@@ -1,6 +1,6 @@
 // ============================================================================
 // STRATFIT SPLINE ENGINE — G-D MODE v9.0
-// Premium CatmullRom + TubeGeometry + Bloom + GSAP
+// Premium CatmullRom + Gradient Fill + Bloom + GSAP
 // ============================================================================
 
 import { useRef, useMemo, useEffect } from 'react';
@@ -69,9 +69,9 @@ interface MountainMeshProps {
 function MountainMesh({ dataPoints, scenario, activeKPIIndex, onPositionsReady }: MountainMeshProps) {
   const groupRef = useRef<THREE.Group>(null);
   const fillMeshRef = useRef<THREE.Mesh>(null);
-  const lineMeshRef = useRef<THREE.Line | null>(null);
-  const glowMeshRef = useRef<THREE.Line | null>(null);
-  
+  const lineMeshRef = useRef<THREE.Line>(null);
+  const glowMeshRef = useRef<THREE.Line>(null);
+
   const currentPointsRef = useRef<number[]>([...dataPoints]);
   const breathRef = useRef(0);
   const targetPointsRef = useRef<number[]>([...dataPoints]);
@@ -81,14 +81,11 @@ function MountainMesh({ dataPoints, scenario, activeKPIIndex, onPositionsReady }
   // GSAP morph when data changes
   useEffect(() => {
     targetPointsRef.current = [...dataPoints];
-    
+
     gsap.to(currentPointsRef, {
       current: dataPoints,
       duration: 0.7,
       ease: 'power3.out',
-      onUpdate: () => {
-        // Points updated in animation loop
-      },
     });
   }, [dataPoints]);
 
@@ -112,13 +109,11 @@ function MountainMesh({ dataPoints, scenario, activeKPIIndex, onPositionsReady }
     const count = currentPointsRef.current.length;
 
     const topPoints: THREE.Vector3[] = [];
-    const bottomPoints: THREE.Vector3[] = [];
 
     currentPointsRef.current.forEach((value, i) => {
       const x = (i / (count - 1)) * width - width / 2;
       const y = (value / 100) * heightScale + breathAmount + Math.sin(breathRef.current + i * 0.5) * 0.05;
       topPoints.push(new THREE.Vector3(x, y, 0));
-      bottomPoints.push(new THREE.Vector3(x, -0.5, 0));
     });
 
     // Report positions for timeline
@@ -137,7 +132,7 @@ function MountainMesh({ dataPoints, scenario, activeKPIIndex, onPositionsReady }
 
     // Update GLOW line (slightly offset)
     if (glowMeshRef.current) {
-      const glowPoints = curvePoints.map(p => new THREE.Vector3(p.x, p.y + 0.02, p.z - 0.1));
+      const glowPoints = curvePoints.map((p) => new THREE.Vector3(p.x, p.y + 0.02, p.z - 0.1));
       const glowGeo = new THREE.BufferGeometry().setFromPoints(glowPoints);
       glowMeshRef.current.geometry.dispose();
       glowMeshRef.current.geometry = glowGeo;
@@ -197,27 +192,26 @@ function MountainMesh({ dataPoints, scenario, activeKPIIndex, onPositionsReady }
   });
 
   // Initial geometries
-  const initialLineGeo = useMemo(() => new THREE.BufferGeometry(), []);
   const initialFillGeo = useMemo(() => new THREE.BufferGeometry(), []);
 
   // Create line objects with materials
   const glowLine = useMemo(() => {
-    return new THREE.Line(initialLineGeo, new THREE.LineBasicMaterial({
+    return new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({
       color: theme.glow,
       transparent: true,
       opacity: 0.3,
       linewidth: 3,
     }));
-  }, [initialLineGeo, theme.glow]);
+  }, [theme.glow]);
 
   const mainLine = useMemo(() => {
-    return new THREE.Line(initialLineGeo, new THREE.LineBasicMaterial({
+    return new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({
       color: theme.primary,
       transparent: true,
       opacity: 1,
       linewidth: 2,
     }));
-  }, [initialLineGeo, theme.primary]);
+  }, [theme.primary]);
 
   // Update materials when theme changes
   useEffect(() => {
@@ -235,13 +229,7 @@ function MountainMesh({ dataPoints, scenario, activeKPIIndex, onPositionsReady }
     <group ref={groupRef} position={[0, 0, 0]}>
       {/* Gradient Fill */}
       <mesh ref={fillMeshRef} geometry={initialFillGeo}>
-        <meshBasicMaterial
-          vertexColors
-          transparent
-          opacity={0.4}
-          side={THREE.DoubleSide}
-          depthWrite={false}
-        />
+        <meshBasicMaterial vertexColors transparent opacity={0.4} side={THREE.DoubleSide} depthWrite={false} />
       </mesh>
 
       {/* Glow Line (behind) */}
@@ -273,12 +261,7 @@ function Atmosphere({ scenario }: { scenario: string }) {
       {/* Bottom fog layer */}
       <mesh ref={fogRef} position={[0, -1.5, -2]} rotation={[-0.2, 0, 0]}>
         <planeGeometry args={[20, 6]} />
-        <meshBasicMaterial
-          color={theme.hex}
-          transparent
-          opacity={0.12}
-          side={THREE.DoubleSide}
-        />
+        <meshBasicMaterial color={theme.hex} transparent opacity={0.12} side={THREE.DoubleSide} />
       </mesh>
 
       {/* Ambient particles effect */}
@@ -289,13 +272,7 @@ function Atmosphere({ scenario }: { scenario: string }) {
             args={[new Float32Array(150).map(() => (Math.random() - 0.5) * 16), 3]}
           />
         </bufferGeometry>
-        <pointsMaterial
-          color={theme.glow}
-          size={0.03}
-          transparent
-          opacity={0.4}
-          sizeAttenuation
-        />
+        <pointsMaterial color={theme.glow} size={0.03} transparent opacity={0.4} sizeAttenuation />
       </points>
     </>
   );
@@ -395,12 +372,7 @@ export default function SplineEngine({
         />
 
         <EffectComposer>
-          <Bloom
-            intensity={1.6}
-            luminanceThreshold={0.1}
-            luminanceSmoothing={0.95}
-            mipmapBlur
-          />
+          <Bloom intensity={1.6} luminanceThreshold={0.1} luminanceSmoothing={0.95} mipmapBlur />
         </EffectComposer>
       </Canvas>
     </div>
