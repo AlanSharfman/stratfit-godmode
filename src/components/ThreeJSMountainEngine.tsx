@@ -136,15 +136,13 @@ const MountainGrid: React.FC<MountainEngineProps> = ({ activeKPIIndex, growth, e
       <bufferGeometry>
         <bufferAttribute 
           attach="attributes-position" 
-          array={positions.array as Float32Array} 
-          count={positions.count} 
-          itemSize={positions.itemSize} 
+          args={[positions.array as Float32Array, positions.itemSize]}
+          count={positions.count}
         />
         <bufferAttribute 
           attach="attributes-color" 
-          array={colors.array as Float32Array} 
-          count={colors.count} 
-          itemSize={colors.itemSize} 
+          args={[colors.array as Float32Array, colors.itemSize]}
+          count={colors.count}
         />
       </bufferGeometry>
       <meshBasicMaterial 
