@@ -29,7 +29,7 @@ const StratfitGodModeDashboard = () => {
     // Base values
     const baseRevenue = 2.0; // $2M base
     const baseBurn = 200; // $200K base monthly burn
-    const baseValuation = 10; // $10M base
+    
     
     // REVENUE: Grows with revenue growth slider
     const revenue = baseRevenue * (1 + (revenueGrowth / 100) * 1.5);
