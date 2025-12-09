@@ -64,9 +64,10 @@ const StratfitGodModeDashboard = () => {
         ))}
       </div>
 
-      {/* 3D MOUNTAIN VISUALIZATION: FIXES THE POOR QUALITY */}
-      <div className="w-full h-[60vh] bg-gray-900 rounded-lg shadow-xl mb-6">
+     {/* 3D MOUNTAIN VISUALIZATION: FIXES THE POOR QUALITY AND THE CRASH */}
+     <div className="w-full h-[60vh] bg-gray-900 rounded-lg shadow-xl mb-6">
         <Canvas camera={{ position: [0, 8, 15], fov: 60 }}>
+          {/* CRITICAL: No DIVs here. Only R3F components. */}
           <ambientLight intensity={0.5} />
           <pointLight position={[10, 10, 10]} intensity={1.5} />
           <ThreeJSMountainEngine 
@@ -76,6 +77,7 @@ const StratfitGodModeDashboard = () => {
           />
         </Canvas>
       </div>
+     
 
       {/* AI ANALYSIS SECTION (Placeholder) */}
       <div className="p-4 bg-white rounded-lg shadow-md mb-6">
