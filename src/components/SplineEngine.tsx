@@ -24,14 +24,6 @@ export interface SplineEngineProps {
 // ============================================================================
 // COLOR PALETTE
 // ============================================================================
-const COLORS = {
-  background: 0x0a1628,
-  valley: 0x0d4f4f,
-  mid: 0x14b8a6,
-  primary: 0x22d3d3,
-  peak: 0x5eead4,
-};
-
 const SCENARIO_COLORS = {
   base: { main: '#22d3d3', glow: '#5eead4', hex: 0x22d3d3 },
   upside: { main: '#42ffb2', glow: '#6fffcc', hex: 0x42ffb2 },
@@ -95,7 +87,6 @@ function SplineRidge({
 
     // Breathing animation
     breathRef.current += 0.015;
-    const breathScale = 1 + Math.sin(breathRef.current) * 0.015;
 
     // Update geometry
     const points = createSplinePoints(
@@ -217,12 +208,9 @@ function SceneContent({
   onTimelineUpdate,
 }: SceneContentProps) {
   const { camera, size } = useThree();
-  const splinePointsRef = useRef<THREE.Vector3[]>([]);
 
   // Project 3D positions to 2D screen coordinates
   const updateTimeline = (points: THREE.Vector3[]) => {
-    splinePointsRef.current = points;
-
     const labels = TIMELINE_LABELS[timePeriod];
     const positions = points.map((point, i) => {
       const projected = point.clone().project(camera);
@@ -323,4 +311,3 @@ export default function SplineEngine({
     </div>
   );
 }
-
