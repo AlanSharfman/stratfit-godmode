@@ -1,7 +1,6 @@
 // ============================================================================
-// STRATFIT SPLINE ENGINE — G-D MODE v8.0
-// CatmullRomCurve3 + TubeGeometry + Bloom + GSAP Morphing
-// NO TERRAIN. NO NOISE. NO WIREFRAMES. NO ORBIT CONTROLS.
+// STRATFIT SPLINE ENGINE — G-D MODE v9.0
+// Premium CatmullRom + TubeGeometry + Bloom + GSAP
 // ============================================================================
 
 import { useRef, useMemo, useEffect } from 'react';
@@ -22,13 +21,33 @@ export interface SplineEngineProps {
 }
 
 // ============================================================================
-// COLOR PALETTE
+// SCENARIO COLOR THEMES
 // ============================================================================
-const SCENARIO_COLORS = {
-  base: { main: '#22d3d3', glow: '#5eead4', hex: 0x22d3d3 },
-  upside: { main: '#42ffb2', glow: '#6fffcc', hex: 0x42ffb2 },
-  downside: { main: '#ff9d3c', glow: '#ffb86c', hex: 0xff9d3c },
-  extreme: { main: '#d946ef', glow: '#e879f9', hex: 0xd946ef },
+const SCENARIO_THEMES = {
+  base: {
+    primary: new THREE.Color('#22d3d3'),
+    secondary: new THREE.Color('#14b8a6'),
+    glow: new THREE.Color('#5eead4'),
+    hex: 0x22d3d3,
+  },
+  upside: {
+    primary: new THREE.Color('#34d399'),
+    secondary: new THREE.Color('#10b981'),
+    glow: new THREE.Color('#6ee7b7'),
+    hex: 0x34d399,
+  },
+  downside: {
+    primary: new THREE.Color('#fbbf24'),
+    secondary: new THREE.Color('#f59e0b'),
+    glow: new THREE.Color('#fcd34d'),
+    hex: 0xfbbf24,
+  },
+  extreme: {
+    primary: new THREE.Color('#f472b6'),
+    secondary: new THREE.Color('#ec4899'),
+    glow: new THREE.Color('#f9a8d4'),
+    hex: 0xf472b6,
+  },
 };
 
 const TIMELINE_LABELS = {
@@ -38,161 +57,254 @@ const TIMELINE_LABELS = {
 };
 
 // ============================================================================
-// NEON SPLINE RIDGE
+// GRADIENT FILLED MOUNTAIN MESH
 // ============================================================================
-interface SplineRidgeProps {
+interface MountainMeshProps {
   dataPoints: number[];
   scenario: 'base' | 'upside' | 'downside' | 'extreme';
   activeKPIIndex: number | null;
-  layerIndex: number;
   onPositionsReady: (positions: THREE.Vector3[]) => void;
 }
 
-function SplineRidge({
-  dataPoints,
-  scenario,
-  activeKPIIndex,
-  layerIndex,
-  onPositionsReady,
-}: SplineRidgeProps) {
-  const tubeRef = useRef<THREE.Mesh>(null);
+function MountainMesh({ dataPoints, scenario, activeKPIIndex, onPositionsReady }: MountainMeshProps) {
+  const groupRef = useRef<THREE.Group>(null);
+  const fillMeshRef = useRef<THREE.Mesh>(null);
+  const lineMeshRef = useRef<THREE.Line | null>(null);
+  const glowMeshRef = useRef<THREE.Line | null>(null);
+  
   const currentPointsRef = useRef<number[]>([...dataPoints]);
   const breathRef = useRef(0);
+  const targetPointsRef = useRef<number[]>([...dataPoints]);
 
-  // Layer configuration
-  const layerConfig = [
-    { yOffset: -0.6, zOffset: -2, opacity: 0.25, radius: 0.08 },
-    { yOffset: -0.2, zOffset: -1, opacity: 0.5, radius: 0.12 },
-    { yOffset: 0, zOffset: 0, opacity: 0.95, radius: 0.18 },
-  ][layerIndex];
+  const theme = SCENARIO_THEMES[scenario];
 
-  // Smooth morph with GSAP
+  // GSAP morph when data changes
   useEffect(() => {
-    const targetPoints = [...dataPoints];
-    const current = { ...currentPointsRef.current };
-
-    gsap.to(current, {
-      duration: 0.6,
-      ease: 'power2.out',
-      ...targetPoints.reduce((acc, val, i) => ({ ...acc, [i]: val }), {}),
+    targetPointsRef.current = [...dataPoints];
+    
+    gsap.to(currentPointsRef, {
+      current: dataPoints,
+      duration: 0.7,
+      ease: 'power3.out',
       onUpdate: () => {
-        currentPointsRef.current = Object.values(current).map(Number);
+        // Points updated in animation loop
       },
     });
   }, [dataPoints]);
 
   // Animation loop
   useFrame((state) => {
-    if (!tubeRef.current) return;
+    if (!groupRef.current) return;
+
+    // Smooth interpolation toward target
+    currentPointsRef.current = currentPointsRef.current.map((val, i) => {
+      const target = targetPointsRef.current[i] ?? val;
+      return val + (target - val) * 0.08;
+    });
 
     // Breathing animation
-    breathRef.current += 0.015;
+    breathRef.current += 0.012;
+    const breathAmount = Math.sin(breathRef.current) * 0.04;
 
-    // Update geometry
-    const points = createSplinePoints(
-      currentPointsRef.current,
-      layerConfig.yOffset,
-      layerConfig.zOffset,
-      breathRef.current
-    );
+    // Generate points
+    const width = 14;
+    const heightScale = 4.5;
+    const count = currentPointsRef.current.length;
 
-    const curve = new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.5);
-    const newGeometry = new THREE.TubeGeometry(curve, 120, layerConfig.radius, 8, false);
+    const topPoints: THREE.Vector3[] = [];
+    const bottomPoints: THREE.Vector3[] = [];
 
-    tubeRef.current.geometry.dispose();
-    tubeRef.current.geometry = newGeometry;
+    currentPointsRef.current.forEach((value, i) => {
+      const x = (i / (count - 1)) * width - width / 2;
+      const y = (value / 100) * heightScale + breathAmount + Math.sin(breathRef.current + i * 0.5) * 0.05;
+      topPoints.push(new THREE.Vector3(x, y, 0));
+      bottomPoints.push(new THREE.Vector3(x, -0.5, 0));
+    });
 
-    // Report positions for timeline (only from front layer)
-    if (layerIndex === 2) {
-      onPositionsReady(points);
+    // Report positions for timeline
+    onPositionsReady(topPoints);
+
+    // Create smooth curve
+    const curve = new THREE.CatmullRomCurve3(topPoints, false, 'catmullrom', 0.4);
+    const curvePoints = curve.getPoints(80);
+
+    // Update LINE geometry (top edge)
+    if (lineMeshRef.current) {
+      const lineGeo = new THREE.BufferGeometry().setFromPoints(curvePoints);
+      lineMeshRef.current.geometry.dispose();
+      lineMeshRef.current.geometry = lineGeo;
     }
 
-    // Glow pulse for active KPI
-    const material = tubeRef.current.material as THREE.MeshStandardMaterial;
-    if (activeKPIIndex !== null && layerIndex === 2) {
-      material.emissiveIntensity = 1.5 + Math.sin(state.clock.elapsedTime * 3) * 0.3;
-    } else {
-      material.emissiveIntensity = layerIndex === 2 ? 1.2 : 0.6;
+    // Update GLOW line (slightly offset)
+    if (glowMeshRef.current) {
+      const glowPoints = curvePoints.map(p => new THREE.Vector3(p.x, p.y + 0.02, p.z - 0.1));
+      const glowGeo = new THREE.BufferGeometry().setFromPoints(glowPoints);
+      glowMeshRef.current.geometry.dispose();
+      glowMeshRef.current.geometry = glowGeo;
+    }
+
+    // Update FILL geometry (gradient mesh)
+    if (fillMeshRef.current) {
+      const vertices: number[] = [];
+      const colors: number[] = [];
+
+      // Build triangle strip for gradient fill
+      curvePoints.forEach((point) => {
+        // Top vertex
+        vertices.push(point.x, point.y, -0.2);
+        // Bottom vertex
+        vertices.push(point.x, -0.8, -0.2);
+
+        // Color gradient (top = bright, bottom = dark)
+        const topColor = theme.glow;
+        const bottomColor = new THREE.Color('#0a1628');
+
+        colors.push(topColor.r * 0.7, topColor.g * 0.7, topColor.b * 0.7);
+        colors.push(bottomColor.r, bottomColor.g, bottomColor.b);
+      });
+
+      // Create indices for triangle strip
+      const indices: number[] = [];
+      for (let i = 0; i < curvePoints.length - 1; i++) {
+        const topLeft = i * 2;
+        const bottomLeft = i * 2 + 1;
+        const topRight = (i + 1) * 2;
+        const bottomRight = (i + 1) * 2 + 1;
+
+        indices.push(topLeft, bottomLeft, topRight);
+        indices.push(bottomLeft, bottomRight, topRight);
+      }
+
+      const fillGeo = new THREE.BufferGeometry();
+      fillGeo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+      fillGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+      fillGeo.setIndex(indices);
+
+      fillMeshRef.current.geometry.dispose();
+      fillMeshRef.current.geometry = fillGeo;
+    }
+
+    // Pulse effect when KPI active
+    if (lineMeshRef.current) {
+      const mat = lineMeshRef.current.material as THREE.LineBasicMaterial;
+      if (activeKPIIndex !== null) {
+        const pulse = 0.8 + Math.sin(state.clock.elapsedTime * 4) * 0.2;
+        mat.opacity = pulse;
+      } else {
+        mat.opacity = 1;
+      }
     }
   });
 
-  // Initial geometry
-  const initialGeometry = useMemo(() => {
-    const points = createSplinePoints(dataPoints, layerConfig.yOffset, layerConfig.zOffset, 0);
-    const curve = new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.5);
-    return new THREE.TubeGeometry(curve, 120, layerConfig.radius, 8, false);
-  }, []);
+  // Initial geometries
+  const initialLineGeo = useMemo(() => new THREE.BufferGeometry(), []);
+  const initialFillGeo = useMemo(() => new THREE.BufferGeometry(), []);
 
-  const colors = SCENARIO_COLORS[scenario];
+  // Create line objects with materials
+  const glowLine = useMemo(() => {
+    return new THREE.Line(initialLineGeo, new THREE.LineBasicMaterial({
+      color: theme.glow,
+      transparent: true,
+      opacity: 0.3,
+      linewidth: 3,
+    }));
+  }, [initialLineGeo, theme.glow]);
+
+  const mainLine = useMemo(() => {
+    return new THREE.Line(initialLineGeo, new THREE.LineBasicMaterial({
+      color: theme.primary,
+      transparent: true,
+      opacity: 1,
+      linewidth: 2,
+    }));
+  }, [initialLineGeo, theme.primary]);
+
+  // Update materials when theme changes
+  useEffect(() => {
+    if (glowMeshRef.current) {
+      const mat = glowMeshRef.current.material as THREE.LineBasicMaterial;
+      mat.color.copy(theme.glow);
+    }
+    if (lineMeshRef.current) {
+      const mat = lineMeshRef.current.material as THREE.LineBasicMaterial;
+      mat.color.copy(theme.primary);
+    }
+  }, [theme]);
 
   return (
-    <mesh ref={tubeRef} geometry={initialGeometry}>
-      <meshStandardMaterial
-        color={colors.hex}
-        emissive={colors.hex}
-        emissiveIntensity={layerIndex === 2 ? 1.2 : 0.6}
-        transparent
-        opacity={layerConfig.opacity}
-        roughness={0.3}
-        metalness={0.1}
-      />
-    </mesh>
+    <group ref={groupRef} position={[0, 0, 0]}>
+      {/* Gradient Fill */}
+      <mesh ref={fillMeshRef} geometry={initialFillGeo}>
+        <meshBasicMaterial
+          vertexColors
+          transparent
+          opacity={0.4}
+          side={THREE.DoubleSide}
+          depthWrite={false}
+        />
+      </mesh>
+
+      {/* Glow Line (behind) */}
+      <primitive ref={glowMeshRef} object={glowLine} />
+
+      {/* Main Ridge Line */}
+      <primitive ref={lineMeshRef} object={mainLine} />
+    </group>
   );
 }
 
 // ============================================================================
-// CREATE SPLINE POINTS
+// ATMOSPHERIC ELEMENTS
 // ============================================================================
-function createSplinePoints(
-  dataPoints: number[],
-  yOffset: number,
-  zOffset: number,
-  breathPhase: number
-): THREE.Vector3[] {
-  const width = 16;
-  const heightScale = 5;
-  const count = dataPoints.length;
-
-  return dataPoints.map((value, i) => {
-    const x = (i / (count - 1)) * width - width / 2;
-    const breathY = Math.sin(breathPhase + i * 0.4) * 0.08;
-    const y = (value / 100) * heightScale + yOffset + breathY;
-    const z = zOffset;
-    return new THREE.Vector3(x, y, z);
-  });
-}
-
-// ============================================================================
-// ATMOSPHERIC FOG
-// ============================================================================
-function AtmosphericFog({ scenario }: { scenario: string }) {
-  const meshRef = useRef<THREE.Mesh>(null);
+function Atmosphere({ scenario }: { scenario: string }) {
+  const fogRef = useRef<THREE.Mesh>(null);
+  const theme = SCENARIO_THEMES[scenario as keyof typeof SCENARIO_THEMES];
 
   useFrame((state) => {
-    if (meshRef.current) {
-      meshRef.current.position.x = Math.sin(state.clock.elapsedTime * 0.1) * 0.5;
-      (meshRef.current.material as THREE.MeshBasicMaterial).opacity =
-        0.15 + Math.sin(state.clock.elapsedTime * 0.3) * 0.03;
+    if (fogRef.current) {
+      fogRef.current.position.y = -1.5 + Math.sin(state.clock.elapsedTime * 0.15) * 0.1;
+      const mat = fogRef.current.material as THREE.MeshBasicMaterial;
+      mat.opacity = 0.12 + Math.sin(state.clock.elapsedTime * 0.2) * 0.02;
     }
   });
 
   return (
-    <mesh ref={meshRef} position={[0, -2.5, -4]} rotation={[-0.3, 0, 0]}>
-      <planeGeometry args={[30, 12]} />
-      <meshBasicMaterial
-        color={SCENARIO_COLORS[scenario as keyof typeof SCENARIO_COLORS].hex}
-        transparent
-        opacity={0.15}
-        side={THREE.DoubleSide}
-      />
-    </mesh>
+    <>
+      {/* Bottom fog layer */}
+      <mesh ref={fogRef} position={[0, -1.5, -2]} rotation={[-0.2, 0, 0]}>
+        <planeGeometry args={[20, 6]} />
+        <meshBasicMaterial
+          color={theme.hex}
+          transparent
+          opacity={0.12}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      {/* Ambient particles effect */}
+      <points position={[0, 1, -3]}>
+        <bufferGeometry>
+          <bufferAttribute
+            attach="attributes-position"
+            args={[new Float32Array(150).map(() => (Math.random() - 0.5) * 16), 3]}
+          />
+        </bufferGeometry>
+        <pointsMaterial
+          color={theme.glow}
+          size={0.03}
+          transparent
+          opacity={0.4}
+          sizeAttenuation
+        />
+      </points>
+    </>
   );
 }
 
 // ============================================================================
-// SCENE CONTENT
+// SCENE SETUP
 // ============================================================================
-interface SceneContentProps {
+interface SceneProps {
   dataPoints: number[];
   scenario: 'base' | 'upside' | 'downside' | 'extreme';
   timePeriod: 'monthly' | 'quarterly' | 'yearly';
@@ -200,17 +312,24 @@ interface SceneContentProps {
   onTimelineUpdate: (positions: { x: number; y: number; label: string }[]) => void;
 }
 
-function SceneContent({
-  dataPoints,
-  scenario,
-  timePeriod,
-  activeKPIIndex,
-  onTimelineUpdate,
-}: SceneContentProps) {
+function Scene({ dataPoints, scenario, timePeriod, activeKPIIndex, onTimelineUpdate }: SceneProps) {
   const { camera, size } = useThree();
+  const theme = SCENARIO_THEMES[scenario];
 
-  // Project 3D positions to 2D screen coordinates
-  const updateTimeline = (points: THREE.Vector3[]) => {
+  // Fixed camera (NO USER CONTROL)
+  useEffect(() => {
+    camera.position.set(0, 1.8, 9);
+    camera.lookAt(0, 0.8, 0);
+  }, [camera]);
+
+  // Subtle camera drift
+  useFrame((state) => {
+    camera.position.y = 1.8 + Math.sin(state.clock.elapsedTime * 0.2) * 0.08;
+    camera.position.x = Math.sin(state.clock.elapsedTime * 0.12) * 0.05;
+  });
+
+  // Project 3D → 2D for timeline
+  const handlePositions = (points: THREE.Vector3[]) => {
     const labels = TIMELINE_LABELS[timePeriod];
     const positions = points.map((point, i) => {
       const projected = point.clone().project(camera);
@@ -220,59 +339,36 @@ function SceneContent({
         label: labels[i] || '',
       };
     });
-
     onTimelineUpdate(positions);
   };
 
-  // Fixed camera position (NO USER CONTROL)
-  useEffect(() => {
-    camera.position.set(0, 2.5, 11);
-    camera.lookAt(0, 0.5, 0);
-  }, [camera]);
-
-  // Subtle camera float
-  useFrame((state) => {
-    camera.position.y = 2.5 + Math.sin(state.clock.elapsedTime * 0.25) * 0.12;
-    camera.position.x = Math.sin(state.clock.elapsedTime * 0.15) * 0.08;
-  });
-
   return (
     <>
-      {/* Lights */}
-      <ambientLight intensity={0.2} />
-      <pointLight
-        position={[0, 8, 5]}
-        intensity={1.5}
-        color={SCENARIO_COLORS[scenario].hex}
-        distance={25}
-        decay={2}
+      {/* Lighting */}
+      <ambientLight intensity={0.15} />
+      <pointLight position={[0, 6, 4]} intensity={1.2} color={theme.hex} distance={20} decay={2} />
+      <pointLight position={[-5, 3, 2]} intensity={0.6} color={0x14b8a6} distance={15} />
+      <pointLight position={[5, 3, 2]} intensity={0.6} color={0x5eead4} distance={15} />
+
+      {/* Mountain */}
+      <MountainMesh
+        dataPoints={dataPoints}
+        scenario={scenario}
+        activeKPIIndex={activeKPIIndex}
+        onPositionsReady={handlePositions}
       />
-      <pointLight position={[-6, 4, 2]} intensity={0.8} color={0x14b8a6} distance={20} />
-      <pointLight position={[6, 4, 2]} intensity={0.8} color={0x5eead4} distance={20} />
 
-      {/* Three-layer ridge system */}
-      {[0, 1, 2].map((layerIndex) => (
-        <SplineRidge
-          key={layerIndex}
-          dataPoints={dataPoints}
-          scenario={scenario}
-          activeKPIIndex={activeKPIIndex}
-          layerIndex={layerIndex}
-          onPositionsReady={layerIndex === 2 ? updateTimeline : () => {}}
-        />
-      ))}
-
-      {/* Atmospheric fog */}
-      <AtmosphericFog scenario={scenario} />
+      {/* Atmosphere */}
+      <Atmosphere scenario={scenario} />
 
       {/* Scene fog */}
-      <fog attach="fog" args={[0x0a1628, 8, 22]} />
+      <fog attach="fog" args={['#0a1628', 6, 18]} />
     </>
   );
 }
 
 // ============================================================================
-// MAIN ENGINE EXPORT
+// MAIN EXPORT
 // ============================================================================
 export default function SplineEngine({
   dataPoints,
@@ -282,7 +378,7 @@ export default function SplineEngine({
   onTimelineUpdate,
 }: SplineEngineProps) {
   return (
-    <div className="w-full h-full relative" style={{ background: '#0a1628' }}>
+    <div className="w-full h-full" style={{ background: '#0a1628' }}>
       <Canvas
         gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
         dpr={[1, 2]}
@@ -290,7 +386,7 @@ export default function SplineEngine({
       >
         <color attach="background" args={['#0a1628']} />
 
-        <SceneContent
+        <Scene
           dataPoints={dataPoints}
           scenario={scenario}
           timePeriod={timePeriod}
@@ -298,12 +394,11 @@ export default function SplineEngine({
           onTimelineUpdate={onTimelineUpdate}
         />
 
-        {/* Bloom post-processing */}
         <EffectComposer>
           <Bloom
-            intensity={1.4}
-            luminanceThreshold={0.15}
-            luminanceSmoothing={0.9}
+            intensity={1.6}
+            luminanceThreshold={0.1}
+            luminanceSmoothing={0.95}
             mipmapBlur
           />
         </EffectComposer>
