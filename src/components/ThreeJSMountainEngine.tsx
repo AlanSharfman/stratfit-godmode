@@ -1,5 +1,5 @@
 // ============================================================================
-// ThreeJSMountainEngine.tsx - 3D Physics Engine
+// ThreeJSMountainEngine.tsx - PURPLE/MAGENTA GOD MODE
 // ============================================================================
 
 import { useRef, useEffect, useMemo } from 'react';
@@ -10,6 +10,7 @@ export interface MountainEngineProps {
   activeKPIIndex: number | null;
   growth: number;
   efficiency: number;
+  scenario?: 'base' | 'upside' | 'downside' | 'extreme';
 }
 
 interface EngineState {
@@ -92,7 +93,7 @@ class SimplexNoise {
 }
 
 // Mountain Grid Component
-function MountainGrid({ growth, efficiency, activeKPIIndex }: MountainEngineProps) {
+function MountainGrid({ growth, efficiency, activeKPIIndex, scenario = 'upside' }: MountainEngineProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const noise = useMemo(() => new SimplexNoise(42), []);
   const state = useRef<EngineState>({ time: 0, height: 20, speed: 0.02, interactionX: 0, interactionForce: 0 });
@@ -106,11 +107,32 @@ function MountainGrid({ growth, efficiency, activeKPIIndex }: MountainEngineProp
     return geo;
   }, []);
 
+  // SCENARIO COLOR PALETTES - Purple/Magenta Theme
   const scenarioColors = useMemo(() => ({
-    low: [0.04, 0.09, 0.15],
-    mid: [0.05, 0.58, 0.53],
-    high: [0.18, 0.83, 0.75],
-    peak: [0.6, 0.96, 0.9]
+    base: {
+      low: [0.05, 0.02, 0.15],      // Deep purple-black
+      mid: [0.4, 0.1, 0.6],          // Purple
+      high: [0.6, 0.2, 0.8],         // Magenta
+      peak: [0.8, 0.4, 1.0]          // Bright magenta
+    },
+    upside: {
+      low: [0.02, 0.05, 0.15],      // Deep blue-black
+      mid: [0.3, 0.1, 0.7],          // Violet
+      high: [0.5, 0.2, 0.9],         // Bright violet
+      peak: [0.7, 0.5, 1.0]          // Pink-white glow
+    },
+    downside: {
+      low: [0.08, 0.05, 0.12],      // Muted purple-grey
+      mid: [0.25, 0.15, 0.35],       // Dusty purple
+      high: [0.35, 0.25, 0.45],      // Muted violet
+      peak: [0.5, 0.4, 0.6]          // Grey-purple
+    },
+    extreme: {
+      low: [0.1, 0.0, 0.2],         // Deep magenta-black
+      mid: [0.8, 0.0, 0.5],          // Hot pink
+      high: [1.0, 0.2, 0.6],         // Neon pink
+      peak: [1.0, 0.6, 0.9]          // White-pink glow
+    }
   }), []);
 
   const kpiXPositions = [-50, -35, -20, 0, 20, 35, 50];
@@ -131,7 +153,7 @@ function MountainGrid({ growth, efficiency, activeKPIIndex }: MountainEngineProp
   useFrame(() => {
     if (!meshRef.current) return;
     const s = state.current;
-    const colors = scenarioColors;
+    const colors = scenarioColors[scenario];
     s.time += s.speed;
     s.interactionForce *= 0.95;
 
@@ -195,23 +217,24 @@ function MountainGrid({ growth, efficiency, activeKPIIndex }: MountainEngineProp
   return (
     <mesh ref={meshRef} rotation={[-Math.PI / 2.5, 0, 0]} position={[0, -5, 10]}>
       <primitive object={geometry} attach="geometry" />
-      <meshBasicMaterial vertexColors wireframe transparent opacity={0.9} />
+      <meshBasicMaterial vertexColors wireframe transparent opacity={0.85} />
     </mesh>
   );
 }
 
 // Main Export
-export default function ThreeJSMountainEngine({ activeKPIIndex, growth, efficiency }: MountainEngineProps) {
+export default function ThreeJSMountainEngine({ activeKPIIndex, growth, efficiency, scenario = 'upside' }: MountainEngineProps) {
   return (
     <Canvas 
       style={{ position: 'absolute', width: '100%', height: '100%', top: 0, left: 0 }}
       camera={{ position: [0, 30, 60], fov: 50, near: 0.1, far: 1000 }}
     >
-      <ambientLight intensity={0.4} />
-      <directionalLight position={[30, 50, 30]} intensity={0.8} color="#14b8a6" />
-      <directionalLight position={[-30, 30, -20]} intensity={0.4} color="#7c3aed" />
-      <MountainGrid growth={growth} efficiency={efficiency} activeKPIIndex={activeKPIIndex} />
-      <fog attach="fog" args={['#0a1628', 60, 120]} />
+      <ambientLight intensity={0.3} />
+      <directionalLight position={[30, 50, 30]} intensity={0.6} color="#a855f7" />
+      <directionalLight position={[-30, 30, -20]} intensity={0.4} color="#ec4899" />
+      <pointLight position={[0, 40, 0]} intensity={0.5} color="#8b5cf6" />
+      <MountainGrid growth={growth} efficiency={efficiency} activeKPIIndex={activeKPIIndex} scenario={scenario} />
+      <fog attach="fog" args={['#0a0b1a', 50, 120]} />
     </Canvas>
   );
 }

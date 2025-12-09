@@ -1,11 +1,14 @@
 // ============================================================================
-// StratfitGodModeDashboard.tsx - Full Calculation Engine
+// StratfitGodModeDashboard.tsx - DARK MODE GOD MODE
 // ============================================================================
 import { useState, useMemo } from 'react';
 import ThreeJSMountainEngine from './ThreeJSMountainEngine';
 
+type Scenario = 'base' | 'upside' | 'downside' | 'extreme';
+
 const StratfitGodModeDashboard = () => {
   const [activeCardIndex, setActiveCardIndex] = useState<number | null>(null);
+  const [scenario, setScenario] = useState<Scenario>('upside');
   
   // PERFORMANCE SLIDERS
   const [revenueGrowth, setRevenueGrowth] = useState<number>(60);
@@ -22,127 +25,95 @@ const StratfitGodModeDashboard = () => {
   const [capex, setCapex] = useState<number>(58);
   const [burnEfficiency, setBurnEfficiency] = useState<number>(12);
 
+  // Scenario multipliers
+  const scenarioMultipliers = {
+    base: 1.0,
+    upside: 1.3,
+    downside: 0.7,
+    extreme: 1.8,
+  };
+
   // =========================================================================
-  // CALCULATION ENGINE - KPIs derived from sliders
+  // CALCULATION ENGINE
   // =========================================================================
   const calculations = useMemo(() => {
-    // Base values
-    const baseRevenue = 2.0; // $2M base
-    const baseBurn = 200; // $200K base monthly burn
+    const mult = scenarioMultipliers[scenario];
+    const baseRevenue = 2.0;
+    const baseBurn = 200;
     
+    const revenue = baseRevenue * (1 + (revenueGrowth / 100) * 1.5) * mult;
+    const revGrowthPercent = Math.round((revenueGrowth + (opEfficiency * 0.2)) * mult);
     
-    // REVENUE: Grows with revenue growth slider
-    const revenue = baseRevenue * (1 + (revenueGrowth / 100) * 1.5);
-    
-    // REV GROWTH: Direct from slider with efficiency boost
-    const revGrowthPercent = revenueGrowth + (opEfficiency * 0.2);
-    
-    // EBITDA: Revenue minus costs, improved by COGS and cost reduction
-    const grossMargin = 0.4 + (cogsReduction / 100) * 0.3; // 40-70% margin
+    const grossMargin = 0.4 + (cogsReduction / 100) * 0.3;
     const operatingCosts = (100 - costReduction) / 100;
     const ebitda = revenue * grossMargin * (1 - operatingCosts * 0.5);
     
-    // BURN RATE: Affected by headcount, CAPEX, and efficiency
-    const headcountCost = headcount * 2; // $2K per head
+    const headcountCost = headcount * 2;
     const capexCost = capex * 0.5;
     const efficiencyMultiplier = 1 - (burnEfficiency / 100);
     const burnRate = (baseBurn + headcountCost + capexCost) * efficiencyMultiplier;
     
-    // RUNWAY: Cash buffer divided by burn rate
-    const cashInBank = cashBuffer * 1000; // Convert to $K
+    const cashInBank = cashBuffer * 1000;
     const runwayMonths = Math.round(cashInBank / burnRate);
     
-    // RISK SCORE: Composite - higher is better (less risky)
-    const runwayRisk = Math.min(runwayMonths / 24, 1) * 30; // 30 pts for 24+ months
-    const growthRisk = (revenueGrowth / 100) * 25; // 25 pts for high growth
-    const efficiencyRisk = (opEfficiency / 100) * 25; // 25 pts for efficiency
-    const bufferRisk = (cashBuffer / 100) * 20; // 20 pts for cash buffer
+    const runwayRisk = Math.min(runwayMonths / 24, 1) * 30;
+    const growthRisk = (revenueGrowth / 100) * 25;
+    const efficiencyRisk = (opEfficiency / 100) * 25;
+    const bufferRisk = (cashBuffer / 100) * 20;
     const riskScore = Math.round(runwayRisk + growthRisk + efficiencyRisk + bufferRisk);
     
-    // VALUATION: Revenue multiple based on growth + profitability
     const revenueMultiple = 3 + (revenueGrowth / 100) * 8 + (ebitda > 0 ? 2 : 0);
-    const valuation = revenue * revenueMultiple;
+    const valuation = revenue * revenueMultiple * mult;
     
     return {
       runway: Math.max(6, Math.min(60, runwayMonths)),
-      revenue: revenue,
-      revGrowth: Math.round(revGrowthPercent),
-      ebitda: ebitda,
-      burnRate: burnRate,
+      revenue,
+      revGrowth: revGrowthPercent,
+      ebitda,
+      burnRate,
       riskScore: Math.max(20, Math.min(99, riskScore)),
-      valuation: valuation,
+      valuation,
     };
-  }, [revenueGrowth, cogsReduction, opEfficiency, headcount, regions, cashBuffer, costReduction, capex, burnEfficiency]);
+  }, [revenueGrowth, cogsReduction, opEfficiency, headcount, cashBuffer, costReduction, capex, burnEfficiency, scenario]);
 
-  // Format helpers
+  // AI Insights based on calculations
+  const aiInsights = useMemo(() => {
+    const insights = [];
+    if (calculations.revGrowth > 50) {
+      insights.push({ type: 'positive', text: `Revenue growth accelerates by ${calculations.revGrowth}% in ${scenario} scenario, exceeding targets.` });
+    }
+    if (calculations.ebitda > 0) {
+      insights.push({ type: 'positive', text: 'AI predicts sustained growth due to market expansion and product adoption.' });
+    }
+    if (calculations.burnRate > 250) {
+      insights.push({ type: 'warning', text: 'Burn rate elevated. Consider efficiency improvements to extend runway.' });
+    }
+    if (calculations.runway < 18) {
+      insights.push({ type: 'warning', text: `Runway at ${calculations.runway} months. Fundraising recommended within 6 months.` });
+    }
+    if (calculations.riskScore > 70) {
+      insights.push({ type: 'positive', text: 'Risk profile healthy. Capital efficiency improves outlook.' });
+    }
+    return insights.slice(0, 3);
+  }, [calculations, scenario]);
+
   const formatMoney = (val: number, decimals = 1) => {
     if (val >= 1) return `$${val.toFixed(decimals)}M`;
     return `$${(val * 1000).toFixed(0)}K`;
   };
   
-  const formatBurn = (val: number) => `-$${Math.round(val)}K`;
+  const formatBurn = (val: number) => `$${Math.round(val)}K`;
 
-  // KPI data with calculated values
   const kpis = [
-    { 
-      label: 'Runway', 
-      value: `${calculations.runway}`, 
-      unit: 'mo', 
-      color: 'bg-violet-500', 
-      change: calculations.runway > 24 ? 'Strong' : calculations.runway > 12 ? 'OK' : 'Low',
-      positive: calculations.runway > 12 
-    },
-    { 
-      label: 'Revenue', 
-      value: formatMoney(calculations.revenue), 
-      unit: '', 
-      color: 'bg-cyan-500', 
-      change: `+${calculations.revGrowth}%`,
-      positive: true 
-    },
-    { 
-      label: 'Rev Growth', 
-      value: `+${calculations.revGrowth}%`, 
-      unit: '', 
-      color: 'bg-emerald-500', 
-      change: calculations.revGrowth > 50 ? '🚀 High' : 'Steady',
-      positive: calculations.revGrowth > 30 
-    },
-    { 
-      label: 'EBITDA', 
-      value: formatMoney(calculations.ebitda), 
-      unit: '', 
-      color: 'bg-teal-500', 
-      change: calculations.ebitda > 0 ? 'Profitable' : 'Negative',
-      positive: calculations.ebitda > 0 
-    },
-    { 
-      label: 'Burn Rate', 
-      value: formatBurn(calculations.burnRate), 
-      unit: '/mo', 
-      color: 'bg-orange-500', 
-      change: calculations.burnRate < 150 ? 'Efficient' : 'High',
-      positive: calculations.burnRate < 200 
-    },
-    { 
-      label: 'Risk Score', 
-      value: `${calculations.riskScore}`, 
-      unit: '/100', 
-      color: 'bg-red-500', 
-      change: calculations.riskScore > 70 ? 'Low Risk' : 'Medium',
-      positive: calculations.riskScore > 60 
-    },
-    { 
-      label: 'Valuation', 
-      value: formatMoney(calculations.valuation, 0), 
-      unit: '', 
-      color: 'bg-blue-500', 
-      change: `${(calculations.valuation / 2).toFixed(1)}x Rev`,
-      positive: true 
-    },
+    { label: 'Runway', value: `${calculations.runway}`, unit: 'Mo', color: 'from-violet-500 to-purple-600', glow: 'shadow-violet-500/50' },
+    { label: 'Cash', value: formatMoney(calculations.revenue * 0.8), unit: '', color: 'from-blue-500 to-cyan-500', glow: 'shadow-cyan-500/50' },
+    { label: 'Revenue Growth', value: `+${calculations.revGrowth}%`, unit: '', color: 'from-emerald-400 to-teal-500', glow: 'shadow-emerald-500/50', highlight: true },
+    { label: 'EBITDA', value: formatMoney(calculations.ebitda), unit: '', color: 'from-teal-400 to-cyan-500', glow: 'shadow-teal-500/50' },
+    { label: 'Burn Rate', value: formatBurn(calculations.burnRate), unit: '', color: 'from-orange-500 to-red-500', glow: 'shadow-orange-500/50' },
+    { label: 'Risk Score', value: `${calculations.riskScore}/100`, unit: '', color: 'from-pink-500 to-rose-500', glow: 'shadow-pink-500/50' },
+    { label: 'Enterprise Value', value: formatMoney(calculations.valuation, 0), unit: '', color: 'from-amber-400 to-orange-500', glow: 'shadow-amber-500/50' },
   ];
 
-  // Combined metric for mountain height (weighted average of key metrics)
   const mountainGrowth = (revenueGrowth * 0.4) + (opEfficiency * 0.3) + ((100 - (calculations.burnRate / 4)) * 0.3);
   const mountainEfficiency = (opEfficiency * 0.4) + (burnEfficiency * 3) + (cogsReduction * 0.2);
 
@@ -152,141 +123,196 @@ const StratfitGodModeDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 p-6 font-sans">
-      <div className="max-w-[1800px] mx-auto space-y-5">
+    <div className="min-h-screen bg-[#0a0b1a] text-white font-sans">
+      <div className="max-w-[1900px] mx-auto p-5">
 
         {/* HEADER */}
-        <header className="flex items-center justify-between bg-white rounded-2xl px-6 py-4 shadow-sm border border-slate-200">
+        <header className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-teal-500/30">S</div>
+            <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-violet-500/30">⚡</div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold tracking-tight text-slate-900">STRATFIT</span>
-                <span className="text-xs bg-gradient-to-r from-teal-500 to-cyan-500 text-white px-2 py-1 rounded-full font-semibold">GOD MODE</span>
-              </div>
-              <span className="text-xs text-slate-400">Scenario Intelligence Platform</span>
+              <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">STRATFIT</span>
+              <span className="text-[10px] text-slate-500 ml-2 tracking-widest">INTELLIGENCE</span>
             </div>
           </div>
-          <div className="flex gap-2 bg-slate-100 p-1 rounded-xl">
-            <button className="px-4 py-2 rounded-lg text-sm font-medium text-slate-500 hover:bg-white hover:shadow-sm transition-all">Monthly</button>
-            <button className="px-4 py-2 bg-white rounded-lg text-sm font-medium text-slate-900 shadow-sm">Quarterly</button>
-            <button className="px-4 py-2 rounded-lg text-sm font-medium text-slate-500 hover:bg-white hover:shadow-sm transition-all">Yearly</button>
+          <div className="flex items-center gap-3">
+            <button className="px-4 py-2 bg-gradient-to-r from-violet-600 to-purple-600 rounded-lg text-sm font-medium flex items-center gap-2 shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-all">
+              <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+              AI Insights
+            </button>
+            <button className="px-4 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-sm font-medium hover:bg-slate-700/50 transition-all">
+              Export
+            </button>
           </div>
         </header>
 
         {/* KPI CARDS */}
-        <div className="grid grid-cols-7 gap-4">
+        <div className="grid grid-cols-7 gap-3 mb-5">
           {kpis.map((kpi, index) => (
             <div
               key={index}
               onClick={() => handleKpiClick(index)}
-              className={`bg-white rounded-2xl p-5 shadow-sm border-2 cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1
-                ${activeCardIndex === index 
-                  ? 'border-teal-500 shadow-lg shadow-teal-500/20 scale-105' 
-                  : 'border-slate-100 hover:border-slate-200'}`}
+              className={`relative rounded-2xl p-4 cursor-pointer transition-all duration-300 overflow-hidden
+                ${kpi.highlight 
+                  ? `bg-gradient-to-br ${kpi.color} shadow-lg ${kpi.glow}` 
+                  : 'bg-slate-800/50 border border-slate-700/50 hover:border-slate-600'}
+                ${activeCardIndex === index ? `ring-2 ring-white/50 scale-105 shadow-xl ${kpi.glow}` : 'hover:scale-102'}`}
             >
-              <div className="flex items-center gap-2 mb-3">
-                <div className={`w-3 h-3 rounded-full ${kpi.color} ${activeCardIndex === index ? 'animate-pulse' : ''}`}></div>
-                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{kpi.label}</span>
-              </div>
-              <div className="text-2xl font-bold text-slate-900">
-                {kpi.value}
-                <span className="text-sm font-normal text-slate-400 ml-1">{kpi.unit}</span>
-              </div>
-              <div className={`text-sm font-semibold mt-2 ${kpi.positive ? 'text-emerald-500' : 'text-orange-500'}`}>
-                {kpi.change}
+              {/* Glow effect on active */}
+              {activeCardIndex === index && (
+                <div className={`absolute inset-0 bg-gradient-to-br ${kpi.color} opacity-20 animate-pulse`}></div>
+              )}
+              <div className="relative z-10">
+                <div className="text-[10px] font-medium text-slate-400 uppercase tracking-wider mb-1">{kpi.label}</div>
+                <div className="text-2xl font-bold">
+                  {kpi.value}
+                  <span className="text-sm font-normal text-slate-400 ml-1">{kpi.unit}</span>
+                </div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* MAIN CONTENT */}
-        <div className="grid grid-cols-[1fr_360px] gap-5">
-
-          {/* 3D VISUALIZATION */}
-          <div className="relative bg-gradient-to-br from-[#0a1628] via-[#0d1f3c] to-[#0f172a] rounded-3xl overflow-hidden shadow-2xl h-[540px] border border-slate-700/50">
-            <ThreeJSMountainEngine 
-              growth={mountainGrowth} 
-              efficiency={mountainEfficiency}
-              activeKPIIndex={activeCardIndex}
-            />
+        {/* MAIN GRID */}
+        <div className="grid grid-cols-[1fr_300px] gap-5">
+          
+          {/* LEFT: VISUALIZATION */}
+          <div className="space-y-4">
             
-            {/* Top Stats Bar */}
-            <div className="absolute top-4 left-4 right-4 flex justify-between">
-              <div className="bg-black/40 backdrop-blur-sm rounded-lg px-4 py-2 border border-white/10">
-                <span className="text-slate-400 text-xs">Health Score</span>
-                <div className="text-white font-bold text-lg">{calculations.riskScore}/100</div>
-              </div>
-              <div className="bg-black/40 backdrop-blur-sm rounded-lg px-4 py-2 border border-white/10">
-                <span className="text-slate-400 text-xs">Valuation</span>
-                <div className="text-teal-400 font-bold text-lg">{formatMoney(calculations.valuation, 0)}</div>
+            {/* SCENARIO SELECTOR */}
+            <div className="flex items-center justify-center gap-2 bg-slate-800/30 rounded-full p-1 w-fit mx-auto">
+              {(['base', 'upside', 'downside', 'extreme'] as Scenario[]).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setScenario(s)}
+                  className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
+                    scenario === s 
+                      ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-lg shadow-violet-500/30' 
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {s.charAt(0).toUpperCase() + s.slice(1)}
+                </button>
+              ))}
+            </div>
+
+            {/* 3D MOUNTAIN */}
+            <div className="relative bg-gradient-to-b from-[#12132a] to-[#0a0b1a] rounded-3xl overflow-hidden h-[420px] border border-slate-800/50">
+              <ThreeJSMountainEngine 
+                growth={mountainGrowth} 
+                efficiency={mountainEfficiency}
+                activeKPIIndex={activeCardIndex}
+                scenario={scenario}
+              />
+              
+              {/* Quarter Timeline */}
+              <div className="absolute bottom-0 left-0 right-0 p-5">
+                <div className="flex justify-center gap-16">
+                  {['Q1', 'Q2', 'Q3', 'Q4'].map((q, i) => (
+                    <div key={q} className="flex flex-col items-center">
+                      <div className={`w-1 h-1 rounded-full mb-2 ${i < 2 ? 'bg-violet-500' : 'bg-slate-600'}`}></div>
+                      <span className={`text-sm font-medium ${i < 2 ? 'text-white' : 'text-slate-500'}`}>{q}</span>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Period Toggle */}
+                <div className="flex justify-center mt-4">
+                  <div className="flex bg-slate-800/50 rounded-full p-1">
+                    <button className="px-4 py-1.5 text-xs text-slate-400 hover:text-white transition-all">Monthly</button>
+                    <button className="px-4 py-1.5 text-xs bg-slate-700 text-white rounded-full">Quarterly</button>
+                    <button className="px-4 py-1.5 text-xs text-slate-400 hover:text-white transition-all">Yearly</button>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Timeline */}
-            <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#0a1628] via-[#0a1628]/80 to-transparent">
-              <div className="flex justify-between items-end">
-                <div className="flex gap-8">
-                  {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((month, i) => (
-                    <span key={month} className={`text-xs font-medium ${i < 9 ? 'text-slate-400' : 'text-slate-600'}`}>{month}</span>
-                  ))}
-                </div>
-                <div className="flex items-center gap-2 bg-teal-500/20 rounded-full px-3 py-1">
-                  <div className="w-2 h-2 bg-teal-400 rounded-full animate-pulse" />
-                  <span className="text-teal-400 font-semibold text-sm">Live</span>
+            {/* CONTROL PANELS - HORIZONTAL */}
+            <div className="grid grid-cols-3 gap-4">
+              
+              {/* PERFORMANCE */}
+              <div className="bg-slate-800/30 rounded-2xl p-4 border border-slate-700/30">
+                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Performance Panel</div>
+                <div className="space-y-4">
+                  <SliderDark label="Revenue Growth (%)" value={revenueGrowth} onChange={setRevenueGrowth} color="teal" />
+                  <SliderDark label="COGS Reduction (%)" value={cogsReduction} onChange={setCogsReduction} color="teal" />
+                  <SliderDark label="Operational Efficiency Gain (%)" value={opEfficiency} onChange={setOpEfficiency} color="teal" />
                 </div>
               </div>
+
+              {/* FINANCIAL */}
+              <div className="bg-slate-800/30 rounded-2xl p-4 border border-slate-700/30">
+                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Financial Panel</div>
+                <div className="space-y-4">
+                  <SliderDark label="OPEX %" value={costReduction} onChange={setCostReduction} color="violet" />
+                  <SliderDark label="CAPEX ($)" value={capex} onChange={setCapex} color="violet" />
+                  <SliderDark label="Burn Rate %" value={burnEfficiency} onChange={setBurnEfficiency} max={25} color="violet" />
+                </div>
+              </div>
+
+              {/* PEOPLE */}
+              <div className="bg-slate-800/30 rounded-2xl p-4 border border-slate-700/30">
+                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">People Panel</div>
+                <div className="space-y-4">
+                  <SliderDark label="Headcount" value={headcount} onChange={setHeadcount} color="pink" />
+                  <SliderDark label="Local changes" value={regions} onChange={setRegions} min={1} max={10} color="pink" />
+                  <SliderDark label="Cash Buffer" value={cashBuffer} onChange={setCashBuffer} color="pink" />
+                </div>
+              </div>
+
             </div>
           </div>
 
-          {/* CONTROL PANELS */}
+          {/* RIGHT: AI INSIGHTS */}
           <div className="space-y-4">
-
-            {/* PERFORMANCE */}
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
-              <div className="flex items-center gap-3 mb-4 pb-3 border-b border-slate-100">
-                <div className="w-9 h-9 bg-gradient-to-br from-teal-400 to-teal-600 rounded-xl flex items-center justify-center text-white text-lg shadow-md shadow-teal-500/30">📈</div>
-                <div>
-                  <span className="font-bold text-slate-900">Performance</span>
-                  <div className="text-xs text-slate-400">Revenue & Efficiency</div>
-                </div>
+            
+            {/* AI INSIGHTS CARD */}
+            <div className="bg-slate-800/30 rounded-2xl p-5 border border-slate-700/30">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-2 h-2 bg-violet-500 rounded-full animate-pulse"></div>
+                <span className="text-sm font-bold">AI Insights</span>
               </div>
-              <div className="space-y-5">
-                <SliderControl label="Revenue Growth" value={revenueGrowth} onChange={setRevenueGrowth} unit="%" color="teal" />
-                <SliderControl label="COGS Reduction" value={cogsReduction} onChange={setCogsReduction} unit="%" color="teal" />
-                <SliderControl label="Op Efficiency" value={opEfficiency} onChange={setOpEfficiency} unit="%" color="teal" />
-              </div>
-            </div>
-
-            {/* PEOPLE */}
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
-              <div className="flex items-center gap-3 mb-4 pb-3 border-b border-slate-100">
-                <div className="w-9 h-9 bg-gradient-to-br from-violet-400 to-violet-600 rounded-xl flex items-center justify-center text-white text-lg shadow-md shadow-violet-500/30">👥</div>
-                <div>
-                  <span className="font-bold text-slate-900">People</span>
-                  <div className="text-xs text-slate-400">Team & Expansion</div>
-                </div>
-              </div>
-              <div className="space-y-5">
-                <SliderControl label="Headcount" value={headcount} onChange={setHeadcount} unit="" prefix="+" color="violet" />
-                <SliderControl label="Regions" value={regions} onChange={setRegions} unit="" min={1} max={10} color="violet" />
-                <SliderControl label="Cash Buffer" value={cashBuffer} onChange={setCashBuffer} unit="M" prefix="$" color="violet" />
+              
+              <div className="space-y-4">
+                {aiInsights.map((insight, i) => (
+                  <div key={i} className="text-sm text-slate-300 leading-relaxed">
+                    <p>{insight.text}</p>
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* FINANCIAL */}
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
-              <div className="flex items-center gap-3 mb-4 pb-3 border-b border-slate-100">
-                <div className="w-9 h-9 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center text-white text-lg shadow-md shadow-blue-500/30">💰</div>
+            {/* AI DEEPER ANALYSIS */}
+            <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-2xl p-5 border border-slate-700/30">
+              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">AI Deeper Analysis</div>
+              <p className="text-sm text-slate-300 leading-relaxed">
+                AI predicts sustained growth due to market expansion and product adoption. Capital efficiency improves...
+              </p>
+              <button className="mt-4 text-xs text-violet-400 hover:text-violet-300 font-medium">
+                View Full Analysis →
+              </button>
+            </div>
+
+            {/* SCENARIO SUMMARY */}
+            <div className="bg-slate-800/30 rounded-2xl p-5 border border-slate-700/30">
+              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Scenario: {scenario}</div>
+              <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <span className="font-bold text-slate-900">Financial</span>
-                  <div className="text-xs text-slate-400">Costs & Capital</div>
+                  <div className="text-slate-500">Valuation</div>
+                  <div className="text-lg font-bold text-emerald-400">{formatMoney(calculations.valuation, 0)}</div>
                 </div>
-              </div>
-              <div className="space-y-5">
-                <SliderControl label="Cost Reduction" value={costReduction} onChange={setCostReduction} unit="M" prefix="$" color="blue" />
-                <SliderControl label="CAPEX" value={capex} onChange={setCapex} unit="M" prefix="$" color="blue" />
-                <SliderControl label="Burn Efficiency" value={burnEfficiency} onChange={setBurnEfficiency} unit="%" max={25} color="blue" />
+                <div>
+                  <div className="text-slate-500">Runway</div>
+                  <div className="text-lg font-bold">{calculations.runway} mo</div>
+                </div>
+                <div>
+                  <div className="text-slate-500">Growth</div>
+                  <div className="text-lg font-bold text-teal-400">+{calculations.revGrowth}%</div>
+                </div>
+                <div>
+                  <div className="text-slate-500">Risk</div>
+                  <div className="text-lg font-bold">{calculations.riskScore}/100</div>
+                </div>
               </div>
             </div>
 
@@ -299,43 +325,35 @@ const StratfitGodModeDashboard = () => {
 };
 
 // ============================================================================
-// SLIDER COMPONENT
+// DARK SLIDER COMPONENT
 // ============================================================================
 interface SliderProps {
   label: string;
   value: number;
   onChange: (val: number) => void;
-  unit: string;
-  prefix?: string;
   min?: number;
   max?: number;
-  color: 'teal' | 'violet' | 'blue';
+  color: 'teal' | 'violet' | 'pink';
 }
 
-function SliderControl({ label, value, onChange, unit, prefix = '', min = 0, max = 100, color }: SliderProps) {
+function SliderDark({ label, value, onChange, min = 0, max = 100, color }: SliderProps) {
   const percent = ((value - min) / (max - min)) * 100;
   
-  const gradients = {
-    teal: 'from-teal-400 to-teal-600',
-    violet: 'from-violet-400 to-violet-600',
-    blue: 'from-blue-400 to-blue-600',
-  };
-  
-  const shadows = {
-    teal: 'shadow-teal-500/50',
-    violet: 'shadow-violet-500/50',
-    blue: 'shadow-blue-500/50',
+  const colors = {
+    teal: 'bg-teal-500',
+    violet: 'bg-violet-500',
+    pink: 'bg-pink-500',
   };
 
   return (
     <div>
       <div className="flex justify-between mb-2">
-        <span className="text-sm text-slate-600 font-medium">{label}</span>
-        <span className="text-sm font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md">{prefix}{value}{unit}</span>
+        <span className="text-xs text-slate-400">{label}</span>
+        <span className="text-xs font-bold text-white">{value}%</span>
       </div>
-      <div className="relative h-2 bg-slate-200 rounded-full overflow-hidden">
+      <div className="relative h-1.5 bg-slate-700 rounded-full">
         <div 
-          className={`absolute left-0 top-0 h-full rounded-full bg-gradient-to-r ${gradients[color]}`} 
+          className={`absolute left-0 top-0 h-full rounded-full ${colors[color]}`} 
           style={{ width: `${percent}%` }} 
         />
         <input
@@ -347,8 +365,8 @@ function SliderControl({ label, value, onChange, unit, prefix = '', min = 0, max
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
         />
         <div 
-          className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 bg-white rounded-full shadow-lg ${shadows[color]} border-2 border-white pointer-events-none transition-all`}
-          style={{ left: `calc(${percent}% - 10px)` }}
+          className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg pointer-events-none"
+          style={{ left: `calc(${percent}% - 6px)` }}
         />
       </div>
     </div>
