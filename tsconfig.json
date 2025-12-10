@@ -1,13 +1,28 @@
 {
   "compilerOptions": {
-    "jsx": "react-jsx",
-    "types": ["vite/client"],
-    "moduleResolution": "bundler",
-    "module": "ESNext",
     "target": "ESNext",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "lib": ["ESNext", "DOM"],
+    
+    "moduleResolution": "bundler",
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+
+    "jsx": "react-jsx",
+
+    "strict": false,
+
+    "noEmit": true,
+
     "baseUrl": "./",
     "paths": {
       "@/*": ["src/*"]
-    }
-  }
+    },
+
+    "types": ["vite/client"]
+  },
+
+  "include": ["src"],
+  "references": [{ "path": "./tsconfig.app.json" }]
 }
