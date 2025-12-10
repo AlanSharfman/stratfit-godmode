@@ -18,7 +18,13 @@ body,
 
 /* Prevent unwanted scrollbars + layout shifting */
 body {
-  @apply bg-[#0a0f1a] text-white overflow-hidden antialiased;
+  /* ❌ INVALID: @apply bg-[#0a0f1a]  
+     ✔ FIX: Use normal CSS for arbitrary colors */
+  background-color: #0a0f1a;
+
+  /* These are valid Tailwind utilities */
+  @apply text-white overflow-hidden antialiased;
+
   font-family: Inter, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
