@@ -1,7 +1,7 @@
-import StratfitGodModeDashboard from './components/StratfitGodModeDashboard';
+import StratfitDashboard from './components/StratfitDashboard';
 
 function App() {
-  return <StratfitGodModeDashboard />;
+  return <StratfitDashboard />;
 }
 
 export default App;
