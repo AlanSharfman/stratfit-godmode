@@ -1,30 +1,45 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* ============================================================================
+   STRATFIT — GLOBAL STYLE LAYER
+   Enforces full-screen engine stability, typography, neon rendering
+   ============================================================================ */
 
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Prevent unwanted scrollbars + layout shifting */
 body {
-  font-family: 'Inter', system-ui, sans-serif;
+  @apply bg-[#0a0f1a] text-white overflow-hidden antialiased;
+  font-family: Inter, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom slider thumb */
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: white;
-  border: 2px solid #14b8a6;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-  cursor: pointer;
+/* STRATFIT standard focus outline */
+:focus {
+  outline: 2px solid #22d3d3;
+  outline-offset: 2px;
 }
 
-input[type="range"]::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: white;
-  border: 2px solid #14b8a6;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-  cursor: pointer;
+/* Smooth transitions on all interactive UI elements */
+button,
+input,
+select,
+a {
+  transition: all 0.25s ease;
+}
+
+/* Prevent selection highlight from ruining neon look */
+::selection {
+  background: #22d3d3;
+  color: #0a0f1a;
 }
