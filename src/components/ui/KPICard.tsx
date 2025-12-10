@@ -2,7 +2,7 @@ import KPISparkline from "./KPISparkline";
 
 interface KPICardProps {
   label: string;
-  value: number | string;
+  value: number;
   active: boolean;
   onClick: () => void;
   sparkValues: number[];
@@ -18,32 +18,15 @@ export default function KPICard({
   return (
     <div
       onClick={onClick}
-      className={`
-        cursor-pointer p-4 rounded-xl border transition-all duration-300
-        ${active ? "border-[#22d3d3] bg-[#0f1b2d]" : "border-[#1e293b] bg-[#0b1624]"}
-        hover:border-[#22d3d3]/60
-      `}
+      className={`p-4 rounded-xl bg-[#0f1b34] border cursor-pointer transition-all
+        ${active ? "border-[#00b4ff] shadow-lg shadow-[#00b4ff40]" : "border-[#1e2b45]"}`}
     >
       <div className="text-sm text-gray-300">{label}</div>
+      <div className="text-2xl font-bold text-white">{value}</div>
 
-      <div
-        className={`
-          text-2xl font-semibold mt-1
-          ${active ? "text-[#22d3d3]" : "text-white"}
-        `}
-      >
-        {value}
-      </div>
-
-      {/* Sparkline */}
-      <div className="mt-3">
-        <KPISparkline
-          values={sparkValues}
-          active={active}
-          color={active ? "#22d3d3" : "#475569"}
-        />
+      <div className="mt-2">
+        <KPISparkline values={sparkValues} />
       </div>
     </div>
   );
 }
-
