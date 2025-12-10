@@ -2,16 +2,23 @@
 export default {
   content: [
     "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
+    "./src/**/*.{js,jsx,ts,tsx}",
   ],
   theme: {
     extend: {
+      colors: {
+        stratfitBg: "#0a0f1a",
+        neonCyan: "#00f2ff",
+        neonCyanBright: "#5cffff",
+        neonMagenta: "#b200ff",
+        neonMagentaBright: "#d946ef",
+        neonPurple: "#8b5cf6",
+      },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        inter: ["Inter", "sans-serif"],
       },
     },
   },
-  plugins: [
-    // Force Vercel rebuild
-  ],
-}
+  plugins: [],
+};
+

@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 /* ============================================================================
-   STRATFIT — GLOBAL STYLE LAYER
-   Enforces full-screen engine stability, typography, neon rendering
+   STRATFIT — GLOBAL STYLE LAYER (SAFE FOR VERCEL)
+   Clean, stable, no invalid @apply usage
    ============================================================================ */
 
 html,
@@ -16,26 +16,27 @@ body,
   padding: 0;
 }
 
-/* Prevent unwanted scrollbars + layout shifting */
+/* Background MUST be normal CSS (NOT @apply) */
 body {
-  /* FIX: Arbitrary Tailwind colors cannot be used inside @apply */
   background-color: #0a0f1a;
-
-  /* Valid Tailwind utilities */
-  @apply text-white overflow-hidden antialiased;
-
+  color: white;
   font-family: Inter, sans-serif;
+
+  /* These are pure CSS and safe */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* These ARE allowed @apply utilities */
+  @apply overflow-hidden antialiased;
 }
 
-/* STRATFIT standard focus outline */
+/* Unified STRATFIT focus outline */
 :focus {
   outline: 2px solid #22d3d3;
   outline-offset: 2px;
 }
 
-/* Smooth transitions on interactive UI elements */
+/* Smooth transitions for all interactive elements */
 button,
 input,
 select,
@@ -43,9 +44,8 @@ a {
   transition: all 0.25s ease;
 }
 
-/* Selection highlight fix */
+/* Neon selection highlight */
 ::selection {
   background: #22d3d3;
   color: #0a0f1a;
 }
-
