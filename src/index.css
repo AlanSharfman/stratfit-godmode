@@ -18,11 +18,10 @@ body,
 
 /* Prevent unwanted scrollbars + layout shifting */
 body {
-  /* ❌ INVALID: @apply bg-[#0a0f1a]  
-     ✔ FIX: Use normal CSS for arbitrary colors */
+  /* FIX: Arbitrary Tailwind colors cannot be used inside @apply */
   background-color: #0a0f1a;
 
-  /* These are valid Tailwind utilities */
+  /* Valid Tailwind utilities */
   @apply text-white overflow-hidden antialiased;
 
   font-family: Inter, sans-serif;
@@ -36,7 +35,7 @@ body {
   outline-offset: 2px;
 }
 
-/* Smooth transitions on all interactive UI elements */
+/* Smooth transitions on interactive UI elements */
 button,
 input,
 select,
@@ -44,7 +43,7 @@ a {
   transition: all 0.25s ease;
 }
 
-/* Prevent selection highlight from ruining neon look */
+/* Selection highlight fix */
 ::selection {
   background: #22d3d3;
   color: #0a0f1a;
