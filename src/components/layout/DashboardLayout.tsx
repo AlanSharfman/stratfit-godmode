@@ -1,22 +1,25 @@
 import { useState } from "react";
-import ScenarioDock from "@/components/ui/ScenarioDock";
 import KPICard from "@/components/ui/KPICard";
 import Slider from "@/components/ui/Slider";
 import MountainEngine from "@/components/engine/MountainEngine";
 import AIInsightsPanel from "@/components/ui/AIInsightsPanel";
+import { ChevronDown } from "lucide-react";
 
 const KPI_LABELS = ["Runway", "Cash", "Growth", "EBITDA", "Burn", "Risk", "Value"];
+const SCENARIOS = [
+  { id: "base", label: "Base Case", color: "#5eead4" },
+  { id: "upside", label: "Upside", color: "#4ade80" },
+  { id: "downside", label: "Downside", color: "#fbbf24" },
+  { id: "extreme", label: "Extreme", color: "#f87171" },
+] as const;
 
 export default function DashboardLayout() {
-  const [dataPoints, setDataPoints] = useState<number[]>([
-    50, 60, 75, 80, 70, 65, 85,
-  ]);
-
+  const [dataPoints, setDataPoints] = useState<number[]>([50, 60, 75, 80, 70, 65, 85]);
   const [activeKPIIndex, setActiveKPIIndex] = useState<number | null>(null);
+  const [scenario, setScenario] = useState<"base" | "upside" | "downside" | "extreme">("base");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  const [scenario, setScenario] = useState<
-    "base" | "upside" | "downside" | "extreme"
-  >("base");
+  const currentScenario = SCENARIOS.find(s => s.id === scenario) || SCENARIOS[0];
 
   const updateDataPoint = (index: number, value: number) => {
     setDataPoints((prev) => {
@@ -27,12 +30,7 @@ export default function DashboardLayout() {
   };
 
   return (
-    <div className="flex flex-col w-full h-full p-6 gap-6">
-
-      {/* Scenario Picker */}
-      <ScenarioDock scenario={scenario} onScenarioChange={setScenario} />
-
-      {/* KPI Cards */}
+    <div className="flex flex-col w-full h-full p-6 gap-4">
       <div className="grid grid-cols-7 gap-4">
         {dataPoints.map((v, i) => (
           <KPICard
@@ -46,9 +44,54 @@ export default function DashboardLayout() {
         ))}
       </div>
 
-      {/* Mountain and AI Insights */}
-      <div className="grid grid-cols-[1fr_320px] gap-4 h-[420px]">
-        {/* Mountain Terrain - Left side */}
+      <div className="relative w-64">
+        <button
+          onClick={() => setDropdownOpen(!dropdownOpen)}
+          className="w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all"
+          style={{
+            background: "rgba(10, 22, 40, 0.8)",
+            borderColor: currentScenario.color + "44",
+            boxShadow: "0 0 20px " + currentScenario.color + "22",
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <div
+              className="w-3 h-3 rounded-full"
+              style={{ backgroundColor: currentScenario.color, boxShadow: "0 0 8px " + currentScenario.color }}
+            />
+            <span className="text-white font-medium">{currentScenario.label}</span>
+          </div>
+          <ChevronDown
+            className={"w-4 h-4 text-slate-400 transition-transform " + (dropdownOpen ? "rotate-180" : "")}
+          />
+        </button>
+
+        {dropdownOpen && (
+          <div
+            className="absolute top-full left-0 w-full mt-2 rounded-xl border overflow-hidden z-50"
+            style={{ background: "rgba(10, 22, 40, 0.95)", borderColor: "rgba(94, 234, 212, 0.2)" }}
+          >
+            {SCENARIOS.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => {
+                  setScenario(s.id);
+                  setDropdownOpen(false);
+                }}
+                className={"w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors " + (scenario === s.id ? "bg-white/10" : "")}
+              >
+                <div
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: s.color, boxShadow: "0 0 8px " + s.color }}
+                />
+                <span className="text-white text-sm">{s.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-[1fr_380px] gap-6 h-[420px]">
         <div className="rounded-xl bg-[#0a1628] border border-[#1a253a] overflow-hidden">
           <MountainEngine
             dataPoints={dataPoints}
@@ -56,8 +99,7 @@ export default function DashboardLayout() {
             scenario={scenario}
           />
         </div>
-        
-        {/* AI Insights Panel - Right side */}
+
         <AIInsightsPanel
           scenario={scenario}
           kpiValues={{
@@ -79,15 +121,8 @@ export default function DashboardLayout() {
         />
       </div>
 
-      {/* Sliders */}
-      <div className="grid grid-cols-5 gap-4 mt-4">
-        {[
-          "Revenue Growth",
-          "Operating Expenses",
-          "Hiring Rate",
-          "Wage Increase",
-          "Burn Rate",
-        ].map((label, i) => (
+      <div className="grid grid-cols-5 gap-4">
+        {["Revenue Growth", "Operating Expenses", "Hiring Rate", "Wage Increase", "Burn Rate"].map((label, i) => (
           <Slider
             key={i}
             label={label}
