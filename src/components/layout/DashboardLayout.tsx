@@ -4,6 +4,8 @@ import KPICard from "@/components/ui/KPICard";
 import Slider from "@/components/ui/Slider";
 import MountainEngine from "@/components/engine/MountainEngine";
 
+const KPI_LABELS = ["Runway", "Cash", "Growth", "EBITDA", "Burn", "Risk", "Value"];
+
 export default function DashboardLayout() {
   const [dataPoints, setDataPoints] = useState<number[]>([
     50, 60, 75, 80, 70, 65, 85,
@@ -34,7 +36,7 @@ export default function DashboardLayout() {
         {dataPoints.map((v, i) => (
           <KPICard
             key={i}
-            label={`KPI ${i + 1}`}
+            label={KPI_LABELS[i]}
             value={Math.round(v)}
             active={activeKPIIndex === i}
             onClick={() => setActiveKPIIndex(i)}
