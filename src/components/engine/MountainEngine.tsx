@@ -37,12 +37,27 @@ export default function MountainEngine({
       const parent = _canvas.parentElement;
       if (!parent) return;
 
-      _canvas.width = parent.clientWidth * 2;   // 2x scaling for retina
-      _canvas.height = parent.clientHeight * 2;
+      const width = parent.clientWidth;
+      const height = parent.clientHeight;
+
+      if (width === 0 || height === 0) return;
+
+      _canvas.width = width * 2;   // 2x scaling for retina
+      _canvas.height = height * 2;
       _ctx.scale(2, 2);
     }
 
-    resize();
+    // Initial resize - try a few times if parent isn't ready
+    let resizeAttempts = 0;
+    const initialResize = () => {
+      resize();
+      if ((_canvas.width === 0 || _canvas.height === 0) && resizeAttempts < 10) {
+        resizeAttempts++;
+        requestAnimationFrame(initialResize);
+      }
+    };
+    initialResize();
+
     window.addEventListener("resize", resize);
 
     // --------------------------------------------------
@@ -58,6 +73,9 @@ export default function MountainEngine({
       // 1. Build smoothed spline from KPIs
       // --------------------------------------------------
       const curve = generateSplinePoints(dataPoints, width, height);
+
+      // Safety check: ensure we have points to draw
+      if (curve.length === 0) return;
 
       // --------------------------------------------------
       // 2. Glow layer
