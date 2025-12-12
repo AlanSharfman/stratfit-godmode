@@ -2,35 +2,24 @@ interface SliderProps {
   label: string;
   value: number;
   onChange: (v: number) => void;
-  min?: number;
-  max?: number;
-  step?: number;
 }
 
-export default function Slider({
-  label,
-  value,
-  onChange,
-  min = 0,
-  max = 100,
-  step = 1,
-}: SliderProps) {
+export default function Slider({ label, value, onChange }: SliderProps) {
   return (
-    <div className="flex flex-col p-4 bg-[#0f1b34] rounded-xl border border-[#1e2b45]">
-      <div className="text-gray-300 text-sm mb-2">{label}</div>
+    <div className="flex flex-col p-4 rounded-xl border border-[#1e2b45] bg-[#0b1020]/95 backdrop-blur-xl">
+      <div className="text-gray-300 text-sm mb-2 flex items-center justify-between">
+        <span>{label}</span>
+        <span className="text-xs text-cyan-300 font-medium">{value}</span>
+      </div>
 
       <input
         type="range"
-        className="w-full slider-thumb"
-        min={min}
-        max={max}
-        step={step}
+        min={0}
+        max={100}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
+        className="stratfit-slider"
       />
-
-      <div className="text-white text-center mt-1">{value}</div>
     </div>
   );
 }
-

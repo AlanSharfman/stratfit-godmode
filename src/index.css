@@ -1,81 +1,126 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* ----------------------------------------
-   GLOBAL RESET / BASE STYLE OVERRIDES
------------------------------------------ */
+/* ---------- APP BASE ---------- */
+:root {
+  color-scheme: dark;
+}
 
-html, body {
-  margin: 0;
-  padding: 0;
-  background-color: #0b0d10;
-  color: white;
+html,
+body,
+#root {
   height: 100%;
-  width: 100%;
-  overflow: hidden;
-  font-family: Inter, system-ui, sans-serif;
 }
 
-/* Smoothen animations globally */
+body {
+  margin: 0;
+  background: radial-gradient(1400px 700px at 18% -10%, rgba(34, 211, 238, 0.12), transparent 60%),
+    radial-gradient(1200px 680px at 85% -10%, rgba(168, 85, 247, 0.10), transparent 55%),
+    radial-gradient(1200px 680px at 70% 110%, rgba(0, 255, 210, 0.08), transparent 55%),
+    #070a10;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
+    "Segoe UI Emoji";
+}
+
+/* Tailwind color helpers used in TSX */
+.bg-app { background-color: transparent; }
+.bg-panel { background-color: rgba(11, 15, 24, 0.78); }
+.bg-card { background-color: rgba(12, 18, 30, 0.82); }
+
+/* ---------- NO LAYOUT THRASH HELPERS ---------- */
 * {
-  transition: all 0.2s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* ----------------------------------------
-   SCROLLBAR (hidden for dashboard feel)
------------------------------------------ */
-::-webkit-scrollbar {
-  width: 0px;
-  height: 0px;
+canvas {
+  image-rendering: auto;
 }
 
-/* ----------------------------------------
-   CUSTOM STRATFIT UTILITY CLASSES
------------------------------------------ */
-
-.glass {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
+/* Prevent accidental overflow that makes mountain “escape” */
+#root {
+  overflow-x: hidden;
 }
 
-.card-hover {
-  transition: transform 0.25s cubic-bezier(.2,.8,.2,1);
-}
-
-.card-hover:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 30px rgba(0, 255, 255, 0.25);
-}
-
-/* Neon Text Glow */
-.neon-text {
-  color: #00f2ff;
-  text-shadow: 0 0 8px rgba(0, 242, 255, 0.8);
-}
-
-/* Slider thumb style for right-side cinematic sliders */
-.slider-thumb::-webkit-slider-thumb {
+/* ---------- PREMIUM RANGE (LEVER) ---------- */
+/* The input itself stays transparent; we paint track below + fill below. */
+.stratefit-range {
+  -webkit-appearance: none;
   appearance: none;
-  height: 12px;
-  width: 12px;
-  border-radius: 100%;
-  background: #00f2ff;
-  box-shadow: 0 0 10px #00f2ff;
-}
-@keyframes kpi-glow {
-  0% {
-    box-shadow: 0 0 0 rgba(34, 211, 238, 0.0);
-  }
-  50% {
-    box-shadow: 0 0 28px rgba(34, 211, 238, 0.7);
-  }
-  100% {
-    box-shadow: 0 0 0 rgba(34, 211, 238, 0.0);
-  }
+  width: 100%;
+  height: 28px;
+  background: transparent;
+  outline: none;
+  position: relative;
+  z-index: 10;
 }
 
-.kpi-glow {
-  animation: kpi-glow 2.2s ease-in-out infinite;
+/* WebKit track */
+.stratefit-range::-webkit-slider-runnable-track {
+  height: 28px;
+  background: transparent;
+  border: none;
 }
 
+/* WebKit thumb */
+.stratefit-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.22);
+  background: rgba(9, 14, 22, 0.95);
+  box-shadow:
+    0 0 0 3px rgba(255,255,255,0.05),
+    0 0 22px color-mix(in oklab, var(--accent, rgba(34,211,238,0.9)) 55%, transparent),
+    0 10px 30px rgba(0,0,0,0.55);
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.stratefit-range:active::-webkit-slider-thumb {
+  transform: scale(1.12);
+  border-color: rgba(255,255,255,0.35);
+  box-shadow:
+    0 0 0 5px rgba(255,255,255,0.06),
+    0 0 28px color-mix(in oklab, var(--accent, rgba(34,211,238,0.9)) 72%, transparent),
+    0 12px 34px rgba(0,0,0,0.62);
+}
+
+/* Firefox */
+.stratefit-range::-moz-range-track {
+  height: 28px;
+  background: transparent;
+  border: none;
+}
+
+.stratefit-range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.22);
+  background: rgba(9, 14, 22, 0.95);
+  box-shadow:
+    0 0 0 3px rgba(255,255,255,0.05),
+    0 0 22px color-mix(in oklab, var(--accent, rgba(34,211,238,0.9)) 55%, transparent),
+    0 10px 30px rgba(0,0,0,0.55);
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.stratefit-range:active::-moz-range-thumb {
+  transform: scale(1.12);
+  border-color: rgba(255,255,255,0.35);
+  box-shadow:
+    0 0 0 5px rgba(255,255,255,0.06),
+    0 0 28px color-mix(in oklab, var(--accent, rgba(34,211,238,0.9)) 72%, transparent),
+    0 12px 34px rgba(0,0,0,0.62);
+}
+
+/* ---------- REDUCED MOTION ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .stratefit-range::-webkit-slider-thumb,
+  .stratefit-range::-moz-range-thumb {
+    transition: none;
+  }
+}

@@ -106,8 +106,6 @@ export default function DashboardLayout() {
       trimmedName ||
       `${currentScenario.label} – ${new Date().toLocaleString()}`;
 
-    // Minimal ScenarioRecord aligned with domain model.
-    // For now, we use placeholder IDs for company/user.
     const record: ScenarioRecord = {
       id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
       companyId: "local-demo-company",
@@ -143,7 +141,6 @@ export default function DashboardLayout() {
     setSelectedSavedId(record.id);
     setScenario(record.scenarioId);
 
-    // Restore lever & metric state from snapshot
     setLeverState(record.levers as LeverState);
     setMetricState(record.metricsSnapshot as MetricState);
     setActiveKPIIndex(null);
@@ -215,7 +212,7 @@ export default function DashboardLayout() {
                   }}
                   className={
                     "w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors " +
-                    (scenario === s.id ? "bg:white/10" : "")
+                    (scenario === s.id ? "bg-white/10" : "")
                   }
                 >
                   <div
@@ -303,9 +300,6 @@ export default function DashboardLayout() {
             key={lever.id}
             label={lever.label}
             value={leverState[lever.id]}
-            min={lever.min}
-            max={lever.max}
-            step={lever.step}
             onChange={(v) => handleLeverChange(lever.id, v)}
           />
         ))}

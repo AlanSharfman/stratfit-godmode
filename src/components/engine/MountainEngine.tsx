@@ -1,66 +1,118 @@
-import { useEffect, useRef } from "react";
-import { generateSplinePoints } from "./utils/splineMath";
+import React, { useEffect, useMemo, useRef } from "react";
 
-interface MountainEngineProps {
-  dataPoints: number[];
-  activeKPIIndex: number | null;
-  scenario: "base" | "upside" | "downside" | "extreme";
+export type ScenarioKey = "base" | "upside" | "downside" | "extreme";
+
+type Density = "compact" | "full";
+
+export interface MountainEngineProps {
+  dataPoints: number[];           // 0..100
+  activeKPIIndex: number | null;  // highlight point
+  scenario: ScenarioKey;
+  density?: Density;
 }
 
-// Scenario color themes - FUTURISTIC NEON
-const SCENARIO_THEMES = {
-  base: {
-    bg1: "#0a0a1a",
-    bg2: "#0f1a2a",
-    back: "rgba(34, 211, 238, 0.3)",
-    mid: "rgba(34, 211, 238, 0.5)",
-    front: "#22d3ee",
-    glow: "rgba(34, 211, 238, 0.8)",
-    fill1: "rgba(34, 211, 238, 0.15)",
-    fill2: "rgba(34, 211, 238, 0.05)",
-    scan: "rgba(34, 211, 238, 0.03)",
-  },
-  upside: {
-    bg1: "#0a1a0f",
-    bg2: "#0f2a1a",
-    back: "rgba(52, 211, 153, 0.3)",
-    mid: "rgba(52, 211, 153, 0.5)",
-    front: "#34d399",
-    glow: "rgba(52, 211, 153, 0.8)",
-    fill1: "rgba(52, 211, 153, 0.15)",
-    fill2: "rgba(52, 211, 153, 0.05)",
-    scan: "rgba(52, 211, 153, 0.03)",
-  },
-  downside: {
-    bg1: "#1a1a0a",
-    bg2: "#2a1f0f",
-    back: "rgba(251, 191, 36, 0.3)",
-    mid: "rgba(251, 191, 36, 0.5)",
-    front: "#fbbf24",
-    glow: "rgba(251, 191, 36, 0.8)",
-    fill1: "rgba(251, 191, 36, 0.15)",
-    fill2: "rgba(251, 191, 36, 0.05)",
-    scan: "rgba(251, 191, 36, 0.03)",
-  },
-  extreme: {
-    bg1: "#1a0a1a",
-    bg2: "#2a0f2a",
-    back: "rgba(244, 114, 182, 0.3)",
-    mid: "rgba(244, 114, 182, 0.5)",
-    front: "#f472b6",
-    glow: "rgba(244, 114, 182, 0.8)",
-    fill1: "rgba(244, 114, 182, 0.2)",
-    fill2: "rgba(244, 114, 182, 0.05)",
-    scan: "rgba(244, 114, 182, 0.03)",
-  },
-};
-
+/**
+ * KEY JITTER FIXES:
+ * - Canvas is resized via ResizeObserver, but debounced to 1 frame.
+ * - Draw loop runs on RAF, interpolating toward target points (no "jump on slider").
+ * - We avoid re-creating contexts / gradients on every render.
+ * - We hard-clip to container and never exceed bounds.
+ */
 export default function MountainEngine({
   dataPoints,
   activeKPIIndex,
   scenario,
+  density = "full",
 }: MountainEngineProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+
+  const theme = useMemo(() => {
+    const base = {
+      bgTop: "rgba(0,0,0,0.18)",
+      bgBottom: "rgba(0,0,0,0.55)",
+      grid: "rgba(255,255,255,0.06)",
+      glow: "rgba(0, 255, 210, 0.35)",
+      line: "rgba(0, 255, 210, 0.75)",
+      line2: "rgba(0, 255, 210, 0.38)",
+      dot: "rgba(220,255,248,0.95)",
+    };
+
+    if (scenario === "upside") {
+      return { ...base, glow: "rgba(0, 255, 210, 0.35)", line: "rgba(0, 255, 210, 0.78)", line2: "rgba(0, 255, 210, 0.40)" };
+    }
+    if (scenario === "downside") {
+      return { ...base, glow: "rgba(255, 90, 140, 0.28)", line: "rgba(255, 90, 140, 0.72)", line2: "rgba(255, 90, 140, 0.38)", dot: "rgba(255,230,240,0.95)" };
+    }
+    if (scenario === "extreme") {
+      return { ...base, glow: "rgba(180, 120, 255, 0.30)", line: "rgba(180, 120, 255, 0.76)", line2: "rgba(180, 120, 255, 0.38)", dot: "rgba(245,235,255,0.95)" };
+    }
+    return { ...base, glow: "rgba(120, 210, 255, 0.28)", line: "rgba(120, 210, 255, 0.75)", line2: "rgba(120, 210, 255, 0.38)" };
+  }, [scenario]);
+
+  // Normalize points to stable length and bounds.
+  const target = useMemo(() => {
+    const safe = (Array.isArray(dataPoints) ? dataPoints : []).map((v) => {
+      const n = typeof v === "number" ? v : 0;
+      return Math.max(0, Math.min(100, n));
+    });
+    // Ensure at least 4 points so the mountain never degenerates.
+    while (safe.length < 4) safe.push(50);
+    // Cap max count for sanity.
+    return safe.slice(0, 14);
+  }, [dataPoints]);
+
+  const animRef = useRef<number | null>(null);
+  const currentRef = useRef<number[]>([]);
+  const sizeRef = useRef<{ w: number; h: number; dpr: number }>({ w: 0, h: 0, dpr: 1 });
+  const pendingResizeRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const wrapper = wrapperRef.current;
+    const canvas = canvasRef.current;
+    if (!wrapper || !canvas) return;
+
+    const ro = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      const cr = entry?.contentRect;
+      if (!cr) return;
+
+      // Debounce to 1 animation frame (prevents resize loop jitter).
+      if (pendingResizeRef.current != null) return;
+      pendingResizeRef.current = requestAnimationFrame(() => {
+        pendingResizeRef.current = null;
+        const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+        const w = Math.max(1, Math.floor(cr.width));
+        const h = Math.max(1, Math.floor(cr.height));
+        sizeRef.current = { w, h, dpr };
+        canvas.width = Math.floor(w * dpr);
+        canvas.height = Math.floor(h * dpr);
+        canvas.style.width = `${w}px`;
+        canvas.style.height = `${h}px`;
+      });
+    });
+
+    ro.observe(wrapper);
+    return () => {
+      ro.disconnect();
+      if (pendingResizeRef.current != null) cancelAnimationFrame(pendingResizeRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    // Initialize current points to avoid first-frame pop.
+    if (currentRef.current.length === 0) {
+      currentRef.current = target.slice();
+    } else if (currentRef.current.length !== target.length) {
+      // Smoothly remap length changes.
+      const prev = currentRef.current.slice();
+      const next: number[] = [];
+      for (let i = 0; i < target.length; i++) {
+        next.push(prev[Math.min(i, prev.length - 1)] ?? 50);
+      }
+      currentRef.current = next;
+    }
+  }, [target]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -69,230 +121,158 @@ export default function MountainEngine({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const _canvas = canvas as HTMLCanvasElement;
-    const _ctx = ctx as CanvasRenderingContext2D;
+    let last = performance.now();
 
-    let frameId: number;
-    let tick = 0;
-
-    function resize() {
-      const parent = _canvas.parentElement;
-      if (!parent) return;
-
-      const rect = parent.getBoundingClientRect();
-      if (!rect.width || !rect.height) return;
-
-      const dpr = window.devicePixelRatio || 1;
-
-      _canvas.width = rect.width * dpr;
-      _canvas.height = rect.height * dpr;
-
-      _ctx.setTransform(1, 0, 0, 1, 0, 0);
-      _ctx.scale(dpr, dpr);
-    }
-
-    resize();
-    window.addEventListener("resize", resize);
-
-    function draw() {
-      const parent = _canvas.parentElement;
-      if (!parent) return;
-
-      const width = parent.clientWidth;
-      const height = parent.clientHeight;
-      if (!width || !height) {
-        frameId = requestAnimationFrame(draw);
+    const draw = (now: number) => {
+      const { w, h, dpr } = sizeRef.current;
+      if (w <= 0 || h <= 0) {
+        animRef.current = requestAnimationFrame(draw);
         return;
       }
 
-      tick += 0.015;
-      const theme = SCENARIO_THEMES[scenario];
+      const dt = Math.min(0.04, (now - last) / 1000);
+      last = now;
 
-      // ========== BACKGROUND ==========
-      const bg = _ctx.createLinearGradient(0, 0, 0, height);
-      bg.addColorStop(0, theme.bg1);
-      bg.addColorStop(0.5, theme.bg2);
-      bg.addColorStop(1, theme.bg1);
-      _ctx.fillStyle = bg;
-      _ctx.fillRect(0, 0, width, height);
-
-      // ========== ANIMATED SCAN LINES ==========
-      _ctx.strokeStyle = theme.scan;
-      _ctx.lineWidth = 1;
-      for (let i = 0; i < 25; i++) {
-        const y = ((i * 18 + tick * 40) % height);
-        _ctx.beginPath();
-        _ctx.moveTo(0, y);
-        _ctx.lineTo(width, y);
-        _ctx.stroke();
+      // Interpolate toward target points (stability + smoothness).
+      const cur = currentRef.current;
+      const speed = density === "compact" ? 10 : 8; // slightly faster in compact thumbnails
+      for (let i = 0; i < cur.length; i++) {
+        const t = target[i] ?? 50;
+        cur[i] += (t - cur[i]) * (1 - Math.exp(-speed * dt));
       }
 
-      // ========== GENERATE CURVES ==========
-      const baseHeight = height * 0.65;
-      const baseCurve = generateSplinePoints(dataPoints, width, baseHeight);
-      if (!baseCurve.length) {
-        frameId = requestAnimationFrame(draw);
-        return;
+      const cw = canvas.width;
+      const ch = canvas.height;
+
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, cw, ch);
+      ctx.scale(dpr, dpr);
+
+      // Background gradient
+      const bg = ctx.createLinearGradient(0, 0, 0, h);
+      bg.addColorStop(0, theme.bgTop);
+      bg.addColorStop(1, theme.bgBottom);
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, w, h);
+
+      // Grid lines
+      ctx.strokeStyle = theme.grid;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      const gridCount = density === "compact" ? 3 : 5;
+      for (let i = 1; i <= gridCount; i++) {
+        const y = (h / (gridCount + 1)) * i;
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+      }
+      ctx.stroke();
+
+      // Layout
+      const padX = density === "compact" ? 10 : 18;
+      const padY = density === "compact" ? 10 : 18;
+      const innerW = Math.max(1, w - padX * 2);
+      const innerH = Math.max(1, h - padY * 2);
+      const n = cur.length;
+
+      const pts = new Array(n).fill(0).map((_, i) => {
+        const x = padX + (innerW * i) / (n - 1);
+        // Mountain range: keep within bounds, never exceed.
+        const v = cur[i] / 100;
+        const y = padY + (1 - v) * innerH;
+        return { x, y, v: cur[i] };
+      });
+
+      // Optional active marker vertical guide
+      if (activeKPIIndex != null && activeKPIIndex >= 0 && activeKPIIndex < pts.length) {
+        const px = pts[activeKPIIndex].x;
+        ctx.strokeStyle = "rgba(255,255,255,0.10)";
+        ctx.setLineDash([4, 6]);
+        ctx.beginPath();
+        ctx.moveTo(px, padY);
+        ctx.lineTo(px, h - padY);
+        ctx.stroke();
+        ctx.setLineDash([]);
       }
 
-      // Parallax wave motion - back moves slow, front moves fast
-      const waveBack = Math.sin(tick * 0.5) * 4;
-      const waveMid = Math.sin(tick * 0.8) * 6;
-      const waveFront = Math.sin(tick * 1.2) * 8;
+      // Smooth polyline
+      const smooth = (i: number) => pts[Math.max(0, Math.min(n - 1, i))];
 
-      const curveBack = baseCurve.map((pt, i) => ({
-        x: pt.x,
-        y: pt.y + 45 + waveBack + Math.sin(tick * 0.4 + i * 0.5) * 3,
-      }));
+      // Draw glow layers (outer -> inner)
+      const drawLine = (width: number, color: string, alpha: number) => {
+        ctx.strokeStyle = color;
+        ctx.globalAlpha = alpha;
+        ctx.lineWidth = width;
+        ctx.lineJoin = "round";
+        ctx.lineCap = "round";
+        ctx.beginPath();
 
-      const curveMid = baseCurve.map((pt, i) => ({
-        x: pt.x,
-        y: pt.y + 22 + waveMid + Math.sin(tick * 0.7 + i * 0.6) * 5,
-      }));
+        for (let i = 0; i < n; i++) {
+          const p0 = smooth(i - 1);
+          const p1 = smooth(i);
+          const p2 = smooth(i + 1);
+          const cx = (p1.x + p2.x) / 2;
+          const cy = (p1.y + p2.y) / 2;
 
-      const curveFront = baseCurve.map((pt, i) => ({
-        x: pt.x,
-        y: pt.y + waveFront + Math.sin(tick * 1.0 + i * 0.7) * 6,
-      }));
+          if (i === 0) ctx.moveTo(p1.x, p1.y);
+          ctx.quadraticCurveTo(p1.x, p1.y, cx, cy);
+          // Keep curve stable
+          if (i === n - 2) ctx.lineTo(p2.x, p2.y);
+          // p0 unused but helps conceptual smoothing if extended later
+          void p0;
+        }
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      };
 
-      // ========== GRADIENT FILL UNDER CURVE ==========
-      const fillGrad = _ctx.createLinearGradient(0, height * 0.15, 0, height);
-      fillGrad.addColorStop(0, theme.fill1);
-      fillGrad.addColorStop(0.4, theme.fill2);
-      fillGrad.addColorStop(1, "transparent");
+      // Glow stack
+      drawLine(density === "compact" ? 5 : 10, theme.glow, 0.22);
+      drawLine(density === "compact" ? 3 : 6, theme.glow, 0.28);
+      drawLine(density === "compact" ? 2 : 3.5, theme.line2, 0.85);
+      drawLine(density === "compact" ? 1.6 : 2.4, theme.line, 1);
 
-      _ctx.beginPath();
-      _ctx.moveTo(curveFront[0].x, height);
-      curveFront.forEach((p) => _ctx.lineTo(p.x, p.y));
-      _ctx.lineTo(curveFront[curveFront.length - 1].x, height);
-      _ctx.closePath();
-      _ctx.fillStyle = fillGrad;
-      _ctx.fill();
-
-      // ========== BACK LAYER ==========
-      _ctx.shadowBlur = 6;
-      _ctx.shadowColor = theme.glow;
-      _ctx.strokeStyle = theme.back;
-      _ctx.lineWidth = 1.5;
-      _ctx.beginPath();
-      curveBack.forEach((p, i) => (i === 0 ? _ctx.moveTo(p.x, p.y) : _ctx.lineTo(p.x, p.y)));
-      _ctx.stroke();
-
-      // ========== MID LAYER ==========
-      _ctx.shadowBlur = 10;
-      _ctx.shadowColor = theme.glow;
-      _ctx.strokeStyle = theme.mid;
-      _ctx.lineWidth = 2;
-      _ctx.beginPath();
-      curveMid.forEach((p, i) => (i === 0 ? _ctx.moveTo(p.x, p.y) : _ctx.lineTo(p.x, p.y)));
-      _ctx.stroke();
-
-      // ========== FRONT LAYER - HOT NEON ==========
-      _ctx.shadowBlur = 25;
-      _ctx.shadowColor = theme.front;
-      _ctx.strokeStyle = theme.front;
-      _ctx.lineWidth = 3;
-      _ctx.beginPath();
-      curveFront.forEach((p, i) => (i === 0 ? _ctx.moveTo(p.x, p.y) : _ctx.lineTo(p.x, p.y)));
-      _ctx.stroke();
-
-      // White-hot inner core
-      _ctx.shadowBlur = 0;
-      _ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
-      _ctx.lineWidth = 1;
-      _ctx.beginPath();
-      curveFront.forEach((p, i) => (i === 0 ? _ctx.moveTo(p.x, p.y) : _ctx.lineTo(p.x, p.y)));
-      _ctx.stroke();
-
-      // ========== PULSING DATA POINTS ==========
-      const pulseSize = 3 + Math.sin(tick * 3) * 1.5;
-      curveFront.forEach((p, i) => {
-        const isActive = activeKPIIndex === i;
-        const size = isActive ? pulseSize * 2.5 : pulseSize;
+      // Active dot and subtle pulse
+      if (activeKPIIndex != null && activeKPIIndex >= 0 && activeKPIIndex < pts.length) {
+        const p = pts[activeKPIIndex];
+        const pulse = 0.5 + 0.5 * Math.sin(now / 260);
+        const r = (density === "compact" ? 3 : 5) + pulse * (density === "compact" ? 1.2 : 2);
 
         // Outer glow
-        _ctx.beginPath();
-        _ctx.arc(p.x, p.y, size + 4, 0, Math.PI * 2);
-        _ctx.fillStyle = isActive ? `${theme.front}40` : `${theme.front}20`;
-        _ctx.fill();
+        ctx.fillStyle = theme.glow;
+        ctx.globalAlpha = 0.55;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, r * 2.2, 0, Math.PI * 2);
+        ctx.fill();
 
-        // Inner dot
-        _ctx.beginPath();
-        _ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
-        _ctx.fillStyle = isActive ? "#ffffff" : theme.front;
-        _ctx.shadowBlur = isActive ? 20 : 10;
-        _ctx.shadowColor = isActive ? "#ffffff" : theme.front;
-        _ctx.fill();
-        _ctx.shadowBlur = 0;
-      });
+        // Core dot
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = theme.dot;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+        ctx.fill();
 
-      // ========== ACTIVE KPI HIGHLIGHT ==========
-      if (activeKPIIndex !== null && activeKPIIndex >= 0 && activeKPIIndex < curveFront.length) {
-        const point = curveFront[activeKPIIndex];
-
-        // Radial pulse
-        const pulseRadius = 30 + Math.sin(tick * 2) * 8;
-        const radialGrad = _ctx.createRadialGradient(point.x, point.y, 0, point.x, point.y, pulseRadius);
-        radialGrad.addColorStop(0, "rgba(255, 255, 255, 0.4)");
-        radialGrad.addColorStop(0.3, `${theme.front}60`);
-        radialGrad.addColorStop(1, "transparent");
-
-        _ctx.beginPath();
-        _ctx.arc(point.x, point.y, pulseRadius, 0, Math.PI * 2);
-        _ctx.fillStyle = radialGrad;
-        _ctx.fill();
-
-        // Vertical guide line
-        _ctx.strokeStyle = `${theme.front}40`;
-        _ctx.lineWidth = 1;
-        _ctx.setLineDash([4, 4]);
-        _ctx.beginPath();
-        _ctx.moveTo(point.x, point.y + 10);
-        _ctx.lineTo(point.x, height - 25);
-        _ctx.stroke();
-        _ctx.setLineDash([]);
+        // Tiny highlight
+        ctx.fillStyle = "rgba(255,255,255,0.65)";
+        ctx.beginPath();
+        ctx.arc(p.x - r * 0.35, p.y - r * 0.35, r * 0.35, 0, Math.PI * 2);
+        ctx.fill();
       }
 
-      // ========== TIMELINE MARKERS ==========
-      const timelineY = height - 15;
-      const months = ["M1", "M2", "M3", "M4", "M5", "M6", "M7"];
-      
-      _ctx.font = "10px monospace";
-      months.forEach((label, i) => {
-        const x = (width / (months.length - 1)) * i;
-        const isActive = activeKPIIndex === i;
+      ctx.restore();
 
-        // Tick mark
-        _ctx.strokeStyle = isActive ? theme.front : "rgba(148, 163, 184, 0.3)";
-        _ctx.lineWidth = isActive ? 2 : 1;
-        _ctx.beginPath();
-        _ctx.moveTo(x, timelineY - 8);
-        _ctx.lineTo(x, timelineY - 3);
-        _ctx.stroke();
-
-        // Label
-        _ctx.fillStyle = isActive ? theme.front : "rgba(148, 163, 184, 0.5)";
-        _ctx.fillText(label, x - 8, timelineY + 8);
-      });
-
-      // Timeline base line
-      _ctx.strokeStyle = "rgba(148, 163, 184, 0.2)";
-      _ctx.lineWidth = 1;
-      _ctx.beginPath();
-      _ctx.moveTo(0, timelineY - 5);
-      _ctx.lineTo(width, timelineY - 5);
-      _ctx.stroke();
-
-      frameId = requestAnimationFrame(draw);
-    }
-
-    frameId = requestAnimationFrame(draw);
-
-    return () => {
-      cancelAnimationFrame(frameId);
-      window.removeEventListener("resize", resize);
+      animRef.current = requestAnimationFrame(draw);
     };
-  }, [dataPoints, activeKPIIndex, scenario]);
 
-  return <canvas ref={canvasRef} className="w-full h-full" />;
+    animRef.current = requestAnimationFrame(draw);
+    return () => {
+      if (animRef.current != null) cancelAnimationFrame(animRef.current);
+      animRef.current = null;
+    };
+  }, [target, activeKPIIndex, theme, density]);
+
+  return (
+    <div ref={wrapperRef} className="relative h-full w-full overflow-hidden">
+      <canvas ref={canvasRef} className="block h-full w-full" />
+    </div>
+  );
 }
