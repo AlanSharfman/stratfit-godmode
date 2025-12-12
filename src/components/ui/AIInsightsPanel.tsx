@@ -1,192 +1,337 @@
-// src/components/ui/AIInsightsPanel.tsx
-import { useMemo } from "react";
-import { SCENARIOS, ScenarioId, ScenarioDefinition } from "@/dashboardConfig";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { ScenarioId } from "@/dashboardConfig";
 
-interface KPIValues {
-  runway: number;
-  cash: number;
-  growth: number;
-  ebitda: number;
-  burn: number;
-  risk: number;
-  value: number;
-}
+type FooterMetric = { label: string; value: string };
 
-interface SliderValues {
-  revenueGrowth: number;
-  operatingExpenses: number;
-  hiringRate: number;
-  wageIncrease: number;
-  burnRate: number;
-}
+export type InsightsPayload = {
+  title: string;
+  subtitle?: string;
+  scenarioLabel: string;
+  scenarioKey: ScenarioId;
+  body: string;
+  bullets: string[];
+  tags?: string[];
+  footerMetrics?: FooterMetric[];
+};
 
-interface AIInsightsPanelProps {
+type Props = {
   scenario: ScenarioId;
-  kpiValues: KPIValues;
-  sliderValues: SliderValues;
+  insights: InsightsPayload;
+};
+
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const apply = () => setReduced(!!mq.matches);
+    apply();
+    mq.addEventListener?.("change", apply);
+    return () => mq.removeEventListener?.("change", apply);
+  }, []);
+
+  return reduced;
 }
 
-export default function AIInsightsPanel({
-  scenario,
-  kpiValues,
-  sliderValues,
-}: AIInsightsPanelProps) {
-  const scenarioMeta = SCENARIOS.find((s: ScenarioDefinition) => s.id === scenario) ?? SCENARIOS[0];
+/**
+ * Premium panel structure (locked):
+ * - Header: fixed
+ * - Narrative: scrolls independently (typewriter runs here)
+ * - Results footer: pinned and ALWAYS visible (never unmounts)
+ *
+ * Key stability rules:
+ * - Never conditionally mount/unmount the footer
+ * - Explicit shrink-0 for header/footer
+ * - min-h-0 on the scrollable middle region
+ * - overflow-hidden at the panel boundary to prevent sibling influence
+ */
+export default function AIInsightsPanel({ scenario, insights }: Props) {
+  const prefersReducedMotion = usePrefersReducedMotion();
 
-  const { headline, bullets, tags } = useMemo(() => {
-    const items: string[] = [];
-    const tagList: string[] = [];
+  const script = useMemo(() => {
+    const body = insights.body ?? "";
+    const bullets = Array.isArray(insights.bullets) ? insights.bullets : [];
+    return { body, bullets };
+  }, [insights.body, insights.bullets]);
 
-    // --- Runway / burn ---
-    if (kpiValues.runway < 6) {
-      items.push("Runway is under 6 months – prioritise burn reduction or new capital.");
-      tagList.push("Critical runway");
-    } else if (kpiValues.runway < 12) {
-      items.push("Runway is in the 6–12 month zone – tighten spend and extend visibility.");
-      tagList.push("Watch runway");
-    } else {
-      items.push("Runway is healthy – you have space to invest in growth, but keep burn in check.");
-      tagList.push("Comfortable runway");
+  const footerMetrics: FooterMetric[] = useMemo(() => {
+    const fm = insights.footerMetrics;
+    return Array.isArray(fm) ? fm : [];
+  }, [insights.footerMetrics]);
+
+  // Typed output state
+  const [typedBody, setTypedBody] = useState("");
+  const [typedBullets, setTypedBullets] = useState<string[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
+
+  // Cancel tokens + timers
+  const runIdRef = useRef(0);
+  const timerRef = useRef<number | null>(null);
+
+  const clearTimer = () => {
+    if (timerRef.current) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  // Typewriter runner
+  useEffect(() => {
+    clearTimer();
+    runIdRef.current += 1;
+    const runId = runIdRef.current;
+
+    if (prefersReducedMotion) {
+      setIsTyping(false);
+      setTypedBody(script.body);
+      setTypedBullets([...script.bullets]);
+      return;
     }
 
-    // --- Growth / value ---
-    if (kpiValues.growth >= 30) {
-      items.push(
-        "Growth is strong – focus on repeatability, unit economics and hiring ahead of demand."
-      );
-      tagList.push("High growth");
-    } else if (kpiValues.growth <= 5) {
-      items.push(
-        "Growth is soft – review pricing, acquisition channels and product fit before scaling spend."
-      );
-      tagList.push("Low growth");
-    } else {
-      items.push(
-        "Growth is moderate – refine your playbook and decide whether to lean into efficiency or acceleration."
-      );
-      tagList.push("Stable growth");
-    }
+    setIsTyping(true);
+    setTypedBody("");
+    setTypedBullets(script.bullets.map(() => ""));
 
-    // --- Risk / operating profile ---
-    if (kpiValues.risk >= 70) {
-      items.push(
-        "Risk score is elevated – burn, opex or execution risk is high. Consider scenario testing downside cases."
-      );
-      tagList.push("High risk");
-    } else if (kpiValues.risk <= 30) {
-      items.push(
-        "Risk score is contained – keep current discipline and avoid sudden cost step-ups."
-      );
-      tagList.push("Disciplined profile");
-    } else {
-      items.push(
-        "Risk is balanced – you have room to experiment, but monitor burn and hiring closely."
-      );
-      tagList.push("Balanced risk");
-    }
+    const body = script.body;
+    const bullets = script.bullets;
 
-    // --- Levers summary for the headline ---
-    const growthBias =
-      sliderValues.revenueGrowth - sliderValues.operatingExpenses - sliderValues.burnRate;
+    const BODY_CPS = 60;
+    const BULLET_CPS = 70;
+    const PAUSE_BETWEEN_SECTIONS_MS = 120;
+    const PAUSE_BETWEEN_BULLETS_MS = 120;
 
-    let headlineText = "";
-    if (growthBias > 20) {
-      headlineText = "You’re skewed towards growth – ensure runway and risk stay within your comfort band.";
-    } else if (growthBias < -10) {
-      headlineText =
-        "Current lever mix is defensive – conserving cash at the cost of growth. Confirm this matches your strategy.";
-    } else {
-      headlineText =
-        "Your lever mix is fairly balanced – small adjustments to growth vs. efficiency will shift the profile.";
-    }
+    let phase: "body" | "bullets" = "body";
+    let bodyIdx = 0;
 
-    return {
-      headline: headlineText,
-      bullets: items,
-      tags: tagList,
+    let bulletIdx = 0;
+    let bulletCharIdx = 0;
+
+    const stepChars = (cps: number) => Math.max(1, Math.floor(cps / 20)); // 50ms ticks
+
+    const tick = () => {
+      if (runIdRef.current !== runId) return;
+
+      if (phase === "body") {
+        bodyIdx = Math.min(body.length, bodyIdx + stepChars(BODY_CPS));
+        setTypedBody(body.slice(0, bodyIdx));
+
+        if (bodyIdx >= body.length) {
+          phase = "bullets";
+          timerRef.current = window.setTimeout(tick, PAUSE_BETWEEN_SECTIONS_MS);
+          return;
+        }
+
+        timerRef.current = window.setTimeout(tick, 50);
+        return;
+      }
+
+      // bullets
+      if (bulletIdx >= bullets.length) {
+        setIsTyping(false);
+        return;
+      }
+
+      const current = bullets[bulletIdx] ?? "";
+      bulletCharIdx = Math.min(
+        current.length,
+        bulletCharIdx + stepChars(BULLET_CPS)
+      );
+
+      setTypedBullets((prev) => {
+        const next = [...prev];
+        next[bulletIdx] = current.slice(0, bulletCharIdx);
+        return next;
+      });
+
+      if (bulletCharIdx >= current.length) {
+        bulletIdx += 1;
+        bulletCharIdx = 0;
+        timerRef.current = window.setTimeout(tick, PAUSE_BETWEEN_BULLETS_MS);
+        return;
+      }
+
+      timerRef.current = window.setTimeout(tick, 50);
     };
-  }, [kpiValues, sliderValues]);
+
+    tick();
+
+    return () => clearTimer();
+  }, [scenario, script.body, script.bullets, prefersReducedMotion]);
+
+  // Which bullet is currently typing (for synced caret)
+  const typingBulletIndex = useMemo(() => {
+    if (!isTyping) return -1;
+    for (let i = 0; i < script.bullets.length; i++) {
+      const target = script.bullets[i] ?? "";
+      const current = typedBullets[i] ?? "";
+      if (current.length < target.length) return i;
+    }
+    return -1;
+  }, [isTyping, script.bullets, typedBullets]);
+
+  const footerTiles = useMemo(() => {
+    // We render a stable 6-tile grid always.
+    // If metrics are missing, we keep placeholders so footer never collapses.
+    const wanted = 6;
+    const src = footerMetrics.slice(0, wanted);
+    if (src.length >= wanted) return src;
+    const pad: FooterMetric[] = [];
+    for (let i = src.length; i < wanted; i++) {
+      pad.push({ label: "—", value: "—" });
+    }
+    return [...src, ...pad];
+  }, [footerMetrics]);
+
+  const footerHasRealData = footerMetrics.length > 0;
 
   return (
-    <div className="h-full rounded-xl bg-[#050814] border border-[#1a253a] flex flex-col p-4">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <div>
-          <div className="text-xs uppercase tracking-wide text-slate-400">
-            Scenario Insights
+    <section
+      className="h-full w-full rounded-2xl border overflow-hidden"
+      style={{
+        background:
+          "linear-gradient(180deg, rgba(10,22,40,0.92), rgba(7,14,26,0.92))",
+        borderColor: "rgba(120, 190, 255, 0.18)",
+        boxShadow: "0 18px 60px rgba(0,0,0,0.45)",
+        // isolates panel layout/paint from affecting siblings (mountain stability)
+        contain: "layout paint",
+      }}
+    >
+      {/* 3-part layout */}
+      <div className="h-full flex flex-col min-h-0">
+        {/* HEADER (fixed) */}
+        <header
+          className="shrink-0 px-5 pt-5 pb-4 border-b"
+          style={{ borderColor: "rgba(255,255,255,0.06)" }}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-[13px] tracking-[0.18em] text-slate-300/80">
+                {insights.title}
+              </div>
+              {insights.subtitle ? (
+                <div className="mt-1 text-[13px] text-slate-200/85">
+                  {insights.subtitle}
+                </div>
+              ) : null}
+            </div>
+
+            <div
+              className="shrink-0 px-3 py-2 rounded-full text-[12px] font-semibold"
+              style={{
+                color: "rgba(255,255,255,0.92)",
+                background: "rgba(120, 190, 255, 0.10)",
+                border: "1px solid rgba(120, 190, 255, 0.22)",
+                boxShadow: "0 0 20px rgba(120, 190, 255, 0.10)",
+              }}
+            >
+              {insights.scenarioLabel}
+            </div>
           </div>
-          <div className="text-sm text-slate-300">
-            Live, rule-based commentary. (AI model wiring comes next.)
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-400">Scenario</span>
-          <span
-            className="px-2 py-1 rounded-full text-xs font-medium"
+        </header>
+
+        {/* NARRATIVE (scrollable, typewriter lives here) */}
+        <div className="flex-1 min-h-0 px-5 py-4 overflow-auto">
+          <div
+            className="rounded-xl border px-4 py-4"
             style={{
-              backgroundColor: scenarioMeta.color + "22",
-              color: "#e5f9ff",
-              boxShadow: `0 0 10px ${scenarioMeta.color}55`,
+              borderColor: "rgba(255,255,255,0.07)",
+              background: "rgba(255,255,255,0.03)",
             }}
           >
-            {scenarioMeta.label}
-          </span>
-        </div>
-      </div>
+            {/* Intro */}
+            <div className="text-[14px] leading-6 text-slate-100/95">
+              {typedBody}
+              {isTyping && typedBody.length < script.body.length ? (
+                <span className="inline-block w-[10px] translate-y-[1px] opacity-80">
+                  ▍
+                </span>
+              ) : null}
+            </div>
 
-      {/* Headline */}
-      <div className="mb-3 px-3 py-2 rounded-lg bg-white/5 border border-white/5 text-sm text-slate-100">
-        {headline}
-      </div>
+            {/* Bullets */}
+            <div className="mt-4 space-y-3">
+              {script.bullets.map((_, i) => {
+                const text = typedBullets[i] ?? "";
+                const started = text.length > 0;
 
-      {/* Bullet insights */}
-      <div className="flex-1 overflow-auto space-y-2 pr-1">
-        {bullets.map((line, idx) => (
-          <div key={idx} className="flex items-start gap-2 text-sm text-slate-200">
-            <span className="mt-1 h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
-            <span>{line}</span>
+                return (
+                  <div key={i} className="flex gap-3">
+                    <div className="pt-[8px] w-3 flex items-start justify-center">
+                      <div
+                        className="w-[6px] h-[6px] rounded-full transition-opacity"
+                        style={{
+                          opacity: started ? 1 : 0,
+                          background: "rgba(56, 189, 248, 0.95)",
+                          boxShadow: "0 0 12px rgba(56, 189, 248, 0.65)",
+                        }}
+                      />
+                    </div>
+                    <div className="text-[14px] leading-6 text-slate-100/90">
+                      {text}
+                      {isTyping && typingBulletIndex === i ? (
+                        <span className="inline-block w-[10px] translate-y-[1px] opacity-70">
+                          ▍
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        ))}
-      </div>
 
-      {/* Footer metrics summary */}
-      <div className="mt-3 pt-3 border-t border-white/5">
-        <div className="flex flex-wrap gap-2 mb-2">
-          {tags.map((t) => (
-            <span
-              key={t}
-              className="px-2 py-1 rounded-full text-[11px] text-cyan-100 bg-cyan-500/10 border border-cyan-500/30"
-            >
-              {t}
-            </span>
-          ))}
+          {/* Tags (kept in narrative area so footer can be purely “results”) */}
+          {insights.tags && insights.tags.length > 0 ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {insights.tags.map((t) => (
+                <span
+                  key={t}
+                  className="px-3 py-1 rounded-full text-[12px] text-slate-100/90"
+                  style={{
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                  }}
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+          ) : null}
         </div>
 
-        <div className="grid grid-cols-3 gap-2 text-xs text-slate-300">
-          <MetricChip label="Runway" value={`${kpiValues.runway.toFixed(1)} mo`} />
-          <MetricChip label="Burn" value={`$${kpiValues.burn.toFixed(0)}k/m`} />
-          <MetricChip label="Cash" value={`$${kpiValues.cash.toFixed(1)}m`} />
-          <MetricChip label="Growth" value={`${kpiValues.growth.toFixed(1)}%`} />
-          <MetricChip label="EBITDA" value={`${kpiValues.ebitda.toFixed(1)}%`} />
-          <MetricChip label="Risk" value={`${kpiValues.risk.toFixed(0)}/100`} />
-        </div>
+        {/* RESULTS FOOTER (pinned, ALWAYS rendered) */}
+        <footer
+          className="shrink-0 px-5 py-4 border-t"
+          style={{
+            borderColor: "rgba(255,255,255,0.06)",
+            background: "rgba(0,0,0,0.18)",
+          }}
+        >
+          <div
+            className="grid grid-cols-3 gap-3 transition-opacity"
+            style={{ opacity: footerHasRealData ? 1 : 0.55 }}
+          >
+            {footerTiles.map((m, idx) => (
+              <div
+                key={`${m.label}-${idx}`}
+                className="rounded-lg px-3 py-2 border"
+                style={{
+                  background: "rgba(0,0,0,0.22)",
+                  borderColor: "rgba(255,255,255,0.07)",
+                }}
+              >
+                <div className="text-[10px] tracking-[0.18em] text-slate-300/70">
+                  {m.label}
+                </div>
+                <div className="mt-1 text-[13px] font-semibold text-slate-100/95">
+                  {m.value}
+                </div>
+              </div>
+            ))}
+          </div>
+        </footer>
       </div>
-    </div>
-  );
-}
-
-interface MetricChipProps {
-  label: string;
-  value: string;
-}
-
-function MetricChip({ label, value }: MetricChipProps) {
-  return (
-    <div className="flex flex-col rounded-lg bg-white/5 px-2 py-1">
-      <span className="text-[10px] uppercase tracking-wide text-slate-400">
-        {label}
-      </span>
-      <span className="text-xs text-slate-100 font-medium">{value}</span>
-    </div>
+    </section>
   );
 }
