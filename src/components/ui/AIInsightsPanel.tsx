@@ -1,6 +1,6 @@
 // src/components/ui/AIInsightsPanel.tsx
-import { useMemo } from "react";
-import { SCENARIOS, ScenarioId, ScenarioDefinition } from "@/dashboardConfig";
+import { useMemo, useState, useEffect } from "react";
+import { SCENARIOS, ScenarioId } from "@/config/dashboardConfig";
 
 interface KPIValues {
   runway: number;
@@ -31,8 +31,11 @@ export default function AIInsightsPanel({
   kpiValues,
   sliderValues,
 }: AIInsightsPanelProps) {
-  const scenarioMeta = SCENARIOS.find((s: ScenarioDefinition) => s.id === scenario) ?? SCENARIOS[0];
+  const scenarioMeta = SCENARIOS.find((s) => s.id === scenario) ?? SCENARIOS[0];
 
+  // ─────────────────────────────────────────────
+  // 1) Rule-based “AI” logic (no API yet)
+  // ─────────────────────────────────────────────
   const { headline, bullets, tags } = useMemo(() => {
     const items: string[] = [];
     const tagList: string[] = [];
@@ -91,7 +94,8 @@ export default function AIInsightsPanel({
 
     let headlineText = "";
     if (growthBias > 20) {
-      headlineText = "You’re skewed towards growth – ensure runway and risk stay within your comfort band.";
+      headlineText =
+        "You’re skewed towards growth – ensure runway and risk stay within your comfort band.";
     } else if (growthBias < -10) {
       headlineText =
         "Current lever mix is defensive – conserving cash at the cost of growth. Confirm this matches your strategy.";
@@ -106,6 +110,42 @@ export default function AIInsightsPanel({
       tags: tagList,
     };
   }, [kpiValues, sliderValues]);
+
+  // ─────────────────────────────────────────────
+  // 2) Typewriter effect for the HEADLINE
+  // ─────────────────────────────────────────────
+  const [typedHeadline, setTypedHeadline] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+
+  useEffect(() => {
+    if (!headline) {
+      setTypedHeadline("");
+      setIsTyping(false);
+      return;
+    }
+
+    setIsTyping(true);
+    setTypedHeadline("");
+
+    const text = headline;
+    let index = 0;
+
+    const interval = window.setInterval(() => {
+      index += 1;
+      setTypedHeadline(text.slice(0, index));
+
+      if (index >= text.length) {
+        window.clearInterval(interval);
+        setIsTyping(false);
+      }
+    }, 18); // typing speed (ms per character) – tweak if needed
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [headline]);
+
+  const displayHeadline = typedHeadline || headline;
 
   return (
     <div className="h-full rounded-xl bg-[#050814] border border-[#1a253a] flex flex-col p-4">
@@ -134,9 +174,12 @@ export default function AIInsightsPanel({
         </div>
       </div>
 
-      {/* Headline */}
-      <div className="mb-3 px-3 py-2 rounded-lg bg-white/5 border border-white/5 text-sm text-slate-100">
-        {headline}
+      {/* Typewriter headline */}
+      <div className="mb-3 px-3 py-2 rounded-lg bg-white/5 border border-white/8 text-sm text-slate-100 flex items-center">
+        <span>{displayHeadline}</span>
+        {isTyping && (
+          <span className="ml-1 inline-block w-[6px] h-4 bg-slate-200 animate-pulse rounded-sm" />
+        )}
       </div>
 
       {/* Bullet insights */}
