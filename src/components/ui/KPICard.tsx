@@ -25,7 +25,7 @@ export default function KPICard({
         "transition-all duration-200 ease-out",
         active
           ? "border-[#00b4ff] -translate-y-2 scale-[1.03] kpi-glow"
-          : "border-[#1e2b45] hover:border-[#00b4ff]/60 hover:-translate-y-1 hover:scale-[1.01]"
+          : "border-[#1e2b45] hover:border-[#00b4ff]/60 hover:-translate-y-1 hover:scale-[1.01]",
       ].join(" ")}
     >
       <div className="text-sm text-gray-300">{label}</div>
