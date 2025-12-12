@@ -24,7 +24,7 @@ import {
   getInitialMetricState,
   calculateMetrics,
   metricsToDataPoints,
-} from "@/logic/metricsModel";
+} from "../../logic/metricsModel";
 
 export default function DashboardLayout() {
   // --- Core state ---
