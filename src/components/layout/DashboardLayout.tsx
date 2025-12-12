@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import MountainEngine from "@/components/engine/MountainEngine";
 import KPICard from "@/components/ui/KPICard";
 import Slider from "@/components/ui/Slider";
@@ -31,284 +31,257 @@ import type { ScenarioRecord } from "@/types/domain";
 const LOCAL_SCENARIOS_KEY = "stratfit_local_scenarios_v1";
 
 export default function DashboardLayout() {
-  // --- Core scenario engine state ---
   const [scenario, setScenario] = useState<ScenarioId>("base");
-  const [leverState, setLeverState] = useState<LeverState>(() =>
-    getInitialLeverState()
-  );
-  const [metricState, setMetricState] = useState<MetricState>(() =>
-    getInitialMetricState("base", getInitialLeverState())
-  );
+  
+  const [leverState, setLeverState] = useState<LeverState>(() => {
+    try { 
+      return getInitialLeverState(); 
+    } catch { 
+      return { revenueGrowth: 20, operatingExpenses: 15, hiringRate: 10, wageIncrease: 5, burnRate: 25 }; 
+    }
+  });
+  
+  const [metricState, setMetricState] = useState<MetricState>(() => {
+    try { 
+      return getInitialMetricState("base", getInitialLeverState()); 
+    } catch { 
+      return { runway: 12, cash: 2, growth: 25, ebitda: 10, burn: 200, risk: 45, value: 10 }; 
+    }
+  });
+  
   const [activeKPIIndex, setActiveKPIIndex] = useState<number | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-
-  const currentScenario =
-    SCENARIOS.find((s: ScenarioDefinition) => s.id === scenario) ?? SCENARIOS[0];
-
-  // --- Local save/load state ---
   const [savedScenarios, setSavedScenarios] = useState<ScenarioRecord[]>([]);
   const [newScenarioName, setNewScenarioName] = useState("");
   const [selectedSavedId, setSelectedSavedId] = useState<string>("");
 
-  // --- Derived visual points for the mountain ---
-  const dataPoints = useMemo(
-    () => metricsToDataPoints(metricState),
-    [metricState]
-  );
+  const currentScenario = useMemo(() => {
+    return SCENARIOS?.find((s: ScenarioDefinition) => s.id === scenario) ?? { id: "base", label: "Base Case", color: "#22d3ee" };
+  }, [scenario]);
 
-  // --- Bootstrapping: load from localStorage once on mount ---
+  const dataPoints = useMemo(() => {
+    try { 
+      return metricsToDataPoints(metricState); 
+    } catch { 
+      return [0.5, 0.6, 0.7, 0.6, 0.5, 0.6, 0.5]; 
+    }
+  }, [metricState]);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
-
     try {
       const raw = window.localStorage.getItem(LOCAL_SCENARIOS_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as ScenarioRecord[];
-      if (Array.isArray(parsed)) {
-        setSavedScenarios(parsed);
+      if (raw) {
+        const parsed = JSON.parse(raw) as ScenarioRecord[];
+        if (Array.isArray(parsed)) setSavedScenarios(parsed);
       }
-    } catch (err) {
-      console.warn("Failed to load local scenarios", err);
+    } catch (err) { 
+      console.warn("Failed to load scenarios", err); 
     }
   }, []);
 
-  const persistSavedScenarios = (next: ScenarioRecord[]) => {
+  const persistSavedScenarios = useCallback((next: ScenarioRecord[]) => {
     setSavedScenarios(next);
-    if (typeof window === "undefined") return;
-    try {
-      window.localStorage.setItem(LOCAL_SCENARIOS_KEY, JSON.stringify(next));
-    } catch (err) {
-      console.warn("Failed to persist local scenarios", err);
+    try { 
+      window.localStorage.setItem(LOCAL_SCENARIOS_KEY, JSON.stringify(next)); 
+    } catch (err) { 
+      console.warn("Failed to persist scenarios", err); 
     }
-  };
+  }, []);
 
-  // --- Handlers: scenario, levers, save/load ---
-
-  const handleScenarioChange = (nextScenario: ScenarioId) => {
+  const handleScenarioChange = useCallback((nextScenario: ScenarioId) => {
     setScenario(nextScenario);
-    setMetricState(() =>
-      calculateMetrics(BASELINE_METRICS, leverState, nextScenario)
-    );
-  };
+    try { 
+      setMetricState(calculateMetrics(BASELINE_METRICS, leverState, nextScenario)); 
+    } catch (err) { 
+      console.warn("Failed to calculate metrics", err); 
+    }
+  }, [leverState]);
 
-  const handleLeverChange = (leverId: LeverId, value: number) => {
+  const handleLeverChange = useCallback((leverId: LeverId, value: number) => {
     setLeverState((prev) => {
       const next: LeverState = { ...prev, [leverId]: value };
-      const nextMetrics = calculateMetrics(BASELINE_METRICS, next, scenario);
-      setMetricState(nextMetrics);
+      try { 
+        setMetricState(calculateMetrics(BASELINE_METRICS, next, scenario)); 
+      } catch (err) { 
+        console.warn("Failed to calculate metrics", err); 
+      }
       return next;
     });
-  };
+  }, [scenario]);
 
-  const handleSaveScenario = () => {
-    const trimmedName = newScenarioName.trim();
-    const nameToUse =
-      trimmedName ||
-      `${currentScenario.label} – ${new Date().toLocaleString()}`;
-
-    // Minimal ScenarioRecord aligned with domain model.
-    // For now, we use placeholder IDs for company/user.
+  const handleSaveScenario = useCallback(() => {
+    const nameToUse = newScenarioName.trim() || `${currentScenario.label} – ${new Date().toLocaleString()}`;
     const record: ScenarioRecord = {
-      id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+      id: crypto.randomUUID?.() ?? Date.now().toString(),
       companyId: "local-demo-company",
       ownerUserId: "local-user",
       scenarioId: scenario,
       name: nameToUse,
-      description: "Local snapshot (not yet synced with Supabase).",
+      description: "Local snapshot",
       levers: { ...leverState },
-      metricsSnapshot: {
-        runway: metricState.runway,
-        cash: metricState.cash,
-        growth: metricState.growth,
-        ebitda: metricState.ebitda,
-        burn: metricState.burn,
-        risk: metricState.risk,
-        value: metricState.value,
-      },
+      metricsSnapshot: { ...metricState },
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       archivedAt: null,
     };
-
-    const next = [...savedScenarios, record];
-    persistSavedScenarios(next);
+    persistSavedScenarios([...savedScenarios, record]);
     setNewScenarioName("");
     setSelectedSavedId(record.id);
-  };
+  }, [newScenarioName, currentScenario.label, scenario, leverState, metricState, savedScenarios, persistSavedScenarios]);
 
-  const handleLoadScenario = (id: string) => {
+  const handleLoadScenario = useCallback((id: string) => {
     const record = savedScenarios.find((s) => s.id === id);
     if (!record) return;
-
     setSelectedSavedId(record.id);
     setScenario(record.scenarioId);
-
-    // Restore lever & metric state from snapshot
     setLeverState(record.levers as LeverState);
     setMetricState(record.metricsSnapshot as MetricState);
     setActiveKPIIndex(null);
-  };
+  }, [savedScenarios]);
+
+  const safeMetrics = METRICS ?? [];
+  const safeLevers = LEVERS ?? [];
+  const safeScenarios = SCENARIOS ?? [];
 
   return (
-    <div className="flex flex-col w-full h-full p-6 gap-4">
-      {/* Metric cards row */}
-      <div className="grid grid-cols-7 gap-4">
-        {METRICS.map((metric: MetricDefinition, i: number) => (
+    <div className="flex flex-col w-full min-h-screen bg-[#070b12] text-white p-6 gap-5">
+      
+      {/* ROW 1: KPI Cards */}
+      <div className="grid grid-cols-7 gap-3">
+        {safeMetrics.map((metric: MetricDefinition, i: number) => (
           <KPICard
             key={metric.id}
-            label={metric.label}
-            value={Math.round(metricState[metric.id])}
-            unit={metric.unit}
-            active={activeKPIIndex === i}
-            onClick={() => setActiveKPIIndex(i)}
-            sparkValues={dataPoints.slice(Math.max(0, i - 5), i + 1)}
+            title={metric.label}
+            value={`${Math.round(metricState?.[metric.id] ?? 0)}${metric.unit ? ` ${metric.unit}` : ""}`}
+            index={i}
+            activeIndex={activeKPIIndex}
+            onActivate={setActiveKPIIndex}
+            onDeactivate={() => setActiveKPIIndex(null)}
+            onSelect={setActiveKPIIndex}
           />
         ))}
       </div>
 
-      {/* Scenario selector */}
-      <div className="flex flex-col gap-2 max-w-xl">
-        <div className="relative w-64">
+      {/* ROW 2: Scenario Selector + Save/Load */}
+      <div className="flex items-center gap-4 flex-wrap">
+        <div className="relative">
           <button
-            onClick={() => setDropdownOpen((open) => !open)}
-            className="w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all"
-            style={{
-              background: "rgba(10, 22, 40, 0.8)",
-              borderColor: currentScenario.color + "44",
-              boxShadow: "0 0 20px " + currentScenario.color + "22",
+            onClick={() => setDropdownOpen((o) => !o)}
+            className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl border min-w-[180px] transition-all"
+            style={{ 
+              background: "rgba(10,22,40,0.8)", 
+              borderColor: (currentScenario.color ?? "#22d3ee") + "44",
+              boxShadow: "0 0 20px " + (currentScenario.color ?? "#22d3ee") + "22"
             }}
           >
             <div className="flex items-center gap-3">
-              <div
-                className="w-3 h-3 rounded-full"
-                style={{
-                  backgroundColor: currentScenario.color,
-                  boxShadow: "0 0 8px " + currentScenario.color,
-                }}
+              <div 
+                className="w-3 h-3 rounded-full" 
+                style={{ 
+                  backgroundColor: currentScenario.color ?? "#22d3ee",
+                  boxShadow: "0 0 8px " + (currentScenario.color ?? "#22d3ee")
+                }} 
               />
-              <span className="text-white font-medium">
-                {currentScenario.label}
-              </span>
+              <span className="text-white font-medium text-sm">{currentScenario.label ?? "Base Case"}</span>
             </div>
-            <ChevronDown
-              className={
-                "w-4 h-4 text-slate-400 transition-transform " +
-                (dropdownOpen ? "rotate-180" : "")
-              }
-            />
+            <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${dropdownOpen ? "rotate-180" : ""}`} />
           </button>
-
+          
           {dropdownOpen && (
-            <div
-              className="absolute top-full left-0 w-full mt-2 rounded-xl border overflow-hidden z-50"
-              style={{
-                background: "rgba(10, 22, 40, 0.95)",
-                borderColor: "rgba(94, 234, 212, 0.2)",
-              }}
+            <div 
+              className="absolute top-full left-0 w-full mt-2 rounded-xl border overflow-hidden z-50" 
+              style={{ background: "rgba(10,22,40,0.95)", borderColor: "rgba(94,234,212,0.2)" }}
             >
-              {SCENARIOS.map((s: ScenarioDefinition) => (
-                <button
-                  key={s.id}
-                  onClick={() => {
-                    handleScenarioChange(s.id);
-                    setDropdownOpen(false);
-                  }}
-                  className={
-                    "w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors " +
-                    (scenario === s.id ? "bg:white/10" : "")
-                  }
+              {safeScenarios.map((s: ScenarioDefinition) => (
+                <button 
+                  key={s.id} 
+                  onClick={() => { handleScenarioChange(s.id); setDropdownOpen(false); }} 
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 hover:bg-white/5 transition-colors ${scenario === s.id ? "bg-white/10" : ""}`}
                 >
-                  <div
-                    className="w-3 h-3 rounded-full"
-                    style={{
-                      backgroundColor: s.color,
-                      boxShadow: "0 0 8px " + s.color,
-                    }}
-                  />
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: s.color, boxShadow: "0 0 8px " + s.color }} />
                   <span className="text-white text-sm">{s.label}</span>
                 </button>
               ))}
             </div>
           )}
         </div>
-
-        {/* Local save / load bar */}
-        <div className="flex items-center gap-3">
-          <input
-            type="text"
-            placeholder="Name this scenario (optional)"
-            className="flex-1 px-3 py-2 rounded-lg bg-[#0f1b34] border border-[#1e2b45] text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-400"
-            value={newScenarioName}
-            onChange={(e) => setNewScenarioName(e.target.value)}
-          />
-          <button
-            onClick={handleSaveScenario}
-            className="px-3 py-2 rounded-lg bg-cyan-500 text-xs font-medium text-black hover:bg-cyan-400 transition-colors"
-          >
-            Save
-          </button>
-          <select
-            className="px-3 py-2 rounded-lg bg-[#0f1b34] border border-[#1e2b45] text-xs text-slate-200 min-w-[180px]"
-            value={selectedSavedId}
-            onChange={(e) => {
-              const id = e.target.value;
-              if (id) handleLoadScenario(id);
-            }}
-          >
-            <option value="">Load saved scenario…</option>
-            {savedScenarios.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Mountain + AI panel */}
-      <div className="grid grid-cols-[1fr_380px] gap-6 h-[420px]">
-        <div className="rounded-xl bg-[#0a1628] border border-[#1a253a] overflow-hidden">
-          <MountainEngine
-            dataPoints={dataPoints}
-            activeKPIIndex={activeKPIIndex}
-            scenario={scenario}
-          />
-        </div>
-
-        <AIInsightsPanel
-          scenario={scenario}
-          kpiValues={{
-            runway: metricState.runway,
-            cash: metricState.cash,
-            growth: metricState.growth,
-            ebitda: metricState.ebitda,
-            burn: metricState.burn,
-            risk: metricState.risk,
-            value: metricState.value,
-          }}
-          sliderValues={{
-            revenueGrowth: leverState.revenueGrowth,
-            operatingExpenses: leverState.operatingExpenses,
-            hiringRate: leverState.hiringRate,
-            wageIncrease: leverState.wageIncrease,
-            burnRate: leverState.burnRate,
-          }}
+        
+        <input 
+          type="text" 
+          placeholder="Name this scenario (optional)" 
+          className="px-3 py-2 rounded-lg bg-[#0f1b34] border border-[#1e2b45] text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-400 w-64" 
+          value={newScenarioName} 
+          onChange={(e) => setNewScenarioName(e.target.value)} 
         />
+        <button 
+          onClick={handleSaveScenario} 
+          className="px-4 py-2 rounded-lg bg-cyan-500 text-sm font-medium text-black hover:bg-cyan-400 transition-colors"
+        >
+          Save
+        </button>
+        <select 
+          className="px-3 py-2 rounded-lg bg-[#0f1b34] border border-[#1e2b45] text-sm text-slate-200 min-w-[200px] cursor-pointer" 
+          value={selectedSavedId} 
+          onChange={(e) => { if (e.target.value) handleLoadScenario(e.target.value); }}
+        >
+          <option value="">Load saved scenario…</option>
+          {savedScenarios.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+        </select>
       </div>
 
-      {/* Lever sliders */}
-      <div className="grid grid-cols-5 gap-4">
-        {LEVERS.map((lever: LeverDefinition) => (
-          <Slider
-            key={lever.id}
-            label={lever.label}
-            value={leverState[lever.id]}
-            min={lever.min}
-            max={lever.max}
-            step={lever.step}
-            onChange={(v) => handleLeverChange(lever.id, v)}
+      {/* ROW 3: Sliders (left) + Mountain (right) */}
+      <div className="flex gap-5 flex-1 min-h-[400px]">
+        
+        {/* LEFT: Sliders */}
+        <div className="w-72 flex-shrink-0 rounded-xl bg-[#0a1628]/80 border border-[#1a253a] p-5 flex flex-col">
+          <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-5">Levers</h3>
+          <div className="flex flex-col gap-6 flex-1">
+            {safeLevers.map((lever: LeverDefinition) => (
+              <Slider 
+                key={lever.id} 
+                label={lever.label} 
+                value={leverState?.[lever.id] ?? 0} 
+                min={lever.min ?? 0} 
+                max={lever.max ?? 100} 
+                step={lever.step ?? 1} 
+                onChange={(v) => handleLeverChange(lever.id, v)} 
+              />
+            ))}
+          </div>
+        </div>
+        
+        {/* RIGHT: Mountain */}
+        <div className="flex-1 rounded-xl bg-[#0a1628] border border-[#1a253a] overflow-hidden">
+          <MountainEngine 
+            dataPoints={dataPoints} 
+            activeKPIIndex={activeKPIIndex} 
+            scenario={scenario} 
           />
-        ))}
+        </div>
+      </div>
+
+      {/* ROW 4: AI Insights */}
+      <div className="w-full">
+        <AIInsightsPanel 
+          scenario={scenario} 
+          kpiValues={{ 
+            runway: metricState?.runway ?? 0, 
+            cash: metricState?.cash ?? 0, 
+            growth: metricState?.growth ?? 0, 
+            ebitda: metricState?.ebitda ?? 0, 
+            burn: metricState?.burn ?? 0, 
+            risk: metricState?.risk ?? 0, 
+            value: metricState?.value ?? 0 
+          }} 
+          sliderValues={{ 
+            revenueGrowth: leverState?.revenueGrowth ?? 0, 
+            operatingExpenses: leverState?.operatingExpenses ?? 0, 
+            hiringRate: leverState?.hiringRate ?? 0, 
+            wageIncrease: leverState?.wageIncrease ?? 0, 
+            burnRate: leverState?.burnRate ?? 0 
+          }} 
+        />
       </div>
     </div>
   );
