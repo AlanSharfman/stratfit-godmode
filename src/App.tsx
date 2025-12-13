@@ -1,39 +1,49 @@
 // src/App.tsx
+// STRATFIT — God Mode with Dynamic Deltas + 3-Column AI Insights
+
 import { useState, useCallback, useMemo, useEffect } from "react";
 import CommandBar, { ScenarioId } from "./components/CommandBar";
 import KPIGrid from "./components/KPIGrid";
 import ScenarioMountain from "./components/mountain/ScenarioMountain";
 import { Moon } from "./components/Moon";
-import { ControlDeck, ControlBoxConfig, ControlDeckStyles } from "./components/ControlDeck";
+import { ControlDeck, ControlBoxConfig } from "./components/ControlDeck";
 import AIInsights from "./components/AIInsights";
 import { useScenarioStore } from "@/state/scenarioStore";
 import type { LeverId } from "@/logic/mountainPeakModel";
 
+// ============================================================================
+// TYPES
+// ============================================================================
+
 interface LeverState {
-  revenueGrowth: number;        // 0–100 (%)
-  pricingAdjustment: number;    // -20..+50 (%)
-  marketingSpend: number;       // 0–200 ($k/month)
-  headcount: number;            // 5–100 (FTE)
-  operatingExpenses: number;    // 10–150 ($k/month)
-  churnSensitivity: number;     // 0–100 (Low/Med/High)
-  fundingInjection: number;     // 0–5 ($M)
+  revenueGrowth: number;
+  pricingAdjustment: number;
+  marketingSpend: number;
+  headcount: number;
+  operatingExpenses: number;
+  churnSensitivity: number;
+  fundingInjection: number;
 }
 
 interface MetricState {
-  mrr: number;           // $/month
-  grossProfit: number;   // $/month
-  cashBalance: number;   // $
-  burnRate: number;      // $/month
-  runwayMonths: number;  // months
-  cac: number;           // $ per customer
-  churnRate: number;     // % monthly
+  mrr: number;
+  grossProfit: number;
+  cashBalance: number;
+  burnRate: number;
+  runwayMonths: number;
+  cac: number;
+  churnRate: number;
 }
 
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
 const SCENARIOS = [
-  { id: "base" as ScenarioId, label: "Base Case 2025", color: "#22d3ee" },   // cyan
-  { id: "upside" as ScenarioId, label: "Upside 2025", color: "#34d399" },    // emerald
-  { id: "downside" as ScenarioId, label: "Downside 2025", color: "#fb7185" },// rose (NO yellow)
-  { id: "extreme" as ScenarioId, label: "Extreme Risk", color: "#ef4444" },  // red
+  { id: "base" as ScenarioId, label: "Base Case 2025", color: "#22d3ee" },
+  { id: "upside" as ScenarioId, label: "Upside 2025", color: "#34d399" },
+  { id: "downside" as ScenarioId, label: "Downside 2025", color: "#fbbf24" },
+  { id: "extreme" as ScenarioId, label: "Extreme Risk", color: "#ef4444" },
 ];
 
 const INITIAL_LEVERS: LeverState = {
@@ -55,6 +65,10 @@ const SLIDER_TO_KPI: Record<keyof LeverState, number> = {
   churnSensitivity: 6,
   fundingInjection: 2,
 };
+
+// ============================================================================
+// HELPERS
+// ============================================================================
 
 function clamp01(n: number) {
   return Math.max(0, Math.min(1, n));
@@ -103,22 +117,13 @@ function calculateMetrics(levers: LeverState, scenario: ScenarioId): MetricState
   const churnBase = 1.8 + churnSens01 * 4.2 + Math.max(0, priceAdj) * 3.2;
   const churnRate = Math.max(0.5, Math.min(12, churnBase * (scenario === "extreme" ? 1.15 : 1)));
 
-  return {
-    mrr,
-    grossProfit,
-    cashBalance,
-    burnRate,
-    runwayMonths,
-    cac,
-    churnRate,
-  };
+  return { mrr, grossProfit, cashBalance, burnRate, runwayMonths, cac, churnRate };
 }
 
 function metricsToDataPoints(metrics: MetricState): number[] {
   const mrr01 = clamp01(metrics.mrr / 350_000);
   const gp01 = clamp01(metrics.grossProfit / 260_000);
   const cash01 = clamp01(metrics.cashBalance / 7_000_000);
-
   const burn01 = clamp01(1 - metrics.burnRate / 420_000);
   const runway01 = clamp01(metrics.runwayMonths / 36);
   const cac01 = clamp01(1 - metrics.cac / 6_000);
@@ -131,16 +136,20 @@ function formatCurrencyUSD(n: number, opts?: { compact?: boolean }) {
   const compact = opts?.compact ?? true;
   if (!Number.isFinite(n)) return "—";
   if (!compact) return `$${Math.round(n).toLocaleString("en-US")}`;
-
   const abs = Math.abs(n);
   if (abs >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
   if (abs >= 1_000) return `$${(n / 1_000).toFixed(0)}k`;
   return `$${Math.round(n)}`;
 }
+
 function formatPct(n: number) {
   if (!Number.isFinite(n)) return "—";
   return `${n.toFixed(1)}%`;
 }
+
+// ============================================================================
+// MAIN APP
+// ============================================================================
 
 export default function App() {
   const [scenario, setScenario] = useState<ScenarioId>("base");
@@ -158,13 +167,8 @@ export default function App() {
   const metrics = useMemo(() => calculateMetrics(levers, scenario), [levers, scenario]);
   const baselinePoints = useMemo(() => metricsToDataPoints(metrics), [metrics]);
 
-  useEffect(() => {
-    setDataPoints(baselinePoints);
-  }, [baselinePoints, setDataPoints]);
-
-  useEffect(() => {
-    setScenarioInStore(scenario);
-  }, [scenario, setScenarioInStore]);
+  useEffect(() => { setDataPoints(baselinePoints); }, [baselinePoints, setDataPoints]);
+  useEffect(() => { setScenarioInStore(scenario); }, [scenario, setScenarioInStore]);
 
   useEffect(() => {
     setKpiValues({
@@ -184,9 +188,7 @@ export default function App() {
         setHoveredKpiIndex(null);
         return;
       }
-
       setLevers((prev) => ({ ...prev, [id]: value }));
-
       const key = id as keyof LeverState;
       const kpiIndex = SLIDER_TO_KPI[key];
       if (kpiIndex !== undefined) setHoveredKpiIndex(kpiIndex);
@@ -202,7 +204,7 @@ export default function App() {
   const controlBoxes: ControlBoxConfig[] = useMemo(
     () => [
       {
-        id: "growth",
+        id: "performance",
         title: "Performance",
         sliders: [
           { id: "revenueGrowth", label: "Revenue Growth", value: levers.revenueGrowth, min: 0, max: 100, defaultValue: INITIAL_LEVERS.revenueGrowth, format: (v) => `${v}%` },
@@ -211,7 +213,7 @@ export default function App() {
         ],
       },
       {
-        id: "cost",
+        id: "financial",
         title: "Financial",
         sliders: [
           { id: "headcount", label: "Headcount", value: levers.headcount, min: 5, max: 100, defaultValue: INITIAL_LEVERS.headcount, format: (v) => `${v} FTE` },
@@ -223,42 +225,29 @@ export default function App() {
         title: "People & Risk",
         sliders: [
           { id: "churnSensitivity", label: "Churn Sensitivity", value: levers.churnSensitivity, min: 0, max: 100, defaultValue: INITIAL_LEVERS.churnSensitivity, format: (v) => (v < 33 ? "Low" : v < 66 ? "Med" : "High") },
-          { id: "fundingInjection", label: "Funding Injection", value: levers.fundingInjection, min: 0, max: 5, defaultValue: INITIAL_LEVERS.fundingInjection, format: (v) => `$${v.toFixed(1)}M` },
+          { id: "fundingInjection", label: "Funding Injection", value: levers.fundingInjection, min: 0, max: 5, step: 0.1, defaultValue: INITIAL_LEVERS.fundingInjection, format: (v) => `$${v.toFixed(1)}M` },
         ],
       },
     ],
     [levers]
   );
 
+  // AI Insights with SUGGESTIONS instead of recommendations
   const aiInsights = useMemo(
     () => ({
-      highlights: `Base SaaS view: ${formatCurrencyUSD(metrics.mrr)}/mo MRR, ${Math.round(metrics.runwayMonths)} months runway, churn ${metrics.churnRate.toFixed(1)}%.`,
-      risks: metrics.runwayMonths < 12 ? `Runway is tight (${Math.round(metrics.runwayMonths)} months).` : `Runway is stable (${Math.round(metrics.runwayMonths)} months).`,
-      recommendations: `1) Improve churn & CAC efficiency. 2) Reduce burn or raise capital. 3) Stress-test pricing and opex.`,
+      highlights: `Strong momentum with ${formatCurrencyUSD(metrics.mrr)}/mo MRR and ${Math.round(metrics.runwayMonths)} months runway. Gross margins healthy at ${((metrics.grossProfit / metrics.mrr) * 100).toFixed(0)}%. Current burn rate sustainable.`,
+      risks: metrics.runwayMonths < 12 
+        ? `Critical: Only ${Math.round(metrics.runwayMonths)} months runway remaining. Burn rate of ${formatCurrencyUSD(metrics.burnRate)}/mo exceeds sustainable threshold. Immediate action required.`
+        : metrics.runwayMonths < 18
+        ? `Moderate runway concern at ${Math.round(metrics.runwayMonths)} months. Monitor burn closely and consider cost optimization strategies.`
+        : `Low risk profile. ${Math.round(metrics.runwayMonths)} months runway provides buffer for growth investments.`,
+      suggestions: `1) Optimize CAC efficiency — current ${formatCurrencyUSD(metrics.cac)} can be improved through channel mix. 2) Address ${metrics.churnRate.toFixed(1)}% churn with retention initiatives. 3) Consider pricing experiments to boost unit economics.`,
     }),
     [metrics]
   );
 
-  const aiBadges = useMemo(
-    () => [
-      { label: "MRR", value: formatCurrencyUSD(metrics.mrr), color: "#22d3ee" },
-      { label: "Burn", value: formatCurrencyUSD(metrics.burnRate), color: "#fb7185" },
-      { label: "Risk", value: metrics.runwayMonths < 12 ? "High" : metrics.runwayMonths < 18 ? "Med" : "Low", color: metrics.runwayMonths < 12 ? "#ef4444" : metrics.runwayMonths < 18 ? "#fb7185" : "#34d399" },
-    ],
-    [metrics]
-  );
-
   return (
-    <div
-      style={{
-        width: "100vw",
-        minHeight: "100vh",
-        background: "linear-gradient(180deg, #0B1020 0%, #05060A 55%)",
-        color: "#fff",
-        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-        paddingTop: 80,
-      }}
-    >
+    <div className="app-container">
       <CommandBar
         scenario={scenario}
         scenarios={SCENARIOS}
@@ -268,38 +257,134 @@ export default function App() {
         onReset={handleReset}
       />
 
-      <div style={{ padding: "24px 32px", display: "flex", flexDirection: "column", gap: 18 }}>
-        <KPIGrid />
+      <main className="main-content">
+        <section className="kpi-section">
+          <KPIGrid />
+        </section>
 
-        <div
-          style={{
-            position: "relative",
-            height: 450,
-            borderRadius: 16,
-            overflow: "hidden",
-            border: "1px solid rgba(255,255,255,0.10)",
-            boxShadow: "0 25px 70px rgba(0,0,0,0.55)",
-            background: "radial-gradient(1200px 500px at 30% 30%, rgba(34,211,238,0.12), transparent 60%)",
-          }}
-        >
-          <Moon rightOffset={10} topOffset={8} scale={1.2} />
+        <section className="controls-mountain-section">
+          <aside className="sliders-panel">
+            <ControlDeck boxes={controlBoxes} onChange={handleLeverChange} />
+          </aside>
 
-          <ScenarioMountain
-            scenario={scenario}
-            dataPoints={baselinePoints}
-            activeKpiIndex={hoveredKpiIndex}
-            activeLeverId={activeLeverId ?? null}
-            leverIntensity01={leverIntensity01 ?? 0}
-            className=""
+          <div className="mountain-panel">
+            <Moon rightOffset={10} topOffset={8} scale={1.2} />
+            <ScenarioMountain
+              scenario={scenario}
+              dataPoints={baselinePoints}
+              activeKpiIndex={hoveredKpiIndex}
+              activeLeverId={activeLeverId ?? null}
+              leverIntensity01={leverIntensity01 ?? 0}
+              className="mountain-canvas"
+            />
+          </div>
+        </section>
+
+        <section className="ai-section">
+          <AIInsights 
+            insights={aiInsights}
+            mrrValue={metrics.mrr}
+            burnValue={metrics.burnRate}
+            runwayMonths={metrics.runwayMonths}
+            onGeneratePDF={() => console.log("Generate PDF")} 
           />
-        </div>
+        </section>
+      </main>
 
-        <ControlDeck boxes={controlBoxes} onChange={handleLeverChange} />
+      <style>{`
+        * {
+          box-sizing: border-box;
+        }
 
-        <AIInsights insights={aiInsights} badges={aiBadges} onGeneratePDF={() => console.log("Generate PDF")} />
-      </div>
+        .app-container {
+          width: 100vw;
+          min-height: 100vh;
+          max-width: 100%;
+          overflow-x: hidden;
+          background: linear-gradient(180deg, #0B1020 0%, #05060A 100%);
+          color: #fff;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
 
-      <style>{ControlDeckStyles}</style>
+        .main-content {
+          padding-top: 72px;
+          padding-bottom: 24px;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          max-width: 1920px;
+          margin: 0 auto;
+        }
+
+        .kpi-section {
+          padding: 0 24px;
+        }
+
+        .controls-mountain-section {
+          display: grid;
+          grid-template-columns: 300px 1fr;
+          gap: 16px;
+          padding: 0 24px;
+          min-height: 420px;
+        }
+
+        .sliders-panel {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .mountain-panel {
+          position: relative;
+          min-height: 400px;
+          border-radius: 16px;
+          overflow: hidden;
+          border: 1px solid rgba(255,255,255,0.08);
+          background: radial-gradient(ellipse 1000px 400px at 50% 40%, rgba(34,211,238,0.08), transparent 70%);
+          box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .mountain-canvas {
+          width: 100%;
+          height: 100%;
+        }
+
+        .ai-section {
+          padding: 0 24px;
+        }
+
+        @media (max-width: 1100px) {
+          .controls-mountain-section {
+            grid-template-columns: 1fr;
+          }
+
+          .sliders-panel {
+            order: 2;
+          }
+
+          .mountain-panel {
+            order: 1;
+            min-height: 350px;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .main-content {
+            padding-top: 64px;
+            gap: 12px;
+          }
+
+          .kpi-section,
+          .controls-mountain-section,
+          .ai-section {
+            padding: 0 12px;
+          }
+
+          .mountain-panel {
+            min-height: 280px;
+          }
+        }
+      `}</style>
     </div>
   );
 }

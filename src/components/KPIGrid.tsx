@@ -1,59 +1,104 @@
 // src/components/KPIGrid.tsx
+// STRATFIT — KPI Grid with Dynamic Delta Calculation
+
 import React from "react";
 import KPICard, { KPICardProps } from "./ui/KPICard";
 import { useScenarioStore } from "@/state/scenarioStore";
 
-const KPI_CONFIG: Array<
-  Omit<KPICardProps, "value" | "subValue" | "isPositive" | "index">
-> = [
-  { label: "MRR", widgetType: "trendSpark", accentColor: "#22d3ee", kpiIndex: 0 },
-  { label: "GROSS PROFIT", widgetType: "profitColumns", accentColor: "#34d399", kpiIndex: 1 },
-  { label: "CASH", widgetType: "cashArea", accentColor: "#a78bfa", kpiIndex: 2 },
-  { label: "BURN", widgetType: "burnBars", accentColor: "#f0abfc", kpiIndex: 3 },
-  // Runway must be light red (no yellow)
-  { label: "RUNWAY", widgetType: "runwayGauge", accentColor: "#fb7185", kpiIndex: 4 },
-  // CAC must be PIE (multi colour)
-  { label: "CAC", widgetType: "cacPie", accentColor: "#22d3ee", kpiIndex: 5 },
-  // Churn improved ring + spark
-  { label: "CHURN", widgetType: "churnRing", accentColor: "#fb7185", kpiIndex: 6 },
+// ============================================================================
+// KPI CONFIGURATION
+// ============================================================================
+
+const KPI_CONFIG: Array<{
+  label: string;
+  widgetType: KPICardProps["widgetType"];
+  accentColor: string;
+  kpiIndex: number;
+  kpiKey: string;
+  isInverted: boolean; // True for metrics where lower is better
+}> = [
+  { label: "MRR", widgetType: "trendSpark", accentColor: "#22d3ee", kpiIndex: 0, kpiKey: "mrr", isInverted: false },
+  { label: "GROSS PROFIT", widgetType: "profitColumns", accentColor: "#34d399", kpiIndex: 1, kpiKey: "grossProfit", isInverted: false },
+  { label: "CASH", widgetType: "cashArea", accentColor: "#a78bfa", kpiIndex: 2, kpiKey: "cashBalance", isInverted: false },
+  { label: "BURN", widgetType: "burnBars", accentColor: "#f0abfc", kpiIndex: 3, kpiKey: "burnRate", isInverted: true },
+  { label: "RUNWAY", widgetType: "runwayGauge", accentColor: "#3b82f6", kpiIndex: 4, kpiKey: "runway", isInverted: false },
+  { label: "CAC", widgetType: "cacPie", accentColor: "#22d3ee", kpiIndex: 5, kpiKey: "cac", isInverted: true },
+  { label: "CHURN", widgetType: "churnRing", accentColor: "#22d3ee", kpiIndex: 6, kpiKey: "churnRate", isInverted: true },
 ];
+
+// ============================================================================
+// COMPONENT
+// ============================================================================
 
 export default function KPIGrid() {
   const kpiValues = useScenarioStore((s) => s.kpiValues);
 
-  const keys = ["mrr", "grossProfit", "cashBalance", "burnRate", "runway", "cac", "churnRate"] as const;
-
   const cards = KPI_CONFIG.map((cfg, i) => {
-    const key = keys[i];
+    const key = cfg.kpiKey as keyof typeof kpiValues;
     const data = kpiValues[key];
-    const valNum = data?.value ?? 0;
-
-    // determine positive/negative for delta chip
-    const negativeIdx = new Set([3, 5, 6]); // burn, cac, churn “bad if up”
-    const isPositive = !negativeIdx.has(i);
-
-    const delta = isPositive ? "+12%" : "-3%"; // placeholder delta (you can wire real deltas later)
 
     return {
-      ...cfg,
+      label: cfg.label,
+      widgetType: cfg.widgetType,
+      accentColor: cfg.accentColor,
+      kpiIndex: cfg.kpiIndex,
+      isInverted: cfg.isInverted,
       index: i,
       value: data?.display ?? "—",
-      subValue: delta,
-      isPositive,
+      rawValue: data?.value ?? 0,
     };
   });
 
   return (
-    <div className="w-full relative z-10 px-6 pb-2">
-      <div className="flex flex-nowrap gap-4 overflow-x-auto pb-4 no-scrollbar">
+    <div className="kpi-grid-wrapper">
+      <div className="kpi-grid">
         {cards.map((card) => (
-          <KPICard key={card.index} {...card} />
+          <div key={card.index} className="kpi-card-wrapper">
+            <KPICard {...card} />
+          </div>
         ))}
       </div>
 
       <style>{`
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .kpi-grid-wrapper {
+          width: 100%;
+          overflow-x: auto;
+          padding-bottom: 8px;
+        }
+
+        .kpi-grid-wrapper::-webkit-scrollbar {
+          display: none;
+        }
+
+        .kpi-grid-wrapper {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+
+        .kpi-grid {
+          display: grid;
+          grid-template-columns: repeat(7, 1fr);
+          gap: 12px;
+          min-width: 900px;
+        }
+
+        .kpi-card-wrapper {
+          aspect-ratio: 1 / 1;
+          min-width: 120px;
+          max-width: 200px;
+        }
+
+        @media (max-width: 1200px) {
+          .kpi-grid {
+            grid-template-columns: repeat(7, minmax(140px, 1fr));
+          }
+        }
+
+        @media (max-width: 768px) {
+          .kpi-grid {
+            grid-template-columns: repeat(7, 130px);
+          }
+        }
       `}</style>
     </div>
   );

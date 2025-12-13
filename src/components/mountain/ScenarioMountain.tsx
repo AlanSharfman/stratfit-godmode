@@ -1,34 +1,47 @@
 // src/components/mountain/ScenarioMountain.tsx
+// STRATFIT — 3D Mountain with FULL PEAK VISIBLE + More Rugged
+
 import React, { useMemo, useRef, useLayoutEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import * as THREE from "three";
 import { buildPeakModel, LeverId } from "@/logic/mountainPeakModel";
-import { ScenarioId } from "@/state/scenarioStore";
+import { ScenarioId, SCENARIO_COLORS } from "@/state/scenarioStore";
 
 // ============================================================================
-// CONFIG (single mesh, peak-forward "mountain" not "wave")
+// CONSTANTS — TUNED FOR FULL VISIBILITY
 // ============================================================================
+
 const GRID_W = 150;
 const GRID_D = 74;
 const MESH_W = 46;
 const MESH_D = 22;
-
 const ISLAND_RADIUS = 19.5;
 
-const BASE_SCALE = 10.0;      // from datapoints
-const PEAK_SCALE = 18.0;      // from peak model
-const MASSIF_SCALE = 12.0;    // always-on shape to feel like mountain
+// REDUCED scales so peak fits in view
+const BASE_SCALE = 7.0;       // Was 10.0
+const PEAK_SCALE = 12.0;      // Was 18.0
+const MASSIF_SCALE = 9.0;     // Was 12.0
 
-const RIDGE_SHARPNESS = 1.65; // >1 sharpens profile
-const CLIFF_BOOST = 1.28;     // makes peaks feel steeper
+const RIDGE_SHARPNESS = 1.8;  // Slightly sharper for more rugged look
+const CLIFF_BOOST = 1.35;     // More dramatic cliffs
 
-// deterministic texture (no randomness)
+// ============================================================================
+// HELPERS
+// ============================================================================
+
 function noise2(x: number, z: number) {
   const n1 = Math.sin(x * 0.68 + z * 0.33) * 0.22;
   const n2 = Math.cos(x * 1.18 - z * 0.57) * 0.14;
   const n3 = Math.sin((x + z) * 2.1) * 0.05;
   return n1 + n2 + n3;
+}
+
+// Extra noise layer for more ruggedness
+function noise3(x: number, z: number) {
+  const n1 = Math.sin(x * 1.5 + z * 0.8) * 0.12;
+  const n2 = Math.cos(x * 2.3 - z * 1.2) * 0.08;
+  return n1 + n2;
 }
 
 function gaussian1(x: number, c: number, s: number) {
@@ -37,7 +50,6 @@ function gaussian1(x: number, c: number, s: number) {
   return Math.exp(-0.5 * t * t);
 }
 
-// 2D gaussian in world coords (for massif bumps)
 function gaussian2(dx: number, dz: number, sx: number, sz: number) {
   const sx2 = Math.max(0.25, sx) ** 2;
   const sz2 = Math.max(0.25, sz) ** 2;
@@ -47,53 +59,35 @@ function gaussian2(dx: number, dz: number, sx: number, sz: number) {
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
+// ============================================================================
+// PALETTE FROM SCENARIO
+// ============================================================================
+
 function paletteForScenario(s: ScenarioId) {
-  // No yellow. Premium cyan/purple/pink/red.
-  switch (s) {
-    case "upside":
-      return {
-        sky: new THREE.Color("#0B0E14"),
-        low: new THREE.Color("#22d3ee"),
-        mid: new THREE.Color("#34d399"),
-        high: new THREE.Color("#a78bfa"),
-        accent: new THREE.Color("#34d399"),
-      };
-    case "downside":
-      return {
-        sky: new THREE.Color("#0B0E14"),
-        low: new THREE.Color("#fb7185"),
-        mid: new THREE.Color("#f472b6"),
-        high: new THREE.Color("#a78bfa"),
-        accent: new THREE.Color("#fb7185"),
-      };
-    case "extreme":
-      return {
-        sky: new THREE.Color("#0B0E14"),
-        low: new THREE.Color("#fb7185"),
-        mid: new THREE.Color("#ef4444"),
-        high: new THREE.Color("#a78bfa"),
-        accent: new THREE.Color("#ef4444"),
-      };
-    case "base":
-    default:
-      return {
-        sky: new THREE.Color("#0B0E14"),
-        low: new THREE.Color("#22d3ee"),
-        mid: new THREE.Color("#7c3aed"),
-        high: new THREE.Color("#f0abfc"),
-        accent: new THREE.Color("#22d3ee"),
-      };
-  }
+  const colors = SCENARIO_COLORS[s];
+  const primary = new THREE.Color(colors.primary);
+  const secondary = new THREE.Color(colors.secondary);
+  
+  return {
+    sky: new THREE.Color("#0B0E14"),
+    low: primary.clone(),
+    mid: secondary.clone(),
+    high: primary.clone().lerp(new THREE.Color("#ffffff"), 0.35),
+    accent: primary.clone(),
+  };
 }
 
 function heightColor(h01: number, pal: ReturnType<typeof paletteForScenario>) {
   const t = clamp01(h01);
-  // deep -> low -> mid -> high (smooth)
   const deep = pal.sky.clone().lerp(new THREE.Color("#111827"), 0.35);
-  if (t < 0.30) return deep.lerp(pal.low.clone(), t / 0.30);
-  if (t < 0.70) return pal.low.clone().lerp(pal.mid.clone(), (t - 0.30) / 0.40);
-  return pal.mid.clone().lerp(pal.high.clone(), (t - 0.70) / 0.30);
+  if (t < 0.25) return deep.lerp(pal.low.clone(), t / 0.25);
+  if (t < 0.60) return pal.low.clone().lerp(pal.mid.clone(), (t - 0.25) / 0.35);
+  return pal.mid.clone().lerp(pal.high.clone(), (t - 0.60) / 0.40);
 }
+
+// ============================================================================
+// TERRAIN COMPONENT
+// ============================================================================
 
 interface TerrainProps {
   dataPoints: number[];
@@ -145,11 +139,13 @@ const Terrain: React.FC<TerrainProps> = ({
 
     const dp = dataPoints?.length === 7 ? dataPoints : [0.55, 0.55, 0.65, 0.40, 0.50, 0.45, 0.35];
 
-    // Signature massif bumps (world coords) — limited count, central mountain feel
+    // Main massif (central peak + shoulders) — MORE DRAMATIC
     const massif = [
-      { x: 0.0, z: -1.0, a: 1.0, sx: 5.6, sz: 3.2 },
-      { x: -7.5, z: -0.6, a: 0.55, sx: 3.6, sz: 2.5 },
-      { x: 7.2, z: -0.8, a: 0.55, sx: 3.6, sz: 2.5 },
+      { x: 0.0, z: -1.5, a: 1.2, sx: 5.0, sz: 3.5 },   // Central peak
+      { x: -8.0, z: -0.5, a: 0.65, sx: 3.2, sz: 2.2 }, // Left shoulder
+      { x: 8.0, z: -0.5, a: 0.65, sx: 3.2, sz: 2.2 },  // Right shoulder
+      { x: -4.0, z: -2.0, a: 0.45, sx: 2.5, sz: 2.0 }, // Left sub-peak
+      { x: 4.0, z: -2.0, a: 0.45, sx: 2.5, sz: 2.0 },  // Right sub-peak
     ];
 
     const heights = new Float32Array(count);
@@ -157,54 +153,56 @@ const Terrain: React.FC<TerrainProps> = ({
 
     for (let i = 0; i < count; i++) {
       const x = pos.getX(i);
-      const z = pos.getY(i); // plane's Y acts as depth axis before rotation
+      const z = pos.getY(i);
 
-      // Map X -> KPI domain 0..6
       const kpiX = ((x + wHalf) / MESH_W) * 6;
 
-      // Base ridge from dataPoints (sharpened)
+      // KPI-driven ridges
       let ridge = 0;
       for (let idx = 0; idx < 7; idx++) {
         const v = clamp01(dp[idx]);
-        const g = gaussian1(kpiX, idx, 0.82);
+        const g = gaussian1(kpiX, idx, 0.75);
         ridge += Math.pow(v, RIDGE_SHARPNESS) * g;
       }
       let h = ridge * BASE_SCALE;
 
-      // Massif gives "mountainness" even when ridge is flat
+      // Add massif peaks
       for (const m of massif) {
         h += gaussian2(x - m.x, z - m.z, m.sx, m.sz) * m.a * MASSIF_SCALE;
       }
 
-      // Interactive peaks in world coords (anchored to KPI positions)
+      // Add dynamic peaks from hover/interaction
       for (const p of peakModel.peaks) {
         const idx = clamp01(p.index / 6);
         const peakX = lerp(-wHalf, wHalf, idx);
-        const peakZ = -0.3; // keep peaks near front so they read as mountain
-        const spread = 0.95 + p.sigma;
-        h += gaussian2(x - peakX, z - peakZ, spread * 1.15, spread * 0.95) * p.amplitude * PEAK_SCALE;
+        const peakZ = -0.5;
+        const spread = 0.85 + p.sigma;
+        h += gaussian2(x - peakX, z - peakZ, spread * 1.1, spread * 0.9) * p.amplitude * PEAK_SCALE;
       }
 
-      // Edge shaping (island)
+      // Island mask (circular falloff)
       const dist = Math.sqrt(x * x + z * z * 1.65);
       const mask = Math.max(0, 1 - Math.pow(dist / ISLAND_RADIUS, 3.1));
 
-      // deterministic texture + cliff boost near peaks
-      const n = noise2(x, z) * 0.85;
-      const cliff = Math.pow(mask, 0.65) * CLIFF_BOOST;
+      // Noise for ruggedness (TWO layers)
+      const n1 = noise2(x, z) * 0.7;
+      const n2 = noise3(x * 1.5, z * 1.5) * 0.4;
+      const totalNoise = n1 + n2;
 
-      const finalH = Math.max(0, (h + n) * mask * cliff);
+      // Cliff boost for dramatic edges
+      const cliff = Math.pow(mask, 0.6) * CLIFF_BOOST;
+
+      const finalH = Math.max(0, (h + totalNoise) * mask * cliff);
 
       heights[i] = finalH;
       if (finalH > maxH) maxH = finalH;
     }
 
-    // Write Z + colors
+    // Apply heights and colors
     for (let i = 0; i < count; i++) {
       const h = heights[i];
       pos.setZ(i, h);
-
-      const h01 = clamp01(h / (maxH * 0.96));
+      const h01 = clamp01(h / (maxH * 0.92));
       const c = heightColor(h01, pal);
       col.setXYZ(i, c.r, c.g, c.b);
     }
@@ -213,55 +211,50 @@ const Terrain: React.FC<TerrainProps> = ({
     col.needsUpdate = true;
     geo.computeVertexNormals();
 
-    // Sync wire geometry
     (meshWireRef.current.geometry as THREE.PlaneGeometry).attributes.position.needsUpdate = true;
     (meshWireRef.current.geometry as THREE.PlaneGeometry).computeVertexNormals();
   }, [dataPoints, peakModel, pal]);
 
   useFrame((state) => {
     const t = state.clock.elapsedTime;
-    const breathe = Math.sin(t * 1.45) * 0.06 * (0.35 + peakModel.confidence01 * 0.75);
+    const breathe = Math.sin(t * 1.45) * 0.04 * (0.35 + peakModel.confidence01 * 0.65);
 
     if (meshFillRef.current) meshFillRef.current.position.y = breathe;
     if (meshWireRef.current) meshWireRef.current.position.y = breathe;
 
-    // slight material intensity modulation for “alive” look
     if (meshFillRef.current) {
       const mat = meshFillRef.current.material as THREE.MeshStandardMaterial;
-      mat.emissiveIntensity = 0.10 + peakModel.confidence01 * 0.30;
+      mat.emissiveIntensity = 0.12 + peakModel.confidence01 * 0.25;
     }
   });
 
   return (
-    <group rotation={[-Math.PI / 2, 0, 0]}>
-      {/* Atmospheric fill */}
+    // MOVED DOWN more to ensure peak is visible
+    <group rotation={[-Math.PI / 2, 0, 0]} position={[0, -4.0, 0]}>
       <mesh ref={meshFillRef} geometry={geometry}>
         <meshStandardMaterial
           vertexColors
           transparent
-          opacity={0.16}
-          roughness={0.12}
-          metalness={0.92}
+          opacity={0.18}
+          roughness={0.1}
+          metalness={0.95}
           side={THREE.DoubleSide}
           emissive={pal.low}
-          emissiveIntensity={0.16}
+          emissiveIntensity={0.14}
           depthWrite={false}
         />
       </mesh>
 
-      {/* Crisp neon wire */}
       <mesh ref={meshWireRef} geometry={geometry}>
-        <meshBasicMaterial
-          vertexColors
-          wireframe
-          transparent
-          opacity={0.68}
-          toneMapped={false}
-        />
+        <meshBasicMaterial vertexColors wireframe transparent opacity={0.72} toneMapped={false} />
       </mesh>
     </group>
   );
 };
+
+// ============================================================================
+// MAIN EXPORT
+// ============================================================================
 
 export default function ScenarioMountain(props: {
   dataPoints: number[];
@@ -271,30 +264,45 @@ export default function ScenarioMountain(props: {
   scenario: ScenarioId;
   className?: string;
 }) {
-  const {
-    dataPoints = [],
-    activeKpiIndex = null,
-    activeLeverId = null,
-    leverIntensity01 = 0,
-    scenario,
-    className,
+  const { 
+    dataPoints = [], 
+    activeKpiIndex = null, 
+    activeLeverId = null, 
+    leverIntensity01 = 0, 
+    scenario, 
+    className 
   } = props;
-
+  
   const pal = useMemo(() => paletteForScenario(scenario), [scenario]);
+  const colors = SCENARIO_COLORS[scenario];
 
   return (
-    <div className={`relative w-full h-full rounded-xl overflow-hidden bg-[#0B0E14] ${className ?? ""}`}>
-      {/* cinematic vignette */}
-      <div className="absolute inset-0 z-10 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_0%,#0B0E14_100%)] opacity-60" />
+    <div 
+      className={`relative w-full h-full rounded-xl overflow-hidden ${className ?? ""}`}
+      style={{
+        background: `radial-gradient(ellipse 1000px 500px at 50% 60%, ${colors.glow}, transparent 70%), #0B0E14`,
+      }}
+    >
+      {/* Ambient glow overlay */}
+      <div 
+        className="absolute inset-0 z-10 pointer-events-none opacity-30"
+        style={{
+          background: `radial-gradient(circle at 50% 70%, ${colors.glow}, transparent 50%)`,
+        }}
+      />
 
       <Canvas dpr={[1, 2]} gl={{ antialias: true, alpha: true }}>
-        <PerspectiveCamera makeDefault position={[0, 15.5, 30]} fov={36} />
+        {/* CAMERA PULLED BACK AND UP for full peak visibility */}
+        <PerspectiveCamera 
+          makeDefault 
+          position={[0, 20, 42]}  // Was [0, 15.5, 30]
+          fov={38}                 // Was 36
+        />
 
-        {/* Lights tuned for blended cyan/purple/pink */}
-        <ambientLight intensity={0.20} />
-        <pointLight position={[18, 26, 18]} intensity={2.25} color={pal.high} />
-        <pointLight position={[-18, 14, -16]} intensity={1.85} color={pal.low} />
-        <spotLight position={[0, 30, 8]} angle={0.30} penumbra={1} intensity={0.85} color={"#ffffff"} />
+        <ambientLight intensity={0.22} />
+        <pointLight position={[18, 28, 18]} intensity={2.0} color={pal.high.getHex()} />
+        <pointLight position={[-18, 16, -16]} intensity={1.6} color={pal.low.getHex()} />
+        <spotLight position={[0, 35, 10]} angle={0.28} penumbra={1} intensity={0.9} color={"#ffffff"} />
 
         <Terrain
           dataPoints={dataPoints}
@@ -304,12 +312,12 @@ export default function ScenarioMountain(props: {
           scenario={scenario}
         />
 
-        {/* Floor grid */}
-        <group position={[0, -1.65, 0]}>
+        {/* Grid floor */}
+        <group position={[0, -3.5, 0]}>
           <gridHelper args={[100, 52, "#1e293b", "#0f172a"]} />
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]}>
             <planeGeometry args={[100, 100]} />
-            <meshBasicMaterial color="#0B0E14" transparent opacity={0.86} side={THREE.DoubleSide} />
+            <meshBasicMaterial color="#0B0E14" transparent opacity={0.88} side={THREE.DoubleSide} />
           </mesh>
         </group>
 
@@ -317,9 +325,9 @@ export default function ScenarioMountain(props: {
           enableZoom={false}
           enablePan={false}
           autoRotate
-          autoRotateSpeed={0.28}
-          maxPolarAngle={Math.PI / 2.12}
-          minPolarAngle={Math.PI / 6.2}
+          autoRotateSpeed={0.25}
+          maxPolarAngle={Math.PI / 2.1}
+          minPolarAngle={Math.PI / 5.5}
         />
       </Canvas>
     </div>
