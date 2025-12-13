@@ -18,10 +18,12 @@
     "framer-motion": "^12.23.26",
     "gsap": "^3.14.1",
     "lucide-react": "^0.556.0",
+    "perlin.js": "^1.0.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "simplex-noise": "^4.0.3",
-    "three": "^0.181.2"
+    "three": "^0.181.2",
+    "zustand": "^5.0.9"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

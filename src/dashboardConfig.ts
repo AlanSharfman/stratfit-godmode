@@ -43,11 +43,12 @@ export interface LeverDefinition {
 
 // ---- Scenario list (single source of truth) ----
 export const SCENARIOS: readonly ScenarioDefinition[] = [
-  { id: "base", label: "Base Case", color: "#5eead4" },
-  { id: "upside", label: "Upside", color: "#4ade80" },
-  { id: "downside", label: "Downside", color: "#fbbf24" },
-  { id: "extreme", label: "Extreme", color: "#f87171" },
+  { id: "base",    label: "Base Case",    color: "#22d3ee" }, // cyan
+  { id: "upside",  label: "Upside",       color: "#a78bfa" }, // purple
+  { id: "downside",label: "Downside",     color: "#d946ef" }, // magenta (NO yellow)
+  { id: "extreme", label: "Extreme Risk", color: "#f87171" }, // red
 ] as const;
+
 
 // ---- Metrics (initial finance set) ----
 export const METRICS: readonly MetricDefinition[] = [

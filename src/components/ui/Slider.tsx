@@ -1,52 +1,45 @@
-import { useId } from "react";
+// src/components/ui/Slider.tsx
+import React from "react";
+import { motion } from "framer-motion";
 
-interface SliderProps {
-  label: string;
+export default function Slider(props: {
   value: number;
-  min?: number;
-  max?: number;
+  min: number;
+  max: number;
   step?: number;
   onChange: (v: number) => void;
-  highlighted?: boolean;
-}
-
-export default function Slider({
-  label,
-  value,
-  min = 0,
-  max = 100,
-  step = 1,
-  onChange,
-  highlighted = false,
-}: SliderProps) {
-  const id = useId();
+  onStart?: () => void;
+  onEnd?: () => void;
+  highlight?: boolean;
+}) {
+  const { value, min, max, step = 1, onChange, onStart, onEnd, highlight } = props;
 
   return (
-    <div
-      className={[
-        "rounded-2xl border px-5 py-4 bg-[#0b1426]/70 backdrop-blur-md transition-all",
-        highlighted
-          ? "border-cyan-300/40 shadow-[0_0_0_1px_rgba(34,211,238,0.22),0_0_28px_rgba(34,211,238,0.14)]"
-          : "border-white/8",
-      ].join(" ")}
-    >
-      <div className="flex items-center justify-between">
-        <label htmlFor={id} className="text-sm text-white/80">
-          {label}
-        </label>
-        <div className="text-sm text-white/70 tabular-nums">{value}</div>
-      </div>
-
-      <input
-        id={id}
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="mt-3 w-full accent-cyan-300"
-      />
+    <div className="w-full">
+      <motion.div
+        className="relative w-full h-[34px] flex items-center"
+        animate={{
+          filter: highlight ? "drop-shadow(0 0 12px rgba(34,211,238,0.35))" : "none",
+        }}
+      >
+        <input
+          type="range"
+          value={value}
+          min={min}
+          max={max}
+          step={step}
+          onMouseDown={onStart}
+          onTouchStart={onStart}
+          onMouseUp={onEnd}
+          onTouchEnd={onEnd}
+          onChange={(e) => onChange(Number(e.target.value))}
+          className="w-full accent-cyan-400"
+          style={{
+            height: 4,
+            borderRadius: 999,
+          }}
+        />
+      </motion.div>
     </div>
   );
 }
