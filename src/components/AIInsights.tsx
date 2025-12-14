@@ -42,7 +42,7 @@ function useTypewriter(text: string, speed: number = 20, delay: number = 0) {
     indexRef.current = 0;
     setDisplayText("");
     setStarted(false);
-    
+
     const startTimer = setTimeout(() => setStarted(true), delay);
     return () => clearTimeout(startTimer);
   }, [text, delay]);
@@ -109,7 +109,7 @@ function InsightCard({ title, icon, items, accentColor, delay }: InsightCardProp
             <div key={i} className="insight-item" style={{ opacity: showBullet ? 1 : 0.3 }}>
               <span className="insight-bullet" style={{ color: accentColor }}>•</span>
               <span className="insight-text">{itemText || item.text.slice(0, 0)}</span>
-            </div>
+      </div>
           );
         })}
       </div>
@@ -193,7 +193,7 @@ const ActionsIcon = () => (
     <polyline points="9 11 12 14 22 4" />
     <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
   </svg>
-);
+  );
 
 // ============================================================================
 // MAIN COMPONENT
@@ -212,7 +212,7 @@ export default function AIInsights({ insights, metrics, onGeneratePDF }: AIInsig
       {/* Header */}
       <div className="ai-header">
         <div className="ai-header-left">
-          <motion.div
+    <motion.div
             className="ai-pulse"
             animate={{ scale: [1, 1.3, 1], opacity: [1, 0.5, 1] }}
             transition={{ duration: 2, repeat: Infinity }}

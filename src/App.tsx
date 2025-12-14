@@ -4,13 +4,14 @@
 
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { ScenarioId } from "./components/ScenarioSlidePanel";
-import KPIGrid from "./components/KPIGrid";
+import KPIConsole from "./components/KPIConsole";
 import ScenarioMountain from "./components/mountain/ScenarioMountain";
 import { Moon } from "./components/Moon";
 import { ControlDeck, ControlBoxConfig } from "./components/ControlDeck";
 import AIIntelligence from "./components/AIIntelligence";
 import ViewToggle from "./components/ViewToggle";
-import { useScenarioStore } from "@/state/scenarioStore";
+import ScenarioSelector from "./components/ScenarioSelector";
+import { useScenarioStore, SCENARIO_COLORS } from "@/state/scenarioStore";
 import type { LeverId } from "@/logic/mountainPeakModel";
 
 // ============================================================================
@@ -44,12 +45,7 @@ const INITIAL_LEVERS: LeverState = {
   fundingPressure: 20,
 };
 
-const SCENARIOS: { id: ScenarioId; label: string }[] = [
-  { id: "base", label: "Base Case" },
-  { id: "upside", label: "Upside" },
-  { id: "downside", label: "Downside" },
-  { id: "extreme", label: "Stress Test" },
-];
+// SCENARIOS moved to ScenarioSelector component
 
 // ============================================================================
 // METRICS CALCULATION
@@ -106,7 +102,11 @@ function metricsToDataPoints(m: ReturnType<typeof calculateMetrics>): number[] {
 export default function App() {
   const [scenario, setScenario] = useState<ScenarioId>("base");
   const [levers, setLevers] = useState<LeverState>(INITIAL_LEVERS);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  // Handle scenario change
+  const handleScenarioChange = useCallback((newScenario: ScenarioId) => {
+    setScenario(newScenario);
+  }, []);
 
   const viewMode = useScenarioStore((s) => s.viewMode);
   const hoveredKpiIndex = useScenarioStore((s) => s.hoveredKpiIndex);
@@ -131,14 +131,26 @@ export default function App() {
   useEffect(() => {
     setKpiValues({
       runway: { value: metrics.runway, display: `${metrics.runway} mo` },
-      cashPosition: { value: metrics.cashPosition * 100, display: `£${metrics.cashPosition.toFixed(1)}M` },
-      momentum: { value: metrics.momentum, display: `${metrics.momentum}%` },
-      burnQuality: { value: metrics.burnQuality, display: `${metrics.burnQuality}%` },
+      cashPosition: { value: metrics.cashPosition * 100, display: `$${metrics.cashPosition.toFixed(1)}M` },
+      momentum: { value: metrics.momentum, display: `${metrics.momentum > 0 ? '+' : ''}${metrics.momentum}%` },
+      burnQuality: { value: metrics.burnQuality, display: `$${Math.round(metrics.burnQuality * 2)}K/mo` },
       riskIndex: { value: metrics.riskIndex, display: `${metrics.riskIndex}/100` },
-      earningsPower: { value: metrics.earningsPower, display: `${metrics.earningsPower}%` },
-      enterpriseValue: { value: metrics.enterpriseValue, display: `£${metrics.enterpriseValue.toFixed(0)}M` },
+      earningsPower: { value: metrics.earningsPower, display: `$${Math.round(metrics.earningsPower * 5)}K` },
+      enterpriseValue: { value: metrics.enterpriseValue, display: `$${metrics.enterpriseValue.toFixed(1)}M` },
     });
   }, [metrics, setKpiValues]);
+
+  // Map lever IDs to state keys
+  const leverIdToStateKey: Record<string, keyof LeverState> = {
+    revenueGrowth: "demandStrength",
+    pricingAdjustment: "pricingPower",
+    marketingSpend: "expansionVelocity",
+    operatingExpenses: "costDiscipline",
+    headcount: "hiringIntensity",
+    cashSensitivity: "operatingDrag",
+    churnSensitivity: "marketVolatility",
+    fundingInjection: "executionRisk",
+  };
 
   const handleLeverChange = useCallback(
     (id: LeverId | "__end__", value: number) => {
@@ -146,7 +158,8 @@ export default function App() {
         setHoveredKpiIndex(null);
         return;
       }
-      setLevers((prev) => ({ ...prev, [id]: value }));
+      const stateKey = leverIdToStateKey[id] || id;
+      setLevers((prev) => ({ ...prev, [stateKey]: value }));
     },
     [setHoveredKpiIndex]
   );
@@ -193,8 +206,6 @@ export default function App() {
     return boxes;
   }, [levers, viewMode]);
 
-  const selectedScenario = SCENARIOS.find(s => s.id === scenario) || SCENARIOS[0];
-
   return (
     <div className="app">
       {/* HEADER */}
@@ -219,46 +230,45 @@ export default function App() {
           <ViewToggle />
         </div>
         <div className="header-actions">
-          <button className="action-btn">Save</button>
-          <button className="action-btn">Load</button>
         </div>
       </header>
 
-      {/* TOP: KPI STRIP */}
-      <section className="kpi-strip">
-        <KPIGrid />
+      {/* TOP: COMMAND BAND - Scenario + KPIs + System Controls */}
+      <section className="command-band">
+        {/* SCENARIO SELECTOR */}
+        <div className="scenario-area">
+          <ScenarioSelector scenario={scenario} onChange={handleScenarioChange} />
+        </div>
+
+        {/* KPI CONSOLE */}
+        <div className="kpi-section">
+          <KPIConsole />
+        </div>
+
+        {/* SYSTEM CONTROLS */}
+        <div className="system-controls">
+          <button className="system-btn">
+            <svg className="system-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+              <polyline points="17 21 17 13 7 13 7 21"/>
+              <polyline points="7 3 7 8 15 8"/>
+            </svg>
+            <span>Save</span>
+          </button>
+          <button className="system-btn">
+            <svg className="system-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="1 4 1 10 7 10"/>
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+            </svg>
+            <span>Load</span>
+          </button>
+        </div>
       </section>
 
       {/* MIDDLE SECTION */}
       <div className="middle-section">
-        {/* LEFT: Scenario + Sliders */}
+        {/* LEFT: Sliders Only */}
         <aside className="left-panel">
-          <div className="scenario-dropdown-container">
-            <button 
-              className="scenario-dropdown"
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-            >
-              <span className="dropdown-label">Scenario</span>
-              <span className="dropdown-value">{selectedScenario.label}</span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </button>
-            {dropdownOpen && (
-              <div className="dropdown-menu">
-                {SCENARIOS.map(s => (
-                  <button 
-                    key={s.id}
-                    className={`dropdown-item ${s.id === scenario ? 'active' : ''}`}
-                    onClick={() => { setScenario(s.id); setDropdownOpen(false); }}
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
           <div className="sliders-container">
             <ControlDeck boxes={controlBoxes} onChange={handleLeverChange} />
           </div>
@@ -276,6 +286,17 @@ export default function App() {
                 activeLeverId={activeLeverId ?? null}
                 leverIntensity01={leverIntensity01 ?? 0}
               />
+            </div>
+            {/* Runway & Risk Badges */}
+            <div className="mountain-badges">
+              <div className={`mountain-badge ${metrics.runway < 10 ? 'status-red' : metrics.runway < 15 ? 'status-orange' : 'status-green'}`}>
+                <span className="badge-label">Runway</span>
+                <span className="badge-value">{metrics.runway} mo</span>
+              </div>
+              <div className={`mountain-badge ${metrics.riskIndex > 55 ? 'status-red' : metrics.riskIndex > 35 ? 'status-orange' : 'status-green'}`}>
+                <span className="badge-label">Risk</span>
+                <span className="badge-value">{metrics.riskIndex}/100</span>
+              </div>
             </div>
           </div>
         </div>
@@ -435,30 +456,99 @@ export default function App() {
           gap: 8px;
         }
 
-        .action-btn {
-          padding: 6px 14px;
+        .header-action-btn {
+          padding: 6px 16px;
           background: #161b22;
           border: 1px solid #30363d;
           border-radius: 6px;
-          color: rgba(255, 255, 255, 0.6);
+          color: rgba(255, 255, 255, 0.5);
           font-size: 11px;
           font-weight: 500;
           cursor: pointer;
           transition: all 0.15s;
         }
 
-        .action-btn:hover {
-          background: #21262d;
-          color: #fff;
+        .header-action-btn:hover {
+          background: #1c2128;
+          color: rgba(255, 255, 255, 0.8);
           border-color: #484f58;
         }
 
-        .kpi-strip {
+        /* COMMAND BAND */
+        .command-band {
           flex-shrink: 0;
-          padding: 8px 20px;
-          padding-left: 236px;
-          padding-right: 316px;
+          padding: 10px 20px;
           border-bottom: 1px solid #21262d;
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          background: linear-gradient(180deg, rgba(13, 17, 23, 1) 0%, rgba(13, 17, 23, 0.95) 100%);
+        }
+
+        .scenario-area {
+          flex-shrink: 0;
+          margin-left: 8px;
+        }
+
+        .option-label {
+          font-size: 13px;
+          font-weight: 600;
+          color: rgba(255, 255, 255, 0.9);
+        }
+
+        .option-desc {
+          font-size: 10px;
+          color: rgba(255, 255, 255, 0.4);
+        }
+
+        .kpi-section {
+          flex: 1;
+          display: flex;
+          justify-content: center;
+          padding: 0 10px;
+        }
+
+        /* SYSTEM CONTROLS — Checkpoint/Session Controls */
+        .system-controls {
+          display: flex;
+          gap: 10px;
+          flex-shrink: 0;
+        }
+
+        .system-btn {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 10px 18px;
+          background: rgba(30, 35, 42, 0.9);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 10px;
+          color: rgba(255, 255, 255, 0.55);
+          font-size: 12px;
+          font-weight: 600;
+          letter-spacing: 0.02em;
+          cursor: pointer;
+          transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+        }
+
+        .system-btn:hover {
+          background: rgba(38, 44, 52, 0.95);
+          border-color: rgba(255, 255, 255, 0.15);
+          color: rgba(255, 255, 255, 0.8);
+          transform: translateY(-1px);
+        }
+
+        .system-btn:active {
+          transform: translateY(0);
+        }
+
+        .system-icon {
+          opacity: 0.5;
+          transition: opacity 0.15s ease;
+        }
+
+        .system-btn:hover .system-icon {
+          opacity: 0.75;
         }
 
         .middle-section {
@@ -473,77 +563,7 @@ export default function App() {
         .left-panel {
           display: flex;
           flex-direction: column;
-          gap: 8px;
           overflow: hidden;
-        }
-
-        .scenario-dropdown-container {
-          position: relative;
-          flex-shrink: 0;
-        }
-
-        .scenario-dropdown {
-          width: 100%;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 10px 14px;
-          background: #161b22;
-          border: 1px solid #30363d;
-          border-radius: 6px;
-          color: #fff;
-          font-size: 12px;
-          cursor: pointer;
-          transition: all 0.15s;
-        }
-
-        .scenario-dropdown:hover {
-          border-color: #484f58;
-        }
-
-        .dropdown-label {
-          color: rgba(255, 255, 255, 0.5);
-        }
-
-        .dropdown-value {
-          color: #22d3ee;
-          font-weight: 600;
-          margin-left: auto;
-        }
-
-        .dropdown-menu {
-          position: absolute;
-          top: 100%;
-          left: 0;
-          right: 0;
-          margin-top: 4px;
-          background: #161b22;
-          border: 1px solid #30363d;
-          border-radius: 6px;
-          overflow: hidden;
-          z-index: 100;
-        }
-
-        .dropdown-item {
-          width: 100%;
-          padding: 10px 14px;
-          background: none;
-          border: none;
-          color: rgba(255, 255, 255, 0.6);
-          font-size: 12px;
-          text-align: left;
-          cursor: pointer;
-          transition: all 0.1s;
-        }
-
-        .dropdown-item:hover {
-          background: #21262d;
-          color: #fff;
-        }
-
-        .dropdown-item.active {
-          background: rgba(34, 211, 238, 0.1);
-          color: #22d3ee;
         }
 
         .sliders-container {
@@ -580,6 +600,63 @@ export default function App() {
           position: relative;
           width: 100%;
           height: 100%;
+        }
+
+        .mountain-badges {
+          position: absolute;
+          bottom: 12px;
+          right: 12px;
+          display: flex;
+          gap: 10px;
+          z-index: 10;
+        }
+
+        .mountain-badge {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 8px 14px;
+          background: rgba(13, 17, 23, 0.85);
+          border-radius: 6px;
+          border: 1px solid #21262d;
+          backdrop-filter: blur(8px);
+          min-width: 70px;
+        }
+
+        .badge-label {
+          font-size: 9px;
+          font-weight: 600;
+          letter-spacing: 0.08em;
+          color: rgba(255, 255, 255, 0.5);
+          text-transform: uppercase;
+          margin-bottom: 2px;
+        }
+
+        .badge-value {
+          font-size: 14px;
+          font-weight: 700;
+          color: #fff;
+        }
+
+        .mountain-badge.status-green {
+          border-color: rgba(34, 197, 94, 0.4);
+        }
+        .mountain-badge.status-green .badge-value {
+          color: #4ade80;
+        }
+
+        .mountain-badge.status-orange {
+          border-color: rgba(251, 146, 60, 0.4);
+        }
+        .mountain-badge.status-orange .badge-value {
+          color: #fb923c;
+        }
+
+        .mountain-badge.status-red {
+          border-color: rgba(239, 68, 68, 0.45);
+        }
+        .mountain-badge.status-red .badge-value {
+          color: #f87171;
         }
 
         .right-panel {

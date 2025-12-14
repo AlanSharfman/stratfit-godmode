@@ -1,12 +1,8 @@
 // src/components/ui/KPICard.tsx
-// STRATFIT — KPI Tile (5% larger)
+// STRATFIT — Premium KPI Widgets — Bloomberg/Apple-Grade Quality
 
-import React, { useMemo, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ViewMode } from "@/state/scenarioStore";
-
-// ============================================================================
-// TYPES
-// ============================================================================
 
 export interface KPICardProps {
   index: number;
@@ -14,247 +10,710 @@ export interface KPICardProps {
   value: string;
   rawValue: number;
   color: string;
-  widgetType: "shrinkingRidge" | "breathingReservoir" | "directionalFlow" | "rotationalArc" | "microJitter" | "verticalLift" | "expandingAura";
+  widgetType: string;
   isActive?: boolean;
+  isAnyActive?: boolean;
   onSelect?: (index: number) => void;
   viewMode: ViewMode;
+  highlightColor?: string;
 }
 
 // ============================================================================
-// MICRO-WIDGETS
+// WIDGET COLOR MAPPING
 // ============================================================================
+const WIDGET_COLORS: Record<string, { primary: string; glow: string }> = {
+  timeCompression: { primary: "#00d4ff", glow: "rgba(0, 212, 255, 0.6)" },      // Cyan - Runway
+  liquidityReservoir: { primary: "#00ffcc", glow: "rgba(0, 255, 204, 0.5)" },   // Green - Cash
+  vectorFlow: { primary: "#00ff88", glow: "rgba(0, 255, 136, 0.5)" },           // Green - Momentum
+  efficiencyRotor: { primary: "#ff6b6b", glow: "rgba(255, 107, 107, 0.5)" },    // Red - Burn
+  stabilityWave: { primary: "#00ccff", glow: "rgba(0, 204, 255, 0.5)" },        // Cyan - Risk
+  structuralLift: { primary: "#00ff88", glow: "rgba(0, 255, 136, 0.5)" },       // Green - Earnings
+  scaleAura: { primary: "#00ddff", glow: "rgba(0, 221, 255, 0.5)" },            // Cyan - Value
+};
 
-function ShrinkingRidge({ color, value, amplitude }: { color: string; value: number; amplitude: number }) {
-  const [phase, setPhase] = useState(0);
-  useEffect(() => {
-    const interval = setInterval(() => setPhase(p => (p + 0.02 * amplitude) % 1), 50);
-    return () => clearInterval(interval);
-  }, [amplitude]);
-
-  const w = 54, h = 22;
-  return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
-      {[0, 1, 2, 3, 4].map(i => {
-        const x = 2 + i * 11;
-        const baseH = 18 - i * 2.5;
-        const animH = baseH * (0.7 + 0.3 * Math.sin((phase + i * 0.2) * Math.PI * 2));
-        return <rect key={i} x={x} y={h - animH} width={8} height={animH} rx={1.5} fill={color} opacity={0.5 + (1 - i * 0.12) * 0.4} />;
-      })}
-    </svg>
-  );
-}
-
-function BreathingReservoir({ color, value, amplitude }: { color: string; value: number; amplitude: number }) {
-  const [breath, setBreath] = useState(0);
-  useEffect(() => {
-    const interval = setInterval(() => setBreath(b => (b + 0.015 * amplitude) % 1), 50);
-    return () => clearInterval(interval);
-  }, [amplitude]);
-
-  const w = 54, h = 22;
-  const breathScale = 0.85 + 0.15 * Math.sin(breath * Math.PI * 2);
-  const fillHeight = Math.max(0.3, value / 100) * h * 0.8 * breathScale;
-
-  return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
-      <rect x={2} y={1} width={w-4} height={h-2} rx={3} fill="rgba(255,255,255,0.05)" />
-      <rect x={4} y={h - 1 - fillHeight} width={w-8} height={fillHeight} rx={2} fill={color} opacity={0.7} />
-    </svg>
-  );
-}
-
-function DirectionalFlow({ color, value, amplitude }: { color: string; value: number; amplitude: number }) {
-  const [flow, setFlow] = useState(0);
-  useEffect(() => {
-    const interval = setInterval(() => setFlow(f => (f + 0.03 * amplitude) % 1), 50);
-    return () => clearInterval(interval);
-  }, [amplitude]);
-
-  const w = 54, h = 22;
-  return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
-      {[0, 1, 2].map(i => {
-        const offset = ((flow + i * 0.33) % 1) * w;
-        return (
-          <polygon key={i} points={`${offset-7},${h/2} ${offset+7},${h/2-6} ${offset+7},${h/2+6}`} fill={color} opacity={0.4 + (value/100) * 0.4} />
-        );
-      })}
-    </svg>
-  );
-}
-
-function RotationalArc({ color, value, amplitude }: { color: string; value: number; amplitude: number }) {
-  const [rotation, setRotation] = useState(0);
-  useEffect(() => {
-    const interval = setInterval(() => setRotation(r => (r + 0.5 * amplitude) % 360), 50);
-    return () => clearInterval(interval);
-  }, [amplitude]);
-
-  const w = 48, h = 22;
-  const cx = w / 2, cy = h / 2;
-  const r = 8;
-
-  return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={2.5} />
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth={2.5} strokeDasharray={`${(value/100) * 40} 60`} strokeLinecap="round" transform={`rotate(${rotation} ${cx} ${cy})`} opacity={0.8} />
-    </svg>
-  );
-}
-
-function MicroJitter({ color, value, amplitude }: { color: string; value: number; amplitude: number }) {
-  const [jitter, setJitter] = useState<number[]>([]);
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setJitter(Array.from({ length: 16 }, () => (Math.random() - 0.5) * (value/100) * amplitude * 12));
-    }, 80);
-    return () => clearInterval(interval);
-  }, [value, amplitude]);
-
-  const w = 54, h = 22;
-  const points = jitter.map((j, i) => `${(i / 15) * w},${h/2 + j}`).join(" ");
-
-  return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
-      {jitter.length > 0 && <polyline points={points} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" opacity={0.7} />}
-    </svg>
-  );
-}
-
-function VerticalLift({ color, value, amplitude }: { color: string; value: number; amplitude: number }) {
-  const [lift, setLift] = useState(0);
-  useEffect(() => {
-    const interval = setInterval(() => setLift(l => (l + 0.02 * amplitude) % 1), 50);
-    return () => clearInterval(interval);
-  }, [amplitude]);
-
-  const w = 48, h = 22;
-  const liftOffset = Math.sin(lift * Math.PI * 2) * 2 * amplitude;
-  const barHeight = Math.max(6, (value / 100) * (h - 4));
-
-  return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
-      <rect x={w/2 - 7} y={h - 2 - barHeight + liftOffset} width={14} height={barHeight} rx={2} fill={color} opacity={0.7} />
-      <polygon points={`${w/2},${h - 4 - barHeight + liftOffset - 5} ${w/2-5},${h - 4 - barHeight + liftOffset} ${w/2+5},${h - 4 - barHeight + liftOffset}`} fill={color} opacity={0.9} />
-    </svg>
-  );
-}
-
-function ExpandingAura({ color, value, amplitude }: { color: string; value: number; amplitude: number }) {
+// ============================================================================
+// 1. RUNWAY — Horizontal Progress Bar with Glow
+// ============================================================================
+function RunwayWidget({ value, isActive }: { value: number; isActive: boolean }) {
   const [pulse, setPulse] = useState(0);
   useEffect(() => {
-    const interval = setInterval(() => setPulse(p => (p + 0.012 * amplitude) % 1), 50);
+    const interval = setInterval(() => setPulse(p => (p + 0.025) % 1), 50);
     return () => clearInterval(interval);
-  }, [amplitude]);
+  }, []);
 
-  const w = 48, h = 22;
-  const cx = w / 2, cy = h / 2;
-  const baseR = 5 + (value / 100) * 2;
-  const pulseR = baseR + pulse * 7;
+  const normalized = Math.min(100, Math.max(8, (value / 36) * 100));
+  const glowIntensity = isActive ? 25 : 18 + Math.sin(pulse * Math.PI * 2) * 6;
 
   return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
-      <circle cx={cx} cy={cy} r={pulseR} fill="none" stroke={color} strokeWidth={1} opacity={0.3 * (1 - pulse)} />
-      <circle cx={cx} cy={cy} r={baseR} fill={color} opacity={0.6} />
-    </svg>
+    <div className="runway-widget">
+      <div className="runway-track">
+        <div 
+          className="runway-fill"
+          style={{ 
+            width: `${normalized}%`,
+            boxShadow: `0 0 ${glowIntensity}px rgba(0, 212, 255, 0.7), 0 0 ${glowIntensity * 1.5}px rgba(0, 212, 255, 0.4), inset 0 1px 2px rgba(255,255,255,0.3)`
+          }}
+        >
+          <div className="runway-highlight" />
+        </div>
+        <div className="runway-glow-line" style={{ width: `${normalized}%` }} />
+      </div>
+      <style>{`
+        .runway-widget { width: 100%; padding: 0 4px; }
+        .runway-track {
+          width: 100%;
+          height: 18px;
+          background: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(10,20,30,0.8) 100%);
+          border-radius: 9px;
+          position: relative;
+          overflow: hidden;
+          border: 1px solid rgba(0, 180, 220, 0.3);
+          box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+        }
+        .runway-fill {
+          height: 100%;
+          background: linear-gradient(90deg, #0090aa 0%, #00c8e8 40%, #00e8ff 70%, #40f8ff 100%);
+          border-radius: 9px;
+          position: relative;
+          transition: width 0.3s ease;
+        }
+        .runway-highlight {
+          position: absolute;
+          top: 2px; left: 8px; right: 8px; height: 5px;
+          background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.5) 50%, transparent 100%);
+          border-radius: 3px;
+        }
+        .runway-glow-line {
+          position: absolute;
+          bottom: 0; left: 0; height: 2px;
+          background: linear-gradient(90deg, transparent, #00e8ff, #00ffff);
+          filter: blur(1px);
+        }
+      `}</style>
+    </div>
   );
 }
 
 // ============================================================================
-// MAIN COMPONENT
+// 2. CASH — Globe + Orbital Rings + Ascending Bars
 // ============================================================================
+function CashWidget({ value, isActive }: { value: number; isActive: boolean }) {
+  const [rotation, setRotation] = useState(0);
+  useEffect(() => {
+    const speed = isActive ? 0.8 : 0.4;
+    const interval = setInterval(() => setRotation(r => (r + speed) % 360), 30);
+    return () => clearInterval(interval);
+  }, [isActive]);
 
+  return (
+    <div className="cash-widget">
+      <div className="cash-globe-wrap">
+        <div className="cash-orbit" style={{ transform: `rotateX(70deg) rotateZ(${rotation}deg)` }} />
+        <div className="cash-orbit outer" style={{ transform: `rotateX(70deg) rotateZ(${-rotation * 0.6}deg)` }} />
+        <div className="cash-globe">
+          <div className="globe-inner-ring" style={{ transform: `rotate(${rotation * 0.5}deg)` }} />
+          <div className="globe-equator" />
+        </div>
+      </div>
+      <div className="cash-bars">
+        <div className="cash-bar" style={{ height: '45%' }}><div className="bar-shine"/></div>
+        <div className="cash-bar" style={{ height: '68%' }}><div className="bar-shine"/></div>
+        <div className="cash-bar" style={{ height: '100%' }}><div className="bar-shine"/></div>
+      </div>
+      <style>{`
+        .cash-widget {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 14px;
+          width: 100%;
+        }
+        .cash-globe-wrap {
+          width: 52px;
+          height: 52px;
+          position: relative;
+        }
+        .cash-orbit {
+          position: absolute;
+          inset: -6px;
+          border: 1.5px solid rgba(0, 255, 200, 0.4);
+          border-radius: 50%;
+          box-shadow: 0 0 8px rgba(0, 255, 200, 0.3);
+        }
+        .cash-orbit.outer {
+          inset: -11px;
+          border-color: rgba(0, 200, 255, 0.25);
+        }
+        .cash-globe {
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          background: 
+            radial-gradient(circle at 30% 25%, rgba(0, 255, 200, 0.4) 0%, transparent 45%),
+            radial-gradient(circle at 70% 75%, rgba(0, 150, 255, 0.25) 0%, transparent 45%),
+            linear-gradient(145deg, #0a3530 0%, #051a18 50%, #031210 100%);
+          border: 1.5px solid rgba(0, 255, 200, 0.4);
+          box-shadow: 
+            0 0 20px rgba(0, 255, 200, 0.25),
+            inset 0 0 15px rgba(0, 255, 200, 0.15),
+            inset 0 -5px 15px rgba(0, 100, 80, 0.3);
+          position: relative;
+          overflow: hidden;
+        }
+        .globe-inner-ring {
+          position: absolute;
+          inset: 6px;
+          border-radius: 50%;
+          border: 1px dashed rgba(0, 255, 200, 0.35);
+        }
+        .globe-equator {
+          position: absolute;
+          top: 50%;
+          left: 0;
+          right: 0;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(0, 255, 200, 0.5), transparent);
+        }
+        .cash-bars {
+          display: flex;
+          align-items: flex-end;
+          gap: 5px;
+          height: 48px;
+        }
+        .cash-bar {
+          width: 14px;
+          background: linear-gradient(180deg, #00ffcc 0%, #00dd99 40%, #00aa77 100%);
+          border-radius: 3px 3px 0 0;
+          box-shadow: 0 0 12px rgba(0, 255, 200, 0.5), inset 0 1px 2px rgba(255,255,255,0.3);
+          min-height: 8px;
+          position: relative;
+        }
+        .bar-shine {
+          position: absolute;
+          top: 2px; left: 2px; right: 2px; height: 35%;
+          background: linear-gradient(180deg, rgba(255,255,255,0.4), transparent);
+          border-radius: 2px;
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ============================================================================
+// 3. MOMENTUM — Metallic Arrow + Animated Chevrons
+// ============================================================================
+function MomentumWidget({ value, isActive }: { value: number; isActive: boolean }) {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const speed = isActive ? 0.04 : 0.025;
+    const interval = setInterval(() => setTick(t => (t + speed) % 1), 40);
+    return () => clearInterval(interval);
+  }, [isActive]);
+
+  return (
+    <div className="momentum-widget">
+      <svg viewBox="0 0 60 28" width="65" height="30" className="momentum-arrow">
+        <defs>
+          <linearGradient id="arrowMetalGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#666"/>
+            <stop offset="30%" stopColor="#ccc"/>
+            <stop offset="50%" stopColor="#fff"/>
+            <stop offset="70%" stopColor="#ccc"/>
+            <stop offset="100%" stopColor="#666"/>
+          </linearGradient>
+          <filter id="arrowGlow">
+            <feGaussianBlur stdDeviation="1.5" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <path 
+          d="M2 11 L42 11 L42 5 L58 14 L42 23 L42 17 L2 17 Z" 
+          fill="url(#arrowMetalGrad)" 
+          filter="url(#arrowGlow)"
+          stroke="rgba(255,255,255,0.3)"
+          strokeWidth="0.5"
+        />
+      </svg>
+      <div className="momentum-chevrons">
+        {[0, 1, 2, 3].map(i => {
+          const phase = (tick + i * 0.18) % 1;
+          const opacity = 0.3 + Math.sin(phase * Math.PI) * 0.7;
+          return <div key={i} className="chevron" style={{ opacity }} />;
+        })}
+      </div>
+      <style>{`
+        .momentum-widget {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
+        }
+        .momentum-arrow {
+          filter: drop-shadow(0 0 6px rgba(200, 220, 255, 0.5));
+        }
+        .momentum-chevrons {
+          display: flex;
+          gap: 4px;
+        }
+        .chevron {
+          width: 10px;
+          height: 12px;
+          background: linear-gradient(135deg, #00aacc 0%, #00ddff 50%, #00ffff 100%);
+          clip-path: polygon(0 50%, 60% 0, 100% 50%, 60% 100%);
+          transform: rotate(-90deg);
+          box-shadow: 0 0 8px rgba(0, 220, 255, 0.6);
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ============================================================================
+// 4. BURN — Semi-Circular Gauge with Needle
+// ============================================================================
+function BurnWidget({ value, isActive }: { value: number; isActive: boolean }) {
+  const normalized = Math.min(100, Math.max(5, value));
+  const angle = -90 + (normalized / 100) * 180;
+  
+  // Color shifts based on value: green → amber → red
+  const getColor = () => {
+    if (normalized < 40) return { main: '#00ff88', glow: 'rgba(0,255,136,0.5)' };
+    if (normalized < 70) return { main: '#ffcc00', glow: 'rgba(255,204,0,0.5)' };
+    return { main: '#ff5555', glow: 'rgba(255,85,85,0.5)' };
+  };
+  const color = getColor();
+
+  return (
+    <div className="burn-widget">
+      <svg viewBox="0 0 100 58" width="90" height="52">
+        <defs>
+          <linearGradient id="burnArcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#00ddff"/>
+            <stop offset="40%" stopColor="#00ff88"/>
+            <stop offset="65%" stopColor="#ffcc00"/>
+            <stop offset="100%" stopColor="#ff4444"/>
+          </linearGradient>
+          <filter id="burnGlow">
+            <feGaussianBlur stdDeviation="2" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        {/* Background arc */}
+        <path d="M12 52 A 40 40 0 0 1 88 52" fill="none" stroke="rgba(40,50,60,0.8)" strokeWidth="7" strokeLinecap="round"/>
+        {/* Colored arc */}
+        <path d="M12 52 A 40 40 0 0 1 88 52" fill="none" stroke="url(#burnArcGrad)" strokeWidth="7" strokeLinecap="round" filter="url(#burnGlow)"/>
+        {/* Tick marks */}
+        {[0, 45, 90, 135, 180].map((a, i) => (
+          <line key={i} x1="50" y1="12" x2="50" y2="16" stroke="rgba(150,170,190,0.5)" strokeWidth="1"
+            transform={`rotate(${a - 90} 50 52)`}/>
+        ))}
+        {/* Needle */}
+        <g transform={`rotate(${angle} 50 52)`}>
+          <path d="M50 52 L48 20 L50 12 L52 20 Z" fill="url(#arrowMetalGrad)" 
+            stroke="rgba(255,255,255,0.4)" strokeWidth="0.5"/>
+        </g>
+        {/* Center cap */}
+        <circle cx="50" cy="52" r="8" fill="linear-gradient(180deg, #2a2a3a, #1a1a2a)" stroke="rgba(100,110,120,0.6)" strokeWidth="2"/>
+        <circle cx="50" cy="52" r="4" fill={color.main} style={{ filter: `drop-shadow(0 0 4px ${color.glow})` }}/>
+      </svg>
+      <style>{`
+        .burn-widget { display: flex; justify-content: center; }
+      `}</style>
+    </div>
+  );
+}
+
+// ============================================================================
+// 5. RISK — Circular Score Ring with /100
+// ============================================================================
+function RiskWidget({ value, isActive }: { value: number; isActive: boolean }) {
+  const [rotation, setRotation] = useState(0);
+  useEffect(() => {
+    const speed = isActive ? 1.5 : 0.8;
+    const interval = setInterval(() => setRotation(r => (r + speed) % 360), 30);
+    return () => clearInterval(interval);
+  }, [isActive]);
+
+  const score = Math.min(100, Math.max(0, Math.round(value)));
+  const riskColor = score < 35 ? '#00ff88' : score < 65 ? '#ffcc00' : '#ff5555';
+
+  return (
+    <div className="risk-widget">
+      <div className="risk-dial">
+        <div className="dial-bezel">
+          <div className="dial-glow-ring" style={{ transform: `rotate(${rotation}deg)` }} />
+          <div className="dial-face">
+            <span className="dial-score" style={{ color: riskColor, textShadow: `0 0 12px ${riskColor}` }}>{score}</span>
+            <span className="dial-max">/100</span>
+          </div>
+        </div>
+      </div>
+      <style>{`
+        .risk-widget { display: flex; justify-content: center; }
+        .risk-dial { width: 62px; height: 62px; position: relative; }
+        .dial-bezel {
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          background: linear-gradient(145deg, #3a3a4a 0%, #1a1a2a 40%, #2a2a3a 100%);
+          border: 2px solid;
+          border-color: #555 #333 #222 #444;
+          box-shadow: 
+            0 4px 12px rgba(0,0,0,0.6),
+            inset 0 2px 8px rgba(0,0,0,0.5),
+            inset 0 -1px 2px rgba(255,255,255,0.05);
+          position: relative;
+        }
+        .dial-glow-ring {
+          position: absolute;
+          inset: 3px;
+          border-radius: 50%;
+          border: 2px solid transparent;
+          border-top-color: rgba(0, 200, 255, 0.7);
+          border-right-color: rgba(0, 200, 255, 0.3);
+          filter: blur(0.5px);
+        }
+        .dial-face {
+          position: absolute;
+          inset: 7px;
+          border-radius: 50%;
+          background: linear-gradient(180deg, #1a1a2a 0%, #0a0a15 100%);
+          border: 1.5px solid rgba(0, 180, 255, 0.35);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          box-shadow: inset 0 2px 6px rgba(0,0,0,0.4);
+        }
+        .dial-score {
+          font-family: system-ui, -apple-system, sans-serif;
+          font-size: 17px;
+          font-weight: 800;
+          line-height: 1;
+        }
+        .dial-max {
+          font-size: 9px;
+          font-weight: 600;
+          color: rgba(150, 170, 190, 0.7);
+          margin-top: 1px;
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ============================================================================
+// 6. EARNINGS — Ascending Bar Chart (Green)
+// ============================================================================
+function EarningsWidget({ value, isActive }: { value: number; isActive: boolean }) {
+  const heights = [38, 55, 72, 100];
+  const scale = isActive ? 1.05 : 1;
+
+  return (
+    <div className="earnings-widget" style={{ transform: `scale(${scale})`, transition: 'transform 0.2s ease' }}>
+      {heights.map((h, i) => (
+        <div key={i} className="earnings-bar" style={{ height: `${h * 0.48}px` }}>
+          <div className="bar-highlight" />
+        </div>
+      ))}
+      <style>{`
+        .earnings-widget {
+          display: flex;
+          align-items: flex-end;
+          justify-content: center;
+          gap: 7px;
+          height: 50px;
+        }
+        .earnings-bar {
+          width: 16px;
+          background: linear-gradient(180deg, #00ff88 0%, #00dd66 35%, #00bb55 70%, #009944 100%);
+          border-radius: 3px 3px 0 0;
+          position: relative;
+          box-shadow: 
+            0 0 14px rgba(0, 255, 136, 0.45),
+            inset 0 1px 3px rgba(255,255,255,0.35);
+          min-height: 8px;
+        }
+        .bar-highlight {
+          position: absolute;
+          top: 2px; left: 2px; right: 2px; height: 40%;
+          background: linear-gradient(180deg, rgba(255,255,255,0.45), rgba(255,255,255,0.1), transparent);
+          border-radius: 2px 2px 0 0;
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ============================================================================
+// 7. VALUE — Halo Ring with Upward Arrow
+// ============================================================================
+function ValueWidget({ value, isActive }: { value: number; isActive: boolean }) {
+  const [pulse, setPulse] = useState(0);
+  const [orbit, setOrbit] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPulse(p => (p + 0.03) % 1);
+      setOrbit(o => (o + (isActive ? 0.6 : 0.3)) % 360);
+    }, 30);
+    return () => clearInterval(interval);
+  }, [isActive]);
+
+  const glowScale = 1 + Math.sin(pulse * Math.PI * 2) * 0.08;
+
+  return (
+    <div className="value-widget">
+      <div className="value-halo" style={{ transform: `rotate(${-orbit}deg)` }} />
+      <div className="value-ring" style={{ transform: `scale(${glowScale})` }}>
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#00ddff" strokeWidth="2.5" strokeLinecap="round">
+          <path d="M12 17V7M7 12l5-5 5 5"/>
+        </svg>
+      </div>
+      <style>{`
+        .value-widget {
+          width: 56px;
+          height: 56px;
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .value-halo {
+          position: absolute;
+          inset: -6px;
+          border-radius: 50%;
+          border: 1px dashed rgba(0, 220, 255, 0.3);
+        }
+        .value-ring {
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          background: radial-gradient(circle at center, rgba(0,200,255,0.2) 0%, rgba(0,150,200,0.1) 40%, transparent 70%);
+          border: 2px solid rgba(0, 220, 255, 0.5);
+          box-shadow: 
+            0 0 20px rgba(0,220,255,0.35),
+            0 0 40px rgba(0,220,255,0.15),
+            inset 0 0 15px rgba(0,220,255,0.15);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: transform 0.15s ease;
+        }
+        .value-ring svg {
+          filter: drop-shadow(0 0 8px rgba(0, 255, 255, 0.8));
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ============================================================================
+// MAIN KPI CARD — Premium Glass Container
+// ============================================================================
 export default function KPICard({ 
-  index, 
-  label, 
-  value, 
-  rawValue, 
-  color, 
-  widgetType, 
-  isActive = false,
-  onSelect,
-  viewMode
+  index, label, value, rawValue, widgetType, 
+  isActive = false, isAnyActive = false, onSelect, viewMode, highlightColor = "#22d3ee"
 }: KPICardProps) {
-  const amplitude = viewMode === "operator" ? 1.0 : 0.6;
-  const normalizedValue = Math.min(100, Math.max(10, rawValue));
+  
+  const isCashCard = widgetType === "liquidityReservoir";
+  const cardWidth = isCashCard ? 220 : 152;
+  const cardHeight = isCashCard ? 155 : 138;
+  
+  const colors = WIDGET_COLORS[widgetType] || WIDGET_COLORS.timeCompression;
+  const activeColor = isActive ? highlightColor : colors.primary;
 
-  const Widget = useMemo(() => {
-    const props = { color, value: normalizedValue, amplitude };
+  // Value color based on KPI type
+  const valueColor = 
+    widgetType === "liquidityReservoir" || widgetType === "vectorFlow" || widgetType === "structuralLift" 
+      ? "#00ffcc" 
+      : widgetType === "efficiencyRotor" 
+        ? "#ff6b6b" 
+        : widgetType === "scaleAura" 
+          ? "#00ddff" 
+          : "#ffffff";
+
+  const Widget = () => {
+    const props = { value: rawValue, isActive };
     switch (widgetType) {
-      case "shrinkingRidge": return <ShrinkingRidge {...props} />;
-      case "breathingReservoir": return <BreathingReservoir {...props} />;
-      case "directionalFlow": return <DirectionalFlow {...props} />;
-      case "rotationalArc": return <RotationalArc {...props} />;
-      case "microJitter": return <MicroJitter {...props} />;
-      case "verticalLift": return <VerticalLift {...props} />;
-      case "expandingAura": return <ExpandingAura {...props} />;
-      default: return <BreathingReservoir {...props} />;
+      case "timeCompression": return <RunwayWidget {...props} />;
+      case "liquidityReservoir": return <CashWidget {...props} />;
+      case "vectorFlow": return <MomentumWidget {...props} />;
+      case "efficiencyRotor": return <BurnWidget {...props} />;
+      case "stabilityWave": return <RiskWidget {...props} />;
+      case "structuralLift": return <EarningsWidget {...props} />;
+      case "scaleAura": return <ValueWidget {...props} />;
+      default: return <RunwayWidget {...props} />;
     }
-  }, [widgetType, color, normalizedValue, amplitude]);
+  };
 
   return (
     <div
-      className={`kpi-card ${isActive ? "active" : ""}`}
-      style={{ "--kpi-color": color } as React.CSSProperties}
+      className={`kpi-card ${isActive ? "active" : ""} ${isCashCard ? "hero" : ""}`}
       onClick={() => onSelect?.(index)}
+      style={{
+        width: cardWidth,
+        height: cardHeight,
+        transform: isActive ? 'translateY(-6px) scale(1.03)' : isAnyActive ? 'scale(0.98)' : 'none',
+        opacity: isAnyActive && !isActive ? 0.7 : 1,
+        zIndex: isActive ? 50 : 1,
+        ['--accent-color' as string]: activeColor,
+        ['--accent-glow' as string]: colors.glow,
+      }}
     >
-      <span className="card-label">{label}</span>
-      <span className="card-value">{value}</span>
-      <div className="card-widget">{Widget}</div>
+      {/* Metallic outer frame */}
+      <div className="card-frame" />
+      
+      {/* Inner glass surface */}
+      <div className={`card-surface ${isCashCard ? "hero-surface" : ""}`}>
+        {/* Top highlight */}
+        <div className="surface-highlight" />
+        
+        {/* Content */}
+        <div className="card-header">
+          <span className="card-label">{label}</span>
+          {isCashCard && (
+            <svg className="trend-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00ffcc" strokeWidth="3">
+              <path d="M12 19V5M5 12l7-7 7 7"/>
+          </svg>
+          )}
+          </div>
+        <span className="card-value" style={{ color: valueColor }}>{value}</span>
+        <div className="card-widget">
+          <Widget />
+        </div>
+      </div>
 
       <style>{`
         .kpi-card {
-          width: 128px;
-          min-width: 110px;
-          height: 95px;
-          flex-shrink: 0;
-          border-radius: 12px;
+          position: relative;
+          border-radius: 18px;
           cursor: pointer;
-          background: #161b22;
-          border: 1px solid #30363d;
-          padding: 11px 14px;
+          transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          flex-shrink: 0;
+        }
+        .kpi-card:hover {
+          transform: translateY(-4px) scale(1.02);
+        }
+        .kpi-card.active {
+          box-shadow: 
+            0 0 0 2px var(--accent-color),
+            0 0 30px var(--accent-glow),
+            0 15px 35px rgba(0,0,0,0.5);
+        }
+        
+        /* Metallic border frame */
+        .card-frame {
+          position: absolute;
+          inset: 0;
+          border-radius: 18px;
+          padding: 1.5px;
+          background: linear-gradient(
+            155deg,
+            rgba(255,255,255,0.5) 0%,
+            rgba(255,255,255,0.15) 20%,
+            rgba(0,0,0,0.1) 40%,
+            rgba(255,255,255,0.1) 60%,
+            rgba(255,255,255,0.4) 100%
+          );
+          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+        }
+        .kpi-card.active .card-frame {
+          background: linear-gradient(155deg, var(--accent-color) 0%, transparent 40%, var(--accent-color) 100%);
+        }
+        .kpi-card.hero .card-frame {
+          background: linear-gradient(
+            155deg,
+            rgba(0,255,200,0.6) 0%,
+            rgba(0,200,255,0.3) 25%,
+            rgba(0,100,150,0.15) 50%,
+            rgba(0,200,255,0.3) 75%,
+            rgba(0,255,200,0.5) 100%
+          );
+        }
+
+        /* Glass surface */
+        .card-surface {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          border-radius: 16px;
+          background: linear-gradient(
+            168deg,
+            rgba(28, 38, 50, 0.97) 0%,
+            rgba(18, 24, 32, 0.98) 50%,
+            rgba(12, 16, 24, 0.99) 100%
+          );
+          backdrop-filter: blur(20px);
           display: flex;
           flex-direction: column;
-          transition: border-color 0.15s, box-shadow 0.15s;
+          padding: 14px;
+          overflow: hidden;
+          box-shadow: inset 0 1px 1px rgba(255,255,255,0.05);
+        }
+        .card-surface.hero-surface {
+          background: linear-gradient(
+            168deg,
+            rgba(0, 45, 55, 0.97) 0%,
+            rgba(0, 28, 38, 0.98) 50%,
+            rgba(0, 18, 28, 0.99) 100%
+          );
+        }
+        
+        .surface-highlight {
+          position: absolute;
+          top: 0; left: 0; right: 0; height: 50%;
+          background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 100%);
+          pointer-events: none;
+          border-radius: 16px 16px 0 0;
         }
 
-        .kpi-card:hover {
-          border-color: #484f58;
+        .card-header {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          position: relative;
+          z-index: 2;
         }
-
-        .kpi-card.active {
-          border-color: var(--kpi-color);
-          box-shadow: 
-            0 0 16px color-mix(in srgb, var(--kpi-color) 40%, transparent),
-            inset 0 0 20px color-mix(in srgb, var(--kpi-color) 8%, transparent);
-        }
-
         .card-label {
-          font-size: 8px;
-          font-weight: 600;
-          letter-spacing: 0.08em;
-          color: rgba(255, 255, 255, 0.4);
+          font-family: system-ui, -apple-system, sans-serif;
+          font-size: 10px;
+          font-weight: 700;
           text-transform: uppercase;
-          margin-bottom: 4px;
+          letter-spacing: 1.8px;
+          color: rgba(180, 200, 220, 0.85);
         }
-
-        .kpi-card:hover .card-label {
-          color: rgba(255, 255, 255, 0.6);
-        }
-
         .kpi-card.active .card-label {
-          color: var(--kpi-color);
+          color: rgba(220, 235, 250, 0.95);
+        }
+        .trend-arrow {
+          filter: drop-shadow(0 0 5px rgba(0, 255, 200, 0.7));
         }
 
         .card-value {
-          font-size: 17px;
-          font-weight: 600;
-          color: #fff;
-          line-height: 1.15;
+          font-family: system-ui, -apple-system, sans-serif;
+          font-size: 22px;
+          font-weight: 800;
+          position: relative;
+          z-index: 2;
+          margin-top: 2px;
+          text-shadow: 0 0 20px currentColor;
+          letter-spacing: -0.5px;
+        }
+        .kpi-card.hero .card-value {
+          font-size: 28px;
         }
 
         .card-widget {
-          margin-top: auto;
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          z-index: 2;
+          margin-top: 6px;
         }
       `}</style>
     </div>

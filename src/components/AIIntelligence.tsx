@@ -16,79 +16,91 @@ interface AIIntelligenceProps {
 }
 
 // ============================================================================
-// TYPEWRITER HOOK
+// TYPEWRITER HOOK - Sequential typing, one paragraph at a time
 // ============================================================================
 
-function useTypewriter(text: string, speed: number = 18, enabled: boolean = true, startDelay: number = 0) {
+function useTypewriter(
+  text: string, 
+  speed: number = 45, 
+  enabled: boolean = true, 
+  canStart: boolean = true
+) {
   const [displayText, setDisplayText] = useState("");
   const [isComplete, setIsComplete] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
 
   useEffect(() => {
-    if (!enabled) {
-      setDisplayText("");
-      setIsComplete(false);
-      setHasStarted(false);
+    if (!enabled || !canStart) {
+      if (!enabled) {
+        setDisplayText("");
+        setIsComplete(false);
+        setHasStarted(false);
+      }
       return;
     }
 
     setDisplayText("");
     setIsComplete(false);
-    setHasStarted(false);
+    setHasStarted(true);
+    
+    let index = 0;
+    
+    const interval = setInterval(() => {
+      if (index < text.length) {
+        index += 1;
+        setDisplayText(text.slice(0, index));
+      } else {
+        setIsComplete(true);
+        clearInterval(interval);
+      }
+    }, speed);
 
-    const delayTimeout = setTimeout(() => {
-      setHasStarted(true);
-      let index = 0;
-      
-      const interval = setInterval(() => {
-        if (index < text.length) {
-          index += 1;
-          setDisplayText(text.slice(0, index));
-        } else {
-          setIsComplete(true);
-          clearInterval(interval);
-        }
-      }, speed);
-
-      return () => clearInterval(interval);
-    }, startDelay);
-
-    return () => clearTimeout(delayTimeout);
-  }, [text, speed, enabled, startDelay]);
+    return () => clearInterval(interval);
+  }, [text, speed, enabled, canStart]);
 
   return { displayText, isComplete, hasStarted };
 }
 
 // ============================================================================
-// AI SECTION COMPONENT
+// AI SECTION COMPONENT - Typewriter font
 // ============================================================================
 
 function AISection({ 
   title, 
   content, 
   isAnalyzing, 
-  delay,
+  canStart,
   contentKey,
-  speed
+  speed,
+  onComplete,
+  isRiskSection = false
 }: { 
   title: string; 
   content: string; 
   isAnalyzing: boolean;
-  delay: number;
+  canStart: boolean;
   contentKey: number;
   speed: number;
+  onComplete?: () => void;
+  isRiskSection?: boolean;
 }) {
   const { displayText, isComplete, hasStarted } = useTypewriter(
     content, 
     speed, 
     !isAnalyzing, 
-    delay
+    canStart
   );
+
+  useEffect(() => {
+    if (isComplete && onComplete) {
+      onComplete();
+    }
+  }, [isComplete, onComplete]);
 
   return (
     <div className="ai-section">
-      <div className="section-header">{title}</div>
-      <div className="section-content">
+      <div className={`section-header ${isRiskSection ? 'risk-header' : ''}`}>{title}</div>
+      <div className="section-content typewriter-text">
         <AnimatePresence mode="wait">
           {isAnalyzing ? (
             <motion.span
@@ -110,10 +122,10 @@ function AISection({
               {hasStarted ? (
                 <>
                   {displayText}
-                  {!isComplete && <span className="cursor">|</span>}
+                  {!isComplete && <span className="cursor">▌</span>}
                 </>
               ) : (
-                <span className="waiting">—</span>
+                <span className="waiting">_</span>
               )}
             </motion.span>
           )}
@@ -131,54 +143,54 @@ function getAIContent(viewMode: ViewMode, scenario: ScenarioId) {
   if (viewMode === "operator") {
     return {
       observation: scenario === "extreme" 
-        ? "Time is now the dominant constraint shaping every strategic decision. Current trajectory compresses optionality faster than value creation can offset. The system is approaching a decision boundary where reversibility diminishes rapidly. Capital efficiency metrics indicate structural misalignment between growth ambitions and resource allocation."
+        ? "Time is now the dominant constraint shaping every decision. Optionality compresses faster than value creation. Strategic flexibility erodes weekly."
         : scenario === "downside"
-        ? "Momentum is outrunning resilience. The widening gap between growth rate and structural strength creates asymmetric downside exposure. Burn quality deterioration suggests the current operating model requires recalibration. Leading indicators point to increasing strain on execution capacity."
+        ? "Momentum is outrunning resilience. The growth-to-strength gap is widening and burn efficiency is declining at current trajectory."
         : scenario === "upside"
-        ? "System performing above baseline expectations. Growth vectors are aligned and mutually reinforcing. Capital efficiency trending positive with sustainable unit economics emerging. Primary opportunity exists in accelerating proven channels while maintaining operational discipline."
-        : "System operating within tolerance bands. Primary tension exists between expansion velocity and burn efficiency, but neither metric is at critical threshold. Market conditions remain supportive. Focus should be on identifying the next constraint before it becomes binding.",
+        ? "System operating above baseline parameters. Growth vectors aligned with plan, efficiency trending positive. Execution delivering ahead of targets."
+        : "Operating within tolerance bands. Tension between velocity and efficiency exists but neither is critical. System stable.",
       
       risks: scenario === "extreme"
-        ? "Runway constraint creates forced-hand scenarios within 6 months. Execution variance amplifies downside asymmetrically—small misses compound into structural problems. Fundraising leverage diminishes as runway shortens, creating adverse selection dynamics. Team retention risk elevates as uncertainty persists."
+        ? "Runway forces binary decisions within 6-month window. Small execution misses now compound structurally into larger shortfalls."
         : scenario === "downside"
-        ? "Efficiency degradation compounds monthly at current trajectory. Hiring intensity is unsustainable relative to revenue certainty. Market timing risk increases if competitors achieve efficiency gains first. Customer concentration may create revenue volatility that stress-tests the current structure."
+        ? "Efficiency degrades monthly without intervention. Current hiring intensity unsustainable at this revenue level. Cash sensitivity elevated."
         : scenario === "upside"
-        ? "Success creates its own risks. Rapid scaling may outpace operational infrastructure. Key person dependencies could become critical bottlenecks. Market expectations may exceed sustainable delivery capacity, creating credibility risk."
-        : "Market volatility exposure remains moderate. Funding pressure is latent but watchable—monitor for early warning signals. Competitive dynamics stable but subject to disruption. Execution risk within normal parameters assuming current team capacity holds.",
+        ? "Scaling velocity may outpace operational infrastructure. Key person dependencies are emerging in critical functions."
+        : "Market volatility moderate. Funding pressure latent but manageable. Execution risk within normal operating parameters.",
       
       action: scenario === "extreme"
-        ? "Immediate: Reduce burn by 25-30% through targeted cuts, not across-the-board. Strategic: Narrow focus to single highest-conviction growth vector. Accept near-term revenue deceleration to extend runway beyond 18 months. Begin investor conversations now, before leverage erodes further."
+        ? "Reduce burn by 25-30% immediately. Narrow focus to single highest-conviction growth vector. Extend runway to 18+ months minimum."
         : scenario === "downside"
-        ? "Rebalance hiring velocity against revenue certainty—pause discretionary roles. Preserve optionality over growth rate for next 2 quarters. Renegotiate vendor contracts while leverage exists. Build scenario models for further deterioration to avoid surprise decision-making."
+        ? "Pause all discretionary hiring. Preserve strategic optionality for next 2 quarters. Tighten operating expense controls."
         : scenario === "upside"
-        ? "Accelerate investment in proven channels. Lock in key talent before market competition intensifies. Consider strategic capital raise from position of strength. Document operational playbooks to enable scaling without founder bottlenecks."
-        : "Maintain current trajectory with weekly efficiency monitoring. No immediate intervention required. Use stability period to stress-test assumptions and build contingency plans. Identify leading indicators that would trigger mode shift."
+        ? "Accelerate investment in proven channels. Lock in critical talent before competition. Consider strategic raise at current momentum."
+        : "Maintain current trajectory. Weekly monitoring cadence. No tactical intervention required at this time."
     };
   } else {
     return {
       observation: scenario === "extreme"
-        ? "Runway constrains all strategic flexibility. Capital efficiency is below sustainable threshold, indicating structural challenges beyond market timing. Management optionality is limited, reducing their ability to navigate uncertainty. Valuation expectations may require recalibration."
+        ? "Runway now constrains strategic flexibility. Capital efficiency has fallen below sustainable threshold. Deployment options narrowing."
         : scenario === "downside"
-        ? "Growth-to-efficiency ratio indicates emerging structural pressure. Current trajectory requires recalibration to reach sustainable economics. Leading indicators suggest operating model friction that may persist beyond current cycle."
+        ? "Growth-to-efficiency pressure is emerging in the portfolio company. Current trajectory requires recalibration within next quarter."
         : scenario === "upside"
-        ? "Operating metrics exceeding plan with sustainable unit economics. Management executing against stated milestones. Capital efficiency supports thesis assumptions. Risk/return profile improving."
-        : "Operating metrics within expected range. Capital deployment efficiency acceptable relative to stage. No material deviation from underwriting assumptions. Standard monitoring cadence appropriate.",
+        ? "Key metrics exceeding plan assumptions. Unit economics remain sustainable. Original investment thesis intact and strengthening."
+        : "Metrics operating within expected range. Deployment efficiency acceptable for stage. Standard monitoring cadence appropriate.",
       
       risks: scenario === "extreme"
-        ? "Risk concentration increases portfolio sensitivity to this position. Downside scenarios have elevated probability—model terminal value scenarios carefully. Management quality becomes critical variable as margin for error narrows. Secondary market liquidity limited if conditions persist."
+        ? "Risk concentration elevated materially. Downside probability has increased. Margin for execution error has narrowed significantly."
         : scenario === "downside"
-        ? "Margin compression evident in recent cohorts. Burn trajectory inconsistent with stated runway assumptions—verify independently. Competitive position may deteriorate if efficiency gap widens. Reserve allocation assumptions may require revision."
+        ? "Margin compression becoming evident in financials. Current burn rate inconsistent with runway assumptions in model."
         : scenario === "upside"
-        ? "Primary risk is execution scaling—success creates operational complexity. Valuation may expand beyond defensible fundamentals if momentum persists. Governance considerations increase as stakes rise."
-        : "Risk factors within normal distribution for stage and sector. No material concerns at current exposure levels. Standard portfolio monitoring appropriate. Thesis intact.",
+        ? "Execution scaling risk present as growth accelerates. Current valuation may exceed near-term fundamentals."
+        : "Risk factors within normal distribution for stage. No material concerns requiring intervention at current levels.",
       
       action: scenario === "extreme"
-        ? "Capital preservation priority. Recommend operational restructuring before additional deployment. Request detailed bridge scenario analysis. Consider position sizing relative to portfolio risk tolerance. Governance engagement may be appropriate."
+        ? "Prioritize capital preservation. Restructure operations before additional deployment. Board governance engagement advised."
         : scenario === "downside"
-        ? "Increase monitoring frequency to monthly. Milestone-based capital release advisable. Request management response plan within 30 days. Model downside scenarios to stress-test reserve adequacy."
+        ? "Shift to monthly monitoring cycle. Milestone-based capital release recommended. Request detailed response plan."
         : scenario === "upside"
-        ? "Consider follow-on allocation if terms favorable. Engage on governance as position scales. Monitor for overheating indicators. Document value creation thesis for IC."
-        : "Continue quarterly monitoring. Standard reporting cadence sufficient. No action required. Maintain reserves per plan."
+        ? "Evaluate follow-on position at current terms. Monitor for overheating indicators in growth metrics."
+        : "Quarterly monitoring cadence sufficient. No portfolio action required at this time."
     };
   }
 }
@@ -197,17 +209,31 @@ export default function AIIntelligence({
   const [isProcessingQuestion, setIsProcessingQuestion] = useState(false);
   const [customResponse, setCustomResponse] = useState<{observation: string; risk: string; action: string} | null>(null);
   
+  // Sequential typing state
+  const [observationComplete, setObservationComplete] = useState(false);
+  const [risksComplete, setRisksComplete] = useState(false);
+  
   const viewMode = useScenarioStore((s) => s.viewMode);
   const activeLeverId = useScenarioStore((s) => s.activeLeverId);
   const setHoveredKpiIndex = useScenarioStore((s) => s.setHoveredKpiIndex);
-  const kpiValues = useScenarioStore((s) => s.kpiValues);
   
   const isAnalyzing = activeLeverId !== null || isProcessingQuestion;
 
   useEffect(() => {
     setContentKey((k) => k + 1);
     setCustomResponse(null);
+    // Reset sequential state
+    setObservationComplete(false);
+    setRisksComplete(false);
   }, [scenario, viewMode]);
+
+  // Reset sequential state when analyzing
+  useEffect(() => {
+    if (isAnalyzing) {
+      setObservationComplete(false);
+      setRisksComplete(false);
+    }
+  }, [isAnalyzing]);
 
   const defaultContent = useMemo(() => getAIContent(viewMode, scenario), [viewMode, scenario]);
   
@@ -218,31 +244,8 @@ export default function AIIntelligence({
     action: customResponse.action
   } : defaultContent;
   
-  const typingSpeed = viewMode === "operator" ? 12 : 18;
-
-  // Signal states
-  const [signal1, setSignal1] = useState(false);
-  const [signal2, setSignal2] = useState(false);
-  const [signal3, setSignal3] = useState(false);
-
-  useEffect(() => {
-    if (isAnalyzing) {
-      setSignal1(false);
-      setSignal2(false);
-      setSignal3(false);
-      return;
-    }
-
-    const t1 = setTimeout(() => setSignal1(true), 100);
-    const t2 = setTimeout(() => setSignal2(true), 800);
-    const t3 = setTimeout(() => setSignal3(true), 1600);
-
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-    };
-  }, [isAnalyzing, contentKey]);
+  // Slower typewriter speed (45ms per character = ~22 chars/second)
+  const typingSpeed = 45;
 
   // Handle strategic question click
   const handlePromptClick = useCallback((
@@ -266,10 +269,6 @@ export default function AIIntelligence({
       }
     }, 600);
   }, [setHoveredKpiIndex]);
-
-  // Metrics for badges
-  const runway = kpiValues.runway?.value ?? 18;
-  const riskIndex = kpiValues.riskIndex?.value ?? 25;
 
   return (
     <div className={`ai-panel ${viewMode}`}>
@@ -295,9 +294,9 @@ export default function AIIntelligence({
           </div>
         </div>
         <div className="signal-dots">
-          <div className={`signal-dot ${signal1 ? 'active' : ''}`} />
-          <div className={`signal-dot ${signal2 ? 'active' : ''}`} />
-          <div className={`signal-dot ${signal3 ? 'active' : ''}`} />
+          <div className="signal-dot dot-1" />
+          <div className="signal-dot dot-2" />
+          <div className="signal-dot dot-3" />
         </div>
       </div>
 
@@ -306,41 +305,31 @@ export default function AIIntelligence({
           title="OBSERVATION" 
           content={aiContent.observation}
           isAnalyzing={isAnalyzing}
-          delay={0}
+          canStart={true}
           contentKey={contentKey}
           speed={typingSpeed}
+          onComplete={() => setObservationComplete(true)}
         />
         
         <AISection 
           title="RISKS" 
           content={aiContent.risks}
           isAnalyzing={isAnalyzing}
-          delay={600}
+          canStart={observationComplete}
           contentKey={contentKey}
           speed={typingSpeed}
+          onComplete={() => setRisksComplete(true)}
+          isRiskSection={true}
         />
         
         <AISection 
           title="ACTION" 
           content={aiContent.action}
           isAnalyzing={isAnalyzing}
-          delay={1200}
+          canStart={risksComplete}
           contentKey={contentKey}
           speed={typingSpeed}
         />
-
-        <div className="metrics-row">
-          <div className={`metric-badge ${runway < 10 ? 'status-red' : runway < 15 ? 'status-orange' : 'status-green'}`}>
-            <span className="metric-label">Runway</span>
-            <span className="metric-value">{runway} mo</span>
-            <span className="status-indicator" />
-          </div>
-          <div className={`metric-badge ${riskIndex > 55 ? 'status-red' : riskIndex > 35 ? 'status-orange' : 'status-green'}`}>
-            <span className="metric-label">Risk</span>
-            <span className="metric-value">{riskIndex}/100</span>
-            <span className="status-indicator" />
-          </div>
-        </div>
       </div>
 
       {/* Strategic Questions Panel */}
@@ -435,40 +424,51 @@ export default function AIIntelligence({
 
         .signal-dots {
           display: flex;
-          gap: 5px;
+          gap: 6px;
         }
 
         .signal-dot {
           width: 7px;
           height: 7px;
           border-radius: 50%;
-          background: rgba(34, 197, 94, 0.15);
+          background: rgba(34, 197, 94, 0.2);
           border: 1px solid rgba(34, 197, 94, 0.3);
-          transition: all 0.4s ease;
         }
 
-        .signal-dot.active {
-          background: #22c55e;
-          border-color: #22c55e;
-          box-shadow: 0 0 8px rgba(34, 197, 94, 0.7);
-          animation: pulse-green 2s ease-in-out infinite;
+        .signal-dot.dot-1 {
+          animation: dot-sweep 1.8s ease-in-out infinite;
         }
 
-        .ai-panel.investor .signal-dot.active {
-          animation: none;
-          box-shadow: 0 0 5px rgba(34, 197, 94, 0.5);
+        .signal-dot.dot-2 {
+          animation: dot-sweep 1.8s ease-in-out infinite 0.3s;
         }
 
-        @keyframes pulse-green {
-          0%, 100% { box-shadow: 0 0 6px rgba(34, 197, 94, 0.6); }
-          50% { box-shadow: 0 0 12px rgba(34, 197, 94, 0.9); }
+        .signal-dot.dot-3 {
+          animation: dot-sweep 1.8s ease-in-out infinite 0.6s;
+        }
+
+        @keyframes dot-sweep {
+          0%, 100% { 
+            background: rgba(34, 197, 94, 0.2);
+            border-color: rgba(34, 197, 94, 0.3);
+            box-shadow: none;
+          }
+          40%, 60% { 
+            background: #22c55e;
+            border-color: #22c55e;
+            box-shadow: 0 0 10px rgba(34, 197, 94, 0.8);
+          }
+        }
+
+        .ai-panel.investor .signal-dot {
+          animation-duration: 2.4s;
         }
 
         .panel-content {
           flex: 1;
           display: flex;
           flex-direction: column;
-          gap: 10px;
+          gap: 16px;
           padding: 10px 14px 8px 18px;
           overflow-y: auto;
           min-height: 0;
@@ -498,31 +498,49 @@ export default function AIIntelligence({
           text-shadow: 0 0 6px rgba(34, 211, 238, 0.3);
         }
 
+        .section-header.risk-header {
+          color: #f87171;
+          text-shadow: 0 0 6px rgba(248, 113, 113, 0.3);
+        }
+
         .ai-panel.investor .section-header {
           text-shadow: none;
           opacity: 0.85;
         }
 
+        .ai-panel.investor .section-header.risk-header {
+          color: #fca5a5;
+        }
+
         .section-content {
           font-size: 12px;
-          line-height: 1.5;
+          line-height: 1.55;
           color: rgba(255, 255, 255, 0.8);
-          min-height: 32px;
+          min-height: 28px;
+        }
+
+        .typewriter-text {
+          font-family: 'Courier New', 'Monaco', 'Consolas', monospace;
+          font-size: 11px;
+          letter-spacing: 0.01em;
         }
 
         .analyzing-text {
           color: rgba(34, 211, 238, 0.5);
           font-style: italic;
+          font-family: 'Inter', sans-serif;
         }
 
         .waiting {
-          color: rgba(255, 255, 255, 0.2);
+          color: rgba(255, 255, 255, 0.15);
+          font-family: 'Courier New', monospace;
         }
 
         .cursor {
           color: #22d3ee;
           font-weight: 400;
-          animation: blink 0.6s step-end infinite;
+          margin-left: 1px;
+          animation: blink 0.5s step-end infinite;
         }
 
         @keyframes blink {
@@ -530,89 +548,6 @@ export default function AIIntelligence({
           50% { opacity: 0; }
         }
 
-        .metrics-row {
-          display: flex;
-          gap: 8px;
-          margin-top: 14px;
-          padding-top: 10px;
-          border-top: 1px solid #21262d;
-          flex-shrink: 0;
-        }
-
-        .metric-badge {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          padding: 10px 10px 8px;
-          background: #161b22;
-          border-radius: 6px;
-          border: 1px solid #21262d;
-          position: relative;
-          transition: border-color 0.2s, box-shadow 0.2s;
-        }
-
-        .metric-label {
-          font-size: 8px;
-          font-weight: 500;
-          letter-spacing: 0.04em;
-          color: rgba(255, 255, 255, 0.4);
-          margin-bottom: 3px;
-        }
-
-        .metric-value {
-          font-size: 14px;
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.9);
-          transition: color 0.2s;
-        }
-
-        .status-indicator {
-          position: absolute;
-          bottom: 4px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 24px;
-          height: 3px;
-          border-radius: 2px;
-          transition: background 0.2s, box-shadow 0.2s;
-        }
-
-        /* GREEN - Good status */
-        .metric-badge.status-green {
-          border-color: rgba(34, 197, 94, 0.35);
-        }
-        .metric-badge.status-green .metric-value {
-          color: #4ade80;
-        }
-        .metric-badge.status-green .status-indicator {
-          background: #22c55e;
-          box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
-        }
-
-        /* ORANGE - So-so status */
-        .metric-badge.status-orange {
-          border-color: rgba(251, 146, 60, 0.4);
-        }
-        .metric-badge.status-orange .metric-value {
-          color: #fb923c;
-        }
-        .metric-badge.status-orange .status-indicator {
-          background: #f97316;
-          box-shadow: 0 0 8px rgba(249, 115, 22, 0.5);
-        }
-
-        /* RED - Poor status */
-        .metric-badge.status-red {
-          border-color: rgba(239, 68, 68, 0.45);
-        }
-        .metric-badge.status-red .metric-value {
-          color: #f87171;
-        }
-        .metric-badge.status-red .status-indicator {
-          background: #ef4444;
-          box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
-        }
       `}</style>
     </div>
   );

@@ -68,9 +68,9 @@ function leverToKpis(leverId: LeverId | null): number[] {
 
 function influenceStrength(rank: number) {
   if (rank === 0) return 1.0;
-  if (rank === 1) return 0.62;
-  if (rank === 2) return 0.38;
-  return 0.2;
+  if (rank === 1) return 0.7;
+  if (rank === 2) return 0.45;
+  return 0.25;
 }
 
 export function buildPeakModel(args: {
@@ -84,12 +84,14 @@ export function buildPeakModel(args: {
 
   const peaks: PeakInstruction[] = [];
 
-  // ---- Signature "massif" backbone (always-on, subtle, makes it feel like a mountain even at flat dp)
-  // This creates a central ridge and two side shoulders.
+  // ---- Signature "massif" backbone (always-on, makes it feel like a mountain even at flat dp)
+  // VERY STRONG baseline to prevent any visible drop when levers are released
   peaks.push(
-    { index: 3.1, amplitude: 0.22, sigma: 2.15, tag: "signature" },
-    { index: 2.2, amplitude: 0.12, sigma: 1.75, tag: "signature" },
-    { index: 4.2, amplitude: 0.12, sigma: 1.75, tag: "signature" }
+    { index: 3.1, amplitude: 0.55, sigma: 2.5, tag: "signature" },
+    { index: 2.0, amplitude: 0.38, sigma: 2.0, tag: "signature" },
+    { index: 4.3, amplitude: 0.38, sigma: 2.0, tag: "signature" },
+    { index: 1.0, amplitude: 0.25, sigma: 1.6, tag: "signature" },
+    { index: 5.2, amplitude: 0.25, sigma: 1.6, tag: "signature" }
   );
 
   // ---- Primary: hovered/clicked KPI emphasis
@@ -97,21 +99,21 @@ export function buildPeakModel(args: {
     const idx = safeIndex(Math.round(args.activeKpiIndex), kpiCount);
     peaks.push({
       index: idx,
-      amplitude: 0.38 + intensity * 0.30, // big lift
-      sigma: 0.58, // sharp enough to feel like a peak
+      amplitude: 0.45 + intensity * 0.45, // stronger lift
+      sigma: 0.55,
       tag: "primary",
     });
 
     // add a small ridge companion peak to create "mountain geometry" not a single spike
     peaks.push({
       index: idx + (idx < 3 ? 0.55 : -0.55),
-      amplitude: 0.18 + intensity * 0.14,
-      sigma: 0.95,
+      amplitude: 0.22 + intensity * 0.2,
+      sigma: 0.9,
       tag: "ridge",
     });
   }
 
-  // ---- Secondary: active lever ripples
+  // ---- Secondary: active lever ripples - MUCH STRONGER RESPONSE
   const targets = leverToKpis(args.activeLeverId ?? null).map((t) =>
     safeIndex(t, kpiCount)
   );
@@ -119,18 +121,19 @@ export function buildPeakModel(args: {
   if (targets.length > 0) {
     targets.forEach((kpiIdx, rank) => {
       const s = influenceStrength(rank);
+      // Subtle emphasis only - base shape is data-driven
       peaks.push({
         index: kpiIdx,
-        amplitude: (0.18 + intensity * 0.34) * s,
-        sigma: rank === 0 ? 0.75 : 1.05,
+        amplitude: (0.15 + intensity * 0.25) * s,
+        sigma: rank === 0 ? 0.7 : 1.0,
         tag: "secondary",
       });
 
-      // subtle ridge smear so it looks like terrain, not graph bumps
+      // Minimal ridge accompaniment
       peaks.push({
         index: kpiIdx + (rank === 0 ? 0.35 : -0.35),
-        amplitude: (0.10 + intensity * 0.16) * s,
-        sigma: 1.35,
+        amplitude: (0.08 + intensity * 0.15) * s,
+        sigma: 1.3,
         tag: "ridge",
       });
     });

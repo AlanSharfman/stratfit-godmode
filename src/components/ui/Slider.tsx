@@ -116,6 +116,8 @@ const Slider = memo(function Slider({
           width: 100%;
           padding: 6px 0;
           touch-action: none;
+          user-select: none;
+          -webkit-user-select: none;
         }
 
         .slider-track {
@@ -125,6 +127,7 @@ const Slider = memo(function Slider({
           display: flex;
           align-items: center;
           cursor: pointer;
+          touch-action: none;
         }
 
         .slider-track::before {
@@ -142,6 +145,7 @@ const Slider = memo(function Slider({
           background: rgba(255, 255, 255, 0.3);
           border-radius: 2px;
           will-change: width;
+          transition: none !important;
         }
 
         .slider-container.highlighted .slider-fill {
@@ -158,11 +162,12 @@ const Slider = memo(function Slider({
           transform: translateX(-50%);
           box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
           will-change: left;
-          transition: transform 0.1s ease;
+          transition: none !important;
         }
 
         .slider-track:active .slider-thumb {
           transform: translateX(-50%) scale(1.15);
+          background: #fff;
         }
 
         .slider-container.highlighted .slider-thumb {

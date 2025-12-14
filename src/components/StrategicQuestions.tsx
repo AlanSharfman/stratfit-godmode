@@ -290,6 +290,7 @@ export default function StrategicQuestions({ onPromptClick, isAnalyzing }: Strat
 
         .sq-header {
           margin-bottom: 10px;
+          text-align: center;
         }
 
         .sq-title {

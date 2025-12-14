@@ -1,10 +1,10 @@
 // src/components/KPIGrid.tsx
-// STRATFIT — KPI System
-// Full width spacing between slider panel and AI panel
+// STRATFIT — Clean KPI Grid
+// Highlight colors match active scenario
 
 import React from "react";
 import KPICard from "./ui/KPICard";
-import { useScenarioStore } from "@/state/scenarioStore";
+import { useScenarioStore, SCENARIO_COLORS } from "@/state/scenarioStore";
 
 // ============================================================================
 // KPI CONFIGURATION
@@ -14,19 +14,19 @@ interface KPIConfig {
   id: string;
   label: string;
   kpiKey: string;
-  widgetType: "shrinkingRidge" | "breathingReservoir" | "directionalFlow" | "rotationalArc" | "microJitter" | "verticalLift" | "expandingAura";
+  widgetType: string;
   color: string;
   operatorOnly?: boolean;
 }
 
 const KPI_CONFIG: KPIConfig[] = [
-  { id: "runway", label: "RUNWAY", kpiKey: "runway", widgetType: "shrinkingRidge", color: "#f59e0b" },
-  { id: "cashPosition", label: "CASH", kpiKey: "cashPosition", widgetType: "breathingReservoir", color: "#22d3ee" },
-  { id: "momentum", label: "MOMENTUM", kpiKey: "momentum", widgetType: "directionalFlow", color: "#22d3ee" },
-  { id: "burnQuality", label: "BURN", kpiKey: "burnQuality", widgetType: "rotationalArc", color: "#a78bfa", operatorOnly: true },
-  { id: "riskIndex", label: "RISK", kpiKey: "riskIndex", widgetType: "microJitter", color: "#ef4444" },
-  { id: "earningsPower", label: "EARNINGS", kpiKey: "earningsPower", widgetType: "verticalLift", color: "#34d399", operatorOnly: true },
-  { id: "enterpriseValue", label: "VALUE", kpiKey: "enterpriseValue", widgetType: "expandingAura", color: "#22d3ee" },
+  { id: "runway", label: "RUNWAY", kpiKey: "runway", widgetType: "timeCompression", color: "#5a7d9a" },
+  { id: "cashPosition", label: "CASH", kpiKey: "cashPosition", widgetType: "liquidityReservoir", color: "#5a7d9a" },
+  { id: "momentum", label: "MOMENTUM", kpiKey: "momentum", widgetType: "vectorFlow", color: "#5a7d9a" },
+  { id: "burnQuality", label: "BURN", kpiKey: "burnQuality", widgetType: "efficiencyRotor", color: "#5a7d9a", operatorOnly: true },
+  { id: "riskIndex", label: "RISK", kpiKey: "riskIndex", widgetType: "stabilityWave", color: "#5a7d9a" },
+  { id: "earningsPower", label: "EARNINGS", kpiKey: "earningsPower", widgetType: "structuralLift", color: "#5a7d9a", operatorOnly: true },
+  { id: "enterpriseValue", label: "VALUE", kpiKey: "enterpriseValue", widgetType: "scaleAura", color: "#5a7d9a" },
 ];
 
 export { KPI_CONFIG };
@@ -40,6 +40,10 @@ export default function KPIGrid() {
   const hoveredKpiIndex = useScenarioStore((s) => s.hoveredKpiIndex);
   const setHoveredKpiIndex = useScenarioStore((s) => s.setHoveredKpiIndex);
   const viewMode = useScenarioStore((s) => s.viewMode);
+  const scenario = useScenarioStore((s) => s.scenario);
+
+  // Get scenario color for KPI highlights
+  const scenarioColor = SCENARIO_COLORS[scenario].primary;
 
   const visibleKPIs = viewMode === "investor" 
     ? KPI_CONFIG.filter(k => !k.operatorOnly)
@@ -53,6 +57,9 @@ export default function KPIGrid() {
       setHoveredKpiIndex(actualIndex);
     }
   };
+
+  // Check if any card is active (for dimming non-selected)
+  const isAnyActive = hoveredKpiIndex !== null;
 
   return (
     <div className="kpi-grid-container">
@@ -72,8 +79,10 @@ export default function KPIGrid() {
               color={cfg.color}
               widgetType={cfg.widgetType}
               isActive={isActive}
+              isAnyActive={isAnyActive && !isActive}
               onSelect={handleSelect}
               viewMode={viewMode}
+              highlightColor={scenarioColor}
             />
           );
         })}
@@ -81,13 +90,18 @@ export default function KPIGrid() {
 
       <style>{`
         .kpi-grid-container {
+          display: flex;
+          justify-content: center;
           width: 100%;
-          padding: 0 20px;
+          padding: 6px 0;
         }
 
         .kpi-grid {
           display: flex;
-          justify-content: space-between;
+          gap: 18px;
+          justify-content: center;
+          align-items: center;
+          flex-wrap: nowrap;
           width: 100%;
         }
       `}</style>

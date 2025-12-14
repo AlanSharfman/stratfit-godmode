@@ -15,10 +15,7 @@ html, body {
   font-family: Inter, system-ui, sans-serif;
 }
 
-/* Smoothen animations globally */
-* {
-  transition: all 0.2s ease;
-}
+/* Note: Transitions applied per-component for precision control */
 
 /* ----------------------------------------
    SCROLLBAR (hidden for dashboard feel)

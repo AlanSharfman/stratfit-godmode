@@ -8,7 +8,7 @@ interface KPICardProps {
   label: string;
   subtitle?: string;
   value01: number; // 0..1 from dataPoints
-  display: string; // formatted display string (e.g., "£120k/mo")
+  display: string; // formatted display string (e.g., "$120k/mo")
   index: number;
 }
 
