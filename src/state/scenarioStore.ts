@@ -1,5 +1,5 @@
 // src/state/scenarioStore.ts
-// STRATFIT — Scenario Store with Baseline Values for Delta Calculation
+// STRATFIT — Scenario Store with 10 KPI Support
 
 import { create } from "zustand";
 import type { LeverId } from "@/logic/mountainPeakModel";
@@ -10,7 +10,8 @@ import type { LeverId } from "@/logic/mountainPeakModel";
 
 export type ScenarioId = "base" | "upside" | "downside" | "extreme";
 
-type KPIKey = "mrr" | "grossProfit" | "cashBalance" | "burnRate" | "runway" | "cac" | "churnRate";
+// 10 KPIs
+type KPIKey = "mrr" | "grossProfit" | "cashBalance" | "burnRate" | "runway" | "cac" | "churnRate" | "ltv" | "ltvCacRatio" | "nrr";
 
 interface KPIValue {
   value: number;
@@ -65,7 +66,6 @@ interface ScenarioStoreState {
   kpiValues: Partial<Record<KPIKey, KPIValue>>;
   setKpiValues: (vals: Partial<Record<KPIKey, KPIValue>>) => void;
 
-  // BASELINE VALUES for delta calculation
   baselineValues: Partial<Record<KPIKey, KPIValue>> | null;
   setBaselineValues: (vals: Partial<Record<KPIKey, KPIValue>>) => void;
   captureBaseline: () => void;
@@ -95,7 +95,6 @@ export const useScenarioStore = create<ScenarioStoreState>((set, get) => ({
   kpiValues: {},
   setKpiValues: (vals) => {
     const state = get();
-    // Auto-capture baseline on first set if not already set
     if (!state.baselineValues) {
       set({ 
         kpiValues: { ...state.kpiValues, ...vals },

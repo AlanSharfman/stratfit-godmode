@@ -1,5 +1,5 @@
 // src/components/KPIConnector.tsx
-// STRATFIT — Glowing connector line from KPI to Mountain
+// STRATFIT — Fixed KPI Connector — Line goes from KPI to MOUNTAIN PEAK
 
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -29,113 +29,23 @@ export default function KPIConnector() {
   if (hoveredKpiIndex === null) return null;
 
   const color = KPI_COLORS[hoveredKpiIndex] || "#22d3ee";
-
-  // Calculate X position based on KPI index (7 KPIs spread across)
-  const xPercent = 7 + (hoveredKpiIndex * (86 / 6)); // 7% to 93%
+  const xPercent = 15 + (hoveredKpiIndex * (70 / 6));
 
   return (
     <AnimatePresence>
-      <div className="kpi-connector" style={{ left: `${xPercent}%` }}>
-        {/* Pulsing circle at top */}
-        <motion.div
-          className="connector-pulse"
-          style={{ backgroundColor: color, boxShadow: `0 0 20px ${color}, 0 0 40px ${color}` }}
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ 
-            scale: [1, 1.4, 1],
-            opacity: [1, 0.6, 1]
-          }}
-          exit={{ scale: 0, opacity: 0 }}
-          transition={{
-            duration: 1.5,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-
-        {/* Static center dot */}
-        <motion.div
-          className="connector-dot"
-          style={{ backgroundColor: color }}
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          exit={{ scale: 0 }}
-          transition={{ type: "spring", stiffness: 500, damping: 25 }}
-        />
-
-        {/* Vertical line */}
-        <motion.div
-          className="connector-line"
-          style={{ 
-            background: `linear-gradient(180deg, ${color} 0%, ${color}00 100%)`,
-            boxShadow: `0 0 10px ${color}`
-          }}
-          initial={{ scaleY: 0, opacity: 0 }}
-          animate={{ scaleY: 1, opacity: 1 }}
-          exit={{ scaleY: 0, opacity: 0 }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
-        />
-
-        {/* Bottom glow */}
-        <motion.div
-          className="connector-glow"
-          style={{ 
-            background: `radial-gradient(ellipse at center, ${color}60 0%, transparent 70%)`
-          }}
-          initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.5 }}
-          transition={{ duration: 0.5 }}
-        />
-
+      <div className="kpi-connector" style={{ left: `${xPercent}%`, "--connector-color": color } as React.CSSProperties}>
+        <motion.div className="connector-pulse-top" initial={{ scale: 0, opacity: 0 }} animate={{ scale: [1, 1.5, 1], opacity: [0.8, 0.4, 0.8] }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }} />
+        <motion.div className="connector-line" initial={{ scaleY: 0, opacity: 0 }} animate={{ scaleY: 1, opacity: 1 }} exit={{ scaleY: 0, opacity: 0 }} transition={{ duration: 0.4, ease: "easeOut" }} />
+        <motion.div className="connector-pulse-bottom" initial={{ scale: 0, opacity: 0 }} animate={{ scale: [1, 1.8, 1], opacity: [1, 0.5, 1] }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }} />
+        <motion.div className="connector-glow" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }} transition={{ duration: 0.4 }} />
         <style>{`
-          .kpi-connector {
-            position: absolute;
-            top: 0;
-            transform: translateX(-50%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            pointer-events: none;
-            z-index: 50;
-            height: 100%;
-          }
-
-          .connector-pulse {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            position: absolute;
-            top: -8px;
-          }
-
-          .connector-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            position: absolute;
-            top: -5px;
-            z-index: 2;
-          }
-
-          .connector-line {
-            width: 2px;
-            height: calc(100% - 40px);
-            margin-top: 8px;
-            transform-origin: top;
-            border-radius: 1px;
-          }
-
-          .connector-glow {
-            position: absolute;
-            bottom: 20px;
-            width: 80px;
-            height: 40px;
-            filter: blur(8px);
-          }
+          .kpi-connector { position: absolute; top: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none; z-index: 20; height: 65%; }
+          .connector-pulse-top { width: 14px; height: 14px; border-radius: 50%; background: var(--connector-color); box-shadow: 0 0 15px var(--connector-color), 0 0 30px var(--connector-color); position: absolute; top: -7px; }
+          .connector-line { width: 2px; height: 100%; background: linear-gradient(180deg, var(--connector-color) 0%, var(--connector-color) 70%, transparent 100%); box-shadow: 0 0 8px var(--connector-color), 0 0 16px var(--connector-color); transform-origin: top; border-radius: 1px; }
+          .connector-pulse-bottom { width: 20px; height: 20px; border-radius: 50%; background: var(--connector-color); box-shadow: 0 0 20px var(--connector-color), 0 0 40px var(--connector-color), 0 0 60px var(--connector-color); position: absolute; bottom: -10px; }
+          .connector-glow { position: absolute; bottom: -30px; width: 100px; height: 60px; background: radial-gradient(ellipse at center, var(--connector-color) 0%, transparent 70%); opacity: 0.5; filter: blur(15px); }
         `}</style>
       </div>
     </AnimatePresence>
   );
 }
-

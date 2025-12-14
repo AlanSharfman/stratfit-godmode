@@ -1,29 +1,34 @@
 // src/components/KPIGrid.tsx
-// STRATFIT — KPI Grid with Dynamic Delta Calculation
+// STRATFIT — 10 Horizontal KPI Cards
+// Full width strip, compact, premium styling
 
 import React from "react";
 import KPICard, { KPICardProps } from "./ui/KPICard";
 import { useScenarioStore } from "@/state/scenarioStore";
 
 // ============================================================================
-// KPI CONFIGURATION
+// 10 KPI CONFIGURATION
 // ============================================================================
 
-const KPI_CONFIG: Array<{
+interface KPIConfig {
   label: string;
+  color: string;
+  kpiKey: "mrr" | "grossProfit" | "cashBalance" | "burnRate" | "runway" | "cac" | "churnRate" | "ltv" | "ltvCacRatio" | "nrr";
   widgetType: KPICardProps["widgetType"];
-  accentColor: string;
-  kpiIndex: number;
-  kpiKey: string;
-  isInverted: boolean; // True for metrics where lower is better
-}> = [
-  { label: "MRR", widgetType: "trendSpark", accentColor: "#22d3ee", kpiIndex: 0, kpiKey: "mrr", isInverted: false },
-  { label: "GROSS PROFIT", widgetType: "profitColumns", accentColor: "#34d399", kpiIndex: 1, kpiKey: "grossProfit", isInverted: false },
-  { label: "CASH", widgetType: "cashArea", accentColor: "#a78bfa", kpiIndex: 2, kpiKey: "cashBalance", isInverted: false },
-  { label: "BURN", widgetType: "burnBars", accentColor: "#f0abfc", kpiIndex: 3, kpiKey: "burnRate", isInverted: true },
-  { label: "RUNWAY", widgetType: "runwayGauge", accentColor: "#3b82f6", kpiIndex: 4, kpiKey: "runway", isInverted: false },
-  { label: "CAC", widgetType: "cacPie", accentColor: "#22d3ee", kpiIndex: 5, kpiKey: "cac", isInverted: true },
-  { label: "CHURN", widgetType: "churnRing", accentColor: "#22d3ee", kpiIndex: 6, kpiKey: "churnRate", isInverted: true },
+  maxValue: number;
+}
+
+const KPI_CONFIG: KPIConfig[] = [
+  { label: "MRR", color: "#22d3ee", kpiKey: "mrr", widgetType: "sparkline", maxValue: 350000 },
+  { label: "GROSS PROFIT", color: "#34d399", kpiKey: "grossProfit", widgetType: "bars", maxValue: 260000 },
+  { label: "CASH", color: "#a78bfa", kpiKey: "cashBalance", widgetType: "donut", maxValue: 7000000 },
+  { label: "BURN", color: "#f0abfc", kpiKey: "burnRate", widgetType: "gauge", maxValue: 420000 },
+  { label: "RUNWAY", color: "#3b82f6", kpiKey: "runway", widgetType: "gauge", maxValue: 36 },
+  { label: "CAC", color: "#f59e0b", kpiKey: "cac", widgetType: "bars", maxValue: 6000 },
+  { label: "CHURN", color: "#ef4444", kpiKey: "churnRate", widgetType: "donut", maxValue: 10 },
+  { label: "LTV", color: "#22c55e", kpiKey: "ltv", widgetType: "sparkline", maxValue: 50000 },
+  { label: "LTV:CAC", color: "#06b6d4", kpiKey: "ltvCacRatio", widgetType: "gauge", maxValue: 10 },
+  { label: "NRR", color: "#8b5cf6", kpiKey: "nrr", widgetType: "donut", maxValue: 150 },
 ];
 
 // ============================================================================
@@ -33,70 +38,58 @@ const KPI_CONFIG: Array<{
 export default function KPIGrid() {
   const kpiValues = useScenarioStore((s) => s.kpiValues);
 
-  const cards = KPI_CONFIG.map((cfg, i) => {
-    const key = cfg.kpiKey as keyof typeof kpiValues;
-    const data = kpiValues[key];
-
-    return {
-      label: cfg.label,
-      widgetType: cfg.widgetType,
-      accentColor: cfg.accentColor,
-      kpiIndex: cfg.kpiIndex,
-      isInverted: cfg.isInverted,
-      index: i,
-      value: data?.display ?? "—",
-      rawValue: data?.value ?? 0,
-    };
-  });
-
   return (
-    <div className="kpi-grid-wrapper">
-      <div className="kpi-grid">
-        {cards.map((card) => (
-          <div key={card.index} className="kpi-card-wrapper">
-            <KPICard {...card} />
-          </div>
-        ))}
+    <div className="kpi-strip-container">
+      <div className="kpi-strip-grid">
+        {KPI_CONFIG.map((cfg, i) => {
+          const data = kpiValues[cfg.kpiKey];
+          const rawValue = data?.value ?? 0;
+          const normalizedValue = Math.min(1, rawValue / cfg.maxValue);
+
+          return (
+            <KPICard
+              key={i}
+              index={i}
+              label={cfg.label}
+              value={data?.display ?? "—"}
+              rawValue={normalizedValue}
+              color={cfg.color}
+              widgetType={cfg.widgetType}
+            />
+          );
+        })}
       </div>
 
       <style>{`
-        .kpi-grid-wrapper {
+        .kpi-strip-container {
           width: 100%;
-          overflow-x: auto;
-          padding-bottom: 8px;
         }
 
-        .kpi-grid-wrapper::-webkit-scrollbar {
-          display: none;
-        }
-
-        .kpi-grid-wrapper {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-
-        .kpi-grid {
+        .kpi-strip-grid {
           display: grid;
-          grid-template-columns: repeat(7, 1fr);
-          gap: 12px;
-          min-width: 900px;
+          grid-template-columns: repeat(10, 1fr);
+          gap: 8px;
         }
 
-        .kpi-card-wrapper {
-          aspect-ratio: 1 / 1;
-          min-width: 120px;
-          max-width: 200px;
+        /* Responsive: wrap to 2 rows on smaller screens */
+        @media (max-width: 1400px) {
+          .kpi-strip-grid {
+            grid-template-columns: repeat(10, 1fr);
+            gap: 6px;
+          }
         }
 
         @media (max-width: 1200px) {
-          .kpi-grid {
-            grid-template-columns: repeat(7, minmax(140px, 1fr));
+          .kpi-strip-grid {
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
           }
         }
 
         @media (max-width: 768px) {
-          .kpi-grid {
-            grid-template-columns: repeat(7, 130px);
+          .kpi-strip-grid {
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
           }
         }
       `}</style>
