@@ -1,5 +1,5 @@
 // src/components/ScenarioHeroBar.tsx
-// STRATFIT — Hero Scenario Selector Bar
+// STRATFIT — PURE GLASS — Completely See-Through
 
 import React from "react";
 import { motion } from "framer-motion";
@@ -15,8 +15,6 @@ interface ScenarioOption {
   label: string;
   sublabel: string;
   color: string;
-  glowColor: string;
-  icon: React.ReactNode;
 }
 
 interface ScenarioHeroBarProps {
@@ -25,65 +23,39 @@ interface ScenarioHeroBarProps {
 }
 
 // ============================================================================
-// SCENARIO CONFIG
+// CONFIG
 // ============================================================================
 
 const SCENARIOS: ScenarioOption[] = [
-  {
-    id: "base",
-    label: "BASE CASE",
-    sublabel: "Current trajectory",
-    color: "#22d3ee",
-    glowColor: "rgba(34, 211, 238, 0.5)",
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 20V10" />
-        <path d="M18 20V4" />
-        <path d="M6 20v-4" />
-      </svg>
-    ),
-  },
-  {
-    id: "upside",
-    label: "UPSIDE",
-    sublabel: "Best case growth",
-    color: "#34d399",
-    glowColor: "rgba(52, 211, 153, 0.5)",
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-        <polyline points="17 6 23 6 23 12" />
-      </svg>
-    ),
-  },
-  {
-    id: "downside",
-    label: "DOWNSIDE",
-    sublabel: "Conservative outlook",
-    color: "#fbbf24",
-    glowColor: "rgba(251, 191, 36, 0.5)",
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="23 18 13.5 8.5 8.5 13.5 1 6" />
-        <polyline points="17 18 23 18 23 12" />
-      </svg>
-    ),
-  },
-  {
-    id: "extreme",
-    label: "EXTREME",
-    sublabel: "Stress test scenario",
-    color: "#ef4444",
-    glowColor: "rgba(239, 68, 68, 0.5)",
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-        <line x1="12" y1="9" x2="12" y2="13" />
-        <line x1="12" y1="17" x2="12.01" y2="17" />
-      </svg>
-    ),
-  },
+  { id: "base", label: "BASE CASE", sublabel: "Current trajectory", color: "#22d3ee" },
+  { id: "upside", label: "UPSIDE", sublabel: "Best case growth", color: "#34d399" },
+  { id: "downside", label: "DOWNSIDE", sublabel: "Conservative outlook", color: "#fbbf24" },
+  { id: "extreme", label: "EXTREME", sublabel: "Stress test scenario", color: "#ef4444" },
 ];
+
+const ICONS: Record<ScenarioId, React.ReactNode> = {
+  base: (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M12 20V10" /><path d="M18 20V4" /><path d="M6 20v-4" />
+    </svg>
+  ),
+  upside: (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" />
+    </svg>
+  ),
+  downside: (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <polyline points="23 18 13.5 8.5 8.5 13.5 1 6" /><polyline points="17 18 23 18 23 12" />
+    </svg>
+  ),
+  extreme: (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+      <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+    </svg>
+  ),
+};
 
 // ============================================================================
 // COMPONENT
@@ -91,85 +63,118 @@ const SCENARIOS: ScenarioOption[] = [
 
 export default function ScenarioHeroBar({ selected, onSelect }: ScenarioHeroBarProps) {
   return (
-    <div className="scenario-hero-bar">
-      {/* Section Title */}
-      <div className="scenario-hero-header">
-        <div className="scenario-hero-title">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10" />
-            <path d="M12 16v-4" />
-            <path d="M12 8h.01" />
-          </svg>
-          <span>SELECT SCENARIO</span>
-        </div>
-        <p className="scenario-hero-subtitle">
-          Choose a scenario to see how your business metrics change
-        </p>
-      </div>
-
-      {/* Scenario Cards */}
-      <div className="scenario-cards">
-        {SCENARIOS.map((scenario) => {
-          const isSelected = selected === scenario.id;
-
+    <div className="hero-bar">
+      <div className="hero-title">SELECT SCENARIO</div>
+      
+      <div className="hero-cards">
+        {SCENARIOS.map((s) => {
+          const isSelected = selected === s.id;
+          
           return (
             <motion.button
-              key={scenario.id}
-              onClick={() => onSelect(scenario.id)}
-              className={`scenario-card ${isSelected ? "selected" : ""}`}
-              style={{
-                "--card-color": scenario.color,
-                "--card-glow": scenario.glowColor,
-              } as React.CSSProperties}
-              whileHover={{ scale: isSelected ? 1 : 1.02, y: isSelected ? 0 : -4 }}
+              key={s.id}
+              onClick={() => onSelect(s.id)}
+              className={`card ${isSelected ? "selected" : ""}`}
+              style={{ "--c": s.color, "--c-rgb": hexToRgb(s.color) } as React.CSSProperties}
+              whileHover={{ y: -5 }}
               whileTap={{ scale: 0.98 }}
-              animate={{
-                y: isSelected ? -6 : 0,
-              }}
-              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+              animate={{ y: isSelected ? -8 : 0 }}
+              transition={{ type: "spring", stiffness: 400, damping: 28 }}
             >
-              {/* Glow effect for selected */}
-              {isSelected && (
-                <motion.div
-                  className="scenario-card-glow"
-                  layoutId="scenarioGlow"
-                  initial={false}
-                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
+              {/* Color underglow — ONLY when selected */}
+              <motion.div 
+                className="card-glow"
+                animate={{ 
+                  opacity: isSelected ? 1 : 0,
+                  scale: isSelected ? 1 : 0.9
+                }}
+                transition={{ duration: 0.35 }}
+              />
+              
+              {/* PURE GLASS */}
+              <div className="glass">
+                {/* Top luminous edge */}
+                <div className="edge-top" />
+                
+                {/* Left luminous edge */}
+                <div className="edge-left" />
+                
+                {/* Right luminous edge */}
+                <div className="edge-right" />
+                
+                {/* Bottom luminous edge */}
+                <div className="edge-bottom" />
+                
+                {/* Corner accents */}
+                <div className="corner corner-tl" />
+                <div className="corner corner-tr" />
+                <div className="corner corner-bl" />
+                <div className="corner corner-br" />
+                
+                {/* Inner color wash — fills glass when selected */}
+                <motion.div 
+                  className="color-wash"
+                  animate={{ 
+                    opacity: isSelected ? 0.15 : 0,
+                  }}
+                  transition={{ duration: 0.4 }}
                 />
-              )}
-
-              {/* Border gradient */}
-              <div className={`scenario-card-border ${isSelected ? "active" : ""}`} />
-
-              {/* Inner content */}
-              <div className="scenario-card-inner">
-                {/* Icon */}
-                <div className={`scenario-card-icon ${isSelected ? "active" : ""}`}>
-                  {scenario.icon}
+                
+                {/* Subtle inner reflection */}
+                <div className="inner-reflection" />
+                
+                {/* Content */}
+                <div className="content">
+                  <motion.div 
+                    className="icon"
+                    animate={{ 
+                      color: isSelected ? s.color : "rgba(255,255,255,0.45)",
+                      filter: isSelected 
+                        ? `drop-shadow(0 0 8px ${s.color}) drop-shadow(0 0 15px ${s.color})`
+                        : "none"
+                    }}
+                    transition={{ duration: 0.25 }}
+                  >
+                    {ICONS[s.id]}
+                  </motion.div>
+                  
+                  <div className="text">
+                    <motion.span 
+                      className="label"
+                      animate={{ 
+                        color: isSelected ? "#ffffff" : "rgba(255,255,255,0.75)",
+                        textShadow: isSelected 
+                          ? `0 0 20px ${s.color}, 0 0 40px ${s.color}`
+                          : "0 1px 3px rgba(0,0,0,0.5)"
+                      }}
+                      transition={{ duration: 0.25 }}
+                    >
+                      {s.label}
+                    </motion.span>
+                    <span className="sublabel">{s.sublabel}</span>
+                  </div>
+                  
+                  <motion.div 
+                    className="indicator"
+                    animate={{
+                      backgroundColor: isSelected ? s.color : "rgba(255,255,255,0.2)",
+                      boxShadow: isSelected 
+                        ? `0 0 8px ${s.color}, 0 0 16px ${s.color}, 0 0 24px ${s.color}`
+                        : "none",
+                      scale: isSelected ? 1.2 : 1
+                    }}
+                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                  />
                 </div>
-
-                {/* Text */}
-                <div className="scenario-card-text">
-                  <span className={`scenario-card-label ${isSelected ? "active" : ""}`}>
-                    {scenario.label}
-                  </span>
-                  <span className="scenario-card-sublabel">
-                    {scenario.sublabel}
-                  </span>
-                </div>
-
-                {/* Selection indicator */}
-                <div className={`scenario-card-indicator ${isSelected ? "active" : ""}`}>
-                  {isSelected ? (
-                    <motion.div
-                      className="indicator-dot"
-                      layoutId="indicatorDot"
-                      style={{ backgroundColor: scenario.color, boxShadow: `0 0 12px ${scenario.color}` }}
-                    />
-                  ) : (
-                    <div className="indicator-ring" />
-                  )}
-                </div>
+                
+                {/* Selected border glow */}
+                <motion.div 
+                  className="selected-border"
+                  animate={{ 
+                    opacity: isSelected ? 1 : 0,
+                  }}
+                  transition={{ duration: 0.3 }}
+                />
               </div>
             </motion.button>
           );
@@ -177,213 +182,273 @@ export default function ScenarioHeroBar({ selected, onSelect }: ScenarioHeroBarP
       </div>
 
       <style>{`
-        .scenario-hero-bar {
-          padding: 16px 24px 20px;
-          background: linear-gradient(
-            180deg,
-            rgba(15, 20, 30, 0.95) 0%,
-            rgba(11, 14, 20, 0.9) 100%
-          );
-          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        .hero-bar {
+          padding: 24px 24px 32px;
         }
-
-        .scenario-hero-header {
-          margin-bottom: 16px;
+        
+        .hero-title {
           text-align: center;
+          font-size: 10px;
+          font-weight: 500;
+          letter-spacing: 0.35em;
+          color: rgba(255,255,255,0.25);
+          margin-bottom: 22px;
         }
-
-        .scenario-hero-title {
-          display: inline-flex;
-          align-items: center;
-          gap: 10px;
-          font-size: 13px;
-          font-weight: 800;
-          letter-spacing: 0.2em;
-          color: rgba(255, 255, 255, 0.9);
-          margin-bottom: 6px;
-        }
-
-        .scenario-hero-title svg {
-          opacity: 0.7;
-        }
-
-        .scenario-hero-subtitle {
-          font-size: 13px;
-          color: rgba(255, 255, 255, 0.45);
-          margin: 0;
-        }
-
-        .scenario-cards {
+        
+        .hero-cards {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
-          gap: 14px;
+          gap: 20px;
           max-width: 1200px;
           margin: 0 auto;
         }
-
+        
         @media (max-width: 900px) {
-          .scenario-cards {
-            grid-template-columns: repeat(2, 1fr);
-          }
+          .hero-cards { grid-template-columns: repeat(2, 1fr); }
         }
-
         @media (max-width: 500px) {
-          .scenario-cards {
-            grid-template-columns: 1fr;
-          }
+          .hero-cards { grid-template-columns: 1fr; }
         }
-
-        .scenario-card {
+        
+        .card {
           position: relative;
-          padding: 3px;
-          border-radius: 16px;
-          background: transparent;
+          background: none;
           border: none;
           cursor: pointer;
           text-align: left;
+          padding: 0;
         }
-
-        .scenario-card-glow {
+        
+        /* Color glow underneath */
+        .card-glow {
           position: absolute;
-          inset: -8px;
-          border-radius: 24px;
+          inset: -25px;
           background: radial-gradient(
-            ellipse at center,
-            var(--card-glow) 0%,
+            ellipse at 50% 70%,
+            var(--c),
             transparent 70%
           );
-          opacity: 0.6;
+          opacity: 0;
+          filter: blur(35px);
           z-index: 0;
-          pointer-events: none;
         }
-
-        .scenario-card-border {
-          position: absolute;
-          inset: 0;
-          border-radius: 16px;
-          background: linear-gradient(
-            145deg,
-            rgba(255, 255, 255, 0.1) 0%,
-            rgba(255, 255, 255, 0.03) 50%,
-            rgba(255, 255, 255, 0.1) 100%
-          );
+        
+        /* PURE GLASS PANEL */
+        .glass {
+          position: relative;
           z-index: 1;
+          padding: 24px 26px;
+          border-radius: 20px;
+          /* COMPLETELY TRANSPARENT — just a hint */
+          background: rgba(255, 255, 255, 0.02);
+          backdrop-filter: blur(30px);
+          -webkit-backdrop-filter: blur(30px);
+          overflow: hidden;
           transition: all 0.3s ease;
         }
-
-        .scenario-card-border.active {
-          background: linear-gradient(
-            145deg,
-            var(--card-color) 0%,
-            transparent 30%,
-            transparent 70%,
-            var(--card-color) 100%
-          );
-          box-shadow:
-            0 0 20px var(--card-glow),
-            0 0 40px var(--card-glow),
-            inset 0 0 1px var(--card-color);
+        
+        .card:hover .glass {
+          background: rgba(255, 255, 255, 0.04);
         }
-
-        .scenario-card-inner {
+        
+        /* LUMINOUS EDGES — This is what makes glass visible */
+        .edge-top {
+          position: absolute;
+          top: 0;
+          left: 30px;
+          right: 30px;
+          height: 1px;
+          background: linear-gradient(90deg, 
+            transparent, 
+            rgba(255,255,255,0.4) 20%,
+            rgba(255,255,255,0.6) 50%,
+            rgba(255,255,255,0.4) 80%,
+            transparent
+          );
+        }
+        
+        .edge-bottom {
+          position: absolute;
+          bottom: 0;
+          left: 40px;
+          right: 40px;
+          height: 1px;
+          background: linear-gradient(90deg, 
+            transparent, 
+            rgba(255,255,255,0.15) 30%,
+            rgba(255,255,255,0.25) 50%,
+            rgba(255,255,255,0.15) 70%,
+            transparent
+          );
+        }
+        
+        .edge-left {
+          position: absolute;
+          left: 0;
+          top: 30px;
+          bottom: 30px;
+          width: 1px;
+          background: linear-gradient(180deg, 
+            transparent, 
+            rgba(255,255,255,0.2) 20%,
+            rgba(255,255,255,0.35) 50%,
+            rgba(255,255,255,0.2) 80%,
+            transparent
+          );
+        }
+        
+        .edge-right {
+          position: absolute;
+          right: 0;
+          top: 30px;
+          bottom: 30px;
+          width: 1px;
+          background: linear-gradient(180deg, 
+            transparent, 
+            rgba(255,255,255,0.15) 20%,
+            rgba(255,255,255,0.25) 50%,
+            rgba(255,255,255,0.15) 80%,
+            transparent
+          );
+        }
+        
+        /* Corner accents — light catches corners */
+        .corner {
+          position: absolute;
+          width: 20px;
+          height: 20px;
+        }
+        
+        .corner-tl {
+          top: 0;
+          left: 0;
+          border-top: 1px solid rgba(255,255,255,0.35);
+          border-left: 1px solid rgba(255,255,255,0.35);
+          border-top-left-radius: 20px;
+        }
+        
+        .corner-tr {
+          top: 0;
+          right: 0;
+          border-top: 1px solid rgba(255,255,255,0.3);
+          border-right: 1px solid rgba(255,255,255,0.2);
+          border-top-right-radius: 20px;
+        }
+        
+        .corner-bl {
+          bottom: 0;
+          left: 0;
+          border-bottom: 1px solid rgba(255,255,255,0.15);
+          border-left: 1px solid rgba(255,255,255,0.2);
+          border-bottom-left-radius: 20px;
+        }
+        
+        .corner-br {
+          bottom: 0;
+          right: 0;
+          border-bottom: 1px solid rgba(255,255,255,0.1);
+          border-right: 1px solid rgba(255,255,255,0.1);
+          border-bottom-right-radius: 20px;
+        }
+        
+        .card:hover .corner-tl,
+        .card:hover .corner-tr {
+          border-color: rgba(255,255,255,0.5);
+        }
+        
+        /* Color wash — fills glass when selected */
+        .color-wash {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            160deg,
+            var(--c) 0%,
+            transparent 60%
+          );
+          opacity: 0;
+          border-radius: 20px;
+        }
+        
+        /* Inner reflection */
+        .inner-reflection {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 45%;
+          background: linear-gradient(
+            180deg,
+            rgba(255,255,255,0.04) 0%,
+            transparent 100%
+          );
+          border-radius: 20px 20px 50% 50%;
+          pointer-events: none;
+        }
+        
+        /* Selected border */
+        .selected-border {
+          position: absolute;
+          inset: 0;
+          border-radius: 20px;
+          border: 1px solid var(--c);
+          opacity: 0;
+          box-shadow: 
+            0 0 20px rgba(var(--c-rgb), 0.4),
+            inset 0 0 30px rgba(var(--c-rgb), 0.1);
+        }
+        
+        /* Content */
+        .content {
           position: relative;
           z-index: 2;
           display: flex;
           align-items: center;
-          gap: 14px;
-          padding: 16px 18px;
-          background: linear-gradient(
-            160deg,
-            rgba(15, 20, 30, 0.98) 0%,
-            rgba(10, 14, 22, 0.99) 100%
-          );
-          border-radius: 14px;
-          transition: all 0.3s ease;
+          gap: 18px;
         }
-
-        .scenario-card.selected .scenario-card-inner {
-          background: linear-gradient(
-            160deg,
-            rgba(20, 28, 40, 0.98) 0%,
-            rgba(15, 20, 30, 0.99) 100%
-          );
-        }
-
-        .scenario-card-icon {
+        
+        .icon {
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 44px;
-          height: 44px;
-          border-radius: 12px;
-          background: rgba(255, 255, 255, 0.05);
-          color: rgba(255, 255, 255, 0.5);
-          transition: all 0.3s ease;
+          width: 42px;
+          height: 42px;
+          color: rgba(255,255,255,0.45);
         }
-
-        .scenario-card-icon.active {
-          background: rgba(255, 255, 255, 0.08);
-          color: var(--card-color);
-          box-shadow: 0 0 20px var(--card-glow);
-        }
-
-        .scenario-card:hover .scenario-card-icon:not(.active) {
-          background: rgba(255, 255, 255, 0.08);
-          color: rgba(255, 255, 255, 0.7);
-        }
-
-        .scenario-card-text {
+        
+        .text {
           flex: 1;
           display: flex;
           flex-direction: column;
-          gap: 3px;
+          gap: 4px;
         }
-
-        .scenario-card-label {
+        
+        .label {
           font-size: 14px;
-          font-weight: 800;
-          letter-spacing: 0.08em;
-          color: rgba(255, 255, 255, 0.8);
-          transition: all 0.3s ease;
+          font-weight: 700;
+          letter-spacing: 0.05em;
+          color: rgba(255,255,255,0.75);
         }
-
-        .scenario-card-label.active {
-          color: var(--card-color);
-          text-shadow: 0 0 20px var(--card-glow);
-        }
-
-        .scenario-card-sublabel {
+        
+        .sublabel {
           font-size: 11px;
-          color: rgba(255, 255, 255, 0.4);
+          color: rgba(255,255,255,0.3);
         }
-
-        .scenario-card-indicator {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 24px;
-          height: 24px;
-        }
-
-        .indicator-ring {
-          width: 16px;
-          height: 16px;
+        
+        .indicator {
+          width: 8px;
+          height: 8px;
           border-radius: 50%;
-          border: 2px solid rgba(255, 255, 255, 0.2);
-          transition: all 0.2s ease;
-        }
-
-        .scenario-card:hover .indicator-ring {
-          border-color: rgba(255, 255, 255, 0.4);
-        }
-
-        .indicator-dot {
-          width: 12px;
-          height: 12px;
-          border-radius: 50%;
+          background: rgba(255,255,255,0.2);
         }
       `}</style>
     </div>
   );
 }
 
+// Helper to convert hex to RGB for box-shadow
+function hexToRgb(hex: string): string {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result 
+    ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`
+    : "255, 255, 255";
+}

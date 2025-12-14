@@ -1,5 +1,5 @@
 // src/components/ControlDeck.tsx
-// STRATFIT — Premium Slider Panels with THICK DISTINCT BORDERS
+// STRATFIT — Premium Sliders with BIGGER FONTS and REAL BORDERS
 
 import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
@@ -28,6 +28,13 @@ export interface ControlBoxConfig {
   sliders: ControlSliderConfig[];
 }
 
+// Box colors
+const BOX_COLORS: Record<string, { accent: string; glow: string }> = {
+  performance: { accent: "#22d3ee", glow: "rgba(34, 211, 238, 0.3)" },
+  financial: { accent: "#a78bfa", glow: "rgba(167, 139, 250, 0.3)" },
+  risk: { accent: "#fb7185", glow: "rgba(251, 113, 133, 0.3)" },
+};
+
 // Lever to KPI mapping
 const LEVER_TO_KPI: Record<LeverId, number[]> = {
   revenueGrowth: [0, 1],
@@ -43,13 +50,6 @@ const BOX_TO_KPIS: Record<string, number[]> = {
   performance: [0, 1, 5],
   financial: [2, 3, 4],
   risk: [6, 4],
-};
-
-// Box accent colors
-const BOX_COLORS: Record<string, string> = {
-  performance: "#22d3ee", // Cyan
-  financial: "#a78bfa",   // Purple
-  risk: "#fb7185",        // Pink
 };
 
 // ============================================================================
@@ -103,36 +103,26 @@ export function ControlDeck(props: {
     <div className="control-deck">
       {boxes.map((box) => {
         const highlighted = isBoxHighlighted(box.id);
-        const boxColor = BOX_COLORS[box.id] || "#22d3ee";
+        const colors = BOX_COLORS[box.id] || BOX_COLORS.performance;
         
         return (
-          <motion.div
+          <div
             key={box.id}
             className={`control-box ${highlighted ? 'highlighted' : ''}`}
-            animate={{
-              scale: highlighted ? 1.02 : 1,
-            }}
-            transition={{ duration: 0.2 }}
             style={{
-              "--box-color": boxColor,
-              "--box-glow": highlighted ? boxColor : "transparent",
+              "--box-accent": colors.accent,
+              "--box-glow": colors.glow,
             } as React.CSSProperties}
           >
-            {/* THICK gradient border */}
+            {/* Premium border */}
             <div className={`control-box-border ${highlighted ? 'active' : ''}`} />
             
             {/* Content */}
             <div className="control-box-inner">
-              {/* Title with icon indicator */}
+              {/* Title */}
               <div className="control-box-header">
-                <motion.div 
-                  className="control-box-indicator"
-                  animate={{
-                    backgroundColor: highlighted ? boxColor : "rgba(255,255,255,0.3)",
-                    boxShadow: highlighted ? `0 0 12px ${boxColor}` : "none",
-                  }}
-                />
-                <span className={`control-box-title ${highlighted ? 'highlighted' : ''}`}>
+                <div className={`control-box-indicator ${highlighted ? 'active' : ''}`} />
+                <span className={`control-box-title ${highlighted ? 'active' : ''}`}>
                   {box.title}
                 </span>
               </div>
@@ -143,27 +133,15 @@ export function ControlDeck(props: {
                   const sliderHighlighted = isSliderHighlighted(s.id);
 
                   return (
-                    <motion.div 
+                    <div 
                       key={s.id} 
                       className={`control-slider ${sliderHighlighted ? 'highlighted' : ''}`}
-                      animate={{
-                        backgroundColor: sliderHighlighted 
-                          ? `${boxColor}15`
-                          : 'transparent',
-                        borderColor: sliderHighlighted 
-                          ? `${boxColor}40`
-                          : 'transparent',
-                      }}
-                      transition={{ duration: 0.2 }}
                     >
                       <div className="slider-header">
                         <span className={`slider-label ${sliderHighlighted ? 'highlighted' : ''}`}>
                           {s.label}
                         </span>
-                        <span 
-                          className={`slider-value ${sliderHighlighted ? 'highlighted' : ''}`}
-                          style={{ color: sliderHighlighted ? boxColor : undefined }}
-                        >
+                        <span className={`slider-value ${sliderHighlighted ? 'highlighted' : ''}`}>
                           {s.format ? s.format(s.value) : String(s.value)}
                         </span>
                       </div>
@@ -190,12 +168,12 @@ export function ControlDeck(props: {
                           onChange(s.id, v);
                         }}
                       />
-                    </motion.div>
+                    </div>
                   );
                 })}
               </div>
             </div>
-          </motion.div>
+          </div>
         );
       })}
 
@@ -203,110 +181,104 @@ export function ControlDeck(props: {
         .control-deck {
           display: flex;
           flex-direction: column;
-          gap: 14px;
+          gap: 16px;
           width: 100%;
         }
 
         .control-box {
           position: relative;
           border-radius: 16px;
-          padding: 3px;
-          transition: all 0.3s ease;
+          padding: 2px;
         }
 
-        /* THICK DISTINCT BORDER */
+        /* PREMIUM BORDER */
         .control-box-border {
           position: absolute;
           inset: 0;
           border-radius: 16px;
           background: linear-gradient(
-            145deg,
-            rgba(255,255,255,0.15) 0%,
-            rgba(255,255,255,0.05) 30%,
-            rgba(255,255,255,0.02) 50%,
-            rgba(255,255,255,0.05) 70%,
-            rgba(255,255,255,0.15) 100%
+            160deg,
+            rgba(255, 255, 255, 0.15) 0%,
+            rgba(255, 255, 255, 0.05) 40%,
+            rgba(255, 255, 255, 0.05) 60%,
+            rgba(255, 255, 255, 0.15) 100%
           );
-          z-index: 0;
           transition: all 0.3s ease;
         }
 
         .control-box-border.active {
           background: linear-gradient(
-            145deg,
-            var(--box-color) 0%,
+            160deg,
+            var(--box-accent) 0%,
             transparent 30%,
             transparent 70%,
-            var(--box-color) 100%
+            var(--box-accent) 100%
           );
           box-shadow: 
-            0 0 20px var(--box-glow),
-            0 0 40px var(--box-glow),
-            inset 0 0 2px var(--box-color);
-        }
-
-        .control-box.highlighted {
-          box-shadow: 
-            0 0 30px var(--box-glow),
-            0 8px 32px rgba(0,0,0,0.4);
+            0 0 25px var(--box-glow),
+            inset 0 0 1px var(--box-accent);
         }
 
         .control-box-inner {
           position: relative;
           z-index: 1;
-          padding: 16px;
-          background: linear-gradient(
-            160deg,
-            rgba(15, 20, 30, 0.95) 0%,
-            rgba(10, 14, 22, 0.98) 100%
-          );
+          padding: 18px 20px;
+          background: rgba(11, 14, 20, 0.9);
           border-radius: 14px;
-          backdrop-filter: blur(12px);
+          backdrop-filter: blur(16px);
         }
 
         .control-box-header {
           display: flex;
           align-items: center;
           gap: 10px;
-          margin-bottom: 14px;
+          margin-bottom: 16px;
         }
 
         .control-box-indicator {
           width: 8px;
           height: 8px;
           border-radius: 50%;
-          background: rgba(255,255,255,0.3);
+          background: rgba(255, 255, 255, 0.25);
           transition: all 0.3s ease;
+        }
+
+        .control-box-indicator.active {
+          background: var(--box-accent);
+          box-shadow: 0 0 10px var(--box-accent);
         }
 
         .control-box-title {
-          font-size: 11px;
+          font-size: 12px;
           font-weight: 700;
-          letter-spacing: 0.18em;
+          letter-spacing: 0.15em;
           text-transform: uppercase;
-          color: rgba(255, 255, 255, 0.55);
+          color: rgba(255, 255, 255, 0.5);
           transition: all 0.3s ease;
         }
 
-        .control-box-title.highlighted {
-          color: var(--box-color);
-          text-shadow: 0 0 12px var(--box-glow);
+        .control-box-title.active {
+          color: var(--box-accent);
         }
 
         .control-sliders {
           display: flex;
           flex-direction: column;
-          gap: 10px;
+          gap: 14px;
         }
 
         .control-slider {
           display: flex;
           flex-direction: column;
-          gap: 6px;
+          gap: 8px;
           padding: 10px 12px;
           border-radius: 10px;
-          border: 1px solid transparent;
-          transition: all 0.25s ease;
+          background: transparent;
+          transition: all 0.2s ease;
+        }
+
+        .control-slider.highlighted {
+          background: rgba(255, 255, 255, 0.03);
         }
 
         .slider-header {
@@ -315,20 +287,20 @@ export function ControlDeck(props: {
           align-items: center;
         }
 
+        /* BIGGER FONTS */
         .slider-label {
-          font-size: 12px;
+          font-size: 14px;
           font-weight: 600;
-          color: rgba(255, 255, 255, 0.8);
+          color: rgba(255, 255, 255, 0.85);
           transition: all 0.2s ease;
         }
 
         .slider-label.highlighted {
           color: #fff;
-          text-shadow: 0 0 8px rgba(255,255,255,0.3);
         }
 
         .slider-value {
-          font-size: 12px;
+          font-size: 14px;
           font-weight: 700;
           color: rgba(255, 255, 255, 0.5);
           font-variant-numeric: tabular-nums;
@@ -336,7 +308,7 @@ export function ControlDeck(props: {
         }
 
         .slider-value.highlighted {
-          color: var(--box-color);
+          color: var(--box-accent);
         }
       `}</style>
     </div>

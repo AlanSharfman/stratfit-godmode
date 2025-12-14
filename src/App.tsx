@@ -1,9 +1,10 @@
 // src/App.tsx
-// STRATFIT — God Mode with Dynamic Deltas + 3-Column AI Insights
+// STRATFIT — God Mode FINAL with all fixes
 
 import { useState, useCallback, useMemo, useEffect } from "react";
-import CommandBar, { ScenarioId } from "./components/CommandBar";
+import ScenarioHeroBar, { ScenarioId } from "./components/ScenarioHeroBar";
 import KPIGrid from "./components/KPIGrid";
+import KPIConnector from "./components/KPIConnector";
 import ScenarioMountain from "./components/mountain/ScenarioMountain";
 import { Moon } from "./components/Moon";
 import { ControlDeck, ControlBoxConfig } from "./components/ControlDeck";
@@ -38,13 +39,6 @@ interface MetricState {
 // ============================================================================
 // CONSTANTS
 // ============================================================================
-
-const SCENARIOS = [
-  { id: "base" as ScenarioId, label: "Base Case 2025", color: "#22d3ee" },
-  { id: "upside" as ScenarioId, label: "Upside 2025", color: "#34d399" },
-  { id: "downside" as ScenarioId, label: "Downside 2025", color: "#fbbf24" },
-  { id: "extreme" as ScenarioId, label: "Extreme Risk", color: "#ef4444" },
-];
 
 const INITIAL_LEVERS: LeverState = {
   revenueGrowth: 45,
@@ -154,6 +148,7 @@ function formatPct(n: number) {
 export default function App() {
   const [scenario, setScenario] = useState<ScenarioId>("base");
   const [levers, setLevers] = useState<LeverState>(INITIAL_LEVERS);
+  const [baselineMetrics, setBaselineMetrics] = useState<MetricState | null>(null);
 
   const hoveredKpiIndex = useScenarioStore((s) => s.hoveredKpiIndex);
   const setHoveredKpiIndex = useScenarioStore((s) => s.setHoveredKpiIndex);
@@ -165,9 +160,16 @@ export default function App() {
   const leverIntensity01 = useScenarioStore((s) => s.leverIntensity01);
 
   const metrics = useMemo(() => calculateMetrics(levers, scenario), [levers, scenario]);
-  const baselinePoints = useMemo(() => metricsToDataPoints(metrics), [metrics]);
+  const dataPoints = useMemo(() => metricsToDataPoints(metrics), [metrics]);
 
-  useEffect(() => { setDataPoints(baselinePoints); }, [baselinePoints, setDataPoints]);
+  // Capture baseline on first render
+  useEffect(() => {
+    if (!baselineMetrics) {
+      setBaselineMetrics(metrics);
+    }
+  }, []);
+
+  useEffect(() => { setDataPoints(dataPoints); }, [dataPoints, setDataPoints]);
   useEffect(() => { setScenarioInStore(scenario); }, [scenario, setScenarioInStore]);
 
   useEffect(() => {
@@ -199,7 +201,8 @@ export default function App() {
   const handleReset = useCallback(() => {
     setLevers(INITIAL_LEVERS);
     setHoveredKpiIndex(null);
-  }, [setHoveredKpiIndex]);
+    setBaselineMetrics(calculateMetrics(INITIAL_LEVERS, scenario));
+  }, [scenario, setHoveredKpiIndex]);
 
   const controlBoxes: ControlBoxConfig[] = useMemo(
     () => [
@@ -232,60 +235,113 @@ export default function App() {
     [levers]
   );
 
-  // AI Insights with SUGGESTIONS instead of recommendations
-  const aiInsights = useMemo(
-    () => ({
-      highlights: `Strong momentum with ${formatCurrencyUSD(metrics.mrr)}/mo MRR and ${Math.round(metrics.runwayMonths)} months runway. Gross margins healthy at ${((metrics.grossProfit / metrics.mrr) * 100).toFixed(0)}%. Current burn rate sustainable.`,
-      risks: metrics.runwayMonths < 12 
-        ? `Critical: Only ${Math.round(metrics.runwayMonths)} months runway remaining. Burn rate of ${formatCurrencyUSD(metrics.burnRate)}/mo exceeds sustainable threshold. Immediate action required.`
-        : metrics.runwayMonths < 18
-        ? `Moderate runway concern at ${Math.round(metrics.runwayMonths)} months. Monitor burn closely and consider cost optimization strategies.`
-        : `Low risk profile. ${Math.round(metrics.runwayMonths)} months runway provides buffer for growth investments.`,
-      suggestions: `1) Optimize CAC efficiency — current ${formatCurrencyUSD(metrics.cac)} can be improved through channel mix. 2) Address ${metrics.churnRate.toFixed(1)}% churn with retention initiatives. 3) Consider pricing experiments to boost unit economics.`,
-    }),
-    [metrics]
-  );
+  // AI Insights data
+  const aiInsights = useMemo(() => ({
+    commentary: [
+      { text: `Strong MRR at ${formatCurrencyUSD(metrics.mrr)}/mo with ${((metrics.grossProfit / metrics.mrr) * 100).toFixed(0)}% gross margin` },
+      { text: `Cash position healthy at ${formatCurrencyUSD(metrics.cashBalance)}` },
+      { text: `Current trajectory supports ${Math.round(metrics.runwayMonths)} months runway` },
+    ],
+    risks: metrics.runwayMonths < 12 
+      ? [
+          { text: `Critical: Only ${Math.round(metrics.runwayMonths)} months runway` },
+          { text: `Burn rate ${formatCurrencyUSD(metrics.burnRate)}/mo unsustainable` },
+          { text: `Immediate cost reduction required` },
+        ]
+      : metrics.runwayMonths < 18
+      ? [
+          { text: `Runway at ${Math.round(metrics.runwayMonths)} months needs monitoring` },
+          { text: `CAC efficiency declining at ${formatCurrencyUSD(metrics.cac)}` },
+          { text: `Churn trending at ${metrics.churnRate.toFixed(1)}%` },
+        ]
+      : [
+          { text: `Low risk profile with ${Math.round(metrics.runwayMonths)} months runway` },
+          { text: `Monitor CAC efficiency (${formatCurrencyUSD(metrics.cac)})` },
+          { text: `Churn stable at ${metrics.churnRate.toFixed(1)}%` },
+        ],
+    actions: [
+      { text: `Reduce burn by 15% to extend runway to ${Math.round(metrics.runwayMonths * 1.15)} months` },
+      { text: `Implement retention program to reduce churn below 4%` },
+      { text: `Optimize CAC through channel diversification` },
+      { text: `Review pricing strategy for margin improvement` },
+    ],
+  }), [metrics]);
+
+  const aiMetrics = useMemo(() => {
+    const base = baselineMetrics || metrics;
+    const mrrChange = ((metrics.mrr - base.mrr) / base.mrr) * 100;
+    const burnChange = ((metrics.burnRate - base.burnRate) / (base.burnRate || 1)) * 100;
+    
+    return {
+      mrr: metrics.mrr,
+      mrrChange: isFinite(mrrChange) ? mrrChange : 0,
+      burn: metrics.burnRate,
+      burnChange: isFinite(burnChange) ? burnChange : 0,
+      runway: Math.round(metrics.runwayMonths),
+      riskLevel: (metrics.runwayMonths < 12 ? "High" : metrics.runwayMonths < 18 ? "Med" : "Low") as "Low" | "Med" | "High",
+    };
+  }, [metrics, baselineMetrics]);
 
   return (
     <div className="app-container">
-      <CommandBar
-        scenario={scenario}
-        scenarios={SCENARIOS}
-        onScenarioChange={setScenario}
-        onSave={() => console.log("Save scenario")}
-        onLoad={() => console.log("Load scenario")}
-        onReset={handleReset}
-      />
+      {/* LOGO HEADER */}
+      <header className="app-header">
+        <div className="logo-section">
+          <div className="logo-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#22d3ee" />
+              <path d="M2 17L12 22L22 17" stroke="#22d3ee" strokeWidth="2" strokeLinecap="round" />
+              <path d="M2 12L12 17L22 12" stroke="#22d3ee" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </div>
+          <span className="logo-text">STRATFIT</span>
+        </div>
+        
+        <div className="header-actions">
+          <button className="header-btn" onClick={handleReset}>Reset</button>
+          <button className="header-btn">Load</button>
+          <button className="header-btn primary">Save</button>
+        </div>
+      </header>
+
+      {/* HERO SCENARIO BAR */}
+      <ScenarioHeroBar selected={scenario} onSelect={setScenario} />
 
       <main className="main-content">
+        {/* KPI Section */}
         <section className="kpi-section">
           <KPIGrid />
         </section>
 
+        {/* Mountain Section with Connector Overlay */}
         <section className="controls-mountain-section">
           <aside className="sliders-panel">
             <ControlDeck boxes={controlBoxes} onChange={handleLeverChange} />
           </aside>
 
-          <div className="mountain-panel">
-            <Moon rightOffset={10} topOffset={8} scale={1.2} />
-            <ScenarioMountain
-              scenario={scenario}
-              dataPoints={baselinePoints}
-              activeKpiIndex={hoveredKpiIndex}
-              activeLeverId={activeLeverId ?? null}
-              leverIntensity01={leverIntensity01 ?? 0}
-              className="mountain-canvas"
-            />
+          <div className="mountain-wrapper">
+            {/* KPI Connector Line */}
+            <KPIConnector />
+            
+            <div className="mountain-panel">
+              <Moon rightOffset={10} topOffset={8} scale={1.2} />
+              <ScenarioMountain
+                scenario={scenario}
+                dataPoints={dataPoints}
+                activeKpiIndex={hoveredKpiIndex}
+                activeLeverId={activeLeverId ?? null}
+                leverIntensity01={leverIntensity01 ?? 0}
+                className="mountain-canvas"
+              />
+            </div>
           </div>
         </section>
 
+        {/* AI Insights */}
         <section className="ai-section">
           <AIInsights 
             insights={aiInsights}
-            mrrValue={metrics.mrr}
-            burnValue={metrics.burnRate}
-            runwayMonths={metrics.runwayMonths}
+            metrics={aiMetrics}
             onGeneratePDF={() => console.log("Generate PDF")} 
           />
         </section>
@@ -306,8 +362,71 @@ export default function App() {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
+        .app-header {
+          position: sticky;
+          top: 0;
+          z-index: 100;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 12px 24px;
+          background: rgba(11, 14, 20, 0.95);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+          backdrop-filter: blur(12px);
+        }
+
+        .logo-section {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .logo-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 36px;
+          height: 36px;
+          border-radius: 10px;
+          background: rgba(34, 211, 238, 0.1);
+        }
+
+        .logo-text {
+          font-size: 18px;
+          font-weight: 800;
+          letter-spacing: 0.15em;
+          color: #fff;
+        }
+
+        .header-actions {
+          display: flex;
+          gap: 10px;
+        }
+
+        .header-btn {
+          padding: 8px 16px;
+          border-radius: 8px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          background: transparent;
+          color: rgba(255, 255, 255, 0.6);
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .header-btn:hover {
+          background: rgba(255, 255, 255, 0.05);
+          color: #fff;
+        }
+
+        .header-btn.primary {
+          background: rgba(34, 211, 238, 0.15);
+          border-color: rgba(34, 211, 238, 0.3);
+          color: #22d3ee;
+        }
+
         .main-content {
-          padding-top: 72px;
           padding-bottom: 24px;
           display: flex;
           flex-direction: column;
@@ -317,15 +436,15 @@ export default function App() {
         }
 
         .kpi-section {
-          padding: 0 24px;
+          padding: 16px 24px 0;
         }
 
         .controls-mountain-section {
           display: grid;
-          grid-template-columns: 300px 1fr;
-          gap: 16px;
+          grid-template-columns: 320px 1fr;
+          gap: 20px;
           padding: 0 24px;
-          min-height: 420px;
+          min-height: 450px;
         }
 
         .sliders-panel {
@@ -334,13 +453,19 @@ export default function App() {
           gap: 12px;
         }
 
+        .mountain-wrapper {
+          position: relative;
+        }
+
         .mountain-panel {
           position: relative;
-          min-height: 400px;
+          width: 100%;
+          height: 100%;
+          min-height: 420px;
           border-radius: 16px;
           overflow: hidden;
-          border: 1px solid rgba(255,255,255,0.08);
-          background: radial-gradient(ellipse 1000px 400px at 50% 40%, rgba(34,211,238,0.08), transparent 70%);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: radial-gradient(ellipse 900px 400px at 50% 60%, rgba(34,211,238,0.06), transparent 70%), #0B0E14;
           box-shadow: 0 20px 60px rgba(0,0,0,0.5);
         }
 
@@ -362,26 +487,37 @@ export default function App() {
             order: 2;
           }
 
-          .mountain-panel {
+          .mountain-wrapper {
             order: 1;
+          }
+
+          .mountain-panel {
             min-height: 350px;
           }
         }
 
         @media (max-width: 768px) {
           .main-content {
-            padding-top: 64px;
             gap: 12px;
           }
 
           .kpi-section,
           .controls-mountain-section,
           .ai-section {
-            padding: 0 12px;
+            padding-left: 12px;
+            padding-right: 12px;
           }
 
           .mountain-panel {
             min-height: 280px;
+          }
+
+          .app-header {
+            padding: 10px 12px;
+          }
+
+          .logo-text {
+            font-size: 14px;
           }
         }
       `}</style>
