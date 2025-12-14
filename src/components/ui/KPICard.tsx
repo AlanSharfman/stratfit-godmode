@@ -1,9 +1,7 @@
 // src/components/ui/KPICard.tsx
-// STRATFIT — Premium KPI Card with Visible Micro-Widgets
-// Glass + emerald borders + premium glow
+// STRATFIT — KPI Card matching reference design exactly
 
 import React, { useMemo } from "react";
-import { motion } from "framer-motion";
 import { useScenarioStore } from "@/state/scenarioStore";
 
 // ============================================================================
@@ -17,10 +15,12 @@ export interface KPICardProps {
   rawValue: number;
   color: string;
   widgetType: "sparkline" | "bars" | "donut" | "gauge";
+  isExpanded?: boolean;
+  onSelect?: (index: number) => void;
 }
 
 // ============================================================================
-// MICRO-VISUAL COMPONENTS — All render visibly
+// WIDGETS
 // ============================================================================
 
 function seededRandom(seed: number) {
@@ -28,68 +28,58 @@ function seededRandom(seed: number) {
   return x - Math.floor(x);
 }
 
-function generateSparkline(seed: number, points: number = 10): number[] {
-  const data: number[] = [];
-  let val = 0.5;
-  for (let i = 0; i < points; i++) {
-    val += (seededRandom(seed + i) - 0.48) * 0.3;
-    val = Math.max(0.15, Math.min(0.9, val));
-    data.push(val);
-  }
-  return data;
-}
-
-interface SparklineProps {
-  color: string;
-  seed: number;
-  value: number;
-}
-
-function Sparkline({ color, seed, value }: SparklineProps) {
+function Sparkline({ color, seed, value }: { color: string; seed: number; value: number }) {
   const data = useMemo(() => {
-    const base = generateSparkline(seed);
-    return base.map((v, i) => v * 0.5 + value * 0.5 * (i / base.length));
+    const points: number[] = [];
+    let v = 0.35;
+    for (let i = 0; i < 10; i++) {
+      v += (seededRandom(seed + i) - 0.45) * 0.18;
+      v = Math.max(0.15, Math.min(0.85, v));
+      points.push(v * 0.6 + value * 0.4 * (i / 9));
+    }
+    return points;
   }, [seed, value]);
 
-  const w = 48;
-  const h = 20;
-  const points = data.map((v, i) => `${(i / (data.length - 1)) * w},${h - v * h}`).join(" ");
+  const w = 65;
+  const h = 22;
+  const path = data.map((v, i) => `${(i / (data.length - 1)) * w},${h - v * h}`).join(" ");
 
   return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display: "block" }}>
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
       <defs>
-        <linearGradient id={`spark-fill-${seed}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.4" />
-          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        <linearGradient id={`spark-${seed}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.35" />
+          <stop offset="100%" stopColor={color} stopOpacity="0.05" />
         </linearGradient>
       </defs>
-      <polygon points={`0,${h} ${points} ${w},${h}`} fill={`url(#spark-fill-${seed})`} />
-      <polyline points={points} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx={w} cy={h - data[data.length - 1] * h} r="2" fill={color} />
+      <polygon points={`0,${h} ${path} ${w},${h}`} fill={`url(#spark-${seed})`} />
+      <polyline 
+        points={path} 
+        fill="none" 
+        stroke={color} 
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+      />
     </svg>
   );
 }
 
-interface BarsProps {
-  color: string;
-  seed: number;
-  value: number;
-}
-
-function Bars({ color, seed, value }: BarsProps) {
+function Bars({ color, seed, value }: { color: string; seed: number; value: number }) {
   const data = useMemo(() => {
     return Array.from({ length: 5 }, (_, i) => 0.25 + seededRandom(seed + i) * 0.35 + value * 0.4);
   }, [seed, value]);
 
-  const w = 44;
-  const h = 18;
-  const barW = 6;
-  const gap = (w - barW * data.length) / (data.length - 1);
+  const w = 50;
+  const h = 22;
+  const barW = 7;
+  const gap = 3;
 
   return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display: "block" }}>
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
       {data.map((v, i) => {
-        const barH = Math.max(3, v * h);
+        const barH = Math.max(4, v * h);
+        const isLast = i === data.length - 1;
         return (
           <rect
             key={i}
@@ -97,9 +87,9 @@ function Bars({ color, seed, value }: BarsProps) {
             y={h - barH}
             width={barW}
             height={barH}
-            rx="1"
-            fill={color}
-            opacity={0.5 + (i / data.length) * 0.5}
+            rx="1.5"
+            fill={isLast ? "#22c55e" : color}
+            opacity={isLast ? 1 : 0.75}
           />
         );
       })}
@@ -107,74 +97,82 @@ function Bars({ color, seed, value }: BarsProps) {
   );
 }
 
-interface DonutProps {
-  color: string;
-  value: number;
-}
-
-function Donut({ color, value }: DonutProps) {
-  const size = 22;
-  const stroke = 3;
-  const r = (size - stroke) / 2;
+function Donut({ color, value }: { color: string; value: number }) {
+  const sz = 32;
+  const stroke = 4;
+  const r = (sz - stroke) / 2;
   const circ = 2 * Math.PI * r;
   const progress = Math.max(0.1, Math.min(1, value)) * circ;
+  const pct = Math.round(value * 100);
 
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: "block" }}>
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth={stroke} />
+    <svg width={sz} height={sz} viewBox={`0 0 ${sz} ${sz}`}>
+      <circle 
+        cx={sz / 2} 
+        cy={sz / 2} 
+        r={r} 
+        fill="none" 
+        stroke="rgba(255,255,255,0.06)" 
+        strokeWidth={stroke} 
+      />
       <circle
-        cx={size / 2}
-        cy={size / 2}
+        cx={sz / 2}
+        cy={sz / 2}
         r={r}
         fill="none"
         stroke={color}
         strokeWidth={stroke}
         strokeDasharray={`${progress} ${circ}`}
         strokeLinecap="round"
-        transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        style={{ filter: `drop-shadow(0 0 3px ${color})` }}
+        transform={`rotate(-90 ${sz / 2} ${sz / 2})`}
       />
+      <text 
+        x={sz / 2} 
+        y={sz / 2 + 4} 
+        textAnchor="middle" 
+        fill="white" 
+        fontSize="10" 
+        fontWeight="600"
+      >
+        {pct}%
+      </text>
     </svg>
   );
 }
 
-interface GaugeProps {
-  color: string;
-  value: number;
-}
-
-function Gauge({ color, value }: GaugeProps) {
-  const w = 40;
-  const h = 20;
-  const angle = Math.max(0.05, Math.min(1, value)) * 180;
+function Gauge({ color, value }: { color: string; value: number }) {
+  const w = 50;
+  const h = 26;
+  const strokeW = 4;
 
   return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display: "block" }}>
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
       <path
-        d={`M 3 ${h - 1} A ${w / 2 - 3} ${h - 3} 0 0 1 ${w - 3} ${h - 1}`}
+        d={`M 4 ${h - 2} A ${w / 2 - 4} ${h - 6} 0 0 1 ${w - 4} ${h - 2}`}
         fill="none"
-        stroke="rgba(255,255,255,0.1)"
-        strokeWidth="2.5"
+        stroke="rgba(255,255,255,0.06)"
+        strokeWidth={strokeW}
         strokeLinecap="round"
       />
       <path
-        d={`M 3 ${h - 1} A ${w / 2 - 3} ${h - 3} 0 0 1 ${w - 3} ${h - 1}`}
+        d={`M 4 ${h - 2} A ${w / 2 - 4} ${h - 6} 0 0 1 ${w - 4} ${h - 2}`}
         fill="none"
         stroke={color}
-        strokeWidth="2.5"
+        strokeWidth={strokeW}
         strokeLinecap="round"
-        strokeDasharray={`${(angle / 180) * 52} 100`}
-        style={{ filter: `drop-shadow(0 0 3px ${color})` }}
+        strokeDasharray={`${value * 60} 200`}
       />
-      <line
-        x1={w / 2}
-        y1={h - 1}
-        x2={w / 2 + Math.cos((Math.PI * (180 - angle)) / 180) * (h - 5)}
-        y2={h - 1 - Math.sin((Math.PI * (180 - angle)) / 180) * (h - 5)}
-        stroke="white"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
+      <text 
+        x={w / 2} 
+        y={h - 9} 
+        textAnchor="middle" 
+        fill="rgba(255,255,255,0.45)" 
+        fontSize="7" 
+        fontWeight="600"
+        letterSpacing="0.04em"
+      >
+        SCORE
+      </text>
     </svg>
   );
 }
@@ -183,12 +181,20 @@ function Gauge({ color, value }: GaugeProps) {
 // MAIN COMPONENT
 // ============================================================================
 
-export default function KPICard({ index, label, value, rawValue, color, widgetType }: KPICardProps) {
+export default function KPICard({ 
+  index, 
+  label, 
+  value, 
+  rawValue, 
+  color, 
+  widgetType, 
+  isExpanded = false,
+  onSelect 
+}: KPICardProps) {
   const hoveredKpiIndex = useScenarioStore((s) => s.hoveredKpiIndex);
-  const setHoveredKpiIndex = useScenarioStore((s) => s.setHoveredKpiIndex);
-  const isHovered = hoveredKpiIndex === index;
+  const isActive = hoveredKpiIndex === index;
 
-  const normalizedValue = Math.min(1, Math.max(0.05, rawValue));
+  const normalizedValue = Math.min(1, Math.max(0.1, rawValue));
 
   const Widget = useMemo(() => {
     switch (widgetType) {
@@ -205,173 +211,108 @@ export default function KPICard({ index, label, value, rawValue, color, widgetTy
     }
   }, [widgetType, color, index, normalizedValue]);
 
+  const handleClick = () => {
+    if (onSelect) {
+      onSelect(index);
+    }
+  };
+
   return (
-    <motion.div
-      className={`kpi-card ${isHovered ? "active" : ""}`}
+    <div
+      className={`kpi-card ${isActive ? "active" : ""}`}
       style={{ "--kpi-color": color } as React.CSSProperties}
-      onMouseEnter={() => setHoveredKpiIndex(index)}
-      onMouseLeave={() => setHoveredKpiIndex(null)}
-      whileHover={{ y: -2 }}
-      transition={{ duration: 0.12, ease: "easeOut" }}
+      onClick={handleClick}
     >
-      {/* Glass background */}
-      <div className="card-glass" />
-
-      {/* Premium border with emerald accent */}
-      <div className="card-border" />
-
-      {/* Ring stroke */}
-      <div className="card-ring" />
-
-      {/* Content */}
       <div className="card-content">
-        <div className="card-row">
-          <div className="card-info">
-            <span className="card-label">{label}</span>
-            <span className="card-value">{value}</span>
-          </div>
-          <div className="card-widget">{Widget}</div>
-        </div>
+        <span className="card-label">{label}</span>
+        <span className="card-value">{value}</span>
+        <div className="card-widget">{Widget}</div>
       </div>
 
       <style>{`
         .kpi-card {
-          position: relative;
-          border-radius: 12px;
+          width: 100%;
+          height: 100px;
+          border-radius: 6px;
           cursor: pointer;
-          transition: all 0.15s ease;
+          background: #161b22;
+          border: 1px solid #30363d;
+          overflow: hidden;
+          transition: border-color 0.15s, box-shadow 0.15s;
         }
 
-        /* Glass background: bg-white/5 backdrop-blur-xl */
-        .card-glass {
-          position: absolute;
-          inset: 0;
-          border-radius: 12px;
-          background: rgba(255, 255, 255, 0.05);
-          backdrop-filter: blur(24px);
-          -webkit-backdrop-filter: blur(24px);
-        }
-
-        /* Premium border: border border-emerald-400/20 */
-        .card-border {
-          position: absolute;
-          inset: 0;
-          border-radius: 12px;
-          border: 1px solid rgba(16, 185, 129, 0.22);
-          transition: all 0.15s ease;
-          pointer-events: none;
-        }
-
-        /* Ring stroke: ring-1 ring-white/10 */
-        .card-ring {
-          position: absolute;
-          inset: 0;
-          border-radius: 12px;
-          box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-          pointer-events: none;
-        }
-
-        /* Premium glow on hover/active */
-        .kpi-card:hover .card-border,
-        .kpi-card.active .card-border {
-          border-color: rgba(16, 185, 129, 0.4);
-          box-shadow: 
-            0 0 0 1px rgba(16, 185, 129, 0.22),
-            0 0 22px rgba(16, 185, 129, 0.1);
+        .kpi-card:hover {
+          border-color: #484f58;
         }
 
         .kpi-card.active {
-          transform: scale(1.02);
-        }
-
-        .kpi-card.active .card-border {
           border-color: var(--kpi-color);
           box-shadow: 
-            0 0 0 1px var(--kpi-color),
-            0 0 24px rgba(16, 185, 129, 0.15);
+            0 0 20px color-mix(in srgb, var(--kpi-color) 40%, transparent),
+            0 0 40px color-mix(in srgb, var(--kpi-color) 20%, transparent),
+            inset 0 0 25px color-mix(in srgb, var(--kpi-color) 8%, transparent);
         }
 
-        /* Content */
         .card-content {
-          position: relative;
-          z-index: 1;
-          padding: 8px 10px;
-        }
-
-        .card-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          gap: 6px;
-        }
-
-        .card-info {
+          height: 100%;
+          padding: 12px 14px;
           display: flex;
           flex-direction: column;
-          gap: 1px;
-          min-width: 0;
-          flex: 1;
         }
 
         .card-label {
-          font-size: 8px;
-          font-weight: 700;
-          letter-spacing: 0.08em;
-          color: var(--kpi-color);
+          font-size: 9px;
+          font-weight: 500;
+          letter-spacing: 0.06em;
+          color: rgba(255, 255, 255, 0.4);
           text-transform: uppercase;
-          opacity: 0.9;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
+          margin-bottom: 4px;
+          transition: color 0.15s;
         }
 
-        .kpi-card:hover .card-label,
+        .kpi-card:hover .card-label {
+          color: rgba(255, 255, 255, 0.6);
+        }
+
         .kpi-card.active .card-label {
-          text-shadow: 0 0 6px var(--kpi-color);
-          opacity: 1;
+          color: var(--kpi-color);
         }
 
         .card-value {
-          font-size: 14px;
-          font-weight: 800;
-          color: #ffffff;
-          letter-spacing: -0.02em;
-          line-height: 1.1;
-          white-space: nowrap;
+          font-size: 18px;
+          font-weight: 600;
+          color: #fff;
+          letter-spacing: -0.01em;
+          line-height: 1.2;
         }
 
         .card-widget {
-          flex-shrink: 0;
+          margin-top: auto;
           display: flex;
-          align-items: center;
-          justify-content: center;
+          align-items: flex-end;
         }
 
-        /* Responsive */
         @media (max-width: 1400px) {
-          .card-content {
-            padding: 6px 8px;
+          .kpi-card {
+            height: 90px;
           }
-          .card-label {
-            font-size: 7px;
+          .card-content {
+            padding: 10px 12px;
           }
           .card-value {
-            font-size: 12px;
+            font-size: 16px;
           }
         }
 
         @media (max-width: 1200px) {
-          .card-content {
-            padding: 8px 10px;
-          }
-          .card-label {
-            font-size: 8px;
+          .kpi-card {
+            height: 85px;
           }
           .card-value {
-            font-size: 14px;
+            font-size: 15px;
           }
         }
       `}</style>
-    </motion.div>
+    </div>
   );
 }

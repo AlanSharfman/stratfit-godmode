@@ -12,7 +12,8 @@ export type LeverId =
   | "headcount"
   | "operatingExpenses"
   | "churnSensitivity"
-  | "fundingInjection";
+  | "fundingInjection"
+  | "cashSensitivity";
 
 export interface PeakInstruction {
   index: number; // KPI domain index: 0..6 (fractional allowed for ridge shaping)
@@ -34,30 +35,32 @@ const safeIndex = (i: number, kpiCount: number) =>
 /**
  * Lever -> KPI influence mapping (must match your UI semantics).
  * KPI index reference (7):
- * 0 MRR
- * 1 Gross Profit
- * 2 Cash Balance
- * 3 Burn Rate
- * 4 Runway
- * 5 CAC
- * 6 Churn Rate
+ * 0 REVENUE (MRR)
+ * 1 PROFIT (Gross Profit)
+ * 2 RUNWAY
+ * 3 CASH (Cash Balance)
+ * 4 BURN RATE
+ * 5 EBITDA (CAC)
+ * 6 RISK (Churn Rate)
  */
 function leverToKpis(leverId: LeverId | null): number[] {
   switch (leverId) {
     case "revenueGrowth":
-      return [0, 1, 4];
+      return [0, 1, 2];
     case "pricingAdjustment":
       return [0, 1, 6];
     case "marketingSpend":
-      return [0, 5, 3];
+      return [0, 4, 5];
     case "headcount":
-      return [3, 4, 1];
+      return [4, 5, 1];
     case "operatingExpenses":
-      return [3, 4, 2];
+      return [4, 5, 2];
     case "churnSensitivity":
-      return [6, 0, 4];
+      return [6, 2, 0];
     case "fundingInjection":
-      return [2, 4, 3];
+      return [3, 2, 4];
+    case "cashSensitivity":
+      return [3, 2, 4]; // CASH, RUNWAY, BURN RATE
     default:
       return [];
   }

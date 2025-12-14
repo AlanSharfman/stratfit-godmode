@@ -1,8 +1,8 @@
 // src/components/ui/Slider.tsx
-// STRATFIT — Optimized Premium Slider
-// Immediate response, memoized, no lag
+// STRATFIT — Ultra-responsive Slider
+// Zero delay, direct DOM updates for smoothest possible response
 
-import React, { useRef, useCallback, memo } from "react";
+import React, { useCallback, useRef, useEffect, memo } from "react";
 
 interface SliderProps {
   value: number;
@@ -13,6 +13,7 @@ interface SliderProps {
   onStart?: () => void;
   onEnd?: () => void;
   highlight?: boolean;
+  highlightColor?: string | null;
 }
 
 const Slider = memo(function Slider({
@@ -24,143 +25,151 @@ const Slider = memo(function Slider({
   onStart,
   onEnd,
   highlight,
+  highlightColor,
 }: SliderProps) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const fillRef = useRef<HTMLDivElement>(null);
+  const thumbRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+  
   const percentage = ((value - min) / (max - min)) * 100;
-  const rafRef = useRef<number | null>(null);
-  const lastValueRef = useRef(value);
+  const isHighlighted = highlight || highlightColor !== null;
+  const activeColor = highlightColor || "#22d3ee";
 
-  // Optimized change handler with RAF throttling
-  const handleChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newValue = Number(e.target.value);
-      
-      // Skip if value hasn't changed
-      if (newValue === lastValueRef.current) return;
-      lastValueRef.current = newValue;
+  // Direct DOM update for instant visual feedback
+  const updateVisuals = useCallback((pct: number) => {
+    if (fillRef.current) {
+      fillRef.current.style.width = `${pct}%`;
+    }
+    if (thumbRef.current) {
+      thumbRef.current.style.left = `${pct}%`;
+    }
+  }, []);
 
-      // Cancel pending RAF
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-      }
+  // Sync visuals with value prop
+  useEffect(() => {
+    updateVisuals(percentage);
+  }, [percentage, updateVisuals]);
 
-      // Use RAF for smooth updates
-      rafRef.current = requestAnimationFrame(() => {
-        onChange(newValue);
-        rafRef.current = null;
-      });
-    },
-    [onChange]
-  );
+  const calculateValue = useCallback((clientX: number) => {
+    if (!trackRef.current) return value;
+    const rect = trackRef.current.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const pct = Math.max(0, Math.min(1, x / rect.width));
+    const rawValue = min + pct * (max - min);
+    const steppedValue = Math.round(rawValue / step) * step;
+    return Math.max(min, Math.min(max, steppedValue));
+  }, [min, max, step, value]);
 
-  const handleMouseDown = useCallback(() => {
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    isDragging.current = true;
     onStart?.();
-  }, [onStart]);
+    
+    const newValue = calculateValue(e.clientX);
+    const newPct = ((newValue - min) / (max - min)) * 100;
+    updateVisuals(newPct);
+    onChange(newValue);
+    
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  }, [calculateValue, min, max, onChange, onStart, updateVisuals]);
 
-  const handleMouseUp = useCallback(() => {
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!isDragging.current) return;
+    
+    const newValue = calculateValue(e.clientX);
+    const newPct = ((newValue - min) / (max - min)) * 100;
+    
+    // Instant visual update
+    updateVisuals(newPct);
+    
+    // Immediate state update
+    onChange(newValue);
+  }, [calculateValue, min, max, onChange, updateVisuals]);
+
+  const handlePointerUp = useCallback((e: React.PointerEvent) => {
+    if (!isDragging.current) return;
+    isDragging.current = false;
     onEnd?.();
+    (e.target as HTMLElement).releasePointerCapture(e.pointerId);
   }, [onEnd]);
 
   return (
-    <div className="slider-container">
-      <div className={`slider-wrapper ${highlight ? "highlight" : ""}`}>
-        {/* Track background */}
-        <div className="slider-track">
-          {/* Filled portion */}
-          <div
-            className="slider-fill"
-            style={{ width: `${percentage}%` }}
-          />
-        </div>
-
-        {/* Native input */}
-        <input
-          type="range"
-          value={value}
-          min={min}
-          max={max}
-          step={step}
-          onMouseDown={handleMouseDown}
-          onTouchStart={handleMouseDown}
-          onMouseUp={handleMouseUp}
-          onTouchEnd={handleMouseUp}
-          onChange={handleChange}
-          className="slider-input"
-        />
-
-        {/* Custom thumb */}
-        <div
-          className="slider-thumb"
-          style={{ left: `${percentage}%` }}
-        />
+    <div 
+      className={`slider-container ${isHighlighted ? "highlighted" : ""}`}
+      style={{ "--slider-color": activeColor } as React.CSSProperties}
+    >
+      <div 
+        ref={trackRef}
+        className="slider-track"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+      >
+        <div ref={fillRef} className="slider-fill" />
+        <div ref={thumbRef} className="slider-thumb" />
       </div>
 
       <style>{`
         .slider-container {
           width: 100%;
           padding: 6px 0;
-        }
-
-        .slider-wrapper {
-          position: relative;
-          width: 100%;
-          height: 18px;
-          display: flex;
-          align-items: center;
-          transition: filter 0.15s ease;
-        }
-
-        .slider-wrapper.highlight {
-          filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
+          touch-action: none;
         }
 
         .slider-track {
+          position: relative;
+          width: 100%;
+          height: 20px;
+          display: flex;
+          align-items: center;
+          cursor: pointer;
+        }
+
+        .slider-track::before {
+          content: '';
           position: absolute;
           width: 100%;
-          height: 3px;
-          background: rgba(255, 255, 255, 0.1);
+          height: 4px;
+          background: rgba(255, 255, 255, 0.08);
           border-radius: 2px;
-          overflow: hidden;
         }
 
         .slider-fill {
-          height: 100%;
-          background: linear-gradient(90deg, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0.9) 100%);
+          position: absolute;
+          height: 4px;
+          background: rgba(255, 255, 255, 0.3);
           border-radius: 2px;
-          transition: width 0.05s ease-out;
+          will-change: width;
+        }
+
+        .slider-container.highlighted .slider-fill {
+          background: var(--slider-color);
+          box-shadow: 0 0 8px color-mix(in srgb, var(--slider-color) 50%, transparent);
         }
 
         .slider-thumb {
           position: absolute;
-          width: 12px;
-          height: 12px;
-          background: white;
+          width: 14px;
+          height: 14px;
+          background: rgba(255, 255, 255, 0.9);
           border-radius: 50%;
           transform: translateX(-50%);
-          box-shadow: 
-            0 0 0 2px rgba(255, 255, 255, 0.15),
-            0 2px 6px rgba(0, 0, 0, 0.4),
-            0 0 10px rgba(255, 255, 255, 0.2);
-          pointer-events: none;
-          z-index: 2;
-          transition: left 0.05s ease-out;
+          box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+          will-change: left;
+          transition: transform 0.1s ease;
         }
 
-        .slider-input {
-          position: absolute;
-          width: 100%;
-          height: 18px;
-          opacity: 0;
-          cursor: pointer;
-          z-index: 3;
-          margin: 0;
+        .slider-track:active .slider-thumb {
+          transform: translateX(-50%) scale(1.15);
         }
 
-        .slider-input:active + .slider-thumb {
-          transform: translateX(-50%) scale(1.1);
+        .slider-container.highlighted .slider-thumb {
+          background: var(--slider-color);
           box-shadow: 
-            0 0 0 3px rgba(255, 255, 255, 0.2),
-            0 2px 8px rgba(0, 0, 0, 0.4),
-            0 0 14px rgba(255, 255, 255, 0.3);
+            0 0 12px color-mix(in srgb, var(--slider-color) 70%, transparent),
+            0 1px 4px rgba(0, 0, 0, 0.3);
         }
       `}</style>
     </div>

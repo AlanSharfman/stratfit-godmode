@@ -1,8 +1,7 @@
 // src/components/ControlDeck.tsx
-// STRATFIT — Control Deck with Horizontal Layout Option
-// Compact horizontal strip for bottom placement
+// STRATFIT — Control Deck matching reference design
 
-import React, { useMemo, useState, useCallback, memo } from "react";
+import React, { useMemo, useCallback, memo } from "react";
 import Slider from "./ui/Slider";
 import { useScenarioStore } from "@/state/scenarioStore";
 import type { LeverId } from "@/logic/mountainPeakModel";
@@ -29,60 +28,63 @@ export interface ControlBoxConfig {
 }
 
 // ============================================================================
-// CONSTANTS
+// KPI INDEX TO COLOR MAPPING
 // ============================================================================
 
-const BOX_COLORS: Record<string, { accent: string; glow: string }> = {
-  performance: { accent: "#22d3ee", glow: "rgba(34, 211, 238, 0.2)" },
-  financial: { accent: "#a78bfa", glow: "rgba(167, 139, 250, 0.2)" },
-  risk: { accent: "#fb7185", glow: "rgba(251, 113, 133, 0.2)" },
+const KPI_COLORS: Record<number, string> = {
+  0: "#22d3ee", // REVENUE - cyan
+  1: "#22d3ee", // PROFIT - cyan
+  2: "#f59e0b", // RUNWAY - orange
+  3: "#22d3ee", // CASH - cyan
+  4: "#22d3ee", // BURN RATE - cyan
+  5: "#a78bfa", // EBITDA - purple
+  6: "#ef4444", // RISK - red
 };
+
+// ============================================================================
+// LEVER TO KPI MAPPING - Which sliders affect which KPIs
+// ============================================================================
 
 const LEVER_TO_KPI: Record<LeverId, number[]> = {
-  revenueGrowth: [0, 1],
-  pricingAdjustment: [0, 1, 6],
-  marketingSpend: [0, 5],
-  headcount: [3, 4],
-  operatingExpenses: [3, 4, 2],
-  churnSensitivity: [6, 0],
-  fundingInjection: [2, 4],
-};
-
-const BOX_TO_KPIS: Record<string, number[]> = {
-  performance: [0, 1, 5],
-  financial: [2, 3, 4],
-  risk: [6, 4],
+  revenueGrowth: [0, 1],        // → REVENUE, PROFIT
+  pricingAdjustment: [0, 1],    // → REVENUE, PROFIT
+  marketingSpend: [0, 4],       // → REVENUE, BURN RATE
+  headcount: [4, 5],            // → BURN RATE, EBITDA
+  operatingExpenses: [4, 5],    // → BURN RATE, EBITDA
+  churnSensitivity: [6, 2],     // → RISK, RUNWAY
+  fundingInjection: [3, 2],     // → CASH, RUNWAY
+  cashSensitivity: [3, 2, 4],   // → CASH, RUNWAY, BURN RATE
 };
 
 // ============================================================================
-// COMPACT SLIDER (for horizontal layout)
+// SLIDER ROW
 // ============================================================================
 
-interface CompactSliderProps {
+interface SliderRowProps {
   slider: ControlSliderConfig;
-  isHighlighted: boolean;
-  accentColor: string;
+  highlightColor: string | null;
   onStart: () => void;
   onEnd: () => void;
   onChange: (v: number) => void;
 }
 
-const CompactSlider = memo(function CompactSlider({
+const SliderRow = memo(function SliderRow({
   slider,
-  isHighlighted,
-  accentColor,
+  highlightColor,
   onStart,
   onEnd,
   onChange,
-}: CompactSliderProps) {
+}: SliderRowProps) {
+  const isHighlighted = highlightColor !== null;
+
   return (
-    <div
-      className={`compact-slider ${isHighlighted ? "highlighted" : ""}`}
-      style={{ "--accent": accentColor } as React.CSSProperties}
+    <div 
+      className={`slider-row ${isHighlighted ? "highlighted" : ""}`}
+      style={{ "--highlight-color": highlightColor || "#22d3ee" } as React.CSSProperties}
     >
-      <div className="compact-header">
-        <span className="compact-label">{slider.label}</span>
-        <span className="compact-value">
+      <div className="slider-header">
+        <span className="slider-label">{slider.label}</span>
+        <span className="slider-value">
           {slider.format ? slider.format(slider.value) : String(slider.value)}
         </span>
       </div>
@@ -91,48 +93,46 @@ const CompactSlider = memo(function CompactSlider({
         min={slider.min}
         max={slider.max}
         step={slider.step}
-        highlight={isHighlighted}
+        highlightColor={highlightColor}
         onStart={onStart}
         onEnd={onEnd}
         onChange={onChange}
       />
 
       <style>{`
-        .compact-slider {
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-          min-width: 100px;
-          flex: 1;
+        .slider-row {
+          padding: 5px 0;
         }
 
-        .compact-header {
+        .slider-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
+          margin-bottom: 5px;
         }
 
-        .compact-label {
-          font-size: 10px;
-          font-weight: 600;
-          color: rgba(255, 255, 255, 0.6);
+        .slider-label {
+          font-size: 11px;
+          font-weight: 500;
+          color: rgba(255, 255, 255, 0.5);
           transition: color 0.15s;
         }
 
-        .compact-slider.highlighted .compact-label {
-          color: var(--accent);
+        .slider-row.highlighted .slider-label {
+          color: var(--highlight-color);
+          text-shadow: 0 0 10px color-mix(in srgb, var(--highlight-color) 40%, transparent);
         }
 
-        .compact-value {
-          font-size: 10px;
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.4);
+        .slider-value {
+          font-size: 11px;
+          font-weight: 600;
+          color: rgba(255, 255, 255, 0.35);
           font-variant-numeric: tabular-nums;
           transition: color 0.15s;
         }
 
-        .compact-slider.highlighted .compact-value {
-          color: var(--accent);
+        .slider-row.highlighted .slider-value {
+          color: var(--highlight-color);
         }
       `}</style>
     </div>
@@ -140,129 +140,105 @@ const CompactSlider = memo(function CompactSlider({
 });
 
 // ============================================================================
-// HORIZONTAL BOX (for horizontal layout)
+// CONTROL BOX
 // ============================================================================
 
-interface HorizontalBoxProps {
+interface ControlBoxProps {
   box: ControlBoxConfig;
-  colors: { accent: string; glow: string };
-  isHighlighted: boolean;
   hoveredKpiIndex: number | null;
   onSliderStart: (id: LeverId, value: number) => void;
   onSliderEnd: () => void;
   onSliderChange: (id: LeverId, value: number) => void;
 }
 
-const HorizontalBox = memo(function HorizontalBox({
+const ControlBox = memo(function ControlBox({
   box,
-  colors,
-  isHighlighted,
   hoveredKpiIndex,
   onSliderStart,
   onSliderEnd,
   onSliderChange,
-}: HorizontalBoxProps) {
-  const isSliderHighlighted = useCallback(
-    (sliderId: LeverId) => {
-      if (hoveredKpiIndex === null) return false;
+}: ControlBoxProps) {
+  const getHighlightColor = useCallback(
+    (sliderId: LeverId): string | null => {
+      if (hoveredKpiIndex === null) return null;
       const relatedKpis = LEVER_TO_KPI[sliderId] || [];
-      return relatedKpis.includes(hoveredKpiIndex);
+      if (relatedKpis.includes(hoveredKpiIndex)) {
+        return KPI_COLORS[hoveredKpiIndex] || "#22d3ee";
+      }
+      return null;
     },
     [hoveredKpiIndex]
   );
 
+  const boxHighlightColor = useMemo(() => {
+    for (const slider of box.sliders) {
+      const color = getHighlightColor(slider.id);
+      if (color) return color;
+    }
+    return null;
+  }, [box.sliders, getHighlightColor]);
+
+  const isBoxHighlighted = boxHighlightColor !== null;
+
   return (
-    <div
-      className={`h-box ${isHighlighted ? "highlighted" : ""}`}
-      style={{ "--box-accent": colors.accent, "--box-glow": colors.glow } as React.CSSProperties}
+    <div 
+      className={`control-box ${isBoxHighlighted ? "highlighted" : ""}`}
+      style={{ "--box-color": boxHighlightColor || "#22d3ee" } as React.CSSProperties}
     >
-      <div className="h-box-border" />
-      <div className="h-box-content">
-        <div className="h-box-header">
-          <div className={`h-box-dot ${isHighlighted ? "active" : ""}`} />
-          <span className={`h-box-title ${isHighlighted ? "active" : ""}`}>{box.title}</span>
-        </div>
-        <div className="h-box-sliders">
-          {box.sliders.map((s) => (
-            <CompactSlider
-              key={s.id}
-              slider={s}
-              isHighlighted={isSliderHighlighted(s.id)}
-              accentColor={colors.accent}
-              onStart={() => onSliderStart(s.id, s.value)}
-              onEnd={onSliderEnd}
-              onChange={(v) => onSliderChange(s.id, v)}
-            />
-          ))}
-        </div>
+      <div className="box-header">
+        <span className="box-title">{box.title}</span>
+      </div>
+      <div className="box-sliders">
+        {box.sliders.map((s) => (
+          <SliderRow
+            key={s.id}
+            slider={s}
+            highlightColor={getHighlightColor(s.id)}
+            onStart={() => onSliderStart(s.id, s.value)}
+            onEnd={onSliderEnd}
+            onChange={(v) => onSliderChange(s.id, v)}
+          />
+        ))}
       </div>
 
       <style>{`
-        .h-box {
-          position: relative;
-          border-radius: 10px;
-          flex: 1;
-          min-width: 200px;
+        .control-box {
+          padding: 12px 14px;
+          background: #161b22;
+          border-radius: 6px;
+          border: 1px solid #30363d;
+          transition: border-color 0.15s, box-shadow 0.15s;
         }
 
-        .h-box-border {
-          position: absolute;
-          inset: 0;
-          border-radius: 10px;
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          transition: all 0.15s ease;
+        .control-box.highlighted {
+          border-color: var(--box-color);
+          box-shadow: 
+            0 0 18px color-mix(in srgb, var(--box-color) 30%, transparent),
+            inset 0 0 25px color-mix(in srgb, var(--box-color) 6%, transparent);
         }
 
-        .h-box.highlighted .h-box-border {
-          border-color: var(--box-accent);
-          box-shadow: 0 0 16px var(--box-glow);
-        }
-
-        .h-box-content {
-          position: relative;
-          z-index: 1;
-          padding: 10px 12px;
-          background: rgba(10, 12, 18, 0.9);
-          border-radius: 10px;
-          backdrop-filter: blur(12px);
-        }
-
-        .h-box-header {
-          display: flex;
-          align-items: center;
-          gap: 6px;
+        .box-header {
           margin-bottom: 8px;
         }
 
-        .h-box-dot {
-          width: 5px;
-          height: 5px;
-          border-radius: 50%;
-          background: rgba(255, 255, 255, 0.2);
-          transition: all 0.15s;
-        }
-
-        .h-box-dot.active {
-          background: var(--box-accent);
-          box-shadow: 0 0 6px var(--box-accent);
-        }
-
-        .h-box-title {
-          font-size: 9px;
-          font-weight: 700;
-          letter-spacing: 0.1em;
+        .box-title {
+          font-size: 11px;
+          font-weight: 600;
+          letter-spacing: 0.06em;
           text-transform: uppercase;
           color: rgba(255, 255, 255, 0.4);
           transition: color 0.15s;
         }
 
-        .h-box-title.active {
-          color: var(--box-accent);
+        .control-box.highlighted .box-title {
+          color: var(--box-color);
+          text-shadow: 0 0 10px color-mix(in srgb, var(--box-color) 40%, transparent);
         }
 
-        .h-box-sliders {
+        .box-sliders {
           display: flex;
-          gap: 16px;
+          flex-direction: column;
+          gap: 0;
         }
       `}</style>
     </div>
@@ -276,15 +252,11 @@ const HorizontalBox = memo(function HorizontalBox({
 export function ControlDeck(props: {
   boxes: ControlBoxConfig[];
   onChange: (id: LeverId | "__end__", value: number) => void;
-  layout?: "vertical" | "horizontal";
 }) {
-  const { boxes, onChange, layout = "vertical" } = props;
+  const { boxes, onChange } = props;
 
   const hoveredKpiIndex = useScenarioStore((s) => s.hoveredKpiIndex);
-  const activeLeverId = useScenarioStore((s) => s.activeLeverId);
   const setActiveLever = useScenarioStore((s) => s.setActiveLever);
-
-  const [dragging, setDragging] = useState<LeverId | null>(null);
 
   const rangeMap = useMemo(() => {
     const m = new Map<LeverId, { min: number; max: number; def: number }>();
@@ -308,18 +280,8 @@ export function ControlDeck(props: {
     [rangeMap]
   );
 
-  const isBoxHighlighted = useCallback(
-    (boxId: string) => {
-      if (hoveredKpiIndex === null) return false;
-      const relatedKpis = BOX_TO_KPIS[boxId] || [];
-      return relatedKpis.includes(hoveredKpiIndex);
-    },
-    [hoveredKpiIndex]
-  );
-
   const handleSliderStart = useCallback(
     (id: LeverId, value: number) => {
-      setDragging(id);
       const intensity = computeIntensity01(id, value);
       setActiveLever(id, intensity);
     },
@@ -327,7 +289,6 @@ export function ControlDeck(props: {
   );
 
   const handleSliderEnd = useCallback(() => {
-    setDragging(null);
     setActiveLever(null, 0);
     onChange("__end__", 0);
   }, [setActiveLever, onChange]);
@@ -341,160 +302,24 @@ export function ControlDeck(props: {
     [computeIntensity01, setActiveLever, onChange]
   );
 
-  // HORIZONTAL LAYOUT
-  if (layout === "horizontal") {
-    return (
-      <div className="control-deck-horizontal">
-        {boxes.map((box) => {
-          const highlighted = isBoxHighlighted(box.id);
-          const colors = BOX_COLORS[box.id] || BOX_COLORS.performance;
-
-          return (
-            <HorizontalBox
-              key={box.id}
-              box={box}
-              colors={colors}
-              isHighlighted={highlighted}
-              hoveredKpiIndex={hoveredKpiIndex}
-              onSliderStart={handleSliderStart}
-              onSliderEnd={handleSliderEnd}
-              onSliderChange={handleSliderChange}
-            />
-          );
-        })}
-
-        <style>{`
-          .control-deck-horizontal {
-            display: flex;
-            gap: 12px;
-            width: 100%;
-          }
-
-          @media (max-width: 900px) {
-            .control-deck-horizontal {
-              flex-wrap: wrap;
-              gap: 8px;
-            }
-          }
-        `}</style>
-      </div>
-    );
-  }
-
-  // VERTICAL LAYOUT (default)
   return (
-    <div className="control-deck-vertical">
-      {boxes.map((box) => {
-        const highlighted = isBoxHighlighted(box.id);
-        const colors = BOX_COLORS[box.id] || BOX_COLORS.performance;
-
-        return (
-          <div
-            key={box.id}
-            className={`v-box ${highlighted ? "highlighted" : ""}`}
-            style={{ "--box-accent": colors.accent, "--box-glow": colors.glow } as React.CSSProperties}
-          >
-            <div className="v-box-border" />
-            <div className="v-box-content">
-              <div className="v-box-header">
-                <div className={`v-box-dot ${highlighted ? "active" : ""}`} />
-                <span className={`v-box-title ${highlighted ? "active" : ""}`}>{box.title}</span>
-              </div>
-              <div className="v-box-sliders">
-                {box.sliders.map((s) => {
-                  const sliderHighlighted =
-                    hoveredKpiIndex !== null && (LEVER_TO_KPI[s.id] || []).includes(hoveredKpiIndex);
-
-                  return (
-                    <CompactSlider
-                      key={s.id}
-                      slider={s}
-                      isHighlighted={sliderHighlighted}
-                      accentColor={colors.accent}
-                      onStart={() => handleSliderStart(s.id, s.value)}
-                      onEnd={handleSliderEnd}
-                      onChange={(v) => handleSliderChange(s.id, v)}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        );
-      })}
+    <div className="control-deck">
+      {boxes.map((box) => (
+        <ControlBox
+          key={box.id}
+          box={box}
+          hoveredKpiIndex={hoveredKpiIndex}
+          onSliderStart={handleSliderStart}
+          onSliderEnd={handleSliderEnd}
+          onSliderChange={handleSliderChange}
+        />
+      ))}
 
       <style>{`
-        .control-deck-vertical {
+        .control-deck {
           display: flex;
           flex-direction: column;
-          gap: 12px;
-          width: 100%;
-        }
-
-        .v-box {
-          position: relative;
-          border-radius: 12px;
-        }
-
-        .v-box-border {
-          position: absolute;
-          inset: 0;
-          border-radius: 12px;
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          transition: all 0.15s ease;
-        }
-
-        .v-box.highlighted .v-box-border {
-          border-color: var(--box-accent);
-          box-shadow: 0 0 20px var(--box-glow);
-        }
-
-        .v-box-content {
-          position: relative;
-          z-index: 1;
-          padding: 14px;
-          background: rgba(10, 12, 18, 0.9);
-          border-radius: 12px;
-          backdrop-filter: blur(12px);
-        }
-
-        .v-box-header {
-          display: flex;
-          align-items: center;
           gap: 8px;
-          margin-bottom: 12px;
-        }
-
-        .v-box-dot {
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background: rgba(255, 255, 255, 0.2);
-          transition: all 0.15s;
-        }
-
-        .v-box-dot.active {
-          background: var(--box-accent);
-          box-shadow: 0 0 8px var(--box-accent);
-        }
-
-        .v-box-title {
-          font-size: 10px;
-          font-weight: 700;
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-          color: rgba(255, 255, 255, 0.4);
-          transition: color 0.15s;
-        }
-
-        .v-box-title.active {
-          color: var(--box-accent);
-        }
-
-        .v-box-sliders {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
         }
       `}</style>
     </div>

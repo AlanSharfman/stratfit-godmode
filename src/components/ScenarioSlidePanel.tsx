@@ -1,6 +1,7 @@
 // src/components/ScenarioSlidePanel.tsx
-// STRATFIT — Glass Scenario Selector
-// Auto-appears after 3s, overlays mountain, leaves visible handle
+// STRATFIT — Scenario Selection Panel
+// LEFT side, stacked vertically, slides OUT and BACK IN visibly
+// Ceremonial, premium handle remains visible
 
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,39 +18,39 @@ interface ScenarioOption {
 interface ScenarioSlidePanelProps {
   selected: ScenarioId;
   onSelect: (id: ScenarioId) => void;
-  isVisible: boolean;
+  isOpen: boolean;
   onToggle: () => void;
 }
 
 const SCENARIOS: ScenarioOption[] = [
-  { id: "base", label: "BASE CASE", sublabel: "Current trajectory", color: "#22c55e" },
-  { id: "upside", label: "UPSIDE", sublabel: "Optimistic growth", color: "#22d3ee" },
+  { id: "base", label: "BASE CASE", sublabel: "Current trajectory", color: "#4ade80" },
+  { id: "upside", label: "UPSIDE", sublabel: "Optimistic growth", color: "#38bdf8" },
   { id: "downside", label: "DOWNSIDE", sublabel: "Conservative view", color: "#fbbf24" },
-  { id: "extreme", label: "EXTREME", sublabel: "Stress test", color: "#ef4444" },
+  { id: "extreme", label: "EXTREME", sublabel: "Stress test", color: "#f87171" },
 ];
 
 const ICONS: Record<ScenarioId, React.ReactNode> = {
   base: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
       <path d="M12 20V10" />
       <path d="M18 20V4" />
       <path d="M6 20v-4" />
     </svg>
   ),
   upside: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
       <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
       <polyline points="17 6 23 6 23 12" />
     </svg>
   ),
   downside: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
       <polyline points="23 18 13.5 8.5 8.5 13.5 1 6" />
       <polyline points="17 18 23 18 23 12" />
     </svg>
   ),
   extreme: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
       <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
       <line x1="12" y1="9" x2="12" y2="13" />
       <line x1="12" y1="17" x2="12.01" y2="17" />
@@ -60,110 +61,102 @@ const ICONS: Record<ScenarioId, React.ReactNode> = {
 export default function ScenarioSlidePanel({
   selected,
   onSelect,
-  isVisible,
+  isOpen,
   onToggle,
 }: ScenarioSlidePanelProps) {
   const selectedScenario = SCENARIOS.find((s) => s.id === selected) || SCENARIOS[0];
 
-  const handleSelect = (id: ScenarioId) => {
-    onSelect(id);
-  };
-
   return (
     <>
-      {/* LEVER/HANDLE — Always visible when dock is closed */}
+      {/* PREMIUM HANDLE — Always visible on LEFT when panel is closed */}
       <AnimatePresence>
-        {!isVisible && (
+        {!isOpen && (
           <motion.button
             className="scenario-handle"
             onClick={onToggle}
-            initial={{ x: -50, opacity: 0 }}
+            initial={{ x: -80, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -50, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            whileHover={{ x: 4, boxShadow: "0 0 20px rgba(34, 197, 94, 0.3)" }}
+            exit={{ x: -80, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 400, damping: 32 }}
+            whileHover={{ x: 6 }}
             style={{ "--accent": selectedScenario.color } as React.CSSProperties}
           >
-            <div className="handle-bar" />
+            <div className="handle-glow" />
             <div className="handle-content">
               <div className="handle-icon">{ICONS[selected]}</div>
-              <div className="handle-text">
+              <div className="handle-info">
                 <span className="handle-label">{selectedScenario.label}</span>
-                <span className="handle-hint">Click to change</span>
+                <span className="handle-hint">Scenario</span>
               </div>
-              <svg className="handle-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg className="handle-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="9 18 15 12 9 6" />
               </svg>
             </div>
+            <div className="handle-accent" />
           </motion.button>
         )}
       </AnimatePresence>
 
-      {/* GLASS PANEL — Floats over mountain */}
+      {/* SLIDE PANEL — From LEFT edge */}
       <AnimatePresence>
-        {isVisible && (
+        {isOpen && (
           <>
-            {/* Click-away backdrop (transparent) */}
+            {/* Backdrop */}
             <motion.div
-              className="scenario-backdrop"
+              className="panel-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={onToggle}
             />
 
-            {/* Glass selector panel */}
+            {/* Panel slides from LEFT */}
             <motion.div
-              className="scenario-glass"
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ type: "spring", stiffness: 400, damping: 35 }}
+              className="slide-panel"
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", stiffness: 350, damping: 35 }}
             >
-              {/* Glass layers */}
-              <div className="glass-bg" />
-              <div className="glass-border" />
-              <div className="glass-shine" />
+              <div className="panel-glass" />
+              <div className="panel-border" />
 
-              {/* Content */}
-              <div className="glass-content">
-                <div className="glass-header">
-                  <span className="glass-title">
-                    <span className="title-dot">◈</span>
-                    SELECT SCENARIO
-                  </span>
-                  <button className="glass-close" onClick={onToggle}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <div className="panel-content">
+                <div className="panel-header">
+                  <span className="panel-title">SCENARIO</span>
+                  <button className="panel-close" onClick={onToggle}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <line x1="18" y1="6" x2="6" y2="18" />
                       <line x1="6" y1="6" x2="18" y2="18" />
                     </svg>
                   </button>
                 </div>
 
-                <div className="scenario-grid">
+                {/* Vertically stacked options */}
+                <div className="scenario-stack">
                   {SCENARIOS.map((s, i) => {
                     const isSelected = selected === s.id;
                     return (
                       <motion.button
                         key={s.id}
-                        className={`scenario-btn ${isSelected ? "selected" : ""}`}
+                        className={`scenario-option ${isSelected ? "selected" : ""}`}
                         style={{ "--sc": s.color } as React.CSSProperties}
-                        onClick={() => handleSelect(s.id)}
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.05 }}
-                        whileHover={{ scale: 1.02 }}
+                        onClick={() => onSelect(s.id)}
+                        initial={{ opacity: 0, x: -16 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.04 }}
+                        whileHover={{ x: 4 }}
                         whileTap={{ scale: 0.98 }}
                       >
-                        <div className="btn-accent" />
-                        <div className="btn-icon">{ICONS[s.id]}</div>
-                        <div className="btn-text">
-                          <span className="btn-label">{s.label}</span>
-                          <span className="btn-sub">{s.sublabel}</span>
+                        <div className="option-bar" />
+                        <div className="option-icon">{ICONS[s.id]}</div>
+                        <div className="option-text">
+                          <span className="option-label">{s.label}</span>
+                          <span className="option-sub">{s.sublabel}</span>
                         </div>
                         {isSelected && (
-                          <motion.div className="btn-check" initial={{ scale: 0 }} animate={{ scale: 1 }}>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={s.color} strokeWidth="3">
+                          <motion.div className="option-check" initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={s.color} strokeWidth="2.5">
                               <polyline points="20 6 9 17 4 12" />
                             </svg>
                           </motion.div>
@@ -179,7 +172,7 @@ export default function ScenarioSlidePanel({
       </AnimatePresence>
 
       <style>{`
-        /* HANDLE — Slim vertical lever */
+        /* HANDLE — Left edge, ceremonial */
         .scenario-handle {
           position: fixed;
           left: 0;
@@ -188,8 +181,8 @@ export default function ScenarioSlidePanel({
           z-index: 100;
           display: flex;
           align-items: center;
-          background: rgba(10, 12, 18, 0.95);
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: rgba(12, 14, 18, 0.96);
+          border: 1px solid rgba(255, 255, 255, 0.07);
           border-left: none;
           border-radius: 0 12px 12px 0;
           cursor: pointer;
@@ -198,232 +191,221 @@ export default function ScenarioSlidePanel({
           transition: all 0.2s ease;
         }
 
-        .handle-bar {
-          width: 3px;
-          height: 100%;
-          background: var(--accent);
-          box-shadow: 0 0 12px var(--accent);
+        .scenario-handle:hover {
+          background: rgba(16, 18, 24, 0.98);
+          border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .handle-glow {
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(circle at 0% 50%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 60%);
+          pointer-events: none;
         }
 
         .handle-content {
           display: flex;
           align-items: center;
           gap: 10px;
-          padding: 12px 14px 12px 12px;
+          padding: 14px 16px 14px 14px;
         }
 
         .handle-icon {
           color: var(--accent);
           display: flex;
+          opacity: 0.9;
         }
 
-        .handle-text {
+        .handle-info {
           display: flex;
           flex-direction: column;
-          gap: 1px;
+          gap: 2px;
         }
 
         .handle-label {
           font-size: 11px;
           font-weight: 700;
-          color: #fff;
-          letter-spacing: 0.04em;
+          color: rgba(255, 255, 255, 0.9);
+          letter-spacing: 0.03em;
         }
 
         .handle-hint {
           font-size: 9px;
-          color: rgba(255, 255, 255, 0.35);
+          color: rgba(255, 255, 255, 0.4);
+          letter-spacing: 0.02em;
         }
 
-        .handle-arrow {
+        .handle-chevron {
           color: rgba(255, 255, 255, 0.3);
         }
 
+        .handle-accent {
+          position: absolute;
+          left: 0;
+          top: 15%;
+          bottom: 15%;
+          width: 3px;
+          background: var(--accent);
+          border-radius: 0 2px 2px 0;
+          opacity: 0.8;
+        }
+
         /* BACKDROP */
-        .scenario-backdrop {
+        .panel-backdrop {
           position: fixed;
           inset: 0;
           z-index: 110;
-          background: rgba(0, 0, 0, 0.2);
+          background: rgba(0, 0, 0, 0.25);
         }
 
-        /* GLASS PANEL */
-        .scenario-glass {
+        /* SLIDE PANEL — From left */
+        .slide-panel {
           position: fixed;
-          left: 50%;
-          top: 50%;
-          transform: translate(-50%, -50%);
-          z-index: 120;
-          width: 380px;
-          border-radius: 20px;
-          overflow: hidden;
-        }
-
-        /* True glass: bg-white/6 backdrop-blur-2xl */
-        .glass-bg {
-          position: absolute;
-          inset: 0;
-          background: rgba(255, 255, 255, 0.06);
-          backdrop-filter: blur(48px) saturate(180%);
-          -webkit-backdrop-filter: blur(48px) saturate(180%);
-        }
-
-        /* Border: border-white/10 border-emerald-400/15 */
-        .glass-border {
-          position: absolute;
-          inset: 0;
-          border-radius: 20px;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          box-shadow: 
-            inset 0 0 0 1px rgba(16, 185, 129, 0.15),
-            0 8px 32px rgba(0, 0, 0, 0.3);
-          pointer-events: none;
-        }
-
-        .glass-shine {
-          position: absolute;
-          top: 0;
           left: 0;
-          right: 0;
-          height: 40%;
-          background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
+          top: 0;
+          bottom: 0;
+          width: 300px;
+          z-index: 120;
+        }
+
+        .panel-glass {
+          position: absolute;
+          inset: 0;
+          background: rgba(12, 14, 18, 0.96);
+          backdrop-filter: blur(32px);
+          -webkit-backdrop-filter: blur(32px);
+        }
+
+        .panel-border {
+          position: absolute;
+          inset: 0;
+          border-right: 1px solid rgba(255, 255, 255, 0.08);
           pointer-events: none;
         }
 
-        .glass-content {
+        .panel-content {
           position: relative;
           z-index: 1;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
           padding: 20px;
         }
 
-        .glass-header {
+        .panel-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 20px;
+          margin-bottom: 24px;
         }
 
-        .glass-title {
-          display: flex;
-          align-items: center;
-          gap: 10px;
+        .panel-title {
           font-size: 11px;
           font-weight: 700;
           letter-spacing: 0.15em;
-          color: rgba(255, 255, 255, 0.8);
+          color: rgba(255, 255, 255, 0.6);
         }
 
-        .title-dot {
-          color: #22c55e;
-          font-size: 14px;
-          text-shadow: 0 0 10px #22c55e;
-        }
-
-        .glass-close {
+        .panel-close {
           width: 32px;
           height: 32px;
           display: flex;
           align-items: center;
           justify-content: center;
           border-radius: 8px;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.02);
           color: rgba(255, 255, 255, 0.5);
           cursor: pointer;
           transition: all 0.15s;
         }
 
-        .glass-close:hover {
-          background: rgba(255, 255, 255, 0.08);
+        .panel-close:hover {
+          background: rgba(255, 255, 255, 0.06);
           color: #fff;
         }
 
-        /* SCENARIO GRID — 2x2 */
-        .scenario-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 10px;
-        }
-
-        .scenario-btn {
-          position: relative;
+        /* VERTICALLY STACKED OPTIONS */
+        .scenario-stack {
           display: flex;
           flex-direction: column;
+          gap: 8px;
+        }
+
+        .scenario-option {
+          position: relative;
+          display: flex;
           align-items: center;
-          gap: 10px;
-          padding: 16px 12px;
-          background: rgba(255, 255, 255, 0.04);
-          border: 1px solid rgba(255, 255, 255, 0.06);
-          border-radius: 12px;
+          gap: 12px;
+          padding: 14px 16px;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 10px;
           cursor: pointer;
-          text-align: center;
+          text-align: left;
           transition: all 0.15s ease;
         }
 
-        .scenario-btn:hover {
-          background: rgba(255, 255, 255, 0.08);
-          border-color: rgba(255, 255, 255, 0.12);
+        .scenario-option:hover {
+          background: rgba(255, 255, 255, 0.04);
+          border-color: rgba(255, 255, 255, 0.08);
         }
 
-        .scenario-btn.selected {
-          background: rgba(255, 255, 255, 0.06);
-          border-color: var(--sc);
-          box-shadow: 0 0 24px rgba(var(--sc), 0.15);
+        .scenario-option.selected {
+          background: rgba(255, 255, 255, 0.03);
+          border-color: color-mix(in srgb, var(--sc) 50%, transparent);
         }
 
-        .btn-accent {
+        .option-bar {
           position: absolute;
-          bottom: 0;
-          left: 20%;
-          right: 20%;
-          height: 2px;
+          left: 0;
+          top: 18%;
+          bottom: 18%;
+          width: 3px;
           background: var(--sc);
-          border-radius: 1px 1px 0 0;
+          border-radius: 0 2px 2px 0;
           opacity: 0;
           transition: opacity 0.15s;
         }
 
-        .scenario-btn.selected .btn-accent {
-          opacity: 1;
-          box-shadow: 0 0 10px var(--sc);
+        .scenario-option.selected .option-bar {
+          opacity: 0.9;
         }
 
-        .btn-icon {
-          color: rgba(255, 255, 255, 0.5);
-          transition: all 0.15s;
+        .option-icon {
+          color: rgba(255, 255, 255, 0.45);
+          transition: color 0.15s;
         }
 
-        .scenario-btn.selected .btn-icon {
+        .scenario-option.selected .option-icon {
           color: var(--sc);
-          filter: drop-shadow(0 0 6px var(--sc));
         }
 
-        .btn-text {
+        .option-text {
+          flex: 1;
           display: flex;
           flex-direction: column;
-          gap: 3px;
+          gap: 2px;
         }
 
-        .btn-label {
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: 0.05em;
-          color: rgba(255, 255, 255, 0.85);
+        .option-label {
+          font-size: 12px;
+          font-weight: 600;
+          letter-spacing: 0.03em;
+          color: rgba(255, 255, 255, 0.8);
         }
 
-        .scenario-btn.selected .btn-label {
+        .scenario-option.selected .option-label {
           color: #fff;
         }
 
-        .btn-sub {
-          font-size: 10px;
+        .option-sub {
+          font-size: 11px;
           color: rgba(255, 255, 255, 0.4);
         }
 
-        .btn-check {
-          position: absolute;
-          top: 10px;
-          right: 10px;
+        .option-check {
+          flex-shrink: 0;
         }
       `}</style>
     </>

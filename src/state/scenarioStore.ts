@@ -1,5 +1,5 @@
 // src/state/scenarioStore.ts
-// STRATFIT — Scenario Store with 10 KPI Support
+// STRATFIT — Scenario Store with EXACTLY 7 KPIs
 
 import { create } from "zustand";
 import type { LeverId } from "@/logic/mountainPeakModel";
@@ -10,8 +10,8 @@ import type { LeverId } from "@/logic/mountainPeakModel";
 
 export type ScenarioId = "base" | "upside" | "downside" | "extreme";
 
-// 10 KPIs
-type KPIKey = "mrr" | "grossProfit" | "cashBalance" | "burnRate" | "runway" | "cac" | "churnRate" | "ltv" | "ltvCacRatio" | "nrr";
+// EXACTLY 7 KPIs
+type KPIKey = "mrr" | "grossProfit" | "cashBalance" | "burnRate" | "runway" | "cac" | "churnRate";
 
 interface KPIValue {
   value: number;

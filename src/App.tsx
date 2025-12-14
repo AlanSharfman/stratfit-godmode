@@ -1,14 +1,14 @@
 // src/App.tsx
 // STRATFIT — Decision Instrument
-// Layout: TOP KPI Strip → CENTER Mountain Hero → BOTTOM Sliders
-// Scenario selector auto-slides after 3s, leaves handle
+// AI Insights on right side, mountain shifted left
 
-import { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import ScenarioSlidePanel, { ScenarioId } from "./components/ScenarioSlidePanel";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { ScenarioId } from "./components/ScenarioSlidePanel";
 import KPIGrid from "./components/KPIGrid";
 import ScenarioMountain from "./components/mountain/ScenarioMountain";
 import { Moon } from "./components/Moon";
 import { ControlDeck, ControlBoxConfig } from "./components/ControlDeck";
+import AIIntelligence from "./components/AIIntelligence";
 import { useScenarioStore } from "@/state/scenarioStore";
 import type { LeverId } from "@/logic/mountainPeakModel";
 
@@ -24,6 +24,7 @@ interface LeverState {
   operatingExpenses: number;
   churnSensitivity: number;
   fundingInjection: number;
+  cashSensitivity: number;
 }
 
 interface MetricState {
@@ -34,9 +35,6 @@ interface MetricState {
   runwayMonths: number;
   cac: number;
   churnRate: number;
-  ltv: number;
-  ltvCacRatio: number;
-  nrr: number;
 }
 
 const INITIAL_LEVERS: LeverState = {
@@ -47,17 +45,26 @@ const INITIAL_LEVERS: LeverState = {
   operatingExpenses: 55,
   churnSensitivity: 50,
   fundingInjection: 1.2,
+  cashSensitivity: 50,
 };
 
 const SLIDER_TO_KPI: Record<keyof LeverState, number> = {
   revenueGrowth: 0,
-  pricingAdjustment: 0,
-  marketingSpend: 5,
-  headcount: 3,
-  operatingExpenses: 3,
+  pricingAdjustment: 1,
+  marketingSpend: 0,
+  headcount: 4,
+  operatingExpenses: 4,
   churnSensitivity: 6,
-  fundingInjection: 2,
+  fundingInjection: 3,
+  cashSensitivity: 3,
 };
+
+const SCENARIOS: { id: ScenarioId; label: string }[] = [
+  { id: "base", label: "Base Case" },
+  { id: "upside", label: "Upside" },
+  { id: "downside", label: "Downside" },
+  { id: "extreme", label: "Extreme" },
+];
 
 // ============================================================================
 // HELPERS
@@ -74,43 +81,33 @@ function calculateMetrics(levers: LeverState, scenario: ScenarioId): MetricState
   const head = levers.headcount;
   const churnSens01 = levers.churnSensitivity / 100;
   const fundingM = levers.fundingInjection;
+  const cashSens01 = levers.cashSensitivity / 100;
 
   const mrrK = Math.max(20, 120 * (1 + 1.35 * growth01) * (1 + priceAdj) * (1 + (mktSpend / 200) * 0.55) * (1 - (0.08 + 0.14 * churnSens01))) * mult;
   const mrr = mrrK * 1000;
   const grossMargin = clamp01(0.78 - (opex / 150) * 0.18 - (head / 100) * 0.10) * (scenario === "upside" ? 1.03 : 1);
   const grossProfit = mrr * grossMargin;
   const burnRate = Math.max(0, opex * 1000 + (head / 100) * 100 * 9500 + 38000 * (scenario === "extreme" ? 1.15 : 1) - grossProfit);
-  const cashBalance = Math.max(0.2, (2.2 + fundingM + (mktSpend / 200) * 0.6) * mult) * 1_000_000;
+  const cashBalance = Math.max(0.2, (2.2 + fundingM + (mktSpend / 200) * 0.6 + cashSens01 * 1.5) * mult) * 1_000_000;
   const runwayMonths = burnRate <= 1 ? 60 : Math.max(0, Math.min(60, cashBalance / burnRate));
   const newCust = Math.max(8, 40 + growth01 * 120) * (scenario === "upside" ? 1.15 : 1) * (scenario === "extreme" ? 0.85 : 1);
   const cac = Math.max(150, (mktSpend * 1000) / newCust);
   const churnRate = Math.max(0.5, Math.min(12, (1.8 + churnSens01 * 4.2 + Math.max(0, priceAdj) * 3.2) * (scenario === "extreme" ? 1.15 : 1)));
-  
-  // Additional KPIs
-  const avgRevenuePerUser = mrr / Math.max(100, 500 + growth01 * 800);
-  const ltv = avgRevenuePerUser * (1 / (churnRate / 100)) * grossMargin;
-  const ltvCacRatio = ltv / Math.max(1, cac);
-  const nrr = 100 + (growth01 * 15) - (churnRate * 0.8) + (priceAdj * 5);
 
-  return { mrr, grossProfit, cashBalance, burnRate, runwayMonths, cac, churnRate, ltv, ltvCacRatio, nrr };
+  return { mrr, grossProfit, cashBalance, burnRate, runwayMonths, cac, churnRate };
 }
 
 function metricsToDataPoints(m: MetricState): number[] {
   return [
     clamp01(m.mrr / 350000),
     clamp01(m.grossProfit / 260000),
+    clamp01(m.runwayMonths / 36),
     clamp01(m.cashBalance / 7000000),
     clamp01(1 - m.burnRate / 420000),
-    clamp01(m.runwayMonths / 36),
     clamp01(1 - m.cac / 6000),
     clamp01(1 - m.churnRate / 10),
   ];
 }
-
-const formatCurrency = (n: number) =>
-  !Number.isFinite(n) ? "—" : Math.abs(n) >= 1e6 ? `$${(n / 1e6).toFixed(1)}M` : Math.abs(n) >= 1e3 ? `$${(n / 1e3).toFixed(0)}k` : `$${Math.round(n)}`;
-
-const formatPct = (n: number) => (Number.isFinite(n) ? `${n.toFixed(1)}%` : "—");
 
 // ============================================================================
 // MAIN COMPONENT
@@ -119,8 +116,7 @@ const formatPct = (n: number) => (Number.isFinite(n) ? `${n.toFixed(1)}%` : "—
 export default function App() {
   const [scenario, setScenario] = useState<ScenarioId>("base");
   const [levers, setLevers] = useState<LeverState>(INITIAL_LEVERS);
-  const [dockVisible, setDockVisible] = useState(false);
-  const dockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const hoveredKpiIndex = useScenarioStore((s) => s.hoveredKpiIndex);
   const setHoveredKpiIndex = useScenarioStore((s) => s.setHoveredKpiIndex);
@@ -133,14 +129,6 @@ export default function App() {
   const metrics = useMemo(() => calculateMetrics(levers, scenario), [levers, scenario]);
   const dataPoints = useMemo(() => metricsToDataPoints(metrics), [metrics]);
 
-  // Auto-show dock after 3 seconds on first load
-  useEffect(() => {
-    dockTimerRef.current = setTimeout(() => setDockVisible(true), 3000);
-    return () => {
-      if (dockTimerRef.current) clearTimeout(dockTimerRef.current);
-    };
-  }, []);
-
   useEffect(() => {
     setDataPoints(dataPoints);
   }, [dataPoints, setDataPoints]);
@@ -151,16 +139,13 @@ export default function App() {
 
   useEffect(() => {
     setKpiValues({
-      mrr: { value: metrics.mrr, display: formatCurrency(metrics.mrr) + "/mo" },
-      grossProfit: { value: metrics.grossProfit, display: formatCurrency(metrics.grossProfit) + "/mo" },
-      cashBalance: { value: metrics.cashBalance, display: formatCurrency(metrics.cashBalance) },
-      burnRate: { value: metrics.burnRate, display: formatCurrency(metrics.burnRate) + "/mo" },
-      runway: { value: metrics.runwayMonths, display: `${Math.round(metrics.runwayMonths)} mo` },
-      cac: { value: metrics.cac, display: `$${Math.round(metrics.cac)}` },
-      churnRate: { value: metrics.churnRate, display: formatPct(metrics.churnRate) },
-      ltv: { value: metrics.ltv, display: formatCurrency(metrics.ltv) },
-      ltvCacRatio: { value: metrics.ltvCacRatio, display: `${metrics.ltvCacRatio.toFixed(1)}x` },
-      nrr: { value: metrics.nrr, display: formatPct(metrics.nrr) },
+      mrr: { value: metrics.mrr, display: `£${(metrics.mrr / 1000).toFixed(0)}k/mo` },
+      grossProfit: { value: metrics.grossProfit, display: `£${(metrics.grossProfit / 1000).toFixed(0)}k` },
+      cashBalance: { value: metrics.cashBalance, display: `£${(metrics.cashBalance / 1000000).toFixed(1)}M` },
+      burnRate: { value: metrics.burnRate, display: `£${(metrics.burnRate / 1000).toFixed(0)}k/mo` },
+      runway: { value: metrics.runwayMonths, display: `${Math.round(metrics.runwayMonths)} Months` },
+      cac: { value: metrics.cac, display: `${((metrics.grossProfit / metrics.mrr) * 100).toFixed(0)}%` },
+      churnRate: { value: metrics.churnRate, display: `${Math.round(15 - metrics.churnRate)}%` },
     });
   }, [metrics, setKpiValues]);
 
@@ -177,100 +162,140 @@ export default function App() {
     [setHoveredKpiIndex]
   );
 
-  const handleScenarioSelect = useCallback((id: ScenarioId) => {
-    setScenario(id);
-    setDockVisible(false);
-  }, []);
-
   const controlBoxes: ControlBoxConfig[] = useMemo(
     () => [
       {
         id: "performance",
         title: "Performance",
         sliders: [
-          { id: "revenueGrowth", label: "Revenue Growth", value: levers.revenueGrowth, min: 0, max: 100, defaultValue: 45, format: (v) => `${v}%` },
-          { id: "pricingAdjustment", label: "Pricing", value: levers.pricingAdjustment, min: -20, max: 50, defaultValue: 10, format: (v) => `${v}%` },
-          { id: "marketingSpend", label: "Marketing", value: levers.marketingSpend, min: 0, max: 200, defaultValue: 60, format: (v) => `$${v}k` },
+          { id: "revenueGrowth", label: "Market Share", value: levers.revenueGrowth, min: 0, max: 100, defaultValue: 45, format: (v) => `${v}%` },
+          { id: "pricingAdjustment", label: "Growth Rate", value: levers.pricingAdjustment + 50, min: 0, max: 100, defaultValue: 60, format: (v) => `${v - 50}` },
         ],
       },
       {
         id: "financial",
         title: "Financial",
         sliders: [
-          { id: "headcount", label: "Headcount", value: levers.headcount, min: 5, max: 100, defaultValue: 24, format: (v) => `${v}` },
-          { id: "operatingExpenses", label: "OpEx", value: levers.operatingExpenses, min: 10, max: 150, defaultValue: 55, format: (v) => `$${v}k` },
+          { id: "marketingSpend", label: "Growth Rate", value: levers.marketingSpend, min: 0, max: 200, defaultValue: 60, format: (v) => `${Math.round(v / 2)}%` },
+          { id: "operatingExpenses", label: "COGS", value: levers.operatingExpenses, min: 10, max: 150, defaultValue: 55, format: (v) => `${Math.round(v / 15)}` },
+          { id: "cashSensitivity", label: "Cash Sensitivity", value: levers.cashSensitivity, min: 0, max: 100, defaultValue: 50, format: (v) => `${v}%` },
         ],
       },
       {
-        id: "risk",
-        title: "Risk",
+        id: "people",
+        title: "People",
         sliders: [
-          { id: "churnSensitivity", label: "Churn", value: levers.churnSensitivity, min: 0, max: 100, defaultValue: 50, format: (v) => (v < 33 ? "Low" : v < 66 ? "Med" : "High") },
-          { id: "fundingInjection", label: "Funding", value: levers.fundingInjection, min: 0, max: 5, step: 0.1, defaultValue: 1.2, format: (v) => `$${v.toFixed(1)}M` },
+          { id: "headcount", label: "Headcount", value: levers.headcount, min: 5, max: 100, defaultValue: 24, format: (v) => `${v * 10}%` },
+          { id: "churnSensitivity", label: "Churn Rate", value: levers.churnSensitivity, min: 0, max: 100, defaultValue: 50, format: (v) => `${Math.round(v / 10)}%` },
         ],
       },
     ],
     [levers]
   );
 
-  const handleReset = useCallback(() => {
-    setLevers(INITIAL_LEVERS);
-    setHoveredKpiIndex(null);
-  }, [setHoveredKpiIndex]);
+  const aiContent = useMemo(
+    () => ({
+      commentary: [
+        `The see position forecast that medium-latent development for all business transformational is driven via all metrics established.`,
+        `Primary schedule to be fit market test sector established themes several strategy for established set the partnered.`,
+        `Mature market asset distribution rate active scenario model strategic particularly managed for established set the scope.`,
+      ],
+      risks: [],
+      actions: [],
+    }),
+    []
+  );
+
+  const selectedScenario = SCENARIOS.find(s => s.id === scenario) || SCENARIOS[0];
 
   return (
     <div className="app">
-      {/* Scenario Dock — Overlays Mountain */}
-      <ScenarioSlidePanel
-        selected={scenario}
-        onSelect={handleScenarioSelect}
-        isVisible={dockVisible}
-        onToggle={() => setDockVisible(!dockVisible)}
-      />
-
       {/* HEADER */}
       <header className="header">
         <div className="logo">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#22c55e" />
-            <path d="M2 17L12 22L22 17" stroke="#22c55e" strokeWidth="2" />
-            <path d="M2 12L12 17L22 12" stroke="#22c55e" strokeWidth="2" />
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#22d3ee" />
+            <path d="M2 17L12 22L22 17" stroke="#22d3ee" strokeWidth="2" />
+            <path d="M2 12L12 17L22 12" stroke="#22d3ee" strokeWidth="2" />
           </svg>
           <span>STRATFIT</span>
         </div>
-        <div className="actions">
-          <button onClick={handleReset}>Reset</button>
-          <button>Load</button>
-          <button className="primary">Save</button>
-        </div>
       </header>
 
-      {/* TOP: KPI STRIP — 10 Horizontal Cards */}
+      {/* TOP: KPI STRIP */}
       <section className="kpi-strip">
         <KPIGrid />
       </section>
 
-      {/* CENTER: MOUNTAIN HERO */}
-      <section className="mountain-hero">
-        {/* Atmospheric Fog */}
-        <div className="atmosphere" />
-        
-        <div className="mountain-container">
-          <Moon rightOffset={4} topOffset={3} scale={0.6} />
-          <ScenarioMountain
-            scenario={scenario}
-            dataPoints={dataPoints}
-            activeKpiIndex={hoveredKpiIndex}
-            activeLeverId={activeLeverId ?? null}
-            leverIntensity01={leverIntensity01 ?? 0}
-          />
-        </div>
-      </section>
+      {/* MIDDLE SECTION - 3 column layout */}
+      <div className="middle-section">
+        {/* LEFT: Scenario + Sliders */}
+        <aside className="left-panel">
+          {/* Scenario Dropdown */}
+          <div className="scenario-dropdown-container">
+            <button 
+              className="scenario-dropdown"
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+            >
+              <span className="dropdown-label">Scenario</span>
+              <span className="dropdown-value">{selectedScenario.label}</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+            {dropdownOpen && (
+              <div className="dropdown-menu">
+                {SCENARIOS.map(s => (
+                  <button 
+                    key={s.id}
+                    className={`dropdown-item ${s.id === scenario ? 'active' : ''}`}
+                    onClick={() => { setScenario(s.id); setDropdownOpen(false); }}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
-      {/* BOTTOM: SLIDER CONTROLS */}
-      <section className="slider-strip">
-        <ControlDeck boxes={controlBoxes} onChange={handleLeverChange} layout="horizontal" />
-      </section>
+          {/* Sliders */}
+          <div className="sliders-container">
+            <ControlDeck boxes={controlBoxes} onChange={handleLeverChange} />
+          </div>
+        </aside>
+
+        {/* CENTER: Mountain (shifted left) */}
+        <div className="center-panel">
+          <div className="mountain-container">
+            <div className="mountain-content">
+              <Moon rightOffset={5} topOffset={4} scale={0.5} />
+              <ScenarioMountain
+                scenario={scenario}
+                dataPoints={dataPoints}
+                activeKpiIndex={hoveredKpiIndex}
+                activeLeverId={activeLeverId ?? null}
+                leverIntensity01={leverIntensity01 ?? 0}
+              />
+            </div>
+          </div>
+          
+          {/* Action buttons below mountain */}
+          <div className="action-row">
+            <button className="action-btn">Save</button>
+            <button className="action-btn">Load</button>
+          </div>
+        </div>
+
+        {/* RIGHT: AI Intelligence Panel */}
+        <aside className="right-panel">
+          <AIIntelligence
+            commentary={aiContent.commentary}
+            risks={aiContent.risks}
+            actions={aiContent.actions}
+            scenario={scenario}
+          />
+        </aside>
+      </div>
 
       <style>{`
         * {
@@ -283,9 +308,9 @@ export default function App() {
           width: 100vw;
           height: 100vh;
           overflow: hidden;
-          background: #050508;
+          background: #0d1117;
           color: #fff;
-          font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
           display: flex;
           flex-direction: column;
         }
@@ -295,98 +320,206 @@ export default function App() {
           flex-shrink: 0;
           height: 44px;
           display: flex;
-          justify-content: space-between;
           align-items: center;
-          padding: 0 16px;
-          background: rgba(5, 5, 8, 0.98);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+          padding: 0 20px;
+          background: #0d1117;
+          border-bottom: 1px solid #21262d;
         }
 
         .logo {
           display: flex;
           align-items: center;
-          gap: 8px;
-          font-size: 12px;
-          font-weight: 800;
-          letter-spacing: 0.12em;
-        }
-
-        .actions {
-          display: flex;
-          gap: 8px;
-        }
-
-        .actions button {
-          padding: 5px 12px;
-          border-radius: 6px;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          background: transparent;
-          color: rgba(255, 255, 255, 0.6);
-          font-size: 11px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.15s ease;
-        }
-
-        .actions button:hover {
-          background: rgba(255, 255, 255, 0.05);
+          gap: 10px;
+          font-size: 14px;
+          font-weight: 700;
+          letter-spacing: 0.08em;
           color: #fff;
         }
 
-        .actions button.primary {
-          background: rgba(34, 197, 94, 0.15);
-          border-color: rgba(34, 197, 94, 0.3);
-          color: #22c55e;
-        }
-
-        /* TOP: KPI STRIP */
+        /* KPI STRIP */
         .kpi-strip {
           flex-shrink: 0;
-          padding: 10px 16px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+          padding: 12px 20px;
+          border-bottom: 1px solid #21262d;
         }
 
-        /* CENTER: MOUNTAIN HERO */
-        .mountain-hero {
+        /* MIDDLE SECTION - 3 columns */
+        .middle-section {
+          flex: 1;
+          display: grid;
+          grid-template-columns: 200px 1fr 280px;
+          gap: 16px;
+          padding: 12px 20px;
+          min-height: 0;
+        }
+
+        /* LEFT PANEL */
+        .left-panel {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          overflow: hidden;
+        }
+
+        /* Scenario Dropdown */
+        .scenario-dropdown-container {
+          position: relative;
+          flex-shrink: 0;
+        }
+
+        .scenario-dropdown {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 10px 14px;
+          background: #161b22;
+          border: 1px solid #30363d;
+          border-radius: 6px;
+          color: #fff;
+          font-size: 12px;
+          cursor: pointer;
+          transition: all 0.15s;
+        }
+
+        .scenario-dropdown:hover {
+          border-color: #484f58;
+        }
+
+        .dropdown-label {
+          color: rgba(255, 255, 255, 0.5);
+        }
+
+        .dropdown-value {
+          color: #22d3ee;
+          font-weight: 600;
+          margin-left: auto;
+        }
+
+        .dropdown-menu {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          right: 0;
+          margin-top: 4px;
+          background: #161b22;
+          border: 1px solid #30363d;
+          border-radius: 6px;
+          overflow: hidden;
+          z-index: 100;
+        }
+
+        .dropdown-item {
+          width: 100%;
+          padding: 10px 14px;
+          background: none;
+          border: none;
+          color: rgba(255, 255, 255, 0.6);
+          font-size: 12px;
+          text-align: left;
+          cursor: pointer;
+          transition: all 0.1s;
+        }
+
+        .dropdown-item:hover {
+          background: #21262d;
+          color: #fff;
+        }
+
+        .dropdown-item.active {
+          background: rgba(34, 211, 238, 0.1);
+          color: #22d3ee;
+        }
+
+        .sliders-container {
+          flex: 1;
+          overflow-y: auto;
+        }
+
+        .sliders-container::-webkit-scrollbar {
+          width: 3px;
+        }
+
+        .sliders-container::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 2px;
+        }
+
+        /* CENTER PANEL - Mountain shifted left */
+        .center-panel {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          min-width: 0;
+          padding-right: 40px; /* Shift mountain left by adding right padding */
+        }
+
+        .mountain-container {
           flex: 1;
           position: relative;
+          border-radius: 8px;
+          overflow: hidden;
+          background: #0d1117;
+          border: 1px solid #30363d;
+        }
+
+        .mountain-content {
+          position: relative;
+          width: 100%;
+          height: 100%;
+        }
+
+        .action-row {
+          display: flex;
+          gap: 8px;
+          justify-content: flex-end;
+        }
+
+        .action-btn {
+          padding: 8px 20px;
+          background: #161b22;
+          border: 1px solid #30363d;
+          border-radius: 6px;
+          color: rgba(255, 255, 255, 0.7);
+          font-size: 11px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.15s;
+        }
+
+        .action-btn:hover {
+          background: #21262d;
+          color: #fff;
+          border-color: #484f58;
+        }
+
+        /* RIGHT PANEL - AI Intelligence */
+        .right-panel {
+          display: flex;
+          flex-direction: column;
           min-height: 0;
           overflow: hidden;
         }
 
-        .atmosphere {
-          position: absolute;
-          inset: 0;
-          z-index: 0;
-          pointer-events: none;
-          background: 
-            radial-gradient(ellipse 100% 50% at 50% 70%, rgba(30, 45, 55, 0.08) 0%, transparent 60%),
-            radial-gradient(ellipse 70% 35% at 30% 60%, rgba(20, 40, 50, 0.05) 0%, transparent 50%),
-            radial-gradient(ellipse 70% 35% at 70% 60%, rgba(20, 40, 50, 0.05) 0%, transparent 50%);
-        }
-
-        .mountain-container {
-          position: relative;
-          width: 100%;
-          height: 100%;
-          z-index: 1;
-        }
-
-        /* BOTTOM: SLIDER STRIP */
-        .slider-strip {
-          flex-shrink: 0;
-          padding: 10px 16px 12px;
-          background: rgba(8, 10, 14, 0.95);
-          border-top: 1px solid rgba(255, 255, 255, 0.06);
-        }
-
         /* Responsive */
-        @media (max-height: 700px) {
-          .kpi-strip {
-            padding: 8px 12px;
+        @media (max-width: 1200px) {
+          .middle-section {
+            grid-template-columns: 180px 1fr 240px;
           }
-          .slider-strip {
-            padding: 8px 12px;
+          .center-panel {
+            padding-right: 20px;
+          }
+        }
+
+        @media (max-width: 1000px) {
+          .middle-section {
+            grid-template-columns: 180px 1fr;
+          }
+          .right-panel {
+            display: none;
+          }
+          .center-panel {
+            padding-right: 0;
           }
         }
       `}</style>
