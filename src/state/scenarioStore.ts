@@ -1,5 +1,5 @@
 // src/state/scenarioStore.ts
-// STRATFIT — Scenario Store with Color Mapping
+// STRATFIT — Scenario Store with Baseline Values for Delta Calculation
 
 import { create } from "zustand";
 import type { LeverId } from "@/logic/mountainPeakModel";
@@ -18,28 +18,28 @@ interface KPIValue {
 }
 
 // ============================================================================
-// SCENARIO COLORS (Mountain will use these!)
+// SCENARIO COLORS
 // ============================================================================
 
 export const SCENARIO_COLORS: Record<ScenarioId, { primary: string; secondary: string; glow: string }> = {
   base: {
-    primary: "#22d3ee",    // Cyan
-    secondary: "#7c3aed",  // Purple
+    primary: "#22d3ee",
+    secondary: "#7c3aed",
     glow: "rgba(34, 211, 238, 0.4)",
   },
   upside: {
-    primary: "#34d399",    // Green
-    secondary: "#22d3ee",  // Cyan
+    primary: "#34d399",
+    secondary: "#22d3ee",
     glow: "rgba(52, 211, 153, 0.4)",
   },
   downside: {
-    primary: "#fbbf24",    // Gold/Amber
-    secondary: "#f97316",  // Orange
+    primary: "#fbbf24",
+    secondary: "#f97316",
     glow: "rgba(251, 191, 36, 0.4)",
   },
   extreme: {
-    primary: "#ef4444",    // Red
-    secondary: "#fb7185",  // Pink
+    primary: "#ef4444",
+    secondary: "#fb7185",
     glow: "rgba(239, 68, 68, 0.4)",
   },
 };
@@ -65,7 +65,11 @@ interface ScenarioStoreState {
   kpiValues: Partial<Record<KPIKey, KPIValue>>;
   setKpiValues: (vals: Partial<Record<KPIKey, KPIValue>>) => void;
 
-  // Helper to get current scenario colors
+  // BASELINE VALUES for delta calculation
+  baselineValues: Partial<Record<KPIKey, KPIValue>> | null;
+  setBaselineValues: (vals: Partial<Record<KPIKey, KPIValue>>) => void;
+  captureBaseline: () => void;
+
   getScenarioColors: () => { primary: string; secondary: string; glow: string };
 }
 
@@ -89,10 +93,25 @@ export const useScenarioStore = create<ScenarioStoreState>((set, get) => ({
     set({ activeLeverId: id, leverIntensity01: Math.max(0, Math.min(1, intensity01)) }),
 
   kpiValues: {},
-  setKpiValues: (vals) =>
-    set((prev) => ({
-      kpiValues: { ...prev.kpiValues, ...vals },
-    })),
+  setKpiValues: (vals) => {
+    const state = get();
+    // Auto-capture baseline on first set if not already set
+    if (!state.baselineValues) {
+      set({ 
+        kpiValues: { ...state.kpiValues, ...vals },
+        baselineValues: { ...state.kpiValues, ...vals }
+      });
+    } else {
+      set({ kpiValues: { ...state.kpiValues, ...vals } });
+    }
+  },
+
+  baselineValues: null,
+  setBaselineValues: (vals) => set({ baselineValues: vals }),
+  captureBaseline: () => {
+    const state = get();
+    set({ baselineValues: { ...state.kpiValues } });
+  },
 
   getScenarioColors: () => {
     const scenario = get().scenario;
