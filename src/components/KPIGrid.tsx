@@ -1,33 +1,34 @@
 // src/components/KPIGrid.tsx
-// STRATFIT — 7 KPI Boxes matching reference design
+// STRATFIT — KPI System
+// Full width spacing between slider panel and AI panel
 
 import React from "react";
-import KPICard, { KPICardProps } from "./ui/KPICard";
+import KPICard from "./ui/KPICard";
 import { useScenarioStore } from "@/state/scenarioStore";
 
 // ============================================================================
-// EXACTLY 7 KPIs
+// KPI CONFIGURATION
 // ============================================================================
 
 interface KPIConfig {
+  id: string;
   label: string;
+  kpiKey: string;
+  widgetType: "shrinkingRidge" | "breathingReservoir" | "directionalFlow" | "rotationalArc" | "microJitter" | "verticalLift" | "expandingAura";
   color: string;
-  kpiKey: "mrr" | "grossProfit" | "cashBalance" | "burnRate" | "runway" | "cac" | "churnRate";
-  widgetType: KPICardProps["widgetType"];
-  maxValue: number;
+  operatorOnly?: boolean;
 }
 
 const KPI_CONFIG: KPIConfig[] = [
-  { label: "REVENUE", color: "#22d3ee", kpiKey: "mrr", widgetType: "sparkline", maxValue: 350000 },
-  { label: "PROFIT", color: "#22d3ee", kpiKey: "grossProfit", widgetType: "bars", maxValue: 260000 },
-  { label: "RUNWAY", color: "#f59e0b", kpiKey: "runway", widgetType: "gauge", maxValue: 36 },
-  { label: "CASH", color: "#22d3ee", kpiKey: "cashBalance", widgetType: "sparkline", maxValue: 7000000 },
-  { label: "BURN RATE", color: "#22d3ee", kpiKey: "burnRate", widgetType: "bars", maxValue: 420000 },
-  { label: "EBITDA", color: "#a78bfa", kpiKey: "cac", widgetType: "donut", maxValue: 6000 },
-  { label: "RISK", color: "#ef4444", kpiKey: "churnRate", widgetType: "donut", maxValue: 10 },
+  { id: "runway", label: "RUNWAY", kpiKey: "runway", widgetType: "shrinkingRidge", color: "#f59e0b" },
+  { id: "cashPosition", label: "CASH", kpiKey: "cashPosition", widgetType: "breathingReservoir", color: "#22d3ee" },
+  { id: "momentum", label: "MOMENTUM", kpiKey: "momentum", widgetType: "directionalFlow", color: "#22d3ee" },
+  { id: "burnQuality", label: "BURN", kpiKey: "burnQuality", widgetType: "rotationalArc", color: "#a78bfa", operatorOnly: true },
+  { id: "riskIndex", label: "RISK", kpiKey: "riskIndex", widgetType: "microJitter", color: "#ef4444" },
+  { id: "earningsPower", label: "EARNINGS", kpiKey: "earningsPower", widgetType: "verticalLift", color: "#34d399", operatorOnly: true },
+  { id: "enterpriseValue", label: "VALUE", kpiKey: "enterpriseValue", widgetType: "expandingAura", color: "#22d3ee" },
 ];
 
-// Export for use in ControlDeck
 export { KPI_CONFIG };
 
 // ============================================================================
@@ -38,59 +39,56 @@ export default function KPIGrid() {
   const kpiValues = useScenarioStore((s) => s.kpiValues);
   const hoveredKpiIndex = useScenarioStore((s) => s.hoveredKpiIndex);
   const setHoveredKpiIndex = useScenarioStore((s) => s.setHoveredKpiIndex);
+  const viewMode = useScenarioStore((s) => s.viewMode);
+
+  const visibleKPIs = viewMode === "investor" 
+    ? KPI_CONFIG.filter(k => !k.operatorOnly)
+    : KPI_CONFIG;
 
   const handleSelect = (index: number) => {
-    if (hoveredKpiIndex === index) {
+    const actualIndex = KPI_CONFIG.findIndex(k => k.id === visibleKPIs[index].id);
+    if (hoveredKpiIndex === actualIndex) {
       setHoveredKpiIndex(null);
     } else {
-      setHoveredKpiIndex(index);
+      setHoveredKpiIndex(actualIndex);
     }
   };
 
   return (
-    <div className="kpi-grid">
-      {KPI_CONFIG.map((cfg, i) => {
-        const data = kpiValues[cfg.kpiKey];
-        const rawValue = data?.value ?? 0;
-        const normalizedValue = Math.min(1, rawValue / cfg.maxValue);
+    <div className="kpi-grid-container">
+      <div className="kpi-grid">
+        {visibleKPIs.map((cfg, i) => {
+          const data = kpiValues[cfg.kpiKey as keyof typeof kpiValues];
+          const actualIndex = KPI_CONFIG.findIndex(k => k.id === cfg.id);
+          const isActive = hoveredKpiIndex === actualIndex;
 
-        return (
-          <div key={cfg.kpiKey} className="kpi-slot">
+          return (
             <KPICard
+              key={cfg.id}
               index={i}
               label={cfg.label}
               value={data?.display ?? "—"}
-              rawValue={normalizedValue}
+              rawValue={data?.value ?? 0}
               color={cfg.color}
               widgetType={cfg.widgetType}
-              isExpanded={hoveredKpiIndex === i}
+              isActive={isActive}
               onSelect={handleSelect}
+              viewMode={viewMode}
             />
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
 
       <style>{`
+        .kpi-grid-container {
+          width: 100%;
+          padding: 0 20px;
+        }
+
         .kpi-grid {
-          display: grid;
-          grid-template-columns: repeat(7, 1fr);
-          gap: 10px;
-        }
-
-        .kpi-slot {
-          min-width: 0;
-        }
-
-        @media (max-width: 1400px) {
-          .kpi-grid {
-            gap: 8px;
-          }
-        }
-
-        @media (max-width: 900px) {
-          .kpi-grid {
-            grid-template-columns: repeat(4, 1fr);
-          }
+          display: flex;
+          justify-content: space-between;
+          width: 100%;
         }
       `}</style>
     </div>

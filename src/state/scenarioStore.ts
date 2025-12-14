@@ -1,5 +1,6 @@
 // src/state/scenarioStore.ts
-// STRATFIT — Scenario Store with EXACTLY 7 KPIs
+// STRATFIT — Deterministic Engine State
+// Two Views, One Engine, Same Truth
 
 import { create } from "zustand";
 import type { LeverId } from "@/logic/mountainPeakModel";
@@ -9,13 +10,22 @@ import type { LeverId } from "@/logic/mountainPeakModel";
 // ============================================================================
 
 export type ScenarioId = "base" | "upside" | "downside" | "extreme";
+export type ViewMode = "operator" | "investor";
 
-// EXACTLY 7 KPIs
-type KPIKey = "mrr" | "grossProfit" | "cashBalance" | "burnRate" | "runway" | "cac" | "churnRate";
+// KPI Keys aligned to specification
+type KPIKey = 
+  | "runway" 
+  | "cashPosition" 
+  | "momentum" 
+  | "burnQuality" 
+  | "riskIndex" 
+  | "earningsPower" 
+  | "enterpriseValue";
 
 interface KPIValue {
   value: number;
   display: string;
+  trend?: number; // -1 to 1 for micro-widget direction
 }
 
 // ============================================================================
@@ -50,6 +60,10 @@ export const SCENARIO_COLORS: Record<ScenarioId, { primary: string; secondary: s
 // ============================================================================
 
 interface ScenarioStoreState {
+  // View Mode: Operator or Investor
+  viewMode: ViewMode;
+  setViewMode: (v: ViewMode) => void;
+
   scenario: ScenarioId;
   setScenario: (s: ScenarioId) => void;
 
@@ -71,6 +85,9 @@ interface ScenarioStoreState {
   captureBaseline: () => void;
 
   getScenarioColors: () => { primary: string; secondary: string; glow: string };
+  
+  // Motion amplitude based on view
+  getMotionAmplitude: () => number;
 }
 
 // ============================================================================
@@ -78,6 +95,9 @@ interface ScenarioStoreState {
 // ============================================================================
 
 export const useScenarioStore = create<ScenarioStoreState>((set, get) => ({
+  viewMode: "operator",
+  setViewMode: (v) => set({ viewMode: v }),
+
   scenario: "base",
   setScenario: (s) => set({ scenario: s }),
 
@@ -116,6 +136,12 @@ export const useScenarioStore = create<ScenarioStoreState>((set, get) => ({
     const scenario = get().scenario;
     return SCENARIO_COLORS[scenario];
   },
+
+  // Operator: full motion (1.0), Investor: restrained (0.6)
+  getMotionAmplitude: () => {
+    const viewMode = get().viewMode;
+    return viewMode === "operator" ? 1.0 : 0.6;
+  },
 }));
 
 // ============================================================================
@@ -123,6 +149,7 @@ export const useScenarioStore = create<ScenarioStoreState>((set, get) => ({
 // ============================================================================
 
 export const useScenario = () => useScenarioStore((s) => s.scenario);
+export const useViewMode = () => useScenarioStore((s) => s.viewMode);
 export const useDataPoints = () => useScenarioStore((s) => s.dataPoints);
 export const useHoveredKpiIndex = () => useScenarioStore((s) => s.hoveredKpiIndex);
 export const useScenarioColors = () => {

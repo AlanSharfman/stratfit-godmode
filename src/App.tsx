@@ -1,6 +1,6 @@
 // src/App.tsx
-// STRATFIT — Decision Instrument
-// AI Insights on right side, mountain shifted left
+// STRATFIT — Scenario Intelligence Platform
+// Two Views, One Engine, Same Truth
 
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { ScenarioId } from "./components/ScenarioSlidePanel";
@@ -9,6 +9,7 @@ import ScenarioMountain from "./components/mountain/ScenarioMountain";
 import { Moon } from "./components/Moon";
 import { ControlDeck, ControlBoxConfig } from "./components/ControlDeck";
 import AIIntelligence from "./components/AIIntelligence";
+import ViewToggle from "./components/ViewToggle";
 import { useScenarioStore } from "@/state/scenarioStore";
 import type { LeverId } from "@/logic/mountainPeakModel";
 
@@ -17,95 +18,84 @@ import type { LeverId } from "@/logic/mountainPeakModel";
 // ============================================================================
 
 interface LeverState {
-  revenueGrowth: number;
-  pricingAdjustment: number;
-  marketingSpend: number;
-  headcount: number;
-  operatingExpenses: number;
-  churnSensitivity: number;
-  fundingInjection: number;
-  cashSensitivity: number;
-}
-
-interface MetricState {
-  mrr: number;
-  grossProfit: number;
-  cashBalance: number;
-  burnRate: number;
-  runwayMonths: number;
-  cac: number;
-  churnRate: number;
+  // Growth
+  demandStrength: number;
+  pricingPower: number;
+  expansionVelocity: number;
+  // Efficiency
+  costDiscipline: number;
+  hiringIntensity: number;
+  operatingDrag: number;
+  // Risk
+  marketVolatility: number;
+  executionRisk: number;
+  fundingPressure: number;
 }
 
 const INITIAL_LEVERS: LeverState = {
-  revenueGrowth: 45,
-  pricingAdjustment: 10,
-  marketingSpend: 60,
-  headcount: 24,
-  operatingExpenses: 55,
-  churnSensitivity: 50,
-  fundingInjection: 1.2,
-  cashSensitivity: 50,
-};
-
-const SLIDER_TO_KPI: Record<keyof LeverState, number> = {
-  revenueGrowth: 0,
-  pricingAdjustment: 1,
-  marketingSpend: 0,
-  headcount: 4,
-  operatingExpenses: 4,
-  churnSensitivity: 6,
-  fundingInjection: 3,
-  cashSensitivity: 3,
+  demandStrength: 60,
+  pricingPower: 50,
+  expansionVelocity: 45,
+  costDiscipline: 55,
+  hiringIntensity: 40,
+  operatingDrag: 35,
+  marketVolatility: 30,
+  executionRisk: 25,
+  fundingPressure: 20,
 };
 
 const SCENARIOS: { id: ScenarioId; label: string }[] = [
   { id: "base", label: "Base Case" },
   { id: "upside", label: "Upside" },
   { id: "downside", label: "Downside" },
-  { id: "extreme", label: "Extreme" },
+  { id: "extreme", label: "Stress Test" },
 ];
 
 // ============================================================================
-// HELPERS
+// METRICS CALCULATION
 // ============================================================================
 
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 
-function calculateMetrics(levers: LeverState, scenario: ScenarioId): MetricState {
-  const mult = scenario === "upside" ? 1.18 : scenario === "downside" ? 0.86 : scenario === "extreme" ? 0.72 : 1;
-  const growth01 = levers.revenueGrowth / 100;
-  const priceAdj = levers.pricingAdjustment / 100;
-  const mktSpend = levers.marketingSpend;
-  const opex = levers.operatingExpenses;
-  const head = levers.headcount;
-  const churnSens01 = levers.churnSensitivity / 100;
-  const fundingM = levers.fundingInjection;
-  const cashSens01 = levers.cashSensitivity / 100;
+function calculateMetrics(levers: LeverState, scenario: ScenarioId) {
+  const mult = scenario === "upside" ? 1.15 : scenario === "downside" ? 0.85 : scenario === "extreme" ? 0.70 : 1;
+  
+  // Growth factors
+  const demand = levers.demandStrength / 100;
+  const pricing = levers.pricingPower / 100;
+  const expansion = levers.expansionVelocity / 100;
+  
+  // Efficiency factors
+  const cost = levers.costDiscipline / 100;
+  const hiring = levers.hiringIntensity / 100;
+  const drag = levers.operatingDrag / 100;
+  
+  // Risk factors
+  const volatility = levers.marketVolatility / 100;
+  const execRisk = levers.executionRisk / 100;
+  const funding = levers.fundingPressure / 100;
 
-  const mrrK = Math.max(20, 120 * (1 + 1.35 * growth01) * (1 + priceAdj) * (1 + (mktSpend / 200) * 0.55) * (1 - (0.08 + 0.14 * churnSens01))) * mult;
-  const mrr = mrrK * 1000;
-  const grossMargin = clamp01(0.78 - (opex / 150) * 0.18 - (head / 100) * 0.10) * (scenario === "upside" ? 1.03 : 1);
-  const grossProfit = mrr * grossMargin;
-  const burnRate = Math.max(0, opex * 1000 + (head / 100) * 100 * 9500 + 38000 * (scenario === "extreme" ? 1.15 : 1) - grossProfit);
-  const cashBalance = Math.max(0.2, (2.2 + fundingM + (mktSpend / 200) * 0.6 + cashSens01 * 1.5) * mult) * 1_000_000;
-  const runwayMonths = burnRate <= 1 ? 60 : Math.max(0, Math.min(60, cashBalance / burnRate));
-  const newCust = Math.max(8, 40 + growth01 * 120) * (scenario === "upside" ? 1.15 : 1) * (scenario === "extreme" ? 0.85 : 1);
-  const cac = Math.max(150, (mktSpend * 1000) / newCust);
-  const churnRate = Math.max(0.5, Math.min(12, (1.8 + churnSens01 * 4.2 + Math.max(0, priceAdj) * 3.2) * (scenario === "extreme" ? 1.15 : 1)));
+  // Calculate KPI values
+  const runway = Math.round(Math.max(3, (18 + cost * 12 - hiring * 8 - funding * 10) * mult));
+  const cashPosition = Math.max(0.5, (3.2 + pricing * 1.5 - drag * 1.2 + cost * 0.8) * mult);
+  const momentum = Math.round((demand * 40 + expansion * 30 + pricing * 20) * mult);
+  const burnQuality = Math.round((cost * 35 + (1 - hiring) * 25 + (1 - drag) * 20) * mult);
+  const riskIndex = Math.round((volatility * 30 + execRisk * 35 + funding * 25) * (2 - mult));
+  const earningsPower = Math.round((demand * 25 + pricing * 30 + cost * 25) * mult);
+  const enterpriseValue = Math.max(5, (demand * 40 + pricing * 30 + expansion * 20 - volatility * 15) * mult);
 
-  return { mrr, grossProfit, cashBalance, burnRate, runwayMonths, cac, churnRate };
+  return { runway, cashPosition, momentum, burnQuality, riskIndex, earningsPower, enterpriseValue };
 }
 
-function metricsToDataPoints(m: MetricState): number[] {
+function metricsToDataPoints(m: ReturnType<typeof calculateMetrics>): number[] {
   return [
-    clamp01(m.mrr / 350000),
-    clamp01(m.grossProfit / 260000),
-    clamp01(m.runwayMonths / 36),
-    clamp01(m.cashBalance / 7000000),
-    clamp01(1 - m.burnRate / 420000),
-    clamp01(1 - m.cac / 6000),
-    clamp01(1 - m.churnRate / 10),
+    clamp01(m.runway / 36),
+    clamp01(m.cashPosition / 8),
+    clamp01(m.momentum / 100),
+    clamp01(m.burnQuality / 100),
+    clamp01(1 - m.riskIndex / 100),
+    clamp01(m.earningsPower / 100),
+    clamp01(m.enterpriseValue / 100),
   ];
 }
 
@@ -118,6 +108,7 @@ export default function App() {
   const [levers, setLevers] = useState<LeverState>(INITIAL_LEVERS);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
+  const viewMode = useScenarioStore((s) => s.viewMode);
   const hoveredKpiIndex = useScenarioStore((s) => s.hoveredKpiIndex);
   const setHoveredKpiIndex = useScenarioStore((s) => s.setHoveredKpiIndex);
   const setDataPoints = useScenarioStore((s) => s.setDataPoints);
@@ -139,13 +130,13 @@ export default function App() {
 
   useEffect(() => {
     setKpiValues({
-      mrr: { value: metrics.mrr, display: `£${(metrics.mrr / 1000).toFixed(0)}k/mo` },
-      grossProfit: { value: metrics.grossProfit, display: `£${(metrics.grossProfit / 1000).toFixed(0)}k` },
-      cashBalance: { value: metrics.cashBalance, display: `£${(metrics.cashBalance / 1000000).toFixed(1)}M` },
-      burnRate: { value: metrics.burnRate, display: `£${(metrics.burnRate / 1000).toFixed(0)}k/mo` },
-      runway: { value: metrics.runwayMonths, display: `${Math.round(metrics.runwayMonths)} Months` },
-      cac: { value: metrics.cac, display: `${((metrics.grossProfit / metrics.mrr) * 100).toFixed(0)}%` },
-      churnRate: { value: metrics.churnRate, display: `${Math.round(15 - metrics.churnRate)}%` },
+      runway: { value: metrics.runway, display: `${metrics.runway} mo` },
+      cashPosition: { value: metrics.cashPosition * 100, display: `£${metrics.cashPosition.toFixed(1)}M` },
+      momentum: { value: metrics.momentum, display: `${metrics.momentum}%` },
+      burnQuality: { value: metrics.burnQuality, display: `${metrics.burnQuality}%` },
+      riskIndex: { value: metrics.riskIndex, display: `${metrics.riskIndex}/100` },
+      earningsPower: { value: metrics.earningsPower, display: `${metrics.earningsPower}%` },
+      enterpriseValue: { value: metrics.enterpriseValue, display: `£${metrics.enterpriseValue.toFixed(0)}M` },
     });
   }, [metrics, setKpiValues]);
 
@@ -156,55 +147,51 @@ export default function App() {
         return;
       }
       setLevers((prev) => ({ ...prev, [id]: value }));
-      const kpiIndex = SLIDER_TO_KPI[id as keyof LeverState];
-      if (kpiIndex !== undefined) setHoveredKpiIndex(kpiIndex);
     },
     [setHoveredKpiIndex]
   );
 
-  const controlBoxes: ControlBoxConfig[] = useMemo(
-    () => [
+  // Slider configuration based on view mode
+  const controlBoxes: ControlBoxConfig[] = useMemo(() => {
+    const boxes: ControlBoxConfig[] = [
       {
-        id: "performance",
-        title: "Performance",
+        id: "growth",
+        title: "Growth",
         sliders: [
-          { id: "revenueGrowth", label: "Market Share", value: levers.revenueGrowth, min: 0, max: 100, defaultValue: 45, format: (v) => `${v}%` },
-          { id: "pricingAdjustment", label: "Growth Rate", value: levers.pricingAdjustment + 50, min: 0, max: 100, defaultValue: 60, format: (v) => `${v - 50}` },
+          { id: "revenueGrowth" as LeverId, label: "Demand Strength", value: levers.demandStrength, min: 0, max: 100, defaultValue: 60, format: (v) => `${v}%` },
+          { id: "pricingAdjustment" as LeverId, label: "Pricing Power", value: levers.pricingPower, min: 0, max: 100, defaultValue: 50, format: (v) => `${v}%` },
+          { id: "marketingSpend" as LeverId, label: "Expansion Velocity", value: levers.expansionVelocity, min: 0, max: 100, defaultValue: 45, format: (v) => `${v}%` },
         ],
       },
       {
-        id: "financial",
-        title: "Financial",
+        id: "efficiency",
+        title: "Efficiency",
         sliders: [
-          { id: "marketingSpend", label: "Growth Rate", value: levers.marketingSpend, min: 0, max: 200, defaultValue: 60, format: (v) => `${Math.round(v / 2)}%` },
-          { id: "operatingExpenses", label: "COGS", value: levers.operatingExpenses, min: 10, max: 150, defaultValue: 55, format: (v) => `${Math.round(v / 15)}` },
-          { id: "cashSensitivity", label: "Cash Sensitivity", value: levers.cashSensitivity, min: 0, max: 100, defaultValue: 50, format: (v) => `${v}%` },
+          { id: "operatingExpenses" as LeverId, label: "Cost Discipline", value: levers.costDiscipline, min: 0, max: 100, defaultValue: 55, format: (v) => `${v}%` },
+          { id: "headcount" as LeverId, label: "Hiring Intensity", value: levers.hiringIntensity, min: 0, max: 100, defaultValue: 40, format: (v) => `${v}%` },
+          { id: "cashSensitivity" as LeverId, label: "Operating Drag", value: levers.operatingDrag, min: 0, max: 100, defaultValue: 35, format: (v) => `${v}%` },
         ],
       },
       {
-        id: "people",
-        title: "People",
+        id: "risk",
+        title: "Risk",
         sliders: [
-          { id: "headcount", label: "Headcount", value: levers.headcount, min: 5, max: 100, defaultValue: 24, format: (v) => `${v * 10}%` },
-          { id: "churnSensitivity", label: "Churn Rate", value: levers.churnSensitivity, min: 0, max: 100, defaultValue: 50, format: (v) => `${Math.round(v / 10)}%` },
+          { id: "churnSensitivity" as LeverId, label: "Market Volatility", value: levers.marketVolatility, min: 0, max: 100, defaultValue: 30, format: (v) => `${v}%` },
+          { id: "fundingInjection" as LeverId, label: "Execution Risk", value: levers.executionRisk, min: 0, max: 100, defaultValue: 25, format: (v) => `${v}%` },
         ],
       },
-    ],
-    [levers]
-  );
+    ];
 
-  const aiContent = useMemo(
-    () => ({
-      commentary: [
-        `The see position forecast that medium-latent development for all business transformational is driven via all metrics established.`,
-        `Primary schedule to be fit market test sector established themes several strategy for established set the partnered.`,
-        `Mature market asset distribution rate active scenario model strategic particularly managed for established set the scope.`,
-      ],
-      risks: [],
-      actions: [],
-    }),
-    []
-  );
+    // Investor view: fewer sliders (only key controls)
+    if (viewMode === "investor") {
+      return boxes.map(box => ({
+        ...box,
+        sliders: box.sliders.slice(0, 2) // Only first 2 sliders per group
+      }));
+    }
+
+    return boxes;
+  }, [levers, viewMode]);
 
   const selectedScenario = SCENARIOS.find(s => s.id === scenario) || SCENARIOS[0];
 
@@ -212,13 +199,28 @@ export default function App() {
     <div className="app">
       {/* HEADER */}
       <header className="header">
-        <div className="logo">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#22d3ee" />
-            <path d="M2 17L12 22L22 17" stroke="#22d3ee" strokeWidth="2" />
-            <path d="M2 12L12 17L22 12" stroke="#22d3ee" strokeWidth="2" />
-          </svg>
-          <span>STRATFIT</span>
+        <div className="header-left">
+          <div className="logo">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#22d3ee" />
+              <path d="M2 17L12 22L22 17" stroke="#22d3ee" strokeWidth="2" />
+              <path d="M2 12L12 17L22 12" stroke="#22d3ee" strokeWidth="2" />
+            </svg>
+            <span>STRATFIT</span>
+          </div>
+          <div className={`system-status ${activeLeverId ? 'computing' : ''} ${viewMode === 'investor' ? 'investor' : ''}`}>
+            <span className="status-label">System Status</span>
+            <span className="status-separator">·</span>
+            <span className="status-live">Live</span>
+            <span className="status-dot" />
+          </div>
+        </div>
+        <div className="header-center">
+          <ViewToggle />
+        </div>
+        <div className="header-actions">
+          <button className="action-btn">Save</button>
+          <button className="action-btn">Load</button>
         </div>
       </header>
 
@@ -227,11 +229,10 @@ export default function App() {
         <KPIGrid />
       </section>
 
-      {/* MIDDLE SECTION - 3 column layout */}
+      {/* MIDDLE SECTION */}
       <div className="middle-section">
         {/* LEFT: Scenario + Sliders */}
         <aside className="left-panel">
-          {/* Scenario Dropdown */}
           <div className="scenario-dropdown-container">
             <button 
               className="scenario-dropdown"
@@ -258,13 +259,12 @@ export default function App() {
             )}
           </div>
 
-          {/* Sliders */}
           <div className="sliders-container">
             <ControlDeck boxes={controlBoxes} onChange={handleLeverChange} />
           </div>
         </aside>
 
-        {/* CENTER: Mountain (shifted left) */}
+        {/* CENTER: Mountain */}
         <div className="center-panel">
           <div className="mountain-container">
             <div className="mountain-content">
@@ -278,20 +278,14 @@ export default function App() {
               />
             </div>
           </div>
-          
-          {/* Action buttons below mountain */}
-          <div className="action-row">
-            <button className="action-btn">Save</button>
-            <button className="action-btn">Load</button>
-          </div>
         </div>
 
-        {/* RIGHT: AI Intelligence Panel */}
+        {/* RIGHT: AI Intelligence */}
         <aside className="right-panel">
           <AIIntelligence
-            commentary={aiContent.commentary}
-            risks={aiContent.risks}
-            actions={aiContent.actions}
+            commentary={[]}
+            risks={[]}
+            actions={[]}
             scenario={scenario}
           />
         </aside>
@@ -315,15 +309,21 @@ export default function App() {
           flex-direction: column;
         }
 
-        /* HEADER */
         .header {
           flex-shrink: 0;
-          height: 44px;
+          height: 48px;
           display: flex;
           align-items: center;
+          justify-content: space-between;
           padding: 0 20px;
           background: #0d1117;
           border-bottom: 1px solid #21262d;
+        }
+
+        .header-left {
+          display: flex;
+          align-items: center;
+          gap: 24px;
         }
 
         .logo {
@@ -336,14 +336,131 @@ export default function App() {
           color: #fff;
         }
 
-        /* KPI STRIP */
+        .system-status {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 11px;
+          letter-spacing: 0.02em;
+          padding: 4px 10px 4px 8px;
+          background: rgba(255, 255, 255, 0.02);
+          border-radius: 4px;
+          border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .status-label {
+          color: #8b949e;
+          font-weight: 500;
+        }
+
+        .status-separator {
+          color: #484f58;
+          margin: 0 1px;
+        }
+
+        .status-live {
+          color: #d1e8d5;
+          font-weight: 600;
+        }
+
+        .status-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #3ccb7f;
+          margin-left: 2px;
+          animation: status-pulse 2.8s ease-in-out infinite;
+        }
+
+        .system-status.computing .status-dot {
+          animation: status-pulse-fast 1.8s ease-in-out infinite;
+        }
+
+        .system-status.paused .status-dot {
+          background: #6b7280;
+          animation: none;
+        }
+
+        @keyframes status-pulse {
+          0%, 100% { 
+            opacity: 0.65; 
+            transform: scale(1); 
+          }
+          50% { 
+            opacity: 0.88; 
+            transform: scale(1.12); 
+          }
+        }
+
+        @keyframes status-pulse-fast {
+          0%, 100% { 
+            opacity: 0.7; 
+            transform: scale(1); 
+          }
+          50% { 
+            opacity: 0.92; 
+            transform: scale(1.08); 
+          }
+        }
+
+        /* Investor view - more restrained */
+        .system-status.investor {
+          background: rgba(255, 255, 255, 0.015);
+          border-color: rgba(255, 255, 255, 0.03);
+        }
+
+        .system-status.investor .status-dot {
+          animation: status-pulse-investor 3.2s ease-in-out infinite;
+        }
+
+        @keyframes status-pulse-investor {
+          0%, 100% { 
+            opacity: 0.55; 
+            transform: scale(1); 
+          }
+          50% { 
+            opacity: 0.75; 
+            transform: scale(1.08); 
+          }
+        }
+
+        .header-center {
+          position: absolute;
+          left: 50%;
+          transform: translateX(-50%);
+        }
+
+        .header-actions {
+          display: flex;
+          gap: 8px;
+        }
+
+        .action-btn {
+          padding: 6px 14px;
+          background: #161b22;
+          border: 1px solid #30363d;
+          border-radius: 6px;
+          color: rgba(255, 255, 255, 0.6);
+          font-size: 11px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.15s;
+        }
+
+        .action-btn:hover {
+          background: #21262d;
+          color: #fff;
+          border-color: #484f58;
+        }
+
         .kpi-strip {
           flex-shrink: 0;
-          padding: 12px 20px;
+          padding: 8px 20px;
+          padding-left: 236px;
+          padding-right: 316px;
           border-bottom: 1px solid #21262d;
         }
 
-        /* MIDDLE SECTION - 3 columns */
         .middle-section {
           flex: 1;
           display: grid;
@@ -353,7 +470,6 @@ export default function App() {
           min-height: 0;
         }
 
-        /* LEFT PANEL */
         .left-panel {
           display: flex;
           flex-direction: column;
@@ -361,7 +477,6 @@ export default function App() {
           overflow: hidden;
         }
 
-        /* Scenario Dropdown */
         .scenario-dropdown-container {
           position: relative;
           flex-shrink: 0;
@@ -445,13 +560,11 @@ export default function App() {
           border-radius: 2px;
         }
 
-        /* CENTER PANEL - Mountain shifted left */
         .center-panel {
           display: flex;
           flex-direction: column;
-          gap: 10px;
           min-width: 0;
-          padding-right: 40px; /* Shift mountain left by adding right padding */
+          padding-right: 20px;
         }
 
         .mountain-container {
@@ -469,31 +582,6 @@ export default function App() {
           height: 100%;
         }
 
-        .action-row {
-          display: flex;
-          gap: 8px;
-          justify-content: flex-end;
-        }
-
-        .action-btn {
-          padding: 8px 20px;
-          background: #161b22;
-          border: 1px solid #30363d;
-          border-radius: 6px;
-          color: rgba(255, 255, 255, 0.7);
-          font-size: 11px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.15s;
-        }
-
-        .action-btn:hover {
-          background: #21262d;
-          color: #fff;
-          border-color: #484f58;
-        }
-
-        /* RIGHT PANEL - AI Intelligence */
         .right-panel {
           display: flex;
           flex-direction: column;
@@ -501,13 +589,9 @@ export default function App() {
           overflow: hidden;
         }
 
-        /* Responsive */
         @media (max-width: 1200px) {
           .middle-section {
             grid-template-columns: 180px 1fr 240px;
-          }
-          .center-panel {
-            padding-right: 20px;
           }
         }
 
@@ -517,9 +601,6 @@ export default function App() {
           }
           .right-panel {
             display: none;
-          }
-          .center-panel {
-            padding-right: 0;
           }
         }
       `}</style>
