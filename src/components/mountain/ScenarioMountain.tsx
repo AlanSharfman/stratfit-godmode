@@ -1,6 +1,6 @@
 // src/components/mountain/ScenarioMountain.tsx
-// STRATFIT — Mountain with 4-6 Visible Peaks
-// Rugged ridgelines, depth, deterministic, no flicker
+// STRATFIT — Mountain with Dramatic Peaks
+// 10% smaller, sharper peaks, more dramatic ridgelines
 
 import React, { useMemo, useRef, useLayoutEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
@@ -10,30 +10,29 @@ import { buildPeakModel, LeverId } from "@/logic/mountainPeakModel";
 import { ScenarioId, SCENARIO_COLORS } from "@/state/scenarioStore";
 
 // ============================================================================
-// CONSTANTS
+// CONSTANTS — Enhanced for dramatic peaks
 // ============================================================================
 
 const GRID_W = 120;
 const GRID_D = 60;
-const MESH_W = 55;
-const MESH_D = 28;
-const ISLAND_RADIUS = 24;
+const MESH_W = 50;  // 10% smaller
+const MESH_D = 25;  // 10% smaller
+const ISLAND_RADIUS = 22;
 
-const BASE_SCALE = 3.5;
-const PEAK_SCALE = 5.5;
-const MASSIF_SCALE = 4.8;
-const RIDGE_SHARPNESS = 1.8;
-const CLIFF_BOOST = 1.25;
+const BASE_SCALE = 4.5;      // Increased for higher peaks
+const PEAK_SCALE = 7.5;      // Much higher peaks
+const MASSIF_SCALE = 6.5;    // Dramatic massif
+const RIDGE_SHARPNESS = 2.2; // Sharper ridges
+const CLIFF_BOOST = 1.4;
 
-const SOFT_CEILING = 10.0;
-const CEILING_START = 7.5;
+const SOFT_CEILING = 12.0;   // Higher ceiling
+const CEILING_START = 9.0;
 
 // ============================================================================
-// DETERMINISTIC NOISE (No random flicker)
+// DETERMINISTIC NOISE
 // ============================================================================
 
 function noise2(x: number, z: number): number {
-  // Multi-frequency deterministic noise
   const n1 = Math.sin(x * 0.7 + z * 0.35) * 0.2;
   const n2 = Math.cos(x * 1.2 - z * 0.6) * 0.15;
   const n3 = Math.sin(x * 2.1 + z * 1.8) * 0.08;
@@ -41,10 +40,9 @@ function noise2(x: number, z: number): number {
 }
 
 function ridgeNoise(x: number, z: number): number {
-  // Creates rugged ridgeline detail
   const base = Math.sin(x * 0.5) * Math.cos(z * 0.3);
-  const detail = Math.abs(Math.sin(x * 2.5 + z * 1.5)) * 0.3;
-  return base * 0.15 + detail * 0.2;
+  const detail = Math.abs(Math.sin(x * 2.5 + z * 1.5)) * 0.35;
+  return base * 0.18 + detail * 0.25;
 }
 
 function gaussian1(x: number, c: number, s: number): number {
@@ -93,14 +91,14 @@ function heightColor(h01: number, pal: ReturnType<typeof paletteForScenario>, il
   else c = pal.high.clone().lerp(pal.peak, (t - 0.75) / 0.25);
 
   if (illumination > 0) {
-    c.lerp(new THREE.Color("#ffffff"), illumination * 0.3);
+    c.lerp(new THREE.Color("#ffffff"), illumination * 0.35);
   }
 
   return c;
 }
 
 // ============================================================================
-// MASSIF DEFINITION — 6 Distinct Peaks
+// MASSIF DEFINITION — Dramatic Peaks
 // ============================================================================
 
 interface MassifPeak {
@@ -113,23 +111,23 @@ interface MassifPeak {
 }
 
 const MASSIF_PEAKS: MassifPeak[] = [
-  // MAIN PEAK — Tallest, slightly off-center
-  { x: 2, z: -3, amplitude: 1.6, sigmaX: 3.2, sigmaZ: 2.8, sharpness: 1.3 },
+  // MAIN PEAK — Tallest, dramatic
+  { x: 1, z: -2, amplitude: 2.2, sigmaX: 2.5, sigmaZ: 2.2, sharpness: 1.6 },
   
-  // SECONDARY PEAK — Left
-  { x: -12, z: -1, amplitude: 1.2, sigmaX: 3.8, sigmaZ: 3.2 },
+  // SECONDARY PEAK — Left, sharp
+  { x: -10, z: -1, amplitude: 1.7, sigmaX: 2.8, sigmaZ: 2.4, sharpness: 1.4 },
   
-  // TERTIARY PEAK — Right
-  { x: 14, z: -2, amplitude: 1.1, sigmaX: 3.5, sigmaZ: 3.0 },
+  // TERTIARY PEAK — Right, prominent
+  { x: 12, z: -1.5, amplitude: 1.5, sigmaX: 2.6, sigmaZ: 2.3, sharpness: 1.3 },
   
   // RIDGE PEAK — Behind main
-  { x: -3, z: 4, amplitude: 0.85, sigmaX: 4.5, sigmaZ: 3.5 },
+  { x: -2, z: 3, amplitude: 1.2, sigmaX: 3.5, sigmaZ: 2.8, sharpness: 1.2 },
   
   // FOOTHILL — Far left
-  { x: -18, z: 3, amplitude: 0.6, sigmaX: 5.0, sigmaZ: 4.0 },
+  { x: -16, z: 2, amplitude: 0.9, sigmaX: 3.8, sigmaZ: 3.2 },
   
-  // FOOTHILL — Far right
-  { x: 20, z: 2, amplitude: 0.55, sigmaX: 4.5, sigmaZ: 3.8 },
+  // FOOTHILL — Far right  
+  { x: 18, z: 1, amplitude: 0.85, sigmaX: 3.5, sigmaZ: 3.0 },
 ];
 
 // ============================================================================
@@ -195,23 +193,23 @@ const Terrain: React.FC<TerrainProps> = ({
       const z = pos.getY(i);
       const kpiX = ((x + wHalf) / MESH_W) * 6;
 
-      // KPI ridges
+      // KPI ridges with enhanced sharpness
       let ridge = 0;
       let illumination = 0;
 
       for (let idx = 0; idx < 7; idx++) {
         const v = clamp01(dp[idx]);
-        const g = gaussian1(kpiX, idx, 0.55);
+        const g = gaussian1(kpiX, idx, 0.48);
         ridge += Math.pow(v, RIDGE_SHARPNESS) * g;
 
         if (activeKpiIndex === idx) {
-          illumination = Math.max(illumination, g * 0.65);
+          illumination = Math.max(illumination, g * 0.7);
         }
       }
 
       let h = ridge * BASE_SCALE;
 
-      // Add massif peaks
+      // Add massif peaks with enhanced amplitude
       for (const m of MASSIF_PEAKS) {
         const g = gaussian2(x - m.x, z - m.z, m.sigmaX, m.sigmaZ);
         const sharpened = m.sharpness ? Math.pow(g, 1 / m.sharpness) : g;
@@ -222,21 +220,21 @@ const Terrain: React.FC<TerrainProps> = ({
       for (const p of peakModel.peaks) {
         const idx = clamp01(p.index / 6);
         const peakX = lerp(-wHalf, wHalf, idx);
-        h += gaussian2(x - peakX, z + 1.5, 0.9 + p.sigma, 0.8 + p.sigma) * p.amplitude * PEAK_SCALE;
+        h += gaussian2(x - peakX, z + 1.5, 0.8 + p.sigma * 0.8, 0.7 + p.sigma * 0.8) * p.amplitude * PEAK_SCALE;
       }
 
       // Rugged ridgeline detail
       const rugged = ridgeNoise(x, z);
-      h += rugged * (0.5 + h * 0.15);
+      h += rugged * (0.6 + h * 0.18);
 
       // Island mask
       const dist = Math.sqrt(x * x + z * z * 1.4);
-      const mask = Math.max(0, 1 - Math.pow(dist / ISLAND_RADIUS, 2.2));
+      const mask = Math.max(0, 1 - Math.pow(dist / ISLAND_RADIUS, 2.0));
 
       // Deterministic noise
-      const n = noise2(x, z) * 0.4;
+      const n = noise2(x, z) * 0.35;
 
-      const cliff = Math.pow(mask, 0.5) * CLIFF_BOOST;
+      const cliff = Math.pow(mask, 0.45) * CLIFF_BOOST;
       let finalH = Math.max(0, (h + n) * mask * cliff);
       finalH = applySoftCeiling(finalH);
 
@@ -248,7 +246,7 @@ const Terrain: React.FC<TerrainProps> = ({
     for (let i = 0; i < count; i++) {
       const h = heights[i];
       pos.setZ(i, h);
-      const h01 = clamp01(h / (maxH * 0.85));
+      const h01 = clamp01(h / (maxH * 0.82));
       const c = heightColor(h01, pal, illuminations[i]);
       col.setXYZ(i, c.r, c.g, c.b);
     }
@@ -270,27 +268,27 @@ const Terrain: React.FC<TerrainProps> = ({
     }
     if (meshFillRef.current) {
       const mat = meshFillRef.current.material as THREE.MeshStandardMaterial;
-      mat.emissiveIntensity = 0.03 + Math.sin(t * 0.5) * 0.015;
+      mat.emissiveIntensity = 0.04 + Math.sin(t * 0.5) * 0.02;
     }
   });
 
   return (
-    <group ref={groupRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -5.2, 0]}>
+    <group ref={groupRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -4.8, 0]}>
       <mesh ref={meshFillRef} geometry={geometry}>
         <meshStandardMaterial
           vertexColors
           transparent
-          opacity={0.18}
-          roughness={0.12}
-          metalness={0.88}
+          opacity={0.2}
+          roughness={0.1}
+          metalness={0.9}
           side={THREE.DoubleSide}
           emissive={pal.mid}
-          emissiveIntensity={0.04}
+          emissiveIntensity={0.05}
           depthWrite={false}
         />
       </mesh>
       <mesh ref={meshWireRef} geometry={geometry}>
-        <meshBasicMaterial vertexColors wireframe transparent opacity={0.7} toneMapped={false} />
+        <meshBasicMaterial vertexColors wireframe transparent opacity={0.75} toneMapped={false} />
       </mesh>
     </group>
   );
@@ -331,11 +329,12 @@ export default function ScenarioMountain(props: {
         gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
         frameloop="always"
       >
-        <PerspectiveCamera makeDefault position={[0, 14, 38]} fov={38} />
-        <ambientLight intensity={0.1} />
-        <pointLight position={[20, 30, 15]} intensity={1.0} />
-        <pointLight position={[-20, 18, -12]} intensity={0.6} />
-        <spotLight position={[0, 25, 0]} intensity={0.4} angle={0.6} penumbra={0.8} />
+        {/* Camera moved back for 10% smaller appearance */}
+        <PerspectiveCamera makeDefault position={[0, 16, 42]} fov={36} />
+        <ambientLight intensity={0.12} />
+        <pointLight position={[20, 35, 15]} intensity={1.2} />
+        <pointLight position={[-20, 20, -12]} intensity={0.7} />
+        <spotLight position={[0, 30, 0]} intensity={0.5} angle={0.6} penumbra={0.8} />
 
         <Terrain
           dataPoints={dataPoints}
@@ -345,8 +344,8 @@ export default function ScenarioMountain(props: {
           scenario={scenario}
         />
 
-        <group position={[0, -4.8, 0]}>
-          <gridHelper args={[90, 45, "#1a2838", "#0e1822"]} />
+        <group position={[0, -4.5, 0]}>
+          <gridHelper args={[80, 40, "#1a2838", "#0e1822"]} />
         </group>
 
         <OrbitControls
