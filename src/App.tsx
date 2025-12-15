@@ -247,20 +247,17 @@ export default function App() {
 
         {/* SYSTEM CONTROLS */}
         <div className="system-controls">
-          <button className="system-btn">
-            <svg className="system-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-              <polyline points="17 21 17 13 7 13 7 21"/>
-              <polyline points="7 3 7 8 15 8"/>
+          <button className="save-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
             </svg>
-            <span>Save</span>
+            <span>SAVE</span>
           </button>
-          <button className="system-btn">
-            <svg className="system-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="1 4 1 10 7 10"/>
-              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+          <button className="load-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
             </svg>
-            <span>Load</span>
+            <span>LOAD</span>
           </button>
         </div>
       </section>
@@ -515,40 +512,69 @@ export default function App() {
           flex-shrink: 0;
         }
 
-        .system-btn {
+        /* Save - Neon Cyan Style */
+        .save-btn {
           display: flex;
           align-items: center;
           gap: 8px;
-          padding: 10px 18px;
-          background: rgba(30, 35, 42, 0.9);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 10px;
-          color: rgba(255, 255, 255, 0.55);
+          padding: 10px 24px;
+          border-radius: 8px;
+          background: rgba(34, 211, 238, 0.1);
+          border: 1px solid rgba(34, 211, 238, 0.5);
+          color: #22d3ee;
+          font-family: ui-monospace, monospace;
           font-size: 12px;
-          font-weight: 600;
-          letter-spacing: 0.02em;
+          font-weight: 700;
+          letter-spacing: 0.1em;
           cursor: pointer;
-          transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+          transition: all 0.3s ease;
         }
 
-        .system-btn:hover {
-          background: rgba(38, 44, 52, 0.95);
-          border-color: rgba(255, 255, 255, 0.15);
-          color: rgba(255, 255, 255, 0.8);
-          transform: translateY(-1px);
+        .save-btn:hover {
+          background: rgba(34, 211, 238, 0.2);
+          border-color: #22d3ee;
+          box-shadow: 0 0 20px rgba(34, 211, 238, 0.4);
         }
 
-        .system-btn:active {
-          transform: translateY(0);
+        .save-btn:active {
+          transform: scale(0.98);
         }
 
-        .system-icon {
-          opacity: 0.5;
-          transition: opacity 0.15s ease;
+        .save-btn svg {
+          stroke: currentColor;
         }
 
-        .system-btn:hover .system-icon {
-          opacity: 0.75;
+        /* Load - Ghost Style */
+        .load-btn {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 10px 24px;
+          border-radius: 8px;
+          background: transparent;
+          border: 1px solid #334155;
+          color: #94a3b8;
+          font-family: ui-monospace, monospace;
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: 0.1em;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .load-btn:hover {
+          border-color: rgba(255, 255, 255, 0.5);
+          color: #ffffff;
+          background: rgba(255, 255, 255, 0.05);
+          box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+        }
+
+        .load-btn:active {
+          transform: scale(0.98);
+        }
+
+        .load-btn svg {
+          stroke: currentColor;
         }
 
         .middle-section {
@@ -592,14 +618,17 @@ export default function App() {
           position: relative;
           border-radius: 8px;
           overflow: hidden;
-          background: #0d1117;
+          background: #060a10;
           border: 1px solid #30363d;
+          /* Prevent white flash */
+          contain: content;
         }
 
         .mountain-content {
           position: relative;
           width: 100%;
           height: 100%;
+          background: #060a10;
         }
 
         .mountain-badges {

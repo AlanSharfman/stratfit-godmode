@@ -103,13 +103,6 @@ function CashInstrument({ value, state }: { value: number; state: "idle" | "hove
 
 // 3. MOMENTUM — Metallic Arrow with Chevrons
 function MomentumInstrument({ value, state }: { value: number; state: "idle" | "hover" | "active" }) {
-  const [tick, setTick] = useState(0);
-  useEffect(() => {
-    const speed = state === "active" ? 0.06 : 0.03;
-    const interval = setInterval(() => setTick(t => (t + speed) % 1), 30);
-    return () => clearInterval(interval);
-  }, [state]);
-
   return (
     <svg viewBox="0 0 80 40" className="instrument-svg">
       <defs>
@@ -125,15 +118,6 @@ function MomentumInstrument({ value, state }: { value: number; state: "idle" | "
       {/* Arrow body */}
       <path d="M8 17 L52 17 L52 12 L68 20 L52 28 L52 23 L8 23 Z" fill="url(#arrowMetal)" filter="url(#arrowGlow)"/>
       <path d="M8 17 L52 17 L52 12 L68 20 L52 28 L52 23 L8 23 Z" fill="url(#arrowMetal)" stroke="rgba(255,255,255,0.2)" strokeWidth="0.3"/>
-      {/* Chevrons */}
-      {[0, 1, 2, 3].map(i => {
-        const phase = (tick + i * 0.2) % 1;
-        const opacity = 0.25 + Math.sin(phase * Math.PI) * 0.6;
-        return (
-          <polygon key={i} points={`${12 + i * 8},32 ${16 + i * 8},36 ${20 + i * 8},32`} 
-            fill="#00ccff" opacity={opacity} transform="rotate(-90 40 34)"/>
-        );
-      })}
     </svg>
   );
 }
@@ -352,6 +336,8 @@ export default function KPIConsole() {
         .kpi-console {
           width: 100%;
           padding: 8px 0;
+          display: flex;
+          justify-content: center;
         }
 
         /* ============================================
@@ -390,6 +376,7 @@ export default function KPIConsole() {
           display: flex;
           gap: 14px;
           align-items: stretch;
+          justify-content: center;
           position: relative;
           z-index: 2;
         }
