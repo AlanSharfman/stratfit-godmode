@@ -11,6 +11,7 @@ import { ControlDeck, ControlBoxConfig } from "./components/ControlDeck";
 import AIIntelligence from "./components/AIIntelligence";
 import ViewToggle from "./components/ViewToggle";
 import ScenarioSelector from "./components/ScenarioSelector";
+import ScenarioDeltaSnapshot from "./components/ScenarioDeltaSnapshot";
 import { useScenarioStore, SCENARIO_COLORS } from "@/state/scenarioStore";
 import type { LeverId } from "@/logic/mountainPeakModel";
 
@@ -102,12 +103,12 @@ function metricsToDataPoints(m: ReturnType<typeof calculateMetrics>): number[] {
 export default function App() {
   const [scenario, setScenario] = useState<ScenarioId>("base");
   const [levers, setLevers] = useState<LeverState>(INITIAL_LEVERS);
-
+  
   // Handle scenario change
   const handleScenarioChange = useCallback((newScenario: ScenarioId) => {
     setScenario(newScenario);
   }, []);
-
+  
   const viewMode = useScenarioStore((s) => s.viewMode);
   const hoveredKpiIndex = useScenarioStore((s) => s.hoveredKpiIndex);
   const setHoveredKpiIndex = useScenarioStore((s) => s.setHoveredKpiIndex);
@@ -130,16 +131,23 @@ export default function App() {
 
   useEffect(() => {
     setKpiValues({
-      runway: { value: metrics.runway, display: `${metrics.runway} mo` },
+      // CASH: $X.XM
       cashPosition: { value: metrics.cashPosition * 100, display: `$${metrics.cashPosition.toFixed(1)}M` },
-      momentum: { value: metrics.momentum, display: `${metrics.momentum > 0 ? '+' : ''}${metrics.momentum}%` },
-      burnQuality: { value: metrics.burnQuality, display: `$${Math.round(metrics.burnQuality * 2)}K/mo` },
+      // BURN: $XXK/mo
+      burnQuality: { value: metrics.burnQuality, display: `$${Math.round(metrics.burnQuality)}K` },
+      // RUNWAY: XX mo
+      runway: { value: metrics.runway, display: `${metrics.runway} mo` },
+      // ARR: $X.XM (was momentum)
+      momentum: { value: metrics.momentum, display: `$${(metrics.momentum * 0.04 + 1.8).toFixed(1)}M` },
+      // GROSS MARGIN: XX% (was earningsPower)
+      earningsPower: { value: metrics.earningsPower, display: `${Math.round(65 + metrics.earningsPower * 0.2)}%` },
+      // RISK SCORE: XX/100
       riskIndex: { value: metrics.riskIndex, display: `${metrics.riskIndex}/100` },
-      earningsPower: { value: metrics.earningsPower, display: `$${Math.round(metrics.earningsPower * 5)}K` },
-      enterpriseValue: { value: metrics.enterpriseValue, display: `$${metrics.enterpriseValue.toFixed(1)}M` },
+      // VALUATION: $XX.XM
+      enterpriseValue: { value: metrics.enterpriseValue, display: `$${(metrics.enterpriseValue * 1.2 + 30).toFixed(1)}M` },
     });
   }, [metrics, setKpiValues]);
-
+    
   // Map lever IDs to state keys
   const leverIdToStateKey: Record<string, keyof LeverState> = {
     revenueGrowth: "demandStrength",
@@ -151,7 +159,7 @@ export default function App() {
     churnSensitivity: "marketVolatility",
     fundingInjection: "executionRisk",
   };
-
+  
   const handleLeverChange = useCallback(
     (id: LeverId | "__end__", value: number) => {
       if (id === "__end__") {
@@ -205,7 +213,7 @@ export default function App() {
 
     return boxes;
   }, [levers, viewMode]);
-
+  
   return (
     <div className="app">
       {/* HEADER */}
@@ -287,18 +295,9 @@ export default function App() {
                 leverIntensity01={leverIntensity01 ?? 0}
               />
             </div>
-            {/* Runway & Risk Badges */}
-            <div className="mountain-badges">
-              <div className={`mountain-badge ${metrics.runway < 10 ? 'status-red' : metrics.runway < 15 ? 'status-orange' : 'status-green'}`}>
-                <span className="badge-label">Runway</span>
-                <span className="badge-value">{metrics.runway} mo</span>
-              </div>
-              <div className={`mountain-badge ${metrics.riskIndex > 55 ? 'status-red' : metrics.riskIndex > 35 ? 'status-orange' : 'status-green'}`}>
-                <span className="badge-label">Risk</span>
-                <span className="badge-value">{metrics.riskIndex}/100</span>
-              </div>
-            </div>
           </div>
+          {/* Scenario Delta Snapshot - below mountain */}
+          <ScenarioDeltaSnapshot />
         </div>
 
         {/* RIGHT: AI Intelligence */}
@@ -310,7 +309,7 @@ export default function App() {
             scenario={scenario}
           />
         </aside>
-      </div>
+    </div>
 
       <style>{`
         * {
@@ -584,7 +583,31 @@ export default function App() {
           display: flex;
           flex-direction: column;
           min-width: 0;
+          min-height: 0;
           padding-right: 20px;
+          overflow-y: auto;
+          overflow-x: hidden;
+          padding-bottom: 20px;
+          position: relative;
+        }
+
+        .center-panel::-webkit-scrollbar {
+          width: 8px;
+        }
+
+        .center-panel::-webkit-scrollbar-track {
+          background: rgba(30, 40, 55, 0.5);
+          border-radius: 4px;
+        }
+
+        .center-panel::-webkit-scrollbar-thumb {
+          background: linear-gradient(180deg, rgba(56, 189, 248, 0.6) 0%, rgba(34, 211, 238, 0.4) 100%);
+          border-radius: 4px;
+          border: 1px solid rgba(56, 189, 248, 0.3);
+        }
+
+        .center-panel::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(180deg, rgba(56, 189, 248, 0.8) 0%, rgba(34, 211, 238, 0.6) 100%);
         }
 
         .mountain-container {
@@ -594,69 +617,13 @@ export default function App() {
           overflow: hidden;
           background: #0d1117;
           border: 1px solid #30363d;
+          min-height: 300px;
         }
 
         .mountain-content {
           position: relative;
           width: 100%;
           height: 100%;
-        }
-
-        .mountain-badges {
-          position: absolute;
-          bottom: 12px;
-          right: 12px;
-          display: flex;
-          gap: 10px;
-          z-index: 10;
-        }
-
-        .mountain-badge {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          padding: 8px 14px;
-          background: rgba(13, 17, 23, 0.85);
-          border-radius: 6px;
-          border: 1px solid #21262d;
-          backdrop-filter: blur(8px);
-          min-width: 70px;
-        }
-
-        .badge-label {
-          font-size: 9px;
-          font-weight: 600;
-          letter-spacing: 0.08em;
-          color: rgba(255, 255, 255, 0.5);
-          text-transform: uppercase;
-          margin-bottom: 2px;
-        }
-
-        .badge-value {
-          font-size: 14px;
-          font-weight: 700;
-          color: #fff;
-        }
-
-        .mountain-badge.status-green {
-          border-color: rgba(34, 197, 94, 0.4);
-        }
-        .mountain-badge.status-green .badge-value {
-          color: #4ade80;
-        }
-
-        .mountain-badge.status-orange {
-          border-color: rgba(251, 146, 60, 0.4);
-        }
-        .mountain-badge.status-orange .badge-value {
-          color: #fb923c;
-        }
-
-        .mountain-badge.status-red {
-          border-color: rgba(239, 68, 68, 0.45);
-        }
-        .mountain-badge.status-red .badge-value {
-          color: #f87171;
         }
 
         .right-panel {

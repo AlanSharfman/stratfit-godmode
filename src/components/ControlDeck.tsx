@@ -28,32 +28,40 @@ export interface ControlBoxConfig {
 }
 
 // ============================================================================
-// KPI INDEX TO COLOR MAPPING
+// KPI INDEX TO COLOR MAPPING (matches KPIConsole order)
+// 0: CASH, 1: BURN RATE, 2: RUNWAY, 3: ARR, 4: GROSS MARGIN, 5: RISK SCORE, 6: VALUATION
 // ============================================================================
 
+// MUST MATCH KPIConsole.tsx accentColor values exactly!
 const KPI_COLORS: Record<number, string> = {
-  0: "#22d3ee", // REVENUE - cyan
-  1: "#22d3ee", // PROFIT - cyan
-  2: "#f59e0b", // RUNWAY - orange
-  3: "#22d3ee", // CASH - cyan
-  4: "#22d3ee", // BURN RATE - cyan
-  5: "#a78bfa", // EBITDA - purple
-  6: "#ef4444", // RISK - red
+  0: "#00ffcc", // CASH - teal
+  1: "#ff6b6b", // BURN RATE - red/coral (matches KPIConsole)
+  2: "#00d4ff", // RUNWAY - cyan
+  3: "#00ff88", // ARR - green
+  4: "#00ff88", // GROSS MARGIN - green
+  5: "#00ccff", // RISK SCORE - cyan (matches KPIConsole)
+  6: "#00ddff", // VALUATION - cyan
 };
 
 // ============================================================================
-// LEVER TO KPI MAPPING - Which sliders affect which KPIs
+// LEVER TO KPI MAPPING - Which sliders affect which KPIs (CORRECTED)
+// Based on calculateMetrics() in App.tsx
 // ============================================================================
 
 const LEVER_TO_KPI: Record<LeverId, number[]> = {
-  revenueGrowth: [0, 1],        // → REVENUE, PROFIT
-  pricingAdjustment: [0, 1],    // → REVENUE, PROFIT
-  marketingSpend: [0, 4],       // → REVENUE, BURN RATE
-  headcount: [4, 5],            // → BURN RATE, EBITDA
-  operatingExpenses: [4, 5],    // → BURN RATE, EBITDA
-  churnSensitivity: [6, 2],     // → RISK, RUNWAY
-  fundingInjection: [3, 2],     // → CASH, RUNWAY
-  cashSensitivity: [3, 2, 4],   // → CASH, RUNWAY, BURN RATE
+  // GROWTH sliders
+  revenueGrowth: [3, 4, 6],         // Demand Strength → ARR, GROSS MARGIN, VALUATION
+  pricingAdjustment: [0, 3, 4, 6],  // Pricing Power → CASH, ARR, GROSS MARGIN, VALUATION
+  marketingSpend: [3, 6],           // Expansion Velocity → ARR, VALUATION
+  
+  // EFFICIENCY sliders
+  operatingExpenses: [0, 1, 2, 4],  // Cost Discipline → CASH, BURN RATE, RUNWAY, GROSS MARGIN
+  headcount: [1, 2],                // Hiring Intensity → BURN RATE, RUNWAY
+  cashSensitivity: [0, 1],          // Operating Drag → CASH, BURN RATE
+  
+  // RISK sliders
+  churnSensitivity: [5, 6],         // Market Volatility → RISK SCORE, VALUATION
+  fundingInjection: [2, 5],         // Execution Risk → RUNWAY, RISK SCORE
 };
 
 // ============================================================================

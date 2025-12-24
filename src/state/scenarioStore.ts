@@ -88,6 +88,11 @@ interface ScenarioStoreState {
   
   // Motion amplitude based on view
   getMotionAmplitude: () => number;
+
+  // Scenario Delta Snapshot toggle (persisted to localStorage)
+  showScenarioImpact: boolean;
+  setShowScenarioImpact: (show: boolean) => void;
+  toggleScenarioImpact: () => void;
 }
 
 // ============================================================================
@@ -141,6 +146,31 @@ export const useScenarioStore = create<ScenarioStoreState>((set, get) => ({
   getMotionAmplitude: () => {
     const viewMode = get().viewMode;
     return viewMode === "operator" ? 1.0 : 0.6;
+  },
+
+  // Scenario Delta Snapshot toggle - initialized from localStorage
+  showScenarioImpact: (() => {
+    try {
+      return localStorage.getItem("stratfit_showScenarioImpact") === "true";
+    } catch {
+      return false;
+    }
+  })(),
+  
+  setShowScenarioImpact: (show) => {
+    try {
+      localStorage.setItem("stratfit_showScenarioImpact", String(show));
+    } catch {}
+    set({ showScenarioImpact: show });
+  },
+  
+  toggleScenarioImpact: () => {
+    const current = get().showScenarioImpact;
+    const next = !current;
+    try {
+      localStorage.setItem("stratfit_showScenarioImpact", String(next));
+    } catch {}
+    set({ showScenarioImpact: next });
   },
 }));
 

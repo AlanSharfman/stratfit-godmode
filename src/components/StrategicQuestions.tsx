@@ -130,33 +130,6 @@ const OPERATOR_PROMPTS: StrategicPrompt[] = [
         action: "Scenario-test against 2x demand drop and 1.5x burn increase."
       };
     }
-  },
-  {
-    id: "investor-worry",
-    text: "What would an investor worry about here?",
-    dominantConstraint: "liquidity",
-    primaryKpis: [0, 1, 4], // Runway, Cash, Risk
-    getResponse: (state) => {
-      if (state.runway < 12) {
-        return {
-          observation: "Runway constrains negotiating position. An investor sees a company that needs capital more than they need that specific investor.",
-          risk: "Dilution risk increases as runway shortens. Terms worsen with urgency.",
-          action: "Extend runway to 18+ months before fundraising to negotiate from strength."
-        };
-      }
-      if (state.burnQuality < 45) {
-        return {
-          observation: "Burn quality signals capital efficiency concerns. Investors question unit economics at scale.",
-          risk: "Low efficiency implies more capital required to reach profitability. IRR degrades.",
-          action: "Demonstrate path to burn improvement before scaling further."
-        };
-      }
-      return {
-        observation: "Position is defensible. Investors would focus on market timing and competitive dynamics.",
-        risk: "External factors become primary concern when internals are sound.",
-        action: "Prepare market narrative. Articulate timing thesis clearly."
-      };
-    }
   }
 ];
 
@@ -258,9 +231,6 @@ export default function StrategicQuestions({ onPromptClick, isAnalyzing }: Strat
 
   return (
     <div className={`strategic-questions ${isAnalyzing ? 'analyzing' : ''}`}>
-      <div className="sq-header">
-        <span className="sq-title">Strategic Questions</span>
-      </div>
       <div className="sq-prompts">
         {prompts.map((prompt) => (
           <button
@@ -269,18 +239,20 @@ export default function StrategicQuestions({ onPromptClick, isAnalyzing }: Strat
             onClick={() => handleClick(prompt)}
             disabled={isAnalyzing}
           >
-            {prompt.text}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="sq-icon">
+              <path d="m9 18 6-6-6-6"/>
+            </svg>
+            <span>{prompt.text}</span>
           </button>
         ))}
       </div>
 
       <style>{`
         .strategic-questions {
-          padding: 16px 16px 16px;
-          border-top: 1px solid #21262d;
+          padding: 12px 16px 16px;
           transition: opacity 0.2s;
           flex-shrink: 0;
-          margin-top: -8px;
+          background: rgba(20, 25, 32, 0.5);
         }
 
         .strategic-questions.analyzing {
@@ -288,52 +260,54 @@ export default function StrategicQuestions({ onPromptClick, isAnalyzing }: Strat
           pointer-events: none;
         }
 
-        .sq-header {
-          margin-bottom: 10px;
-          text-align: center;
-        }
-
-        .sq-title {
-          font-size: 9px;
-          font-weight: 700;
-          letter-spacing: 0.12em;
-          color: rgba(255, 255, 255, 0.35);
-          text-transform: uppercase;
-        }
-
         .sq-prompts {
           display: flex;
           flex-direction: column;
-          gap: 6px;
+          gap: 8px;
         }
 
         .sq-prompt {
           width: 100%;
-          padding: 8px 12px;
-          background: #1a1d24;
-          border: 1px solid #2a2d35;
-          border-radius: 6px;
-          color: rgba(255, 255, 255, 0.7);
-          font-size: 11px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 12px 14px;
+          background: rgba(25, 30, 38, 0.7);
+          border: 1px solid rgba(50, 60, 75, 0.35);
+          border-radius: 8px;
+          color: rgba(200, 215, 230, 0.75);
+          font-size: 11.5px;
           font-weight: 500;
           text-align: left;
           cursor: pointer;
-          transition: all 0.15s;
+          transition: all 0.2s ease;
+        }
+
+        .sq-prompt .sq-icon {
+          flex-shrink: 0;
+          color: rgba(34, 211, 238, 0.5);
+          transition: transform 0.2s ease, color 0.2s ease;
         }
 
         .sq-prompt:hover:not(:disabled) {
-          background: #21262d;
-          border-color: #3a3d45;
-          color: #fff;
+          background: rgba(34, 211, 238, 0.08);
+          border-color: rgba(34, 211, 238, 0.35);
+          color: rgba(255, 255, 255, 0.9);
+        }
+
+        .sq-prompt:hover:not(:disabled) .sq-icon {
+          color: rgba(34, 211, 238, 0.8);
+          transform: translateX(2px);
         }
 
         .sq-prompt:active:not(:disabled) {
-          background: #282d35;
+          background: rgba(34, 211, 238, 0.12);
+          transform: scale(0.99);
         }
 
         .sq-prompt:disabled {
           cursor: not-allowed;
-          opacity: 0.5;
+          opacity: 0.4;
         }
       `}</style>
     </div>

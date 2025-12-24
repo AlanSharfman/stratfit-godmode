@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect} from "react";
 import { useScenarioStore, SCENARIO_COLORS } from "@/state/scenarioStore";
+import BurnTrendBars from "./BurnTrendBars";
 
 // ============================================================================
 // KPI CONFIGURATION
@@ -19,249 +20,326 @@ interface KPIConfig {
 }
 
 const KPI_CONFIG: KPIConfig[] = [
-  { id: "runway", label: "RUNWAY", kpiKey: "runway", unit: "mo", widgetType: "bar", accentColor: "#00d4ff" },
   { id: "cash", label: "CASH", kpiKey: "cashPosition", unit: "", widgetType: "globe", accentColor: "#00ffcc" },
-  { id: "momentum", label: "MOMENTUM", kpiKey: "momentum", unit: "", widgetType: "arrow", accentColor: "#00ff88" },
-  { id: "burn", label: "BURN", kpiKey: "burnQuality", unit: "/mo", widgetType: "gauge", accentColor: "#ff6b6b" },
-  { id: "risk", label: "RISK", kpiKey: "riskIndex", unit: "/100", widgetType: "dial", accentColor: "#00ccff" },
-  { id: "earnings", label: "EARNINGS", kpiKey: "earningsPower", unit: "", widgetType: "chart", accentColor: "#00ff88" },
-  { id: "value", label: "VALUE", kpiKey: "enterpriseValue", unit: "", widgetType: "ring", accentColor: "#00ddff" },
+  { id: "burn", label: "BURN RATE", kpiKey: "burnQuality", unit: "/mo", widgetType: "gauge", accentColor: "#ff6b6b" },
+  { id: "runway", label: "RUNWAY", kpiKey: "runway", unit: "", widgetType: "bar", accentColor: "#00d4ff" },
+  { id: "arr", label: "ARR", kpiKey: "momentum", unit: "", widgetType: "arrow", accentColor: "#00ff88" },
+  { id: "margin", label: "GROSS MARGIN", kpiKey: "earningsPower", unit: "", widgetType: "chart", accentColor: "#00ff88" },
+  { id: "risk", label: "RISK SCORE", kpiKey: "riskIndex", unit: "", widgetType: "dial", accentColor: "#00ccff" },
+  { id: "value", label: "VALUATION", kpiKey: "enterpriseValue", unit: "", widgetType: "ring", accentColor: "#00ddff" },
 ];
 
 // ============================================================================
-// INSTRUMENT WIDGETS — SVG-based, Unified Visual Language
+// INSTRUMENT WIDGETS — Bloomberg-grade micro-visuals
 // ============================================================================
 
-// Shared animation timing
-const BREATH_DURATION = "0.4s";
-const GLOW_INTENSITY = { idle: 0.3, hover: 0.5, active: 0.8 };
+// Shared easing
+const EASE_OUT = "cubic-bezier(0.22, 1, 0.36, 1)";
 
-// 1. RUNWAY — Horizontal Fill Bar
+// 1. CASH — Reserve ring showing cash level (no continuous motion)
+function CashInstrument({ value, state }: { value: number; state: "idle" | "hover" | "active" }) {
+  // Reserve level as percentage of ring fill (0-100 maps to arc)
+  const reservePct = Math.min(100, Math.max(0, value));
+  const circumference = 2 * Math.PI * 18;
+  const reserveArc = (reservePct / 100) * circumference;
+  
+  return (
+    <svg viewBox="0 0 48 48" className="instrument-svg">
+      {/* Outer track ring */}
+      <circle 
+        cx="24" cy="24" r="18" 
+        fill="none" 
+        stroke="rgba(50,60,75,0.3)" 
+        strokeWidth="3"
+      />
+      {/* Reserve level arc - fills based on cash position */}
+      <circle 
+        cx="24" cy="24" r="18" 
+        fill="none" 
+        stroke="rgba(34,211,238,0.6)" 
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeDasharray={`${reserveArc} ${circumference}`}
+        style={{ 
+          transform: 'rotate(-90deg)',
+          transformOrigin: '24px 24px',
+          transition: `stroke-dasharray 500ms ${EASE_OUT}`
+        }}
+      />
+      {/* Inner reference ring */}
+      <circle cx="24" cy="24" r="12" fill="none" stroke="rgba(60,70,85,0.25)" strokeWidth="1"/>
+      {/* Center indicator */}
+      <circle cx="24" cy="24" r="4" fill="rgba(34,211,238,0.5)"/>
+    </svg>
+  );
+}
+
+// 2. BURN RATE — Trend Bars (purple base, orange negative, green positive)
+// Uses BurnTrendBars component - shows burn rate trend over time
+function BurnInstrument({ value, state, burnAmount, cashAmount }: { 
+  value: number; 
+  state: "idle" | "hover" | "active";
+  burnAmount?: number;
+  cashAmount?: number;
+}) {
+  // Use provided burn amount or fall back to value
+  const burn = burnAmount ?? value * 1000;
+  
+  // Calculate trend: compare to baseline (85K)
+  // Lower burn = positive (green), Higher burn = negative (orange)
+  const baseline = 85000; // $85K baseline
+  const diff = burn - baseline;
+  const threshold = baseline * 0.05; // 5% threshold for neutral
+  
+  let trend: "positive" | "negative" | "neutral" = "neutral";
+  if (diff < -threshold) {
+    trend = "positive"; // Burn decreased = good = green
+  } else if (diff > threshold) {
+    trend = "negative"; // Burn increased = bad = orange
+  }
+  
+  return <BurnTrendBars value={burn} trend={trend} />;
+}
+
+// 3. RUNWAY — Progress bar with rounded leading edge and end fade
 function RunwayInstrument({ value, state }: { value: number; state: "idle" | "hover" | "active" }) {
-  const pct = Math.min(100, Math.max(5, (value / 36) * 100));
-  const glow = GLOW_INTENSITY[state];
+  const pct = Math.min(100, Math.max(2, (value / 36) * 100));
+  const fillWidth = Math.max(6, pct * 0.88);
+  const fadeId = `runway-fade-${Math.random().toString(36).substr(2, 9)}`;
   
   return (
     <svg viewBox="0 0 100 24" className="instrument-svg">
       <defs>
-        <linearGradient id="runwayFill" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#0088aa"/>
-          <stop offset="50%" stopColor="#00ccee"/>
-          <stop offset="100%" stopColor="#00eeff"/>
+        {/* End fade gradient */}
+        <linearGradient id={fadeId} x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="rgba(34,211,238,0.6)"/>
+          <stop offset="85%" stopColor="rgba(34,211,238,0.6)"/>
+          <stop offset="100%" stopColor="rgba(34,211,238,0.15)"/>
         </linearGradient>
-        <filter id="runwayGlow">
-          <feGaussianBlur stdDeviation={2 * glow} result="blur"/>
-          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
       </defs>
-      {/* Track */}
-      <rect x="4" y="8" width="92" height="8" rx="4" fill="rgba(0,0,0,0.5)" stroke="rgba(0,180,220,0.2)" strokeWidth="0.5"/>
-      {/* Fill */}
-      <rect x="4" y="8" width={pct * 0.92} height="8" rx="4" fill="url(#runwayFill)" filter="url(#runwayGlow)">
-        {state === "active" && <animate attributeName="opacity" values="0.9;1;0.9" dur="1.5s" repeatCount="indefinite"/>}
-      </rect>
-      {/* Highlight */}
-      <rect x="6" y="9" width={Math.max(0, pct * 0.88)} height="2" rx="1" fill="rgba(255,255,255,0.35)"/>
+      {/* Track with subtle end zone */}
+      <rect x="4" y="9" width="92" height="6" rx="3" fill="rgba(30,35,45,0.7)"/>
+      {/* Danger zone indicator at end */}
+      <rect x="82" y="9" width="14" height="6" rx="0" fill="rgba(239,68,68,0.12)"/>
+      {/* Runway fill with fade */}
+      <rect 
+        x="4" 
+        y="9" 
+        width={fillWidth} 
+        height="6" 
+        rx="3" 
+        fill={`url(#${fadeId})`}
+        style={{ transition: `width 400ms ${EASE_OUT}` }}
+      />
+      {/* Rounded leading edge cap */}
+      <circle 
+        cx={4 + fillWidth - 3} 
+        cy="12" 
+        r="3.5" 
+        fill="rgba(34,211,238,0.7)"
+        style={{ transition: `cx 400ms ${EASE_OUT}` }}
+      />
     </svg>
   );
 }
 
-// 2. CASH — Globe with Orbits
-function CashInstrument({ value, state }: { value: number; state: "idle" | "hover" | "active" }) {
-  const [rotation, setRotation] = useState(0);
-  useEffect(() => {
-    const speed = state === "active" ? 1.2 : 0.4;
-    const interval = setInterval(() => setRotation(r => (r + speed) % 360), 30);
-    return () => clearInterval(interval);
-  }, [state]);
-
-  return (
-    <svg viewBox="0 0 60 60" className="instrument-svg">
-      <defs>
-        <radialGradient id="globeGrad" cx="35%" cy="35%">
-          <stop offset="0%" stopColor="rgba(0,255,200,0.4)"/>
-          <stop offset="100%" stopColor="rgba(0,40,40,0.9)"/>
-        </radialGradient>
-      </defs>
-      {/* Outer orbit */}
-      <ellipse cx="30" cy="30" rx="26" ry="10" fill="none" stroke="rgba(0,255,200,0.25)" strokeWidth="0.8"
-        transform={`rotate(${rotation * 0.3} 30 30)`} strokeDasharray="4 3"/>
-      {/* Inner orbit */}
-      <ellipse cx="30" cy="30" rx="20" ry="7" fill="none" stroke="rgba(0,200,255,0.3)" strokeWidth="0.8"
-        transform={`rotate(${-rotation * 0.5} 30 30)`}/>
-      {/* Globe */}
-      <circle cx="30" cy="30" r="14" fill="url(#globeGrad)" stroke="rgba(0,255,200,0.5)" strokeWidth="1">
-        {state === "active" && <animate attributeName="r" values="14;14.5;14" dur="2s" repeatCount="indefinite"/>}
-      </circle>
-      {/* Equator */}
-      <ellipse cx="30" cy="30" rx="14" ry="4" fill="none" stroke="rgba(0,255,200,0.3)" strokeWidth="0.5"/>
-      {/* Highlight */}
-      <circle cx="25" cy="25" r="4" fill="rgba(255,255,255,0.15)"/>
-    </svg>
-  );
-}
-
-// 3. MOMENTUM — Metallic Arrow with Chevrons
+// 4. ARR — Sparkline with thicker final segment, faded history
 function MomentumInstrument({ value, state }: { value: number; state: "idle" | "hover" | "active" }) {
-  const [tick, setTick] = useState(0);
-  useEffect(() => {
-    const speed = state === "active" ? 0.06 : 0.03;
-    const interval = setInterval(() => setTick(t => (t + speed) % 1), 30);
-    return () => clearInterval(interval);
-  }, [state]);
-
-  return (
-    <svg viewBox="0 0 80 40" className="instrument-svg">
-      <defs>
-        <linearGradient id="arrowMetal" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#555"/>
-          <stop offset="40%" stopColor="#ccc"/>
-          <stop offset="50%" stopColor="#fff"/>
-          <stop offset="60%" stopColor="#ccc"/>
-          <stop offset="100%" stopColor="#555"/>
-        </linearGradient>
-        <filter id="arrowGlow"><feGaussianBlur stdDeviation="1.5"/></filter>
-      </defs>
-      {/* Arrow body */}
-      <path d="M8 17 L52 17 L52 12 L68 20 L52 28 L52 23 L8 23 Z" fill="url(#arrowMetal)" filter="url(#arrowGlow)"/>
-      <path d="M8 17 L52 17 L52 12 L68 20 L52 28 L52 23 L8 23 Z" fill="url(#arrowMetal)" stroke="rgba(255,255,255,0.2)" strokeWidth="0.3"/>
-      {/* Chevrons */}
-      {[0, 1, 2, 3].map(i => {
-        const phase = (tick + i * 0.2) % 1;
-        const opacity = 0.25 + Math.sin(phase * Math.PI) * 0.6;
-        return (
-          <polygon key={i} points={`${12 + i * 8},32 ${16 + i * 8},36 ${20 + i * 8},32`} 
-            fill="#00ccff" opacity={opacity} transform="rotate(-90 40 34)"/>
-        );
-      })}
-    </svg>
-  );
-}
-
-// 4. BURN — Semi-circular Gauge
-function BurnInstrument({ value, state }: { value: number; state: "idle" | "hover" | "active" }) {
-  const pct = Math.min(100, Math.max(0, value));
-  const angle = -135 + (pct / 100) * 270;
+  const fadeId = `arr-fade-${Math.random().toString(36).substr(2, 9)}`;
+  // Generate deterministic sparkline based on value
+  const points = Array.from({ length: 16 }, (_, i) => {
+    const base = 28 - (value / 100) * 12;
+    const variance = Math.sin(i * 0.8 + value * 0.1) * 6 + Math.cos(i * 1.2) * 3;
+    const trend = (i / 15) * (value / 100) * -8;
+    return { x: 4 + i * 5.5, y: Math.max(8, Math.min(38, base + variance + trend)) };
+  });
+  
+  // Split into history (faded) and recent (bold)
+  const historyPath = points.slice(0, 12).map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+  const recentPath = points.slice(11).map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
   
   return (
-    <svg viewBox="0 0 70 45" className="instrument-svg">
+    <svg viewBox="0 0 92 44" className="instrument-svg">
       <defs>
-        <linearGradient id="burnArc" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#00ddff"/>
-          <stop offset="40%" stopColor="#00ff88"/>
-          <stop offset="70%" stopColor="#ffcc00"/>
-          <stop offset="100%" stopColor="#ff4444"/>
+        <linearGradient id={fadeId} x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="rgba(100,115,130,0.2)"/>
+          <stop offset="100%" stopColor="rgba(100,115,130,0.5)"/>
         </linearGradient>
       </defs>
-      {/* Background arc */}
-      <path d="M10 40 A 25 25 0 0 1 60 40" fill="none" stroke="rgba(40,50,60,0.7)" strokeWidth="5" strokeLinecap="round"/>
-      {/* Colored arc */}
-      <path d="M10 40 A 25 25 0 0 1 60 40" fill="none" stroke="url(#burnArc)" strokeWidth="5" strokeLinecap="round"
-        style={{ filter: state !== "idle" ? "drop-shadow(0 0 4px rgba(255,150,50,0.5))" : "none" }}/>
-      {/* Needle */}
-      <g transform={`rotate(${angle} 35 40)`}>
-        <path d="M35 40 L33 18 L35 12 L37 18 Z" fill="#aaa" stroke="rgba(255,255,255,0.3)" strokeWidth="0.3"/>
-      </g>
-      {/* Center cap */}
-      <circle cx="35" cy="40" r="5" fill="#1a1a2a" stroke="rgba(100,110,120,0.5)" strokeWidth="1.5"/>
-      <circle cx="35" cy="40" r="2.5" fill={pct > 70 ? "#ff5555" : pct > 40 ? "#ffcc00" : "#00ff88"}/>
+      {/* Baseline reference */}
+      <line x1="4" y1="24" x2="88" y2="24" stroke="rgba(60,70,85,0.2)" strokeWidth="0.5" strokeDasharray="2 3"/>
+      {/* History segment (faded) */}
+      <path 
+        d={historyPath} 
+        fill="none" 
+        stroke={`url(#${fadeId})`}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={{ transition: `d 350ms ${EASE_OUT}` }}
+      />
+      {/* Recent segment (bold) */}
+      <path 
+        d={recentPath} 
+        fill="none" 
+        stroke="rgba(140,160,180,0.8)" 
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={{ transition: `d 350ms ${EASE_OUT}` }}
+      />
+      {/* Current value dot */}
+      <circle cx={points[15].x} cy={points[15].y} r="3.5" fill="rgba(34,211,238,0.7)"/>
     </svg>
   );
 }
 
-// 5. RISK — Circular Dial with Score
-function RiskInstrument({ value, state }: { value: number; state: "idle" | "hover" | "active" }) {
-  const [rotation, setRotation] = useState(0);
-  useEffect(() => {
-    const speed = state === "active" ? 1.8 : 0.6;
-    const interval = setInterval(() => setRotation(r => (r + speed) % 360), 30);
-    return () => clearInterval(interval);
-  }, [state]);
-
-  const score = Math.min(100, Math.max(0, Math.round(value)));
-  const color = score < 35 ? "#00ff88" : score < 65 ? "#ffcc00" : "#ff5555";
-
-  return (
-    <svg viewBox="0 0 60 60" className="instrument-svg">
-      {/* Outer bezel */}
-      <circle cx="30" cy="30" r="27" fill="none" stroke="rgba(80,90,100,0.5)" strokeWidth="3"/>
-      <circle cx="30" cy="30" r="25" fill="linear-gradient(180deg, #2a2a3a, #1a1a2a)"/>
-      {/* Rotating glow ring */}
-      <circle cx="30" cy="30" r="22" fill="none" stroke="rgba(0,200,255,0.4)" strokeWidth="1.5"
-        strokeDasharray="30 100" transform={`rotate(${rotation} 30 30)`}/>
-      {/* Inner face */}
-      <circle cx="30" cy="30" r="18" fill="#0a0a15" stroke="rgba(0,180,255,0.3)" strokeWidth="1"/>
-      {/* Score */}
-      <text x="30" y="28" textAnchor="middle" fontSize="14" fontWeight="800" fill={color}
-        style={{ textShadow: `0 0 8px ${color}` }}>{score}</text>
-      <text x="30" y="38" textAnchor="middle" fontSize="7" fill="rgba(150,170,190,0.7)">/100</text>
-    </svg>
-  );
-}
-
-// 6. EARNINGS — Bar Chart
+// 5. GROSS MARGIN — Banded range with position indicator
 function EarningsInstrument({ value, state }: { value: number; state: "idle" | "hover" | "active" }) {
-  const heights = [35, 50, 68, 100];
-  const scale = state === "active" ? 1.05 : 1;
-
+  const pct = Math.min(100, Math.max(0, value));
+  const indicatorX = 4 + (pct / 100) * 72;
+  
   return (
-    <svg viewBox="0 0 70 50" className="instrument-svg" style={{ transform: `scale(${scale})`, transition: "transform 0.2s" }}>
-      <defs>
-        <linearGradient id="barGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#00ff88"/>
-          <stop offset="50%" stopColor="#00cc66"/>
-          <stop offset="100%" stopColor="#009944"/>
-        </linearGradient>
-      </defs>
-      {heights.map((h, i) => (
-        <g key={i}>
-          <rect x={10 + i * 15} y={50 - h * 0.45} width="10" height={h * 0.45} rx="2" fill="url(#barGrad)"
-            style={{ filter: state !== "idle" ? "drop-shadow(0 0 6px rgba(0,255,136,0.4))" : "none" }}/>
-          <rect x={11 + i * 15} y={51 - h * 0.45} width="8" height={h * 0.15} rx="1" fill="rgba(255,255,255,0.3)"/>
-        </g>
-      ))}
+    <svg viewBox="0 0 80 32" className="instrument-svg">
+      {/* Low band (0-40%) - warning */}
+      <rect x="4" y="12" width="28.8" height="8" fill="rgba(239,68,68,0.15)"/>
+      {/* Mid band (40-70%) - acceptable */}
+      <rect x="32.8" y="12" width="21.6" height="8" fill="rgba(217,119,6,0.12)"/>
+      {/* High band (70-100%) - healthy */}
+      <rect x="54.4" y="12" width="21.6" height="8" fill="rgba(74,222,128,0.12)"/>
+      {/* Track outline */}
+      <rect x="4" y="12" width="72" height="8" rx="1" fill="none" stroke="rgba(60,70,85,0.35)" strokeWidth="1"/>
+      {/* Position indicator line */}
+      <line 
+        x1={indicatorX} 
+        y1="8" 
+        x2={indicatorX} 
+        y2="24" 
+        stroke="rgba(34,211,238,0.75)" 
+        strokeWidth="2"
+        strokeLinecap="round"
+        style={{ transition: `x1 300ms ${EASE_OUT}, x2 300ms ${EASE_OUT}` }}
+      />
+      {/* Indicator cap */}
+      <circle 
+        cx={indicatorX} 
+        cy="16" 
+        r="3" 
+        fill="rgba(34,211,238,0.6)"
+        style={{ transition: `cx 300ms ${EASE_OUT}` }}
+      />
     </svg>
   );
 }
 
-// 7. VALUE — Halo Ring with Arrow
-function ValueInstrument({ value, state }: { value: number; state: "idle" | "hover" | "active" }) {
-  const [pulse, setPulse] = useState(0);
-  const [orbit, setOrbit] = useState(0);
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setPulse(p => (p + 0.04) % 1);
-      setOrbit(o => (o + (state === "active" ? 0.8 : 0.3)) % 360);
-    }, 30);
-    return () => clearInterval(interval);
-  }, [state]);
-
-  const glowScale = 1 + Math.sin(pulse * Math.PI * 2) * 0.06;
-
+// 6. RISK SCORE — Thickened arc with single numeric display
+function RiskInstrument({ value, state }: { value: number; state: "idle" | "hover" | "active" }) {
+  const score = Math.min(100, Math.max(0, Math.round(value)));
+  const color = score < 35 ? "rgba(74,222,128,0.75)" : score < 65 ? "rgba(217,119,6,0.75)" : "rgba(239,68,68,0.75)";
+  
   return (
-    <svg viewBox="0 0 60 60" className="instrument-svg">
-      {/* Outer dashed orbit */}
-      <circle cx="30" cy="30" r="26" fill="none" stroke="rgba(0,220,255,0.2)" strokeWidth="0.8" strokeDasharray="3 4"
-        transform={`rotate(${-orbit} 30 30)`}/>
-      {/* Main ring */}
-      <circle cx="30" cy="30" r={20 * glowScale} fill="none" stroke="rgba(0,220,255,0.5)" strokeWidth="2"
-        style={{ filter: state !== "idle" ? "drop-shadow(0 0 10px rgba(0,220,255,0.4))" : "none" }}/>
-      {/* Inner glow */}
-      <circle cx="30" cy="30" r="16" fill="radial-gradient(circle, rgba(0,200,255,0.15) 0%, transparent 70%)"/>
-      {/* Up arrow */}
-      <path d="M30 38 L30 22 M24 28 L30 22 L36 28" fill="none" stroke="#00ddff" strokeWidth="2.5" strokeLinecap="round"
-        style={{ filter: "drop-shadow(0 0 6px rgba(0,255,255,0.7))" }}/>
+    <svg viewBox="0 0 60 50" className="instrument-svg">
+      {/* Arc track - thicker */}
+      <path 
+        d="M8 38 A 22 22 0 0 1 52 38" 
+        fill="none" 
+        stroke="rgba(40,48,60,0.5)" 
+        strokeWidth="5" 
+        strokeLinecap="round"
+      />
+      {/* Colored arc based on value - thicker */}
+      <path 
+        d="M8 38 A 22 22 0 0 1 52 38" 
+        fill="none" 
+        stroke={color}
+        strokeWidth="5" 
+        strokeLinecap="round"
+        strokeDasharray="110"
+        strokeDashoffset={110 - (score / 100) * 110}
+        style={{ transition: `stroke-dashoffset 400ms ${EASE_OUT}, stroke 300ms ${EASE_OUT}` }}
+      />
+      {/* Score display - prominent single number */}
+      <text 
+        x="30" 
+        y="32" 
+        textAnchor="middle" 
+        fontSize="14" 
+        fontWeight="600" 
+        fill="rgba(160,175,190,0.9)"
+        style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
+      >
+        {score}
+      </text>
+    </svg>
+  );
+}
+
+// 7. VALUATION — Confidence band with baseline indicator
+function ValueInstrument({ value, state }: { value: number; state: "idle" | "hover" | "active" }) {
+  const normalized = Math.min(100, Math.max(0, value));
+  const baselineX = 40; // Center baseline
+  const indicatorX = 10 + (normalized / 100) * 60; // Current position
+  const bandWidth = Math.abs(indicatorX - baselineX) + 8;
+  const bandX = Math.min(indicatorX, baselineX) - 4;
+  
+  return (
+    <svg viewBox="0 0 80 36" className="instrument-svg">
+      {/* Confidence band behind baseline */}
+      <rect 
+        x={bandX} 
+        y="10" 
+        width={bandWidth} 
+        height="16" 
+        rx="2" 
+        fill="rgba(34,211,238,0.08)"
+        style={{ transition: `x 500ms ${EASE_OUT}, width 500ms ${EASE_OUT}` }}
+      />
+      {/* Track */}
+      <line x1="10" y1="18" x2="70" y2="18" stroke="rgba(55,65,80,0.4)" strokeWidth="1.5"/>
+      {/* Baseline marker */}
+      <line x1={baselineX} y1="12" x2={baselineX} y2="24" stroke="rgba(90,105,120,0.5)" strokeWidth="1.5"/>
+      {/* Current value indicator */}
+      <line 
+        x1={indicatorX} 
+        y1="10" 
+        x2={indicatorX} 
+        y2="26" 
+        stroke="rgba(34,211,238,0.7)" 
+        strokeWidth="2"
+        strokeLinecap="round"
+        style={{ transition: `x1 500ms ${EASE_OUT}, x2 500ms ${EASE_OUT}` }}
+      />
+      {/* Indicator cap */}
+      <circle 
+        cx={indicatorX} 
+        cy="18" 
+        r="3.5" 
+        fill="rgba(34,211,238,0.6)"
+        style={{ transition: `cx 500ms ${EASE_OUT}` }}
+      />
     </svg>
   );
 }
 
 // Widget renderer
-function InstrumentWidget({ type, value, state }: { type: KPIConfig["widgetType"]; value: number; state: "idle" | "hover" | "active" }) {
+function InstrumentWidget({ 
+  type, 
+  value, 
+  state,
+  burnAmount,
+  cashAmount 
+}: { 
+  type: KPIConfig["widgetType"]; 
+  value: number; 
+  state: "idle" | "hover" | "active";
+  burnAmount?: number;
+  cashAmount?: number;
+}) {
   switch (type) {
     case "bar": return <RunwayInstrument value={value} state={state} />;
     case "globe": return <CashInstrument value={value} state={state} />;
     case "arrow": return <MomentumInstrument value={value} state={state} />;
-    case "gauge": return <BurnInstrument value={value} state={state} />;
+    case "gauge": return <BurnInstrument value={value} state={state} burnAmount={burnAmount} cashAmount={cashAmount} />;
     case "dial": return <RiskInstrument value={value} state={state} />;
     case "chart": return <EarningsInstrument value={value} state={state} />;
     case "ring": return <ValueInstrument value={value} state={state} />;
@@ -283,7 +361,7 @@ export default function KPIConsole() {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
   const visibleKPIs = viewMode === "investor" 
-    ? KPI_CONFIG.filter(k => !["burn", "earnings"].includes(k.id))
+    ? KPI_CONFIG.filter(k => !["burn", "margin"].includes(k.id))
     : KPI_CONFIG;
 
   const handleClick = (index: number) => {
@@ -336,7 +414,13 @@ export default function KPIConsole() {
                     </div>
                     {/* Widget */}
                     <div className="instrument-widget">
-                      <InstrumentWidget type={cfg.widgetType} value={data?.value ?? 0} state={state} />
+                      <InstrumentWidget 
+                        type={cfg.widgetType} 
+                        value={data?.value ?? 0} 
+                        state={state}
+                        burnAmount={cfg.id === "burn" ? (kpiValues.burnQuality?.value ?? 0) * 1000 : undefined}
+                        cashAmount={cfg.id === "burn" ? (kpiValues.cashPosition?.value ?? 0) * 100000 : undefined}
+                      />
                     </div>
                   </div>
                 </div>
@@ -401,7 +485,7 @@ export default function KPIConsole() {
           position: relative;
           width: 138px;
           cursor: pointer;
-          transition: all ${BREATH_DURATION} cubic-bezier(0.4, 0, 0.2, 1);
+          transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
         }
 
         .instrument.hover {
@@ -470,7 +554,7 @@ export default function KPIConsole() {
           border-radius: 18px;
           background: radial-gradient(ellipse at center, var(--accent), transparent 70%);
           opacity: 0;
-          transition: opacity ${BREATH_DURATION} ease;
+          transition: opacity 0.3s ease;
           pointer-events: none;
           z-index: -1;
         }
