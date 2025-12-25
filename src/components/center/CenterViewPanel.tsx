@@ -2,14 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import CenterViewTabs, { CenterView } from "./CenterViewTabs";
 import ScenarioMountain from "@/components/mountain/ScenarioMountain";
 import ScenarioDeltaSnapshot from "@/components/ScenarioDeltaSnapshot";
-import BriefingPanel, {
+
+import BriefingPanel from "@/components/briefing/BriefingPanel";
+import {
   getSoundEnabled,
   isBriefingSeen,
   setBriefingSeen,
   setSoundEnabled,
-} from "@/components/briefing/BriefingPanel";
-
-type BriefingKey = "terrain" | "variance" | "actuals";
+  type BriefingKey,
+} from "@/components/briefing/briefingStorage";
 
 function viewToBriefingKey(view: CenterView): BriefingKey {
   return view;
