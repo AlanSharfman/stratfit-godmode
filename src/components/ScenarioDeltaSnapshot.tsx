@@ -1,9 +1,12 @@
 // src/components/ScenarioDeltaSnapshot.tsx
 // Scenario Delta Snapshot — Collapsible table below mountain
 // Shows Base → Scenario comparison with deltas and AI variance commentary
+// NOW USES ENGINE DELTAS FROM STORE (Phase 2 Step 4 completion)
 
 import { useState, useEffect, useMemo } from "react";
 import { useScenarioStore } from "@/state/scenarioStore";
+import type { ScenarioId } from "./ScenarioSlidePanel";
+import type { Delta } from "@/engine";
 
 interface DeltaRow {
   metric: string;
@@ -97,87 +100,151 @@ function getVarianceCommentary(
   return isPositive ? metricCommentary.positive : metricCommentary.negative;
 }
 
-export default function ScenarioDeltaSnapshot() {
-  const [isOpen, setIsOpen] = useState(false);
+interface ScenarioDeltaSnapshotProps {
+  open?: boolean;
+  reopenTick?: number;
+  scenario?: ScenarioId;
+}
+
+export default function ScenarioDeltaSnapshot({ open, reopenTick, scenario: propScenario }: ScenarioDeltaSnapshotProps) {
+  const [isOpen, setIsOpen] = useState(open ?? false);
   
   useEffect(() => {
     const storeValue = useScenarioStore.getState().showScenarioImpact;
     setIsOpen(storeValue);
   }, []);
 
-  const handleToggle = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const newValue = !isOpen;
-    setIsOpen(newValue);
-    useScenarioStore.getState().setShowScenarioImpact(newValue);
-  };
+  useEffect(() => {
+    if (reopenTick === undefined) return;
+    setIsOpen(true);
+  }, [reopenTick]);
+
+  const handleToggle = () => setIsOpen((v) => !v);
 
   const kpiValues = useScenarioStore((state) => state.kpiValues);
-  const scenario = useScenarioStore((state) => state.scenario);
+  const scenario = propScenario ?? useScenarioStore((state) => state.scenario);
+  const scenarioDeltas = useScenarioStore((state) => state.scenarioDeltas);
 
+  // ============================================================================
+  // ENGINE-DRIVEN DELTA DATA (Phase 2 Step 4)
+  // Uses scenarioDeltas from store, computed by runEnginePair in App.tsx
+  // ============================================================================
   const deltaData: DeltaRow[] = useMemo(() => {
-    // Parse numeric value from display string
-    const parseValue = (display: string): number => {
-      // Handle "X/100" format (like risk score)
-      if (display.includes("/")) {
-        const parts = display.split("/");
-        return parseFloat(parts[0].replace(/[^0-9.-]/g, "")) || 0;
-      }
-      const cleaned = display.replace(/[^0-9.-]/g, "");
-      return parseFloat(cleaned) || 0;
+    // Map engine delta keys to UI-friendly display
+    const deltaKeyMap: Record<string, { 
+      label: string; 
+      format: (v: number) => string;
+      formatDelta: (d: number) => string;
+      isInverse?: boolean; // true if lower is better (burn, risk)
+    }> = {
+      revenueAnnual: { 
+        label: "Revenue", 
+        format: (v) => `$${(v / 1_000_000).toFixed(1)}M`,
+        formatDelta: (d) => `${d >= 0 ? "+" : ""}$${(d / 1_000_000).toFixed(1)}M`
+      },
+      grossMarginPct: { 
+        label: "Gross Margin", 
+        format: (v) => `${Math.round(v * 100)}%`,
+        formatDelta: (d) => `${d >= 0 ? "+" : ""}${(d * 100).toFixed(0)}%`
+      },
+      burnMonthly: { 
+        label: "Burn Rate", 
+        format: (v) => `$${Math.round(v / 1000)}K/mo`,
+        formatDelta: (d) => `${d >= 0 ? "+" : ""}$${Math.round(d / 1000)}K`,
+        isInverse: true // lower burn is better
+      },
+      runwayMonths: { 
+        label: "Runway", 
+        format: (v) => `${Math.round(v)} mo`,
+        formatDelta: (d) => `${d >= 0 ? "+" : ""}${d.toFixed(1)} mo`
+      },
+      riskScore: { 
+        label: "Risk Score", 
+        format: (v) => `${Math.round(v)}/100`,
+        formatDelta: (d) => `${d >= 0 ? "+" : ""}${d.toFixed(0)}`,
+        isInverse: true // lower risk is better
+      },
+      valuation: { 
+        label: "Valuation", 
+        format: (v) => `$${(v / 1_000_000).toFixed(1)}M`,
+        formatDelta: (d) => `${d >= 0 ? "+" : ""}$${(d / 1_000_000).toFixed(1)}M`
+      },
     };
 
-    const baseValues = { 
-      revenue: 2.6, 
-      arr: 3.2,
-      grossMargin: 74,
-      valuation: 43.5, 
-      runway: 19, 
-      burn: 85, 
-      cash: 4.0,
-      risk: 23
-    };
+    // Add Cash Balance and ARR from kpiValues (not in engine deltas but needed for UI)
+    const extraRows: DeltaRow[] = [];
+    
+    // Cash Balance - derive from kpiValues
+    const cashDisplay = kpiValues.cashPosition?.display || "$4.0M";
+    const cashValue = parseFloat(cashDisplay.replace(/[^0-9.-]/g, "")) || 4.0;
+    const baseCash: number = 4.0; // Base case cash in millions
+    const cashDelta = cashValue - baseCash;
+    const cashPct = (cashDelta / baseCash) * 100;
+    const cashType: "positive" | "negative" | "neutral" = Math.abs(cashDelta) < 0.05 ? "neutral" : cashDelta > 0 ? "positive" : "negative";
+    extraRows.push({
+      metric: "Cash Balance",
+      base: `$${baseCash.toFixed(1)}M`,
+      scenario: cashDisplay,
+      delta: cashType === "neutral" ? "—" : `${cashDelta >= 0 ? "+" : ""}${cashDelta.toFixed(1)}M`,
+      deltaPct: cashType === "neutral" ? "—" : `${cashPct >= 0 ? "+" : ""}${cashPct.toFixed(0)}%`,
+      deltaType: cashType,
+      commentary: getVarianceCommentary("Cash Balance", cashType, `${cashPct.toFixed(0)}%`, scenario)
+    });
 
-    const currentRevenue = parseValue(kpiValues.momentum?.display || "$2.6M");
-    const currentARR = parseValue(kpiValues.momentum?.display || "$3.2M");
-    const currentMargin = parseValue(kpiValues.earningsPower?.display || "74%");
-    const currentValuation = parseValue(kpiValues.enterpriseValue?.display || "$43.5M");
-    const currentRunway = parseValue(kpiValues.runway?.display || "19 mo");
-    const currentBurn = parseValue(kpiValues.burnQuality?.display || "$85K");
-    const currentCash = parseValue(kpiValues.cashPosition?.display || "$4.0M");
-    const currentRisk = parseValue(kpiValues.riskIndex?.display || "23/100");
+    // ARR - derive from kpiValues (same as Revenue for now)
+    const arrDisplay = kpiValues.momentum?.display || "$3.2M";
+    const arrValue = parseFloat(arrDisplay.replace(/[^0-9.-]/g, "")) || 3.2;
+    const baseArr: number = 3.2;
+    const arrDelta = arrValue - baseArr;
+    const arrPct = (arrDelta / baseArr) * 100;
+    const arrType: "positive" | "negative" | "neutral" = Math.abs(arrDelta) < 0.05 ? "neutral" : arrDelta > 0 ? "positive" : "negative";
+    extraRows.push({
+      metric: "ARR",
+      base: `$${baseArr.toFixed(1)}M`,
+      scenario: arrDisplay,
+      delta: arrType === "neutral" ? "—" : `${arrDelta >= 0 ? "+" : ""}${arrDelta.toFixed(1)}M`,
+      deltaPct: arrType === "neutral" ? "—" : `${arrPct >= 0 ? "+" : ""}${arrPct.toFixed(0)}%`,
+      deltaType: arrType,
+      commentary: getVarianceCommentary("ARR", arrType, `${arrPct.toFixed(0)}%`, scenario)
+    });
 
-    const calcDelta = (current: number, base: number, isInverse = false): { delta: string; pct: string; type: "positive" | "negative" | "neutral" } => {
-      const diff = current - base;
-      if (Math.abs(diff) < 0.05) return { delta: "—", pct: "—", type: "neutral" };
-      const pct = base !== 0 ? ((diff / base) * 100) : 0;
-      const sign = diff > 0 ? "+" : "";
-      const isPos = isInverse ? diff < 0 : diff > 0;
-      const type: "positive" | "negative" | "neutral" = Math.abs(diff) < 0.05 ? "neutral" : isPos ? "positive" : "negative";
-      return { delta: `${sign}${diff.toFixed(1)}`, pct: `${sign}${pct.toFixed(0)}%`, type };
-    };
+    // Convert engine deltas to UI rows
+    const engineRows: DeltaRow[] = scenarioDeltas
+      .filter((d: Delta) => deltaKeyMap[d.key])
+      .map((d: Delta) => {
+        const config = deltaKeyMap[d.key];
+        const pctValue = d.deltaPct !== null ? d.deltaPct * 100 : 0;
+        const isNeutral = Math.abs(d.deltaAbs) < (d.key === "valuation" ? 100000 : d.key === "grossMarginPct" ? 0.005 : 0.5);
+        
+        // Determine if delta is positive/negative (accounting for inverse metrics)
+        let deltaType: "positive" | "negative" | "neutral";
+        if (isNeutral) {
+          deltaType = "neutral";
+        } else if (config.isInverse) {
+          deltaType = d.deltaAbs < 0 ? "positive" : "negative"; // Lower is better
+        } else {
+          deltaType = d.deltaAbs > 0 ? "positive" : "negative"; // Higher is better
+        }
 
-    const revD = calcDelta(currentRevenue, baseValues.revenue);
-    const arrD = calcDelta(currentARR, baseValues.arr);
-    const marginD = calcDelta(currentMargin, baseValues.grossMargin);
-    const valD = calcDelta(currentValuation, baseValues.valuation);
-    const runD = calcDelta(currentRunway, baseValues.runway);
-    const burnD = calcDelta(currentBurn, baseValues.burn, true); // Burn: lower is better
-    const cashD = calcDelta(currentCash, baseValues.cash);
-    const riskD = calcDelta(currentRisk, baseValues.risk, true); // Risk: lower is better
+        return {
+          metric: config.label,
+          base: config.format(d.base),
+          scenario: config.format(d.scenario),
+          delta: isNeutral ? "—" : config.formatDelta(d.deltaAbs),
+          deltaPct: isNeutral ? "—" : `${pctValue >= 0 ? "+" : ""}${pctValue.toFixed(0)}%`,
+          deltaType,
+          commentary: getVarianceCommentary(config.label, deltaType, `${pctValue.toFixed(0)}%`, scenario)
+        };
+      });
 
-    return [
-      { metric: "Revenue", base: `$${baseValues.revenue.toFixed(1)}M`, scenario: kpiValues.momentum?.display || "—", delta: revD.delta === "—" ? "—" : `${revD.delta}M`, deltaPct: revD.pct, deltaType: revD.type, commentary: getVarianceCommentary("Revenue", revD.type, revD.pct, scenario) },
-      { metric: "ARR", base: `$${baseValues.arr.toFixed(1)}M`, scenario: kpiValues.momentum?.display || "—", delta: arrD.delta === "—" ? "—" : `${arrD.delta}M`, deltaPct: arrD.pct, deltaType: arrD.type, commentary: getVarianceCommentary("ARR", arrD.type, arrD.pct, scenario) },
-      { metric: "Valuation", base: `$${baseValues.valuation.toFixed(1)}M`, scenario: kpiValues.enterpriseValue?.display || "—", delta: valD.delta === "—" ? "—" : `${valD.delta}M`, deltaPct: valD.pct, deltaType: valD.type, commentary: getVarianceCommentary("Valuation", valD.type, valD.pct, scenario) },
-      { metric: "Gross Margin", base: `${baseValues.grossMargin}%`, scenario: kpiValues.earningsPower?.display || "—", delta: marginD.delta === "—" ? "—" : `${marginD.delta}%`, deltaPct: marginD.pct, deltaType: marginD.type, commentary: getVarianceCommentary("Gross Margin", marginD.type, marginD.pct, scenario) },
-      { metric: "Burn Rate", base: `$${baseValues.burn}K/mo`, scenario: kpiValues.burnQuality?.display || "—", delta: burnD.delta === "—" ? "—" : `${burnD.delta}K`, deltaPct: burnD.pct, deltaType: burnD.type, commentary: getVarianceCommentary("Burn Rate", burnD.type, burnD.pct, scenario) },
-      { metric: "Cash Balance", base: `$${baseValues.cash.toFixed(1)}M`, scenario: kpiValues.cashPosition?.display || "—", delta: cashD.delta === "—" ? "—" : `${cashD.delta}M`, deltaPct: cashD.pct, deltaType: cashD.type, commentary: getVarianceCommentary("Cash Balance", cashD.type, cashD.pct, scenario) },
-      { metric: "Runway", base: `${baseValues.runway} mo`, scenario: kpiValues.runway?.display || "—", delta: runD.delta === "—" ? "—" : `${runD.delta} mo`, deltaPct: runD.pct, deltaType: runD.type, commentary: getVarianceCommentary("Runway", runD.type, runD.pct, scenario) },
-      { metric: "Risk Score", base: `${baseValues.risk}/100`, scenario: kpiValues.riskIndex?.display || "—", delta: riskD.delta === "—" ? "—" : `${riskD.delta}`, deltaPct: riskD.pct, deltaType: riskD.type, commentary: getVarianceCommentary("Risk Score", riskD.type, riskD.pct, scenario) },
-    ];
-  }, [kpiValues, scenario]);
+    // Combine and order: Revenue, ARR, Valuation, Gross Margin, Burn Rate, Cash Balance, Runway, Risk Score
+    const orderedMetrics = ["Revenue", "ARR", "Valuation", "Gross Margin", "Burn Rate", "Cash Balance", "Runway", "Risk Score"];
+    const allRows = [...engineRows, ...extraRows];
+    
+    return orderedMetrics
+      .map(metric => allRows.find(r => r.metric === metric))
+      .filter((r): r is DeltaRow => r !== undefined);
+  }, [scenarioDeltas, kpiValues, scenario]);
 
   const getDeltaColor = (type: string) => 
     type === 'positive' ? 'rgba(34,211,238,0.9)' : 

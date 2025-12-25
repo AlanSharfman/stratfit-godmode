@@ -8,11 +8,18 @@ import { ScenarioId } from "./ScenarioSlidePanel";
 import { useScenarioStore, ViewMode } from "@/state/scenarioStore";
 import StrategicQuestions from "./StrategicQuestions";
 
+const DEFAULT_INSIGHTS = {
+  observations: ["—"],
+  risks: ["—"],
+  actions: ["—"],
+  questions: [{ q: "—", a: "—" }],
+};
 interface AIIntelligenceProps {
   commentary: string[];
   risks: string[];
   actions: string[];
   scenario: ScenarioId;
+  questions?: { q: string; a: string }[];
 }
 
 // ============================================================================
@@ -259,6 +266,7 @@ export default function AIIntelligence({
   risks,
   actions,
   scenario,
+  questions,
 }: AIIntelligenceProps) {
   const [contentKey, setContentKey] = useState(0);
   const [isProcessingQuestion, setIsProcessingQuestion] = useState(false);
@@ -299,6 +307,19 @@ export default function AIIntelligence({
     risks: customResponse.risk,
     action: customResponse.action
   } : defaultContent;
+
+  const safeList = (v: unknown): string[] =>
+    Array.isArray(v) && v.length ? (v as string[]) : [];
+
+  const safeQA = (v: unknown): { q: string; a: string }[] =>
+    Array.isArray(v) && v.length ? (v as { q: string; a: string }[]) : [];
+
+  const insights = {
+    observations: safeList(commentary).length ? safeList(commentary) : DEFAULT_INSIGHTS.observations,
+    risks: safeList(risks).length ? safeList(risks) : DEFAULT_INSIGHTS.risks,
+    actions: safeList(actions).length ? safeList(actions) : DEFAULT_INSIGHTS.actions,
+    questions: safeQA(questions).length ? safeQA(questions) : DEFAULT_INSIGHTS.questions,
+  };
   
   // Typewriter speed - fast base with rhythm variation (18ms base = ~55 chars/second burst)
   const typingSpeed = 18;
@@ -362,19 +383,19 @@ export default function AIIntelligence({
       </div>
 
       <div className="panel-content">
-        <AISection 
-          title="OBSERVATION" 
-          content={aiContent.observation}
+        <AISection
+          title="OBSERVATIONS"
+          content={insights.observations.join("\n\n")}
           isAnalyzing={isAnalyzing}
           canStart={true}
           contentKey={contentKey}
           speed={typingSpeed}
           onComplete={() => setObservationComplete(true)}
         />
-        
-        <AISection 
-          title="RISKS" 
-          content={aiContent.risks}
+
+        <AISection
+          title="RISKS"
+          content={insights.risks.join("\n\n")}
           isAnalyzing={isAnalyzing}
           canStart={observationComplete}
           contentKey={contentKey}
@@ -382,12 +403,21 @@ export default function AIIntelligence({
           onComplete={() => setRisksComplete(true)}
           isRiskSection={true}
         />
-        
-        <AISection 
-          title="ACTION" 
-          content={aiContent.action}
+
+        <AISection
+          title="ACTIONS"
+          content={insights.actions.join("\n\n")}
           isAnalyzing={isAnalyzing}
           canStart={risksComplete}
+          contentKey={contentKey}
+          speed={typingSpeed}
+        />
+
+        <AISection
+          title="QUESTIONS"
+          content={insights.questions.map(q => `Q: ${q.q}\nA: ${q.a}`).join("\n\n")}
+          isAnalyzing={false}
+          canStart={true}
           contentKey={contentKey}
           speed={typingSpeed}
         />

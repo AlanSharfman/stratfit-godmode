@@ -1,12 +1,36 @@
 // src/components/mountain/ScenarioMountain.tsx
 // STRATFIT — Stable Mountain with Atmospheric Haze
 
-import React, { useMemo, useRef, useLayoutEffect, Suspense } from "react";
+import React, { useMemo, useRef, useLayoutEffect, Suspense, useState, useEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import * as THREE from "three";
 import { buildPeakModel, LeverId } from "@/logic/mountainPeakModel";
 import { ScenarioId, SCENARIO_COLORS, useScenarioStore } from "@/state/scenarioStore";
+
+type TerrainZone = "burn" | "margin" | "revenue" | "risk";
+
+function mapKPIToZone(kpi: string): TerrainZone {
+  switch (kpi) {
+    case "burn":
+      return "burn";        // lower slopes / valleys
+    case "margin":
+      return "margin";      // mid-ridge stability
+    case "revenue":
+    case "arr":
+      return "revenue";     // forward ridge extension
+    case "risk":
+      return "risk";        // steep gradients / edges
+    default:
+      return "margin";
+  }
+}
+
+type GlowEvent = {
+  zone: TerrainZone;
+  mode: "strengthening" | "strain";
+  ts: number;
+};
 
 // ============================================================================
 // CONSTANTS — STABLE VERSION
@@ -145,7 +169,136 @@ const Terrain: React.FC<TerrainProps> = ({
   const currentColorsRef = useRef<Float32Array | null>(null);
   const maxHeightRef = useRef(1);
 
+  // Geometry and base color refs for glow blending
+  const geomRef = useRef<THREE.BufferGeometry | null>(null);
+  const baseColorsRef = useRef<Float32Array | null>(null);
+  const zoneMasksRef = useRef<Record<TerrainZone, Float32Array> | null>(null);
+
   const pal = useMemo(() => paletteForScenario(scenario), [scenario]);
+
+  // KPI index -> logical KPI key mapping (single source)
+  const indexToKpi = ["burn", "revenue", "revenue", "burn", "risk", "margin", "revenue"] as const;
+
+  // Glow event state for short-lived highlights
+  const [glowEvent, setGlowEvent] = useState<GlowEvent | null>(null);
+  const [glowIntensity, setGlowIntensity] = useState(0);
+
+  // Trigger glow when a KPI is selected (activeKpiIndex changes)
+  useEffect(() => {
+    if (activeKpiIndex === null || activeKpiIndex === undefined) return;
+    const key = (indexToKpi[activeKpiIndex] as string) ?? "margin";
+    setGlowEvent({ zone: mapKPIToZone(key), mode: "strain", ts: Date.now() });
+  }, [activeKpiIndex]);
+
+  // Trigger glow on scenario/slider changes
+  useEffect(() => {
+    setGlowEvent({ zone: mapKPIToZone((indexToKpi[activeKpiIndex ?? 5] as string) ?? "margin"), mode: "strain", ts: Date.now() });
+  }, [scenario]);
+
+  // Time-boxed intensity (fade in -> hold -> fade out)
+  useEffect(() => {
+    if (!glowEvent) return;
+    setGlowIntensity(0);
+    const fadeIn = setTimeout(() => setGlowIntensity(1), 20);
+    const fadeOut = setTimeout(() => setGlowIntensity(0), 450);
+    return () => {
+      clearTimeout(fadeIn);
+      clearTimeout(fadeOut);
+    };
+  }, [glowEvent?.ts]);
+
+  // Build zone masks once when geometry is ready
+  useEffect(() => {
+    const g = geomRef.current;
+    if (!g) return;
+
+    const pos = g.getAttribute("position") as THREE.BufferAttribute;
+    const colorAttr = g.getAttribute("color") as THREE.BufferAttribute;
+
+    if (!pos || !colorAttr) return;
+
+    const vertexCount = pos.count;
+
+    // Snapshot base colors
+    baseColorsRef.current = new Float32Array(colorAttr.array as Float32Array);
+
+    const burn = new Float32Array(vertexCount);
+    const margin = new Float32Array(vertexCount);
+    const revenue = new Float32Array(vertexCount);
+    const risk = new Float32Array(vertexCount);
+
+    let minY = Infinity, maxY = -Infinity;
+    let minX = Infinity, maxX = -Infinity;
+    let minZ = Infinity, maxZ = -Infinity;
+
+    for (let i = 0; i < vertexCount; i++) {
+      const x = pos.getX(i);
+      const y = pos.getY(i);
+      const z = pos.getZ(i);
+      minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+      minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+      minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
+    }
+
+    const yRange = Math.max(1e-6, maxY - minY);
+    const zRange = Math.max(1e-6, maxZ - minZ);
+
+    const smoothstep = (a: number, b: number, v: number) => {
+      const t = Math.min(1, Math.max(0, (v - a) / (b - a)));
+      return t * t * (3 - 2 * t);
+    };
+
+    for (let i = 0; i < vertexCount; i++) {
+      const x = pos.getX(i);
+      const y = pos.getY(i);
+      const z = pos.getZ(i);
+
+      const yn = (y - minY) / yRange;
+      const zn = (z - minZ) / zRange;
+
+      burn[i] = 1 - smoothstep(0.2, 0.55, yn);
+      margin[i] = Math.max(0, 1 - Math.abs(yn - 0.55) / 0.2);
+      revenue[i] = smoothstep(0.55, 0.9, zn) * smoothstep(0.35, 0.8, yn);
+
+      const edgeX = Math.min(Math.abs(x - minX), Math.abs(maxX - x));
+      const edgeXn = 1 - Math.min(1, edgeX / ((maxX - minX) * 0.18 + 1e-6));
+      risk[i] = edgeXn * smoothstep(0.45, 0.9, yn);
+    }
+
+    zoneMasksRef.current = { burn, margin, revenue, risk };
+  }, []);
+
+  // Blend glow into vertex colors (localised to zone, time-boxed via glowIntensity)
+  useEffect(() => {
+    const g = geomRef.current;
+    const masks = zoneMasksRef.current;
+    const base = baseColorsRef.current;
+    if (!g || !masks || !base || !glowEvent) return;
+
+    const colorAttr = g.getAttribute("color") as THREE.BufferAttribute;
+    const colors = colorAttr.array as Float32Array;
+
+    const zone = glowEvent.zone;
+    const weights = masks[zone];
+    const cap = 0.18;
+    const t = glowIntensity;
+
+    const target =
+      glowEvent.mode === "strengthening"
+        ? { r: 0.12, g: 0.7, b: 0.55 }
+        : { r: 0.7, g: 0.42, b: 0.22 };
+
+    for (let i = 0; i < weights.length; i++) {
+      const w = weights[i] * cap * t;
+      const bi = i * 3;
+
+      colors[bi + 0] = base[bi + 0] + (target.r - base[bi + 0]) * w;
+      colors[bi + 1] = base[bi + 1] + (target.g - base[bi + 1]) * w;
+      colors[bi + 2] = base[bi + 2] + (target.b - base[bi + 2]) * w;
+    }
+
+    colorAttr.needsUpdate = true;
+  }, [glowEvent?.ts, glowIntensity]);
 
   // Build peak model - no caching to ensure immediate response
   const peakModel = buildPeakModel({
@@ -299,7 +452,15 @@ const Terrain: React.FC<TerrainProps> = ({
 
   return (
     <group ref={groupRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]}>
-      <mesh ref={meshFillRef} geometry={geometry}>
+      <mesh
+        ref={meshFillRef}
+        geometry={geometry}
+        onUpdate={(m) => {
+          if (m.geometry && !geomRef.current) {
+            geomRef.current = m.geometry as THREE.BufferGeometry;
+          }
+        }}
+      >
         <meshStandardMaterial
           vertexColors
           transparent

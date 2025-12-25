@@ -14,6 +14,7 @@ import ScenarioSelector from "./components/ScenarioSelector";
 import ScenarioDeltaSnapshot from "./components/ScenarioDeltaSnapshot";
 import { useScenarioStore, SCENARIO_COLORS } from "@/state/scenarioStore";
 import type { LeverId } from "@/logic/mountainPeakModel";
+import { runEnginePair, BASE_UI_LEVERS } from "@/logic/engineAdapter";
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -31,70 +32,20 @@ interface LeverState {
   // Risk
   marketVolatility: number;
   executionRisk: number;
-  fundingPressure: number;
 }
 
 const INITIAL_LEVERS: LeverState = {
-  demandStrength: 60,
+  demandStrength: 50,
   pricingPower: 50,
-  expansionVelocity: 45,
-  costDiscipline: 55,
-  hiringIntensity: 40,
-  operatingDrag: 35,
-  marketVolatility: 30,
-  executionRisk: 25,
-  fundingPressure: 20,
+  expansionVelocity: 50,
+  costDiscipline: 50,
+  hiringIntensity: 50,
+  operatingDrag: 50,
+  marketVolatility: 50,
+  executionRisk: 50,
 };
 
 // SCENARIOS moved to ScenarioSelector component
-
-// ============================================================================
-// METRICS CALCULATION
-// ============================================================================
-
-const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
-
-function calculateMetrics(levers: LeverState, scenario: ScenarioId) {
-  const mult = scenario === "upside" ? 1.15 : scenario === "downside" ? 0.85 : scenario === "extreme" ? 0.70 : 1;
-  
-  // Growth factors
-  const demand = levers.demandStrength / 100;
-  const pricing = levers.pricingPower / 100;
-  const expansion = levers.expansionVelocity / 100;
-  
-  // Efficiency factors
-  const cost = levers.costDiscipline / 100;
-  const hiring = levers.hiringIntensity / 100;
-  const drag = levers.operatingDrag / 100;
-  
-  // Risk factors
-  const volatility = levers.marketVolatility / 100;
-  const execRisk = levers.executionRisk / 100;
-  const funding = levers.fundingPressure / 100;
-
-  // Calculate KPI values
-  const runway = Math.round(Math.max(3, (18 + cost * 12 - hiring * 8 - funding * 10) * mult));
-  const cashPosition = Math.max(0.5, (3.2 + pricing * 1.5 - drag * 1.2 + cost * 0.8) * mult);
-  const momentum = Math.round((demand * 40 + expansion * 30 + pricing * 20) * mult);
-  const burnQuality = Math.round((cost * 35 + (1 - hiring) * 25 + (1 - drag) * 20) * mult);
-  const riskIndex = Math.round((volatility * 30 + execRisk * 35 + funding * 25) * (2 - mult));
-  const earningsPower = Math.round((demand * 25 + pricing * 30 + cost * 25) * mult);
-  const enterpriseValue = Math.max(5, (demand * 40 + pricing * 30 + expansion * 20 - volatility * 15) * mult);
-
-  return { runway, cashPosition, momentum, burnQuality, riskIndex, earningsPower, enterpriseValue };
-}
-
-function metricsToDataPoints(m: ReturnType<typeof calculateMetrics>): number[] {
-  return [
-    clamp01(m.runway / 36),
-    clamp01(m.cashPosition / 8),
-    clamp01(m.momentum / 100),
-    clamp01(m.burnQuality / 100),
-    clamp01(1 - m.riskIndex / 100),
-    clamp01(m.earningsPower / 100),
-    clamp01(m.enterpriseValue / 100),
-  ];
-}
 
 // ============================================================================
 // MAIN COMPONENT
@@ -103,6 +54,7 @@ function metricsToDataPoints(m: ReturnType<typeof calculateMetrics>): number[] {
 export default function App() {
   const [scenario, setScenario] = useState<ScenarioId>("base");
   const [levers, setLevers] = useState<LeverState>(INITIAL_LEVERS);
+  const [impactReopenTick, setImpactReopenTick] = useState(0);
   
   // Handle scenario change
   const handleScenarioChange = useCallback((newScenario: ScenarioId) => {
@@ -115,11 +67,38 @@ export default function App() {
   const setDataPoints = useScenarioStore((s) => s.setDataPoints);
   const setScenarioInStore = useScenarioStore((s) => s.setScenario);
   const setKpiValues = useScenarioStore((s) => s.setKpiValues);
+  const setScenarioDeltas = useScenarioStore((s) => s.setScenarioDeltas);
   const activeLeverId = useScenarioStore((s) => s.activeLeverId);
   const leverIntensity01 = useScenarioStore((s) => s.leverIntensity01);
 
-  const metrics = useMemo(() => calculateMetrics(levers, scenario), [levers, scenario]);
-  const dataPoints = useMemo(() => metricsToDataPoints(metrics), [metrics]);
+  const enginePair = useMemo(() => {
+    return runEnginePair(BASE_UI_LEVERS, levers);
+  }, [levers]);
+
+  const metrics = useMemo(() => {
+    return enginePair.scenarioOutputs;
+  }, [enginePair]);
+
+  const deltas = useMemo(() => {
+    return enginePair.deltas;
+  }, [enginePair]);
+
+  const kpiValues = useMemo(() => {
+    return enginePair.kpis;
+  }, [enginePair]);
+
+  const dataPoints = useMemo(() => {
+    // Normalize engine outputs to 0-1 scale for mountain visualization
+    return [
+      Math.max(0, Math.min(1, metrics.runwayMonths / 36)),        // runway
+      Math.max(0, Math.min(1, metrics.cashOnHand / 8_000_000)),   // cash
+      Math.max(0, Math.min(1, metrics.revenueAnnual / 5_000_000)), // momentum/ARR
+      Math.max(0, Math.min(1, (100 - metrics.riskScore) / 100)),  // burn quality (inverse risk)
+      Math.max(0, Math.min(1, metrics.grossMarginPct)),           // risk (inverse)
+      Math.max(0, Math.min(1, metrics.grossMarginPct)),           // earnings power
+      Math.max(0, Math.min(1, metrics.valuation / 50_000_000)),   // enterprise value
+    ];
+  }, [metrics]);
 
   useEffect(() => {
     setDataPoints(dataPoints);
@@ -130,23 +109,25 @@ export default function App() {
   }, [scenario, setScenarioInStore]);
 
   useEffect(() => {
+    // Format raw KPI values for store display
     setKpiValues({
-      // CASH: $X.XM
-      cashPosition: { value: metrics.cashPosition * 100, display: `$${metrics.cashPosition.toFixed(1)}M` },
-      // BURN: $XXK/mo
-      burnQuality: { value: metrics.burnQuality, display: `$${Math.round(metrics.burnQuality)}K` },
-      // RUNWAY: XX mo
-      runway: { value: metrics.runway, display: `${metrics.runway} mo` },
-      // ARR: $X.XM (was momentum)
-      momentum: { value: metrics.momentum, display: `$${(metrics.momentum * 0.04 + 1.8).toFixed(1)}M` },
-      // GROSS MARGIN: XX% (was earningsPower)
-      earningsPower: { value: metrics.earningsPower, display: `${Math.round(65 + metrics.earningsPower * 0.2)}%` },
-      // RISK SCORE: XX/100
-      riskIndex: { value: metrics.riskIndex, display: `${metrics.riskIndex}/100` },
-      // VALUATION: $XX.XM
-      enterpriseValue: { value: metrics.enterpriseValue, display: `$${(metrics.enterpriseValue * 1.2 + 30).toFixed(1)}M` },
+      cashPosition: { value: kpiValues.cashPosition / 8_000_000, display: `$${(kpiValues.cashPosition / 1_000_000).toFixed(1)}M` },
+      runway: { value: Math.max(0, Math.min(1, kpiValues.runway / 36)), display: `${Math.round(kpiValues.runway)} mo` },
+      burnQuality: { value: Math.max(0, Math.min(1, kpiValues.burn / 500_000)), display: `$${Math.round(kpiValues.burn / 1000)}K/mo` },
+      momentum: { value: Math.max(0, Math.min(1, kpiValues.revenue / 5_000_000)), display: `$${(kpiValues.revenue / 1_000_000).toFixed(1)}M` },
+      earningsPower: { value: kpiValues.margin, display: `${Math.round(kpiValues.margin * 100)}%` },
+      riskIndex: { value: kpiValues.risk, display: `${Math.round(kpiValues.risk)}/100` },
+      enterpriseValue: { value: Math.max(0, Math.min(1, kpiValues.valuation / 50_000_000)), display: `$${(kpiValues.valuation / 1_000_000).toFixed(1)}M` },
     });
-  }, [metrics, setKpiValues]);
+  }, [kpiValues, setKpiValues]);
+
+  useEffect(() => {
+    setScenarioDeltas(deltas);
+  }, [deltas, setScenarioDeltas]);
+
+  useEffect(() => {
+    setImpactReopenTick((t) => t + 1);
+  }, [scenario]);
     
   // Map lever IDs to state keys
   const leverIdToStateKey: Record<string, keyof LeverState> = {
@@ -213,6 +194,12 @@ export default function App() {
 
     return boxes;
   }, [levers, viewMode]);
+
+  const INSIGHTS_PLACEHOLDER = {
+    commentary: ["—"],
+    risks: ["—"],
+    actions: ["—"],
+  };
   
   return (
     <div className="app">
@@ -297,15 +284,21 @@ export default function App() {
             </div>
           </div>
           {/* Scenario Delta Snapshot - below mountain */}
-          <ScenarioDeltaSnapshot />
+          <div style={{ marginTop: 8, opacity: 0.75, fontSize: 12 }}>
+            Terrain highlights indicate where the system absorbs or resists strategic change.
+          </div>
+          <ScenarioDeltaSnapshot
+            scenario={scenario}
+            reopenTick={impactReopenTick}
+          />
         </div>
 
         {/* RIGHT: AI Intelligence */}
         <aside className="right-panel">
           <AIIntelligence
-            commentary={[]}
-            risks={[]}
-            actions={[]}
+            commentary={INSIGHTS_PLACEHOLDER.commentary}
+            risks={INSIGHTS_PLACEHOLDER.risks}
+            actions={INSIGHTS_PLACEHOLDER.actions}
             scenario={scenario}
           />
         </aside>
@@ -641,10 +634,10 @@ export default function App() {
 
         @media (max-width: 1000px) {
           .middle-section {
-            grid-template-columns: 180px 1fr;
+            grid-template-columns: 180px 1fr 280px; /* keep right panel present */
           }
           .right-panel {
-            display: none;
+            display: flex; /* never remove it */
           }
         }
       `}</style>
