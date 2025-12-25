@@ -5,7 +5,7 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { ScenarioId } from "./components/ScenarioSlidePanel";
 import KPIConsole from "./components/KPIConsole";
-import ScenarioMountain from "./components/mountain/ScenarioMountain";
+import CenterViewPanel from "@/components/center/CenterViewPanel";
 import { Moon } from "./components/Moon";
 import { ControlDeck, ControlBoxConfig } from "./components/ControlDeck";
 import AIIntelligence from "./components/AIIntelligence";
@@ -281,23 +281,8 @@ export default function App() {
           </div>
         </aside>
 
-        {/* CENTER: Mountain */}
-        <div className="center-panel">
-          <div className="mountain-container">
-            <div className="mountain-content">
-              <Moon rightOffset={5} topOffset={4} scale={0.5} />
-              <ScenarioMountain
-                scenario={scenario}
-                dataPoints={dataPoints}
-                activeKpiIndex={hoveredKpiIndex}
-                activeLeverId={activeLeverId ?? null}
-                leverIntensity01={leverIntensity01 ?? 0}
-              />
-            </div>
-          </div>
-          {/* Scenario Delta Snapshot - below mountain */}
-          {/* <ScenarioDeltaSnapshot /> */}
-        </div>
+        {/* CENTER: Panel */}
+        <CenterViewPanel />
 
         {/* RIGHT: AI Intelligence */}
         <aside className="right-panel">
