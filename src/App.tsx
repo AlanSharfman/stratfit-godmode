@@ -11,7 +11,6 @@ import { ControlDeck, ControlBoxConfig } from "./components/ControlDeck";
 import AIIntelligence from "./components/AIIntelligence";
 import ViewToggle from "./components/ViewToggle";
 import ScenarioSelector from "./components/ScenarioSelector";
-import ScenarioDeltaSnapshot from "./components/ScenarioDeltaSnapshot";
 import { useScenarioStore, SCENARIO_COLORS } from "@/state/scenarioStore";
 import type { LeverId } from "@/logic/mountainPeakModel";
 
@@ -297,7 +296,7 @@ export default function App() {
             </div>
           </div>
           {/* Scenario Delta Snapshot - below mountain */}
-          <ScenarioDeltaSnapshot />
+          {/* <ScenarioDeltaSnapshot /> */}
         </div>
 
         {/* RIGHT: AI Intelligence */}
