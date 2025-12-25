@@ -3,7 +3,8 @@
 // Curated, high-signal, clickable questions that trigger deterministic analysis
 
 import React, { useMemo, useCallback } from "react";
-import { useScenarioStore, ViewMode, ScenarioId } from "@/state/scenarioStore";
+import { useShallow } from "zustand/react/shallow";
+import { useScenarioStore, ScenarioId } from "@/state/scenarioStore";
 
 // ============================================================================
 // TYPES
@@ -209,7 +210,19 @@ interface StrategicQuestionsProps {
 export default function StrategicQuestions({ onPromptClick, isAnalyzing }: StrategicQuestionsProps) {
   const viewMode = useScenarioStore((s) => s.viewMode);
   const scenario = useScenarioStore((s) => s.scenario);
-  const kpiValues = useScenarioStore((s) => s.kpiValues);
+  
+  const {
+    activeScenarioId,
+    engineResults,
+  } = useScenarioStore(
+    useShallow((s) => ({
+      activeScenarioId: s.activeScenarioId,
+      engineResults: s.engineResults,
+    }))
+  );
+
+  const engineResult = engineResults?.[activeScenarioId];
+  const kpiValues = engineResult?.kpis || {};
 
   const prompts = viewMode === "investor" ? INVESTOR_PROMPTS : OPERATOR_PROMPTS;
 

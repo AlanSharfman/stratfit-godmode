@@ -99,9 +99,9 @@ function getVarianceCommentary(
 
 export default function ScenarioDeltaSnapshot() {
   const [isOpen, setIsOpen] = useState(false);
-  
+
   useEffect(() => {
-    const storeValue = useScenarioStore.getState().showScenarioImpact;
+    const storeValue = useScenarioStore((state) => state.showScenarioImpact);
     setIsOpen(storeValue);
   }, []);
 
@@ -113,8 +113,27 @@ export default function ScenarioDeltaSnapshot() {
     useScenarioStore.getState().setShowScenarioImpact(newValue);
   };
 
-  const kpiValues = useScenarioStore((state) => state.kpiValues);
   const scenario = useScenarioStore((state) => state.scenario);
+
+  const {
+    activeScenarioId,
+    comparisonTargetScenarioId,
+    engineResults,
+  } = useScenarioStore(
+    (state) => ({
+      activeScenarioId: state.activeScenarioId,
+      comparisonTargetScenarioId: state.comparisonTargetScenarioId,
+      engineResults: state.engineResults,
+    })
+  );
+
+  const activeResult = engineResults?.[activeScenarioId];
+  const baseResult =
+    comparisonTargetScenarioId
+      ? engineResults?.[comparisonTargetScenarioId]
+      : undefined;
+
+  const kpiDisplayValues = activeResult?.kpis || {};
 
   const deltaData: DeltaRow[] = useMemo(() => {
     // Parse numeric value from display string
@@ -139,14 +158,14 @@ export default function ScenarioDeltaSnapshot() {
       risk: 23
     };
 
-    const currentRevenue = parseValue(kpiValues.momentum?.display || "$2.6M");
-    const currentARR = parseValue(kpiValues.momentum?.display || "$3.2M");
-    const currentMargin = parseValue(kpiValues.earningsPower?.display || "74%");
-    const currentValuation = parseValue(kpiValues.enterpriseValue?.display || "$43.5M");
-    const currentRunway = parseValue(kpiValues.runway?.display || "19 mo");
-    const currentBurn = parseValue(kpiValues.burnQuality?.display || "$85K");
-    const currentCash = parseValue(kpiValues.cashPosition?.display || "$4.0M");
-    const currentRisk = parseValue(kpiValues.riskIndex?.display || "23/100");
+    const currentRevenue = parseValue(kpiDisplayValues.momentum?.display || "$2.6M");
+    const currentARR = parseValue(kpiDisplayValues.momentum?.display || "$3.2M");
+    const currentMargin = parseValue(kpiDisplayValues.earningsPower?.display || "74%");
+    const currentValuation = parseValue(kpiDisplayValues.enterpriseValue?.display || "$43.5M");
+    const currentRunway = parseValue(kpiDisplayValues.runway?.display || "19 mo");
+    const currentBurn = parseValue(kpiDisplayValues.burnQuality?.display || "$85K");
+    const currentCash = parseValue(kpiDisplayValues.cashPosition?.display || "$4.0M");
+    const currentRisk = parseValue(kpiDisplayValues.riskIndex?.display || "23/100");
 
     const calcDelta = (current: number, base: number, isInverse = false): { delta: string; pct: string; type: "positive" | "negative" | "neutral" } => {
       const diff = current - base;
@@ -168,16 +187,16 @@ export default function ScenarioDeltaSnapshot() {
     const riskD = calcDelta(currentRisk, baseValues.risk, true); // Risk: lower is better
 
     return [
-      { metric: "Revenue", base: `$${baseValues.revenue.toFixed(1)}M`, scenario: kpiValues.momentum?.display || "—", delta: revD.delta === "—" ? "—" : `${revD.delta}M`, deltaPct: revD.pct, deltaType: revD.type, commentary: getVarianceCommentary("Revenue", revD.type, revD.pct, scenario) },
-      { metric: "ARR", base: `$${baseValues.arr.toFixed(1)}M`, scenario: kpiValues.momentum?.display || "—", delta: arrD.delta === "—" ? "—" : `${arrD.delta}M`, deltaPct: arrD.pct, deltaType: arrD.type, commentary: getVarianceCommentary("ARR", arrD.type, arrD.pct, scenario) },
-      { metric: "Valuation", base: `$${baseValues.valuation.toFixed(1)}M`, scenario: kpiValues.enterpriseValue?.display || "—", delta: valD.delta === "—" ? "—" : `${valD.delta}M`, deltaPct: valD.pct, deltaType: valD.type, commentary: getVarianceCommentary("Valuation", valD.type, valD.pct, scenario) },
-      { metric: "Gross Margin", base: `${baseValues.grossMargin}%`, scenario: kpiValues.earningsPower?.display || "—", delta: marginD.delta === "—" ? "—" : `${marginD.delta}%`, deltaPct: marginD.pct, deltaType: marginD.type, commentary: getVarianceCommentary("Gross Margin", marginD.type, marginD.pct, scenario) },
-      { metric: "Burn Rate", base: `$${baseValues.burn}K/mo`, scenario: kpiValues.burnQuality?.display || "—", delta: burnD.delta === "—" ? "—" : `${burnD.delta}K`, deltaPct: burnD.pct, deltaType: burnD.type, commentary: getVarianceCommentary("Burn Rate", burnD.type, burnD.pct, scenario) },
-      { metric: "Cash Balance", base: `$${baseValues.cash.toFixed(1)}M`, scenario: kpiValues.cashPosition?.display || "—", delta: cashD.delta === "—" ? "—" : `${cashD.delta}M`, deltaPct: cashD.pct, deltaType: cashD.type, commentary: getVarianceCommentary("Cash Balance", cashD.type, cashD.pct, scenario) },
-      { metric: "Runway", base: `${baseValues.runway} mo`, scenario: kpiValues.runway?.display || "—", delta: runD.delta === "—" ? "—" : `${runD.delta} mo`, deltaPct: runD.pct, deltaType: runD.type, commentary: getVarianceCommentary("Runway", runD.type, runD.pct, scenario) },
-      { metric: "Risk Score", base: `${baseValues.risk}/100`, scenario: kpiValues.riskIndex?.display || "—", delta: riskD.delta === "—" ? "—" : `${riskD.delta}`, deltaPct: riskD.pct, deltaType: riskD.type, commentary: getVarianceCommentary("Risk Score", riskD.type, riskD.pct, scenario) },
+      { metric: "Revenue", base: `$${baseValues.revenue.toFixed(1)}M`, scenario: kpiDisplayValues.momentum?.display || "—", delta: revD.delta === "—" ? "—" : `${revD.delta}M`, deltaPct: revD.pct, deltaType: revD.type, commentary: getVarianceCommentary("Revenue", revD.type, revD.pct, scenario) },
+      { metric: "ARR", base: `$${baseValues.arr.toFixed(1)}M`, scenario: kpiDisplayValues.momentum?.display || "—", delta: arrD.delta === "—" ? "—" : `${arrD.delta}M`, deltaPct: arrD.pct, deltaType: arrD.type, commentary: getVarianceCommentary("ARR", arrD.type, arrD.pct, scenario) },
+      { metric: "Valuation", base: `$${baseValues.valuation.toFixed(1)}M`, scenario: kpiDisplayValues.enterpriseValue?.display || "—", delta: valD.delta === "—" ? "—" : `${valD.delta}M`, deltaPct: valD.pct, deltaType: valD.type, commentary: getVarianceCommentary("Valuation", valD.type, valD.pct, scenario) },
+      { metric: "Gross Margin", base: `${baseValues.grossMargin}%`, scenario: kpiDisplayValues.earningsPower?.display || "—", delta: marginD.delta === "—" ? "—" : `${marginD.delta}%`, deltaPct: marginD.pct, deltaType: marginD.type, commentary: getVarianceCommentary("Gross Margin", marginD.type, marginD.pct, scenario) },
+      { metric: "Burn Rate", base: `$${baseValues.burn}K/mo`, scenario: kpiDisplayValues.burnQuality?.display || "—", delta: burnD.delta === "—" ? "—" : `${burnD.delta}K`, deltaPct: burnD.pct, deltaType: burnD.type, commentary: getVarianceCommentary("Burn Rate", burnD.type, burnD.pct, scenario) },
+      { metric: "Cash Balance", base: `$${baseValues.cash.toFixed(1)}M`, scenario: kpiDisplayValues.cashPosition?.display || "—", delta: cashD.delta === "—" ? "—" : `${cashD.delta}M`, deltaPct: cashD.pct, deltaType: cashD.type, commentary: getVarianceCommentary("Cash Balance", cashD.type, cashD.pct, scenario) },
+      { metric: "Runway", base: `${baseValues.runway} mo`, scenario: kpiDisplayValues.runway?.display || "—", delta: runD.delta === "—" ? "—" : `${runD.delta} mo`, deltaPct: runD.pct, deltaType: runD.type, commentary: getVarianceCommentary("Runway", runD.type, runD.pct, scenario) },
+      { metric: "Risk Score", base: `${baseValues.risk}/100`, scenario: kpiDisplayValues.riskIndex?.display || "—", delta: riskD.delta === "—" ? "—" : `${riskD.delta}`, deltaPct: riskD.pct, deltaType: riskD.type, commentary: getVarianceCommentary("Risk Score", riskD.type, riskD.pct, scenario) },
     ];
-  }, [kpiValues, scenario]);
+  }, [kpiDisplayValues, scenario]);
 
   const getDeltaColor = (type: string) => 
     type === 'positive' ? 'rgba(34,211,238,0.9)' : 

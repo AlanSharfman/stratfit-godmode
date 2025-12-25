@@ -13,6 +13,7 @@ import ViewToggle from "./components/ViewToggle";
 import ScenarioSelector from "./components/ScenarioSelector";
 import { useScenarioStore, SCENARIO_COLORS } from "@/state/scenarioStore";
 import type { LeverId } from "@/logic/mountainPeakModel";
+import { calculateMetrics } from "@/logic/calculateMetrics";
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -53,36 +54,6 @@ const INITIAL_LEVERS: LeverState = {
 
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 
-function calculateMetrics(levers: LeverState, scenario: ScenarioId) {
-  const mult = scenario === "upside" ? 1.15 : scenario === "downside" ? 0.85 : scenario === "extreme" ? 0.70 : 1;
-  
-  // Growth factors
-  const demand = levers.demandStrength / 100;
-  const pricing = levers.pricingPower / 100;
-  const expansion = levers.expansionVelocity / 100;
-  
-  // Efficiency factors
-  const cost = levers.costDiscipline / 100;
-  const hiring = levers.hiringIntensity / 100;
-  const drag = levers.operatingDrag / 100;
-  
-  // Risk factors
-  const volatility = levers.marketVolatility / 100;
-  const execRisk = levers.executionRisk / 100;
-  const funding = levers.fundingPressure / 100;
-
-  // Calculate KPI values
-  const runway = Math.round(Math.max(3, (18 + cost * 12 - hiring * 8 - funding * 10) * mult));
-  const cashPosition = Math.max(0.5, (3.2 + pricing * 1.5 - drag * 1.2 + cost * 0.8) * mult);
-  const momentum = Math.round((demand * 40 + expansion * 30 + pricing * 20) * mult);
-  const burnQuality = Math.round((cost * 35 + (1 - hiring) * 25 + (1 - drag) * 20) * mult);
-  const riskIndex = Math.round((volatility * 30 + execRisk * 35 + funding * 25) * (2 - mult));
-  const earningsPower = Math.round((demand * 25 + pricing * 30 + cost * 25) * mult);
-  const enterpriseValue = Math.max(5, (demand * 40 + pricing * 30 + expansion * 20 - volatility * 15) * mult);
-
-  return { runway, cashPosition, momentum, burnQuality, riskIndex, earningsPower, enterpriseValue };
-}
-
 function metricsToDataPoints(m: ReturnType<typeof calculateMetrics>): number[] {
   return [
     clamp01(m.runway / 36),
@@ -113,7 +84,6 @@ export default function App() {
   const setHoveredKpiIndex = useScenarioStore((s) => s.setHoveredKpiIndex);
   const setDataPoints = useScenarioStore((s) => s.setDataPoints);
   const setScenarioInStore = useScenarioStore((s) => s.setScenario);
-  const setKpiValues = useScenarioStore((s) => s.setKpiValues);
   const activeLeverId = useScenarioStore((s) => s.activeLeverId);
   const leverIntensity01 = useScenarioStore((s) => s.leverIntensity01);
 
@@ -128,24 +98,24 @@ export default function App() {
     setScenarioInStore(scenario);
   }, [scenario, setScenarioInStore]);
 
+  const activeScenarioId = useScenarioStore((s) => s.activeScenarioId);
+  const setEngineResult = useScenarioStore((s) => s.setEngineResult);
+
   useEffect(() => {
-    setKpiValues({
-      // CASH: $X.XM
-      cashPosition: { value: metrics.cashPosition * 100, display: `$${metrics.cashPosition.toFixed(1)}M` },
-      // BURN: $XXK/mo
-      burnQuality: { value: metrics.burnQuality, display: `$${Math.round(metrics.burnQuality)}K` },
-      // RUNWAY: XX mo
-      runway: { value: metrics.runway, display: `${metrics.runway} mo` },
-      // ARR: $X.XM (was momentum)
-      momentum: { value: metrics.momentum, display: `$${(metrics.momentum * 0.04 + 1.8).toFixed(1)}M` },
-      // GROSS MARGIN: XX% (was earningsPower)
-      earningsPower: { value: metrics.earningsPower, display: `${Math.round(65 + metrics.earningsPower * 0.2)}%` },
-      // RISK SCORE: XX/100
-      riskIndex: { value: metrics.riskIndex, display: `${metrics.riskIndex}/100` },
-      // VALUATION: $XX.XM
-      enterpriseValue: { value: metrics.enterpriseValue, display: `$${(metrics.enterpriseValue * 1.2 + 30).toFixed(1)}M` },
-    });
-  }, [metrics, setKpiValues]);
+    if (!metrics) return;
+    const engineResult = {
+      kpis: {
+        runway: { value: metrics.runway, display: `${Math.round(metrics.runway)} mo` },
+        cashPosition: { value: metrics.cashPosition, display: `$${(metrics.cashPosition / 100).toFixed(1)}M` },
+        momentum: { value: metrics.momentum, display: `$${(metrics.momentum / 10).toFixed(1)}M` },
+        burnQuality: { value: metrics.burnQuality, display: `$${Math.round(metrics.burnQuality)}K` },
+        riskIndex: { value: metrics.riskIndex, display: `${Math.round(metrics.riskIndex)}/100` },
+        earningsPower: { value: metrics.earningsPower, display: `${Math.round(metrics.earningsPower)}%` },
+        enterpriseValue: { value: metrics.enterpriseValue, display: `$${(metrics.enterpriseValue / 10).toFixed(1)}M` },
+      },
+    };
+    setEngineResult(activeScenarioId, engineResult);
+  }, [activeScenarioId, metrics, setEngineResult]);
     
   // Map lever IDs to state keys
   const leverIdToStateKey: Record<string, keyof LeverState> = {

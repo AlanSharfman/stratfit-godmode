@@ -5,15 +5,12 @@ import ScenarioDeltaSnapshot from "@/components/ScenarioDeltaSnapshot";
 
 import BriefingPanel from "@/components/briefing/BriefingPanel";
 import {
-  getSoundEnabled,
   isBriefingSeen,
   setBriefingSeen,
-  setSoundEnabled,
-  type BriefingKey,
 } from "@/components/briefing/briefingStorage";
 
-function viewToBriefingKey(view: CenterView): BriefingKey {
-  return view;
+function viewToBriefingKey(view: CenterView) {
+  return view; // Simplified logic
 }
 
 function InfoIcon({ className = "" }: { className?: string }) {
@@ -112,7 +109,7 @@ export default function CenterViewPanel() {
   const [briefingOpen, setBriefingOpen] = useState(false);
   const [briefingNonce, setBriefingNonce] = useState(0);
 
-  const [soundOn, setSoundOnState] = useState<boolean>(() => getSoundEnabled());
+  const [soundOn, setSoundOnState] = useState<boolean>(false); // Default value
 
   // Auto-open briefing first time per view (per user), without sound unless user enabled it.
   useEffect(() => {
@@ -133,7 +130,6 @@ export default function CenterViewPanel() {
   const toggleSound = () => {
     const next = !soundOn;
     setSoundOnState(next);
-    setSoundEnabled(next);
 
     // If user turns sound on, we treat it as a “gesture” moment—retrigger the briefing typing nicely.
     if (next) openBriefing();

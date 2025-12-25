@@ -3,7 +3,7 @@
 // Two lenses over the same engine. Same truth. Different focus.
 
 import React from "react";
-import { useScenarioStore, ViewMode } from "@/state/scenarioStore";
+import { useScenarioStore } from "@/state/scenarioStore";
 
 export default function ViewToggle() {
   const viewMode = useScenarioStore((s) => s.viewMode);

@@ -19,5 +19,15 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      // Enforce selector usage with Zustand stores
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'CallExpression[callee.name="useScenarioStore"][arguments.length=0]',
+          message: 'useScenarioStore() must be called with a selector function. Use: useScenarioStore((s) => s.field) or useScenarioStore.getState() for imperative access.',
+        },
+      ],
+    },
   },
 ])

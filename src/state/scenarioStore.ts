@@ -12,20 +12,8 @@ import type { LeverId } from "@/logic/mountainPeakModel";
 export type ScenarioId = "base" | "upside" | "downside" | "extreme";
 export type ViewMode = "operator" | "investor";
 
-// KPI Keys aligned to specification
-type KPIKey = 
-  | "runway" 
-  | "cashPosition" 
-  | "momentum" 
-  | "burnQuality" 
-  | "riskIndex" 
-  | "earningsPower" 
-  | "enterpriseValue";
-
-interface KPIValue {
-  value: number;
-  display: string;
-  trend?: number; // -1 to 1 for micro-widget direction
+interface EngineResult {
+  kpis: Record<string, { value: number; display: string }>;
 }
 
 // ============================================================================
@@ -59,7 +47,7 @@ export const SCENARIO_COLORS: Record<ScenarioId, { primary: string; secondary: s
 // STORE INTERFACE
 // ============================================================================
 
-interface ScenarioStoreState {
+export type ScenarioStoreState = {
   // View Mode: Operator or Investor
   viewMode: ViewMode;
   setViewMode: (v: ViewMode) => void;
@@ -77,13 +65,6 @@ interface ScenarioStoreState {
   leverIntensity01: number;
   setActiveLever: (id: LeverId | null, intensity01: number) => void;
 
-  kpiValues: Partial<Record<KPIKey, KPIValue>>;
-  setKpiValues: (vals: Partial<Record<KPIKey, KPIValue>>) => void;
-
-  baselineValues: Partial<Record<KPIKey, KPIValue>> | null;
-  setBaselineValues: (vals: Partial<Record<KPIKey, KPIValue>>) => void;
-  captureBaseline: () => void;
-
   getScenarioColors: () => { primary: string; secondary: string; glow: string };
   
   // Motion amplitude based on view
@@ -93,6 +74,11 @@ interface ScenarioStoreState {
   showScenarioImpact: boolean;
   setShowScenarioImpact: (show: boolean) => void;
   toggleScenarioImpact: () => void;
+
+  activeScenarioId: ScenarioId;
+  comparisonTargetScenarioId: ScenarioId | null;
+  engineResults: Record<ScenarioId, EngineResult>;
+  setEngineResult: (scenarioId: ScenarioId, result: EngineResult) => void;
 }
 
 // ============================================================================
@@ -116,26 +102,6 @@ export const useScenarioStore = create<ScenarioStoreState>((set, get) => ({
   leverIntensity01: 0,
   setActiveLever: (id, intensity01) =>
     set({ activeLeverId: id, leverIntensity01: Math.max(0, Math.min(1, intensity01)) }),
-
-  kpiValues: {},
-  setKpiValues: (vals) => {
-    const state = get();
-    if (!state.baselineValues) {
-      set({ 
-        kpiValues: { ...state.kpiValues, ...vals },
-        baselineValues: { ...state.kpiValues, ...vals }
-      });
-    } else {
-      set({ kpiValues: { ...state.kpiValues, ...vals } });
-    }
-  },
-
-  baselineValues: null,
-  setBaselineValues: (vals) => set({ baselineValues: vals }),
-  captureBaseline: () => {
-    const state = get();
-    set({ baselineValues: { ...state.kpiValues } });
-  },
 
   getScenarioColors: () => {
     const scenario = get().scenario;
@@ -172,6 +138,22 @@ export const useScenarioStore = create<ScenarioStoreState>((set, get) => ({
     } catch {}
     set({ showScenarioImpact: next });
   },
+
+  activeScenarioId: "base",
+  comparisonTargetScenarioId: null,
+  engineResults: {
+    base: {} as EngineResult,
+    upside: {} as EngineResult,
+    downside: {} as EngineResult,
+    extreme: {} as EngineResult,
+  },
+  setEngineResult: (scenarioId, result) =>
+    set((state) => ({
+      engineResults: {
+        ...state.engineResults,
+        [scenarioId]: result,
+      },
+    })),
 }));
 
 // ============================================================================

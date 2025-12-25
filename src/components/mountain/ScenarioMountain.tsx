@@ -5,6 +5,7 @@ import React, { useMemo, useRef, useLayoutEffect, Suspense } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import * as THREE from "three";
+import { useShallow } from "zustand/react/shallow";
 import { buildPeakModel, LeverId } from "@/logic/mountainPeakModel";
 import { ScenarioId, SCENARIO_COLORS, useScenarioStore } from "@/state/scenarioStore";
 
@@ -463,7 +464,19 @@ export default function ScenarioMountain({
 }: ScenarioMountainProps) {
   const colors = SCENARIO_COLORS[scenario];
   const viewMode = useScenarioStore((s) => s.viewMode);
-  const kpiValues = useScenarioStore((s) => s.kpiValues);
+  
+  const {
+    activeScenarioId,
+    engineResults,
+  } = useScenarioStore(
+    useShallow((s) => ({
+      activeScenarioId: s.activeScenarioId,
+      engineResults: s.engineResults,
+    }))
+  );
+
+  const engineResult = engineResults?.[activeScenarioId];
+  const kpiValues = engineResult?.kpis || {};
   
   const riskLevel = kpiValues.riskIndex?.value ?? 25;
 

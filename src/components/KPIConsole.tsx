@@ -2,7 +2,8 @@
 // STRATFIT — Bloomberg-Grade KPI Instrument Console
 // Premium unified control surface with embedded instrument widgets
 
-import React, { useState, useEffect} from "react";
+import React, { useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useScenarioStore, SCENARIO_COLORS } from "@/state/scenarioStore";
 import BurnTrendBars from "./BurnTrendBars";
 
@@ -351,11 +352,23 @@ function InstrumentWidget({
 // ============================================================================
 
 export default function KPIConsole() {
-  const kpiValues = useScenarioStore((s) => s.kpiValues);
+  const {
+    activeScenarioId,
+    engineResults,
+  } = useScenarioStore(
+    useShallow((s) => ({
+      activeScenarioId: s.activeScenarioId,
+      engineResults: s.engineResults,
+    }))
+  );
+
   const hoveredKpiIndex = useScenarioStore((s) => s.hoveredKpiIndex);
   const setHoveredKpiIndex = useScenarioStore((s) => s.setHoveredKpiIndex);
   const viewMode = useScenarioStore((s) => s.viewMode);
   const scenario = useScenarioStore((s) => s.scenario);
+  
+  const engineResult = engineResults?.[activeScenarioId];
+  const kpiValues = engineResult?.kpis || {};
   
   const scenarioColor = SCENARIO_COLORS[scenario].primary;
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);

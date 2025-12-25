@@ -3,6 +3,7 @@
 // Highlight colors match active scenario
 
 import React from "react";
+import { useShallow } from "zustand/react/shallow";
 import KPICard from "./ui/KPICard";
 import { useScenarioStore, SCENARIO_COLORS } from "@/state/scenarioStore";
 
@@ -36,11 +37,23 @@ export { KPI_CONFIG };
 // ============================================================================
 
 export default function KPIGrid() {
-  const kpiValues = useScenarioStore((s) => s.kpiValues);
+  const {
+    activeScenarioId,
+    engineResults,
+  } = useScenarioStore(
+    useShallow((s) => ({
+      activeScenarioId: s.activeScenarioId,
+      engineResults: s.engineResults,
+    }))
+  );
+
   const hoveredKpiIndex = useScenarioStore((s) => s.hoveredKpiIndex);
   const setHoveredKpiIndex = useScenarioStore((s) => s.setHoveredKpiIndex);
   const viewMode = useScenarioStore((s) => s.viewMode);
   const scenario = useScenarioStore((s) => s.scenario);
+
+  const engineResult = engineResults?.[activeScenarioId];
+  const kpiValues = engineResult?.kpis || {};
 
   // Get scenario color for KPI highlights
   const scenarioColor = SCENARIO_COLORS[scenario].primary;
