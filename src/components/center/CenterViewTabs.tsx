@@ -2,31 +2,32 @@
 
 export type CenterView = "terrain" | "variance" | "actuals";
 
-interface Props {
-  value: CenterView;
-  onChange: (v: CenterView) => void;
-}
-
-const TAB: Array<{ id: CenterView; label: string }> = [
+const TABS: { id: CenterView; label: string }[] = [
   { id: "terrain", label: "Terrain" },
   { id: "variance", label: "Variance" },
   { id: "actuals", label: "Actuals" },
 ];
 
-export default function CenterViewTabs({ value, onChange }: Props) {
+export default function CenterViewTabs({
+  value,
+  onChange,
+}: {
+  value: CenterView;
+  onChange: (v: CenterView) => void;
+}) {
   return (
-    <div className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-black/30 p-1">
-      {TAB.map((t) => {
+    <div className="inline-flex items-center gap-1 rounded-xl border border-white/15 bg-black/40 p-1 shadow-sm">
+      {TABS.map((t) => {
         const active = value === t.id;
         return (
           <button
             key={t.id}
             onClick={() => onChange(t.id)}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition select-none ${
-                  active
-                    ? "bg-white/10 text-white shadow-sm"
-                    : "text-white/60 hover:text-white hover:bg-white/5"
-                }`}
+            className={`relative px-4 py-1.5 text-xs font-medium rounded-lg transition-all ${
+              active
+                ? "bg-white/10 text-white shadow-md"
+                : "text-white/60 hover:text-white hover:bg-white/5"
+            }`}
           >
             {t.label}
           </button>
