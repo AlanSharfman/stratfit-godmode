@@ -1,8 +1,9 @@
 // src/components/ControlDeck.tsx
 // STRATFIT — Control Deck matching reference design
 
-import React, { useMemo, useCallback, memo } from "react";
+import React, { useMemo, useCallback, memo, useRef } from "react";
 import Slider from "./ui/Slider";
+import { useShallow } from "zustand/react/shallow";
 import { useScenarioStore } from "@/state/scenarioStore";
 import type { LeverId } from "@/logic/mountainPeakModel";
 
@@ -369,8 +370,18 @@ export function ControlDeck(props: {
 }) {
   const { boxes, onChange } = props;
 
-  const hoveredKpiIndex = useScenarioStore((s) => s.hoveredKpiIndex);
-  const setActiveLever = useScenarioStore((s) => s.setActiveLever);
+  // Consolidated store selectors to prevent rerender cascades
+  const { hoveredKpiIndex, setActiveLever } = useScenarioStore(
+    useShallow((s) => ({
+      hoveredKpiIndex: s.hoveredKpiIndex,
+      setActiveLever: s.setActiveLever,
+    }))
+  );
+
+  // Throttle lever intensity updates (16ms = ~60fps, prevents excessive store updates)
+  const lastLeverUpdate = useRef<number>(0);
+  const pendingLeverUpdate = useRef<{ id: LeverId; intensity: number } | null>(null);
+  const leverUpdateFrame = useRef<number | null>(null);
 
   const rangeMap = useMemo(() => {
     const m = new Map<LeverId, { min: number; max: number; def: number }>();
@@ -394,26 +405,58 @@ export function ControlDeck(props: {
     [rangeMap]
   );
 
+  // Throttled lever update - batches rapid updates to prevent rerender cascades
+  const throttledSetActiveLever = useCallback(
+    (id: LeverId, intensity: number) => {
+      const now = performance.now();
+      // If enough time has passed, update immediately
+      if (now - lastLeverUpdate.current > 32) {
+        lastLeverUpdate.current = now;
+        setActiveLever(id, intensity);
+        return;
+      }
+      // Otherwise, schedule update for next frame
+      pendingLeverUpdate.current = { id, intensity };
+      if (leverUpdateFrame.current === null) {
+        leverUpdateFrame.current = requestAnimationFrame(() => {
+          if (pendingLeverUpdate.current) {
+            setActiveLever(pendingLeverUpdate.current.id, pendingLeverUpdate.current.intensity);
+            lastLeverUpdate.current = performance.now();
+          }
+          pendingLeverUpdate.current = null;
+          leverUpdateFrame.current = null;
+        });
+      }
+    },
+    [setActiveLever]
+  );
+
   const handleSliderStart = useCallback(
     (id: LeverId, value: number) => {
       const intensity = computeIntensity01(id, value);
-      setActiveLever(id, intensity);
+      setActiveLever(id, intensity); // Immediate on start
     },
     [computeIntensity01, setActiveLever]
   );
 
   const handleSliderEnd = useCallback(() => {
+    // Cancel any pending throttled update
+    if (leverUpdateFrame.current !== null) {
+      cancelAnimationFrame(leverUpdateFrame.current);
+      leverUpdateFrame.current = null;
+    }
+    pendingLeverUpdate.current = null;
     setActiveLever(null, 0);
     onChange("__end__", 0);
   }, [setActiveLever, onChange]);
 
   const handleSliderChange = useCallback(
     (id: LeverId, v: number) => {
-      const intensity = computeIntensity01(id, v);
-      setActiveLever(id, intensity);
+      // Throttle store updates, but always pass value change through
+      throttledSetActiveLever(id, computeIntensity01(id, v));
       onChange(id, v);
     },
-    [computeIntensity01, setActiveLever, onChange]
+    [computeIntensity01, throttledSetActiveLever, onChange]
   );
 
   return (

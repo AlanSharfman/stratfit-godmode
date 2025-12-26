@@ -2,7 +2,7 @@
 // STRATFIT — Executive Command Console
 // World-class KPI instrument panel with terrain + lever linkage
 
-import React, { useState } from "react";
+import React, { useState, useCallback, memo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useScenarioStore, SCENARIO_COLORS } from "@/state/scenarioStore";
 import BurnTrendBars from "./BurnTrendBars";
@@ -30,7 +30,7 @@ const KPI_CONFIG: KPIConfig[] = [
     unit: "", 
     widgetType: "globe", 
     accentColor: "#22d3ee",
-    relatedLevers: ["costDiscipline", "fundingInjection"]
+    relatedLevers: ["operatingExpenses", "fundingInjection"]
   },
   { 
     id: "burn", 
@@ -39,7 +39,7 @@ const KPI_CONFIG: KPIConfig[] = [
     unit: "/mo", 
     widgetType: "gauge", 
     accentColor: "#f97316",
-    relatedLevers: ["hiringIntensity", "operatingDrag", "costDiscipline"]
+    relatedLevers: ["headcount", "cashSensitivity", "operatingExpenses"]
   },
   { 
     id: "runway", 
@@ -48,7 +48,7 @@ const KPI_CONFIG: KPIConfig[] = [
     unit: "", 
     widgetType: "bar", 
     accentColor: "#22d3ee",
-    relatedLevers: ["costDiscipline", "hiringIntensity"]
+    relatedLevers: ["operatingExpenses", "headcount"]
   },
   { 
     id: "arr", 
@@ -57,7 +57,7 @@ const KPI_CONFIG: KPIConfig[] = [
     unit: "", 
     widgetType: "arrow", 
     accentColor: "#34d399",
-    relatedLevers: ["demandStrength", "pricingPower", "expansionVelocity"]
+    relatedLevers: ["revenueGrowth", "pricingAdjustment", "marketingSpend"]
   },
   { 
     id: "margin", 
@@ -66,7 +66,7 @@ const KPI_CONFIG: KPIConfig[] = [
     unit: "", 
     widgetType: "chart", 
     accentColor: "#34d399",
-    relatedLevers: ["pricingPower", "operatingDrag"]
+    relatedLevers: ["pricingAdjustment", "cashSensitivity"]
   },
   { 
     id: "risk", 
@@ -84,7 +84,7 @@ const KPI_CONFIG: KPIConfig[] = [
     unit: "", 
     widgetType: "ring", 
     accentColor: "#a78bfa",
-    relatedLevers: ["pricingPower", "demandStrength"]
+    relatedLevers: ["pricingAdjustment", "revenueGrowth"]
   },
 ];
 
@@ -406,39 +406,104 @@ function InstrumentWidget({
 }
 
 // ============================================================================
+// MEMOIZED KPI INSTRUMENT CARD
+// ============================================================================
+
+interface KPIInstrumentCardProps {
+  cfg: KPIConfig;
+  data: { value: number; display: string } | undefined;
+  state: "idle" | "hover" | "active";
+  isDimmed: boolean;
+  accentColor: string;
+  onClick: () => void;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
+  burnAmount?: number;
+  cashAmount?: number;
+}
+
+const KPIInstrumentCard = memo(function KPIInstrumentCard({
+  cfg,
+  data,
+  state,
+  isDimmed,
+  accentColor,
+  onClick,
+  onMouseEnter,
+  onMouseLeave,
+  burnAmount,
+  cashAmount,
+}: KPIInstrumentCardProps) {
+  return (
+    <div
+      className={`kpi-instrument ${state} ${isDimmed ? "dimmed" : ""}`}
+      onClick={onClick}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      style={{
+        ["--kpi-accent" as string]: accentColor,
+      }}
+    >
+      {/* Metallic border frame */}
+      <div className="instrument-border">
+        {/* Recessed instrument well */}
+        <div className="instrument-well">
+          {/* Label row */}
+          <div className="instrument-label-row">
+            <span className="instrument-label">{cfg.label}</span>
+          </div>
+          
+          {/* Value display */}
+          <div className="instrument-value-row">
+            <span className="value-display">{data?.display ?? "—"}</span>
+            {cfg.unit && <span className="value-unit">{cfg.unit}</span>}
+          </div>
+          
+          {/* Visual widget */}
+          <div className="instrument-visual">
+            <InstrumentWidget 
+              type={cfg.widgetType} 
+              value={data?.value ?? 0} 
+              state={state}
+              burnAmount={burnAmount}
+              cashAmount={cashAmount}
+            />
+          </div>
+        </div>
+      </div>
+      
+      {/* Neon glow layer */}
+      <div className="instrument-glow" />
+      
+      {/* Focus indicator ring */}
+      {state === "active" && <div className="focus-ring" />}
+    </div>
+  );
+});
+
+// ============================================================================
 // MAIN CONSOLE COMPONENT
 // ============================================================================
 
 export default function KPIConsole() {
-  const {
-    activeScenarioId,
-    engineResults,
-    hoveredKpiIndex,
-    setHoveredKpiIndex,
-    scenario,
-  } = useScenarioStore(
+  // Subscribe only to specific values needed, not the entire engineResults object
+  const { activeScenarioId, scenario, hoveredKpiIndex, setHoveredKpiIndex } = useScenarioStore(
     useShallow((s) => ({
       activeScenarioId: s.activeScenarioId,
-      engineResults: s.engineResults,
+      scenario: s.scenario,
       hoveredKpiIndex: s.hoveredKpiIndex,
       setHoveredKpiIndex: s.setHoveredKpiIndex,
-      scenario: s.scenario,
     }))
   );
   
-  const engineResult = engineResults?.[activeScenarioId];
-  const kpiValues = engineResult?.kpis || {};
+  // Subscribe to KPI values for active scenario only (avoids rerender on other scenario updates)
+  const kpiValues = useScenarioStore((s) => s.engineResults[s.activeScenarioId]?.kpis || {});
   
   const scenarioColor = SCENARIO_COLORS[scenario].primary;
   const [localHoverIndex, setLocalHoverIndex] = useState<number | null>(null);
 
-  const handleKPIInteraction = (index: number, isClick: boolean = false) => {
-    if (isClick) {
-      setHoveredKpiIndex(hoveredKpiIndex === index ? null : index);
-    } else {
-      setLocalHoverIndex(index);
-    }
-  };
+  // Stable callback for clearing local hover
+  const handleMouseLeave = useCallback(() => setLocalHoverIndex(null), []);
 
   const isAnyActive = hoveredKpiIndex !== null;
 
@@ -456,53 +521,22 @@ export default function KPIConsole() {
             const isActive = hoveredKpiIndex === index;
             const isHovered = localHoverIndex === index && !isActive;
             const isDimmed = isAnyActive && !isActive;
-            const state = isActive ? "active" : isHovered ? "hover" : "idle";
+            const state: "idle" | "hover" | "active" = isActive ? "active" : isHovered ? "hover" : "idle";
 
             return (
-              <div
+              <KPIInstrumentCard
                 key={cfg.id}
-                className={`kpi-instrument ${state} ${isDimmed ? "dimmed" : ""}`}
-                onClick={() => handleKPIInteraction(index, true)}
-                onMouseEnter={() => handleKPIInteraction(index, false)}
-                onMouseLeave={() => setLocalHoverIndex(null)}
-                style={{
-                  ["--kpi-accent" as string]: isActive ? scenarioColor : cfg.accentColor,
-                }}
-              >
-                {/* Metallic border frame */}
-                <div className="instrument-border">
-                  {/* Recessed instrument well */}
-                  <div className="instrument-well">
-                    {/* Label row */}
-                    <div className="instrument-label-row">
-                      <span className="instrument-label">{cfg.label}</span>
-                    </div>
-                    
-                    {/* Value display */}
-                    <div className="instrument-value-row">
-                      <span className="value-display">{data?.display ?? "—"}</span>
-                      {cfg.unit && <span className="value-unit">{cfg.unit}</span>}
-                    </div>
-                    
-                    {/* Visual widget */}
-                    <div className="instrument-visual">
-                      <InstrumentWidget 
-                        type={cfg.widgetType} 
-                        value={data?.value ?? 0} 
-                        state={state}
-                        burnAmount={cfg.id === "burn" ? (kpiValues.burnQuality?.value ?? 0) * 1000 : undefined}
-                        cashAmount={cfg.id === "burn" ? (kpiValues.cashPosition?.value ?? 0) * 100000 : undefined}
-                      />
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Neon glow layer */}
-                <div className="instrument-glow" />
-                
-                {/* Focus indicator ring */}
-                {isActive && <div className="focus-ring" />}
-              </div>
+                cfg={cfg}
+                data={data}
+                state={state}
+                isDimmed={isDimmed}
+                accentColor={isActive ? scenarioColor : cfg.accentColor}
+                onClick={() => setHoveredKpiIndex(hoveredKpiIndex === index ? null : index)}
+                onMouseEnter={() => setLocalHoverIndex(index)}
+                onMouseLeave={handleMouseLeave}
+                burnAmount={cfg.id === "burn" ? (kpiValues.burnQuality?.value ?? 0) * 1000 : undefined}
+                cashAmount={cfg.id === "burn" ? (kpiValues.cashPosition?.value ?? 0) * 100000 : undefined}
+              />
             );
           })}
         </div>

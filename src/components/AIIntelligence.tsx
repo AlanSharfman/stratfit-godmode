@@ -2,9 +2,10 @@
 // STRATFIT — AI Intelligence Engine + Strategic Questions
 // Guided interrogation panel at bottom
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ScenarioId } from "./ScenarioSlidePanel";
+import { useShallow } from "zustand/react/shallow";
 import { useScenarioStore, ViewMode } from "@/state/scenarioStore";
 import StrategicQuestions from "./StrategicQuestions";
 
@@ -269,9 +270,14 @@ export default function AIIntelligence({
   const [observationComplete, setObservationComplete] = useState(false);
   const [risksComplete, setRisksComplete] = useState(false);
   
-  const viewMode = useScenarioStore((s) => s.viewMode);
-  const activeLeverId = useScenarioStore((s) => s.activeLeverId);
-  const setHoveredKpiIndex = useScenarioStore((s) => s.setHoveredKpiIndex);
+  // Consolidated store selectors to prevent rerender cascades
+  const { viewMode, activeLeverId, setHoveredKpiIndex } = useScenarioStore(
+    useShallow((s) => ({
+      viewMode: s.viewMode,
+      activeLeverId: s.activeLeverId,
+      setHoveredKpiIndex: s.setHoveredKpiIndex,
+    }))
+  );
   
   const isAnalyzing = activeLeverId !== null || isProcessingQuestion;
 
@@ -294,14 +300,18 @@ export default function AIIntelligence({
   const defaultContent = useMemo(() => getAIContent(viewMode, scenario), [viewMode, scenario]);
   
   // Use custom response if available, otherwise default
-  const aiContent = customResponse ? {
+  const aiContent = useMemo(() => customResponse ? {
     observation: customResponse.observation,
     risks: customResponse.risk,
     action: customResponse.action
-  } : defaultContent;
+  } : defaultContent, [customResponse, defaultContent]);
   
   // Typewriter speed - fast base with rhythm variation (18ms base = ~55 chars/second burst)
   const typingSpeed = 18;
+
+  // Stable callbacks for AISection to prevent re-renders
+  const handleObservationComplete = useCallback(() => setObservationComplete(true), []);
+  const handleRisksComplete = useCallback(() => setRisksComplete(true), []);
 
   // Handle strategic question click
   const handlePromptClick = useCallback((
@@ -354,7 +364,7 @@ export default function AIIntelligence({
             </span>
           </div>
         </div>
-        <div className={`signal-dots ${!observationComplete || !risksComplete || isAnalyzing ? 'active' : ''}`}>
+        <div className={`signal-dots ${isAnalyzing ? 'active' : ''}`}>
           <div className="signal-dot dot-1" />
           <div className="signal-dot dot-2" />
           <div className="signal-dot dot-3" />
@@ -369,7 +379,7 @@ export default function AIIntelligence({
           canStart={true}
           contentKey={contentKey}
           speed={typingSpeed}
-          onComplete={() => setObservationComplete(true)}
+          onComplete={handleObservationComplete}
         />
         
         <AISection 
@@ -379,7 +389,7 @@ export default function AIIntelligence({
           canStart={observationComplete}
           contentKey={contentKey}
           speed={typingSpeed}
-          onComplete={() => setRisksComplete(true)}
+          onComplete={handleRisksComplete}
           isRiskSection={true}
         />
         
@@ -551,14 +561,14 @@ export default function AIIntelligence({
 
         @keyframes neon-pulse {
           0%, 100% { 
-            opacity: 0.6;
-            transform: scale(1);
-            box-shadow: 0 0 6px #00ff88, 0 0 12px rgba(0, 255, 136, 0.4);
+            opacity: 0.3;
+            transform: scale(0.8) translateX(0);
+            box-shadow: 0 0 2px rgba(0, 255, 136, 0.2);
           }
           50% { 
             opacity: 1;
-            transform: scale(1.2);
-            box-shadow: 0 0 12px #00ff88, 0 0 24px rgba(0, 255, 136, 0.6), 0 0 36px rgba(0, 255, 136, 0.3);
+            transform: scale(1.3) translateX(4px);
+            box-shadow: 0 0 12px #00ff88, 0 0 24px rgba(0, 255, 136, 0.8);
           }
         }
 
@@ -643,15 +653,15 @@ export default function AIIntelligence({
         }
 
         .section-content {
-          font-size: 12px;
-          line-height: 1.65;
-          color: rgba(255, 255, 255, 0.75);
+          font-size: 13.5px;
+          line-height: 1.7;
+          color: rgba(255, 255, 255, 0.82);
           min-height: 32px;
         }
 
         .typewriter-text {
           font-family: 'Inter', -apple-system, sans-serif;
-          font-size: 11.5px;
+          font-size: 13.5px;
           letter-spacing: 0.01em;
         }
 

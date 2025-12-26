@@ -2,7 +2,8 @@
 // STRATFIT — Scenario Intelligence Platform
 // Two Views, One Engine, Same Truth
 
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { ScenarioId } from "./components/ScenarioSlidePanel";
 import KPIConsole from "./components/KPIConsole";
 import CenterViewPanel from "@/components/center/CenterViewPanel";
@@ -11,7 +12,7 @@ import { ControlDeck, ControlBoxConfig } from "./components/ControlDeck";
 import AIIntelligence from "./components/AIIntelligence";
 import ViewToggle from "./components/ViewToggle";
 import ScenarioSelector from "./components/ScenarioSelector";
-import OnboardingSequence from "./components/OnboardingSequence";
+import OnboardingSequence from "./components/OnboardingSequenceNew";
 import { useScenarioStore, SCENARIO_COLORS } from "@/state/scenarioStore";
 import type { LeverId } from "@/logic/mountainPeakModel";
 import { calculateMetrics } from "@/logic/calculateMetrics";
@@ -80,13 +81,30 @@ export default function App() {
     setScenario(newScenario);
   }, []);
   
-  const viewMode = useScenarioStore((s) => s.viewMode);
-  const hoveredKpiIndex = useScenarioStore((s) => s.hoveredKpiIndex);
-  const setHoveredKpiIndex = useScenarioStore((s) => s.setHoveredKpiIndex);
-  const setDataPoints = useScenarioStore((s) => s.setDataPoints);
-  const setScenarioInStore = useScenarioStore((s) => s.setScenario);
-  const activeLeverId = useScenarioStore((s) => s.activeLeverId);
-  const leverIntensity01 = useScenarioStore((s) => s.leverIntensity01);
+  // Consolidated store selectors to prevent rerender cascades
+  const {
+    viewMode,
+    hoveredKpiIndex,
+    setHoveredKpiIndex,
+    setDataPoints,
+    setScenarioInStore,
+    activeLeverId,
+    leverIntensity01,
+    activeScenarioId,
+    setEngineResult,
+  } = useScenarioStore(
+    useShallow((s) => ({
+      viewMode: s.viewMode,
+      hoveredKpiIndex: s.hoveredKpiIndex,
+      setHoveredKpiIndex: s.setHoveredKpiIndex,
+      setDataPoints: s.setDataPoints,
+      setScenarioInStore: s.setScenario,
+      activeLeverId: s.activeLeverId,
+      leverIntensity01: s.leverIntensity01,
+      activeScenarioId: s.activeScenarioId,
+      setEngineResult: s.setEngineResult,
+    }))
+  );
 
   const metrics = useMemo(() => calculateMetrics(levers, scenario), [levers, scenario]);
   const dataPoints = useMemo(() => metricsToDataPoints(metrics), [metrics]);
@@ -98,9 +116,6 @@ export default function App() {
   useEffect(() => {
     setScenarioInStore(scenario);
   }, [scenario, setScenarioInStore]);
-
-  const activeScenarioId = useScenarioStore((s) => s.activeScenarioId);
-  const setEngineResult = useScenarioStore((s) => s.setEngineResult);
 
   useEffect(() => {
     if (!metrics) return;
@@ -280,14 +295,10 @@ export default function App() {
     return boxes;
   }, [levers, viewMode]);
   
-  // Onboarding state (show once per user)
-  const [showOnboarding, setShowOnboarding] = useState(() => {
-    const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
-    return !hasSeenOnboarding;
-  });
+  // Onboarding state - ALWAYS SHOW FOR DEMO
+  const [showOnboarding, setShowOnboarding] = useState(true);
 
   const handleOnboardingComplete = useCallback(() => {
-    localStorage.setItem('hasSeenOnboarding', 'true');
     setShowOnboarding(false);
   }, []);
   
