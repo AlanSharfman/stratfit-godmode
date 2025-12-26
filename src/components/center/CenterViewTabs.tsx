@@ -1,10 +1,11 @@
 
 
-export type CenterView = "terrain" | "variance" | "actuals";
+export type CenterView = "terrain" | "variance" | "systemBrief" | "actuals";
 
 const TABS: { id: CenterView; label: string }[] = [
   { id: "terrain", label: "Terrain" },
   { id: "variance", label: "Variance" },
+  { id: "systemBrief", label: "System Brief" },
   { id: "actuals", label: "Actuals" },
 ];
 

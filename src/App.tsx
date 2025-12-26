@@ -11,6 +11,7 @@ import { ControlDeck, ControlBoxConfig } from "./components/ControlDeck";
 import AIIntelligence from "./components/AIIntelligence";
 import ViewToggle from "./components/ViewToggle";
 import ScenarioSelector from "./components/ScenarioSelector";
+import OnboardingSequence from "./components/OnboardingSequence";
 import { useScenarioStore, SCENARIO_COLORS } from "@/state/scenarioStore";
 import type { LeverId } from "@/logic/mountainPeakModel";
 import { calculateMetrics } from "@/logic/calculateMetrics";
@@ -148,26 +149,122 @@ export default function App() {
         id: "growth",
         title: "Growth",
         sliders: [
-          { id: "revenueGrowth" as LeverId, label: "Demand Strength", value: levers.demandStrength, min: 0, max: 100, defaultValue: 60, format: (v) => `${v}%` },
-          { id: "pricingAdjustment" as LeverId, label: "Pricing Power", value: levers.pricingPower, min: 0, max: 100, defaultValue: 50, format: (v) => `${v}%` },
-          { id: "marketingSpend" as LeverId, label: "Expansion Velocity", value: levers.expansionVelocity, min: 0, max: 100, defaultValue: 45, format: (v) => `${v}%` },
+          { 
+            id: "revenueGrowth" as LeverId, 
+            label: "Demand Strength", 
+            value: levers.demandStrength, 
+            min: 0, 
+            max: 100, 
+            defaultValue: 60, 
+            format: (v) => `${v}%`,
+            tooltip: {
+              description: "Marketing spend, sales velocity, product-market fit strength",
+              impact: "Higher = more inbound leads, faster customer acquisition"
+            }
+          },
+          { 
+            id: "pricingAdjustment" as LeverId, 
+            label: "Pricing Power", 
+            value: levers.pricingPower, 
+            min: 0, 
+            max: 100, 
+            defaultValue: 50, 
+            format: (v) => `${v}%`,
+            tooltip: {
+              description: "Ability to raise prices without losing customers",
+              impact: "Higher = better margins, stronger revenue per customer"
+            }
+          },
+          { 
+            id: "marketingSpend" as LeverId, 
+            label: "Expansion Velocity", 
+            value: levers.expansionVelocity, 
+            min: 0, 
+            max: 100, 
+            defaultValue: 45, 
+            format: (v) => `${v}%`,
+            tooltip: {
+              description: "Speed of entering new markets, launching products, scaling teams",
+              impact: "Higher = faster growth, more burn, higher execution risk"
+            }
+          },
         ],
       },
       {
         id: "efficiency",
         title: "Efficiency",
         sliders: [
-          { id: "operatingExpenses" as LeverId, label: "Cost Discipline", value: levers.costDiscipline, min: 0, max: 100, defaultValue: 55, format: (v) => `${v}%` },
-          { id: "headcount" as LeverId, label: "Hiring Intensity", value: levers.hiringIntensity, min: 0, max: 100, defaultValue: 40, format: (v) => `${v}%` },
-          { id: "cashSensitivity" as LeverId, label: "Operating Drag", value: levers.operatingDrag, min: 0, max: 100, defaultValue: 35, format: (v) => `${v}%` },
+          { 
+            id: "operatingExpenses" as LeverId, 
+            label: "Cost Discipline", 
+            value: levers.costDiscipline, 
+            min: 0, 
+            max: 100, 
+            defaultValue: 55, 
+            format: (v) => `${v}%`,
+            tooltip: {
+              description: "Vendor management, infrastructure optimization, spending control",
+              impact: "Higher = lower burn rate, longer runway, better unit economics"
+            }
+          },
+          { 
+            id: "headcount" as LeverId, 
+            label: "Hiring Intensity", 
+            value: levers.hiringIntensity, 
+            min: 0, 
+            max: 100, 
+            defaultValue: 40, 
+            format: (v) => `${v}%`,
+            tooltip: {
+              description: "Pace of team growth across all departments",
+              impact: "Higher = faster execution, steeper burn, culture risk"
+            }
+          },
+          { 
+            id: "cashSensitivity" as LeverId, 
+            label: "Operating Drag", 
+            value: levers.operatingDrag, 
+            min: 0, 
+            max: 100, 
+            defaultValue: 35, 
+            format: (v) => `${v}%`,
+            tooltip: {
+              description: "Overhead, process friction, technical debt, administrative burden",
+              impact: "Lower = better capital efficiency, faster decision-making"
+            }
+          },
         ],
       },
       {
         id: "risk",
         title: "Risk",
         sliders: [
-          { id: "churnSensitivity" as LeverId, label: "Market Volatility", value: levers.marketVolatility, min: 0, max: 100, defaultValue: 30, format: (v) => `${v}%` },
-          { id: "fundingInjection" as LeverId, label: "Execution Risk", value: levers.executionRisk, min: 0, max: 100, defaultValue: 25, format: (v) => `${v}%` },
+          { 
+            id: "churnSensitivity" as LeverId, 
+            label: "Market Volatility", 
+            value: levers.marketVolatility, 
+            min: 0, 
+            max: 100, 
+            defaultValue: 30, 
+            format: (v) => `${v}%`,
+            tooltip: {
+              description: "Economic headwinds, competitive pressure, customer churn risk",
+              impact: "Higher = unpredictable revenue, lower valuation multiples"
+            }
+          },
+          { 
+            id: "fundingInjection" as LeverId, 
+            label: "Execution Risk", 
+            value: levers.executionRisk, 
+            min: 0, 
+            max: 100, 
+            defaultValue: 25, 
+            format: (v) => `${v}%`,
+            tooltip: {
+              description: "Product delays, team turnover, operational breakdowns",
+              impact: "Higher = missed targets, emergency fundraising, runway compression"
+            }
+          },
         ],
       },
     ];
@@ -183,8 +280,21 @@ export default function App() {
     return boxes;
   }, [levers, viewMode]);
   
+  // Onboarding state (show once per user)
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
+    return !hasSeenOnboarding;
+  });
+
+  const handleOnboardingComplete = useCallback(() => {
+    localStorage.setItem('hasSeenOnboarding', 'true');
+    setShowOnboarding(false);
+  }, []);
+  
   return (
     <div className="app">
+      {/* ONBOARDING SEQUENCE */}
+      {showOnboarding && <OnboardingSequence onComplete={handleOnboardingComplete} />}
       {/* HEADER */}
       <header className="header">
         <div className="header-left">

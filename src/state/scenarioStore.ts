@@ -12,7 +12,7 @@ import type { LeverId } from "@/logic/mountainPeakModel";
 export type ScenarioId = "base" | "upside" | "downside" | "extreme";
 export type ViewMode = "operator" | "investor";
 
-interface EngineResult {
+export interface EngineResult {
   kpis: Record<string, { value: number; display: string }>;
 }
 

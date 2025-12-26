@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import CenterViewTabs, { CenterView } from "./CenterViewTabs";
+import CenterViewSegmented, { CenterView } from "@/components/CenterViewSegmented";
 import ScenarioMountain from "@/components/mountain/ScenarioMountain";
 import ScenarioDeltaSnapshot from "@/components/ScenarioDeltaSnapshot";
+import { useScenario, useDataPoints, useScenarioStore } from "@/state/scenarioStore";
 
 import BriefingPanel from "@/components/briefing/BriefingPanel";
 import {
@@ -9,8 +10,33 @@ import {
   setBriefingSeen,
 } from "@/components/briefing/briefingStorage";
 
-function viewToBriefingKey(view: CenterView) {
-  return view; // Simplified logic
+function ThinkingIndicator() {
+  return (
+    <div className="flex items-center gap-1.5">
+      <div className="flex gap-1">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400"
+            style={{
+              animation: `pulse 1.4s ease-in-out ${i * 0.15}s infinite`,
+            }}
+          />
+        ))}
+      </div>
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 0.3; transform: scale(0.85); }
+          50% { opacity: 1; transform: scale(1.1); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function viewToBriefingKey(view: CenterView): "terrain" | "variance" | "actuals" {
+  if (view === "systemBrief") return "variance";
+  return view;
 }
 
 function InfoIcon({ className = "" }: { className?: string }) {
@@ -97,12 +123,11 @@ function SpeakerIcon({
   );
 }
 
-import { useScenario, useDataPoints } from "@/state/scenarioStore";
-
 export default function CenterViewPanel() {
   const [view, setView] = useState<CenterView>("terrain");
   const scenario = useScenario();
   const dataPoints = useDataPoints();
+  const hoveredKpiIndex = useScenarioStore((s) => s.hoveredKpiIndex);
 
   // briefing controls
   const briefingKey = useMemo(() => viewToBriefingKey(view), [view]);
@@ -137,37 +162,26 @@ export default function CenterViewPanel() {
 
   return (
     <div className="relative h-full w-full rounded-xl bg-black/40 backdrop-blur-sm border border-white/5 overflow-hidden">
-      {/* Header Strip */}
-      <div className="px-4 pt-3 pb-2 border-b border-white/5 bg-black/20">
-        <div className="flex items-center justify-between gap-3">
-          <CenterViewTabs value={view} onChange={setView} />
+      {/* Command Bar */}
+      <div className="px-6 pt-4 pb-3 border-b border-white/5 bg-gradient-to-b from-black/30 to-transparent">
+        <div className="flex items-center justify-between">
+          <CenterViewSegmented value={view} onChange={setView} />
 
-          {/* Controls (small, premium, no clutter) */}
-          <div className="flex items-center gap-2">
-            <button
-              onMouseEnter={openBriefing} // ⓘ hover re-trigger
-              onClick={() => (briefingOpen ? setBriefingOpen(false) : openBriefing())}
-              className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-black/30 px-2 py-1 text-[11px] text-white/60 hover:text-white hover:bg-white/5 transition"
-              title="Briefing"
-              aria-label="Briefing"
-            >
-              <InfoIcon className="text-white/70" />
-              <span className="hidden sm:inline">Brief</span>
-            </button>
-
-            <button
-              onClick={toggleSound}
-              className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-black/30 px-2 py-1 text-[11px] text-white/60 hover:text-white hover:bg-white/5 transition"
-              title={soundOn ? "Typing sound: On" : "Typing sound: Off"}
-              aria-label="Toggle typing sound"
-            >
-              <SpeakerIcon on={soundOn} className="text-white/70" />
-              <span className="hidden sm:inline">{soundOn ? "Sound" : "Silent"}</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={openBriefing}
+            className="group relative inline-flex items-center gap-2 rounded-xl border border-slate-600/40 bg-slate-900/40 px-3 py-2 text-[10px] font-medium uppercase tracking-wide text-slate-400 backdrop-blur-sm transition-all duration-150 hover:border-slate-500/60 hover:bg-slate-800/60 hover:text-slate-200"
+            title="View help for this mode"
+          >
+            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+            <span className="hidden sm:inline">Help</span>
+          </button>
         </div>
 
-        {/* Briefing Panel (green box requirement) */}
         <BriefingPanel
           briefingKey={briefingKey}
           open={briefingOpen}
@@ -178,16 +192,27 @@ export default function CenterViewPanel() {
         />
       </div>
 
-      {/* Content Area */}
-      <div className="relative h-[calc(100%-52px)] w-full">
+      {/* Center Stage */}
+      <div className="relative h-[calc(100%-68px)] w-full p-4">
         {view === "terrain" && (
-          <div className="absolute inset-0">
-            <ScenarioMountain scenario={scenario} dataPoints={dataPoints} />
+          <div className="relative h-full w-full overflow-hidden rounded-3xl border border-slate-700/40 bg-black shadow-[0_8px_32px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.03)]">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.4)_60%,rgba(0,0,0,0.85)_100%)]" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-black/60 via-black/20 to-transparent" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+            <div className="pointer-events-none absolute inset-0 rounded-3xl shadow-[inset_0_0_0_1px_rgba(34,211,238,0.06)]" />
+            
+            <div className="relative h-full w-full">
+              <ScenarioMountain 
+                scenario={scenario} 
+                dataPoints={dataPoints}
+                activeKpiIndex={hoveredKpiIndex}
+              />
+            </div>
           </div>
         )}
 
         {view === "variance" && (
-          <div className="h-full w-full overflow-auto px-4 py-4">
+          <div className="h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-gradient-to-br from-slate-950/60 to-black/80 p-6 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
             <ScenarioDeltaSnapshot />
           </div>
         )}

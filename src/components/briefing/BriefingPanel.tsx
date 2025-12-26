@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
+const ENABLE_BRIEFING_AUDIO = false;
+
 type BriefingKey = "terrain" | "variance" | "actuals";
 
 const BRIEFINGS: Record<
@@ -63,6 +65,7 @@ function useTelegramTick(enabled: boolean) {
   const ctxRef = useRef<AudioContext | null>(null);
 
   const tick = () => {
+    if (!ENABLE_BRIEFING_AUDIO) return;
     if (!enabled) return;
 
     // Create / reuse AudioContext

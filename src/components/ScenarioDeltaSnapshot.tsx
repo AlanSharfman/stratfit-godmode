@@ -205,6 +205,119 @@ export default function ScenarioDeltaSnapshot() {
 
   return (
     <>
+      {/* World-First Value Proposition */}
+      <div style={{
+        marginBottom: '24px',
+        padding: '24px 28px',
+        background: 'linear-gradient(135deg, rgba(34,211,238,0.08) 0%, rgba(168,85,247,0.06) 100%)',
+        border: '1px solid rgba(34,211,238,0.25)',
+        borderRadius: '12px',
+        boxShadow: '0 4px 24px rgba(34,211,238,0.12)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'start', gap: '20px' }}>
+          {/* Icon */}
+          <div style={{
+            flexShrink: 0,
+            width: '48px',
+            height: '48px',
+            borderRadius: '12px',
+            background: 'rgba(34,211,238,0.15)',
+            border: '1px solid rgba(34,211,238,0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" stroke="rgba(34,211,238,0.9)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <polyline points="17 21 17 13 7 13 7 21" stroke="rgba(34,211,238,0.9)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <polyline points="7 3 7 8 15 8" stroke="rgba(34,211,238,0.9)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+
+          {/* Content */}
+          <div style={{ flex: 1 }}>
+            <div style={{
+              fontSize: '16px',
+              fontWeight: 700,
+              color: 'rgba(34,211,238,0.95)',
+              marginBottom: '8px',
+              letterSpacing: '0.02em',
+            }}>
+              📊 Export Board-Ready PDF Reports
+            </div>
+            
+            <div style={{
+              fontSize: '13px',
+              lineHeight: '1.6',
+              color: 'rgba(200,215,230,0.9)',
+              marginBottom: '16px',
+            }}>
+              Generate comprehensive variance analysis reports with one click. Perfect for board meetings, investor updates, and strategic planning sessions.
+            </div>
+
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: '12px',
+              marginBottom: '16px',
+            }}>
+              <div style={{
+                padding: '10px 14px',
+                background: 'rgba(18,22,30,0.6)',
+                border: '1px solid rgba(34,211,238,0.2)',
+                borderRadius: '8px',
+              }}>
+                <div style={{ fontSize: '10px', fontWeight: 700, color: 'rgba(34,211,238,0.8)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Included in PDF</div>
+                <div style={{ fontSize: '11px', color: 'rgba(175,190,210,0.9)', lineHeight: '1.5' }}>
+                  • Full variance analysis<br/>
+                  • 3D terrain snapshot<br/>
+                  • Lever position matrix<br/>
+                  • AI strategic insights
+                </div>
+              </div>
+              <div style={{
+                padding: '10px 14px',
+                background: 'rgba(18,22,30,0.6)',
+                border: '1px solid rgba(34,211,238,0.2)',
+                borderRadius: '8px',
+              }}>
+                <div style={{ fontSize: '10px', fontWeight: 700, color: 'rgba(34,211,238,0.8)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Use Cases</div>
+                <div style={{ fontSize: '11px', color: 'rgba(175,190,210,0.9)', lineHeight: '1.5' }}>
+                  • Board presentations<br/>
+                  • Investor decks<br/>
+                  • Strategic planning<br/>
+                  • Scenario documentation
+                </div>
+              </div>
+            </div>
+
+            <div style={{
+              padding: '14px 16px',
+              background: 'rgba(168,85,247,0.08)',
+              border: '1px solid rgba(168,85,247,0.2)',
+              borderRadius: '8px',
+              marginBottom: '12px',
+            }}>
+              <div style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(168,85,247,0.95)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                🌍 World-First Technology
+              </div>
+              <div style={{ fontSize: '12px', lineHeight: '1.6', color: 'rgba(200,215,230,0.9)' }}>
+                <strong style={{ color: 'rgba(255,255,255,0.95)' }}>No spreadsheet has ever done this.</strong> Traditional tools give you static numbers in rows and columns. STRATFIT visualizes your business as a <strong style={{ color: 'rgba(255,255,255,0.95)' }}>living terrain</strong> that shows system dynamics in real time — how growth, efficiency, and risk interact before they happen.
+              </div>
+            </div>
+
+            <div style={{
+              fontSize: '11px',
+              color: 'rgba(150,165,185,0.75)',
+              lineHeight: '1.5',
+              fontStyle: 'italic',
+            }}>
+              💡 <strong style={{ color: 'rgba(200,215,230,0.85)', fontStyle: 'normal' }}>Why you need this:</strong> Explore scenarios before betting the company. See second-order effects, hidden leverage points, and compounding risks that Excel can't show you. From insight to board-ready report in 60 seconds.
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div style={{ width: '100%', marginTop: '10px', marginBottom: '40px', flexShrink: 0 }}>
         <button 
           onClick={handleToggle}

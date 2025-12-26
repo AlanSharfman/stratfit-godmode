@@ -262,12 +262,12 @@ const Terrain: React.FC<TerrainProps> = ({
     const targetCols = targetColorsRef.current;
     const currentCols = currentColorsRef.current;
 
-    const smoothing = 0.18; // FASTER response
+    const smoothing = 0.45; // IMMEDIATE response - snappy but smooth
     let needsUpdate = false;
 
     for (let i = 0; i < count; i++) {
       const diff = targets[i] - currents[i];
-      if (Math.abs(diff) > 0.0005) {
+      if (Math.abs(diff) > 0.0002) {
         currents[i] += diff * smoothing;
         needsUpdate = true;
       } else {
@@ -278,7 +278,7 @@ const Terrain: React.FC<TerrainProps> = ({
       for (let c = 0; c < 3; c++) {
         const ci = i * 3 + c;
         const colDiff = targetCols[ci] - currentCols[ci];
-        if (Math.abs(colDiff) > 0.001) {
+        if (Math.abs(colDiff) > 0.0005) {
           currentCols[ci] += colDiff * smoothing;
         } else {
           currentCols[ci] = targetCols[ci];

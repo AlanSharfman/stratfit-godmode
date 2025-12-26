@@ -1,14 +1,15 @@
 // src/components/KPIConsole.tsx
-// STRATFIT — Bloomberg-Grade KPI Instrument Console
-// Premium unified control surface with embedded instrument widgets
+// STRATFIT — Executive Command Console
+// World-class KPI instrument panel with terrain + lever linkage
 
 import React, { useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useScenarioStore, SCENARIO_COLORS } from "@/state/scenarioStore";
 import BurnTrendBars from "./BurnTrendBars";
+import type { LeverId } from "@/logic/mountainPeakModel";
 
 // ============================================================================
-// KPI CONFIGURATION
+// KPI CONFIGURATION — CANONICAL SET (LOCKED)
 // ============================================================================
 
 interface KPIConfig {
@@ -18,16 +19,73 @@ interface KPIConfig {
   unit: string;
   widgetType: "bar" | "globe" | "arrow" | "gauge" | "dial" | "chart" | "ring";
   accentColor: string;
+  relatedLevers: LeverId[];
 }
 
 const KPI_CONFIG: KPIConfig[] = [
-  { id: "cash", label: "CASH", kpiKey: "cashPosition", unit: "", widgetType: "globe", accentColor: "#00ffcc" },
-  { id: "burn", label: "BURN RATE", kpiKey: "burnQuality", unit: "/mo", widgetType: "gauge", accentColor: "#ff6b6b" },
-  { id: "runway", label: "RUNWAY", kpiKey: "runway", unit: "", widgetType: "bar", accentColor: "#00d4ff" },
-  { id: "arr", label: "ARR", kpiKey: "momentum", unit: "", widgetType: "arrow", accentColor: "#00ff88" },
-  { id: "margin", label: "GROSS MARGIN", kpiKey: "earningsPower", unit: "", widgetType: "chart", accentColor: "#00ff88" },
-  { id: "risk", label: "RISK SCORE", kpiKey: "riskIndex", unit: "", widgetType: "dial", accentColor: "#00ccff" },
-  { id: "value", label: "VALUATION", kpiKey: "enterpriseValue", unit: "", widgetType: "ring", accentColor: "#00ddff" },
+  { 
+    id: "cash", 
+    label: "CASH POSITION", 
+    kpiKey: "cashPosition", 
+    unit: "", 
+    widgetType: "globe", 
+    accentColor: "#22d3ee",
+    relatedLevers: ["costDiscipline", "fundingInjection"]
+  },
+  { 
+    id: "burn", 
+    label: "BURN RATE", 
+    kpiKey: "burnQuality", 
+    unit: "/mo", 
+    widgetType: "gauge", 
+    accentColor: "#f97316",
+    relatedLevers: ["hiringIntensity", "operatingDrag", "costDiscipline"]
+  },
+  { 
+    id: "runway", 
+    label: "RUNWAY", 
+    kpiKey: "runway", 
+    unit: "", 
+    widgetType: "bar", 
+    accentColor: "#22d3ee",
+    relatedLevers: ["costDiscipline", "hiringIntensity"]
+  },
+  { 
+    id: "arr", 
+    label: "ARR", 
+    kpiKey: "momentum", 
+    unit: "", 
+    widgetType: "arrow", 
+    accentColor: "#34d399",
+    relatedLevers: ["demandStrength", "pricingPower", "expansionVelocity"]
+  },
+  { 
+    id: "margin", 
+    label: "GROSS MARGIN", 
+    kpiKey: "earningsPower", 
+    unit: "", 
+    widgetType: "chart", 
+    accentColor: "#34d399",
+    relatedLevers: ["pricingPower", "operatingDrag"]
+  },
+  { 
+    id: "risk", 
+    label: "RISK SCORE", 
+    kpiKey: "riskIndex", 
+    unit: "", 
+    widgetType: "dial", 
+    accentColor: "#ef4444",
+    relatedLevers: ["churnSensitivity", "fundingInjection"]
+  },
+  { 
+    id: "value", 
+    label: "ENTERPRISE VALUE", 
+    kpiKey: "enterpriseValue", 
+    unit: "", 
+    widgetType: "ring", 
+    accentColor: "#a78bfa",
+    relatedLevers: ["pricingPower", "demandStrength"]
+  },
 ];
 
 // ============================================================================
@@ -355,78 +413,79 @@ export default function KPIConsole() {
   const {
     activeScenarioId,
     engineResults,
+    hoveredKpiIndex,
+    setHoveredKpiIndex,
+    scenario,
   } = useScenarioStore(
     useShallow((s) => ({
       activeScenarioId: s.activeScenarioId,
       engineResults: s.engineResults,
+      hoveredKpiIndex: s.hoveredKpiIndex,
+      setHoveredKpiIndex: s.setHoveredKpiIndex,
+      scenario: s.scenario,
     }))
   );
-
-  const hoveredKpiIndex = useScenarioStore((s) => s.hoveredKpiIndex);
-  const setHoveredKpiIndex = useScenarioStore((s) => s.setHoveredKpiIndex);
-  const viewMode = useScenarioStore((s) => s.viewMode);
-  const scenario = useScenarioStore((s) => s.scenario);
   
   const engineResult = engineResults?.[activeScenarioId];
   const kpiValues = engineResult?.kpis || {};
   
   const scenarioColor = SCENARIO_COLORS[scenario].primary;
-  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  const [localHoverIndex, setLocalHoverIndex] = useState<number | null>(null);
 
-  const visibleKPIs = viewMode === "investor" 
-    ? KPI_CONFIG.filter(k => !["burn", "margin"].includes(k.id))
-    : KPI_CONFIG;
-
-  const handleClick = (index: number) => {
-    const actualIndex = KPI_CONFIG.findIndex(k => k.id === visibleKPIs[index].id);
-    setHoveredKpiIndex(hoveredKpiIndex === actualIndex ? null : actualIndex);
+  const handleKPIInteraction = (index: number, isClick: boolean = false) => {
+    if (isClick) {
+      setHoveredKpiIndex(hoveredKpiIndex === index ? null : index);
+    } else {
+      setLocalHoverIndex(index);
+    }
   };
 
   const isAnyActive = hoveredKpiIndex !== null;
 
   return (
-    <div className="kpi-console">
-      {/* Console Surface */}
-      <div className="console-surface">
-        {/* Vignette overlay */}
-        <div className="console-vignette" />
+    <div className="kpi-command-console">
+      {/* Command Console Container */}
+      <div className="console-container">
+        {/* Ambient backdrop layer */}
+        <div className="console-backdrop" />
         
-        {/* Instrument Row */}
-        <div className="instrument-row">
-          {visibleKPIs.map((cfg, i) => {
+        {/* KPI Instrument Grid */}
+        <div className="instrument-grid">
+          {KPI_CONFIG.map((cfg, index) => {
             const data = kpiValues[cfg.kpiKey as keyof typeof kpiValues];
-            const actualIndex = KPI_CONFIG.findIndex(k => k.id === cfg.id);
-            const isActive = hoveredKpiIndex === actualIndex;
-            const isHovered = hoverIndex === i;
+            const isActive = hoveredKpiIndex === index;
+            const isHovered = localHoverIndex === index && !isActive;
+            const isDimmed = isAnyActive && !isActive;
             const state = isActive ? "active" : isHovered ? "hover" : "idle";
-            const dimmed = isAnyActive && !isActive;
 
             return (
               <div
                 key={cfg.id}
-                className={`instrument ${state} ${dimmed ? "dimmed" : ""}`}
-                onClick={() => handleClick(i)}
-                onMouseEnter={() => setHoverIndex(i)}
-                onMouseLeave={() => setHoverIndex(null)}
+                className={`kpi-instrument ${state} ${isDimmed ? "dimmed" : ""}`}
+                onClick={() => handleKPIInteraction(index, true)}
+                onMouseEnter={() => handleKPIInteraction(index, false)}
+                onMouseLeave={() => setLocalHoverIndex(null)}
                 style={{
-                  ["--accent" as string]: isActive ? scenarioColor : cfg.accentColor,
+                  ["--kpi-accent" as string]: isActive ? scenarioColor : cfg.accentColor,
                 }}
               >
-                {/* Instrument frame */}
-                <div className="instrument-frame">
-                  {/* Inner well */}
+                {/* Metallic border frame */}
+                <div className="instrument-border">
+                  {/* Recessed instrument well */}
                   <div className="instrument-well">
-                    {/* Header */}
-                    <div className="instrument-header">
+                    {/* Label row */}
+                    <div className="instrument-label-row">
                       <span className="instrument-label">{cfg.label}</span>
                     </div>
-                    {/* Value */}
-                    <div className="instrument-value">
-                      <span className="value-main">{data?.display ?? "—"}</span>
+                    
+                    {/* Value display */}
+                    <div className="instrument-value-row">
+                      <span className="value-display">{data?.display ?? "—"}</span>
                       {cfg.unit && <span className="value-unit">{cfg.unit}</span>}
                     </div>
-                    {/* Widget */}
-                    <div className="instrument-widget">
+                    
+                    {/* Visual widget */}
+                    <div className="instrument-visual">
                       <InstrumentWidget 
                         type={cfg.widgetType} 
                         value={data?.value ?? 0} 
@@ -437,8 +496,12 @@ export default function KPIConsole() {
                     </div>
                   </div>
                 </div>
-                {/* Glow layer */}
+                
+                {/* Neon glow layer */}
                 <div className="instrument-glow" />
+                
+                {/* Focus indicator ring */}
+                {isActive && <div className="focus-ring" />}
               </div>
             );
           })}
@@ -446,214 +509,290 @@ export default function KPIConsole() {
       </div>
 
       <style>{`
-        .kpi-console {
-          width: 100%;
-          padding: 8px 0;
-        }
-
         /* ============================================
-           CONSOLE SURFACE — Unified Dark Glass
+           COMMAND CONSOLE — TOP LEVEL
            ============================================ */
-        .console-surface {
+        .kpi-command-console {
+          width: 100%;
+          padding: 0;
           position: relative;
-          display: flex;
-          justify-content: center;
-          padding: 12px 20px;
-          background: linear-gradient(
-            180deg,
-            rgba(16, 22, 30, 0.98) 0%,
-            rgba(12, 16, 24, 0.99) 100%
-          );
-          border-radius: 16px;
-          border: 1px solid rgba(255, 255, 255, 0.06);
-          box-shadow: 
-            inset 0 1px 0 rgba(255, 255, 255, 0.03),
-            inset 0 -2px 8px rgba(0, 0, 0, 0.3),
-            0 4px 20px rgba(0, 0, 0, 0.4);
         }
 
-        .console-vignette {
+        /* Container with premium glass morphism */
+        .console-container {
+          position: relative;
+          margin: 0 auto;
+          max-width: 1400px;
+          padding: 16px 24px 18px;
+          background: linear-gradient(
+            168deg,
+            rgba(12, 16, 24, 0.96) 0%,
+            rgba(8, 12, 18, 0.98) 50%,
+            rgba(6, 8, 12, 1) 100%
+          );
+          border-radius: 20px;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          box-shadow: 
+            inset 0 1px 0 rgba(255, 255, 255, 0.04),
+            inset 0 -1px 0 rgba(0, 0, 0, 0.4),
+            0 8px 32px rgba(0, 0, 0, 0.6),
+            0 2px 8px rgba(0, 0, 0, 0.3);
+          backdrop-filter: blur(12px);
+        }
+
+        /* Ambient backdrop with subtle radial gradient */
+        .console-backdrop {
           position: absolute;
           inset: 0;
-          border-radius: 16px;
-          background: radial-gradient(ellipse 80% 60% at 50% 50%, transparent 0%, rgba(0,0,0,0.3) 100%);
+          border-radius: 20px;
+          background: radial-gradient(
+            ellipse 70% 50% at 50% 40%,
+            rgba(34, 211, 238, 0.03) 0%,
+            transparent 70%
+          );
           pointer-events: none;
         }
 
         /* ============================================
-           INSTRUMENT ROW
+           INSTRUMENT GRID
            ============================================ */
-        .instrument-row {
+        .instrument-grid {
           display: flex;
-          gap: 14px;
+          gap: 16px;
           align-items: stretch;
           position: relative;
           z-index: 2;
         }
 
         /* ============================================
-           INDIVIDUAL INSTRUMENT
+           KPI INSTRUMENT — INDIVIDUAL CARD
            ============================================ */
-        .instrument {
+        .kpi-instrument {
           position: relative;
-          width: 138px;
+          flex: 1;
+          min-width: 0;
           cursor: pointer;
-          transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+          transition: 
+            transform 250ms cubic-bezier(0.22, 1, 0.36, 1),
+            opacity 200ms ease,
+            filter 200ms ease;
         }
 
-        .instrument.hover {
-          transform: translateY(-2px);
+        /* Hover state: subtle lift */
+        .kpi-instrument.hover {
+          transform: translateY(-3px);
         }
 
-        .instrument.active {
-          transform: translateY(-6px) scale(1.02);
+        /* Active state: enlarge + lift */
+        .kpi-instrument.active {
+          transform: translateY(-6px) scale(1.04);
           z-index: 10;
         }
 
-        .instrument.dimmed {
-          opacity: 0.55;
+        /* Dimmed state: fade others when one is active */
+        .kpi-instrument.dimmed {
+          opacity: 0.45;
+          filter: grayscale(0.3);
           transform: scale(0.98);
         }
 
-        /* Frame — Metallic border */
-        .instrument-frame {
+        /* ============================================
+           INSTRUMENT BORDER — METALLIC FRAME
+           ============================================ */
+        .instrument-border {
           position: relative;
-          border-radius: 14px;
-          padding: 1.5px;
+          border-radius: 16px;
+          padding: 2px;
           background: linear-gradient(
-            155deg,
-            rgba(255,255,255,0.25) 0%,
-            rgba(255,255,255,0.08) 30%,
-            rgba(0,0,0,0.1) 50%,
-            rgba(255,255,255,0.08) 70%,
-            rgba(255,255,255,0.2) 100%
+            160deg,
+            rgba(255, 255, 255, 0.18) 0%,
+            rgba(255, 255, 255, 0.05) 25%,
+            rgba(0, 0, 0, 0.15) 50%,
+            rgba(255, 255, 255, 0.05) 75%,
+            rgba(255, 255, 255, 0.15) 100%
+          );
+          transition: background 250ms ease;
+        }
+
+        .kpi-instrument.active .instrument-border {
+          background: linear-gradient(
+            160deg,
+            var(--kpi-accent) 0%,
+            rgba(255, 255, 255, 0.12) 25%,
+            rgba(0, 0, 0, 0.2) 50%,
+            rgba(255, 255, 255, 0.12) 75%,
+            var(--kpi-accent) 100%
           );
         }
 
-        .instrument.active .instrument-frame {
-          background: linear-gradient(
-            155deg,
-            var(--accent) 0%,
-            rgba(255,255,255,0.15) 30%,
-            transparent 50%,
-            rgba(255,255,255,0.15) 70%,
-            var(--accent) 100%
-          );
-        }
-
-        /* Well — Recessed inner surface */
+        /* ============================================
+           INSTRUMENT WELL — RECESSED SURFACE
+           ============================================ */
         .instrument-well {
+          position: relative;
           background: linear-gradient(
-            168deg,
-            rgba(22, 30, 42, 0.98) 0%,
-            rgba(14, 20, 30, 0.99) 50%,
-            rgba(10, 14, 22, 1) 100%
+            172deg,
+            rgba(18, 24, 34, 0.98) 0%,
+            rgba(12, 16, 24, 1) 40%,
+            rgba(8, 10, 16, 1) 100%
           );
-          border-radius: 12px;
-          padding: 12px 14px 10px;
+          border-radius: 14px;
+          padding: 14px 16px 12px;
           display: flex;
           flex-direction: column;
-          gap: 4px;
+          gap: 6px;
           box-shadow: 
-            inset 0 2px 6px rgba(0, 0, 0, 0.4),
-            inset 0 -1px 0 rgba(255, 255, 255, 0.02);
-          min-height: 130px;
-        }
-
-        /* Glow layer */
-        .instrument-glow {
-          position: absolute;
-          inset: -4px;
-          border-radius: 18px;
-          background: radial-gradient(ellipse at center, var(--accent), transparent 70%);
-          opacity: 0;
-          transition: opacity 0.3s ease;
-          pointer-events: none;
-          z-index: -1;
-        }
-
-        .instrument.hover .instrument-glow {
-          opacity: 0.12;
-        }
-
-        .instrument.active .instrument-glow {
-          opacity: 0.25;
+            inset 0 2px 8px rgba(0, 0, 0, 0.5),
+            inset 0 -1px 0 rgba(255, 255, 255, 0.03);
+          min-height: 140px;
         }
 
         /* ============================================
            INSTRUMENT CONTENT
            ============================================ */
-        .instrument-header {
+        .instrument-label-row {
           display: flex;
           align-items: center;
+          min-height: 12px;
         }
 
         .instrument-label {
           font-size: 9px;
-          font-weight: 700;
-          letter-spacing: 1.8px;
+          font-weight: 800;
+          letter-spacing: 2.2px;
           text-transform: uppercase;
-          color: rgba(160, 180, 200, 0.75);
-          transition: color 0.2s ease;
+          color: rgba(140, 160, 180, 0.7);
+          transition: color 200ms ease;
         }
 
-        .instrument.active .instrument-label {
-          color: rgba(200, 220, 240, 0.95);
+        .kpi-instrument.active .instrument-label {
+          color: rgba(200, 220, 240, 1);
         }
 
-        .instrument-value {
+        .instrument-value-row {
           display: flex;
           align-items: baseline;
-          gap: 3px;
+          gap: 4px;
+          margin-top: 2px;
         }
 
-        .value-main {
-          font-size: 22px;
-          font-weight: 800;
-          color: #fff;
-          letter-spacing: -0.5px;
-          text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-          transition: text-shadow 0.2s ease;
+        .value-display {
+          font-size: 26px;
+          font-weight: 900;
+          color: #ffffff;
+          letter-spacing: -0.8px;
+          line-height: 1;
+          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+          transition: all 250ms cubic-bezier(0.22, 1, 0.36, 1);
         }
 
-        .instrument.active .value-main {
-          color: var(--accent);
-          text-shadow: 0 0 16px var(--accent);
+        .kpi-instrument.active .value-display {
+          color: var(--kpi-accent);
+          text-shadow: 
+            0 0 20px var(--kpi-accent),
+            0 2px 4px rgba(0, 0, 0, 0.6);
         }
 
         .value-unit {
           font-size: 11px;
-          font-weight: 600;
-          color: rgba(140, 160, 180, 0.7);
+          font-weight: 700;
+          color: rgba(120, 140, 160, 0.65);
+          margin-left: 2px;
         }
 
-        .instrument-widget {
+        .instrument-visual {
           flex: 1;
           display: flex;
           align-items: center;
           justify-content: center;
-          min-height: 50px;
+          min-height: 58px;
+          margin-top: 4px;
         }
 
         .instrument-svg {
           width: 100%;
           height: auto;
-          max-height: 55px;
+          max-height: 60px;
+        }
+
+        /* ============================================
+           NEON GLOW LAYER
+           ============================================ */
+        .instrument-glow {
+          position: absolute;
+          inset: -6px;
+          border-radius: 22px;
+          background: radial-gradient(
+            ellipse at center,
+            var(--kpi-accent),
+            transparent 65%
+          );
+          opacity: 0;
+          transition: opacity 250ms cubic-bezier(0.22, 1, 0.36, 1);
+          pointer-events: none;
+          z-index: -1;
+        }
+
+        .kpi-instrument.hover .instrument-glow {
+          opacity: 0.15;
+        }
+
+        .kpi-instrument.active .instrument-glow {
+          opacity: 0.35;
+        }
+
+        /* ============================================
+           FOCUS RING — ACTIVE INDICATOR
+           ============================================ */
+        .focus-ring {
+          position: absolute;
+          inset: -3px;
+          border-radius: 19px;
+          border: 2px solid var(--kpi-accent);
+          opacity: 0;
+          animation: focusRingPulse 2s ease-in-out infinite;
+          pointer-events: none;
+        }
+
+        @keyframes focusRingPulse {
+          0%, 100% { 
+            opacity: 0.4;
+            transform: scale(1);
+          }
+          50% { 
+            opacity: 0.7;
+            transform: scale(1.01);
+          }
         }
 
         /* ============================================
            RESPONSIVE
            ============================================ */
-        @media (max-width: 1200px) {
-          .instrument {
-            width: 125px;
+        @media (max-width: 1400px) {
+          .instrument-grid {
+            gap: 14px;
           }
-          .value-main {
-            font-size: 20px;
+          .value-display {
+            font-size: 24px;
+          }
+        }
+
+        @media (max-width: 1200px) {
+          .instrument-grid {
+            gap: 12px;
+          }
+          .console-container {
+            padding: 14px 20px 16px;
+          }
+          .value-display {
+            font-size: 22px;
+          }
+          .instrument-label {
+            font-size: 8px;
+            letter-spacing: 1.8px;
           }
         }
       `}</style>
     </div>
   );
 }
-

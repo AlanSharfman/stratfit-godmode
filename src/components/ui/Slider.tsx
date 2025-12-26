@@ -34,7 +34,7 @@ const Slider = memo(function Slider({
   
   const percentage = ((value - min) / (max - min)) * 100;
   const isHighlighted = highlight || highlightColor !== null;
-  const activeColor = highlightColor || "#22d3ee";
+  const activeColor = highlightColor || "#22d3ee"; // Default cyan
 
   // Direct DOM update for instant visual feedback
   const updateVisuals = useCallback((pct: number) => {
@@ -123,7 +123,7 @@ const Slider = memo(function Slider({
         .slider-track {
           position: relative;
           width: 100%;
-          height: 20px;
+          height: 24px;
           display: flex;
           align-items: center;
           cursor: pointer;
@@ -134,47 +134,71 @@ const Slider = memo(function Slider({
           content: '';
           position: absolute;
           width: 100%;
-          height: 4px;
-          background: rgba(255, 255, 255, 0.08);
-          border-radius: 2px;
+          height: 6px;
+          background: linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.8));
+          border: 1px solid rgba(34, 211, 238, 0.15);
+          border-radius: 3px;
+          box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
         }
 
         .slider-fill {
           position: absolute;
-          height: 4px;
-          background: rgba(255, 255, 255, 0.3);
-          border-radius: 2px;
+          height: 6px;
+          background: linear-gradient(90deg, rgba(34, 211, 238, 0.7), rgba(34, 211, 238, 0.9));
+          border-radius: 3px;
           will-change: width;
           transition: none !important;
+          box-shadow: 
+            0 0 12px rgba(34, 211, 238, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
         }
 
         .slider-container.highlighted .slider-fill {
-          background: var(--slider-color);
-          box-shadow: 0 0 8px color-mix(in srgb, var(--slider-color) 50%, transparent);
+          background: linear-gradient(90deg, 
+            color-mix(in srgb, var(--slider-color) 80%, transparent),
+            var(--slider-color)
+          );
+          box-shadow: 
+            0 0 16px color-mix(in srgb, var(--slider-color) 60%, transparent),
+            0 0 6px color-mix(in srgb, var(--slider-color) 80%, transparent),
+            inset 0 1px 0 rgba(255, 255, 255, 0.3);
         }
 
         .slider-thumb {
           position: absolute;
           width: 14px;
           height: 14px;
-          background: rgba(255, 255, 255, 0.9);
+          background: linear-gradient(135deg, rgba(34, 211, 238, 0.95), rgba(34, 211, 238, 1));
+          border: 2px solid rgba(255, 255, 255, 0.3);
           border-radius: 50%;
           transform: translateX(-50%);
-          box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+          box-shadow: 
+            0 0 16px rgba(34, 211, 238, 0.5),
+            0 2px 8px rgba(0, 0, 0, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.4);
           will-change: left;
-          transition: none !important;
+          transition: all 150ms cubic-bezier(0.22, 1, 0.36, 1);
         }
 
         .slider-track:active .slider-thumb {
-          transform: translateX(-50%) scale(1.15);
-          background: #fff;
+          transform: translateX(-50%) scale(1.2);
+          box-shadow: 
+            0 0 24px rgba(34, 211, 238, 0.8),
+            0 2px 12px rgba(0, 0, 0, 0.5),
+            inset 0 1px 0 rgba(255, 255, 255, 0.5);
         }
 
         .slider-container.highlighted .slider-thumb {
-          background: var(--slider-color);
+          background: linear-gradient(135deg, 
+            color-mix(in srgb, var(--slider-color) 90%, white),
+            var(--slider-color)
+          );
+          border-color: color-mix(in srgb, var(--slider-color) 50%, white);
           box-shadow: 
-            0 0 12px color-mix(in srgb, var(--slider-color) 70%, transparent),
-            0 1px 4px rgba(0, 0, 0, 0.3);
+            0 0 20px color-mix(in srgb, var(--slider-color) 70%, transparent),
+            0 0 8px var(--slider-color),
+            0 2px 8px rgba(0, 0, 0, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.5);
         }
       `}</style>
     </div>
