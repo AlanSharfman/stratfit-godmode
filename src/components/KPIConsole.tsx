@@ -1,6 +1,6 @@
 // src/components/KPIConsole.tsx
 // STRATFIT — Executive Command Console
-// KPI Strip Step 1: Remove "widget feel" -> convert to instrument rail (no logic changes)
+// KPI Strip Step 2: Add instrument presence to ACTIVE KPI only (subtle lift + emphasis)
 
 import React, { useState, useCallback, memo } from "react";
 import { useShallow } from "zustand/react/shallow";
@@ -561,9 +561,9 @@ export default function KPIConsole() {
           /* No "card" borders, no rounded rectangles, no shadows */
           background: transparent;
 
-          /* Calm interaction only: color/underline, no motion */
+          /* Calm interaction only: color/underline, subtle lift on active */
           cursor: pointer;
-          transition: opacity 160ms ease;
+          transition: opacity 160ms ease, transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
         }
 
         /* Dividers between cells (rail-level separation, not boxes) */
@@ -575,13 +575,15 @@ export default function KPIConsole() {
           opacity: 0.50;
         }
 
-        /* No lift / scale (Step 1) */
+        /* No lift on hover (keep it calm) */
         .kpi-cell.hover {
           opacity: 0.92;
         }
 
+        /* Step 2: Subtle vertical lift on ACTIVE only */
         .kpi-cell.active {
           opacity: 1;
+          transform: translateY(-3px);
         }
 
         .cell-inner {
@@ -650,9 +652,15 @@ export default function KPIConsole() {
           min-height: 58px;
           margin-top: 2px;
           opacity: 0.90;
+          transition: opacity 180ms ease;
         }
 
-        /* De-emphasize visuals (Step 1) */
+        /* Step 2: Strengthen visual emphasis on active */
+        .kpi-cell.active .cell-visual {
+          opacity: 1;
+        }
+
+        /* De-emphasize visuals when dimmed */
         .kpi-cell.dimmed .cell-visual {
           opacity: 0.70;
         }
