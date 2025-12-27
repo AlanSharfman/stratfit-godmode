@@ -75,4 +75,6 @@ html, body {
 .kpi-glow {
   animation: kpi-glow 2.2s ease-in-out infinite;
 }
+html { scrollbar-gutter: stable; }
+body { overflow-x: hidden; }
 
