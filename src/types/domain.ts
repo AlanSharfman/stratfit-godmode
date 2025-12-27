@@ -1,6 +1,6 @@
 // src/types/domain.ts
 
-import type { ScenarioId, LeverId, MetricId } from "@/config/dashboardConfig";
+import type { ScenarioId, LeverId, MetricId } from "../dashboardConfig";
 
 /**
  * Core STRATFIT domain types

@@ -30,6 +30,7 @@ export interface MetricDefinition {
   id: MetricId;
   label: string;
   unit?: string;
+  description?: string;
 }
 
 export interface LeverDefinition {
