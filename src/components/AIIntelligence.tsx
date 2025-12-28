@@ -79,67 +79,64 @@ function useTypewriter(
   const [hasStarted, setHasStarted] = useState(false);
 
   useEffect(() => {
-    if (!enabled || !canStart) {
-      if (!enabled) {
-        setDisplayText("");
-        setIsComplete(false);
-        setHasStarted(false);
-      }
+    // Hard reset when disabled
+    if (!enabled) {
+      setDisplayText("");
+      setIsComplete(false);
+      setHasStarted(false);
       return;
     }
+
+    // Gate start (used for sequential OBSERVATION -> RISKS -> ACTIONS)
+    if (!canStart) return;
 
     setDisplayText("");
     setIsComplete(false);
     setHasStarted(true);
 
     let index = 0;
-    let timeoutId: ReturnType<typeof setTimeout>;
+    let rafId = 0;
+    let nextAt = 0;
 
-    const typeNextChar = () => {
-      if (index >= text.length) {
-        setIsComplete(true);
-        return;
-      }
+    const delayFor = (ch: string, next: string | undefined) => {
+      // Keep punctuation pauses subtle (big pauses feel like "jitter")
+      if (ch === "." || ch === "!" || ch === "?") return baseSpeed * 3;
+      if (ch === "," || ch === ";" || ch === ":") return baseSpeed * 2;
+      if (ch === "\n") return baseSpeed * 2;
 
-      const char = text[index];
-      const nextChar = text[index + 1];
+      // Small natural pause before a new sentence start (space + capital),
+      // but avoid dramatic stalls.
+      if (ch === " " && next && /[A-Z]/.test(next)) return baseSpeed * 1.5;
 
-      // Type 1-3 characters at once for rhythm variation
-      let charsToType = 1;
-      if (Math.random() > 0.7 && index < text.length - 2) {
-        charsToType = Math.random() > 0.5 ? 2 : 3;
-      }
-
-      index += charsToType;
-      index = Math.min(index, text.length);
-      setDisplayText(text.slice(0, index));
-
-      // Calculate delay based on character type
-      let delay = baseSpeed;
-
-      // Longer pause after punctuation (typewriter rhythm)
-      if (char === "." || char === "!" || char === "?") {
-        delay = baseSpeed * 8; // Sentence pause
-      } else if (char === "," || char === ";" || char === ":") {
-        delay = baseSpeed * 4; // Clause pause
-      } else if (char === " " && nextChar && /[A-Z]/.test(nextChar)) {
-        delay = baseSpeed * 3; // Before capital letter
-      } else {
-        // Add slight random variation for natural rhythm
-        delay = baseSpeed + Math.random() * 12 - 6;
-      }
-
-      if (index < text.length) {
-        timeoutId = setTimeout(typeNextChar, delay);
-      } else {
-        setIsComplete(true);
-      }
+      return baseSpeed;
     };
 
-    // Start typing
-    timeoutId = setTimeout(typeNextChar, 100);
+    const step = (t: number) => {
+      if (!nextAt) nextAt = t; // start immediately (no initial delay)
 
-    return () => clearTimeout(timeoutId);
+      if (t >= nextAt) {
+        if (index >= text.length) {
+          setIsComplete(true);
+          return;
+        }
+
+        const ch = text[index];
+        const next = text[index + 1];
+
+        index += 1;
+        setDisplayText(text.slice(0, index));
+
+        nextAt = t + delayFor(ch, next);
+      }
+
+      rafId = requestAnimationFrame(step);
+    };
+
+    rafId = requestAnimationFrame(step);
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+    };
   }, [text, baseSpeed, enabled, canStart]);
 
   return { displayText, isComplete, hasStarted };
@@ -466,27 +463,6 @@ function buildInsightsFromDelta(delta: TerrainDelta | null): InsightsPayload {
 }
 
 // ============================================================================
-// STRATEGIC QUESTION STAMP - Guarantees uniqueness vs baseline scenario text
-// ============================================================================
-
-function formatDeltaStamp(delta: TerrainDelta | null, maxItems: number = 3) {
-  if (!delta || !delta.kpiDelta) return "";
-
-  const entries = Object.entries(delta.kpiDelta)
-    .filter(([, v]) => typeof v?.from === "number" && typeof v?.to === "number")
-    .sort((a, b) => Math.abs(b[1].delta) - Math.abs(a[1].delta))
-    .slice(0, maxItems);
-
-  if (entries.length === 0) return "";
-
-  const parts = entries.map(([k, v]) => {
-    const sign = v.delta > 0 ? "+" : "";
-    return `${k}: ${v.from}→${v.to} (${sign}${v.delta})`;
-  });
-
-  return `Delta snapshot: ${parts.join(" • ")}`;
-}
-// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
@@ -629,7 +605,6 @@ export default function AIIntelligence({
     }),
     [insights]
   );
-
   // Use custom response if available, then insights if present, otherwise default
   const aiContent = useMemo(() => {
     if (customResponse) {
@@ -675,28 +650,9 @@ export default function AIIntelligence({
       setIsProcessingQuestion(true);
       setShowQuestions(false); // Close questions panel
 
-      // Compose a deterministic “question stamp” to guarantee uniqueness
-      const focus = constraint?.trim() ? constraint.trim() : "Selected strategic question";
-      const primaryKpi =
-        Array.isArray(kpis) && kpis.length > 0 ? `Primary KPI index: ${kpis[0]}` : "";
-      const deltaStamp = formatDeltaStamp(terrainDelta, 3);
-
-      const headerLines = [
-        `Strategic Question Focus: ${focus}.`,
-        primaryKpi ? primaryKpi + "." : "",
-        deltaStamp ? deltaStamp : "",
-      ].filter(Boolean);
-
-      const stamp = headerLines.length ? `${headerLines.join(" ")} ` : "";
-
       // Brief analyzing state
       setTimeout(() => {
-        setCustomResponse({
-          observation: `${stamp}${response.observation}`,
-          risk: `${stamp}${response.risk}`,
-          action: `${stamp}${response.action}`,
-        });
-
+        setCustomResponse(response);
         setContentKey((k) => k + 1);
         setIsProcessingQuestion(false);
 
@@ -708,7 +664,7 @@ export default function AIIntelligence({
         }
       }, 600);
     },
-    [setHoveredKpiIndex, terrainDelta]
+    [setHoveredKpiIndex]
   );
 
   const toggleQuestions = () => {
