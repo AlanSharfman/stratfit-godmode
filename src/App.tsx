@@ -311,6 +311,29 @@ export default function App() {
       {/* HEADER */}
       <header className="header">
         <div className="header-left">
+          <button
+            className="take-tour-btn"
+            onClick={() => setShowOnboarding(true)}
+            disabled={showOnboarding}
+            aria-label="Take the Tour"
+            title={showOnboarding ? "Tour is running" : "Take the Tour"}
+          >
+            <svg
+              className="take-tour-icon"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 2l1.2 3.7L17 7l-3.8 1.3L12 12l-1.2-3.7L7 7l3.8-1.3L12 2z" />
+              <path d="M19 10l.7 2.2L22 13l-2.3.8L19 16l-.7-2.2L16 13l2.3-.8L19 10z" />
+            </svg>
+            <span>Take the Tour</span>
+          </button>
           <div className="logo">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#22d3ee" />
@@ -420,7 +443,39 @@ export default function App() {
         .header-left {
           display: flex;
           align-items: center;
-          gap: 24px;
+          gap: 18px;
+          min-width: 0;
+        }
+
+        .take-tour-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          height: 38px;
+          padding: 0 18px;
+          border-radius: 9999px;
+          border: none;
+          cursor: pointer;
+          flex-shrink: 0;
+          color: rgba(10, 13, 16, 0.92);
+          font-size: 18px;
+          font-weight: 600;
+          letter-spacing: 0.01em;
+          background: linear-gradient(180deg, #7ff6ff 0%, #4fe8ff 100%);
+          box-shadow:
+            0 10px 30px rgba(34, 211, 238, 0.18),
+            0 0 0 1px rgba(34, 211, 238, 0.25),
+            inset 0 1px 0 rgba(255, 255, 255, 0.35);
+        }
+
+        .take-tour-btn:disabled {
+          opacity: 0.55;
+          cursor: default;
+        }
+
+        .take-tour-icon {
+          color: rgba(10, 13, 16, 0.92);
+          flex-shrink: 0;
         }
 
         .logo {
