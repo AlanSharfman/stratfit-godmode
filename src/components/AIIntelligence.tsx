@@ -274,7 +274,6 @@ function AISection({
     </div>
   );
 }
-
 // ============================================================================
 // AI CONTENT BASED ON VIEW MODE
 // ============================================================================
@@ -509,6 +508,9 @@ export default function AIIntelligence({
 
   // Terrain delta tracking
   const previousEngineResultsRef = useRef<any>(null);
+  const previousKpisRef = useRef<Record<string, number> | null>(null);
+  const previousKpisSigRef = useRef<string>("");
+
   const [terrainDelta, setTerrainDelta] = useState<TerrainDelta | null>(null);
   const [insights, setInsights] = useState<InsightsPayload>({
     observation: [],
@@ -534,6 +536,13 @@ export default function AIIntelligence({
     }
   }, [isAnalyzing]);
 
+  // Keep internal refs sane when scenario changes
+  useEffect(() => {
+    previousEngineResultsRef.current = null;
+    previousKpisRef.current = null;
+    previousKpisSigRef.current = "";
+  }, [activeScenarioId]);
+
   // NEW: Prefer canonical upstream scenarioDelta when provided
   useEffect(() => {
     if (!scenarioDelta) return;
@@ -550,6 +559,29 @@ export default function AIIntelligence({
     });
   }, [scenarioDelta]);
 
+  // Current KPI snapshot (do NOT memo on engineResults identity; lever moves already re-render via activeLeverId)
+  const currentKpis: Record<string, unknown> | null =
+    activeScenarioId && engineResults?.[activeScenarioId]?.kpis
+      ? engineResults[activeScenarioId].kpis
+      : null;
+
+  // Build a stable signature that changes when KPI values change (even if engineResults is mutated in-place)
+  const currentKpisSignature = useMemo(() => {
+    if (!activeScenarioId || !currentKpis) return "";
+
+    const keys = Object.keys(currentKpis).sort();
+    // Fixed precision for signature stability; numeric coercion only
+    return keys
+      .map((k) => {
+        const raw = (currentKpis as any)[k];
+        const n = typeof raw === "number" ? raw : Number(raw);
+        if (!Number.isFinite(n)) return `${k}:NaN`;
+        return `${k}:${n.toFixed(6)}`;
+      })
+      .join("|");
+    // IMPORTANT: include activeLeverId to recompute while dragging, even if store mutates in place
+  }, [activeScenarioId, activeLeverId, currentKpis]);
+
   // Terrain delta tracking effect (fallback only; bypass when scenarioDelta is provided)
   useEffect(() => {
     if (scenarioDelta) {
@@ -558,26 +590,41 @@ export default function AIIntelligence({
       return;
     }
 
-    if (!engineResults || !activeScenarioId) return;
+    if (!activeScenarioId) return;
+    if (!currentKpis) return;
 
-    const current = engineResults[activeScenarioId];
-    const prev = previousEngineResultsRef.current?.[activeScenarioId];
+    // If signature hasn't changed, nothing to do.
+    if (currentKpisSignature && currentKpisSignature === previousKpisSigRef.current) {
+      return;
+    }
 
-    if (!current || !prev) {
+    const prevKpis = previousKpisRef.current;
+
+    // First snapshot — just store and wait for next change.
+    if (!prevKpis) {
+      const snapshot: Record<string, number> = {};
+      for (const k of Object.keys(currentKpis)) {
+        const raw = (currentKpis as any)[k];
+        const n = typeof raw === "number" ? raw : Number(raw);
+        if (Number.isFinite(n)) snapshot[k] = n;
+      }
+      previousKpisRef.current = snapshot;
+      previousKpisSigRef.current = currentKpisSignature;
       previousEngineResultsRef.current = engineResults;
       return;
     }
 
     const kpiDelta: TerrainDelta["kpiDelta"] = {};
 
-    Object.keys(current.kpis || {}).forEach((key) => {
-      const from = prev.kpis?.[key];
-      const to = current.kpis?.[key];
+    for (const key of Object.keys(currentKpis)) {
+      const raw = (currentKpis as any)[key];
+      const to = typeof raw === "number" ? raw : Number(raw);
+      const from = prevKpis[key];
 
-      if (typeof from === "number" && typeof to === "number" && from !== to) {
+      if (typeof from === "number" && Number.isFinite(to) && from !== to) {
         kpiDelta[key] = { from, to, delta: to - from };
       }
-    });
+    }
 
     if (Object.keys(kpiDelta).length > 0) {
       setTerrainDelta({
@@ -587,8 +634,24 @@ export default function AIIntelligence({
       });
     }
 
+    // Update snapshots
+    const nextSnapshot: Record<string, number> = {};
+    for (const k of Object.keys(currentKpis)) {
+      const raw = (currentKpis as any)[k];
+      const n = typeof raw === "number" ? raw : Number(raw);
+      if (Number.isFinite(n)) nextSnapshot[k] = n;
+    }
+    previousKpisRef.current = nextSnapshot;
+    previousKpisSigRef.current = currentKpisSignature;
     previousEngineResultsRef.current = engineResults;
-  }, [engineResults, activeScenarioId, scenarioDelta]);
+  }, [
+    scenarioDelta,
+    activeScenarioId,
+    activeLeverId,
+    currentKpisSignature,
+    currentKpis,
+    engineResults,
+  ]);
 
   // Build insights from terrain delta
   useEffect(() => {
@@ -675,7 +738,6 @@ export default function AIIntelligence({
   const toggleQuestions = () => {
     setShowQuestions(!showQuestions);
   };
-
   return (
     <div className={`ai-panel ${viewMode}`}>
       <div className="panel-edge" />
