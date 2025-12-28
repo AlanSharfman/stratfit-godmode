@@ -128,6 +128,10 @@ export default function CenterViewPanel() {
   const scenario = useScenario();
   const dataPoints = useDataPoints();
   const hoveredKpiIndex = useScenarioStore((s) => s.hoveredKpiIndex);
+  const engineResults = useScenarioStore((s) => s.engineResults);
+  const activeScenarioId = useScenarioStore((s) => s.activeScenarioId);
+
+  const downsideResult = engineResults?.["downside"];
 
   // briefing controls
   const briefingKey = useMemo(() => viewToBriefingKey(view), [view]);
@@ -206,6 +210,7 @@ export default function CenterViewPanel() {
                 scenario={scenario} 
                 dataPoints={dataPoints}
                 activeKpiIndex={hoveredKpiIndex}
+                ghostDownside={downsideResult?.terrainPoints}
               />
             </div>
           </div>
