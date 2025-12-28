@@ -530,6 +530,34 @@ export default function AIIntelligence({
     }))
   );
 
+  // DEV-ONLY: CASH KPI TRUTH CHECK
+  if (import.meta.env.DEV) {
+    const cur = engineResults?.[activeScenarioId]?.kpis ?? {};
+    // eslint-disable-next-line no-console
+    console.log("[AI PANEL] scenario:", activeScenarioId);
+    // eslint-disable-next-line no-console
+    console.log(
+      "[AI PANEL] cash position raw:",
+      cur["cash position"],
+      "type:",
+      typeof cur["cash position"]
+    );
+    // eslint-disable-next-line no-console
+    console.log(
+      "[AI PANEL] cashPosition raw:",
+      cur["cashPosition"],
+      "type:",
+      typeof cur["cashPosition"]
+    );
+    // eslint-disable-next-line no-console
+    console.log(
+      "[AI PANEL] cashBalance raw:",
+      cur["cashBalance"],
+      "type:",
+      typeof cur["cashBalance"]
+    );
+  }
+
   useEffect(() => {
     if (!import.meta.env.DEV) return;
     if (!engineResults || !activeScenarioId) return;
