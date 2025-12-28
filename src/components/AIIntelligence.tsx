@@ -31,6 +31,28 @@ type InsightsPayload = {
   actions: InsightItem[];
 };
 
+// ============================================================================
+// KPI ALIASES + THRESHOLDS
+// ============================================================================
+
+const KPI_ALIASES: Record<string, string[]> = {
+  runway: ["runway", "runwayMonths", "runway_months"],
+  burnRate: ["burnRate", "burn_rate", "burn", "burnMonthly", "burn_per_month"],
+  cashPosition: ["cashPosition", "cash", "cash_balance", "cashBalance"],
+  riskScore: ["riskScore", "riskIndex", "risk", "risk_score"],
+  arr: ["arr", "ARR", "annualRecurringRevenue"],
+  grossMargin: ["grossMargin", "gm", "gross_margin"],
+  enterpriseValue: ["enterpriseValue", "ev", "enterprise_value"],
+};
+
+const INSIGHT_THRESHOLDS = {
+  runwayCritical: 6,        // months
+  runwayMaterialMove: 1,    // months delta to mention
+  burnMaterialMovePct: 0.05, // 5% change triggers mention
+  riskHigh: 70,             // score
+  riskMaterialMove: 5,      // points delta to mention
+};
+
 interface AIIntelligenceProps {
   commentary: string[];
   risks: string[];
@@ -319,6 +341,15 @@ function getAIContent(viewMode: ViewMode, scenario: ScenarioId) {
 // RULES ENGINE - Build insights from terrain deltas
 // ============================================================================
 
+function getDelta(delta: TerrainDelta | null, canonicalKey: keyof typeof KPI_ALIASES) {
+  const aliases = KPI_ALIASES[canonicalKey] ?? [canonicalKey as string];
+  for (const k of aliases) {
+    const v = delta?.kpiDelta?.[k];
+    if (v !== undefined && v !== null) return v;
+  }
+  return null;
+}
+
 function buildInsightsFromDelta(delta: TerrainDelta | null): InsightsPayload {
   if (!delta) {
     return { observation: [], risks: [], actions: [] };
@@ -328,11 +359,9 @@ function buildInsightsFromDelta(delta: TerrainDelta | null): InsightsPayload {
   const risks: InsightItem[] = [];
   const acts: InsightItem[] = [];
 
-  const get = (k: string) => delta.kpiDelta?.[k];
-
-  // ---- Core Observations ----
-  const runway = get("runway");
-  if (runway) {
+  // ---- Runway (material move gating) ----
+  const runway = getDelta(delta, "runway");
+  if (runway && Math.abs(runway.delta) >= INSIGHT_THRESHOLDS.runwayMaterialMove) {
     obs.push({
       id: "runway-change",
       title: `Runway ${runway.delta < 0 ? "compressed" : "extended"}`,
@@ -340,11 +369,11 @@ function buildInsightsFromDelta(delta: TerrainDelta | null): InsightsPayload {
       severity: runway.delta < 0 ? "med" : "low",
     });
 
-    if (runway.to <= 6) {
+    if (runway.to <= INSIGHT_THRESHOLDS.runwayCritical) {
       risks.push({
         id: "runway-critical",
         title: "Runway approaching critical threshold",
-        detail: `Runway is now ${runway.to}. Liquidity risk rises sharply below ~6 months.`,
+        detail: `Runway is now ${runway.to}. Liquidity risk rises sharply below ~${INSIGHT_THRESHOLDS.runwayCritical} months.`,
         severity: "high",
       });
       acts.push({
@@ -357,48 +386,57 @@ function buildInsightsFromDelta(delta: TerrainDelta | null): InsightsPayload {
     }
   }
 
-  const burn = get("burnRate") || get("burn") || get("burn_rate");
-  if (burn) {
-    obs.push({
-      id: "burn-change",
-      title: `Burn ${burn.delta > 0 ? "increased" : "decreased"}`,
-      detail: `Burn moved from ${burn.from} to ${burn.to} (${burn.delta > 0 ? "+" : ""}${burn.delta}).`,
-      severity: burn.delta > 0 ? "med" : "low",
-    });
+  // ---- Burn Rate (percentage-based gating) ----
+  const burn = getDelta(delta, "burnRate");
+  if (burn && burn.from) {
+    const pct = (burn.to - burn.from) / Math.max(Math.abs(burn.from), 1);
+    if (Math.abs(pct) >= INSIGHT_THRESHOLDS.burnMaterialMovePct) {
+      obs.push({
+        id: "burn-change",
+        title: `Burn ${burn.delta > 0 ? "increased" : "decreased"}`,
+        detail: `Burn moved from ${burn.from} to ${burn.to} (${burn.delta > 0 ? "+" : ""}${burn.delta}, ${(pct * 100).toFixed(1)}%).`,
+        severity: burn.delta > 0 ? "med" : "low",
+      });
 
-    if (burn.delta > 0) {
-      risks.push({
-        id: "burn-pressure",
-        title: "Burn pressure rising",
-        detail:
-          "Higher burn reduces margin for execution error. If sustained, this will compress runway and constrain strategic flexibility.",
-        severity: "med",
-      });
-      acts.push({
-        id: "burn-mitigation",
-        title: "Identify the burn driver",
-        detail:
-          "Segment burn into: headcount, hosting/tools, marketing, and overhead. Target the fastest reversible driver first.",
-        severity: "med",
-      });
+      if (burn.delta > 0) {
+        risks.push({
+          id: "burn-pressure",
+          title: "Burn pressure rising",
+          detail:
+            "Higher burn reduces margin for execution error. If sustained, this will compress runway and constrain strategic flexibility.",
+          severity: "med",
+        });
+        acts.push({
+          id: "burn-mitigation",
+          title: "Identify the burn driver",
+          detail:
+            "Segment burn into: headcount, hosting/tools, marketing, and overhead. Target the fastest reversible driver first.",
+          severity: "med",
+        });
+      }
     }
   }
 
-  const risk = get("riskScore") || get("riskIndex") || get("risk");
-  if (risk && risk.delta > 0) {
+  // ---- Risk Score (material move gating) ----
+  const risk = getDelta(delta, "riskScore");
+  if (risk && Math.abs(risk.delta) >= INSIGHT_THRESHOLDS.riskMaterialMove) {
+    const isHigh = risk.to >= INSIGHT_THRESHOLDS.riskHigh;
     risks.push({
       id: "risk-up",
-      title: "Risk score deteriorated",
-      detail: `Risk moved from ${risk.from} to ${risk.to} (+${risk.delta}).`,
-      severity: risk.to >= 70 ? "high" : "med",
+      title: risk.delta > 0 ? "Risk score deteriorated" : "Risk score improved",
+      detail: `Risk moved from ${risk.from} to ${risk.to} (${risk.delta > 0 ? "+" : ""}${risk.delta}).`,
+      severity: isHigh ? "high" : "med",
     });
-    acts.push({
-      id: "risk-plan",
-      title: "Reduce top 1–2 risk drivers",
-      detail:
-        "Pick the two highest contributors (market, execution, concentration, cash). Define mitigation owners + next review date.",
-      severity: "med",
-    });
+
+    if (risk.delta > 0) {
+      acts.push({
+        id: "risk-plan",
+        title: "Reduce top 1–2 risk drivers",
+        detail:
+          "Pick the two highest contributors (market, execution, concentration, cash). Define mitigation owners + next review date.",
+        severity: isHigh ? "high" : "med",
+      });
+    }
   }
 
   // Fallback if nothing matched (still deterministic)
