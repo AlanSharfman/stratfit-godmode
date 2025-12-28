@@ -153,6 +153,7 @@ function AISection({
   contentKey,
   speed,
   onComplete,
+  onTypingChange,
   isRiskSection = false,
 }: {
   title: string;
@@ -162,6 +163,7 @@ function AISection({
   contentKey: number;
   speed: number;
   onComplete?: () => void;
+  onTypingChange?: (isTyping: boolean) => void;
   isRiskSection?: boolean;
 }) {
   const { displayText, isComplete, hasStarted } = useTypewriter(
@@ -170,6 +172,11 @@ function AISection({
     !isAnalyzing,
     canStart
   );
+
+  const isTypingNow = !isAnalyzing && hasStarted && !isComplete;
+  useEffect(() => {
+    onTypingChange?.(isTypingNow);
+  }, [isTypingNow, onTypingChange]);
 
   useEffect(() => {
     if (isComplete && onComplete) onComplete();
@@ -492,6 +499,21 @@ export default function AIIntelligence({
   const [risksComplete, setRisksComplete] = useState(false);
   const [actionsComplete, setActionsComplete] = useState(false);
 
+  // Explicit typing telemetry from each section (more reliable than completion flags)
+  const typingRef = useRef({ obs: false, risks: false, actions: false });
+  const [isTyping, setIsTyping] = useState(false);
+  const setTypingFlag = useCallback(
+    (key: "obs" | "risks" | "actions") => (v: boolean) => {
+      typingRef.current[key] = v;
+      const any =
+        typingRef.current.obs ||
+        typingRef.current.risks ||
+        typingRef.current.actions;
+      setIsTyping(any);
+    },
+    []
+  );
+
   const {
     viewMode,
     activeLeverId,
@@ -519,9 +541,7 @@ export default function AIIntelligence({
   // isAnalyzing = lever moving or processing question
   const isAnalyzing = activeLeverId !== null || isProcessingQuestion;
 
-  // Dots stay active until ALL 3 sections finish typing (and also while analyzing).
-  const isTyping =
-    !isAnalyzing && (!observationComplete || !risksComplete || !actionsComplete);
+  // Dots stay active while analyzing OR while any section is actively typing.
   const signalActive = isAnalyzing || isTyping;
 
   useEffect(() => {
@@ -530,6 +550,8 @@ export default function AIIntelligence({
     setObservationComplete(false);
     setRisksComplete(false);
     setActionsComplete(false);
+    typingRef.current = { obs: false, risks: false, actions: false };
+    setIsTyping(false);
   }, [scenario, viewMode]);
 
   useEffect(() => {
@@ -537,6 +559,8 @@ export default function AIIntelligence({
       setObservationComplete(false);
       setRisksComplete(false);
       setActionsComplete(false);
+      typingRef.current = { obs: false, risks: false, actions: false };
+      setIsTyping(false);
     }
   }, [isAnalyzing]);
 
@@ -747,6 +771,7 @@ export default function AIIntelligence({
           contentKey={contentKey}
           speed={typingSpeed}
           onComplete={handleObservationComplete}
+          onTypingChange={setTypingFlag("obs")}
         />
 
         <AISection
@@ -758,6 +783,7 @@ export default function AIIntelligence({
           speed={typingSpeed}
           onComplete={handleRisksComplete}
           isRiskSection={true}
+          onTypingChange={setTypingFlag("risks")}
         />
 
         <AISection
@@ -768,6 +794,7 @@ export default function AIIntelligence({
           contentKey={contentKey}
           speed={typingSpeed}
           onComplete={handleActionsComplete}
+          onTypingChange={setTypingFlag("actions")}
         />
       </div>
 
