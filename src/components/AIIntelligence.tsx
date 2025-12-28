@@ -532,6 +532,8 @@ export default function AIIntelligence({
   const [isProcessingQuestion, setIsProcessingQuestion] = useState(false);
   const [activeStrategicId, setActiveStrategicId] = useState<string | null>(null);
   const [strategicContentKey, setStrategicContentKey] = useState(0);
+  const [confidenceLevel, setConfidenceLevel] =
+    useState<"low" | "medium" | "high" | null>(null);
   const [activeStrategicQuestion, setActiveStrategicQuestion] = useState<{
     id: string;
     text: string;
@@ -782,6 +784,12 @@ export default function AIIntelligence({
       setActiveStrategicId(q.id);
       setActiveStrategicQuestion(q);
       setStrategicContentKey((k) => k + 1);
+
+      const deltaMagnitude = Math.abs(getDelta(terrainDelta, "enterpriseValue")?.delta ?? 0);
+      if (deltaMagnitude < 2) setConfidenceLevel("low");
+      else if (deltaMagnitude < 8) setConfidenceLevel("medium");
+      else setConfidenceLevel("high");
+
       // Immediately enter "processing" so signal dots + gating behave correctly
       setIsProcessingQuestion(true);
       setShowQuestions(false);
@@ -912,6 +920,16 @@ export default function AIIntelligence({
         {activeStrategicQuestion && activeScenario && (
           <div className="scenario-context">
             Scenario context: <strong>{activeScenario.label}</strong>
+          </div>
+        )}
+        {activeStrategicQuestion && confidenceLevel && (
+          <div className={`confidence-band ${confidenceLevel}`}>
+            <span className="confidence-label">Confidence</span>
+            <span className="confidence-value">
+              {confidenceLevel === "low" && "Low conviction"}
+              {confidenceLevel === "medium" && "Moderate conviction"}
+              {confidenceLevel === "high" && "High conviction"}
+            </span>
           </div>
         )}
         {activeStrategicQuestion && !!deltaAnchorText && (
@@ -1183,6 +1201,35 @@ export default function AIIntelligence({
         .scenario-context strong {
           color: rgba(255,255,255,0.95);
           font-weight: 600;
+        }
+
+        .confidence-band {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin: 8px 0 12px;
+          padding: 6px 10px;
+          border-radius: 8px;
+          font-size: 12px;
+        }
+
+        .confidence-label {
+          opacity: 0.6;
+        }
+
+        .confidence-band.low {
+          background: rgba(255, 200, 0, 0.12);
+          color: rgba(255, 200, 0, 0.9);
+        }
+
+        .confidence-band.medium {
+          background: rgba(0, 180, 255, 0.12);
+          color: rgba(0, 180, 255, 0.9);
+        }
+
+        .confidence-band.high {
+          background: rgba(0, 255, 160, 0.14);
+          color: rgba(0, 255, 160, 1);
         }
 
         .delta-anchor {
