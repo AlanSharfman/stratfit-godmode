@@ -9,6 +9,15 @@ import { useShallow } from "zustand/react/shallow";
 import { useScenarioStore, ViewMode } from "@/state/scenarioStore";
 import StrategicQuestions from "./StrategicQuestions";
 
+type TerrainDelta = {
+  scenarioId: string;
+  kpiDelta: Record<
+    string,
+    { from: number; to: number; delta: number }
+  >;
+  timestamp: number;
+};
+
 interface AIIntelligenceProps {
   commentary: string[];
   risks: string[];
@@ -317,13 +326,19 @@ export default function AIIntelligence({
   const [risksComplete, setRisksComplete] = useState(false);
 
   // Consolidated store selectors to prevent rerender cascades
-  const { viewMode, activeLeverId, setHoveredKpiIndex } = useScenarioStore(
+  const { viewMode, activeLeverId, setHoveredKpiIndex, engineResults, activeScenarioId } = useScenarioStore(
     useShallow((s) => ({
       viewMode: s.viewMode,
       activeLeverId: s.activeLeverId,
       setHoveredKpiIndex: s.setHoveredKpiIndex,
+      engineResults: s.engineResults,
+      activeScenarioId: s.activeScenarioId,
     }))
   );
+
+  // Terrain delta tracking
+  const previousEngineResultsRef = useRef<any>(null);
+  const [terrainDelta, setTerrainDelta] = useState<TerrainDelta | null>(null);
 
   const isAnalyzing = activeLeverId !== null || isProcessingQuestion;
 
@@ -342,6 +357,40 @@ export default function AIIntelligence({
       setRisksComplete(false);
     }
   }, [isAnalyzing]);
+
+  // Terrain delta tracking effect
+  useEffect(() => {
+    if (!engineResults || !activeScenarioId) return;
+
+    const current = engineResults[activeScenarioId];
+    const prev = previousEngineResultsRef.current?.[activeScenarioId];
+
+    if (!current || !prev) {
+      previousEngineResultsRef.current = engineResults;
+      return;
+    }
+
+    const kpiDelta: TerrainDelta["kpiDelta"] = {};
+
+    Object.keys(current.kpis || {}).forEach((key) => {
+      const from = prev.kpis?.[key];
+      const to = current.kpis?.[key];
+
+      if (typeof from === "number" && typeof to === "number" && from !== to) {
+        kpiDelta[key] = { from, to, delta: to - from };
+      }
+    });
+
+    if (Object.keys(kpiDelta).length > 0) {
+      setTerrainDelta({
+        scenarioId: activeScenarioId,
+        kpiDelta,
+        timestamp: Date.now(),
+      });
+    }
+
+    previousEngineResultsRef.current = engineResults;
+  }, [engineResults, activeScenarioId]);
 
   const defaultContent = useMemo(
     () => getAIContent(viewMode, scenario),
