@@ -515,6 +515,7 @@ export default function AIIntelligence({
   const [contentKey, setContentKey] = useState(0);
   const [isProcessingQuestion, setIsProcessingQuestion] = useState(false);
   const [activeStrategicId, setActiveStrategicId] = useState<string | null>(null);
+  const [strategicContentKey, setStrategicContentKey] = useState(0);
   const [customResponse, setCustomResponse] = useState<{
     observation: string;
     risk: string;
@@ -759,6 +760,7 @@ export default function AIIntelligence({
       constraint: string
     ) => {
       setActiveStrategicId(q.id);
+      setStrategicContentKey((k) => k + 1);
       // Immediately enter "processing" so signal dots + gating behave correctly
       setIsProcessingQuestion(true);
       setShowQuestions(false);
@@ -811,7 +813,9 @@ export default function AIIntelligence({
 
   const toggleQuestions = () => setShowQuestions((v) => !v);
 
-  const strategicKeyStr = activeStrategicId ? `${contentKey}-${activeStrategicId}` : `${contentKey}`;
+  const strategicKeyStr = activeStrategicId
+    ? `strategic-${strategicContentKey}-${activeStrategicId}`
+    : `${contentKey}`;
 
   return (
     <div className={`ai-panel ${viewMode}`}>
