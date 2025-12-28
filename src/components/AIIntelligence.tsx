@@ -160,7 +160,7 @@ function AISection({
   content: string;
   isAnalyzing: boolean;
   canStart: boolean;
-  contentKey: number;
+  contentKey: string | number;
   speed: number;
   onComplete?: () => void;
   onTypingChange?: (isTyping: boolean) => void;
@@ -512,6 +512,7 @@ export default function AIIntelligence({
 }: AIIntelligenceProps) {
   const [contentKey, setContentKey] = useState(0);
   const [isProcessingQuestion, setIsProcessingQuestion] = useState(false);
+  const [activeStrategicId, setActiveStrategicId] = useState<string | null>(null);
   const [customResponse, setCustomResponse] = useState<{
     observation: string;
     risk: string;
@@ -748,18 +749,28 @@ export default function AIIntelligence({
   // Strategic Question click: IMMEDIATE (no 600ms delay), but still closes panel cleanly.
   const handlePromptClick = useCallback(
     (
+      q: { id: string; text: string },
       response: { observation: string; risk: string; action: string },
       kpis: number[],
       constraint: string
     ) => {
+      setActiveStrategicId(q.id);
       // Immediately enter "processing" so signal dots + gating behave correctly
       setIsProcessingQuestion(true);
       setShowQuestions(false);
 
+      // reset gating so dots + typing restart every time
+      setObservationComplete(false);
+      setRisksComplete(false);
+      setActionsComplete(false);
+      typingRef.current = { obs: false, risks: false, actions: false };
+      setIsTyping(false);
+
+      // IMPORTANT: force a remount of the typewriter content
+      setContentKey((k) => k + 1);
+
       // Compose deterministic stamp to guarantee uniqueness
-      const focus = constraint?.trim()
-        ? constraint.trim()
-        : "Selected strategic question";
+      const focus = q.text?.trim() ? q.text.trim() : "Selected strategic question";
       const primaryKpi =
         Array.isArray(kpis) && kpis.length > 0
           ? `Primary KPI index: ${kpis[0]}`
@@ -783,7 +794,6 @@ export default function AIIntelligence({
           action: `${stamp}${response.action}`,
         });
 
-        setContentKey((k) => k + 1);
         setIsProcessingQuestion(false);
 
         if (kpis.length > 0) {
@@ -792,10 +802,12 @@ export default function AIIntelligence({
         }
       });
     },
-    [setHoveredKpiIndex, terrainDelta]
+    [setHoveredKpiIndex, terrainDelta, setTypingFlag]
   );
 
   const toggleQuestions = () => setShowQuestions((v) => !v);
+
+  const strategicKey = activeStrategicId ? `${contentKey}-${activeStrategicId}` : `${contentKey}`;
 
   return (
     <div className={`ai-panel ${viewMode}`}>
@@ -842,7 +854,7 @@ export default function AIIntelligence({
           content={aiContent.observation}
           isAnalyzing={isAnalyzing}
           canStart={true}
-          contentKey={contentKey}
+          contentKey={strategicKey}
           speed={typingSpeed}
           onComplete={handleObservationComplete}
           onTypingChange={setTypingFlag("obs")}
@@ -853,7 +865,7 @@ export default function AIIntelligence({
           content={aiContent.risks}
           isAnalyzing={isAnalyzing}
           canStart={observationComplete}
-          contentKey={contentKey}
+          contentKey={strategicKey}
           speed={typingSpeed}
           onComplete={handleRisksComplete}
           isRiskSection={true}
@@ -865,7 +877,7 @@ export default function AIIntelligence({
           content={aiContent.action}
           isAnalyzing={isAnalyzing}
           canStart={risksComplete}
-          contentKey={contentKey}
+          contentKey={strategicKey}
           speed={typingSpeed}
           onComplete={handleActionsComplete}
           onTypingChange={setTypingFlag("actions")}

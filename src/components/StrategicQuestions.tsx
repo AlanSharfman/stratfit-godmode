@@ -248,7 +248,12 @@ const INVESTOR_PROMPTS: StrategicPrompt[] = [
 // ============================================================================
 
 interface StrategicQuestionsProps {
-  onPromptClick: (response: AnalysisResponse, kpis: number[], constraint: string) => void;
+  onPromptClick: (
+    q: { id: string; text: string },
+    response: AnalysisResponse,
+    kpis: number[],
+    constraint: string
+  ) => void;
   isAnalyzing: boolean;
 }
 
@@ -285,7 +290,12 @@ export default function StrategicQuestions({ onPromptClick, isAnalyzing }: Strat
   const handleClick = useCallback((prompt: StrategicPrompt) => {
     if (isAnalyzing) return;
     const response = prompt.getResponse(analysisState);
-    onPromptClick(response, prompt.primaryKpis, prompt.dominantConstraint);
+    onPromptClick(
+      { id: prompt.id, text: prompt.text },
+      response,
+      prompt.primaryKpis,
+      prompt.dominantConstraint
+    );
   }, [analysisState, isAnalyzing, onPromptClick]);
 
   return (
