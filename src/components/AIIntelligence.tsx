@@ -35,7 +35,7 @@ type InsightsPayload = {
 const KPI_ALIASES: Record<string, string[]> = {
   runway: ["runway", "runwayMonths", "runway_months"],
   burnRate: ["burnRate", "burn_rate", "burn", "burnMonthly", "burn_per_month"],
-  cashPosition: ["cashPosition", "cash", "cash_balance", "cashBalance"],
+  cashPosition: ["cash position", "cashPosition", "cash", "cash_balance", "cashBalance"],
   riskScore: ["riskScore", "riskIndex", "risk", "risk_score"],
   arr: ["arr", "ARR", "annualRecurringRevenue"],
   grossMargin: ["grossMargin", "gm", "gross_margin"],
