@@ -175,6 +175,22 @@ function AISection({
     canStart
   );
 
+  const renderKpiIndexNote = useCallback((text: string) => {
+    // Visually soften "Primary KPI index: N" without changing content semantics.
+    const re = /(Primary KPI index:\s*\d+)/g;
+    const parts = text.split(re);
+    if (parts.length === 1) return text;
+    return parts.map((part, i) =>
+      re.test(part) ? (
+        <span key={`kpi-note-${i}`} className="kpi-index-note">
+          {part}
+        </span>
+      ) : (
+        <React.Fragment key={`kpi-text-${i}`}>{part}</React.Fragment>
+      )
+    );
+  }, []);
+
   const isTypingNow = !isAnalyzing && hasStarted && !isComplete;
   useEffect(() => {
     onTypingChange?.(isTypingNow);
@@ -263,7 +279,7 @@ function AISection({
             >
               {hasStarted ? (
                 <>
-                  {displayText}
+                  {renderKpiIndexNote(displayText)}
                   {!isComplete && <span className="cursor">▌</span>}
                 </>
               ) : (
@@ -1121,6 +1137,13 @@ export default function AIIntelligence({
           font-weight: 600;
           line-height: 1.35;
           color: rgba(255,255,255,0.95);
+        }
+
+        .kpi-index-note {
+          display: block;
+          margin-bottom: 6px;
+          font-size: 12px;
+          color: rgba(255,255,255,0.5);
         }
 
         .panel-content::-webkit-scrollbar {
