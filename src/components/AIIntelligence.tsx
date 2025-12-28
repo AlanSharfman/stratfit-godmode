@@ -859,6 +859,12 @@ export default function AIIntelligence({
     return drivers;
   };
 
+  const deriveExecutiveSentence = (text: string | null) => {
+    if (!text) return null;
+    const firstSentence = text.split(".")[0];
+    return firstSentence ? `${firstSentence}.` : null;
+  };
+
   const activeScenario = useMemo(() => {
     const label =
       scenario === "base"
@@ -887,6 +893,11 @@ export default function AIIntelligence({
   const deltaDrivers = useMemo(
     () => deriveDeltaDrivers(deltaSnapshot),
     [deltaSnapshot]
+  );
+
+  const executiveSentence = useMemo(
+    () => deriveExecutiveSentence(customResponse?.observation ?? null),
+    [customResponse]
   );
 
   return (
@@ -954,6 +965,12 @@ export default function AIIntelligence({
           <div className="delta-anchor">
             Insight driven primarily by changes in:
             <strong> {deltaDrivers.join(", ")}</strong>
+          </div>
+        )}
+        {activeStrategicQuestion && executiveSentence && (
+          <div className="executive-sentence">
+            <span className="exec-label">Executive signal</span>
+            <span className="exec-text">{executiveSentence}</span>
           </div>
         )}
         <AISection
@@ -1259,6 +1276,33 @@ export default function AIIntelligence({
           border-left: 2px solid rgba(255,255,255,0.18);
           font-size: 12px;
           color: rgba(255,255,255,0.65);
+        }
+
+        .executive-sentence {
+          margin: 10px 0 12px;
+          padding: 10px 12px;
+          border-radius: 10px;
+          background: linear-gradient(
+            180deg,
+            rgba(255,255,255,0.06),
+            rgba(255,255,255,0.02)
+          );
+        }
+
+        .exec-label {
+          display: block;
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          color: rgba(255,255,255,0.55);
+          margin-bottom: 4px;
+        }
+
+        .exec-text {
+          font-size: 14px;
+          font-weight: 600;
+          line-height: 1.35;
+          color: rgba(255,255,255,0.95);
         }
 
         .kpi-index-note {
