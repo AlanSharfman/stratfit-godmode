@@ -78,6 +78,13 @@ export default function MountainEngine({
       ctx.stroke();
     }
 
+    // Helper: normalize array to 0-1 range
+    const normalize01 = (pts?: number[]) => {
+      if (!pts || pts.length < 2) return null;
+      const m = Math.max(...pts, 1);
+      return pts.map((v) => v / m);
+    };
+
     // Build path
     const buildPath = (pts: number[]) => {
       const path = new Path2D();
@@ -90,26 +97,32 @@ export default function MountainEngine({
       return path;
     };
 
+    // Helper: stroke a ghost path
+    const strokePath = (pts01: number[], stroke: string, alpha: number) => {
+      const path = buildPath(pts01);
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.shadowBlur = 0; // ghosts: no glow
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 1.5;
+      ctx.stroke(path);
+      ctx.restore();
+    };
+
+    // ------------------------------------------------------------
+    // Terrain v2 — Ghost overlays (stroke only, behind active)
+    // ------------------------------------------------------------
+    const gBase = normalize01(ghostBase);
+    const gUpside = normalize01(ghostUpside);
+    const gDownside = normalize01(ghostDownside);
+
+    // Use subtle alphas; do not distract from active scenario
+    if (gBase && scenario !== "base") strokePath(gBase, SCENARIO_THEMES.base.stroke, 0.28);
+    if (gUpside && scenario !== "upside") strokePath(gUpside, SCENARIO_THEMES.upside.stroke, 0.22);
+    if (gDownside && scenario !== "downside") strokePath(gDownside, SCENARIO_THEMES.downside.stroke, 0.22);
+
     // Draw mountain fill
     const mainPath = buildPath(points);
-
-    // --------------------------------------------------
-    // GHOST OVERLAY: DOWNSIDE (stroke only, behind main)
-    // --------------------------------------------------
-    if (ghostDownside && ghostDownside.length === points.length) {
-      const maxGhost = Math.max(...ghostDownside, 1);
-      const g01 = ghostDownside.map((v) => v / maxGhost);
-      const ghostPath = buildPath(g01);
-
-      ctx.save();
-      ctx.shadowBlur = 0;
-      ctx.globalAlpha = 0.22; // subtle
-      ctx.strokeStyle = "rgba(251, 191, 36, 0.9)"; // amber (downside)
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([6, 6]); // ghost feel
-      ctx.stroke(ghostPath);
-      ctx.restore();
-    }
     
     // Close path for fill
     const fillPath = new Path2D();
@@ -182,7 +195,7 @@ export default function MountainEngine({
       }
     }
 
-  }, [dataPoints, activeKPIIndex, scenario, ghostDownside]);
+  }, [dataPoints, activeKPIIndex, scenario, ghostBase, ghostUpside, ghostDownside]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
