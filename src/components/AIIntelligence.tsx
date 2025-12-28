@@ -65,12 +65,13 @@ interface AIIntelligenceProps {
 }
 
 // ============================================================================
-// TYPEWRITER HOOK - Sequential typing, one paragraph at a time
+// TYPEWRITER HOOK - Military-style: constant rhythm, no pauses, smooth flow
+// Uses RAF for buttery-smooth timing, no setTimeout jitter
 // ============================================================================
 
 function useTypewriter(
   text: string,
-  baseSpeed: number = 18,
+  baseSpeed: number = 12, // ms per character (12ms = ~83 chars/sec)
   enabled: boolean = true,
   canStart: boolean = true
 ) {
@@ -78,68 +79,71 @@ function useTypewriter(
   const [isComplete, setIsComplete] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
 
+  // Refs for RAF-based timing (avoids setTimeout drift/jitter)
+  const rafRef = useRef<number | null>(null);
+  const lastTickRef = useRef<number>(0);
+  const indexRef = useRef<number>(0);
+
   useEffect(() => {
     if (!enabled || !canStart) {
       if (!enabled) {
         setDisplayText("");
         setIsComplete(false);
         setHasStarted(false);
+        indexRef.current = 0;
       }
       return;
     }
 
+    // Reset state for new text
     setDisplayText("");
     setIsComplete(false);
     setHasStarted(true);
+    indexRef.current = 0;
+    lastTickRef.current = 0;
 
-    let index = 0;
-    let timeoutId: ReturnType<typeof setTimeout>;
-
-    const typeNextChar = () => {
-      if (index >= text.length) {
-        setIsComplete(true);
-        return;
+    // RAF-based typing loop - smooth, no jitter
+    const tick = (now: number) => {
+      // Initialize timestamp on first frame
+      if (lastTickRef.current === 0) {
+        lastTickRef.current = now;
       }
 
-      const char = text[index];
-      const nextChar = text[index + 1];
+      const elapsed = now - lastTickRef.current;
 
-      // Type 1-3 characters at once for rhythm variation
-      let charsToType = 1;
-      if (Math.random() > 0.7 && index < text.length - 2) {
-        charsToType = Math.random() > 0.5 ? 2 : 3;
+      // Check if enough time has passed for next character
+      if (elapsed >= baseSpeed) {
+        // Calculate how many characters to type based on elapsed time
+        // This handles frame drops gracefully
+        const charsToType = Math.floor(elapsed / baseSpeed);
+        const newIndex = Math.min(indexRef.current + charsToType, text.length);
+
+        if (newIndex !== indexRef.current) {
+          indexRef.current = newIndex;
+          setDisplayText(text.slice(0, newIndex));
+        }
+
+        // Reset timer, accounting for any overshoot
+        lastTickRef.current = now - (elapsed % baseSpeed);
       }
 
-      index += charsToType;
-      index = Math.min(index, text.length);
-      setDisplayText(text.slice(0, index));
-
-      // Calculate delay based on character type
-      let delay = baseSpeed;
-
-      // Longer pause after punctuation (typewriter rhythm)
-      if (char === "." || char === "!" || char === "?") {
-        delay = baseSpeed * 8; // Sentence pause
-      } else if (char === "," || char === ";" || char === ":") {
-        delay = baseSpeed * 4; // Clause pause
-      } else if (char === " " && nextChar && /[A-Z]/.test(nextChar)) {
-        delay = baseSpeed * 3; // Before capital letter
-      } else {
-        // Add slight random variation for natural rhythm
-        delay = baseSpeed + Math.random() * 12 - 6;
-      }
-
-      if (index < text.length) {
-        timeoutId = setTimeout(typeNextChar, delay);
+      // Continue or complete
+      if (indexRef.current < text.length) {
+        rafRef.current = requestAnimationFrame(tick);
       } else {
         setIsComplete(true);
       }
     };
 
-    // Start typing
-    timeoutId = setTimeout(typeNextChar, 100);
+    // Start immediately - no initial delay
+    rafRef.current = requestAnimationFrame(tick);
 
-    return () => clearTimeout(timeoutId);
+    return () => {
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    };
   }, [text, baseSpeed, enabled, canStart]);
 
   return { displayText, isComplete, hasStarted };
@@ -698,8 +702,9 @@ export default function AIIntelligence({
     return defaultContent;
   }, [customResponse, defaultContent, insightLines]);
 
-  // Typewriter speed - fast base with rhythm variation (18ms base = ~55 chars/second burst)
-  const typingSpeed = 18;
+  // Typewriter speed - military comms style: constant, rapid, no hesitation
+  // 14ms = ~71 chars/sec - fast but readable, like teletype output
+  const typingSpeed = 14;
 
   // Stable callbacks for AISection to prevent re-renders
   const handleObservationComplete = useCallback(
