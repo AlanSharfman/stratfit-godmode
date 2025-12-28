@@ -151,6 +151,7 @@ function AISection({
   isAnalyzing,
   canStart,
   contentKey,
+  contentKeyStr,
   speed,
   onComplete,
   onTypingChange,
@@ -160,7 +161,8 @@ function AISection({
   content: string;
   isAnalyzing: boolean;
   canStart: boolean;
-  contentKey: string | number;
+  contentKey: number;
+  contentKeyStr: string;
   speed: number;
   onComplete?: () => void;
   onTypingChange?: (isTyping: boolean) => void;
@@ -254,7 +256,7 @@ function AISection({
             </motion.span>
           ) : (
             <motion.span
-              key={`text-${contentKey}`}
+              key={`text-${contentKeyStr}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -617,6 +619,8 @@ export default function AIIntelligence({
   const signalActive = isAnalyzing || isTyping;
 
   useEffect(() => {
+    // If a strategic question is active, do not overwrite the active response.
+    if (activeStrategicId) return;
     setContentKey((k) => k + 1);
     setCustomResponse(null);
     setObservationComplete(false);
@@ -624,7 +628,7 @@ export default function AIIntelligence({
     setActionsComplete(false);
     typingRef.current = { obs: false, risks: false, actions: false };
     setIsTyping(false);
-  }, [scenario, viewMode]);
+  }, [scenario, viewMode, activeStrategicId]);
 
   useEffect(() => {
     if (isAnalyzing) {
@@ -807,7 +811,7 @@ export default function AIIntelligence({
 
   const toggleQuestions = () => setShowQuestions((v) => !v);
 
-  const strategicKey = activeStrategicId ? `${contentKey}-${activeStrategicId}` : `${contentKey}`;
+  const strategicKeyStr = activeStrategicId ? `${contentKey}-${activeStrategicId}` : `${contentKey}`;
 
   return (
     <div className={`ai-panel ${viewMode}`}>
@@ -854,7 +858,8 @@ export default function AIIntelligence({
           content={aiContent.observation}
           isAnalyzing={isAnalyzing}
           canStart={true}
-          contentKey={strategicKey}
+          contentKey={contentKey}
+          contentKeyStr={strategicKeyStr}
           speed={typingSpeed}
           onComplete={handleObservationComplete}
           onTypingChange={setTypingFlag("obs")}
@@ -865,7 +870,8 @@ export default function AIIntelligence({
           content={aiContent.risks}
           isAnalyzing={isAnalyzing}
           canStart={observationComplete}
-          contentKey={strategicKey}
+          contentKey={contentKey}
+          contentKeyStr={strategicKeyStr}
           speed={typingSpeed}
           onComplete={handleRisksComplete}
           isRiskSection={true}
@@ -877,7 +883,8 @@ export default function AIIntelligence({
           content={aiContent.action}
           isAnalyzing={isAnalyzing}
           canStart={risksComplete}
-          contentKey={strategicKey}
+          contentKey={contentKey}
+          contentKeyStr={strategicKeyStr}
           speed={typingSpeed}
           onComplete={handleActionsComplete}
           onTypingChange={setTypingFlag("actions")}
