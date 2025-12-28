@@ -101,10 +101,6 @@ export default function CenterViewPanel() {
   return (
     <div className="relative h-full w-full rounded-xl bg-black/40 backdrop-blur-sm border border-white/5 overflow-hidden">
       <div className="px-6 pt-4 pb-3 border-b border-white/5 bg-gradient-to-b from-black/30 to-transparent">
-        <div className="flex items-center justify-between">
-          <CenterViewSegmented value={view} onChange={setView} />
-        </div>
-
         <BriefingPanel
           briefingKey={briefingKey}
           open={briefingOpen}
@@ -115,28 +111,34 @@ export default function CenterViewPanel() {
         />
       </div>
 
-      <div className="relative h-[calc(100%-68px)] w-full p-4">
-        {view === "terrain" && (
-          <div className="relative h-full w-full overflow-hidden rounded-3xl border border-slate-700/40 bg-black shadow-[0_8px_32px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.03)]">
-            <div className="relative h-full w-full">
-              <ScenarioMountain
-                scenario={scenario}
-                dataPoints={dataPoints}
-                activeKpiIndex={hoveredKpiIndex}
-                ghostBase={baseResult?.kpis ? Object.values(baseResult.kpis).slice(0, 7).map(k => k.value) : undefined}
-                ghostUpside={upsideResult?.kpis ? Object.values(upsideResult.kpis).slice(0, 7).map(k => k.value) : undefined}
-                ghostDownside={downsideResult?.kpis ? Object.values(downsideResult.kpis).slice(0, 7).map(k => k.value) : undefined}
-                scenarioDelta={scenarioDeltaRef.current}
-              />
-            </div>
-          </div>
-        )}
+      <div className="relative h-[calc(100%-68px)] w-full p-4 flex flex-col">
+        <div className="mb-3 flex items-center justify-start">
+          <CenterViewSegmented value={view} onChange={setView} />
+        </div>
 
-        {view === "variance" && (
-          <div className="h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-gradient-to-br from-slate-950/60 to-black/80 p-6">
-            <ScenarioDeltaSnapshot />
-          </div>
-        )}
+        <div className="relative flex-1 min-h-0">
+          {view === "terrain" && (
+            <div className="relative h-full w-full overflow-hidden rounded-3xl border border-slate-700/40 bg-black shadow-[0_8px_32px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.03)]">
+              <div className="relative h-full w-full">
+                <ScenarioMountain
+                  scenario={scenario}
+                  dataPoints={dataPoints}
+                  activeKpiIndex={hoveredKpiIndex}
+                  ghostBase={baseResult?.kpis ? Object.values(baseResult.kpis).slice(0, 7).map(k => k.value) : undefined}
+                  ghostUpside={upsideResult?.kpis ? Object.values(upsideResult.kpis).slice(0, 7).map(k => k.value) : undefined}
+                  ghostDownside={downsideResult?.kpis ? Object.values(downsideResult.kpis).slice(0, 7).map(k => k.value) : undefined}
+                  scenarioDelta={scenarioDeltaRef.current}
+                />
+              </div>
+            </div>
+          )}
+
+          {view === "variance" && (
+            <div className="h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-gradient-to-br from-slate-950/60 to-black/80 p-6">
+              <ScenarioDeltaSnapshot />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

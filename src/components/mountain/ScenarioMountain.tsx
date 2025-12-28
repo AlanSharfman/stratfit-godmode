@@ -7,6 +7,7 @@ import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import * as THREE from "three";
 import { useShallow } from "zustand/react/shallow";
 import { buildPeakModel, LeverId } from "@/logic/mountainPeakModel";
+import type { ScenarioDelta } from "@/logic/buildScenarioDelta";
 import { ScenarioId, SCENARIO_COLORS, useScenarioStore } from "@/state/scenarioStore";
 
 // ============================================================================
@@ -567,6 +568,7 @@ interface ScenarioMountainProps {
   ghostBase?: number[];
   ghostUpside?: number[];
   ghostDownside?: number[];
+  scenarioDelta?: ScenarioDelta | null;
 }
 
 export default function ScenarioMountain({
@@ -579,6 +581,7 @@ export default function ScenarioMountain({
   ghostBase,
   ghostUpside,
   ghostDownside,
+  scenarioDelta,
 }: ScenarioMountainProps) {
   const colors = SCENARIO_COLORS[scenario];
   const viewMode = useScenarioStore((s) => s.viewMode);
