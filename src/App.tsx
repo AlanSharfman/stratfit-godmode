@@ -459,7 +459,9 @@ export default function App() {
           gap: 10px;
           height: 32px;
           padding: 0 14px;
-          margin: 2px 0;
+          /* Nudge lower so it doesn't kiss the top border */
+          margin-top: 6px;
+          margin-bottom: 0px;
           border-radius: 9999px;
           border: none;
           cursor: pointer;
