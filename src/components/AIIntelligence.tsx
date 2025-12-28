@@ -170,6 +170,23 @@ function AISection({
   onTypingChange?: (isTyping: boolean) => void;
   isRiskSection?: boolean;
 }) {
+  const highlightDeltaSentences = (text: string, drivers: string[]) => {
+    if (!drivers.length) return text;
+
+    return text
+      .split(". ")
+      .map((sentence) => {
+        const matchesDriver = drivers.some((driver) =>
+          sentence.toLowerCase().includes(driver.toLowerCase())
+        );
+
+        if (!matchesDriver) return sentence;
+
+        return `<span class="delta-highlight">${sentence}</span>`;
+      })
+      .join(". ");
+  };
+
   const { displayText, isComplete, hasStarted } = useTypewriter(
     content,
     speed,
@@ -194,36 +211,7 @@ function AISection({
     );
   }, []);
 
-  const renderDeltaHighlights = useCallback(
-    (text: string, drivers: string[]) => {
-      if (!drivers.length) return renderKpiIndexNote(text);
-
-      const sentences = text.split(". ");
-      return sentences.map((sentence, i) => {
-        const matchesDriver = drivers.some((driver) =>
-          sentence.toLowerCase().includes(driver.toLowerCase())
-        );
-
-        const isLast = i === sentences.length - 1;
-        const withSep = isLast ? sentence : `${sentence}. `;
-
-        if (!matchesDriver) {
-          return (
-            <React.Fragment key={`s-${i}`}>
-              {renderKpiIndexNote(withSep)}
-            </React.Fragment>
-          );
-        }
-
-        return (
-          <span key={`h-${i}`} className="delta-highlight">
-            {renderKpiIndexNote(withSep)}
-          </span>
-        );
-      });
-    },
-    [renderKpiIndexNote]
-  );
+  // NOTE: Delta highlighting is applied via HTML wrapping at render-time (after typing completes).
 
   const isTypingNow = !isAnalyzing && hasStarted && !isComplete;
   useEffect(() => {
@@ -313,9 +301,16 @@ function AISection({
             >
               {hasStarted ? (
                 <>
-                  {isComplete
-                    ? renderDeltaHighlights(content, deltaDrivers)
-                    : renderKpiIndexNote(displayText)}
+                  {isComplete ? (
+                    <span
+                      // allowHtml equivalent: highlight wrappers are injected into the completed text only
+                      dangerouslySetInnerHTML={{
+                        __html: highlightDeltaSentences(content, deltaDrivers),
+                      }}
+                    />
+                  ) : (
+                    renderKpiIndexNote(displayText)
+                  )}
                   {!isComplete && <span className="cursor">▌</span>}
                 </>
               ) : (
@@ -880,22 +875,6 @@ export default function AIIntelligence({
   const strategicKeyStr = activeStrategicId
     ? `strategic-${strategicContentKey}-${activeStrategicId}`
     : `${contentKey}`;
-
-  const highlightDeltaSentences = (text: string, drivers: string[]) => {
-    if (!drivers.length) return text;
-
-    return text
-      .split(". ")
-      .map((sentence) => {
-        const matchesDriver = drivers.some((driver) =>
-          sentence.toLowerCase().includes(driver.toLowerCase())
-        );
-
-        if (!matchesDriver) return sentence;
-        return `<span class="delta-highlight">${sentence}</span>`;
-      })
-      .join(". ");
-  };
 
   // Deterministic, thresholded, tunable later — NO side effects.
   const deriveDeltaDrivers = (delta: any) => {
