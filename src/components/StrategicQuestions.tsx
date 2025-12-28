@@ -233,7 +233,8 @@ export default function StrategicQuestions({ onPromptClick, isAnalyzing }: Strat
     runway: kpiValues.runway?.value ?? 18,
     momentum: kpiValues.momentum?.value ?? 50,
     burnQuality: kpiValues.burnQuality?.value ?? 55,
-    cashPosition: (kpiValues.cashPosition?.value ?? 300) / 100,
+    // cashPosition value is already in "millions" scale (e.g. 3.2 => $3.2M)
+    cashPosition: kpiValues.cashPosition?.value ?? 3.0,
   }), [scenario, kpiValues]);
 
   const handleClick = useCallback((prompt: StrategicPrompt) => {
