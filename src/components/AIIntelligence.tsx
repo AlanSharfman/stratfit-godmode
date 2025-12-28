@@ -11,10 +11,7 @@ import StrategicQuestions from "./StrategicQuestions";
 
 type TerrainDelta = {
   scenarioId: string;
-  kpiDelta: Record<
-    string,
-    { from: number; to: number; delta: number }
-  >;
+  kpiDelta: Record<string, { from: number; to: number; delta: number }>;
   timestamp: number;
 };
 
@@ -46,11 +43,11 @@ const KPI_ALIASES: Record<string, string[]> = {
 };
 
 const INSIGHT_THRESHOLDS = {
-  runwayCritical: 6,        // months
-  runwayMaterialMove: 1,    // months delta to mention
+  runwayCritical: 6, // months
+  runwayMaterialMove: 1, // months delta to mention
   burnMaterialMovePct: 0.05, // 5% change triggers mention
-  riskHigh: 70,             // score
-  riskMaterialMove: 5,      // points delta to mention
+  riskHigh: 70, // score
+  riskMaterialMove: 5, // points delta to mention
 };
 
 interface AIIntelligenceProps {
@@ -58,6 +55,13 @@ interface AIIntelligenceProps {
   risks: string[];
   actions: string[];
   scenario: ScenarioId;
+
+  /**
+   * Canonical delta injected from upstream (preferred).
+   * If present, this is treated as source-of-truth for insights.
+   * Fallback remains: local delta derived from engineResults.
+   */
+  scenarioDelta?: TerrainDelta | null;
 }
 
 // ============================================================================
@@ -341,7 +345,10 @@ function getAIContent(viewMode: ViewMode, scenario: ScenarioId) {
 // RULES ENGINE - Build insights from terrain deltas
 // ============================================================================
 
-function getDelta(delta: TerrainDelta | null, canonicalKey: keyof typeof KPI_ALIASES) {
+function getDelta(
+  delta: TerrainDelta | null,
+  canonicalKey: keyof typeof KPI_ALIASES
+) {
   const aliases = KPI_ALIASES[canonicalKey] ?? [canonicalKey as string];
   for (const k of aliases) {
     const v = delta?.kpiDelta?.[k];
@@ -365,7 +372,9 @@ function buildInsightsFromDelta(delta: TerrainDelta | null): InsightsPayload {
     obs.push({
       id: "runway-change",
       title: `Runway ${runway.delta < 0 ? "compressed" : "extended"}`,
-      detail: `Runway moved from ${runway.from} to ${runway.to} (${runway.delta > 0 ? "+" : ""}${runway.delta}).`,
+      detail: `Runway moved from ${runway.from} to ${runway.to} (${
+        runway.delta > 0 ? "+" : ""
+      }${runway.delta}).`,
       severity: runway.delta < 0 ? "med" : "low",
     });
 
@@ -394,7 +403,9 @@ function buildInsightsFromDelta(delta: TerrainDelta | null): InsightsPayload {
       obs.push({
         id: "burn-change",
         title: `Burn ${burn.delta > 0 ? "increased" : "decreased"}`,
-        detail: `Burn moved from ${burn.from} to ${burn.to} (${burn.delta > 0 ? "+" : ""}${burn.delta}, ${(pct * 100).toFixed(1)}%).`,
+        detail: `Burn moved from ${burn.from} to ${burn.to} (${
+          burn.delta > 0 ? "+" : ""
+        }${burn.delta}, ${(pct * 100).toFixed(1)}%).`,
         severity: burn.delta > 0 ? "med" : "low",
       });
 
@@ -424,7 +435,9 @@ function buildInsightsFromDelta(delta: TerrainDelta | null): InsightsPayload {
     risks.push({
       id: "risk-up",
       title: risk.delta > 0 ? "Risk score deteriorated" : "Risk score improved",
-      detail: `Risk moved from ${risk.from} to ${risk.to} (${risk.delta > 0 ? "+" : ""}${risk.delta}).`,
+      detail: `Risk moved from ${risk.from} to ${risk.to} (${
+        risk.delta > 0 ? "+" : ""
+      }${risk.delta}).`,
       severity: isHigh ? "high" : "med",
     });
 
@@ -462,6 +475,7 @@ export default function AIIntelligence({
   risks,
   actions,
   scenario,
+  scenarioDelta,
 }: AIIntelligenceProps) {
   const [contentKey, setContentKey] = useState(0);
   const [isProcessingQuestion, setIsProcessingQuestion] = useState(false);
@@ -477,7 +491,13 @@ export default function AIIntelligence({
   const [risksComplete, setRisksComplete] = useState(false);
 
   // Consolidated store selectors to prevent rerender cascades
-  const { viewMode, activeLeverId, setHoveredKpiIndex, engineResults, activeScenarioId } = useScenarioStore(
+  const {
+    viewMode,
+    activeLeverId,
+    setHoveredKpiIndex,
+    engineResults,
+    activeScenarioId,
+  } = useScenarioStore(
     useShallow((s) => ({
       viewMode: s.viewMode,
       activeLeverId: s.activeLeverId,
@@ -514,8 +534,30 @@ export default function AIIntelligence({
     }
   }, [isAnalyzing]);
 
-  // Terrain delta tracking effect
+  // NEW: Prefer canonical upstream scenarioDelta when provided
   useEffect(() => {
+    if (!scenarioDelta) return;
+
+    setTerrainDelta((prev) => {
+      if (!prev) return scenarioDelta;
+      if (
+        prev.timestamp === scenarioDelta.timestamp &&
+        prev.scenarioId === scenarioDelta.scenarioId
+      ) {
+        return prev;
+      }
+      return scenarioDelta;
+    });
+  }, [scenarioDelta]);
+
+  // Terrain delta tracking effect (fallback only; bypass when scenarioDelta is provided)
+  useEffect(() => {
+    if (scenarioDelta) {
+      // Still update ref so fallback is sane if upstream delta is removed later.
+      previousEngineResultsRef.current = engineResults;
+      return;
+    }
+
     if (!engineResults || !activeScenarioId) return;
 
     const current = engineResults[activeScenarioId];
@@ -546,7 +588,7 @@ export default function AIIntelligence({
     }
 
     previousEngineResultsRef.current = engineResults;
-  }, [engineResults, activeScenarioId]);
+  }, [engineResults, activeScenarioId, scenarioDelta]);
 
   // Build insights from terrain delta
   useEffect(() => {
@@ -559,34 +601,39 @@ export default function AIIntelligence({
   );
 
   // Transform insights into lines for display
-  const insightLines = useMemo(() => ({
-    observation: insights.observation.map((x) => `${x.title}: ${x.detail}`),
-    risks: insights.risks.map((x) => `${x.title}: ${x.detail}`),
-    actions: insights.actions.map((x) => `${x.title}: ${x.detail}`),
-  }), [insights]);
+  const insightLines = useMemo(
+    () => ({
+      observation: insights.observation.map((x) => `${x.title}: ${x.detail}`),
+      risks: insights.risks.map((x) => `${x.title}: ${x.detail}`),
+      actions: insights.actions.map((x) => `${x.title}: ${x.detail}`),
+    }),
+    [insights]
+  );
 
   // Use custom response if available, then insights if present, otherwise default
-  const aiContent = useMemo(
-    () => {
-      if (customResponse) {
-        return {
-          observation: customResponse.observation,
-          risks: customResponse.risk,
-          action: customResponse.action,
-        };
-      }
-      // If insights have content, use them
-      if (insightLines.observation.length > 0 || insightLines.risks.length > 0 || insightLines.actions.length > 0) {
-        return {
-          observation: insightLines.observation.join(" ") || defaultContent.observation,
-          risks: insightLines.risks.join(" ") || defaultContent.risks,
-          action: insightLines.actions.join(" ") || defaultContent.action,
-        };
-      }
-      return defaultContent;
-    },
-    [customResponse, defaultContent, insightLines]
-  );
+  const aiContent = useMemo(() => {
+    if (customResponse) {
+      return {
+        observation: customResponse.observation,
+        risks: customResponse.risk,
+        action: customResponse.action,
+      };
+    }
+    // If insights have content, use them
+    if (
+      insightLines.observation.length > 0 ||
+      insightLines.risks.length > 0 ||
+      insightLines.actions.length > 0
+    ) {
+      return {
+        observation:
+          insightLines.observation.join(" ") || defaultContent.observation,
+        risks: insightLines.risks.join(" ") || defaultContent.risks,
+        action: insightLines.actions.join(" ") || defaultContent.action,
+      };
+    }
+    return defaultContent;
+  }, [customResponse, defaultContent, insightLines]);
 
   // Typewriter speed - fast base with rhythm variation (18ms base = ~55 chars/second burst)
   const typingSpeed = 18;
@@ -721,7 +768,9 @@ export default function AIIntelligence({
             <path d="M12 17h.01" />
           </svg>
           <span>
-            {showQuestions ? "Hide Strategic Questions" : "Nominated Strategic Questions"}
+            {showQuestions
+              ? "Hide Strategic Questions"
+              : "Nominated Strategic Questions"}
           </span>
           <svg
             width="10"
@@ -754,7 +803,10 @@ export default function AIIntelligence({
             transition={{ duration: 0.2, ease: "easeInOut" }}
             style={{ overflow: "hidden" }}
           >
-            <StrategicQuestions onPromptClick={handlePromptClick} isAnalyzing={isAnalyzing} />
+            <StrategicQuestions
+              onPromptClick={handlePromptClick}
+              isAnalyzing={isAnalyzing}
+            />
           </motion.div>
         )}
       </AnimatePresence>
@@ -864,12 +916,13 @@ export default function AIIntelligence({
         }
 
         @keyframes neon-pulse {
-          0%, 100% { 
+          0%,
+          100% {
             opacity: 0.3;
             transform: scale(0.8) translateX(0);
             box-shadow: 0 0 2px rgba(0, 255, 136, 0.2);
           }
-          50% { 
+          50% {
             opacity: 1;
             transform: scale(1.3) translateX(4px);
             box-shadow: 0 0 12px #00ff88, 0 0 24px rgba(0, 255, 136, 0.8);
@@ -1006,8 +1059,13 @@ export default function AIIntelligence({
         }
 
         @keyframes blink {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0; }
+          0%,
+          100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0;
+          }
         }
 
         /* Questions Toggle Button */
