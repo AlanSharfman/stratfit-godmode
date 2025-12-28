@@ -559,6 +559,7 @@ export default function AIIntelligence({
   scenario,
   scenarioDelta,
 }: AIIntelligenceProps) {
+  const companyName = "STRATFIT";
   const [contentKey, setContentKey] = useState(0);
   const [isProcessingQuestion, setIsProcessingQuestion] = useState(false);
   const [activeStrategicId, setActiveStrategicId] = useState<string | null>(null);
@@ -899,6 +900,14 @@ export default function AIIntelligence({
     return firstSentence ? `${firstSentence}.` : null;
   };
 
+  const stripHtml = (s: string) => s.replace(/<[^>]*>/g, "");
+
+  const extractRisks = (text: string) => {
+    const plain = stripHtml(text);
+    const m = plain.match(/RISKS:\s*([\s\S]*?)(?:\n\nACTIONS:|$)/i);
+    return (m?.[1] ?? "").trim();
+  };
+
   const activeScenario = useMemo(() => {
     const label =
       scenario === "base"
@@ -1007,6 +1016,46 @@ export default function AIIntelligence({
 
   const strategicText = useMemo(() => buildStrategicText(), [buildStrategicText]);
 
+  const buildInvestorSnapshot = () => {
+    const upsideHtml = highlightDeltaSentences(strategicText, upsideDrivers);
+    const downsideHtml = highlightDeltaSentences(strategicText, downsideDrivers);
+
+    return {
+      company: companyName,
+      comparison: "Upside vs Downside",
+      question: activeStrategicQuestion?.text ?? null,
+      timestamp: new Date().toISOString(),
+      scenarios: {
+        upside: {
+          confidence: upsideConfidence,
+          drivers: upsideDrivers,
+          executive: deriveExecutiveSentence(stripHtml(upsideHtml)),
+          risks: extractRisks(upsideHtml),
+        },
+        downside: {
+          confidence: downsideConfidence,
+          drivers: downsideDrivers,
+          executive: deriveExecutiveSentence(stripHtml(downsideHtml)),
+          risks: extractRisks(downsideHtml),
+        },
+      },
+    };
+  };
+
+  const handleExportSnapshot = () => {
+    const snapshot = buildInvestorSnapshot();
+    const blob = new Blob([JSON.stringify(snapshot, null, 2)], {
+      type: "application/json",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "stratfit-investor-snapshot.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const ScenarioPanel = useCallback(
     (props: {
       label: "Upside" | "Downside";
@@ -1100,6 +1149,11 @@ export default function AIIntelligence({
         >
           Compare scenarios
         </button>
+        {viewMode === "investor" && compareMode && (
+          <button className="export-snapshot" onClick={handleExportSnapshot}>
+            Export snapshot
+          </button>
+        )}
         <div className={`signal-dots ${signalActive ? "active" : ""}`}>
           <div className="signal-dot dot-1" />
           <div className="signal-dot dot-2" />
@@ -1313,6 +1367,19 @@ export default function AIIntelligence({
         .compare-toggle.active {
           opacity: 1;
           font-weight: 600;
+        }
+
+        .export-snapshot {
+          font-size: 12px;
+          opacity: 0.6;
+          background: transparent;
+          border: none;
+          color: rgba(255,255,255,0.85);
+          padding: 0;
+        }
+
+        .export-snapshot:hover {
+          opacity: 1;
         }
 
         .scenario-compare-grid {
