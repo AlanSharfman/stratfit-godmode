@@ -147,6 +147,9 @@ const Terrain: React.FC<TerrainProps> = ({
   const groupRef = useRef<THREE.Group>(null);
   const meshFillRef = useRef<THREE.Mesh>(null);
   const meshWireRef = useRef<THREE.Mesh>(null);
+  const ghostDownRef = useRef<THREE.Mesh>(null);
+  const ghostBaseRef = useRef<THREE.Mesh>(null);
+  const ghostUpRef = useRef<THREE.Mesh>(null);
   const targetHeightsRef = useRef<Float32Array | null>(null);
   const currentHeightsRef = useRef<Float32Array | null>(null);
   const targetColorsRef = useRef<Float32Array | null>(null);
@@ -169,6 +172,11 @@ const Terrain: React.FC<TerrainProps> = ({
     geo.setAttribute("color", new THREE.BufferAttribute(new Float32Array(count * 3), 3));
     return geo;
   }, []);
+
+  // Terrain v2: downside ghost uses a cloned geometry so it never mutates the main terrain
+  const ghostDownGeo = useMemo(() => geometry.clone(), [geometry]);
+  const ghostBaseGeo = useMemo(() => geometry.clone(), [geometry]);
+  const ghostUpGeo = useMemo(() => geometry.clone(), [geometry]);
 
   // Calculate target heights
   useLayoutEffect(() => {
@@ -303,6 +311,60 @@ const Terrain: React.FC<TerrainProps> = ({
       wireGeo.attributes.position.needsUpdate = true;
       wireGeo.computeVertexNormals();
     }
+
+    // ------------------------------------------------------------
+    // Terrain v2: ghost layers (wire only) — scale main heights
+    // ------------------------------------------------------------
+    const avg = (arr: number[]) =>
+      arr.reduce((a, b) => a + b, 0) / Math.max(1, arr.length);
+
+    const dp = dataPoints?.length === 7
+      ? dataPoints
+      : [0.5, 0.5, 0.6, 0.4, 0.5, 0.45, 0.35];
+
+    const baseAvg = avg(dp);
+
+    // Base ghost (reference)
+    if (ghostBaseRef.current && ghostBase?.length === 7) {
+      const g = ghostBaseRef.current.geometry as THREE.PlaneGeometry;
+      const gPos = g.attributes.position as THREE.BufferAttribute;
+
+      for (let i = 0; i < gPos.count; i++) {
+        gPos.setZ(i, targets[i]);
+      }
+      gPos.needsUpdate = true;
+      g.computeVertexNormals();
+    }
+
+    // Upside ghost
+    if (ghostUpRef.current && ghostUpside?.length === 7) {
+      const upAvg = avg(ghostUpside);
+      const ratio = baseAvg > 0 ? upAvg / baseAvg : 1.15;
+
+      const g = ghostUpRef.current.geometry as THREE.PlaneGeometry;
+      const gPos = g.attributes.position as THREE.BufferAttribute;
+
+      for (let i = 0; i < gPos.count; i++) {
+        gPos.setZ(i, targets[i] * ratio);
+      }
+      gPos.needsUpdate = true;
+      g.computeVertexNormals();
+    }
+
+    // Downside ghost (existing)
+    if (ghostDownRef.current && ghostDownside?.length === 7) {
+      const downAvg = avg(ghostDownside);
+      const ratio = baseAvg > 0 ? downAvg / baseAvg : 0.85;
+
+      const g = ghostDownRef.current.geometry as THREE.PlaneGeometry;
+      const gPos = g.attributes.position as THREE.BufferAttribute;
+
+      for (let i = 0; i < gPos.count; i++) {
+        gPos.setZ(i, targets[i] * ratio);
+      }
+      gPos.needsUpdate = true;
+      g.computeVertexNormals();
+    }
   });
 
   return (
@@ -320,6 +382,49 @@ const Terrain: React.FC<TerrainProps> = ({
           depthWrite={false}
         />
       </mesh>
+
+      {/* Terrain v2: Base ghost (wire only) */}
+      {ghostBase?.length === 7 && (
+        <mesh ref={ghostBaseRef} geometry={ghostBaseGeo}>
+          <meshBasicMaterial
+            wireframe
+            transparent
+            opacity={0.12}
+            color={SCENARIO_COLORS.base.primary}
+            depthWrite={false}
+            toneMapped={false}
+          />
+        </mesh>
+      )}
+
+      {/* Terrain v2: Upside ghost (wire only) */}
+      {ghostUpside?.length === 7 && (
+        <mesh ref={ghostUpRef} geometry={ghostUpGeo}>
+          <meshBasicMaterial
+            wireframe
+            transparent
+            opacity={0.18}
+            color={SCENARIO_COLORS.upside.primary}
+            depthWrite={false}
+            toneMapped={false}
+          />
+        </mesh>
+      )}
+
+      {/* Terrain v2: Downside ghost (wire only) */}
+      {ghostDownside?.length === 7 && (
+        <mesh ref={ghostDownRef} geometry={ghostDownGeo}>
+          <meshBasicMaterial
+            wireframe
+            transparent
+            opacity={0.22}
+            color={SCENARIO_COLORS.downside.primary}
+            depthWrite={false}
+            toneMapped={false}
+          />
+        </mesh>
+      )}
+
       <mesh ref={meshWireRef} geometry={geometry}>
         <meshBasicMaterial vertexColors wireframe transparent opacity={0.75} toneMapped={false} />
       </mesh>
@@ -459,6 +564,9 @@ interface ScenarioMountainProps {
   activeLeverId?: LeverId | null;
   leverIntensity01?: number;
   className?: string;
+  ghostBase?: number[];
+  ghostUpside?: number[];
+  ghostDownside?: number[];
 }
 
 export default function ScenarioMountain({
@@ -468,6 +576,9 @@ export default function ScenarioMountain({
   activeLeverId = null,
   leverIntensity01 = 0,
   className,
+  ghostBase,
+  ghostUpside,
+  ghostDownside,
 }: ScenarioMountainProps) {
   const colors = SCENARIO_COLORS[scenario];
   const viewMode = useScenarioStore((s) => s.viewMode);
