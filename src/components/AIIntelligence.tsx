@@ -65,13 +65,12 @@ interface AIIntelligenceProps {
 }
 
 // ============================================================================
-// TYPEWRITER HOOK - Military-style: constant rhythm, no pauses, smooth flow
-// Uses RAF for buttery-smooth timing, no setTimeout jitter
+// TYPEWRITER HOOK - Sequential typing, one paragraph at a time
 // ============================================================================
 
 function useTypewriter(
   text: string,
-  baseSpeed: number = 12, // ms per character (12ms = ~83 chars/sec)
+  baseSpeed: number = 18,
   enabled: boolean = true,
   canStart: boolean = true
 ) {
@@ -79,71 +78,68 @@ function useTypewriter(
   const [isComplete, setIsComplete] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
 
-  // Refs for RAF-based timing (avoids setTimeout drift/jitter)
-  const rafRef = useRef<number | null>(null);
-  const lastTickRef = useRef<number>(0);
-  const indexRef = useRef<number>(0);
-
   useEffect(() => {
     if (!enabled || !canStart) {
       if (!enabled) {
         setDisplayText("");
         setIsComplete(false);
         setHasStarted(false);
-        indexRef.current = 0;
       }
       return;
     }
 
-    // Reset state for new text
     setDisplayText("");
     setIsComplete(false);
     setHasStarted(true);
-    indexRef.current = 0;
-    lastTickRef.current = 0;
 
-    // RAF-based typing loop - smooth, no jitter
-    const tick = (now: number) => {
-      // Initialize timestamp on first frame
-      if (lastTickRef.current === 0) {
-        lastTickRef.current = now;
+    let index = 0;
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const typeNextChar = () => {
+      if (index >= text.length) {
+        setIsComplete(true);
+        return;
       }
 
-      const elapsed = now - lastTickRef.current;
+      const char = text[index];
+      const nextChar = text[index + 1];
 
-      // Check if enough time has passed for next character
-      if (elapsed >= baseSpeed) {
-        // Calculate how many characters to type based on elapsed time
-        // This handles frame drops gracefully
-        const charsToType = Math.floor(elapsed / baseSpeed);
-        const newIndex = Math.min(indexRef.current + charsToType, text.length);
-
-        if (newIndex !== indexRef.current) {
-          indexRef.current = newIndex;
-          setDisplayText(text.slice(0, newIndex));
-        }
-
-        // Reset timer, accounting for any overshoot
-        lastTickRef.current = now - (elapsed % baseSpeed);
+      // Type 1-3 characters at once for rhythm variation
+      let charsToType = 1;
+      if (Math.random() > 0.7 && index < text.length - 2) {
+        charsToType = Math.random() > 0.5 ? 2 : 3;
       }
 
-      // Continue or complete
-      if (indexRef.current < text.length) {
-        rafRef.current = requestAnimationFrame(tick);
+      index += charsToType;
+      index = Math.min(index, text.length);
+      setDisplayText(text.slice(0, index));
+
+      // Calculate delay based on character type
+      let delay = baseSpeed;
+
+      // Longer pause after punctuation (typewriter rhythm)
+      if (char === "." || char === "!" || char === "?") {
+        delay = baseSpeed * 8; // Sentence pause
+      } else if (char === "," || char === ";" || char === ":") {
+        delay = baseSpeed * 4; // Clause pause
+      } else if (char === " " && nextChar && /[A-Z]/.test(nextChar)) {
+        delay = baseSpeed * 3; // Before capital letter
+      } else {
+        // Add slight random variation for natural rhythm
+        delay = baseSpeed + Math.random() * 12 - 6;
+      }
+
+      if (index < text.length) {
+        timeoutId = setTimeout(typeNextChar, delay);
       } else {
         setIsComplete(true);
       }
     };
 
-    // Start immediately - no initial delay
-    rafRef.current = requestAnimationFrame(tick);
+    // Start typing
+    timeoutId = setTimeout(typeNextChar, 100);
 
-    return () => {
-      if (rafRef.current !== null) {
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
-      }
-    };
+    return () => clearTimeout(timeoutId);
   }, [text, baseSpeed, enabled, canStart]);
 
   return { displayText, isComplete, hasStarted };
@@ -470,6 +466,27 @@ function buildInsightsFromDelta(delta: TerrainDelta | null): InsightsPayload {
 }
 
 // ============================================================================
+// STRATEGIC QUESTION STAMP - Guarantees uniqueness vs baseline scenario text
+// ============================================================================
+
+function formatDeltaStamp(delta: TerrainDelta | null, maxItems: number = 3) {
+  if (!delta || !delta.kpiDelta) return "";
+
+  const entries = Object.entries(delta.kpiDelta)
+    .filter(([, v]) => typeof v?.from === "number" && typeof v?.to === "number")
+    .sort((a, b) => Math.abs(b[1].delta) - Math.abs(a[1].delta))
+    .slice(0, maxItems);
+
+  if (entries.length === 0) return "";
+
+  const parts = entries.map(([k, v]) => {
+    const sign = v.delta > 0 ? "+" : "";
+    return `${k}: ${v.from}→${v.to} (${sign}${v.delta})`;
+  });
+
+  return `Delta snapshot: ${parts.join(" • ")}`;
+}
+// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
@@ -512,9 +529,6 @@ export default function AIIntelligence({
 
   // Terrain delta tracking
   const previousEngineResultsRef = useRef<any>(null);
-  const previousKpisRef = useRef<Record<string, number> | null>(null);
-  const previousKpisSigRef = useRef<string>("");
-
   const [terrainDelta, setTerrainDelta] = useState<TerrainDelta | null>(null);
   const [insights, setInsights] = useState<InsightsPayload>({
     observation: [],
@@ -540,13 +554,6 @@ export default function AIIntelligence({
     }
   }, [isAnalyzing]);
 
-  // Keep internal refs sane when scenario changes
-  useEffect(() => {
-    previousEngineResultsRef.current = null;
-    previousKpisRef.current = null;
-    previousKpisSigRef.current = "";
-  }, [activeScenarioId]);
-
   // NEW: Prefer canonical upstream scenarioDelta when provided
   useEffect(() => {
     if (!scenarioDelta) return;
@@ -563,29 +570,6 @@ export default function AIIntelligence({
     });
   }, [scenarioDelta]);
 
-  // Current KPI snapshot (do NOT memo on engineResults identity; lever moves already re-render via activeLeverId)
-  const currentKpis: Record<string, unknown> | null =
-    activeScenarioId && engineResults?.[activeScenarioId]?.kpis
-      ? engineResults[activeScenarioId].kpis
-      : null;
-
-  // Build a stable signature that changes when KPI values change (even if engineResults is mutated in-place)
-  const currentKpisSignature = useMemo(() => {
-    if (!activeScenarioId || !currentKpis) return "";
-
-    const keys = Object.keys(currentKpis).sort();
-    // Fixed precision for signature stability; numeric coercion only
-    return keys
-      .map((k) => {
-        const raw = (currentKpis as any)[k];
-        const n = typeof raw === "number" ? raw : Number(raw);
-        if (!Number.isFinite(n)) return `${k}:NaN`;
-        return `${k}:${n.toFixed(6)}`;
-      })
-      .join("|");
-    // IMPORTANT: include activeLeverId to recompute while dragging, even if store mutates in place
-  }, [activeScenarioId, activeLeverId, currentKpis]);
-
   // Terrain delta tracking effect (fallback only; bypass when scenarioDelta is provided)
   useEffect(() => {
     if (scenarioDelta) {
@@ -594,41 +578,26 @@ export default function AIIntelligence({
       return;
     }
 
-    if (!activeScenarioId) return;
-    if (!currentKpis) return;
+    if (!engineResults || !activeScenarioId) return;
 
-    // If signature hasn't changed, nothing to do.
-    if (currentKpisSignature && currentKpisSignature === previousKpisSigRef.current) {
-      return;
-    }
+    const current = engineResults[activeScenarioId];
+    const prev = previousEngineResultsRef.current?.[activeScenarioId];
 
-    const prevKpis = previousKpisRef.current;
-
-    // First snapshot — just store and wait for next change.
-    if (!prevKpis) {
-      const snapshot: Record<string, number> = {};
-      for (const k of Object.keys(currentKpis)) {
-        const raw = (currentKpis as any)[k];
-        const n = typeof raw === "number" ? raw : Number(raw);
-        if (Number.isFinite(n)) snapshot[k] = n;
-      }
-      previousKpisRef.current = snapshot;
-      previousKpisSigRef.current = currentKpisSignature;
+    if (!current || !prev) {
       previousEngineResultsRef.current = engineResults;
       return;
     }
 
     const kpiDelta: TerrainDelta["kpiDelta"] = {};
 
-    for (const key of Object.keys(currentKpis)) {
-      const raw = (currentKpis as any)[key];
-      const to = typeof raw === "number" ? raw : Number(raw);
-      const from = prevKpis[key];
+    Object.keys(current.kpis || {}).forEach((key) => {
+      const from = prev.kpis?.[key];
+      const to = current.kpis?.[key];
 
-      if (typeof from === "number" && Number.isFinite(to) && from !== to) {
+      if (typeof from === "number" && typeof to === "number" && from !== to) {
         kpiDelta[key] = { from, to, delta: to - from };
       }
-    }
+    });
 
     if (Object.keys(kpiDelta).length > 0) {
       setTerrainDelta({
@@ -638,24 +607,8 @@ export default function AIIntelligence({
       });
     }
 
-    // Update snapshots
-    const nextSnapshot: Record<string, number> = {};
-    for (const k of Object.keys(currentKpis)) {
-      const raw = (currentKpis as any)[k];
-      const n = typeof raw === "number" ? raw : Number(raw);
-      if (Number.isFinite(n)) nextSnapshot[k] = n;
-    }
-    previousKpisRef.current = nextSnapshot;
-    previousKpisSigRef.current = currentKpisSignature;
     previousEngineResultsRef.current = engineResults;
-  }, [
-    scenarioDelta,
-    activeScenarioId,
-    activeLeverId,
-    currentKpisSignature,
-    currentKpis,
-    engineResults,
-  ]);
+  }, [engineResults, activeScenarioId, scenarioDelta]);
 
   // Build insights from terrain delta
   useEffect(() => {
@@ -702,9 +655,8 @@ export default function AIIntelligence({
     return defaultContent;
   }, [customResponse, defaultContent, insightLines]);
 
-  // Typewriter speed - military comms style: constant, steady, fluid
-  // 22ms = ~45 chars/sec - readable pace, smooth flow
-  const typingSpeed = 22;
+  // Typewriter speed - fast base with rhythm variation (18ms base = ~55 chars/second burst)
+  const typingSpeed = 18;
 
   // Stable callbacks for AISection to prevent re-renders
   const handleObservationComplete = useCallback(
@@ -723,9 +675,28 @@ export default function AIIntelligence({
       setIsProcessingQuestion(true);
       setShowQuestions(false); // Close questions panel
 
+      // Compose a deterministic “question stamp” to guarantee uniqueness
+      const focus = constraint?.trim() ? constraint.trim() : "Selected strategic question";
+      const primaryKpi =
+        Array.isArray(kpis) && kpis.length > 0 ? `Primary KPI index: ${kpis[0]}` : "";
+      const deltaStamp = formatDeltaStamp(terrainDelta, 3);
+
+      const headerLines = [
+        `Strategic Question Focus: ${focus}.`,
+        primaryKpi ? primaryKpi + "." : "",
+        deltaStamp ? deltaStamp : "",
+      ].filter(Boolean);
+
+      const stamp = headerLines.length ? `${headerLines.join(" ")} ` : "";
+
       // Brief analyzing state
       setTimeout(() => {
-        setCustomResponse(response);
+        setCustomResponse({
+          observation: `${stamp}${response.observation}`,
+          risk: `${stamp}${response.risk}`,
+          action: `${stamp}${response.action}`,
+        });
+
         setContentKey((k) => k + 1);
         setIsProcessingQuestion(false);
 
@@ -737,12 +708,13 @@ export default function AIIntelligence({
         }
       }, 600);
     },
-    [setHoveredKpiIndex]
+    [setHoveredKpiIndex, terrainDelta]
   );
 
   const toggleQuestions = () => {
     setShowQuestions(!showQuestions);
   };
+
   return (
     <div className={`ai-panel ${viewMode}`}>
       <div className="panel-edge" />
