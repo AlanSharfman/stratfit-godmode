@@ -101,10 +101,6 @@ export default function CenterViewPanel() {
   return (
     <div className="relative h-full w-full rounded-xl bg-black/40 backdrop-blur-sm border border-white/5 overflow-hidden">
       <div className="px-6 pt-4 pb-3 border-b border-white/5 bg-gradient-to-b from-black/30 to-transparent">
-        <div className="flex items-center justify-between">
-          <CenterViewSegmented value={view} onChange={setView} />
-        </div>
-
         <BriefingPanel
           briefingKey={briefingKey}
           open={briefingOpen}
@@ -116,6 +112,9 @@ export default function CenterViewPanel() {
       </div>
 
       <div className="relative h-[calc(100%-68px)] w-full p-4">
+        <div className="mb-3">
+          <CenterViewSegmented value={view} onChange={setView} />
+        </div>
         {view === "terrain" && (
           <div className="relative h-full w-full overflow-hidden rounded-3xl border border-slate-700/40 bg-black shadow-[0_8px_32px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.03)]">
             <div className="relative h-full w-full">
