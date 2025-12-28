@@ -516,6 +516,10 @@ export default function AIIntelligence({
   const [isProcessingQuestion, setIsProcessingQuestion] = useState(false);
   const [activeStrategicId, setActiveStrategicId] = useState<string | null>(null);
   const [strategicContentKey, setStrategicContentKey] = useState(0);
+  const [activeStrategicQuestion, setActiveStrategicQuestion] = useState<{
+    id: string;
+    text: string;
+  } | null>(null);
   const [customResponse, setCustomResponse] = useState<{
     observation: string;
     risk: string;
@@ -760,6 +764,7 @@ export default function AIIntelligence({
       constraint: string
     ) => {
       setActiveStrategicId(q.id);
+      setActiveStrategicQuestion(q);
       setStrategicContentKey((k) => k + 1);
       // Immediately enter "processing" so signal dots + gating behave correctly
       setIsProcessingQuestion(true);
@@ -784,7 +789,6 @@ export default function AIIntelligence({
       const deltaStamp = formatDeltaStamp(terrainDelta, 3);
 
       const headerLines = [
-        `Strategic Question Focus: ${focus}.`,
         primaryKpi ? `${primaryKpi}.` : "",
         deltaStamp ? deltaStamp : "",
       ].filter(Boolean);
@@ -857,6 +861,12 @@ export default function AIIntelligence({
       </div>
 
       <div className="panel-content">
+        {activeStrategicQuestion && (
+          <div className="strategic-question-header">
+            Strategic Question:
+            <span>{activeStrategicQuestion.text}</span>
+          </div>
+        )}
         <AISection
           title="OBSERVATION"
           content={aiContent.observation}
@@ -1085,6 +1095,25 @@ export default function AIIntelligence({
           padding: 16px 16px;
           overflow-y: auto;
           min-height: 0;
+        }
+
+        .strategic-question-header {
+          display: flex;
+          align-items: baseline;
+          gap: 8px;
+          padding: 10px 12px;
+          border-radius: 6px;
+          border: 1px solid rgba(148, 163, 184, 0.12);
+          background: rgba(15, 23, 42, 0.35);
+          color: rgba(140, 160, 180, 0.75);
+          font-size: 11px;
+          font-weight: 600;
+          letter-spacing: 0.02em;
+        }
+
+        .strategic-question-header span {
+          color: rgba(226, 232, 240, 0.85);
+          font-weight: 600;
         }
 
         .panel-content::-webkit-scrollbar {
