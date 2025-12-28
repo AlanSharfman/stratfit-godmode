@@ -33,6 +33,51 @@ interface AnalysisResponse {
   action: string;
 }
 
+type StrategicLens = "liquidity" | "growth" | "risk" | "valuation" | "ops";
+
+function classifyLens(prompt: string): StrategicLens {
+  const p = prompt.toLowerCase();
+
+  if (
+    p.includes("runway") ||
+    p.includes("cash") ||
+    p.includes("burn") ||
+    p.includes("liquidity") ||
+    p.includes("survive") ||
+    p.includes("extend")
+  )
+    return "liquidity";
+
+  if (
+    p.includes("growth") ||
+    p.includes("revenue") ||
+    p.includes("pricing") ||
+    p.includes("pipeline") ||
+    p.includes("acquisition") ||
+    p.includes("arr")
+  )
+    return "growth";
+
+  if (
+    p.includes("risk") ||
+    p.includes("downside") ||
+    p.includes("volatility") ||
+    p.includes("concentration") ||
+    p.includes("exposure")
+  )
+    return "risk";
+
+  if (
+    p.includes("valuation") ||
+    p.includes("multiple") ||
+    p.includes("ev") ||
+    p.includes("exit")
+  )
+    return "valuation";
+
+  return "ops";
+}
+
 // ============================================================================
 // PROMPT CONFIGURATIONS
 // ============================================================================
