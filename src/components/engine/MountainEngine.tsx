@@ -66,6 +66,11 @@ export default function MountainEngine({
   // HiDPI support
   const dprRef = useRef(Math.max(1, window.devicePixelRatio || 1));
 
+  // Path caching
+  const cachedMainPathRef = useRef<Path2D | null>(null);
+  const cachedFillPathRef = useRef<Path2D | null>(null);
+  const cachedPointsSigRef = useRef<string>("");
+
   // DEV warning for zero-height parent
   useEffect(() => {
     if (import.meta.env.DEV) {
@@ -105,6 +110,16 @@ export default function MountainEngine({
     const points = points01Ref.current;
     if (points.length < 2) return;
 
+    // Signature: rebuild cached paths only when points/size change
+    const sig = `${width}x${height}|${points.length}|${points.join(",")}`;
+    const needsRebuild = sig !== cachedPointsSigRef.current;
+
+    if (needsRebuild) {
+      cachedPointsSigRef.current = sig;
+      cachedMainPathRef.current = null;
+      cachedFillPathRef.current = null;
+    }
+
     const padding = 40;
     const graphHeight = height - padding * 2;
     const graphWidth = width - padding * 2;
@@ -120,29 +135,35 @@ export default function MountainEngine({
       ctx.stroke();
     }
 
-    // Path builder
-    const buildPath = (pts: number[]) => {
-      const path = new Path2D();
-      pts.forEach((val, i) => {
-        const x = padding + (graphWidth / (pts.length - 1)) * i;
-        const y = height - padding - val * graphHeight;
-        if (i === 0) path.moveTo(x, y);
-        else path.lineTo(x, y);
-      });
-      return path;
-    };
+    // Build cached paths (only if missing)
+    if (!cachedMainPathRef.current || !cachedFillPathRef.current) {
+      const mainPath = new Path2D();
+      const fillPath = new Path2D();
 
-    // Fill path
-    const fillPath = new Path2D();
-    points.forEach((val, i) => {
-      const x = padding + (graphWidth / (points.length - 1)) * i;
-      const y = height - padding - val * graphHeight;
-      if (i === 0) fillPath.moveTo(x, y);
-      else fillPath.lineTo(x, y);
-    });
-    fillPath.lineTo(width - padding, height - padding);
-    fillPath.lineTo(padding, height - padding);
-    fillPath.closePath();
+      points.forEach((val, i) => {
+        const x = padding + (graphWidth / (points.length - 1)) * i;
+        const y = height - padding - val * graphHeight;
+
+        if (i === 0) {
+          mainPath.moveTo(x, y);
+          fillPath.moveTo(x, y);
+        } else {
+          mainPath.lineTo(x, y);
+          fillPath.lineTo(x, y);
+        }
+      });
+
+      // Close fill path
+      fillPath.lineTo(width - padding, height - padding);
+      fillPath.lineTo(padding, height - padding);
+      fillPath.closePath();
+
+      cachedMainPathRef.current = mainPath;
+      cachedFillPathRef.current = fillPath;
+    }
+
+    const mainPath = cachedMainPathRef.current!;
+    const fillPath = cachedFillPathRef.current!;
 
     // Fill gradient
     const gradient = ctx.createLinearGradient(0, padding, 0, height - padding);
@@ -156,7 +177,7 @@ export default function MountainEngine({
     ctx.shadowBlur = 12;
     ctx.strokeStyle = theme.stroke;
     ctx.lineWidth = 2;
-    ctx.stroke(buildPath(points));
+    ctx.stroke(mainPath);
     ctx.shadowBlur = 0;
 
     // Data points
