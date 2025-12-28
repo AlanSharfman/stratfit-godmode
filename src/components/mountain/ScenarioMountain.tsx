@@ -128,6 +128,10 @@ interface TerrainProps {
   activeLeverId: LeverId | null;
   leverIntensity01: number;
   scenario: ScenarioId;
+
+  ghostBase?: number[];
+  ghostUpside?: number[];
+  ghostDownside?: number[];
 }
 
 const Terrain: React.FC<TerrainProps> = ({
@@ -136,6 +140,9 @@ const Terrain: React.FC<TerrainProps> = ({
   activeLeverId,
   leverIntensity01,
   scenario,
+  ghostBase,
+  ghostUpside,
+  ghostDownside,
 }) => {
   const groupRef = useRef<THREE.Group>(null);
   const meshFillRef = useRef<THREE.Mesh>(null);
