@@ -530,6 +530,24 @@ export default function AIIntelligence({
     }))
   );
 
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    if (!engineResults || !activeScenarioId) return;
+
+    const cur = engineResults?.[activeScenarioId]?.kpis ?? {};
+    // eslint-disable-next-line no-console
+    console.log("[AI PANEL] scenario:", activeScenarioId);
+    // eslint-disable-next-line no-console
+    console.log("[AI PANEL] kpi keys:", Object.keys(cur));
+    // eslint-disable-next-line no-console
+    console.log(
+      "[AI PANEL] cash position raw:",
+      cur["cash position"],
+      "type:",
+      typeof cur["cash position"]
+    );
+  }, [engineResults, activeScenarioId]);
+
   const previousEngineResultsRef = useRef<any>(null);
   const [terrainDelta, setTerrainDelta] = useState<TerrainDelta | null>(null);
   const [insights, setInsights] = useState<InsightsPayload>({
