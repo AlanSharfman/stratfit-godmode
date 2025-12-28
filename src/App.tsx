@@ -303,7 +303,7 @@ export default function App() {
   const handleOnboardingComplete = useCallback(() => {
     setShowOnboarding(false);
   }, []);
-  
+
   return (
     <div className="app">
       {/* ONBOARDING SEQUENCE */}
@@ -630,7 +630,8 @@ export default function App() {
         .middle-section {
           flex: 1;
           display: grid;
-          grid-template-columns: 200px 1fr 280px;
+          /* Wider AI panel so content doesn't clip/overflow the viewport */
+          grid-template-columns: 200px 1fr 340px;
           gap: 16px;
           padding: 12px 20px;
           min-height: 0;
@@ -706,13 +707,14 @@ export default function App() {
         .right-panel {
           display: flex;
           flex-direction: column;
+          min-width: 0;
           min-height: 0;
           overflow: hidden;
         }
 
         @media (max-width: 1200px) {
           .middle-section {
-            grid-template-columns: 180px 1fr 240px;
+            grid-template-columns: 180px 1fr 300px;
           }
         }
 

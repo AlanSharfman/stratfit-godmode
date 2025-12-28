@@ -1402,8 +1402,15 @@ export default function AIIntelligence({
 
         .scenario-compare-grid {
           display: grid;
-          grid-template-columns: 1fr 1fr;
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
           gap: 16px;
+        }
+
+        /* Prevent horizontal overflow on narrower right panels */
+        @media (max-width: 1200px) {
+          .scenario-compare-grid {
+            grid-template-columns: 1fr;
+          }
         }
 
         .scenario-panel {
