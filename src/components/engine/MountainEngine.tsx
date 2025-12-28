@@ -63,6 +63,9 @@ export default function MountainEngine({
   // Normalize cache
   const points01Ref = useRef<number[]>([]);
 
+  // HiDPI support
+  const dprRef = useRef(Math.max(1, window.devicePixelRatio || 1));
+
   // DEV warning for zero-height parent
   useEffect(() => {
     if (import.meta.env.DEV) {
@@ -224,8 +227,18 @@ export default function MountainEngine({
       if (w === sizeRef.current.w && h === sizeRef.current.h) return;
 
       sizeRef.current = { w, h };
-      canvas.width = w;
-      canvas.height = h;
+
+      const dpr = dprRef.current;
+
+      canvas.width = Math.floor(w * dpr);
+      canvas.height = Math.floor(h * dpr);
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
+
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
 
       dirtyRef.current = true;
     };
