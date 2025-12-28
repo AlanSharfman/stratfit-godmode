@@ -491,9 +491,6 @@ export default function AIIntelligence({
   const [observationComplete, setObservationComplete] = useState(false);
   const [risksComplete, setRisksComplete] = useState(false);
   const [actionsComplete, setActionsComplete] = useState(false);
-  
-  // Track if typewriter sequence is running (start true, stop when actions complete)
-  const [typingInProgress, setTypingInProgress] = useState(true);
 
   const {
     viewMode,
@@ -522,17 +519,10 @@ export default function AIIntelligence({
   // isAnalyzing = lever moving or processing question
   const isAnalyzing = activeLeverId !== null || isProcessingQuestion;
 
-  // Signal dots active while analyzing OR while typewriter in progress
-  const signalActive = isAnalyzing || typingInProgress;
-
-  // Stop typing animation only when ACTIONS section completes
-  useEffect(() => {
-    if (actionsComplete) {
-      // Small delay so user sees the final state before dots stop
-      const t = setTimeout(() => setTypingInProgress(false), 300);
-      return () => clearTimeout(t);
-    }
-  }, [actionsComplete]);
+  // Dots stay active until ALL 3 sections finish typing (and also while analyzing).
+  const isTyping =
+    !isAnalyzing && (!observationComplete || !risksComplete || !actionsComplete);
+  const signalActive = isAnalyzing || isTyping;
 
   useEffect(() => {
     setContentKey((k) => k + 1);
@@ -540,7 +530,6 @@ export default function AIIntelligence({
     setObservationComplete(false);
     setRisksComplete(false);
     setActionsComplete(false);
-    setTypingInProgress(true);
   }, [scenario, viewMode]);
 
   useEffect(() => {
@@ -548,7 +537,6 @@ export default function AIIntelligence({
       setObservationComplete(false);
       setRisksComplete(false);
       setActionsComplete(false);
-      setTypingInProgress(true);
     }
   }, [isAnalyzing]);
 
