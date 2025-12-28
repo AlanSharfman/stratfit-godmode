@@ -28,6 +28,23 @@ type InsightsPayload = {
   actions: InsightItem[];
 };
 
+const highlightDeltaSentences = (text: string, drivers: string[]) => {
+  if (!drivers.length) return text;
+
+  return text
+    .split(". ")
+    .map((sentence) => {
+      const matchesDriver = drivers.some((driver) =>
+        sentence.toLowerCase().includes(driver.toLowerCase())
+      );
+
+      if (!matchesDriver) return sentence;
+
+      return `<span class="delta-highlight">${sentence}</span>`;
+    })
+    .join(". ");
+};
+
 // ============================================================================
 // KPI ALIASES + THRESHOLDS
 // ============================================================================
@@ -170,23 +187,6 @@ function AISection({
   onTypingChange?: (isTyping: boolean) => void;
   isRiskSection?: boolean;
 }) {
-  const highlightDeltaSentences = (text: string, drivers: string[]) => {
-    if (!drivers.length) return text;
-
-    return text
-      .split(". ")
-      .map((sentence) => {
-        const matchesDriver = drivers.some((driver) =>
-          sentence.toLowerCase().includes(driver.toLowerCase())
-        );
-
-        if (!matchesDriver) return sentence;
-
-        return `<span class="delta-highlight">${sentence}</span>`;
-      })
-      .join(". ");
-  };
-
   const { displayText, isComplete, hasStarted } = useTypewriter(
     content,
     speed,
@@ -565,6 +565,7 @@ export default function AIIntelligence({
   const [strategicContentKey, setStrategicContentKey] = useState(0);
   const [viewMode, setViewMode] =
     useState<"operator" | "investor">("operator");
+  const [compareMode, setCompareMode] = useState(false);
   const [confidenceLevel, setConfidenceLevel] =
     useState<"low" | "medium" | "high" | null>(null);
   const [activeStrategicQuestion, setActiveStrategicQuestion] = useState<{
@@ -915,10 +916,11 @@ export default function AIIntelligence({
   const deltaSnapshot = useMemo(() => {
     const k = terrainDelta?.kpiDelta ?? {};
     return {
-      revenueDelta: (k as any).revenue?.delta ?? (k as any).arr?.delta ?? 0,
-      burnDelta: (k as any).burnRate?.delta ?? (k as any).burnQuality?.delta ?? 0,
+      // Map to STRATFIT demo KPI schema
+      revenueDelta: (k as any).momentum?.delta ?? 0,
+      burnDelta: (k as any).burnQuality?.delta ?? 0,
       runwayDelta: (k as any).runway?.delta ?? 0,
-      capacityDelta: (k as any).capacity?.delta ?? (k as any).momentum?.delta ?? 0,
+      capacityDelta: (k as any).earningsPower?.delta ?? 0,
       enterpriseValueDelta: (k as any).enterpriseValue?.delta ?? 0,
     };
   }, [terrainDelta]);
@@ -931,6 +933,119 @@ export default function AIIntelligence({
   const executiveSentence = useMemo(
     () => deriveExecutiveSentence(customResponse?.observation ?? null),
     [customResponse]
+  );
+
+  const deriveConfidence = useCallback(
+    (snapshot: any): "low" | "medium" | "high" => {
+      const deltaMagnitude = Math.abs(snapshot?.enterpriseValueDelta ?? 0);
+      if (deltaMagnitude < 2) return "low";
+      if (deltaMagnitude < 8) return "medium";
+      return "high";
+    },
+    []
+  );
+
+  const baseKpis = engineResults?.base?.kpis ?? null;
+  const upsideKpis = engineResults?.upside?.kpis ?? null;
+  const downsideKpis = engineResults?.downside?.kpis ?? null;
+
+  const buildSnapshotFromKpis = useCallback(
+    (from: any, to: any) => {
+      const fromObj = from ?? {};
+      const toObj = to ?? {};
+
+      const n = (v: any) => toNumberMaybe(v);
+      const dv = (key: string) => {
+        const a = n(fromObj[key]);
+        const b = n(toObj[key]);
+        if (a === null || b === null) return 0;
+        return b - a;
+      };
+
+      return {
+        revenueDelta: dv("momentum"),
+        burnDelta: dv("burnQuality"),
+        runwayDelta: dv("runway"),
+        capacityDelta: dv("earningsPower"),
+        enterpriseValueDelta: dv("enterpriseValue"),
+      };
+    },
+    []
+  );
+
+  const upsideSnapshot = useMemo(
+    () => buildSnapshotFromKpis(baseKpis, upsideKpis),
+    [baseKpis, upsideKpis, buildSnapshotFromKpis]
+  );
+  const downsideSnapshot = useMemo(
+    () => buildSnapshotFromKpis(baseKpis, downsideKpis),
+    [baseKpis, downsideKpis, buildSnapshotFromKpis]
+  );
+
+  const upsideDrivers = useMemo(
+    () => deriveDeltaDrivers(upsideSnapshot),
+    [upsideSnapshot]
+  );
+  const downsideDrivers = useMemo(
+    () => deriveDeltaDrivers(downsideSnapshot),
+    [downsideSnapshot]
+  );
+
+  const upsideConfidence = useMemo(
+    () => deriveConfidence(upsideSnapshot),
+    [deriveConfidence, upsideSnapshot]
+  );
+  const downsideConfidence = useMemo(
+    () => deriveConfidence(downsideSnapshot),
+    [deriveConfidence, downsideSnapshot]
+  );
+
+  const buildStrategicText = useCallback(() => {
+    if (!customResponse) return "";
+    return `OBSERVATION: ${customResponse.observation}\n\nRISKS: ${customResponse.risk}\n\nACTIONS: ${customResponse.action}`;
+  }, [customResponse]);
+
+  const strategicText = useMemo(() => buildStrategicText(), [buildStrategicText]);
+
+  const ScenarioPanel = useCallback(
+    (props: {
+      label: "Upside" | "Downside";
+      confidence: "low" | "medium" | "high";
+      drivers: string[];
+      content: string;
+    }) => {
+      const { label, confidence, drivers, content } = props;
+      return (
+        <div className={`scenario-panel ${label.toLowerCase()}`}>
+          <h4>{label} scenario</h4>
+
+          <div className={`confidence-band ${confidence}`}>
+            <span className="confidence-label">Confidence</span>
+            <span className="confidence-value">
+              {confidence === "low" && "Low conviction"}
+              {confidence === "medium" && "Moderate conviction"}
+              {confidence === "high" && "High conviction"}
+            </span>
+          </div>
+
+          {drivers.length > 0 && (
+            <div className="delta-anchor">
+              Driven by: <strong>{drivers.join(", ")}</strong>
+            </div>
+          )}
+
+          <div
+            className="scenario-panel-content"
+            dangerouslySetInnerHTML={{
+              __html: highlightDeltaSentences(content, drivers)
+                .split("\n")
+                .join("<br/>"),
+            }}
+          />
+        </div>
+      );
+    },
+    []
   );
 
   return (
@@ -979,6 +1094,12 @@ export default function AIIntelligence({
             Investor
           </button>
         </div>
+        <button
+          className={`compare-toggle ${compareMode ? "active" : ""}`}
+          onClick={() => setCompareMode((v) => !v)}
+        >
+          Compare scenarios
+        </button>
         <div className={`signal-dots ${signalActive ? "active" : ""}`}>
           <div className="signal-dot dot-1" />
           <div className="signal-dot dot-2" />
@@ -993,12 +1114,12 @@ export default function AIIntelligence({
             <div className="sq-text">{activeStrategicQuestion.text}</div>
           </div>
         )}
-        {activeStrategicQuestion && activeScenario && (
+        {activeStrategicQuestion && activeScenario && !compareMode && (
           <div className="scenario-context">
             Scenario context: <strong>{activeScenario.label}</strong>
           </div>
         )}
-        {activeStrategicQuestion && confidenceLevel && (
+        {activeStrategicQuestion && confidenceLevel && !compareMode && (
           <div className={`confidence-band ${confidenceLevel}`}>
             <span className="confidence-label">Confidence</span>
             <span className="confidence-value">
@@ -1008,18 +1129,35 @@ export default function AIIntelligence({
             </span>
           </div>
         )}
-        {activeStrategicQuestion && deltaDrivers.length > 0 && (
+        {activeStrategicQuestion && !compareMode && deltaDrivers.length > 0 && (
           <div className="delta-anchor">
             Insight driven primarily by changes in:
             <strong> {deltaDrivers.join(", ")}</strong>
           </div>
         )}
-        {activeStrategicQuestion && executiveSentence && (
+        {activeStrategicQuestion && !compareMode && executiveSentence && (
           <div className="executive-sentence">
             <span className="exec-label">Executive signal</span>
             <span className="exec-text">{executiveSentence}</span>
           </div>
         )}
+        {activeStrategicQuestion && compareMode ? (
+          <div className="scenario-compare-grid">
+            <ScenarioPanel
+              label="Upside"
+              confidence={upsideConfidence}
+              drivers={upsideDrivers}
+              content={strategicText}
+            />
+            <ScenarioPanel
+              label="Downside"
+              confidence={downsideConfidence}
+              drivers={downsideDrivers}
+              content={strategicText}
+            />
+          </div>
+        ) : null}
+        {!compareMode && (
         <AISection
           title="OBSERVATION"
           content={aiContent.observation}
@@ -1032,7 +1170,9 @@ export default function AIIntelligence({
           onComplete={handleObservationComplete}
           onTypingChange={setTypingFlag("obs")}
         />
+        )}
 
+        {!compareMode && (
         <AISection
           title="RISKS"
           content={aiContent.risks}
@@ -1046,7 +1186,9 @@ export default function AIIntelligence({
           isRiskSection={true}
           onTypingChange={setTypingFlag("risks")}
         />
+        )}
 
+        {!compareMode && (
         <AISection
           title="ACTIONS"
           content={aiContent.action}
@@ -1059,6 +1201,7 @@ export default function AIIntelligence({
           onComplete={handleActionsComplete}
           onTypingChange={setTypingFlag("actions")}
         />
+        )}
       </div>
 
       <div className="questions-toggle-container">
@@ -1156,6 +1299,46 @@ export default function AIIntelligence({
         .view-toggle button.active {
           opacity: 1;
           font-weight: 600;
+        }
+
+        .compare-toggle {
+          font-size: 12px;
+          opacity: 0.6;
+          background: transparent;
+          border: none;
+          color: rgba(255,255,255,0.85);
+          padding: 0;
+        }
+
+        .compare-toggle.active {
+          opacity: 1;
+          font-weight: 600;
+        }
+
+        .scenario-compare-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 16px;
+        }
+
+        .scenario-panel {
+          padding: 12px;
+          border-radius: 12px;
+          background: rgba(255,255,255,0.03);
+        }
+
+        .scenario-panel h4 {
+          font-size: 12px;
+          text-transform: uppercase;
+          opacity: 0.6;
+          margin-bottom: 6px;
+        }
+
+        .scenario-panel-content {
+          font-size: 12px;
+          color: rgba(255,255,255,0.85);
+          line-height: 1.5;
+          white-space: normal;
         }
 
         .header-left {
