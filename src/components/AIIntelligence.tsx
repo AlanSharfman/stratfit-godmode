@@ -946,8 +946,8 @@ export default function AIIntelligence({
         }
 
         .signal-dots.active .signal-dot {
-          background: #00ff88;
-          box-shadow: 0 0 8px #00ff88, 0 0 16px rgba(0, 255, 136, 0.5);
+          background: #22d3ee;
+          box-shadow: 0 0 8px #22d3ee, 0 0 16px rgba(34, 211, 238, 0.5);
         }
 
         .signal-dots.active .signal-dot.dot-1 {
@@ -967,12 +967,12 @@ export default function AIIntelligence({
           100% {
             opacity: 0.3;
             transform: scale(0.8) translateX(0);
-            box-shadow: 0 0 2px rgba(0, 255, 136, 0.2);
+            box-shadow: 0 0 2px rgba(34, 211, 238, 0.2);
           }
           50% {
             opacity: 1;
             transform: scale(1.3) translateX(4px);
-            box-shadow: 0 0 12px #00ff88, 0 0 24px rgba(0, 255, 136, 0.8);
+            box-shadow: 0 0 12px #22d3ee, 0 0 24px rgba(34, 211, 238, 0.8);
           }
         }
 
