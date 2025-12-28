@@ -702,9 +702,9 @@ export default function AIIntelligence({
     return defaultContent;
   }, [customResponse, defaultContent, insightLines]);
 
-  // Typewriter speed - military comms style: constant, rapid, no hesitation
-  // 14ms = ~71 chars/sec - fast but readable, like teletype output
-  const typingSpeed = 14;
+  // Typewriter speed - military comms style: constant, steady, fluid
+  // 22ms = ~45 chars/sec - readable pace, smooth flow
+  const typingSpeed = 22;
 
   // Stable callbacks for AISection to prevent re-renders
   const handleObservationComplete = useCallback(
