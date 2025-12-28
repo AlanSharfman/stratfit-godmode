@@ -837,6 +837,32 @@ export default function AIIntelligence({
     ? `strategic-${strategicContentKey}-${activeStrategicId}`
     : `${contentKey}`;
 
+  const activeScenario = useMemo(() => {
+    const label =
+      scenario === "base"
+        ? "Base"
+        : scenario === "upside"
+        ? "Upside"
+        : scenario === "downside"
+        ? "Downside"
+        : scenario === "extreme"
+        ? "Extreme"
+        : String(scenario);
+    return { id: scenario, label };
+  }, [scenario]);
+
+  const deltaAnchorText = useMemo(() => {
+    if (!terrainDelta?.kpiDelta) return "";
+    const entries = Object.entries(terrainDelta.kpiDelta);
+    if (entries.length === 0) return "";
+    const top = entries
+      .slice()
+      .sort((a, b) => Math.abs(b[1].delta) - Math.abs(a[1].delta))
+      .slice(0, 3)
+      .map(([k]) => k);
+    return top.length ? `Key deltas driving insight: ${top.join(", ")}` : "";
+  }, [terrainDelta]);
+
   return (
     <div className={`ai-panel ${viewMode}`}>
       <div className="panel-edge" />
@@ -882,6 +908,14 @@ export default function AIIntelligence({
             <div className="sq-label">Strategic Question</div>
             <div className="sq-text">{activeStrategicQuestion.text}</div>
           </div>
+        )}
+        {activeStrategicQuestion && activeScenario && (
+          <div className="scenario-context">
+            Scenario context: <strong>{activeScenario.label}</strong>
+          </div>
+        )}
+        {activeStrategicQuestion && !!deltaAnchorText && (
+          <div className="delta-anchor">{deltaAnchorText}</div>
         )}
         <AISection
           title="OBSERVATION"
@@ -1137,6 +1171,26 @@ export default function AIIntelligence({
           font-weight: 600;
           line-height: 1.35;
           color: rgba(255,255,255,0.95);
+        }
+
+        .scenario-context {
+          margin-top: 4px;
+          margin-bottom: 6px;
+          font-size: 12px;
+          color: rgba(255,255,255,0.55);
+        }
+
+        .scenario-context strong {
+          color: rgba(255,255,255,0.95);
+          font-weight: 600;
+        }
+
+        .delta-anchor {
+          margin: 8px 0 10px;
+          font-size: 12px;
+          color: rgba(255,255,255,0.6);
+          border-left: 2px solid rgba(255,255,255,0.15);
+          padding-left: 8px;
         }
 
         .kpi-index-note {
