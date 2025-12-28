@@ -132,9 +132,9 @@ function useTypewriter(
 
       if (t >= nextAt) {
         if (index >= text.length) {
-          setIsComplete(true);
-          return;
-        }
+        setIsComplete(true);
+        return;
+      }
 
         const ch = text[index];
         const next = text[index + 1];
@@ -320,7 +320,7 @@ function AISection({
           )}
         </AnimatePresence>
       </div>
-    </div>
+      </div>
   );
 }
 // ============================================================================
@@ -827,7 +827,7 @@ export default function AIIntelligence({
 
       // Immediately enter "processing" so signal dots + gating behave correctly
       setIsProcessingQuestion(true);
-      setShowQuestions(false);
+    setShowQuestions(false);
 
       // reset gating so dots + typing restart every time
       setObservationComplete(false);
@@ -886,10 +886,10 @@ export default function AIIntelligence({
 
     const drivers: string[] = [];
 
-    if (Math.abs(delta.revenueDelta ?? 0) > 5) drivers.push("Revenue");
-    if (Math.abs(delta.burnDelta ?? 0) > 5) drivers.push("Burn");
-    if (Math.abs(delta.runwayDelta ?? 0) > 2) drivers.push("Runway");
-    if (Math.abs(delta.capacityDelta ?? 0) > 5) drivers.push("Capacity");
+    if (Math.abs(delta.revenueDelta ?? 0) >= 7) drivers.push("Revenue");
+    if (Math.abs(delta.burnDelta ?? 0) >= 6) drivers.push("Burn");
+    if (Math.abs(delta.runwayDelta ?? 0) >= 2) drivers.push("Runway");
+    if (Math.abs(delta.capacityDelta ?? 0) >= 5) drivers.push("Capacity");
 
     return drivers;
   };
@@ -1061,11 +1061,18 @@ export default function AIIntelligence({
       label: "Upside" | "Downside";
       confidence: "low" | "medium" | "high";
       drivers: string[];
-      content: string;
+      content: {
+        observation: string;
+        risks: string;
+        actions: string;
+      };
     }) => {
       const { label, confidence, drivers, content } = props;
+      const observationHtml = highlightDeltaSentences(content.observation, drivers);
+      const risksHtml = highlightDeltaSentences(content.risks, drivers);
+      const actionsHtml = highlightDeltaSentences(content.actions, drivers);
       return (
-        <div className={`scenario-panel ${label.toLowerCase()}`}>
+        <div className={`scenario-panel compare ${label.toLowerCase()}`}>
           <h4>{label} scenario</h4>
 
           <div className={`confidence-band ${confidence}`}>
@@ -1083,14 +1090,17 @@ export default function AIIntelligence({
             </div>
           )}
 
-          <div
-            className="scenario-panel-content"
-            dangerouslySetInnerHTML={{
-              __html: highlightDeltaSentences(content, drivers)
-                .split("\n")
-                .join("<br/>"),
-            }}
-          />
+          <div className="scenario-panel-content">
+            <div
+              className="observation"
+              dangerouslySetInnerHTML={{ __html: observationHtml }}
+            />
+            <div className="risks" dangerouslySetInnerHTML={{ __html: risksHtml }} />
+            <div
+              className="actions"
+              dangerouslySetInnerHTML={{ __html: actionsHtml }}
+            />
+          </div>
         </div>
       );
     },
@@ -1201,13 +1211,21 @@ export default function AIIntelligence({
               label="Upside"
               confidence={upsideConfidence}
               drivers={upsideDrivers}
-              content={strategicText}
+              content={{
+                observation: `OBSERVATION: ${customResponse?.observation ?? ""}`,
+                risks: `RISKS: ${customResponse?.risk ?? ""}`,
+                actions: `ACTIONS: ${customResponse?.action ?? ""}`,
+              }}
             />
             <ScenarioPanel
               label="Downside"
               confidence={downsideConfidence}
               drivers={downsideDrivers}
-              content={strategicText}
+              content={{
+                observation: `OBSERVATION: ${customResponse?.observation ?? ""}`,
+                risks: `RISKS: ${customResponse?.risk ?? ""}`,
+                actions: `ACTIONS: ${customResponse?.action ?? ""}`,
+              }}
             />
           </div>
         ) : null}
@@ -1394,6 +1412,14 @@ export default function AIIntelligence({
           background: rgba(255,255,255,0.03);
         }
 
+        .scenario-panel.upside {
+          border-left: 3px solid rgba(0, 220, 170, 0.35);
+        }
+
+        .scenario-panel.downside {
+          border-left: 3px solid rgba(255, 120, 120, 0.35);
+        }
+
         .scenario-panel h4 {
           font-size: 12px;
           text-transform: uppercase;
@@ -1401,11 +1427,32 @@ export default function AIIntelligence({
           margin-bottom: 6px;
         }
 
+        .scenario-panel .delta-anchor {
+          margin-bottom: 10px;
+          padding-bottom: 8px;
+          border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
         .scenario-panel-content {
           font-size: 12px;
           color: rgba(255,255,255,0.85);
           line-height: 1.5;
           white-space: normal;
+        }
+
+        .scenario-panel.compare .observation {
+          max-height: 200px;
+          overflow: hidden;
+        }
+
+        .scenario-panel.compare .risks {
+          max-height: 160px;
+          overflow: hidden;
+        }
+
+        .scenario-panel.compare .actions {
+          max-height: 120px;
+          overflow: hidden;
         }
 
         .header-left {
