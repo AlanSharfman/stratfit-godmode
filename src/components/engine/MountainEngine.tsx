@@ -2,6 +2,7 @@
 // STRATFIT — 2D Canvas Mountain Engine (Performance Hardened: single RAF + dirty flag)
 
 import { useRef, useEffect, useCallback } from "react";
+import type { ScenarioDelta } from "@/logic/buildScenarioDelta";
 
 type ScenarioId = "base" | "upside" | "downside" | "extreme";
 
@@ -14,6 +15,9 @@ interface MountainEngineProps {
   ghostBase?: number[];
   ghostUpside?: number[];
   ghostDownside?: number[];
+
+  // Canonical delta (immutable, per-frame)
+  scenarioDelta?: ScenarioDelta | null;
 }
 
 const SCENARIO_THEMES: Record<
@@ -49,8 +53,13 @@ export default function MountainEngine({
   ghostBase,
   ghostUpside,
   ghostDownside,
+  scenarioDelta,
 }: MountainEngineProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Store canonical delta (no recompute, no mutation)
+  const deltaRef = useRef<ScenarioDelta | null>(null);
+  deltaRef.current = scenarioDelta ?? null;
 
   // RAF loop refs
   const rafRef = useRef<number | null>(null);
