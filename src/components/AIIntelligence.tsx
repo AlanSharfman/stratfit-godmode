@@ -492,8 +492,8 @@ export default function AIIntelligence({
   const [risksComplete, setRisksComplete] = useState(false);
   const [actionsComplete, setActionsComplete] = useState(false);
   
-  // Track if typewriter sequence has started (to know when dots should flash)
-  const [typingInProgress, setTypingInProgress] = useState(false);
+  // Track if typewriter sequence is running (start true, stop when actions complete)
+  const [typingInProgress, setTypingInProgress] = useState(true);
 
   const {
     viewMode,
@@ -525,14 +525,12 @@ export default function AIIntelligence({
   // Signal dots active while analyzing OR while typewriter in progress
   const signalActive = isAnalyzing || typingInProgress;
 
-  // Start typing when contentKey changes, stop when actions complete
-  useEffect(() => {
-    setTypingInProgress(true);
-  }, [contentKey]);
-
+  // Stop typing animation only when ACTIONS section completes
   useEffect(() => {
     if (actionsComplete) {
-      setTypingInProgress(false);
+      // Small delay so user sees the final state before dots stop
+      const t = setTimeout(() => setTypingInProgress(false), 300);
+      return () => clearTimeout(t);
     }
   }, [actionsComplete]);
 
