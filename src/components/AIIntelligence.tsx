@@ -662,7 +662,7 @@ export default function AIIntelligence({
     return defaultContent;
   }, [customResponse, defaultContent, insightLines]);
 
-  const typingSpeed = 18;
+  const typingSpeed = 16;
 
   const handleObservationComplete = useCallback(
     () => setObservationComplete(true),
