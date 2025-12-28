@@ -863,8 +863,8 @@ export default function AIIntelligence({
       <div className="panel-content">
         {activeStrategicQuestion && (
           <div className="strategic-question-header">
-            Strategic Question:
-            <span>{activeStrategicQuestion.text}</span>
+            <div className="sq-label">Strategic Question</div>
+            <div className="sq-text">{activeStrategicQuestion.text}</div>
           </div>
         )}
         <AISection
@@ -1098,22 +1098,29 @@ export default function AIIntelligence({
         }
 
         .strategic-question-header {
-          display: flex;
-          align-items: baseline;
-          gap: 8px;
-          padding: 10px 12px;
-          border-radius: 6px;
-          border: 1px solid rgba(148, 163, 184, 0.12);
-          background: rgba(15, 23, 42, 0.35);
-          color: rgba(140, 160, 180, 0.75);
-          font-size: 11px;
-          font-weight: 600;
-          letter-spacing: 0.02em;
+          padding: 12px 14px;
+          margin-bottom: 12px;
+          border-radius: 10px;
+          background: linear-gradient(
+            180deg,
+            rgba(255,255,255,0.04),
+            rgba(255,255,255,0.01)
+          );
         }
 
-        .strategic-question-header span {
-          color: rgba(226, 232, 240, 0.85);
+        .sq-label {
+          font-size: 11px;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: rgba(255,255,255,0.45);
+          margin-bottom: 4px;
+        }
+
+        .sq-text {
+          font-size: 15px;
           font-weight: 600;
+          line-height: 1.35;
+          color: rgba(255,255,255,0.95);
         }
 
         .panel-content::-webkit-scrollbar {
