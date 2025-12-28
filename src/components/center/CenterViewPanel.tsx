@@ -132,6 +132,7 @@ export default function CenterViewPanel() {
   const activeScenarioId = useScenarioStore((s) => s.activeScenarioId);
 
   const downsideResult = engineResults?.["downside"];
+  const upsideResult = engineResults?.["upside"];
 
   // briefing controls
   const briefingKey = useMemo(() => viewToBriefingKey(view), [view]);
@@ -210,7 +211,8 @@ export default function CenterViewPanel() {
                 scenario={scenario} 
                 dataPoints={dataPoints}
                 activeKpiIndex={hoveredKpiIndex}
-                ghostDownside={downsideResult?.terrainPoints}
+                ghostDownside={downsideResult ? Object.values(downsideResult.kpis).slice(0, 7).map(k => k.value) : undefined}
+                ghostUpside={upsideResult ? Object.values(upsideResult.kpis).slice(0, 7).map(k => k.value) : undefined}
               />
             </div>
           </div>
