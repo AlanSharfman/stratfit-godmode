@@ -92,6 +92,24 @@ export default function MountainEngine({
 
     // Draw mountain fill
     const mainPath = buildPath(points);
+
+    // --------------------------------------------------
+    // GHOST OVERLAY: DOWNSIDE (stroke only, behind main)
+    // --------------------------------------------------
+    if (ghostDownside && ghostDownside.length === points.length) {
+      const maxGhost = Math.max(...ghostDownside, 1);
+      const g01 = ghostDownside.map((v) => v / maxGhost);
+      const ghostPath = buildPath(g01);
+
+      ctx.save();
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 0.22; // subtle
+      ctx.strokeStyle = "rgba(251, 191, 36, 0.9)"; // amber (downside)
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([6, 6]); // ghost feel
+      ctx.stroke(ghostPath);
+      ctx.restore();
+    }
     
     // Close path for fill
     const fillPath = new Path2D();
@@ -164,9 +182,7 @@ export default function MountainEngine({
       }
     }
 
-    // Ghost overlays would be rendered here when implemented
-    // ghostBase, ghostUpside, ghostDownside are available for future use
-  }, [dataPoints, activeKPIIndex, scenario]);
+  }, [dataPoints, activeKPIIndex, scenario, ghostDownside]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
