@@ -18,6 +18,19 @@ type TerrainDelta = {
   timestamp: number;
 };
 
+type InsightItem = {
+  id: string;
+  title: string;
+  detail: string;
+  severity?: "low" | "med" | "high";
+};
+
+type InsightsPayload = {
+  observation: InsightItem[];
+  risks: InsightItem[];
+  actions: InsightItem[];
+};
+
 interface AIIntelligenceProps {
   commentary: string[];
   risks: string[];
@@ -303,6 +316,106 @@ function getAIContent(viewMode: ViewMode, scenario: ScenarioId) {
 }
 
 // ============================================================================
+// RULES ENGINE - Build insights from terrain deltas
+// ============================================================================
+
+function buildInsightsFromDelta(delta: TerrainDelta | null): InsightsPayload {
+  if (!delta) {
+    return { observation: [], risks: [], actions: [] };
+  }
+
+  const obs: InsightItem[] = [];
+  const risks: InsightItem[] = [];
+  const acts: InsightItem[] = [];
+
+  const get = (k: string) => delta.kpiDelta?.[k];
+
+  // ---- Core Observations ----
+  const runway = get("runway");
+  if (runway) {
+    obs.push({
+      id: "runway-change",
+      title: `Runway ${runway.delta < 0 ? "compressed" : "extended"}`,
+      detail: `Runway moved from ${runway.from} to ${runway.to} (${runway.delta > 0 ? "+" : ""}${runway.delta}).`,
+      severity: runway.delta < 0 ? "med" : "low",
+    });
+
+    if (runway.to <= 6) {
+      risks.push({
+        id: "runway-critical",
+        title: "Runway approaching critical threshold",
+        detail: `Runway is now ${runway.to}. Liquidity risk rises sharply below ~6 months.`,
+        severity: "high",
+      });
+      acts.push({
+        id: "runway-action",
+        title: "Stabilise runway immediately",
+        detail:
+          "Freeze discretionary spend, review burn drivers, and validate near-term revenue commitments. Prioritise actions that add 60–90 days runway.",
+        severity: "high",
+      });
+    }
+  }
+
+  const burn = get("burnRate") || get("burn") || get("burn_rate");
+  if (burn) {
+    obs.push({
+      id: "burn-change",
+      title: `Burn ${burn.delta > 0 ? "increased" : "decreased"}`,
+      detail: `Burn moved from ${burn.from} to ${burn.to} (${burn.delta > 0 ? "+" : ""}${burn.delta}).`,
+      severity: burn.delta > 0 ? "med" : "low",
+    });
+
+    if (burn.delta > 0) {
+      risks.push({
+        id: "burn-pressure",
+        title: "Burn pressure rising",
+        detail:
+          "Higher burn reduces margin for execution error. If sustained, this will compress runway and constrain strategic flexibility.",
+        severity: "med",
+      });
+      acts.push({
+        id: "burn-mitigation",
+        title: "Identify the burn driver",
+        detail:
+          "Segment burn into: headcount, hosting/tools, marketing, and overhead. Target the fastest reversible driver first.",
+        severity: "med",
+      });
+    }
+  }
+
+  const risk = get("riskScore") || get("riskIndex") || get("risk");
+  if (risk && risk.delta > 0) {
+    risks.push({
+      id: "risk-up",
+      title: "Risk score deteriorated",
+      detail: `Risk moved from ${risk.from} to ${risk.to} (+${risk.delta}).`,
+      severity: risk.to >= 70 ? "high" : "med",
+    });
+    acts.push({
+      id: "risk-plan",
+      title: "Reduce top 1–2 risk drivers",
+      detail:
+        "Pick the two highest contributors (market, execution, concentration, cash). Define mitigation owners + next review date.",
+      severity: "med",
+    });
+  }
+
+  // Fallback if nothing matched (still deterministic)
+  if (obs.length === 0 && risks.length === 0 && acts.length === 0) {
+    obs.push({
+      id: "no-material",
+      title: "No material delta detected",
+      detail:
+        "Inputs changed, but KPI deltas did not pass thresholds for a strategic note.",
+      severity: "low",
+    });
+  }
+
+  return { observation: obs, risks, actions: acts };
+}
+
+// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
@@ -339,6 +452,11 @@ export default function AIIntelligence({
   // Terrain delta tracking
   const previousEngineResultsRef = useRef<any>(null);
   const [terrainDelta, setTerrainDelta] = useState<TerrainDelta | null>(null);
+  const [insights, setInsights] = useState<InsightsPayload>({
+    observation: [],
+    risks: [],
+    actions: [],
+  });
 
   const isAnalyzing = activeLeverId !== null || isProcessingQuestion;
 
@@ -392,22 +510,44 @@ export default function AIIntelligence({
     previousEngineResultsRef.current = engineResults;
   }, [engineResults, activeScenarioId]);
 
+  // Build insights from terrain delta
+  useEffect(() => {
+    setInsights(buildInsightsFromDelta(terrainDelta));
+  }, [terrainDelta]);
+
   const defaultContent = useMemo(
     () => getAIContent(viewMode, scenario),
     [viewMode, scenario]
   );
 
-  // Use custom response if available, otherwise default
+  // Transform insights into lines for display
+  const insightLines = useMemo(() => ({
+    observation: insights.observation.map((x) => `${x.title}: ${x.detail}`),
+    risks: insights.risks.map((x) => `${x.title}: ${x.detail}`),
+    actions: insights.actions.map((x) => `${x.title}: ${x.detail}`),
+  }), [insights]);
+
+  // Use custom response if available, then insights if present, otherwise default
   const aiContent = useMemo(
-    () =>
-      customResponse
-        ? {
-            observation: customResponse.observation,
-            risks: customResponse.risk,
-            action: customResponse.action,
-          }
-        : defaultContent,
-    [customResponse, defaultContent]
+    () => {
+      if (customResponse) {
+        return {
+          observation: customResponse.observation,
+          risks: customResponse.risk,
+          action: customResponse.action,
+        };
+      }
+      // If insights have content, use them
+      if (insightLines.observation.length > 0 || insightLines.risks.length > 0 || insightLines.actions.length > 0) {
+        return {
+          observation: insightLines.observation.join(" ") || defaultContent.observation,
+          risks: insightLines.risks.join(" ") || defaultContent.risks,
+          action: insightLines.actions.join(" ") || defaultContent.action,
+        };
+      }
+      return defaultContent;
+    },
+    [customResponse, defaultContent, insightLines]
   );
 
   // Typewriter speed - fast base with rhythm variation (18ms base = ~55 chars/second burst)
