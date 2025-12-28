@@ -845,6 +845,20 @@ export default function AIIntelligence({
     ? `strategic-${strategicContentKey}-${activeStrategicId}`
     : `${contentKey}`;
 
+  // Deterministic, thresholded, tunable later — NO side effects.
+  const deriveDeltaDrivers = (delta: any) => {
+    if (!delta) return [];
+
+    const drivers: string[] = [];
+
+    if (Math.abs(delta.revenueDelta ?? 0) > 5) drivers.push("Revenue");
+    if (Math.abs(delta.burnDelta ?? 0) > 5) drivers.push("Burn");
+    if (Math.abs(delta.runwayDelta ?? 0) > 2) drivers.push("Runway");
+    if (Math.abs(delta.capacityDelta ?? 0) > 5) drivers.push("Capacity");
+
+    return drivers;
+  };
+
   const activeScenario = useMemo(() => {
     const label =
       scenario === "base"
@@ -859,17 +873,21 @@ export default function AIIntelligence({
     return { id: scenario, label };
   }, [scenario]);
 
-  const deltaAnchorText = useMemo(() => {
-    if (!terrainDelta?.kpiDelta) return "";
-    const entries = Object.entries(terrainDelta.kpiDelta);
-    if (entries.length === 0) return "";
-    const top = entries
-      .slice()
-      .sort((a, b) => Math.abs(b[1].delta) - Math.abs(a[1].delta))
-      .slice(0, 3)
-      .map(([k]) => k);
-    return top.length ? `Key deltas driving insight: ${top.join(", ")}` : "";
+  const deltaSnapshot = useMemo(() => {
+    const k = terrainDelta?.kpiDelta ?? {};
+    return {
+      revenueDelta: (k as any).revenue?.delta ?? (k as any).arr?.delta ?? 0,
+      burnDelta: (k as any).burnRate?.delta ?? (k as any).burnQuality?.delta ?? 0,
+      runwayDelta: (k as any).runway?.delta ?? 0,
+      capacityDelta: (k as any).capacity?.delta ?? (k as any).momentum?.delta ?? 0,
+      enterpriseValueDelta: (k as any).enterpriseValue?.delta ?? 0,
+    };
   }, [terrainDelta]);
+
+  const deltaDrivers = useMemo(
+    () => deriveDeltaDrivers(deltaSnapshot),
+    [deltaSnapshot]
+  );
 
   return (
     <div className={`ai-panel ${viewMode}`}>
@@ -932,8 +950,11 @@ export default function AIIntelligence({
             </span>
           </div>
         )}
-        {activeStrategicQuestion && !!deltaAnchorText && (
-          <div className="delta-anchor">{deltaAnchorText}</div>
+        {activeStrategicQuestion && deltaDrivers.length > 0 && (
+          <div className="delta-anchor">
+            Insight driven primarily by changes in:
+            <strong> {deltaDrivers.join(", ")}</strong>
+          </div>
         )}
         <AISection
           title="OBSERVATION"
@@ -1233,11 +1254,11 @@ export default function AIIntelligence({
         }
 
         .delta-anchor {
-          margin: 8px 0 10px;
+          margin: 6px 0 10px;
+          padding-left: 10px;
+          border-left: 2px solid rgba(255,255,255,0.18);
           font-size: 12px;
-          color: rgba(255,255,255,0.6);
-          border-left: 2px solid rgba(255,255,255,0.15);
-          padding-left: 8px;
+          color: rgba(255,255,255,0.65);
         }
 
         .kpi-index-note {
