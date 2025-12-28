@@ -152,6 +152,7 @@ function AISection({
   canStart,
   contentKey,
   contentKeyStr,
+  deltaDrivers = [],
   speed,
   onComplete,
   onTypingChange,
@@ -163,6 +164,7 @@ function AISection({
   canStart: boolean;
   contentKey: number;
   contentKeyStr: string;
+  deltaDrivers?: string[];
   speed: number;
   onComplete?: () => void;
   onTypingChange?: (isTyping: boolean) => void;
@@ -177,11 +179,12 @@ function AISection({
 
   const renderKpiIndexNote = useCallback((text: string) => {
     // Visually soften "Primary KPI index: N" without changing content semantics.
-    const re = /(Primary KPI index:\s*\d+)/g;
-    const parts = text.split(re);
+    const splitRe = /(Primary KPI index:\s*\d+)/g;
+    const testRe = /(Primary KPI index:\s*\d+)/;
+    const parts = text.split(splitRe);
     if (parts.length === 1) return text;
     return parts.map((part, i) =>
-      re.test(part) ? (
+      testRe.test(part) ? (
         <span key={`kpi-note-${i}`} className="kpi-index-note">
           {part}
         </span>
@@ -190,6 +193,37 @@ function AISection({
       )
     );
   }, []);
+
+  const renderDeltaHighlights = useCallback(
+    (text: string, drivers: string[]) => {
+      if (!drivers.length) return renderKpiIndexNote(text);
+
+      const sentences = text.split(". ");
+      return sentences.map((sentence, i) => {
+        const matchesDriver = drivers.some((driver) =>
+          sentence.toLowerCase().includes(driver.toLowerCase())
+        );
+
+        const isLast = i === sentences.length - 1;
+        const withSep = isLast ? sentence : `${sentence}. `;
+
+        if (!matchesDriver) {
+          return (
+            <React.Fragment key={`s-${i}`}>
+              {renderKpiIndexNote(withSep)}
+            </React.Fragment>
+          );
+        }
+
+        return (
+          <span key={`h-${i}`} className="delta-highlight">
+            {renderKpiIndexNote(withSep)}
+          </span>
+        );
+      });
+    },
+    [renderKpiIndexNote]
+  );
 
   const isTypingNow = !isAnalyzing && hasStarted && !isComplete;
   useEffect(() => {
@@ -279,7 +313,9 @@ function AISection({
             >
               {hasStarted ? (
                 <>
-                  {renderKpiIndexNote(displayText)}
+                  {isComplete
+                    ? renderDeltaHighlights(content, deltaDrivers)
+                    : renderKpiIndexNote(displayText)}
                   {!isComplete && <span className="cursor">▌</span>}
                 </>
               ) : (
@@ -845,6 +881,22 @@ export default function AIIntelligence({
     ? `strategic-${strategicContentKey}-${activeStrategicId}`
     : `${contentKey}`;
 
+  const highlightDeltaSentences = (text: string, drivers: string[]) => {
+    if (!drivers.length) return text;
+
+    return text
+      .split(". ")
+      .map((sentence) => {
+        const matchesDriver = drivers.some((driver) =>
+          sentence.toLowerCase().includes(driver.toLowerCase())
+        );
+
+        if (!matchesDriver) return sentence;
+        return `<span class="delta-highlight">${sentence}</span>`;
+      })
+      .join(". ");
+  };
+
   // Deterministic, thresholded, tunable later — NO side effects.
   const deriveDeltaDrivers = (delta: any) => {
     if (!delta) return [];
@@ -980,6 +1032,7 @@ export default function AIIntelligence({
           canStart={true}
           contentKey={contentKey}
           contentKeyStr={strategicKeyStr}
+          deltaDrivers={activeStrategicQuestion ? deltaDrivers : []}
           speed={typingSpeed}
           onComplete={handleObservationComplete}
           onTypingChange={setTypingFlag("obs")}
@@ -992,6 +1045,7 @@ export default function AIIntelligence({
           canStart={observationComplete}
           contentKey={contentKey}
           contentKeyStr={strategicKeyStr}
+          deltaDrivers={activeStrategicQuestion ? deltaDrivers : []}
           speed={typingSpeed}
           onComplete={handleRisksComplete}
           isRiskSection={true}
@@ -1005,6 +1059,7 @@ export default function AIIntelligence({
           canStart={risksComplete}
           contentKey={contentKey}
           contentKeyStr={strategicKeyStr}
+          deltaDrivers={activeStrategicQuestion ? deltaDrivers : []}
           speed={typingSpeed}
           onComplete={handleActionsComplete}
           onTypingChange={setTypingFlag("actions")}
@@ -1276,6 +1331,12 @@ export default function AIIntelligence({
           border-left: 2px solid rgba(255,255,255,0.18);
           font-size: 12px;
           color: rgba(255,255,255,0.65);
+        }
+
+        .delta-highlight {
+          background: rgba(255, 255, 255, 0.08);
+          padding: 1px 3px;
+          border-radius: 4px;
         }
 
         .executive-sentence {
