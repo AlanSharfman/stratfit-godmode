@@ -487,9 +487,10 @@ export default function AIIntelligence({
   } | null>(null);
   const [showQuestions, setShowQuestions] = useState(false);
 
-  // Sequential typing state
+  // Sequential typing state - track all three sections
   const [observationComplete, setObservationComplete] = useState(false);
   const [risksComplete, setRisksComplete] = useState(false);
+  const [actionsComplete, setActionsComplete] = useState(false);
 
   const {
     viewMode,
@@ -515,19 +516,28 @@ export default function AIIntelligence({
     actions: [],
   });
 
+  // isAnalyzing = lever moving or processing question
   const isAnalyzing = activeLeverId !== null || isProcessingQuestion;
+
+  // isTyping = typewriter still outputting (any section incomplete)
+  const isTyping = !actionsComplete;
+
+  // Signal dots active while analyzing OR while typewriter still running
+  const signalActive = isAnalyzing || isTyping;
 
   useEffect(() => {
     setContentKey((k) => k + 1);
     setCustomResponse(null);
     setObservationComplete(false);
     setRisksComplete(false);
+    setActionsComplete(false);
   }, [scenario, viewMode]);
 
   useEffect(() => {
     if (isAnalyzing) {
       setObservationComplete(false);
       setRisksComplete(false);
+      setActionsComplete(false);
     }
   }, [isAnalyzing]);
 
@@ -636,6 +646,7 @@ export default function AIIntelligence({
     []
   );
   const handleRisksComplete = useCallback(() => setRisksComplete(true), []);
+  const handleActionsComplete = useCallback(() => setActionsComplete(true), []);
 
   // Strategic Question click: IMMEDIATE (no 600ms delay), but still closes panel cleanly.
   const handlePromptClick = useCallback(
@@ -721,7 +732,7 @@ export default function AIIntelligence({
             </span>
           </div>
         </div>
-        <div className={`signal-dots ${isAnalyzing ? "active" : ""}`}>
+        <div className={`signal-dots ${signalActive ? "active" : ""}`}>
           <div className="signal-dot dot-1" />
           <div className="signal-dot dot-2" />
           <div className="signal-dot dot-3" />
@@ -757,6 +768,7 @@ export default function AIIntelligence({
           canStart={risksComplete}
           contentKey={contentKey}
           speed={typingSpeed}
+          onComplete={handleActionsComplete}
         />
       </div>
 
