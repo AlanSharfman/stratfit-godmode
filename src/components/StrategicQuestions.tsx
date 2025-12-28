@@ -289,6 +289,11 @@ export default function StrategicQuestions({ onPromptClick, isAnalyzing }: Strat
 
   const handleClick = useCallback((prompt: StrategicPrompt) => {
     if (isAnalyzing) return;
+    // DEV-ONLY proof test: verify runtime prompt identity on each click
+    if (import.meta.env.DEV) {
+      // eslint-disable-next-line no-console
+      console.log("[STRATEGIC QUESTIONS] click:", { id: prompt.id, text: prompt.text });
+    }
     const response = prompt.getResponse(analysisState);
     onPromptClick(
       { id: prompt.id, text: prompt.text },
