@@ -133,8 +133,12 @@ const SliderRow = memo(function SliderRow({
       />
 
       <style>{`
+        /* ============================================
+           SLIDER ROW — Matched to AI Insights
+           Same spacing, font sizes, colors
+        ============================================ */
         .slider-row {
-          padding: 8px 0;
+          padding: 6px 0;
           position: relative;
         }
 
@@ -142,85 +146,81 @@ const SliderRow = memo(function SliderRow({
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 8px;
+          margin-bottom: 6px;
         }
 
         .slider-label {
           font-size: 11px;
-          font-weight: 600;
-          color: rgba(255, 255, 255, 0.7);
-          transition: all 250ms cubic-bezier(0.22, 1, 0.36, 1);
+          font-weight: 500;
+          color: rgba(226, 232, 240, 0.7);
+          transition: color 150ms ease-out;
           display: flex;
           align-items: center;
           gap: 4px;
-          letter-spacing: 0.03em;
+          letter-spacing: 0.02em;
         }
 
         .info-icon {
-          opacity: 0.4;
+          opacity: 0.35;
           transition: opacity 0.15s;
         }
 
         .slider-row:hover .info-icon {
-          opacity: 0.7;
+          opacity: 0.6;
         }
 
         .lever-tooltip {
           position: absolute;
           top: -8px;
           left: calc(100% + 12px);
-          width: 280px;
-          background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.98));
-          border: 1px solid rgba(148, 163, 184, 0.2);
-          border-radius: 12px;
+          width: 240px;
+          background: #14181e;
+          border: 1px solid #1e2530;
+          border-radius: 6px;
           padding: 12px;
           z-index: 1000;
-          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(148, 163, 184, 0.1);
-          backdrop-filter: blur(12px);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
           pointer-events: none;
         }
 
         .tooltip-title {
           font-size: 11px;
-          font-weight: 700;
-          color: rgba(34, 211, 238, 0.9);
+          font-weight: 600;
+          color: rgba(34, 211, 238, 0.8);
           text-transform: uppercase;
-          letter-spacing: 0.05em;
+          letter-spacing: 0.04em;
           margin-bottom: 6px;
         }
 
         .tooltip-description {
-          font-size: 12px;
-          color: rgba(255, 255, 255, 0.8);
-          line-height: 1.5;
+          font-size: 11px;
+          color: rgba(226, 232, 240, 0.7);
+          line-height: 1.45;
           margin-bottom: 8px;
         }
 
         .tooltip-impact {
           font-size: 10px;
-          color: rgba(148, 163, 184, 0.7);
+          color: rgba(148, 163, 184, 0.55);
           font-style: italic;
           padding-top: 6px;
-          border-top: 1px solid rgba(148, 163, 184, 0.15);
+          border-top: 1px solid rgba(148, 163, 184, 0.10);
         }
 
         .slider-row.highlighted .slider-label {
           color: var(--highlight-color);
-          text-shadow: 0 0 10px color-mix(in srgb, var(--highlight-color) 40%, transparent);
         }
 
         .slider-value {
-          font-size: 12px;
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.6);
+          font-size: 11px;
+          font-weight: 600;
+          color: rgba(148, 163, 184, 0.7);
           font-variant-numeric: tabular-nums;
-          transition: all 250ms cubic-bezier(0.22, 1, 0.36, 1);
-          text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+          transition: color 150ms ease-out;
         }
 
         .slider-row.highlighted .slider-value {
           color: var(--highlight-color);
-          text-shadow: 0 0 15px color-mix(in srgb, var(--highlight-color) 50%, transparent);
         }
       `}</style>
     </div>
@@ -290,70 +290,49 @@ const ControlBox = memo(function ControlBox({
       </div>
 
       <style>{`
+        /* ============================================
+           CONTROL BOX — Matched to AI Panel sections
+           Same background, border, padding, colors
+        ============================================ */
         .control-box {
-          padding: 18px 20px;
-          background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.85));
-          backdrop-filter: blur(12px);
-          border-radius: 12px;
-          border: 2px solid rgba(34, 211, 238, 0.25);
-          box-shadow: 
-            0 4px 20px rgba(0, 0, 0, 0.4),
-            inset 0 1px 0 rgba(255, 255, 255, 0.05),
-            0 0 0 1px rgba(34, 211, 238, 0.1);
-          transition: all 250ms cubic-bezier(0.22, 1, 0.36, 1);
+          padding: 14px;
+          background: rgba(30, 37, 48, 0.4);
+          border-radius: 6px;
+          border: none;
+          transition: background 150ms ease-out;
           position: relative;
         }
 
-        .control-box::before {
-          content: '';
-          position: absolute;
-          inset: -2px;
-          background: linear-gradient(135deg, rgba(34, 211, 238, 0.15), rgba(124, 58, 237, 0.1));
-          border-radius: 12px;
-          opacity: 0;
-          transition: opacity 250ms cubic-bezier(0.22, 1, 0.36, 1);
-          z-index: -1;
-        }
-
-        .control-box.highlighted::before {
-          opacity: 1;
-        }
-
         .control-box.highlighted {
-          border-color: var(--box-color);
-          box-shadow: 
-            0 8px 32px color-mix(in srgb, var(--box-color) 30%, transparent),
-            0 0 40px color-mix(in srgb, var(--box-color) 20%, transparent),
-            inset 0 1px 0 rgba(255, 255, 255, 0.1),
-            inset 0 0 30px color-mix(in srgb, var(--box-color) 8%, transparent);
-          transform: translateY(-2px);
+          background: rgba(30, 37, 48, 0.55);
         }
 
         .box-header {
-          margin-bottom: 16px;
-          padding-bottom: 12px;
-          border-bottom: 2px solid rgba(34, 211, 238, 0.2);
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 12px;
+          padding-bottom: 10px;
+          border-bottom: 1px solid rgba(148, 163, 184, 0.10);
         }
 
         .box-title {
-          font-size: 13px;
-          font-weight: 800;
-          letter-spacing: 0.1em;
+          font-size: 11px;
+          font-weight: 600;
+          letter-spacing: 0.04em;
           text-transform: uppercase;
-          color: rgba(255, 255, 255, 0.9);
-          text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
-          transition: all 250ms cubic-bezier(0.22, 1, 0.36, 1);
+          color: rgba(140, 160, 180, 0.7);
+          transition: color 150ms ease-out;
         }
 
         .control-box.highlighted .box-title {
           color: var(--box-color);
-          text-shadow: 0 0 25px color-mix(in srgb, var(--box-color) 60%, transparent);
         }
 
         .box-sliders {
           display: flex;
           flex-direction: column;
-          gap: 6px;
+          gap: 4px;
         }
       `}</style>
     </div>
@@ -473,10 +452,29 @@ export function ControlDeck(props: {
       ))}
 
       <style>{`
+        /* ============================================
+           CONTROL DECK — Matched to AI Panel
+           Same container styling for visual familiarity
+        ============================================ */
         .control-deck {
+          height: 100%;
           display: flex;
           flex-direction: column;
-          gap: 16px;
+          gap: 14px;
+          background: #14181e;
+          border: 1px solid #1e2530;
+          border-radius: 8px;
+          padding: 16px;
+          overflow-y: auto;
+        }
+
+        .control-deck::-webkit-scrollbar {
+          width: 3px;
+        }
+
+        .control-deck::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.08);
+          border-radius: 2px;
         }
       `}</style>
     </div>

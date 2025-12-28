@@ -230,9 +230,13 @@ const Slider = memo(function Slider({
       </div>
 
       <style>{`
+        /* ============================================
+           SLIDER — Matched to AI Insights Panel
+           Same background, borders, spacing, colors
+        ============================================ */
         .slider-container {
           width: 100%;
-          padding: 6px 0;
+          padding: 4px 0;
           touch-action: none;
           user-select: none;
           -webkit-user-select: none;
@@ -241,7 +245,7 @@ const Slider = memo(function Slider({
         .slider-track {
           position: relative;
           width: 100%;
-          height: 24px;
+          height: 20px;
           display: flex;
           align-items: center;
           cursor: pointer;
@@ -252,77 +256,68 @@ const Slider = memo(function Slider({
           content: '';
           position: absolute;
           width: 100%;
-          height: 6px;
-          background: linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.8));
-          border: 1px solid rgba(34, 211, 238, 0.15);
-          border-radius: 3px;
-          box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+          height: 4px;
+          background: rgba(30, 37, 48, 0.6);
+          border: 1px solid rgba(30, 37, 48, 0.8);
+          border-radius: 2px;
+          box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
         }
 
         .slider-fill {
           position: absolute;
-          height: 6px;
-          background: linear-gradient(90deg, rgba(34, 211, 238, 0.7), rgba(34, 211, 238, 0.9));
-          border-radius: 3px;
+          height: 4px;
+          background: rgba(34, 211, 238, 0.6);
+          border-radius: 2px;
           will-change: width;
           transition: none !important;
-          box-shadow:
-            0 0 12px rgba(34, 211, 238, 0.4),
-            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+          box-shadow: 0 0 6px rgba(34, 211, 238, 0.25);
         }
 
         .slider-container.highlighted .slider-fill {
-          background: linear-gradient(90deg,
-            color-mix(in srgb, var(--slider-color) 80%, transparent),
-            var(--slider-color)
-          );
-          box-shadow:
-            0 0 16px color-mix(in srgb, var(--slider-color) 60%, transparent),
-            0 0 6px color-mix(in srgb, var(--slider-color) 80%, transparent),
-            inset 0 1px 0 rgba(255, 255, 255, 0.3);
+          background: var(--slider-color);
+          box-shadow: 0 0 8px color-mix(in srgb, var(--slider-color) 40%, transparent);
         }
 
         .slider-thumb {
           position: absolute;
-          width: 14px;
-          height: 14px;
-          background: linear-gradient(135deg, rgba(34, 211, 238, 0.95), rgba(34, 211, 238, 1));
-          border: 2px solid rgba(255, 255, 255, 0.3);
+          width: 10px;
+          height: 10px;
+          background: rgba(34, 211, 238, 0.85);
+          border: 1px solid rgba(255, 255, 255, 0.2);
           border-radius: 50%;
           transform: translateX(-50%);
           box-shadow:
-            0 0 16px rgba(34, 211, 238, 0.5),
-            0 2px 8px rgba(0, 0, 0, 0.4),
-            inset 0 1px 0 rgba(255, 255, 255, 0.4);
+            0 0 8px rgba(34, 211, 238, 0.3),
+            0 1px 3px rgba(0, 0, 0, 0.3);
           will-change: left;
-          transition: transform 150ms cubic-bezier(0.22, 1, 0.36, 1),
-                      box-shadow 150ms cubic-bezier(0.22, 1, 0.36, 1);
+          transition: transform 100ms ease-out,
+                      box-shadow 100ms ease-out;
         }
 
-        /* IMPORTANT: no left-transition while dragging (removes "jitter feel") */
+        /* No left-transition while dragging */
         .slider-track.dragging .slider-thumb {
           transition: none !important;
         }
 
         .slider-track:active .slider-thumb {
-          transform: translateX(-50%) scale(1.2);
+          transform: translateX(-50%) scale(1.15);
           box-shadow:
-            0 0 24px rgba(34, 211, 238, 0.8),
-            0 2px 12px rgba(0, 0, 0, 0.5),
-            inset 0 1px 0 rgba(255, 255, 255, 0.5);
+            0 0 12px rgba(34, 211, 238, 0.5),
+            0 1px 4px rgba(0, 0, 0, 0.4);
         }
 
         .slider-container.highlighted .slider-thumb {
-          background: linear-gradient(135deg,
-            color-mix(in srgb, var(--slider-color) 90%, white),
-            var(--slider-color)
-          );
-          border-color: color-mix(in srgb, var(--slider-color) 50%, white);
+          background: var(--slider-color);
+          border-color: color-mix(in srgb, var(--slider-color) 40%, white);
           box-shadow:
-            0 0 20px color-mix(in srgb, var(--slider-color) 70%, transparent),
-            0 0 8px var(--slider-color),
-            0 2px 8px rgba(0, 0, 0, 0.4),
-            inset 0 1px 0 rgba(255, 255, 255, 0.5);
+            0 0 10px color-mix(in srgb, var(--slider-color) 50%, transparent),
+            0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .slider-track:hover .slider-thumb {
+          box-shadow:
+            0 0 10px rgba(34, 211, 238, 0.4),
+            0 1px 4px rgba(0, 0, 0, 0.35);
         }
       `}</style>
     </div>
