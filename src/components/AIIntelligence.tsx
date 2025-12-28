@@ -11,7 +11,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useScenarioStore } from "@/state/scenarioStore";
-import { shallow } from "zustand/react/shallow";
+import { useShallow } from "zustand/react/shallow";
 
 export type ScenarioId = "base" | "upside" | "downside" | "extreme";
 
@@ -43,7 +43,7 @@ function useTypewriter(text: string, baseSpeed: number, enabled: boolean, canSta
     setHasStarted(true);
 
     let idx = 0;
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined = undefined;
 
     const typeNextChar = () => {
       idx += 1;
@@ -205,8 +205,7 @@ export default function AIIntelligence({
   const [actionComplete, setActionComplete] = useState(false);
 
   const { viewMode } = useScenarioStore(
-    (s) => ({ viewMode: s.viewMode }),
-    shallow
+    useShallow((s) => ({ viewMode: s.viewMode }))
   );
 
   const isInvestor = viewMode === "investor";
