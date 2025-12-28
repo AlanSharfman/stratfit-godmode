@@ -491,6 +491,9 @@ export default function AIIntelligence({
   const [observationComplete, setObservationComplete] = useState(false);
   const [risksComplete, setRisksComplete] = useState(false);
   const [actionsComplete, setActionsComplete] = useState(false);
+  
+  // Track if typewriter sequence has started (to know when dots should flash)
+  const [typingInProgress, setTypingInProgress] = useState(false);
 
   const {
     viewMode,
@@ -519,11 +522,19 @@ export default function AIIntelligence({
   // isAnalyzing = lever moving or processing question
   const isAnalyzing = activeLeverId !== null || isProcessingQuestion;
 
-  // isTyping = typewriter still outputting (any section incomplete)
-  const isTyping = !actionsComplete;
+  // Signal dots active while analyzing OR while typewriter in progress
+  const signalActive = isAnalyzing || typingInProgress;
 
-  // Signal dots active while analyzing OR while typewriter still running
-  const signalActive = isAnalyzing || isTyping;
+  // Start typing when contentKey changes, stop when actions complete
+  useEffect(() => {
+    setTypingInProgress(true);
+  }, [contentKey]);
+
+  useEffect(() => {
+    if (actionsComplete) {
+      setTypingInProgress(false);
+    }
+  }, [actionsComplete]);
 
   useEffect(() => {
     setContentKey((k) => k + 1);
@@ -531,6 +542,7 @@ export default function AIIntelligence({
     setObservationComplete(false);
     setRisksComplete(false);
     setActionsComplete(false);
+    setTypingInProgress(true);
   }, [scenario, viewMode]);
 
   useEffect(() => {
@@ -538,6 +550,7 @@ export default function AIIntelligence({
       setObservationComplete(false);
       setRisksComplete(false);
       setActionsComplete(false);
+      setTypingInProgress(true);
     }
   }, [isAnalyzing]);
 
