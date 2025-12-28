@@ -21,9 +21,9 @@ interface AIIntelligenceProps {
 // ============================================================================
 
 function useTypewriter(
-  text: string, 
-  baseSpeed: number = 18, 
-  enabled: boolean = true, 
+  text: string,
+  baseSpeed: number = 18,
+  enabled: boolean = true,
   canStart: boolean = true
 ) {
   const [displayText, setDisplayText] = useState("");
@@ -43,51 +43,51 @@ function useTypewriter(
     setDisplayText("");
     setIsComplete(false);
     setHasStarted(true);
-    
+
     let index = 0;
     let timeoutId: ReturnType<typeof setTimeout>;
-    
+
     const typeNextChar = () => {
       if (index >= text.length) {
         setIsComplete(true);
         return;
       }
-      
+
       const char = text[index];
       const nextChar = text[index + 1];
-      
+
       // Type 1-3 characters at once for rhythm variation
       let charsToType = 1;
       if (Math.random() > 0.7 && index < text.length - 2) {
         charsToType = Math.random() > 0.5 ? 2 : 3;
       }
-      
+
       index += charsToType;
       index = Math.min(index, text.length);
       setDisplayText(text.slice(0, index));
-      
+
       // Calculate delay based on character type
       let delay = baseSpeed;
-      
+
       // Longer pause after punctuation (typewriter rhythm)
-      if (char === '.' || char === '!' || char === '?') {
+      if (char === "." || char === "!" || char === "?") {
         delay = baseSpeed * 8; // Sentence pause
-      } else if (char === ',' || char === ';' || char === ':') {
+      } else if (char === "," || char === ";" || char === ":") {
         delay = baseSpeed * 4; // Clause pause
-      } else if (char === ' ' && nextChar && /[A-Z]/.test(nextChar)) {
+      } else if (char === " " && nextChar && /[A-Z]/.test(nextChar)) {
         delay = baseSpeed * 3; // Before capital letter
       } else {
         // Add slight random variation for natural rhythm
         delay = baseSpeed + Math.random() * 12 - 6;
       }
-      
+
       if (index < text.length) {
         timeoutId = setTimeout(typeNextChar, delay);
       } else {
         setIsComplete(true);
       }
     };
-    
+
     // Start typing
     timeoutId = setTimeout(typeNextChar, 100);
 
@@ -101,18 +101,18 @@ function useTypewriter(
 // AI SECTION COMPONENT - Typewriter font
 // ============================================================================
 
-function AISection({ 
-  title, 
-  content, 
-  isAnalyzing, 
+function AISection({
+  title,
+  content,
+  isAnalyzing,
   canStart,
   contentKey,
   speed,
   onComplete,
-  isRiskSection = false
-}: { 
-  title: string; 
-  content: string; 
+  isRiskSection = false,
+}: {
+  title: string;
+  content: string;
   isAnalyzing: boolean;
   canStart: boolean;
   contentKey: number;
@@ -121,9 +121,9 @@ function AISection({
   isRiskSection?: boolean;
 }) {
   const { displayText, isComplete, hasStarted } = useTypewriter(
-    content, 
-    speed, 
-    !isAnalyzing, 
+    content,
+    speed,
+    !isAnalyzing,
     canStart
   );
 
@@ -134,24 +134,60 @@ function AISection({
   }, [isComplete, onComplete]);
 
   // Icons for each section type
-  const sectionIcon = title === "OBSERVATION" ? (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-    </svg>
-  ) : title === "RISKS" ? (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-    </svg>
-  ) : (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-    </svg>
-  );
+  const sectionIcon =
+    title === "OBSERVATION" ? (
+      <svg
+        width="12"
+        height="12"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <circle cx="11" cy="11" r="8" />
+        <path d="m21 21-4.35-4.35" />
+      </svg>
+    ) : title === "RISKS" ? (
+      <svg
+        width="12"
+        height="12"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+        <line x1="12" y1="9" x2="12" y2="13" />
+        <line x1="12" y1="17" x2="12.01" y2="17" />
+      </svg>
+    ) : (
+      <svg
+        width="12"
+        height="12"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+        <polyline points="22 4 12 14.01 9 11.01" />
+      </svg>
+    );
 
-  const headerClass = isRiskSection ? 'risk-header' : title === 'ACTION' ? 'action-header' : '';
-  
+  const headerClass = isRiskSection
+    ? "risk-header"
+    : title === "ACTIONS"
+    ? "action-header"
+    : "";
+
   return (
-    <div className={`ai-section ${isRiskSection ? 'risk-section' : ''}`}>
+    <div className={`ai-section ${isRiskSection ? "risk-section" : ""}`}>
       <div className="section-header-row">
         <span className="section-icon">{sectionIcon}</span>
         <span className={`section-header ${headerClass}`}>{title}</span>
@@ -198,55 +234,61 @@ function AISection({
 function getAIContent(viewMode: ViewMode, scenario: ScenarioId) {
   if (viewMode === "operator") {
     return {
-      observation: scenario === "extreme" 
-        ? "Runway has become the binding constraint. Cash position critical. Current burn rate unsustainable beyond 6-month horizon without intervention."
-        : scenario === "downside"
-        ? "Growth-to-efficiency ratio has deteriorated. Burn rate exceeds revenue scaling. Cost structure requires recalibration."
-        : scenario === "upside"
-        ? "Metrics trending above plan. Growth and efficiency aligned. Execution capacity adequate for current trajectory."
-        : "Core metrics remain within operating tolerance. Cash position and runway are stable. Growth and efficiency are balanced, with no immediate pressure points.",
-      
-      risks: scenario === "extreme"
-        ? "Limited runway eliminates margin for error. Any execution miss compounds into structural deficit. Optionality severely constrained."
-        : scenario === "downside"
-        ? "Cost discipline has eroded. Hiring velocity inconsistent with revenue base. Cash sensitivity elevated."
-        : scenario === "upside"
-        ? "Scaling velocity may outpace operational capacity. Key dependencies emerging in critical functions."
-        : "Sustained growth acceleration would increase execution complexity. Hiring velocity and cost discipline require continued monitoring. External market volatility remains a secondary risk.",
-      
-      action: scenario === "extreme"
-        ? "Reduce burn 25-30% within 30 days. Narrow to single growth vector. Extend runway to 18+ months before any expansion."
-        : scenario === "downside"
-        ? "Freeze discretionary hiring. Tighten operating expense controls. Preserve optionality for next 2 quarters."
-        : scenario === "upside"
-        ? "Accelerate proven channels. Secure critical talent. Evaluate opportunistic capital raise."
-        : "Maintain current operating posture. Continue weekly metric review cadence. No structural changes required at this time."
+      observation:
+        scenario === "extreme"
+          ? "Runway has become the binding constraint. Cash position critical. Current burn rate unsustainable beyond 6-month horizon without intervention."
+          : scenario === "downside"
+          ? "Growth-to-efficiency ratio has deteriorated. Burn rate exceeds revenue scaling. Cost structure requires recalibration."
+          : scenario === "upside"
+          ? "Metrics trending above plan. Growth and efficiency aligned. Execution capacity adequate for current trajectory."
+          : "Core metrics remain within operating tolerance. Cash position and runway are stable. Growth and efficiency are balanced, with no immediate pressure points.",
+
+      risks:
+        scenario === "extreme"
+          ? "Limited runway eliminates margin for error. Any execution miss compounds into structural deficit. Optionality severely constrained."
+          : scenario === "downside"
+          ? "Cost discipline has eroded. Hiring velocity inconsistent with revenue base. Cash sensitivity elevated."
+          : scenario === "upside"
+          ? "Scaling velocity may outpace operational capacity. Key dependencies emerging in critical functions."
+          : "Sustained growth acceleration would increase execution complexity. Hiring velocity and cost discipline require continued monitoring. External market volatility remains a secondary risk.",
+
+      action:
+        scenario === "extreme"
+          ? "Reduce burn 25-30% within 30 days. Narrow to single growth vector. Extend runway to 18+ months before any expansion."
+          : scenario === "downside"
+          ? "Freeze discretionary hiring. Tighten operating expense controls. Preserve optionality for next 2 quarters."
+          : scenario === "upside"
+          ? "Accelerate proven channels. Secure critical talent. Evaluate opportunistic capital raise."
+          : "Maintain current operating posture. Continue weekly metric review cadence. No structural changes required at this time.",
     };
   } else {
     return {
-      observation: scenario === "extreme"
-        ? "Portfolio company runway critically constrained. Capital efficiency below sustainable threshold. Deployment risk elevated."
-        : scenario === "downside"
-        ? "Growth-to-efficiency pressure emerging. Current trajectory requires recalibration within next quarter."
-        : scenario === "upside"
-        ? "Metrics exceeding plan assumptions. Unit economics remain sustainable. Investment thesis intact."
-        : "Metrics within expected range. Deployment efficiency acceptable for stage. No anomalies detected.",
-      
-      risks: scenario === "extreme"
-        ? "Material risk concentration. Downside probability increased. Execution margin minimal."
-        : scenario === "downside"
-        ? "Margin compression evident. Burn rate inconsistent with model assumptions."
-        : scenario === "upside"
-        ? "Execution scaling risk present. Valuation may exceed near-term fundamentals."
-        : "Risk factors within normal distribution. No material concerns at current levels.",
-      
-      action: scenario === "extreme"
-        ? "Prioritize capital preservation. Restructure before additional deployment. Board engagement advised."
-        : scenario === "downside"
-        ? "Shift to monthly monitoring. Milestone-based capital release. Request response plan."
-        : scenario === "upside"
-        ? "Evaluate follow-on at current terms. Monitor for overheating indicators."
-        : "Quarterly monitoring cadence sufficient. No portfolio action required."
+      observation:
+        scenario === "extreme"
+          ? "Portfolio company runway critically constrained. Capital efficiency below sustainable threshold. Deployment risk elevated."
+          : scenario === "downside"
+          ? "Growth-to-efficiency pressure emerging. Current trajectory requires recalibration within next quarter."
+          : scenario === "upside"
+          ? "Metrics exceeding plan assumptions. Unit economics remain sustainable. Investment thesis intact."
+          : "Metrics within expected range. Deployment efficiency acceptable for stage. No anomalies detected.",
+
+      risks:
+        scenario === "extreme"
+          ? "Material risk concentration. Downside probability increased. Execution margin minimal."
+          : scenario === "downside"
+          ? "Margin compression evident. Burn rate inconsistent with model assumptions."
+          : scenario === "upside"
+          ? "Execution scaling risk present. Valuation may exceed near-term fundamentals."
+          : "Risk factors within normal distribution. No material concerns at current levels.",
+
+      action:
+        scenario === "extreme"
+          ? "Prioritize capital preservation. Restructure before additional deployment. Board engagement advised."
+          : scenario === "downside"
+          ? "Shift to monthly monitoring. Milestone-based capital release. Request response plan."
+          : scenario === "upside"
+          ? "Evaluate follow-on at current terms. Monitor for overheating indicators."
+          : "Quarterly monitoring cadence sufficient. No portfolio action required.",
     };
   }
 }
@@ -263,13 +305,17 @@ export default function AIIntelligence({
 }: AIIntelligenceProps) {
   const [contentKey, setContentKey] = useState(0);
   const [isProcessingQuestion, setIsProcessingQuestion] = useState(false);
-  const [customResponse, setCustomResponse] = useState<{observation: string; risk: string; action: string} | null>(null);
+  const [customResponse, setCustomResponse] = useState<{
+    observation: string;
+    risk: string;
+    action: string;
+  } | null>(null);
   const [showQuestions, setShowQuestions] = useState(false);
-  
+
   // Sequential typing state
   const [observationComplete, setObservationComplete] = useState(false);
   const [risksComplete, setRisksComplete] = useState(false);
-  
+
   // Consolidated store selectors to prevent rerender cascades
   const { viewMode, activeLeverId, setHoveredKpiIndex } = useScenarioStore(
     useShallow((s) => ({
@@ -278,7 +324,7 @@ export default function AIIntelligence({
       setHoveredKpiIndex: s.setHoveredKpiIndex,
     }))
   );
-  
+
   const isAnalyzing = activeLeverId !== null || isProcessingQuestion;
 
   useEffect(() => {
@@ -297,45 +343,60 @@ export default function AIIntelligence({
     }
   }, [isAnalyzing]);
 
-  const defaultContent = useMemo(() => getAIContent(viewMode, scenario), [viewMode, scenario]);
-  
+  const defaultContent = useMemo(
+    () => getAIContent(viewMode, scenario),
+    [viewMode, scenario]
+  );
+
   // Use custom response if available, otherwise default
-  const aiContent = useMemo(() => customResponse ? {
-    observation: customResponse.observation,
-    risks: customResponse.risk,
-    action: customResponse.action
-  } : defaultContent, [customResponse, defaultContent]);
-  
+  const aiContent = useMemo(
+    () =>
+      customResponse
+        ? {
+            observation: customResponse.observation,
+            risks: customResponse.risk,
+            action: customResponse.action,
+          }
+        : defaultContent,
+    [customResponse, defaultContent]
+  );
+
   // Typewriter speed - fast base with rhythm variation (18ms base = ~55 chars/second burst)
   const typingSpeed = 18;
 
   // Stable callbacks for AISection to prevent re-renders
-  const handleObservationComplete = useCallback(() => setObservationComplete(true), []);
+  const handleObservationComplete = useCallback(
+    () => setObservationComplete(true),
+    []
+  );
   const handleRisksComplete = useCallback(() => setRisksComplete(true), []);
 
   // Handle strategic question click
-  const handlePromptClick = useCallback((
-    response: { observation: string; risk: string; action: string },
-    kpis: number[],
-    constraint: string
-  ) => {
-    setIsProcessingQuestion(true);
-    setShowQuestions(false); // Close questions panel
-    
-    // Brief analyzing state
-    setTimeout(() => {
-      setCustomResponse(response);
-      setContentKey(k => k + 1);
-      setIsProcessingQuestion(false);
-      
-      // Highlight primary KPI
-      if (kpis.length > 0) {
-        setHoveredKpiIndex(kpis[0]);
-        // Clear highlight after 4 seconds
-        setTimeout(() => setHoveredKpiIndex(null), 4000);
-      }
-    }, 600);
-  }, [setHoveredKpiIndex]);
+  const handlePromptClick = useCallback(
+    (
+      response: { observation: string; risk: string; action: string },
+      kpis: number[],
+      constraint: string
+    ) => {
+      setIsProcessingQuestion(true);
+      setShowQuestions(false); // Close questions panel
+
+      // Brief analyzing state
+      setTimeout(() => {
+        setCustomResponse(response);
+        setContentKey((k) => k + 1);
+        setIsProcessingQuestion(false);
+
+        // Highlight primary KPI
+        if (kpis.length > 0) {
+          setHoveredKpiIndex(kpis[0]);
+          // Clear highlight after 4 seconds
+          setTimeout(() => setHoveredKpiIndex(null), 4000);
+        }
+      }, 600);
+    },
+    [setHoveredKpiIndex]
+  );
 
   const toggleQuestions = () => {
     setShowQuestions(!showQuestions);
@@ -344,17 +405,26 @@ export default function AIIntelligence({
   return (
     <div className={`ai-panel ${viewMode}`}>
       <div className="panel-edge" />
-      
+
       <div className="panel-header">
         <div className="header-left">
           <div className="brain-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 4.5a2.5 2.5 0 0 0-4.96-.46 2.5 2.5 0 0 0-1.98 3 2.5 2.5 0 0 0-1.32 4.24 3 3 0 0 0 .34 5.58 2.5 2.5 0 0 0 2.96 3.08 2.5 2.5 0 0 0 4.91.05L12 20V4.5Z"/>
-              <path d="M16 8V5c0-1.1.9-2 2-2"/>
-              <path d="M12 13h4"/>
-              <path d="M12 18h6a2 2 0 0 1 2 2v1"/>
-              <path d="M12 8h8"/>
-              <path d="M20.5 8.5a2.5 2.5 0 0 0-4.96-.46 2.5 2.5 0 0 0-1.98 3 2.5 2.5 0 0 0 1.32 4.24"/>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 4.5a2.5 2.5 0 0 0-4.96-.46 2.5 2.5 0 0 0-1.98 3 2.5 2.5 0 0 0-1.32 4.24 3 3 0 0 0 .34 5.58 2.5 2.5 0 0 0 2.96 3.08 2.5 2.5 0 0 0 4.91.05L12 20V4.5Z" />
+              <path d="M16 8V5c0-1.1.9-2 2-2" />
+              <path d="M12 13h4" />
+              <path d="M12 18h6a2 2 0 0 1 2 2v1" />
+              <path d="M12 8h8" />
+              <path d="M20.5 8.5a2.5 2.5 0 0 0-4.96-.46 2.5 2.5 0 0 0-1.98 3 2.5 2.5 0 0 0 1.32 4.24" />
             </svg>
           </div>
           <div className="header-text">
@@ -364,7 +434,7 @@ export default function AIIntelligence({
             </span>
           </div>
         </div>
-        <div className={`signal-dots ${isAnalyzing ? 'active' : ''}`}>
+        <div className={`signal-dots ${isAnalyzing ? "active" : ""}`}>
           <div className="signal-dot dot-1" />
           <div className="signal-dot dot-2" />
           <div className="signal-dot dot-3" />
@@ -372,8 +442,8 @@ export default function AIIntelligence({
       </div>
 
       <div className="panel-content">
-        <AISection 
-          title="OBSERVATION" 
+        <AISection
+          title="OBSERVATION"
           content={aiContent.observation}
           isAnalyzing={isAnalyzing}
           canStart={true}
@@ -381,9 +451,9 @@ export default function AIIntelligence({
           speed={typingSpeed}
           onComplete={handleObservationComplete}
         />
-        
-        <AISection 
-          title="RISKS" 
+
+        <AISection
+          title="RISKS"
           content={aiContent.risks}
           isAnalyzing={isAnalyzing}
           canStart={observationComplete}
@@ -392,9 +462,9 @@ export default function AIIntelligence({
           onComplete={handleRisksComplete}
           isRiskSection={true}
         />
-        
-        <AISection 
-          title="ACTION" 
+
+        <AISection
+          title="ACTIONS"
           content={aiContent.action}
           isAnalyzing={isAnalyzing}
           canStart={risksComplete}
@@ -405,34 +475,44 @@ export default function AIIntelligence({
 
       {/* Strategic Questions Toggle */}
       <div className="questions-toggle-container">
-        <button 
-          className={`questions-toggle ${showQuestions ? 'open' : ''}`}
+        <button
+          className={`questions-toggle ${showQuestions ? "open" : ""}`}
           onClick={toggleQuestions}
         >
-          <svg 
-            width="12" 
-            height="12" 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="2" 
-            strokeLinecap="round" 
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
             strokeLinejoin="round"
           >
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-            <path d="M12 17h.01"/>
+            <circle cx="12" cy="12" r="10" />
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+            <path d="M12 17h.01" />
           </svg>
-          <span>{showQuestions ? 'Hide Strategic Questions' : 'Nominated Strategic Questions'}</span>
-          <svg 
-            width="10" 
-            height="10" 
-            viewBox="0 0 12 12" 
+          <span>
+            {showQuestions ? "Hide Strategic Questions" : "Nominated Strategic Questions"}
+          </span>
+          <svg
+            width="10"
+            height="10"
+            viewBox="0 0 12 12"
             fill="none"
             className="chevron"
-            style={{ transform: showQuestions ? 'rotate(180deg)' : 'rotate(0deg)' }}
+            style={{
+              transform: showQuestions ? "rotate(180deg)" : "rotate(0deg)",
+            }}
           >
-            <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <path
+              d="M3 4.5L6 7.5L9 4.5"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         </button>
       </div>
@@ -442,15 +522,12 @@ export default function AIIntelligence({
         {showQuestions && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
+            animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: 'easeInOut' }}
-            style={{ overflow: 'hidden' }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            style={{ overflow: "hidden" }}
           >
-            <StrategicQuestions 
-              onPromptClick={handlePromptClick}
-              isAnalyzing={isAnalyzing}
-            />
+            <StrategicQuestions onPromptClick={handlePromptClick} isAnalyzing={isAnalyzing} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -599,7 +676,7 @@ export default function AIIntelligence({
         .ai-section {
           display: flex;
           flex-direction: column;
-          gap: 8px;
+          gap: 10px;
           background: rgba(30, 37, 48, 0.4);
           border-radius: 6px;
           padding: 14px;
@@ -612,7 +689,13 @@ export default function AIIntelligence({
         .section-header-row {
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 8px;
+          padding-bottom: 10px;
+          border-bottom: 1px solid rgba(148, 163, 184, 0.10);
+        }
+
+        .ai-section.risk-section .section-header-row {
+          border-bottom-color: rgba(248, 113, 113, 0.10);
         }
 
         .section-icon {
@@ -625,31 +708,45 @@ export default function AIIntelligence({
           color: rgba(248, 113, 113, 0.5);
         }
 
+        /* HEADER AUTHORITY (Step 2) */
         .section-header {
-          font-size: 10px;
-          font-weight: 700;
-          letter-spacing: 0.08em;
-          color: rgba(160, 180, 200, 0.85);
+          display: inline-flex;
+          align-items: center;
+          height: 20px;
+          padding: 0 10px;
+          border-radius: 9999px;
+          border: 1px solid rgba(148, 163, 184, 0.18);
+          background: rgba(15, 23, 42, 0.55);
+
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: rgba(226, 232, 240, 0.86);
         }
 
         .section-header.risk-header {
-          color: rgba(248, 150, 150, 0.85);
+          border-color: rgba(248, 113, 113, 0.18);
+          background: rgba(40, 20, 24, 0.38);
+          color: rgba(248, 150, 150, 0.88);
         }
 
         .section-header.action-header {
-          color: rgba(134, 195, 160, 0.85);
+          border-color: rgba(34, 197, 94, 0.18);
+          background: rgba(16, 32, 24, 0.35);
+          color: rgba(134, 195, 160, 0.88);
         }
 
         .ai-panel.investor .section-header {
-          opacity: 0.9;
+          opacity: 0.92;
         }
 
         .ai-panel.investor .section-header.risk-header {
-          color: rgba(220, 140, 140, 0.8);
+          color: rgba(220, 140, 140, 0.82);
         }
 
         .ai-panel.investor .section-header.action-header {
-          color: rgba(120, 175, 145, 0.8);
+          color: rgba(120, 175, 145, 0.82);
         }
 
         .section-content {
@@ -725,7 +822,6 @@ export default function AIIntelligence({
         .questions-toggle .chevron {
           transition: transform 0.2s ease;
         }
-
       `}</style>
     </div>
   );
