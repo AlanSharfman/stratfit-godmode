@@ -65,7 +65,7 @@ interface AIIntelligenceProps {
 }
 
 // ============================================================================
-// TYPEWRITER HOOK - Sequential typing, one paragraph at a time
+// TYPEWRITER HOOK - RAF-driven, smooth, no initial delay
 // ============================================================================
 
 function useTypewriter(
@@ -104,8 +104,7 @@ function useTypewriter(
       if (ch === "," || ch === ";" || ch === ":") return baseSpeed * 2;
       if (ch === "\n") return baseSpeed * 2;
 
-      // Small natural pause before a new sentence start (space + capital),
-      // but avoid dramatic stalls.
+      // Small natural pause before a new sentence start (space + capital)
       if (ch === " " && next && /[A-Z]/.test(next)) return baseSpeed * 1.5;
 
       return baseSpeed;
@@ -173,12 +172,9 @@ function AISection({
   );
 
   useEffect(() => {
-    if (isComplete && onComplete) {
-      onComplete();
-    }
+    if (isComplete && onComplete) onComplete();
   }, [isComplete, onComplete]);
 
-  // Icons for each section type
   const sectionIcon =
     title === "OBSERVATION" ? (
       <svg
@@ -305,36 +301,36 @@ function getAIContent(viewMode: ViewMode, scenario: ScenarioId) {
           ? "Accelerate proven channels. Secure critical talent. Evaluate opportunistic capital raise."
           : "Maintain current operating posture. Continue weekly metric review cadence. No structural changes required at this time.",
     };
-  } else {
-    return {
-      observation:
-        scenario === "extreme"
-          ? "Portfolio company runway critically constrained. Capital efficiency below sustainable threshold. Deployment risk elevated."
-          : scenario === "downside"
-          ? "Growth-to-efficiency pressure emerging. Current trajectory requires recalibration within next quarter."
-          : scenario === "upside"
-          ? "Metrics exceeding plan assumptions. Unit economics remain sustainable. Investment thesis intact."
-          : "Metrics within expected range. Deployment efficiency acceptable for stage. No anomalies detected.",
-
-      risks:
-        scenario === "extreme"
-          ? "Material risk concentration. Downside probability increased. Execution margin minimal."
-          : scenario === "downside"
-          ? "Margin compression evident. Burn rate inconsistent with model assumptions."
-          : scenario === "upside"
-          ? "Execution scaling risk present. Valuation may exceed near-term fundamentals."
-          : "Risk factors within normal distribution. No material concerns at current levels.",
-
-      action:
-        scenario === "extreme"
-          ? "Prioritize capital preservation. Restructure before additional deployment. Board engagement advised."
-          : scenario === "downside"
-          ? "Shift to monthly monitoring. Milestone-based capital release. Request response plan."
-          : scenario === "upside"
-          ? "Evaluate follow-on at current terms. Monitor for overheating indicators."
-          : "Quarterly monitoring cadence sufficient. No portfolio action required.",
-    };
   }
+
+  return {
+    observation:
+      scenario === "extreme"
+        ? "Portfolio company runway critically constrained. Capital efficiency below sustainable threshold. Deployment risk elevated."
+        : scenario === "downside"
+        ? "Growth-to-efficiency pressure emerging. Current trajectory requires recalibration within next quarter."
+        : scenario === "upside"
+        ? "Metrics exceeding plan assumptions. Unit economics remain sustainable. Investment thesis intact."
+        : "Metrics within expected range. Deployment efficiency acceptable for stage. No anomalies detected.",
+
+    risks:
+      scenario === "extreme"
+        ? "Material risk concentration. Downside probability increased. Execution margin minimal."
+        : scenario === "downside"
+        ? "Margin compression evident. Burn rate inconsistent with model assumptions."
+        : scenario === "upside"
+        ? "Execution scaling risk present. Valuation may exceed near-term fundamentals."
+        : "Risk factors within normal distribution. No material concerns at current levels.",
+
+    action:
+      scenario === "extreme"
+        ? "Prioritize capital preservation. Restructure before additional deployment. Board engagement advised."
+        : scenario === "downside"
+        ? "Shift to monthly monitoring. Milestone-based capital release. Request response plan."
+        : scenario === "upside"
+        ? "Evaluate follow-on at current terms. Monitor for overheating indicators."
+        : "Quarterly monitoring cadence sufficient. No portfolio action required.",
+  };
 }
 
 // ============================================================================
@@ -354,23 +350,18 @@ function getDelta(
 }
 
 function buildInsightsFromDelta(delta: TerrainDelta | null): InsightsPayload {
-  if (!delta) {
-    return { observation: [], risks: [], actions: [] };
-  }
+  if (!delta) return { observation: [], risks: [], actions: [] };
 
   const obs: InsightItem[] = [];
   const risks: InsightItem[] = [];
   const acts: InsightItem[] = [];
 
-  // ---- Runway (material move gating) ----
   const runway = getDelta(delta, "runway");
   if (runway && Math.abs(runway.delta) >= INSIGHT_THRESHOLDS.runwayMaterialMove) {
     obs.push({
       id: "runway-change",
       title: `Runway ${runway.delta < 0 ? "compressed" : "extended"}`,
-      detail: `Runway moved from ${runway.from} to ${runway.to} (${
-        runway.delta > 0 ? "+" : ""
-      }${runway.delta}).`,
+      detail: `Runway moved from ${runway.from} to ${runway.to} (${runway.delta > 0 ? "+" : ""}${runway.delta}).`,
       severity: runway.delta < 0 ? "med" : "low",
     });
 
@@ -391,7 +382,6 @@ function buildInsightsFromDelta(delta: TerrainDelta | null): InsightsPayload {
     }
   }
 
-  // ---- Burn Rate (percentage-based gating) ----
   const burn = getDelta(delta, "burnRate");
   if (burn && burn.from) {
     const pct = (burn.to - burn.from) / Math.max(Math.abs(burn.from), 1);
@@ -399,9 +389,7 @@ function buildInsightsFromDelta(delta: TerrainDelta | null): InsightsPayload {
       obs.push({
         id: "burn-change",
         title: `Burn ${burn.delta > 0 ? "increased" : "decreased"}`,
-        detail: `Burn moved from ${burn.from} to ${burn.to} (${
-          burn.delta > 0 ? "+" : ""
-        }${burn.delta}, ${(pct * 100).toFixed(1)}%).`,
+        detail: `Burn moved from ${burn.from} to ${burn.to} (${burn.delta > 0 ? "+" : ""}${burn.delta}, ${(pct * 100).toFixed(1)}%).`,
         severity: burn.delta > 0 ? "med" : "low",
       });
 
@@ -424,16 +412,13 @@ function buildInsightsFromDelta(delta: TerrainDelta | null): InsightsPayload {
     }
   }
 
-  // ---- Risk Score (material move gating) ----
   const risk = getDelta(delta, "riskScore");
   if (risk && Math.abs(risk.delta) >= INSIGHT_THRESHOLDS.riskMaterialMove) {
     const isHigh = risk.to >= INSIGHT_THRESHOLDS.riskHigh;
     risks.push({
       id: "risk-up",
       title: risk.delta > 0 ? "Risk score deteriorated" : "Risk score improved",
-      detail: `Risk moved from ${risk.from} to ${risk.to} (${
-        risk.delta > 0 ? "+" : ""
-      }${risk.delta}).`,
+      detail: `Risk moved from ${risk.from} to ${risk.to} (${risk.delta > 0 ? "+" : ""}${risk.delta}).`,
       severity: isHigh ? "high" : "med",
     });
 
@@ -448,7 +433,6 @@ function buildInsightsFromDelta(delta: TerrainDelta | null): InsightsPayload {
     }
   }
 
-  // Fallback if nothing matched (still deterministic)
   if (obs.length === 0 && risks.length === 0 && acts.length === 0) {
     obs.push({
       id: "no-material",
@@ -462,6 +446,27 @@ function buildInsightsFromDelta(delta: TerrainDelta | null): InsightsPayload {
   return { observation: obs, risks, actions: acts };
 }
 
+// ============================================================================
+// STRATEGIC QUESTION STAMP - guarantees uniqueness vs baseline scenario text
+// ============================================================================
+
+function formatDeltaStamp(delta: TerrainDelta | null, maxItems: number = 3) {
+  if (!delta || !delta.kpiDelta) return "";
+
+  const entries = Object.entries(delta.kpiDelta)
+    .filter(([, v]) => typeof v?.from === "number" && typeof v?.to === "number")
+    .sort((a, b) => Math.abs(b[1].delta) - Math.abs(a[1].delta))
+    .slice(0, maxItems);
+
+  if (entries.length === 0) return "";
+
+  const parts = entries.map(([k, v]) => {
+    const sign = v.delta > 0 ? "+" : "";
+    return `${k}: ${v.from}→${v.to} (${sign}${v.delta})`;
+  });
+
+  return `Delta snapshot: ${parts.join(" • ")}`;
+}
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
@@ -486,7 +491,6 @@ export default function AIIntelligence({
   const [observationComplete, setObservationComplete] = useState(false);
   const [risksComplete, setRisksComplete] = useState(false);
 
-  // Consolidated store selectors to prevent rerender cascades
   const {
     viewMode,
     activeLeverId,
@@ -503,7 +507,6 @@ export default function AIIntelligence({
     }))
   );
 
-  // Terrain delta tracking
   const previousEngineResultsRef = useRef<any>(null);
   const [terrainDelta, setTerrainDelta] = useState<TerrainDelta | null>(null);
   const [insights, setInsights] = useState<InsightsPayload>({
@@ -517,12 +520,10 @@ export default function AIIntelligence({
   useEffect(() => {
     setContentKey((k) => k + 1);
     setCustomResponse(null);
-    // Reset sequential state
     setObservationComplete(false);
     setRisksComplete(false);
   }, [scenario, viewMode]);
 
-  // Reset sequential state when analyzing
   useEffect(() => {
     if (isAnalyzing) {
       setObservationComplete(false);
@@ -530,7 +531,7 @@ export default function AIIntelligence({
     }
   }, [isAnalyzing]);
 
-  // NEW: Prefer canonical upstream scenarioDelta when provided
+  // Prefer canonical upstream scenarioDelta when provided
   useEffect(() => {
     if (!scenarioDelta) return;
 
@@ -546,10 +547,9 @@ export default function AIIntelligence({
     });
   }, [scenarioDelta]);
 
-  // Terrain delta tracking effect (fallback only; bypass when scenarioDelta is provided)
+  // Fallback delta build when upstream delta not provided
   useEffect(() => {
     if (scenarioDelta) {
-      // Still update ref so fallback is sane if upstream delta is removed later.
       previousEngineResultsRef.current = engineResults;
       return;
     }
@@ -586,7 +586,6 @@ export default function AIIntelligence({
     previousEngineResultsRef.current = engineResults;
   }, [engineResults, activeScenarioId, scenarioDelta]);
 
-  // Build insights from terrain delta
   useEffect(() => {
     setInsights(buildInsightsFromDelta(terrainDelta));
   }, [terrainDelta]);
@@ -596,7 +595,6 @@ export default function AIIntelligence({
     [viewMode, scenario]
   );
 
-  // Transform insights into lines for display
   const insightLines = useMemo(
     () => ({
       observation: insights.observation.map((x) => `${x.title}: ${x.detail}`),
@@ -605,7 +603,7 @@ export default function AIIntelligence({
     }),
     [insights]
   );
-  // Use custom response if available, then insights if present, otherwise default
+
   const aiContent = useMemo(() => {
     if (customResponse) {
       return {
@@ -614,7 +612,7 @@ export default function AIIntelligence({
         action: customResponse.action,
       };
     }
-    // If insights have content, use them
+
     if (
       insightLines.observation.length > 0 ||
       insightLines.risks.length > 0 ||
@@ -627,49 +625,69 @@ export default function AIIntelligence({
         action: insightLines.actions.join(" ") || defaultContent.action,
       };
     }
+
     return defaultContent;
   }, [customResponse, defaultContent, insightLines]);
 
-  // Typewriter speed - fast base with rhythm variation (18ms base = ~55 chars/second burst)
   const typingSpeed = 18;
 
-  // Stable callbacks for AISection to prevent re-renders
   const handleObservationComplete = useCallback(
     () => setObservationComplete(true),
     []
   );
   const handleRisksComplete = useCallback(() => setRisksComplete(true), []);
 
-  // Handle strategic question click
+  // Strategic Question click: IMMEDIATE (no 600ms delay), but still closes panel cleanly.
   const handlePromptClick = useCallback(
     (
       response: { observation: string; risk: string; action: string },
       kpis: number[],
       constraint: string
     ) => {
+      // Immediately enter "processing" so signal dots + gating behave correctly
       setIsProcessingQuestion(true);
-      setShowQuestions(false); // Close questions panel
+      setShowQuestions(false);
 
-      // Brief analyzing state
-      setTimeout(() => {
-        setCustomResponse(response);
+      // Compose deterministic stamp to guarantee uniqueness
+      const focus = constraint?.trim()
+        ? constraint.trim()
+        : "Selected strategic question";
+      const primaryKpi =
+        Array.isArray(kpis) && kpis.length > 0
+          ? `Primary KPI index: ${kpis[0]}`
+          : "";
+      const deltaStamp = formatDeltaStamp(terrainDelta, 3);
+
+      const headerLines = [
+        `Strategic Question Focus: ${focus}.`,
+        primaryKpi ? `${primaryKpi}.` : "",
+        deltaStamp ? deltaStamp : "",
+      ].filter(Boolean);
+
+      const stamp = headerLines.length ? `${headerLines.join(" ")} ` : "";
+
+      // Commit on next animation frame (prevents React batching “stutter”),
+      // but removes visible delay.
+      requestAnimationFrame(() => {
+        setCustomResponse({
+          observation: `${stamp}${response.observation}`,
+          risk: `${stamp}${response.risk}`,
+          action: `${stamp}${response.action}`,
+        });
+
         setContentKey((k) => k + 1);
         setIsProcessingQuestion(false);
 
-        // Highlight primary KPI
         if (kpis.length > 0) {
           setHoveredKpiIndex(kpis[0]);
-          // Clear highlight after 4 seconds
           setTimeout(() => setHoveredKpiIndex(null), 4000);
         }
-      }, 600);
+      });
     },
-    [setHoveredKpiIndex]
+    [setHoveredKpiIndex, terrainDelta]
   );
 
-  const toggleQuestions = () => {
-    setShowQuestions(!showQuestions);
-  };
+  const toggleQuestions = () => setShowQuestions((v) => !v);
 
   return (
     <div className={`ai-panel ${viewMode}`}>
@@ -742,7 +760,6 @@ export default function AIIntelligence({
         />
       </div>
 
-      {/* Strategic Questions Toggle */}
       <div className="questions-toggle-container">
         <button
           className={`questions-toggle ${showQuestions ? "open" : ""}`}
@@ -788,7 +805,6 @@ export default function AIIntelligence({
         </button>
       </div>
 
-      {/* Collapsible Strategic Questions Panel */}
       <AnimatePresence>
         {showQuestions && (
           <motion.div
@@ -886,13 +902,11 @@ export default function AIIntelligence({
           transition: all 0.3s ease;
         }
 
-        /* Idle state - subtle */
         .signal-dots:not(.active) .signal-dot {
           animation: none;
           opacity: 0.3;
         }
 
-        /* Active state - NEON BRIGHT when AI is typing */
         .signal-dots.active .signal-dot {
           background: #00ff88;
           box-shadow: 0 0 8px #00ff88, 0 0 16px rgba(0, 255, 136, 0.5);
@@ -947,7 +961,6 @@ export default function AIIntelligence({
           border-radius: 2px;
         }
 
-        /* Memo-style sections with subtle backgrounds */
         .ai-section {
           display: flex;
           flex-direction: column;
@@ -983,7 +996,6 @@ export default function AIIntelligence({
           color: rgba(248, 113, 113, 0.5);
         }
 
-        /* HEADER AUTHORITY (Step 2) */
         .section-header {
           display: inline-flex;
           align-items: center;
@@ -992,7 +1004,6 @@ export default function AIIntelligence({
           border-radius: 9999px;
           border: 1px solid rgba(148, 163, 184, 0.18);
           background: rgba(15, 23, 42, 0.55);
-
           font-size: 11px;
           font-weight: 800;
           letter-spacing: 0.12em;
@@ -1055,15 +1066,10 @@ export default function AIIntelligence({
 
         @keyframes blink {
           0%,
-          100% {
-            opacity: 1;
-          }
-          50% {
-            opacity: 0;
-          }
+          100% { opacity: 1; }
+          50% { opacity: 0; }
         }
 
-        /* Questions Toggle Button */
         .questions-toggle-container {
           padding: 12px 16px;
           border-top: 1px solid rgba(30, 37, 48, 0.6);
