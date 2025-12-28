@@ -356,6 +356,31 @@ function getDelta(
   return null;
 }
 
+function toNumberMaybe(v: unknown): number | null {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+
+  if (typeof v === "string") {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  if (v && typeof v === "object") {
+    const obj = v as Record<string, unknown>;
+
+    // common shapes
+    if ("value" in obj) return toNumberMaybe(obj.value);
+    if ("current" in obj) return toNumberMaybe(obj.current);
+    if ("amount" in obj) return toNumberMaybe(obj.amount);
+    if ("val" in obj) return toNumberMaybe(obj.val);
+
+    // sometimes stored as { base: X } or { latest: X }
+    if ("base" in obj) return toNumberMaybe(obj.base);
+    if ("latest" in obj) return toNumberMaybe(obj.latest);
+  }
+
+  return null;
+}
+
 function buildInsightsFromDelta(delta: TerrainDelta | null): InsightsPayload {
   if (!delta) return { observation: [], risks: [], actions: [] };
 
@@ -646,10 +671,13 @@ export default function AIIntelligence({
     const kpiDelta: TerrainDelta["kpiDelta"] = {};
 
     Object.keys(current.kpis || {}).forEach((key) => {
-      const from = prev.kpis?.[key];
-      const to = current.kpis?.[key];
+      const fromRaw = prev.kpis?.[key];
+      const toRaw = current.kpis?.[key];
 
-      if (typeof from === "number" && typeof to === "number" && from !== to) {
+      const from = toNumberMaybe(fromRaw);
+      const to = toNumberMaybe(toRaw);
+
+      if (from !== null && to !== null && from !== to) {
         kpiDelta[key] = { from, to, delta: to - from };
       }
     });
