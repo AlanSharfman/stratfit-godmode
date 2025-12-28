@@ -563,6 +563,8 @@ export default function AIIntelligence({
   const [isProcessingQuestion, setIsProcessingQuestion] = useState(false);
   const [activeStrategicId, setActiveStrategicId] = useState<string | null>(null);
   const [strategicContentKey, setStrategicContentKey] = useState(0);
+  const [viewMode, setViewMode] =
+    useState<"operator" | "investor">("operator");
   const [confidenceLevel, setConfidenceLevel] =
     useState<"low" | "medium" | "high" | null>(null);
   const [activeStrategicQuestion, setActiveStrategicQuestion] = useState<{
@@ -597,7 +599,7 @@ export default function AIIntelligence({
   );
 
   const {
-    viewMode,
+    viewMode: storeViewMode,
     activeLeverId,
     setHoveredKpiIndex,
     engineResults,
@@ -963,6 +965,20 @@ export default function AIIntelligence({
             </span>
           </div>
         </div>
+        <div className="view-toggle">
+          <button
+            className={viewMode === "operator" ? "active" : ""}
+            onClick={() => setViewMode("operator")}
+          >
+            Operator
+          </button>
+          <button
+            className={viewMode === "investor" ? "active" : ""}
+            onClick={() => setViewMode("investor")}
+          >
+            Investor
+          </button>
+        </div>
         <div className={`signal-dots ${signalActive ? "active" : ""}`}>
           <div className="signal-dot dot-1" />
           <div className="signal-dot dot-2" />
@@ -1131,6 +1147,15 @@ export default function AIIntelligence({
           padding: 16px 16px 12px;
           border-bottom: 1px solid #1e2530;
           background: rgba(20, 24, 30, 0.5);
+        }
+
+        .view-toggle button {
+          opacity: 0.6;
+        }
+
+        .view-toggle button.active {
+          opacity: 1;
+          font-weight: 600;
         }
 
         .header-left {
