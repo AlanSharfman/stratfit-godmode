@@ -24,3 +24,5 @@ dist-ssr
 *.sw?
 
 .vercel
+
+src/components/OnboardingTourV2.tsx
