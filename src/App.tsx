@@ -685,6 +685,33 @@ export default function App() {
           background: linear-gradient(180deg, rgba(56, 189, 248, 0.8) 0%, rgba(34, 211, 238, 0.6) 100%);
         }
 
+        /* RIGHT PANEL — anchor AI column */
+        .right-panel {
+          display: flex;
+          flex-direction: column;
+          min-height: 0;     /* critical for grid children */
+          overflow: hidden; /* contain panel */
+        }
+
+        .right-panel > * {
+          flex: 1;
+          min-height: 0;    /* allow child scrolling */
+        }
+
+        /* Internal scroll for AI panel content */
+        .right-panel {
+          overflow-y: auto;
+        }
+
+        .right-panel::-webkit-scrollbar {
+          width: 6px;
+        }
+
+        .right-panel::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.12);
+          border-radius: 6px;
+        }
+
         .mountain-container {
           flex: 1;
           position: relative;
@@ -699,13 +726,6 @@ export default function App() {
           position: relative;
           width: 100%;
           height: 100%;
-        }
-
-        .right-panel {
-          display: flex;
-          flex-direction: column;
-          min-height: 0;
-          overflow: hidden;
         }
 
         @media (max-width: 1200px) {
