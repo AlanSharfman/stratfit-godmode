@@ -122,9 +122,18 @@ export default function App() {
     const engineResult = {
       kpis: {
         runway: { value: metrics.runway, display: `${Math.round(metrics.runway)} mo` },
-        cashPosition: { value: metrics.cashPosition, display: `$${(metrics.cashPosition / 100).toFixed(1)}M` },
-        momentum: { value: metrics.momentum, display: `$${(metrics.momentum / 10).toFixed(1)}M` },
-        burnQuality: { value: metrics.burnQuality, display: `$${Math.round(metrics.burnQuality)}K` },
+        cashPosition: {
+          value: metrics.cashPosition,
+          display: `$${metrics.cashPosition.toFixed(1)}M`,
+        },
+        momentum: {
+          value: metrics.momentum,
+          display: `$${(metrics.momentum / 10).toFixed(1)}M`,
+        },
+        burnQuality: {
+          value: metrics.burnQuality,
+          display: `${Math.round(metrics.burnQuality)}`,
+        },
         riskIndex: { value: metrics.riskIndex, display: `${Math.round(metrics.riskIndex)}/100` },
         earningsPower: { value: metrics.earningsPower, display: `${Math.round(metrics.earningsPower)}%` },
         enterpriseValue: { value: metrics.enterpriseValue, display: `$${(metrics.enterpriseValue / 10).toFixed(1)}M` },
