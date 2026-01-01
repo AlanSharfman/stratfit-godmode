@@ -36,7 +36,7 @@ export const KPI_META: Record<KPIKey, KPIMetadata> = {
     key: "cashPosition",
     label: "CASH",
     unit: "M",
-    format: (v) => `$${(v / 100).toFixed(1)}M`,
+    format: (v) => `$${v.toFixed(1)}M`,
     color: "#00ffcc",
     description: "Current cash reserves",
     higherIsBetter: true,

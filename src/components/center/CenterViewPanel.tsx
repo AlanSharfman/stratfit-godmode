@@ -3,6 +3,7 @@ import CenterViewSegmented, { CenterView } from "@/components/CenterViewSegmente
 import ScenarioMountain from "@/components/mountain/ScenarioMountain";
 import ScenarioDeltaSnapshot from "@/components/ScenarioDeltaSnapshot";
 import { useScenario, useDataPoints, useScenarioStore } from "@/state/scenarioStore";
+import TerrainBriefing from "@/components/terrain/TerrainBriefing";
 
 import BriefingPanel from "@/components/briefing/BriefingPanel";
 import {
@@ -207,6 +208,10 @@ export default function CenterViewPanel() {
                 dataPoints={dataPoints}
                 activeKpiIndex={hoveredKpiIndex}
               />
+
+              <div className="absolute right-4 top-4 z-10 w-[420px] max-w-[48%]">
+                <TerrainBriefing />
+              </div>
             </div>
           </div>
         )}
