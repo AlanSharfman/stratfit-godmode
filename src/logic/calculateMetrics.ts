@@ -1,6 +1,8 @@
 // src/logic/calculateMetrics.ts
 // Pure function to calculate metrics based on scenario state and levers
 
+import type { ScenarioId } from "@/state/scenarioStore";
+
 export interface LeverState {
   demandStrength: number;
   pricingPower: number;
@@ -23,10 +25,11 @@ export interface MetricsResult {
   enterpriseValue: number;
 }
 
-export type ScenarioId = "base" | "upside" | "downside" | "extreme";
-
 export function calculateMetrics(levers: LeverState, scenario: ScenarioId): MetricsResult {
-  const mult = scenario === "upside" ? 1.15 : scenario === "downside" ? 0.85 : scenario === "extreme" ? 0.70 : 1;
+  const mult =
+    scenario === "upside" ? 1.15 :
+    scenario === "downside" ? 0.85 :
+    1;
 
   // Growth factors
   const demand = levers.demandStrength / 100;

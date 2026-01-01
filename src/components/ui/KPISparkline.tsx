@@ -1,8 +1,7 @@
 // src/components/ui/KPICard.tsx
 import React, { useMemo } from "react";
 import { useScenarioStore } from "@/state/scenarioStore";
-
-type ScenarioId = "base" | "upside" | "downside" | "extreme";
+import type { ScenarioId } from "@/state/scenarioStore";
 
 interface KPICardProps {
   label: string;
@@ -22,8 +21,6 @@ function scenarioAccent(s: ScenarioId) {
       return { a: "rgba(74,222,128,1)", b: "rgba(74,222,128,0.15)" };
     case "downside":
       return { a: "rgba(251,191,36,1)", b: "rgba(251,191,36,0.15)" };
-    case "extreme":
-      return { a: "rgba(248,113,113,1)", b: "rgba(248,113,113,0.15)" };
     case "base":
     default:
       return { a: "rgba(34,211,238,1)", b: "rgba(34,211,238,0.15)" };

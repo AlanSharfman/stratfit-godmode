@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ScenarioId } from "./ScenarioSlidePanel";
+import type { ScenarioId } from "@/state/scenarioStore";
 import { useShallow } from "zustand/react/shallow";
 import { useScenarioStore, ViewMode } from "@/state/scenarioStore";
 import StrategicQuestions from "./StrategicQuestions";
@@ -235,27 +235,21 @@ function getAIContent(viewMode: ViewMode, scenario: ScenarioId) {
   if (viewMode === "operator") {
     return {
       observation:
-        scenario === "extreme"
-          ? "Runway has become the binding constraint. Cash position critical. Current burn rate unsustainable beyond 6-month horizon without intervention."
-          : scenario === "downside"
+        scenario === "downside"
           ? "Growth-to-efficiency ratio has deteriorated. Burn rate exceeds revenue scaling. Cost structure requires recalibration."
           : scenario === "upside"
           ? "Metrics trending above plan. Growth and efficiency aligned. Execution capacity adequate for current trajectory."
           : "Core metrics remain within operating tolerance. Cash position and runway are stable. Growth and efficiency are balanced, with no immediate pressure points.",
 
       risks:
-        scenario === "extreme"
-          ? "Limited runway eliminates margin for error. Any execution miss compounds into structural deficit. Optionality severely constrained."
-          : scenario === "downside"
+        scenario === "downside"
           ? "Cost discipline has eroded. Hiring velocity inconsistent with revenue base. Cash sensitivity elevated."
           : scenario === "upside"
           ? "Scaling velocity may outpace operational capacity. Key dependencies emerging in critical functions."
           : "Sustained growth acceleration would increase execution complexity. Hiring velocity and cost discipline require continued monitoring. External market volatility remains a secondary risk.",
 
       action:
-        scenario === "extreme"
-          ? "Reduce burn 25-30% within 30 days. Narrow to single growth vector. Extend runway to 18+ months before any expansion."
-          : scenario === "downside"
+        scenario === "downside"
           ? "Freeze discretionary hiring. Tighten operating expense controls. Preserve optionality for next 2 quarters."
           : scenario === "upside"
           ? "Accelerate proven channels. Secure critical talent. Evaluate opportunistic capital raise."
@@ -264,27 +258,21 @@ function getAIContent(viewMode: ViewMode, scenario: ScenarioId) {
   } else {
     return {
       observation:
-        scenario === "extreme"
-          ? "Portfolio company runway critically constrained. Capital efficiency below sustainable threshold. Deployment risk elevated."
-          : scenario === "downside"
+        scenario === "downside"
           ? "Growth-to-efficiency pressure emerging. Current trajectory requires recalibration within next quarter."
           : scenario === "upside"
           ? "Metrics exceeding plan assumptions. Unit economics remain sustainable. Investment thesis intact."
           : "Metrics within expected range. Deployment efficiency acceptable for stage. No anomalies detected.",
 
       risks:
-        scenario === "extreme"
-          ? "Material risk concentration. Downside probability increased. Execution margin minimal."
-          : scenario === "downside"
+        scenario === "downside"
           ? "Margin compression evident. Burn rate inconsistent with model assumptions."
           : scenario === "upside"
           ? "Execution scaling risk present. Valuation may exceed near-term fundamentals."
           : "Risk factors within normal distribution. No material concerns at current levels.",
 
       action:
-        scenario === "extreme"
-          ? "Prioritize capital preservation. Restructure before additional deployment. Board engagement advised."
-          : scenario === "downside"
+        scenario === "downside"
           ? "Shift to monthly monitoring. Milestone-based capital release. Request response plan."
           : scenario === "upside"
           ? "Evaluate follow-on at current terms. Monitor for overheating indicators."

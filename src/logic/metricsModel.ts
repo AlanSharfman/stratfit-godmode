@@ -1,6 +1,6 @@
 // src/logic/metricsModel.ts
+import type { ScenarioId } from "@/state/scenarioStore";
 import type {
-    ScenarioId,
     MetricId,
     LeverId,
     LeverDefinition,
@@ -54,13 +54,6 @@ import type {
       burn: 1.2,
       risk: 1.3,
       value: 0.8,
-    },
-    extreme: {
-      growth: 0.4,
-      runway: 0.5,
-      burn: 1.5,
-      risk: 1.7,
-      value: 0.5,
     },
   };
   

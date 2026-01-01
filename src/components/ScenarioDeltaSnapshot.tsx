@@ -29,8 +29,7 @@ function getVarianceCommentary(
   
   // Scenario-aware commentary
   const scenarioContext = scenario === "upside" ? "upside assumptions" : 
-                          scenario === "downside" ? "downside pressures" :
-                          scenario === "extreme" ? "stress test conditions" : "adjusted lever inputs";
+                          scenario === "downside" ? "downside pressures" : "adjusted lever inputs";
 
   const commentaryMap: Record<string, { positive: string; negative: string }> = {
     Revenue: {

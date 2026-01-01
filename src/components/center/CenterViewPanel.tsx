@@ -202,11 +202,23 @@ export default function CenterViewPanel() {
             <div className="pointer-events-none absolute inset-0 rounded-3xl shadow-[inset_0_0_0_1px_rgba(34,211,238,0.06)]" />
             
             <div className="relative h-full w-full">
-              <ScenarioMountain 
-                scenario={scenario} 
-                dataPoints={dataPoints}
-                activeKpiIndex={hoveredKpiIndex}
-              />
+              {/* BASE GHOST (always behind) */}
+              <div className="absolute inset-0 opacity-[0.28]">
+                <ScenarioMountain
+                  scenario="base"
+                  dataPoints={dataPoints}
+                  activeKpiIndex={null}
+                />
+              </div>
+
+              {/* ACTIVE SCENARIO (single source of truth) */}
+              <div className="relative h-full w-full">
+                <ScenarioMountain
+                  scenario={scenario}
+                  dataPoints={dataPoints}
+                  activeKpiIndex={hoveredKpiIndex}
+                />
+              </div>
             </div>
           </div>
         )}

@@ -13,7 +13,6 @@ const SCENARIOS: { id: ScenarioId; label: string; desc: string }[] = [
   { id: "base", label: "Base Case", desc: "Current trajectory" },
   { id: "upside", label: "Upside", desc: "Optimistic execution" },
   { id: "downside", label: "Downside", desc: "Cost or demand pressure" },
-  { id: "extreme", label: "Stress Test", desc: "Extreme conditions" },
 ];
 
 export default function ScenarioSelector({ scenario, onChange }: ScenarioSelectorProps) {

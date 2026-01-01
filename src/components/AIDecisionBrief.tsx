@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ScenarioId } from "./ScenarioSlidePanel";
+import type { ScenarioId } from "@/state/scenarioStore";
 import { useScenarioStore } from "@/state/scenarioStore";
 
 // ============================================================================

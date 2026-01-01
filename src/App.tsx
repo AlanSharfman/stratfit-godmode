@@ -4,7 +4,8 @@
 
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { ScenarioId } from "./components/ScenarioSlidePanel";
+import type { ScenarioId } from "@/state/scenarioStore";
+import { calculateMetrics } from "@/logic/calculateMetrics";
 import KPIConsole from "./components/KPIConsole";
 import CenterViewPanel from "@/components/center/CenterViewPanel";
 import { Moon } from "./components/Moon";
@@ -15,7 +16,6 @@ import ScenarioSelector from "./components/ScenarioSelector";
 import OnboardingSequence from "./components/OnboardingSequenceNew";
 import { useScenarioStore, SCENARIO_COLORS } from "@/state/scenarioStore";
 import type { LeverId } from "@/logic/mountainPeakModel";
-import { calculateMetrics } from "@/logic/calculateMetrics";
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -106,7 +106,18 @@ export default function App() {
     }))
   );
 
-  const metrics = useMemo(() => calculateMetrics(levers, scenario), [levers, scenario]);
+  const scenarios: ScenarioId[] = ["base", "upside", "downside"];
+
+  const metricsByScenario = useMemo(() => {
+    const out: Record<ScenarioId, ReturnType<typeof calculateMetrics>> = {
+      base: calculateMetrics(levers, "base"),
+      upside: calculateMetrics(levers, "upside"),
+      downside: calculateMetrics(levers, "downside"),
+    };
+    return out;
+  }, [levers]);
+
+  const metrics = metricsByScenario[scenario];
   const dataPoints = useMemo(() => metricsToDataPoints(metrics), [metrics]);
 
   useEffect(() => {
@@ -118,20 +129,23 @@ export default function App() {
   }, [scenario, setScenarioInStore]);
 
   useEffect(() => {
-    if (!metrics) return;
-    const engineResult = {
-      kpis: {
-        runway: { value: metrics.runway, display: `${Math.round(metrics.runway)} mo` },
-        cashPosition: { value: metrics.cashPosition, display: `$${(metrics.cashPosition / 100).toFixed(1)}M` },
-        momentum: { value: metrics.momentum, display: `$${(metrics.momentum / 10).toFixed(1)}M` },
-        burnQuality: { value: metrics.burnQuality, display: `$${Math.round(metrics.burnQuality)}K` },
-        riskIndex: { value: metrics.riskIndex, display: `${Math.round(metrics.riskIndex)}/100` },
-        earningsPower: { value: metrics.earningsPower, display: `${Math.round(metrics.earningsPower)}%` },
-        enterpriseValue: { value: metrics.enterpriseValue, display: `$${(metrics.enterpriseValue / 10).toFixed(1)}M` },
-      },
-    };
-    setEngineResult(activeScenarioId, engineResult);
-  }, [activeScenarioId, metrics, setEngineResult]);
+    // Keep engineResults warm for ALL scenarios so overlays never go stale
+    scenarios.forEach((s) => {
+      const m = metricsByScenario[s];
+      const engineResult = {
+        kpis: {
+          runway: { value: m.runway, display: `${Math.round(m.runway)} mo` },
+          cashPosition: { value: m.cashPosition, display: `$${m.cashPosition.toFixed(1)}M` },
+          momentum: { value: m.momentum, display: `$${(m.momentum / 10).toFixed(1)}M` },
+          burnQuality: { value: m.burnQuality, display: `${Math.round(m.burnQuality)}` },
+          riskIndex: { value: m.riskIndex, display: `${Math.round(m.riskIndex)}/100` },
+          earningsPower: { value: m.earningsPower, display: `${Math.round(m.earningsPower)}%` },
+          enterpriseValue: { value: m.enterpriseValue, display: `$${(m.enterpriseValue / 10).toFixed(1)}M` },
+        },
+      };
+      setEngineResult(s, engineResult as any);
+    });
+  }, [metricsByScenario, setEngineResult]);
     
   // Map lever IDs to state keys
   const leverIdToStateKey: Record<string, keyof LeverState> = {

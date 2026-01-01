@@ -9,7 +9,7 @@ import type { LeverId } from "@/logic/mountainPeakModel";
 // TYPES
 // ============================================================================
 
-export type ScenarioId = "base" | "upside" | "downside" | "extreme";
+export type ScenarioId = "base" | "upside" | "downside";
 export type ViewMode = "operator" | "investor";
 
 export interface EngineResult {
@@ -35,11 +35,6 @@ export const SCENARIO_COLORS: Record<ScenarioId, { primary: string; secondary: s
     primary: "#fbbf24",
     secondary: "#f97316",
     glow: "rgba(251, 191, 36, 0.4)",
-  },
-  extreme: {
-    primary: "#ef4444",
-    secondary: "#fb7185",
-    glow: "rgba(239, 68, 68, 0.4)",
   },
 };
 
@@ -145,7 +140,6 @@ export const useScenarioStore = create<ScenarioStoreState>((set, get) => ({
     base: {} as EngineResult,
     upside: {} as EngineResult,
     downside: {} as EngineResult,
-    extreme: {} as EngineResult,
   },
   setEngineResult: (scenarioId, result) =>
     set((state) => ({

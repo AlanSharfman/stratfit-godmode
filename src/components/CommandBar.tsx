@@ -12,12 +12,11 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import type { ScenarioId } from "@/state/scenarioStore";
 
 // ============================================================================
 // TYPES
 // ============================================================================
-
-export type ScenarioId = "base" | "upside" | "downside" | "extreme";
 
 interface Scenario {
   id: ScenarioId;

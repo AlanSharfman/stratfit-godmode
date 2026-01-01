@@ -91,7 +91,7 @@ const OPERATOR_PROMPTS: StrategicPrompt[] = [
     dominantConstraint: "risk",
     primaryKpis: [4], // Risk
     getResponse: (state) => {
-      if (state.scenario === "extreme" || state.scenario === "downside") {
+      if (state.scenario === "downside") {
         return {
           observation: "In stressed scenarios, hiring intensity amplifies risk fastest. Each new commitment extends fixed cost exposure.",
           risk: "Headcount cannot be unwound quickly. Creates structural rigidity in downside.",
@@ -161,7 +161,7 @@ const INVESTOR_PROMPTS: StrategicPrompt[] = [
     dominantConstraint: "risk",
     primaryKpis: [4, 0], // Risk, Runway
     getResponse: (state) => {
-      if (state.scenario === "extreme" || state.scenario === "downside") {
+      if (state.scenario === "downside") {
         return {
           observation: "Liquidity risk dominates. Downside scenarios compress runway faster than operations can adapt.",
           risk: "Cash exhaustion timeline accelerates non-linearly in stress scenarios.",

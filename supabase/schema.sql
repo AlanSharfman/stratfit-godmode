@@ -60,8 +60,8 @@ create table if not exists public.scenarios (
   company_id uuid not null references public.companies (id) on delete cascade,
   owner_user_id uuid not null,    -- mirrors companies.owner_user_id for RLS checks
 
-  -- Link to our ScenarioId union: "base" | "upside" | "downside" | "extreme"
-  scenario_id text not null check (scenario_id in ('base', 'upside', 'downside', 'extreme')),
+  -- Link to our ScenarioId union: "base" | "upside" | "downside"
+  scenario_id text not null check (scenario_id in ('base', 'upside', 'downside')),
 
   name text not null,             -- e.g. 'Base FY25', 'Aggressive Growth'
   description text,
