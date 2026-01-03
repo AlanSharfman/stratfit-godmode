@@ -4,12 +4,15 @@
 
 import { create } from "zustand";
 import type { LeverId } from "@/logic/mountainPeakModel";
+import type { ScenarioId } from "@/types/domain";
+
+export type { ScenarioId } from "@/types/domain";
 
 // ============================================================================
+
 // TYPES
 // ============================================================================
 
-export type ScenarioId = "base" | "upside" | "downside";
 export type ViewMode = "operator" | "investor";
 
 export interface EngineResult {
@@ -157,8 +160,30 @@ export const useScenarioStore = create<ScenarioStoreState>((set, get) => ({
 export const useScenario = () => useScenarioStore((s) => s.scenario);
 export const useViewMode = () => useScenarioStore((s) => s.viewMode);
 export const useDataPoints = () => useScenarioStore((s) => s.dataPoints);
+
+export const useLevers = () =>
+  useScenarioStore((s) => s.leverState ?? s.levers ?? {});
 export const useHoveredKpiIndex = () => useScenarioStore((s) => s.hoveredKpiIndex);
 export const useScenarioColors = () => {
   const scenario = useScenarioStore((s) => s.scenario);
   return SCENARIO_COLORS[scenario];
 };
+
+// Expose levers via selector hook
+export function useLevers() {
+  // Expose leverState if present, otherwise fallback
+  return useScenarioStore((s) =>
+    s.leverState ?? (
+      s.levers ?? {
+        revenueGrowth: s.dataPoints[0] ?? 50,
+        pricingAdjustment: s.dataPoints[1] ?? 50,
+        marketingSpend: s.dataPoints[2] ?? 50,
+        operatingExpenses: s.dataPoints[3] ?? 50,
+        headcount: s.dataPoints[4] ?? 50,
+        cashSensitivity: s.dataPoints[5] ?? 50,
+        churnSensitivity: s.dataPoints[6] ?? 50,
+        fundingInjection: s.dataPoints[7] ?? 50,
+      }
+    )
+  );
+}

@@ -2,33 +2,30 @@
 // STRATFIT — Scenario Health Tab View (Board-Grade State Assessment)
 
 import { useMemo } from 'react';
-import { useScenario, useDataPoints } from '@/state/scenarioStore';
+import { useScenario, useLevers } from '@/state/scenarioStore';
 import { calculateScenarioHealth, type LeverValues } from '@/logic/calculateScenarioHealth';
 
 export default function HealthStatePanel() {
   const scenario = useScenario();
-  const dataPoints = useDataPoints();
   
   // Derive lever values from dataPoints (normalized 0-100)
   // dataPoints represent scenario outputs; we map them to lever approximations
+  // ✅ SOURCE OF TRUTH: the real lever values (0–100)
+  const levers = useLevers();
+
   const leverValues: LeverValues = useMemo(() => {
-    const dp = dataPoints.length > 0 ? dataPoints : [50, 50, 50, 50, 50, 50, 50, 50];
     const normalize = (v: number) => Math.max(0, Math.min(100, v));
-    
-    // Map dataPoints to lever inputs (with scenario adjustments)
-    const scenarioMod = scenario === 'upside' ? 15 : scenario === 'downside' ? -15 : 0;
-    
     return {
-      revenueGrowth: normalize((dp[0] ?? 50) + scenarioMod),
-      pricingAdjustment: normalize((dp[1] ?? 50) + scenarioMod * 0.5),
-      marketingSpend: normalize(dp[2] ?? 50),
-      operatingExpenses: normalize((dp[3] ?? 50) - scenarioMod * 0.3),
-      headcount: normalize((dp[4] ?? 50) - scenarioMod * 0.2),
-      cashSensitivity: normalize((dp[5] ?? 40) - scenarioMod * 0.5),
-      churnSensitivity: normalize((dp[6] ?? 35) - scenarioMod * 0.4),
-      fundingInjection: normalize((dp[7] ?? 50) + scenarioMod * 0.3),
+      revenueGrowth: normalize(levers.revenueGrowth ?? 50),
+      pricingAdjustment: normalize(levers.pricingAdjustment ?? 50),
+      marketingSpend: normalize(levers.marketingSpend ?? 50),
+      operatingExpenses: normalize(levers.operatingExpenses ?? 50),
+      headcount: normalize(levers.headcount ?? 50),
+      cashSensitivity: normalize(levers.cashSensitivity ?? 50),
+      churnSensitivity: normalize(levers.churnSensitivity ?? 50),
+      fundingInjection: normalize(levers.fundingInjection ?? 50),
     };
-  }, [dataPoints, scenario]);
+  }, [levers]);
   
   const metrics = useMemo(() => calculateScenarioHealth(leverValues), [leverValues]);
   
@@ -58,17 +55,22 @@ export default function HealthStatePanel() {
     return 'Structural headwinds require immediate intervention.';
   };
 
-  // Sensitivity analysis
+  // Sensitivity analysis (rank by impact severity)
   const getSensitivities = () => {
     const factors = [
-      { label: 'Demand Strength', value: breakdown.growth },
-      { label: 'Burn Rate', value: breakdown.efficiency },
-      { label: 'Market Risk', value: breakdown.risk }
+      { label: 'Demand Strength', value: breakdown.growth, polarity: 'good' as const },
+      { label: 'Burn Rate', value: breakdown.efficiency, polarity: 'good' as const },
+      { label: 'Market Risk', value: breakdown.risk, polarity: 'bad' as const },
     ];
-    
-    return factors
-      .sort((a, b) => b.value - a.value)
+
+    const ranked = factors
+      .map(f => ({
+        label: f.label,
+        score: f.polarity === 'bad' ? f.value : (100 - f.value), // higher score = worse pressure
+      }))
+      .sort((a, b) => b.score - a.score)
       .slice(0, 2);
+    return ranked;
   };
 
   // Flip conditions (when state changes)
