@@ -1,5 +1,7 @@
+
 // src/logic/calculateScenarioHealth.ts
 // STRATFIT — Scenario Health State Assessment Engine
+import { SYSTEM_THRESHOLDS } from "@/config/systemThresholds";
 
 export interface HealthMetrics {
   health: number;           // 0-100
@@ -24,7 +26,7 @@ export interface LeverValues {
   fundingInjection: number;   // 0-100
 }
 
-const BASELINE_HEALTH = 65; // Base case expected health
+
 
 export function calculateScenarioHealth(
   levers: LeverValues,
@@ -58,22 +60,25 @@ export function calculateScenarioHealth(
     ((100 - risk) * 0.30)
   );
   
-  // 5. STATE CLASSIFICATION
+  // 5. STATE CLASSIFICATION (threshold-driven)
+  const { state: STATE_T, trendDelta } = SYSTEM_THRESHOLDS.health;
+
   let state: 'strong' | 'stable' | 'fragile' | 'critical';
-  if (health >= 75) state = 'strong';
-  else if (health >= 60) state = 'stable';
-  else if (health >= 40) state = 'fragile';
+  if (health >= STATE_T.strong) state = 'strong';
+  else if (health >= STATE_T.stable) state = 'stable';
+  else if (health >= STATE_T.fragile) state = 'fragile';
   else state = 'critical';
-  
+
   // 6. TREND DETECTION
   let trend: 'strengthening' | 'stable' | 'weakening' = 'stable';
   if (previousHealth !== undefined) {
     const delta = health - previousHealth;
-    if (delta > 3) trend = 'strengthening';
-    else if (delta < -3) trend = 'weakening';
+    if (delta > trendDelta) trend = 'strengthening';
+    else if (delta < -trendDelta) trend = 'weakening';
   }
-  
+
   // 7. VS BASELINE
+  const BASELINE_HEALTH = SYSTEM_THRESHOLDS.health.baselineHealth;
   const vsBase = Math.round(((health - BASELINE_HEALTH) / BASELINE_HEALTH) * 100);
   
   return {
