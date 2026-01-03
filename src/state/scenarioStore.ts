@@ -162,7 +162,16 @@ export const useViewMode = () => useScenarioStore((s) => s.viewMode);
 export const useDataPoints = () => useScenarioStore((s) => s.dataPoints);
 
 export const useLevers = () =>
-  useScenarioStore((s) => s.leverState ?? s.levers ?? {});
+  useScenarioStore((s) => ({
+    revenueGrowth: s.dataPoints?.[0] ?? 50,
+    pricingAdjustment: s.dataPoints?.[1] ?? 50,
+    marketingSpend: s.dataPoints?.[2] ?? 50,
+    operatingExpenses: s.dataPoints?.[3] ?? 50,
+    headcount: s.dataPoints?.[4] ?? 50,
+    cashSensitivity: s.dataPoints?.[5] ?? 50,
+    churnSensitivity: s.dataPoints?.[6] ?? 50,
+    fundingInjection: s.dataPoints?.[7] ?? 50,
+  }));
 export const useHoveredKpiIndex = () => useScenarioStore((s) => s.hoveredKpiIndex);
 export const useScenarioColors = () => {
   const scenario = useScenarioStore((s) => s.scenario);
