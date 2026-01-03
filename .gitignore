@@ -28,3 +28,7 @@ dist-ssr
 src/components/OnboardingTourV2.tsx
 
 src/components/OnboardingTourV2.tsx
+
+# local archives
+*.zip
+
