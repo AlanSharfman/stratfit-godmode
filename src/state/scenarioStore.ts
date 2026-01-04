@@ -4,84 +4,48 @@
 
 import { create } from "zustand";
 import { useShallow } from "zustand/react/shallow";
-import type { LeverId } from "@/logic/mountainPeakModel";
+import type { LeverId } from "@/logic/leverDefinitions";
 import type { ScenarioId } from "@/types/domain";
 
 export type { ScenarioId } from "@/types/domain";
 
 // ============================================================================
+// SCENARIO COLORS (leave as-is for now; restore later if you have canonical palette)
+// ============================================================================
+export const SCENARIO_COLORS: Record<
+  ScenarioId,
+  { primary: string; secondary: string; glow: string }
+> = {
+  base: { primary: "#000", secondary: "#000", glow: "#000" },
+  upside: { primary: "#000", secondary: "#000", glow: "#000" },
+  downside: { primary: "#000", secondary: "#000", glow: "#000" },
+};
 
+// ============================================================================
+// CANONICAL LEVER -> DATAPOINTS INDEX MAP (single source of truth)
+// MUST match the order used by useLevers() below.
+// ============================================================================
+export const LEVER_INDEX: Record<LeverId, number> = {
+  revenueGrowth: 0,
+  pricingAdjustment: 1,
+  marketingSpend: 2,
+  operatingExpenses: 3,
+  headcount: 4,
+  cashSensitivity: 5,
+  churnSensitivity: 6,
+  fundingInjection: 7,
+} as const;
+
+// ============================================================================
 // TYPES
 // ============================================================================
-
 export type ViewMode = "operator" | "investor";
 
 export interface EngineResult {
   kpis: Record<string, { value: number; display: string }>;
 }
 
-  setDataPoints: (dp) => set({ dataPoints: Array.isArray(dp) ? dp : [] }),
-// SCENARIO COLORS
-// ============================================================================
-
-
-export const SCENARIO_COLORS = {
-  base: { primary: "#000", secondary: "#000", glow: "#000" },
-  upside: { primary: "#000", secondary: "#000", glow: "#000" },
-  downside: { primary: "#000", secondary: "#000", glow: "#000" },
-};
-
-type LeverId =
-  | "revenueGrowth"
-  | "pricingAdjustment"
-  | "marketingSpend"
-  | "operatingExpenses"
-  | "headcount"
-  | "cashSensitivity"
-  | "churnSensitivity"
-  | "fundingInjection";
-
-const LEVER_INDEX: Record<LeverId, number> = {
-  revenueGrowth: 0,
-  pricingAdjustment: 1,
-  marketingSpend: 2,
-  operatingExpenses: 3,
-  headcount: 4,
-  cashSensitivity: 5,
-  churnSensitivity: 6,
-  fundingInjection: 7,
-} as const;
-
-// ============================================================================
-// CANONICAL LEVER -> DATAPOINTS INDEX MAP (single source of truth)
-// ============================================================================
-type LeverId =
-  | "revenueGrowth"
-  | "pricingAdjustment"
-  | "marketingSpend"
-  | "operatingExpenses"
-  | "headcount"
-  | "cashSensitivity"
-  | "churnSensitivity"
-  | "fundingInjection";
-
-const LEVER_INDEX: Record<LeverId, number> = {
-  revenueGrowth: 0,
-  pricingAdjustment: 1,
-  marketingSpend: 2,
-  operatingExpenses: 3,
-  headcount: 4,
-  cashSensitivity: 5,
-  churnSensitivity: 6,
-  fundingInjection: 7,
-} as const;
-
-// ============================================================================
-// STORE INTERFACE
-// ============================================================================
-
 export type ScenarioStoreState = {
-  // View Mode: Operator or Investor
   viewMode: ViewMode;
   setViewMode: (v: ViewMode) => void;
 
@@ -89,8 +53,9 @@ export type ScenarioStoreState = {
   setScenario: (s: ScenarioId) => void;
 
   dataPoints: number[];
-
   setDataPoints: (dp: number[]) => void;
+
+  // Canonical per-lever writer (index-safe)
   setLeverValue: (id: LeverId, value: number) => void;
 
   hoveredKpiIndex: number | null;
@@ -101,25 +66,23 @@ export type ScenarioStoreState = {
   setActiveLever: (id: LeverId | null, intensity01: number) => void;
 
   getScenarioColors: () => { primary: string; secondary: string; glow: string };
-  
-  // Motion amplitude based on view
   getMotionAmplitude: () => number;
 
-  // Scenario Delta Snapshot toggle (persisted to localStorage)
   showScenarioImpact: boolean;
   setShowScenarioImpact: (show: boolean) => void;
   toggleScenarioImpact: () => void;
 
   activeScenarioId: ScenarioId;
   comparisonTargetScenarioId: ScenarioId | null;
+
   engineResults: Record<ScenarioId, EngineResult>;
   setEngineResult: (scenarioId: ScenarioId, result: EngineResult) => void;
-}
+};
 
 // ============================================================================
 // STORE
 // ============================================================================
-
+export const useScenarioStore = create<ScenarioStoreState>((set, get) => ({
   viewMode: "operator",
   setViewMode: (v) => set({ viewMode: v }),
 
@@ -127,13 +90,12 @@ export type ScenarioStoreState = {
   setScenario: (s) => set({ scenario: s }),
 
   dataPoints: [],
-
   setDataPoints: (dp) => set({ dataPoints: Array.isArray(dp) ? dp : [] }),
 
   setLeverValue: (id, value) =>
-    set((s) => {
+    set((state) => {
       const idx = LEVER_INDEX[id];
-      const current = Array.isArray(s.dataPoints) ? s.dataPoints : [];
+      const current = Array.isArray(state.dataPoints) ? state.dataPoints : [];
       const next =
         current.length >= 8
           ? [...current]
@@ -149,20 +111,21 @@ export type ScenarioStoreState = {
   activeLeverId: null,
   leverIntensity01: 0,
   setActiveLever: (id, intensity01) =>
-    set({ activeLeverId: id, leverIntensity01: Math.max(0, Math.min(1, intensity01)) }),
+    set({
+      activeLeverId: id,
+      leverIntensity01: Math.max(0, Math.min(1, intensity01)),
+    }),
 
   getScenarioColors: () => {
     const scenario = get().scenario;
     return SCENARIO_COLORS[scenario];
   },
 
-  // Operator: full motion (1.0), Investor: restrained (0.6)
   getMotionAmplitude: () => {
     const viewMode = get().viewMode;
     return viewMode === "operator" ? 1.0 : 0.6;
   },
 
-  // Scenario Delta Snapshot toggle - initialized from localStorage
   showScenarioImpact: (() => {
     try {
       return localStorage.getItem("stratfit_showScenarioImpact") === "true";
@@ -170,14 +133,14 @@ export type ScenarioStoreState = {
       return false;
     }
   })(),
-  
+
   setShowScenarioImpact: (show) => {
     try {
       localStorage.setItem("stratfit_showScenarioImpact", String(show));
     } catch {}
     set({ showScenarioImpact: show });
   },
-  
+
   toggleScenarioImpact: () => {
     const current = get().showScenarioImpact;
     const next = !current;
@@ -189,11 +152,13 @@ export type ScenarioStoreState = {
 
   activeScenarioId: "base",
   comparisonTargetScenarioId: null,
+
   engineResults: {
     base: {} as EngineResult,
     upside: {} as EngineResult,
     downside: {} as EngineResult,
   },
+
   setEngineResult: (scenarioId, result) =>
     set((state) => ({
       engineResults: {
@@ -204,28 +169,8 @@ export type ScenarioStoreState = {
 }));
 
 // ============================================================================
-
-// ============================================================================
-// CANONICAL LEVER -> DATAPOINTS INDEX MAP (single source of truth)
-// ============================================================================
-
-
-// Canonical per-lever setter (foundation for migration)
-export function setLeverValue(id: LeverId, value: number) {
-  const idx = LEVER_INDEX[id];
-  if (typeof idx !== 'number') return;
-  const store = useScenarioStore.getState();
-  const dp = Array.isArray(store.dataPoints) ? [...store.dataPoints] : [];
-  // Ensure dp is long enough
-  while (dp.length <= idx) dp.push(50);
-  dp[idx] = value;
-  store.setDataPoints(dp);
-}
-
-// ============================================================================
 // SELECTOR HOOKS
 // ============================================================================
-
 export const useScenario = () => useScenarioStore((s) => s.scenario);
 export const useViewMode = () => useScenarioStore((s) => s.viewMode);
 export const useDataPoints = () => useScenarioStore((s) => s.dataPoints);
@@ -243,10 +188,11 @@ export const useLevers = () =>
       fundingInjection: s.dataPoints?.[7] ?? 50,
     }))
   );
-export const useHoveredKpiIndex = () => useScenarioStore((s) => s.hoveredKpiIndex);
+
+export const useHoveredKpiIndex = () =>
+  useScenarioStore((s) => s.hoveredKpiIndex);
+
 export const useScenarioColors = () => {
   const scenario = useScenarioStore((s) => s.scenario);
   return SCENARIO_COLORS[scenario];
 };
-
-

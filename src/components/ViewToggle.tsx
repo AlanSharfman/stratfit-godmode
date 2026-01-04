@@ -2,8 +2,10 @@
 // STRATFIT — View Toggle
 // Two lenses over the same engine. Same truth. Different focus.
 
+
 import React from "react";
 import { useScenarioStore } from "@/state/scenarioStore";
+import { useShallow } from "zustand/react/shallow";
 
 export default function ViewToggle() {
   const { viewMode, setViewMode } = useScenarioStore(
