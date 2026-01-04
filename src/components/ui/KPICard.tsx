@@ -632,31 +632,38 @@ export default function KPICard({
             0 18px 42px rgba(0,0,0,0.55);
         }
 
-        /* One-shot scenario pulse on selection */
-        /* One-shot scenario pulse on selection (visible behind frame/surface) */
+        /* Selection pulse (scenario-colored, premium, visible) */
         .kpi-card.active::after {
           content: "";
           position: absolute;
           inset: -10px;
           border-radius: 26px;
           pointer-events: none;
-          z-index: 1;                 /* sits behind frame(2) + surface(3) */
+          z-index: 1;                 /* behind frame/surface */
           background: radial-gradient(
             circle at 50% 45%,
-            var(--accent-color) 0%,
-            transparent 68%
+            rgba(255,255,255,0.08) 0%,
+            color-mix(in srgb, var(--accent-color) 40%, transparent) 22%,
+            transparent 70%
           );
           opacity: 0;
           filter: blur(14px);
-          transform: scale(0.96);
+          transform: scale(0.965);
           mix-blend-mode: screen;
           animation: kpi-select-pulse 560ms cubic-bezier(0.2, 0.9, 0.2, 1) 1;
         }
 
+        /* Hero card pulse slightly stronger */
+        .kpi-card.hero.active::after {
+          inset: -12px;
+          filter: blur(16px);
+          animation-duration: 620ms;
+        }
+
         @keyframes kpi-select-pulse {
-          0%   { opacity: 0;   transform: scale(0.96); }
-          35%  { opacity: 0.85; transform: scale(1.00); }
-          100% { opacity: 0;   transform: scale(1.06); }
+          0%   { opacity: 0;    transform: scale(0.965); }
+          35%  { opacity: 0.90; transform: scale(1.00); }
+          100% { opacity: 0;    transform: scale(1.07); }
         }
                 .kpi-card .card-value {
                   transition: opacity 140ms ease, transform 160ms ease;
@@ -782,6 +789,14 @@ export default function KPICard({
           position: relative;
           z-index: 2;
           margin-top: 6px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .kpi-card,
+          .kpi-card * {
+            animation: none !important;
+            transition: none !important;
+          }
         }
       `}</style>
     </div>
