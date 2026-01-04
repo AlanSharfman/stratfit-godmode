@@ -1,4 +1,10 @@
 // src/components/KPIConsole.tsx
+/**
+ * KPI CONSOLE — CANONICAL UI (LOCKED)
+ * Restored from tag: kpi-pre-instrument-step1
+ * Rule: Do not modify KPI box layout/styling without explicit UI sign-off.
+ * Scope: KPI boxes only (no slider/mountain/store coupling).
+ */
 // STRATFIT — Executive Command Console
 // World-class KPI instrument panel with terrain + lever linkage
 
