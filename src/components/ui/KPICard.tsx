@@ -91,37 +91,39 @@ function RunwayWidget({ value, isActive }: { value: number; isActive: boolean })
         }
       `}</style>
     </div>
-  );
-}
+        .kpi-card.active {
+          box-shadow:
+            0 0 0 1px rgba(255,255,255,0.06) inset,
+            0 0 0 2px color-mix(in srgb, var(--accent-color) 70%, transparent),
+            0 0 26px color-mix(in srgb, var(--accent-color) 22%, transparent),
+            0 0 46px color-mix(in srgb, var(--accent-glow) 28%, transparent),
+            0 18px 42px rgba(0,0,0,0.55);
+        }
 
-// ============================================================================
-// 2. CASH — Globe + Orbital Rings + Ascending Bars
-// ============================================================================
-function CashWidget({ value, isActive }: { value: number; isActive: boolean }) {
-  const [rotation, setRotation] = useState(0);
-  useEffect(() => {
-    const speed = isActive ? 0.8 : 0.4;
-    const interval = setInterval(() => setRotation(r => (r + speed) % 360), 30);
-    return () => clearInterval(interval);
-  }, [isActive]);
+        /* One-shot scenario pulse on selection (visible behind frame/surface) */
+        .kpi-card.active::after {
+          content: "";
+          position: absolute;
+          inset: -10px;
+          border-radius: 26px;
+          pointer-events: none;
+          z-index: 1;
+          background: radial-gradient(
+            circle at 50% 45%,
+            var(--accent-color) 0%,
+            transparent 68%
+          );
+          opacity: 0;
+          filter: blur(14px);
+          transform: scale(0.96);
+          mix-blend-mode: screen;
+          animation: kpi-select-pulse 560ms cubic-bezier(0.2, 0.9, 0.2, 1) 1;
+        }
 
-  return (
-    <div className="cash-widget">
-      <div className="cash-globe-wrap">
-        <div className="cash-orbit" style={{ transform: `rotateX(70deg) rotateZ(${rotation}deg)` }} />
-        <div className="cash-orbit outer" style={{ transform: `rotateX(70deg) rotateZ(${-rotation * 0.6}deg)` }} />
-        <div className="cash-globe">
-          <div className="globe-inner-ring" style={{ transform: `rotate(${rotation * 0.5}deg)` }} />
-          <div className="globe-equator" />
-        </div>
-      </div>
-      <div className="cash-bars">
-        <div className="cash-bar" style={{ height: '45%' }}><div className="bar-shine"/></div>
-        <div className="cash-bar" style={{ height: '68%' }}><div className="bar-shine"/></div>
-        <div className="cash-bar" style={{ height: '100%' }}><div className="bar-shine"/></div>
-      </div>
-      <style>{`
-        .cash-widget {
+        @keyframes kpi-select-pulse {
+          0%   { opacity: 0;   transform: scale(0.96); }
+          35%  { opacity: 0.85; transform: scale(1.00); }
+          100% { opacity: 0;   transform: scale(1.06); }
           display: flex;
           align-items: center;
           justify-content: center;
@@ -146,23 +148,25 @@ function CashWidget({ value, isActive }: { value: number; isActive: boolean }) {
         }
         .cash-globe {
           width: 100%;
-          height: 100%;
-          border-radius: 50%;
-          background: 
-            radial-gradient(circle at 30% 25%, rgba(0, 255, 200, 0.4) 0%, transparent 45%),
-            radial-gradient(circle at 70% 75%, rgba(0, 150, 255, 0.25) 0%, transparent 45%),
-            linear-gradient(145deg, #0a3530 0%, #051a18 50%, #031210 100%);
-          border: 1.5px solid rgba(0, 255, 200, 0.4);
-          box-shadow: 
-            0 0 20px rgba(0, 255, 200, 0.25),
-            inset 0 0 15px rgba(0, 255, 200, 0.15),
-            inset 0 -5px 15px rgba(0, 100, 80, 0.3);
-          position: relative;
-          overflow: hidden;
-        }
-        .globe-inner-ring {
+        .card-frame {
           position: absolute;
-          inset: 6px;
+          inset: 0;
+          border-radius: 18px;
+          padding: 1.5px;
+          background: linear-gradient(
+            155deg,
+            rgba(255,255,255,0.5) 0%,
+            rgba(255,255,255,0.15) 20%,
+            rgba(0,0,0,0.1) 40%,
+            rgba(255,255,255,0.1) 60%,
+            rgba(255,255,255,0.4) 100%
+          );
+          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+          z-index: 2;
+        }
           border-radius: 50%;
           border: 1px dashed rgba(0, 255, 200, 0.35);
         }
@@ -597,6 +601,8 @@ export default function KPICard({
             filter 180ms ease;
           will-change: transform, box-shadow;
           flex-shrink: 0;
+          isolation: isolate;
+          overflow: visible;
         }
 
         .card-label {
@@ -627,27 +633,30 @@ export default function KPICard({
         }
 
         /* One-shot scenario pulse on selection */
+        /* One-shot scenario pulse on selection (visible behind frame/surface) */
         .kpi-card.active::after {
           content: "";
           position: absolute;
-          inset: -6px;
-          border-radius: 22px;
+          inset: -10px;
+          border-radius: 26px;
           pointer-events: none;
+          z-index: 1;                 /* sits behind frame(2) + surface(3) */
           background: radial-gradient(
             circle at 50% 45%,
-            color-mix(in srgb, var(--accent-color) 38%, transparent) 0%,
-            transparent 62%
+            var(--accent-color) 0%,
+            transparent 68%
           );
           opacity: 0;
-          filter: blur(10px);
-          transform: scale(0.98);
-          animation: kpi-select-pulse 520ms cubic-bezier(0.2, 0.9, 0.2, 1) 1;
+          filter: blur(14px);
+          transform: scale(0.96);
+          mix-blend-mode: screen;
+          animation: kpi-select-pulse 560ms cubic-bezier(0.2, 0.9, 0.2, 1) 1;
         }
 
         @keyframes kpi-select-pulse {
-          0%   { opacity: 0;   transform: scale(0.98); }
-          35%  { opacity: 0.9; transform: scale(1.00); }
-          100% { opacity: 0;   transform: scale(1.04); }
+          0%   { opacity: 0;   transform: scale(0.96); }
+          35%  { opacity: 0.85; transform: scale(1.00); }
+          100% { opacity: 0;   transform: scale(1.06); }
         }
                 .kpi-card .card-value {
                   transition: opacity 140ms ease, transform 160ms ease;
@@ -676,6 +685,7 @@ export default function KPICard({
           mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
           -webkit-mask-composite: xor;
           mask-composite: exclude;
+          z-index: 2;
         }
         .kpi-card.active .card-frame {
           background: linear-gradient(155deg, var(--accent-color) 0%, transparent 40%, var(--accent-color) 100%);
@@ -709,6 +719,7 @@ export default function KPICard({
           padding: 14px;
           overflow: hidden;
           box-shadow: inset 0 1px 1px rgba(255,255,255,0.05);
+          z-index: 3;
         }
         .card-surface.hero-surface {
           background: linear-gradient(
