@@ -1,11 +1,8 @@
 // src/components/ui/Slider.tsx
-// STRATFIT — Ultra-responsive Slider (jitter-hardened)
-// - Instant DOM visuals (no delay)
-// - rAF-batched onChange (prevents parent/layout thrash)
-// - Cached track rect during drag (avoids layout reads every move)
-// - No thumb transition while dragging
+// STRATFIT — Ultra-responsive Slider
+// Zero delay, direct DOM updates for smoothest possible response
 
-import React, { useCallback, useEffect, useMemo, useRef, memo } from "react";
+import React, { useCallback, useRef, useEffect, memo } from "react";
 
 interface SliderProps {
   value: number;
@@ -18,8 +15,6 @@ interface SliderProps {
   highlight?: boolean;
   highlightColor?: string | null;
 }
-
-const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 
 const Slider = memo(function Slider({
   value,
@@ -35,195 +30,82 @@ const Slider = memo(function Slider({
   const trackRef = useRef<HTMLDivElement>(null);
   const fillRef = useRef<HTMLDivElement>(null);
   const thumbRef = useRef<HTMLDivElement>(null);
-
   const isDragging = useRef(false);
-  const draggingClassOn = useRef(false);
-
-  const rectRef = useRef<DOMRect | null>(null);
-
-  const rafId = useRef<number | null>(null);
-  const pendingValue = useRef<number | null>(null);
-  const lastEmittedValue = useRef<number>(value);
-
+  
+  const percentage = ((value - min) / (max - min)) * 100;
   const isHighlighted = highlight || highlightColor !== null;
-  const activeColor = highlightColor || "#22d3ee";
+  const activeColor = highlightColor || "#22d3ee"; // Default cyan
 
-  const percentage = useMemo(() => {
-    const span = Math.max(1e-9, max - min);
-    return ((value - min) / span) * 100;
-  }, [value, min, max]);
-
-  const setDraggingVisual = useCallback((dragging: boolean) => {
-    const track = trackRef.current;
-    if (!track) return;
-    // avoid toggling class redundantly during pointermove
-    if (draggingClassOn.current === dragging) return;
-    draggingClassOn.current = dragging;
-    track.classList.toggle("dragging", dragging);
-  }, []);
-
+  // Direct DOM update for instant visual feedback
   const updateVisuals = useCallback((pct: number) => {
-    const p = Math.max(0, Math.min(100, pct));
-    if (fillRef.current) fillRef.current.style.width = `${p}%`;
-    if (thumbRef.current) thumbRef.current.style.left = `${p}%`;
-  }, []);
-
-  // Keep visuals in sync when value changes externally (e.g. programmatic updates)
-  useEffect(() => {
-    // While dragging, visuals are driven directly by pointer.
-    // Avoid fighting pointer updates with prop sync.
-    if (isDragging.current) return;
-    updateVisuals(percentage);
-    lastEmittedValue.current = value;
-  }, [percentage, updateVisuals, value]);
-
-  const snap = useCallback(
-    (raw: number) => {
-      const s = Math.max(1e-9, step);
-      const snapped = Math.round(raw / s) * s;
-      // normalize floating point noise
-      const cleaned = Number(snapped.toFixed(10));
-      return Math.max(min, Math.min(max, cleaned));
-    },
-    [min, max, step]
-  );
-
-  const calculateFromClientX = useCallback(
-    (clientX: number) => {
-      const rect = rectRef.current ?? trackRef.current?.getBoundingClientRect();
-      if (!rect) return value;
-
-      const x = clientX - rect.left;
-      const pct01 = clamp01(x / Math.max(1e-9, rect.width));
-      const raw = min + pct01 * (max - min);
-      return snap(raw);
-    },
-    [min, max, snap, value]
-  );
-
-  const flushRaf = useCallback(() => {
-    rafId.current = null;
-    if (pendingValue.current === null) return;
-
-    const v = pendingValue.current;
-    pendingValue.current = null;
-
-    // Only emit when changed (prevents redundant parent updates)
-    if (v !== lastEmittedValue.current) {
-      lastEmittedValue.current = v;
-      onChange(v);
+    if (fillRef.current) {
+      fillRef.current.style.width = `${pct}%`;
     }
-  }, [onChange]);
-
-  const scheduleOnChange = useCallback(
-    (v: number) => {
-      pendingValue.current = v;
-      if (rafId.current !== null) return;
-      rafId.current = requestAnimationFrame(flushRaf);
-    },
-    [flushRaf]
-  );
-
-  const handlePointerDown = useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
-      e.preventDefault();
-
-      isDragging.current = true;
-      setDraggingVisual(true);
-      onStart?.();
-
-      // Cache rect for the duration of the drag (no layout reads each move)
-      rectRef.current = trackRef.current?.getBoundingClientRect() ?? null;
-
-      // Capture pointer on the TRACK (not e.target), so moves stay consistent
-      trackRef.current?.setPointerCapture(e.pointerId);
-
-      const v = calculateFromClientX(e.clientX);
-      const span = Math.max(1e-9, max - min);
-      const pct = ((v - min) / span) * 100;
-
-      updateVisuals(pct);
-      scheduleOnChange(v);
-    },
-    [calculateFromClientX, max, min, onStart, scheduleOnChange, setDraggingVisual, updateVisuals]
-  );
-
-  const handlePointerMove = useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
-      if (!isDragging.current) return;
-
-      const v = calculateFromClientX(e.clientX);
-      const span = Math.max(1e-9, max - min);
-      const pct = ((v - min) / span) * 100;
-
-      updateVisuals(pct);
-      scheduleOnChange(v);
-    },
-    [calculateFromClientX, max, min, scheduleOnChange, updateVisuals]
-  );
-
-  const endDrag = useCallback(
-    (pointerId?: number) => {
-      if (!isDragging.current) return;
-
-      isDragging.current = false;
-      setDraggingVisual(false);
-
-      rectRef.current = null;
-
-      if (pointerId !== undefined) {
-        try {
-          trackRef.current?.releasePointerCapture(pointerId);
-        } catch {
-          // ignore if capture already released
-        }
-      }
-
-      // Flush any pending value immediately at end of drag
-      if (rafId.current !== null) {
-        cancelAnimationFrame(rafId.current);
-        rafId.current = null;
-      }
-      flushRaf();
-
-      onEnd?.();
-    },
-    [flushRaf, onEnd, setDraggingVisual]
-  );
-
-  const handlePointerUp = useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
-      endDrag(e.pointerId);
-    },
-    [endDrag]
-  );
-
-  const handlePointerCancel = useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
-      endDrag(e.pointerId);
-    },
-    [endDrag]
-  );
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (rafId.current !== null) cancelAnimationFrame(rafId.current);
-    };
+    if (thumbRef.current) {
+      thumbRef.current.style.left = `${pct}%`;
+    }
   }, []);
+
+  // Sync visuals with value prop
+  useEffect(() => {
+    updateVisuals(percentage);
+  }, [percentage, updateVisuals]);
+
+  const calculateValue = useCallback((clientX: number) => {
+    if (!trackRef.current) return value;
+    const rect = trackRef.current.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const pct = Math.max(0, Math.min(1, x / rect.width));
+    const rawValue = min + pct * (max - min);
+    const steppedValue = Math.round(rawValue / step) * step;
+    return Math.max(min, Math.min(max, steppedValue));
+  }, [min, max, step, value]);
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    isDragging.current = true;
+    onStart?.();
+    
+    const newValue = calculateValue(e.clientX);
+    const newPct = ((newValue - min) / (max - min)) * 100;
+    updateVisuals(newPct);
+    onChange(newValue);
+    
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  }, [calculateValue, min, max, onChange, onStart, updateVisuals]);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!isDragging.current) return;
+    
+    const newValue = calculateValue(e.clientX);
+    const newPct = ((newValue - min) / (max - min)) * 100;
+    
+    // Instant visual update
+    updateVisuals(newPct);
+    
+    // Immediate state update
+    onChange(newValue);
+  }, [calculateValue, min, max, onChange, updateVisuals]);
+
+  const handlePointerUp = useCallback((e: React.PointerEvent) => {
+    if (!isDragging.current) return;
+    isDragging.current = false;
+    onEnd?.();
+    (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+  }, [onEnd]);
 
   return (
-    <div
+    <div 
       className={`slider-container ${isHighlighted ? "highlighted" : ""}`}
       style={{ "--slider-color": activeColor } as React.CSSProperties}
     >
-      <div
+      <div 
         ref={trackRef}
         className="slider-track"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerCancel}
+        onPointerCancel={handlePointerUp}
       >
         <div ref={fillRef} className="slider-fill" />
         <div ref={thumbRef} className="slider-thumb" />
@@ -266,17 +148,17 @@ const Slider = memo(function Slider({
           border-radius: 3px;
           will-change: width;
           transition: none !important;
-          box-shadow:
+          box-shadow: 
             0 0 12px rgba(34, 211, 238, 0.4),
             inset 0 1px 0 rgba(255, 255, 255, 0.2);
         }
 
         .slider-container.highlighted .slider-fill {
-          background: linear-gradient(90deg,
+          background: linear-gradient(90deg, 
             color-mix(in srgb, var(--slider-color) 80%, transparent),
             var(--slider-color)
           );
-          box-shadow:
+          box-shadow: 
             0 0 16px color-mix(in srgb, var(--slider-color) 60%, transparent),
             0 0 6px color-mix(in srgb, var(--slider-color) 80%, transparent),
             inset 0 1px 0 rgba(255, 255, 255, 0.3);
@@ -290,35 +172,29 @@ const Slider = memo(function Slider({
           border: 2px solid rgba(255, 255, 255, 0.3);
           border-radius: 50%;
           transform: translateX(-50%);
-          box-shadow:
+          box-shadow: 
             0 0 16px rgba(34, 211, 238, 0.5),
             0 2px 8px rgba(0, 0, 0, 0.4),
             inset 0 1px 0 rgba(255, 255, 255, 0.4);
           will-change: left;
-          transition: transform 150ms cubic-bezier(0.22, 1, 0.36, 1),
-                      box-shadow 150ms cubic-bezier(0.22, 1, 0.36, 1);
-        }
-
-        /* IMPORTANT: no left-transition while dragging (removes "jitter feel") */
-        .slider-track.dragging .slider-thumb {
-          transition: none !important;
+          transition: all 150ms cubic-bezier(0.22, 1, 0.36, 1);
         }
 
         .slider-track:active .slider-thumb {
           transform: translateX(-50%) scale(1.2);
-          box-shadow:
+          box-shadow: 
             0 0 24px rgba(34, 211, 238, 0.8),
             0 2px 12px rgba(0, 0, 0, 0.5),
             inset 0 1px 0 rgba(255, 255, 255, 0.5);
         }
 
         .slider-container.highlighted .slider-thumb {
-          background: linear-gradient(135deg,
+          background: linear-gradient(135deg, 
             color-mix(in srgb, var(--slider-color) 90%, white),
             var(--slider-color)
           );
           border-color: color-mix(in srgb, var(--slider-color) 50%, white);
-          box-shadow:
+          box-shadow: 
             0 0 20px color-mix(in srgb, var(--slider-color) 70%, transparent),
             0 0 8px var(--slider-color),
             0 2px 8px rgba(0, 0, 0, 0.4),
