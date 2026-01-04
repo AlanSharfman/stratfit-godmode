@@ -114,15 +114,15 @@ export default function KPIGrid() {
           gap: 16px;
           justify-content: center;
           align-items: center;
-          flex-wrap: wrap;
+          flex-wrap: nowrap;
           width: 100%;
+          overflow-x: auto;
+          overflow-y: hidden;
+          padding-bottom: 4px;
         }
 
-        /* Keep it single-row when there is enough room */
-        @media (min-width: 1100px) {
-          .kpi-grid {
-            flex-wrap: nowrap;
-          }
+        .kpi-grid > * {
+          flex: 0 0 auto;
         }
       `}</style>
     </div>
