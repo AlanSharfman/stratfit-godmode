@@ -527,7 +527,7 @@ export default function KPICard({
     widgetType === "liquidityReservoir" || widgetType === "vectorFlow" || widgetType === "structuralLift" 
       ? "#00ffcc" 
       : widgetType === "efficiencyRotor" 
-        ? "#ff6b6b" 
+        ? "#ff3b3b" 
         : widgetType === "scaleAura" 
           ? "#00ddff" 
           : "#ffffff";
@@ -595,10 +595,12 @@ export default function KPICard({
           transform: translateY(-4px) scale(1.02);
         }
         .kpi-card.active {
-          box-shadow: 
-            0 0 0 2px var(--accent-color),
-            0 0 30px var(--accent-glow),
-            0 15px 35px rgba(0,0,0,0.5);
+          box-shadow:
+            0 0 0 1px rgba(255,255,255,0.06) inset,
+            0 0 0 2px color-mix(in srgb, var(--accent-color) 70%, transparent),
+            0 0 26px color-mix(in srgb, var(--accent-color) 22%, transparent),
+            0 0 46px color-mix(in srgb, var(--accent-glow) 28%, transparent),
+            0 18px 42px rgba(0,0,0,0.55);
         }
         
         /* Metallic border frame */
