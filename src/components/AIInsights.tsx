@@ -198,7 +198,9 @@ const ActionsIcon = () => (
 export default function AIInsights({ insights, metrics, onGeneratePDF }: AIInsightsProps) {
   // Keep this if you use it later; otherwise safe to remove.
   // (It is currently unused in your pasted code, but not harmful.)
-  const scenario = useScenarioStore((s) => s.scenario);
+  const { scenario } = useScenarioStore(
+    useShallow((s) => ({ scenario: s.scenario }))
+  );
 
   const formatCurrency = (n: number) => {
     if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;

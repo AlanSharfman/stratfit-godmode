@@ -5,8 +5,11 @@
 import React, { useState, useCallback, memo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useScenarioStore, SCENARIO_COLORS } from "@/state/scenarioStore";
+import { shallow } from "zustand/shallow";
 import BurnTrendBars from "./BurnTrendBars";
 import type { LeverId } from "@/logic/mountainPeakModel";
+
+import { calculateScenarioHealth } from "@/logic/calculateScenarioHealth";
 
 // ============================================================================
 // KPI CONFIGURATION — CANONICAL SET (LOCKED)
@@ -23,6 +26,7 @@ interface KPIConfig {
 }
 
 const KPI_CONFIG: KPIConfig[] = [
+  // Add scenario health as a virtual KPI (not in the main config array)
   { 
     id: "cash", 
     label: "CASH POSITION", 
@@ -507,6 +511,30 @@ export default function KPIConsole() {
 
   const isAnyActive = hoveredKpiIndex !== null;
 
+  // Calculate scenario health trend code for the tongue widget
+  const levers = useScenarioStore((s) => s.levers, shallow);
+  const normalize = (v: number) => Math.max(0, Math.min(100, v));
+  const leverValues = {
+    revenueGrowth: normalize(levers?.revenueGrowth ?? 50),
+    pricingAdjustment: normalize(levers?.pricingAdjustment ?? 50),
+    marketingSpend: normalize(levers?.marketingSpend ?? 50),
+    operatingExpenses: normalize(levers?.operatingExpenses ?? 50),
+    headcount: normalize(levers?.headcount ?? 50),
+    cashSensitivity: normalize(levers?.cashSensitivity ?? 50),
+    churnSensitivity: normalize(levers?.churnSensitivity ?? 50),
+    fundingInjection: normalize(levers?.fundingInjection ?? 50),
+  };
+  // Use ES import for calculateScenarioHealth
+  const { state } = calculateScenarioHealth(leverValues);
+  const mappedTrend =
+    state === "strong" ? "strengthening" :
+    state === "stable" ? "stable" :
+    "weakening";
+  const trendCode =
+    mappedTrend === "strengthening" ? 1 :
+    mappedTrend === "weakening" ? -1 :
+    0;
+
   return (
     <div className="kpi-command-console">
       {/* Command Console Container */}
@@ -539,6 +567,26 @@ export default function KPIConsole() {
               />
             );
           })}
+          {/* Scenario Health Tongue KPI */}
+          <KPIInstrumentCard
+            key="scenario-health-tongue"
+            cfg={{
+              id: "scenario-health-tongue",
+              label: "SCENARIO HEALTH",
+              kpiKey: "scenarioHealth",
+              unit: "",
+              widgetType: "scenarioHealthTongue",
+              accentColor: "#00E5FF",
+              relatedLevers: [],
+            }}
+            data={{ value: trendCode, display: "" }}
+            state="idle"
+            isDimmed={false}
+            accentColor="#00E5FF"
+            onClick={() => {}}
+            onMouseEnter={() => {}}
+            onMouseLeave={() => {}}
+          />
         </div>
       </div>
 

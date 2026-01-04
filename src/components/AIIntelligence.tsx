@@ -304,12 +304,14 @@ export default function AIIntelligence({
   const [observationComplete, setObservationComplete] = useState(false);
   const [risksComplete, setRisksComplete] = useState(false);
 
+
   // Consolidated store selectors to prevent rerender cascades
-  const { viewMode, activeLeverId, setHoveredKpiIndex } = useScenarioStore(
+  const { viewMode, activeLeverId, setHoveredKpiIndex, scenario: activeScenario } = useScenarioStore(
     useShallow((s) => ({
       viewMode: s.viewMode,
       activeLeverId: s.activeLeverId,
       setHoveredKpiIndex: s.setHoveredKpiIndex,
+      scenario: s.scenario,
     }))
   );
 

@@ -1,0 +1,173 @@
+/* src/components/ScenarioHealthTongue.css */
+/* STRATFIT — Scenario Health Tongue Slab (VIDEO MATCH) */
+
+.shTongue {
+  position: relative;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 229, 255, 0.22);
+  background: rgba(8, 12, 20, 0.92);
+  overflow: hidden;
+  backdrop-filter: blur(18px);
+}
+
+/* Keep it calm; accent only where needed */
+.shTongue {
+  border-color: color-mix(in srgb, var(--sh-accent) 35%, rgba(255,255,255,0.10));
+}
+
+.shTongue__top {
+  display: grid;
+  grid-template-columns: 160px 1fr 180px 220px;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px 10px;
+}
+
+.shTongue__label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  color: rgba(255, 255, 255, 0.50);
+}
+
+.shTongue__trend {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  justify-content: center;
+  color: var(--sh-accent);
+}
+
+.shTongue__trendArrow {
+  font-size: 28px;
+  font-weight: 900;
+  line-height: 1;
+  transform: translateY(-1px);
+}
+
+.shTongue__trendText {
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.shTongue__vs {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  justify-content: center;
+  color: var(--sh-accent);
+  font-weight: 800;
+}
+
+.shTongue__vsText {
+  font-size: 22px;
+  letter-spacing: 0.02em;
+}
+
+.shTongue__vsBase {
+  font-size: 22px;
+  letter-spacing: 0.02em;
+}
+
+.shTongue__vsArrow {
+  font-size: 20px;
+  font-weight: 900;
+  transform: translateY(-1px);
+}
+
+.shTongue__right {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 18px;
+}
+
+.shTongue__scenario {
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 0.10em;
+  color: #ff4d4d;
+}
+
+.shTongue__status {
+  font-size: 18px;
+  font-weight: 900;
+  color: #22c55e;
+}
+
+.shTongue__weak {
+  font-size: 18px;
+  font-weight: 900;
+  color: #ef4444;
+}
+
+/* Tray area (video has a clean divider + grid floor) */
+.shTongue__tray {
+  position: relative;
+  height: 86px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(2, 6, 12, 0.55);
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+.shTongue__grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.22;
+  background:
+    linear-gradient(to right, rgba(0, 229, 255, 0.18) 1px, transparent 1px) 0 0 / 22px 22px,
+    linear-gradient(to bottom, rgba(0, 229, 255, 0.12) 1px, transparent 1px) 0 0 / 22px 22px;
+  mask-image: linear-gradient(to top, rgba(0,0,0,1), rgba(0,0,0,0));
+}
+
+/* Slab “tongue” (facing viewer) */
+.shTongue__slabWrap {
+  position: absolute;
+  left: 50%;
+  top: 12px;
+  transform: translateX(-50%);
+  width: min(520px, 72%);
+  height: 56px;
+  perspective: 900px;
+}
+
+.shTongue__slab {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 100%;
+  height: 44px;
+  transform: translateX(-50%) translateY(var(--sh-slabY)) rotateX(58deg);
+  transform-origin: top center;
+
+  /* trapezoid like the video */
+  clip-path: polygon(14% 0%, 86% 0%, 100% 100%, 0% 100%);
+
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--sh-accent) 55%, rgba(255,255,255,0.15)) 0%,
+    color-mix(in srgb, var(--sh-accent) 18%, rgba(0,0,0,0.0)) 100%
+  );
+
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.55),
+    0 0 0 1px color-mix(in srgb, var(--sh-accent) 38%, rgba(255,255,255,0.05)) inset;
+  opacity: 0.95;
+}
+
+/* Small screen safety */
+@media (max-width: 1100px) {
+  .shTongue__top {
+    grid-template-columns: 140px 1fr;
+    grid-auto-rows: auto;
+  }
+  .shTongue__vs,
+  .shTongue__right {
+    display: none;
+  }
+}

@@ -47,10 +47,15 @@ export default function KPIGrid() {
     }))
   );
 
-  const hoveredKpiIndex = useScenarioStore((s) => s.hoveredKpiIndex);
-  const setHoveredKpiIndex = useScenarioStore((s) => s.setHoveredKpiIndex);
-  const viewMode = useScenarioStore((s) => s.viewMode);
-  const scenario = useScenarioStore((s) => s.scenario);
+
+  const { hoveredKpiIndex, setHoveredKpiIndex, viewMode, scenario } = useScenarioStore(
+    useShallow((s) => ({
+      hoveredKpiIndex: s.hoveredKpiIndex,
+      setHoveredKpiIndex: s.setHoveredKpiIndex,
+      viewMode: s.viewMode,
+      scenario: s.scenario,
+    }))
+  );
 
   const engineResult = engineResults?.[activeScenarioId];
   const kpiValues = engineResult?.kpis || {};

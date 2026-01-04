@@ -1,0 +1,8 @@
+[35msrc/App.tsx[m[36m:[m[32m9[m[36m:[mimport [1;31mKPIConsole[m from "./components/[1;31mKPIConsole[m";
+[35msrc/App.tsx[m[36m:[m[32m357[m[36m:[m          <[1;31mKPIConsole[m />
+[35msrc/components/ControlDeck.tsx[m[36m:[m[32m36[m[36m:[m// KPI INDEX TO COLOR MAPPING (matches [1;31mKPIConsole[m order)
+[35msrc/components/ControlDeck.tsx[m[36m:[m[32m40[m[36m:[m// MUST MATCH [1;31mKPIConsole[m.tsx accentColor values exactly!
+[35msrc/components/ControlDeck.tsx[m[36m:[m[32m43[m[36m:[m  1: "#ff6b6b", // BURN RATE - red/coral (matches [1;31mKPIConsole[m)
+[35msrc/components/ControlDeck.tsx[m[36m:[m[32m47[m[36m:[m  5: "#00ccff", // RISK SCORE - cyan (matches [1;31mKPIConsole[m)
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m1[m[36m:[m// src/components/[1;31mKPIConsole[m.tsx
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m488[m[36m:[mexport default function [1;31mKPIConsole[m() {

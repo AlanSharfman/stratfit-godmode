@@ -208,14 +208,10 @@ interface StrategicQuestionsProps {
 }
 
 export default function StrategicQuestions({ onPromptClick, isAnalyzing }: StrategicQuestionsProps) {
-  const viewMode = useScenarioStore((s) => s.viewMode);
-  const scenario = useScenarioStore((s) => s.scenario);
-  
-  const {
-    activeScenarioId,
-    engineResults,
-  } = useScenarioStore(
+  const { viewMode, scenario, activeScenarioId, engineResults } = useScenarioStore(
     useShallow((s) => ({
+      viewMode: s.viewMode,
+      scenario: s.scenario,
       activeScenarioId: s.activeScenarioId,
       engineResults: s.engineResults,
     }))

@@ -462,7 +462,9 @@ export default function ScenarioMountain({
   className,
 }: ScenarioMountainProps) {
   const colors = SCENARIO_COLORS[scenario];
-  const viewMode = useScenarioStore((s) => s.viewMode);
+  const { viewMode } = useScenarioStore(
+    useShallow((s) => ({ viewMode: s.viewMode }))
+  );
   
   const {
     activeScenarioId,

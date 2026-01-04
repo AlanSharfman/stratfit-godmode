@@ -24,7 +24,9 @@ const KPI_COLORS = [
 // ============================================================================
 
 export default function KPIConnector() {
-  const hoveredKpiIndex = useScenarioStore((s) => s.hoveredKpiIndex);
+  const { hoveredKpiIndex } = useScenarioStore(
+    useShallow((s) => ({ hoveredKpiIndex: s.hoveredKpiIndex }))
+  );
 
   if (hoveredKpiIndex === null) return null;
 

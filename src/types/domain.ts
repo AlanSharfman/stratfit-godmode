@@ -1,7 +1,8 @@
 // src/types/domain.ts
 
-import type { ScenarioId } from "@/state/scenarioStore";
+
 import type { LeverId, MetricId } from "@/dashboardConfig";
+export type ScenarioId = "base" | "upside" | "downside";
 
 /**
  * Core STRATFIT domain types

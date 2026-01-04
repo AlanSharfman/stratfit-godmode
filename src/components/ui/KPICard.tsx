@@ -3,6 +3,8 @@
 
 import React, { useEffect, useState } from "react";
 import { ViewMode } from "@/state/scenarioStore";
+import ScenarioHealthTongueWidget from "./widgets/ScenarioHealthTongueWidget";
+import ScenarioHealthTile from "../scenario/ScenarioHealthTile";
 
 export interface KPICardProps {
   index: number;
@@ -542,6 +544,7 @@ export default function KPICard({
       case "stabilityWave": return <RiskWidget {...props} />;
       case "structuralLift": return <EarningsWidget {...props} />;
       case "scaleAura": return <ValueWidget {...props} />;
+      case "scenarioHealthTongue": return <ScenarioHealthTile scenario="base" />;
       default: return <RunwayWidget {...props} />;
     }
   };
@@ -560,11 +563,27 @@ export default function KPICard({
         ['--accent-glow' as string]: colors.glow,
       }}
     >
+      {/* GHOST MOUNTAIN — Subtle SVG background (true card background) */}
+      <div className="ghost-mountain-bg" aria-hidden="true">
+        <svg viewBox="0 0 120 60" width="100%" height="100%" fill="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, top: 'auto' }}>
+          {/* GHOST MOUNTAIN (background, larger, lighter, more visible) */}
+          <path
+            d="M0 54 Q 16 38 32 46 Q 48 54 60 30 Q 72 10 88 26 Q 104 42 120 54"
+            stroke="#fafdff" strokeWidth="6" fill="none" opacity="0.18"/>
+          {/* MAIN MOUNTAIN (foreground, as before) */}
+          <path
+            d="M0 44 Q 18 34 28 38 Q 38 42 48 30 Q 58 18 68 26 Q 78 34 88 24 Q 98 14 120 44"
+            stroke="#b6e3f7" strokeWidth="2.5" fill="none" opacity="0.16"/>
+          <path
+            d="M0 44 Q 20 36 32 40 Q 44 44 56 34 Q 68 24 80 30 Q 92 36 120 44"
+            stroke="#b6e3f7" strokeWidth="1.2" fill="none" opacity="0.11"/>
+        </svg>
+      </div>
       {/* Metallic outer frame */}
       <div className="card-frame" />
-      
+
       {/* Inner glass surface */}
-      <div className={`card-surface ${isCashCard ? "hero-surface" : ""}`}>
+      <div className={`card-surface ${isCashCard ? "hero-surface" : ""}`}> 
         {/* Top highlight */}
         <div className="surface-highlight" />
         
@@ -714,6 +733,25 @@ export default function KPICard({
           position: relative;
           z-index: 2;
           margin-top: 6px;
+        }
+        .ghost-mountain-bg {
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          top: auto;
+          height: 70%;
+          z-index: -1;
+          pointer-events: none;
+          border-radius: 18px;
+          overflow: hidden;
+        }
+        .kpi-card {
+          position: relative;
+        }
+        .card-surface {
+          position: relative;
+          z-index: 1;
         }
       `}</style>
     </div>

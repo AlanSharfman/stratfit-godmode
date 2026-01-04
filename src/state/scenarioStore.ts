@@ -3,6 +3,7 @@
 // Two Views, One Engine, Same Truth
 
 import { create } from "zustand";
+import { useShallow } from "zustand/react/shallow";
 import type { LeverId } from "@/logic/mountainPeakModel";
 import type { ScenarioId } from "@/types/domain";
 
@@ -19,27 +20,61 @@ export interface EngineResult {
   kpis: Record<string, { value: number; display: string }>;
 }
 
-// ============================================================================
+  setDataPoints: (dp) => set({ dataPoints: Array.isArray(dp) ? dp : [] }),
 // SCENARIO COLORS
 // ============================================================================
 
-export const SCENARIO_COLORS: Record<ScenarioId, { primary: string; secondary: string; glow: string }> = {
-  base: {
-    primary: "#22d3ee",
-    secondary: "#7c3aed",
-    glow: "rgba(34, 211, 238, 0.4)",
-  },
-  upside: {
-    primary: "#34d399",
-    secondary: "#22d3ee",
-    glow: "rgba(52, 211, 153, 0.4)",
-  },
-  downside: {
-    primary: "#fbbf24",
-    secondary: "#f97316",
-    glow: "rgba(251, 191, 36, 0.4)",
-  },
+
+export const SCENARIO_COLORS = {
+  base: { primary: "#000", secondary: "#000", glow: "#000" },
+  upside: { primary: "#000", secondary: "#000", glow: "#000" },
+  downside: { primary: "#000", secondary: "#000", glow: "#000" },
 };
+
+type LeverId =
+  | "revenueGrowth"
+  | "pricingAdjustment"
+  | "marketingSpend"
+  | "operatingExpenses"
+  | "headcount"
+  | "cashSensitivity"
+  | "churnSensitivity"
+  | "fundingInjection";
+
+const LEVER_INDEX: Record<LeverId, number> = {
+  revenueGrowth: 0,
+  pricingAdjustment: 1,
+  marketingSpend: 2,
+  operatingExpenses: 3,
+  headcount: 4,
+  cashSensitivity: 5,
+  churnSensitivity: 6,
+  fundingInjection: 7,
+} as const;
+
+// ============================================================================
+// CANONICAL LEVER -> DATAPOINTS INDEX MAP (single source of truth)
+// ============================================================================
+type LeverId =
+  | "revenueGrowth"
+  | "pricingAdjustment"
+  | "marketingSpend"
+  | "operatingExpenses"
+  | "headcount"
+  | "cashSensitivity"
+  | "churnSensitivity"
+  | "fundingInjection";
+
+const LEVER_INDEX: Record<LeverId, number> = {
+  revenueGrowth: 0,
+  pricingAdjustment: 1,
+  marketingSpend: 2,
+  operatingExpenses: 3,
+  headcount: 4,
+  cashSensitivity: 5,
+  churnSensitivity: 6,
+  fundingInjection: 7,
+} as const;
 
 // ============================================================================
 // STORE INTERFACE
@@ -54,7 +89,9 @@ export type ScenarioStoreState = {
   setScenario: (s: ScenarioId) => void;
 
   dataPoints: number[];
+
   setDataPoints: (dp: number[]) => void;
+  setLeverValue: (id: LeverId, value: number) => void;
 
   hoveredKpiIndex: number | null;
   setHoveredKpiIndex: (i: number | null) => void;
@@ -83,7 +120,6 @@ export type ScenarioStoreState = {
 // STORE
 // ============================================================================
 
-export const useScenarioStore = create<ScenarioStoreState>((set, get) => ({
   viewMode: "operator",
   setViewMode: (v) => set({ viewMode: v }),
 
@@ -91,7 +127,21 @@ export const useScenarioStore = create<ScenarioStoreState>((set, get) => ({
   setScenario: (s) => set({ scenario: s }),
 
   dataPoints: [],
+
   setDataPoints: (dp) => set({ dataPoints: Array.isArray(dp) ? dp : [] }),
+
+  setLeverValue: (id, value) =>
+    set((s) => {
+      const idx = LEVER_INDEX[id];
+      const current = Array.isArray(s.dataPoints) ? s.dataPoints : [];
+      const next =
+        current.length >= 8
+          ? [...current]
+          : Array.from({ length: 8 }, (_, i) => current[i] ?? 50);
+
+      next[idx] = value;
+      return { dataPoints: next };
+    }),
 
   hoveredKpiIndex: null,
   setHoveredKpiIndex: (i) => set({ hoveredKpiIndex: i }),
@@ -154,6 +204,25 @@ export const useScenarioStore = create<ScenarioStoreState>((set, get) => ({
 }));
 
 // ============================================================================
+
+// ============================================================================
+// CANONICAL LEVER -> DATAPOINTS INDEX MAP (single source of truth)
+// ============================================================================
+
+
+// Canonical per-lever setter (foundation for migration)
+export function setLeverValue(id: LeverId, value: number) {
+  const idx = LEVER_INDEX[id];
+  if (typeof idx !== 'number') return;
+  const store = useScenarioStore.getState();
+  const dp = Array.isArray(store.dataPoints) ? [...store.dataPoints] : [];
+  // Ensure dp is long enough
+  while (dp.length <= idx) dp.push(50);
+  dp[idx] = value;
+  store.setDataPoints(dp);
+}
+
+// ============================================================================
 // SELECTOR HOOKS
 // ============================================================================
 
@@ -162,20 +231,22 @@ export const useViewMode = () => useScenarioStore((s) => s.viewMode);
 export const useDataPoints = () => useScenarioStore((s) => s.dataPoints);
 
 export const useLevers = () =>
-  useScenarioStore((s) => ({
-    revenueGrowth: s.dataPoints?.[0] ?? 50,
-    pricingAdjustment: s.dataPoints?.[1] ?? 50,
-    marketingSpend: s.dataPoints?.[2] ?? 50,
-    operatingExpenses: s.dataPoints?.[3] ?? 50,
-    headcount: s.dataPoints?.[4] ?? 50,
-    cashSensitivity: s.dataPoints?.[5] ?? 50,
-    churnSensitivity: s.dataPoints?.[6] ?? 50,
-    fundingInjection: s.dataPoints?.[7] ?? 50,
-  }));
+  useScenarioStore(
+    useShallow((s) => ({
+      revenueGrowth: s.dataPoints?.[0] ?? 50,
+      pricingAdjustment: s.dataPoints?.[1] ?? 50,
+      marketingSpend: s.dataPoints?.[2] ?? 50,
+      operatingExpenses: s.dataPoints?.[3] ?? 50,
+      headcount: s.dataPoints?.[4] ?? 50,
+      cashSensitivity: s.dataPoints?.[5] ?? 50,
+      churnSensitivity: s.dataPoints?.[6] ?? 50,
+      fundingInjection: s.dataPoints?.[7] ?? 50,
+    }))
+  );
 export const useHoveredKpiIndex = () => useScenarioStore((s) => s.hoveredKpiIndex);
 export const useScenarioColors = () => {
   const scenario = useScenarioStore((s) => s.scenario);
   return SCENARIO_COLORS[scenario];
 };
 
-// Expose levers via selector hook
+

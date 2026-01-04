@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import CenterViewSegmented, { CenterView } from "@/components/CenterViewSegmented";
+import DashboardTabs, { DashboardTab } from "@/components/DashboardTabs";
+import type { CenterView } from "@/components/CenterViewSegmented";
 import ScenarioMountain from "@/components/mountain/ScenarioMountain";
 import ScenarioDeltaSnapshot from "@/components/ScenarioDeltaSnapshot";
 import { useScenario, useDataPoints, useScenarioStore } from "@/state/scenarioStore";
@@ -124,10 +125,12 @@ function SpeakerIcon({
 }
 
 export default function CenterViewPanel() {
-  const [view, setView] = useState<CenterView>("terrain");
+  const [view, setView] = useState<DashboardTab>("terrain");
   const scenario = useScenario();
   const dataPoints = useDataPoints();
-  const hoveredKpiIndex = useScenarioStore((s) => s.hoveredKpiIndex);
+  const { hoveredKpiIndex } = useScenarioStore(
+    useShallow((s) => ({ hoveredKpiIndex: s.hoveredKpiIndex }))
+  );
 
   // briefing controls
   const briefingKey = useMemo(() => viewToBriefingKey(view), [view]);
@@ -165,7 +168,7 @@ export default function CenterViewPanel() {
       {/* Command Bar */}
       <div className="px-6 pt-4 pb-3 border-b border-white/5 bg-gradient-to-b from-black/30 to-transparent">
         <div className="flex items-center justify-between">
-          <CenterViewSegmented value={view} onChange={setView} />
+          <DashboardTabs value={view} onChange={setView} />
 
           <button
             type="button"

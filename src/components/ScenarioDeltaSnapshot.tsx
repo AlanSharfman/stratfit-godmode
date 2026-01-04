@@ -119,11 +119,11 @@ export default function ScenarioDeltaSnapshot() {
     comparisonTargetScenarioId,
     engineResults,
   } = useScenarioStore(
-    (state) => ({
+    useShallow((state) => ({
       activeScenarioId: state.activeScenarioId,
       comparisonTargetScenarioId: state.comparisonTargetScenarioId,
       engineResults: state.engineResults,
-    })
+    }))
   );
 
   const activeResult = engineResults?.[activeScenarioId];

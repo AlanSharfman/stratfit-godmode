@@ -144,7 +144,9 @@ export default function AIIntelligenceStream({
   const [activeTab, setActiveTab] = useState<TabId>("commentary");
   const [contentKey, setContentKey] = useState(0);
   
-  const activeLeverId = useScenarioStore((s) => s.activeLeverId);
+  const { activeLeverId } = useScenarioStore(
+    useShallow((s) => ({ activeLeverId: s.activeLeverId }))
+  );
   const isAnalyzing = activeLeverId !== null;
 
   useEffect(() => {

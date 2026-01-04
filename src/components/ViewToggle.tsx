@@ -6,8 +6,12 @@ import React from "react";
 import { useScenarioStore } from "@/state/scenarioStore";
 
 export default function ViewToggle() {
-  const viewMode = useScenarioStore((s) => s.viewMode);
-  const setViewMode = useScenarioStore((s) => s.setViewMode);
+  const { viewMode, setViewMode } = useScenarioStore(
+    useShallow((s) => ({
+      viewMode: s.viewMode,
+      setViewMode: s.setViewMode,
+    }))
+  );
 
   return (
     <div className="view-toggle-container">

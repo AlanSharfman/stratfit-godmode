@@ -1,9 +1,9 @@
-// src/components/ui/KPICard.tsx
+// src/components/ui/KPISparkline.tsx
 import React, { useMemo } from "react";
 import { useScenarioStore } from "@/state/scenarioStore";
 import type { ScenarioId } from "@/state/scenarioStore";
 
-interface KPICardProps {
+interface KPISparklineProps {
   label: string;
   subtitle?: string;
   value01: number; // 0..1 from dataPoints
@@ -74,8 +74,10 @@ function ringDash(v01: number) {
   return `${filled.toFixed(2)} ${rest.toFixed(2)}`;
 }
 
-export default function KPICard({ label, subtitle, value01, display, index }: KPICardProps) {
-  const scenario = useScenarioStore((s) => s.scenario) as ScenarioId;
+export default function KPISparkline({ label, subtitle, value01, display, index }: KPISparklineProps) {
+  const { scenario } = useScenarioStore(
+    useShallow((s) => ({ scenario: s.scenario }))
+  );
 
   const v01 = clamp01(value01);
   const accent = scenarioAccent(scenario);

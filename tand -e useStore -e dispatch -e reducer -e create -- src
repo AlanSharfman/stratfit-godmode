@@ -1,0 +1,30 @@
+[35msrc/App.tsx[m[36m:[m[32m6[m[36m:[mimport { useShallow } from "[1;31mzustand[m/react/shallow";
+[35msrc/components/AIIntelligence.tsx[m[36m:[m[32m8[m[36m:[mimport { useShallow } from "[1;31mzustand[m/react/shallow";
+[35msrc/components/ControlDeck.tsx[m[36m:[m[32m6[m[36m:[mimport { useShallow } from "[1;31mzustand[m/react/shallow";
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m6[m[36m:[mimport { useShallow } from "[1;31mzustand[m/react/shallow";
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m8[m[36m:[mimport { shallow } from "[1;31mzustand[m/shallow";
+[35msrc/components/KPIGrid.tsx[m[36m:[m[32m6[m[36m:[mimport { useShallow } from "[1;31mzustand[m/react/shallow";
+[35msrc/components/OnboardingSequence.tsx[m[36m:[m[32m562[m[36m:[m                      <strong className="text-white">Remember:</strong> Risk levers affect the mountain's valleys. High risk [1;31mcreate[ms deeper pressure zones.
+[35msrc/components/StrategicQuestions.tsx[m[36m:[m[32m6[m[36m:[mimport { useShallow } from "[1;31mzustand[m/react/shallow";
+[35msrc/components/StrategicQuestions.tsx[m[36m:[m[32m50[m[36m:[m          risk: "Hiring ahead of revenue [1;31mcreate[ms structural deficit. Cash efficiency degrades non-linearly.",
+[35msrc/components/StrategicQuestions.tsx[m[36m:[m[32m103[m[36m:[m        risk: "Aggressive expansion in uncertain conditions [1;31mcreate[ms exposure asymmetry.",
+[35msrc/components/StrategicQuestions.tsx[m[36m:[m[32m116[m[36m:[m          observation: "Time is the fragility. Limited runway [1;31mcreate[ms forced-hand scenarios that compound suboptimal decisions.",
+[35msrc/components/StrategicQuestions.tsx[m[36m:[m[32m187[m[36m:[m          observation: "Value is highly sensitive to execution. Current momentum [1;31mcreate[ms expectations that must be sustained.",
+[35msrc/components/briefing/BriefingPanel.tsx[m[36m:[m[32m16[m[36m:[m      "Peaks represent momentum [1;31mcreate[md by demand, pricing power, and execution velocity.",
+[35msrc/components/briefing/BriefingPanel.tsx[m[36m:[m[32m82[m[36m:[m    const o = ctx.[1;31mcreate[mOscillator();
+[35msrc/components/briefing/BriefingPanel.tsx[m[36m:[m[32m83[m[36m:[m    const g = ctx.[1;31mcreate[mGain();
+[35msrc/components/mountain/ScenarioMountain.tsx[m[36m:[m[32m8[m[36m:[mimport { useShallow } from "[1;31mzustand[m/react/shallow";
+[35msrc/components/ui/InfoPopover.tsx[m[36m:[m[32m2[m[36m:[mimport { [1;31mcreate[mPortal } from "react-dom";
+[35msrc/components/ui/InfoPopover.tsx[m[36m:[m[32m160[m[36m:[m      {open && [1;31mcreate[mPortal(panel, document.body)}
+[35msrc/logic/leverDefinitions.ts[m[36m:[m[32m103[m[36m:[m    helpText: 'Degree of unpredictability in your market (regulatory changes, competitive shifts, macro shocks).\n\nBusiness Impact: Higher volatility = wider outcome range, harder to forecast\n\nScenario Effect: Upside = volatility [1;31mcreate[ms opportunity, Downside = volatility kills business\n\nTypical Range: 40-60 = stable market, 70+ = highly uncertain, 30- = predictable',
+[35msrc/logic/mountainPeakModel.ts[m[36m:[m[32m107[m[36m:[m    // add a small ridge companion peak to [1;31mcreate[m "mountain geometry" not a single spike
+[35msrc/main.tsx[m[36m:[m[32m12[m[36m:[mReactDOM.[1;31mcreate[mRoot(rootElement).render(
+[35msrc/state/scenarioStore.ts[m[36m:[m[32m5[m[36m:[mimport { [1;31mcreate[m } from "[1;31mzustand[m";
+[35msrc/state/scenarioStore.ts[m[36m:[m[32m6[m[36m:[mimport { useShallow } from "[1;31mzustand[m/react/shallow";
+[35msrc/state/scenarioStore.ts[m[36m:[m[32m87[m[36m:[mexport const useScenarioStore = [1;31mcreate[m<ScenarioStoreState>((set, get) => ({
+[35msrc/types/domain.ts[m[36m:[m[32m19[m[36m:[m  [1;31mcreate[mdAt: string;    // ISO string
+[35msrc/types/domain.ts[m[36m:[m[32m29[m[36m:[m  [1;31mcreate[mdAt: string;
+[35msrc/types/domain.ts[m[36m:[m[32m49[m[36m:[m  [1;31mcreate[mdAt: string;
+[35msrc/types/domain.ts[m[36m:[m[32m76[m[36m:[m  [1;31mcreate[mdAt: string;
+[35msrc/views/center/SystemBriefPanel.tsx[m[36m:[m[32m1[m[36m:[mimport { useShallow } from "[1;31mzustand[m/react/shallow";
+[35msrc/views/center/VariancesPanel.tsx[m[36m:[m[32m1[m[36m:[mimport { useShallow } from "[1;31mzustand[m/react/shallow";

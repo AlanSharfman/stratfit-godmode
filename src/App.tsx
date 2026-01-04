@@ -7,6 +7,7 @@ import { useShallow } from "zustand/react/shallow";
 import type { ScenarioId } from "@/state/scenarioStore";
 import { calculateMetrics } from "@/logic/calculateMetrics";
 import KPIConsole from "./components/KPIConsole";
+import HealthStatePanel from "./components/HealthStatePanel";
 import CenterViewPanel from "@/components/center/CenterViewPanel";
 import { Moon } from "./components/Moon";
 import { ControlDeck, ControlBoxConfig } from "./components/ControlDeck";
