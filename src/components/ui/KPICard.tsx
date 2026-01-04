@@ -523,14 +523,16 @@ export default function KPICard({
   const activeColor = isActive ? highlightColor : colors.primary;
 
   // Value color based on KPI type
-  const valueColor = 
-    widgetType === "liquidityReservoir" || widgetType === "vectorFlow" || widgetType === "structuralLift" 
-      ? "#00ffcc" 
-      : widgetType === "efficiencyRotor" 
-        ? "#ff3b3b" 
-        : widgetType === "scaleAura" 
-          ? "#00ddff" 
-          : "#ffffff";
+  const valueColor =
+    widgetType === "efficiencyRotor"
+      ? "#ff3b3b" // Risk/stress red
+      : widgetType === "liquidityReservoir" || widgetType === "structuralLift"
+        ? "#22c55e" // Emerald
+        : widgetType === "vectorFlow"
+          ? "#00ccff" // Cyan/Ice
+          : widgetType === "scaleAura"
+            ? "#7c3aed" // Indigo/Violet
+            : "#ffffff";
 
   const Widget = () => {
     const props = { value: rawValue, isActive };
@@ -588,7 +590,12 @@ export default function KPICard({
           position: relative;
           border-radius: 18px;
           cursor: pointer;
-          transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          transition:
+            transform 180ms cubic-bezier(0.2, 0.9, 0.2, 1),
+            box-shadow 220ms ease,
+            opacity 160ms ease,
+            filter 180ms ease;
+          will-change: transform, box-shadow;
           flex-shrink: 0;
         }
 
@@ -618,6 +625,14 @@ export default function KPICard({
             0 0 46px color-mix(in srgb, var(--accent-glow) 28%, transparent),
             0 18px 42px rgba(0,0,0,0.55);
         }
+                .kpi-card .card-value {
+                  transition: opacity 140ms ease, transform 160ms ease;
+                }
+
+                .kpi-card:not(.active) .card-value {
+                  opacity: 0.92;
+                  transform: translateY(0.5px);
+                }
         
         /* Metallic border frame */
         .card-frame {
