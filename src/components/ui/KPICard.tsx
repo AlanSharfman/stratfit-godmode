@@ -34,15 +34,27 @@ const WIDGET_COLORS: Record<string, { primary: string; glow: string }> = {
 // ============================================================================
 // 1. RUNWAY — Horizontal Progress Bar with Glow
 // ============================================================================
-function RunwayWidget({ value, isActive }: { value: number; isActive: boolean }) {
+function RunwayWidget({
+  value,
+  isActive,
+  reduceMotion,
+}: {
+  value: number;
+  isActive: boolean;
+  reduceMotion: boolean;
+}) {
   const [pulse, setPulse] = useState(0);
   useEffect(() => {
-    const interval = setInterval(() => setPulse(p => (p + 0.025) % 1), 50);
+    if (reduceMotion) {
+      setPulse(0);
+      return;
+    }
+    const interval = setInterval(() => setPulse((p) => (p + 0.025) % 1), 50);
     return () => clearInterval(interval);
-  }, []);
+  }, [reduceMotion]);
 
   const normalized = Math.min(100, Math.max(8, (value / 36) * 100));
-  const glowIntensity = isActive ? 25 : 18 + Math.sin(pulse * Math.PI * 2) * 6;
+  const glowIntensity = isActive ? 25 : reduceMotion ? 18 : 18 + Math.sin(pulse * Math.PI * 2) * 6;
 
   return (
     <div className="runway-widget">
@@ -519,6 +531,8 @@ export default function KPICard({
   isActive = false, isAnyActive = false, onSelect, viewMode, highlightColor = "#22d3ee"
 }: KPICardProps) {
   
+  const reduceMotion = isAnyActive && !isActive;
+
   const isCashCard = widgetType === "liquidityReservoir";
   const cardWidth = isCashCard ? 220 : 152;
   const cardHeight = isCashCard ? 155 : 138;
@@ -541,20 +555,20 @@ export default function KPICard({
   const Widget = () => {
     const props = { value: rawValue, isActive };
     switch (widgetType) {
-      case "timeCompression": return <RunwayWidget {...props} />;
+      case "timeCompression": return <RunwayWidget {...props} reduceMotion={reduceMotion} />;
       case "liquidityReservoir": return <CashWidget {...props} />;
       case "vectorFlow": return <MomentumWidget {...props} />;
       case "efficiencyRotor": return <BurnWidget {...props} />;
       case "stabilityWave": return <RiskWidget {...props} />;
       case "structuralLift": return <EarningsWidget {...props} />;
       case "scaleAura": return <ValueWidget {...props} />;
-      default: return <RunwayWidget {...props} />;
+      default: return <RunwayWidget {...props} reduceMotion={reduceMotion} />;
     }
   };
 
   return (
     <div
-      className={`kpi-card ${isActive ? "active" : ""} ${isCashCard ? "hero" : ""}`}
+      className={`kpi-card ${isActive ? "active" : ""} ${isCashCard ? "hero" : ""} ${reduceMotion ? "inactive-dim" : ""}`}
       onClick={() => onSelect?.(index)}
       style={{
         width: cardWidth,
@@ -789,6 +803,18 @@ export default function KPICard({
           position: relative;
           z-index: 2;
           margin-top: 6px;
+        }
+
+        /* PHASE 2 — Inactive KPI discipline */
+        .kpi-card.inactive-dim {
+          transform: scale(0.988);
+          opacity: 0.86;
+          filter: saturate(0.92) brightness(0.94);
+          box-shadow: none;
+        }
+
+        .kpi-card.inactive-dim:hover {
+          transform: scale(0.988);
         }
 
         @media (prefers-reduced-motion: reduce) {
