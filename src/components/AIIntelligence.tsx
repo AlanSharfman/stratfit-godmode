@@ -2,13 +2,15 @@
 // STRATFIT — AI Intelligence Engine + Strategic Questions
 // Guided interrogation panel at bottom
 
-import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ScenarioId } from "./ScenarioSlidePanel";
 import { useShallow } from "zustand/react/shallow";
 import { useScenarioStore, ViewMode } from "@/state/scenarioStore";
 import StrategicQuestions from "./StrategicQuestions";
 import AIColdPanel from "./AIColdPanel";
+import { KPI_CONFIG } from "./KPIGrid";
+import { KPI_META } from "@/config/kpiMeta";
 
 interface AIIntelligenceProps {
   commentary: string[];
@@ -28,13 +30,15 @@ function useTypewriter(
   text: string,
   baseSpeed: number = 18,
   enabled: boolean = true,
-  canStart: boolean = true
+  canStart: boolean = true,
+  panelMode: AIIntelligencePanelMode = "legacy"
 ) {
   const [displayText, setDisplayText] = useState("");
   const [isComplete, setIsComplete] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
 
   useEffect(() => {
+    if (panelMode !== "legacy") return;
     if (!enabled || !canStart) {
       if (!enabled) {
         setDisplayText("");
@@ -96,7 +100,7 @@ function useTypewriter(
     timeoutId = setTimeout(typeNextChar, 100);
 
     return () => clearTimeout(timeoutId);
-  }, [text, baseSpeed, enabled, canStart]);
+  }, [text, baseSpeed, enabled, canStart, panelMode]);
 
   return { displayText, isComplete, hasStarted };
 }
@@ -114,6 +118,7 @@ function AISection({
   speed,
   onComplete,
   isRiskSection = false,
+  panelMode,
 }: {
   title: string;
   content: string;
@@ -123,12 +128,14 @@ function AISection({
   speed: number;
   onComplete?: () => void;
   isRiskSection?: boolean;
+  panelMode: AIIntelligencePanelMode;
 }) {
   const { displayText, isComplete, hasStarted } = useTypewriter(
     content,
     speed,
     !isAnalyzing,
-    canStart
+    canStart,
+    panelMode
   );
 
   useEffect(() => {
@@ -311,29 +318,41 @@ export default function AIIntelligence({
     const stored = localStorage.getItem(AI_PANEL_MODE_STORAGE_KEY);
     return stored === "cold" || stored === "legacy" ? stored : "cold";
   });
-  const [contentKey, setContentKey] = useState(0);
-  const [isProcessingQuestion, setIsProcessingQuestion] = useState(false);
-  const [customResponse, setCustomResponse] = useState<{
-    observation: string;
-    risk: string;
-    action: string;
-  } | null>(null);
-  const [showQuestions, setShowQuestions] = useState(false);
-
-  // Sequential typing state
-  const [observationComplete, setObservationComplete] = useState(false);
-  const [risksComplete, setRisksComplete] = useState(false);
 
   // Consolidated store selectors to prevent rerender cascades
-  const { viewMode, activeLeverId, setHoveredKpiIndex } = useScenarioStore(
+  const { viewMode, activeLeverId, activeScenarioId, engineResults } = useScenarioStore(
     useShallow((s) => ({
       viewMode: s.viewMode,
       activeLeverId: s.activeLeverId,
-      setHoveredKpiIndex: s.setHoveredKpiIndex,
+      activeScenarioId: s.activeScenarioId,
+      engineResults: s.engineResults,
     }))
   );
 
-  const isAnalyzing = activeLeverId !== null || isProcessingQuestion;
+  const isAnalyzing = activeLeverId !== null;
+
+  // KPI snapshot for deterministic delta tracing (ordered by canonical KPI_CONFIG)
+  const kpiValues = engineResults?.[activeScenarioId]?.kpis || {};
+  const visibleKpiConfig = viewMode === "investor" ? KPI_CONFIG.filter((k) => !k.operatorOnly) : KPI_CONFIG;
+  const kpis = useMemo(
+    () => visibleKpiConfig.map((cfg) => kpiValues?.[cfg.kpiKey as keyof typeof kpiValues]?.value ?? 0),
+    [kpiValues, visibleKpiConfig]
+  );
+
+  // Store previous KPI snapshot for delta computation
+  const prevKpisRef = useRef<number[] | null>(null);
+
+  // Compute deltas each render (cheap + deterministic)
+  const kpiDeltas = useMemo(() => {
+    if (!kpis || kpis.length === 0) return [];
+    const prev = prevKpisRef.current;
+    return kpis.map((v, i) => (typeof prev?.[i] === "number" ? v - (prev as number[])[i] : 0));
+  }, [kpis]);
+
+  // Update the ref when kpis change
+  useEffect(() => {
+    if (kpis && kpis.length) prevKpisRef.current = kpis;
+  }, [kpis, scenario, viewMode]);
 
   const scenarioName =
     scenario === "extreme"
@@ -348,88 +367,93 @@ export default function AIIntelligence({
     localStorage.setItem(AI_PANEL_MODE_STORAGE_KEY, panelMode);
   }, [panelMode]);
 
-  useEffect(() => {
-    setContentKey((k) => k + 1);
-    setCustomResponse(null);
-    // Reset sequential state
-    setObservationComplete(false);
-    setRisksComplete(false);
-  }, [scenario, viewMode]);
+  const isCold = panelMode === "cold";
 
-  // Reset sequential state when analyzing
-  useEffect(() => {
-    if (isAnalyzing) {
-      setObservationComplete(false);
-      setRisksComplete(false);
+  // Cold panel mapping (deterministic; no LLM)
+  const coldPanel = useMemo(() => {
+    const thresholdsByKey: Partial<Record<string, { low: number; med: number; high: number }>> = {
+      runway: { low: 0.5, med: 1, high: 3 },
+      cashPosition: { low: 20, med: 50, high: 150 },
+      momentum: { low: 2, med: 5, high: 15 },
+      burnQuality: { low: 10, med: 25, high: 75 },
+      riskIndex: { low: 2, med: 5, high: 15 },
+      earningsPower: { low: 1, med: 3, high: 8 },
+      enterpriseValue: { low: 5, med: 10, high: 30 },
+    };
+
+    const eps = 1e-6;
+
+    const coldKpis: Array<{
+      key: string;
+      label: string;
+      value: string;
+      delta?: string;
+      direction?: "UP" | "DOWN" | "FLAT";
+      severity?: "LOW" | "MED" | "HIGH";
+    }> = [];
+
+    const traceKpiDeltas: Array<{ label: string; from: string; to: string }> = [];
+
+    for (let i = 0; i < visibleKpiConfig.length; i++) {
+      const cfg = visibleKpiConfig[i];
+      const data = kpiValues?.[cfg.kpiKey as keyof typeof kpiValues];
+      const valueNum = kpis[i] ?? 0;
+      const display =
+        data?.display ?? KPI_META[cfg.kpiKey as keyof typeof KPI_META]?.format?.(valueNum) ?? "—";
+      const d = kpiDeltas[i] ?? 0;
+
+      const direction: "UP" | "DOWN" | "FLAT" = d > eps ? "UP" : d < -eps ? "DOWN" : "FLAT";
+
+      const higherIsBetter =
+        KPI_META[cfg.kpiKey as keyof typeof KPI_META]?.higherIsBetter ?? true;
+      const badDelta = higherIsBetter ? -d : d; // positive means "worse"
+
+      const t = thresholdsByKey[cfg.kpiKey] ?? { low: 1, med: 3, high: 8 };
+      let severity: "LOW" | "MED" | "HIGH" | undefined;
+      if (Math.abs(d) <= eps) {
+        severity = undefined;
+      } else if (badDelta >= t.high) {
+        severity = "HIGH";
+      } else if (badDelta >= t.med) {
+        severity = "MED";
+      } else if (badDelta >= t.low) {
+        severity = "LOW";
+      } else {
+        severity = undefined;
+      }
+
+      coldKpis.push({
+        key: cfg.id,
+        label: cfg.label,
+        value: display,
+        delta:
+          Math.abs(d) > eps
+            ? KPI_META[cfg.kpiKey as keyof typeof KPI_META]?.format?.(Math.abs(d)) ?? d.toFixed(2)
+            : undefined,
+        direction,
+        severity,
+      });
+
+      if (severity) {
+        const prev = prevKpisRef.current?.[i];
+        const prevDisplay =
+          typeof prev === "number"
+            ? KPI_META[cfg.kpiKey as keyof typeof KPI_META]?.format?.(prev) ?? String(prev)
+            : "—";
+        traceKpiDeltas.push({ label: cfg.label, from: prevDisplay, to: display });
+      }
     }
-  }, [isAnalyzing]);
 
-  const defaultContent = useMemo(
-    () => getAIContent(viewMode, scenario),
-    [viewMode, scenario]
-  );
-
-  // Use custom response if available, otherwise default
-  const aiContent = useMemo(
-    () =>
-      customResponse
-        ? {
-            observation: customResponse.observation,
-            risks: customResponse.risk,
-            action: customResponse.action,
-          }
-        : defaultContent,
-    [customResponse, defaultContent]
-  );
-
-  // Typewriter speed - fast base with rhythm variation (18ms base = ~55 chars/second burst)
-  const typingSpeed = 18;
-
-  // Stable callbacks for AISection to prevent re-renders
-  const handleObservationComplete = useCallback(
-    () => setObservationComplete(true),
-    []
-  );
-  const handleRisksComplete = useCallback(() => setRisksComplete(true), []);
-
-  // Handle strategic question click
-  const handlePromptClick = useCallback(
-    (
-      response: { observation: string; risk: string; action: string },
-      kpis: number[],
-      constraint: string
-    ) => {
-      setIsProcessingQuestion(true);
-      setShowQuestions(false); // Close questions panel
-
-      // Brief analyzing state
-      setTimeout(() => {
-        setCustomResponse(response);
-        setContentKey((k) => k + 1);
-        setIsProcessingQuestion(false);
-
-        // Highlight primary KPI
-        if (kpis.length > 0) {
-          setHoveredKpiIndex(kpis[0]);
-          // Clear highlight after 4 seconds
-          setTimeout(() => setHoveredKpiIndex(null), 4000);
-        }
-      }, 600);
-    },
-    [setHoveredKpiIndex]
-  );
-
-  const toggleQuestions = () => {
-    setShowQuestions(!showQuestions);
-  };
-
-  if (panelMode === "cold") {
-    return (
-      <div style={{ height: "100%" }}>
-        <AIColdPanel scenarioName={scenario} />
-      </div>
-    );
-  }
+    return {
+      coldKpis,
+      driversForCold: commentary.map((c) => ({ label: c })),
+      actionsForCold: actions.map((a) => ({ label: a })),
+      trace: {
+        notes: risks.length ? risks : undefined,
+        kpiDeltas: traceKpiDeltas.slice(0, 7),
+      },
+    };
+  }, [actions, commentary, kpiDeltas, kpiValues, kpis, risks, visibleKpiConfig]);
 
   return (
     <div className={`ai-panel ${viewMode}`}>
@@ -472,7 +496,7 @@ export default function AIIntelligence({
           <div className="mode-toggle" role="tablist" aria-label="AI panel mode">
             <button
               type="button"
-              className={`mode-btn ${panelMode === "cold" ? "active" : ""}`}
+              className={`mode-btn ${isCold ? "active" : ""}`}
               onClick={() => setPanelMode("cold")}
             >
               Cold
@@ -488,115 +512,24 @@ export default function AIIntelligence({
         </div>
       </div>
 
-      <div className="panel-content">
-        {panelMode === "cold" ? (
+      {isCold ? (
+        <div className="panel-content">
           <AIColdPanel
             scenarioName={scenarioName}
-            drivers={commentary.map((c) => ({ label: c }))}
-            actions={actions.map((a) => ({ label: a }))}
-            trace={
-              risks.length
-                ? {
-                    notes: risks,
-                  }
-                : undefined
-            }
+            kpis={coldPanel.coldKpis}
+            drivers={coldPanel.driversForCold}
+            actions={coldPanel.actionsForCold}
+            trace={coldPanel.trace}
           />
-        ) : (
-          <>
-            <AISection
-              title="OBSERVATION"
-              content={aiContent.observation}
-              isAnalyzing={isAnalyzing}
-              canStart={true}
-              contentKey={contentKey}
-              speed={typingSpeed}
-              onComplete={handleObservationComplete}
-            />
-
-            <AISection
-              title="RISKS"
-              content={aiContent.risks}
-              isAnalyzing={isAnalyzing}
-              canStart={observationComplete}
-              contentKey={contentKey}
-              speed={typingSpeed}
-              onComplete={handleRisksComplete}
-              isRiskSection={true}
-            />
-
-            <AISection
-              title="ACTIONS"
-              content={aiContent.action}
-              isAnalyzing={isAnalyzing}
-              canStart={risksComplete}
-              contentKey={contentKey}
-              speed={typingSpeed}
-            />
-          </>
-        )}
-      </div>
-
-      {/* Strategic Questions Toggle */}
-      {panelMode === "legacy" && (
-        <div className="questions-toggle-container">
-          <button
-            className={`questions-toggle ${showQuestions ? "open" : ""}`}
-            onClick={toggleQuestions}
-          >
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="12" cy="12" r="10" />
-              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-              <path d="M12 17h.01" />
-            </svg>
-            <span>
-              {showQuestions ? "Hide Strategic Questions" : "Nominated Strategic Questions"}
-            </span>
-            <svg
-              width="10"
-              height="10"
-              viewBox="0 0 12 12"
-              fill="none"
-              className="chevron"
-              style={{
-                transform: showQuestions ? "rotate(180deg)" : "rotate(0deg)",
-              }}
-            >
-              <path
-                d="M3 4.5L6 7.5L9 4.5"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
         </div>
+      ) : (
+        <AIIntelligenceLegacy
+          scenario={scenario}
+          viewMode={viewMode}
+          activeLeverId={activeLeverId}
+          panelMode={panelMode}
+        />
       )}
-
-      {/* Collapsible Strategic Questions Panel */}
-      <AnimatePresence>
-        {panelMode === "legacy" && showQuestions && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeInOut" }}
-            style={{ overflow: "hidden" }}
-          >
-            <StrategicQuestions onPromptClick={handlePromptClick} isAnalyzing={isAnalyzing} />
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       <style>{`
         .ai-panel {
@@ -928,5 +861,191 @@ export default function AIIntelligence({
         }
       `}</style>
     </div>
+  );
+}
+
+function AIIntelligenceLegacy({
+  scenario,
+  viewMode,
+  activeLeverId,
+  panelMode,
+}: {
+  scenario: ScenarioId;
+  viewMode: ViewMode;
+  activeLeverId: string | null;
+  panelMode: AIIntelligencePanelMode;
+}) {
+  const [contentKey, setContentKey] = useState(0);
+  const [isProcessingQuestion, setIsProcessingQuestion] = useState(false);
+  const [customResponse, setCustomResponse] = useState<{
+    observation: string;
+    risk: string;
+    action: string;
+  } | null>(null);
+  const [showQuestions, setShowQuestions] = useState(false);
+
+  // Sequential typing state
+  const [observationComplete, setObservationComplete] = useState(false);
+  const [risksComplete, setRisksComplete] = useState(false);
+
+  const setHoveredKpiIndex = useScenarioStore((s) => s.setHoveredKpiIndex);
+
+  const isAnalyzing = activeLeverId !== null || isProcessingQuestion;
+
+  useEffect(() => {
+    setContentKey((k) => k + 1);
+    setCustomResponse(null);
+    // Reset sequential state
+    setObservationComplete(false);
+    setRisksComplete(false);
+  }, [scenario, viewMode]);
+
+  // Reset sequential state when analyzing
+  useEffect(() => {
+    if (isAnalyzing) {
+      setObservationComplete(false);
+      setRisksComplete(false);
+    }
+  }, [isAnalyzing]);
+
+  const defaultContent = useMemo(() => getAIContent(viewMode, scenario), [viewMode, scenario]);
+
+  // Use custom response if available, otherwise default
+  const aiContent = useMemo(
+    () =>
+      customResponse
+        ? {
+            observation: customResponse.observation,
+            risks: customResponse.risk,
+            action: customResponse.action,
+          }
+        : defaultContent,
+    [customResponse, defaultContent]
+  );
+
+  // Typewriter speed - fast base with rhythm variation (18ms base = ~55 chars/second burst)
+  const typingSpeed = 18;
+
+  // Stable callbacks for AISection to prevent re-renders
+  const handleObservationComplete = useCallback(() => setObservationComplete(true), []);
+  const handleRisksComplete = useCallback(() => setRisksComplete(true), []);
+
+  // Handle strategic question click (includes hover-highlight timers)
+  const handlePromptClick = useCallback(
+    (response: { observation: string; risk: string; action: string }, kpis: number[], _constraint: string) => {
+      if (panelMode !== "legacy") return;
+      setIsProcessingQuestion(true);
+      setShowQuestions(false); // Close questions panel
+
+      // Brief analyzing state
+      setTimeout(() => {
+        setCustomResponse(response);
+        setContentKey((k) => k + 1);
+        setIsProcessingQuestion(false);
+
+        // Highlight primary KPI
+        if (kpis.length > 0) {
+          setHoveredKpiIndex(kpis[0]);
+          // Clear highlight after 4 seconds
+          setTimeout(() => setHoveredKpiIndex(null), 4000);
+        }
+      }, 600);
+    },
+    [panelMode, setHoveredKpiIndex]
+  );
+
+  const toggleQuestions = () => {
+    setShowQuestions(!showQuestions);
+  };
+
+  return (
+    <>
+      <div className="panel-content">
+        <AISection
+          title="OBSERVATION"
+          content={aiContent.observation}
+          isAnalyzing={isAnalyzing}
+          canStart={true}
+          contentKey={contentKey}
+          speed={typingSpeed}
+          onComplete={handleObservationComplete}
+          panelMode={panelMode}
+        />
+
+        <AISection
+          title="RISKS"
+          content={aiContent.risks}
+          isAnalyzing={isAnalyzing}
+          canStart={observationComplete}
+          contentKey={contentKey}
+          speed={typingSpeed}
+          onComplete={handleRisksComplete}
+          isRiskSection={true}
+          panelMode={panelMode}
+        />
+
+        <AISection
+          title="ACTIONS"
+          content={aiContent.action}
+          isAnalyzing={isAnalyzing}
+          canStart={risksComplete}
+          contentKey={contentKey}
+          speed={typingSpeed}
+          panelMode={panelMode}
+        />
+      </div>
+
+      <div className="questions-toggle-container">
+        <button className={`questions-toggle ${showQuestions ? "open" : ""}`} onClick={toggleQuestions}>
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+            <path d="M12 17h.01" />
+          </svg>
+          <span>{showQuestions ? "Hide Strategic Questions" : "Nominated Strategic Questions"}</span>
+          <svg
+            width="10"
+            height="10"
+            viewBox="0 0 12 12"
+            fill="none"
+            className="chevron"
+            style={{
+              transform: showQuestions ? "rotate(180deg)" : "rotate(0deg)",
+            }}
+          >
+            <path
+              d="M3 4.5L6 7.5L9 4.5"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
+
+      <AnimatePresence>
+        {showQuestions && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            style={{ overflow: "hidden" }}
+          >
+            <StrategicQuestions onPromptClick={handlePromptClick} isAnalyzing={isAnalyzing} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
