@@ -8,6 +8,7 @@ import { ScenarioId } from "./ScenarioSlidePanel";
 import { useShallow } from "zustand/react/shallow";
 import { useScenarioStore, ViewMode } from "@/state/scenarioStore";
 import StrategicQuestions from "./StrategicQuestions";
+import AIColdPanel from "./AIColdPanel";
 
 interface AIIntelligenceProps {
   commentary: string[];
@@ -15,6 +16,9 @@ interface AIIntelligenceProps {
   actions: string[];
   scenario: ScenarioId;
 }
+
+type AIIntelligencePanelMode = "cold" | "legacy";
+const AI_PANEL_MODE_STORAGE_KEY = "stratfit.ai.panelMode";
 
 // ============================================================================
 // TYPEWRITER HOOK - Sequential typing, one paragraph at a time
@@ -303,6 +307,10 @@ export default function AIIntelligence({
   actions,
   scenario,
 }: AIIntelligenceProps) {
+  const [panelMode, setPanelMode] = useState<AIIntelligencePanelMode>(() => {
+    const stored = localStorage.getItem(AI_PANEL_MODE_STORAGE_KEY);
+    return stored === "cold" || stored === "legacy" ? stored : "cold";
+  });
   const [contentKey, setContentKey] = useState(0);
   const [isProcessingQuestion, setIsProcessingQuestion] = useState(false);
   const [customResponse, setCustomResponse] = useState<{
@@ -326,6 +334,19 @@ export default function AIIntelligence({
   );
 
   const isAnalyzing = activeLeverId !== null || isProcessingQuestion;
+
+  const scenarioName =
+    scenario === "extreme"
+      ? "Extreme Scenario"
+      : scenario === "downside"
+      ? "Downside Scenario"
+      : scenario === "upside"
+      ? "Upside Scenario"
+      : "Current Scenario";
+
+  useEffect(() => {
+    localStorage.setItem(AI_PANEL_MODE_STORAGE_KEY, panelMode);
+  }, [panelMode]);
 
   useEffect(() => {
     setContentKey((k) => k + 1);
@@ -402,6 +423,14 @@ export default function AIIntelligence({
     setShowQuestions(!showQuestions);
   };
 
+  if (panelMode === "cold") {
+    return (
+      <div style={{ height: "100%" }}>
+        <AIColdPanel scenarioName={scenario} />
+      </div>
+    );
+  }
+
   return (
     <div className={`ai-panel ${viewMode}`}>
       <div className="panel-edge" />
@@ -434,92 +463,129 @@ export default function AIIntelligence({
             </span>
           </div>
         </div>
-        <div className={`signal-dots ${isAnalyzing ? "active" : ""}`}>
-          <div className="signal-dot dot-1" />
-          <div className="signal-dot dot-2" />
-          <div className="signal-dot dot-3" />
+        <div className="header-right">
+          <div className={`signal-dots ${isAnalyzing ? "active" : ""}`}>
+            <div className="signal-dot dot-1" />
+            <div className="signal-dot dot-2" />
+            <div className="signal-dot dot-3" />
+          </div>
+          <div className="mode-toggle" role="tablist" aria-label="AI panel mode">
+            <button
+              type="button"
+              className={`mode-btn ${panelMode === "cold" ? "active" : ""}`}
+              onClick={() => setPanelMode("cold")}
+            >
+              Cold
+            </button>
+            <button
+              type="button"
+              className={`mode-btn ${panelMode === "legacy" ? "active" : ""}`}
+              onClick={() => setPanelMode("legacy")}
+            >
+              Legacy
+            </button>
+          </div>
         </div>
       </div>
 
       <div className="panel-content">
-        <AISection
-          title="OBSERVATION"
-          content={aiContent.observation}
-          isAnalyzing={isAnalyzing}
-          canStart={true}
-          contentKey={contentKey}
-          speed={typingSpeed}
-          onComplete={handleObservationComplete}
-        />
+        {panelMode === "cold" ? (
+          <AIColdPanel
+            scenarioName={scenarioName}
+            drivers={commentary.map((c) => ({ label: c }))}
+            actions={actions.map((a) => ({ label: a }))}
+            trace={
+              risks.length
+                ? {
+                    notes: risks,
+                  }
+                : undefined
+            }
+          />
+        ) : (
+          <>
+            <AISection
+              title="OBSERVATION"
+              content={aiContent.observation}
+              isAnalyzing={isAnalyzing}
+              canStart={true}
+              contentKey={contentKey}
+              speed={typingSpeed}
+              onComplete={handleObservationComplete}
+            />
 
-        <AISection
-          title="RISKS"
-          content={aiContent.risks}
-          isAnalyzing={isAnalyzing}
-          canStart={observationComplete}
-          contentKey={contentKey}
-          speed={typingSpeed}
-          onComplete={handleRisksComplete}
-          isRiskSection={true}
-        />
+            <AISection
+              title="RISKS"
+              content={aiContent.risks}
+              isAnalyzing={isAnalyzing}
+              canStart={observationComplete}
+              contentKey={contentKey}
+              speed={typingSpeed}
+              onComplete={handleRisksComplete}
+              isRiskSection={true}
+            />
 
-        <AISection
-          title="ACTIONS"
-          content={aiContent.action}
-          isAnalyzing={isAnalyzing}
-          canStart={risksComplete}
-          contentKey={contentKey}
-          speed={typingSpeed}
-        />
+            <AISection
+              title="ACTIONS"
+              content={aiContent.action}
+              isAnalyzing={isAnalyzing}
+              canStart={risksComplete}
+              contentKey={contentKey}
+              speed={typingSpeed}
+            />
+          </>
+        )}
       </div>
 
       {/* Strategic Questions Toggle */}
-      <div className="questions-toggle-container">
-        <button
-          className={`questions-toggle ${showQuestions ? "open" : ""}`}
-          onClick={toggleQuestions}
-        >
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+      {panelMode === "legacy" && (
+        <div className="questions-toggle-container">
+          <button
+            className={`questions-toggle ${showQuestions ? "open" : ""}`}
+            onClick={toggleQuestions}
           >
-            <circle cx="12" cy="12" r="10" />
-            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-            <path d="M12 17h.01" />
-          </svg>
-          <span>
-            {showQuestions ? "Hide Strategic Questions" : "Nominated Strategic Questions"}
-          </span>
-          <svg
-            width="10"
-            height="10"
-            viewBox="0 0 12 12"
-            fill="none"
-            className="chevron"
-            style={{
-              transform: showQuestions ? "rotate(180deg)" : "rotate(0deg)",
-            }}
-          >
-            <path
-              d="M3 4.5L6 7.5L9 4.5"
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
               stroke="currentColor"
-              strokeWidth="1.5"
+              strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-            />
-          </svg>
-        </button>
-      </div>
+            >
+              <circle cx="12" cy="12" r="10" />
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+              <path d="M12 17h.01" />
+            </svg>
+            <span>
+              {showQuestions ? "Hide Strategic Questions" : "Nominated Strategic Questions"}
+            </span>
+            <svg
+              width="10"
+              height="10"
+              viewBox="0 0 12 12"
+              fill="none"
+              className="chevron"
+              style={{
+                transform: showQuestions ? "rotate(180deg)" : "rotate(0deg)",
+              }}
+            >
+              <path
+                d="M3 4.5L6 7.5L9 4.5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
+      )}
 
       {/* Collapsible Strategic Questions Panel */}
       <AnimatePresence>
-        {showQuestions && (
+        {panelMode === "legacy" && showQuestions && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
@@ -601,6 +667,44 @@ export default function AIIntelligence({
         .signal-dots {
           display: flex;
           gap: 6px;
+        }
+
+        .header-right {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .mode-toggle {
+          display: inline-flex;
+          gap: 0;
+          border-radius: 9999px;
+          overflow: hidden;
+          border: 1px solid rgba(148, 163, 184, 0.18);
+          background: rgba(15, 23, 42, 0.35);
+        }
+
+        .mode-btn {
+          appearance: none;
+          border: 0;
+          background: transparent;
+          color: rgba(148, 163, 184, 0.72);
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.06em;
+          padding: 6px 10px;
+          cursor: pointer;
+          transition: background 160ms ease, color 160ms ease;
+        }
+
+        .mode-btn:hover {
+          background: rgba(148, 163, 184, 0.10);
+          color: rgba(226, 232, 240, 0.82);
+        }
+
+        .mode-btn.active {
+          background: rgba(34, 211, 238, 0.14);
+          color: rgba(34, 211, 238, 0.92);
         }
 
         .signal-dot {
