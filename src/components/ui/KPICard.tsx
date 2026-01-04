@@ -591,6 +591,22 @@ export default function KPICard({
           transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
           flex-shrink: 0;
         }
+
+        .card-label {
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          opacity: 0.70;
+        }
+
+        .card-value {
+          font-size: 22px;
+          font-weight: 900;
+          letter-spacing: -0.02em;
+          line-height: 1.05;
+          margin-top: 6px;
+        }
         .kpi-card:hover {
           transform: translateY(-4px) scale(1.02);
         }
