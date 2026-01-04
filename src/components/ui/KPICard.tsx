@@ -625,6 +625,30 @@ export default function KPICard({
             0 0 46px color-mix(in srgb, var(--accent-glow) 28%, transparent),
             0 18px 42px rgba(0,0,0,0.55);
         }
+
+        /* One-shot scenario pulse on selection */
+        .kpi-card.active::after {
+          content: "";
+          position: absolute;
+          inset: -6px;
+          border-radius: 22px;
+          pointer-events: none;
+          background: radial-gradient(
+            circle at 50% 45%,
+            color-mix(in srgb, var(--accent-color) 38%, transparent) 0%,
+            transparent 62%
+          );
+          opacity: 0;
+          filter: blur(10px);
+          transform: scale(0.98);
+          animation: kpi-select-pulse 520ms cubic-bezier(0.2, 0.9, 0.2, 1) 1;
+        }
+
+        @keyframes kpi-select-pulse {
+          0%   { opacity: 0;   transform: scale(0.98); }
+          35%  { opacity: 0.9; transform: scale(1.00); }
+          100% { opacity: 0;   transform: scale(1.04); }
+        }
                 .kpi-card .card-value {
                   transition: opacity 140ms ease, transform 160ms ease;
                 }
