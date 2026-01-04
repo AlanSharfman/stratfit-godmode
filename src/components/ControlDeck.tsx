@@ -368,6 +368,7 @@ export function ControlDeck(props: {
   boxes: ControlBoxConfig[];
   onChange: (id: LeverId | "__end__", value: number) => void;
 }) {
+  const leverReleaseTimeoutRef = React.useRef<number | null>(null);
   const { boxes, onChange } = props;
 
   // Consolidated store selectors to prevent rerender cascades
@@ -434,7 +435,12 @@ export function ControlDeck(props: {
   const handleSliderStart = useCallback(
     (id: LeverId, value: number) => {
       const intensity = computeIntensity01(id, value);
-      setActiveLever(id, intensity); // Immediate on start
+      // Cancel any pending release
+      if (leverReleaseTimeoutRef.current !== null) {
+        window.clearTimeout(leverReleaseTimeoutRef.current);
+        leverReleaseTimeoutRef.current = null;
+      }
+      setActiveLever(id, intensity);
     },
     [computeIntensity01, setActiveLever]
   );
@@ -446,7 +452,16 @@ export function ControlDeck(props: {
       leverUpdateFrame.current = null;
     }
     pendingLeverUpdate.current = null;
-    setActiveLever(null, 0);
+    // Cancel any pending release
+    if (leverReleaseTimeoutRef.current !== null) {
+      window.clearTimeout(leverReleaseTimeoutRef.current);
+    }
+    // Tripwire log
+    console.log("[LEVER END] scheduling release", { id: null, inMs: 250 });
+    leverReleaseTimeoutRef.current = window.setTimeout(() => {
+      setActiveLever(null, 0);
+      leverReleaseTimeoutRef.current = null;
+    }, 250);
     onChange("__end__", 0);
   }, [setActiveLever, onChange]);
 
