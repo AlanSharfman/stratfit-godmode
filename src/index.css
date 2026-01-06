@@ -15,10 +15,7 @@ html, body {
   font-family: Inter, system-ui, sans-serif;
 }
 
-/* Smoothen animations globally */
-* {
-  transition: all 0.2s ease;
-}
+/* Note: Transitions applied per-component for precision control */
 
 /* ----------------------------------------
    SCROLLBAR (hidden for dashboard feel)
@@ -78,4 +75,6 @@ html, body {
 .kpi-glow {
   animation: kpi-glow 2.2s ease-in-out infinite;
 }
+html { scrollbar-gutter: stable; }
+body { overflow-x: hidden; }
 
