@@ -1,21 +1,3 @@
-/**
- * 🚨 STRATFIT CANONICAL MOUNTAIN — DO NOT MODIFY 🚨
- *
- * This file defines the mountain’s:
- * - Vertical amplitude
- * - Noise fields
- * - Silhouette
- * - Peak behaviour
- *
- * ❌ NO height clamping
- * ❌ NO normalisation
- * ❌ NO container-based scaling
- * ❌ NO UI-driven constraints
- *
- * Any layout or KPI changes MUST happen outside this system.
- */
-
-
 import { useEffect, useRef } from "react";
 import { generateSplinePoints } from "./utils/splineMath";
 

@@ -6,6 +6,7 @@ import React from "react";
 import { useShallow } from "zustand/react/shallow";
 import KPICard from "./ui/KPICard";
 import { useScenarioStore, SCENARIO_COLORS } from "@/state/scenarioStore";
+import type { LeverId } from "@/logic/mountainPeakModel";
 
 // ============================================================================
 // KPI CONFIGURATION
@@ -15,19 +16,94 @@ interface KPIConfig {
   id: string;
   label: string;
   kpiKey: string;
-  widgetType: string;
-  color: string;
-  operatorOnly?: boolean;
+  unit: string;
+  widgetType: "bar" | "globe" | "arrow" | "gauge" | "dial" | "chart" | "ring";
+  accentColor: string;
+  relatedLevers: LeverId[];
+  group: "RESILIENCE" | "MOMENTUM" | "QUALITY";
 }
 
+const WIDGET_TYPE_TO_LEGACY = {
+  bar: "timeCompression",
+  globe: "liquidityReservoir",
+  arrow: "vectorFlow",
+  dial: "efficiencyRotor",
+  gauge: "stabilityWave",
+  ring: "structuralLift",
+  chart: "scaleAura",
+} as const;
+
 const KPI_CONFIG: KPIConfig[] = [
-  { id: "runway", label: "RUNWAY", kpiKey: "runway", widgetType: "timeCompression", color: "#5a7d9a" },
-  { id: "cashPosition", label: "CASH", kpiKey: "cashPosition", widgetType: "liquidityReservoir", color: "#5a7d9a" },
-  { id: "momentum", label: "MOMENTUM", kpiKey: "momentum", widgetType: "vectorFlow", color: "#5a7d9a" },
-  { id: "burnQuality", label: "BURN", kpiKey: "burnQuality", widgetType: "efficiencyRotor", color: "#5a7d9a", operatorOnly: true },
-  { id: "riskIndex", label: "RISK", kpiKey: "riskIndex", widgetType: "stabilityWave", color: "#5a7d9a" },
-  { id: "earningsPower", label: "EARNINGS", kpiKey: "earningsPower", widgetType: "structuralLift", color: "#5a7d9a", operatorOnly: true },
-  { id: "enterpriseValue", label: "VALUE", kpiKey: "enterpriseValue", widgetType: "scaleAura", color: "#5a7d9a" },
+  {
+    id: "runway",
+    label: "RUNWAY",
+    kpiKey: "runway",
+    unit: "mo",
+    widgetType: "bar",
+    accentColor: "#00d4ff",
+    relatedLevers: ["operatingExpenses", "headcount", "fundingInjection"],
+    group: "RESILIENCE",
+  },
+  {
+    id: "cashPosition",
+    label: "CASH",
+    kpiKey: "cashPosition",
+    unit: "$",
+    widgetType: "globe",
+    accentColor: "#00ffcc",
+    relatedLevers: ["pricingAdjustment", "operatingExpenses", "cashSensitivity"],
+    group: "RESILIENCE",
+  },
+  {
+    id: "momentum",
+    label: "MOMENTUM",
+    kpiKey: "momentum",
+    unit: "$",
+    widgetType: "arrow",
+    accentColor: "#00ff88",
+    relatedLevers: ["revenueGrowth", "marketingSpend", "pricingAdjustment"],
+    group: "MOMENTUM",
+  },
+  {
+    id: "burnQuality",
+    label: "BURN",
+    kpiKey: "burnQuality",
+    unit: "$",
+    widgetType: "dial",
+    accentColor: "#fb7185",
+    relatedLevers: ["operatingExpenses", "headcount", "cashSensitivity"],
+    group: "QUALITY",
+  },
+  {
+    id: "riskIndex",
+    label: "RISK",
+    kpiKey: "riskIndex",
+    unit: "/100",
+    widgetType: "gauge",
+    accentColor: "#00ccff",
+    relatedLevers: ["churnSensitivity", "fundingInjection"],
+    group: "RESILIENCE",
+  },
+  {
+    id: "earningsPower",
+    label: "EARNINGS",
+    kpiKey: "earningsPower",
+    unit: "%",
+    widgetType: "ring",
+    accentColor: "#00ff88",
+    relatedLevers: ["revenueGrowth", "pricingAdjustment", "operatingExpenses"],
+    group: "QUALITY",
+  },
+  {
+    id: "enterpriseValue",
+    label: "VALUE",
+    kpiKey: "enterpriseValue",
+    unit: "$",
+    widgetType: "chart",
+    accentColor: "#00ddff",
+    relatedLevers: ["revenueGrowth", "pricingAdjustment", "marketingSpend", "churnSensitivity"],
+    group: "MOMENTUM",
+  },
 ];
 
 export { KPI_CONFIG };
@@ -58,9 +134,7 @@ export default function KPIGrid() {
   // Get scenario color for KPI highlights
   const scenarioColor = SCENARIO_COLORS[scenario].primary;
 
-  const visibleKPIs = viewMode === "investor" 
-    ? KPI_CONFIG.filter(k => !k.operatorOnly)
-    : KPI_CONFIG;
+  const visibleKPIs = KPI_CONFIG;
 
   const handleSelect = (index: number) => {
     const actualIndex = KPI_CONFIG.findIndex(k => k.id === visibleKPIs[index].id);
@@ -89,8 +163,8 @@ export default function KPIGrid() {
               label={cfg.label}
               value={data?.display ?? "—"}
               rawValue={data?.value ?? 0}
-              color={cfg.color}
-              widgetType={cfg.widgetType}
+              color={cfg.accentColor}
+              widgetType={WIDGET_TYPE_TO_LEGACY[cfg.widgetType]}
               isActive={isActive}
               isAnyActive={isAnyActive && !isActive}
               onSelect={handleSelect}

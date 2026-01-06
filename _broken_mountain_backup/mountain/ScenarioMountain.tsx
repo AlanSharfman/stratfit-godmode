@@ -1,30 +1,14 @@
-/**
- * 🚨 STRATFIT CANONICAL MOUNTAIN — DO NOT MODIFY 🚨
- *
- * This file defines the mountain’s:
- * - Vertical amplitude
- * - Noise fields
- * - Silhouette
- * - Peak behaviour
- *
- * ❌ NO height clamping
- * ❌ NO normalisation
- * ❌ NO container-based scaling
- * ❌ NO UI-driven constraints
- *
- * Any layout or KPI changes MUST happen outside this system.
- */
-
 // src/components/mountain/ScenarioMountain.tsx
 // STRATFIT — Stable Mountain with Atmospheric Haze
 
-import React, { useMemo, useRef, useLayoutEffect, Suspense } from "react";
+import React, { useEffect, useMemo, useRef, useLayoutEffect, Suspense, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import * as THREE from "three";
 import { useShallow } from "zustand/react/shallow";
 import { buildPeakModel, LeverId } from "@/logic/mountainPeakModel";
 import { ScenarioId, SCENARIO_COLORS, useScenarioStore } from "@/state/scenarioStore";
+import GhostMountain from "@/components/mountain/GhostMountain";
 
 // ============================================================================
 // CONSTANTS — STABLE VERSION
@@ -36,14 +20,26 @@ const MESH_W = 50;
 const MESH_D = 25;
 const ISLAND_RADIUS = 22;
 
-const BASE_SCALE = 4.5;      // Increased: data-driven shape dominates
-const PEAK_SCALE = 3.0;      // Reduced: less drop when lever released
-const MASSIF_SCALE = 4.5;    // Slightly increased for stable backdrop
+// ---------------------------------------------------------------------------
+// STRATFIT AMPLITUDE TUNING (UI ONLY)
+// Peaks must reflect true scenario amplitude (no auto-fit normalization).
+// Tune these two constants only:
+// ---------------------------------------------------------------------------
+export const PEAK_GAIN = 1.35;
+export const HEADROOM = 0.18; // 10–20% visual headroom to avoid clipping
+
+const BASE_SCALE = 4.5 * PEAK_GAIN;      // data-driven ridge gain
+const PEAK_SCALE = 3.0 * PEAK_GAIN;      // lever-driven peaks gain
+const MASSIF_SCALE = 4.5 * PEAK_GAIN;    // backdrop massif gain
 const RIDGE_SHARPNESS = 1.4;
 const CLIFF_BOOST = 1.15;
 
-const SOFT_CEILING = 9.0;
-const CEILING_START = 7.0;
+// Soft ceiling (no hard clamp) — raised so extremes can exceed prior “safe” heights.
+const SOFT_CEILING = 14.0;
+const CEILING_START = 10.5;
+
+// Base vertical anchoring (lower = more headroom above; does not compress)
+const BASE_Y = -2.25;
 
 // ============================================================================
 // DETERMINISTIC NOISE
@@ -155,8 +151,13 @@ const Terrain: React.FC<TerrainProps> = ({
   scenario,
 }) => {
   const groupRef = useRef<THREE.Group>(null);
+  const baseYRef = useRef(BASE_Y);
+  const reduceMotionRef = useRef<boolean | null>(null);
   const meshFillRef = useRef<THREE.Mesh>(null);
   const meshWireRef = useRef<THREE.Mesh>(null);
+  const lastScenarioRef = useRef<ScenarioId | null>(null);
+  const [ghostGeo, setGhostGeo] = useState<THREE.PlaneGeometry | null>(null);
+  const [ghostKey, setGhostKey] = useState(0);
   const targetHeightsRef = useRef<Float32Array | null>(null);
   const currentHeightsRef = useRef<Float32Array | null>(null);
   const targetColorsRef = useRef<Float32Array | null>(null);
@@ -255,7 +256,8 @@ const Terrain: React.FC<TerrainProps> = ({
 
     for (let i = 0; i < count; i++) {
       const h = heights[i];
-      const h01 = clamp01(h / (maxH * 0.82));
+      // Color headroom is independent of geometry amplitude — prevents “always white” peaks.
+      const h01 = clamp01(h / (maxH * (1 + HEADROOM)));
       const c = heightColor(h01, pal, illuminations[i]);
       targetColors[i * 3] = c.r;
       targetColors[i * 3 + 1] = c.g;
@@ -264,10 +266,25 @@ const Terrain: React.FC<TerrainProps> = ({
   }, [dataPoints, peakModel, pal, activeKpiIndex]);
 
   // Smooth interpolation - NO erratic motion
-  useFrame(() => {
+  useFrame((state) => {
     if (!meshFillRef.current || !meshWireRef.current) return;
     if (!targetHeightsRef.current || !currentHeightsRef.current) return;
     if (!targetColorsRef.current || !currentColorsRef.current) return;
+
+    // Visual-only: subtle “breathing/heave” so the mountain feels alive.
+    // This does NOT affect the underlying heights/colors (engine truth stays the same).
+    if (reduceMotionRef.current === null) {
+      reduceMotionRef.current =
+        typeof window !== "undefined" &&
+        window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches === true;
+    }
+    if (!reduceMotionRef.current && groupRef.current) {
+      const t = state.clock.getElapsedTime();
+      const a = Math.sin(t * 0.55) * 0.5 + Math.sin(t * 0.22) * 0.5; // slow, organic
+      const scale = 1 + a * 0.007; // <1% scale
+      groupRef.current.scale.set(scale, scale, scale);
+      groupRef.current.position.y = baseYRef.current + a * 0.06;
+    }
 
     const geo = meshFillRef.current.geometry as THREE.PlaneGeometry;
     const pos = geo.attributes.position as THREE.BufferAttribute;
@@ -315,8 +332,48 @@ const Terrain: React.FC<TerrainProps> = ({
     }
   });
 
+  // Ghost mountain snapshot: capture previous geometry ONLY on scenario commit (not on slider drag)
+  useEffect(() => {
+    const prev = lastScenarioRef.current;
+    if (prev === null) {
+      lastScenarioRef.current = scenario;
+      return;
+    }
+    if (prev === scenario) return;
+
+    // Snapshot current wire geometry BEFORE new scenario settles visually.
+    const wire = meshWireRef.current;
+    if (wire) {
+      const geo = wire.geometry as THREE.PlaneGeometry;
+      const snap = geo.clone() as THREE.PlaneGeometry;
+      // Deep-copy attributes so it is frozen (no recompute / no mutation)
+      const pos = snap.attributes.position as THREE.BufferAttribute;
+      snap.setAttribute("position", new THREE.BufferAttribute(pos.array.slice(0), pos.itemSize));
+      const col = snap.attributes.color as THREE.BufferAttribute | undefined;
+      if (col) {
+        snap.setAttribute("color", new THREE.BufferAttribute(col.array.slice(0), col.itemSize));
+      }
+      snap.computeVertexNormals();
+      setGhostGeo(snap);
+      setGhostKey((k) => k + 1);
+    }
+
+    lastScenarioRef.current = scenario;
+  }, [scenario]);
+
   return (
     <group ref={groupRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]}>
+      {/* Ghost layer (previous scenario snapshot) — fades out, wireframe only */}
+      {ghostGeo ? (
+        <GhostMountain
+          key={`ghost-${ghostKey}`}
+          geometry={ghostGeo}
+          durationMs={700}
+          color="rgba(34,211,238,0.55)"
+          opacityStart={0.45}
+          onDone={() => setGhostGeo(null)}
+        />
+      ) : null}
       <mesh ref={meshFillRef} geometry={geometry}>
         <meshStandardMaterial
           vertexColors
@@ -331,7 +388,7 @@ const Terrain: React.FC<TerrainProps> = ({
         />
       </mesh>
       <mesh ref={meshWireRef} geometry={geometry}>
-        <meshBasicMaterial vertexColors wireframe transparent opacity={0.75} toneMapped={false} />
+        <meshBasicMaterial vertexColors wireframe transparent opacity={0.82} toneMapped={false} />
       </mesh>
     </group>
   );
@@ -517,6 +574,7 @@ export default function ScenarioMountain({
         fallback={<div style={{ width: "100%", height: "100%", background: "#0d1117" }} />}
       >
         <Suspense fallback={null}>
+        {/* Headroom: aim slightly lower so taller peaks don’t clip without compressing */}
         <PerspectiveCamera makeDefault position={[0, 6, 32]} fov={38} />
         <ambientLight intensity={0.12} />
         <directionalLight position={[8, 20, 10]} intensity={0.4} color="#ffffff" />
@@ -537,6 +595,7 @@ export default function ScenarioMountain({
           enablePan={false} 
           enableRotate={true}
           rotateSpeed={0.4}
+          target={[0, BASE_Y * 0.55, 0]}
           minPolarAngle={Math.PI / 4}
           maxPolarAngle={Math.PI / 2.2}
           minAzimuthAngle={-Math.PI / 5}

@@ -2,6 +2,7 @@
 // STRATFIT — Premium Scenario Control — Core Platform Control
 
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { ScenarioId, SCENARIO_COLORS } from "@/state/scenarioStore";
 
 interface ScenarioSelectorProps {
@@ -22,6 +23,9 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
   const [showHint, setShowHint] = useState(false);
   const [flashColor, setFlashColor] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number; width: number } | null>(null);
   
   const colors = SCENARIO_COLORS[scenario];
   const currentScenario = SCENARIOS.find(s => s.id === scenario);
@@ -41,6 +45,8 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
   // Close on outside click
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
+      // Dropdown is portaled — don't treat clicks inside it as "outside".
+      if (menuRef.current && menuRef.current.contains(e.target as Node)) return;
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setIsOpen(false);
       }
@@ -48,6 +54,41 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
+
+  // Portal positioning (prevents clipping by any parent overflow/stacking context)
+  useEffect(() => {
+    if (!isOpen) {
+      setMenuPos(null);
+      return;
+    }
+
+    const update = () => {
+      const btn = buttonRef.current;
+      if (!btn) return;
+      const r = btn.getBoundingClientRect();
+
+      const width = Math.max(240, r.width);
+      const left = Math.min(window.innerWidth - width - 8, Math.max(8, r.left));
+
+      // Always show ALL options (no forced tiny scrollbox). Flip upward if needed.
+      const estimatedH = 240;
+      const spaceBelow = window.innerHeight - r.bottom;
+      const top =
+        spaceBelow < estimatedH
+          ? Math.max(8, r.top - 8 - estimatedH)
+          : Math.min(window.innerHeight - estimatedH - 8, r.bottom + 8);
+
+      setMenuPos({ top, left, width });
+    };
+
+    update();
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+    };
+  }, [isOpen]);
 
   const handleSelect = (id: ScenarioId) => {
     setHasInteracted(true);
@@ -66,6 +107,7 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
     <div ref={containerRef} className="scenario-selector">
       {/* Main Control Capsule */}
       <button 
+        ref={buttonRef}
         className={`selector-capsule ${isOpen ? 'open' : ''} ${showHint ? 'hint-pulse' : ''}`}
         onClick={handleToggle}
         style={{
@@ -92,31 +134,51 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
         </div>
       </button>
 
-      {/* Dropdown Options — Slide Down */}
-      <div className={`selector-dropdown ${isOpen ? 'visible' : ''}`}>
-        {SCENARIOS.map((s, i) => (
-          <button
-            key={s.id}
-            className={`dropdown-option ${s.id === scenario ? 'active' : ''}`}
-            onClick={() => handleSelect(s.id)}
-            style={{ 
-              ['--option-color' as string]: SCENARIO_COLORS[s.id].primary,
-              transitionDelay: isOpen ? `${i * 40}ms` : '0ms'
-            }}
-          >
-            <div className="option-indicator" />
-            <div className="option-text">
-              <span className="option-name">{s.label}</span>
-              <span className="option-desc">{s.desc}</span>
-            </div>
-          </button>
-        ))}
-      </div>
+      {/* Dropdown Options — PORTAL overlay (prevents clipping) */}
+      {isOpen && menuPos
+        ? createPortal(
+            <div
+              ref={menuRef}
+              className="selector-dropdown-portal"
+              style={{
+                position: "fixed",
+                top: menuPos.top,
+                left: menuPos.left,
+                width: menuPos.width,
+                right: "auto",
+                zIndex: 2147483647,
+                maxHeight: "none",
+                overflow: "visible",
+                pointerEvents: "auto",
+              }}
+            >
+              {SCENARIOS.map((s, i) => (
+                <button
+                  key={s.id}
+                  className={`dropdown-option ${s.id === scenario ? "active" : ""}`}
+                  onClick={() => handleSelect(s.id)}
+                  style={{
+                    ["--option-color" as string]: SCENARIO_COLORS[s.id].primary,
+                    transitionDelay: `${i * 40}ms`,
+                  }}
+                >
+                  <div className="option-indicator" />
+                  <div className="option-text">
+                    <span className="option-name">{s.label}</span>
+                    <span className="option-desc">{s.desc}</span>
+                  </div>
+                </button>
+              ))}
+            </div>,
+            document.body
+          )
+        : null}
 
       <style>{`
         .scenario-selector {
           position: relative;
-          z-index: 100;
+          z-index: 4000; /* must overlay sliders + mountain */
+          isolation: isolate;
         }
 
         /* ============================================
@@ -126,19 +188,19 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
           position: relative;
           display: flex;
           align-items: center;
-          gap: 20px;
-          padding: 14px 22px;
-          min-width: 220px;
+          gap: 14px;
+          padding: 12px 16px;
+          min-width: 240px;
           background: linear-gradient(
             165deg,
             rgba(22, 28, 38, 0.95) 0%,
             rgba(14, 18, 26, 0.98) 50%,
             rgba(10, 14, 22, 0.99) 100%
           );
-          border: 1.5px solid rgba(255, 255, 255, 0.12);
-          border-radius: 16px;
+          border: 1px solid rgba(255, 255, 255, 0.10);
+          border-radius: 14px;
           cursor: pointer;
-          transition: all 0.3s ease;
+          transition: background 160ms ease, border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
           overflow: hidden;
         }
 
@@ -146,8 +208,8 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
           content: '';
           position: absolute;
           inset: 0;
-          border-radius: 16px;
-          padding: 1.5px;
+          border-radius: 14px;
+          padding: 1px;
           background: linear-gradient(
             145deg,
             rgba(255,255,255,0.2) 0%,
@@ -166,9 +228,9 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
         .capsule-glow {
           position: absolute;
           inset: -2px;
-          border-radius: 18px;
+          border-radius: 16px;
           background: radial-gradient(ellipse at center, var(--glow), transparent 70%);
-          opacity: 0.15;
+          opacity: 0.09;
           animation: ambient-pulse 7s ease-in-out infinite;
           pointer-events: none;
         }
@@ -185,8 +247,9 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
             rgba(18, 24, 34, 0.98) 50%,
             rgba(12, 16, 26, 0.99) 100%
           );
-          border-color: rgba(255, 255, 255, 0.2);
-          box-shadow: 0 0 30px var(--glow), 0 8px 32px rgba(0,0,0,0.4);
+          border-color: rgba(255, 255, 255, 0.16);
+          box-shadow: 0 10px 28px rgba(0,0,0,0.35);
+          transform: translateY(-1px);
         }
 
         .selector-capsule:hover .capsule-glow {
@@ -194,9 +257,9 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
         }
 
         .selector-capsule.open {
-          border-radius: 16px 16px 0 0;
+          border-radius: 14px 14px 0 0;
           border-color: var(--accent);
-          box-shadow: 0 0 30px var(--glow);
+          box-shadow: 0 10px 28px rgba(0,0,0,0.40);
         }
 
         /* Hint pulse — single cycle */
@@ -221,18 +284,18 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
         }
 
         .capsule-label {
-          font-size: 9px;
+          font-size: 10px;
           font-weight: 700;
-          letter-spacing: 2px;
+          letter-spacing: 0.16em;
           color: rgba(160, 180, 200, 0.8);
           text-transform: uppercase;
         }
 
         .capsule-value {
-          font-size: 18px;
-          font-weight: 700;
+          font-size: 16px;
+          font-weight: 800;
           color: var(--accent);
-          text-shadow: 0 0 20px var(--glow);
+          text-shadow: 0 0 12px rgba(34,211,238,0.20);
           letter-spacing: 0.5px;
         }
 
@@ -244,17 +307,17 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 32px;
-          height: 32px;
+          width: 28px;
+          height: 28px;
           margin-left: auto;
           color: rgba(200, 220, 240, 0.7);
-          transition: all 0.3s ease;
+          transition: color 160ms ease, transform 160ms ease;
           z-index: 2;
         }
 
         .capsule-arrow svg {
           filter: drop-shadow(0 0 4px rgba(255,255,255,0.3));
-          transition: transform 0.3s ease;
+          transition: transform 160ms ease;
         }
 
         .selector-capsule:hover .capsule-arrow {
@@ -292,27 +355,52 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
           top: 100%;
           left: 0;
           right: 0;
+          z-index: 4500;
           background: linear-gradient(
             180deg,
             rgba(14, 18, 26, 0.98) 0%,
             rgba(10, 14, 22, 0.99) 100%
           );
-          border: 1.5px solid rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.10);
           border-top: none;
-          border-radius: 0 0 16px 16px;
+          border-radius: 0 0 14px 14px;
           overflow: hidden;
           max-height: 0;
           opacity: 0;
-          transition: max-height 0.35s ease, opacity 0.25s ease;
+          transition: max-height 220ms ease, opacity 160ms ease;
           pointer-events: none;
         }
 
         .selector-dropdown.visible {
-          max-height: 300px;
+          max-height: 240px;
           opacity: 1;
           pointer-events: auto;
-          box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+          box-shadow: 0 14px 46px rgba(0,0,0,0.55);
+          overflow-y: auto;
+          overscroll-behavior: contain;
+          -webkit-overflow-scrolling: touch;
+          scroll-behavior: smooth;
         }
+        
+        /* Portal variant: always overlays and shows ALL options (no clipping, no hidden scroll). */
+        .selector-dropdown-portal {
+          background: linear-gradient(
+            180deg,
+            rgba(14, 18, 26, 0.98) 0%,
+            rgba(10, 14, 22, 0.99) 100%
+          );
+          border: 1px solid rgba(255, 255, 255, 0.10);
+          border-radius: 14px;
+          box-shadow: 0 14px 46px rgba(0,0,0,0.55);
+          pointer-events: auto;
+        }
+
+        .selector-dropdown-portal .dropdown-option {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        .selector-dropdown.visible::-webkit-scrollbar { width: 0px; height: 0px; }
 
         /* ============================================
            OPTIONS
@@ -320,13 +408,13 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
         .dropdown-option {
           display: flex;
           align-items: center;
-          gap: 14px;
+          gap: 10px;
           width: 100%;
-          padding: 14px 20px;
+          padding: 10px 14px;
           background: transparent;
           border: none;
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: background 120ms ease, transform 120ms ease, opacity 120ms ease;
           opacity: 0;
           transform: translateY(-8px);
         }
@@ -337,7 +425,7 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
         }
 
         .dropdown-option:hover {
-          background: rgba(255, 255, 255, 0.04);
+          background: rgba(255, 255, 255, 0.03);
         }
 
         .dropdown-option.active {
@@ -345,19 +433,18 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
         }
 
         .option-indicator {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
+          width: 3px;
+          height: 22px;
+          border-radius: 999px;
           background: var(--option-color);
-          opacity: 0.4;
-          transition: all 0.2s ease;
-          box-shadow: 0 0 8px var(--option-color);
+          opacity: 0.45;
+          transition: opacity 120ms ease, height 120ms ease;
         }
 
         .dropdown-option:hover .option-indicator,
         .dropdown-option.active .option-indicator {
           opacity: 1;
-          transform: scale(1.2);
+          height: 28px;
         }
 
         .option-text {
@@ -368,8 +455,8 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
         }
 
         .option-name {
-          font-size: 14px;
-          font-weight: 600;
+          font-size: 12px;
+          font-weight: 700;
           color: rgba(255, 255, 255, 0.9);
         }
 
@@ -378,7 +465,7 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
         }
 
         .option-desc {
-          font-size: 11px;
+          font-size: 10px;
           color: rgba(160, 180, 200, 0.6);
         }
       `}</style>

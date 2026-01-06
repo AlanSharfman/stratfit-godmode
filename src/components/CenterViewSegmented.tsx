@@ -35,7 +35,7 @@ export default function CenterViewSegmented({ value, onChange, className }: Prop
               type="button"
               onClick={() => onChange(t.key)}
               className={[
-                "h-8 rounded-xl px-5 text-[10px] font-semibold uppercase tracking-widest transition-all duration-150",
+                "h-8 rounded-xl px-6 text-[11px] font-semibold uppercase tracking-widest transition-all duration-150",
                 active
                   ? "text-cyan-300 border border-cyan-400/60 bg-linear-to-br from-cyan-950/50 to-cyan-900/30 shadow-[0_0_16px_rgba(34,211,238,0.25),inset_0_0_0_1px_rgba(34,211,238,0.2)]"
                   : "text-slate-400 hover:text-slate-200 hover:bg-white/3 border border-transparent",

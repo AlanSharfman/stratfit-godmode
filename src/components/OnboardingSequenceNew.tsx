@@ -1,4 +1,7 @@
-import React from "react";
-export default function OnboardingSequenceNew() {
+export type OnboardingSequenceNewProps = {
+  onComplete?: () => void;
+};
+
+export default function OnboardingSequenceNew(_props: OnboardingSequenceNewProps) {
   return null;
 }

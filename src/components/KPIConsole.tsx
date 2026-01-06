@@ -8,11 +8,13 @@
 // STRATFIT — Executive Command Console
 // World-class KPI instrument panel with terrain + lever linkage
 
-import React, { useState, useCallback, memo } from "react";
+import React, { useEffect, useState, useCallback, memo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useScenarioStore, SCENARIO_COLORS } from "@/state/scenarioStore";
 import BurnTrendBars from "./BurnTrendBars";
 import type { LeverId } from "@/logic/mountainPeakModel";
+import { onCausal } from "@/ui/causalEvents";
+import KPIBezel from "@/components/kpi/KPIBezel";
 
 // ============================================================================
 // KPI CONFIGURATION — CANONICAL SET (LOCKED)
@@ -29,70 +31,85 @@ interface KPIConfig {
 }
 
 const KPI_CONFIG: KPIConfig[] = [
-  { 
-    id: "cash", 
-    label: "CASH POSITION", 
-    kpiKey: "cashPosition", 
-    unit: "", 
-    widgetType: "globe", 
+  {
+    id: "cash",
+    label: "CASH POSITION",
+    kpiKey: "cashPosition",
+    unit: "",
+    widgetType: "globe",
     accentColor: "#22d3ee",
-    relatedLevers: ["operatingExpenses", "fundingInjection"]
+    relatedLevers: ["operatingExpenses", "fundingInjection"],
   },
-  { 
-    id: "burn", 
-    label: "BURN RATE", 
-    kpiKey: "burnQuality", 
-    unit: "/mo", 
-    widgetType: "gauge", 
-    accentColor: "#f97316",
-    relatedLevers: ["headcount", "cashSensitivity", "operatingExpenses"]
+  {
+    id: "burn",
+    label: "BURN RATE",
+    kpiKey: "burnQuality",
+    unit: "/mo",
+    widgetType: "gauge",
+    accentColor: "#ef4444", // NO ORANGE
+    relatedLevers: ["headcount", "cashSensitivity", "operatingExpenses"],
   },
-  { 
-    id: "runway", 
-    label: "RUNWAY", 
-    kpiKey: "runway", 
-    unit: "", 
-    widgetType: "bar", 
+  {
+    id: "runway",
+    label: "RUNWAY",
+    kpiKey: "runway",
+    unit: "",
+    widgetType: "bar",
     accentColor: "#22d3ee",
-    relatedLevers: ["operatingExpenses", "headcount"]
+    relatedLevers: ["operatingExpenses", "headcount"],
   },
-  { 
-    id: "arr", 
-    label: "ARR", 
-    kpiKey: "momentum", 
-    unit: "", 
-    widgetType: "arrow", 
+  {
+    id: "arr",
+    label: "ARR",
+    kpiKey: "momentum",
+    unit: "",
+    widgetType: "arrow",
     accentColor: "#34d399",
-    relatedLevers: ["revenueGrowth", "pricingAdjustment", "marketingSpend"]
+    relatedLevers: ["revenueGrowth", "pricingAdjustment", "marketingSpend"],
   },
-  { 
-    id: "margin", 
-    label: "GROSS MARGIN", 
-    kpiKey: "earningsPower", 
-    unit: "", 
-    widgetType: "chart", 
+  {
+    id: "arrGrowth",
+    label: "ARR GROWTH",
+    kpiKey: "arrGrowthPct",
+    unit: "",
+    widgetType: "arrow",
+    accentColor: "#22d3ee",
+    relatedLevers: ["revenueGrowth", "pricingAdjustment", "marketingSpend"],
+  },
+  {
+    id: "margin",
+    label: "GROSS MARGIN",
+    kpiKey: "earningsPower",
+    unit: "",
+    widgetType: "chart",
     accentColor: "#34d399",
-    relatedLevers: ["pricingAdjustment", "cashSensitivity"]
+    relatedLevers: ["pricingAdjustment", "cashSensitivity"],
   },
-  { 
-    id: "risk", 
-    label: "RISK SCORE", 
-    kpiKey: "riskIndex", 
-    unit: "", 
-    widgetType: "dial", 
+  {
+    id: "risk",
+    label: "RISK SCORE",
+    kpiKey: "riskIndex",
+    unit: "",
+    widgetType: "dial",
     accentColor: "#ef4444",
-    relatedLevers: ["churnSensitivity", "fundingInjection"]
+    relatedLevers: ["churnSensitivity", "fundingInjection"],
   },
-  { 
-    id: "value", 
-    label: "ENTERPRISE VALUE", 
-    kpiKey: "enterpriseValue", 
-    unit: "", 
-    widgetType: "ring", 
+  {
+    id: "value",
+    label: "ENTERPRISE VALUE",
+    kpiKey: "enterpriseValue",
+    unit: "",
+    widgetType: "ring",
     accentColor: "#a78bfa",
-    relatedLevers: ["pricingAdjustment", "revenueGrowth"]
+    relatedLevers: ["pricingAdjustment", "revenueGrowth"],
   },
 ];
+
+const KPI_GROUPS = [
+  { title: "RESILIENCE", items: ["cash", "burn", "runway"] as const },
+  { title: "MOMENTUM", items: ["arr", "arrGrowth"] as const },
+  { title: "QUALITY", items: ["margin", "risk", "value"] as const },
+] as const;
 
 const EMPTY_KPIS = Object.freeze({});
 
@@ -420,9 +437,11 @@ function InstrumentWidget({
 interface KPIInstrumentCardProps {
   cfg: KPIConfig;
   data: { value: number; display: string } | undefined;
+  secondaryLine?: string | null;
   state: "idle" | "hover" | "active";
   isDimmed: boolean;
   accentColor: string;
+  pulseColor?: string | null;
   onClick: () => void;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
@@ -433,9 +452,11 @@ interface KPIInstrumentCardProps {
 const KPIInstrumentCard = memo(function KPIInstrumentCard({
   cfg,
   data,
+  secondaryLine,
   state,
   isDimmed,
   accentColor,
+  pulseColor,
   onClick,
   onMouseEnter,
   onMouseLeave,
@@ -444,12 +465,13 @@ const KPIInstrumentCard = memo(function KPIInstrumentCard({
 }: KPIInstrumentCardProps) {
   return (
     <div
-      className={`kpi-instrument ${state} ${isDimmed ? "dimmed" : ""}`}
+      className={`kpi-instrument ${state} ${isDimmed ? "dimmed" : ""} ${pulseColor ? "pulse" : ""}`}
       onClick={onClick}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       style={{
         ["--kpi-accent" as string]: accentColor,
+        ["--kpi-pulse" as string]: pulseColor ?? accentColor,
       }}
     >
       {/* Metallic border frame */}
@@ -465,6 +487,7 @@ const KPIInstrumentCard = memo(function KPIInstrumentCard({
           <div className="instrument-value-row">
             <span className="value-display">{data?.display ?? "—"}</span>
             {cfg.unit && <span className="value-unit">{cfg.unit}</span>}
+            {secondaryLine ? <span className="value-secondary">{secondaryLine}</span> : null}
           </div>
           
           {/* Visual widget */}
@@ -509,11 +532,41 @@ export default function KPIConsole() {
   
   const scenarioColor = SCENARIO_COLORS[scenario].primary;
   const [localHoverIndex, setLocalHoverIndex] = useState<number | null>(null);
+  const [pulses, setPulses] = useState<Record<number, string>>({});
 
   // Stable callback for clearing local hover
   const handleMouseLeave = useCallback(() => setLocalHoverIndex(null), []);
 
   const isAnyActive = hoveredKpiIndex !== null;
+
+  // CAUSAL HIGHLIGHT — KPI echo pulse (delayed ~50ms after user action)
+  useEffect(() => {
+    const off = onCausal((detail) => {
+      const indices =
+        detail.source === "scenario_switch"
+          ? KPI_CONFIG.map((_, i) => i)
+          : (detail.kpiIndices ?? []);
+      if (!indices.length) return;
+
+      window.setTimeout(() => {
+        setPulses((prev) => {
+          const next = { ...prev };
+          for (const i of indices) next[i] = detail.color;
+          return next;
+        });
+
+        window.setTimeout(() => {
+          setPulses((prev) => {
+            const next = { ...prev };
+            for (const i of indices) delete next[i];
+            return next;
+          });
+        }, 420);
+      }, 50);
+    });
+
+    return off;
+  }, []);
 
   return (
     <div className="kpi-command-console">
@@ -522,319 +575,58 @@ export default function KPIConsole() {
         {/* Ambient backdrop layer */}
         <div className="console-backdrop" />
         
-        {/* KPI Instrument Grid */}
-        <div className="instrument-grid">
-          {KPI_CONFIG.map((cfg, index) => {
-            const data = kpiValues[cfg.kpiKey as keyof typeof kpiValues];
-            const isActive = hoveredKpiIndex === index;
-            const isHovered = localHoverIndex === index && !isActive;
-            const isDimmed = isAnyActive && !isActive;
-            const state: "idle" | "hover" | "active" = isActive ? "active" : isHovered ? "hover" : "idle";
+        <div className="kpi-groups">
+          {KPI_GROUPS.map((g) => {
+            const cols = g.items.length === 2 ? 2 : 3;
+            const sizeClass = g.title === "MOMENTUM" ? "sf-kpi--narrow" : "sf-kpi--wide";
 
             return (
-              <KPIInstrumentCard
-                key={cfg.id}
-                cfg={cfg}
-                data={data}
-                state={state}
-                isDimmed={isDimmed}
-                accentColor={isActive ? scenarioColor : cfg.accentColor}
-                onClick={() => setHoveredKpiIndex(hoveredKpiIndex === index ? null : index)}
-                onMouseEnter={() => setLocalHoverIndex(index)}
-                onMouseLeave={handleMouseLeave}
-                burnAmount={cfg.id === "burn" ? (kpiValues.burnQuality?.value ?? 0) * 1000 : undefined}
-                cashAmount={cfg.id === "burn" ? (kpiValues.cashPosition?.value ?? 0) * 100000 : undefined}
-              />
+              <div key={g.title} className={sizeClass} data-kpi-group={g.title}>
+                <KPIBezel
+                  title={g.title}
+                  columns={cols as 2 | 3}
+                >
+                  {g.items.map((id) => {
+                    const cfg = KPI_CONFIG.find((k) => k.id === id)!;
+                    const index = KPI_CONFIG.findIndex((k) => k.id === cfg.id);
+                    const data = kpiValues[cfg.kpiKey as keyof typeof kpiValues];
+                    const isActive = hoveredKpiIndex === index;
+                    const isHovered = localHoverIndex === index && !isActive;
+                    const isDimmed = isAnyActive && !isActive;
+                    const state: "idle" | "hover" | "active" = isActive
+                      ? "active"
+                      : isHovered
+                        ? "hover"
+                        : "idle";
+
+                    return (
+                      <KPIInstrumentCard
+                        key={cfg.id}
+                        cfg={cfg}
+                        data={data}
+                        secondaryLine={
+                          cfg.id === "arrGrowth"
+                            ? `Δ ARR ${kpiValues?.arrDelta?.display ?? "—"}`
+                            : null
+                        }
+                        state={state}
+                        isDimmed={isDimmed}
+                        accentColor={isActive ? scenarioColor : cfg.accentColor}
+                        pulseColor={pulses[index] ?? null}
+                        onClick={() => setHoveredKpiIndex(hoveredKpiIndex === index ? null : index)}
+                        onMouseEnter={() => setLocalHoverIndex(index)}
+                        onMouseLeave={handleMouseLeave}
+                        burnAmount={cfg.id === "burn" ? (kpiValues.burnQuality?.value ?? 0) * 1000 : undefined}
+                        cashAmount={cfg.id === "burn" ? (kpiValues.cashPosition?.value ?? 0) * 100000 : undefined}
+                      />
+                    );
+                  })}
+                </KPIBezel>
+              </div>
             );
           })}
         </div>
       </div>
-
-      <style>{`
-        /* ============================================
-           COMMAND CONSOLE — TOP LEVEL
-           ============================================ */
-        .kpi-command-console {
-          width: 100%;
-          padding: 0;
-          position: relative;
-        }
-
-        /* Container with premium glass morphism */
-        .console-container {
-          position: relative;
-          margin: 0 auto;
-          max-width: 1400px;
-          padding: 16px 24px 18px;
-          background: linear-gradient(
-            168deg,
-            rgba(12, 16, 24, 0.96) 0%,
-            rgba(8, 12, 18, 0.98) 50%,
-            rgba(6, 8, 12, 1) 100%
-          );
-          border-radius: 20px;
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          box-shadow: 
-            inset 0 1px 0 rgba(255, 255, 255, 0.04),
-            inset 0 -1px 0 rgba(0, 0, 0, 0.4),
-            0 8px 32px rgba(0, 0, 0, 0.6),
-            0 2px 8px rgba(0, 0, 0, 0.3);
-          backdrop-filter: blur(12px);
-        }
-
-        /* Ambient backdrop with subtle radial gradient */
-        .console-backdrop {
-          position: absolute;
-          inset: 0;
-          border-radius: 20px;
-          background: radial-gradient(
-            ellipse 70% 50% at 50% 40%,
-            rgba(34, 211, 238, 0.03) 0%,
-            transparent 70%
-          );
-          pointer-events: none;
-        }
-
-        /* ============================================
-           INSTRUMENT GRID
-           ============================================ */
-        .instrument-grid {
-          display: flex;
-          gap: 16px;
-          align-items: stretch;
-          position: relative;
-          z-index: 2;
-        }
-
-        /* ============================================
-           KPI INSTRUMENT — INDIVIDUAL CARD
-           ============================================ */
-        .kpi-instrument {
-          position: relative;
-          flex: 1;
-          min-width: 0;
-          cursor: pointer;
-          transition: 
-            transform 250ms cubic-bezier(0.22, 1, 0.36, 1),
-            opacity 200ms ease,
-            filter 200ms ease;
-        }
-
-        /* Hover state: subtle lift */
-        .kpi-instrument.hover {
-          transform: translateY(-3px);
-        }
-
-        /* Active state: enlarge + lift */
-        .kpi-instrument.active {
-          transform: translateY(-6px) scale(1.04);
-          z-index: 10;
-        }
-
-        /* Dimmed state: fade others when one is active */
-        .kpi-instrument.dimmed {
-          opacity: 0.45;
-          filter: grayscale(0.3);
-          transform: scale(0.98);
-        }
-
-        /* ============================================
-           INSTRUMENT BORDER — METALLIC FRAME
-           ============================================ */
-        .instrument-border {
-          position: relative;
-          border-radius: 16px;
-          padding: 2px;
-          background: linear-gradient(
-            160deg,
-            rgba(255, 255, 255, 0.18) 0%,
-            rgba(255, 255, 255, 0.05) 25%,
-            rgba(0, 0, 0, 0.15) 50%,
-            rgba(255, 255, 255, 0.05) 75%,
-            rgba(255, 255, 255, 0.15) 100%
-          );
-          transition: background 250ms ease;
-        }
-
-        .kpi-instrument.active .instrument-border {
-          background: linear-gradient(
-            160deg,
-            var(--kpi-accent) 0%,
-            rgba(255, 255, 255, 0.12) 25%,
-            rgba(0, 0, 0, 0.2) 50%,
-            rgba(255, 255, 255, 0.12) 75%,
-            var(--kpi-accent) 100%
-          );
-        }
-
-        /* ============================================
-           INSTRUMENT WELL — RECESSED SURFACE
-           ============================================ */
-        .instrument-well {
-          position: relative;
-          background: linear-gradient(
-            172deg,
-            rgba(18, 24, 34, 0.98) 0%,
-            rgba(12, 16, 24, 1) 40%,
-            rgba(8, 10, 16, 1) 100%
-          );
-          border-radius: 14px;
-          padding: 14px 16px 12px;
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-          box-shadow: 
-            inset 0 2px 8px rgba(0, 0, 0, 0.5),
-            inset 0 -1px 0 rgba(255, 255, 255, 0.03);
-          min-height: 140px;
-        }
-
-        /* ============================================
-           INSTRUMENT CONTENT
-           ============================================ */
-        .instrument-label-row {
-          display: flex;
-          align-items: center;
-          min-height: 12px;
-        }
-
-        .instrument-label {
-          font-size: 9px;
-          font-weight: 800;
-          letter-spacing: 2.2px;
-          text-transform: uppercase;
-          color: rgba(140, 160, 180, 0.7);
-          transition: color 200ms ease;
-        }
-
-        .kpi-instrument.active .instrument-label {
-          color: rgba(200, 220, 240, 1);
-        }
-
-        .instrument-value-row {
-          display: flex;
-          align-items: baseline;
-          gap: 4px;
-          margin-top: 2px;
-        }
-
-        .value-display {
-          font-size: 26px;
-          font-weight: 900;
-          color: #ffffff;
-          letter-spacing: -0.8px;
-          line-height: 1;
-          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-          transition: all 250ms cubic-bezier(0.22, 1, 0.36, 1);
-        }
-
-        .kpi-instrument.active .value-display {
-          color: var(--kpi-accent);
-          text-shadow: 
-            0 0 20px var(--kpi-accent),
-            0 2px 4px rgba(0, 0, 0, 0.6);
-        }
-
-        .value-unit {
-          font-size: 11px;
-          font-weight: 700;
-          color: rgba(120, 140, 160, 0.65);
-          margin-left: 2px;
-        }
-
-        .instrument-visual {
-          flex: 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          min-height: 58px;
-          margin-top: 4px;
-        }
-
-        .instrument-svg {
-          width: 100%;
-          height: auto;
-          max-height: 60px;
-        }
-
-        /* ============================================
-           NEON GLOW LAYER
-           ============================================ */
-        .instrument-glow {
-          position: absolute;
-          inset: -6px;
-          border-radius: 22px;
-          background: radial-gradient(
-            ellipse at center,
-            var(--kpi-accent),
-            transparent 65%
-          );
-          opacity: 0;
-          transition: opacity 250ms cubic-bezier(0.22, 1, 0.36, 1);
-          pointer-events: none;
-          z-index: -1;
-        }
-
-        .kpi-instrument.hover .instrument-glow {
-          opacity: 0.15;
-        }
-
-        .kpi-instrument.active .instrument-glow {
-          opacity: 0.35;
-        }
-
-        /* ============================================
-           FOCUS RING — ACTIVE INDICATOR
-           ============================================ */
-        .focus-ring {
-          position: absolute;
-          inset: -3px;
-          border-radius: 19px;
-          border: 2px solid var(--kpi-accent);
-          opacity: 0;
-          animation: focusRingPulse 2s ease-in-out infinite;
-          pointer-events: none;
-        }
-
-        @keyframes focusRingPulse {
-          0%, 100% { 
-            opacity: 0.4;
-            transform: scale(1);
-          }
-          50% { 
-            opacity: 0.7;
-            transform: scale(1.01);
-          }
-        }
-
-        /* ============================================
-           RESPONSIVE
-           ============================================ */
-        @media (max-width: 1400px) {
-          .instrument-grid {
-            gap: 14px;
-          }
-          .value-display {
-            font-size: 24px;
-          }
-        }
-
-        @media (max-width: 1200px) {
-          .instrument-grid {
-            gap: 12px;
-          }
-          .console-container {
-            padding: 14px 20px 16px;
-          }
-          .value-display {
-            font-size: 22px;
-          }
-          .instrument-label {
-            font-size: 8px;
-            letter-spacing: 1.8px;
-          }
-        }
-      `}</style>
     </div>
   );
 }

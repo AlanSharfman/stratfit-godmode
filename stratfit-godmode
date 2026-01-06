@@ -1,0 +1,30 @@
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m447[m[36m:[m      className={`[1;31mkpi-instrument[m ${state} ${isDimmed ? "dimmed" : ""}`}
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m612[m[36m:[m        .[1;31mkpi-instrument[m {
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m624[m[36m:[m        .[1;31mkpi-instrument[m.hover {
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m629[m[36m:[m        .[1;31mkpi-instrument[m.active {
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m635[m[36m:[m        .[1;31mkpi-instrument[m.dimmed {
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m659[m[36m:[m        .[1;31mkpi-instrument[m.active .instrument-border {
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m710[m[36m:[m        .[1;31mkpi-instrument[m.active .instrument-label {
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m731[m[36m:[m        .[1;31mkpi-instrument[m.active .value-display {
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m778[m[36m:[m        .[1;31mkpi-instrument[m.hover .instrument-glow {
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m782[m[36m:[m        .[1;31mkpi-instrument[m.active .instrument-glow {
+[35msrc/components/_revive/corrupt_components/components/KPIConsole.tsx[m[36m:[m[32m447[m[36m:[m      className={`[1;31mkpi-instrument[m ${state} ${isDimmed ? "dimmed" : ""}`}
+[35msrc/components/_revive/corrupt_components/components/KPIConsole.tsx[m[36m:[m[32m612[m[36m:[m        .[1;31mkpi-instrument[m {
+[35msrc/components/_revive/corrupt_components/components/KPIConsole.tsx[m[36m:[m[32m624[m[36m:[m        .[1;31mkpi-instrument[m.hover {
+[35msrc/components/_revive/corrupt_components/components/KPIConsole.tsx[m[36m:[m[32m629[m[36m:[m        .[1;31mkpi-instrument[m.active {
+[35msrc/components/_revive/corrupt_components/components/KPIConsole.tsx[m[36m:[m[32m635[m[36m:[m        .[1;31mkpi-instrument[m.dimmed {
+[35msrc/components/_revive/corrupt_components/components/KPIConsole.tsx[m[36m:[m[32m659[m[36m:[m        .[1;31mkpi-instrument[m.active .instrument-border {
+[35msrc/components/_revive/corrupt_components/components/KPIConsole.tsx[m[36m:[m[32m710[m[36m:[m        .[1;31mkpi-instrument[m.active .instrument-label {
+[35msrc/components/_revive/corrupt_components/components/KPIConsole.tsx[m[36m:[m[32m731[m[36m:[m        .[1;31mkpi-instrument[m.active .value-display {
+[35msrc/components/_revive/corrupt_components/components/KPIConsole.tsx[m[36m:[m[32m778[m[36m:[m        .[1;31mkpi-instrument[m.hover .instrument-glow {
+[35msrc/components/_revive/corrupt_components/components/KPIConsole.tsx[m[36m:[m[32m782[m[36m:[m        .[1;31mkpi-instrument[m.active .instrument-glow {
+[35msrc/index.css[m[36m:[m[32m319[m[36m:[m.[1;31mkpi-instrument[m{
+[35msrc/index.css[m[36m:[m[32m325[m[36m:[m.[1;31mkpi-instrument[m:hover{ transform: translateY(-1px); }
+[35msrc/index.css[m[36m:[m[32m339[m[36m:[m.[1;31mkpi-instrument[m.active .instrument-border{
+[35msrc/index.css[m[36m:[m[32m387[m[36m:[m.[1;31mkpi-instrument[m.active .instrument-glow{ opacity:.22; }
+[35msrc/index.css[m[36m:[m[32m669[m[36m:[m.kpi-command-console .[1;31mkpi-instrument[m .instrument-border {
+[35msrc/index.css[m[36m:[m[32m684[m[36m:[m.kpi-command-console .[1;31mkpi-instrument[m.active .instrument-border {
+[35msrc/index.css[m[36m:[m[32m696[m[36m:[m.kpi-command-console .[1;31mkpi-instrument[m .instrument-well {
+[35msrc/index.css[m[36m:[m[32m708[m[36m:[m.kpi-command-console .[1;31mkpi-instrument[m .instrument-glow {
+[35msrc/index.css[m[36m:[m[32m713[m[36m:[m.kpi-command-console .[1;31mkpi-instrument[m.active .instrument-glow {
+[35msrc/index.css[m[36m:[m[32m718[m[36m:[m.kpi-command-console .[1;31mkpi-instrument[m .focus-ring {

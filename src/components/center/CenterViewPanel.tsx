@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import CenterViewSegmented, { CenterView } from "@/components/CenterViewSegmented";
 import ScenarioMountain from "@/components/mountain/ScenarioMountain";
 import ScenarioDeltaSnapshot from "@/components/ScenarioDeltaSnapshot";
 import { useScenario, useDataPoints, useScenarioStore } from "@/state/scenarioStore";
+import { onCausal } from "@/ui/causalEvents";
 
 import BriefingPanel from "@/components/briefing/BriefingPanel";
 import {
@@ -123,7 +124,11 @@ function SpeakerIcon({
   );
 }
 
-export default function CenterViewPanel() {
+export default function CenterViewPanel(props: {
+  scenarioControl?: React.ReactNode;
+  tourControl?: React.ReactNode;
+}) {
+  const { scenarioControl, tourControl } = props;
   const [view, setView] = useState<CenterView>("terrain");
   const scenario = useScenario();
   const dataPoints = useDataPoints();
@@ -160,29 +165,45 @@ export default function CenterViewPanel() {
     if (next) openBriefing();
   };
 
+  // CAUSAL HIGHLIGHT — Mountain band (Phase 1, UI-only)
+  const [bandNonce, setBandNonce] = useState(0);
+  const [bandStyle, setBandStyle] = useState<"solid" | "wash">("solid");
+  const [bandColor, setBandColor] = useState("rgba(34,211,238,0.18)");
+
+  useEffect(() => {
+    const off = onCausal((detail) => {
+      setBandStyle(detail.bandStyle);
+      setBandColor(detail.color);
+      setBandNonce((n) => n + 1);
+    });
+    return off;
+  }, []);
+
   return (
-    <div className="relative h-full w-full rounded-xl bg-black/40 backdrop-blur-sm border border-white/5 overflow-hidden">
+    <div className="relative flex h-full w-full flex-col rounded-xl bg-black/40 backdrop-blur-sm border border-white/5 overflow-hidden">
       {/* Command Bar */}
-      <div className="px-6 pt-4 pb-3 border-b border-white/5 bg-gradient-to-b from-black/30 to-transparent">
-        <div className="flex items-center justify-between">
-          <CenterViewSegmented value={view} onChange={setView} />
+      <div className="relative shrink-0 px-6 pt-4 pb-3 border-b border-white/5 bg-gradient-to-b from-black/30 to-transparent">
+        {scenarioControl || tourControl ? (
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+            <div className="justify-self-start">
+              <CenterViewSegmented value={view} onChange={setView} />
+            </div>
+            <div className="justify-self-center">
+              {scenarioControl ? <div className="min-w-[260px] scale-[1.08]">{scenarioControl}</div> : null}
+            </div>
+            <div className="justify-self-end flex items-center scale-[1.08]">
+              {tourControl}
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-start">
+            <CenterViewSegmented value={view} onChange={setView} />
+          </div>
+        )}
 
-          <button
-            type="button"
-            onClick={openBriefing}
-            className="group relative inline-flex items-center gap-2 rounded-xl border border-slate-600/40 bg-slate-900/40 px-3 py-2 text-[10px] font-medium uppercase tracking-wide text-slate-400 backdrop-blur-sm transition-all duration-150 hover:border-slate-500/60 hover:bg-slate-800/60 hover:text-slate-200"
-            title="View help for this mode"
-          >
-            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-              <line x1="12" y1="17" x2="12.01" y2="17" />
-            </svg>
-            <span className="hidden sm:inline">Help</span>
-          </button>
-        </div>
-
+        {/* IMPORTANT: Briefing must not steal mountain height (overlay only) */}
         <BriefingPanel
+          className="absolute left-6 right-6 top-full z-20 mt-3"
           briefingKey={briefingKey}
           open={briefingOpen}
           soundEnabled={soundOn}
@@ -193,7 +214,10 @@ export default function CenterViewPanel() {
       </div>
 
       {/* Center Stage */}
-      <div className="relative h-[calc(100%-68px)] w-full p-4">
+      {/* STRATFIT RULE:
+          Mountain dominance locked at ~65% viewport height.
+          Do not adjust without design sign-off. */}
+      <div className="mountain-stage relative w-full flex-1 p-4" data-tour="mountain">
         {view === "terrain" && (
           <div className="relative h-full w-full overflow-hidden rounded-3xl border border-slate-700/40 bg-black shadow-[0_8px_32px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.03)]">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.4)_60%,rgba(0,0,0,0.85)_100%)]" />
@@ -201,6 +225,15 @@ export default function CenterViewPanel() {
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
             <div className="pointer-events-none absolute inset-0 rounded-3xl shadow-[inset_0_0_0_1px_rgba(34,211,238,0.06)]" />
             
+            {/* Causal highlight band (no labels) — only after explicit user action */}
+            {bandNonce > 0 ? (
+              <div
+                key={bandNonce}
+                className={`sf-causal-band play ${bandStyle === "wash" ? "wash" : ""}`}
+                style={{ ["--sf-causal" as string]: bandColor } as React.CSSProperties}
+              />
+            ) : null}
+
             <div className="relative h-full w-full">
               <ScenarioMountain 
                 scenario={scenario} 

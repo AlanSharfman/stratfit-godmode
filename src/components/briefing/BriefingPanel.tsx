@@ -109,6 +109,7 @@ export default function BriefingPanel({
   onClose,
   onSeen,
   forceNonce,
+  className,
 }: {
   briefingKey: BriefingKey;
   open: boolean;
@@ -119,6 +120,7 @@ export default function BriefingPanel({
    * Changing this value forces a re-type (used for hover re-trigger).
    */
   forceNonce: number;
+  className?: string;
 }) {
   const briefing = BRIEFINGS[briefingKey];
   const fullText = useMemo(() => briefing.lines.join("\n"), [briefing.lines]);
@@ -174,7 +176,12 @@ export default function BriefingPanel({
   if (!open) return null;
 
   return (
-    <div className="mt-3 max-w-2xl rounded-lg border border-white/10 bg-black/40 px-4 py-3">
+    <div
+      className={[
+        "max-w-2xl rounded-lg border border-white/10 bg-black/40 px-4 py-3",
+        className ?? "",
+      ].join(" ")}
+    >
       <div className="flex items-center justify-between gap-3">
         <div className="text-[11px] font-semibold tracking-wide text-white/70">
           {briefing.title}

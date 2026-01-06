@@ -3,9 +3,11 @@
 
 import React, { useMemo, useCallback, memo, useRef } from "react";
 import Slider from "./ui/Slider";
+import SliderInfoTooltip from "./ui/SliderInfoTooltip";
 import { useShallow } from "zustand/react/shallow";
 import { useScenarioStore } from "@/state/scenarioStore";
 import type { LeverId } from "@/logic/mountainPeakModel";
+import { emitCausal } from "@/ui/causalEvents";
 
 // ============================================================================
 // TYPES
@@ -89,23 +91,32 @@ const SliderRow = memo(function SliderRow({
   onChange,
 }: SliderRowProps) {
   const isHighlighted = highlightColor !== null;
-  const [showTooltip, setShowTooltip] = React.useState(false);
+  const [tooltipRect, setTooltipRect] = React.useState<DOMRect | null>(null);
 
   return (
     <div 
       className={`slider-row ${isHighlighted ? "highlighted" : ""}`}
       style={{ "--highlight-color": highlightColor || "#22d3ee" } as React.CSSProperties}
-      onMouseEnter={() => setShowTooltip(true)}
-      onMouseLeave={() => setShowTooltip(false)}
     >
       <div className="slider-header">
         <span className="slider-label">
           {slider.label}
           {slider.tooltip && (
-            <svg className="info-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <path d="M12 16v-4M12 8h.01" />
-            </svg>
+            <span
+              className="info-icon"
+              onMouseEnter={(e) => setTooltipRect(e.currentTarget.getBoundingClientRect())}
+              onMouseLeave={() => setTooltipRect(null)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setTooltipRect((prev) => (prev ? null : e.currentTarget.getBoundingClientRect()));
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 16v-4M12 8h.01" />
+              </svg>
+            </span>
           )}
         </span>
         <span className="slider-value">
@@ -113,12 +124,12 @@ const SliderRow = memo(function SliderRow({
         </span>
       </div>
       
-      {slider.tooltip && showTooltip && (
-        <div className="lever-tooltip">
+      {slider.tooltip && (
+        <SliderInfoTooltip anchorRect={tooltipRect}>
           <div className="tooltip-title">{slider.label}</div>
           <div className="tooltip-description">{slider.tooltip.description}</div>
           <div className="tooltip-impact">{slider.tooltip.impact}</div>
-        </div>
+        </SliderInfoTooltip>
       )}
       
       <Slider
@@ -163,21 +174,6 @@ const SliderRow = memo(function SliderRow({
 
         .slider-row:hover .info-icon {
           opacity: 0.7;
-        }
-
-        .lever-tooltip {
-          position: absolute;
-          top: -8px;
-          left: calc(100% + 12px);
-          width: 280px;
-          background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.98));
-          border: 1px solid rgba(148, 163, 184, 0.2);
-          border-radius: 12px;
-          padding: 12px;
-          z-index: 1000;
-          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(148, 163, 184, 0.1);
-          backdrop-filter: blur(12px);
-          pointer-events: none;
         }
 
         .tooltip-title {
@@ -369,6 +365,7 @@ export function ControlDeck(props: {
   onChange: (id: LeverId | "__end__", value: number) => void;
 }) {
   const leverReleaseTimeoutRef = React.useRef<number | null>(null);
+  const lastLeverIdRef = React.useRef<LeverId | null>(null);
   const { boxes, onChange } = props;
 
   // Consolidated store selectors to prevent rerender cascades
@@ -434,6 +431,7 @@ export function ControlDeck(props: {
 
   const handleSliderStart = useCallback(
     (id: LeverId, value: number) => {
+      lastLeverIdRef.current = id;
       const intensity = computeIntensity01(id, value);
       // Cancel any pending release
       if (leverReleaseTimeoutRef.current !== null) {
@@ -446,6 +444,35 @@ export function ControlDeck(props: {
   );
 
   const handleSliderEnd = useCallback(() => {
+    // CAUSAL HIGHLIGHT — fire ONLY on release
+    const lastId = lastLeverIdRef.current;
+    if (lastId) {
+      const leverType: "growth" | "efficiency" | "risk" | "pricing" =
+        lastId === "pricingAdjustment"
+          ? "pricing"
+          : lastId === "operatingExpenses" || lastId === "headcount" || lastId === "cashSensitivity"
+            ? "efficiency"
+            : lastId === "churnSensitivity" || lastId === "fundingInjection"
+              ? "risk"
+              : "growth";
+
+      const color =
+        leverType === "growth"
+          ? "rgba(34,211,238,0.18)" // cyan/ice
+          : leverType === "efficiency"
+            ? "rgba(52,211,153,0.18)" // emerald
+            : leverType === "pricing"
+              ? "rgba(129,140,248,0.18)" // indigo
+              : "rgba(251,113,133,0.16)"; // muted red (risk)
+
+      emitCausal({
+        source: "slider_release",
+        bandStyle: "solid",
+        color,
+        kpiIndices: LEVER_TO_KPI[lastId] ?? [],
+      });
+    }
+
     // Cancel any pending throttled update
     if (leverUpdateFrame.current !== null) {
       cancelAnimationFrame(leverUpdateFrame.current);
@@ -467,6 +494,7 @@ export function ControlDeck(props: {
 
   const handleSliderChange = useCallback(
     (id: LeverId, v: number) => {
+      lastLeverIdRef.current = id;
       // Throttle store updates, but always pass value change through
       throttledSetActiveLever(id, computeIntensity01(id, v));
       onChange(id, v);

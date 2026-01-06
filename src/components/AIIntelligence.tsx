@@ -348,7 +348,7 @@ export default function AIIntelligence({
   }, [liveKpisValid, liveKpis]);
 
   const stableKpiValues = (liveKpisValid ? liveKpis : lastGoodKpisRef.current) ?? null;
-  const visibleKpiConfig = viewMode === "investor" ? KPI_CONFIG.filter((k) => !k.operatorOnly) : KPI_CONFIG;
+  const visibleKpiConfig = KPI_CONFIG;
   const kpis = useMemo(() => {
     if (!stableKpiValues) return [];
     return visibleKpiConfig.map(

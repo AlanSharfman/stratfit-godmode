@@ -10,12 +10,15 @@ import CenterViewPanel from "@/components/center/CenterViewPanel";
 import { Moon } from "./components/Moon";
 import { ControlDeck, ControlBoxConfig } from "./components/ControlDeck";
 import AIIntelligence from "./components/AIIntelligenceEnhanced";
-import ViewToggle from "./components/ViewToggle";
 import ScenarioSelector from "./components/ScenarioSelector";
 import OnboardingSequence from "./components/OnboardingSequenceNew";
 import { useScenarioStore, SCENARIO_COLORS } from "@/state/scenarioStore";
 import type { LeverId } from "@/logic/mountainPeakModel";
 import { calculateMetrics } from "@/logic/calculateMetrics";
+import { emitCausal } from "@/ui/causalEvents";
+import TakeTheTour from "@/components/ui/TakeTheTour";
+import ScenarioIntelligencePanel from "@/components/ui/ScenarioIntelligencePanel";
+import { deriveArrGrowth, formatUsdCompact } from "@/utils/arrGrowth";
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -73,13 +76,33 @@ function metricsToDataPoints(m: ReturnType<typeof calculateMetrics>): number[] {
 // ============================================================================
 
 export default function App() {
+  // FEATURE FLAG — Scenario Intelligence (Cold Brief) — reversible, UI-only
+  // Enable via: localStorage.setItem("ENABLE_SCENARIO_INTELLIGENCE","1"); location.reload();
+  const ENABLE_SCENARIO_INTELLIGENCE =
+    typeof window !== "undefined" &&
+    window.localStorage.getItem("ENABLE_SCENARIO_INTELLIGENCE") === "1";
+
   const [scenario, setScenario] = useState<ScenarioId>("base");
   const [levers, setLevers] = useState<LeverState>(INITIAL_LEVERS);
+  const didMountRef = useRef(false);
   
   // Handle scenario change
   const handleScenarioChange = useCallback((newScenario: ScenarioId) => {
     setScenario(newScenario);
   }, []);
+
+  // Scenario switch causal highlight — fire AFTER state update (and never on initial mount)
+  useEffect(() => {
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      return;
+    }
+    emitCausal({
+      source: "scenario_switch",
+      bandStyle: "wash",
+      color: "rgba(34,211,238,0.18)",
+    });
+  }, [scenario]);
   
   // Consolidated store selectors to prevent rerender cascades
   const {
@@ -133,6 +156,13 @@ export default function App() {
     const cashValue = Number.isFinite(cashRaw) ? Number(cashRaw) : 0;
     const cashValueDollars = cashValue > 0 && cashValue < 1_000_000 ? cashValue * 1_000_000 : cashValue;
 
+    // ARR proxy (today): momentum is already displayed as $X.XM in the KPI console.
+    // Until we have a true projection in the engine output, we derive ARR_next12 deterministically from the same signal.
+    const arrCurrent = (metrics.momentum / 10) * 1_000_000;
+    const growthRate = Math.max(-0.5, Math.min(0.8, (metrics.momentum - 50) * 0.006));
+    const arrNext12 = arrCurrent * (1 + growthRate);
+    const arrGrowth = deriveArrGrowth({ arrCurrent, arrNext12 });
+
     const engineResult = {
       kpis: {
         runway: { value: metrics.runway, display: `${Math.round(metrics.runway)} mo` },
@@ -141,6 +171,10 @@ export default function App() {
           display: `$${(cashValueDollars / 1_000_000).toFixed(1)}M`,
         },
         momentum: { value: metrics.momentum, display: `$${(metrics.momentum / 10).toFixed(1)}M` },
+        arrCurrent: { value: arrCurrent, display: formatUsdCompact(arrCurrent) },
+        arrNext12: { value: arrNext12, display: formatUsdCompact(arrNext12) },
+        arrDelta: { value: arrGrowth.arrDelta ?? 0, display: arrGrowth.displayDelta },
+        arrGrowthPct: { value: arrGrowth.arrGrowthPct ?? 0, display: arrGrowth.displayPct },
         burnQuality: { value: metrics.burnQuality, display: `$${Math.round(metrics.burnQuality)}K` },
         riskIndex: { value: metrics.riskIndex, display: `${Math.round(metrics.riskIndex)}/100` },
         earningsPower: { value: metrics.earningsPower, display: `${Math.round(metrics.earningsPower)}%` },
@@ -354,49 +388,65 @@ export default function App() {
             <span className="status-dot" />
           </div>
         </div>
-        <div className="header-center">
-          <ViewToggle />
-        </div>
         <div className="header-actions">
+          <div className="header-action-buttons">
+            <TakeTheTour />
+            <button
+              className="header-action-btn"
+              title="Load scenario"
+              onClick={() => {
+                emitCausal({
+                  source: "scenario_load",
+                  bandStyle: "wash",
+                  color: "rgba(34,211,238,0.18)",
+                });
+              }}
+            >
+              <svg className="header-action-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="1 4 1 10 7 10" />
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+              </svg>
+              <span className="header-action-text">Load</span>
+            </button>
+            <button
+              className="header-action-btn"
+              title="Save scenario"
+              onClick={() => {
+                emitCausal({
+                  source: "scenario_save",
+                  bandStyle: "wash",
+                  color: "rgba(34,211,238,0.18)",
+                });
+              }}
+            >
+              <svg className="header-action-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                <polyline points="17 21 17 13 7 13 7 21" />
+                <polyline points="7 3 7 8 15 8" />
+              </svg>
+              <span className="header-action-text">Save</span>
+            </button>
+          </div>
         </div>
       </header>
 
       {/* TOP: COMMAND BAND - Scenario + KPIs + System Controls */}
       <section className="command-band">
-        {/* SCENARIO SELECTOR */}
+        {/* ACTIVE SCENARIO (TOP-LEFT, next to KPI bezels — per spec) */}
         <div className="scenario-area">
           <ScenarioSelector scenario={scenario} onChange={handleScenarioChange} />
         </div>
 
         {/* KPI CONSOLE */}
-        <div className="kpi-section">
+        <div className="kpi-section" data-tour="kpis">
           <KPIConsole />
-        </div>
-
-        {/* SYSTEM CONTROLS */}
-        <div className="system-controls">
-          <button className="system-btn">
-            <svg className="system-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-              <polyline points="17 21 17 13 7 13 7 21"/>
-              <polyline points="7 3 7 8 15 8"/>
-            </svg>
-            <span>Save</span>
-          </button>
-          <button className="system-btn">
-            <svg className="system-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="1 4 1 10 7 10"/>
-              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
-            </svg>
-            <span>Load</span>
-          </button>
         </div>
       </section>
 
       {/* MIDDLE SECTION */}
       <div className="middle-section">
         {/* LEFT: Sliders Only */}
-        <aside className="left-panel">
+        <aside className="left-panel" data-tour="sliders">
           <div className="sliders-container">
             <ControlDeck boxes={controlBoxes} onChange={handleLeverChange} />
           </div>
@@ -406,11 +456,12 @@ export default function App() {
         <CenterViewPanel />
 
         {/* RIGHT: AI Intelligence */}
-        <aside className="right-panel">
-          <AIIntelligence
-            levers={levers}
-            scenario={scenario}
-          />
+        <aside className="right-panel" data-tour="intel">
+          {ENABLE_SCENARIO_INTELLIGENCE ? (
+            <ScenarioIntelligencePanel />
+          ) : (
+            <AIIntelligence levers={levers} scenario={scenario} />
+          )}
         </aside>
     </div></div>
   );

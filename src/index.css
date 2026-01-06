@@ -145,6 +145,68 @@ body { overflow-x: hidden; }
   gap:18px;
 }
 
+.header-actions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.header-action-label{
+  font-size:11px;
+  font-weight:700;
+  color:rgba(255,255,255,.40);
+  letter-spacing:.02em;
+}
+
+.header-action-buttons{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  opacity:.55; /* peripheral by default */
+  transition: opacity .18s ease;
+}
+.header-action-buttons:hover{
+  opacity:1;
+}
+
+.header-action-btn{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  height:34px; /* bigger */
+  padding:0 12px; /* bigger */
+  border-radius:9px;
+  border:1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.02);
+  color: rgba(255,255,255,.62);
+  font-size:12px;
+  font-weight:700;
+  cursor:pointer;
+  transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
+}
+.header-action-btn:hover{
+  transform: translateY(-1px);
+  background: rgba(255,255,255,.05);
+  border-color: rgba(255,255,255,.14);
+  color: rgba(255,255,255,.90);
+}
+.header-action-btn:focus-visible{
+  outline:none;
+  box-shadow: 0 0 0 2px rgba(255,255,255,.10); /* no cyan callout */
+}
+.header-action-icon{
+  opacity:.85;
+}
+
+/* Text is optional; reveal on hover for an icon-first feel */
+.header-action-text{
+  display:inline;
+  opacity: 0.88;
+}
+.header-action-btn:hover .header-action-text{
+  display:inline;
+}
+
 .logo{
   display:flex;
   align-items:center;
@@ -192,11 +254,15 @@ body { overflow-x: hidden; }
 .command-band{
   flex-shrink:0;
   display:grid;
-  grid-template-columns: 300px 1fr 220px;
-  gap:12px;
+  grid-template-columns: 300px 1fr;
+  gap:10px; /* tighter: bring KPI cluster closer to Active Scenario (per reference arrow) */
   padding:10px 12px;
   border-bottom:1px solid rgba(255,255,255,.06);
   background: rgba(0,0,0,.16);
+  position: relative;
+  z-index: 5;
+  /* Command-bridge separation: terrain starts below this layer */
+  box-shadow: 0 16px 34px rgba(0,0,0,0.55);
 }
 
 .scenario-area,
@@ -208,14 +274,59 @@ body { overflow-x: hidden; }
   backdrop-filter: blur(18px);
 }
 
-.scenario-area{ padding:10px; }
+.scenario-area{
+  padding: 10px; /* center the capsule vertically within the box */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Scenario selector must be allowed to overlay the shell */
+.scenario-area{
+  position: relative;
+  z-index: 2000;
+  overflow: visible;
+}
 .kpi-section{ padding:6px 8px; }
+
+/* KPI band height policy — compact chassis, never cannibalize the mountain */
+.kpi-section{
+  /* Reference: KPI layer is a primary structural band (~18–22% viewport height) */
+  min-height: clamp(190px, 20vh, 240px);
+  display:flex;
+  align-items: stretch;
+}
+.kpi-section > *{
+  width: 100%;
+}
+
+/* KPI ROW (CRITICAL): remove row-level “boxed panel” feel — keep only group bezels */
+.kpi-section{
+  border: none;
+  background: transparent;
+  border-radius: 0;
+  backdrop-filter: none;
+  padding: 0; /* let the console own its own spacing */
+}
 .system-controls{
   display:flex;
   align-items:center;
   justify-content:flex-end;
   gap:10px;
   padding:10px;
+}
+
+/* Tour slot must NOT look like a boxed panel — black field with white text only */
+.tour-area{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:10px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  border-radius: 0;
+  backdrop-filter: none;
 }
 
 .system-btn{
@@ -267,6 +378,21 @@ body { overflow-x: hidden; }
   height:100%;
   padding:10px;
   overflow:auto;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Left column: scenario selector stays visible while sliders scroll */
+.left-scenario{
+  padding: 10px 10px 6px;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: linear-gradient(180deg, rgba(7,9,12,0.92), rgba(7,9,12,0.55));
+  backdrop-filter: blur(10px);
+  display: flex;
+  justify-content: center; /* align active scenario capsule with slider-box centerline */
 }
 
 /* Center panel frame polish (no engine touch) */
@@ -295,103 +421,526 @@ body { overflow-x: hidden; }
   opacity:.55;
 }
 
-/* KPI Console “hardware” polish (targets existing classes) */
-.kpi-command-console{ width:100%; }
-.console-container{
-  position:relative;
-  padding:10px;
-  border-radius: var(--r-md);
-}
-.console-backdrop{
-  position:absolute; inset:0;
-  border-radius: var(--r-md);
-  background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
-  border:1px solid rgba(255,255,255,.06);
-  filter: saturate(1.05);
-}
-.instrument-grid{
-  position:relative;
-  display:grid;
-  grid-template-columns: repeat(6, minmax(0,1fr));
-  gap:10px;
+/* =========================================================
+   MOUNTAIN SIZE — FINAL LOCK
+   Target: ~65% of available vertical viewport (never below 60%)
+   ========================================================= */
+.mountain-stage{
+  height: calc(66vh * 1.07625);     /* +5% then +2.5% (visual/layout only) */
+  min-height: calc(66vh * 1.07625); /* prevent parent shrink */
 }
 
-.kpi-instrument{
-  position:relative;
-  border-radius:16px;
-  cursor:pointer;
-  transition: transform .18s ease, filter .18s ease;
+/* KPI Console styles moved from `src/components/KPIConsole.tsx` (no inline <style> blocks) */
+.kpi-command-console {
+  width: 100%;
+  padding: 0;
+  position: relative;
+  /* Internal alignment contract (instrument-grade) */
+  --kpi-label-h: 14px;
+  --kpi-value-h: 44px;
+  --kpi-viz-min: 86px;
+  --kpi-widget-scale: 0.95; /* “5% smaller” widgets (visuals only) */
 }
-.kpi-instrument:hover{ transform: translateY(-1px); }
 
-.instrument-border{
-  border-radius:16px;
-  padding:2px;
+/* Container with premium glass morphism */
+.console-container {
+  position: relative;
+  /* Left-align KPI cluster (do NOT center) — matches reference arrow */
+  margin: 0;
+  margin-left: 38px; /* ~10mm total nudge right (5mm ≈ 19px @ 96dpi) */
+  max-width: 1780px; /* wider console so group bezels + KPIs are longer (not taller) */
+  padding: 0; /* no outer chassis box — groups are the chassis */
+  background: transparent;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+/* Ambient backdrop with subtle radial gradient */
+.console-backdrop {
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
+  background: radial-gradient(
+    ellipse 70% 50% at 50% 40%,
+    rgba(34, 211, 238, 0.02) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+/* ============================================
+   INSTRUMENT GRID
+   ============================================ */
+.instrument-grid {
+  display: flex;
+  gap: 18px; /* ~5% larger */
+  align-items: stretch;
+  position: relative;
+  z-index: 2;
+}
+
+/* ==========================================================================
+   KPI GROUPS — God Mode bezel + grouping
+   ========================================================================== */
+
+.kpi-groups{
+  display: flex; /* bezel widths are controlled by BezelFrame flex sizing */
+  gap: 56px; /* clearer visual separation between clusters */
+  align-items: stretch;
+}
+
+/* Structural separators between clusters (not borders on cards) */
+.kpi-groups > div{
+  position: relative;
+}
+.kpi-groups > div + div::before{
+  content: "";
+  position: absolute;
+  left: -28px;
+  top: 18px;
+  bottom: 18px;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(34,211,238,0.18) 30%,
+    rgba(255,255,255,0.06) 50%,
+    rgba(34,211,238,0.12) 70%,
+    transparent 100%
+  );
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+/* KPI group width ratios (stable at 80–125% zoom) */
+.sf-kpi--wide{ flex: 1.15; min-width: 0; }
+.sf-kpi--narrow{ flex: 0.90; min-width: 0; }
+
+/* On smaller widths, stack groups */
+@media (max-width: 1200px){
+  .kpi-groups{
+    flex-direction: column;
+    gap: 18px;
+  }
+}
+
+/* ============================================
+   KPI INSTRUMENT — INDIVIDUAL CARD
+   ============================================ */
+.kpi-instrument {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+  height: 100%;
+  transition: 
+    transform 250ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 200ms ease,
+    filter 200ms ease;
+}
+
+/* Hover state: subtle lift */
+.kpi-instrument.hover {
+  transform: translateY(-3px);
+}
+
+/* Active state: enlarge + lift */
+.kpi-instrument.active {
+  transform: translateY(-6px) scale(1.04);
+  z-index: 10;
+}
+
+/* Dimmed state: fade others when one is active */
+.kpi-instrument.dimmed {
+  opacity: 0.45;
+  filter: grayscale(0.3);
+  transform: scale(0.98);
+}
+
+/* ============================================
+   INSTRUMENT BORDER — METALLIC FRAME
+   ============================================ */
+.instrument-border {
+  position: relative;
+  border-radius: 16px;
+  padding: 2px;
+  height: 100%;
+  display: flex;
+  align-items: stretch;
   background: linear-gradient(
     160deg,
-    rgba(255,255,255,.16) 0%,
-    rgba(255,255,255,.05) 30%,
-    rgba(0,0,0,.18) 55%,
-    rgba(255,255,255,.04) 75%,
-    rgba(255,255,255,.12) 100%
+    rgba(255, 255, 255, 0.18) 0%,
+    rgba(255, 255, 255, 0.05) 25%,
+    rgba(0, 0, 0, 0.15) 50%,
+    rgba(255, 255, 255, 0.05) 75%,
+    rgba(255, 255, 255, 0.15) 100%
   );
+  transition: background 250ms ease;
 }
-.kpi-instrument.active .instrument-border{
+
+.kpi-instrument.active .instrument-border {
   background: linear-gradient(
     160deg,
-    rgba(34,211,238,.55) 0%,
-    rgba(255,255,255,.10) 30%,
-    rgba(0,0,0,.18) 55%,
-    rgba(34,211,238,.10) 80%,
-    rgba(0,242,255,.35) 100%
+    var(--kpi-accent) 0%,
+    rgba(255, 255, 255, 0.12) 25%,
+    rgba(0, 0, 0, 0.2) 50%,
+    rgba(255, 255, 255, 0.12) 75%,
+    var(--kpi-accent) 100%
   );
 }
 
-.instrument-well{
-  border-radius:14px;
-  padding:10px 10px 9px;
-  background:
-    radial-gradient(600px 220px at 30% 0%, rgba(34,211,238,.09), transparent 55%),
-    linear-gradient(180deg, rgba(10,12,16,.92), rgba(8,10,14,.86));
-  border:1px solid rgba(255,255,255,.06);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+/* ============================================
+   INSTRUMENT WELL — RECESSED SURFACE
+   ============================================ */
+.instrument-well {
+  position: relative;
+  background: linear-gradient(
+    172deg,
+    rgba(18, 24, 34, 0.98) 0%,
+    rgba(12, 16, 24, 1) 40%,
+    rgba(8, 10, 16, 1) 100%
+  );
+  border-radius: 14px;
+  padding: 14px 16px 12px;  /* strong top/bottom padding (reference) */
+  width: 100%;
+  height: 100%;
+  display: grid; /* CRITICAL: identical internal layout for every card */
+  grid-template-rows: var(--kpi-label-h) var(--kpi-value-h) 1fr;
+  row-gap: 8px;
+  align-content: stretch;
+  box-shadow: 
+    inset 0 2px 8px rgba(0, 0, 0, 0.5),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.03);
+  min-height: 128px; /* instrument-grade height (no compression) */
 }
 
-.instrument-label-row{ display:flex; align-items:center; justify-content:space-between; }
-.instrument-label{
-  font-size:10px;
-  font-weight:800;
-  letter-spacing:.16em;
-  color: rgba(255,255,255,.58);
-}
-.instrument-value-row{ display:flex; align-items:baseline; gap:6px; margin-top:6px; }
-.value-display{
-  font-size:18px;
-  font-weight:900;
-  letter-spacing:.02em;
-}
-.value-unit{
-  font-size:11px;
-  font-weight:800;
-  color: rgba(255,255,255,.55);
+/* ============================================
+   INSTRUMENT CONTENT
+   ============================================ */
+.instrument-label-row {
+  display: flex;
+  align-items: center;
+  height: var(--kpi-label-h);
 }
 
-.instrument-glow{
-  position:absolute; inset:-2px;
-  border-radius:18px;
+.instrument-label {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 2.2px;
+  text-transform: uppercase;
+  color: rgba(140, 160, 180, 0.7);
+  transition: color 200ms ease;
+}
+
+.kpi-instrument.active .instrument-label {
+  color: rgba(200, 220, 240, 1);
+}
+
+.instrument-value-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: 1fr auto;
+  column-gap: 6px;
+  row-gap: 4px;
+  align-items: end;
+  height: var(--kpi-value-h);
+  margin-top: 0;
+}
+
+.value-display {
+  grid-column: 1;
+  grid-row: 1;
+  font-size: 28px; /* ~5% larger */
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: -0.8px;
+  line-height: 1;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  transition: all 250ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.kpi-instrument.active .value-display {
+  color: var(--kpi-accent);
+  text-shadow: 
+    0 0 20px var(--kpi-accent),
+    0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+.value-unit {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: end;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(120, 140, 160, 0.65);
+  margin-left: 2px;
+}
+
+.value-secondary{
+  grid-column: 1 / -1;
+  grid-row: 2;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.60);
+  line-height: 1.05;
+}
+
+.instrument-visual {
+  display: grid;
+  place-items: center;
+  min-height: var(--kpi-viz-min);
+  margin-top: 0;
+}
+.instrument-visual > *{
+  width: 100%;
+  max-height: 100%;
+  justify-self: center;
+  align-self: center;
+  transform: scale(var(--kpi-widget-scale));
+  transform-origin: 50% 50%;
+}
+
+.instrument-svg {
+  width: 100%;
+  height: 100%;
+  max-height: 96px; /* stable visual row height across widgets */
+}
+
+/* ============================================
+   NEON GLOW LAYER
+   ============================================ */
+.instrument-glow {
+  position: absolute;
+  inset: -6px;
+  border-radius: 22px;
+  background: radial-gradient(
+    ellipse at center,
+    var(--kpi-accent),
+    transparent 65%
+  );
+  opacity: 0;
+  transition: opacity 250ms cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* KPI echo pulse — causal highlighting (short, subtle) */
+.kpi-instrument.pulse .instrument-border{
+  animation: sfKpiPulse 420ms ease-out;
+}
+@keyframes sfKpiPulse{
+  0%{
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 0 0 rgba(0,0,0,0);
+  }
+  40%{
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--kpi-pulse) 40%, rgba(255,255,255,0.10)),
+      0 0 22px color-mix(in srgb, var(--kpi-pulse) 35%, transparent);
+  }
+  100%{
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 0 0 rgba(0,0,0,0);
+  }
+}
+
+/* =========================================================
+   CAUSAL HIGHLIGHT — MOUNTAIN BAND (Phase 1)
+   ========================================================= */
+.sf-causal-band{
+  position:absolute;
+  left: 7%;
+  right: 7%;
+  top: 48%;
+  height: 3%;
+  min-height: 12px;
+  max-height: 22px;
+  border-radius: 999px;
+  opacity: 0;
   pointer-events:none;
-  opacity:.10;
-  filter: blur(10px);
-  background: radial-gradient(220px 140px at 50% 60%, rgba(34,211,238,.9), transparent 70%);
+  filter: blur(6px);
+  background: linear-gradient(90deg, transparent 0%, var(--sf-causal) 18%, var(--sf-causal) 82%, transparent 100%);
 }
-.kpi-instrument.active .instrument-glow{ opacity:.22; }
+.sf-causal-band.play{
+  animation: sfCausalBand 700ms ease-out;
+}
+.sf-causal-band.wash{
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255,255,255,0.14) 18%,
+    rgba(34,211,238,0.14) 55%,
+    rgba(255,255,255,0.10) 82%,
+    transparent 100%
+  );
+}
+@keyframes sfCausalBand{
+  0% { opacity: 0; transform: translateY(2px); }
+  22% { opacity: 0.16; transform: translateY(0); }
+  62% { opacity: 0.16; }
+  100% { opacity: 0; }
+}
 
-.focus-ring{
-  position:absolute; inset:-6px;
-  border-radius:22px;
+/* =========================================================
+   TAKE THE TOUR — minimal overlay (Phase 1)
+   ========================================================= */
+.sf-tour-pill{
+  height: 34px; /* match header controls */
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(34,211,238,0.30);
+  background: transparent;
+  color: rgba(34,211,238,0.95);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+.sf-tour-pill:hover{
+  background: transparent;
+  border-color: rgba(34,211,238,0.55);
+  color: rgba(0,242,255,0.98);
+}
+
+.sf-tour{
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+}
+.sf-tour__dim{
+  position:absolute;
+  inset:0;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(2px);
+}
+.sf-tour__focus{
+  position:absolute;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.18);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.08) inset, 0 18px 60px rgba(0,0,0,0.55);
   pointer-events:none;
-  border:1px solid rgba(34,211,238,.22);
-  box-shadow: 0 0 0 3px rgba(34,211,238,.08), 0 0 32px rgba(34,211,238,.18);
+}
+.sf-tour__card{
+  position:absolute;
+  width: 360px;
+  max-width: calc(100vw - 36px);
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(10,12,16,0.92);
+  box-shadow: 0 18px 60px rgba(0,0,0,0.60);
+  padding: 14px 14px 12px;
+  color: rgba(255,255,255,0.85);
+}
+.sf-tour__kicker{
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  color: rgba(255,255,255,0.50);
+  text-transform: uppercase;
+}
+.sf-tour__title{
+  margin-top: 6px;
+  font-size: 16px;
+  font-weight: 900;
+  color: rgba(255,255,255,0.92);
+}
+.sf-tour__body{
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(255,255,255,0.70);
+}
+.sf-tour__actions{
+  margin-top: 12px;
+  display:flex;
+  align-items:center;
+  gap: 8px;
+}
+.sf-tour__btn{
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.03);
+  color: rgba(255,255,255,0.72);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+.sf-tour__btn:hover{
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.14);
+  color: rgba(255,255,255,0.88);
+}
+.sf-tour__btn:disabled{
+  opacity: 0.35;
+  cursor: default;
+}
+.sf-tour__btn--primary{
+  border-color: rgba(34,211,238,0.22);
+}
+
+.kpi-instrument.hover .instrument-glow {
+  opacity: 0.15;
+}
+
+.kpi-instrument.active .instrument-glow {
+  opacity: 0.35;
+}
+
+/* ============================================
+   FOCUS RING — ACTIVE INDICATOR
+   ============================================ */
+.focus-ring {
+  position: absolute;
+  inset: -3px;
+  border-radius: 19px;
+  border: 0; /* avoid double-outline with active instrument border */
+  opacity: 0;
+  animation: focusRingPulse 2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes focusRingPulse {
+  0%, 100% { 
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.7;
+    transform: scale(1.01);
+  }
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 1400px) {
+  .instrument-grid {
+    gap: 14px;
+  }
+  .value-display {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .instrument-grid {
+    gap: 12px;
+  }
+  .console-container {
+    padding: 14px 20px 16px;
+  }
+  .value-display {
+    font-size: 22px;
+  }
+  .instrument-label {
+    font-size: 8px;
+    letter-spacing: 1.8px;
+  }
 }
 
 /* Control Deck density + slider rows */
@@ -498,4 +1047,290 @@ body { overflow-x: hidden; }
 }
 .signal-label{ font-weight:800; color: rgba(255,255,255,.78); }
 .signal-dir{ color: rgba(255,255,255,.62); }
+
+/* =========================================================
+   TOOLTIP VISIBILITY FIX — LEFT PANEL MUST OVERLAY CENTER
+========================================================= */
+
+/* Ensure columns have deterministic stacking */
+.middle-section { position: relative; }
+
+.left-panel {
+  position: relative;
+  z-index: 30;         /* ABOVE center mountain panel */
+  overflow: visible;   /* allow tooltip to escape */
+}
+
+.right-panel {
+  position: relative;
+  z-index: 20;
+}
+
+/* If center panel has its own stacking, keep it lower */
+.center-view-panel,
+.center-panel,
+.center {
+  position: relative;
+  z-index: 1;
+  overflow: visible;
+}
+
+/* The scrolling container can still scroll, but must not clip callouts */
+.sliders-container {
+  overflow: auto;
+  position: relative;
+  z-index: 31;         /* keep tooltip above within left stack */
+}
+
+/* =========================================================
+   CALLOUT TOOLTIP — OFFSET + ARROW + ANIMATION
+========================================================= */
+
+.slider-row { position: relative; }
+
+/* Default hidden state (works for hover OR focus-within) */
+.lever-tooltip {
+  position: absolute;
+  top: -6px;
+
+  /* Push tooltip OUT to the right so it doesn't sit under the pointer */
+  left: calc(100% + 14px);
+
+  width: 280px;
+  max-width: 320px;
+
+  z-index: 9999; /* must beat mountain canvas stack */
+
+  opacity: 0;
+  transform: translateX(-8px);
+  pointer-events: none;
+
+  transition: opacity 140ms ease, transform 180ms ease;
+}
+
+/* Show on hover over the row (safe) */
+.slider-row:hover .lever-tooltip {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+/* ALSO show when row contains focused element (enables click-to-hold IF info icon is focusable) */
+.slider-row:focus-within .lever-tooltip {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+/* Arrow / stem pointing back to the slider row */
+.lever-tooltip::before {
+  content: "";
+  position: absolute;
+  left: -10px;
+  top: 18px;
+
+  width: 10px;
+  height: 10px;
+
+  transform: rotate(45deg);
+  background: rgba(10,12,16,.96);
+  border-left: 1px solid rgba(255,255,255,.10);
+  border-bottom: 1px solid rgba(255,255,255,.10);
+}
+
+/* Optional “beam” line for a longer callout feel */
+.lever-tooltip::after {
+  content: "";
+  position: absolute;
+  left: -44px;
+  top: 22px;
+  width: 34px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(34,211,238,.0), rgba(34,211,238,.35), rgba(34,211,238,.10));
+  opacity: .9;
+}
+
+/* Make sure tooltip body looks premium and readable */
+.lever-tooltip {
+  background: rgba(10,12,16,.96);
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 12px;
+  box-shadow: 0 18px 60px rgba(0,0,0,.55);
+  backdrop-filter: blur(12px);
+  padding: 10px 12px;
+}
+
+/* Improve info icon hit area (if it exists as SVG only) */
+.info-icon {
+  cursor: pointer;
+  filter: drop-shadow(0 0 10px rgba(34,211,238,.10));
+}
+
+/* =========================================================
+   PORTAL TOOLTIP — ALWAYS ABOVE WEBGL
+========================================================= */
+
+.slider-tooltip-portal {
+  position: fixed;
+  z-index: 2147483647; /* max safe z-index */
+  pointer-events: none;
+  animation: tooltip-slide-in 180ms cubic-bezier(.2,.8,.2,1);
+}
+
+.slider-tooltip-body {
+  background: rgba(10,12,16,.96);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  padding: 10px 12px;
+  width: 280px;
+  box-shadow: 0 18px 60px rgba(0,0,0,.6);
+  backdrop-filter: blur(14px);
+}
+
+.slider-tooltip-arrow {
+  position: absolute;
+  left: -8px;
+  top: 16px;
+  width: 8px;
+  height: 8px;
+  background: rgba(10,12,16,.96);
+  transform: rotate(45deg);
+  border-left: 1px solid rgba(255,255,255,.12);
+  border-bottom: 1px solid rgba(255,255,255,.12);
+}
+
+@keyframes tooltip-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ==========================================================================
+   Slider tooltip (PORTAL) — always above mountain
+   ========================================================================== */
+
+.sf-tooltip {
+  transform-origin: left top;
+  animation: sf-tip-peek 190ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  filter: drop-shadow(0 18px 40px rgba(0,0,0,0.65));
+}
+
+@keyframes sf-tip-peek {
+  0%   { opacity: 0; transform: translateX(-8px) scale(0.985); }
+  65%  { opacity: 1; transform: translateX(6px) scale(1); }
+  100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+.sf-tooltip__panel{
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.98));
+  border: 1px solid rgba(148, 163, 184, 0.20);
+  border-radius: 14px;
+  padding: 12px 12px 11px;
+  backdrop-filter: blur(14px);
+  box-shadow:
+    0 0 0 1px rgba(148, 163, 184, 0.08) inset,
+    0 22px 60px rgba(0,0,0,0.55);
+}
+
+/* “Extended arrow arm” (the thing you asked for) */
+.sf-tooltip__arm{
+  position: absolute;
+  width: 34px; /* a bit more gap from icon → narrative */
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(34, 211, 238, 0.18);
+  border: 1px solid rgba(34, 211, 238, 0.22);
+  box-shadow: 0 0 18px rgba(34, 211, 238, 0.25);
+}
+
+.sf-tooltip__arm.right{
+  transform: translateX(0);
+}
+
+.sf-tooltip__arm.left{
+  transform: translateX(0);
+}
+
+/* Arrow head */
+.sf-tooltip__arrow{
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+
+.sf-tooltip__arrow.right{
+  border-right: 10px solid rgba(30, 41, 59, 0.98);
+}
+
+.sf-tooltip__arrow.left{
+  border-left: 10px solid rgba(30, 41, 59, 0.98);
+}
+
+/* =========================================================
+   KPI HARDWARE BEZEL — FORCE OVERRIDE (GOD MODE)
+========================================================= */
+
+/* Increase specificity so this beats legacy styles */
+.kpi-command-console .kpi-instrument .instrument-border {
+  border-radius: 16px;
+  padding: 2px;
+
+  background: linear-gradient(
+    160deg,
+    rgba(255,255,255,.18) 0%,
+    rgba(255,255,255,.06) 28%,
+    rgba(0,0,0,.22) 52%,
+    rgba(255,255,255,.05) 76%,
+    rgba(255,255,255,.16) 100%
+  );
+}
+
+/* ACTIVE KPI — neon chamfer */
+.kpi-command-console .kpi-instrument.active .instrument-border {
+  background: linear-gradient(
+    160deg,
+    rgba(34,211,238,.65) 0%,
+    rgba(255,255,255,.12) 28%,
+    rgba(0,0,0,.22) 52%,
+    rgba(34,211,238,.14) 78%,
+    rgba(0,242,255,.45) 100%
+  );
+}
+
+/* Inner well depth */
+.kpi-command-console .kpi-instrument .instrument-well {
+  border-radius: 14px;
+  background:
+    radial-gradient(600px 220px at 30% 0%, rgba(34,211,238,.10), transparent 55%),
+    linear-gradient(180deg, rgba(10,12,16,.94), rgba(8,10,14,.88));
+  border: 1px solid rgba(255,255,255,.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.06),
+    inset 0 -8px 18px rgba(0,0,0,.45);
+}
+
+/* Glow layer (already rendered in JSX, just enhance it) */
+.kpi-command-console .kpi-instrument .instrument-glow {
+  opacity: .18;
+  filter: blur(14px);
+}
+
+.kpi-command-console .kpi-instrument.active .instrument-glow {
+  opacity: .32;
+}
+
+/* Focus ring must sit ABOVE everything */
+.kpi-command-console .kpi-instrument .focus-ring {
+  z-index: 5;
+  border-radius: 22px;
+  box-shadow:
+    0 0 38px rgba(34,211,238,.22);
+}
 

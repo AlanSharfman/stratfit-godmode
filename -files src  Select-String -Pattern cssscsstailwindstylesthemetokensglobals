@@ -1,0 +1,60 @@
+[35msrc/App.tsx[m[36m:[m[32m336[m[36m:[m    <div [1;31mclassName=[m"app">
+[35msrc/App.tsx[m[36m:[m[32m340[m[36m:[m      <header [1;31mclassName=[m"header">
+[35msrc/App.tsx[m[36m:[m[32m341[m[36m:[m        <div [1;31mclassName=[m"header-left">
+[35msrc/App.tsx[m[36m:[m[32m342[m[36m:[m          <div [1;31mclassName=[m"logo">
+[35msrc/App.tsx[m[36m:[m[32m350[m[36m:[m          <div [1;31mclassName=[m{`system-status ${activeLeverId ? 'computing' : ''} ${viewMode === 'investor' ? 'investor' : ''}`}>
+[35msrc/App.tsx[m[36m:[m[32m351[m[36m:[m            <span [1;31mclassName=[m"status-label">System Status</span>
+[35msrc/App.tsx[m[36m:[m[32m352[m[36m:[m            <span [1;31mclassName=[m"status-separator">·</span>
+[35msrc/App.tsx[m[36m:[m[32m353[m[36m:[m            <span [1;31mclassName=[m"status-live">Live</span>
+[35msrc/App.tsx[m[36m:[m[32m354[m[36m:[m            <span [1;31mclassName=[m"status-dot" />
+[35msrc/App.tsx[m[36m:[m[32m357[m[36m:[m        <div [1;31mclassName=[m"header-center">
+[35msrc/App.tsx[m[36m:[m[32m360[m[36m:[m        <div [1;31mclassName=[m"header-actions">
+[35msrc/App.tsx[m[36m:[m[32m365[m[36m:[m      <section [1;31mclassName=[m"command-band">
+[35msrc/App.tsx[m[36m:[m[32m367[m[36m:[m        <div [1;31mclassName=[m"scenario-area">
+[35msrc/App.tsx[m[36m:[m[32m372[m[36m:[m        <div [1;31mclassName=[m"kpi-section">
+[35msrc/App.tsx[m[36m:[m[32m377[m[36m:[m        <div [1;31mclassName=[m"system-controls">
+[35msrc/App.tsx[m[36m:[m[32m378[m[36m:[m          <button [1;31mclassName=[m"system-btn">
+[35msrc/App.tsx[m[36m:[m[32m379[m[36m:[m            <svg [1;31mclassName=[m"system-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+[35msrc/App.tsx[m[36m:[m[32m386[m[36m:[m          <button [1;31mclassName=[m"system-btn">
+[35msrc/App.tsx[m[36m:[m[32m387[m[36m:[m            <svg [1;31mclassName=[m"system-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+[35msrc/App.tsx[m[36m:[m[32m397[m[36m:[m      <div [1;31mclassName=[m"middle-section">
+[35msrc/App.tsx[m[36m:[m[32m399[m[36m:[m        <aside [1;31mclassName=[m"left-panel">
+[35msrc/App.tsx[m[36m:[m[32m400[m[36m:[m          <div [1;31mclassName=[m"sliders-container">
+[35msrc/App.tsx[m[36m:[m[32m409[m[36m:[m        <aside [1;31mclassName=[m"right-panel">
+[35msrc/components/ControlDeck.tsx[m[36m:[m[32m96[m[36m:[m      [1;31mclassName=[m{`slider-row ${isHighlighted ? "highlighted" : ""}`}
+[35msrc/components/ControlDeck.tsx[m[36m:[m[32m101[m[36m:[m      <div [1;31mclassName=[m"slider-header">
+[35msrc/components/ControlDeck.tsx[m[36m:[m[32m102[m[36m:[m        <span [1;31mclassName=[m"slider-label">
+[35msrc/components/ControlDeck.tsx[m[36m:[m[32m105[m[36m:[m            <svg [1;31mclassName=[m"info-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+[35msrc/components/ControlDeck.tsx[m[36m:[m[32m111[m[36m:[m        <span [1;31mclassName=[m"slider-value">
+[35msrc/components/ControlDeck.tsx[m[36m:[m[32m117[m[36m:[m        <div [1;31mclassName=[m"lever-tooltip">
+[35msrc/components/ControlDeck.tsx[m[36m:[m[32m118[m[36m:[m          <div [1;31mclassName=[m"tooltip-title">{slider.label}</div>
+[35msrc/components/ControlDeck.tsx[m[36m:[m[32m119[m[36m:[m          <div [1;31mclassName=[m"tooltip-description">{slider.tooltip.description}</div>
+[35msrc/components/ControlDeck.tsx[m[36m:[m[32m120[m[36m:[m          <div [1;31mclassName=[m"tooltip-impact">{slider.tooltip.impact}</div>
+[35msrc/components/ControlDeck.tsx[m[36m:[m[32m273[m[36m:[m      [1;31mclassName=[m{`control-box ${isBoxHighlighted ? "highlighted" : ""}`}
+[35msrc/components/ControlDeck.tsx[m[36m:[m[32m276[m[36m:[m      <div [1;31mclassName=[m"box-header">
+[35msrc/components/ControlDeck.tsx[m[36m:[m[32m277[m[36m:[m        <span [1;31mclassName=[m"box-title">{box.title}</span>
+[35msrc/components/ControlDeck.tsx[m[36m:[m[32m279[m[36m:[m      <div [1;31mclassName=[m"box-sliders">
+[35msrc/components/ControlDeck.tsx[m[36m:[m[32m478[m[36m:[m    <div [1;31mclassName=[m"control-deck">
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m114[m[36m:[m    <svg viewBox="0 0 48 48" [1;31mclassName=[m"instrument-svg">
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m178[m[36m:[m    <svg viewBox="0 0 100 24" [1;31mclassName=[m"instrument-svg">
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m229[m[36m:[m    <svg viewBox="0 0 92 44" [1;31mclassName=[m"instrument-svg">
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m270[m[36m:[m    <svg viewBox="0 0 80 32" [1;31mclassName=[m"instrument-svg">
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m308[m[36m:[m    <svg viewBox="0 0 60 50" [1;31mclassName=[m"instrument-svg">
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m353[m[36m:[m    <svg viewBox="0 0 80 36" [1;31mclassName=[m"instrument-svg">
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m447[m[36m:[m      [1;31mclassName=[m{`kpi-instrument ${state} ${isDimmed ? "dimmed" : ""}`}
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m456[m[36m:[m      <div [1;31mclassName=[m"instrument-border">
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m458[m[36m:[m        <div [1;31mclassName=[m"instrument-well">
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m460[m[36m:[m          <div [1;31mclassName=[m"instrument-label-row">
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m461[m[36m:[m            <span [1;31mclassName=[m"instrument-label">{cfg.label}</span>
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m465[m[36m:[m          <div [1;31mclassName=[m"instrument-value-row">
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m466[m[36m:[m            <span [1;31mclassName=[m"value-display">{data?.display ?? "—"}</span>
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m467[m[36m:[m            {cfg.unit && <span [1;31mclassName=[m"value-unit">{cfg.unit}</span>}
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m471[m[36m:[m          <div [1;31mclassName=[m"instrument-visual">
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m484[m[36m:[m      <div [1;31mclassName=[m"instrument-glow" />
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m487[m[36m:[m      {state === "active" && <div [1;31mclassName=[m"focus-ring" />}
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m519[m[36m:[m    <div [1;31mclassName=[m"kpi-command-console">
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m521[m[36m:[m      <div [1;31mclassName=[m"console-container">
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m523[m[36m:[m        <div [1;31mclassName=[m"console-backdrop" />
+[35msrc/components/KPIConsole.tsx[m[36m:[m[32m526[m[36m:[m        <div [1;31mclassName=[m"instrument-grid">
+[35msrc/components/KPIGrid.tsx[m[36m:[m[32m78[m[36m:[m    <div [1;31mclassName=[m"kpi-grid-container">
+[35msrc/components/KPIGrid.tsx[m[36m:[m[32m79[m[36m:[m      <div [1;31mclassName=[m"kpi-grid">

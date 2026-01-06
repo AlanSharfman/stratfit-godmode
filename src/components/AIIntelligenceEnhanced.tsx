@@ -2,11 +2,78 @@
 // STRATFIT — Enhanced AI Intelligence Panel (MVP - No Typewriter)
 // Structured: Observation / Risks / Actions - INSTANT updates
 
-import React, { useMemo, useEffect, useState } from "react";
+import React, { useMemo, useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useScenarioStore, ViewMode } from "@/state/scenarioStore";
 import type { ScenarioId } from "@/state/scenarioStore";
 import { calculateMetrics, LeverState } from "@/logic/calculateMetrics";
+import { onCausal } from "@/ui/causalEvents";
+
+// ============================================================================
+// TYPEWRITER — “MILITARY MODE” PRESENTATION LAYER (UI ONLY)
+// Triggers only on explicit causal events (slider release / scenario switch / save-load)
+// ============================================================================
+
+function useTypewriterText(params: {
+  text: string;
+  enabled: boolean;
+  nonce: number;
+  startDelayMs?: number;
+  baseSpeedMs?: number;
+}) {
+  const { text, enabled, nonce, startDelayMs = 0, baseSpeedMs = 15 } = params;
+  const [out, setOut] = useState("");
+  const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    if (!enabled) {
+      setOut(text);
+      setDone(true);
+      return;
+    }
+
+    let cancelled = false;
+    let idx = 0;
+    let timeoutId: number | undefined;
+
+    setOut("");
+    setDone(false);
+
+    const tick = () => {
+      if (cancelled) return;
+      if (idx >= text.length) {
+        setDone(true);
+        return;
+      }
+
+      // Type 1–3 characters for rhythm
+      let n = 1;
+      if (Math.random() > 0.75 && idx < text.length - 2) n = Math.random() > 0.5 ? 2 : 3;
+
+      const nextIdx = Math.min(text.length, idx + n);
+      const typedChar = text[Math.max(0, nextIdx - 1)] ?? "";
+      const nextChar = text[nextIdx] ?? "";
+      idx = nextIdx;
+      setOut(text.slice(0, idx));
+
+      // Punctuation timing (clear + readable)
+      let delay = baseSpeedMs + (Math.random() * 10 - 5);
+      if (typedChar === "." || typedChar === "!" || typedChar === "?") delay = baseSpeedMs * 7;
+      else if (typedChar === "," || typedChar === ";" || typedChar === ":") delay = baseSpeedMs * 4;
+      else if (typedChar === " " && nextChar && /[A-Z]/.test(nextChar)) delay = baseSpeedMs * 3;
+
+      timeoutId = window.setTimeout(tick, Math.max(8, delay));
+    };
+
+    timeoutId = window.setTimeout(tick, startDelayMs);
+    return () => {
+      cancelled = true;
+      if (timeoutId) window.clearTimeout(timeoutId);
+    };
+  }, [text, enabled, nonce, startDelayMs, baseSpeedMs]);
+
+  return { out, done };
+}
 
 // ============================================================================
 // TYPES
@@ -326,7 +393,32 @@ function generateActions(
 // COMPONENTS
 // ============================================================================
 
-function RiskCard({ risk }: { risk: Risk }) {
+function RiskCard({
+  risk,
+  typing,
+  nonce,
+  startDelayMs,
+}: {
+  risk: Risk;
+  typing: boolean;
+  nonce: number;
+  startDelayMs: number;
+}) {
+  const typedDriver = useTypewriterText({
+    text: risk.driver,
+    enabled: typing,
+    nonce,
+    startDelayMs,
+    baseSpeedMs: 13,
+  });
+  const typedImpact = useTypewriterText({
+    text: risk.impact,
+    enabled: typing,
+    nonce,
+    startDelayMs: startDelayMs + 220,
+    baseSpeedMs: 13,
+  });
+
   const severityColors = {
     CRITICAL: 'rgba(239, 68, 68, 0.15)',
     HIGH: 'rgba(251, 146, 60, 0.15)',
@@ -378,17 +470,46 @@ function RiskCard({ risk }: { risk: Risk }) {
         marginLeft: '22px'
       }}>
         <div style={{ marginBottom: '4px' }}>
-          <strong style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Driver:</strong> {risk.driver}
+          <strong style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Driver:</strong>{" "}
+          {typing ? <span className="sf-typed">{typedDriver.out}</span> : risk.driver}
         </div>
         <div>
-          <strong style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Impact:</strong> {risk.impact}
+          <strong style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Impact:</strong>{" "}
+          {typing ? <span className="sf-typed">{typedImpact.out}</span> : risk.impact}
         </div>
       </div>
     </div>
   );
 }
 
-function ActionCard({ action, index }: { action: Action; index: number }) {
+function ActionCard({
+  action,
+  index,
+  typing,
+  nonce,
+  startDelayMs,
+}: {
+  action: Action;
+  index: number;
+  typing: boolean;
+  nonce: number;
+  startDelayMs: number;
+}) {
+  const typedTitle = useTypewriterText({
+    text: action.title,
+    enabled: typing,
+    nonce,
+    startDelayMs,
+    baseSpeedMs: 13,
+  });
+  const typedImpact = useTypewriterText({
+    text: action.impact,
+    enabled: typing,
+    nonce,
+    startDelayMs: startDelayMs + 220,
+    baseSpeedMs: 13,
+  });
+
   return (
     <div
       style={{
@@ -412,14 +533,14 @@ function ActionCard({ action, index }: { action: Action; index: number }) {
             color: 'rgba(255, 255, 255, 0.9)',
             marginBottom: '4px'
           }}>
-            {action.title}
+            {typing ? <span className="sf-typed">{typedTitle.out}</span> : action.title}
           </div>
           <div style={{ 
             fontSize: '12px', 
             color: 'rgba(255, 255, 255, 0.5)',
             lineHeight: '1.4'
           }}>
-            {action.impact}
+            {typing ? <span className="sf-typed">{typedImpact.out}</span> : action.impact}
           </div>
         </div>
       </div>
@@ -439,11 +560,22 @@ export default function AIIntelligenceEnhanced({
   const activeLeverId = useScenarioStore((s) => s.activeLeverId);
   
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [typingNonce, setTypingNonce] = useState(0);
+  const [typingActive, setTypingActive] = useState(false);
+  const typingTimeoutRef = useRef<number | null>(null);
+  const didMountRef = useRef(false);
+  const [reduceMotion, setReduceMotion] = useState(false);
 
   // Generate insights instantly
   const insights = useMemo(() => {
     return generateInsights(levers, scenario, viewMode);
   }, [levers, scenario, viewMode]);
+
+  // Respect reduced motion: show instantly.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setReduceMotion(window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches === true);
+  }, []);
 
   // Show brief "analyzing" state when dragging slider
   useEffect(() => {
@@ -455,6 +587,40 @@ export default function AIIntelligenceEnhanced({
       setIsAnalyzing(false);
     }
   }, [activeLeverId]);
+
+  // Typewriter triggers ONLY on explicit causal events (no page load / no idle / no drag tick).
+  const startTypewriter = useCallback(() => {
+    if (reduceMotion) return;
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+    }
+    setTypingNonce((n) => n + 1);
+    setTypingActive(true);
+
+    // Auto-release typing mode so subsequent live updates stay responsive while dragging.
+    if (typingTimeoutRef.current !== null) {
+      window.clearTimeout(typingTimeoutRef.current);
+    }
+    const est = Math.min(3200, 700 + insights.observation.length * 14);
+    typingTimeoutRef.current = window.setTimeout(() => setTypingActive(false), est);
+  }, [insights.observation.length, reduceMotion]);
+
+  useEffect(() => {
+    const off = onCausal(() => startTypewriter());
+    return () => {
+      off();
+      if (typingTimeoutRef.current !== null) window.clearTimeout(typingTimeoutRef.current);
+    };
+  }, [startTypewriter]);
+
+  const typing = typingActive && !isAnalyzing && !reduceMotion;
+  const typedObservation = useTypewriterText({
+    text: insights.observation,
+    enabled: typing,
+    nonce: typingNonce,
+    startDelayMs: 50,
+    baseSpeedMs: 14,
+  });
 
   return (
     <div style={{
@@ -528,10 +694,11 @@ export default function AIIntelligenceEnhanced({
         flex: 1,
         overflowY: 'auto',
         padding: '18px',
+        fontFamily: typing ? 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' : undefined,
       }}>
         <AnimatePresence mode="wait">
           <motion.div
-            key={insights.timestamp.getTime()}
+            key={`${scenario}:${viewMode}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.15 }}
@@ -568,7 +735,14 @@ export default function AIIntelligenceEnhanced({
                 color: 'rgba(255, 255, 255, 0.8)',
                 marginBottom: '12px'
               }}>
-                {insights.observation}
+                {typing ? (
+                  <>
+                    <span className="sf-typed">{typedObservation.out}</span>
+                    {!typedObservation.done ? <span className="sf-caret" /> : null}
+                  </>
+                ) : (
+                  insights.observation
+                )}
               </p>
               
               {/* Key Metrics */}
@@ -644,7 +818,13 @@ export default function AIIntelligenceEnhanced({
                   RISKS ({insights.risks.length})
                 </h4>
                 {insights.risks.map((risk, i) => (
-                  <RiskCard key={i} risk={risk} />
+                  <RiskCard
+                    key={i}
+                    risk={risk}
+                    typing={typing}
+                    nonce={typingNonce}
+                    startDelayMs={Math.max(120, 220 + i * 140)}
+                  />
                 ))}
               </section>
             )}
@@ -677,7 +857,14 @@ export default function AIIntelligenceEnhanced({
                   RECOMMENDED ACTIONS
                 </h4>
                 {insights.actions.map((action, i) => (
-                  <ActionCard key={i} action={action} index={i} />
+                  <ActionCard
+                    key={i}
+                    action={action}
+                    index={i}
+                    typing={typing}
+                    nonce={typingNonce}
+                    startDelayMs={Math.max(220, 520 + i * 160)}
+                  />
                 ))}
               </section>
             )}
@@ -707,6 +894,21 @@ export default function AIIntelligenceEnhanced({
         @keyframes pulse {
           0%, 100% { opacity: 0.8; transform: scale(1); }
           50% { opacity: 1; transform: scale(1.1); }
+        }
+        .sf-typed { letter-spacing: 0.01em; }
+        .sf-caret{
+          display:inline-block;
+          width: 8px;
+          height: 14px;
+          margin-left: 4px;
+          background: rgba(34, 211, 238, 0.65);
+          box-shadow: 0 0 10px rgba(34, 211, 238, 0.25);
+          transform: translateY(2px);
+          animation: sfCaretBlink 900ms steps(1,end) infinite;
+        }
+        @keyframes sfCaretBlink{
+          0%, 49% { opacity: 1; }
+          50%, 100% { opacity: 0; }
         }
       `}</style>
     </div>

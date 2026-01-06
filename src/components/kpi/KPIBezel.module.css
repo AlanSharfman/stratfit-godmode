@@ -1,0 +1,216 @@
+.wrap {
+  /* Fixed chassis height (non-negotiable) */
+  /* Reference: KPI layer occupies ~18–22% viewport height on desktop */
+  height: clamp(190px, 20vh, 240px);
+  position: relative;
+  border-radius: 14px;
+  overflow: visible; /* allow rail glow to spill OUTSIDE without affecting neighbors */
+  isolation: isolate;
+}
+
+/* Neon rails (top & bottom) — glow is isolated on wrapper pseudo-elements */
+.wrap::before,
+.wrap::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 78%;
+  border-radius: 999px;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.wrap::before {
+  top: 4px;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(34, 211, 238, 0.82) 12%,
+    rgba(34, 211, 238, 0.95) 50%,
+    rgba(34, 211, 238, 0.82) 88%,
+    transparent 100%
+  );
+  box-shadow: 0 0 14px rgba(34, 211, 238, 0.55), 0 0 26px rgba(34, 211, 238, 0.18);
+  opacity: 0.9;
+}
+
+.wrap::after {
+  bottom: 8px;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(34, 211, 238, 0.48) 14%,
+    rgba(34, 211, 238, 0.62) 50%,
+    rgba(34, 211, 238, 0.48) 86%,
+    transparent 100%
+  );
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.35), 0 0 18px rgba(34, 211, 238, 0.14);
+  opacity: 0.8;
+}
+
+.bezel {
+  position: relative;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(10, 14, 20, 0.96), rgba(8, 10, 14, 0.96));
+  /* Subtle lower notch/handle cutout */
+  clip-path: polygon(
+    /* top-left chamfer */
+    2.0% 0%,
+    98.0% 0%,
+    100% 8%,
+    /* right edge */
+    100% 92%,
+    98.0% 100%,
+    /* bottom notch (tiny, edge-only) */
+    56% 100%,
+    54.2% 94.5%,
+    45.8% 94.5%,
+    44% 100%,
+    /* left edge */
+    2.0% 100%,
+    0% 92%,
+    0% 8%
+  );
+  /* HARD CLIP: prevent any inner shadows/children from overlapping other bezels */
+  overflow: hidden;
+  height: 100%;
+}
+
+.bezel::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  clip-path: inherit; /* follow notch geometry */
+  pointer-events:none;
+  /* Outer cyan rim + subtle metallic edge */
+  border: 1px solid rgba(34, 211, 238, 0.20);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.06),
+    inset 0 10px 20px rgba(0,0,0,0.35);
+  opacity: 0.9;
+}
+
+.bezel::after{
+  content:"";
+  position:absolute;
+  inset: 2px; /* inner rim line sits just inside outer shell */
+  clip-path: inherit;
+  pointer-events:none;
+  border: 1px solid rgba(34, 211, 238, 0.12);
+  opacity: 0.85;
+}
+
+.inner {
+  position: absolute;
+  inset: 9px; /* inner frame inset (8–10px) */
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(12, 16, 22, 0.92), rgba(8, 10, 14, 0.96));
+  /* No glow inside cavity */
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 0 0 2px rgba(34, 211, 238, 0.10);
+  overflow: hidden;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  height: 28px; /* fixed header band */
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 0 12px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+}
+
+.title {
+  justify-self: center;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.92);
+  transform: translateY(-1px); /* sits slightly above the divider line (reference) */
+}
+
+.dots {
+  justify-self: end;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  opacity: 0.7;
+}
+
+.dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(34, 211, 238, 0.9);
+}
+
+.divider {
+  height: 1px;
+  background: rgba(34, 211, 238, 0.26);
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.14);
+  animation: dividerPulse 2.8s ease-in-out infinite;
+}
+
+@keyframes dividerPulse {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  gap: 12px;
+  padding: 10px; /* instrument breathing room (no compression) */
+  align-items: stretch;
+}
+
+.grid > * {
+  min-width: 0;
+  height: 100%;
+}
+
+/* =========================================================
+   DEBUG — magenta outlines for bezel anatomy (no layout impact)
+   Toggle via `DEBUG_BEZEL` in KPIBezel.tsx
+   ========================================================= */
+.debug {
+  outline: 1px solid magenta; /* outer bezel */
+  outline-offset: 0;
+}
+
+.debug .inner {
+  outline: 1px solid magenta; /* inner frame */
+  outline-offset: -1px;
+}
+
+.debug .header {
+  outline: 1px solid magenta; /* header band */
+}
+
+.debug .divider {
+  outline: 1px solid magenta; /* divider line */
+}
+
+.debug .grid {
+  outline: 1px solid magenta; /* content grid */
+}
+
+.debug .grid > * {
+  outline: 1px solid magenta; /* each KPI cell */
+}
+
+

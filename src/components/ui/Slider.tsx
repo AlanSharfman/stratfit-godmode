@@ -72,6 +72,17 @@ const Slider = memo(function Slider({
     if (!isDragging.current) return;
     isDragging.current = false;
     onEnd?.();
+
+    // Micro polish: thumb micro-glow on release (UI-only; no state/store changes)
+    const el = thumbRef.current;
+    if (el) {
+      el.classList.remove("sf-thumb-release");
+      // Force reflow so animation can retrigger even on rapid releases
+      void el.offsetWidth;
+      el.classList.add("sf-thumb-release");
+      window.setTimeout(() => el.classList.remove("sf-thumb-release"), 220);
+    }
+
     if (captureElRef.current && pointerIdRef.current !== null) {
       try {
         captureElRef.current.releasePointerCapture(pointerIdRef.current);
@@ -103,8 +114,12 @@ const Slider = memo(function Slider({
     const newValue = calculateValue(e.clientX);
     const newPct = ((newValue - min) / (max - min)) * 100;
     updateVisuals(newPct);
-    valueRef.current = newValue;
-    onChange(newValue);
+
+    // Avoid redundant state churn on pointerdown
+    if (newValue !== valueRef.current) {
+      valueRef.current = newValue;
+      onChange(newValue);
+    }
     
     pointerIdRef.current = e.pointerId;
     captureElRef.current = trackRef.current;
@@ -120,9 +135,11 @@ const Slider = memo(function Slider({
     // Instant visual update
     updateVisuals(newPct);
     
-    // Immediate state update
-    valueRef.current = newValue;
-    onChange(newValue);
+    // Immediate state update (only when value actually changes)
+    if (newValue !== valueRef.current) {
+      valueRef.current = newValue;
+      onChange(newValue);
+    }
   }, [calculateValue, min, max, onChange, updateVisuals]);
 
   const handlePointerUp = useCallback((e: React.PointerEvent) => {
@@ -213,7 +230,12 @@ const Slider = memo(function Slider({
             0 2px 8px rgba(0, 0, 0, 0.4),
             inset 0 1px 0 rgba(255, 255, 255, 0.4);
           will-change: left;
-          transition: all 150ms cubic-bezier(0.22, 1, 0.36, 1);
+          /* CRITICAL: do NOT transition "left" or the thumb will lag behind the pointer. */
+          transition:
+            transform 120ms cubic-bezier(0.22, 1, 0.36, 1),
+            box-shadow 120ms cubic-bezier(0.22, 1, 0.36, 1),
+            background 120ms cubic-bezier(0.22, 1, 0.36, 1),
+            border-color 120ms cubic-bezier(0.22, 1, 0.36, 1);
         }
 
         .slider-track:active .slider-thumb {
@@ -235,6 +257,16 @@ const Slider = memo(function Slider({
             0 0 8px var(--slider-color),
             0 2px 8px rgba(0, 0, 0, 0.4),
             inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        }
+
+        .slider-thumb.sf-thumb-release {
+          animation: sfThumbRelease 180ms ease-out;
+        }
+
+        @keyframes sfThumbRelease {
+          0% { transform: translateX(-50%) scale(1); }
+          55% { transform: translateX(-50%) scale(1.08); box-shadow: 0 0 22px rgba(34, 211, 238, 0.65), 0 2px 10px rgba(0, 0, 0, 0.45); }
+          100% { transform: translateX(-50%) scale(1); }
         }
       `}</style>
     </div>

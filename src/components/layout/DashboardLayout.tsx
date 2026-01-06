@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import KPICard from "@/components/ui/KPICard";
 import Slider from "@/components/ui/Slider";
 import MountainEngine from "@/components/engine/MountainEngine";
@@ -19,6 +19,19 @@ export default function DashboardLayout() {
   const [activeKPIIndex, setActiveKPIIndex] = useState<number | null>(null);
   const [scenario, setScenario] = useState<"base" | "upside" | "downside" | "extreme">("base");
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const widgetTypes = useMemo(
+    () =>
+      [
+        "timeCompression",
+        "liquidityReservoir",
+        "vectorFlow",
+        "structuralLift",
+        "efficiencyRotor",
+        "stabilityWave",
+        "scaleAura",
+      ] as const,
+    []
+  );
 
   const currentScenario = SCENARIOS.find(s => s.id === scenario) || SCENARIOS[0];
 
@@ -39,11 +52,16 @@ export default function DashboardLayout() {
         {dataPoints.map((v, i) => (
           <KPICard
             key={i}
+            index={i}
             label={KPI_LABELS[i]}
-            value={Math.round(v)}
-            active={activeKPIIndex === i}
-            onClick={() => setActiveKPIIndex(i)}
-            sparkValues={dataPoints.slice(Math.max(0, i - 5), i + 1)}
+            value={String(Math.round(v))}
+            rawValue={v}
+            color="#22d3ee"
+            widgetType={widgetTypes[i] ?? "scaleAura"}
+            isActive={activeKPIIndex === i}
+            isAnyActive={activeKPIIndex !== null}
+            onSelect={() => setActiveKPIIndex(i)}
+            viewMode="operator"
           />
         ))}
       </div>
@@ -127,12 +145,10 @@ export default function DashboardLayout() {
 
       <div className="grid grid-cols-5 gap-4">
         {["Revenue Growth", "Operating Expenses", "Hiring Rate", "Wage Increase", "Burn Rate"].map((label, i) => (
-          <Slider
-            key={i}
-            label={label}
-            value={dataPoints[i] ?? 50}
-            onChange={(v) => updateDataPoint(i, v)}
-          />
+          <div key={label} className="space-y-2">
+            <div className="text-[11px] font-semibold text-white/70">{label}</div>
+            <Slider value={dataPoints[i] ?? 50} min={0} max={100} onChange={(v) => updateDataPoint(i, v)} />
+          </div>
         ))}
       </div>
 
