@@ -1049,6 +1049,308 @@ body { overflow-x: hidden; }
 .signal-dir{ color: rgba(255,255,255,.62); }
 
 /* =========================================================
+   SCENARIO INTELLIGENCE — God Mode “Cold Brief” (no AI, no animation)
+   ========================================================= */
+.sf-si{
+  color: rgba(255,255,255,0.86);
+}
+.sf-si__header{
+  padding: 10px 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background:
+    radial-gradient(520px 200px at 30% 0%, rgba(34,211,238,0.10), transparent 60%),
+    rgba(255,255,255,0.02);
+}
+.sf-si__title{
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.70);
+}
+.sf-si__meta{
+  margin-top: 6px;
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: rgba(255,255,255,0.90);
+}
+.sf-si__status{
+  display:inline-flex;
+  align-items:center;
+  gap: 7px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(34,211,238,0.18);
+  background: rgba(34,211,238,0.04);
+  color: rgba(210,250,255,0.92);
+}
+.sf-si__dot{
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(34,211,238,0.95);
+  box-shadow: 0 0 10px rgba(34,211,238,0.25);
+}
+.sf-si__sep{ opacity: 0.55; }
+.sf-si__tag{
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  color: rgba(255,255,255,0.82);
+}
+.sf-si__section{ margin-top: 12px; }
+.sf-si__kicker{
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+  margin-bottom: 8px;
+}
+.sf-si__brief{
+  font-size: 12px;
+  line-height: 1.55;
+  color: rgba(255,255,255,0.78);
+}
+.sf-si__tiles{
+  display:grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.sf-si__tile{
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.02);
+  border-radius: 12px;
+  padding: 10px 10px 9px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+  min-height: 74px;
+  display:grid;
+  grid-template-rows: 12px 1fr 14px;
+}
+.sf-si__tileLabel{
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+}
+.sf-si__tileValue{
+  align-self: end;
+  font-size: 16px;
+  font-weight: 900;
+  color: rgba(255,255,255,0.92);
+}
+.sf-si__tileSub{
+  font-size: 10px;
+  font-weight: 800;
+  color: rgba(255,255,255,0.55);
+}
+.sf-si__actions{
+  margin: 0;
+  padding-left: 16px;
+  color: rgba(255,255,255,0.82);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.sf-si__trace{
+  margin-top: 12px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.015);
+  border-radius: 12px;
+  padding: 10px;
+}
+.sf-si__trace > summary{
+  cursor: pointer;
+  list-style: none;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.58);
+}
+.sf-si__trace > summary::-webkit-details-marker{ display:none; }
+.sf-si__traceGrid{
+  margin-top: 10px;
+  display:grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px 10px;
+}
+.sf-si__traceK{
+  font-size: 11px;
+  font-weight: 800;
+  color: rgba(255,255,255,0.55);
+}
+.sf-si__traceV{
+  font-size: 11px;
+  font-weight: 900;
+  color: rgba(255,255,255,0.82);
+}
+
+/* Q&A (single-question executive interrogation layer) */
+.sf-si__qa{
+  margin-top: 12px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.015);
+  border-radius: 12px;
+  padding: 10px;
+}
+.sf-si__qa > summary{
+  cursor: pointer;
+  list-style: none;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.58);
+}
+.sf-si__qa > summary::-webkit-details-marker{ display:none; }
+.sf-si__qaRow{
+  margin-top: 10px;
+  display:flex;
+  gap: 8px;
+  align-items:center;
+}
+.sf-si__qaToggle{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  padding: 0 10px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.015);
+  color: rgba(255,255,255,0.70);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  user-select: none;
+  white-space: nowrap;
+}
+.sf-si__qaToggleLabel{ opacity: 0.9; }
+.sf-si__qaSwitch{
+  width: 34px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.20);
+  position: relative;
+  flex: 0 0 auto;
+}
+.sf-si__qaSwitchKnob{
+  position:absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.72);
+  box-shadow: 0 0 10px rgba(255,255,255,0.12);
+  transition: transform 160ms ease, background 160ms ease;
+}
+.sf-si__qaSwitch.on{
+  border-color: rgba(34,211,238,0.22);
+  background: rgba(34,211,238,0.06);
+}
+.sf-si__qaSwitch.on .sf-si__qaSwitchKnob{
+  transform: translateX(16px);
+  background: rgba(34,211,238,0.95);
+  box-shadow: 0 0 12px rgba(34,211,238,0.22);
+}
+.sf-si__qaInput{
+  flex: 1;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.22);
+  color: rgba(255,255,255,0.88);
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  outline: none;
+}
+.sf-si__qaInput:focus-visible{
+  border-color: rgba(34,211,238,0.22);
+  box-shadow: 0 0 0 2px rgba(34,211,238,0.10);
+}
+.sf-si__qaBtn{
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(34,211,238,0.22);
+  background: rgba(34,211,238,0.06);
+  color: rgba(220,252,255,0.92);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+.sf-si__qaBtn:disabled{
+  opacity: 0.45;
+  cursor: default;
+}
+.sf-si__qaBtn--secondary{
+  border-color: rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.03);
+  color: rgba(255,255,255,0.78);
+}
+.sf-si__qaBtn--secondary:hover{
+  border-color: rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.05);
+}
+.sf-si__qaActions{
+  margin-top: 10px;
+  display:flex;
+  align-items:center;
+  gap: 10px;
+}
+.sf-si__qaSaved{
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: rgba(34,211,238,0.70);
+  min-width: 64px; /* avoid layout shift */
+}
+.sf-si__qaBtn:hover{
+  border-color: rgba(34,211,238,0.35);
+  background: rgba(34,211,238,0.09);
+}
+.sf-si__qaAnswer{
+  margin-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding-top: 10px;
+  min-height: 92px; /* stable: avoid layout jumps once opened */
+}
+.sf-si__qaHeadline{
+  font-size: 12px;
+  font-weight: 900;
+  color: rgba(255,255,255,0.92);
+  margin-bottom: 6px;
+}
+.sf-si__qaBody{
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(255,255,255,0.78);
+}
+.sf-si__qaData{
+  margin-top: 8px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.60);
+}
+.sf-si__qaDataK{ font-weight: 900; letter-spacing: 0.06em; }
+.sf-si__qaDataV{ font-weight: 800; }
+.sf-si__qaHint{
+  font-size: 12px;
+  color: rgba(255,255,255,0.62);
+}
+
+/* =========================================================
    TOOLTIP VISIBILITY FIX — LEFT PANEL MUST OVERLAY CENTER
 ========================================================= */
 
