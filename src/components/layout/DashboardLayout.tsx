@@ -4,6 +4,7 @@ import Slider from "@/components/ui/Slider";
 import MountainEngine from "@/components/engine/MountainEngine";
 import AIInsightsPanel from "@/components/ui/AIInsightsPanel";
 import { ChevronDown } from "lucide-react";
+import OnboardingFlow from "@/components/onboarding/OnboardingFlow";
 
 const KPI_LABELS = ["Runway", "Cash", "Growth", "EBITDA", "Burn", "Risk", "Value"];
 const SCENARIOS = [
@@ -31,6 +32,9 @@ export default function DashboardLayout() {
 
   return (
     <div className="flex flex-col w-full h-full p-6 gap-4">
+      <div className="fixed top-3 left-3 z-[99999] rounded-lg border border-[#00b4ff]/30 bg-[#071225]/80 px-3 py-1 text-[11px] font-semibold tracking-wide text-[#bfefff] backdrop-blur">
+        LOCAL — DASHBOARDLAYOUT — 2026-01-06
+      </div>
       <div className="grid grid-cols-7 gap-4">
         {dataPoints.map((v, i) => (
           <KPICard
@@ -131,6 +135,9 @@ export default function DashboardLayout() {
           />
         ))}
       </div>
+
+      {/* Onboarding Overlay (localStorage-gated internally) */}
+      <OnboardingFlow />
     </div>
   );
 }

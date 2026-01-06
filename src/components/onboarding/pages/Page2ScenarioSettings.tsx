@@ -265,13 +265,13 @@ export default function Page2ScenarioSettings({ value, onUpdate, onNext, onBack 
               {
                 key: "operator",
                 label: "Operator",
-                hint: "Execution posture. Levers + constraints.",
+                hint: "Operate the machine. Levers, capacity, execution.",
                 rgb: "0,204,255",
               },
               {
                 key: "investor",
                 label: "Investor",
-                hint: "Outcome posture. Risks + trajectory.",
+                hint: "Evaluate outcomes. Risk, resilience, trajectory.",
                 rgb: "129,140,248",
               },
             ] as const).map((vm) => {
