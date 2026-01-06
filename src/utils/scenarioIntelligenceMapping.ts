@@ -19,6 +19,7 @@ export type ScenarioIntelligenceOutput = {
   observations: string[]; // 2–4, no numbers
   risks: ScenarioIntelligenceRisk[]; // 1–3
   attention: string[]; // 2–3, no imperatives, no numbers
+  assumptionFlags: string[]; // 0–2, calm readout, no numbers, no imperatives
 };
 
 export type ScenarioMetricsSnapshot = {
@@ -118,6 +119,15 @@ export function mapScenarioIntelligence(params: {
   const arrBand = arrGrowthBand(current.arrGrowthPct);
   const gmBand = grossMarginBand(current.grossMarginPct);
 
+  const deltaRunway = current.runwayMonths - baseline.runwayMonths;
+  const deltaArrGrowth = Number.isFinite(current.arrGrowthPct) && Number.isFinite(baseline.arrGrowthPct)
+    ? current.arrGrowthPct - baseline.arrGrowthPct
+    : NaN;
+  const deltaMargin = current.grossMarginPct - baseline.grossMarginPct;
+  const deltaRisk = current.riskScore - baseline.riskScore;
+  const burnChangePct =
+    baseline.burnRateMonthly > 0 ? (current.burnRateMonthly - baseline.burnRateMonthly) / baseline.burnRateMonthly : 0;
+
   // System state mapping (deterministic)
   const financial = maxState(runwayS, burnPressureS);
 
@@ -127,6 +137,124 @@ export function mapScenarioIntelligence(params: {
   );
 
   const execution = riskS;
+
+  // Assumption flags (0–2 lines, scored, deterministic; no numbers; no imperatives)
+  type FlagKey = "A" | "B" | "C" | "D" | "E";
+  type FlagCandidate = { key: FlagKey; score: number; category: "growth" | "runway" | "cost" | "efficiency" | "execution"; text: string };
+
+  const flagCandidates: FlagCandidate[] = [];
+
+  // A Growth dependency
+  {
+    const trigger = (Number.isFinite(current.arrGrowthPct) && current.arrGrowthPct < 10) || (Number.isFinite(deltaArrGrowth) && deltaArrGrowth <= -3);
+    if (trigger) {
+      let score = 0;
+      if (Number.isFinite(current.arrGrowthPct)) {
+        if (current.arrGrowthPct < 0) score = 3;
+        else if (current.arrGrowthPct < 10) score = 2;
+      }
+      if (Number.isFinite(deltaArrGrowth) && deltaArrGrowth <= -10) score = Math.max(score, 3);
+      else if (Number.isFinite(deltaArrGrowth) && deltaArrGrowth <= -3) score = Math.max(score, 1);
+      flagCandidates.push({
+        key: "A",
+        category: "growth",
+        score,
+        text: "Outcome is sensitive to revenue momentum holding.",
+      });
+    }
+  }
+
+  // B Runway dependency
+  {
+    const trigger = current.runwayMonths < 12 || deltaRunway <= -1;
+    if (trigger) {
+      let score = 0;
+      if (current.runwayMonths < 6) score = 3;
+      else if (current.runwayMonths < 12) score = 2;
+      if (deltaRunway <= -3) score = Math.max(score, 2);
+      else if (deltaRunway <= -1) score = Math.max(score, 1);
+      flagCandidates.push({
+        key: "B",
+        category: "runway",
+        score,
+        text: "Stability depends on runway buffer not compressing.",
+      });
+    }
+  }
+
+  // C Cost discipline dependency
+  {
+    const trigger = burnChangePct >= 0.10;
+    if (trigger) {
+      let score = 1;
+      if (burnChangePct >= 0.20) score = 3;
+      else if (burnChangePct >= 0.15) score = 2;
+      flagCandidates.push({
+        key: "C",
+        category: "cost",
+        score,
+        text: "Scenario assumes cost load remains contained.",
+      });
+    }
+  }
+
+  // D Efficiency dependency
+  {
+    const trigger = current.grossMarginPct < 65 || deltaMargin <= -2;
+    if (trigger) {
+      let score = 0;
+      if (current.grossMarginPct < 50) score = 3;
+      else if (current.grossMarginPct < 65) score = 2;
+      if (deltaMargin <= -5) score = Math.max(score, 2);
+      else if (deltaMargin <= -2) score = Math.max(score, 1);
+      flagCandidates.push({
+        key: "D",
+        category: "efficiency",
+        score,
+        text: "Result depends on maintaining efficiency under scale.",
+      });
+    }
+  }
+
+  // E Execution tolerance dependency
+  {
+    const trigger = current.riskScore >= 55 || deltaRisk >= 5;
+    if (trigger) {
+      let score = 0;
+      if (current.riskScore >= 75) score = 3;
+      else if (current.riskScore >= 55) score = 2;
+      if (deltaRisk >= 10) score = Math.max(score, 2);
+      else if (deltaRisk >= 5) score = Math.max(score, 1);
+      flagCandidates.push({
+        key: "E",
+        category: "execution",
+        score,
+        text: "Execution tolerance is low under this risk profile.",
+      });
+    }
+  }
+
+  // If fully stable, emit no flags.
+  let assumptionFlags: string[] = [];
+  if (financial === "STABLE" && operational === "STABLE" && execution === "STABLE") {
+    assumptionFlags = [];
+  } else {
+    const order: Record<FlagKey, number> = { A: 1, B: 2, C: 3, D: 4, E: 5 };
+    flagCandidates.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return order[a.key] - order[b.key];
+    });
+
+    const picked: FlagCandidate[] = [];
+    const usedCats = new Set<string>();
+    for (const c of flagCandidates) {
+      if (picked.length >= 2) break;
+      if (usedCats.has(c.category)) continue;
+      picked.push(c);
+      usedCats.add(c.category);
+    }
+    assumptionFlags = picked.map((c) => noNumbers(c.text)).filter(Boolean);
+  }
 
   // Observations (2–4, declarative, no numbers)
   const obs: string[] = [];
@@ -236,7 +364,12 @@ export function mapScenarioIntelligence(params: {
 
   // Final enforcement: mapping must not emit digits anywhere.
   const enforceNoDigits = (arr: string[]) => arr.every((s) => !hasDigits(s));
-  if (!enforceNoDigits(observations) || !enforceNoDigits(attention) || risks.some((r) => hasDigits(r.title + r.driver + r.impact))) {
+  if (
+    !enforceNoDigits(observations) ||
+    !enforceNoDigits(attention) ||
+    !enforceNoDigits(assumptionFlags) ||
+    risks.some((r) => hasDigits(r.title + r.driver + r.impact))
+  ) {
     // Invariant: strip digits just in case.
     return {
       systemState: { financial, operational, execution },
@@ -248,6 +381,7 @@ export function mapScenarioIntelligence(params: {
         impact: noNumbers(r.impact),
       })),
       attention: attention.map(noNumbers),
+      assumptionFlags: assumptionFlags.map(noNumbers),
     };
   }
 
@@ -263,6 +397,7 @@ export function mapScenarioIntelligence(params: {
       },
     ],
     attention,
+    assumptionFlags,
   };
 }
 

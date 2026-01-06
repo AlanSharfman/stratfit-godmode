@@ -124,6 +124,17 @@ export default function AIIntelligenceEnhanced(props: { levers: LeverState; scen
         </ul>
       </div>
 
+      {assessment.assumptionFlags.length ? (
+        <div className="sf-si__section">
+          <div className="sf-si__kicker">Assumption Flags</div>
+          <ul className="sf-si__actions">
+            {assessment.assumptionFlags.slice(0, 2).map((f, i) => (
+              <li key={i}>{f}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       <details className="sf-si__trace">
         <summary>Traceability</summary>
         <div className="sf-si__traceGrid" style={{ gridTemplateColumns: "1fr" }}>
