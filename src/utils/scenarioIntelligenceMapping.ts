@@ -1,0 +1,269 @@
+// src/utils/scenarioIntelligenceMapping.ts
+// STRATFIT — Deterministic Scenario Intelligence mapping (testable, no AI)
+
+export type SystemStateLevel = "STABLE" | "MODERATE" | "ELEVATED" | "HIGH";
+
+export type ScenarioIntelligenceRisk = {
+  severity: SystemStateLevel;
+  title: string;
+  driver: string;
+  impact: string;
+};
+
+export type ScenarioIntelligenceOutput = {
+  systemState: {
+    financial: SystemStateLevel;
+    operational: SystemStateLevel;
+    execution: SystemStateLevel;
+  };
+  observations: string[]; // 2–4, no numbers
+  risks: ScenarioIntelligenceRisk[]; // 1–3
+  attention: string[]; // 2–3, no imperatives, no numbers
+};
+
+export type ScenarioMetricsSnapshot = {
+  runwayMonths: number;
+  cashPosition: number; // dollars
+  burnRateMonthly: number; // dollars
+  arr: number; // dollars
+  arrGrowthPct: number; // percent (e.g. 18 for +18%). Can be NaN if unknown.
+  grossMarginPct: number; // percent
+  riskScore: number; // 0 good -> 100 bad
+  enterpriseValue: number; // dollars
+};
+
+function clamp01(n: number) {
+  return Math.max(0, Math.min(1, n));
+}
+
+function hasDigits(s: string) {
+  return /[0-9]/.test(s);
+}
+
+function noNumbers(s: string) {
+  // Enforce “no numbers in text” at the mapping boundary.
+  return s.replace(/[0-9]/g, "").replace(/\s+/g, " ").trim();
+}
+
+function runwayState(runwayMonths: number): SystemStateLevel {
+  if (runwayMonths < 6) return "HIGH";
+  if (runwayMonths < 12) return "ELEVATED";
+  if (runwayMonths < 18) return "MODERATE";
+  return "STABLE";
+}
+
+type ArrGrowthBand = "CONTRACTING" | "WEAK" | "HEALTHY" | "STRONG" | "UNKNOWN";
+function arrGrowthBand(arrGrowthPct: number): ArrGrowthBand {
+  if (!Number.isFinite(arrGrowthPct)) return "UNKNOWN";
+  if (arrGrowthPct < 0) return "CONTRACTING";
+  if (arrGrowthPct < 10) return "WEAK";
+  if (arrGrowthPct < 25) return "HEALTHY";
+  return "STRONG";
+}
+
+type MarginBand = "WEAK" | "ELEVATED" | "STABLE" | "STRONG";
+function grossMarginBand(gmPct: number): MarginBand {
+  if (gmPct < 50) return "WEAK";
+  if (gmPct < 65) return "ELEVATED";
+  if (gmPct < 80) return "STABLE";
+  return "STRONG";
+}
+
+function riskState(riskScore: number): SystemStateLevel {
+  if (riskScore < 30) return "STABLE";
+  if (riskScore < 55) return "MODERATE";
+  if (riskScore < 75) return "ELEVATED";
+  return "HIGH";
+}
+
+type BurnPressureBand = "DOWN" | "FLAT" | "UP_MODERATE" | "UP_ELEVATED" | "UP_HIGH";
+function burnPressureBand(current: number, baseline: number): BurnPressureBand {
+  if (!(baseline > 0) || !Number.isFinite(current) || !Number.isFinite(baseline)) return "FLAT";
+  const pct = (current - baseline) / baseline; // ratio
+  if (pct <= -0.08) return "DOWN";
+  if (pct < 0.03) return "FLAT";
+  if (pct < 0.08) return "UP_MODERATE";
+  if (pct < 0.15) return "UP_ELEVATED";
+  return "UP_HIGH";
+}
+
+function maxState(...states: SystemStateLevel[]): SystemStateLevel {
+  const rank: Record<SystemStateLevel, number> = { STABLE: 0, MODERATE: 1, ELEVATED: 2, HIGH: 3 };
+  return states.reduce((a, b) => (rank[b] > rank[a] ? b : a), "STABLE");
+}
+
+function severityScore(s: SystemStateLevel) {
+  return s === "HIGH" ? 3 : s === "ELEVATED" ? 2 : s === "MODERATE" ? 1 : 0;
+}
+
+export function mapScenarioIntelligence(params: {
+  current: ScenarioMetricsSnapshot;
+  baseline: ScenarioMetricsSnapshot;
+}): ScenarioIntelligenceOutput {
+  const { current, baseline } = params;
+
+  const runwayS = runwayState(current.runwayMonths);
+  const riskS = riskState(current.riskScore);
+
+  const burnBand = burnPressureBand(current.burnRateMonthly, baseline.burnRateMonthly);
+  const burnPressureS: SystemStateLevel =
+    burnBand === "UP_HIGH"
+      ? "HIGH"
+      : burnBand === "UP_ELEVATED"
+      ? "ELEVATED"
+      : burnBand === "UP_MODERATE"
+      ? "MODERATE"
+      : "STABLE";
+
+  const arrBand = arrGrowthBand(current.arrGrowthPct);
+  const gmBand = grossMarginBand(current.grossMarginPct);
+
+  // System state mapping (deterministic)
+  const financial = maxState(runwayS, burnPressureS);
+
+  const operational = maxState(
+    gmBand === "WEAK" ? "ELEVATED" : gmBand === "ELEVATED" ? "MODERATE" : "STABLE",
+    burnPressureS === "HIGH" ? "ELEVATED" : burnPressureS
+  );
+
+  const execution = riskS;
+
+  // Observations (2–4, declarative, no numbers)
+  const obs: string[] = [];
+
+  if (runwayS === "HIGH") obs.push("Runway is critically constrained under the current posture.");
+  else if (runwayS === "ELEVATED") obs.push("Runway constraint is elevated and reduces optionality.");
+  else if (runwayS === "MODERATE") obs.push("Runway remains workable but requires discipline.");
+  else obs.push("Runway posture remains stable under the current assumptions.");
+
+  if (arrBand === "CONTRACTING") obs.push("ARR growth signal indicates contraction versus the baseline posture.");
+  else if (arrBand === "WEAK") obs.push("ARR growth signal is weak relative to baseline expectations.");
+  else if (arrBand === "HEALTHY") obs.push("ARR growth signal is healthy under the current scenario.");
+  else if (arrBand === "STRONG") obs.push("ARR growth signal is strong and supports forward momentum.");
+  else obs.push("ARR growth signal is not available from current inputs.");
+
+  if (riskS === "HIGH") obs.push("Execution risk is high and dominates the decision surface.");
+  else if (riskS === "ELEVATED") obs.push("Execution risk is elevated and increases outcome variance.");
+  else if (riskS === "MODERATE") obs.push("Execution risk is moderate and requires active monitoring.");
+  else obs.push("Execution risk remains stable under current conditions.");
+
+  if (burnBand === "UP_HIGH" || burnBand === "UP_ELEVATED") {
+    obs.push("Burn pressure has increased versus baseline and tightens the operating envelope.");
+  } else if (burnBand === "DOWN") {
+    obs.push("Burn pressure has eased versus baseline, improving resilience.");
+  }
+
+  const observations = obs.map(noNumbers).filter(Boolean).slice(0, 4);
+
+  // Risks (1–3, pick highest severity and most negative posture)
+  const candidates: Array<ScenarioIntelligenceRisk & { score: number }> = [];
+
+  if (runwayS !== "STABLE") {
+    const sev = runwayS === "HIGH" ? "HIGH" : runwayS === "ELEVATED" ? "ELEVATED" : "MODERATE";
+    candidates.push({
+      severity: sev,
+      title: "Runway constraint",
+      driver: "Runway posture is constrained under the current burn and funding sensitivity.",
+      impact: "Optionality narrows and timing risk increases.",
+      score: severityScore(sev) + 0.2,
+    });
+  }
+
+  if (burnPressureS !== "STABLE") {
+    const sev = burnPressureS;
+    candidates.push({
+      severity: sev,
+      title: "Burn pressure shift",
+      driver: "Burn pressure has increased versus baseline posture.",
+      impact: "Resilience decreases and tradeoffs become sharper.",
+      score: severityScore(sev) + 0.1,
+    });
+  }
+
+  if (arrBand === "CONTRACTING" || arrBand === "WEAK") {
+    const sev = arrBand === "CONTRACTING" ? "ELEVATED" : "MODERATE";
+    candidates.push({
+      severity: sev,
+      title: "ARR growth fragility",
+      driver: "ARR growth signal is below baseline expectations.",
+      impact: "Revenue momentum weakens and recovery requires tighter execution.",
+      score: severityScore(sev) + 0.15,
+    });
+  }
+
+  if (gmBand === "WEAK" || gmBand === "ELEVATED") {
+    const sev = gmBand === "WEAK" ? "ELEVATED" : "MODERATE";
+    candidates.push({
+      severity: sev,
+      title: "Margin pressure",
+      driver: "Gross margin posture is under pressure relative to the stable band.",
+      impact: "Unit economics tighten and growth becomes less efficient.",
+      score: severityScore(sev) + 0.12,
+    });
+  }
+
+  if (riskS !== "STABLE") {
+    const sev = riskS;
+    candidates.push({
+      severity: sev,
+      title: "Execution variance",
+      driver: "Risk posture is elevated relative to baseline conditions.",
+      impact: "Outcome variance widens and forecast reliability decreases.",
+      score: severityScore(sev) + 0.18,
+    });
+  }
+
+  candidates.sort((a, b) => b.score - a.score);
+  const risks = candidates
+    .slice(0, 3)
+    .map(({ score: _score, ...r }) => ({
+      ...r,
+      title: noNumbers(r.title),
+      driver: noNumbers(r.driver),
+      impact: noNumbers(r.impact),
+    }));
+
+  // Attention (2–3, neutral, no imperatives)
+  const att: string[] = [];
+  if (financial !== "STABLE") att.push("Attention on runway resilience versus burn posture.");
+  if (arrBand === "CONTRACTING" || arrBand === "WEAK") att.push("Attention on retention quality and pipeline health.");
+  if (gmBand === "WEAK" || gmBand === "ELEVATED") att.push("Attention on pricing power and cost of service assumptions.");
+  if (execution !== "STABLE") att.push("Attention on execution sequencing and dependency risk.");
+
+  // Ensure 2–3 items
+  const attention = att.map(noNumbers).filter(Boolean).slice(0, 3);
+  while (attention.length < 2) attention.push(noNumbers("Attention on forecast stability and operating discipline."));
+
+  // Final enforcement: mapping must not emit digits anywhere.
+  const enforceNoDigits = (arr: string[]) => arr.every((s) => !hasDigits(s));
+  if (!enforceNoDigits(observations) || !enforceNoDigits(attention) || risks.some((r) => hasDigits(r.title + r.driver + r.impact))) {
+    // Invariant: strip digits just in case.
+    return {
+      systemState: { financial, operational, execution },
+      observations: observations.map(noNumbers),
+      risks: risks.map((r) => ({
+        ...r,
+        title: noNumbers(r.title),
+        driver: noNumbers(r.driver),
+        impact: noNumbers(r.impact),
+      })),
+      attention: attention.map(noNumbers),
+    };
+  }
+
+  return {
+    systemState: { financial, operational, execution },
+    observations,
+    risks: risks.length ? risks : [
+      {
+        severity: "STABLE",
+        title: "No structural risks detected",
+        driver: "Inputs are within stable operating bands.",
+        impact: "Continue monitoring for drift.",
+      },
+    ],
+    attention,
+  };
+}
+
+
