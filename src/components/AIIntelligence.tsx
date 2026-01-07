@@ -313,60 +313,6 @@ export default function AIIntelligence({
   actions,
   scenario,
 }: AIIntelligenceProps) {
-  // Export Scenario Memo handler
-  const handleExportMemo = useCallback(() => {
-    // Build memo snapshot from current intelligence output
-    // Example: gather all required fields from store and props
-    const scenarioId = activeScenarioId;
-    const scenarioName = scenarioName;
-    const preparedAt = new Date().toISOString();
-    const modelVersion = "v1.0"; // Replace with actual model/hash if available
-    // For demo, use coldPanel and props (adjust as needed)
-    const executiveSummary = commentary.slice(0, 5);
-    const systemState = {
-      financial: "Stable", // Replace with actual
-      operational: "Nominal", // Replace with actual
-      execution: "On Track", // Replace with actual
-    };
-    const keyObservations = commentary.slice(0, 4);
-    const riskSignals = (risks || []).slice(0, 3).map((r, i) => ({
-      severity: "MEDIUM", // Replace with actual
-      title: r,
-      driver: "AI Engine", // Replace with actual
-      impact: "Review required", // Replace with actual
-    }));
-    const leadershipAttention = actions.slice(0, 3);
-    // Optionals
-    const assumptionFlags = [];
-    const strategicQA = [];
-    const traceability = `Scenario ${scenarioId} — Memo generated ${preparedAt}`;
-    const memoObj = {
-      scenarioId,
-      scenarioName,
-      preparedAt,
-      modelVersion,
-      executiveSummary,
-      systemState,
-      keyObservations,
-      riskSignals,
-      leadershipAttention,
-      assumptionFlags,
-      strategicQA,
-      traceability,
-    };
-    window.localStorage.setItem("scenarioMemoSnapshot", JSON.stringify(memoObj));
-    window.open(`/memo/${scenarioId}`, "_blank");
-  }, [activeScenarioId, scenarioName, commentary, risks, actions]);
-  const [panelMode, setPanelMode] = useState<AIIntelligencePanelMode>(() => {
-    const saved = window.localStorage.getItem("stratfit.aiPanelMode");
-    if (saved === "cold" || saved === "legacy") return saved;
-    return "cold";
-  });
-
-  useEffect(() => {
-    window.localStorage.setItem("stratfit.aiPanelMode", panelMode);
-  }, [panelMode]);
-
   // Consolidated store selectors to prevent rerender cascades
   const { viewMode, activeLeverId, activeScenarioId, engineResults } = useScenarioStore(
     useShallow((s) => ({
@@ -376,6 +322,25 @@ export default function AIIntelligence({
       engineResults: s.engineResults,
     }))
   );
+
+  const scenarioName =
+    scenario === "extreme"
+      ? "Extreme Scenario"
+      : scenario === "downside"
+      ? "Downside Scenario"
+      : scenario === "upside"
+      ? "Upside Scenario"
+      : "Current Scenario";
+
+  const [panelMode, setPanelMode] = useState<AIIntelligencePanelMode>(() => {
+    const saved = window.localStorage.getItem("stratfit.aiPanelMode");
+    if (saved === "cold" || saved === "legacy") return saved;
+    return "cold";
+  });
+
+  useEffect(() => {
+    window.localStorage.setItem("stratfit.aiPanelMode", panelMode);
+  }, [panelMode]);
 
   const isAnalyzing = activeLeverId !== null;
 
@@ -415,15 +380,6 @@ export default function AIIntelligence({
   useEffect(() => {
     if (stableKpiValues && kpis.length) prevKpisRef.current = kpis;
   }, [stableKpiValues, kpis, scenario, viewMode]);
-
-  const scenarioName =
-    scenario === "extreme"
-      ? "Extreme Scenario"
-      : scenario === "downside"
-      ? "Downside Scenario"
-      : scenario === "upside"
-      ? "Upside Scenario"
-      : "Current Scenario";
 
   useEffect(() => {
     window.localStorage.setItem("stratfit.aiPanelMode", panelMode);
@@ -601,14 +557,6 @@ export default function AIIntelligence({
               onClick={() => setPanelMode("legacy")}
             >
               Legacy
-            </button>
-            <button
-              type="button"
-              className="export-memo-btn"
-              style={{ marginLeft: 16, background: "#fff", color: "#222", border: "1px solid #eee", borderRadius: 6, padding: "6px 14px", fontWeight: 600, fontFamily: "Inter, sans-serif", cursor: "pointer" }}
-              onClick={handleExportMemo}
-            >
-              Export Scenario Memo
             </button>
           </div>
         </div>
@@ -1136,6 +1084,7 @@ function AIIntelligenceLegacy({
           </svg>
         </button>
       </div>
+
 
       <AnimatePresence>
         {showQuestions && (

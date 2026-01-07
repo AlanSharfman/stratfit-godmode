@@ -1,5 +1,7 @@
 import React, { useId, useMemo } from "react";
 import type { OnboardingData, OnboardingPreset } from "../onboarding.types";
+import TerrainDerivative from "../TerrainDerivative";
+import { presetToTerrainParams } from "../terrainParams";
 
 type Props = {
   value: OnboardingData;
@@ -111,6 +113,7 @@ export default function Page3LeversIntent({ value, onUpdate, onBack, onNext }: P
 
   const preset = value.preset;
   const canContinue = useMemo(() => true, []);
+  const terrainParams = useMemo(() => presetToTerrainParams(preset), [preset]);
 
   const setPreset = (next: OnboardingPreset) => {
     onUpdate({ ...value, preset: next });
@@ -152,39 +155,69 @@ export default function Page3LeversIntent({ value, onUpdate, onBack, onNext }: P
         This sets your default posture. It does not change the underlying engine yet — it only arms your starting stance.
       </p>
 
-      <div className="mt-5 grid grid-cols-1 gap-4">
-        <SegmentGroup
-          title="Growth posture"
-          subtitle="How hard you push growth relative to stability."
-          value={preset.growthPosture}
-          options={growthOptions}
-          onChange={(next) => setPreset({ ...preset, growthPosture: next })}
-          name="growthPosture"
-        />
-        <SegmentGroup
-          title="Burn discipline"
-          subtitle="How tight your spending stance is at the start."
-          value={preset.burnDiscipline}
-          options={burnOptions}
-          onChange={(next) => setPreset({ ...preset, burnDiscipline: next })}
-          name="burnDiscipline"
-        />
-        <SegmentGroup
-          title="Risk appetite"
-          subtitle="How much variance you accept in the trajectory."
-          value={preset.riskAppetite}
-          options={riskOptions}
-          onChange={(next) => setPreset({ ...preset, riskAppetite: next })}
-          name="riskAppetite"
-        />
-        <SegmentGroup
-          title="Execution bias"
-          subtitle="Speed vs certainty when operating the machine."
-          value={preset.executionBias}
-          options={speedOptions}
-          onChange={(next) => setPreset({ ...preset, executionBias: next })}
-          name="executionBias"
-        />
+      <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-12 lg:items-start">
+        {/* LEFT: terrain visual */}
+        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-slate-950/85 to-black/90 shadow-[0_24px_70px_rgba(0,0,0,0.55)] lg:col-span-7">
+          {/* Ambient cyan glow (no orange) */}
+          <div
+            className="pointer-events-none absolute -inset-24 blur-2xl"
+            style={{
+              background: "radial-gradient(closest-side, rgba(0,204,255,0.14), rgba(0,0,0,0) 70%)",
+            }}
+          />
+
+          <TerrainDerivative
+            className="h-[280px] sm:h-[360px] lg:h-[520px]"
+            params={terrainParams}
+            showGhostRidges
+          />
+
+          {/* Title overlay */}
+          <div className="pointer-events-none absolute left-4 top-4">
+            <div className="text-[10px] font-extrabold tracking-[0.18em] text-white/55 uppercase">
+              Define your terrain
+            </div>
+            <div className="mt-1 max-w-[28rem] text-[13px] font-semibold text-white/80">
+              Shape assumptions. Watch the landscape respond.
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT: preset levers */}
+        <div className="space-y-4 lg:col-span-5">
+          <SegmentGroup
+            title="Growth posture"
+            subtitle="How hard you push growth relative to stability."
+            value={preset.growthPosture}
+            options={growthOptions}
+            onChange={(next) => setPreset({ ...preset, growthPosture: next })}
+            name="growthPosture"
+          />
+          <SegmentGroup
+            title="Burn discipline"
+            subtitle="How tight your spending stance is at the start."
+            value={preset.burnDiscipline}
+            options={burnOptions}
+            onChange={(next) => setPreset({ ...preset, burnDiscipline: next })}
+            name="burnDiscipline"
+          />
+          <SegmentGroup
+            title="Risk appetite"
+            subtitle="How much variance you accept in the trajectory."
+            value={preset.riskAppetite}
+            options={riskOptions}
+            onChange={(next) => setPreset({ ...preset, riskAppetite: next })}
+            name="riskAppetite"
+          />
+          <SegmentGroup
+            title="Execution bias"
+            subtitle="Speed vs certainty when operating the machine."
+            value={preset.executionBias}
+            options={speedOptions}
+            onChange={(next) => setPreset({ ...preset, executionBias: next })}
+            name="executionBias"
+          />
+        </div>
       </div>
 
       <div className="mt-5 flex items-center justify-between">

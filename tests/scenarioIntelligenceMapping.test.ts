@@ -103,4 +103,29 @@ describe("mapScenarioIntelligence — assumption flags", () => {
   });
 });
 
+describe("mapScenarioIntelligence — strategic questions", () => {
+  it("fully stable emits 0 questions", () => {
+    const base = snap({ runwayMonths: 18, riskScore: 20, burnRateMonthly: 200_000, grossMarginPct: 70, arrGrowthPct: 18 });
+    const cur = snap({ runwayMonths: 18, riskScore: 20, burnRateMonthly: 200_000, grossMarginPct: 70, arrGrowthPct: 18 });
+    const out = mapScenarioIntelligence({ current: cur, baseline: base });
+    expect(out.strategicQuestions?.length ?? 0).toBe(0);
+  });
+
+  it("stressed scenario emits 2 questions", () => {
+    const base = snap({ runwayMonths: 18, riskScore: 20, burnRateMonthly: 200_000, grossMarginPct: 70, arrGrowthPct: 18 });
+    const cur = snap({ runwayMonths: 8, riskScore: 80, burnRateMonthly: 260_000, grossMarginPct: 55, arrGrowthPct: 5 });
+    const out = mapScenarioIntelligence({ current: cur, baseline: base });
+    expect(out.strategicQuestions?.length).toBe(2);
+  });
+
+  it("mixed scenario emits 1 question", () => {
+    // Growth is weak, but risk is not rising and financial posture is stable => only Growth Sustainability should trigger.
+    const base = snap({ runwayMonths: 18, riskScore: 40, burnRateMonthly: 200_000, grossMarginPct: 70, arrGrowthPct: 18 });
+    const cur = snap({ runwayMonths: 18, riskScore: 40, burnRateMonthly: 200_000, grossMarginPct: 70, arrGrowthPct: 5 });
+    const out = mapScenarioIntelligence({ current: cur, baseline: base });
+    expect(out.strategicQuestions?.length).toBe(1);
+    expect(out.strategicQuestions?.[0]?.question).toContain("sustainable");
+  });
+});
+
 

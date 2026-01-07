@@ -47,6 +47,15 @@ export const SCENARIO_COLORS: Record<ScenarioId, { primary: string; secondary: s
 // STORE INTERFACE
 // ============================================================================
 
+export type NoteEntry = {
+  timestamp: string;
+  mode: "operator" | "investor";
+  question: string;
+  answerBullets: string[];
+  comparedToBase: boolean;
+  scenarioScope: string;
+};
+
 export type ScenarioStoreState = {
   // View Mode: Operator or Investor
   viewMode: ViewMode;
@@ -79,6 +88,10 @@ export type ScenarioStoreState = {
   comparisonTargetScenarioId: ScenarioId | null;
   engineResults: Record<ScenarioId, EngineResult>;
   setEngineResult: (scenarioId: ScenarioId, result: EngineResult) => void;
+
+  // Scenario Notes persistence
+  scenarioNotesByScenarioId: Record<string, NoteEntry[]>;
+  addScenarioNote: (scenarioId: string, note: NoteEntry) => void;
 }
 
 // ============================================================================
@@ -152,6 +165,18 @@ export const useScenarioStore = create<ScenarioStoreState>((set, get) => ({
       engineResults: {
         ...state.engineResults,
         [scenarioId]: result,
+      },
+    })),
+
+  scenarioNotesByScenarioId: {},
+  addScenarioNote: (scenarioId, note) =>
+    set((state) => ({
+      scenarioNotesByScenarioId: {
+        ...state.scenarioNotesByScenarioId,
+        [scenarioId]: [
+          ...(state.scenarioNotesByScenarioId[scenarioId] || []),
+          note,
+        ],
       },
     })),
 }));

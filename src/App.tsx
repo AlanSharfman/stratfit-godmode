@@ -19,6 +19,7 @@ import { emitCausal } from "@/ui/causalEvents";
 import TakeTheTour from "@/components/ui/TakeTheTour";
 import ScenarioIntelligencePanel from "@/components/ui/ScenarioIntelligencePanel";
 import { deriveArrGrowth, formatUsdCompact } from "@/utils/arrGrowth";
+import ScenarioMemoPage from "@/pages/ScenarioMemoPage";
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -76,6 +77,11 @@ function metricsToDataPoints(m: ReturnType<typeof calculateMetrics>): number[] {
 // ============================================================================
 
 export default function App() {
+  // Simple memo route (no router) — used for Print-to-PDF export.
+  if (typeof window !== "undefined" && window.location.pathname.startsWith("/memo/")) {
+    return <ScenarioMemoPage />;
+  }
+
   // FEATURE FLAG — Scenario Intelligence (Cold Brief) — reversible, UI-only
   // Enable via: localStorage.setItem("ENABLE_SCENARIO_INTELLIGENCE","1"); location.reload();
   const ENABLE_SCENARIO_INTELLIGENCE =

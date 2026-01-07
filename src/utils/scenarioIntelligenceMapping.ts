@@ -20,6 +20,7 @@ export type ScenarioIntelligenceOutput = {
   risks: ScenarioIntelligenceRisk[]; // 1–3
   attention: string[]; // 2–3, no imperatives, no numbers
   assumptionFlags: string[]; // 0–2, calm readout, no numbers, no imperatives
+  strategicQuestions?: Array<{ question: string; answer: string }>; // 0–2, board-safe, no numbers, no imperatives
 };
 
 export type ScenarioMetricsSnapshot = {
@@ -256,6 +257,87 @@ export function mapScenarioIntelligence(params: {
     assumptionFlags = picked.map((c) => noNumbers(c.text)).filter(Boolean);
   }
 
+  // Strategic questions (0–2, board/investor-safe; deterministic; no numbers; no imperatives)
+  type QKey = "Q1" | "Q2" | "Q3" | "Q4";
+  type QCandidate = { key: QKey; score: number; question: string; answer: string };
+  const qCandidates: QCandidate[] = [];
+
+  const runwayDeclining = deltaRunway <= -1;
+  const arrDeclining = Number.isFinite(deltaArrGrowth) ? deltaArrGrowth <= -3 : false;
+  const riskRising = deltaRisk >= 5;
+
+  // Q1 Capital Timing
+  if (financial === "ELEVATED" || financial === "HIGH" || runwayDeclining) {
+    const score =
+      financial === "HIGH" || deltaRunway <= -3 || burnChangePct >= 0.15
+        ? 3
+        : financial === "ELEVATED" || runwayDeclining || burnChangePct >= 0.10
+        ? 2
+        : 1;
+    qCandidates.push({
+      key: "Q1",
+      score,
+      question: "What signals would indicate capital timing sensitivity?",
+      answer:
+        burnBand === "UP_HIGH" || burnBand === "UP_ELEVATED" || runwayDeclining
+          ? "Sensitivity appears tied to runway compression and burn pressure increasing relative to baseline."
+          : "Sensitivity appears tied to stability narrowing under the current financial posture.",
+    });
+  }
+
+  // Q2 Growth Sustainability
+  if (arrBand === "CONTRACTING" || arrBand === "WEAK" || arrDeclining) {
+    const score =
+      arrBand === "CONTRACTING" || (Number.isFinite(deltaArrGrowth) && deltaArrGrowth <= -10)
+        ? 3
+        : arrBand === "WEAK" || arrDeclining
+        ? 2
+        : 1;
+    qCandidates.push({
+      key: "Q2",
+      score,
+      question: "How sustainable is current growth under this scenario?",
+      answer:
+        gmBand === "WEAK" || gmBand === "ELEVATED"
+          ? "Sustainability appears sensitive to momentum holding while efficiency tolerance remains intact."
+          : "Sustainability appears driven by momentum holding without increasing execution variance.",
+    });
+  }
+
+  // Q3 Risk Concentration
+  if (current.riskScore >= 55 || riskRising) {
+    const score = riskS === "HIGH" || deltaRisk >= 10 ? 3 : riskS === "ELEVATED" || riskRising ? 2 : 1;
+    let answer = "Risk appears concentrated in execution variance under the current posture.";
+    if (financial === "HIGH" || financial === "ELEVATED") answer = "Risk appears concentrated in liquidity optionality and execution variance.";
+    else if (gmBand === "WEAK") answer = "Risk appears concentrated in efficiency tolerance and execution variance.";
+    qCandidates.push({
+      key: "Q3",
+      score,
+      question: "Where is risk most concentrated in this scenario?",
+      answer,
+    });
+  }
+
+  // Q4 Assumption Fragility
+  if (assumptionFlags.length) {
+    const score = Math.max(severityScore(financial), severityScore(execution), severityScore(operational));
+    qCandidates.push({
+      key: "Q4",
+      score: Math.max(1, score),
+      question: "Which assumptions does this scenario rely on most?",
+      answer: `The scenario relies most on: ${assumptionFlags.join(" · ")}`,
+    });
+  }
+
+  const qOrder: Record<QKey, number> = { Q1: 1, Q2: 2, Q3: 3, Q4: 4 };
+  qCandidates.sort((a, b) => (b.score !== a.score ? b.score - a.score : qOrder[a.key] - qOrder[b.key]));
+  // Only emit higher-signal questions (mixed cases should not automatically produce 2).
+  const strategicQuestions = qCandidates
+    .filter((q) => q.score >= 2)
+    .slice(0, 2)
+    .map((q) => ({ question: noNumbers(q.question), answer: noNumbers(q.answer) }))
+    .filter((q) => q.question && q.answer);
+
   // Observations (2–4, declarative, no numbers)
   const obs: string[] = [];
 
@@ -368,6 +450,7 @@ export function mapScenarioIntelligence(params: {
     !enforceNoDigits(observations) ||
     !enforceNoDigits(attention) ||
     !enforceNoDigits(assumptionFlags) ||
+    !enforceNoDigits(strategicQuestions.flatMap((q) => [q.question, q.answer])) ||
     risks.some((r) => hasDigits(r.title + r.driver + r.impact))
   ) {
     // Invariant: strip digits just in case.
@@ -382,6 +465,7 @@ export function mapScenarioIntelligence(params: {
       })),
       attention: attention.map(noNumbers),
       assumptionFlags: assumptionFlags.map(noNumbers),
+      strategicQuestions: strategicQuestions.map((q) => ({ question: noNumbers(q.question), answer: noNumbers(q.answer) })),
     };
   }
 
@@ -398,6 +482,7 @@ export function mapScenarioIntelligence(params: {
     ],
     attention,
     assumptionFlags,
+    strategicQuestions,
   };
 }
 
