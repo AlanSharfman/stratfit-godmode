@@ -403,17 +403,17 @@ export function ControlDeck(props: {
     [rangeMap]
   );
 
-  // Throttled lever update - batches rapid updates to prevent rerender cascades
+  // Ultra-responsive lever update - minimal throttling for smooth feel
   const throttledSetActiveLever = useCallback(
     (id: LeverId, intensity: number) => {
       const now = performance.now();
-      // If enough time has passed, update immediately
-      if (now - lastLeverUpdate.current > 32) {
+      // Reduced throttle from 32ms to 8ms for smoother response
+      if (now - lastLeverUpdate.current > 8) {
         lastLeverUpdate.current = now;
         setActiveLever(id, intensity);
         return;
       }
-      // Otherwise, schedule update for next frame
+      // Schedule update for next animation frame (instant visual feedback)
       pendingLeverUpdate.current = { id, intensity };
       if (leverUpdateFrame.current === null) {
         leverUpdateFrame.current = requestAnimationFrame(() => {

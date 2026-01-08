@@ -571,7 +571,8 @@ export default function KPIConsole() {
   return (
     <div className="kpi-command-console">
       {/* Command Console Container */}
-      <div className="console-container">
+      <div className="top-kpi-row">
+        <div className="console-container">
         {/* Ambient backdrop layer */}
         <div className="console-backdrop" />
         
@@ -625,6 +626,7 @@ export default function KPIConsole() {
               </div>
             );
           })}
+        </div>
         </div>
       </div>
     </div>

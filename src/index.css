@@ -263,6 +263,8 @@ body { overflow-x: hidden; }
   z-index: 5;
   /* Command-bridge separation: terrain starts below this layer */
   box-shadow: 0 16px 34px rgba(0,0,0,0.55);
+  overflow: visible; /* allow KPI bezel shadow/glow to render fully */
+  padding-bottom: 22px; /* clearance so bottom edge/glow isn't flush/clipped */
 }
 
 .scenario-area,
@@ -358,7 +360,8 @@ body { overflow-x: hidden; }
   flex:1;
   min-height:0;
   display:grid;
-  grid-template-columns: 320px 1fr 360px;
+  /* 🔥 FIXED: Right panel now responsive, was 360px (too narrow) */
+  grid-template-columns: minmax(280px, 320px) 1fr minmax(480px, 560px);
   gap:12px;
   padding:12px;
 }
@@ -371,7 +374,8 @@ body { overflow-x: hidden; }
   border-radius: var(--r-lg);
   backdrop-filter: blur(18px);
   box-shadow: 0 10px 40px rgba(0,0,0,.35);
-  overflow:hidden;
+  overflow-y: auto; /* 🔥 FIXED: Allow vertical scrolling instead of clipping */
+  overflow-x: hidden;
 }
 
 .sliders-container{
@@ -442,12 +446,18 @@ body { overflow-x: hidden; }
   --kpi-widget-scale: 0.95; /* “5% smaller” widgets (visuals only) */
 }
 
+/* KPI row position nudge (fast, safe, reversible) */
+.top-kpi-row{
+  position: relative;
+  left: 120px; /* was 72px */
+}
+
 /* Container with premium glass morphism */
 .console-container {
   position: relative;
   /* Left-align KPI cluster (do NOT center) — matches reference arrow */
   margin: 0;
-  margin-left: 8px; /* move KPI blocks higher/left (reduce nudge) */
+  margin-left: 0; /* offset is handled by .top-kpi-row */
   max-width: 1780px; /* wider console so group bezels + KPIs are longer (not taller) */
   padding: 0; /* no outer chassis box — groups are the chassis */
   background: transparent;
@@ -505,9 +515,9 @@ body { overflow-x: hidden; }
   background: linear-gradient(
     180deg,
     transparent 0%,
-    rgba(34,211,238,0.18) 30%,
-    rgba(255,255,255,0.06) 50%,
-    rgba(34,211,238,0.12) 70%,
+    rgba(255,255,255,0.06) 30%,
+    rgba(255,255,255,0.10) 50%,
+    rgba(255,255,255,0.06) 70%,
     transparent 100%
   );
   opacity: 0.75;
@@ -523,6 +533,9 @@ body { overflow-x: hidden; }
   .kpi-groups{
     flex-direction: column;
     gap: 18px;
+  }
+  .top-kpi-row{
+    left: 0; /* avoid horizontal overflow when stacked */
   }
 }
 
@@ -554,9 +567,9 @@ body { overflow-x: hidden; }
 
 /* Dimmed state: fade others when one is active */
 .kpi-instrument.dimmed {
-  opacity: 0.45;
-  filter: grayscale(0.3);
-  transform: scale(0.98);
+  opacity: 0.78; /* keep other KPIs readable (no "greyed out") */
+  filter: none;
+  transform: none;
 }
 
 /* ============================================
@@ -569,13 +582,14 @@ body { overflow-x: hidden; }
   height: 100%;
   display: flex;
   align-items: stretch;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.07); /* stronger boundary */
   background: linear-gradient(
     160deg,
-    rgba(255, 255, 255, 0.18) 0%,
-    rgba(255, 255, 255, 0.05) 25%,
+    rgba(255, 255, 255, 0.22) 0%,
+    rgba(255, 255, 255, 0.07) 25%,
     rgba(0, 0, 0, 0.15) 50%,
-    rgba(255, 255, 255, 0.05) 75%,
-    rgba(255, 255, 255, 0.15) 100%
+    rgba(255, 255, 255, 0.07) 75%,
+    rgba(255, 255, 255, 0.20) 100%
   );
   transition: background 250ms ease;
 }
@@ -596,12 +610,8 @@ body { overflow-x: hidden; }
    ============================================ */
 .instrument-well {
   position: relative;
-  background: linear-gradient(
-    172deg,
-    rgba(18, 24, 34, 0.98) 0%,
-    rgba(12, 16, 24, 1) 40%,
-    rgba(8, 10, 16, 1) 100%
-  );
+  /* IMPORTANT: No bottom-darkening gradient on widget parent (prevents fade-out). */
+  background: rgba(10,20,18,0.94);
   border-radius: 14px;
   padding: 14px 16px 12px;  /* strong top/bottom padding (reference) */
   width: 100%;
@@ -610,9 +620,9 @@ body { overflow-x: hidden; }
   grid-template-rows: var(--kpi-label-h) var(--kpi-value-h) 1fr;
   row-gap: 8px;
   align-content: stretch;
-  box-shadow: 
-    inset 0 2px 8px rgba(0, 0, 0, 0.5),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.03);
+  /* Remove shadows completely (user request) */
+  box-shadow: none;
+  border: 1px solid rgba(255,255,255,0.10); /* more visible tile boundary */
   min-height: 128px; /* instrument-grade height (no compression) */
 }
 
@@ -630,7 +640,7 @@ body { overflow-x: hidden; }
   font-weight: 800;
   letter-spacing: 2.2px;
   text-transform: uppercase;
-  color: rgba(140, 160, 180, 0.7);
+  color: rgba(255, 255, 255, 0.72);
   transition: color 200ms ease;
 }
 
@@ -654,10 +664,10 @@ body { overflow-x: hidden; }
   grid-row: 1;
   font-size: 28px; /* ~5% larger */
   font-weight: 900;
-  color: #ffffff;
+  color: rgba(255, 255, 255, 0.96);
   letter-spacing: -0.8px;
   line-height: 1;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
   transition: all 250ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -674,7 +684,7 @@ body { overflow-x: hidden; }
   align-self: end;
   font-size: 11px;
   font-weight: 700;
-  color: rgba(120, 140, 160, 0.65);
+  color: rgba(210, 225, 238, 0.65);
   margin-left: 2px;
 }
 
@@ -684,7 +694,7 @@ body { overflow-x: hidden; }
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.08em;
-  color: rgba(255,255,255,0.60);
+  color: rgba(255,255,255,0.70);
   line-height: 1.05;
 }
 
@@ -693,6 +703,13 @@ body { overflow-x: hidden; }
   place-items: center;
   min-height: var(--kpi-viz-min);
   margin-top: 0;
+  opacity: 1;
+  filter: none;
+}
+
+/* Make widgets visible (without brightening the card background) */
+.instrument-svg{
+  filter: saturate(1.35) contrast(1.28) brightness(1.16);
 }
 .instrument-visual > *{
   width: 100%;
@@ -884,11 +901,11 @@ body { overflow-x: hidden; }
 }
 
 .kpi-instrument.hover .instrument-glow {
-  opacity: 0.15;
+  opacity: 0.06; /* reduce float */
 }
 
 .kpi-instrument.active .instrument-glow {
-  opacity: 0.35;
+  opacity: 0.12; /* reduce float */
 }
 
 /* ============================================
@@ -1055,151 +1072,407 @@ body { overflow-x: hidden; }
   color: rgba(255,255,255,0.86);
 }
 
-/* ==========================================================================
-   SCENARIO INTELLIGENCE (Scenario panel only) — premium bezel + state polish
-   Scoped so it doesn't affect other sf-si uses.
-   ========================================================================== */
-.sf-si__outer{
-  padding: 0; /* component provides its own 16px outer padding inside bezel */
+/* Scenario Intelligence Panel */
+
+.sf-si__outer {
+  display: flex;
+  flex-direction: column;
 }
 
-.sf-si--scenario{
+.sf-si--scenario {
+  /* 🔥 FIXED: Responsive right-panel geometry (was 420px fixed, too narrow) */
+  width: 100%;
+  min-width: 460px;
+  max-width: 560px;
   height: 100%;
-}
-
-.sf-si--scenario .sf-si__bezel{
-  min-height: 100%;
-  border-radius: 16px;
-  padding: 16px;
   position: relative;
-  border: 1px solid rgba(255,255,255,0.08); /* outer faint */
-  background:
-    radial-gradient(720px 260px at 30% 0%, rgba(34,211,238,0.10), transparent 60%),
-    linear-gradient(180deg, rgba(10,12,16,0.86), rgba(8,10,14,0.84));
-  backdrop-filter: blur(14px);
+
+  /* authority spine — critical for zone definition */
+  border-left: 1px solid rgba(34, 211, 238, 0.15);
+
+  /* deep glass against mountain */
+  background: rgba(10, 13, 20, 0.95);
+
   box-shadow:
-    0 0 0 1px rgba(255,255,255,0.04) inset,
-    0 24px 70px rgba(0,0,0,0.50);
-  overflow: visible;
+    inset 1px 0 0 rgba(34, 211, 238, 0.06),
+    -10px 0 28px rgba(0, 0, 0, 0.35);
+
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+
+  overflow: hidden;
 }
 
-.sf-si--scenario .sf-si__bezel::before{
-  content: "";
-  position: absolute;
-  inset: 10px; /* inner frame */
-  border-radius: 14px;
-  border: 1px solid rgba(34,211,238,0.18); /* inner glow line */
-  box-shadow: 0 0 0 1px rgba(34,211,238,0.06) inset, 0 0 24px rgba(34,211,238,0.10);
-  pointer-events: none;
+/* bezel = inner frame */
+.sf-si--scenario .sf-si__bezel {
+  height: 100%;
+  padding: 24px; /* uniform 24px all sides */
+
+  border-radius: 0;
+  background: transparent;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
 }
 
-.sf-si--scenario .sf-si__header{
-  padding: 12px 12px 13px;
+/* custom scrollbar: 6px width, cyan thumb, 3px radius */
+.sf-si--scenario .sf-si__bezel::-webkit-scrollbar {
+  width: 6px;
+}
+.sf-si--scenario .sf-si__bezel::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sf-si--scenario .sf-si__bezel::-webkit-scrollbar-thumb {
+  background: rgba(34, 211, 238, 0.2);
+  border-radius: 3px;
+}
+.sf-si--scenario .sf-si__bezel::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 211, 238, 0.32);
 }
 
-.sf-si--scenario .sf-si__title{
-  font-size: 12px;
-  letter-spacing: 0.20em;
+/* Header block */
+.sf-si--scenario .sf-si__header {
+  padding: 0 0 16px;
+  margin: 0 0 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.sf-si--scenario .sf-si__brief,
-.sf-si--scenario .sf-si__qaBody{
+.sf-si--scenario .sf-si__title {
+  font-size: 18px;
+  letter-spacing: 0.14em;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: rgba(34, 211, 238, 0.9); /* cyan only for main title */
+}
+
+.sf-si--scenario .sf-si__metaRow {
+  margin-top: 12px;
+  gap: 10px;
+}
+
+/* pills */
+.sf-si--scenario .sf-si__pill {
+  border: 1px solid rgba(34, 211, 238, 0.18);
+  background: rgba(8, 18, 30, 0.55);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+/* export button */
+.sf-si--scenario .sf-si__exportBtn {
+  margin-top: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.04),
+    0 10px 24px rgba(0,0,0,0.18);
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.sf-si--scenario .sf-si__exportBtn:hover {
+  border-color: rgba(34, 211, 238, 0.22);
+  background: rgba(255, 255, 255, 0.045);
+  transform: translateY(-1px);
+}
+
+/* section rhythm: 32px vertical gaps */
+.sf-si--scenario .sf-si__section {
+  margin-top: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06); /* scannable dividers */
+}
+
+.sf-si--scenario .sf-si__section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+/* section headers (kickers): cyan, 16px top, 8px bottom */
+.sf-si--scenario .sf-si__kicker {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: rgba(34, 211, 238, 0.9); /* cyan for section headers */
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+
+.sf-si--scenario .sf-si__section > .sf-si__kicker:first-child {
+  margin-top: 0;
+}
+
+/* expandable section chevron */
+.sf-si--scenario .sf-si__kicker--expandable {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.sf-si--scenario .sf-si__kicker--expandable::after {
+  content: "▼";
+  font-size: 10px;
+  opacity: 0.5;
+  transition: transform 0.2s ease;
+}
+
+.sf-si--scenario .sf-si__kicker--expandable.expanded::after {
+  content: "▲";
+}
+
+.sf-si--scenario .sf-si__rule {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  margin: 24px 0;
+}
+
+/* body text: white, line-height 1.7, reduced eye strain */
+.sf-si--scenario .sf-si__brief {
+  line-height: 1.7;
   font-size: 13px;
+  color: rgba(255, 255, 255, 0.75); /* white body text */
 }
 
-.sf-si--scenario .sf-si__block{
-  padding: 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.06);
-  background: rgba(255,255,255,0.015);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+.sf-si--scenario .sf-si__brief p {
+  margin: 0 0 16px;
+}
+
+.sf-si--scenario .sf-si__brief p:last-child {
+  margin-bottom: 0;
+}
+
+/* tiles: SYSTEM STATE cards with status accent bars */
+.sf-si--scenario .sf-si__tiles {
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.sf-si--scenario .sf-si__tile {
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.02);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.04),
+    0 14px 26px rgba(0,0,0,0.20);
+  position: relative;
+  overflow: hidden;
+}
+
+/* status accent bars for SYSTEM STATE tiles */
+.sf-si--scenario .sf-si__tile--stable {
+  border-left: 3px solid #10b981; /* green */
+}
+
+.sf-si--scenario .sf-si__tile--elevated {
+  border-left: 3px solid #f59e0b; /* amber */
+}
+
+.sf-si--scenario .sf-si__tile--critical {
+  border-left: 3px solid #ef4444; /* red */
+}
+
+.sf-si--scenario .sf-si__tileLabel {
+  color: rgba(210, 230, 245, 0.6);
+  letter-spacing: 0.14em;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.sf-si--scenario .sf-si__tileValue {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.sf-si--scenario .sf-si__tileHint {
+  color: rgba(160, 185, 205, 0.55);
+  font-size: 11px;
+}
+
+/* blocks: clean frames + proper spacing */
+.sf-si--scenario .sf-si__block {
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.02);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.04),
+    0 18px 34px rgba(0,0,0,0.22);
+  margin-top: 16px;
+  padding: 14px;
   overflow-wrap: anywhere;
   word-break: break-word;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.75);
 }
 
-.sf-si--scenario .sf-si__modeRow{
+/* SYSTEM STATE: neutral */
+.sf-si--scenario .sf-si__block--system {
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* RISK: red accent, 8px radius */
+.sf-si--scenario .sf-si__block--risk {
+  border-left: 3px solid #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  border-left-width: 3px;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.04);
+}
+
+.sf-si--scenario .sf-si__block--risk strong {
+  color: rgba(255, 200, 200, 0.92);
+}
+
+/* ATTENTION: emerald emphasis */
+.sf-si--scenario .sf-si__block--attention {
+  border-left: 3px solid #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.15);
+  border-left-width: 3px;
+  border-radius: 8px;
+  background: rgba(16, 185, 129, 0.04);
+}
+
+/* FLAGS: quiet neutral */
+.sf-si--scenario .sf-si__block--flags {
+  border-color: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.015);
+}
+
+/* QUESTIONS: framed controls */
+.sf-si--scenario .sf-si__block--questions {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 8px;
+}
+
+/* Q row alignment */
+.sf-si--scenario .sf-si__qRow {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Traceability: terminal-like */
+.sf-si--scenario .sf-si__traceBox {
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: rgba(180, 200, 220, 0.65);
+}
+
+/* checkboxes at bottom: 20px top margin, 16px between */
+.sf-si--scenario .sf-si__controls {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sf-si--scenario .sf-si__controls label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.75);
+  cursor: pointer;
+}
+
+.sf-si--scenario .sf-si__controls input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: rgba(34, 211, 238, 0.9);
+}
+
+/* Mode row (locked single-scenario) */
+.sf-si--scenario .sf-si__modeRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
 }
 
-.sf-si--scenario .sf-si__modeLabel{
+.sf-si--scenario .sf-si__modeLabel {
   font-size: 10px;
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.55);
+  color: rgba(255, 255, 255, 0.55);
 }
 
-.sf-si--scenario .sf-si__modePill{
+.sf-si--scenario .sf-si__modePill {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   padding: 5px 10px;
   border-radius: 999px;
-  border: 1px solid rgba(34,211,238,0.18);
-  background: rgba(34,211,238,0.04);
-  color: rgba(210,250,255,0.92);
+  border: 1px solid rgba(34, 211, 238, 0.18);
+  background: rgba(34, 211, 238, 0.04);
+  color: rgba(210, 250, 255, 0.92);
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 700;
 }
 
-.sf-si--scenario .sf-si__modeLock{
-  color: rgba(34,211,238,0.95);
+.sf-si--scenario .sf-si__modeLock {
+  color: rgba(34, 211, 238, 0.95);
   display: inline-flex;
 }
 
-.sf-si--scenario .sf-si__modeHint{
-  margin-top: 8px;
+.sf-si--scenario .sf-si__modeHint {
+  margin-top: 10px;
   font-size: 12px;
-  color: rgba(255,255,255,0.62);
-  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.7;
 }
 
-.sf-si__dot--pulse{
+/* Pulse animation for EMPTY state */
+.sf-si__dot--pulse {
   animation: sf-si-dot-pulse 1.1s ease-in-out infinite;
 }
 
-@keyframes sf-si-dot-pulse{
+@keyframes sf-si-dot-pulse {
   0%   { opacity: 0.55; transform: scale(0.95); }
   50%  { opacity: 1; transform: scale(1.15); }
   100% { opacity: 0.55; transform: scale(0.95); }
 }
 
-.sf-si--scenario .sf-si__emptyRow{
+.sf-si--scenario .sf-si__emptyRow {
   display: flex;
   align-items: flex-start;
   gap: 12px;
 }
 
-.sf-si--scenario .sf-si__pulseDot{
+.sf-si--scenario .sf-si__pulseDot {
   width: 10px;
   height: 10px;
   border-radius: 999px;
-  background: rgba(34,211,238,0.95);
-  box-shadow: 0 0 12px rgba(34,211,238,0.24);
+  background: rgba(34, 211, 238, 0.95);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.24);
   margin-top: 3px;
   animation: sf-si-dot-pulse 1.1s ease-in-out infinite;
 }
 
-.sf-si--scenario .sf-si__emptyTitle{
+.sf-si--scenario .sf-si__emptyTitle {
   font-size: 13px;
   font-weight: 900;
-  color: rgba(255,255,255,0.90);
+  color: rgba(255, 255, 255, 0.90);
 }
 
-.sf-si--scenario .sf-si__emptySub{
+.sf-si--scenario .sf-si__emptySub {
   margin-top: 3px;
   font-size: 12px;
-  color: rgba(255,255,255,0.62);
+  color: rgba(255, 255, 255, 0.62);
   line-height: 1.45;
 }
 
-.sf-si--scenario .sf-si__qaBullets{
+/* Q&A bullets */
+.sf-si--scenario .sf-si__qaBullets {
   margin: 8px 0 0;
   padding-left: 16px;
-  color: rgba(255,255,255,0.80);
+  color: rgba(255, 255, 255, 0.80);
   font-size: 13px;
   line-height: 1.5;
   overflow-wrap: anywhere;
@@ -1516,6 +1789,8 @@ body { overflow-x: hidden; }
 .right-panel {
   position: relative;
   z-index: 20;
+  overflow-y: auto; /* 🔥 FIXED: Allow scrolling, not clipping */
+  overflow-x: hidden;
 }
 
 /* If center panel has its own stacking, keep it lower */
@@ -1733,11 +2008,12 @@ body { overflow-x: hidden; }
 .kpi-command-console .kpi-instrument .instrument-border {
   border-radius: 16px;
   padding: 2px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08); /* more visible boundary */
 
   background: linear-gradient(
     160deg,
     rgba(255,255,255,.18) 0%,
-    rgba(255,255,255,.06) 28%,
+    rgba(255,255,255,.08) 28%,
     rgba(0,0,0,.22) 52%,
     rgba(255,255,255,.05) 76%,
     rgba(255,255,255,.16) 100%
@@ -1759,23 +2035,19 @@ body { overflow-x: hidden; }
 /* Inner well depth */
 .kpi-command-console .kpi-instrument .instrument-well {
   border-radius: 14px;
-  background:
-    radial-gradient(600px 220px at 30% 0%, rgba(34,211,238,.10), transparent 55%),
-    linear-gradient(180deg, rgba(10,12,16,.94), rgba(8,10,14,.88));
+  background: rgba(10,20,18,0.94);
   border: 1px solid rgba(255,255,255,.08);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.06),
-    inset 0 -8px 18px rgba(0,0,0,.45);
+  box-shadow: none; /* remove shadows completely */
 }
 
 /* Glow layer (already rendered in JSX, just enhance it) */
 .kpi-command-console .kpi-instrument .instrument-glow {
-  opacity: .18;
+  opacity: .08; /* reduce float */
   filter: blur(14px);
 }
 
 .kpi-command-console .kpi-instrument.active .instrument-glow {
-  opacity: .32;
+  opacity: .14; /* reduce float */
 }
 
 /* Focus ring must sit ABOVE everything */
@@ -1784,5 +2056,75 @@ body { overflow-x: hidden; }
   border-radius: 22px;
   box-shadow:
     0 0 38px rgba(34,211,238,.22);
+}
+
+/* ============================================================================
+   STRATFIT - NUCLEAR MODE ANIMATIONS
+   ============================================================================ */
+
+/* AI Panel Header Glow Pulse Animation */
+@keyframes glowPulse {
+  0%, 100% { 
+    opacity: 0.6;
+    box-shadow: 0 0 20px rgba(34, 211, 238, 0.6);
+  }
+  50% { 
+    opacity: 1.0;
+    box-shadow: 
+      0 0 40px rgba(34, 211, 238, 0.9), 
+      0 0 60px rgba(34, 211, 238, 0.6);
+  }
+}
+
+/* AI Panel Status Dots Pulse Animation */
+@keyframes dotPulse {
+  0%, 100% { 
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 1.0;
+    transform: scale(1.3);
+  }
+}
+
+/* AI Panel Custom Scrollbar Styling */
+.ai-intelligence-panel {
+  /* Enable smooth scrolling */
+  scroll-behavior: smooth;
+}
+
+.ai-intelligence-panel::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ai-intelligence-panel::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-left: 1px solid rgba(34, 211, 238, 0.1);
+}
+
+.ai-intelligence-panel::-webkit-scrollbar-thumb {
+  background: rgba(34, 211, 238, 0.3);
+  border-radius: 4px;
+  border: 1px solid rgba(34, 211, 238, 0.4);
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.3);
+  transition: all 0.2s ease;
+}
+
+.ai-intelligence-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 211, 238, 0.5);
+  box-shadow: 0 0 16px rgba(34, 211, 238, 0.5);
+}
+
+/* Firefox scrollbar styling */
+.ai-intelligence-panel {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(34, 211, 238, 0.3) rgba(255, 255, 255, 0.02);
+}
+
+/* Typewriter Cursor Blink Animation */
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
 }
 

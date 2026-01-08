@@ -188,16 +188,16 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
           position: relative;
           display: flex;
           align-items: center;
-          gap: 14px;
-          padding: 12px 16px;
-          min-width: 240px;
+          gap: 17px;
+          padding: 14px 19px;
+          min-width: 288px;
           background: linear-gradient(
             165deg,
             rgba(22, 28, 38, 0.95) 0%,
             rgba(14, 18, 26, 0.98) 50%,
             rgba(10, 14, 22, 0.99) 100%
           );
-          border: 1px solid rgba(255, 255, 255, 0.10);
+          border: 1px solid rgba(255, 255, 255, 0.12);
           border-radius: 14px;
           cursor: pointer;
           transition: background 160ms ease, border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
@@ -247,7 +247,7 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
             rgba(18, 24, 34, 0.98) 50%,
             rgba(12, 16, 26, 0.99) 100%
           );
-          border-color: rgba(255, 255, 255, 0.16);
+          border-color: rgba(255, 255, 255, 0.19);
           box-shadow: 0 10px 28px rgba(0,0,0,0.35);
           transform: translateY(-1px);
         }
@@ -284,7 +284,7 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
         }
 
         .capsule-label {
-          font-size: 10px;
+          font-size: 12px;
           font-weight: 700;
           letter-spacing: 0.16em;
           color: rgba(160, 180, 200, 0.8);
@@ -292,7 +292,7 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
         }
 
         .capsule-value {
-          font-size: 16px;
+          font-size: 19px;
           font-weight: 800;
           color: var(--accent);
           text-shadow: 0 0 12px rgba(34,211,238,0.20);
@@ -307,8 +307,8 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 28px;
-          height: 28px;
+          width: 34px;
+          height: 34px;
           margin-left: auto;
           color: rgba(200, 220, 240, 0.7);
           transition: color 160ms ease, transform 160ms ease;
@@ -361,7 +361,7 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
             rgba(14, 18, 26, 0.98) 0%,
             rgba(10, 14, 22, 0.99) 100%
           );
-          border: 1px solid rgba(255, 255, 255, 0.10);
+          border: 1px solid rgba(255, 255, 255, 0.12);
           border-top: none;
           border-radius: 0 0 14px 14px;
           overflow: hidden;
@@ -389,7 +389,7 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
             rgba(14, 18, 26, 0.98) 0%,
             rgba(10, 14, 22, 0.99) 100%
           );
-          border: 1px solid rgba(255, 255, 255, 0.10);
+          border: 1px solid rgba(255, 255, 255, 0.12);
           border-radius: 14px;
           box-shadow: 0 14px 46px rgba(0,0,0,0.55);
           pointer-events: auto;
@@ -410,7 +410,7 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
           align-items: center;
           gap: 10px;
           width: 100%;
-          padding: 10px 14px;
+          padding: 12px 17px;
           background: transparent;
           border: none;
           cursor: pointer;
@@ -455,7 +455,7 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
         }
 
         .option-name {
-          font-size: 12px;
+          font-size: 14px;
           font-weight: 700;
           color: rgba(255, 255, 255, 0.9);
         }
@@ -465,7 +465,7 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
         }
 
         .option-desc {
-          font-size: 10px;
+          font-size: 12px;
           color: rgba(160, 180, 200, 0.6);
         }
       `}</style>

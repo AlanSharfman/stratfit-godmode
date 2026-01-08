@@ -19,10 +19,10 @@ export default function CenterViewSegmented({ value, onChange, className }: Prop
     <div className={className ?? ""}>
       <div
         className="
-          inline-flex h-11 items-center rounded-2xl
+          inline-flex h-12 items-center rounded-2xl ml-8
           border border-slate-700/60
           bg-linear-to-b from-slate-950/80 to-slate-950/95
-          px-1.5 gap-1
+          px-2 gap-1.5
           shadow-[0_2px_12px_rgba(0,0,0,0.5),0_0_0_1px_rgba(100,116,139,0.15)]
           backdrop-blur-xl
         "
@@ -35,7 +35,7 @@ export default function CenterViewSegmented({ value, onChange, className }: Prop
               type="button"
               onClick={() => onChange(t.key)}
               className={[
-                "h-8 rounded-xl px-6 text-[11px] font-semibold uppercase tracking-widest transition-all duration-150",
+                "h-10 rounded-xl px-8 text-[13px] font-semibold uppercase tracking-widest transition-all duration-150",
                 active
                   ? "text-cyan-300 border border-cyan-400/60 bg-linear-to-br from-cyan-950/50 to-cyan-900/30 shadow-[0_0_16px_rgba(34,211,238,0.25),inset_0_0_0_1px_rgba(34,211,238,0.2)]"
                   : "text-slate-400 hover:text-slate-200 hover:bg-white/3 border border-transparent",

@@ -1,4 +1,5 @@
 // STRATFIT — KPI GROUP BEZEL FRAME (HARDWARE-GRADE, SVG/MASK)
+// NUCLEAR MODE FIXES APPLIED
 // Layer stack (top → bottom):
 // SVG frame (chamfer + notch) -> inner cavity -> header strip -> divider -> card rack -> bottom notch + glow bars
 
@@ -65,15 +66,15 @@ export default function BezelFrame({
     <section
       className={[
         "relative isolate",
-        "h-[174px]", // bezel height (kept compact; group cards define internal density)
+        "h-[194px]", // 🔥 FIX: Increased from 174px to 194px
         sizeToClass(size),
         className ?? "",
       ].join(" ")}
       style={
         {
           ["--sf-accent" as string]: `rgba(${rgb},1)`,
-          ["--sf-accentA" as string]: `rgba(${rgb},0.55)`,
-          ["--sf-accentB" as string]: `rgba(${rgb},0.22)`,
+          ["--sf-accentA" as string]: `rgba(${rgb},0.70)`, // 🔥 FIX: Increased from 0.55 to 0.70
+          ["--sf-accentB" as string]: `rgba(${rgb},0.35)`, // 🔥 FIX: Increased from 0.22 to 0.35
         } as React.CSSProperties
       }
     >
@@ -129,13 +130,13 @@ export default function BezelFrame({
           filter={`url(#${outerId})`}
         />
 
-        {/* Accent rim (subtle, no hard edge) */}
+        {/* 🔥 FIX: Accent rim - increased visibility */}
         <path
           d={outerPath}
           fill="none"
-          stroke="var(--sf-accentB)"
-          strokeWidth="2"
-          opacity="0.65"
+          stroke="var(--sf-accentA)" // Changed from accentB
+          strokeWidth="2.5" // Changed from 2
+          opacity="0.85" // Changed from 0.65
         />
 
         {/* Inner cavity housing */}
@@ -160,7 +161,7 @@ export default function BezelFrame({
           strokeWidth="2"
         />
 
-        {/* Bottom notch “handle” inner lip */}
+        {/* Bottom notch "handle" inner lip */}
         <path
           d="M420 206 H580"
           stroke="rgba(255,255,255,0.10)"
@@ -169,30 +170,30 @@ export default function BezelFrame({
         />
       </svg>
 
-      {/* Top light bar (short, centered; not full width) */}
+      {/* 🔥 FIX: Top light bar - stronger glow */}
       <div
-        className="pointer-events-none absolute left-1/2 top-[10px] h-[3px] w-[34%] -translate-x-1/2 rounded-full"
+        className="pointer-events-none absolute left-1/2 top-[12px] h-[4px] w-[38%] -translate-x-1/2 rounded-full"
         style={{
-          background: "var(--sf-accentA)",
+          background: "linear-gradient(90deg, transparent, var(--sf-accent), transparent)",
           boxShadow:
-            "0 0 18px var(--sf-accentB), 0 0 34px rgba(0,0,0,0.12)",
-          opacity: 0.75,
+            "0 0 24px var(--sf-accent), 0 0 48px var(--sf-accentB), 0 0 72px rgba(34,211,238,0.15)",
+          opacity: 1.0,
         }}
       />
 
-      {/* Bottom light bar (short, centered above notch) */}
+      {/* 🔥 FIX: Bottom light bar - stronger glow */}
       <div
-        className="pointer-events-none absolute left-1/2 bottom-[18px] h-[2px] w-[28%] -translate-x-1/2 rounded-full"
+        className="pointer-events-none absolute left-1/2 bottom-[20px] h-[3px] w-[32%] -translate-x-1/2 rounded-full"
         style={{
-          background: "var(--sf-accentB)",
+          background: "linear-gradient(90deg, transparent, var(--sf-accentB), transparent)",
           boxShadow:
-            "0 0 16px var(--sf-accentB), 0 0 28px rgba(0,0,0,0.10)",
-          opacity: 0.75,
+            "0 0 20px var(--sf-accentB), 0 0 40px rgba(34,211,238,0.18)",
+          opacity: 0.85,
         }}
       />
 
-      {/* Content overlay */}
-      <div className="relative z-10 flex h-full flex-col px-[18px] pt-[14px] pb-[18px]">
+      {/* 🔥 FIX: Content overlay - increased padding */}
+      <div className="relative z-10 flex h-full flex-col px-[24px] pt-[18px] pb-[22px]">
         {/* Header strip */}
         <div className="flex items-center justify-between">
           <div className="flex-1" />
@@ -202,10 +203,11 @@ export default function BezelFrame({
             </div>
           </div>
           <div className="flex flex-1 items-center justify-end">
+            {/* 🔥 FIX: Corner screws - larger with glow */}
             <div className="flex flex-col gap-[3px] pr-[2px] opacity-60">
-              <span className="h-[3px] w-[3px] rounded-full bg-[var(--sf-accent)]" />
-              <span className="h-[3px] w-[3px] rounded-full bg-[var(--sf-accent)]" />
-              <span className="h-[3px] w-[3px] rounded-full bg-[var(--sf-accent)]" />
+              <span className="h-[4px] w-[4px] rounded-full bg-[var(--sf-accent)] shadow-[0_0_6px_var(--sf-accent)]" />
+              <span className="h-[4px] w-[4px] rounded-full bg-[var(--sf-accent)] shadow-[0_0_6px_var(--sf-accent)]" />
+              <span className="h-[4px] w-[4px] rounded-full bg-[var(--sf-accent)] shadow-[0_0_6px_var(--sf-accent)]" />
             </div>
           </div>
         </div>
@@ -226,5 +228,3 @@ export default function BezelFrame({
     </section>
   );
 }
-
-

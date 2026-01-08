@@ -1,146 +1,186 @@
+/* src/components/kpi/KPIBezel.module.css
+   STRATFIT — PRO BEZEL (no neon, raised double-rim, CFO-grade)
+*/
+
 .wrap {
-  /* Fixed chassis height (non-negotiable) */
-  /* Reference: KPI layer occupies ~18–22% viewport height on desktop */
-  height: clamp(190px, 20vh, 240px);
+  height: clamp(210px, 22vh, 260px);
   position: relative;
-  border-radius: 14px;
-  overflow: visible; /* allow rail glow to spill OUTSIDE without affecting neighbors */
+  border-radius: 26px;
+  overflow: visible;
   isolation: isolate;
 }
 
-/* Neon rails (top & bottom) — glow is isolated on wrapper pseudo-elements */
+/* Remove neon rails entirely */
 .wrap::before,
 .wrap::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 78%;
-  border-radius: 999px;
-  pointer-events: none;
-  z-index: 3;
-}
-
-.wrap::before {
-  top: 4px;
-  height: 3px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(34, 211, 238, 0.82) 12%,
-    rgba(34, 211, 238, 0.95) 50%,
-    rgba(34, 211, 238, 0.82) 88%,
-    transparent 100%
-  );
-  box-shadow: 0 0 14px rgba(34, 211, 238, 0.55), 0 0 26px rgba(34, 211, 238, 0.18);
-  opacity: 0.9;
-}
-
-.wrap::after {
-  bottom: 8px;
-  height: 2px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(34, 211, 238, 0.48) 14%,
-    rgba(34, 211, 238, 0.62) 50%,
-    rgba(34, 211, 238, 0.48) 86%,
-    transparent 100%
-  );
-  box-shadow: 0 0 10px rgba(34, 211, 238, 0.35), 0 0 18px rgba(34, 211, 238, 0.14);
-  opacity: 0.8;
+  content: none;
 }
 
 .bezel {
   position: relative;
-  border-radius: 14px;
-  background: linear-gradient(180deg, rgba(10, 14, 20, 0.96), rgba(8, 10, 14, 0.96));
-  /* Subtle lower notch/handle cutout */
-  clip-path: polygon(
-    /* top-left chamfer */
-    2.0% 0%,
-    98.0% 0%,
-    100% 8%,
-    /* right edge */
-    100% 92%,
-    98.0% 100%,
-    /* bottom notch (tiny, edge-only) */
-    56% 100%,
-    54.2% 94.5%,
-    45.8% 94.5%,
-    44% 100%,
-    /* left edge */
-    2.0% 100%,
-    0% 92%,
-    0% 8%
-  );
-  /* HARD CLIP: prevent any inner shadows/children from overlapping other bezels */
-  overflow: hidden;
   height: 100%;
-}
+  border-radius: 26px;
 
-.bezel::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  clip-path: inherit; /* follow notch geometry */
-  pointer-events:none;
-  border: 1px solid #e5e7eb;
+  /* Outer bezel frame: gunmetal charcoal @ ~0.90 (no blur filter) */
+  background: rgba(22,26,30,0.90);
+
+  /* Raised / lifted rim — stronger lift + clearer step */
   box-shadow:
+    /* top-left lift highlight */
+    -18px -18px 36px rgba(255, 255, 255, 0.045),
+    /* bottom-right depth */
+    22px 22px 46px rgba(0, 0, 0, 0.78),
+    /* inner rim + top sheen (crisp) */
     inset 0 0 0 1px rgba(255,255,255,0.06),
-    inset 0 10px 20px rgba(0,0,0,0.10);
-  opacity: 0.9;
-  z-index: 2;
+    inset 0 1px 0 rgba(255,255,255,0.10),
+    /* rim edge definition */
+    inset 1px 1px 0 rgba(255, 255, 255, 0.10),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.72),
+    /* undercut inside the rim (adds "stepped" feel) */
+    inset 0 18px 30px rgba(0, 0, 0, 0.38),
+    /* Bottom lip contrast */
+    inset 0 -1px 0 rgba(255,255,255,0.06),
+    inset 0 -14px 22px rgba(0,0,0,0.42);
+
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  /* Do not clip/dim widget layer */
+  overflow: visible;
 }
 
-.bezel::after{
-  content:"";
-  position:absolute;
-  inset:2px;
-  clip-path: inherit;
-  pointer-events:none;
-  border: 1px solid #e5e7eb;
-  opacity: 0.85;
+/* STEP 1: outer manufacturing line (crisp ring) */
+.bezel::before{
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
   z-index: 1;
+
+  padding: 6px; /* ring thickness (stronger step visibility) */
+  /* Ring-only render (no masks): border-box shows ring, padding-box is transparent */
+  /* Uniform ring (no bottom fade) */
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,0.18) 0%,
+      rgba(255,255,255,0.14) 100%
+    ) border-box,
+    linear-gradient(transparent, transparent) padding-box;
+  background-clip: border-box, padding-box;
+  border: 1px solid rgba(255,255,255,0.11);
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.14),
+    inset 0 -1px 0 rgba(0,0,0,0.45);
+  opacity: 0.95;
 }
 
+/* STEP 2: inner ledge at cavity boundary (the “step” in your green circle) */
+.bezel::after{
+  content: "";
+  position: absolute;
+  inset: 6px; /* widen the visible shelf between ledge and cavity */
+  border-radius: 21px;
+  pointer-events: none;
+  z-index: 1;
+
+  padding: 6px; /* ring thickness (stronger step visibility) */
+  /* Ring-only render (no masks): border-box shows ring, padding-box is transparent */
+  /* Uniform ledge ring (no bottom fade) */
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,0.16) 0%,
+      rgba(255,255,255,0.12) 100%
+    ) border-box,
+    linear-gradient(transparent, transparent) padding-box;
+  background-clip: border-box, padding-box;
+  border: 1px solid rgba(255,255,255,0.11);
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.10),
+    inset 0 -1px 0 rgba(0,0,0,0.40);
+  opacity: 1;
+}
+
+/* Recessed “screen cavity” */
 .inner {
   position: absolute;
-  inset: 9px; /* inner frame inset (8–10px) */
-  border-radius: 12px;
-  background: linear-gradient(180deg, rgba(12, 16, 22, 0.92), rgba(8, 10, 14, 0.96));
-  /* No glow inside cavity */
+  inset: 14px; /* exposes more of the ledge so the step reads clearly */
+  border-radius: 18px;
+
+  /* Inner tray behind tiles: slightly more translucent than bezel (0.78–0.82) */
+  background: linear-gradient(180deg, rgba(20,25,29,0.82) 0%, rgba(15,20,24,0.78) 100%);
+
+  /* Step ledge: lip + crisp cut + bottom depth (inset-only, no layout changes) */
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
-    inset 0 0 0 2px rgba(34, 211, 238, 0.10);
-  overflow: hidden;
-  z-index: 1;
+    inset 0 0 0 1px rgba(255,255,255,0.045), /* crisp inner edge */
+    inset 0 1px 0 rgba(255,255,255,0.06),    /* subtle top lip highlight */
+    inset 0 -22px 38px rgba(0,0,0,0.58);     /* bottom depth */
+
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  z-index: 2; /* surface above frame bg, below widgets */
+
   display: flex;
   flex-direction: column;
+  /* Do not clip/dim widget layer */
+  overflow: visible;
 }
 
+/* IMPORTANT: no overlay pseudo-elements on the widget parent (.inner) */
+
+/* Header band */
 .header {
-  height: 28px; /* fixed header band */
+  height: 36px;               /* a touch more breathing room */
+  position: relative;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  padding: 0 12px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+  padding: 0 14px;
+
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    rgba(255, 255, 255, 0.018) 100%
+  );
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.header::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255,255,255,0.08) 20%,
+    rgba(255,255,255,0.06) 80%,
+    transparent 100%
+  );
+  opacity: 0.7;
 }
 
 .title {
   justify-self: center;
   font-size: 11px;
   font-weight: 900;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.92);
-  transform: translateY(-1px); /* sits slightly above the divider line (reference) */
+  color: rgba(255, 255, 255, 0.86);
+  line-height: 1.1; /* reduce “pinched” feel */
+  transform: translateY(0px);
+  /* Engraved effect (no glow): faint highlight + inner shadow */
+  text-shadow:
+    0 -1px 0 rgba(255,255,255,0.10),
+    0 1px 0 rgba(0,0,0,0.70);
 }
 
 .dots {
   justify-self: end;
-  display: flex;
+  display: none; /* remove 3-dot ornamentation */
   flex-direction: column;
   gap: 3px;
   opacity: 0.7;
@@ -150,32 +190,32 @@
   width: 3px;
   height: 3px;
   border-radius: 999px;
-  background: rgba(34, 211, 238, 0.9);
+  background: rgba(255, 255, 255, 0.6);
 }
 
+/* Divider — neutral, no glow */
 .divider {
   height: 1px;
-  background: rgba(34, 211, 238, 0.26);
-  box-shadow: 0 0 8px rgba(34, 211, 238, 0.14);
-  animation: dividerPulse 2.8s ease-in-out infinite;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.10) 20%,
+    rgba(255, 255, 255, 0.08) 80%,
+    transparent 100%
+  );
+  opacity: 0.55;
 }
 
-@keyframes dividerPulse {
-  0%,
-  100% {
-    opacity: 0.25;
-  }
-  50% {
-    opacity: 0.55;
-  }
-}
-
+/* Grid (keep your sizing contract) */
 .grid {
+  /* HARD GUARANTEE: widget layer is always above any bezel shading */
+  position: relative;
+  z-index: 3;
   flex: 1;
   display: grid;
   grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
-  gap: 12px;
-  padding: 10px; /* instrument breathing room (no compression) */
+  gap: 16px;
+  padding: 16px 14px;
   align-items: stretch;
 }
 
@@ -184,34 +224,25 @@
   height: 100%;
 }
 
-/* =========================================================
-   DEBUG — magenta outlines for bezel anatomy (no layout impact)
-   Toggle via `DEBUG_BEZEL` in KPIBezel.tsx
-   ========================================================= */
+/* Debug helpers remain valid if you toggle DEBUG_BEZEL */
 .debug {
-  outline: 1px solid magenta; /* outer bezel */
+  outline: 1px solid magenta;
   outline-offset: 0;
 }
 
 .debug .inner {
-  outline: 1px solid magenta; /* inner frame */
+  outline: 1px solid magenta;
   outline-offset: -1px;
 }
 
 .debug .header {
-  outline: 1px solid magenta; /* header band */
+  outline: 1px solid magenta;
 }
 
 .debug .divider {
-  outline: 1px solid magenta; /* divider line */
+  outline: 1px solid magenta;
 }
 
 .debug .grid {
-  outline: 1px solid magenta; /* content grid */
+  outline: 1px solid magenta;
 }
-
-.debug .grid > * {
-  outline: 1px solid magenta; /* each KPI cell */
-}
-
-

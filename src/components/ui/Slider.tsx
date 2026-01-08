@@ -201,6 +201,8 @@ const Slider = memo(function Slider({
           border-radius: 3px;
           will-change: width;
           transition: none !important;
+          transform: translateZ(0); /* 🔥 GPU acceleration */
+          backface-visibility: hidden; /* 🔥 Prevent paint flicker */
           box-shadow: 
             0 0 12px rgba(34, 211, 238, 0.4),
             inset 0 1px 0 rgba(255, 255, 255, 0.2);
@@ -224,22 +226,22 @@ const Slider = memo(function Slider({
           background: linear-gradient(135deg, rgba(34, 211, 238, 0.95), rgba(34, 211, 238, 1));
           border: 2px solid rgba(255, 255, 255, 0.3);
           border-radius: 50%;
-          transform: translateX(-50%);
+          transform: translateX(-50%) translateZ(0); /* 🔥 GPU layer */
+          backface-visibility: hidden; /* 🔥 Prevent paint flicker */
           box-shadow: 
             0 0 16px rgba(34, 211, 238, 0.5),
             0 2px 8px rgba(0, 0, 0, 0.4),
             inset 0 1px 0 rgba(255, 255, 255, 0.4);
-          will-change: left;
+          will-change: left, transform;
           /* CRITICAL: do NOT transition "left" or the thumb will lag behind the pointer. */
           transition:
-            transform 120ms cubic-bezier(0.22, 1, 0.36, 1),
-            box-shadow 120ms cubic-bezier(0.22, 1, 0.36, 1),
-            background 120ms cubic-bezier(0.22, 1, 0.36, 1),
-            border-color 120ms cubic-bezier(0.22, 1, 0.36, 1);
+            box-shadow 80ms cubic-bezier(0.22, 1, 0.36, 1),
+            background 80ms cubic-bezier(0.22, 1, 0.36, 1),
+            border-color 80ms cubic-bezier(0.22, 1, 0.36, 1);
         }
 
         .slider-track:active .slider-thumb {
-          transform: translateX(-50%) scale(1.2);
+          transform: translateX(-50%) translateZ(0) scale(1.15); /* 🔥 Slightly reduced scale for speed */
           box-shadow: 
             0 0 24px rgba(34, 211, 238, 0.8),
             0 2px 12px rgba(0, 0, 0, 0.5),
@@ -264,9 +266,9 @@ const Slider = memo(function Slider({
         }
 
         @keyframes sfThumbRelease {
-          0% { transform: translateX(-50%) scale(1); }
-          55% { transform: translateX(-50%) scale(1.08); box-shadow: 0 0 22px rgba(34, 211, 238, 0.65), 0 2px 10px rgba(0, 0, 0, 0.45); }
-          100% { transform: translateX(-50%) scale(1); }
+          0% { transform: translateX(-50%) translateZ(0) scale(1); }
+          55% { transform: translateX(-50%) translateZ(0) scale(1.06); box-shadow: 0 0 20px rgba(34, 211, 238, 0.6), 0 2px 10px rgba(0, 0, 0, 0.45); }
+          100% { transform: translateX(-50%) translateZ(0) scale(1); }
         }
       `}</style>
     </div>
