@@ -25,3 +25,8 @@ dist-ssr
 
 .vercel
 .env*.local
+
+# local backups
+*.zip
+*_FULLCOPY_*
+
