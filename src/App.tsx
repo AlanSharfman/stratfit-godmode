@@ -17,7 +17,7 @@ import type { LeverId } from "@/logic/mountainPeakModel";
 import { calculateMetrics } from "@/logic/calculateMetrics";
 import { emitCausal } from "@/ui/causalEvents";
 import TakeTheTour from "@/components/ui/TakeTheTour";
-import ScenarioIntelligencePanel from "@/components/ui/ScenarioIntelligencePanel";
+import { ScenarioIntelligencePanel } from "@/components/ui/ScenarioIntelligencePanel";
 import { deriveArrGrowth, formatUsdCompact } from "@/utils/arrGrowth";
 import ScenarioMemoPage from "@/pages/ScenarioMemoPage";
 
@@ -53,6 +53,53 @@ const INITIAL_LEVERS: LeverState = {
 };
 
 // SCENARIOS moved to ScenarioSelector component
+
+type SavedScenarioVersion = {
+  id: string;
+  name: string;
+  scenario: ScenarioId;
+  levers: LeverState;
+  savedAt: number;
+};
+
+const SAVED_SCENARIOS_KEY = "sf.savedScenarios.v1";
+
+function safeReadSavedScenarios(): SavedScenarioVersion[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(SAVED_SCENARIOS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((x) => x as Partial<SavedScenarioVersion>)
+      .filter((x) => typeof x?.name === "string" && typeof x?.savedAt === "number")
+      .map((x) => ({
+        id: String(x.id ?? `${x.name}-${x.savedAt}`),
+        name: String(x.name ?? ""),
+        scenario: (x.scenario ?? "base") as ScenarioId,
+        levers: (x.levers ?? INITIAL_LEVERS) as LeverState,
+        savedAt: Number(x.savedAt ?? Date.now()),
+      }))
+      .sort((a, b) => b.savedAt - a.savedAt);
+  } catch {
+    return [];
+  }
+}
+
+function safeWriteSavedScenarios(list: SavedScenarioVersion[]) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(SAVED_SCENARIOS_KEY, JSON.stringify(list));
+  } catch {
+    // ignore write failures (private mode / quota)
+  }
+}
+
+function makeId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
+  return `id_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+}
 
 // ============================================================================
 // METRICS CALCULATION
@@ -91,6 +138,14 @@ export default function App() {
   const [scenario, setScenario] = useState<ScenarioId>("base");
   const [levers, setLevers] = useState<LeverState>(INITIAL_LEVERS);
   const didMountRef = useRef(false);
+
+  // Scenario persistence (local-only, UI-only)
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [loadOpen, setLoadOpen] = useState(false);
+  const [saveName, setSaveName] = useState("");
+  const [savedScenarios, setSavedScenarios] = useState<SavedScenarioVersion[]>(() =>
+    safeReadSavedScenarios()
+  );
   
   // Handle scenario change
   const handleScenarioChange = useCallback((newScenario: ScenarioId) => {
@@ -371,6 +426,77 @@ export default function App() {
   const handleOnboardingComplete = useCallback(() => {
     setShowOnboarding(false);
   }, []);
+
+  const openSave = useCallback(() => {
+    emitCausal({
+      source: "scenario_save",
+      bandStyle: "wash",
+      color: "rgba(34,211,238,0.18)",
+    });
+    setSaveName("");
+    setSaveOpen(true);
+  }, []);
+
+  const openLoad = useCallback(() => {
+    emitCausal({
+      source: "scenario_load",
+      bandStyle: "wash",
+      color: "rgba(34,211,238,0.18)",
+    });
+    setSavedScenarios(safeReadSavedScenarios());
+    setLoadOpen(true);
+  }, []);
+
+  const commitSave = useCallback(() => {
+    const name = saveName.trim();
+    if (!name) return;
+
+    const now = Date.now();
+    const existingIdx = savedScenarios.findIndex((s) => s.name.toLowerCase() === name.toLowerCase());
+    const next: SavedScenarioVersion = {
+      id: existingIdx >= 0 ? savedScenarios[existingIdx]!.id : makeId(),
+      name,
+      scenario,
+      levers,
+      savedAt: now,
+    };
+
+    const nextList =
+      existingIdx >= 0
+        ? savedScenarios.map((s, i) => (i === existingIdx ? next : s)).sort((a, b) => b.savedAt - a.savedAt)
+        : [next, ...savedScenarios].sort((a, b) => b.savedAt - a.savedAt);
+
+    setSavedScenarios(nextList);
+    safeWriteSavedScenarios(nextList);
+    setSaveOpen(false);
+  }, [levers, saveName, savedScenarios, scenario]);
+
+  const commitLoad = useCallback(
+    (item: SavedScenarioVersion) => {
+      setScenario(item.scenario);
+      setLevers(item.levers);
+      setLoadOpen(false);
+      emitCausal({
+        source: "scenario_load",
+        bandStyle: "wash",
+        color: "rgba(34,211,238,0.18)",
+      });
+    },
+    []
+  );
+
+  // Modal escape key support
+  useEffect(() => {
+    if (!saveOpen && !loadOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSaveOpen(false);
+        setLoadOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [saveOpen, loadOpen]);
   
   return (
     <div className="app">
@@ -395,43 +521,60 @@ export default function App() {
           </div>
         </div>
         <div className="header-actions">
-          <div className="header-action-buttons">
+          <div className="sf-hdrUtil" aria-label="Top-right utilities">
+            <div className="sf-hdrUtil__icons" aria-label="Scenario load/save">
+              <button
+                type="button"
+                className="sf-hdrUtil__pillBtn"
+                onClick={openLoad}
+                title="Load scenario"
+                aria-label="Load scenario"
+              >
+                <svg
+                  className="sf-hdrUtil__icon"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M12 3v10" />
+                  <path d="M8 11l4 4 4-4" />
+                  <path d="M4 21h16" />
+                </svg>
+                <span className="sf-hdrUtil__pillText">Load</span>
+              </button>
+              <button
+                type="button"
+                className="sf-hdrUtil__pillBtn"
+                onClick={openSave}
+                title="Save scenario"
+                aria-label="Save scenario"
+              >
+                <svg
+                  className="sf-hdrUtil__icon"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M4 4h14l2 2v14H4z" />
+                  <path d="M7 4v6h10V4" />
+                  <path d="M7 20v-6h10v6" />
+                </svg>
+                <span className="sf-hdrUtil__pillText">Save</span>
+              </button>
+            </div>
             <TakeTheTour />
-            <button
-              className="header-action-btn"
-              title="Load scenario"
-              onClick={() => {
-                emitCausal({
-                  source: "scenario_load",
-                  bandStyle: "wash",
-                  color: "rgba(34,211,238,0.18)",
-                });
-              }}
-            >
-              <svg className="header-action-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="1 4 1 10 7 10" />
-                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
-              </svg>
-              <span className="header-action-text">Load</span>
-            </button>
-            <button
-              className="header-action-btn"
-              title="Save scenario"
-              onClick={() => {
-                emitCausal({
-                  source: "scenario_save",
-                  bandStyle: "wash",
-                  color: "rgba(34,211,238,0.18)",
-                });
-              }}
-            >
-              <svg className="header-action-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                <polyline points="17 21 17 13 7 13 7 21" />
-                <polyline points="7 3 7 8 15 8" />
-              </svg>
-              <span className="header-action-text">Save</span>
-            </button>
           </div>
         </div>
       </header>
@@ -440,7 +583,9 @@ export default function App() {
       <section className="command-band">
         {/* ACTIVE SCENARIO (TOP-LEFT, next to KPI bezels — per spec) */}
         <div className="scenario-area">
-          <ScenarioSelector scenario={scenario} onChange={handleScenarioChange} />
+          <div className="scenario-command-center">
+            <ScenarioSelector scenario={scenario} onChange={handleScenarioChange} />
+          </div>
         </div>
 
         {/* KPI CONSOLE */}
@@ -469,6 +614,81 @@ export default function App() {
             <AIIntelligence levers={levers} scenario={scenario} />
           )}
         </aside>
-    </div></div>
+      </div>
+
+      {/* SCENARIO SAVE MODAL */}
+      {saveOpen ? (
+        <div className="sf-scm" role="dialog" aria-modal="true" aria-label="Save scenario version">
+          <div className="sf-scm__backdrop" onClick={() => setSaveOpen(false)} />
+          <div className="sf-scm__panel">
+            <div className="sf-scm__kicker">SAVE</div>
+            <div className="sf-scm__title">Name this scenario version</div>
+            <div className="sf-scm__meta">Current: {scenario}</div>
+
+            <input
+              className="sf-scm__input"
+              value={saveName}
+              onChange={(e) => setSaveName(e.target.value)}
+              placeholder="e.g., Aggressive Growth"
+              autoFocus
+            />
+
+            <div className="sf-scm__actions">
+              <button type="button" className="sf-scm__btn" onClick={() => setSaveOpen(false)}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="sf-scm__btn sf-scm__btn--primary"
+                onClick={commitSave}
+                disabled={!saveName.trim()}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* SCENARIO LOAD MODAL */}
+      {loadOpen ? (
+        <div className="sf-scm" role="dialog" aria-modal="true" aria-label="Load scenario version">
+          <div className="sf-scm__backdrop" onClick={() => setLoadOpen(false)} />
+          <div className="sf-scm__panel">
+            <div className="sf-scm__kicker">LOAD</div>
+            <div className="sf-scm__title">Saved scenario versions</div>
+            <div className="sf-scm__meta">{savedScenarios.length ? `${savedScenarios.length} saved` : "No saves yet"}</div>
+
+            <div className="sf-scm__list" role="list">
+              {savedScenarios.length ? (
+                savedScenarios.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className="sf-scm__row"
+                    onClick={() => commitLoad(item)}
+                    title={`Load ${item.name}`}
+                  >
+                    <div className="sf-scm__rowTitle">{item.name}</div>
+                    <div className="sf-scm__rowMeta">
+                      <span className="sf-scm__tag">{item.scenario}</span>
+                      <span className="sf-scm__time">{new Date(item.savedAt).toLocaleString()}</span>
+                    </div>
+                  </button>
+                ))
+              ) : (
+                <div className="sf-scm__empty">Use Save to capture your current lever configuration.</div>
+              )}
+            </div>
+
+            <div className="sf-scm__actions">
+              <button type="button" className="sf-scm__btn" onClick={() => setLoadOpen(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }

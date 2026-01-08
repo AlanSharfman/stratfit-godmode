@@ -123,8 +123,9 @@
 
   display: flex;
   flex-direction: column;
-  /* Do not clip/dim widget layer */
-  overflow: visible;
+  /* Keep KPI tiles within bezel boundaries (no masks, no fades) */
+  overflow: hidden;
+  min-height: 0;
 }
 
 /* IMPORTANT: no overlay pseudo-elements on the widget parent (.inner) */
@@ -147,20 +148,8 @@
 }
 
 .header::after {
-  content: "";
-  position: absolute;
-  left: 14px;
-  right: 14px;
-  bottom: 0;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255,255,255,0.08) 20%,
-    rgba(255,255,255,0.06) 80%,
-    transparent 100%
-  );
-  opacity: 0.7;
+  /* moved to .title::after so the rule reads as “under-title precision” */
+  content: none;
 }
 
 .title {
@@ -176,6 +165,26 @@
   text-shadow:
     0 -1px 0 rgba(255,255,255,0.10),
     0 1px 0 rgba(0,0,0,0.70);
+  position: relative;
+  padding-bottom: 0; /* avoid pushing/overflowing the header band */
+}
+
+/* Under-title precision rule (manufactured, not decorative) */
+.title::after{
+  content: "";
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: -8px; /* centered baseline just under the title band */
+  height: 1px;
+  border-radius: 1px;
+  /* Optional (tasteful): subtle “system intelligence” gradient, matte + restrained */
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255,255,255,0.18),
+    transparent
+  );
 }
 
 .dots {

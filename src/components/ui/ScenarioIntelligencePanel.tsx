@@ -1,454 +1,428 @@
 // src/components/ui/ScenarioIntelligencePanel.tsx
 // STRATFIT — Scenario Intelligence (SAFE MVP, deterministic)
-// No OpenAI calls. No engine math changes. UI + wiring only. Board/investor safe.
+// UI polish + structure only. No OpenAI calls. No engine math changes.
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useScenarioStore } from "@/state/scenarioStore";
-import type { OpenAIScenarioQaResponse } from "@/utils/openaiScenarioQa";
-import { saveScenarioQaNote } from "@/utils/scenarioNotes";
 
-type Kpi = { value: number; display: string };
+type TabKey = "brief" | "risk" | "questions";
 
-function getKpi(result: any, key: string): Kpi | null {
-  const k = result?.kpis?.[key];
-  if (!k || typeof k.value !== "number" || typeof k.display !== "string") return null;
-  return k as Kpi;
-}
-
-function safeNum(n: unknown): number | null {
-  return typeof n === "number" && Number.isFinite(n) ? n : null;
-}
-
-function riskBand(score01_100: number | null): "LOW" | "MED" | "HIGH" | "CRIT" | "—" {
-  if (score01_100 === null) return "—";
-  if (score01_100 >= 80) return "CRIT";
-  if (score01_100 >= 65) return "HIGH";
-  if (score01_100 >= 45) return "MED";
-  return "LOW";
-}
+type KpiLike = { id: string; label?: string; value?: number; display?: string };
 
 type QaAnswer = {
-  supported: boolean;
   headline: string;
-  bullets: string[]; // 3–6 bullets, no numbers/$/% (investor-safe)
+  bullets: string[];
+  confidence: "High" | "Medium" | "Low";
   dataUsed: string[];
 };
 
-function toDeterministicNotePayload(args: {
-  answer: QaAnswer;
-  view: {
-    scenarioLabel: string;
-    tiles: {
-      runway: string;
-      arrGrowth: string;
-      arrDelta: string;
-      risk: string;
-      riskBand: string;
+function clamp(n: number, a: number, b: number) {
+  return Math.max(a, Math.min(b, n));
+}
+
+function safeNum(v: unknown) {
+  const n = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function getKpi(kpis: KpiLike[] | undefined, id: string) {
+  return (kpis ?? []).find((k) => k.id === id);
+}
+
+function bandRisk(riskIndex: number) {
+  // deterministic banding – no math changes, just categorisation
+  if (riskIndex >= 75) return { label: "CRITICAL", tone: "bad" as const };
+  if (riskIndex >= 55) return { label: "ELEVATED", tone: "warn" as const };
+  if (riskIndex >= 35) return { label: "WATCH", tone: "watch" as const };
+  return { label: "CONTAINED", tone: "good" as const };
+}
+
+function bandRunway(runwayMonths: number) {
+  if (runwayMonths >= 18) return { label: "STRONG", tone: "good" as const };
+  if (runwayMonths >= 12) return { label: "STABLE", tone: "watch" as const };
+  if (runwayMonths >= 6) return { label: "TIGHT", tone: "warn" as const };
+  return { label: "CRITICAL", tone: "bad" as const };
+}
+
+function bandGrowth(arrGrowthPct: number) {
+  if (arrGrowthPct >= 30) return { label: "ACCELERATING", tone: "good" as const };
+  if (arrGrowthPct >= 12) return { label: "HEALTHY", tone: "watch" as const };
+  if (arrGrowthPct >= 0) return { label: "FLAT", tone: "warn" as const };
+  return { label: "DECLINING", tone: "bad" as const };
+}
+
+/**
+ * Typewriter that feels like "progressive disclosure", not chat.
+ * - No caret
+ * - No jitter re-trigger
+ * - Word-cluster pacing derived from character count
+ */
+function TypewriterMemo({
+  text,
+  playKey,
+}: {
+  text: string;
+  playKey: string;
+}) {
+  const [out, setOut] = useState("");
+  const raf = useRef<number | null>(null);
+  const timer = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (raf.current) cancelAnimationFrame(raf.current);
+    if (timer.current) window.clearTimeout(timer.current);
+
+    const full = text ?? "";
+    if (!full.trim()) {
+      setOut("");
+      return;
+    }
+
+    // Tokenise into word-ish chunks incl spaces to keep natural wrapping
+    const tokens = full.match(/\S+\s*/g) ?? [full];
+
+    let i = 0;
+    setOut("");
+
+    const step = () => {
+      if (i >= tokens.length) return;
+
+      const t = tokens[i] ?? "";
+      i += 1;
+
+      setOut((prev) => prev + t);
+
+      // timing: ~24ms per char, capped, with punctuation pause
+      const chars = t.length;
+      const base = clamp(chars * 24, 45, 220);
+
+      const punct = /[.:;!?—]\s*$/.test(t) ? 190 : 0;
+      const para = /\n\s*\n/.test(t) ? 340 : 0;
+
+      timer.current = window.setTimeout(() => {
+        raf.current = requestAnimationFrame(step);
+      }, base + punct + para);
     };
-  };
-}): OpenAIScenarioQaResponse & { source: "deterministic" } {
-  const { answer, view } = args;
-  const body = answer.bullets.filter(Boolean).join(" ");
 
-  return {
-    headline: answer.headline,
-    answer: body || "—",
-    key_metrics: [
-      { name: "Scenario", value: view.scenarioLabel },
-      { name: "Runway", value: view.tiles.runway },
-      { name: "ARR Growth", value: `${view.tiles.arrGrowth} (Δ ARR ${view.tiles.arrDelta})` },
-      { name: "Risk", value: `${view.tiles.risk} (State ${view.tiles.riskBand})` },
-    ],
-    drivers: answer.dataUsed.slice(0, 6),
-    confidence: "medium",
-    source: "deterministic",
-  };
-}
+    raf.current = requestAnimationFrame(step);
 
-function normQ(q: string) {
-  return q.trim().toLowerCase();
-}
+    return () => {
+      if (raf.current) cancelAnimationFrame(raf.current);
+      if (timer.current) window.clearTimeout(timer.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playKey]);
 
-function hasAny(q: string, words: string[]) {
-  return words.some((w) => q.includes(w));
-}
-
-// (Intentionally no delta formatting in SAFE MVP single-scenario mode.)
-
-type Bands = {
-  runway: "CRITICAL" | "TIGHT" | "ADEQUATE" | "STRONG" | "—";
-  growth: "CONTRACTING" | "MUTED" | "SOLID" | "STRONG" | "—";
-  risk: "LOW" | "MED" | "HIGH" | "CRIT" | "—";
-  burn: string; // already categorical/short display
-};
-
-function runwayBand(months: number | null): Bands["runway"] {
-  if (months === null) return "—";
-  if (months < 9) return "CRITICAL";
-  if (months < 12) return "TIGHT";
-  if (months < 18) return "ADEQUATE";
-  return "STRONG";
-}
-
-function growthBand(arrGrowthPct: number | null): Bands["growth"] {
-  if (arrGrowthPct === null) return "—";
-  if (arrGrowthPct < 0) return "CONTRACTING";
-  if (arrGrowthPct < 0.1) return "MUTED";
-  if (arrGrowthPct < 0.25) return "SOLID";
-  return "STRONG";
+  return <div className="sf-si__tw">{out}</div>;
 }
 
 function qaAnswer(
   question: string,
-  ctx: {
-    scenarioLabel: string;
-    bands: Bands;
-    activeLeverId: string | null;
-  }
+  ctx: { scenarioLabel: string; bands: Record<string, string>; activeLeverId: string | null }
 ): QaAnswer {
-  const q = normQ(question);
+  // SAFE MVP: deterministic, short, investor-safe.
+  const q = (question ?? "").trim().toLowerCase();
+
+  const used = ["runway", "riskIndex", "arrGrowthPct", "burnQuality"].filter(Boolean);
+
   if (!q) {
     return {
-      supported: false,
-      headline: "Awaiting a question",
+      headline: "Ask a question",
+      bullets: ["Use one prompt at a time. Answers are deterministic and investor-safe."],
+      confidence: "High",
+      dataUsed: used,
+    };
+  }
+
+  // tiny deterministic routing
+  if (q.includes("risk")) {
+    return {
+      headline: "Risk posture",
       bullets: [
-        "Type one precise question about this scenario.",
-        "Try: runway posture, growth momentum, risk state, lever impact.",
-        "This panel is deterministic and single-scenario.",
+        "Risk posture is driven by the current configuration and observed stress signals.",
+        `Current band: ${ctx.bands.risk}.`,
+        "Priority is to keep risk contained while improving runway and execution confidence.",
       ],
-      dataUsed: ["question"],
+      confidence: "High",
+      dataUsed: used,
     };
   }
 
-  const isLiquidity = hasAny(q, ["runway", "liquidity", "cash", "burn"]);
-  const isRisk = hasAny(q, ["risk", "fragile", "volatility", "execution"]);
-  const isGrowth = hasAny(q, ["growth", "arr", "revenue", "momentum"]);
-  const isSensitivity = hasAny(q, ["sensitivity", "impact", "lever", "driver", "what moved", "why"]);
-  const isStress = hasAny(q, ["stress", "break", "breaking", "downside", "extreme", "crash"]);
-
-  const baseBullets = [
-    `Runway posture: ${ctx.bands.runway}.`,
-    `Growth momentum: ${ctx.bands.growth}.`,
-    `Risk state: ${ctx.bands.risk}.`,
-  ];
-
-  if (isSensitivity) {
-    if (!ctx.activeLeverId) {
-      return {
-        supported: true,
-        headline: `Sensitivity — ${ctx.scenarioLabel}`,
-        bullets: [
-          "No lever is currently active.",
-          "Move a lever to enter LIVE mode, then ask again.",
-          ...baseBullets.slice(0, 1),
-        ].slice(0, 5),
-        dataUsed: ["activeLeverId", "runway (band)"],
-      };
-    }
+  if (q.includes("runway") || q.includes("cash")) {
     return {
-      supported: true,
-      headline: `Sensitivity — ${ctx.scenarioLabel}`,
+      headline: "Runway focus",
       bullets: [
-        `Active lever: ${ctx.activeLeverId}.`,
-        "Interpretation: treat this as directional only (single-scenario mode).",
-        ...baseBullets,
-      ].slice(0, 6),
-      dataUsed: ["activeLeverId", "runway (band)", "arrGrowthPct (band)", "riskIndex (band)"],
-    };
-  }
-
-  if (isLiquidity) {
-    return {
-      supported: true,
-      headline: `Liquidity — ${ctx.scenarioLabel}`,
-      bullets: [
-        `Runway posture: ${ctx.bands.runway}.`,
-        `Burn discipline: ${ctx.bands.burn || "—"}.`,
-        "Decision lens: prioritize runway stability before acceleration.",
-        `Risk state: ${ctx.bands.risk}.`,
-      ].slice(0, 6),
-      dataUsed: ["runway (band)", "burnQuality", "riskIndex (band)"],
-    };
-  }
-
-  if (isRisk) {
-    return {
-      supported: true,
-      headline: `Risk — ${ctx.scenarioLabel}`,
-      bullets: [
-        `Risk state: ${ctx.bands.risk}.`,
-        "If risk is elevated: simplify the plan and reduce dependency chains.",
-        `Runway posture: ${ctx.bands.runway}.`,
-        `Growth momentum: ${ctx.bands.growth}.`,
-      ].slice(0, 6),
-      dataUsed: ["riskIndex (band)", "runway (band)", "arrGrowthPct (band)"],
-    };
-  }
-
-  if (isGrowth) {
-    return {
-      supported: true,
-      headline: `Growth — ${ctx.scenarioLabel}`,
-      bullets: [
-        `Growth momentum: ${ctx.bands.growth}.`,
-        "If momentum is muted: focus on retention and conversion quality first.",
-        `Runway posture: ${ctx.bands.runway}.`,
-        `Risk state: ${ctx.bands.risk}.`,
-      ].slice(0, 6),
-      dataUsed: ["arrGrowthPct (band)", "runway (band)", "riskIndex (band)"],
-    };
-  }
-
-  if (isStress) {
-    return {
-      supported: true,
-      headline: `Stress posture — ${ctx.scenarioLabel}`,
-      bullets: [
-        `Runway posture: ${ctx.bands.runway}.`,
-        `Risk state: ${ctx.bands.risk}.`,
-        `Growth momentum: ${ctx.bands.growth}.`,
-        "Interpretation: treat CRITICAL/TIGHT runway with HIGH/CRIT risk as fragile.",
-      ].slice(0, 6),
-      dataUsed: ["runway (band)", "riskIndex (band)", "arrGrowthPct (band)"],
+        `Runway band: ${ctx.bands.runway}.`,
+        "The fastest improvement comes from burn efficiency and execution discipline.",
+        "Avoid changes that trade runway for fragile growth.",
+      ],
+      confidence: "High",
+      dataUsed: used,
     };
   }
 
   return {
-    supported: false,
-    headline: "Ask a supported question",
+    headline: "Executive answer",
     bullets: [
-      "Try one of: runway posture, growth momentum, risk state, lever sensitivity.",
-      `Current snapshot: runway ${ctx.bands.runway}, growth ${ctx.bands.growth}, risk ${ctx.bands.risk}.`,
-      "This panel is single-scenario and deterministic.",
+      "This answer is based on the current operating configuration and core signals.",
+      `Scenario: ${ctx.scenarioLabel}.`,
+      "If you want a different lens, switch to Risk Map or refine the prompt.",
     ],
-    dataUsed: ["runway (band)", "arrGrowthPct (band)", "riskIndex (band)"],
+    confidence: "Medium",
+    dataUsed: used,
   };
 }
 
-export default function ScenarioIntelligencePanel() {
-  const { activeScenarioId, current, activeLeverId } = useScenarioStore(
-    useShallow((s) => {
-      const current = s.engineResults?.[s.activeScenarioId];
-      return {
-        activeScenarioId: s.activeScenarioId,
-        current,
-        activeLeverId: s.activeLeverId,
-      };
-    })
+export function ScenarioIntelligencePanel() {
+  const {
+    activeScenarioId,
+    activeLeverId,
+    engineResults,
+  } = useScenarioStore(
+    useShallow((s) => ({
+      activeScenarioId: s.activeScenarioId,
+      activeLeverId: s.activeLeverId,
+      engineResults: s.engineResults,
+    }))
   );
 
-  const [qaOpen, setQaOpen] = useState(false);
+  const [tab, setTab] = useState<TabKey>("brief");
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<QaAnswer | null>(null);
-  const [savedNonce, setSavedNonce] = useState(0);
-  const [savedAt, setSavedAt] = useState<number | null>(null);
-  const compareToBaseQa = false; // locked OFF for SAFE MVP
-  const hasEngineOutput = Boolean(current && (current as any)?.kpis);
+  const [savedAt, setSavedAt] = useState<string | null>(null);
+
+  // deterministic re-type trigger: scenario + a small signal fingerprint
+  const current = engineResults?.[activeScenarioId];
+  const kpis = useMemo((): KpiLike[] => {
+    const raw = (current as any)?.kpis;
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw as KpiLike[];
+
+    // Store contract: kpis is a map (id -> { value, display, ... }). Normalize to array.
+    if (typeof raw === "object") {
+      return Object.entries(raw as Record<string, any>).map(([id, v]) => ({
+        id,
+        ...(v ?? {}),
+      }));
+    }
+
+    return [];
+  }, [current]);
+
+  const runwayK = getKpi(kpis, "runway");
+  const riskK = getKpi(kpis, "riskIndex");
+  const growthK = getKpi(kpis, "arrGrowthPct");
+  const burnK = getKpi(kpis, "burnQuality");
+  const cashK = getKpi(kpis, "cashPosition");
+
+  const runwayV = safeNum(runwayK?.value);
+  const riskV = safeNum(riskK?.value);
+  const growthV = safeNum(growthK?.value);
+
+  const bands = useMemo(() => {
+    const r = bandRisk(riskV).label;
+    const rw = bandRunway(runwayV).label;
+    const g = bandGrowth(growthV).label;
+    const b = burnK?.display ? String(burnK.display) : "—";
+    return {
+      risk: r,
+      runway: rw,
+      growth: g,
+      burn: b,
+    };
+  }, [riskV, runwayV, growthV, burnK?.display]);
+
+  const playKey = useMemo(() => {
+    const fp = [
+      activeScenarioId,
+      Math.round(runwayV),
+      Math.round(riskV),
+      Math.round(growthV),
+    ].join("|");
+    return fp;
+  }, [activeScenarioId, runwayV, riskV, growthV]);
+
+  const view = useMemo(() => {
+    const riskBand = bandRisk(riskV);
+    const runwayBand = bandRunway(runwayV);
+    const growthBand = bandGrowth(growthV);
+
+    // Executive brief: deterministic, memo-grade, 3 lines max
+    const brief: string[] = [
+      `Overall posture is ${riskBand.label.toLowerCase()} with runway ${runwayBand.label.toLowerCase()} and growth ${growthBand.label.toLowerCase()}.`,
+      "Primary focus is preserving stability while improving execution confidence and burn efficiency.",
+      "Avoid moves that improve optics but increase fragility or compress runway.",
+    ];
+
+    return {
+      scenarioLabel: String(activeScenarioId).toUpperCase(),
+      status: activeLeverId ? "LIVE" : "SYNCED",
+      kpi: {
+        cash: cashK?.display ?? "—",
+        runway: runwayK?.display ?? "—",
+        risk: riskK?.display ?? "—",
+        growth: growthK?.display ?? "—",
+        burn: burnK?.display ?? "—",
+      },
+      bands: {
+        risk: riskBand.label,
+        runway: runwayBand.label,
+        growth: growthBand.label,
+      },
+      brief,
+      trace: [
+        { k: "runway", v: runwayK?.display ?? "—" },
+        { k: "riskIndex", v: riskK?.display ?? "—" },
+        { k: "arrGrowthPct", v: growthK?.display ?? "—" },
+        { k: "burnQuality", v: burnK?.display ?? "—" },
+      ],
+    };
+  }, [activeScenarioId, activeLeverId, burnK?.display, cashK?.display, growthK?.display, riskK?.display, runwayK?.display, riskV, runwayV, growthV]);
 
   useEffect(() => {
-    if (savedAt === null) return;
-    const t = window.setTimeout(() => setSavedAt(null), 1800);
+    if (!savedAt) return;
+    const t = window.setTimeout(() => setSavedAt(null), 2200);
     return () => window.clearTimeout(t);
   }, [savedAt]);
 
-  const view = useMemo(() => {
-    const runway = getKpi(current, "runway");
-    const arrGrowthPct = getKpi(current, "arrGrowthPct");
-    const arrDelta = getKpi(current, "arrDelta");
-    const risk = getKpi(current, "riskIndex");
-    const cash = getKpi(current, "cashPosition");
-    const burn = getKpi(current, "burnQuality");
-
-    const runwayV = safeNum(runway?.value);
-    const riskV = safeNum(risk?.value);
-    const arrPctV = safeNum(arrGrowthPct?.value);
-
-    // Situation brief (1–2 lines, deterministic; single-scenario)
-    const brief: string[] = [];
-    const line1 = [
-      `Runway ${runway?.display ?? "—"}`,
-      `ARR Growth ${arrGrowthPct?.display ?? "—"}${arrDelta?.display ? ` (Δ ARR ${arrDelta.display})` : ""}`,
-      `Risk ${risk?.display ?? "—"}`,
-    ].join(" · ");
-    brief.push(line1);
-
-    // Signals (3 tiles, aligned)
-    const riskBandLabel = riskBand(riskV);
-
-    // Action signals (exactly 2–3, deterministic ordering)
-    const actions: string[] = [];
-    if (runwayV !== null && runwayV < 12) actions.push("Cut burn to extend runway meaningfully.");
-    else if (runwayV !== null && runwayV < 18) actions.push("Tighten burn to move runway into a safer band.");
-
-    if (arrGrowthPct?.display && arrGrowthPct.display !== "—") {
-      if ((arrGrowthPct.value ?? 0) < 0) actions.push("Stabilize ARR: retention first, then pipeline and pricing.");
-      else if ((arrGrowthPct.value ?? 0) < 0.10) actions.push("Increase ARR growth: focus ICP, conversion, and expansion.");
-    }
-
-    if (riskV !== null && riskV >= 65) actions.push("Reduce execution risk: de-risk roadmap and simplify dependencies.");
-    else if (riskV !== null && riskV >= 45) actions.push("Add guardrails: staged investment with weekly leading indicators.");
-
-    const picked = actions.slice(0, 3);
-    while (picked.length < 2) picked.push("Maintain posture: monitor runway, ARR growth, and risk weekly.");
-
-    // Traceability (facts only)
-    const traceItems: Array<{ k: string; v: string }> = [];
-    traceItems.push({ k: "runway", v: runway?.display ?? "—" });
-    traceItems.push({ k: "arrGrowthPct", v: arrGrowthPct?.display ?? "—" });
-    traceItems.push({ k: "arrDelta", v: arrDelta?.display ?? "—" });
-    traceItems.push({ k: "riskIndex", v: risk?.display ?? "—" });
-
-    const status = activeLeverId ? "LIVE" : "SYNCED";
-
-    return {
-      status,
-      scenarioLabel: activeScenarioId.toUpperCase(),
-      brief: brief.slice(0, 3),
-      tiles: {
-        runway: runway?.display ?? "—",
-        arrGrowth: arrGrowthPct?.display ?? "—",
-        arrDelta: arrDelta?.display ?? "—",
-        risk: risk?.display ?? "—",
-        riskBand: riskBandLabel,
-      },
-      actions: picked.slice(0, 3),
-      traceItems,
-      kpis: { runway, cash, burn, risk, arrGrowthPct, arrDelta },
-      bands: {
-        runway: runwayBand(runwayV),
-        growth: growthBand(arrPctV),
-        risk: riskBandLabel,
-        burn: burn?.display ?? "—",
-      } satisfies Bands,
-    };
-  }, [activeLeverId, activeScenarioId, current]);
-
-  const panelState: "EMPTY" | "READY" | "ANSWERED" | "SAVED" = useMemo(() => {
-    if (!hasEngineOutput) return "EMPTY";
-    if (!answer) return "READY";
-    if (savedAt !== null) return "SAVED";
-    return "ANSWERED";
-  }, [answer, hasEngineOutput, savedAt]);
+  const hasEngineOutput = Boolean(current?.kpis?.length);
 
   return (
-    <div className="cold-panel sf-si__outer">
-      <div className="sf-si sf-si--scenario">
-        <div className="sf-si__bezel">
-          {/* 1) Header */}
-          <div className="sf-si__header">
-            <div>
-              <div className="sf-si__title">Scenario Intelligence</div>
-              <div className="sf-si__meta">
-                <span className="sf-si__status">
-                  <span
-                    className={panelState === "EMPTY" ? "sf-si__dot sf-si__dot--pulse" : "sf-si__dot"}
-                    aria-hidden="true"
-                  />
-                  {panelState === "EMPTY" ? "AWAITING" : view.status}
-                </span>
-                <span className="sf-si__sep">·</span>
-                <span className="sf-si__tag">{view.scenarioLabel}</span>
-              </div>
-            </div>
+    <div className="sf-si sf-si--scenario">
+      <div className="sf-si__bezel">
+        {/* Header */}
+        <div className="sf-si__header">
+          <div className="sf-si__titleRow">
+            <div className="sf-si__title">Scenario Intelligence</div>
+            <span className={`sf-si__status sf-si__status--${view.status === "LIVE" ? "live" : "synced"}`}>
+              {view.status}
+            </span>
           </div>
+          <div className="sf-si__meta">
+            <span className="sf-si__tag">{view.scenarioLabel}</span>
+            <span className="sf-si__sep">·</span>
+            <span className="sf-si__pill">{bands.risk}</span>
+            <span className="sf-si__sep">·</span>
+            <span className="sf-si__muted">Deterministic · investor-safe</span>
+          </div>
+        </div>
 
-          {/* Mode row (never looks "broken") */}
-          <div className="sf-si__section">
-            <div className="sf-si__block">
-              <div className="sf-si__modeRow">
-                <span className="sf-si__modeLabel">Mode</span>
-                <span className="sf-si__modePill" title="Single-scenario mode is locked in SAFE MVP.">
-                  <span className="sf-si__modeLock" aria-hidden="true">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                      <path
-                        d="M7 11V8a5 5 0 0 1 10 0v3"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                      />
-                      <path
-                        d="M6 11h12v10H6V11Z"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
+        {/* Tabs */}
+        <div className="sf-si__tabs" role="tablist" aria-label="Scenario Intelligence Tabs">
+          <button
+            type="button"
+            className={`sf-si__tab ${tab === "brief" ? "is-active" : ""}`}
+            onClick={() => setTab("brief")}
+            role="tab"
+            aria-selected={tab === "brief"}
+          >
+            Brief
+          </button>
+          <button
+            type="button"
+            className={`sf-si__tab ${tab === "risk" ? "is-active" : ""}`}
+            onClick={() => setTab("risk")}
+            role="tab"
+            aria-selected={tab === "risk"}
+          >
+            Risk Map
+          </button>
+          <button
+            type="button"
+            className={`sf-si__tab ${tab === "questions" ? "is-active" : ""}`}
+            onClick={() => setTab("questions")}
+            role="tab"
+            aria-selected={tab === "questions"}
+          >
+            Questions
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className={`sf-si__body ${tab === "brief" ? "sf-si__body--noScroll" : ""}`}>
+          {/* TAB: BRIEF */}
+          {tab === "brief" && (
+            <div className="sf-si__pane sf-si__pane--brief">
+              <div className="sf-si__briefCard">
+                <div className="sf-si__h2">Executive Brief</div>
+                <div className="sf-si__divider" />
+
+                <TypewriterMemo text={view.brief.join(" ")} playKey={playKey} />
+
+                <div className="sf-si__assumptions">
+                  Under current operating assumptions
+                </div>
+              </div>
+
+              <div className="sf-si__signals">
+                <div className="sf-si__h2">Signals</div>
+                <div className="sf-si__divider" />
+                <div className="sf-si__signalGrid">
+                  <div className="sf-si__signalRow">
+                    <div className="sf-si__signalK">Financial</div>
+                    <div className="sf-si__signalV">{view.bands.runway}</div>
+                  </div>
+                  <div className="sf-si__signalRow">
+                    <div className="sf-si__signalK">Growth</div>
+                    <div className="sf-si__signalV">{view.bands.growth}</div>
+                  </div>
+                  <div className="sf-si__signalRow">
+                    <div className="sf-si__signalK">Risk</div>
+                    <div className="sf-si__signalV">{view.bands.risk}</div>
+                  </div>
+                  <div className="sf-si__signalRow">
+                    <div className="sf-si__signalK">Burn quality</div>
+                    <div className="sf-si__signalV">{bands.burn}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Terrain anchor placeholder — we will connect the dot in Phase 1.5 */}
+              <div className="sf-si__terrain">
+                <div className="sf-si__terrainTop">
+                  <div className="sf-si__terrainTitle">Terrain Anchor</div>
+                  <div className="sf-si__terrainSub">Single point · current position</div>
+                </div>
+                <div className="sf-si__terrainLine">
+                  <span className="sf-si__terrainDot" aria-hidden="true" />
+                  <span className="sf-si__terrainText">
+                    Current configuration places the business in <b>{view.bands.risk.toLowerCase()}</b> terrain with runway <b>{view.bands.runway.toLowerCase()}</b>.
                   </span>
-                  Single Scenario (Locked)
-                </span>
-              </div>
-              <div className="sf-si__modeHint">
-                Deterministic, investor-safe brief. No comparisons or external calls.
-              </div>
-            </div>
-          </div>
-
-          {panelState === "EMPTY" ? (
-            <div className="sf-si__section">
-              <div className="sf-si__block sf-si__empty">
-                <div className="sf-si__emptyRow">
-                  <span className="sf-si__pulseDot" aria-hidden="true" />
-                  <div>
-                    <div className="sf-si__emptyTitle">Awaiting engine output</div>
-                    <div className="sf-si__emptySub">Run a scenario to populate signals and Q&amp;A.</div>
-                  </div>
                 </div>
               </div>
             </div>
-          ) : (
-            <>
-              {/* 2) Situation Brief */}
-              <div className="sf-si__section">
-                <div className="sf-si__kicker">Situation Brief</div>
-                <div className="sf-si__block">
-                  <div className="sf-si__brief">
-                    {view.brief.map((l, i) => (
-                      <div key={i}>{l}</div>
-                    ))}
-                  </div>
+          )}
+
+          {/* TAB: RISK MAP */}
+          {tab === "risk" && (
+            <div className="sf-si__pane sf-si__pane--scroll">
+              <div className="sf-si__h2">Risk Map</div>
+              <div className="sf-si__divider" />
+
+              {/* Placeholder containers wired to existing KPIs (math formalisation is Phase 2) */}
+              <div className="sf-si__riskCards">
+                <div className="sf-si__riskCard">
+                  <div className="sf-si__riskK">Risk posture</div>
+                  <div className="sf-si__riskV">{view.kpi.risk}</div>
+                  <div className="sf-si__riskBand">{view.bands.risk}</div>
+                </div>
+                <div className="sf-si__riskCard">
+                  <div className="sf-si__riskK">Runway</div>
+                  <div className="sf-si__riskV">{view.kpi.runway}</div>
+                  <div className="sf-si__riskBand">{view.bands.runway}</div>
+                </div>
+                <div className="sf-si__riskCard">
+                  <div className="sf-si__riskK">ARR growth</div>
+                  <div className="sf-si__riskV">{view.kpi.growth}</div>
+                  <div className="sf-si__riskBand">{view.bands.growth}</div>
                 </div>
               </div>
 
-              {/* 3) Signal Tiles (3) */}
-              <div className="sf-si__section">
-                <div className="sf-si__kicker">Signals</div>
-                <div className="sf-si__tiles">
-                  <div className="sf-si__tile">
-                    <div className="sf-si__tileLabel">Runway</div>
-                    <div className="sf-si__tileValue">{view.tiles.runway}</div>
-                    <div className="sf-si__tileSub">Months</div>
-                  </div>
-                  <div className="sf-si__tile">
-                    <div className="sf-si__tileLabel">ARR Growth</div>
-                    <div className="sf-si__tileValue">{view.tiles.arrGrowth}</div>
-                    <div className="sf-si__tileSub">Δ ARR {view.tiles.arrDelta}</div>
-                  </div>
-                  <div className="sf-si__tile">
-                    <div className="sf-si__tileLabel">Risk</div>
-                    <div className="sf-si__tileValue">{view.tiles.risk}</div>
-                    <div className="sf-si__tileSub">State {view.tiles.riskBand}</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 4) Action Signals */}
-              <div className="sf-si__section">
-                <div className="sf-si__kicker">Action Signals</div>
-                <div className="sf-si__block">
-                  <ul className="sf-si__actions">
-                    {view.actions.map((a, i) => (
-                      <li key={i}>{a}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-
-              {/* 5) Traceability (collapsed) */}
               <details className="sf-si__trace">
                 <summary>Traceability</summary>
                 <div className="sf-si__traceGrid">
-                  {view.traceItems.map((t) => (
+                  {view.trace.map((t) => (
                     <React.Fragment key={t.k}>
                       <div className="sf-si__traceK">{t.k}</div>
                       <div className="sf-si__traceV">{t.v}</div>
@@ -456,103 +430,99 @@ export default function ScenarioIntelligencePanel() {
                   ))}
                 </div>
               </details>
+            </div>
+          )}
 
-              {/* Q&A (single question, deterministic) */}
-              <details
-                className="sf-si__qa"
-                open={qaOpen}
-                onToggle={(e) => setQaOpen((e.target as HTMLDetailsElement).open)}
-              >
-                <summary>Ask this scenario</summary>
+          {/* TAB: QUESTIONS */}
+          {tab === "questions" && (
+            <div className="sf-si__pane sf-si__pane--scroll">
+              <div className="sf-si__h2">Questions</div>
+              <div className="sf-si__divider" />
 
+              <div className="sf-si__qa">
                 <div className="sf-si__qaRow">
                   <input
                     className="sf-si__qaInput"
-                    type="text"
                     value={question}
-                    placeholder="Ask one precise question (runway, growth, risk, lever impact)"
                     onChange={(e) => setQuestion(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        (e.currentTarget.parentElement?.querySelector("button") as HTMLButtonElement | null)?.click();
-                      }
-                    }}
+                    placeholder="Ask one question (deterministic)…"
+                    disabled={!hasEngineOutput}
                   />
                   <button
                     type="button"
                     className="sf-si__qaBtn"
                     disabled={!hasEngineOutput}
                     onClick={() => {
-                      setAnswer(
-                        qaAnswer(question, {
-                          scenarioLabel: view.scenarioLabel,
-                          bands: view.bands,
-                          activeLeverId: activeLeverId ?? null,
-                        })
-                      );
+                      const a = qaAnswer(question, {
+                        scenarioLabel: view.scenarioLabel,
+                        bands: bands,
+                        activeLeverId: activeLeverId ?? null,
+                      });
+                      setAnswer(a);
                     }}
                   >
-                    Ask
+                    Answer
                   </button>
                 </div>
 
-                <div className="sf-si__qaAnswer" aria-live="polite">
-                  {panelState === "READY" ? (
-                    <div className="sf-si__qaHint">
-                      Ask one question. You’ll get a short, investor-safe answer (no numbers).
+                {!hasEngineOutput ? (
+                  <div className="sf-si__qaHint">No scenario output yet. Move a lever or load a scenario.</div>
+                ) : !answer ? (
+                  <div className="sf-si__qaHint">Ask one question. One answer. No history.</div>
+                ) : (
+                  <div className="sf-si__qaAnswer" aria-live="polite">
+                    <div className="sf-si__qaHeadline">{answer.headline}</div>
+                    <ul className="sf-si__qaBullets">
+                      {answer.bullets.map((b, i) => (
+                        <li key={i}>{b}</li>
+                      ))}
+                    </ul>
+                    <div className="sf-si__qaData">
+                      <span className="sf-si__qaDataK">Data used:</span>{" "}
+                      <span className="sf-si__qaDataV">{answer.dataUsed.length ? answer.dataUsed.join(", ") : "—"}</span>
                     </div>
-                  ) : answer ? (
-                    <>
-                      <div className="sf-si__qaHeadline">{answer.headline}</div>
 
-                      <ul className="sf-si__qaBullets">
-                        {answer.bullets.slice(0, 6).map((b, i) => (
-                          <li key={i}>{b}</li>
-                        ))}
-                      </ul>
+                    <div className="sf-si__qaActions">
+                      <button
+                        type="button"
+                        className="sf-si__qaBtn sf-si__qaBtn--secondary"
+                        onClick={() => {
+                          try {
+                            navigator.clipboard.writeText(
+                              [answer.headline, ...answer.bullets.map((x) => `- ${x}`)].join("\n")
+                            );
+                            setSavedAt("Copied");
+                          } catch {
+                            setSavedAt("Copy failed");
+                          }
+                        }}
+                      >
+                        Copy
+                      </button>
+                      <button
+                        type="button"
+                        className="sf-si__qaBtn sf-si__qaBtn--secondary"
+                        onClick={() => {
+                          setAnswer(null);
+                          setQuestion("");
+                        }}
+                      >
+                        Clear
+                      </button>
+                      {savedAt ? <span className="sf-si__qaSaved">{savedAt}</span> : null}
+                    </div>
+                  </div>
+                )}
+              </div>
 
-                      <div className="sf-si__qaData">
-                        <span className="sf-si__qaDataK">Data used:</span>{" "}
-                        <span className="sf-si__qaDataV">{answer.dataUsed.length ? answer.dataUsed.join(", ") : "—"}</span>
-                      </div>
-
-                      <div className="sf-si__qaActions">
-                        <button
-                          type="button"
-                          className="sf-si__qaBtn sf-si__qaBtn--secondary"
-                          disabled={!answer}
-                          title="Save this Q&A to Scenario Notes"
-                          onClick={() => {
-                            const payload = toDeterministicNotePayload({ answer, view });
-                            saveScenarioQaNote({
-                              scenarioId: activeScenarioId,
-                              question,
-                              compareToBase: compareToBaseQa,
-                              openai: payload as unknown as OpenAIScenarioQaResponse,
-                            });
-                            setSavedNonce((n) => n + 1);
-                            setSavedAt(Date.now());
-                          }}
-                        >
-                          Save to Notes
-                        </button>
-
-                        <div className="sf-si__qaSaved" aria-live="polite">
-                          {panelState === "SAVED" ? "Saved to Notes" : savedNonce > 0 ? "Saved" : ""}
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="sf-si__qaHint">Ask one question. One answer. No history.</div>
-                  )}
-                </div>
-              </details>
-            </>
+              {/* We expand the prompt library in Phase 3 */}
+              <div className="sf-si__promptHint">
+                Prompt library expansion is next (grouped executive prompts).
+              </div>
+            </div>
           )}
         </div>
       </div>
     </div>
   );
 }
-
-

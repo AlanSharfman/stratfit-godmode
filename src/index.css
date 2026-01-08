@@ -151,6 +151,62 @@ body { overflow-x: hidden; }
   gap:10px;
 }
 
+/* Top-right utility cluster: Load / Save icons + System Guide button */
+.sf-hdrUtil{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap: 8px;
+  padding-top: 4px;
+  /* bring the whole cluster DOWN so it visually aligns ~halfway toward KPI band */
+  transform: translateY(32px);
+}
+.sf-hdrUtil__icons{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap: 12px;
+}
+
+/* Larger, visible pills (pro-grade; purple accent on hover) */
+.sf-hdrUtil__pillBtn{
+  height: 38px;
+  padding: 0 14px 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: rgba(255,255,255,0.84);
+  cursor: pointer;
+  display:inline-flex;
+  align-items:center;
+  gap: 10px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease, filter 160ms ease;
+}
+.sf-hdrUtil__pillBtn:hover{
+  border-color: rgba(168,85,247,0.42);
+  background: rgba(168,85,247,0.08);
+  color: rgba(255,255,255,0.92);
+  filter: drop-shadow(0 0 12px rgba(168,85,247,0.22));
+}
+.sf-hdrUtil__pillBtn:focus-visible{
+  outline: none;
+  border-color: rgba(168,85,247,0.50);
+  box-shadow: 0 0 0 2px rgba(168,85,247,0.22), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.sf-hdrUtil__pillText{
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.92;
+}
+.sf-hdrUtil__icon{
+  display:block;
+}
+
 .header-action-label{
   font-size:11px;
   font-weight:700;
@@ -254,7 +310,7 @@ body { overflow-x: hidden; }
 .command-band{
   flex-shrink:0;
   display:grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: minmax(420px, 460px) 1fr;
   gap:10px; /* tighter: bring KPI cluster closer to Active Scenario (per reference arrow) */
   padding:10px 12px;
   border-bottom:1px solid rgba(255,255,255,.06);
@@ -289,6 +345,15 @@ body { overflow-x: hidden; }
   z-index: 2000;
   overflow: visible;
 }
+
+.scenario-command-center{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+}
+
+/* NOTE: Load/Save controls moved to top-right utility cluster (header) */
 .kpi-section{ padding:6px 8px; }
 
 /* KPI band height policy — compact chassis, never cannibalize the mountain */
@@ -800,25 +865,191 @@ body { overflow-x: hidden; }
 }
 
 /* =========================================================
-   TAKE THE TOUR — minimal overlay (Phase 1)
+   SYSTEM GUIDE — minimal overlay (Phase 1)
    ========================================================= */
 .sf-tour-pill{
-  height: 34px; /* match header controls */
-  padding: 0 14px;
+  /* SYSTEM GUIDE — glass (smaller, restrained) */
+  height: 32px; /* ~30% smaller than 44px */
+  padding: 0 16px;
   border-radius: 999px;
-  border: 1px solid rgba(34,211,238,0.30);
-  background: transparent;
-  color: rgba(34,211,238,0.95);
-  font-size: 12px;
+  border: 1px solid rgba(168, 85, 247, 0.40); /* purple */
+  background: rgba(168, 85, 247, 0.08);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  color: rgba(255,255,255,0.78);
+  font-size: 10.5px;
   font-weight: 800;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   cursor: pointer;
-  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+  transition: color 160ms ease, border-color 160ms ease, filter 160ms ease, background 160ms ease;
 }
 .sf-tour-pill:hover{
-  background: transparent;
-  border-color: rgba(34,211,238,0.55);
-  color: rgba(0,242,255,0.98);
+  color: rgba(255,255,255,0.92);
+  border-color: rgba(168, 85, 247, 0.55);
+  background: rgba(168, 85, 247, 0.12);
+  filter: drop-shadow(0 0 12px rgba(168,85,247,0.22));
+}
+.sf-tour-pill:focus-visible{
+  outline:none;
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.22), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.sf-tour-pill__icon{
+  opacity:0.92;
+}
+
+/* Scenario save/load modals (local-only) */
+.sf-scm{
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  display: grid;
+  place-items: center;
+}
+.sf-scm__backdrop{
+  position:absolute;
+  inset:0;
+  background: rgba(0,0,0,0.62);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.sf-scm__panel{
+  position: relative;
+  width: min(520px, calc(100vw - 28px));
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: linear-gradient(180deg, rgba(14,18,24,0.92) 0%, rgba(10,14,18,0.90) 100%);
+  box-shadow: 0 24px 80px rgba(0,0,0,0.65);
+  padding: 18px 18px 16px;
+}
+.sf-scm__kicker{
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  color: rgba(255,255,255,0.55);
+}
+.sf-scm__title{
+  margin-top: 6px;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: rgba(255,255,255,0.92);
+}
+.sf-scm__meta{
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.55);
+}
+.sf-scm__input{
+  margin-top: 14px;
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.03);
+  color: rgba(255,255,255,0.92);
+  outline: none;
+}
+.sf-scm__input:focus{
+  border-color: rgba(0,229,255,0.35);
+  box-shadow: 0 0 0 2px rgba(0,229,255,0.18);
+}
+.sf-scm__list{
+  margin-top: 12px;
+  max-height: min(360px, calc(100vh - 220px));
+  overflow: auto;
+  padding-right: 2px;
+}
+.sf-scm__row{
+  width: 100%;
+  text-align: left;
+  padding: 12px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+.sf-scm__row + .sf-scm__row{ margin-top: 10px; }
+.sf-scm__row:hover{
+  transform: translateY(-1px);
+  border-color: rgba(0,229,255,0.22);
+  background: rgba(0,229,255,0.06);
+}
+.sf-scm__rowTitle{
+  font-size: 13px;
+  font-weight: 800;
+  color: rgba(255,255,255,0.92);
+}
+.sf-scm__rowMeta{
+  margin-top: 6px;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  color: rgba(255,255,255,0.55);
+  font-size: 11px;
+}
+.sf-scm__tag{
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.03);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 800;
+  color: rgba(255,255,255,0.70);
+}
+.sf-scm__time{
+  opacity: 0.9;
+}
+.sf-scm__empty{
+  padding: 12px 6px 2px;
+  color: rgba(255,255,255,0.55);
+  font-size: 12px;
+}
+.sf-scm__actions{
+  margin-top: 14px;
+  display:flex;
+  justify-content: flex-end;
+  gap:10px;
+}
+.sf-scm__btn{
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.03);
+  color: rgba(255,255,255,0.88);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor:pointer;
+  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease, opacity 160ms ease;
+}
+.sf-scm__btn:hover{
+  transform: translateY(-1px);
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.18);
+}
+.sf-scm__btn:disabled{
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+.sf-scm__btn--primary{
+  border: 1px solid rgba(0,229,255,0.28);
+  background: rgba(0,229,255,0.12);
+  color: rgba(220,252,255,0.92);
+}
+.sf-scm__btn--primary:hover{
+  background: rgba(0,229,255,0.16);
+  border-color: rgba(0,229,255,0.40);
 }
 
 .sf-tour{
@@ -1771,6 +2002,414 @@ body { overflow-x: hidden; }
 .sf-si__qaHint{
   font-size: 12px;
   color: rgba(255,255,255,0.62);
+}
+
+/* =========================================================
+   SCENARIO INTELLIGENCE — GD MODE PANEL (TABBED, MEMO-GRADE)
+   Overrides (keep at end of the SCENARIO INTELLIGENCE block)
+   ========================================================= */
+
+.sf-si--scenario .sf-si__bezel{
+  /* Datapad bezel shell */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  padding: 16px;
+  border-radius: 22px;
+
+  /* Charcoal gunmetal bezel */
+  background: rgba(22, 26, 30, 0.90);
+  border: 1px solid rgba(255,255,255,0.08);
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    inset 0 0 0 1px rgba(255,255,255,0.06),
+    0 18px 44px rgba(0,0,0,0.55);
+
+  overflow: hidden; /* IMPORTANT: prevents header/tab jitter */
+}
+
+/* Header */
+.sf-si--scenario .sf-si__header{
+  padding: 10px 10px 8px 10px;
+}
+
+.sf-si--scenario .sf-si__titleRow{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+}
+
+.sf-si--scenario .sf-si__title{
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  font-size: 14px;
+  color: rgba(255,255,255,0.92);
+}
+
+.sf-si--scenario .sf-si__meta{
+  margin-top: 6px;
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.65);
+}
+
+.sf-si--scenario .sf-si__pill{
+  border: 1px solid rgba(34, 211, 238, 0.18);
+  background: rgba(8, 18, 30, 0.45);
+  padding: 4px 8px;
+  border-radius: 999px;
+}
+
+.sf-si--scenario .sf-si__status{
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.10);
+  color: rgba(255,255,255,0.78);
+  background: rgba(0,0,0,0.22);
+}
+
+.sf-si--scenario .sf-si__status--live{
+  border-color: rgba(34,211,238,0.22);
+  color: rgba(34,211,238,0.92);
+}
+
+.sf-si--scenario .sf-si__status--synced{
+  border-color: rgba(255,255,255,0.10);
+  color: rgba(255,255,255,0.78);
+}
+
+/* Tabs (flat, memo-grade) */
+.sf-si--scenario .sf-si__tabs{
+  margin-top: 8px;
+  padding: 0 8px 10px 8px;
+  display:flex;
+  gap: 12px; /* slightly more breathing room */
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.sf-si--scenario .sf-si__tab{
+  appearance:none;
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.60);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 10px 8px 12px 8px; /* slightly less cramped */
+  cursor: pointer;
+  position: relative;
+}
+
+.sf-si--scenario .sf-si__tab.is-active{
+  color: rgba(34,211,238,0.92);
+}
+
+.sf-si--scenario .sf-si__tab.is-active::after{
+  content:"";
+  position:absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 6px;
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(34,211,238,0.70);
+}
+
+/* Body: pinned memo feel */
+.sf-si--scenario .sf-si__body{
+  flex: 1;
+  min-height: 0;
+  padding: 14px 10px 10px 10px;
+}
+
+.sf-si--scenario .sf-si__body--noScroll{
+  overflow: hidden; /* BRIEF must not scroll */
+}
+
+.sf-si--scenario .sf-si__pane{
+  height: 100%;
+}
+
+.sf-si--scenario .sf-si__pane--scroll{
+  height: 100%;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+/* Headings + divider */
+.sf-si--scenario .sf-si__h2{
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.82);
+}
+
+.sf-si--scenario .sf-si__divider{
+  margin-top: 8px;
+  margin-bottom: 12px;
+  height: 1px;
+  background: rgba(255,255,255,0.08);
+}
+
+/* Executive brief card (single container, not stacked cards) */
+.sf-si--scenario .sf-si__briefCard{
+  border-radius: 18px;
+  padding: 16px 16px 14px 16px;
+
+  /* inner tray = solid charcoal (no translucency) */
+  background: linear-gradient(180deg, #14191d 0%, #0f1418 100%);
+  border: 1px solid rgba(255,255,255,0.07);
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    inset 0 0 0 1px rgba(255,255,255,0.05),
+    inset 0 -10px 18px rgba(0,0,0,0.38);
+}
+
+/* Typewriter text: same font as panel, memo-grade */
+.sf-si--scenario .sf-si__tw{
+  margin-top: 10px;
+  color: rgba(255,255,255,0.86);
+  font-size: 13px;
+  line-height: 1.58;
+  font-weight: 500;
+  white-space: pre-wrap;
+}
+
+/* Assumption line (quiet footnote) */
+.sf-si--scenario .sf-si__assumptions{
+  margin-top: 12px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: rgba(255,255,255,0.52);
+}
+
+/* Signals = calm rows (not mini-cards) */
+.sf-si--scenario .sf-si__signals{
+  margin-top: 14px;
+  border-radius: 18px;
+  padding: 14px 16px;
+  background: rgba(0,0,0,0.18);
+  border: 1px solid rgba(255,255,255,0.07);
+}
+
+.sf-si--scenario .sf-si__signalGrid{
+  display: grid;
+  gap: 10px;
+}
+
+.sf-si--scenario .sf-si__signalRow{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding: 10px 10px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.sf-si--scenario .sf-si__signalK{
+  font-size: 12px;
+  color: rgba(255,255,255,0.72);
+  font-weight: 700;
+}
+
+.sf-si--scenario .sf-si__signalV{
+  font-size: 12px;
+  color: rgba(255,255,255,0.85);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+/* Terrain anchor (panel-side only for now; mountain dot hookup next) */
+.sf-si--scenario .sf-si__terrain{
+  margin-top: 14px;
+  border-radius: 18px;
+  padding: 14px 16px;
+  background: rgba(0,0,0,0.14);
+  border: 1px solid rgba(255,255,255,0.07);
+}
+
+.sf-si--scenario .sf-si__terrainTop{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap: 10px;
+}
+
+.sf-si--scenario .sf-si__terrainTitle{
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.82);
+}
+
+.sf-si--scenario .sf-si__terrainSub{
+  font-size: 11px;
+  color: rgba(255,255,255,0.50);
+}
+
+.sf-si--scenario .sf-si__terrainLine{
+  margin-top: 10px;
+  display:flex;
+  align-items:flex-start;
+  gap: 10px;
+}
+
+.sf-si--scenario .sf-si__terrainDot{
+  width: 8px;
+  height: 8px;
+  margin-top: 4px;
+  border-radius: 999px;
+  background: rgba(34,211,238,0.90);
+  box-shadow: 0 0 0 6px rgba(34,211,238,0.12);
+}
+
+.sf-si--scenario .sf-si__terrainText{
+  font-size: 13px;
+  line-height: 1.55;
+  color: rgba(255,255,255,0.80);
+}
+
+/* Risk cards */
+.sf-si--scenario .sf-si__riskCards{
+  display:grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.sf-si--scenario .sf-si__riskCard{
+  border-radius: 16px;
+  padding: 14px 14px 12px 14px;
+  background: rgba(0,0,0,0.18);
+  border: 1px solid rgba(255,255,255,0.07);
+}
+
+.sf-si--scenario .sf-si__riskK{
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.56);
+  font-weight: 800;
+}
+
+.sf-si--scenario .sf-si__riskV{
+  margin-top: 8px;
+  font-size: 18px;
+  font-weight: 900;
+  color: rgba(255,255,255,0.90);
+}
+
+.sf-si--scenario .sf-si__riskBand{
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: rgba(34,211,238,0.82);
+}
+
+/* Q&A (keep clean) */
+.sf-si--scenario .sf-si__qa{
+  margin-top: 8px;
+}
+
+.sf-si--scenario .sf-si__qaRow{
+  display:flex;
+  gap: 10px;
+}
+
+.sf-si--scenario .sf-si__qaInput{
+  flex: 1;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.22);
+  padding: 11px 12px;
+  color: rgba(255,255,255,0.88);
+  outline: none;
+}
+
+.sf-si--scenario .sf-si__qaBtn{
+  border-radius: 12px;
+  border: 1px solid rgba(34,211,238,0.22);
+  background: rgba(8, 18, 30, 0.55);
+  padding: 11px 14px;
+  color: rgba(34,211,238,0.92);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  cursor:pointer;
+}
+
+.sf-si--scenario .sf-si__qaBtn:disabled{
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.sf-si--scenario .sf-si__qaBtn--secondary{
+  border-color: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.78);
+}
+
+.sf-si--scenario .sf-si__qaHint{
+  margin-top: 10px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.52);
+}
+
+.sf-si--scenario .sf-si__qaAnswer{
+  margin-top: 12px;
+  border-radius: 16px;
+  padding: 14px 14px;
+  background: rgba(0,0,0,0.16);
+  border: 1px solid rgba(255,255,255,0.07);
+}
+
+.sf-si--scenario .sf-si__qaHeadline{
+  font-size: 13px;
+  font-weight: 900;
+  color: rgba(255,255,255,0.88);
+}
+
+.sf-si--scenario .sf-si__qaBullets{
+  margin-top: 8px;
+  padding-left: 18px;
+  color: rgba(255,255,255,0.76);
+  line-height: 1.55;
+  font-size: 13px;
+}
+
+.sf-si--scenario .sf-si__qaData{
+  margin-top: 10px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.52);
+}
+
+.sf-si--scenario .sf-si__qaActions{
+  margin-top: 10px;
+  display:flex;
+  align-items:center;
+  gap: 10px;
+}
+
+.sf-si--scenario .sf-si__qaSaved{
+  font-size: 11px;
+  color: rgba(34,211,238,0.86);
+}
+
+.sf-si--scenario .sf-si__promptHint{
+  margin-top: 14px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.46);
 }
 
 /* =========================================================

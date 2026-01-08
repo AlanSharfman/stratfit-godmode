@@ -89,7 +89,7 @@ export default function TakeTheTour() {
 
   const overlay = open
     ? createPortal(
-        <div className="sf-tour" role="dialog" aria-modal="true" aria-label="Take the tour">
+        <div className="sf-tour" role="dialog" aria-modal="true" aria-label="System guide">
           <div className="sf-tour__dim" onClick={() => setOpen(false)} />
 
           {rect ? (
@@ -105,7 +105,7 @@ export default function TakeTheTour() {
           ) : null}
 
           <div className="sf-tour__card" style={{ right: 18, bottom: 18 }}>
-            <div className="sf-tour__kicker">TAKE THE TOUR</div>
+            <div className="sf-tour__kicker">SYSTEM GUIDE</div>
             <div className="sf-tour__title">{step.title}</div>
             <div className="sf-tour__body">{step.body}</div>
 
@@ -147,7 +147,22 @@ export default function TakeTheTour() {
   return (
     <>
       <button type="button" className="sf-tour-pill" onClick={() => setOpen(true)}>
-        Take the tour
+        <svg
+          className="sf-tour-pill__icon"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
+          <circle cx="12" cy="12" r="2.5" />
+        </svg>
+        SYSTEM GUIDE
       </button>
       {overlay}
     </>
