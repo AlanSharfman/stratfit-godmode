@@ -24,3 +24,9 @@ dist-ssr
 *.sw?
 
 .vercel
+
+# Never commit local dependency archives / backups
+node_modules__LOCKED_*
+*_node_modules_*
+**/node_modules__LOCKED_*
+
