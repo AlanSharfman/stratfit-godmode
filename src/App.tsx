@@ -11,6 +11,7 @@ import { Moon } from "./components/Moon";
 import { ControlDeck, ControlBoxConfig } from "./components/ControlDeck";
 import AIIntelligence from "./components/AIIntelligenceEnhanced";
 import ScenarioSelector from "./components/ScenarioSelector";
+import ScenarioBezel from "./components/kpi/ScenarioBezel";
 import OnboardingSequence from "./components/OnboardingSequenceNew";
 import { useScenarioStore, SCENARIO_COLORS } from "@/state/scenarioStore";
 import type { LeverId } from "@/logic/mountainPeakModel";
@@ -440,7 +441,9 @@ export default function App() {
       <section className="command-band">
         {/* ACTIVE SCENARIO (TOP-LEFT, next to KPI bezels — per spec) */}
         <div className="scenario-area">
-          <ScenarioSelector scenario={scenario} onChange={handleScenarioChange} />
+          <ScenarioBezel>
+            <ScenarioSelector scenario={scenario} onChange={handleScenarioChange} />
+          </ScenarioBezel>
         </div>
 
         {/* KPI CONSOLE */}

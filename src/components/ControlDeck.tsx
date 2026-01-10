@@ -157,7 +157,7 @@ const SliderRow = memo(function SliderRow({
         }
 
         .slider-label {
-          font-size: 11px;
+          font-size: 16.5px;
           font-weight: 600;
           color: rgba(255, 255, 255, 0.7);
           transition: all 250ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -332,7 +332,7 @@ const ControlBox = memo(function ControlBox({
         }
 
         .box-title {
-          font-size: 13px;
+          font-size: 19.5px;
           font-weight: 800;
           letter-spacing: 0.1em;
           text-transform: uppercase;
