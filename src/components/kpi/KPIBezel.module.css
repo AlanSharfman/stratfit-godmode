@@ -1,3 +1,4 @@
+
 /* src/components/kpi/KPIBezel.module.css
    STRATFIT — PRO BEZEL (no neon, raised double-rim, CFO-grade)
 */
@@ -5,8 +6,9 @@
 .wrap {
   position: relative;
   width: 100%;
-  overflow: visible;
   height: clamp(210px, 22vh, 260px);
+  display: block;
+  overflow: visible;
 }
 
 /* Remove neon rails entirely */
@@ -18,22 +20,25 @@
 .bezel {
   position: relative;
   height: 100%;
+  width: 100%;
   border-radius: 18px;
   padding: 14px;
   overflow: visible;
+
+  /* rim */
   border: 1px solid rgba(255,255,255,0.06);
 
-  background:
-    radial-gradient(120% 90% at 20% 10%, rgba(80, 160, 220, 0.12), rgba(0,0,0,0) 60%),
-    radial-gradient(140% 120% at 80% 0%, rgba(30, 120, 180, 0.08), rgba(0,0,0,0) 55%),
-    linear-gradient(180deg, rgba(8, 14, 20, 0.92), rgba(4, 8, 12, 0.98));
 
+  /* glass shell */
+  background:
+    radial-gradient(120% 90% at 20% 10%, rgba(120,140,170,0.12), rgba(0,0,0,0) 60%),
+    linear-gradient(180deg, rgba(18,22,28,0.92), rgba(8,10,14,0.96));
+
+  /* physical depth */
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.10),   /* top cut */
-    inset 0 -1px 0 rgba(0,0,0,0.65),        /* bottom ledge */
-    inset 1px 0 0 rgba(0,0,0,0.55),         /* left lip */
-    inset -1px 0 0 rgba(255,255,255,0.03),  /* right sheen */
-    0 10px 28px rgba(0,0,0,0.55);           /* lift */
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    inset 0 -1px 0 rgba(0,0,0,0.7),
+    0 18px 40px rgba(0,0,0,0.75);
 }
 
 /* Corner glints (Picture-3 style) */
@@ -85,18 +90,12 @@
 /* Recessed "screen cavity" */
 .inner {
   position: absolute;
-  inset: 0; /* fill bezel — stepped effect via box-shadow */
-  border-radius: 18px;
-  z-index: 2; /* content surface above bezel FX */
-
-  /* Inner tray behind tiles: slightly more translucent than bezel (0.78–0.82) */
-  background: linear-gradient(180deg, rgba(20,25,29,0.82) 0%, rgba(15,20,24,0.78) 100%);
-
-  /* Step ledge: lip + crisp cut + bottom depth (inset-only, no layout changes) */
+  inset: 10px;
+  border-radius: 14px;
+  background: rgba(10,14,18,0.82);
   box-shadow:
-    inset 0 0 0 1px rgba(255,255,255,0.045), /* crisp inner edge */
-    inset 0 1px 0 rgba(255,255,255,0.06),    /* subtle top lip highlight */
-    inset 0 -22px 38px rgba(0,0,0,0.58);     /* bottom depth */
+    inset 0 0 0 1px rgba(255,255,255,0.04),
+    inset 0 -8px 20px rgba(0,0,0,0.6);
 
   border: 1px solid rgba(255, 255, 255, 0.03);
   z-index: 2; /* surface above frame bg, below widgets */
@@ -261,4 +260,5 @@
   .wrap { min-height: 210px; }
   .bezel { min-height: 100%; }
 }
+
 

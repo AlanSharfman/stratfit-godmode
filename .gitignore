@@ -25,3 +25,19 @@ dist-ssr
 
 .vercel
 .env*.local
+
+# Archives (old backups)
+_archive/
+*.zip
+
+# Vite cache
+node_modules/.vite/
+# Local archives & backups
+_archive/
+*.zip
+
+# Vite cache
+node_modules/.vite/
+
+# Secrets
+.env.local

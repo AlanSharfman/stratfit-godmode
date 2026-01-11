@@ -585,7 +585,7 @@ export default function KPIConsole() {
               <div key={g.title} className={sizeClass} data-kpi-group={g.title}>
                 <KPIBezel
                   title={g.title}
-                  columns={cols as 2 | 3}
+                  cols={cols}
                 >
                   {g.items.map((id) => {
                     const cfg = KPI_CONFIG.find((k) => k.id === id)!;
@@ -601,25 +601,26 @@ export default function KPIConsole() {
                         : "idle";
 
                     return (
-                      <KPIInstrumentCard
-                        key={cfg.id}
-                        cfg={cfg}
-                        data={data}
-                        secondaryLine={
-                          cfg.id === "arrGrowth"
-                            ? `Δ ARR ${kpiValues?.arrDelta?.display ?? "—"}`
-                            : null
-                        }
-                        state={state}
-                        isDimmed={isDimmed}
-                        accentColor={isActive ? scenarioColor : cfg.accentColor}
-                        pulseColor={pulses[index] ?? null}
-                        onClick={() => setHoveredKpiIndex(hoveredKpiIndex === index ? null : index)}
-                        onMouseEnter={() => setLocalHoverIndex(index)}
-                        onMouseLeave={handleMouseLeave}
-                        burnAmount={cfg.id === "burn" ? (kpiValues.burnQuality?.value ?? 0) * 1000 : undefined}
-                        cashAmount={cfg.id === "burn" ? (kpiValues.cashPosition?.value ?? 0) * 100000 : undefined}
-                      />
+                      <div key={cfg.id} style={{ height: "100%" }}>
+                        <KPIInstrumentCard
+                          cfg={cfg}
+                          data={data}
+                          secondaryLine={
+                            cfg.id === "arrGrowth"
+                              ? `Δ ARR ${kpiValues?.arrDelta?.display ?? "—"}`
+                              : null
+                          }
+                          state={state}
+                          isDimmed={isDimmed}
+                          accentColor={isActive ? scenarioColor : cfg.accentColor}
+                          pulseColor={pulses[index] ?? null}
+                          onClick={() => setHoveredKpiIndex(hoveredKpiIndex === index ? null : index)}
+                          onMouseEnter={() => setLocalHoverIndex(index)}
+                          onMouseLeave={handleMouseLeave}
+                          burnAmount={cfg.id === "burn" ? (kpiValues.burnQuality?.value ?? 0) * 1000 : undefined}
+                          cashAmount={cfg.id === "burn" ? (kpiValues.cashPosition?.value ?? 0) * 100000 : undefined}
+                        />
+                      </div>
                     );
                   })}
                 </KPIBezel>

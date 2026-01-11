@@ -2,7 +2,7 @@
 // Scenario Delta Snapshot — Collapsible table below mountain
 // Shows Base → Scenario comparison with deltas and AI variance commentary
 
-import { useState, useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useScenarioStore } from "@/state/scenarioStore";
 
@@ -99,19 +99,12 @@ function getVarianceCommentary(
 }
 
 export default function ScenarioDeltaSnapshot() {
-  const [isOpen, setIsOpen] = useState(false);
-
-  useEffect(() => {
-    const storeValue = useScenarioStore((state) => state.showScenarioImpact);
-    setIsOpen(storeValue);
-  }, []);
+  const isOpen = useScenarioStore((state) => state.showScenarioImpact);
 
   const handleToggle = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const newValue = !isOpen;
-    setIsOpen(newValue);
-    useScenarioStore.getState().setShowScenarioImpact(newValue);
+    useScenarioStore.getState().setShowScenarioImpact(!isOpen);
   };
 
   const scenario = useScenarioStore((state) => state.scenario);

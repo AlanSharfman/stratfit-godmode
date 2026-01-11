@@ -181,8 +181,8 @@ export default function CenterViewPanel(props: {
 
   return (
     <div className="relative flex h-full w-full flex-col rounded-xl bg-black/40 backdrop-blur-sm border border-white/5 overflow-hidden">
-      {/* Command Bar */}
-      <div className="relative shrink-0 px-6 pt-4 pb-3 border-b border-white/5 bg-gradient-to-b from-black/30 to-transparent">
+      {/* Command Bar — reduced left padding to align with KPI boxes */}
+      <div className="relative shrink-0 pl-2 pr-4 pt-4 pb-3 border-b border-white/5 bg-gradient-to-b from-black/30 to-transparent">
         {scenarioControl || tourControl ? (
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
             <div className="justify-self-start">

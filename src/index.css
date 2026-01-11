@@ -250,13 +250,14 @@ body { overflow-x: hidden; }
   50%{ opacity:.95; transform:scale(1.18); box-shadow:0 0 26px rgba(34,211,238,.22); }
 }
 
-/* Command band */
+/* Command band — 3 columns to align with middle-section */
 .command-band{
   flex-shrink:0;
   display:grid;
-  grid-template-columns: 300px 1fr;
-  gap:10px; /* tighter: bring KPI cluster closer to Active Scenario (per reference arrow) */
-  padding:10px 12px;
+  /* Match middle-section columns: left panel | center | right panel */
+  grid-template-columns: minmax(300px, 420px) 1fr minmax(480px, 560px);
+  gap:12px;
+  padding:12px;
   border-bottom:1px solid rgba(255,255,255,.06);
   background: rgba(0,0,0,.16);
   position: relative;
@@ -439,11 +440,12 @@ body { overflow-x: hidden; }
   width: 100%;
   padding: 0;
   position: relative;
+  overflow: visible; /* allow bezel glow to render */
   /* Internal alignment contract (instrument-grade) */
   --kpi-label-h: 14px;
   --kpi-value-h: 44px;
   --kpi-viz-min: 86px;
-  --kpi-widget-scale: 0.95; /* “5% smaller” widgets (visuals only) */
+  --kpi-widget-scale: 0.95; /* "5% smaller" widgets (visuals only) */
 }
 
 /* KPI row position nudge (fast, safe, reversible) */
