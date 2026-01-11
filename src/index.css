@@ -360,8 +360,8 @@ body { overflow-x: hidden; }
   flex:1;
   min-height:0;
   display:grid;
-  /* 🔥 FIXED: Right panel now responsive, was 360px (too narrow) */
-  grid-template-columns: minmax(280px, 320px) 1fr minmax(480px, 560px);
+  /* Command Center stretches to align with KPI row edge */
+  grid-template-columns: minmax(300px, 420px) 1fr minmax(480px, 560px);
   gap:12px;
   padding:12px;
 }
@@ -961,7 +961,7 @@ body { overflow-x: hidden; }
 }
 
 /* Control Deck density + slider rows */
-.control-deck{ padding:6px; }
+.control-deck{ padding:6px; width:100%; }
 .control-box{
   border:1px solid rgba(255,255,255,.06);
   background: rgba(255,255,255,.02);
