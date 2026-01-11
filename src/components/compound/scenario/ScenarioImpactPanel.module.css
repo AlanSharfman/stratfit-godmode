@@ -1,0 +1,124 @@
+.wrap{
+  position: relative;
+  width: 100%;
+  padding: 14px 0;
+  border-radius: 12px;
+  background: rgba(12,18,28,0.5);
+  border: 1px solid rgba(80,180,255,0.08);
+}
+
+.header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap: 16px;
+  padding: 0 18px 10px;
+  border-bottom: 1px solid rgba(160, 200, 255, 0.06);
+}
+
+.headerLeft{ display:flex; flex-direction:column; gap:6px; }
+.kicker{
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(80, 200, 255, 0.9);
+  font-weight: 700;
+}
+.sub{
+  font-size: 12px;
+  color: rgba(210, 230, 255, 0.42);
+}
+
+.headerRight{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  padding-top: 2px;
+}
+.hint{
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(210, 230, 255, 0.35);
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  user-select:none;
+}
+.hintIcon{
+  opacity: 0.7;
+}
+
+.tableWrap{
+  width: 100%;
+  overflow-x: auto;
+  padding: 12px 0 0;
+}
+
+.table{
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+thead th{
+  font-size: 10px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: rgba(80, 200, 255, 0.8);
+  font-weight: 700;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(160, 200, 255, 0.06);
+  background: rgba(15,25,40,0.5);
+  white-space: nowrap;
+}
+
+.tr td{
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(160, 200, 255, 0.04);
+  vertical-align: middle;
+}
+
+.tr:hover td{
+  background: rgba(80,180,255,0.04);
+}
+
+.thMetric, .tdMetric{ min-width: 160px; }
+.thBase, .tdBase{ min-width: 90px; text-align: right; }
+.thScenario, .tdScenario{ min-width: 100px; text-align: right; }
+.thDelta, .tdDelta{ min-width: 80px; text-align: right; }
+.thDeltaP, .tdDeltaP{ min-width: 70px; text-align: right; }
+.thCommentary, .tdCommentary{ min-width: 200px; }
+
+.tdMetric{
+  font-weight: 650;
+  color: rgba(230, 245, 255, 0.78);
+}
+
+.tdBase, .tdScenario{
+  color: rgba(230, 245, 255, 0.62);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.tdDelta, .tdDeltaP{
+  font-variant-numeric: tabular-nums;
+  font-weight: 750;
+  text-align: right;
+}
+
+.pos{
+  color: rgba(80, 220, 255, 0.95);
+  text-shadow: 0 0 14px rgba(80, 220, 255, 0.10);
+}
+
+.neg{
+  color: rgba(255, 120, 160, 0.92);
+  text-shadow: 0 0 14px rgba(255, 120, 160, 0.08);
+}
+
+.muted{
+  color: rgba(210, 230, 255, 0.30);
+  font-style: italic;
+}
+

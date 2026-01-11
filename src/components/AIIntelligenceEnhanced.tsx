@@ -258,6 +258,9 @@ export default function AIIntelligenceEnhanced({
 }: AIIntelligenceEnhancedProps) {
   const viewMode = useScenarioStore((s) => s.viewMode);
   
+  // CFO Intelligence from engine results
+  const cfoSummary = useScenarioStore((s) => s.engineResults?.[scenario]?.ai?.summary);
+  
   const insights = useMemo(
     () => generateInsights(levers, scenario, viewMode),
     [levers, scenario, viewMode]
@@ -643,6 +646,15 @@ export default function AIIntelligenceEnhanced({
                 {status === "UPDATING" ? <span className={styles.cursor} /> : null}
               </div>
             </div>
+
+            {cfoSummary && (
+              <div className={styles.card}>
+                <div className={`${styles.cardLabel} ${styles.neutral}`}>CFO Intelligence</div>
+                <div className={styles.cardText} style={{ whiteSpace: "pre-line" }}>
+                  {cfoSummary}
+                </div>
+              </div>
+            )}
 
             <div className={styles.sectionHeader}>
               <Activity className={styles.sectionIcon} />

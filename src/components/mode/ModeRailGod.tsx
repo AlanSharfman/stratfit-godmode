@@ -2,7 +2,7 @@ import React, { memo, useMemo } from "react";
 import styles from "./ModeRailGod.module.css";
 import { Layers, Activity, BarChart3 } from "lucide-react";
 
-export type ModeKey = "terrain" | "variances" | "actuals";
+export type ModeKey = "terrain" | "scenario" | "variances";
 
 type Props = {
   value: ModeKey;
@@ -13,8 +13,8 @@ type Props = {
 
 const MODES: Array<{ key: ModeKey; label: string; Icon: React.FC<any> }> = [
   { key: "terrain", label: "Terrain", Icon: Layers },
+  { key: "scenario", label: "Scenario", Icon: BarChart3 },
   { key: "variances", label: "Variances", Icon: Activity },
-  { key: "actuals", label: "Actuals", Icon: BarChart3 },
 ];
 
 export default memo(function ModeRailGod({ value, onChange, className, disabled }: Props) {

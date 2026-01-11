@@ -610,19 +610,21 @@ export default function KPICard({
         }
 
         .card-label {
-          font-size: 10px;
+          font-size: 18px;
           font-weight: 800;
-          letter-spacing: 0.14em;
+          letter-spacing: 0.25em;
           text-transform: uppercase;
-          opacity: 0.70;
+          opacity: 0.80;
+          padding-left: 4px;
         }
 
         .card-value {
-          font-size: 22px;
+          font-size: 28px;
           font-weight: 900;
           letter-spacing: -0.02em;
           line-height: 1.05;
           margin-top: 6px;
+          padding-left: 4px;
         }
         .kpi-card:hover {
           transform: translateY(-4px) scale(1.02);
@@ -773,17 +775,18 @@ export default function KPICard({
         .card-header {
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 8px;
           position: relative;
           z-index: 2;
+          padding-left: 4px;
         }
         .card-label {
           font-family: system-ui, -apple-system, sans-serif;
-          font-size: 10px;
+          font-size: 18px;
           font-weight: 700;
           text-transform: uppercase;
-          letter-spacing: 1.8px;
-          color: rgba(180, 200, 220, 0.85);
+          letter-spacing: 3.3px;
+          color: rgba(180, 200, 220, 0.90);
         }
         .kpi-card.active .card-label {
           color: rgba(220, 235, 250, 0.95);
@@ -794,16 +797,17 @@ export default function KPICard({
 
         .card-value {
           font-family: system-ui, -apple-system, sans-serif;
-          font-size: 22px;
+          font-size: 28px;
           font-weight: 800;
           position: relative;
           z-index: 2;
           margin-top: 2px;
-          text-shadow: 0 0 20px currentColor;
+          text-shadow: 0 0 24px currentColor;
           letter-spacing: -0.5px;
+          padding-left: 4px;
         }
         .kpi-card.hero .card-value {
-          font-size: 28px;
+          font-size: 35px;
         }
 
         .card-widget {
@@ -813,7 +817,9 @@ export default function KPICard({
           justify-content: center;
           position: relative;
           z-index: 2;
-          margin-top: 6px;
+          margin-top: 8px;
+          transform: scale(1.25) translateX(3px);
+          transform-origin: center center;
         }
 
         /* PHASE 2 — Inactive KPI discipline */

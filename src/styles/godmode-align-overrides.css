@@ -1,0 +1,96 @@
+/* =========================================================
+   STRATFIT — GODMODE ALIGNMENT OVERRIDES (SAFE LAYER)
+   Goal:
+   1) Active Scenario top aligns with KPI compounds
+   2) Mode rail drops ~1mm (≈4px)
+   3) Scenario Intelligence top aligns with Mode rail
+   4) Terrain/Variances/Actuals buttons drop ~0.45mm (≈2px)
+   5) Selected tab = cyan neon
+========================================================= */
+
+:root{
+  --sf-mm-1: 4px;     /* ~1mm visually */
+  --sf-mm-045: 2px;   /* ~0.45mm visually */
+}
+
+/* -----------------------------
+   1) Active Scenario: drop down
+   (top align with KPI compounds)
+------------------------------ */
+
+/* Try the most common wrappers first */
+.left-rail .active-scenario,
+.left-rail .scenario-selector,
+.left-rail .activeScenario,
+.left-rail [data-role="active-scenario"]{
+  margin-top: var(--sf-mm-1) !important;
+}
+
+/* If your left rail top row uses a direct card wrapper */
+.left-rail .activeScenarioCard,
+.left-rail .scenarioCard{
+  margin-top: var(--sf-mm-1) !important;
+}
+
+/* -----------------------------
+   2) Mode/Command rail: drop ~1mm
+------------------------------ */
+.header-center.sf-hdrCenter,
+.sf-hdrCenter,
+.mode-rail,
+.modeRail,
+.mode-rail-god,
+.modeRailGod{
+  margin-top: var(--sf-mm-1) !important;
+}
+
+/* -----------------------------
+   3) Scenario Intelligence: align with Mode rail
+   (top edges match exactly)
+------------------------------ */
+.right-rail .scenario-intelligence,
+.right-rail .ai-panel,
+.right-rail .advisor-panel,
+.right-rail [data-role="scenario-intelligence"]{
+  margin-top: var(--sf-mm-1) !important;
+}
+
+/* If the right panel is a specific component shell */
+.right-rail .scenarioIntelligenceShell,
+.right-rail .intelligencePanel{
+  margin-top: var(--sf-mm-1) !important;
+}
+
+/* -----------------------------
+   4) Terrain/Variances/Actuals buttons:
+      drop ~0.45mm (~2px)
+------------------------------ */
+.mode-rail button,
+.modeRail button,
+.mode-rail-god button,
+.modeRailGod button,
+.tabs-terrain button,
+.terrain-tabs button{
+  transform: translateY(var(--sf-mm-045));
+}
+
+/* -----------------------------
+   5) Selected tab: cyan neon TEXT ONLY (no pill)
+------------------------------ */
+
+/* common active patterns — text glow only, no box/pill */
+.mode-rail button[aria-selected="true"],
+.mode-rail button.active,
+.modeRail button[aria-selected="true"],
+.modeRail button.active,
+.mode-rail-god button[aria-selected="true"],
+.mode-rail-god button.active{
+  color: #22d3ee !important;
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  text-shadow: 
+    0 0 12px rgba(34,211,238,0.65),
+    0 0 24px rgba(34,211,238,0.35);
+}
+

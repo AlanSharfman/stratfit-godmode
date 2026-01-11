@@ -99,24 +99,17 @@
   filter: saturate(1.05);
 }
 
-/* ACTIVE: NEON CYAN highlight */
+/* ACTIVE: NEON CYAN text only (no pill) */
 .active{
   color: #22d3ee;
-  text-shadow: 0 0 12px rgba(34,211,238,0.55);
+  text-shadow: 
+    0 0 12px rgba(34,211,238,0.65),
+    0 0 24px rgba(34,211,238,0.35);
 
-  background:
-    radial-gradient(120% 140% at 50% 0%, rgba(34,211,238,0.25), rgba(0,0,0,0) 60%),
-    linear-gradient(180deg, rgba(34,211,238,0.12), rgba(34,211,238,0.04)),
-    rgba(12,18,26,0.85);
-
-  border-color: rgba(34,211,238,0.55);
-
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.15),
-    inset 0 0 0 1px rgba(34,211,238,0.20),
-    0 0 20px rgba(34,211,238,0.30),
-    0 0 40px rgba(34,211,238,0.15),
-    0 10px 25px rgba(0,0,0,0.45);
+  /* NO background, NO border, NO box-shadow pill */
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
 }
 
 .icon{

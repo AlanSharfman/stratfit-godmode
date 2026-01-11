@@ -3,7 +3,7 @@ import s from "./ModeTabs.module.css";
 
 const MODE_RAIL_V2 = true; // ← set false to instantly rollback
 
-export type ModeKey = "terrain" | "variances" | "actuals";
+export type ModeKey = "terrain" | "scenario" | "variances";
 
 type Props = {
   mode: ModeKey;
@@ -29,18 +29,22 @@ export const ModeTabs = memo(function ModeTabs({ mode, onChange, className }: Pr
         Terrain
       </button>
 
+      <div className={s.divider} aria-hidden="true" />
+
+      <button type="button" role="tab" aria-selected={mode === "scenario"}
+        className={cx(s.tab, mode === "scenario" && s.active)}
+        onClick={() => onChange("scenario")}
+      >
+        Scenario
+      </button>
+
+      <div className={s.divider} aria-hidden="true" />
+
       <button type="button" role="tab" aria-selected={mode === "variances"}
         className={cx(s.tab, mode === "variances" && s.active)}
         onClick={() => onChange("variances")}
       >
         Variances
-      </button>
-
-      <button type="button" role="tab" aria-selected={mode === "actuals"}
-        className={cx(s.tab, mode === "actuals" && s.active)}
-        onClick={() => onChange("actuals")}
-      >
-        Actuals
       </button>
     </div>
   );

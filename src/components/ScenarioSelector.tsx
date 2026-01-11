@@ -50,10 +50,10 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
       if (!btn) return;
 
       const r = btn.getBoundingClientRect();
-      const width = Math.max(260, r.width);
+      const width = Math.max(320, r.width);
       const left = Math.min(window.innerWidth - width - 12, Math.max(12, r.left));
 
-      const estimatedH = 240;
+      const estimatedH = 380;
       const spaceBelow = window.innerHeight - r.bottom;
       const top =
         spaceBelow < estimatedH
@@ -130,34 +130,54 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
                     width: "100%",
                     display: "flex",
                     alignItems: "center",
-                    gap: 10,
-                    padding: "12px 16px",
-                    background: "transparent",
+                    gap: 14,
+                    padding: "18px 22px",
+                    background: s.id === scenario
+                      ? "linear-gradient(180deg, rgba(0,210,255,0.08), rgba(0,0,0,0.05))"
+                      : "transparent",
+                    borderBottom: "1px solid rgba(255,255,255,0.06)",
                     border: 0,
                     cursor: "pointer",
                     textAlign: "left",
+                    transition: "background 120ms ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (s.id !== scenario) {
+                      e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = s.id === scenario
+                      ? "linear-gradient(180deg, rgba(0,210,255,0.08), rgba(0,0,0,0.05))"
+                      : "transparent";
                   }}
                 >
                   <span
                     style={{
-                      width: 3,
-                      height: 22,
+                      width: 4,
+                      height: 44,
                       borderRadius: 999,
                       background: SCENARIO_COLORS[s.id].primary,
                       opacity: s.id === scenario ? 1 : 0.55,
+                      boxShadow: s.id === scenario
+                        ? `0 0 12px ${SCENARIO_COLORS[s.id].primary}`
+                        : "none",
                     }}
                   />
-                  <span style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                     <span
                       style={{
-                        fontSize: 14,
-                        fontWeight: 800,
-                        color: s.id === scenario ? SCENARIO_COLORS[s.id].primary : "rgba(255,255,255,0.88)",
+                        fontSize: 26,
+                        fontWeight: 700,
+                        color: s.id === scenario ? SCENARIO_COLORS[s.id].primary : "rgba(255,255,255,0.92)",
+                        textShadow: s.id === scenario
+                          ? `0 0 14px ${SCENARIO_COLORS[s.id].primary}40`
+                          : "none",
                       }}
                     >
                       {s.label}
                     </span>
-                    <span style={{ fontSize: 12, color: "rgba(170,190,205,0.60)" }}>{s.desc}</span>
+                    <span style={{ fontSize: 13, color: "rgba(190,210,225,0.60)" }}>{s.desc}</span>
                   </span>
                 </button>
               ))}

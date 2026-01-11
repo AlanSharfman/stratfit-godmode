@@ -18,8 +18,10 @@
     "framer-motion": "^12.23.25",
     "gsap": "^3.14.1",
     "lucide-react": "^0.556.0",
+    "puppeteer": "^24.34.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "recharts": "^3.6.0",
     "simplex-noise": "^4.0.3",
     "three": "^0.181.2"
   },
@@ -39,8 +41,8 @@
     "tailwindcss": "^4.1.17",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
-    "vitest": "^3.2.4",
-    "vite": "npm:rolldown-vite@7.2.5"
+    "vite": "npm:rolldown-vite@7.2.5",
+    "vitest": "^3.2.4"
   },
   "overrides": {
     "vite": "npm:rolldown-vite@7.2.5"

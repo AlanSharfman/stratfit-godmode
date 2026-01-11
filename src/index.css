@@ -172,23 +172,24 @@ body { overflow-x: hidden; }
 .header-action-buttons{
   display:flex;
   align-items:center;
-  gap:10px;
+  gap:12px;
   transition: opacity .2s ease;
 }
 
 .header-action-btn{
   display:inline-flex;
   align-items:center;
-  gap:8px;
-  height:38px;
-  padding:0 16px;
-  border-radius:10px;
+  gap:10px;
+  height:46px;
+  padding:0 19px;
+  border-radius:12px;
   border:1px solid rgba(120,180,255,.12);
   background: linear-gradient(180deg, rgba(20,28,40,0.85), rgba(12,18,26,0.9));
-  color: rgba(255,255,255,.7);
-  font-size:13px;
-  font-weight:700;
-  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.92);
+  font-size:17px;
+  font-weight:650;
+  letter-spacing: 0.44px;
+  text-shadow: 0 0 8px rgba(255,255,255,0.15);
   cursor:pointer;
   transition: 
     transform .22s cubic-bezier(0.2, 0.9, 0.3, 1),
@@ -205,7 +206,8 @@ body { overflow-x: hidden; }
   transform: translateY(-2px) scale(1.02);
   background: linear-gradient(180deg, rgba(30,40,55,0.95), rgba(18,26,38,0.95));
   border-color: rgba(34,211,238,.35);
-  color: rgba(255,255,255,.95);
+  color: #ffffff;
+  text-shadow: 0 0 12px rgba(255,255,255,0.25);
   box-shadow:
     0 6px 20px rgba(0,0,0,.4),
     0 0 16px rgba(34,211,238,.12),
@@ -225,6 +227,8 @@ body { overflow-x: hidden; }
 }
 
 .header-action-icon{
+  width: 19px;
+  height: 19px;
   opacity:.9;
   transition: transform .2s ease, opacity .2s ease;
 }
@@ -347,11 +351,11 @@ body { overflow-x: hidden; }
 .left-column {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;          /* drops ControlDeck down slightly (~1mm feel) */
   min-height: 0;
   min-width: 0; /* IMPORTANT: allow grid children to shrink without forcing overflow */
   overflow: visible;
-  padding-top: 4px; /* align with other columns */
+  padding-top: 12px;  /* aligns Active Scenario top bezel with KPI bezel top */
 }
 
 /* CENTER COLUMN: Unified KPI + Mountain */
@@ -390,7 +394,7 @@ body { overflow-x: hidden; }
     0 0 0 1px rgba(255, 255, 255, 0.07),
     0 4px 12px rgba(0, 0, 0, 0.55);
   padding: 20px;
-  margin-top: 4px; /* align top with control panel */
+  margin-top: 291px; /* aligns Scenario Intelligence top with mountain compound corner */
   align-self: start; /* align to top, not stretch */
 }
 
@@ -564,10 +568,10 @@ body { overflow-x: hidden; }
   position: relative;
   overflow: visible; /* allow bezel glow to render */
   /* Internal alignment contract (instrument-grade) */
-  --kpi-label-h: 14px;
-  --kpi-value-h: 44px;
-  --kpi-viz-min: 86px;
-  --kpi-widget-scale: 0.95; /* "5% smaller" widgets (visuals only) */
+  --kpi-label-h: 16px; /* compact label */
+  --kpi-value-h: 40px; /* slightly reduced */
+  --kpi-viz-min: 110px; /* +28% taller for widgets */
+  --kpi-widget-scale: 1.20; /* +25% larger widgets */
 }
 
 /* KPI row position nudge (fast, safe, reversible) */
@@ -747,7 +751,7 @@ body { overflow-x: hidden; }
   /* Remove shadows completely (user request) */
   box-shadow: none;
   border: 1px solid rgba(255,255,255,0.10); /* more visible tile boundary */
-  min-height: 128px; /* instrument-grade height (no compression) */
+  min-height: 150px; /* taller to fit widgets without cutoff */
 }
 
 /* ============================================
@@ -760,12 +764,13 @@ body { overflow-x: hidden; }
 }
 
 .instrument-label {
-  font-size: 9px;
+  font-size: 11px; /* +22% */
   font-weight: 800;
-  letter-spacing: 2.2px;
+  letter-spacing: 2.8px;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(255, 255, 255, 0.75);
   transition: color 200ms ease;
+  transform: translateX(4px);
 }
 
 .kpi-instrument.active .instrument-label {
@@ -781,6 +786,7 @@ body { overflow-x: hidden; }
   align-items: end;
   height: var(--kpi-value-h);
   margin-top: 0;
+  padding-left: 4px; /* shift right for optical centering */
 }
 
 .value-display {
@@ -840,14 +846,15 @@ body { overflow-x: hidden; }
   max-height: 100%;
   justify-self: center;
   align-self: center;
-  transform: scale(var(--kpi-widget-scale));
+  transform: scale(var(--kpi-widget-scale)) translateX(4px);
   transform-origin: 50% 50%;
 }
 
 .instrument-svg {
   width: 100%;
   height: 100%;
-  max-height: 96px; /* stable visual row height across widgets */
+  max-height: 140px; /* taller to prevent cutoff */
+  transform-origin: center center;
 }
 
 /* ============================================
@@ -927,13 +934,13 @@ body { overflow-x: hidden; }
    TAKE THE TOUR — minimal overlay (Phase 1)
    ========================================================= */
 .sf-tour-pill{
-  height: 34px; /* match header controls */
-  padding: 0 14px;
+  height: 49px; /* 45% larger */
+  padding: 0 20px;
   border-radius: 999px;
   border: 1px solid rgba(34,211,238,0.30);
   background: transparent;
   color: rgba(34,211,238,0.95);
-  font-size: 12px;
+  font-size: 17px; /* 45% larger */
   font-weight: 800;
   letter-spacing: 0.02em;
   cursor: pointer;
@@ -1079,8 +1086,9 @@ body { overflow-x: hidden; }
     font-size: 22px;
   }
   .instrument-label {
-    font-size: 8px;
-    letter-spacing: 1.8px;
+    font-size: 10px; /* +25% */
+    letter-spacing: 2.2px;
+    transform: translateX(3px);
   }
 }
 

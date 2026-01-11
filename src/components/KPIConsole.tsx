@@ -33,7 +33,7 @@ interface KPIConfig {
 const KPI_CONFIG: KPIConfig[] = [
   {
     id: "cash",
-    label: "CASH POSITION",
+    label: "CASH",
     kpiKey: "cashPosition",
     unit: "",
     widgetType: "globe",
@@ -608,7 +608,9 @@ export default function KPIConsole() {
                           secondaryLine={
                             cfg.id === "arrGrowth"
                               ? `Δ ARR ${kpiValues?.arrDelta?.display ?? "—"}`
-                              : null
+                              : cfg.id === "value"
+                                ? `Growth Quality: ${kpiValues?.cacQuality?.display ?? "—"}`
+                                : null
                           }
                           state={state}
                           isDimmed={isDimmed}

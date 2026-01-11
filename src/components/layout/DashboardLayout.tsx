@@ -5,6 +5,7 @@ import MountainEngine from "@/components/engine/MountainEngine";
 import AIInsightsPanel from "@/components/ui/AIInsightsPanel";
 import { ChevronDown } from "lucide-react";
 import OnboardingFlow from "@/components/onboarding/OnboardingFlow";
+import { useScenarioStore } from "@/state/scenarioStore";
 
 const KPI_LABELS = ["Runway", "Cash", "Growth", "EBITDA", "Burn", "Risk", "Value"];
 const SCENARIOS = [
@@ -34,6 +35,9 @@ export default function DashboardLayout() {
   );
 
   const currentScenario = SCENARIOS.find(s => s.id === scenario) || SCENARIOS[0];
+
+  // Get growth stress from store for mountain cracks
+  const growthStress = useScenarioStore((s) => s.engineResults?.[scenario]?.kpis?.growthStress?.value ?? 0);
 
   const updateDataPoint = (index: number, value: number) => {
     setDataPoints((prev) => {
@@ -119,6 +123,7 @@ export default function DashboardLayout() {
             dataPoints={dataPoints}
             activeKPIIndex={activeKPIIndex}
             scenario={scenario}
+            growthStress={growthStress}
           />
         </div>
 

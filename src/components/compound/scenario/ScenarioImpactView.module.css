@@ -1,0 +1,306 @@
+/* src/components/compound/scenario/ScenarioImpactView.module.css
+   STRATFIT — Scenario Impact View Layout (Reorganized)
+*/
+
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 20px;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  background:
+    radial-gradient(100% 80% at 50% 0%, rgba(60,140,200,0.06), rgba(0,0,0,0) 50%),
+    linear-gradient(180deg, rgba(10,16,24,0.96), rgba(6,10,16,0.98));
+  border-radius: 14px;
+}
+
+/* ============================================================
+   SECTION 1: OVERVIEW
+   ============================================================ */
+
+.overviewSection {
+  margin-bottom: 20px;
+}
+
+.overviewHeader {
+  margin-bottom: 16px;
+}
+
+.titleBlock {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 6px;
+}
+
+.pageTitle {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow: 0 0 20px rgba(120,200,255,0.3);
+}
+
+.scenarioBadge {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.scenarioBadge[data-scenario="base"] {
+  background: rgba(34,211,238,0.15);
+  color: #22d3ee;
+  border: 1px solid rgba(34,211,238,0.3);
+}
+
+.scenarioBadge[data-scenario="conservative"] {
+  background: rgba(96,165,250,0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(96,165,250,0.3);
+}
+
+.scenarioBadge[data-scenario="growth"] {
+  background: rgba(52,211,153,0.15);
+  color: #34d399;
+  border: 1px solid rgba(52,211,153,0.3);
+}
+
+.scenarioBadge[data-scenario="turnaround"] {
+  background: rgba(244,114,182,0.15);
+  color: #f472b6;
+  border: 1px solid rgba(244,114,182,0.3);
+}
+
+.pageSubtitle {
+  margin: 0;
+  font-size: 13px;
+  color: rgba(160,200,255,0.65);
+}
+
+.pageSubtitle strong {
+  color: rgba(200,230,255,0.9);
+}
+
+/* Overview Grid: Summary Cards + Spider */
+.overviewGrid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .overviewGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Summary Cards */
+.summaryCards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 1100px) {
+  .summaryCards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.summaryCard {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background:
+    linear-gradient(145deg, rgba(30,45,65,0.6), rgba(20,30,45,0.7));
+  border: 1px solid rgba(120,180,255,0.10);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.05),
+    0 4px 12px rgba(0,0,0,0.25);
+}
+
+.cardLabel {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(140,180,220,0.7);
+  margin-bottom: 6px;
+}
+
+.cardValue {
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+.cardDelta {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.cardDelta.pos {
+  color: #34d399;
+}
+
+.cardDelta.neg {
+  color: #f472b6;
+}
+
+.cardDelta.neutral {
+  color: rgba(200,220,255,0.6);
+}
+
+/* Spider Chart */
+.spiderWrap {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(14,22,32,0.85), rgba(8,14,22,0.92));
+  border: 1px solid rgba(80,180,255,0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.04),
+    0 4px 16px rgba(0,0,0,0.3);
+}
+
+.spiderHeader {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(80,200,255,0.9);
+  margin-bottom: 6px;
+  text-align: center;
+}
+
+/* ============================================================
+   DIVIDERS
+   ============================================================ */
+
+.sectionDivider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 24px 0 20px;
+}
+
+.dividerLine {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    rgba(80,180,255,0.0) 0%,
+    rgba(80,180,255,0.25) 30%,
+    rgba(80,180,255,0.25) 70%,
+    rgba(80,180,255,0.0) 100%
+  );
+}
+
+.dividerLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(120,180,255,0.6);
+  white-space: nowrap;
+}
+
+.sectionDividerSmall {
+  display: flex;
+  align-items: center;
+  margin: 16px 0;
+}
+
+.dividerLineSmall {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    rgba(80,180,255,0.0) 0%,
+    rgba(80,180,255,0.12) 20%,
+    rgba(80,180,255,0.12) 80%,
+    rgba(80,180,255,0.0) 100%
+  );
+}
+
+/* ============================================================
+   METRICS SECTIONS
+   ============================================================ */
+
+.metricsSection {
+  width: 100%;
+}
+
+/* ============================================================
+   AI COMMENTARY FOOTER
+   ============================================================ */
+
+.aiFooter {
+  margin-top: 24px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background:
+    linear-gradient(135deg, rgba(60,120,180,0.08), rgba(100,60,180,0.06));
+  border: 1px solid rgba(120,180,255,0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.05),
+    0 4px 12px rgba(0,0,0,0.2);
+}
+
+.aiHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.aiIcon {
+  font-size: 16px;
+}
+
+.aiTitle {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: rgba(180,200,255,0.85);
+}
+
+.aiText {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.65;
+  color: rgba(200,220,240,0.8);
+}
+
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
+
+.container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.container::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.2);
+  border-radius: 4px;
+}
+
+.container::-webkit-scrollbar-thumb {
+  background: rgba(120,180,255,0.25);
+  border-radius: 4px;
+}
+
+.container::-webkit-scrollbar-thumb:hover {
+  background: rgba(120,180,255,0.4);
+}
+

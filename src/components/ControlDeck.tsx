@@ -333,10 +333,10 @@ const ControlBox = memo(function ControlBox({
       <style>{`
         .control-box {
           padding: 18px 20px;
-          background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.85));
+          background: linear-gradient(135deg, rgba(20, 24, 30, 0.78), rgba(10, 12, 16, 0.70));
           backdrop-filter: blur(12px);
           border-radius: 12px;
-          border: 2px solid rgba(34, 211, 238, 0.25);
+          border: 1px solid rgba(255,255,255,0.08);
           box-shadow: 
             0 4px 20px rgba(0, 0, 0, 0.4),
             inset 0 1px 0 rgba(255, 255, 255, 0.05),
@@ -377,15 +377,18 @@ const ControlBox = memo(function ControlBox({
         }
 
         .box-title {
-          font-size: 18px;
+          font-size: 23px;
           font-weight: 800;
-          letter-spacing: 0.12em;
+          letter-spacing: 0.15em;
           text-transform: uppercase;
           color: #fff !important;
           opacity: 1 !important;
+          text-align: center;
+          width: 100%;
+          display: block;
           text-shadow: 
-            0 0 16px rgba(255, 255, 255, 0.4),
-            0 0 4px rgba(255, 255, 255, 0.6),
+            0 0 18px rgba(255, 255, 255, 0.45),
+            0 0 5px rgba(255, 255, 255, 0.65),
             0 1px 2px rgba(0,0,0,0.6);
           transition: all 80ms cubic-bezier(0.22, 1, 0.36, 1);
         }
@@ -400,9 +403,21 @@ const ControlBox = memo(function ControlBox({
         }
 
         .box-sliders {
+          padding: 16px;
           display: flex;
           flex-direction: column;
-          gap: 6px;
+          gap: 8px;
+
+          /* BLACK inner well (per reference) */
+          background:
+            radial-gradient(120% 140% at 18% 12%, rgba(255,255,255,0.06), rgba(0,0,0,0) 55%),
+            linear-gradient(180deg, rgba(3,4,6,0.70), rgba(0,0,0,0.78));
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 14px;
+
+          box-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.06),
+            inset 0 -16px 28px rgba(0,0,0,0.60);
         }
       `}</style>
     </div>

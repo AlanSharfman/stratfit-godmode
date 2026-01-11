@@ -17,12 +17,14 @@
 
 
 import { useEffect, useRef } from "react";
+import { useScenarioStore } from "@/state/scenarioStore";
 import { generateSplinePoints } from "./utils/splineMath";
 
 interface MountainEngineProps {
   dataPoints: number[];
   activeKPIIndex: number | null;
   scenario: "base" | "upside" | "downside" | "extreme";
+  growthStress?: number; // 0 = great growth, 1 = terrible (shows cracks)
 }
 
 // Scenario color themes - FUTURISTIC NEON
@@ -77,8 +79,12 @@ export default function MountainEngine({
   dataPoints,
   activeKPIIndex,
   scenario,
+  growthStress = 0,
 }: MountainEngineProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  
+  // Get solver path from store for visualization
+  const solverPath = useScenarioStore((s) => s.solverPath);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -222,6 +228,145 @@ export default function MountainEngine({
       curveFront.forEach((p, i) => (i === 0 ? _ctx.moveTo(p.x, p.y) : _ctx.lineTo(p.x, p.y)));
       _ctx.stroke();
 
+      // ========== GROWTH STRESS CRACKS ==========
+      // When growth is weak, the mountain shows fracture lines
+      if (growthStress > 0.2) {
+        const crackOpacity = Math.min(0.6, growthStress);
+        const crackCount = Math.floor(growthStress * 12);
+        
+        // Find the peak (highest point / lowest Y)
+        let peakX = width / 2;
+        let peakY = height;
+        curveFront.forEach((p) => {
+          if (p.y < peakY) {
+            peakY = p.y;
+            peakX = p.x;
+          }
+        });
+
+        _ctx.strokeStyle = `rgba(255, 80, 120, ${crackOpacity})`;
+        _ctx.lineWidth = 2;
+        _ctx.shadowBlur = 8;
+        _ctx.shadowColor = `rgba(255, 80, 120, ${crackOpacity * 0.5})`;
+
+        // Deterministic pseudo-random cracks based on tick
+        for (let i = 0; i < crackCount; i++) {
+          const seed = i * 1234.5678;
+          const xOffset = Math.sin(seed) * 120;
+          const x = peakX + xOffset;
+          const crackLength = 60 + Math.cos(seed * 2) * 60;
+          const xDrift = Math.sin(seed * 3) * 40;
+
+          _ctx.beginPath();
+          _ctx.moveTo(x, peakY + 10);
+          _ctx.lineTo(x + xDrift, peakY + crackLength);
+          // Add jagged segments
+          _ctx.lineTo(x + xDrift - 10, peakY + crackLength + 20);
+          _ctx.stroke();
+        }
+
+        _ctx.shadowBlur = 0;
+      }
+
+      // ========== SOLVER PATH VISUALIZATION ==========
+      // Draw the optimization path as a glowing trail
+      if (solverPath.length > 1) {
+        const pathPoints = solverPath.map((step, i) => {
+          // Map risk (0-100) to X position (right to left - low risk = right)
+          const x = width - (step.riskIndex / 100) * width * 0.8 - width * 0.1;
+          
+          // Map enterprise value to Y position (higher value = higher on screen = lower Y)
+          // Normalize enterprise value: assume max ~$150M for visualization
+          const normalizedValue = Math.min(1, step.enterpriseValue / 150_000_000);
+          const y = height - (normalizedValue * height * 0.7) - height * 0.15;
+          
+          return { x, y, step, index: i };
+        });
+
+        // Draw path trail with gradient opacity
+        _ctx.lineWidth = 3;
+        _ctx.lineCap = "round";
+        _ctx.lineJoin = "round";
+        
+        for (let i = 1; i < pathPoints.length; i++) {
+          const prev = pathPoints[i - 1];
+          const curr = pathPoints[i];
+          const progress = i / (pathPoints.length - 1);
+          
+          // Gradient from dim to bright cyan
+          const alpha = 0.3 + progress * 0.6;
+          _ctx.strokeStyle = `rgba(80, 220, 255, ${alpha})`;
+          _ctx.shadowBlur = 8 + progress * 12;
+          _ctx.shadowColor = `rgba(80, 220, 255, ${alpha * 0.8})`;
+          
+          _ctx.beginPath();
+          _ctx.moveTo(prev.x, prev.y);
+          _ctx.lineTo(curr.x, curr.y);
+          _ctx.stroke();
+        }
+
+        // Draw waypoint dots
+        pathPoints.forEach((pt, i) => {
+          const progress = i / (pathPoints.length - 1);
+          const size = 3 + progress * 4;
+          const alpha = 0.4 + progress * 0.6;
+          
+          // Outer glow
+          _ctx.beginPath();
+          _ctx.arc(pt.x, pt.y, size + 4, 0, Math.PI * 2);
+          _ctx.fillStyle = `rgba(80, 220, 255, ${alpha * 0.3})`;
+          _ctx.fill();
+          
+          // Inner dot
+          _ctx.beginPath();
+          _ctx.arc(pt.x, pt.y, size, 0, Math.PI * 2);
+          _ctx.fillStyle = `rgba(80, 220, 255, ${alpha})`;
+          _ctx.shadowBlur = 10;
+          _ctx.shadowColor = `rgba(80, 220, 255, ${alpha})`;
+          _ctx.fill();
+        });
+
+        // Draw final destination marker (star/diamond)
+        if (pathPoints.length > 0) {
+          const final = pathPoints[pathPoints.length - 1];
+          const starSize = 12 + Math.sin(tick * 3) * 3;
+          
+          _ctx.save();
+          _ctx.translate(final.x, final.y);
+          _ctx.rotate(Math.PI / 4);
+          
+          // Diamond shape
+          _ctx.beginPath();
+          _ctx.moveTo(0, -starSize);
+          _ctx.lineTo(starSize * 0.6, 0);
+          _ctx.lineTo(0, starSize);
+          _ctx.lineTo(-starSize * 0.6, 0);
+          _ctx.closePath();
+          
+          _ctx.fillStyle = "rgba(250, 204, 21, 0.9)";
+          _ctx.shadowBlur = 20;
+          _ctx.shadowColor = "rgba(250, 204, 21, 0.8)";
+          _ctx.fill();
+          
+          _ctx.restore();
+
+          // Label the final valuation
+          _ctx.font = "bold 11px system-ui, sans-serif";
+          _ctx.fillStyle = "rgba(250, 204, 21, 0.95)";
+          _ctx.shadowBlur = 6;
+          _ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+          _ctx.textAlign = "center";
+          _ctx.fillText(
+            `$${(final.step.enterpriseValue / 1_000_000).toFixed(0)}M`,
+            final.x,
+            final.y - starSize - 8
+          );
+          _ctx.textAlign = "left";
+        }
+
+        _ctx.shadowBlur = 0;
+      }
+
       // ========== PULSING DATA POINTS ==========
       const pulseSize = 3 + Math.sin(tick * 3) * 1.5;
       curveFront.forEach((p, i) => {
@@ -310,7 +455,7 @@ export default function MountainEngine({
       cancelAnimationFrame(frameId);
       window.removeEventListener("resize", resize);
     };
-  }, [dataPoints, activeKPIIndex, scenario]);
+  }, [dataPoints, activeKPIIndex, scenario, solverPath, growthStress]);
 
   return <canvas ref={canvasRef} className="w-full h-full" />;
 }
