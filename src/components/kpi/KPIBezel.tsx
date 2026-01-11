@@ -23,6 +23,7 @@ export default function KPIBezel({ title, columns, children, className }: Props)
         className={[styles.bezel, className ?? ""].join(" ")}
         style={{ ["--cols" as string]: String(columns) } as React.CSSProperties}
       >
+        <div className={styles.glints} />
         <div className={styles.inner}>
           <div className={styles.header}>
             <div />

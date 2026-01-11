@@ -18,96 +18,76 @@
 
 .bezel {
   position: relative;
-  height: 100%;
-  border-radius: 26px;
-
-  /* Outer bezel frame: gunmetal charcoal @ ~0.90 (no blur filter) */
-  background: rgba(22,26,30,0.90);
-
-  /* Raised / lifted rim — stronger lift + clearer step */
-  box-shadow:
-    /* top-left lift highlight */
-    -18px -18px 36px rgba(255, 255, 255, 0.045),
-    /* bottom-right depth */
-    22px 22px 46px rgba(0, 0, 0, 0.78),
-    /* inner rim + top sheen (crisp) */
-    inset 0 0 0 1px rgba(255,255,255,0.06),
-    inset 0 1px 0 rgba(255,255,255,0.10),
-    /* rim edge definition */
-    inset 1px 1px 0 rgba(255, 255, 255, 0.10),
-    inset -1px -1px 0 rgba(0, 0, 0, 0.72),
-    /* undercut inside the rim (adds "stepped" feel) */
-    inset 0 18px 30px rgba(0, 0, 0, 0.38),
-    /* Bottom lip contrast */
-    inset 0 -1px 0 rgba(255,255,255,0.06),
-    inset 0 -14px 22px rgba(0,0,0,0.42);
-
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  /* Do not clip/dim widget layer */
+  height: 100%; /* CRITICAL: fill the .wrap container */
+  border-radius: 18px;
+  padding: 14px;
   overflow: visible;
+
+  /* thin rim – defined, not grey */
+  border: 1px solid rgba(140, 220, 255, 0.08);
+
+  /* deep cockpit glass (blue-black) */
+  background:
+    radial-gradient(120% 120% at 18% 10%, rgba(90, 160, 220, 0.14), rgba(0,0,0,0) 58%),
+    radial-gradient(120% 120% at 88% 22%, rgba(0, 220, 255, 0.08), rgba(0,0,0,0) 55%),
+    linear-gradient(180deg, rgba(9, 14, 22, 0.97), rgba(5, 8, 14, 0.95));
+
+  /* STEPPED DEPTH — SAFE (shadows only, cannot cover content) */
+  box-shadow:
+    /* outer lift */
+    0 18px 46px rgba(0,0,0,0.75),
+
+    /* rim sheen */
+    0 1px 0 rgba(255,255,255,0.05) inset,
+
+    /* step ledge highlight (top edge) */
+    0 10px 0 rgba(255,255,255,0.03) inset,
+
+    /* step ledge shadow (bottom edge) */
+    0 -12px 18px rgba(0,0,0,0.55) inset,
+
+    /* inner frame line */
+    0 0 0 1px rgba(120, 210, 255, 0.06) inset;
 }
 
-/* STEP 1: outer manufacturing line (crisp ring) */
-.bezel::before{
+/* Outer halo (behind everything) */
+.bezel::before {
   content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  pointer-events: none;
+
+  background:
+    radial-gradient(140% 100% at 20% 0%, rgba(120,240,255,0.22), rgba(0,0,0,0) 55%),
+    radial-gradient(140% 100% at 100% 22%, rgba(70,160,255,0.18), rgba(0,0,0,0) 60%);
+
+  filter: blur(10px);
+  opacity: 0.85;
+  z-index: -1; /* force behind content */
+}
+
+/* Corner glints (optional, use only if your KPIFrame adds a div.glints) */
+.glints {
   position: absolute;
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  z-index: 1;
-
-  padding: 6px; /* ring thickness (stronger step visibility) */
-  /* Ring-only render (no masks): border-box shows ring, padding-box is transparent */
-  /* Uniform ring (no bottom fade) */
   background:
-    linear-gradient(
-      180deg,
-      rgba(255,255,255,0.18) 0%,
-      rgba(255,255,255,0.14) 100%
-    ) border-box,
-    linear-gradient(transparent, transparent) padding-box;
-  background-clip: border-box, padding-box;
-  border: 1px solid rgba(255,255,255,0.11);
-
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.14),
-    inset 0 -1px 0 rgba(0,0,0,0.45);
-  opacity: 0.95;
-}
-
-/* STEP 2: inner ledge at cavity boundary (the "step" in your green circle) */
-.bezel::after{
-  content: "";
-  position: absolute;
-  inset: 6px; /* widen the visible shelf between ledge and cavity */
-  border-radius: 21px;
-  pointer-events: none;
-  z-index: 1;
-
-  padding: 6px; /* ring thickness (stronger step visibility) */
-  /* Ring-only render (no masks): border-box shows ring, padding-box is transparent */
-  /* Uniform ledge ring (no bottom fade) */
-  background:
-    linear-gradient(
-      180deg,
-      rgba(255,255,255,0.16) 0%,
-      rgba(255,255,255,0.12) 100%
-    ) border-box,
-    linear-gradient(transparent, transparent) padding-box;
-  background-clip: border-box, padding-box;
-  border: 1px solid rgba(255,255,255,0.11);
-
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.10),
-    inset 0 -1px 0 rgba(0,0,0,0.40);
-  opacity: 1;
+    radial-gradient(22px 22px at 10px 10px, rgba(140,240,255,0.22), rgba(0,0,0,0) 70%),
+    radial-gradient(22px 22px at calc(100% - 10px) 10px, rgba(110,200,255,0.16), rgba(0,0,0,0) 72%),
+    radial-gradient(22px 22px at 10px calc(100% - 10px), rgba(70,130,255,0.12), rgba(0,0,0,0) 72%),
+    radial-gradient(22px 22px at calc(100% - 10px) calc(100% - 10px), rgba(120,240,255,0.18), rgba(0,0,0,0) 70%);
+  mix-blend-mode: screen;
+  opacity: 0.8;
 }
 
 /* Recessed "screen cavity" */
 .inner {
   position: absolute;
-  inset: 14px; /* exposes more of the ledge so the step reads clearly */
+  inset: 0; /* fill bezel — stepped effect via box-shadow */
   border-radius: 18px;
+  z-index: 2; /* content surface above bezel FX */
 
   /* Inner tray behind tiles: slightly more translucent than bezel (0.78–0.82) */
   background: linear-gradient(180deg, rgba(20,25,29,0.82) 0%, rgba(15,20,24,0.78) 100%);
@@ -274,5 +254,11 @@
   justify-content: center;
   padding: 12px;
   min-height: 0;
+}
+
+/* Guardrail: never allow bezel collapse */
+@supports (height: 100%) {
+  .wrap { min-height: 210px; }
+  .bezel { min-height: 100%; }
 }
 

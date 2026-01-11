@@ -112,9 +112,10 @@ const SliderRow = memo(function SliderRow({
                 setTooltipRect((prev) => (prev ? null : e.currentTarget.getBoundingClientRect()));
               }}
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 16v-4M12 8h.01" />
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 17v-6" strokeLinecap="round" strokeWidth="2.5" />
+                <circle cx="12" cy="7.5" r="1.2" fill="currentColor" stroke="none" />
               </svg>
             </span>
           )}
@@ -168,12 +169,18 @@ const SliderRow = memo(function SliderRow({
         }
 
         .info-icon {
-          opacity: 0.4;
-          transition: opacity 0.15s;
+          opacity: 0.75;
+          transition: opacity 0.15s, transform 0.15s;
+          margin-left: 6px;
+          display: inline-flex;
+          align-items: center;
+          cursor: pointer;
+          color: rgba(34, 211, 238, 0.9);
         }
 
         .slider-row:hover .info-icon {
-          opacity: 0.7;
+          opacity: 1;
+          transform: scale(1.1);
         }
 
         .tooltip-title {
