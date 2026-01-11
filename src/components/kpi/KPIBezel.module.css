@@ -3,11 +3,10 @@
 */
 
 .wrap {
-  height: clamp(210px, 22vh, 260px);
   position: relative;
-  border-radius: 26px;
+  width: 100%;
   overflow: visible;
-  isolation: isolate;
+  height: clamp(210px, 22vh, 260px);
 }
 
 /* Remove neon rails entirely */
@@ -18,53 +17,54 @@
 
 .bezel {
   position: relative;
-  height: 100%; /* CRITICAL: fill the .wrap container */
+  height: 100%;
   border-radius: 18px;
   padding: 14px;
   overflow: visible;
+  border: 1px solid rgba(255,255,255,0.06);
 
-  /* thin rim – defined, not grey */
-  border: 1px solid rgba(140, 220, 255, 0.08);
-
-  /* deep cockpit glass (blue-black) */
   background:
-    radial-gradient(120% 120% at 18% 10%, rgba(90, 160, 220, 0.14), rgba(0,0,0,0) 58%),
-    radial-gradient(120% 120% at 88% 22%, rgba(0, 220, 255, 0.08), rgba(0,0,0,0) 55%),
-    linear-gradient(180deg, rgba(9, 14, 22, 0.97), rgba(5, 8, 14, 0.95));
+    radial-gradient(120% 90% at 20% 10%, rgba(80, 160, 220, 0.12), rgba(0,0,0,0) 60%),
+    radial-gradient(140% 120% at 80% 0%, rgba(30, 120, 180, 0.08), rgba(0,0,0,0) 55%),
+    linear-gradient(180deg, rgba(8, 14, 20, 0.92), rgba(4, 8, 12, 0.98));
 
-  /* STEPPED DEPTH — SAFE (shadows only, cannot cover content) */
   box-shadow:
-    /* outer lift */
-    0 18px 46px rgba(0,0,0,0.75),
-
-    /* rim sheen */
-    0 1px 0 rgba(255,255,255,0.05) inset,
-
-    /* step ledge highlight (top edge) */
-    0 10px 0 rgba(255,255,255,0.03) inset,
-
-    /* step ledge shadow (bottom edge) */
-    0 -12px 18px rgba(0,0,0,0.55) inset,
-
-    /* inner frame line */
-    0 0 0 1px rgba(120, 210, 255, 0.06) inset;
+    inset 0 1px 0 rgba(255,255,255,0.10),   /* top cut */
+    inset 0 -1px 0 rgba(0,0,0,0.65),        /* bottom ledge */
+    inset 1px 0 0 rgba(0,0,0,0.55),         /* left lip */
+    inset -1px 0 0 rgba(255,255,255,0.03),  /* right sheen */
+    0 10px 28px rgba(0,0,0,0.55);           /* lift */
 }
 
-/* Outer halo (behind everything) */
+/* Corner glints (Picture-3 style) */
 .bezel::before {
   content: "";
   position: absolute;
-  inset: -2px;
+  inset: 0;
   border-radius: inherit;
   pointer-events: none;
 
   background:
-    radial-gradient(140% 100% at 20% 0%, rgba(120,240,255,0.22), rgba(0,0,0,0) 55%),
-    radial-gradient(140% 100% at 100% 22%, rgba(70,160,255,0.18), rgba(0,0,0,0) 60%);
+    radial-gradient(10px 10px at 14px 14px, rgba(0,255,255,0.35), transparent 62%),
+    radial-gradient(10px 10px at calc(100% - 14px) 14px, rgba(0,255,255,0.22), transparent 62%),
+    radial-gradient(10px 10px at 14px calc(100% - 14px), rgba(0,255,255,0.14), transparent 65%);
 
-  filter: blur(10px);
-  opacity: 0.85;
-  z-index: -1; /* force behind content */
+  mix-blend-mode: screen;
+  opacity: 0.9;
+}
+
+/* Thin inner "glass rim" (definition) */
+.bezel::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: calc(18px - 2px);
+  pointer-events: none;
+
+  box-shadow:
+    inset 0 0 0 1px rgba(120, 200, 255, 0.10),
+    inset 0 10px 22px rgba(0, 255, 255, 0.05),
+    inset 0 -14px 24px rgba(0, 0, 0, 0.55);
 }
 
 /* Corner glints (optional, use only if your KPIFrame adds a div.glints) */
