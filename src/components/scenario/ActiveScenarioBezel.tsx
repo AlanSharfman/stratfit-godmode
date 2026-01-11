@@ -10,22 +10,16 @@ type Props = {
 export default memo(function ActiveScenarioBezel({ label, subLabel, onOpen }: Props) {
   return (
     <button type="button" className={styles.shell} onClick={onOpen} aria-label="Active scenario">
-      {/* Outer deep frame */}
-      <div className={styles.frame}>
-        {/* Inner surface */}
-        <div className={styles.surface}>
+      <div className={styles.step}>
+        <div className={styles.inner}>
           <div className={styles.kicker}>ACTIVE SCENARIO</div>
 
           <div className={styles.row}>
             <div className={styles.value}>{label}</div>
-
-            {/* Arrow button (small dark square) */}
-            <div className={styles.arrowBox} aria-hidden="true">
-              <span className={styles.caret}>▼</span>
-            </div>
+            <span className={styles.chev} aria-hidden="true">▼</span>
           </div>
 
-          {subLabel ? <div className={styles.sub}>{subLabel}</div> : null}
+          <div className={styles.sub}>{subLabel ?? ""}</div>
         </div>
       </div>
     </button>
