@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import CenterViewSegmented, { CenterView } from "@/components/CenterViewSegmented";
+import { CenterView } from "@/components/CenterViewSegmented";
 import ScenarioMountain from "@/components/mountain/ScenarioMountain";
 import ScenarioDeltaSnapshot from "@/components/ScenarioDeltaSnapshot";
 import { useScenario, useDataPoints, useScenarioStore } from "@/state/scenarioStore";
@@ -125,11 +125,9 @@ function SpeakerIcon({
 }
 
 export default function CenterViewPanel(props: {
-  scenarioControl?: React.ReactNode;
-  tourControl?: React.ReactNode;
+  view?: CenterView;
 }) {
-  const { scenarioControl, tourControl } = props;
-  const [view, setView] = useState<CenterView>("terrain");
+  const { view = "terrain" } = props;
   const scenario = useScenario();
   const dataPoints = useDataPoints();
   const hoveredKpiIndex = useScenarioStore((s) => s.hoveredKpiIndex);
@@ -139,7 +137,7 @@ export default function CenterViewPanel(props: {
   const [briefingOpen, setBriefingOpen] = useState(false);
   const [briefingNonce, setBriefingNonce] = useState(0);
 
-  const [soundOn, setSoundOnState] = useState<boolean>(false); // Default value
+  const [soundOn] = useState<boolean>(false); // Default value
 
   // Auto-open briefing first time per view (per user), without sound unless user enabled it.
   useEffect(() => {
@@ -151,19 +149,6 @@ export default function CenterViewPanel(props: {
       setBriefingOpen(false);
     }
   }, [briefingKey]);
-
-  const openBriefing = () => {
-    setBriefingOpen(true);
-    setBriefingNonce((n) => n + 1);
-  };
-
-  const toggleSound = () => {
-    const next = !soundOn;
-    setSoundOnState(next);
-
-    // If user turns sound on, we treat it as a “gesture” moment—retrigger the briefing typing nicely.
-    if (next) openBriefing();
-  };
 
   // CAUSAL HIGHLIGHT — Mountain band (Phase 1, UI-only)
   const [bandNonce, setBandNonce] = useState(0);
@@ -181,37 +166,16 @@ export default function CenterViewPanel(props: {
 
   return (
     <div className="relative flex h-full w-full flex-col rounded-xl bg-black/40 backdrop-blur-sm border border-white/5 overflow-hidden">
-      {/* Command Bar — reduced left padding to align with KPI boxes */}
-      <div className="relative shrink-0 pl-2 pr-4 pt-4 pb-3 border-b border-white/5 bg-gradient-to-b from-black/30 to-transparent">
-        {scenarioControl || tourControl ? (
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
-            <div className="justify-self-start">
-              <CenterViewSegmented value={view} onChange={setView} />
-            </div>
-            <div className="justify-self-center">
-              {scenarioControl ? <div className="min-w-[260px] scale-[1.08]">{scenarioControl}</div> : null}
-            </div>
-            <div className="justify-self-end flex items-center scale-[1.08]">
-              {tourControl}
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-center justify-start">
-            <CenterViewSegmented value={view} onChange={setView} />
-          </div>
-        )}
-
-        {/* IMPORTANT: Briefing must not steal mountain height (overlay only) */}
-        <BriefingPanel
-          className="absolute left-6 right-6 top-full z-20 mt-3"
-          briefingKey={briefingKey}
-          open={briefingOpen}
-          soundEnabled={soundOn}
-          onClose={() => setBriefingOpen(false)}
-          onSeen={() => setBriefingSeen(briefingKey)}
-          forceNonce={briefingNonce}
-        />
-      </div>
+      {/* Briefing overlay (does not take layout space) */}
+      <BriefingPanel
+        className="absolute left-6 right-6 top-4 z-20"
+        briefingKey={briefingKey}
+        open={briefingOpen}
+        soundEnabled={soundOn}
+        onClose={() => setBriefingOpen(false)}
+        onSeen={() => setBriefingSeen(briefingKey)}
+        forceNonce={briefingNonce}
+      />
 
       {/* Center Stage */}
       {/* STRATFIT RULE:

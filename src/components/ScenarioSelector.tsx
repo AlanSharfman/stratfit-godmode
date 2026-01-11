@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { ScenarioId, SCENARIO_COLORS } from "@/state/scenarioStore";
+import ActiveScenarioBezel from "@/components/scenario/ActiveScenarioBezel";
 
 interface ScenarioSelectorProps {
   scenario: ScenarioId;
@@ -23,7 +24,7 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
   const [showHint, setShowHint] = useState(false);
   const [flashColor, setFlashColor] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
+  const buttonRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; left: number; width: number } | null>(null);
   
@@ -105,34 +106,14 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
 
   return (
     <div ref={containerRef} className="scenario-selector">
-      {/* Main Control Capsule */}
-      <button 
-        ref={buttonRef}
-        className={`selector-capsule ${isOpen ? 'open' : ''} ${showHint ? 'hint-pulse' : ''}`}
-        onClick={handleToggle}
-        style={{
-          ['--accent' as string]: colors.primary,
-          ['--glow' as string]: colors.glow,
-          boxShadow: flashColor 
-            ? `0 0 40px ${flashColor}80, 0 0 80px ${flashColor}40`
-            : undefined
-        }}
-      >
-        {/* Slow ambient glow */}
-        <div className="capsule-glow" />
-        
-        <div className="capsule-content">
-          <span className="capsule-label">ACTIVE SCENARIO</span>
-          <span className="capsule-value">{currentScenario?.label}</span>
-        </div>
-        
-        <div className={`capsule-arrow ${isOpen ? 'rotated' : ''}`}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-          <div className="arrow-shimmer" />
-        </div>
-      </button>
+      {/* Main Control Capsule — Exact Replica Bezel */}
+      <div ref={buttonRef}>
+        <ActiveScenarioBezel
+          label={currentScenario?.label ?? "Base Case"}
+          subLabel={currentScenario?.desc}
+          onOpen={handleToggle}
+        />
+      </div>
 
       {/* Dropdown Options — PORTAL overlay (prevents clipping) */}
       {isOpen && menuPos
@@ -179,49 +160,65 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
           position: relative;
           z-index: 4000; /* must overlay sliders + mountain */
           isolation: isolate;
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: flex-start;
+          padding-left: 2px; /* tiny anchor so it visually lines up with the slider stack */
         }
 
         /* ============================================
-           MAIN CAPSULE — Premium Dark Glass
+           MAIN CAPSULE — Clean Control Surface
            ============================================ */
         .selector-capsule {
           position: relative;
           display: flex;
           align-items: center;
-          gap: 17px;
-          padding: 14px 19px;
-          min-width: 288px;
-          background: linear-gradient(
-            165deg,
-            rgba(22, 28, 38, 0.95) 0%,
-            rgba(14, 18, 26, 0.98) 50%,
-            rgba(10, 14, 22, 0.99) 100%
-          );
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          border-radius: 14px;
+          gap: 16px;
+          width: 100%;
+          height: 100%;
+          padding: 0 14px 0 22px;
+          border-radius: 10px;
+
+          /* IMPORTANT: the outer GODMODE steps come from ScenarioBezel.
+             This inner control must be clean, readable, and not "double-bezeled". */
+          background: linear-gradient(180deg, rgba(15, 23, 32, 0.55), rgba(11, 17, 23, 0.35));
+          border: 1px solid rgba(120, 180, 255, 0.16);
+
+          box-shadow:
+            inset 0 1px 0 rgba(220,245,255,0.08),
+            inset 0 -14px 22px rgba(0,0,0,0.55);
+
           cursor: pointer;
-          transition: background 160ms ease, border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
-          overflow: hidden;
+          transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+          overflow: hidden; /* clip inner glow only */
+        }
+
+        /* Inner edge highlight (top-left) + depth bite (bottom-right) */
+        .selector-capsule::before,
+        .selector-capsule::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          border-radius: 10px;
+          pointer-events: none;
         }
 
         .selector-capsule::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          border-radius: 14px;
-          padding: 1px;
-          background: linear-gradient(
-            145deg,
-            rgba(255,255,255,0.2) 0%,
-            transparent 30%,
-            transparent 70%,
-            rgba(255,255,255,0.15) 100%
-          );
-          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-          mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-          -webkit-mask-composite: xor;
-          mask-composite: exclude;
-          pointer-events: none;
+          background:
+            radial-gradient(120% 90% at 18% 12%,
+              rgba(140,210,255,0.14),
+              rgba(0,0,0,0) 55%);
+          opacity: 0.9;
+        }
+
+        .selector-capsule::after {
+          background:
+            radial-gradient(120% 90% at 86% 92%,
+              rgba(0,0,0,0.55),
+              rgba(0,0,0,0) 60%);
+          opacity: 1;
         }
 
         /* Slow ambient glow pulse — 7s cycle */
@@ -233,6 +230,24 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
           opacity: 0.09;
           animation: ambient-pulse 7s ease-in-out infinite;
           pointer-events: none;
+          z-index: 1;
+        }
+
+        /* Status cue dot — Bloomberg-style anchor marker */
+        .capsule-cue {
+          position: absolute;
+          left: 10px;
+          top: 50%;
+          width: 6px;
+          height: 6px;
+          border-radius: 999px;
+          transform: translateY(-50%);
+
+          background: rgba(160, 185, 210, 0.65);
+          box-shadow:
+            0 0 0 2px rgba(0,0,0,0.55),
+            0 0 10px rgba(120, 200, 255, 0.10);
+          opacity: 0.95;
         }
 
         @keyframes ambient-pulse {
@@ -284,19 +299,24 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
         }
 
         .capsule-label {
-          font-size: 12px;
-          font-weight: 700;
-          letter-spacing: 0.16em;
-          color: rgba(160, 180, 200, 0.8);
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0.14em;
+          color: rgba(255, 255, 255, 0.88);
           text-transform: uppercase;
+          text-shadow: 
+            0 0 8px rgba(255,255,255,0.15),
+            0 1px 2px rgba(0,0,0,0.5);
         }
 
         .capsule-value {
-          font-size: 19px;
+          font-size: 20px;
           font-weight: 800;
-          color: var(--accent);
-          text-shadow: 0 0 12px rgba(34,211,238,0.20);
-          letter-spacing: 0.5px;
+          color: #22d3ee;
+          text-shadow: 
+            0 0 8px rgba(34,211,238,0.35),
+            0 1px 2px rgba(0,0,0,0.4);
+          letter-spacing: 0.02em;
         }
 
         /* ============================================
@@ -361,7 +381,7 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
             rgba(14, 18, 26, 0.98) 0%,
             rgba(10, 14, 22, 0.99) 100%
           );
-          border: 1px solid rgba(255, 255, 255, 0.12);
+          border: 1px solid rgba(120, 180, 255, 0.18);
           border-top: none;
           border-radius: 0 0 14px 14px;
           overflow: hidden;
@@ -375,7 +395,7 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
           max-height: 240px;
           opacity: 1;
           pointer-events: auto;
-          box-shadow: 0 14px 46px rgba(0,0,0,0.55);
+          box-shadow: 0 14px 46px rgba(0,0,0,0.62), inset 0 1px 0 rgba(190,235,255,0.10);
           overflow-y: auto;
           overscroll-behavior: contain;
           -webkit-overflow-scrolling: touch;
@@ -389,9 +409,9 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
             rgba(14, 18, 26, 0.98) 0%,
             rgba(10, 14, 22, 0.99) 100%
           );
-          border: 1px solid rgba(255, 255, 255, 0.12);
+          border: 1px solid rgba(120, 180, 255, 0.18);
           border-radius: 14px;
-          box-shadow: 0 14px 46px rgba(0,0,0,0.55);
+          box-shadow: 0 14px 46px rgba(0,0,0,0.62), inset 0 1px 0 rgba(190,235,255,0.10);
           pointer-events: auto;
         }
 

@@ -137,12 +137,20 @@ body { overflow-x: hidden; }
   padding:0 18px;
   background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
   border-bottom:1px solid rgba(255,255,255,.06);
+  position: relative; /* for centered mode selector */
 }
 
 .header-left{
   display:flex;
   align-items:center;
   gap:18px;
+}
+
+/* SIMULATION MODE SELECTOR — centered in header */
+.header-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .header-actions{
@@ -158,53 +166,103 @@ body { overflow-x: hidden; }
   letter-spacing:.02em;
 }
 
+/* ============================================================
+   HEADER ACTION BUTTONS — World-class command bar
+   ============================================================ */
 .header-action-buttons{
   display:flex;
   align-items:center;
-  gap:8px;
-  opacity:.55; /* peripheral by default */
-  transition: opacity .18s ease;
-}
-.header-action-buttons:hover{
-  opacity:1;
+  gap:10px;
+  transition: opacity .2s ease;
 }
 
 .header-action-btn{
   display:inline-flex;
   align-items:center;
   gap:8px;
-  height:34px; /* bigger */
-  padding:0 12px; /* bigger */
-  border-radius:9px;
-  border:1px solid rgba(255,255,255,.08);
-  background: rgba(255,255,255,.02);
-  color: rgba(255,255,255,.62);
-  font-size:12px;
+  height:38px;
+  padding:0 16px;
+  border-radius:10px;
+  border:1px solid rgba(120,180,255,.12);
+  background: linear-gradient(180deg, rgba(20,28,40,0.85), rgba(12,18,26,0.9));
+  color: rgba(255,255,255,.7);
+  font-size:13px;
   font-weight:700;
+  letter-spacing: 0.02em;
   cursor:pointer;
-  transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
-}
-.header-action-btn:hover{
-  transform: translateY(-1px);
-  background: rgba(255,255,255,.05);
-  border-color: rgba(255,255,255,.14);
-  color: rgba(255,255,255,.90);
-}
-.header-action-btn:focus-visible{
-  outline:none;
-  box-shadow: 0 0 0 2px rgba(255,255,255,.10); /* no cyan callout */
-}
-.header-action-icon{
-  opacity:.85;
+  transition: 
+    transform .22s cubic-bezier(0.2, 0.9, 0.3, 1),
+    background .2s ease,
+    border-color .2s ease,
+    color .2s ease,
+    box-shadow .25s ease;
+  box-shadow:
+    0 2px 8px rgba(0,0,0,.3),
+    inset 0 1px 0 rgba(255,255,255,.06);
 }
 
-/* Text is optional; reveal on hover for an icon-first feel */
+.header-action-btn:hover{
+  transform: translateY(-2px) scale(1.02);
+  background: linear-gradient(180deg, rgba(30,40,55,0.95), rgba(18,26,38,0.95));
+  border-color: rgba(34,211,238,.35);
+  color: rgba(255,255,255,.95);
+  box-shadow:
+    0 6px 20px rgba(0,0,0,.4),
+    0 0 16px rgba(34,211,238,.12),
+    inset 0 1px 0 rgba(255,255,255,.1);
+}
+
+.header-action-btn:active{
+  transform: translateY(0) scale(0.98);
+  transition: transform .08s ease;
+}
+
+.header-action-btn:focus-visible{
+  outline:none;
+  box-shadow: 
+    0 0 0 2px rgba(34,211,238,.25),
+    0 4px 12px rgba(0,0,0,.3);
+}
+
+.header-action-icon{
+  opacity:.9;
+  transition: transform .2s ease, opacity .2s ease;
+}
+
+.header-action-btn:hover .header-action-icon{
+  opacity:1;
+  transform: scale(1.1);
+}
+
+/* God-Mode cyan for header action icons (Load/Save/Share) */
+.sys-action-icon {
+  color: rgba(120,220,255,0.95);
+  filter:
+    drop-shadow(0 0 10px rgba(120,220,255,0.20))
+    drop-shadow(0 0 18px rgba(120,220,255,0.14));
+  transition: filter 160ms ease, color 160ms ease;
+}
+
+.sys-action-icon:hover,
+.header-action-btn:hover .sys-action-icon {
+  color: rgba(170, 235, 255, 1);
+  filter:
+    drop-shadow(0 0 8px rgba(120, 210, 255, 0.65))
+    drop-shadow(0 0 18px rgba(120, 210, 255, 0.35));
+}
+
+/* active click feedback */
+.sys-action-icon:active,
+.header-action-btn:active .sys-action-icon {
+  filter:
+    drop-shadow(0 0 10px rgba(120, 210, 255, 0.85))
+    drop-shadow(0 0 24px rgba(120, 210, 255, 0.45));
+}
+
 .header-action-text{
   display:inline;
-  opacity: 0.88;
-}
-.header-action-btn:hover .header-action-text{
-  display:inline;
+  opacity: 0.95;
+  transition: opacity .2s ease;
 }
 
 .logo{
@@ -250,73 +308,122 @@ body { overflow-x: hidden; }
   50%{ opacity:.95; transform:scale(1.18); box-shadow:0 0 26px rgba(34,211,238,.22); }
 }
 
-/* Command band — 3 columns to align with middle-section */
-.command-band{
-  flex-shrink:0;
-  display:grid;
-  /* Match middle-section columns: left panel | center | right panel */
-  grid-template-columns: minmax(300px, 420px) 1fr minmax(480px, 560px);
-  gap:12px;
-  padding:12px;
-  border-bottom:1px solid rgba(255,255,255,.06);
-  background: rgba(0,0,0,.16);
-  position: relative;
-  z-index: 5;
-  /* Command-bridge separation: terrain starts below this layer */
-  box-shadow: 0 16px 34px rgba(0,0,0,0.55);
-  overflow: visible; /* allow KPI bezel shadow/glow to render fully */
-  padding-bottom: 22px; /* clearance so bottom edge/glow isn't flush/clipped */
+/* ============================================================
+   OPTION 1: UNIFIED 3-COLUMN LAYOUT
+   Left: Scenario + Sliders | Center: Tabs + KPIs + Mountain | Right: Intel
+   ============================================================ */
+
+.main-content {
+  flex: 1;
+  display: grid;
+
+  /* GODMODE GRID (left panel reduced by 15%):
+     - Left panel: compact but readable
+     - Centre can breathe
+     - Right panel can shrink so it NEVER falls off screen */
+  grid-template-columns:
+    clamp(290px, 20vw, 408px)
+    minmax(560px, 1fr)
+    clamp(340px, 24vw, 520px);
+
+  gap: 18px;
+  padding: 16px;
+  min-height: 0;
+  overflow: visible;
 }
 
-.scenario-area,
-.kpi-section,
-.system-controls{
-  border:1px solid rgba(255,255,255,.06);
-  background: rgba(255,255,255,.02);
-  border-radius: var(--r-md);
-  backdrop-filter: blur(18px);
+@media (max-width: 1400px) {
+  .main-content {
+    grid-template-columns:
+      clamp(238px, 19vw, 323px)
+      minmax(480px, 1fr)
+      clamp(280px, 22vw, 400px);
+    gap: 14px;
+    padding: 12px;
+  }
 }
 
-.scenario-area{
-  padding: 10px; /* center the capsule vertically within the box */
+/* LEFT COLUMN: Scenario + Sliders */
+.left-column {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  min-width: 0; /* IMPORTANT: allow grid children to shrink without forcing overflow */
+  overflow: visible;
 }
 
-/* Scenario selector must be allowed to overlay the shell */
-.scenario-area{
+/* CENTER COLUMN: Unified KPI + Mountain */
+.center-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-height: 0;
+  min-width: 0; /* IMPORTANT: allow grid children to shrink without forcing overflow */
+  overflow: visible;
+}
+
+/* Mountain panel expands to fill remaining space */
+.center-column > *:last-child {
+  flex: 1;
+  min-height: 0;
+}
+
+/* RIGHT COLUMN: Intelligence Panel */
+.right-column {
+  min-height: 0;
+  min-width: 0; /* IMPORTANT: allow grid children to shrink without forcing overflow */
+  overflow: hidden;
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(28, 32, 38, 0.9), rgba(24, 28, 34, 0.95));
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.07),
+    0 4px 12px rgba(0, 0, 0, 0.55);
+  padding: 20px;
+}
+
+/* Sliders container styling */
+.sliders-container {
+  flex: 1;
+  min-height: 0;
+  overflow: visible;
+  background: linear-gradient(145deg, rgba(38, 44, 54, 0.9), rgba(28, 34, 44, 0.95));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.07),
+    0 4px 12px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* SCENARIO AREA (in left column) — wrapper only, bezel comes from ScenarioBezel */
+.scenario-area {
+  flex-shrink: 0;
   position: relative;
   z-index: 2000;
   overflow: visible;
-}
-.kpi-section{ padding:6px 8px; }
-
-/* KPI band height policy — compact chassis, never cannibalize the mountain */
-.kpi-section{
-  /* Reference: KPI layer is a primary structural band (~18–22% viewport height) */
-  min-height: clamp(190px, 20vh, 240px);
-  display:flex;
-  align-items: stretch;
-}
-.kpi-section > *{
-  width: 100%;
+  min-height: 100px;
+  max-width: 85%; /* Reduced by 15% relative to column */
+  /* No background/border — ScenarioBezel provides the chassis */
 }
 
-/* KPI ROW (CRITICAL): remove row-level “boxed panel” feel — keep only group bezels */
-.kpi-section{
+/* DEPRECATED: tabs-header moved to top bar */
+
+/* These are structural wrappers ONLY — no blur/glass here or it washes out bezels */
+.kpi-section {
+  flex-shrink: 0;
+  overflow: visible;
+  margin-bottom: 16px;
   border: none;
   background: transparent;
   border-radius: 0;
   backdrop-filter: none;
-  padding: 0; /* let the console own its own spacing */
 }
-.system-controls{
-  display:flex;
-  align-items:center;
-  justify-content:flex-end;
-  gap:10px;
-  padding:10px;
+
+.kpi-section > * {
+  width: 100%;
 }
 
 /* Tour slot must NOT look like a boxed panel — black field with white text only */
@@ -356,26 +463,30 @@ body { overflow-x: hidden; }
 }
 .system-icon{ opacity:.85; }
 
-/* Middle 3-column shell */
+/* DEPRECATED: Old middle-section (kept for backwards compat) */
 .middle-section{
   flex:1;
   min-height:0;
   display:grid;
-  /* Command Center stretches to align with KPI row edge */
-  grid-template-columns: minmax(300px, 420px) 1fr minmax(480px, 560px);
-  gap:12px;
+  grid-template-columns:
+    clamp(340px, 24vw, 480px)
+    minmax(560px, 1fr)
+    clamp(340px, 24vw, 520px);
+  gap:18px;
   padding:12px;
 }
 
+/* DEPRECATED: Old panel styles */
 .left-panel,
 .right-panel{
   min-height:0;
+  min-width:0; /* IMPORTANT: allow grid children to shrink without forcing overflow */
   border:1px solid rgba(255,255,255,.06);
   background: rgba(255,255,255,.02);
   border-radius: var(--r-lg);
   backdrop-filter: blur(18px);
   box-shadow: 0 10px 40px rgba(0,0,0,.35);
-  overflow-y: auto; /* 🔥 FIXED: Allow vertical scrolling instead of clipping */
+  overflow-y: auto;
   overflow-x: hidden;
 }
 
@@ -979,13 +1090,7 @@ body { overflow-x: hidden; }
   display:flex; align-items:center; justify-content:space-between;
   margin-bottom:8px;
 }
-.box-title{
-  font-size:11px;
-  font-weight:900;
-  letter-spacing:.14em;
-  color: rgba(255,255,255,.68);
-  text-transform:uppercase;
-}
+/* REMOVED: .box-title override — now controlled by ControlDeck.tsx */
 .slider-row{
   border-radius:12px;
   padding:8px;
@@ -2128,5 +2233,122 @@ body { overflow-x: hidden; }
 @keyframes blink {
   0%, 50% { opacity: 1; }
   51%, 100% { opacity: 0; }
+}
+
+/* =========================================================
+   STRATFIT — GODMODE HEADER LAYOUT LOCK (Mode Rail Prominence)
+   - Prevents center controls being "lost"
+   - Prevents header actions compressing the mode rail
+   - DPI-safe (150% Windows scaling)
+   ========================================================= */
+
+.header{
+  display: grid;
+  grid-template-columns: auto minmax(520px, 1fr) auto;
+  align-items: center;
+  column-gap: 18px;
+}
+
+/* Left block stays natural size */
+.header-left{
+  min-width: 320px;
+}
+
+/* Center is a true slot, always centered */
+.header-center,
+.sf-hdrCenter{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 520px;
+}
+
+/* The mode slot adds subtle "focus framing" without neon */
+.sf-modeSlot{
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 6px 10px;
+  border-radius: 22px;
+
+  /* ultra-soft halo frame so users notice it */
+  background:
+    radial-gradient(120% 140% at 50% 0%, rgba(120,200,255,0.06), rgba(0,0,0,0) 62%);
+  border: 1px solid rgba(255,255,255,0.06);
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    0 10px 24px rgba(0,0,0,0.30);
+}
+
+/* Right actions: never steal center width */
+.header-actions{
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  min-width: 360px;
+}
+
+/* If the right cluster grows, allow wrap rather than crushing the center */
+.header-action-buttons{
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* ------------------------------
+   RESPONSIVE SAFETY (short widths)
+   - Avoids pushing content off-screen
+   - Still keeps mode rail discoverable
+-------------------------------- */
+@media (max-width: 1180px){
+  .header{
+    grid-template-columns: 1fr;
+    row-gap: 10px;
+  }
+  .header-left,
+  .header-actions{
+    min-width: 0;
+    justify-content: space-between;
+  }
+  .header-center,
+  .sf-hdrCenter{
+    min-width: 0;
+    justify-content: flex-start; /* on tight screens, keep it visible */
+  }
+  .sf-modeSlot{
+    padding: 6px 8px;
+  }
+}
+
+/* GODMODE: left rail spacing so Active Scenario can breathe */
+.sf-leftStack{
+  display: flex;
+  flex-direction: column;
+}
+
+/* the actual breathing room (responsive) */
+.sf-leftStack__spacer{
+  height: clamp(36px, 3vw, 56px);
+}
+
+/* optional: tiny visual separation line (very subtle) */
+.sf-leftStack__spacer::after{
+  content:"";
+  display:block;
+  height: 1px;
+  margin-top: calc(clamp(36px, 3vw, 56px) / 2);
+
+  background: linear-gradient(
+    90deg,
+    rgba(120,200,255,0),
+    rgba(120,200,255,0.12),
+    rgba(120,200,255,0)
+  );
+  opacity: 0.55;
 }
 

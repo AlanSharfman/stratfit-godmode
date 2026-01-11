@@ -180,7 +180,7 @@ export default function BurnTrendBars({ series, value, trend = "neutral" }: Burn
             fill={bar.isLatest ? "url(#burn-bar-latest)" : "url(#burn-bar-purple)"}
             opacity={opacity}
             style={{
-              transition: `y 350ms cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms, height 350ms cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms, fill 300ms ease`,
+              transition: `y 80ms cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms, height 80ms cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms, fill 80ms ease`,
             }}
           />
         );
@@ -199,7 +199,7 @@ export default function BurnTrendBars({ series, value, trend = "neutral" }: Burn
           stroke={lastBarColors.glow}
           strokeWidth="1"
           style={{
-            transition: 'y 350ms cubic-bezier(0.22, 1, 0.36, 1), height 350ms cubic-bezier(0.22, 1, 0.36, 1), stroke 300ms ease',
+            transition: 'y 80ms cubic-bezier(0.22, 1, 0.36, 1), height 80ms cubic-bezier(0.22, 1, 0.36, 1), stroke 80ms ease',
           }}
         />
       )}

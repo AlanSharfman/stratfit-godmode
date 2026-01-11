@@ -147,7 +147,7 @@ function CashInstrument({ value, state }: { value: number; state: "idle" | "hove
         style={{ 
           transform: 'rotate(-90deg)',
           transformOrigin: '24px 24px',
-          transition: `stroke-dasharray 500ms ${EASE_OUT}`
+          transition: `stroke-dasharray 80ms ${EASE_OUT}`
         }}
       />
       {/* Inner reference ring */}
@@ -213,7 +213,7 @@ function RunwayInstrument({ value, state }: { value: number; state: "idle" | "ho
         height="6" 
         rx="3" 
         fill={`url(#${fadeId})`}
-        style={{ transition: `width 400ms ${EASE_OUT}` }}
+        style={{ transition: `width 80ms ${EASE_OUT}` }}
       />
       {/* Rounded leading edge cap */}
       <circle 
@@ -221,7 +221,7 @@ function RunwayInstrument({ value, state }: { value: number; state: "idle" | "ho
         cy="12" 
         r="3.5" 
         fill="rgba(34,211,238,0.7)"
-        style={{ transition: `cx 400ms ${EASE_OUT}` }}
+        style={{ transition: `cx 80ms ${EASE_OUT}` }}
       />
     </svg>
   );
@@ -260,7 +260,7 @@ function MomentumInstrument({ value, state }: { value: number; state: "idle" | "
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
-        style={{ transition: `d 350ms ${EASE_OUT}` }}
+        style={{ transition: `d 80ms ${EASE_OUT}` }}
       />
       {/* Recent segment (bold) */}
       <path 
@@ -270,7 +270,7 @@ function MomentumInstrument({ value, state }: { value: number; state: "idle" | "
         strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"
-        style={{ transition: `d 350ms ${EASE_OUT}` }}
+        style={{ transition: `d 80ms ${EASE_OUT}` }}
       />
       {/* Current value dot */}
       <circle cx={points[15].x} cy={points[15].y} r="3.5" fill="rgba(34,211,238,0.7)"/>
@@ -302,7 +302,7 @@ function EarningsInstrument({ value, state }: { value: number; state: "idle" | "
         stroke="rgba(34,211,238,0.75)" 
         strokeWidth="2"
         strokeLinecap="round"
-        style={{ transition: `x1 300ms ${EASE_OUT}, x2 300ms ${EASE_OUT}` }}
+        style={{ transition: `x1 80ms ${EASE_OUT}, x2 80ms ${EASE_OUT}` }}
       />
       {/* Indicator cap */}
       <circle 
@@ -310,7 +310,7 @@ function EarningsInstrument({ value, state }: { value: number; state: "idle" | "
         cy="16" 
         r="3" 
         fill="rgba(34,211,238,0.6)"
-        style={{ transition: `cx 300ms ${EASE_OUT}` }}
+        style={{ transition: `cx 80ms ${EASE_OUT}` }}
       />
     </svg>
   );
@@ -340,7 +340,7 @@ function RiskInstrument({ value, state }: { value: number; state: "idle" | "hove
         strokeLinecap="round"
         strokeDasharray="110"
         strokeDashoffset={110 - (score / 100) * 110}
-        style={{ transition: `stroke-dashoffset 400ms ${EASE_OUT}, stroke 300ms ${EASE_OUT}` }}
+        style={{ transition: `stroke-dashoffset 80ms ${EASE_OUT}, stroke 80ms ${EASE_OUT}` }}
       />
       {/* Score display - prominent single number */}
       <text 
@@ -376,7 +376,7 @@ function ValueInstrument({ value, state }: { value: number; state: "idle" | "hov
         height="16" 
         rx="2" 
         fill="rgba(34,211,238,0.08)"
-        style={{ transition: `x 500ms ${EASE_OUT}, width 500ms ${EASE_OUT}` }}
+        style={{ transition: `x 80ms ${EASE_OUT}, width 80ms ${EASE_OUT}` }}
       />
       {/* Track */}
       <line x1="10" y1="18" x2="70" y2="18" stroke="rgba(55,65,80,0.4)" strokeWidth="1.5"/>
@@ -391,7 +391,7 @@ function ValueInstrument({ value, state }: { value: number; state: "idle" | "hov
         stroke="rgba(34,211,238,0.7)" 
         strokeWidth="2"
         strokeLinecap="round"
-        style={{ transition: `x1 500ms ${EASE_OUT}, x2 500ms ${EASE_OUT}` }}
+        style={{ transition: `x1 80ms ${EASE_OUT}, x2 80ms ${EASE_OUT}` }}
       />
       {/* Indicator cap */}
       <circle 
@@ -399,7 +399,7 @@ function ValueInstrument({ value, state }: { value: number; state: "idle" | "hov
         cy="18" 
         r="3.5" 
         fill="rgba(34,211,238,0.6)"
-        style={{ transition: `cx 500ms ${EASE_OUT}` }}
+        style={{ transition: `cx 80ms ${EASE_OUT}` }}
       />
     </svg>
   );

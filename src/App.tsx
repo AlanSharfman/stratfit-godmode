@@ -7,6 +7,7 @@ import { useShallow } from "zustand/react/shallow";
 import { ScenarioId } from "./components/ScenarioSlidePanel";
 import KPIConsole from "./components/KPIConsole";
 import CenterViewPanel from "@/components/center/CenterViewPanel";
+import CenterViewSegmented, { CenterView } from "@/components/CenterViewSegmented";
 import { Moon } from "./components/Moon";
 import { ControlDeck, ControlBoxConfig } from "./components/ControlDeck";
 import AIIntelligence from "./components/AIIntelligenceEnhanced";
@@ -21,6 +22,7 @@ import TakeTheTour from "@/components/ui/TakeTheTour";
 import ScenarioIntelligencePanel from "@/components/ui/ScenarioIntelligencePanel";
 import { deriveArrGrowth, formatUsdCompact } from "@/utils/arrGrowth";
 import ScenarioMemoPage from "@/pages/ScenarioMemoPage";
+import ModeRailGod, { type ModeKey } from "@/components/mode/ModeRailGod";
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -91,7 +93,29 @@ export default function App() {
 
   const [scenario, setScenario] = useState<ScenarioId>("base");
   const [levers, setLevers] = useState<LeverState>(INITIAL_LEVERS);
+  const [centerView, setCenterView] = useState<CenterView>("terrain");
   const didMountRef = useRef(false);
+
+  // GOD-MODE: Mode rail state with localStorage persistence
+  const MODE_KEY = "sf.mode.v1";
+  const [mode, setMode] = useState<ModeKey>(() => {
+    try {
+      const raw = window.localStorage.getItem(MODE_KEY);
+      if (raw === "terrain" || raw === "variances" || raw === "actuals") return raw;
+    } catch {}
+    return "terrain";
+  });
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(MODE_KEY, mode);
+    } catch {}
+    // state cohesion hook — harmless now
+    document.documentElement.setAttribute("data-sf-mode", mode);
+    return () => {
+      document.documentElement.removeAttribute("data-sf-mode");
+    };
+  }, [mode]);
   
   // Handle scenario change
   const handleScenarioChange = useCallback((newScenario: ScenarioId) => {
@@ -395,9 +419,16 @@ export default function App() {
             <span className="status-dot" />
           </div>
         </div>
+        {/* GOD-MODE: Mode Rail — center command control */}
+        <div className="header-center sf-hdrCenter">
+          <div className="sf-modeSlot">
+            <ModeRailGod value={mode} onChange={setMode} />
+          </div>
+        </div>
+
         <div className="header-actions">
           <div className="header-action-buttons">
-            <TakeTheTour />
+            {/* STANDARD ORDER: Load → Save → Share → Tour */}
             <button
               className="header-action-btn"
               title="Load scenario"
@@ -409,7 +440,7 @@ export default function App() {
                 });
               }}
             >
-              <svg className="header-action-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg className="header-action-icon sys-action-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="1 4 1 10 7 10" />
                 <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
               </svg>
@@ -426,52 +457,75 @@ export default function App() {
                 });
               }}
             >
-              <svg className="header-action-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg className="header-action-icon sys-action-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
                 <polyline points="17 21 17 13 7 13 7 21" />
                 <polyline points="7 3 7 8 15 8" />
               </svg>
               <span className="header-action-text">Save</span>
             </button>
+            <button
+              className="header-action-btn"
+              title="Share scenario"
+              onClick={() => {
+                emitCausal({
+                  source: "scenario_share",
+                  bandStyle: "wash",
+                  color: "rgba(34,211,238,0.18)",
+                });
+              }}
+            >
+              <svg className="header-action-icon sys-action-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="18" cy="5" r="3" />
+                <circle cx="6" cy="12" r="3" />
+                <circle cx="18" cy="19" r="3" />
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+              </svg>
+              <span className="header-action-text">Share</span>
+            </button>
+            <TakeTheTour />
           </div>
         </div>
       </header>
 
-      {/* TOP: COMMAND BAND - Scenario + KPIs + System Controls */}
-      <section className="command-band">
-        {/* ACTIVE SCENARIO (TOP-LEFT, next to KPI bezels — per spec) */}
-        <div className="scenario-area">
-          <ScenarioBezel>
-            <ScenarioSelector scenario={scenario} onChange={handleScenarioChange} />
-          </ScenarioBezel>
-        </div>
-
-        {/* KPI CONSOLE */}
-        <div className="kpi-section" data-tour="kpis">
-          <KPIConsole />
-        </div>
-      </section>
-
-      {/* MIDDLE SECTION */}
-      <div className="middle-section">
-        {/* LEFT: Sliders Only */}
-        <aside className="left-panel" data-tour="sliders">
-          <div className="sliders-container">
-            <ControlDeck boxes={controlBoxes} onChange={handleLeverChange} />
+      {/* OPTION 1: UNIFIED 3-COLUMN LAYOUT */}
+      <div className="main-content">
+        {/* LEFT COLUMN: Scenario + Sliders */}
+        <aside className="left-column">
+          <div className="sf-leftStack">
+            <div className="scenario-area">
+              <ScenarioBezel>
+                <ScenarioSelector scenario={scenario} onChange={handleScenarioChange} />
+              </ScenarioBezel>
+            </div>
+            <div className="sf-leftStack__spacer" aria-hidden="true" />
+            <div className="sliders-container" data-tour="sliders">
+              <ControlDeck boxes={controlBoxes} onChange={handleLeverChange} />
+            </div>
           </div>
         </aside>
 
-        {/* CENTER: Panel */}
-        <CenterViewPanel />
+        {/* CENTER COLUMN: KPIs + Mountain */}
+        <main className="center-column">
+          {/* KPI CONSOLE */}
+          <div className="kpi-section" data-tour="kpis">
+            <KPIConsole />
+          </div>
 
-        {/* RIGHT: AI Intelligence */}
-        <aside className="right-panel" data-tour="intel">
+          {/* Mountain Visualization */}
+          <CenterViewPanel view={centerView} />
+        </main>
+
+        {/* RIGHT COLUMN: AI Intelligence */}
+        <aside className="right-column" data-tour="intel">
           {ENABLE_SCENARIO_INTELLIGENCE ? (
             <ScenarioIntelligencePanel />
           ) : (
             <AIIntelligence levers={levers} scenario={scenario} />
           )}
         </aside>
-    </div></div>
+      </div>
+    </div>
   );
 }

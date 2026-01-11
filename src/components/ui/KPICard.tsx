@@ -684,18 +684,23 @@ export default function KPICard({
           inset: 0;
           border-radius: 18px;
           padding: 1.5px;
+
+          /* IMPORTANT:
+             Keep the frame "machined" but introduce a darker bite so it never melts into the KPI chassis */
           background: linear-gradient(
             155deg,
-            rgba(255,255,255,0.5) 0%,
-            rgba(255,255,255,0.15) 20%,
-            rgba(0,0,0,0.1) 40%,
-            rgba(255,255,255,0.1) 60%,
-            rgba(255,255,255,0.4) 100%
+            rgba(255,255,255,0.42) 0%,
+            rgba(200,225,255,0.14) 18%,
+            rgba(0,0,0,0.28) 44%,
+            rgba(120,170,220,0.10) 66%,
+            rgba(255,255,255,0.32) 100%
           );
+
           -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
           mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
           -webkit-mask-composite: xor;
           mask-composite: exclude;
+
           z-index: 2;
         }
         .kpi-card.active .card-frame {
@@ -712,33 +717,49 @@ export default function KPICard({
           );
         }
 
-        /* Glass surface */
+        /* Glass surface — tuned contrast */
         .card-surface {
           position: relative;
           width: 100%;
           height: 100%;
           border-radius: 16px;
+
+          /* Slightly brighter top glass so cards don't "sink" into the chassis */
           background: linear-gradient(
             168deg,
-            rgba(28, 38, 50, 0.97) 0%,
-            rgba(18, 24, 32, 0.98) 50%,
-            rgba(12, 16, 24, 0.99) 100%
+            rgba(34, 46, 62, 0.965) 0%,
+            rgba(18, 24, 32, 0.985) 52%,
+            rgba(10, 14, 20, 0.99) 100%
           );
+
+          /* dual-rim: a dark bite + a subtle cyan hairline */
+          border: 1px solid rgba(0,0,0,0.55);
+          box-shadow:
+            inset 0 0 0 1px rgba(160, 210, 255, 0.10),
+            inset 0 1px 0 rgba(255,255,255,0.07),
+            inset 0 -14px 28px rgba(0,0,0,0.55);
+
           backdrop-filter: blur(20px);
           display: flex;
           flex-direction: column;
           padding: 14px;
           overflow: hidden;
-          box-shadow: inset 0 1px 1px rgba(255,255,255,0.05);
           z-index: 3;
         }
         .card-surface.hero-surface {
-          background: linear-gradient(
-            168deg,
-            rgba(0, 45, 55, 0.97) 0%,
-            rgba(0, 28, 38, 0.98) 50%,
-            rgba(0, 18, 28, 0.99) 100%
-          );
+          background: linear-gradient(180deg, rgba(0, 28, 38, 0.95), rgba(0, 14, 22, 0.95));
+          border: 1px solid rgba(0, 220, 180, 0.22);
+        }
+
+        /* Top highlight hairline — makes card edges read instantly */
+        .card-surface::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          border-radius: 16px;
+          pointer-events: none;
+          background: linear-gradient(180deg, rgba(190, 230, 255, 0.10), rgba(0,0,0,0) 46%);
+          opacity: 0.95;
         }
         
         .surface-highlight {

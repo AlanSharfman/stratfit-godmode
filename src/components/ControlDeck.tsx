@@ -112,11 +112,7 @@ const SliderRow = memo(function SliderRow({
                 setTooltipRect((prev) => (prev ? null : e.currentTarget.getBoundingClientRect()));
               }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <circle cx="12" cy="12" r="9" />
-                <path d="M12 17v-6" strokeLinecap="round" strokeWidth="2.5" />
-                <circle cx="12" cy="7.5" r="1.2" fill="currentColor" stroke="none" />
-              </svg>
+              <span className="info-icon__glyph">i</span>
             </span>
           )}
         </span>
@@ -161,7 +157,7 @@ const SliderRow = memo(function SliderRow({
           font-size: 16.5px;
           font-weight: 600;
           color: rgba(255, 255, 255, 0.7);
-          transition: all 250ms cubic-bezier(0.22, 1, 0.36, 1);
+          transition: all 80ms cubic-bezier(0.22, 1, 0.36, 1);
           display: flex;
           align-items: center;
           gap: 4px;
@@ -169,18 +165,60 @@ const SliderRow = memo(function SliderRow({
         }
 
         .info-icon {
-          opacity: 0.75;
-          transition: opacity 0.15s, transform 0.15s;
-          margin-left: 6px;
           display: inline-flex;
           align-items: center;
+          justify-content: center;
+          width: 18px;
+          height: 18px;
+          margin-left: 6px;
+          border-radius: 50%;
           cursor: pointer;
-          color: rgba(34, 211, 238, 0.9);
+
+          /* Visible white circle */
+          background: rgba(12,16,22,0.75);
+          border: 1.5px solid rgba(255,255,255,0.55);
+
+          box-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.12),
+            0 2px 6px rgba(0,0,0,0.40);
+
+          transition: 
+            transform 140ms ease,
+            border-color 140ms ease,
+            box-shadow 140ms ease,
+            background 140ms ease;
+        }
+
+        .info-icon:hover {
+          transform: scale(1.12);
+          border-color: rgba(255,255,255,0.75);
+          background:
+            radial-gradient(circle at 30% 30%, rgba(120,200,255,0.22), rgba(0,0,0,0) 60%),
+            rgba(12,18,26,0.75);
+          box-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.12),
+            0 4px 12px rgba(0,0,0,0.45),
+            0 0 12px rgba(120,200,255,0.15);
+        }
+
+        .info-icon__glyph {
+          font-size: 11px;
+          font-weight: 800;
+          font-style: italic;
+          font-family: "Georgia", serif;
+          color: rgba(255,255,255,0.90);
+          text-shadow: none;
+          line-height: 1;
+          transform: translateY(-0.5px);
+        }
+
+        .info-icon:hover .info-icon__glyph {
+          color: #ffffff;
+          text-shadow: 0 0 6px rgba(255,255,255,0.35);
         }
 
         .slider-row:hover .info-icon {
-          opacity: 1;
-          transform: scale(1.1);
+          /* no extra transform — hover state handles it */
         }
 
         .tooltip-title {
@@ -213,11 +251,11 @@ const SliderRow = memo(function SliderRow({
         }
 
         .slider-value {
-          font-size: 12px;
+          font-size: 15px;
           font-weight: 700;
           color: rgba(255, 255, 255, 0.6);
           font-variant-numeric: tabular-nums;
-          transition: all 250ms cubic-bezier(0.22, 1, 0.36, 1);
+          transition: all 80ms cubic-bezier(0.22, 1, 0.36, 1);
           text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
         }
 
@@ -303,7 +341,7 @@ const ControlBox = memo(function ControlBox({
             0 4px 20px rgba(0, 0, 0, 0.4),
             inset 0 1px 0 rgba(255, 255, 255, 0.05),
             0 0 0 1px rgba(34, 211, 238, 0.1);
-          transition: all 250ms cubic-bezier(0.22, 1, 0.36, 1);
+          transition: all 80ms cubic-bezier(0.22, 1, 0.36, 1);
           position: relative;
         }
 
@@ -335,22 +373,30 @@ const ControlBox = memo(function ControlBox({
         .box-header {
           margin-bottom: 16px;
           padding-bottom: 12px;
-          border-bottom: 2px solid rgba(34, 211, 238, 0.2);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.12);
         }
 
         .box-title {
-          font-size: 19.5px;
+          font-size: 18px;
           font-weight: 800;
-          letter-spacing: 0.1em;
+          letter-spacing: 0.12em;
           text-transform: uppercase;
-          color: rgba(255, 255, 255, 0.9);
-          text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
-          transition: all 250ms cubic-bezier(0.22, 1, 0.36, 1);
+          color: #fff !important;
+          opacity: 1 !important;
+          text-shadow: 
+            0 0 16px rgba(255, 255, 255, 0.4),
+            0 0 4px rgba(255, 255, 255, 0.6),
+            0 1px 2px rgba(0,0,0,0.6);
+          transition: all 80ms cubic-bezier(0.22, 1, 0.36, 1);
         }
 
         .control-box.highlighted .box-title {
-          color: var(--box-color);
-          text-shadow: 0 0 25px color-mix(in srgb, var(--box-color) 60%, transparent);
+          /* KEEP WHITE — never let highlight color override the title */
+          color: #fff !important;
+          text-shadow: 
+            0 0 20px rgba(255, 255, 255, 0.5),
+            0 0 6px rgba(255, 255, 255, 0.7),
+            0 1px 2px rgba(0,0,0,0.5);
         }
 
         .box-sliders {
@@ -490,12 +536,11 @@ export function ControlDeck(props: {
     if (leverReleaseTimeoutRef.current !== null) {
       window.clearTimeout(leverReleaseTimeoutRef.current);
     }
-    // Tripwire log
-    console.log("[LEVER END] scheduling release", { id: null, inMs: 250 });
+    // Instant release for snappy feel
     leverReleaseTimeoutRef.current = window.setTimeout(() => {
       setActiveLever(null, 0);
       leverReleaseTimeoutRef.current = null;
-    }, 250);
+    }, 50);
     onChange("__end__", 0);
   }, [setActiveLever, onChange]);
 
