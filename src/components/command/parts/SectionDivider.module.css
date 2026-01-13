@@ -1,0 +1,35 @@
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 10px 2px 8px;
+  margin-top: 8px;
+}
+
+.title {
+  font-size: 17.4px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #ffffff;
+  text-shadow: 0 0 10px rgba(80, 220, 255, 0.12);
+  white-space: nowrap;
+  text-align: center;
+  width: 100%;
+}
+
+.line {
+  height: 1px;
+  flex: 1;
+  background: linear-gradient(
+    90deg,
+    rgba(120, 180, 255, 0.20),
+    rgba(120, 180, 255, 0.08),
+    rgba(120, 180, 255, 0.00)
+  );
+}
+
+.spacer {
+  height: 10px;
+}
+

@@ -1,0 +1,135 @@
+/* src/styles/phase1LayoutFixes.css
+   STRATFIT — PHASE 1: Usability blockers (scroll + layout fit)
+   - Layout-only, reversible
+   - Must work at Windows scaling 150% + browser zoom 100%
+*/
+
+/* ============================================================
+   1) MAIN 3-COLUMN GRID MUST NOT FORCE OFF-SCREEN LAYOUT
+   Root issue: center column min constraint too large at 150% scale.
+   Fix: allow center to shrink (minmax(0,1fr)); clamp side widths.
+============================================================ */
+.main-content{
+  overflow: hidden;
+  min-height: 0;
+  min-width: 0;
+
+  grid-template-columns:
+    clamp(320px, 22vw, 392px)
+    minmax(0, 1fr)
+    clamp(300px, 24vw, 460px);
+}
+
+/* Ensure all columns can shrink without horizontal bleed */
+.left-column,
+.center-column,
+.right-column{
+  min-width: 0;
+  min-height: 0;
+}
+
+/* ============================================================
+   2) LEFT COMMAND/LEVERS MUST SCROLL
+   Root issue: left stack had no height context → internal scroll never engages.
+   Fix: make the left stack a real flex column with min-height:0.
+============================================================ */
+.sf-leftStack{
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+
+  display: flex;
+  flex-direction: column;
+}
+
+/* Replace inline spacer with a real class (keeps layout deterministic) */
+.sf-leftSpacer{
+  height: 50px;
+  flex: 0 0 50px;
+}
+
+/* The sliders container must be allowed to shrink; scroll happens inside bezel */
+.sliders-container{
+  flex: 1;
+  min-height: 0;
+}
+
+/* ============================================================
+   3) RIGHT AI INTELLIGENCE MUST SCROLL (outer bezel fixed, inner scroll)
+   Root issue: right column and panel wrapper trap overflow (clipping).
+   Fix: right column holds the space; bezel scrolls.
+============================================================ */
+.right-column{
+  display: flex;
+  flex-direction: column;
+
+  min-height: 0;
+  min-width: 0;
+
+  overflow: hidden;  /* keeps outer edges clean */
+  padding: 12px;
+  margin-top: 0;
+  align-self: stretch;
+}
+
+/* Terrain-only alignment rule (keeps your existing visual intent) */
+.main-content.mode-terrain .right-column{
+  margin-top: 291px;
+  align-self: start;
+}
+
+/* Ensure SI wrapper fills right column */
+.sf-si__outer{
+  height: 100%;
+  min-height: 0;
+}
+
+/* Allow SI panel to shrink; do not hard-lock width */
+.sf-si--scenario{
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+
+  height: 100%;
+  min-height: 0;
+
+  overflow: hidden;
+}
+
+/* The bezel becomes the scroll container */
+.sf-si--scenario .sf-si__bezel{
+  height: 100%;
+  min-height: 0;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ============================================================
+   4) RESPONSIVE TIGHTENING FOR SMALLER VIEWPORTS / 150% SCALE
+============================================================ */
+@media (max-width: 1500px){
+  .main-content{
+    gap: 14px;
+    padding: 12px;
+    grid-template-columns:
+      clamp(300px, 24vw, 360px)
+      minmax(0, 1fr)
+      clamp(280px, 26vw, 420px);
+  }
+
+  .right-column{
+    padding: 10px;
+  }
+}
+
+@media (max-width: 1280px){
+  .main-content{
+    gap: 12px;
+    padding: 10px;
+    grid-template-columns:
+      320px
+      minmax(0, 1fr)
+      360px;
+  }
+}

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1216" height="832" viewBox="0 0 1216 832" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <desc>Serene mountain landscape with lake reflection - suitable for hero sections, onboarding, and marketing</desc>
+  
+  <!-- Sky gradient -->
+  <defs>
+    <linearGradient id="skyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#A8D5E2;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#6BB6D0;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="waterGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4A9FBF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2E7A9C;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="mountainGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#F0E6E6;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#B8C5D0;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8A9BA8;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background Sky -->
+  <rect width="1216" height="832" fill="url(#skyGradient)"/>
+  
+  <!-- Mountains -->
+  <path d="M 400 150 L 480 100 L 520 120 L 580 80 L 620 140 L 680 120 L 750 180 L 0 400 L 0 150 Z" 
+        fill="url(#mountainGradient)" opacity="0.9"/>
+  <path d="M 500 200 L 608 100 L 700 150 L 800 100 L 900 200 L 1216 300 L 1216 200 Z" 
+        fill="url(#mountainGradient)" opacity="0.95"/>
+  
+  <!-- Forest treeline -->
+  <rect x="0" y="380" width="1216" height="140" fill="#2D5A4A" opacity="0.85"/>
+  
+  <!-- Mist layer -->
+  <rect x="0" y="380" width="1216" height="60" fill="#D8E8EA" opacity="0.4"/>
+  
+  <!-- Water -->
+  <rect x="0" y="520" width="1216" height="312" fill="url(#waterGradient)"/>
+  
+  <!-- Reflection (simplified) -->
+  <path d="M 500 600 L 608 700 L 700 650 L 800 700 L 900 600 L 1216 550 L 1216 832 L 0 832 L 0 600 Z" 
+        fill="#8A9BA8" opacity="0.15"/>
+</svg>
+

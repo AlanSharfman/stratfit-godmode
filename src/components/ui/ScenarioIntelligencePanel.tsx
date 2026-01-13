@@ -336,8 +336,9 @@ export default function ScenarioIntelligencePanel() {
     <div className="cold-panel sf-si__outer">
       <div className="sf-si sf-si--scenario">
         <div className="sf-si__bezel">
-          {/* 1) Header */}
-          <div className="sf-si__header">
+          <div className={styles["sf-si__scroll"]}>
+            {/* 1) Header */}
+            <div className="sf-si__header">
             <div>
               <div className="sf-si__title">Scenario Intelligence</div>
               <div className="sf-si__meta">
@@ -550,6 +551,7 @@ export default function ScenarioIntelligencePanel() {
               </details>
             </>
           )}
+          </div>
         </div>
       </div>
     </div>

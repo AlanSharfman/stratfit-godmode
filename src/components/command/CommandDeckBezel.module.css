@@ -1,0 +1,94 @@
+/* STRATFIT — Command Deck Chassis (G-D Mode)
+   - ONE unified bezel for all lever sections
+   - Locked width (cannot shrink)
+   - Internal scroll (sections stay inside)
+   PHASE 1 FIX:
+   - Ensure the bezel can actually become a scroll container by inheriting height context.
+*/
+
+.wrap {
+  /* HARD LOCK width — do not let layout squeeze this column */
+  width: 360px;
+  min-width: 360px;
+  max-width: 360px;
+
+  flex: 0 0 360px;
+  flex-shrink: 0;
+
+  box-sizing: border-box;
+  overflow: visible;
+
+  /* critical: allow child to compute scroll height */
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.bezel {
+  position: relative;
+
+  border-radius: 18px;
+  padding: 14px;
+  overflow: visible;
+
+  border: 1px solid rgba(255,255,255,0.06);
+
+  /* dark glass base */
+  background:
+    radial-gradient(120% 90% at 20% 10%, rgba(120, 140, 170, 0.10), rgba(0, 0, 0, 0) 60%),
+    linear-gradient(180deg, rgba(18, 22, 28, 0.92), rgba(6, 8, 10, 0.96));
+
+  box-shadow:
+    0 26px 60px rgba(0,0,0,0.75),
+    inset 0 1px 0 rgba(255,255,255,0.10),
+    inset 0 -6px 16px rgba(0,0,0,0.70),
+    inset 0 0 0 1px rgba(120,180,255,0.10);
+
+  /* critical: height context */
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.inner {
+  border-radius: 14px;
+  padding: 10px;
+  background:
+    radial-gradient(140% 120% at 30% 18%, rgba(120,180,255,0.08), rgba(0,0,0,0) 55%),
+    linear-gradient(180deg, rgba(10,12,14,0.94), rgba(0,0,0,0.98));
+
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.05),
+    inset 0 10px 18px rgba(0,0,0,0.55);
+
+  /* critical: allow scroll area to size */
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* THE scroll container */
+.scroll {
+  flex: 1;
+  min-height: 0;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  padding-right: 2px;
+  max-height: none;
+}
+
+/* nicer scrollbar (Chrome/Edge) */
+.scroll::-webkit-scrollbar { width: 8px; }
+.scroll::-webkit-scrollbar-thumb {
+  background: rgba(120,180,255,0.18);
+  border-radius: 10px;
+}
+.scroll::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.15);
+  border-radius: 10px;
+}

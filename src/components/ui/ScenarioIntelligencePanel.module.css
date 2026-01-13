@@ -1,0 +1,13 @@
+.sf-si__kicker {
+  font-size: 1.45em;
+  color: #fff;
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin-bottom: 0.5em;
+}
+
+/* Specific for the three headers */
+.sf-si__kicker {
+  /* Default style above, but you can target specific text if needed */
+}

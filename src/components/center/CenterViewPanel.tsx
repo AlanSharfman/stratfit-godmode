@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { CenterView } from "@/components/CenterViewSegmented";
 import ScenarioMountain from "@/components/mountain/ScenarioMountain";
 import ScenarioDeltaSnapshot from "@/components/ScenarioDeltaSnapshot";
-import VariancesView from "@/components/compound/variances/VariancesView";
+import VariancesHub from "@/components/compound/variances2/VariancesHub";
 import { useScenario, useDataPoints, useScenarioStore } from "@/state/scenarioStore";
 import { onCausal } from "@/ui/causalEvents";
 
@@ -69,7 +69,7 @@ export default function CenterViewPanel(props: {
 
         {view === "variances" && (
           <div className="h-full w-full overflow-hidden rounded-3xl border border-slate-700/40 bg-gradient-to-br from-slate-950/60 to-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
-            <VariancesView />
+            <VariancesHub />
           </div>
         )}
       </div>
