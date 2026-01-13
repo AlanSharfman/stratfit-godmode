@@ -47,6 +47,13 @@ function useTypewriter(
       return;
     }
 
+    // TYPEWRITER DISABLED - Show full text immediately
+    setDisplayText(text);
+    setIsComplete(true);
+    setHasStarted(true);
+    return;
+
+    /* ORIGINAL TYPEWRITER CODE - Disabled temporarily
     setDisplayText("");
     setIsComplete(false);
     setHasStarted(true);
@@ -99,6 +106,7 @@ function useTypewriter(
     timeoutId = setTimeout(typeNextChar, 100);
 
     return () => clearTimeout(timeoutId);
+    */
   }, [text, baseSpeed, enabled, canStart, panelMode]);
 
   return { displayText, isComplete, hasStarted };

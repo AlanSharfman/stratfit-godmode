@@ -36,6 +36,12 @@ function useTypewriter(text: string, speed: number = 20, delay: number = 0, enab
       return;
     }
 
+    // TYPEWRITER DISABLED - Show full text immediately
+    setDisplayText(text);
+    setIsComplete(true);
+    return;
+
+    /* ORIGINAL TYPEWRITER CODE - Disabled temporarily
     indexRef.current = 0;
     setDisplayText("");
     setIsComplete(false);
@@ -55,6 +61,7 @@ function useTypewriter(text: string, speed: number = 20, delay: number = 0, enab
     }, delay);
 
     return () => clearTimeout(startTimer);
+    */
   }, [text, speed, delay, enabled]);
 
   return { displayText, isComplete };

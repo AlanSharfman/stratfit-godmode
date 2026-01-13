@@ -12,9 +12,11 @@ export default function VariancesHub() {
     <div className={styles.wrap}>
       <div className={styles.headerRow}>
         <div className={styles.titleBlock}>
-          <div className={styles.h1}>Cross-Scenario Comparison</div>
+          <div className={styles.h1}>Scenario Variances</div>
           <div className={styles.sub}>
-            Executive scan in Overview. Expand scenarios in Deep Dive for Base → Scenario comparisons.
+            {mode === "overview"
+              ? "Executive scan across Base, Upside, Downside, Stress."
+              : "Expand a scenario to review Base → Scenario drivers and deltas."}
           </div>
         </div>
 
@@ -36,6 +38,7 @@ export default function VariancesHub() {
         </div>
       </div>
 
+      {/* Body */}
       {mode === "overview" ? <OverviewPanel /> : <DeepDiveAccordions />}
     </div>
   );
