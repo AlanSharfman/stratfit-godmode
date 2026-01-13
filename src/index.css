@@ -272,11 +272,16 @@ body { overflow-x: hidden; }
 .logo{
   display:flex;
   align-items:center;
-  gap:10px;
-  font-size:13px;
-  font-weight:800;
-  letter-spacing:.14em;
-  text-transform:uppercase;
+  justify-content: center;
+  background: #000000; /* Pure black background */
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+.logo-image{
+  height: 36px;
+  width: auto;
+  object-fit: contain;
+  display: block;
 }
 
 .system-status{
@@ -398,19 +403,50 @@ body { overflow-x: hidden; }
   align-self: start; /* align to top, not stretch */
 }
 
-/* Sliders container styling */
+/* ═══════════════════════════════════════════════════════════════
+   SLIDERS CONTAINER — GOD-MODE STEPPED BEZEL (4-layer chassis)
+   Matches KPI and Active Scenario bezels exactly
+   ═══════════════════════════════════════════════════════════════ */
 .sliders-container {
   flex: 1;
   min-height: 0;
-  overflow: visible;
-  background: linear-gradient(145deg, rgba(38, 44, 54, 0.9), rgba(28, 34, 44, 0.95));
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
-  padding: 16px;
+  position: relative;
+  border-radius: 18px;
+  padding: 14px;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  /* WELL: Pure black void interior */
+  background: #000000;
+
+  /* GOD-MODE 4-LAYER STEPPED EFFECT */
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.07),
-    0 4px 12px rgba(0, 0, 0, 0.6),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    /* ═══ CHASSIS (outer glow frame) ═══ */
+    0 0 0 3px #1e252f,                          /* Dark blue-grey base */
+    0 0 0 4px #000000,                          /* Hard black separator */
+    0 0 28px rgba(137, 196, 244, 0.55),         /* Cool blue outer glow */
+
+    /* ═══ RIM (Step 1 - Chrome) ═══ */
+    inset 0 0 0 3px #9CA8B5,                    /* Silver rim */
+    inset 0 1px 0 3px #FFFFFF,                  /* Pure white top highlight */
+    inset 0 -1px 0 3px #000000,                 /* Black bottom cut */
+
+    /* ═══ STEP (Step 2 - Dark Steel) ═══ */
+    inset 0 0 0 8px #2C3540,                    /* Dark steel grey */
+    inset 0 1px 0 8px rgba(255,255,255,0.35),   /* Top highlight */
+    inset 0 0 0 10px #050505,                   /* Pitch black inner edge */
+
+    /* ═══ WELL (Inner void depth) ═══ */
+    inset 0 12px 30px rgba(0,0,0,0.95);         /* Maximum depth shadow */
+
+  /* Outer chassis border */
+  border: 1px solid rgba(60, 90, 130, 0.18);
+}
+
+/* Ensure content stays above shadow layers */
+.sliders-container > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* SCENARIO AREA (in left column) — wrapper only, bezel comes from ScenarioBezel */
@@ -421,6 +457,8 @@ body { overflow-x: hidden; }
   overflow: visible;
   min-height: 100px;
   max-width: 85%; /* Reduced by 15% relative to column */
+  margin-left: auto;
+  margin-right: auto;
   /* No background/border — ScenarioBezel provides the chassis */
 }
 
@@ -505,14 +543,7 @@ body { overflow-x: hidden; }
   overflow-x: hidden;
 }
 
-.sliders-container{
-  height:100%;
-  padding:10px;
-  overflow:auto;
-  overscroll-behavior: contain;
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
-}
+/* DEPRECATED: Old sliders-container styling moved to main definition */
 
 /* Left column: scenario selector stays visible while sliders scroll */
 .left-scenario{
@@ -934,22 +965,39 @@ body { overflow-x: hidden; }
    TAKE THE TOUR — minimal overlay (Phase 1)
    ========================================================= */
 .sf-tour-pill{
-  height: 49px; /* 45% larger */
-  padding: 0 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 49px;
+  padding: 0 26px;
   border-radius: 999px;
-  border: 1px solid rgba(34,211,238,0.30);
-  background: transparent;
-  color: rgba(34,211,238,0.95);
-  font-size: 17px; /* 45% larger */
+  border: 2px solid rgba(34,211,238,0.55);
+  background: rgba(34,211,238,0.12);
+  color: rgba(34,211,238,1);
+  font-size: 17px;
   font-weight: 800;
   letter-spacing: 0.02em;
   cursor: pointer;
-  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+  box-shadow:
+    0 0 18px rgba(34,211,238,0.22),
+    0 0 6px rgba(34,211,238,0.15),
+    inset 0 1px 0 rgba(255,255,255,0.10);
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 .sf-tour-pill:hover{
-  background: transparent;
-  border-color: rgba(34,211,238,0.55);
-  color: rgba(0,242,255,0.98);
+  background: rgba(34,211,238,0.18);
+  border-color: rgba(34,211,238,0.75);
+  color: rgba(0,242,255,1);
+  transform: translateY(-1px);
+  box-shadow:
+    0 0 28px rgba(34,211,238,0.35),
+    0 0 10px rgba(34,211,238,0.25),
+    inset 0 1px 0 rgba(255,255,255,0.12);
+}
+.sf-tour-pill svg{
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
 }
 
 .sf-tour{
@@ -1928,10 +1976,8 @@ body { overflow-x: hidden; }
   overflow: visible;
 }
 
-/* The scrolling container can still scroll, but must not clip callouts */
+/* The scrolling container z-index for tooltip layering */
 .sliders-container {
-  overflow: auto;
-  position: relative;
   z-index: 31;         /* keep tooltip above within left stack */
 }
 

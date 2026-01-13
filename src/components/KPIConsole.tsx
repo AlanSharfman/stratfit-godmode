@@ -42,7 +42,7 @@ const KPI_CONFIG: KPIConfig[] = [
   },
   {
     id: "burn",
-    label: "BURN RATE",
+    label: "MONTHLY BURN",
     kpiKey: "burnQuality",
     unit: "/mo",
     widgetType: "gauge",
@@ -60,7 +60,7 @@ const KPI_CONFIG: KPIConfig[] = [
   },
   {
     id: "arr",
-    label: "ARR",
+    label: "ARR (RUN-RATE)",
     kpiKey: "momentum",
     unit: "",
     widgetType: "arrow",

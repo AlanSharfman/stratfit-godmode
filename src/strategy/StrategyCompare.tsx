@@ -21,10 +21,13 @@ const COMPARE_METRICS = [
 
 // Cap table and exit metrics (computed from strategy)
 const CAP_TABLE_METRICS = [
-  { key: "founderPct", label: "Founder %", getValue: (s: Strategy) => s.capTable?.founders ?? 1 },
-  { key: "investorPct", label: "Investor %", getValue: (s: Strategy) => s.capTable?.investors ?? 0 },
-  { key: "exit8x", label: "Exit @ 8× ARR", getValue: (s: Strategy) => calculateExitValue(s, 8).enterprise },
-  { key: "founderProceeds", label: "Founder Proceeds", getValue: (s: Strategy) => calculateExitValue(s, 8).founders },
+  { key: "totalRaised", label: "Total Raised", getValue: (s: Strategy) => s.totalFunding, format: "currency" },
+  { key: "founderPct", label: "Founder %", getValue: (s: Strategy) => s.capTable?.founders ?? 1, format: "percent" },
+  { key: "investorPct", label: "Investor %", getValue: (s: Strategy) => s.capTable?.investors ?? 0, format: "percent" },
+  { key: "exit8x", label: "Exit @ 8× ARR", getValue: (s: Strategy) => calculateExitValue(s, 8).enterprise, format: "currency" },
+  { key: "founderProceeds", label: "Founder Proceeds", getValue: (s: Strategy) => s.founderProceeds ?? calculateExitValue(s, 8).founders, format: "currency" },
+  { key: "investorProceeds", label: "Investor Proceeds", getValue: (s: Strategy) => s.investorProceeds ?? calculateExitValue(s, 8).investors, format: "currency" },
+  { key: "investorIRR", label: "Investor IRR", getValue: (s: Strategy) => s.investorIRR ?? 0, format: "irr" },
 ];
 
 function getMetricValue(strategy: Strategy, metricKey: string, fromKpis: boolean): number | null {
@@ -227,9 +230,18 @@ export function StrategyCompare() {
             {CAP_TABLE_METRICS.map((metric) => {
               const values = strategies.map(s => metric.getValue(s));
               
-              // Higher founder % is better, higher proceeds is better
-              const higherIsBetter = ["founderPct", "exit8x", "founderProceeds"].includes(metric.key);
-              const bestValue = higherIsBetter ? Math.max(...values) : Math.min(...values);
+              // Determine what's "best" for each metric
+              const higherIsBetter = ["founderPct", "exit8x", "founderProceeds", "investorIRR"].includes(metric.key);
+              const lowerIsBetter = ["totalRaised", "investorPct"].includes(metric.key);
+              
+              let bestValue: number;
+              if (higherIsBetter) {
+                bestValue = Math.max(...values);
+              } else if (lowerIsBetter) {
+                bestValue = Math.min(...values.filter(v => v > 0)); // Exclude zero for "lower is better"
+              } else {
+                bestValue = Math.max(...values);
+              }
               
               return (
                 <tr key={metric.key} style={{
@@ -244,26 +256,36 @@ export function StrategyCompare() {
                   </td>
                   {strategies.map((s, i) => {
                     const value = values[i];
-                    const isBest = value === bestValue;
+                    const isBest = value === bestValue && value > 0;
                     
-                    // Format based on metric type
+                    // Format based on metric format type
                     let displayValue = "—";
-                    if (metric.key === "founderPct" || metric.key === "investorPct") {
+                    if (metric.format === "percent") {
                       displayValue = `${(value * 100).toFixed(1)}%`;
-                    } else {
-                      // Currency
-                      displayValue = value >= 1_000_000 
-                        ? `$${(value / 1_000_000).toFixed(1)}M`
-                        : `$${(value / 1_000).toFixed(0)}K`;
+                    } else if (metric.format === "irr") {
+                      displayValue = value > 0 ? `${(value * 100).toFixed(0)}%` : "N/A";
+                    } else if (metric.format === "currency") {
+                      if (value === 0) {
+                        displayValue = metric.key === "totalRaised" ? "None" : "$0";
+                      } else if (value >= 1_000_000) {
+                        displayValue = `$${(value / 1_000_000).toFixed(1)}M`;
+                      } else if (value >= 1_000) {
+                        displayValue = `$${(value / 1_000).toFixed(0)}K`;
+                      } else {
+                        displayValue = `$${value.toFixed(0)}`;
+                      }
                     }
+                    
+                    // Special: "None" funding is best
+                    const isNoneBest = metric.key === "totalRaised" && value === 0;
                     
                     return (
                       <td key={s.id} style={{
                         padding: "10px 16px",
                         textAlign: "right",
-                        color: isBest ? "#fcd34d" : "#e6f2ff",
-                        fontWeight: isBest ? 700 : 400,
-                        background: isBest ? "rgba(250,204,21,0.08)" : "transparent",
+                        color: (isBest || isNoneBest) ? "#fcd34d" : "#e6f2ff",
+                        fontWeight: (isBest || isNoneBest) ? 700 : 400,
+                        background: (isBest || isNoneBest) ? "rgba(250,204,21,0.08)" : "transparent",
                       }}>
                         {displayValue}
                       </td>

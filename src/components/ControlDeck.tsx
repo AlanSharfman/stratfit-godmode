@@ -8,6 +8,8 @@ import { useShallow } from "zustand/react/shallow";
 import { useScenarioStore } from "@/state/scenarioStore";
 import type { LeverId } from "@/logic/mountainPeakModel";
 import { emitCausal } from "@/ui/causalEvents";
+import { CommandDeckBezel } from "@/components/command/CommandDeckBezel";
+import { SectionDivider, SectionSpacer } from "@/components/command/parts/SectionDivider";
 
 // ============================================================================
 // TYPES
@@ -569,27 +571,69 @@ export function ControlDeck(props: {
     [computeIntensity01, throttledSetActiveLever, onChange]
   );
 
+  // Build highlight color function for sliders
+  const getHighlightColor = useCallback(
+    (sliderId: LeverId): string | null => {
+      if (hoveredKpiIndex === null) return null;
+      const relatedKpis = LEVER_TO_KPI[sliderId] || [];
+      if (relatedKpis.includes(hoveredKpiIndex)) {
+        return KPI_COLORS[hoveredKpiIndex] || "#22d3ee";
+      }
+      return null;
+    },
+    [hoveredKpiIndex]
+  );
+
   return (
-    <div className="control-deck">
-      {boxes.map((box) => (
-        <ControlBox
-          key={box.id}
-          box={box}
-          hoveredKpiIndex={hoveredKpiIndex}
-          onSliderStart={handleSliderStart}
-          onSliderEnd={handleSliderEnd}
-          onSliderChange={handleSliderChange}
-        />
+    <CommandDeckBezel>
+      {boxes.map((box, boxIndex) => (
+        <React.Fragment key={box.id}>
+          <SectionDivider title={box.title} />
+          
+          <div className="section-well">
+            <div className="section-sliders">
+              {box.sliders.map((s) => (
+                <SliderRow
+                  key={s.id}
+                  slider={s}
+                  highlightColor={getHighlightColor(s.id)}
+                  onStart={() => handleSliderStart(s.id, s.value)}
+                  onEnd={handleSliderEnd}
+                  onChange={(v) => handleSliderChange(s.id, v)}
+                />
+              ))}
+            </div>
+          </div>
+          
+          {boxIndex < boxes.length - 1 && <SectionSpacer />}
+        </React.Fragment>
       ))}
 
       <style>{`
-        .control-deck {
+        .section-well {
+          padding: 10px 10px;
+          border-radius: 14px;
+
+          /* super subtle band — not a card */
+          background:
+            radial-gradient(120% 120% at 18% 12%, rgba(255,255,255,0.05), rgba(0,0,0,0) 60%),
+            linear-gradient(180deg, rgba(0,0,0,0.22), rgba(0,0,0,0.10));
+
+          border: 1px solid rgba(255,255,255,0.06);
+
+          box-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.05),
+            inset 0 -16px 24px rgba(0,0,0,0.35);
+        }
+
+        .section-sliders {
           display: flex;
           flex-direction: column;
-          gap: 16px;
+          gap: 6px;
+          padding: 6px 4px;
         }
       `}</style>
-    </div>
+    </CommandDeckBezel>
   );
 }
 

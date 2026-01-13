@@ -1,19 +1,16 @@
 // src/components/ScenarioDeltaSnapshot.tsx
-// Scenario Delta Snapshot — Collapsible table below mountain
-// Shows Base → Scenario comparison with deltas and AI variance commentary
-//
-// G-D Mode upgrade (scoped):
-// - Adds “Strategic Fitness Profile” hero (SpiderRadar + explanation + pills)
-// - Keeps existing toggle + delta table
-// - No changes to KPI math, Mountain engine, or Scenario engine logic
-// - No layout-width changes to main app (Scenario module only)
+// Scenario Delta Snapshot — CFO-grade Base → Scenario comparison
+// Truth wired to engineResults (no demo data, no placeholders)
 
-import React, { useMemo, type MouseEvent } from "react";
-import { useShallow } from "zustand/react/shallow";
+import { useMemo, useState } from "react";
 import { useScenarioStore } from "@/state/scenarioStore";
-
 import { SpiderRadar } from "@/components/charts/SpiderRadar";
-import { buildSpiderAxes, cacQualityBand, type ScenarioMetrics, type TrafficLight } from "@/logic/spiderFitness";
+import {
+  buildSpiderAxes,
+  cacQualityBand,
+  type ScenarioMetrics,
+  type TrafficLight,
+} from "@/logic/spiderFitness";
 import { TrafficLightPill } from "@/components/charts/mini/TrafficLightPill";
 
 interface DeltaRow {
@@ -26,6 +23,55 @@ interface DeltaRow {
   commentary: string;
 }
 
+function safeNum(n: unknown): number {
+  const v = typeof n === "number" ? n : Number(n);
+  return Number.isFinite(v) ? v : 0;
+}
+
+function pct(n: number): string {
+  const sign = n > 0 ? "+" : "";
+  return `${sign}${n.toFixed(1)}%`;
+}
+
+function fmtInt(n: number): string {
+  return Math.round(n).toLocaleString();
+}
+
+function fmtMo(n: number): string {
+  return `${Math.round(n)} mo`;
+}
+
+function formatUsdCompact(n: number): string {
+  const v = safeNum(n);
+  const abs = Math.abs(v);
+  const sign = v < 0 ? "-" : "";
+  if (abs >= 1_000_000_000) return `${sign}$${(abs / 1_000_000_000).toFixed(1)}B`;
+  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`;
+  if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(0)}K`;
+  return `${sign}$${abs.toFixed(0)}`;
+}
+
+function formatPctCompact(n: number): string {
+  const sign = n > 0 ? "+" : n < 0 ? "-" : "";
+  return `${sign}${Math.abs(n).toFixed(1)}%`;
+}
+
+function computeDeltaType(metricKey: string, delta: number): "positive" | "negative" | "neutral" {
+  // Neutral threshold
+  if (Math.abs(delta) < 1e-9) return "neutral";
+
+  // For cost/risk metrics, DOWN is better.
+  const lowerIsBetter = new Set([
+    "burnRate",
+    "cac",
+    "cacPayback",
+    "riskIndex",
+  ]);
+
+  const isBetter = lowerIsBetter.has(metricKey) ? delta < 0 : delta > 0;
+  return isBetter ? "positive" : "negative";
+}
+
 // CFO-grade variance commentary generator
 function getVarianceCommentary(
   metric: string,
@@ -35,10 +81,8 @@ function getVarianceCommentary(
 ): string {
   if (deltaType === "neutral") return "No material variance from base case assumptions.";
 
-  const isPositive = deltaType === "positive";
   const pctValue = Math.abs(parseFloat(deltaPct.replace(/[^0-9.-]/g, "")) || 0);
 
-  // Scenario-aware commentary
   const scenarioContext =
     scenario === "upside"
       ? "upside assumptions"
@@ -49,498 +93,304 @@ function getVarianceCommentary(
           : "adjusted lever inputs";
 
   const commentaryMap: Record<string, { positive: string; negative: string }> = {
-    Revenue: {
-      positive:
-        pctValue > 30
-          ? `Strong revenue uplift driven by ${scenarioContext}. Demand thesis validated; growth trajectory on track.`
-          : `Modest revenue improvement observed. Growth levers responding positively to scenario inputs.`,
-      negative:
-        pctValue > 30
-          ? `Material revenue compression under ${scenarioContext}. Recommend reassessing demand assumptions and pipeline.`
-          : `Revenue softening anticipated. Continue monitoring top-line drivers and market conditions.`,
-    },
-    ARR: {
+    "ARR (Run-Rate)": {
       positive:
         pctValue > 25
-          ? `ARR acceleration exceeding expectations under ${scenarioContext}. Recurring revenue base strengthening.`
-          : `Incremental ARR growth reflects healthy customer acquisition and retention dynamics.`,
+          ? `ARR is accelerating under ${scenarioContext}. Core revenue engine is compounding — growth thesis validated.`
+          : `ARR is improving. Customer acquisition and expansion are responding positively to scenario levers.`,
       negative:
         pctValue > 25
-          ? `ARR contraction signals churn risk or acquisition slowdown. Review customer success metrics.`
-          : `ARR growth moderating. Recommend reviewing pricing strategy and expansion revenue opportunities.`,
+          ? `ARR contraction under ${scenarioContext}. Churn or demand fragility detected — revenue engine at risk.`
+          : `ARR growth is softening. Monitor pipeline quality and expansion dynamics closely.`,
     },
+
+    "ARR in 12 Months": {
+      positive:
+        pctValue > 30
+          ? `Forward ARR outlook materially strengthened. Scenario implies durable revenue scale and valuation uplift.`
+          : `Forward ARR improving, indicating healthy future revenue momentum.`,
+      negative:
+        pctValue > 30
+          ? `Forward ARR outlook deteriorating. Growth trajectory under stress — future revenue base at risk.`
+          : `ARR growth outlook moderating. Long-term revenue visibility reduced.`,
+    },
+
     "Gross Margin": {
       positive:
         pctValue > 10
-          ? `Margin expansion driven by ${scenarioContext}. Unit economics improving; operational leverage emerging.`
-          : `Gross margin improvement reflects cost discipline and favorable mix shift.`,
+          ? `Margin expansion indicates improving unit economics and operating leverage.`
+          : `Gross margin improving, reflecting better cost discipline or mix.`,
       negative:
         pctValue > 10
-          ? `Margin compression requires immediate attention. Review COGS structure and pricing power.`
-          : `Margin pressure emerging from ${scenarioContext}. Monitor input costs and product mix.`,
+          ? `Margin compression detected. Unit economics deteriorating — pricing or cost structure needs review.`
+          : `Gross margin slipping. Monitor cost inflation and discounting.`,
     },
-    "Risk Score": {
-      positive: `Risk profile improving. System stability and operational resilience strengthening.`,
+
+    "Burn Rate": {
+      positive: `Burn efficiency improving. Capital is being deployed more effectively.`,
       negative:
         pctValue > 30
-          ? `Elevated risk concentration detected. Recommend stress testing key assumptions and contingency planning.`
-          : `Risk score increasing moderately. Continue monitoring key risk indicators.`,
+          ? `Burn trajectory unsustainable under ${scenarioContext}. Cash preservation required.`
+          : `Burn rate increasing. Operating leverage not yet achieved.`,
     },
+
+    "Runway": {
+      positive: `Runway extended — scenario provides more time to execute growth strategy.`,
+      negative:
+        pctValue > 20
+          ? `Runway critically compressed. Financing or cost action required.`
+          : `Runway reduced. Strategic buffer narrowing.`,
+    },
+
+    "Cash Balance": {
+      positive: `Liquidity position strengthened. Greater optionality for investment and risk absorption.`,
+      negative: `Cash reserves declining. Flexibility reduced under scenario.`,
+    },
+
+    "Risk Score": {
+      positive: `Risk profile improving. System stability and resilience increasing.`,
+      negative:
+        pctValue > 30
+          ? `Risk concentration elevated. Stress-test assumptions and contingency plans required.`
+          : `Risk trending higher. Monitor operational and financial fragility.`,
+    },
+
     Valuation: {
       positive:
-        pctValue > 50
-          ? `Significant enterprise value creation under ${scenarioContext}. Multiple expansion supported by fundamentals.`
-          : `Incremental valuation uplift reflecting improved unit economics and growth outlook.`,
+        pctValue > 40
+          ? `Enterprise value creation accelerating. Fundamentals support multiple expansion.`
+          : `Valuation uplift reflects improving growth and unit economics.`,
       negative:
-        pctValue > 50
-          ? `Substantial value erosion projected. Review capital allocation strategy and funding options.`
-          : `Valuation pressure emerging from ${scenarioContext}. Monitor closely for further deterioration.`,
-    },
-    Runway: {
-      positive: `Extended operating runway provides strategic flexibility. Additional time to execute growth initiatives.`,
-      negative:
-        pctValue > 20
-          ? `Critical runway compression. Prioritize cash preservation measures and evaluate funding alternatives.`
-          : `Operating buffer reduced under scenario. Recommend tightening expense controls proactively.`,
-    },
-    "Burn Rate": {
-      positive: `Burn rate discipline improving. Efficiency gains being realized through operational improvements.`,
-      negative:
-        pctValue > 30
-          ? `Burn rate trajectory unsustainable under ${scenarioContext}. Immediate cost rationalization required.`
-          : `Elevated burn rate anticipated. Conduct detailed review of cost structure and discretionary spend.`,
-    },
-    "Cash Balance": {
-      positive: `Liquidity position strengthened. Enhanced optionality for strategic investments and contingencies.`,
-      negative:
-        pctValue > 20
-          ? `Accelerated cash erosion projected. Activate funding contingency planning immediately.`
-          : `Cash drawdown within tolerance but trending unfavorably. Maintain heightened monitoring.`,
+        pctValue > 40
+          ? `Material value erosion projected. Capital strategy and growth model under threat.`
+          : `Valuation pressure emerging under scenario.`,
     },
   };
 
-  const metricCommentary = commentaryMap[metric];
-  if (!metricCommentary) return isPositive ? "Favorable variance from base case." : "Adverse variance requiring attention.";
+  const entry = commentaryMap[metric];
+  if (!entry) return deltaType === "positive" ? "Improvement under scenario." : "Deterioration under scenario.";
 
-  return isPositive ? metricCommentary.positive : metricCommentary.negative;
-}
-
-const parseKpiDisplay = (display: string): number => {
-  if (!display) return 0;
-
-  // Handle "X/100" format (risk score etc)
-  if (display.includes("/")) {
-    const parts = display.split("/");
-    return parseFloat(parts[0].replace(/[^0-9.-]/g, "")) || 0;
-  }
-
-  const cleaned = display.replace(/[^0-9.-]/g, "");
-  return parseFloat(cleaned) || 0;
-};
-
-function bandLabel(b: TrafficLight): string {
-  if (b === "green") return "Investor-safe";
-  if (b === "amber") return "Aggressive";
-  return "Risk";
+  return deltaType === "positive" ? entry.positive : entry.negative;
 }
 
 export default function ScenarioDeltaSnapshot() {
-  const isOpen = useScenarioStore((state) => state.showScenarioImpact);
+  const activeScenarioId = useScenarioStore((s) => s.activeScenarioId);
+  const engineResults = useScenarioStore((s) => s.engineResults);
 
-  const handleToggle = (e: MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    useScenarioStore.getState().setShowScenarioImpact(!isOpen);
-  };
+  // show/hide whole module
+  const [open, setOpen] = useState(true);
 
-  const scenario = useScenarioStore((state) => state.scenario);
+  // Base always exists; scenario = activeScenarioId (or base itself)
+  const base = engineResults?.base;
+  const scenarioKey = activeScenarioId ?? "base";
+  const scenario = engineResults?.[scenarioKey] ?? engineResults?.base;
 
-  const { activeScenarioId, engineResults } = useScenarioStore(
-    useShallow((state) => ({
-      activeScenarioId: state.activeScenarioId,
-      engineResults: state.engineResults,
-    }))
-  );
+  // If missing, render nothing (should not happen in normal flow)
+  if (!base || !scenario) return null;
 
-  const activeResult = engineResults?.[activeScenarioId];
-  const kpiDisplayValues = activeResult?.kpis || {};
-
-  // Demo base case values (used by table + spider)
-  const baseValues = {
-    revenue: 2.6,
-    arr: 3.2,
-    grossMargin: 74,
-    valuation: 43.5,
-    runway: 19,
-    burn: 85,
-    cash: 4.0,
-    risk: 23,
-  };
-
-  // Current scenario values (for spider + table)
-  const currentRevenue = parseKpiDisplay(kpiDisplayValues.momentum?.display || "$2.6M");
-  const currentARR = parseKpiDisplay(kpiDisplayValues.momentum?.display || "$3.2M");
-  const currentMargin = parseKpiDisplay(kpiDisplayValues.earningsPower?.display || "74%");
-  const currentValuation = parseKpiDisplay(kpiDisplayValues.enterpriseValue?.display || "$43.5M");
-  const currentRunway = parseKpiDisplay(kpiDisplayValues.runway?.display || "19 mo");
-  const currentBurn = parseKpiDisplay(kpiDisplayValues.burnQuality?.display || "$85K");
-  const currentCash = parseKpiDisplay(kpiDisplayValues.cashPosition?.display || "$4.0M");
-  const currentRisk = parseKpiDisplay(kpiDisplayValues.riskIndex?.display || "23/100");
-
-  const deltaData: DeltaRow[] = useMemo(() => {
-    const calcDelta = (
-      current: number,
-      base: number,
-      isInverse = false
-    ): { delta: string; pct: string; type: "positive" | "negative" | "neutral" } => {
-      const diff = current - base;
-      if (Math.abs(diff) < 0.05) return { delta: "—", pct: "—", type: "neutral" };
-      const pct = base !== 0 ? (diff / base) * 100 : 0;
-      const sign = diff > 0 ? "+" : "";
-      const isPos = isInverse ? diff < 0 : diff > 0;
-      const type: "positive" | "negative" | "neutral" = Math.abs(diff) < 0.05 ? "neutral" : isPos ? "positive" : "negative";
-      return { delta: `${sign}${diff.toFixed(1)}`, pct: `${sign}${pct.toFixed(0)}%`, type };
-    };
-
-    const revD = calcDelta(currentRevenue, baseValues.revenue);
-    const arrD = calcDelta(currentARR, baseValues.arr);
-    const marginD = calcDelta(currentMargin, baseValues.grossMargin);
-    const valD = calcDelta(currentValuation, baseValues.valuation);
-    const runD = calcDelta(currentRunway, baseValues.runway);
-    const burnD = calcDelta(currentBurn, baseValues.burn, true); // Burn: lower is better
-    const cashD = calcDelta(currentCash, baseValues.cash);
-    const riskD = calcDelta(currentRisk, baseValues.risk, true); // Risk: lower is better
-
-    return [
-      { metric: "Revenue", base: `$${baseValues.revenue.toFixed(1)}M`, scenario: kpiDisplayValues.momentum?.display || "—", delta: revD.delta === "—" ? "—" : `${revD.delta}M`, deltaPct: revD.pct, deltaType: revD.type, commentary: getVarianceCommentary("Revenue", revD.type, revD.pct, scenario) },
-      { metric: "ARR", base: `$${baseValues.arr.toFixed(1)}M`, scenario: kpiDisplayValues.momentum?.display || "—", delta: arrD.delta === "—" ? "—" : `${arrD.delta}M`, deltaPct: arrD.pct, deltaType: arrD.type, commentary: getVarianceCommentary("ARR", arrD.type, arrD.pct, scenario) },
-      { metric: "Valuation", base: `$${baseValues.valuation.toFixed(1)}M`, scenario: kpiDisplayValues.enterpriseValue?.display || "—", delta: valD.delta === "—" ? "—" : `${valD.delta}M`, deltaPct: valD.pct, deltaType: valD.type, commentary: getVarianceCommentary("Valuation", valD.type, valD.pct, scenario) },
-      { metric: "Gross Margin", base: `${baseValues.grossMargin}%`, scenario: kpiDisplayValues.earningsPower?.display || "—", delta: marginD.delta === "—" ? "—" : `${marginD.delta}%`, deltaPct: marginD.pct, deltaType: marginD.type, commentary: getVarianceCommentary("Gross Margin", marginD.type, marginD.pct, scenario) },
-      { metric: "Burn Rate", base: `$${baseValues.burn}K/mo`, scenario: kpiDisplayValues.burnQuality?.display || "—", delta: burnD.delta === "—" ? "—" : `${burnD.delta}K`, deltaPct: burnD.pct, deltaType: burnD.type, commentary: getVarianceCommentary("Burn Rate", burnD.type, burnD.pct, scenario) },
-      { metric: "Cash Balance", base: `$${baseValues.cash.toFixed(1)}M`, scenario: kpiDisplayValues.cashPosition?.display || "—", delta: cashD.delta === "—" ? "—" : `${cashD.delta}M`, deltaPct: cashD.pct, deltaType: cashD.type, commentary: getVarianceCommentary("Cash Balance", cashD.type, cashD.pct, scenario) },
-      { metric: "Runway", base: `${baseValues.runway} mo`, scenario: kpiDisplayValues.runway?.display || "—", delta: runD.delta === "—" ? "—" : `${runD.delta} mo`, deltaPct: runD.pct, deltaType: runD.type, commentary: getVarianceCommentary("Runway", runD.type, runD.pct, scenario) },
-      { metric: "Risk Score", base: `${baseValues.risk}/100`, scenario: kpiDisplayValues.riskIndex?.display || "—", delta: riskD.delta === "—" ? "—" : `${riskD.delta}`, deltaPct: riskD.pct, deltaType: riskD.type, commentary: getVarianceCommentary("Risk Score", riskD.type, riskD.pct, scenario) },
-    ];
-  }, [kpiDisplayValues, scenario, currentRevenue, currentARR, currentMargin, currentValuation, currentRunway, currentBurn, currentCash, currentRisk]);
-
-  // Spider metrics (typed; safe defaults handled in spiderFitness)
-  const baseMetrics: ScenarioMetrics = useMemo(
-    () => ({
-      arr: baseValues.arr,
-      grossMarginPct: baseValues.grossMargin,
-      burnRateMonthly: baseValues.burn * 1000,
-      runwayMonths: baseValues.runway,
-      riskScore: baseValues.risk,
-    }),
+  const metricDefs = useMemo(
+    () => [
+      { key: "arr", label: "ARR (Run-Rate)", fmt: (v: number) => formatUsdCompact(v) },
+      { key: "arrNext12", label: "ARR in 12 Months", fmt: (v: number) => formatUsdCompact(v) },
+      { key: "grossMargin", label: "Gross Margin", fmt: (v: number) => formatPctCompact(v) },
+      { key: "burnRate", label: "Burn Rate", fmt: (v: number) => formatUsdCompact(v) },
+      { key: "runway", label: "Runway", fmt: (v: number) => fmtMo(v) },
+      { key: "cashPosition", label: "Cash Balance", fmt: (v: number) => formatUsdCompact(v) },
+      { key: "riskIndex", label: "Risk Score", fmt: (v: number) => `${fmtInt(v)}/100` },
+      { key: "enterpriseValue", label: "Valuation", fmt: (v: number) => formatUsdCompact(v) },
+    ],
     []
   );
 
-  const scenarioMetrics: ScenarioMetrics = useMemo(
-    () => ({
-      arr: currentARR,
-      grossMarginPct: currentMargin,
-      burnRateMonthly: currentBurn * 1000,
-      runwayMonths: currentRunway,
-      riskScore: currentRisk,
-    }),
-    [currentARR, currentMargin, currentBurn, currentRunway, currentRisk]
-  );
+  const rows: DeltaRow[] = useMemo(() => {
+    return metricDefs.map((m) => {
+      const b = safeNum(base.kpis[m.key]?.value);
+      const s = safeNum(scenario.kpis[m.key]?.value);
+      const d = s - b;
 
-  const baseAxes = useMemo(() => buildSpiderAxes(baseMetrics), [baseMetrics]);
-  const scenAxes = useMemo(() => buildSpiderAxes(scenarioMetrics), [scenarioMetrics]);
+      const dPct = b !== 0 ? (d / b) * 100 : d === 0 ? 0 : 100;
+      const deltaType = computeDeltaType(m.key, d);
 
-  const cacBand = useMemo(() => cacQualityBand(scenarioMetrics), [scenarioMetrics]);
-  const riskBand = useMemo(
-    () => (scenAxes.find((a) => a.key === "risk_posture")?.band ?? "amber"),
-    [scenAxes]
-  );
-  const efficiencyBand = useMemo(
-    () => (scenAxes.find((a) => a.key === "capital_efficiency")?.band ?? "amber"),
-    [scenAxes]
-  );
+      return {
+        metric: m.label,
+        base: m.fmt(b),
+        scenario: m.fmt(s),
+        delta:
+          m.key === "grossMargin"
+            ? `${d > 0 ? "+" : ""}${d.toFixed(1)}pp`
+            : m.key === "runway"
+              ? `${d > 0 ? "+" : ""}${Math.round(d)} mo`
+              : m.fmt(d),
+        deltaPct: pct(dPct),
+        deltaType,
+        commentary: getVarianceCommentary(m.label, deltaType, pct(dPct), scenarioKey),
+      };
+    });
+  }, [base, scenario, metricDefs, scenarioKey]);
 
-  // Delta colors (NO orange): cyan for positive, amber for negative, neutral grey.
-  const getDeltaColor = (type: "positive" | "negative" | "neutral") =>
-    type === "positive"
-      ? "rgba(52,211,153,0.92)" // emerald
-      : type === "negative"
-        ? "rgba(251,191,36,0.92)" // amber
-        : "rgba(130,145,165,0.55)"; // neutral
+  // === Strategic Fitness Profile (Spider) ===
+  const spiderData = useMemo(() => {
+    // Build metrics from engineResults (truth)
+    const m: ScenarioMetrics = {
+      arr: safeNum(scenario?.kpis?.arrCurrent?.value),
+      arrGrowthPct: safeNum(scenario?.kpis?.arrGrowthPct?.value),
+      grossMarginPct: safeNum(scenario?.kpis?.earningsPower?.value),
+      burnRateMonthly: safeNum(scenario?.kpis?.burnQuality?.value) * 1000,
+      runwayMonths: safeNum(scenario?.kpis?.runway?.value),
+      riskScore: safeNum(scenario?.kpis?.riskIndex?.value),
+      ltvToCac: safeNum(scenario?.kpis?.ltvCac?.value),
+      cacPaybackMonths: safeNum(scenario?.kpis?.cacPayback?.value),
+    };
 
-  const heroWrap: React.CSSProperties = {
-    display: "grid",
-    gridTemplateColumns: "1.15fr 0.85fr",
-    gap: 18,
-    padding: "18px 0 18px 0",
-    marginBottom: 6,
-  };
-
-  const bezelCard: React.CSSProperties = {
-    padding: "16px 16px 14px 16px",
-    background: "linear-gradient(135deg, rgba(8,10,14,0.78), rgba(16,20,28,0.62))",
-    border: "1px solid rgba(56,189,248,0.22)",
-    borderRadius: 10,
-    boxShadow: "0 14px 36px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06)",
-  };
-
-  const explCard: React.CSSProperties = {
-    padding: 16,
-    background: "rgba(12,16,22,0.62)",
-    border: "1px solid rgba(50,60,75,0.32)",
-    borderRadius: 10,
-    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
-  };
+    const axes = buildSpiderAxes(m);
+    const band = cacQualityBand(m);
+    return { axes, band };
+  }, [scenario]);
 
   return (
-    <div style={{ width: "100%", marginTop: 10, marginBottom: 40, flexShrink: 0 }}>
-      {/* Keep existing toggle (unchanged behavior) */}
-      <button
-        onClick={handleToggle}
-        type="button"
+    <div style={{ width: "100%" }}>
+      <div
         style={{
           display: "flex",
           alignItems: "center",
-          justifyContent: "center",
-          gap: 8,
-          width: "100%",
-          padding: "10px 14px",
-          background: "rgba(25,30,40,0.6)",
-          border: "1px solid rgba(50,60,75,0.35)",
-          borderRadius: 5,
-          cursor: "pointer",
-          color: "rgba(150,165,180,0.85)",
-          fontSize: 11,
-          fontWeight: 600,
-          letterSpacing: "0.02em",
+          justifyContent: "space-between",
+          marginBottom: 12,
         }}
       >
-        <svg
-          width="12"
-          height="12"
-          viewBox="0 0 12 12"
-          fill="none"
-          style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}
-        >
-          <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-        <span>{isOpen ? "Hide Scenario Impact" : "Show Scenario Impact"}</span>
-      </button>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+          <div style={{ fontWeight: 900, letterSpacing: 0.12, textTransform: "uppercase", fontSize: 12, color: "rgba(200,225,255,0.92)" }}>
+            Scenario Delta Snapshot
+          </div>
+          <div style={{ fontSize: 12, color: "rgba(180,200,220,0.6)" }}>
+            Base → {scenarioKey === "base" ? "Base" : scenarioKey}
+          </div>
+        </div>
 
-      {isOpen && (
-        <div
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
           style={{
-            marginTop: 12,
-            marginBottom: 30,
-            padding: "24px 28px 32px 28px",
-            background: "rgba(18,22,30,0.8)",
-            border: "1px solid rgba(50,60,75,0.35)",
-            borderRadius: 6,
+            border: "1px solid rgba(120,180,255,0.18)",
+            background: "linear-gradient(180deg, rgba(10,14,18,0.85), rgba(6,9,14,0.92))",
+            color: "rgba(210,235,255,0.86)",
+            borderRadius: 10,
+            padding: "8px 12px",
+            fontSize: 12,
+            fontWeight: 800,
+            cursor: "pointer",
           }}
         >
-          {/* Header */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-            <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: "0.10em", color: "rgba(56,189,248,0.9)" }}>
-              SCENARIO DELTA SNAPSHOT
-            </span>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ opacity: 0.7 }}>
-                <path
-                  d="M6 2V10M6 10L3 7M6 10L9 7"
-                  stroke="rgba(56,189,248,0.7)"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(56,189,248,0.6)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
-                Scroll for all metrics
-              </span>
-            </div>
-          </div>
+          {open ? "Hide" : "Show"}
+        </button>
+      </div>
 
-          <div style={{ marginBottom: 16, paddingBottom: 14, borderBottom: "1px solid rgba(50,60,75,0.3)" }}>
-            <span style={{ fontSize: 11, fontWeight: 500, color: "rgba(120,135,155,0.70)" }}>
-              {scenario === "base" ? "Base Case → Adjusted Base" : `Base Case → ${scenario.charAt(0).toUpperCase() + scenario.slice(1)}`}
-            </span>
-          </div>
-
-          {/* G-D Mode hero */}
-          <div style={heroWrap}>
-            {/* Left: SpiderRadar bezel */}
-            <div style={bezelCard}>
-              <SpiderRadar title="Strategic Fitness Profile" base={baseAxes} scenario={scenAxes} note="" />
-
-              <div style={{ marginTop: 10, display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <TrafficLightPill label="CAC Quality" band={cacBand} valueText={bandLabel(cacBand)} />
-                <TrafficLightPill label="Risk Band" band={riskBand} valueText={bandLabel(riskBand)} />
-                <TrafficLightPill label="Efficiency" band={efficiencyBand} valueText={bandLabel(efficiencyBand)} />
+      {open && (
+        <>
+          {/* Strategic Fitness Profile */}
+          <div
+            style={{
+              border: "1px solid rgba(120,180,255,0.12)",
+              borderRadius: 16,
+              padding: 14,
+              background: "linear-gradient(180deg, rgba(12,16,22,0.72), rgba(6,9,14,0.88))",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
+              marginBottom: 12,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <div style={{ fontSize: 12, letterSpacing: 0.12, textTransform: "uppercase", fontWeight: 900, color: "rgba(200,225,255,0.9)" }}>
+                Strategic Fitness Profile
               </div>
+              <TrafficLightPill label="Quality" band={spiderData.band} />
             </div>
 
-            {/* Right: Explanation card */}
-            <div style={explCard}>
-              <div
-                style={{
-                  fontSize: 11,
-                  fontWeight: 900,
-                  letterSpacing: "0.14em",
-                  textTransform: "uppercase",
-                  color: "rgba(56,189,248,0.85)",
-                  marginBottom: 10,
-                }}
-              >
-                What it is
+            <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 16, alignItems: "center" }}>
+              <div style={{ minHeight: 220 }}>
+                <SpiderRadar title="" base={[]} scenario={spiderData.axes} note="" />
               </div>
 
-              <div style={{ fontSize: 12, lineHeight: 1.65, color: "rgba(200,215,230,0.88)" }}>
-                <div style={{ marginBottom: 10 }}>
-                  The <b style={{ color: "rgba(255,255,255,0.92)" }}>Strategic Fitness Profile</b> compares{" "}
-                  <b style={{ color: "rgba(255,255,255,0.86)" }}>Base</b> (grey) vs{" "}
-                  <b style={{ color: "rgba(34,211,238,0.95)" }}>Scenario</b> (cyan) across five investor-grade dimensions.
+              <div style={{ color: "rgba(210,235,255,0.72)", fontSize: 12, lineHeight: 1.55 }}>
+                <div style={{ fontWeight: 800, marginBottom: 6 }}>
+                  This profile translates the scenario into an investor-readable posture.
                 </div>
-
-                <div style={{ marginBottom: 10 }}>
-                  <div style={{ fontWeight: 800, fontSize: 11, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(210,245,255,0.78)", marginBottom: 6 }}>
-                    How to read it
-                  </div>
-                  <div style={{ color: "rgba(175,190,210,0.85)" }}>
-                    • Larger outward shape = stronger strategic fitness<br />
-                    • Ring thresholds indicate posture:
-                    <div style={{ marginTop: 6 }}>
-                      – <b>Green</b>: investor-safe<br />
-                      – <b>Amber</b>: aggressive / needs proof<br />
-                      – <b>Red</b>: risk zone
-                    </div>
-                  </div>
+                <div style={{ marginBottom: 8 }}>
+                  <b>ARR growth</b> and <b>forward ARR</b> reflect revenue engine power. <b>Margin</b> and <b>burn</b> reflect unit economics and capital intensity.
+                  <b>Runway</b> and <b>risk</b> reflect survivability under stress.
                 </div>
-
-                <div
-                  style={{
-                    padding: "10px 12px",
-                    borderRadius: 8,
-                    background: "rgba(34,211,238,0.08)",
-                    border: "1px solid rgba(34,211,238,0.18)",
-                    color: "rgba(210,245,255,0.86)",
-                  }}
-                >
-                  The pills summarize the scenario posture — the table below shows the numeric deltas + CFO commentary.
+                <div style={{ display: "grid", gap: 6 }}>
+                  <div><b>Bands:</b></div>
+                  <div>• Green: investor-safe</div>
+                  <div>• Amber: aggressive / needs proof</div>
+                  <div>• Red: risk zone</div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Table */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-            {/* Header Row */}
+          {/* Delta Table */}
+          <div
+            style={{
+              border: "1px solid rgba(120,180,255,0.12)",
+              borderRadius: 16,
+              overflow: "hidden",
+              background: "linear-gradient(180deg, rgba(12,16,22,0.62), rgba(6,9,14,0.9))",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
+            }}
+          >
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "100px 90px 100px 80px 70px 80px 1fr",
-                gap: 20,
-                padding: "14px 0",
-                borderBottom: "1px solid rgba(56,189,248,0.25)",
+                gridTemplateColumns: "1.25fr 0.9fr 0.9fr 0.8fr 0.7fr 2fr",
+                gap: 0,
+                padding: "10px 12px",
+                borderBottom: "1px solid rgba(120,180,255,0.10)",
+                color: "rgba(180,200,220,0.75)",
+                fontSize: 11,
+                fontWeight: 900,
+                letterSpacing: 0.1,
+                textTransform: "uppercase",
               }}
             >
-              <span style={{ fontWeight: 800, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(56,189,248,0.85)" }}>Metric</span>
-              <span style={{ fontWeight: 800, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(56,189,248,0.85)", textAlign: "right" }}>Base</span>
-              <span style={{ fontWeight: 800, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(56,189,248,0.85)", textAlign: "right" }}>Scenario</span>
-              <span style={{ fontWeight: 800, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(56,189,248,0.85)", textAlign: "right" }}>Δ</span>
-              <span style={{ fontWeight: 800, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(56,189,248,0.85)", textAlign: "right" }}>Δ%</span>
-              <span />
-              <span style={{ fontWeight: 800, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(56,189,248,0.85)" }}>CFO Commentary</span>
+              <div>Metric</div>
+              <div>Base</div>
+              <div>Scenario</div>
+              <div>Δ</div>
+              <div>Δ%</div>
+              <div>CFO Commentary</div>
             </div>
 
-            {/* Data Rows */}
-            {deltaData.map((row, idx) => (
-              <div
-                key={row.metric}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "100px 90px 100px 80px 70px 80px 1fr",
-                  gap: 20,
-                  padding: "16px 0",
-                  borderBottom: idx === deltaData.length - 1 ? "none" : "1px solid rgba(50,60,75,0.15)",
-                  alignItems: "flex-start",
-                }}
-              >
-                <span
+            {rows.map((r) => {
+              const c =
+                r.deltaType === "positive"
+                  ? "rgba(16,185,129,0.92)"
+                  : r.deltaType === "negative"
+                    ? "rgba(239,68,68,0.88)"
+                    : "rgba(180,200,220,0.55)";
+
+              return (
+                <div
+                  key={r.metric}
                   style={{
-                    fontWeight: 700,
+                    display: "grid",
+                    gridTemplateColumns: "1.25fr 0.9fr 0.9fr 0.8fr 0.7fr 2fr",
+                    padding: "12px 12px",
+                    borderBottom: "1px solid rgba(120,180,255,0.06)",
+                    color: "rgba(210,235,255,0.80)",
                     fontSize: 12,
-                    color: "rgba(200,215,230,0.95)",
-                    fontFamily: "'JetBrains Mono', 'SF Mono', monospace",
+                    alignItems: "center",
                   }}
                 >
-                  {row.metric}
-                </span>
-
-                <span
-                  style={{
-                    fontSize: 12,
-                    color: "rgba(175,190,210,0.9)",
-                    textAlign: "right",
-                    fontFamily: "'JetBrains Mono', 'SF Mono', monospace",
-                    fontVariantNumeric: "tabular-nums",
-                  }}
-                >
-                  {row.base}
-                </span>
-
-                <span
-                  style={{
-                    fontSize: 12,
-                    color: "rgba(175,190,210,0.9)",
-                    textAlign: "right",
-                    fontFamily: "'JetBrains Mono', 'SF Mono', monospace",
-                    fontVariantNumeric: "tabular-nums",
-                  }}
-                >
-                  {row.scenario}
-                </span>
-
-                <span
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 800,
-                    color: getDeltaColor(row.deltaType),
-                    textAlign: "right",
-                    fontFamily: "'JetBrains Mono', 'SF Mono', monospace",
-                    fontVariantNumeric: "tabular-nums",
-                  }}
-                >
-                  {row.delta}
-                </span>
-
-                <span
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 800,
-                    color: getDeltaColor(row.deltaType),
-                    textAlign: "right",
-                    fontFamily: "'JetBrains Mono', 'SF Mono', monospace",
-                    fontVariantNumeric: "tabular-nums",
-                  }}
-                >
-                  {row.deltaPct}
-                </span>
-
-                <span />
-
-                <span
-                  style={{
-                    fontSize: 11,
-                    lineHeight: 1.6,
-                    fontFamily: "'Inter', -apple-system, sans-serif",
-                    color: row.deltaType === "neutral" ? "rgba(130,145,165,0.55)" : "rgba(175,190,210,0.9)",
-                    fontStyle: row.deltaType === "neutral" ? "italic" : "normal",
-                  }}
-                >
-                  {row.commentary}
-                </span>
-              </div>
-            ))}
+                  <div style={{ fontWeight: 800, color: "rgba(210,235,255,0.86)" }}>{r.metric}</div>
+                  <div style={{ color: "rgba(210,235,255,0.72)" }}>{r.base}</div>
+                  <div style={{ color: "rgba(210,235,255,0.72)" }}>{r.scenario}</div>
+                  <div style={{ fontWeight: 900, color: c }}>{r.delta}</div>
+                  <div style={{ fontWeight: 900, color: c }}>{r.deltaPct}</div>
+                  <div style={{ color: "rgba(200,220,240,0.70)", lineHeight: 1.45 }}>{r.commentary}</div>
+                </div>
+              );
+            })}
           </div>
-        </div>
+        </>
       )}
     </div>
   );

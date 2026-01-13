@@ -3,6 +3,7 @@
 // No OpenAI calls. No engine math changes. UI + wiring only. Board/investor safe.
 
 import React, { useEffect, useMemo, useState } from "react";
+import styles from "./ScenarioIntelligencePanel.module.css";
 import { useShallow } from "zustand/react/shallow";
 import { useScenarioStore } from "@/state/scenarioStore";
 import type { OpenAIScenarioQaResponse } from "@/utils/openaiScenarioQa";
@@ -400,7 +401,7 @@ export default function ScenarioIntelligencePanel() {
             <>
               {/* 2) Situation Brief */}
               <div className="sf-si__section">
-                <div className="sf-si__kicker">Situation Brief</div>
+                <div className={`sf-si__kicker ${styles["sf-si__kicker"]}`}>Situation Brief</div>
                 <div className="sf-si__block">
                   <div className="sf-si__brief">
                     {view.brief.map((l, i) => (
@@ -412,7 +413,7 @@ export default function ScenarioIntelligencePanel() {
 
               {/* 3) Signal Tiles (3) */}
               <div className="sf-si__section">
-                <div className="sf-si__kicker">Signals</div>
+                <div className={`sf-si__kicker ${styles["sf-si__kicker"]}`}>Signals</div>
                 <div className="sf-si__tiles">
                   <div className="sf-si__tile">
                     <div className="sf-si__tileLabel">Runway</div>
@@ -434,7 +435,7 @@ export default function ScenarioIntelligencePanel() {
 
               {/* 4) Action Signals */}
               <div className="sf-si__section">
-                <div className="sf-si__kicker">Action Signals</div>
+                <div className={`sf-si__kicker ${styles["sf-si__kicker"]}`}>Action Signals</div>
                 <div className="sf-si__block">
                   <ul className="sf-si__actions">
                     {view.actions.map((a, i) => (

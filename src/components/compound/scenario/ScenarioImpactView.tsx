@@ -88,9 +88,9 @@ export const ScenarioImpactView = memo(function ScenarioImpactView() {
   }, [kpis, baseKpis]);
 
   const scenarioLabel = scenario === "base" ? "Base Case" :
-    scenario === "conservative" ? "Conservative" :
-    scenario === "growth" ? "Growth" :
-    scenario === "turnaround" ? "Turnaround" : scenario;
+    scenario === "upside" ? "Upside" :
+    scenario === "downside" ? "Downside" :
+    scenario === "extreme" ? "Stress Test" : scenario;
 
   return (
     <div className={styles.container}>
@@ -205,12 +205,12 @@ export const ScenarioImpactView = memo(function ScenarioImpactView() {
         <p className={styles.aiText}>
           {scenario === "base" ? (
             "Base Case represents current trajectory with no strategic adjustments. Use this as your benchmark for evaluating alternative scenarios."
-          ) : scenario === "conservative" ? (
-            "Conservative scenario prioritizes capital preservation and runway extension. Lower growth but reduced risk exposure. Recommended when market conditions are uncertain."
-          ) : scenario === "growth" ? (
-            "Growth scenario optimizes for revenue acceleration and market capture. Higher burn rate but stronger unit economics if executed well. Requires robust demand signals."
+          ) : scenario === "upside" ? (
+            "Upside scenario models optimistic execution with strong market tailwinds. Higher growth trajectory with improved unit economics if key assumptions hold. Best-case planning scenario."
+          ) : scenario === "downside" ? (
+            "Downside scenario assumes challenging market conditions or execution headwinds. Lower growth but maintains operational discipline. Prudent planning for uncertain environments."
           ) : (
-            "Turnaround scenario focuses on restructuring fundamentals. Short-term pain for long-term viability. Critical for companies facing runway constraints."
+            "Stress Test scenario evaluates extreme adverse conditions. Critical for assessing survivability, runway constraints, and defensive restructuring options. Worst-case resilience check."
           )}
         </p>
       </section>

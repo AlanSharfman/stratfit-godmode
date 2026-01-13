@@ -56,7 +56,7 @@ const KPI_CONFIG: KPIConfig[] = [
   },
   {
     id: "momentum",
-    label: "MOMENTUM",
+    label: "ARR (RUN-RATE)",
     kpiKey: "momentum",
     unit: "$",
     widgetType: "arrow",
@@ -66,7 +66,7 @@ const KPI_CONFIG: KPIConfig[] = [
   },
   {
     id: "burnQuality",
-    label: "BURN",
+    label: "MONTHLY BURN",
     kpiKey: "burnQuality",
     unit: "$",
     widgetType: "dial",
@@ -86,7 +86,7 @@ const KPI_CONFIG: KPIConfig[] = [
   },
   {
     id: "earningsPower",
-    label: "EARNINGS",
+    label: "GROSS MARGIN",
     kpiKey: "earningsPower",
     unit: "%",
     widgetType: "ring",

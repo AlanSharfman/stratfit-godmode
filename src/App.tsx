@@ -25,6 +25,7 @@ import ScenarioMemoPage from "@/pages/ScenarioMemoPage";
 import ModeRailGod, { type ModeKey } from "@/components/mode/ModeRailGod";
 import { ScenarioImpactView } from "@/components/compound/scenario/ScenarioImpactView";
 import VariancesView from "@/components/compound/variances/VariancesView";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import "@/styles/godmode-align-overrides.css";
 
 // ============================================================================
@@ -395,6 +396,12 @@ export default function App() {
 
   const [scenario, setScenario] = useState<ScenarioId>("base");
   const [levers, setLevers] = useState<LeverState>(INITIAL_LEVERS);
+  
+  // 🚀 PERFORMANCE OPTIMIZATION: Debounce expensive calculations
+  // - immediateLevers: Used for visual feedback (sliders feel instant)
+  // - debouncedLevers: Used for heavy engine calculations (prevents lag)
+  const [immediateLevers, debouncedLevers] = useDebouncedValue(levers, 100);
+  
   const [centerView, setCenterView] = useState<CenterView>("terrain");
   const didMountRef = useRef(false);
 
@@ -513,10 +520,10 @@ export default function App() {
   const currentKpis = engineResults?.[scenario]?.kpis;
   const viable = isViable(currentKpis);
 
-  // Sync current levers to store for strategy saving
+  // Sync current levers to store for strategy saving (use debounced to reduce store updates)
   useEffect(() => {
-    setCurrentLevers(levers);
-  }, [levers, setCurrentLevers]);
+    setCurrentLevers(debouncedLevers);
+  }, [debouncedLevers, setCurrentLevers]);
 
   // Handle save strategy
   const handleSaveStrategy = useCallback(() => {
@@ -614,17 +621,19 @@ export default function App() {
   // Clear solver path when levers change manually
   useEffect(() => {
     // Only clear if we have a path (to avoid clearing on initial load)
+    // Use debounced levers to avoid clearing path during drag
     if (solverPath.length > 0) {
       // Check if current levers differ from the final solver step
       const finalLevers = solverPath[solverPath.length - 1]?.levers;
-      if (finalLevers && JSON.stringify(levers) !== JSON.stringify(finalLevers)) {
+      if (finalLevers && JSON.stringify(debouncedLevers) !== JSON.stringify(finalLevers)) {
         setSolverPath([]);
         setSolverPathInStore([]);
       }
     }
-  }, [levers, solverPath, setSolverPathInStore]);
+  }, [debouncedLevers, solverPath, setSolverPathInStore]);
 
-  const metrics = useMemo(() => calculateMetrics(levers, scenario), [levers, scenario]);
+  // 🚀 Use debounced levers for expensive calculations (prevents stutter)
+  const metrics = useMemo(() => calculateMetrics(debouncedLevers, scenario), [debouncedLevers, scenario]);
   const dataPoints = useMemo(() => metricsToDataPoints(metrics), [metrics]);
 
   useEffect(() => {
@@ -841,7 +850,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
           { 
             id: "revenueGrowth" as LeverId, 
             label: "Demand Strength", 
-            value: levers.demandStrength, 
+            value: immediateLevers.demandStrength, 
             min: 0, 
             max: 100, 
             defaultValue: 60, 
@@ -854,7 +863,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
           { 
             id: "pricingAdjustment" as LeverId, 
             label: "Pricing Power", 
-            value: levers.pricingPower, 
+            value: immediateLevers.pricingPower, 
             min: 0, 
             max: 100, 
             defaultValue: 50, 
@@ -867,7 +876,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
           { 
             id: "marketingSpend" as LeverId, 
             label: "Expansion Velocity", 
-            value: levers.expansionVelocity, 
+            value: immediateLevers.expansionVelocity, 
             min: 0, 
             max: 100, 
             defaultValue: 45, 
@@ -886,7 +895,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
           { 
             id: "operatingExpenses" as LeverId, 
             label: "Cost Discipline", 
-            value: levers.costDiscipline, 
+            value: immediateLevers.costDiscipline, 
             min: 0, 
             max: 100, 
             defaultValue: 55, 
@@ -899,7 +908,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
           { 
             id: "headcount" as LeverId, 
             label: "Hiring Intensity", 
-            value: levers.hiringIntensity, 
+            value: immediateLevers.hiringIntensity, 
             min: 0, 
             max: 100, 
             defaultValue: 40, 
@@ -912,7 +921,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
           { 
             id: "cashSensitivity" as LeverId, 
             label: "Operating Drag", 
-            value: levers.operatingDrag, 
+            value: immediateLevers.operatingDrag, 
             min: 0, 
             max: 100, 
             defaultValue: 35, 
@@ -931,7 +940,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
           { 
             id: "churnSensitivity" as LeverId, 
             label: "Market Volatility", 
-            value: levers.marketVolatility, 
+            value: immediateLevers.marketVolatility, 
             min: 0, 
             max: 100, 
             defaultValue: 30, 
@@ -944,7 +953,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
           { 
             id: "fundingInjection" as LeverId, 
             label: "Execution Risk", 
-            value: levers.executionRisk, 
+            value: immediateLevers.executionRisk, 
             min: 0, 
             max: 100, 
             defaultValue: 25, 
@@ -967,7 +976,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
     }
 
     return boxes;
-  }, [levers, viewMode]);
+  }, [immediateLevers, viewMode]);
   
   // Onboarding state - ALWAYS SHOW FOR DEMO
   const [showOnboarding, setShowOnboarding] = useState(true);
@@ -984,12 +993,11 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
       <header className="header">
         <div className="header-left">
           <div className="logo">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#22d3ee" />
-              <path d="M2 17L12 22L22 17" stroke="#22d3ee" strokeWidth="2" />
-              <path d="M2 12L12 17L22 12" stroke="#22d3ee" strokeWidth="2" />
-            </svg>
-            <span>STRATFIT</span>
+            <img 
+              src="/stratfit-logo.svg" 
+              alt="STRATFIT" 
+              className="logo-image"
+            />
           </div>
           <div className={`system-status ${activeLeverId ? 'computing' : ''} ${viewMode === 'investor' ? 'investor' : ''}`}>
             <span className="status-label">System Status</span>
@@ -1120,7 +1128,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
       </header>
 
       {/* OPTION 1: UNIFIED 3-COLUMN LAYOUT */}
-      <div className="main-content">
+      <div className={`main-content mode-${mode}`}>
         {/* LEFT COLUMN: Scenario + Sliders */}
         <aside className="left-column">
           <div className="sf-leftStack">
@@ -1131,8 +1139,8 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
               </ScenarioBezel>
             </div>
 
-            {/* Small spacer */}
-            <div style={{ height: 12 }} />
+            {/* Spacer (fixed, CSS-controlled) */}
+            <div className="sf-leftSpacer" aria-hidden="true" />
 
             {/* Control Panel */}
             <div className="sliders-container" data-tour="sliders">

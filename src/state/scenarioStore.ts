@@ -125,7 +125,7 @@ export type ScenarioStoreState = {
 }
 
 // ============================================================================
-// TIMELINE PROJECTION WITH FUNDING ROUNDS & DILUTION
+// TIMELINE PROJECTION WITH FUNDING ROUNDS, DILUTION & SAFE/EQUITY
 // ============================================================================
 
 function projectStrategy(
@@ -142,6 +142,7 @@ function projectStrategy(
   let totalFunding = 0;
   let fundingRounds = 0;
   let founderOwnership = 1; // 100% - founders start with full ownership
+  let lastFundingType: "safe" | "equity" | undefined = undefined;
 
   for (let t = 0; t <= months; t += step) {
     // Run engine for this time point
@@ -186,15 +187,27 @@ function projectStrategy(
       totalFunding += raiseAmount;
       fundingRounds += 1;
       
-      // Calculate dilution for this round
-      // Pre-money valuation = current enterprise value
-      // Post-money = pre-money + raise amount
-      const preMoney = Math.max(enterpriseValue, raiseAmount * 2); // Floor at 2x raise
-      const postMoney = preMoney + raiseAmount;
-      const dilution = raiseAmount / postMoney;
+      // Pre-money valuation (floor at 2x raise to avoid crazy dilution)
+      const preMoney = Math.max(enterpriseValue, raiseAmount * 2);
       
-      // Founders get diluted
-      founderOwnership *= (1 - dilution);
+      // Determine funding type: Round 1 = SAFE, later rounds = priced equity
+      const isSAFE = fundingRounds === 1;
+      
+      if (isSAFE) {
+        // SAFE with standard terms
+        const safe = createDefaultSAFE(preMoney, raiseAmount);
+        const { dilution } = calculateSAFEDilution(safe, preMoney);
+        
+        founderOwnership *= (1 - dilution);
+        lastFundingType = "safe";
+      } else {
+        // Priced equity round
+        const termSheet = createDefaultTermSheet(preMoney, raiseAmount, fundingRounds);
+        const { dilution } = calculateEquityDilution(termSheet);
+        
+        founderOwnership *= (1 - dilution);
+        lastFundingType = "equity";
+      }
     }
     
     // Calculate runway based on current cash and burn
@@ -210,6 +223,7 @@ function projectStrategy(
       fundingRounds,
       totalFunding,
       founderOwnership,
+      lastFundingType,
     });
 
     // Natural drift forward (compounding effects over time)
@@ -354,6 +368,29 @@ export const useScenarioStore = create<ScenarioStoreState>((set, get) => ({
       founders: founderOwnership,
       investors: 1 - founderOwnership,
     };
+    
+    // Calculate exit values at 8x ARR
+    const exitValue = calculateExitValue({
+      timeline,
+      capTable,
+    } as Strategy, 8);
+    
+    const founderProceeds = exitValue.founders;
+    
+    // Calculate investor proceeds with liquidation preference consideration
+    const investorProceedsResult = calculateInvestorProceeds(
+      exitValue.enterprise,
+      capTable.investors,
+      totalFunding,
+      1 // 1x liquidation preference
+    );
+    const investorProceeds = investorProceedsResult.proceeds;
+    
+    // Calculate investor IRR (36 months = 3 years)
+    const years = 36 / 12;
+    const investorIRR = totalFunding > 0 
+      ? calculateIRR(totalFunding, investorProceeds, years)
+      : 0;
 
     const newStrategy: Strategy = {
       id,
@@ -367,6 +404,9 @@ export const useScenarioStore = create<ScenarioStoreState>((set, get) => ({
       totalFunding,
       fundingRounds,
       capTable,
+      investorIRR,
+      investorProceeds,
+      founderProceeds,
       createdAt: new Date().toISOString(),
       notes,
     };

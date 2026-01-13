@@ -1,6 +1,6 @@
 import React from "react";
 
-export type CenterView = "terrain" | "variance" | "systemBrief" | "actuals";
+export type CenterView = "terrain" | "scenario" | "variances" | "actuals";
 
 type Props = {
   value: CenterView;
@@ -10,8 +10,8 @@ type Props = {
 
 const tabs: { key: CenterView; label: string }[] = [
   { key: "terrain", label: "TERRAIN" },
-  { key: "variance", label: "VARIANCES" },
-  { key: "actuals", label: "ACTUALS" },
+  { key: "scenario", label: "SCENARIO" },
+  { key: "variances", label: "VARIANCES" },
 ];
 
 export default function CenterViewSegmented({ value, onChange, className }: Props) {

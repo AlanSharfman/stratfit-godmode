@@ -525,7 +525,7 @@ export default function KPICard({
 
   const isCashCard = widgetType === "liquidityReservoir";
   const cardWidth = isCashCard ? 220 : 152;
-  const cardHeight = isCashCard ? 155 : 138;
+  const cardHeight = isCashCard ? 185 : 165; // Increased to prevent widget clipping
   
   const colors = WIDGET_COLORS[widgetType] || WIDGET_COLORS.timeCompression;
   const activeColor = isActive ? highlightColor : colors.primary;
@@ -610,20 +610,21 @@ export default function KPICard({
         }
 
         .card-label {
-          font-size: 18px;
+          font-size: 16px; /* Slightly smaller to save space */
           font-weight: 800;
-          letter-spacing: 0.25em;
+          letter-spacing: 0.20em; /* Tighter */
           text-transform: uppercase;
           opacity: 0.80;
           padding-left: 4px;
+          line-height: 1;
         }
 
         .card-value {
-          font-size: 28px;
+          font-size: 26px; /* Slightly smaller */
           font-weight: 900;
           letter-spacing: -0.02em;
-          line-height: 1.05;
-          margin-top: 6px;
+          line-height: 1;
+          margin-top: 4px; /* Reduced from 6px */
           padding-left: 4px;
         }
         .kpi-card:hover {
@@ -744,7 +745,7 @@ export default function KPICard({
           backdrop-filter: blur(20px);
           display: flex;
           flex-direction: column;
-          padding: 14px;
+          padding: 10px 14px 14px 14px; /* Reduced top padding to push header up */
           overflow: hidden;
           z-index: 3;
         }
@@ -782,11 +783,12 @@ export default function KPICard({
         }
         .card-label {
           font-family: system-ui, -apple-system, sans-serif;
-          font-size: 18px;
+          font-size: 16px; /* Reduced for consistency */
           font-weight: 700;
           text-transform: uppercase;
-          letter-spacing: 3.3px;
+          letter-spacing: 2.8px; /* Adjusted */
           color: rgba(180, 200, 220, 0.90);
+          line-height: 1;
         }
         .kpi-card.active .card-label {
           color: rgba(220, 235, 250, 0.95);
@@ -797,7 +799,7 @@ export default function KPICard({
 
         .card-value {
           font-family: system-ui, -apple-system, sans-serif;
-          font-size: 28px;
+          font-size: 26px; /* Reduced for consistency */
           font-weight: 800;
           position: relative;
           z-index: 2;
@@ -805,9 +807,10 @@ export default function KPICard({
           text-shadow: 0 0 24px currentColor;
           letter-spacing: -0.5px;
           padding-left: 4px;
+          line-height: 1;
         }
         .kpi-card.hero .card-value {
-          font-size: 35px;
+          font-size: 32px; /* Reduced from 35px */
         }
 
         .card-widget {
@@ -817,9 +820,10 @@ export default function KPICard({
           justify-content: center;
           position: relative;
           z-index: 2;
-          margin-top: 8px;
+          margin-top: 4px; /* Reduced from 8px to give more space to widget */
           transform: scale(1.25) translateX(3px);
           transform-origin: center center;
+          min-height: 0; /* Allow flex to shrink if needed */
         }
 
         /* PHASE 2 — Inactive KPI discipline */

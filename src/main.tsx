@@ -3,6 +3,7 @@ import App from "./App";
 import ErrorBoundary from "./components/ErrorBoundary";
 import "./styles/phase2Tokens.css";
 import "./index.css";
+import "./styles/phase1LayoutFixes.css";
 
 const rootElement = document.getElementById("root");
 

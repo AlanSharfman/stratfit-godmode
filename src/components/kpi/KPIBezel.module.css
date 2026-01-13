@@ -61,21 +61,21 @@
 /* ═══════════════════════════════════════════════════════════════
    STEP (STEP 2) — GOD MODE DARK STEEL
    Gradient: #2C3540 → #050505 (LIGHTER START proves the step exists)
-   2px solid black border + Deep inner shadow
+   4px solid black border + Deep inner shadow (THICKENED)
    ═══════════════════════════════════════════════════════════════ */
 .step {
   position: relative;
   height: 100%;
   border-radius: 13px;
-  padding: 4px;
+  padding: 6px;
   overflow: visible;
 
   background: linear-gradient(180deg, #2C3540 0%, #050505 100%);
   border: none;
 
-  /* 2px solid black border + Deep inner shadow */
+  /* 4px solid black border + Deep inner shadow (THICKENED) */
   box-shadow:
-    0 0 0 2px #000000,
+    0 0 0 4px #000000,
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
     inset 0 3px 6px rgba(0, 0, 0, 0.8);
 }
