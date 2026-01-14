@@ -173,14 +173,28 @@ function getVarianceCommentary(
 }
 
 export default function ScenarioDeltaSnapshot() {
+
   const activeScenarioId = useScenarioStore((s) => s.activeScenarioId);
   const engineResults = useScenarioStore((s) => s.engineResults);
 
   const [open, setOpen] = useState(true);
 
-  const base = engineResults?.base;
+  const baseER = engineResults?.base;
+  const scenER = engineResults?.[activeScenarioId ?? "base"] ?? engineResults?.base;
+
+  const base = baseER;
   const scenarioKey = activeScenarioId ?? "base";
-  const scenario = engineResults?.[scenarioKey] ?? engineResults?.base;
+  const scenario = scenER;
+
+  // Compute scenario quality (truth-locked)
+  const qualityScore = getQualityScore(scenER as any);
+  const qualityBand = getQualityBand(qualityScore);
+
+  // UI label for quality
+  const qualityLabel =
+    qualityBand === "green" ? "QUALITY GREEN" :
+    qualityBand === "yellow" ? "QUALITY WATCH" :
+    "QUALITY RED";
 
   if (!base || !scenario) return null;
 
@@ -303,9 +317,9 @@ export default function ScenarioDeltaSnapshot() {
                   <div className={styles.cardHint}>Base posture vs active scenario posture (truth)</div>
                 </div>
                 <TrafficLightPill 
-                  label="QUALITY" 
-                  band={toTrafficLight(spiderData.qBand)} 
-                  valueText={qualityBandLabel(spiderData.qBand)}
+                  label={qualityLabel}
+                  band={toTrafficLight(qualityBand)}
+                  valueText={qualityLabel.replace("QUALITY ", "")}
                 />
               </div>
 
