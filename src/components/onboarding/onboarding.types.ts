@@ -4,7 +4,7 @@
 
 export type HorizonMonths = 12 | 24 | 36 | 48 | 60;
 
-export type ScenarioKey = "base" | "upside" | "downside" | "extreme";
+export type ScenarioKey = "base" | "upside" | "downside" | "stress";
 
 export type ViewMode = "operator" | "investor";
 

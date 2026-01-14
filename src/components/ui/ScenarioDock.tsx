@@ -4,7 +4,7 @@ interface Props {
 }
 
 export default function ScenarioDock({ scenario, onScenarioChange }: Props) {
-  const scenarios = ["base", "upside", "downside", "extreme"];
+  const scenarios = ["base", "upside", "downside", "stress"];
 
   return (
     <div className="flex gap-4">

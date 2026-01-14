@@ -26,7 +26,7 @@ export type ScenarioIntelligence = {
   traceability: string;
 };
 
-export type ScenarioKey = "base" | "upside" | "downside" | "extreme";
+export type ScenarioKey = "base" | "upside" | "downside" | "stress";
 
 export type ScenarioMemo = {
   scenarioId: string;

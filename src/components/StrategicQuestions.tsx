@@ -91,7 +91,7 @@ const OPERATOR_PROMPTS: StrategicPrompt[] = [
     dominantConstraint: "risk",
     primaryKpis: [4], // Risk
     getResponse: (state) => {
-      if (state.scenario === "extreme" || state.scenario === "downside") {
+      if (state.scenario === "stress" || state.scenario === "downside") {
         return {
           observation: "In stressed scenarios, hiring intensity amplifies risk fastest. Each new commitment extends fixed cost exposure.",
           risk: "Headcount cannot be unwound quickly. Creates structural rigidity in downside.",
@@ -161,7 +161,7 @@ const INVESTOR_PROMPTS: StrategicPrompt[] = [
     dominantConstraint: "risk",
     primaryKpis: [4, 0], // Risk, Runway
     getResponse: (state) => {
-      if (state.scenario === "extreme" || state.scenario === "downside") {
+      if (state.scenario === "stress" || state.scenario === "downside") {
         return {
           observation: "Liquidity risk dominates. Downside scenarios compress runway faster than operations can adapt.",
           risk: "Cash exhaustion timeline accelerates non-linearly in stress scenarios.",
@@ -229,7 +229,7 @@ export default function StrategicQuestions({ onPromptClick, isAnalyzing }: Strat
   // Build current analysis state from store
   const analysisState: AnalysisState = useMemo(() => ({
     scenario,
-    riskLevel: kpiValues.riskIndex?.value ?? 25,
+    riskLevel: 100 - (kpiValues.riskIndex?.value ?? 50), // Convert health → danger
     runway: kpiValues.runway?.value ?? 18,
     momentum: kpiValues.momentum?.value ?? 50,
     burnQuality: kpiValues.burnQuality?.value ?? 55,

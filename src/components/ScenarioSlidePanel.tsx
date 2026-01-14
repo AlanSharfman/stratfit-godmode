@@ -6,7 +6,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export type ScenarioId = "base" | "upside" | "downside" | "extreme";
+export type ScenarioId = "base" | "upside" | "downside" | "stress";
 
 interface ScenarioOption {
   id: ScenarioId;
@@ -26,7 +26,7 @@ const SCENARIOS: ScenarioOption[] = [
   { id: "base", label: "Base Case", sublabel: "Current trajectory", color: "#4ade80" },
   { id: "upside", label: "Upside", sublabel: "Optimistic growth", color: "#38bdf8" },
   { id: "downside", label: "Downside", sublabel: "Conservative view", color: "#fbbf24" },
-  { id: "extreme", label: "Stress", sublabel: "Stress test", color: "#f87171" },
+  { id: "stress", label: "Stress", sublabel: "Stress test", color: "#f87171" },
 ];
 
 const ICONS: Record<ScenarioId, React.ReactNode> = {

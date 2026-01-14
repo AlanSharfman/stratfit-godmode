@@ -60,7 +60,7 @@ export interface ScenarioRecord {
   ownerUserId: string;
 
   // Link to the "mode" in the UI
-  scenarioId: ScenarioId;      // "base" | "upside" | "downside" | "extreme"
+  scenarioId: ScenarioId;      // "base" | "upside" | "downside" | "stress"
 
   name: string;                // e.g. "Base FY25", "Aggressive Growth"
   description?: string;

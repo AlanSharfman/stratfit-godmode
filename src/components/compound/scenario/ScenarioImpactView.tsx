@@ -23,13 +23,13 @@ interface ScenarioSummary {
 // HELPERS (display-only)
 // ============================================================================
 
-type ScenarioId = "base" | "upside" | "downside" | "extreme" | string;
+type ScenarioId = "base" | "upside" | "downside" | "stress" | string;
 
 function scenarioLabelOf(id: ScenarioId): string {
   if (id === "base") return "Base Case";
   if (id === "upside") return "Upside";
   if (id === "downside") return "Downside";
-  if (id === "extreme") return "Stress";
+  if (id === "stress") return "Stress";
   return String(id);
 }
 
@@ -48,7 +48,7 @@ function whatThisMeansBullets(id: ScenarioId): string[] {
         "Use to identify the minimum operating shape that protects runway.",
         "Primary watch-outs: CAC efficiency and burn discipline.",
       ];
-    case "extreme":
+    case "stress":
       return [
         "Stress scenario tests survivability under adverse conditions.",
         "Use to surface immediate runway risks and defensive actions.",

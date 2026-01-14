@@ -21,6 +21,7 @@ import { emitCausal } from "@/ui/causalEvents";
 import TakeTheTour from "@/components/ui/TakeTheTour";
 import ScenarioIntelligencePanel from "@/components/ui/ScenarioIntelligencePanel";
 import { deriveArrGrowth, formatUsdCompact } from "@/utils/arrGrowth";
+import { getQualityScoreFromKpis, getQualityBandFromKpis } from "@/logic/qualityScore";
 import ScenarioMemoPage from "@/pages/ScenarioMemoPage";
 import ModeRailGod, { type ModeKey } from "@/components/mode/ModeRailGod";
 import { ScenarioImpactView } from "@/components/compound/scenario/ScenarioImpactView";
@@ -59,7 +60,7 @@ const INITIAL_LEVERS: LeverState = {
   fundingPressure: 20,
 };
 
-const ALL_SCENARIOS: ScenarioId[] = ["base", "upside", "downside", "extreme"];
+const ALL_SCENARIOS: ScenarioId[] = ["base", "upside", "downside", "stress"];
 
 // SCENARIOS moved to ScenarioSelector component
 
@@ -679,8 +680,12 @@ export default function App() {
       const grossMargin = 0.74;
       const annualChurn = 0.12;
 
-      const burn = m.burnQuality * 1000;
+      const burn = m.burnQuality * 1000; // monthly burn in dollars
       const marketingSpend = burn * 0.45;
+
+      // ✅ TRUTH: Runway = cashflow survival (single source)
+      // First month where cumulative cash < 0 = cash / burn
+      const runwaySurvivalMonths = burn > 0 ? Math.floor(cashValueDollars / burn) : 999;
 
       const arrDeltaValue = arrGrowth.arrDelta ?? 0;
       const newCustomers = Math.max(1, arrDeltaValue / avgRevenuePerCustomer);
@@ -716,7 +721,7 @@ export default function App() {
       const growthStress = Math.min(1, (1 / Math.max(1, ltvCac)) + (cacPaybackMonths / 36));
 
       const kpis = {
-        runway: { value: m.runway, display: `${Math.round(m.runway)} mo` },
+        runway: { value: runwaySurvivalMonths, display: `${runwaySurvivalMonths} mo` },
         cashPosition: { value: cashValueDollars, display: `$${(cashValueDollars / 1_000_000).toFixed(1)}M` },
         momentum: { value: m.momentum, display: `$${(m.momentum / 10).toFixed(1)}M` },
         arrCurrent: { value: arrCurrent, display: formatUsdCompact(arrCurrent) },
@@ -724,7 +729,10 @@ export default function App() {
         arrDelta: { value: arrGrowth.arrDelta ?? 0, display: arrGrowth.displayDelta },
         arrGrowthPct: { value: arrGrowth.arrGrowthPct ?? 0, display: arrGrowth.displayPct },
         burnQuality: { value: m.burnQuality, display: `$${Math.round(m.burnQuality)}K` },
+        // riskIndex = health (higher = healthier) - keep for internal calculations
         riskIndex: { value: adjustedRiskIndex, display: `${Math.round(adjustedRiskIndex)}/100` },
+        // riskScore = danger (higher = more dangerous) - use for UI display
+        riskScore: { value: 100 - adjustedRiskIndex, display: `${Math.round(100 - adjustedRiskIndex)}/100` },
         earningsPower: { value: m.earningsPower, display: `${Math.round(m.earningsPower)}%` },
         enterpriseValue: { value: m.enterpriseValue, display: `$${(m.enterpriseValue / 10).toFixed(1)}M` },
         cac: { value: cac, display: `$${Math.round(cac).toLocaleString()}` },
@@ -734,6 +742,12 @@ export default function App() {
         safeCac: { value: safeCac, display: `$${Math.round(safeCac).toLocaleString()}` },
         growthStress: { value: growthStress, display: `${Math.round(growthStress * 100)}%` },
       };
+
+      // ✅ QUALITY SCORE: Canonical composite (locked formula)
+      const qualityScore = getQualityScoreFromKpis(kpis);
+      const qualityBand = getQualityBandFromKpis(kpis);
+      (kpis as any).qualityScore = { value: qualityScore, display: `${Math.round(qualityScore * 100)}%` };
+      (kpis as any).qualityBand = { value: qualityBand === "green" ? 1 : qualityBand === "amber" ? 0.5 : 0, display: qualityBand.toUpperCase() };
 
       // Compare to base (once base exists this becomes meaningful)
       const baseKpis = useScenarioStore.getState().engineResults?.base?.kpis;

@@ -84,13 +84,17 @@ function generateInsights(
   // Compute deltas from baseline
   const runwayDelta = metrics.runway - baselineMetrics.runway;
   const momentumDelta = metrics.momentum - baselineMetrics.momentum;
-  const riskDelta = metrics.riskIndex - baselineMetrics.riskIndex;
+  // riskScore = danger (higher = worse), computed from riskIndex (health, higher = better)
+  const riskScore = 100 - metrics.riskIndex;
+  const baseRiskScore = 100 - baselineMetrics.riskIndex;
+  const riskDelta = riskScore - baseRiskScore;
   const burnDelta = metrics.burnQuality - baselineMetrics.burnQuality;
 
   // Derive dynamic observation text based on current state
   const runwayBand = metrics.runway >= 18 ? 'strong' : metrics.runway >= 12 ? 'adequate' : 'constrained';
   const growthSignal = momentumDelta >= 5 ? 'accelerating' : momentumDelta <= -5 ? 'contracting' : 'stable';
-  const riskPosture = metrics.riskIndex >= 60 ? 'elevated' : metrics.riskIndex >= 40 ? 'moderate' : 'contained';
+  // Higher riskScore = more dangerous
+  const riskPosture = riskScore >= 60 ? 'elevated' : riskScore >= 40 ? 'moderate' : 'contained';
   
   const observation = [
     `Runway posture is ${runwayBand} at ${Math.round(metrics.runway)} months${runwayDelta !== 0 ? ` (${runwayDelta > 0 ? '+' : ''}${Math.round(runwayDelta)} vs baseline)` : ''}.`,
@@ -138,12 +142,12 @@ function generateInsights(
     });
   }
   
-  if (metrics.riskIndex > 55) {
+  if (riskScore > 55) {
     risks.push({
-      severity: metrics.riskIndex > 70 ? 'CRITICAL' : 'MODERATE',
-      emoji: metrics.riskIndex > 70 ? '🔴' : '🟡',
+      severity: riskScore > 70 ? 'CRITICAL' : 'MODERATE',
+      emoji: riskScore > 70 ? '🔴' : '🟡',
       title: 'Elevated risk exposure',
-      driver: `Combined risk index at ${Math.round(metrics.riskIndex)}/100`,
+      driver: `Risk score at ${Math.round(riskScore)}/100`,
       impact: 'Scenario volatility increases investor concern',
     });
   }

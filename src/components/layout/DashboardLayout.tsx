@@ -12,13 +12,13 @@ const SCENARIOS = [
   { id: "base", label: "Base Case", color: "#5eead4" },
   { id: "upside", label: "Upside", color: "#4ade80" },
   { id: "downside", label: "Downside", color: "#fbbf24" },
-  { id: "extreme", label: "Extreme", color: "#f87171" },
+  { id: "stress", label: "Stress", color: "#f87171" },
 ] as const;
 
 export default function DashboardLayout() {
   const [dataPoints, setDataPoints] = useState<number[]>([50, 60, 75, 80, 70, 65, 85]);
   const [activeKPIIndex, setActiveKPIIndex] = useState<number | null>(null);
-  const [scenario, setScenario] = useState<"base" | "upside" | "downside" | "extreme">("base");
+  const [scenario, setScenario] = useState<"base" | "upside" | "downside" | "stress">("base");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const widgetTypes = useMemo(
     () =>

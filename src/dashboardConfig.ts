@@ -1,7 +1,7 @@
 // src/config/dashboardConfig.ts
 
 // ---- Core IDs ----
-export type ScenarioId = "base" | "upside" | "downside" | "extreme";
+export type ScenarioId = "base" | "upside" | "downside" | "stress";
 
 export type MetricId =
   | "runway"
@@ -46,7 +46,7 @@ export const SCENARIOS: readonly ScenarioDefinition[] = [
   { id: "base",    label: "Base Case",    color: "#22d3ee" }, // cyan
   { id: "upside",  label: "Upside",       color: "#a78bfa" }, // purple
   { id: "downside",label: "Downside",     color: "#d946ef" }, // magenta (NO yellow)
-  { id: "extreme", label: "Extreme Risk", color: "#f87171" }, // red
+  { id: "stress", label: "Stress Test", color: "#f87171" }, // red
 ] as const;
 
 

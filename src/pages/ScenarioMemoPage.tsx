@@ -19,7 +19,7 @@ function scenarioNameFromId(id: string): string {
     case "base": return "Base Case";
     case "upside": return "Upside";
     case "downside": return "Downside";
-    case "extreme": return "Extreme";
+    case "stress": return "Stress";
     default: return id;
   }
 }

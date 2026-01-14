@@ -7,11 +7,25 @@ import { useScenarioStore } from "@/state/scenarioStore";
 import { SpiderRadar } from "@/components/charts/SpiderRadar";
 import {
   buildSpiderAxes,
-  cacQualityBand,
   type ScenarioMetrics,
 } from "@/logic/spiderFitness";
 import { TrafficLightPill } from "@/components/charts/mini/TrafficLightPill";
+import { getRiskScoreFromKpis } from "@/logic/riskScore";
+import { getQualityScore, getQualityBand } from "@/lib/truth/truthSelectors";
+import type { TrafficLight } from "@/logic/spiderFitness";
 import styles from "./ScenarioDeltaSnapshot.module.css";
+
+// Convert truth selector band to TrafficLight type
+function toTrafficLight(band: "green" | "yellow" | "red"): TrafficLight {
+  return band === "yellow" ? "amber" : band;
+}
+
+// Quality band label mapping
+function qualityBandLabel(band: "green" | "yellow" | "red"): string {
+  if (band === "green") return "GREEN";
+  if (band === "yellow") return "WATCH";
+  return "RED";
+}
 
 interface DeltaRow {
   metric: string;
@@ -60,7 +74,8 @@ function computeDeltaType(metricKey: string, delta: number): "positive" | "negat
   if (Math.abs(delta) < 1e-9) return "neutral";
 
   // For cost/risk metrics, DOWN is better.
-  const lowerIsBetter = new Set(["burnRate", "cac", "cacPayback", "riskIndex"]);
+  // riskScore (not riskIndex!) — higher riskScore = more dangerous, so lower is better
+  const lowerIsBetter = new Set(["burnRate", "cac", "cacPayback", "riskScore"]);
   const isBetter = lowerIsBetter.has(metricKey) ? delta < 0 : delta > 0;
   return isBetter ? "positive" : "negative";
 }
@@ -81,7 +96,7 @@ function getVarianceCommentary(
       ? "upside assumptions"
       : scenario === "downside"
         ? "downside pressures"
-        : scenario === "extreme"
+        : scenario === "stress"
           ? "stress test conditions"
           : "adjusted lever inputs";
 
@@ -93,10 +108,9 @@ function getVarianceCommentary(
           : `ARR is improving. Customer acquisition and expansion are responding positively to scenario levers.`,
       negative:
         pctValue > 25
-          ? `ARR contraction under ${scenarioContext}. Churn or demand fragility detected — revenue engine at risk.`
+          ? `ARR contraction under ${scenarioContext}. Demand fragility detected — revenue engine at risk.`
           : `ARR growth is softening. Monitor pipeline quality and expansion dynamics closely.`,
     },
-
     "ARR in 12 Months": {
       positive:
         pctValue > 30
@@ -107,7 +121,6 @@ function getVarianceCommentary(
           ? `Forward ARR outlook deteriorating. Growth trajectory under stress — future revenue base at risk.`
           : `ARR growth outlook moderating. Long-term revenue visibility reduced.`,
     },
-
     "Gross Margin": {
       positive:
         pctValue > 10
@@ -118,7 +131,6 @@ function getVarianceCommentary(
           ? `Margin compression detected. Unit economics deteriorating — pricing or cost structure needs review.`
           : `Gross margin slipping. Monitor cost inflation and discounting.`,
     },
-
     "Burn Rate": {
       positive: `Burn efficiency improving. Capital is being deployed more effectively.`,
       negative:
@@ -126,28 +138,24 @@ function getVarianceCommentary(
           ? `Burn trajectory unsustainable under ${scenarioContext}. Cash preservation required.`
           : `Burn rate increasing. Operating leverage not yet achieved.`,
     },
-
-    "Runway": {
-      positive: `Runway extended — scenario provides more time to execute growth strategy.`,
+    Runway: {
+      positive: `Runway extended — more time to execute without financing pressure.`,
       negative:
         pctValue > 20
           ? `Runway critically compressed. Financing or cost action required.`
           : `Runway reduced. Strategic buffer narrowing.`,
     },
-
     "Cash Balance": {
-      positive: `Liquidity position strengthened. Greater optionality for investment and risk absorption.`,
+      positive: `Liquidity strengthened. Greater optionality for investment and risk absorption.`,
       negative: `Cash reserves declining. Flexibility reduced under scenario.`,
     },
-
     "Risk Score": {
-      positive: `Risk profile improving. System stability and resilience increasing.`,
+      positive: `Risk profile improving. System resilience increasing.`,
       negative:
         pctValue > 30
           ? `Risk concentration elevated. Stress-test assumptions and contingency plans required.`
           : `Risk trending higher. Monitor operational and financial fragility.`,
     },
-
     Valuation: {
       positive:
         pctValue > 40
@@ -185,7 +193,7 @@ export default function ScenarioDeltaSnapshot() {
       { key: "burnRate", label: "Burn Rate", fmt: (v: number) => formatUsdCompact(v) },
       { key: "runway", label: "Runway", fmt: (v: number) => fmtMo(v) },
       { key: "cashPosition", label: "Cash Balance", fmt: (v: number) => formatUsdCompact(v) },
-      { key: "riskIndex", label: "Risk Score", fmt: (v: number) => `${fmtInt(v)}/100` },
+      { key: "riskScore", label: "Risk Score", fmt: (v: number) => `${fmtInt(v)}/100` },
       { key: "enterpriseValue", label: "Valuation", fmt: (v: number) => formatUsdCompact(v) },
     ],
     []
@@ -193,8 +201,16 @@ export default function ScenarioDeltaSnapshot() {
 
   const rows: DeltaRow[] = useMemo(() => {
     return metricDefs.map((m) => {
-      const b = safeNum(base.kpis[m.key]?.value);
-      const s = safeNum(scenario.kpis[m.key]?.value);
+      // Special case: riskScore is computed from riskIndex (100 - riskIndex)
+      const getValue = (kpis: typeof base.kpis) => {
+        if (m.key === "riskScore") {
+          return getRiskScoreFromKpis(kpis);
+        }
+        return safeNum(kpis[m.key]?.value);
+      };
+
+      const b = getValue(base.kpis);
+      const s = getValue(scenario.kpis);
       const d = s - b;
 
       const dPct = b !== 0 ? (d / b) * 100 : d === 0 ? 0 : 100;
@@ -217,31 +233,49 @@ export default function ScenarioDeltaSnapshot() {
     });
   }, [base, scenario, metricDefs, scenarioKey]);
 
-  // === Strategic Fitness Profile (Spider) — TRUE comparison (Base vs Scenario) ===
-  const spider = useMemo(() => {
-    const toMetrics = (src: any): ScenarioMetrics => ({
+  // Build BOTH base + scenario axes (so the radar tells the truth visually)
+  const spiderData = useMemo(() => {
+    const build = (src: any): ScenarioMetrics => ({
       arr: safeNum(src?.kpis?.arrCurrent?.value),
       arrGrowthPct: safeNum(src?.kpis?.arrGrowthPct?.value),
       grossMarginPct: safeNum(src?.kpis?.earningsPower?.value),
       burnRateMonthly: safeNum(src?.kpis?.burnQuality?.value) * 1000,
       runwayMonths: safeNum(src?.kpis?.runway?.value),
-      riskScore: safeNum(src?.kpis?.riskIndex?.value),
+      riskScore: getRiskScoreFromKpis(src?.kpis), // 100 - riskIndex (higher = more dangerous)
       ltvToCac: safeNum(src?.kpis?.ltvCac?.value),
       cacPaybackMonths: safeNum(src?.kpis?.cacPayback?.value),
     });
 
-    const baseAxes = buildSpiderAxes(toMetrics(base));
-    const scenAxes = buildSpiderAxes(toMetrics(scenario));
-    const band = cacQualityBand(toMetrics(scenario)); // band reflects active scenario quality
-    return { baseAxes, scenAxes, band };
+    const baseM = build(base);
+    const scenM = build(scenario);
+
+    const baseAxes = buildSpiderAxes(baseM);
+    const scenarioAxes = buildSpiderAxes(scenM);
+    
+    // Use canonical truth selectors — no component invents quality
+    const qScore = getQualityScore(scenario);
+    const qBand = getQualityBand(qScore);
+
+    return { baseAxes, scenarioAxes, qScore, qBand };
   }, [base, scenario]);
+
+  const topMoves = useMemo(() => {
+    // Pick the 3 most material % moves (ignoring neutral)
+    const ranked = [...rows]
+      .filter((r) => r.deltaType !== "neutral")
+      .sort((a, b) => Math.abs(parseFloat(b.deltaPct)) - Math.abs(parseFloat(a.deltaPct)));
+
+    return ranked.slice(0, 3);
+  }, [rows]);
 
   return (
     <div className={styles.wrap}>
-      <div className={styles.headRow}>
-        <div className={styles.titleBlock}>
+      <div className={styles.topBar}>
+        <div className={styles.titleRow}>
           <div className={styles.kicker}>Scenario Delta Snapshot</div>
-          <div className={styles.subkicker}>Base → {scenarioKey === "base" ? "Base" : scenarioKey}</div>
+          <div className={styles.subKicker}>
+            Base → {scenarioKey === "base" ? "Base" : scenarioKey}
+          </div>
         </div>
 
         <button type="button" onClick={() => setOpen((v) => !v)} className={styles.toggleBtn}>
@@ -251,63 +285,105 @@ export default function ScenarioDeltaSnapshot() {
 
       {open && (
         <>
+          {/* Strategic Fitness Profile */}
           <div className={styles.card}>
-            <div className={styles.cardHeader}>
-              <div>
-                <div className={styles.cardTitle}>Strategic Fitness Profile</div>
-                <div className={styles.cardHint}>Base posture vs active scenario posture (same truth)</div>
+            <div className={styles.cardInner}>
+              <div className={styles.cardHeader}>
+                <div>
+                  <div className={styles.cardTitle}>Strategic Fitness Profile</div>
+                  <div className={styles.cardHint}>Base posture vs active scenario posture (truth)</div>
+                </div>
+                <TrafficLightPill 
+                  label="QUALITY" 
+                  band={toTrafficLight(spiderData.qBand)} 
+                  valueText={qualityBandLabel(spiderData.qBand)}
+                />
               </div>
-              <TrafficLightPill label="Quality" band={spider.band} />
-            </div>
 
-            <div className={styles.topGrid}>
-              <div className={styles.spiderShell}>
-                <SpiderRadar title="" base={spider.baseAxes} scenario={spider.scenAxes} note="" />
-              </div>
+              <div className={styles.fitnessGrid}>
+                <div className={styles.radarShell}>
+                  <div className={styles.radarStage}>
+                    <SpiderRadar
+                      title=""
+                      base={spiderData.baseAxes}
+                      scenario={spiderData.scenarioAxes}
+                      note=""
+                    />
+                  </div>
+                </div>
 
-              <div className={styles.insightShell}>
-                <div className={styles.insightTitle}>What changed (executive read)</div>
-                <div className={styles.bullets}>
-                  <div>
-                    This view isolates the <b>Base → Scenario</b> shift and surfaces whether improvements are driven by
+                <div className={styles.briefShell}>
+                  <div className={styles.briefTitle}>What changed (executive read)</div>
+
+                  <p className={styles.briefP}>
+                    This view isolates the <b>Base → Scenario</b> shift and surfaces whether changes are driven by
                     <b> unit economics</b>, <b>growth quality</b>, or <b>capital intensity</b>.
+                  </p>
+
+                  <div className={styles.briefBullets}>
+                    {topMoves.length === 0 ? (
+                      <div className={styles.bullet}>
+                        <div className={styles.dot} />
+                        <div>
+                          <div className={styles.bulletStrong}>No material movement</div>
+                          <div className={styles.bulletSub}>
+                            Select a non-base scenario and move levers to create meaningful variances.
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      topMoves.map((m) => (
+                        <div key={m.metric} className={styles.bullet}>
+                          <div className={styles.dot} />
+                          <div>
+                            <div className={styles.bulletStrong}>
+                              {m.metric}: {m.deltaPct} ({m.delta})
+                            </div>
+                            <div className={styles.bulletSub}>{m.commentary}</div>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
-                  <div>
-                    Use the table below to see the <b>largest deltas</b>, then validate the underlying lever moves.
-                  </div>
-                  <div>
-                    The quality band reflects <b>LTV/CAC + payback</b> under the active scenario (no demo scoring).
-                  </div>
+
+                  <p className={styles.briefP} style={{ marginTop: 12, marginBottom: 0 }}>
+                    Quality score: <b>{Math.round(spiderData.qScore * 100)}%</b> — reflects LTV/CAC, payback, 
+                    margin, and burn discipline (canonical formula).
+                  </p>
                 </div>
               </div>
             </div>
+          </div>
 
-            <div className={styles.table}>
-              <div className={styles.thead}>
-                <div>Metric</div>
-                <div>Base</div>
-                <div>Scenario</div>
-                <div>Δ</div>
-                <div>Δ%</div>
-                <div>CFO Commentary</div>
-              </div>
-
-              {rows.map((r) => {
-                const tone =
-                  r.deltaType === "positive" ? styles.pos : r.deltaType === "negative" ? styles.neg : styles.neu;
-
-                return (
-                  <div key={r.metric} className={styles.row}>
-                    <div className={styles.metric}>{r.metric}</div>
-                    <div className={styles.muted}>{r.base}</div>
-                    <div className={styles.muted}>{r.scenario}</div>
-                    <div className={`${styles.delta} ${tone}`}>{r.delta}</div>
-                    <div className={`${styles.delta} ${tone}`}>{r.deltaPct}</div>
-                    <div className={styles.commentary}>{r.commentary}</div>
-                  </div>
-                );
-              })}
+          {/* Delta Table */}
+          <div className={`${styles.card} ${styles.table}`}>
+            <div className={styles.tableHead}>
+              <div>Metric</div>
+              <div>Base</div>
+              <div>Scenario</div>
+              <div>Δ</div>
+              <div>Δ%</div>
+              <div>CFO Commentary</div>
             </div>
+
+            {rows.map((r) => {
+              const deltaClass =
+                r.deltaType === "positive" ? styles.deltaPos : r.deltaType === "negative" ? styles.deltaNeg : styles.deltaNeu;
+
+              const rowTone =
+                r.deltaType === "positive" ? styles.rowPos : r.deltaType === "negative" ? styles.rowNeg : "";
+
+              return (
+                <div key={r.metric} className={`${styles.row} ${rowTone}`}>
+                  <div className={styles.metric}>{r.metric}</div>
+                  <div className={styles.muted}>{r.base}</div>
+                  <div className={styles.muted}>{r.scenario}</div>
+                  <div className={deltaClass}>{r.delta}</div>
+                  <div className={deltaClass}>{r.deltaPct}</div>
+                  <div className={styles.commentary}>{r.commentary}</div>
+                </div>
+              );
+            })}
           </div>
         </>
       )}

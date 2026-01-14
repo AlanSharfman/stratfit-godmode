@@ -155,7 +155,7 @@ function qaAnswer(
         "Interpretation: treat this as directional only (single-scenario mode).",
         ...baseBullets,
       ].slice(0, 6),
-      dataUsed: ["activeLeverId", "runway (band)", "arrGrowthPct (band)", "riskIndex (band)"],
+      dataUsed: ["activeLeverId", "runway (band)", "arrGrowthPct (band)", "riskScore (band)"],
     };
   }
 
@@ -169,7 +169,7 @@ function qaAnswer(
         "Decision lens: prioritize runway stability before acceleration.",
         `Risk state: ${ctx.bands.risk}.`,
       ].slice(0, 6),
-      dataUsed: ["runway (band)", "burnQuality", "riskIndex (band)"],
+      dataUsed: ["runway (band)", "burnQuality", "riskScore (band)"],
     };
   }
 
@@ -183,7 +183,7 @@ function qaAnswer(
         `Runway posture: ${ctx.bands.runway}.`,
         `Growth momentum: ${ctx.bands.growth}.`,
       ].slice(0, 6),
-      dataUsed: ["riskIndex (band)", "runway (band)", "arrGrowthPct (band)"],
+      dataUsed: ["riskScore (band)", "runway (band)", "arrGrowthPct (band)"],
     };
   }
 
@@ -197,7 +197,7 @@ function qaAnswer(
         `Runway posture: ${ctx.bands.runway}.`,
         `Risk state: ${ctx.bands.risk}.`,
       ].slice(0, 6),
-      dataUsed: ["arrGrowthPct (band)", "runway (band)", "riskIndex (band)"],
+      dataUsed: ["arrGrowthPct (band)", "runway (band)", "riskScore (band)"],
     };
   }
 
@@ -211,7 +211,7 @@ function qaAnswer(
         `Growth momentum: ${ctx.bands.growth}.`,
         "Interpretation: treat CRITICAL/TIGHT runway with HIGH/CRIT risk as fragile.",
       ].slice(0, 6),
-      dataUsed: ["runway (band)", "riskIndex (band)", "arrGrowthPct (band)"],
+      dataUsed: ["runway (band)", "riskScore (band)", "arrGrowthPct (band)"],
     };
   }
 
@@ -223,7 +223,7 @@ function qaAnswer(
       `Current snapshot: runway ${ctx.bands.runway}, growth ${ctx.bands.growth}, risk ${ctx.bands.risk}.`,
       "This panel is single-scenario and deterministic.",
     ],
-    dataUsed: ["runway (band)", "arrGrowthPct (band)", "riskIndex (band)"],
+    dataUsed: ["runway (band)", "arrGrowthPct (band)", "riskScore (band)"],
   };
 }
 
@@ -257,7 +257,7 @@ export default function ScenarioIntelligencePanel() {
     const runway = getKpi(current, "runway");
     const arrGrowthPct = getKpi(current, "arrGrowthPct");
     const arrDelta = getKpi(current, "arrDelta");
-    const risk = getKpi(current, "riskIndex");
+    const risk = getKpi(current, "riskScore"); // Use danger score (higher = worse) for display
     const cash = getKpi(current, "cashPosition");
     const burn = getKpi(current, "burnQuality");
 
@@ -298,7 +298,7 @@ export default function ScenarioIntelligencePanel() {
     traceItems.push({ k: "runway", v: runway?.display ?? "—" });
     traceItems.push({ k: "arrGrowthPct", v: arrGrowthPct?.display ?? "—" });
     traceItems.push({ k: "arrDelta", v: arrDelta?.display ?? "—" });
-    traceItems.push({ k: "riskIndex", v: risk?.display ?? "—" });
+    traceItems.push({ k: "riskScore", v: risk?.display ?? "—" });
 
     const status = activeLeverId ? "LIVE" : "SYNCED";
 

@@ -184,7 +184,7 @@ export function answerCrossScenarioQuestion({
   }
   // Operator mode: legacy output
   // ...existing code...
-  const scenarioOrder = ["base", "upside", "downside", "extreme"];
+  const scenarioOrder = ["base", "upside", "downside", "stress"];
   const packMap = Object.fromEntries(packs.map(p => [p.scenario, p]));
   // ...existing code...
   return { bullets: bullets.slice(0, 6) };

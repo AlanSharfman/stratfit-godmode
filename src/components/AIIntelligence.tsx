@@ -253,7 +253,7 @@ function getAIContent(viewMode: ViewMode, scenario: ScenarioId) {
   if (viewMode === "operator") {
     return {
       observation:
-        scenario === "extreme"
+        scenario === "stress"
           ? "Runway has become the binding constraint. Cash position critical. Current burn rate unsustainable beyond 6-month horizon without intervention."
           : scenario === "downside"
           ? "Growth-to-efficiency ratio has deteriorated. Burn rate exceeds revenue scaling. Cost structure requires recalibration."
@@ -262,7 +262,7 @@ function getAIContent(viewMode: ViewMode, scenario: ScenarioId) {
           : "Core metrics remain within operating tolerance. Cash position and runway are stable. Growth and efficiency are balanced, with no immediate pressure points.",
 
       risks:
-        scenario === "extreme"
+        scenario === "stress"
           ? "Limited runway eliminates margin for error. Any execution miss compounds into structural deficit. Optionality severely constrained."
           : scenario === "downside"
           ? "Cost discipline has eroded. Hiring velocity inconsistent with revenue base. Cash sensitivity elevated."
@@ -271,7 +271,7 @@ function getAIContent(viewMode: ViewMode, scenario: ScenarioId) {
           : "Sustained growth acceleration would increase execution complexity. Hiring velocity and cost discipline require continued monitoring. External market volatility remains a secondary risk.",
 
       action:
-        scenario === "extreme"
+        scenario === "stress"
           ? "Reduce burn 25-30% within 30 days. Narrow to single growth vector. Extend runway to 18+ months before any expansion."
           : scenario === "downside"
           ? "Freeze discretionary hiring. Tighten operating expense controls. Preserve optionality for next 2 quarters."
@@ -282,7 +282,7 @@ function getAIContent(viewMode: ViewMode, scenario: ScenarioId) {
   } else {
     return {
       observation:
-        scenario === "extreme"
+        scenario === "stress"
           ? "Portfolio company runway critically constrained. Capital efficiency below sustainable threshold. Deployment risk elevated."
           : scenario === "downside"
           ? "Growth-to-efficiency pressure emerging. Current trajectory requires recalibration within next quarter."
@@ -291,7 +291,7 @@ function getAIContent(viewMode: ViewMode, scenario: ScenarioId) {
           : "Metrics within expected range. Deployment efficiency acceptable for stage. No anomalies detected.",
 
       risks:
-        scenario === "extreme"
+        scenario === "stress"
           ? "Material risk concentration. Downside probability increased. Execution margin minimal."
           : scenario === "downside"
           ? "Margin compression evident. Burn rate inconsistent with model assumptions."
@@ -300,7 +300,7 @@ function getAIContent(viewMode: ViewMode, scenario: ScenarioId) {
           : "Risk factors within normal distribution. No material concerns at current levels.",
 
       action:
-        scenario === "extreme"
+        scenario === "stress"
           ? "Prioritize capital preservation. Restructure before additional deployment. Board engagement advised."
           : scenario === "downside"
           ? "Shift to monthly monitoring. Milestone-based capital release. Request response plan."
@@ -332,7 +332,7 @@ export default function AIIntelligence({
   );
 
   const scenarioName =
-    scenario === "extreme"
+    scenario === "stress"
       ? "Extreme Scenario"
       : scenario === "downside"
       ? "Downside Scenario"

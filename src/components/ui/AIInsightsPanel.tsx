@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Brain, Sparkles, MessageSquare, ShieldAlert, Lightbulb } from "lucide-react";
 
 interface AIInsightsPanelProps {
-  scenario: "base" | "upside" | "downside" | "extreme";
+  scenario: "base" | "upside" | "downside" | "stress";
   kpiValues: {
     runway: number;
     cash: number;

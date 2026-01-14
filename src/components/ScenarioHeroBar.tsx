@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 // TYPES
 // ============================================================================
 
-export type ScenarioId = "base" | "upside" | "downside" | "extreme";
+export type ScenarioId = "base" | "upside" | "downside" | "stress";
 
 interface ScenarioOption {
   id: ScenarioId;
@@ -30,7 +30,7 @@ const SCENARIOS: ScenarioOption[] = [
   { id: "base", label: "BASE CASE", sublabel: "Current trajectory", color: "#22d3ee" },
   { id: "upside", label: "UPSIDE", sublabel: "Best case growth", color: "#34d399" },
   { id: "downside", label: "DOWNSIDE", sublabel: "Conservative outlook", color: "#fbbf24" },
-  { id: "extreme", label: "EXTREME", sublabel: "Stress test scenario", color: "#ef4444" },
+  { id: "stress", label: "STRESS", sublabel: "Stress test scenario", color: "#ef4444" },
 ];
 
 const ICONS: Record<ScenarioId, React.ReactNode> = {

@@ -609,7 +609,7 @@ export default function KPIConsole() {
                             cfg.id === "arrGrowth"
                               ? `Δ ARR ${kpiValues?.arrDelta?.display ?? "—"}`
                               : cfg.id === "value"
-                                ? `Growth Quality: ${kpiValues?.cacQuality?.display ?? "—"}`
+                                ? `Quality: ${kpiValues?.qualityBand?.display ?? kpiValues?.cacQuality?.display ?? "—"}`
                                 : null
                           }
                           state={state}

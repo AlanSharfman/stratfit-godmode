@@ -16,9 +16,9 @@ export const GrowthEfficiencySpider = () => {
 
   if (!kpis) return null;
 
-  // Scenario data (bright)
+  // Scenario data (bright) — uses canonical qualityScore (0-1 scaled to 0-100)
   const data = [
-    { metric: "CAC Quality", value: kpis.cacQuality?.value ?? 0 },
+    { metric: "Quality", value: (kpis.qualityScore?.value ?? 0.5) * 100 },
     { metric: "LTV/CAC", value: Math.min(100, (kpis.ltvCac?.value ?? 0) * 20) },
     { metric: "Payback", value: Math.max(0, 100 - (kpis.cacPayback?.value ?? 0) * 4) },
     { metric: "Margin", value: kpis.earningsPower?.value ?? 0 },
@@ -27,7 +27,7 @@ export const GrowthEfficiencySpider = () => {
 
   // Base data (faint reference)
   const baseData = [
-    { metric: "CAC Quality", value: baseKpis?.cacQuality?.value ?? 0 },
+    { metric: "Quality", value: (baseKpis?.qualityScore?.value ?? 0.5) * 100 },
     { metric: "LTV/CAC", value: Math.min(100, (baseKpis?.ltvCac?.value ?? 0) * 20) },
     { metric: "Payback", value: Math.max(0, 100 - (baseKpis?.cacPayback?.value ?? 0) * 4) },
     { metric: "Margin", value: baseKpis?.earningsPower?.value ?? 0 },

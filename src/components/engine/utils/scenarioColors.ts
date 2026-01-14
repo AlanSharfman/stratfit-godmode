@@ -12,7 +12,7 @@ export function getScenarioColor(scenario: string) {
           main: "#ff4d4d",
         };
   
-      case "extreme":
+      case "stress":
         return {
           glow: "rgba(255,0,255,0.55)",
           main: "#ff00ff",

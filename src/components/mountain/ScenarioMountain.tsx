@@ -351,7 +351,7 @@ function AtmosphericHaze({ riskLevel, viewMode, scenario }: AtmosphericHazeProps
   const riskFactor = clamp01(riskLevel / 100);
   const viewFactor = viewMode === "investor" ? 0.7 : 1.0;
   
-  const scenarioTone = scenario === "extreme" ? 1.2 : 
+  const scenarioTone = scenario === "stress" ? 1.2 : 
                        scenario === "downside" ? 1.1 : 
                        scenario === "upside" ? 0.85 : 1.0;
   
@@ -495,7 +495,9 @@ export default function ScenarioMountain({
   const engineResult = engineResults?.[activeScenarioId];
   const kpiValues = engineResult?.kpis || {};
   
-  const riskLevel = kpiValues.riskIndex?.value ?? 25;
+  // riskLevel = danger score (higher = more dangerous)
+  // riskIndex is health (higher = healthier), so invert it
+  const riskLevel = 100 - (kpiValues.riskIndex?.value ?? 50);
 
   return (
     <div

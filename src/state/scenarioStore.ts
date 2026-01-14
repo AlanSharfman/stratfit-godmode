@@ -20,7 +20,7 @@ import {
 // TYPES
 // ============================================================================
 
-export type ScenarioId = "base" | "upside" | "downside" | "extreme";
+export type ScenarioId = "base" | "upside" | "downside" | "stress";
 export type ViewMode = "operator" | "investor";
 
 export interface EngineResult {
@@ -54,7 +54,7 @@ export const SCENARIO_COLORS: Record<ScenarioId, { primary: string; secondary: s
     secondary: "#f97316",
     glow: "rgba(251, 191, 36, 0.4)",
   },
-  extreme: {
+  stress: {
     primary: "#ef4444",
     secondary: "#fb7185",
     glow: "rgba(239, 68, 68, 0.4)",
@@ -303,7 +303,7 @@ export const useScenarioStore = create<ScenarioStoreState>((set, get) => ({
     base: {} as EngineResult,
     upside: {} as EngineResult,
     downside: {} as EngineResult,
-    extreme: {} as EngineResult,
+    stress: {} as EngineResult,
   },
   setEngineResult: (scenarioId, result) =>
     set((state) => ({
@@ -456,3 +456,44 @@ export const useScenarioColors = () => {
   const scenario = useScenarioStore((s) => s.scenario);
   return SCENARIO_COLORS[scenario];
 };
+
+// ============================================================================
+// DEBUG: Expose store to window for console inspection
+// ============================================================================
+if (typeof window !== "undefined") {
+  // Lazy import to avoid circular dependency
+  const getRiskScore = (er: EngineResult | null | undefined) => {
+    const riskIndex = er?.kpis?.riskIndex?.value ?? 50;
+    return Math.round(100 - riskIndex);
+  };
+
+  const getQualityScore = (er: EngineResult | null | undefined) => {
+    const kpis = er?.kpis;
+    if (!kpis) return 0.5;
+    const normalize = (x: number, min: number, max: number) => Math.max(0, Math.min(1, (x - min) / (max - min)));
+    const ltvCac = kpis.ltvCac?.value ?? 3;
+    const cacPayback = kpis.cacPayback?.value ?? 18;
+    const earningsPower = kpis.earningsPower?.value ?? 50;
+    const burnQuality = kpis.burnQuality?.value ?? 50;
+    return Math.round((
+      0.35 * normalize(ltvCac, 2, 6) +
+      0.25 * (1 - normalize(cacPayback, 6, 36)) +
+      0.25 * normalize(earningsPower, 20, 80) +
+      0.15 * normalize(burnQuality, 20, 80)
+    ) * 100) / 100;
+  };
+
+  (window as any).__STRATFIT__ = {
+    scenarioStore: useScenarioStore,
+    get engineResults() {
+      return useScenarioStore.getState().engineResults;
+    },
+    getRiskScore,
+    getQualityScore,
+  };
+  // Shortcut for quick console access
+  Object.defineProperty(window, "engineResults", {
+    get: () => useScenarioStore.getState().engineResults,
+    configurable: true,
+  });
+}

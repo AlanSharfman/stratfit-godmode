@@ -2,7 +2,7 @@
 // STRATFIT — Strategic Questions (OpenAI-backed, STRICT JSON)
 // UI-only layer: no engine math changes. Deterministic answers remain the fallback.
 
-export type ScenarioLabel = "base" | "upside" | "downside" | "extreme";
+export type ScenarioLabel = "base" | "upside" | "downside" | "stress";
 export type DeltaDir = "up" | "down" | "flat";
 
 export type StrategicQuestionId =
@@ -192,7 +192,7 @@ export async function askStrategicQuestionsOpenAI(args: {
     properties: {
       version: { type: "string", enum: ["1.0"] },
       scenarioId: { type: "string" },
-      scenarioLabel: { type: "string", enum: ["base", "upside", "downside", "extreme"] },
+      scenarioLabel: { type: "string", enum: ["base", "upside", "downside", "stress"] },
       compareToBase: { type: "boolean" },
       items: {
         type: "array",

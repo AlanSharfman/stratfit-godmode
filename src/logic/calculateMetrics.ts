@@ -23,10 +23,10 @@ export interface MetricsResult {
   enterpriseValue: number;
 }
 
-export type ScenarioId = "base" | "upside" | "downside" | "extreme";
+export type ScenarioId = "base" | "upside" | "downside" | "stress";
 
 export function calculateMetrics(levers: LeverState, scenario: ScenarioId): MetricsResult {
-  const mult = scenario === "upside" ? 1.15 : scenario === "downside" ? 0.85 : scenario === "extreme" ? 0.70 : 1;
+  const mult = scenario === "upside" ? 1.15 : scenario === "downside" ? 0.85 : scenario === "stress" ? 0.70 : 1;
 
   // Growth factors
   const demand = levers.demandStrength / 100;

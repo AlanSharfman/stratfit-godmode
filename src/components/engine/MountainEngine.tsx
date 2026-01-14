@@ -23,7 +23,7 @@ import { generateSplinePoints } from "./utils/splineMath";
 interface MountainEngineProps {
   dataPoints: number[];
   activeKPIIndex: number | null;
-  scenario: "base" | "upside" | "downside" | "extreme";
+  scenario: "base" | "upside" | "downside" | "stress";
   growthStress?: number; // 0 = great growth, 1 = terrible (shows cracks)
 }
 
@@ -273,7 +273,9 @@ export default function MountainEngine({
       if (solverPath.length > 1) {
         const pathPoints = solverPath.map((step, i) => {
           // Map risk (0-100) to X position (right to left - low risk = right)
-          const x = width - (step.riskIndex / 100) * width * 0.8 - width * 0.1;
+          // riskIndex is health (higher = healthier), convert to danger score
+          const riskScore = 100 - step.riskIndex;
+          const x = width - (riskScore / 100) * width * 0.8 - width * 0.1;
           
           // Map enterprise value to Y position (higher value = higher on screen = lower Y)
           // Normalize enterprise value: assume max ~$150M for visualization
