@@ -5,7 +5,8 @@
 import React, { useMemo, useEffect, useRef, useState } from "react";
 import { useScenarioStore, ViewMode } from "@/state/scenarioStore";
 import type { ScenarioId } from "@/state/scenarioStore";
-import { calculateMetrics, LeverState } from "@/logic/calculateMetrics";
+import { LeverState } from "@/logic/calculateMetrics";
+import { buildScenarioDeltaLedger } from "@/logic/scenarioDeltaLedger";
 import { Activity, MessageCircle, FileText, ChevronDown } from "lucide-react";
 import styles from "./AIIntelligenceEnhanced.module.css";
 
@@ -61,155 +62,168 @@ const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 // ============================================================================
 
 function generateInsights(
-  levers: LeverState,
-  scenario: ScenarioId,
-  viewMode: ViewMode
-): AIInsights {
-  const metrics = calculateMetrics(levers, scenario);
-  const baselineMetrics = calculateMetrics(
-    {
-      demandStrength: 60,
-      pricingPower: 50,
-      expansionVelocity: 45,
-      costDiscipline: 55,
-      hiringIntensity: 40,
-      operatingDrag: 35,
-      marketVolatility: 30,
-      executionRisk: 25,
-      fundingPressure: 20,
-    },
-    "base"
-  );
+    levers: LeverState,
+    scenario: ScenarioId,
+    viewMode: ViewMode,
+    ledger: any // we'll keep 'any' for now to avoid importing types; optional improvement later
+  ): AIInsights | null {
+    if (!ledger) return null;
 
-  // Compute deltas from baseline
-  const runwayDelta = metrics.runway - baselineMetrics.runway;
-  const momentumDelta = metrics.momentum - baselineMetrics.momentum;
-  // riskScore = danger (higher = worse), computed from riskIndex (health, higher = better)
-  const riskScore = 100 - metrics.riskIndex;
-  const baseRiskScore = 100 - baselineMetrics.riskIndex;
-  const riskDelta = riskScore - baseRiskScore;
-  const burnDelta = metrics.burnQuality - baselineMetrics.burnQuality;
+    // --- null-safe helpers ---
+    const n = (x: unknown, fallback = 0) => (typeof x === "number" && Number.isFinite(x) ? x : fallback);
+    const nn = (x: unknown) => (typeof x === "number" && Number.isFinite(x) ? x : null);
+    const fmtSigned = (x: number, decimals = 0) => `${x >= 0 ? "+" : ""}${x.toFixed(decimals)}`;
 
-  // Derive dynamic observation text based on current state
-  const runwayBand = metrics.runway >= 18 ? 'strong' : metrics.runway >= 12 ? 'adequate' : 'constrained';
-  const growthSignal = momentumDelta >= 5 ? 'accelerating' : momentumDelta <= -5 ? 'contracting' : 'stable';
-  // Higher riskScore = more dangerous
-  const riskPosture = riskScore >= 60 ? 'elevated' : riskScore >= 40 ? 'moderate' : 'contained';
-  
-  const observation = [
-    `Runway posture is ${runwayBand} at ${Math.round(metrics.runway)} months${runwayDelta !== 0 ? ` (${runwayDelta > 0 ? '+' : ''}${Math.round(runwayDelta)} vs baseline)` : ''}.`,
-    `Growth momentum is ${growthSignal} with current lever configuration.`,
-    riskPosture !== 'contained' ? `Risk exposure is ${riskPosture} and warrants attention.` : `Risk exposure remains contained under current assumptions.`,
-  ].join(' ');
+    // Example: runway
+    const runway = nn(ledger.runwayMonths?.scenario);
+    const runwayDelta = n(ledger.runwayMonths?.delta, 0);
+    // Example: ARR
+    const arr12 = nn(ledger.arr12?.scenario);
+    const arr12Delta = n(ledger.arr12?.delta, 0);
+    // Example: Growth
+    const arrGrowthPct = nn(ledger.arrGrowthPct?.scenario);
+    const arrGrowthDelta = n(ledger.arrGrowthPct?.delta, 0);
+    // Example: Risk
+    const riskScore = nn(ledger.riskScore?.scenario);
+    const riskScoreDelta = n(ledger.riskScore?.delta, 0);
+    // Example: Quality
+    const qualityScore = nn(ledger.qualityScore?.scenario);
+    const qualityScoreDelta = n(ledger.qualityScore?.delta, 0);
 
-  // Derive system state from metrics
-  const financialStrain = Math.min(100, Math.max(0, 100 - metrics.runway * 4));
-  const operationalStrain = Math.min(100, Math.max(0, levers.hiringIntensity * 0.6 + levers.operatingDrag * 0.4));
-  const executionStrain = Math.min(100, Math.max(0, levers.executionRisk * 0.7 + levers.marketVolatility * 0.3));
+    // Derive dynamic observation text based on current state
+    const runwayVal = runway ?? 0;
+    const runwayBand = runwayVal >= 18 ? "strong" : runwayVal >= 12 ? "adequate" : "constrained";
+    const growthSignal = arrGrowthDelta >= 5 ? "accelerating" : arrGrowthDelta <= -5 ? "contracting" : "stable";
+    const riskPosture = (riskScore ?? 0) >= 60 ? "elevated" : (riskScore ?? 0) >= 40 ? "moderate" : "contained";
 
-  const getStatus = (strain: number): 'STABLE' | 'ELEVATED' | 'CRITICAL' => {
-    if (strain >= 65) return 'CRITICAL';
-    if (strain >= 40) return 'ELEVATED';
-    return 'STABLE';
-  };
+    const observation = [
+      `Runway posture is ${runwayBand} at ${Math.round(runwayVal)} months${
+        runwayDelta !== 0 ? ` (${runwayDelta > 0 ? "+" : ""}${Math.round(runwayDelta)} vs base)` : ""
+      }.`,
+      `Growth momentum is ${growthSignal} with current lever configuration.`,
+      riskPosture !== "contained"
+        ? `Risk exposure is ${riskPosture} and warrants attention.`
+        : `Risk exposure remains contained under current assumptions.`,
+    ].join(" ");
 
-  const systemState = [
-    { label: 'FINANCIAL', status: getStatus(financialStrain), strain: Math.round(financialStrain) },
-    { label: 'OPERATIONAL', status: getStatus(operationalStrain), strain: Math.round(operationalStrain) },
-    { label: 'EXECUTION', status: getStatus(executionStrain), strain: Math.round(executionStrain) },
-  ];
+    // Derive system state from ledger + levers
+    const financialStrain = Math.min(100, Math.max(0, 100 - runwayVal * 4));
+    const operationalStrain = Math.min(
+      100,
+      Math.max(0, n((levers as any).hiringIntensity, 0) * 0.6 + n((levers as any).operatingDrag, 0) * 0.4)
+    );
+    const executionStrain = Math.min(
+      100,
+      Math.max(0, n((levers as any).executionRisk, 0) * 0.7 + n((levers as any).marketVolatility, 0) * 0.3)
+    );
 
-  // Derive risks based on current lever values
-  const risks: Risk[] = [];
-  
-  if (momentumDelta < -3) {
-    risks.push({
-      severity: momentumDelta < -10 ? 'CRITICAL' : 'HIGH',
-      emoji: momentumDelta < -10 ? '🔴' : '🟠',
-      title: 'ARR growth fragility',
-      driver: `Growth momentum is ${Math.abs(Math.round(momentumDelta))}% below baseline`,
-      impact: 'Revenue trajectory weakens and recovery requires tighter execution',
-    });
+    const getStatus = (strain: number): "STABLE" | "ELEVATED" | "CRITICAL" => {
+      if (strain >= 65) return "CRITICAL";
+      if (strain >= 40) return "ELEVATED";
+      return "STABLE";
+    };
+
+    const systemState = [
+      { label: "FINANCIAL", status: getStatus(financialStrain), strain: Math.round(financialStrain) },
+      { label: "OPERATIONAL", status: getStatus(operationalStrain), strain: Math.round(operationalStrain) },
+      { label: "EXECUTION", status: getStatus(executionStrain), strain: Math.round(executionStrain) },
+    ];
+
+    // Derive risks based on current ledger values
+    const risks: Risk[] = [];
+    if (arrGrowthDelta < -3) {
+      risks.push({
+        severity: arrGrowthDelta < -10 ? "CRITICAL" : "HIGH",
+        emoji: arrGrowthDelta < -10 ? "🔴" : "🟠",
+        title: "ARR growth fragility",
+        driver: `Growth momentum is ${Math.abs(Math.round(arrGrowthDelta))}% below base`,
+        impact: "Revenue trajectory weakens and recovery requires tighter execution",
+      });
+    }
+    if (n((levers as any).costDiscipline, 100) < 45) {
+      const cd = n((levers as any).costDiscipline, 100);
+      risks.push({
+        severity: cd < 30 ? "CRITICAL" : "HIGH",
+        emoji: cd < 30 ? "🔴" : "🟠",
+        title: "Burn rate pressure",
+        driver: `Cost discipline at ${Math.round(cd)}% is below optimal threshold`,
+        impact: "Runway compression accelerates without corrective action",
+      });
+    }
+    if ((riskScore ?? 0) > 55) {
+      risks.push({
+        severity: (riskScore ?? 0) > 70 ? "CRITICAL" : "MODERATE",
+        emoji: (riskScore ?? 0) > 70 ? "🔴" : "🟡",
+        title: "Elevated risk exposure",
+        driver: `Risk score at ${Math.round(riskScore ?? 0)}/100`,
+        impact: "Scenario volatility increases investor concern",
+      });
+    }
+    if (risks.length === 0) {
+      risks.push({
+        severity: "LOW",
+        emoji: "🟢",
+        title: "Risk posture stable",
+        driver: "Current lever configuration within acceptable bounds",
+        impact: "Continue monitoring for early signals of drift",
+      });
+    }
+
+    // Derive recommended actions based on current state
+    const actions: Action[] = [];
+    if (n((levers as any).hiringIntensity, 0) > 50) {
+      const hi = n((levers as any).hiringIntensity, 0);
+      actions.push({
+        priority: actions.length + 1,
+        title: "Phase hiring into milestone-driven stages",
+        impact: `Reduce hiring intensity from ${Math.round(hi)}% to extend runway`,
+      });
+    }
+    if (n((levers as any).operatingDrag, 0) > 40) {
+      const od = n((levers as any).operatingDrag, 0);
+      actions.push({
+        priority: actions.length + 1,
+        title: "Initiate operational efficiency review",
+        impact: `Target ${Math.round(od * 0.3)}% OpEx optimization`,
+      });
+    }
+    if (n((levers as any).demandStrength, 100) < 50) {
+      actions.push({
+        priority: actions.length + 1,
+        title: "Accelerate demand generation initiatives",
+        impact: "Strengthen pipeline to improve revenue trajectory",
+      });
+    }
+    if (actions.length === 0) {
+      actions.push({
+        priority: 1,
+        title: "Maintain current trajectory",
+        impact: "Lever configuration supports stable execution path",
+      });
+    }
+
+    // Metrics display (null-safe)
+    const runwayDisp = `${Math.round(runwayVal)}mo`;
+    const arr12Disp = arr12 == null ? "—" : `$${arr12.toFixed(1)}M`;
+    const growthDisp = arrGrowthPct == null ? "—" : `${arrGrowthPct.toFixed(1)}%`;
+    const riskDisp = riskScore == null ? "—" : `${riskScore.toFixed(1)}`;
+    const qualDisp = qualityScore == null ? "—" : `${qualityScore.toFixed(1)}`;
+
+    return {
+      observation,
+      metrics: [
+        { label: "RUNWAY", value: runwayDisp, change: `${fmtSigned(runwayDelta, 0)}mo`, trend: runwayDelta > 0 ? "up" : runwayDelta < 0 ? "down" : "neutral" },
+        { label: "ARR12", value: arr12Disp, change: fmtSigned(arr12Delta, 1) + "M", trend: arr12Delta > 0 ? "up" : arr12Delta < 0 ? "down" : "neutral" },
+        { label: "GROWTH", value: growthDisp, change: fmtSigned(arrGrowthDelta, 1) + "%", trend: arrGrowthDelta > 0 ? "up" : arrGrowthDelta < 0 ? "down" : "neutral" },
+        { label: "RISK", value: riskDisp, change: fmtSigned(riskScoreDelta, 1), trend: riskScoreDelta > 0 ? "up" : riskScoreDelta < 0 ? "down" : "neutral" },
+        { label: "QUALITY", value: qualDisp, change: fmtSigned(qualityScoreDelta, 1), trend: qualityScoreDelta > 0 ? "up" : qualityScoreDelta < 0 ? "down" : "neutral" },
+      ],
+      systemState,
+      risks,
+      actions,
+      timestamp: new Date(),
+    };
   }
-  
-  if (levers.costDiscipline < 45) {
-    risks.push({
-      severity: levers.costDiscipline < 30 ? 'CRITICAL' : 'HIGH',
-      emoji: levers.costDiscipline < 30 ? '🔴' : '🟠',
-      title: 'Burn rate pressure',
-      driver: `Cost discipline at ${levers.costDiscipline}% is below optimal threshold`,
-      impact: 'Runway compression accelerates without corrective action',
-    });
-  }
-  
-  if (riskScore > 55) {
-    risks.push({
-      severity: riskScore > 70 ? 'CRITICAL' : 'MODERATE',
-      emoji: riskScore > 70 ? '🔴' : '🟡',
-      title: 'Elevated risk exposure',
-      driver: `Risk score at ${Math.round(riskScore)}/100`,
-      impact: 'Scenario volatility increases investor concern',
-    });
-  }
-
-  if (risks.length === 0) {
-    risks.push({
-      severity: 'LOW',
-      emoji: '🟢',
-      title: 'Risk posture stable',
-      driver: 'Current lever configuration within acceptable bounds',
-      impact: 'Continue monitoring for early signals of drift',
-    });
-  }
-
-  // Derive recommended actions based on current state
-  const actions: Action[] = [];
-  
-  if (levers.hiringIntensity > 50) {
-    actions.push({
-      priority: actions.length + 1,
-      title: 'Phase hiring into milestone-driven stages',
-      impact: `Reduce hiring intensity from ${levers.hiringIntensity}% to extend runway`,
-    });
-  }
-  
-  if (levers.operatingDrag > 40) {
-    actions.push({
-      priority: actions.length + 1,
-      title: 'Initiate operational efficiency review',
-      impact: `Target ${Math.round(levers.operatingDrag * 0.3)}% OpEx optimization`,
-    });
-  }
-  
-  if (levers.demandStrength < 50) {
-    actions.push({
-      priority: actions.length + 1,
-      title: 'Accelerate demand generation initiatives',
-      impact: 'Strengthen pipeline to improve revenue trajectory',
-    });
-  }
-
-  if (actions.length === 0) {
-    actions.push({
-      priority: 1,
-      title: 'Maintain current trajectory',
-      impact: 'Lever configuration supports stable execution path',
-    });
-  }
-
-  return {
-    observation,
-    metrics: [
-      { label: 'RUNWAY', value: `${Math.round(metrics.runway)}mo`, change: `${runwayDelta >= 0 ? '+' : ''}${Math.round(runwayDelta)}mo`, trend: runwayDelta > 0 ? 'up' : runwayDelta < 0 ? 'down' : 'neutral' },
-      { label: 'CASH', value: `$${(metrics.cashPosition).toFixed(1)}M`, change: `${((metrics.cashPosition - baselineMetrics.cashPosition) / baselineMetrics.cashPosition * 100).toFixed(0)}%`, trend: metrics.cashPosition > baselineMetrics.cashPosition ? 'up' : metrics.cashPosition < baselineMetrics.cashPosition ? 'down' : 'neutral' },
-      { label: 'MOMENTUM', value: `$${(metrics.momentum / 10).toFixed(1)}M`, change: `${momentumDelta >= 0 ? '+' : ''}${Math.round(momentumDelta)}%`, trend: momentumDelta > 0 ? 'up' : momentumDelta < 0 ? 'down' : 'neutral' },
-    ],
-    systemState,
-    risks,
-    actions,
-    timestamp: new Date(),
-  };
-}
 
 // ============================================================================
 // TYPEWRITER HOOK — RESTARTS ON TEXT CHANGE
@@ -261,14 +275,26 @@ export default function AIIntelligenceEnhanced({
   scenario 
 }: AIIntelligenceEnhancedProps) {
   const viewMode = useScenarioStore((s) => s.viewMode);
-  
+
   // CFO Intelligence from engine results
   const cfoSummary = useScenarioStore((s) => (s.engineResults?.[scenario] as any)?.ai?.summary);
-  
+
+  // Canonical engineResults and ledger wiring (with hooks)
+  const engineResults = useScenarioStore((s) => s.engineResults);
+  const ledger = useMemo(() => {
+    return buildScenarioDeltaLedger({
+      engineResults,
+      activeScenario: scenario,
+    });
+  }, [engineResults, scenario]);
+
   const insights = useMemo(
-    () => generateInsights(levers, scenario, viewMode),
-    [levers, scenario, viewMode]
+    () => generateInsights(levers, scenario, viewMode, ledger),
+    [levers, scenario, viewMode, ledger]
   );
+
+  // Guard if insights is null
+  if (!insights) return null;
 
   // LIVE UPDATE SIGNAL (sliders): `levers` prop updates on every slider move
   const leverSignal = useMemo(() => JSON.stringify(levers), [levers]);
