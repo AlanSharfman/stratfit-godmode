@@ -3,7 +3,7 @@
 // Safe defaults: missing inputs are tolerated.
 // PHASE 1E: Risk + Quality use canonical truth selectors.
 
-import { getRiskScore, getQualityScore } from "@/lib/truth/truthSelectors";
+import { getRiskScore } from "@/lib/truth/truthSelectors";
 
 export type SpiderAxisKey =
   | "growth_quality"
@@ -50,7 +50,6 @@ export type ScenarioMetrics = Partial<{
   burnQuality: number;    // proxy for burn discipline
 }>;
 
-const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
 const clamp100 = (x: number) => Math.max(0, Math.min(100, x));
 
 /**
@@ -92,125 +91,72 @@ export function cacQualityBand(m: ScenarioMetrics): TrafficLight {
 }
 
 export function buildSpiderAxes(m: ScenarioMetrics): SpiderAxis[] {
-  // A) Growth Quality
+  // ---------------------------------------------------------------------------
+  // PHASE 1E — CFO Truth Curves (0–100 fitness)
+  // Inputs:
+  // - m.arrGrowthPct is PERCENT POINTS (e.g. -10.2, 16, 35)  ✅ ensured in ScenarioDeltaSnapshot.tsx
+  // - m.arrNext12 is forward ARR ($)
+  // - m.burnQuality, m.earningsPower are 0–100 proxies (as per your engine kpis)
+  // - m.riskIndex is HEALTH (higher = better); canonical riskScore = 100 - riskIndex (higher = worse)
+  // ---------------------------------------------------------------------------
+
+  // 1) ARR Growth (fitness increases as growth increases)
   const arrGrowth = Number.isFinite(m.arrGrowthPct) ? (m.arrGrowthPct as number) : NaN;
-  const gm = Number.isFinite(m.grossMarginPct) ? (m.grossMarginPct as number) : NaN;
-
-  const growthScore = clamp100(
-    0.7 * scoreCurve(arrGrowth, [
-      [0, 0],
-      [15, 35],
-      [30, 70],
-      [50, 100],
-    ]) +
-      0.3 * scoreCurve(gm, [
-        [40, 0],
-        [55, 35],
-        [70, 70],
-        [80, 100],
-      ])
-  );
-
-  // B) Unit Economics
-  const ltvCac = Number.isFinite(m.ltvToCac) ? (m.ltvToCac as number) : NaN;
-  const payback = Number.isFinite(m.cacPaybackMonths) ? (m.cacPaybackMonths as number) : NaN;
-
-  const unitScore = clamp100(
-    0.6 * scoreCurve(ltvCac, [
-      [1, 0],
-      [2, 25],
-      [3, 55],
-      [4, 80],
-      [5, 100],
-    ]) +
-      0.4 * scoreCurve(payback, [
-        [30, 0],
-        [18, 40],
-        [12, 75],
-        [6, 100],
-      ])
-  );
-
-  // C) Capital Efficiency
-  const burnMultiple = Number.isFinite(m.burnMultiple) ? (m.burnMultiple as number) : NaN;
-  const burnToArr = Number.isFinite(m.burnToArrPct) ? (m.burnToArrPct as number) : NaN;
-
-  // prefer burnMultiple; fallback to burnToArr; else 50
-  let capEffScore = 50;
-  if (Number.isFinite(burnMultiple)) {
-    // lower burn multiple is better
-    capEffScore = scoreCurve(burnMultiple, [
-      [4.0, 0],
-      [3.0, 25],
-      [2.0, 60],
-      [1.5, 80],
-      [1.0, 100],
-    ]);
-  } else if (Number.isFinite(burnToArr)) {
-    capEffScore = scoreCurve(burnToArr, [
-      [80, 0],
-      [60, 25],
-      [40, 60],
-      [25, 80],
-      [15, 100],
-    ]);
-  }
-
-  // D) Scalability
-  const opLev = Number.isFinite(m.operatingLeveragePct) ? (m.operatingLeveragePct as number) : NaN;
-  const scaleScore = clamp100(
-    0.7 * scoreCurve(gm, [
-      [35, 0],
-      [50, 35],
-      [65, 70],
-      [75, 90],
-      [85, 100],
-    ]) +
-      0.3 * (Number.isFinite(opLev)
-        ? scoreCurve(opLev, [
-            [-10, 0],
-            [0, 40],
-            [10, 70],
-            [20, 90],
-            [30, 100],
-          ])
-        : 70) // if missing leverage, don't punish harshly
-  );
-
-  // E) Risk Posture — USES CANONICAL TRUTH SELECTOR
-  const runway = Number.isFinite(m.runwayMonths) ? (m.runwayMonths as number) : NaN;
-  
-  // Get canonical risk score via truth selector (higher = worse)
-  // If riskIndex provided, use selector; else fallback to legacy riskScore
-  let canonicalRiskScore: number;
-  if (Number.isFinite(m.riskIndex)) {
-    // Use truth selector: getRiskScore expects EngineResult-like shape
-    canonicalRiskScore = getRiskScore({ kpis: { riskIndex: { value: m.riskIndex! } } } as any);
-  } else if (Number.isFinite(m.riskScore)) {
-    canonicalRiskScore = m.riskScore as number;
-  } else {
-    canonicalRiskScore = 50; // neutral fallback
-  }
-
-  // Higher riskScore = worse → lower spider axis score
-  // Curve: 35 safe, 55 caution, 75 danger, 90 severe
-  const riskAxisFromDanger = scoreCurve(canonicalRiskScore, [
-    [35, 100],  // low danger = high score
-    [55, 70],   // moderate danger
-    [75, 35],   // high danger
-    [90, 10],   // severe danger = low score
+  const growthScore = scoreCurve(arrGrowth, [
+    [-20,  5],
+    [  0, 25],
+    [ 10, 55],
+    [ 25, 80],
+    [ 40, 95],
+    [ 60,100],
   ]);
 
-  const riskPostureScore = clamp100(
-    0.55 * scoreCurve(runway, [
-      [3, 0],
-      [6, 25],
-      [12, 65],
-      [18, 85],
-      [24, 100],
-    ]) +
-      0.45 * riskAxisFromDanger
-  );
+  // 2) ARR Scale (forward ARR in $ via arrNext12)
+  const arrScale = Number.isFinite(m.arrNext12) ? (m.arrNext12 as number) : NaN;
+  const unitScore = scoreCurve(arrScale, [
+    [  500000, 15],
+    [ 1000000, 35],
+    [ 3000000, 60],
+    [ 7000000, 80],
+    [15000000, 95],
+    [30000000,100],
+  ]);
+
+  // 3) Burn (proxy: burnQuality; higher = better discipline)
+  const burnQ = Number.isFinite(m.burnQuality) ? (m.burnQuality as number) : NaN;
+  const capEffScore = scoreCurve(burnQ, [
+    [ 10, 10],
+    [ 25, 35],
+    [ 40, 60],
+    [ 55, 80],
+    [ 70, 95],
+    [ 85,100],
+  ]);
+
+  // 4) Gross Margin proxy (earningsPower; higher = better)
+  const earnP = Number.isFinite(m.earningsPower) ? (m.earningsPower as number) : NaN;
+  const scaleScore = scoreCurve(earnP, [
+    [ 10, 10],
+    [ 25, 35],
+    [ 40, 60],
+    [ 55, 80],
+    [ 70, 95],
+    [ 85,100],
+  ]);
+
+  // 5) Risk (canonical): riskIndex is HEALTH; riskScore is DANGER
+  // We convert to fitness: higher danger => lower fitness
+  const riskScoreCanonical = getRiskScore({ kpis: { riskIndex: { value: m.riskIndex } } } as any);
+  const risk = Number.isFinite(riskScoreCanonical) ? riskScoreCanonical : NaN;
+
+  const riskPostureScore = scoreCurve(risk, [
+    [ 20,100], // low danger
+    [ 35, 85],
+    [ 50, 65], // caution
+    [ 65, 40], // danger
+    [ 80, 20], // severe
+    [ 90, 10], // near-failure
+  ]);
 
   const axes: SpiderAxis[] = [
     {
@@ -218,35 +164,35 @@ export function buildSpiderAxes(m: ScenarioMetrics): SpiderAxis[] {
       label: "ARR Growth",
       value: growthScore,
       band: bandForScore(growthScore),
-      explain: "How healthy and sustainable the growth profile is (ARR growth + margin quality).",
+      explain: "YoY ARR growth rate. <0% contraction, 10-25% board-tolerable, 40%+ venture-grade.",
     },
     {
       key: "unit_economics",
       label: "ARR Scale",
       value: unitScore,
       band: bandForScore(unitScore),
-      explain: "Strength of LTV/CAC and speed of CAC payback. Investor-critical.",
+      explain: "Forward ARR (12mo). $500K subscale → $15M+ institutional.",
     },
     {
       key: "capital_efficiency",
       label: "Burn",
       value: capEffScore,
       band: bandForScore(capEffScore),
-      explain: "How expensive growth is. Uses Burn Multiple (or burn/ARR proxy). Lower cost = higher score.",
+      explain: "Burn discipline / capital efficiency. Higher = more disciplined.",
     },
     {
       key: "scalability",
       label: "Gross Margin",
       value: scaleScore,
       band: bandForScore(scaleScore),
-      explain: "Ability to scale profitably (margin + operating leverage proxy).",
+      explain: "Margin quality (earningsPower proxy). Higher = better unit economics.",
     },
     {
       key: "risk_posture",
       label: "Risk",
       value: riskPostureScore,
       band: bandForScore(riskPostureScore),
-      explain: "Survivability and execution safety (runway + risk containment).",
+      explain: "Survival risk (inverted). Higher riskScore → lower spider score.",
     },
   ];
 
