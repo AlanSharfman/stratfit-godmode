@@ -240,19 +240,19 @@ export default function ScenarioDeltaSnapshot() {
       arr: safeNum(src?.kpis?.arrNext12?.value),
       arrNext12: safeNum(src?.kpis?.arrNext12?.value),
       // CRITICAL: arrGrowthPct in engine is ratio (e.g. -0.102), spider expects percent (-10.2)
-      arrGrowthPct: safeNum(src?.kpis?.arrGrowthPct?.value) * 100,
+      arrGrowthPct: safeNum(src?.kpis?.arrGrowthPct?.value) * 100, // ratio → percent
+      riskIndex: safeNum(src?.kpis?.riskIndex?.value),
+      burnQuality: safeNum(src?.kpis?.burnQuality?.value),
+      earningsPower: safeNum(src?.kpis?.earningsPower?.value),
+      ltvCac: safeNum(src?.kpis?.ltvCac?.value),
+      cacPayback: safeNum(src?.kpis?.cacPayback?.value),
+      // For legacy/compatibility
       grossMarginPct: safeNum(src?.kpis?.earningsPower?.value),
       burnRateMonthly: safeNum(src?.kpis?.burnQuality?.value) * 1000,
       runwayMonths: safeNum(src?.kpis?.runway?.value),
-      // Risk: pass riskIndex so spiderFitness can use truth selector
-      riskIndex: safeNum(src?.kpis?.riskIndex?.value),
       riskScore: getRiskScore(src), // legacy fallback
-      // Unit economics for spider axes
       ltvToCac: safeNum(src?.kpis?.ltvCac?.value),
       cacPaybackMonths: safeNum(src?.kpis?.cacPayback?.value),
-      // Quality inputs for truth selector
-      earningsPower: safeNum(src?.kpis?.earningsPower?.value),
-      burnQuality: safeNum(src?.kpis?.burnQuality?.value),
     });
 
     const baseM = build(base);

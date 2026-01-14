@@ -101,7 +101,7 @@ export function buildSpiderAxes(m: ScenarioMetrics): SpiderAxis[] {
   // ---------------------------------------------------------------------------
 
   // 1) ARR Growth (fitness increases as growth increases)
-  const arrGrowth = Number.isFinite(m.arrGrowthPct) ? (m.arrGrowthPct as number) : NaN;
+  const arrGrowth = Number.isFinite(m.arrGrowthPct) ? m.arrGrowthPct : NaN;
   const growthScore = scoreCurve(arrGrowth, [
     [-20,  5],
     [  0, 25],
@@ -112,7 +112,7 @@ export function buildSpiderAxes(m: ScenarioMetrics): SpiderAxis[] {
   ]);
 
   // 2) ARR Scale (forward ARR in $ via arrNext12)
-  const arrScale = Number.isFinite(m.arrNext12) ? (m.arrNext12 as number) : NaN;
+  const arrScale = Number.isFinite(m.arrNext12) ? m.arrNext12 : NaN;
   const unitScore = scoreCurve(arrScale, [
     [  500000, 15],
     [ 1000000, 35],
@@ -123,7 +123,7 @@ export function buildSpiderAxes(m: ScenarioMetrics): SpiderAxis[] {
   ]);
 
   // 3) Burn (proxy: burnQuality; higher = better discipline)
-  const burnQ = Number.isFinite(m.burnQuality) ? (m.burnQuality as number) : NaN;
+  const burnQ = Number.isFinite(m.burnQuality) ? m.burnQuality : NaN;
   const capEffScore = scoreCurve(burnQ, [
     [ 10, 10],
     [ 25, 35],
@@ -134,7 +134,7 @@ export function buildSpiderAxes(m: ScenarioMetrics): SpiderAxis[] {
   ]);
 
   // 4) Gross Margin proxy (earningsPower; higher = better)
-  const earnP = Number.isFinite(m.earningsPower) ? (m.earningsPower as number) : NaN;
+  const earnP = Number.isFinite(m.earningsPower) ? m.earningsPower : NaN;
   const scaleScore = scoreCurve(earnP, [
     [ 10, 10],
     [ 25, 35],
