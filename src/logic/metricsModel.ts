@@ -55,7 +55,7 @@ import type {
       risk: 1.3,
       value: 0.8,
     },
-    extreme: {
+    stress: {
       growth: 0.4,
       runway: 0.5,
       burn: 1.5,

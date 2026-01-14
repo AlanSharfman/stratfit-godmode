@@ -39,7 +39,7 @@ export const DEFAULT_SCENARIO_SETTINGS: ScenarioSettings = {
     base: true,
     upside: true,
     downside: true,
-    extreme: false,
+    stress: false,
   },
   viewMode: "operator",
 };

@@ -30,7 +30,7 @@ const SCENARIO_META: Readonly<
   base: { label: "Base", hint: "Anchor scenario for comparisons.", accent: "cyan" },
   upside: { label: "Upside", hint: "Tailwinds + stronger execution.", accent: "emerald" },
   downside: { label: "Downside", hint: "Headwinds + conservative constraints.", accent: "indigo" },
-  extreme: { label: "Extreme", hint: "Stress test. Rare regime shifts.", accent: "red" },
+  stress: { label: "Stress", hint: "Stress test. Rare regime shifts.", accent: "red" },
 } as const;
 
 function accentRGB(a: "cyan" | "emerald" | "indigo" | "red") {

@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.json",
+  "exclude": [
+    "src/pitch/**",
+    "src/components/compound/variances2/**"
+  ]
+}

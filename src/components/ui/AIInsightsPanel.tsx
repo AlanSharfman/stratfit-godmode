@@ -83,7 +83,7 @@ export default function AIInsightsPanel({ scenario, kpiValues, sliderValues }: A
           "Focus sales on expansion revenue from existing customers. 3x more efficient than new logo acquisition in downturns.",
         ],
       },
-      extreme: {
+      stress: {
         commentary: [
           "CRITICAL: Runway at " + kpiValues.runway + " months. This is a survival scenario requiring immediate executive action.",
           "All non-essential operations must cease. Focus exclusively on core revenue-generating activities and cash preservation.",
@@ -137,7 +137,7 @@ export default function AIInsightsPanel({ scenario, kpiValues, sliderValues }: A
     base: { accent: "#5eead4", glow: "rgba(94, 234, 212, 0.3)" },
     upside: { accent: "#4ade80", glow: "rgba(74, 222, 128, 0.3)" },
     downside: { accent: "#fbbf24", glow: "rgba(251, 191, 36, 0.3)" },
-    extreme: { accent: "#f87171", glow: "rgba(248, 113, 113, 0.4)" },
+    stress: { accent: "#f87171", glow: "rgba(248, 113, 113, 0.4)" },
   };
 
   const style = scenarioStyles[scenario] || scenarioStyles.base;

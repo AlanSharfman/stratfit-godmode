@@ -52,7 +52,6 @@ export const GrowthEfficiencySpider = () => {
 
         {/* Base (faint reference shape) */}
         <Radar
-          data={baseData}
           dataKey="value"
           stroke="rgba(200,200,255,0.5)"
           fill="rgba(200,200,255,0.08)"
@@ -62,7 +61,6 @@ export const GrowthEfficiencySpider = () => {
 
         {/* Scenario (bright animated shape) */}
         <Radar
-          data={data}
           dataKey="value"
           stroke="cyan"
           fill="rgba(80,220,255,0.25)"

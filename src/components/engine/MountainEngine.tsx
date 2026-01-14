@@ -62,7 +62,7 @@ const SCENARIO_THEMES = {
     fill2: "rgba(251, 191, 36, 0.05)",
     scan: "rgba(251, 191, 36, 0.03)",
   },
-  extreme: {
+  stress: {
     bg1: "#1a0a1a",
     bg2: "#2a0f2a",
     back: "rgba(244, 114, 182, 0.3)",

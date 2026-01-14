@@ -10,7 +10,7 @@ import {
   type ScenarioMetrics,
 } from "@/logic/spiderFitness";
 import { TrafficLightPill } from "@/components/charts/mini/TrafficLightPill";
-import { getRiskScore, getQualityScore, getQualityBand } from "@/lib/truth/truthSelectors";
+import { buildScenarioDeltaLedger } from "@/logic/scenarioDeltaLedger";
 import type { TrafficLight } from "@/logic/spiderFitness";
 import styles from "./ScenarioDeltaSnapshot.module.css";
 
@@ -179,24 +179,13 @@ export default function ScenarioDeltaSnapshot() {
 
   const [open, setOpen] = useState(true);
 
-  const baseER = engineResults?.base;
-  const scenER = engineResults?.[activeScenarioId ?? "base"] ?? engineResults?.base;
-
-  const base = baseER;
   const scenarioKey = activeScenarioId ?? "base";
-  const scenario = scenER;
 
-  // Compute scenario quality (truth-locked)
-  const qualityScore = getQualityScore(scenER as any);
-  const qualityBand = getQualityBand(qualityScore);
+  const ledger = useMemo(() => {
+    return buildScenarioDeltaLedger({ engineResults, activeScenario: scenarioKey });
+  }, [engineResults, scenarioKey]);
 
-  // UI label for quality
-  const qualityLabel =
-    qualityBand === "green" ? "QUALITY GREEN" :
-    qualityBand === "yellow" ? "QUALITY WATCH" :
-    "QUALITY RED";
-
-  if (!base || !scenario) return null;
+  if (!ledger) return null;
 
   const metricDefs = useMemo(
     () => [
@@ -213,83 +202,100 @@ export default function ScenarioDeltaSnapshot() {
   );
 
   const rows: DeltaRow[] = useMemo(() => {
-    return metricDefs.map((m) => {
-      // Special case: riskScore uses truth selector (100 - riskIndex)
-      const getValue = (er: typeof base, kpis: typeof base.kpis) => {
-        if (m.key === "riskScore") {
-          return getRiskScore(er); // Truth selector
-        }
-        return safeNum(kpis[m.key]?.value);
-      };
+    // Formatting helpers
+    const fmt = {
+      money: (v: number) => formatUsdCompact(v),
+      percent: (v: number) => `${v.toFixed(1)}%`,
+      int: (v: number) => Math.round(v).toLocaleString(),
+    };
+    if (!ledger) return [];
 
-      const b = getValue(base, base.kpis);
-      const s = getValue(scenario, scenario.kpis);
-      const d = s - b;
+    const arr12Base = ledger.arr12.base;
+    const arr12Sc = ledger.arr12.scenario;
+    const arr12Delta = ledger.arr12.delta;
+    const arr12Pct = ledger.arr12.deltaPct != null ? ledger.arr12.deltaPct * 100 : null;
 
-      const dPct = b !== 0 ? (d / b) * 100 : d === 0 ? 0 : 100;
-      const deltaType = computeDeltaType(m.key, d);
+    const riskBase = ledger.riskScore.base;
+    const riskSc = ledger.riskScore.scenario;
+    const riskDelta = ledger.riskScore.delta;
 
-      return {
-        metric: m.label,
-        base: m.fmt(b),
-        scenario: m.fmt(s),
-        delta:
-          m.key === "grossMargin"
-            ? `${d > 0 ? "+" : ""}${d.toFixed(1)}pp`
-            : m.key === "runway"
-              ? `${d > 0 ? "+" : ""}${Math.round(d)} mo`
-              : m.fmt(d),
-        deltaPct: pct(dPct),
-        deltaType,
-        commentary: getVarianceCommentary(m.label, deltaType, pct(dPct), scenarioKey),
-      };
-    });
-  }, [base, scenario, metricDefs, scenarioKey]);
+    const runwayBase = ledger.runwayMonths.base;
+    const runwaySc = ledger.runwayMonths.scenario;
+    const runwayDelta = ledger.runwayMonths.delta;
 
-  // Build BOTH base + scenario axes (so the radar tells the truth visually)
-  // PHASE 1E: All spider inputs use truth selectors
-  const spiderData = useMemo(() => {
-    const build = (src: any): ScenarioMetrics => ({
-      // ARR Scale uses arrNext12 (forward-looking, matches delta table)
-      arr: safeNum(src?.kpis?.arrNext12?.value),
-      arrNext12: safeNum(src?.kpis?.arrNext12?.value),
-      // CRITICAL: arrGrowthPct in engine is ratio (e.g. -0.102), spider expects percent (-10.2)
-      arrGrowthPct: safeNum(src?.kpis?.arrGrowthPct?.value) * 100, // ratio → percent
-      riskIndex: safeNum(src?.kpis?.riskIndex?.value),
-      burnQuality: safeNum(src?.kpis?.burnQuality?.value),
-      earningsPower: safeNum(src?.kpis?.earningsPower?.value),
-      ltvCac: safeNum(src?.kpis?.ltvCac?.value),
-      cacPayback: safeNum(src?.kpis?.cacPayback?.value),
-      // For legacy/compatibility
-      grossMarginPct: safeNum(src?.kpis?.earningsPower?.value),
-      burnRateMonthly: safeNum(src?.kpis?.burnQuality?.value) * 1000,
-      runwayMonths: safeNum(src?.kpis?.runway?.value),
-      riskScore: getRiskScore(src), // legacy fallback
-      ltvToCac: safeNum(src?.kpis?.ltvCac?.value),
-      cacPaybackMonths: safeNum(src?.kpis?.cacPayback?.value),
-    });
+    const gBase = ledger.arrGrowthPct.base;
+    const gSc = ledger.arrGrowthPct.scenario;
+    const gDelta = ledger.arrGrowthPct.delta;
 
-    const baseM = build(base);
-    const scenM = build(scenario);
+    const qBandBase = ledger.qualityBand.base;
+    const qBandSc = ledger.qualityBand.scenario;
 
-    const baseAxes = buildSpiderAxes(baseM);
-    const scenarioAxes = buildSpiderAxes(scenM);
-    
-    // Quality uses truth selector: getQualityScore + getQualityBand
-    const qScore = getQualityScore(scenario);
-    const qBand = getQualityBand(qScore);
+    const dt = (d: number): DeltaRow["deltaType"] =>
+      Math.abs(d) < 1e-9 ? "neutral" : d > 0 ? "positive" : "negative";
 
-    return { baseAxes, scenarioAxes, qScore, qBand };
-  }, [base, scenario]);
+    return [
+      {
+        metric: "ARR 12m",
+        base: fmt.money(arr12Base),
+        scenario: fmt.money(arr12Sc),
+        delta: fmt.money(arr12Delta),
+        deltaPct: arr12Pct == null ? "" : fmt.percent(arr12Pct),
+        deltaType: dt(arr12Delta),
+        commentary: "ARR impact is the primary scale driver.",
+      },
+      {
+        metric: "ARR Growth",
+        base: fmt.percent(gBase),
+        scenario: fmt.percent(gSc),
+        delta: fmt.percent(gDelta),
+        deltaPct: "",
+        deltaType: dt(gDelta),
+        commentary: "Growth trajectory change.",
+      },
+      {
+        metric: "Runway (months)",
+        base: fmt.int(runwayBase),
+        scenario: fmt.int(runwaySc),
+        delta: fmt.int(runwayDelta),
+        deltaPct: "",
+        deltaType: dt(runwayDelta),
+        commentary: "Runway impact reflects survival window.",
+      },
+      {
+        metric: "RiskScore",
+        base: fmt.int(riskBase),
+        scenario: fmt.int(riskSc),
+        delta: fmt.int(riskDelta),
+        deltaPct: "",
+        deltaType: dt(riskDelta),
+        commentary: "RiskScore shift indicates fragility.",
+      },
+      {
+        metric: "Quality Band",
+        base: qBandBase,
+        scenario: qBandSc,
+        delta: qBandBase === qBandSc ? "—" : `${qBandBase} → ${qBandSc}`,
+        deltaPct: "",
+        deltaType: qBandBase === qBandSc ? "neutral" : "negative",
+        commentary: "Structural quality change.",
+      },
+    ];
+  }, [ledger]);
 
-  const topMoves = useMemo(() => {
-    // Pick the 3 most material % moves (ignoring neutral)
-    const ranked = [...rows]
-      .filter((r) => r.deltaType !== "neutral")
-      .sort((a, b) => Math.abs(parseFloat(b.deltaPct)) - Math.abs(parseFloat(a.deltaPct)));
+    // PATCH 3: Define topMoves after rows
+    const topMoves = useMemo(() => {
+      const scored = rows.map((r) => {
+        const pct = Number(r.deltaPct);
+        const hasPct = Number.isFinite(pct) && r.deltaPct !== "";
+        const score = hasPct ? Math.abs(pct) : Math.abs(Number(r.delta) || 0);
+        return { r, score };
+      });
 
-    return ranked.slice(0, 3);
-  }, [rows]);
+      return scored
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 3)
+        .map(({ r }) => r);
+    }, [rows]);
 
   return (
     <div className={styles.wrap}>
@@ -317,9 +323,9 @@ export default function ScenarioDeltaSnapshot() {
                   <div className={styles.cardHint}>Base posture vs active scenario posture (truth)</div>
                 </div>
                 <TrafficLightPill 
-                  label={qualityLabel}
-                  band={toTrafficLight(qualityBand)}
-                  valueText={qualityLabel.replace("QUALITY ", "")}
+                  label={`QUALITY ${qualityBandLabel(ledger.qualityBand.scenario as any)}`}
+                  band={toTrafficLight(ledger.qualityBand.scenario as any)}
+                  valueText={qualityBandLabel(ledger.qualityBand.scenario as any)}
                 />
               </div>
 
@@ -328,8 +334,8 @@ export default function ScenarioDeltaSnapshot() {
                   <div className={styles.radarStage}>
                     <SpiderRadar
                       title=""
-                      base={spiderData.baseAxes}
-                      scenario={spiderData.scenarioAxes}
+                      base={[]}
+                      scenario={[]}
                       note=""
                     />
                   </div>
@@ -370,7 +376,7 @@ export default function ScenarioDeltaSnapshot() {
                   </div>
 
                   <p className={styles.briefP} style={{ marginTop: 12, marginBottom: 0 }}>
-                    Quality score: <b>{Math.round(spiderData.qScore * 100)}%</b> — reflects LTV/CAC, payback, 
+                    {/* Quality score: <b>{Math.round(spiderData.qScore * 100)}%</b> — reflects LTV/CAC, payback, */}
                     margin, and burn discipline (canonical formula).
                   </p>
                 </div>

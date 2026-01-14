@@ -14,7 +14,7 @@ import { useState, useEffect, useRef } from "react";
 export function useDebouncedValue<T>(value: T, delay: number = 150): [T, T] {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
   const rafRef = useRef<number | null>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     // Cancel any pending updates

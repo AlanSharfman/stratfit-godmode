@@ -135,7 +135,7 @@ function projectStrategy(
   step: number = 3
 ): TimelinePoint[] {
   const projections: TimelinePoint[] = [];
-  const state = { ...levers };
+  const state = { ...levers, fundingPressure: 0 };
   
   // Initialize cash position (default $3M if not set)
   let cash = 3_000_000;

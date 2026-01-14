@@ -263,7 +263,7 @@ export default function AIIntelligenceEnhanced({
   const viewMode = useScenarioStore((s) => s.viewMode);
   
   // CFO Intelligence from engine results
-  const cfoSummary = useScenarioStore((s) => s.engineResults?.[scenario]?.ai?.summary);
+  const cfoSummary = useScenarioStore((s) => (s.engineResults?.[scenario] as any)?.ai?.summary);
   
   const insights = useMemo(
     () => generateInsights(levers, scenario, viewMode),
