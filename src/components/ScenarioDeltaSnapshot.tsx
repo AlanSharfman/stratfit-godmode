@@ -10,8 +10,7 @@ import {
   type ScenarioMetrics,
 } from "@/logic/spiderFitness";
 import { TrafficLightPill } from "@/components/charts/mini/TrafficLightPill";
-import { getRiskScoreFromKpis } from "@/logic/riskScore";
-import { getQualityScore, getQualityBand } from "@/lib/truth/truthSelectors";
+import { getRiskScore, getQualityScore, getQualityBand } from "@/lib/truth/truthSelectors";
 import type { TrafficLight } from "@/logic/spiderFitness";
 import styles from "./ScenarioDeltaSnapshot.module.css";
 
@@ -201,16 +200,16 @@ export default function ScenarioDeltaSnapshot() {
 
   const rows: DeltaRow[] = useMemo(() => {
     return metricDefs.map((m) => {
-      // Special case: riskScore is computed from riskIndex (100 - riskIndex)
-      const getValue = (kpis: typeof base.kpis) => {
+      // Special case: riskScore uses truth selector (100 - riskIndex)
+      const getValue = (er: typeof base, kpis: typeof base.kpis) => {
         if (m.key === "riskScore") {
-          return getRiskScoreFromKpis(kpis);
+          return getRiskScore(er); // Truth selector
         }
         return safeNum(kpis[m.key]?.value);
       };
 
-      const b = getValue(base.kpis);
-      const s = getValue(scenario.kpis);
+      const b = getValue(base, base.kpis);
+      const s = getValue(scenario, scenario.kpis);
       const d = s - b;
 
       const dPct = b !== 0 ? (d / b) * 100 : d === 0 ? 0 : 100;
@@ -234,16 +233,26 @@ export default function ScenarioDeltaSnapshot() {
   }, [base, scenario, metricDefs, scenarioKey]);
 
   // Build BOTH base + scenario axes (so the radar tells the truth visually)
+  // PHASE 1E: All spider inputs use truth selectors
   const spiderData = useMemo(() => {
     const build = (src: any): ScenarioMetrics => ({
-      arr: safeNum(src?.kpis?.arrCurrent?.value),
-      arrGrowthPct: safeNum(src?.kpis?.arrGrowthPct?.value),
+      // ARR Scale uses arrNext12 (forward-looking, matches delta table)
+      arr: safeNum(src?.kpis?.arrNext12?.value),
+      arrNext12: safeNum(src?.kpis?.arrNext12?.value),
+      // CRITICAL: arrGrowthPct in engine is ratio (e.g. -0.102), spider expects percent (-10.2)
+      arrGrowthPct: safeNum(src?.kpis?.arrGrowthPct?.value) * 100,
       grossMarginPct: safeNum(src?.kpis?.earningsPower?.value),
       burnRateMonthly: safeNum(src?.kpis?.burnQuality?.value) * 1000,
       runwayMonths: safeNum(src?.kpis?.runway?.value),
-      riskScore: getRiskScoreFromKpis(src?.kpis), // 100 - riskIndex (higher = more dangerous)
+      // Risk: pass riskIndex so spiderFitness can use truth selector
+      riskIndex: safeNum(src?.kpis?.riskIndex?.value),
+      riskScore: getRiskScore(src), // legacy fallback
+      // Unit economics for spider axes
       ltvToCac: safeNum(src?.kpis?.ltvCac?.value),
       cacPaybackMonths: safeNum(src?.kpis?.cacPayback?.value),
+      // Quality inputs for truth selector
+      earningsPower: safeNum(src?.kpis?.earningsPower?.value),
+      burnQuality: safeNum(src?.kpis?.burnQuality?.value),
     });
 
     const baseM = build(base);
@@ -252,7 +261,7 @@ export default function ScenarioDeltaSnapshot() {
     const baseAxes = buildSpiderAxes(baseM);
     const scenarioAxes = buildSpiderAxes(scenM);
     
-    // Use canonical truth selectors — no component invents quality
+    // Quality uses truth selector: getQualityScore + getQualityBand
     const qScore = getQualityScore(scenario);
     const qBand = getQualityBand(qScore);
 

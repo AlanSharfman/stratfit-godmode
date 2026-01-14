@@ -1,6 +1,9 @@
 // src/logic/spiderFitness.ts
 // STRATFIT — Spider 2.0 (Strategic Fitness Profile) 0–100
 // Safe defaults: missing inputs are tolerated.
+// PHASE 1E: Risk + Quality use canonical truth selectors.
+
+import { getRiskScore, getQualityScore } from "@/lib/truth/truthSelectors";
 
 export type SpiderAxisKey =
   | "growth_quality"
@@ -24,10 +27,12 @@ export type ScenarioMetrics = Partial<{
   revenue: number;
   arr: number;
   arrGrowthPct: number; // 0–100+ (e.g. 16 means +16%)
+  arrNext12: number;    // forward-looking ARR ($ value)
   grossMarginPct: number; // 0–100
   burnRateMonthly: number; // $/mo (positive number = burn)
   runwayMonths: number;
-  riskScore: number; // 0–100 (higher = worse)
+  riskScore: number; // 0–100 (higher = worse) — legacy, prefer riskIndex + selector
+  riskIndex: number; // 0–100 health index (higher = healthier) — use with getRiskScore()
 
   // unit economics
   cac: number;
@@ -39,6 +44,10 @@ export type ScenarioMetrics = Partial<{
   burnMultiple: number; // net burn / net new ARR
   burnToArrPct: number; // (burn / ARR) * 100
   operatingLeveragePct: number; // optional
+
+  // quality inputs (for truth selector)
+  earningsPower: number;  // proxy for margin/efficiency
+  burnQuality: number;    // proxy for burn discipline
 }>;
 
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
@@ -168,12 +177,31 @@ export function buildSpiderAxes(m: ScenarioMetrics): SpiderAxis[] {
         : 70) // if missing leverage, don't punish harshly
   );
 
-  // E) Risk Posture
+  // E) Risk Posture — USES CANONICAL TRUTH SELECTOR
   const runway = Number.isFinite(m.runwayMonths) ? (m.runwayMonths as number) : NaN;
-  const risk = Number.isFinite(m.riskScore) ? (m.riskScore as number) : NaN;
-  const riskSafety = Number.isFinite(risk) ? clamp100(100 - risk) : 60;
+  
+  // Get canonical risk score via truth selector (higher = worse)
+  // If riskIndex provided, use selector; else fallback to legacy riskScore
+  let canonicalRiskScore: number;
+  if (Number.isFinite(m.riskIndex)) {
+    // Use truth selector: getRiskScore expects EngineResult-like shape
+    canonicalRiskScore = getRiskScore({ kpis: { riskIndex: { value: m.riskIndex! } } } as any);
+  } else if (Number.isFinite(m.riskScore)) {
+    canonicalRiskScore = m.riskScore as number;
+  } else {
+    canonicalRiskScore = 50; // neutral fallback
+  }
 
-  const riskScore = clamp100(
+  // Higher riskScore = worse → lower spider axis score
+  // Curve: 35 safe, 55 caution, 75 danger, 90 severe
+  const riskAxisFromDanger = scoreCurve(canonicalRiskScore, [
+    [35, 100],  // low danger = high score
+    [55, 70],   // moderate danger
+    [75, 35],   // high danger
+    [90, 10],   // severe danger = low score
+  ]);
+
+  const riskPostureScore = clamp100(
     0.55 * scoreCurve(runway, [
       [3, 0],
       [6, 25],
@@ -181,7 +209,7 @@ export function buildSpiderAxes(m: ScenarioMetrics): SpiderAxis[] {
       [18, 85],
       [24, 100],
     ]) +
-      0.45 * riskSafety
+      0.45 * riskAxisFromDanger
   );
 
   const axes: SpiderAxis[] = [
@@ -216,8 +244,8 @@ export function buildSpiderAxes(m: ScenarioMetrics): SpiderAxis[] {
     {
       key: "risk_posture",
       label: "Risk",
-      value: riskScore,
-      band: bandForScore(riskScore),
+      value: riskPostureScore,
+      band: bandForScore(riskPostureScore),
       explain: "Survivability and execution safety (runway + risk containment).",
     },
   ];
