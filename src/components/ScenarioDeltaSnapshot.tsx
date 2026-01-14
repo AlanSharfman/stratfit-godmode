@@ -9,9 +9,9 @@ import {
   buildSpiderAxes,
   cacQualityBand,
   type ScenarioMetrics,
-  type TrafficLight,
 } from "@/logic/spiderFitness";
 import { TrafficLightPill } from "@/components/charts/mini/TrafficLightPill";
+import styles from "./ScenarioDeltaSnapshot.module.css";
 
 interface DeltaRow {
   metric: string;
@@ -57,17 +57,10 @@ function formatPctCompact(n: number): string {
 }
 
 function computeDeltaType(metricKey: string, delta: number): "positive" | "negative" | "neutral" {
-  // Neutral threshold
   if (Math.abs(delta) < 1e-9) return "neutral";
 
   // For cost/risk metrics, DOWN is better.
-  const lowerIsBetter = new Set([
-    "burnRate",
-    "cac",
-    "cacPayback",
-    "riskIndex",
-  ]);
-
+  const lowerIsBetter = new Set(["burnRate", "cac", "cacPayback", "riskIndex"]);
   const isBetter = lowerIsBetter.has(metricKey) ? delta < 0 : delta > 0;
   return isBetter ? "positive" : "negative";
 }
@@ -108,7 +101,7 @@ function getVarianceCommentary(
       positive:
         pctValue > 30
           ? `Forward ARR outlook materially strengthened. Scenario implies durable revenue scale and valuation uplift.`
-          : `Forward ARR improving, indicating healthy future revenue momentum.`,
+          : `Forward ARR improving, indicating healthier future revenue momentum.`,
       negative:
         pctValue > 30
           ? `Forward ARR outlook deteriorating. Growth trajectory under stress — future revenue base at risk.`
@@ -169,7 +162,6 @@ function getVarianceCommentary(
 
   const entry = commentaryMap[metric];
   if (!entry) return deltaType === "positive" ? "Improvement under scenario." : "Deterioration under scenario.";
-
   return deltaType === "positive" ? entry.positive : entry.negative;
 }
 
@@ -177,15 +169,12 @@ export default function ScenarioDeltaSnapshot() {
   const activeScenarioId = useScenarioStore((s) => s.activeScenarioId);
   const engineResults = useScenarioStore((s) => s.engineResults);
 
-  // show/hide whole module
   const [open, setOpen] = useState(true);
 
-  // Base always exists; scenario = activeScenarioId (or base itself)
   const base = engineResults?.base;
   const scenarioKey = activeScenarioId ?? "base";
   const scenario = engineResults?.[scenarioKey] ?? engineResults?.base;
 
-  // If missing, render nothing (should not happen in normal flow)
   if (!base || !scenario) return null;
 
   const metricDefs = useMemo(
@@ -228,167 +217,97 @@ export default function ScenarioDeltaSnapshot() {
     });
   }, [base, scenario, metricDefs, scenarioKey]);
 
-  // === Strategic Fitness Profile (Spider) ===
-  const spiderData = useMemo(() => {
-    // Build metrics from engineResults (truth)
-    const m: ScenarioMetrics = {
-      arr: safeNum(scenario?.kpis?.arrCurrent?.value),
-      arrGrowthPct: safeNum(scenario?.kpis?.arrGrowthPct?.value),
-      grossMarginPct: safeNum(scenario?.kpis?.earningsPower?.value),
-      burnRateMonthly: safeNum(scenario?.kpis?.burnQuality?.value) * 1000,
-      runwayMonths: safeNum(scenario?.kpis?.runway?.value),
-      riskScore: safeNum(scenario?.kpis?.riskIndex?.value),
-      ltvToCac: safeNum(scenario?.kpis?.ltvCac?.value),
-      cacPaybackMonths: safeNum(scenario?.kpis?.cacPayback?.value),
-    };
+  // === Strategic Fitness Profile (Spider) — TRUE comparison (Base vs Scenario) ===
+  const spider = useMemo(() => {
+    const toMetrics = (src: any): ScenarioMetrics => ({
+      arr: safeNum(src?.kpis?.arrCurrent?.value),
+      arrGrowthPct: safeNum(src?.kpis?.arrGrowthPct?.value),
+      grossMarginPct: safeNum(src?.kpis?.earningsPower?.value),
+      burnRateMonthly: safeNum(src?.kpis?.burnQuality?.value) * 1000,
+      runwayMonths: safeNum(src?.kpis?.runway?.value),
+      riskScore: safeNum(src?.kpis?.riskIndex?.value),
+      ltvToCac: safeNum(src?.kpis?.ltvCac?.value),
+      cacPaybackMonths: safeNum(src?.kpis?.cacPayback?.value),
+    });
 
-    const axes = buildSpiderAxes(m);
-    const band = cacQualityBand(m);
-    return { axes, band };
-  }, [scenario]);
+    const baseAxes = buildSpiderAxes(toMetrics(base));
+    const scenAxes = buildSpiderAxes(toMetrics(scenario));
+    const band = cacQualityBand(toMetrics(scenario)); // band reflects active scenario quality
+    return { baseAxes, scenAxes, band };
+  }, [base, scenario]);
 
   return (
-    <div style={{ width: "100%" }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: 12,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-          <div style={{ fontWeight: 900, letterSpacing: 0.12, textTransform: "uppercase", fontSize: 12, color: "rgba(200,225,255,0.92)" }}>
-            Scenario Delta Snapshot
-          </div>
-          <div style={{ fontSize: 12, color: "rgba(180,200,220,0.6)" }}>
-            Base → {scenarioKey === "base" ? "Base" : scenarioKey}
-          </div>
+    <div className={styles.wrap}>
+      <div className={styles.headRow}>
+        <div className={styles.titleBlock}>
+          <div className={styles.kicker}>Scenario Delta Snapshot</div>
+          <div className={styles.subkicker}>Base → {scenarioKey === "base" ? "Base" : scenarioKey}</div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          style={{
-            border: "1px solid rgba(120,180,255,0.18)",
-            background: "linear-gradient(180deg, rgba(10,14,18,0.85), rgba(6,9,14,0.92))",
-            color: "rgba(210,235,255,0.86)",
-            borderRadius: 10,
-            padding: "8px 12px",
-            fontSize: 12,
-            fontWeight: 800,
-            cursor: "pointer",
-          }}
-        >
+        <button type="button" onClick={() => setOpen((v) => !v)} className={styles.toggleBtn}>
           {open ? "Hide" : "Show"}
         </button>
       </div>
 
       {open && (
         <>
-          {/* Strategic Fitness Profile */}
-          <div
-            style={{
-              border: "1px solid rgba(120,180,255,0.12)",
-              borderRadius: 16,
-              padding: 14,
-              background: "linear-gradient(180deg, rgba(12,16,22,0.72), rgba(6,9,14,0.88))",
-              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
-              marginBottom: 12,
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-              <div style={{ fontSize: 12, letterSpacing: 0.12, textTransform: "uppercase", fontWeight: 900, color: "rgba(200,225,255,0.9)" }}>
-                Strategic Fitness Profile
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <div>
+                <div className={styles.cardTitle}>Strategic Fitness Profile</div>
+                <div className={styles.cardHint}>Base posture vs active scenario posture (same truth)</div>
               </div>
-              <TrafficLightPill label="Quality" band={spiderData.band} />
+              <TrafficLightPill label="Quality" band={spider.band} />
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 16, alignItems: "center" }}>
-              <div style={{ minHeight: 220 }}>
-                <SpiderRadar title="" base={[]} scenario={spiderData.axes} note="" />
+            <div className={styles.topGrid}>
+              <div className={styles.spiderShell}>
+                <SpiderRadar title="" base={spider.baseAxes} scenario={spider.scenAxes} note="" />
               </div>
 
-              <div style={{ color: "rgba(210,235,255,0.72)", fontSize: 12, lineHeight: 1.55 }}>
-                <div style={{ fontWeight: 800, marginBottom: 6 }}>
-                  This profile translates the scenario into an investor-readable posture.
-                </div>
-                <div style={{ marginBottom: 8 }}>
-                  <b>ARR growth</b> and <b>forward ARR</b> reflect revenue engine power. <b>Margin</b> and <b>burn</b> reflect unit economics and capital intensity.
-                  <b>Runway</b> and <b>risk</b> reflect survivability under stress.
-                </div>
-                <div style={{ display: "grid", gap: 6 }}>
-                  <div><b>Bands:</b></div>
-                  <div>• Green: investor-safe</div>
-                  <div>• Amber: aggressive / needs proof</div>
-                  <div>• Red: risk zone</div>
+              <div className={styles.insightShell}>
+                <div className={styles.insightTitle}>What changed (executive read)</div>
+                <div className={styles.bullets}>
+                  <div>
+                    This view isolates the <b>Base → Scenario</b> shift and surfaces whether improvements are driven by
+                    <b> unit economics</b>, <b>growth quality</b>, or <b>capital intensity</b>.
+                  </div>
+                  <div>
+                    Use the table below to see the <b>largest deltas</b>, then validate the underlying lever moves.
+                  </div>
+                  <div>
+                    The quality band reflects <b>LTV/CAC + payback</b> under the active scenario (no demo scoring).
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Delta Table */}
-          <div
-            style={{
-              border: "1px solid rgba(120,180,255,0.12)",
-              borderRadius: 16,
-              overflow: "hidden",
-              background: "linear-gradient(180deg, rgba(12,16,22,0.62), rgba(6,9,14,0.9))",
-              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
-            }}
-          >
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1.25fr 0.9fr 0.9fr 0.8fr 0.7fr 2fr",
-                gap: 0,
-                padding: "10px 12px",
-                borderBottom: "1px solid rgba(120,180,255,0.10)",
-                color: "rgba(180,200,220,0.75)",
-                fontSize: 11,
-                fontWeight: 900,
-                letterSpacing: 0.1,
-                textTransform: "uppercase",
-              }}
-            >
-              <div>Metric</div>
-              <div>Base</div>
-              <div>Scenario</div>
-              <div>Δ</div>
-              <div>Δ%</div>
-              <div>CFO Commentary</div>
+            <div className={styles.table}>
+              <div className={styles.thead}>
+                <div>Metric</div>
+                <div>Base</div>
+                <div>Scenario</div>
+                <div>Δ</div>
+                <div>Δ%</div>
+                <div>CFO Commentary</div>
+              </div>
+
+              {rows.map((r) => {
+                const tone =
+                  r.deltaType === "positive" ? styles.pos : r.deltaType === "negative" ? styles.neg : styles.neu;
+
+                return (
+                  <div key={r.metric} className={styles.row}>
+                    <div className={styles.metric}>{r.metric}</div>
+                    <div className={styles.muted}>{r.base}</div>
+                    <div className={styles.muted}>{r.scenario}</div>
+                    <div className={`${styles.delta} ${tone}`}>{r.delta}</div>
+                    <div className={`${styles.delta} ${tone}`}>{r.deltaPct}</div>
+                    <div className={styles.commentary}>{r.commentary}</div>
+                  </div>
+                );
+              })}
             </div>
-
-            {rows.map((r) => {
-              const c =
-                r.deltaType === "positive"
-                  ? "rgba(16,185,129,0.92)"
-                  : r.deltaType === "negative"
-                    ? "rgba(239,68,68,0.88)"
-                    : "rgba(180,200,220,0.55)";
-
-              return (
-                <div
-                  key={r.metric}
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1.25fr 0.9fr 0.9fr 0.8fr 0.7fr 2fr",
-                    padding: "12px 12px",
-                    borderBottom: "1px solid rgba(120,180,255,0.06)",
-                    color: "rgba(210,235,255,0.80)",
-                    fontSize: 12,
-                    alignItems: "center",
-                  }}
-                >
-                  <div style={{ fontWeight: 800, color: "rgba(210,235,255,0.86)" }}>{r.metric}</div>
-                  <div style={{ color: "rgba(210,235,255,0.72)" }}>{r.base}</div>
-                  <div style={{ color: "rgba(210,235,255,0.72)" }}>{r.scenario}</div>
-                  <div style={{ fontWeight: 900, color: c }}>{r.delta}</div>
-                  <div style={{ fontWeight: 900, color: c }}>{r.deltaPct}</div>
-                  <div style={{ color: "rgba(200,220,240,0.70)", lineHeight: 1.45 }}>{r.commentary}</div>
-                </div>
-              );
-            })}
           </div>
         </>
       )}

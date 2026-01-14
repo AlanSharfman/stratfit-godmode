@@ -1,0 +1,117 @@
+/* src/components/ScenarioDeltaSnapshot.module.css
+   STRATFIT — GodMode Compound Card
+*/
+
+.wrap{ width:100%; }
+
+.headRow{ display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+.titleBlock{ display:flex; align-items:baseline; gap:10px; }
+.kicker{ font-weight:950; letter-spacing:.14em; text-transform:uppercase; font-size:12px; color:rgba(210,235,255,.92); }
+.subkicker{ font-size:12px; color:rgba(180,200,220,.62); }
+
+.toggleBtn{
+  border:1px solid rgba(120,180,255,.16);
+  background:linear-gradient(180deg, rgba(10,14,18,.86), rgba(6,9,14,.94));
+  color:rgba(210,235,255,.86);
+  border-radius:12px;
+  padding:8px 12px;
+  font-size:12px;
+  font-weight:900;
+  cursor:pointer;
+  box-shadow:0 10px 26px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+.card{
+  position:relative;
+  border-radius:18px;
+  padding:14px;
+  border:1px solid rgba(120,180,255,.12);
+  background:
+    radial-gradient(120% 90% at 18% 12%, rgba(120,160,210,.10), rgba(0,0,0,0) 62%),
+    linear-gradient(180deg, rgba(14,18,24,.74), rgba(6,9,14,.92));
+  box-shadow:0 34px 70px rgba(0,0,0,.64), inset 0 1px 0 rgba(255,255,255,.06), inset 0 -10px 24px rgba(0,0,0,.55);
+  overflow:hidden;
+}
+
+.card::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:18px;
+  pointer-events:none;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06), inset 1px 0 0 rgba(255,255,255,.03), inset -1px 0 0 rgba(0,0,0,.55), inset 0 -1px 0 rgba(0,0,0,.65);
+}
+
+.cardHeader{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; }
+.cardTitle{ font-size:12px; font-weight:950; letter-spacing:.14em; text-transform:uppercase; color:rgba(210,235,255,.90); }
+.cardHint{ font-size:12px; color:rgba(190,210,230,.62); }
+
+.topGrid{ display:grid; grid-template-columns:1.25fr 1fr; gap:16px; align-items:stretch; }
+
+.spiderShell{
+  min-height:240px;
+  border-radius:16px;
+  border:1px solid rgba(120,180,255,.10);
+  background:linear-gradient(180deg, rgba(10,14,18,.50), rgba(6,9,14,.72));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+  padding:12px;
+}
+
+.insightShell{
+  border-radius:16px;
+  border:1px solid rgba(120,180,255,.10);
+  background:linear-gradient(180deg, rgba(10,14,18,.44), rgba(6,9,14,.70));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+  padding:12px;
+}
+
+.insightTitle{ font-size:12px; font-weight:900; color:rgba(210,235,255,.86); margin-bottom:8px; }
+.bullets{ display:grid; gap:8px; color:rgba(200,220,240,.74); font-size:12px; line-height:1.55; }
+
+.table{
+  margin-top:12px;
+  border-radius:16px;
+  border:1px solid rgba(120,180,255,.10);
+  overflow:hidden;
+  background:linear-gradient(180deg, rgba(10,14,18,.42), rgba(6,9,14,.82));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+}
+
+.thead{
+  display:grid;
+  grid-template-columns:1.25fr .9fr .9fr .8fr .7fr 2fr;
+  padding:10px 12px;
+  border-bottom:1px solid rgba(120,180,255,.10);
+  color:rgba(180,200,220,.72);
+  font-size:11px;
+  font-weight:950;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+
+.row{
+  display:grid;
+  grid-template-columns:1.25fr .9fr .9fr .8fr .7fr 2fr;
+  padding:12px 12px;
+  border-bottom:1px solid rgba(120,180,255,.06);
+  align-items:center;
+  color:rgba(210,235,255,.78);
+  font-size:12px;
+}
+
+.row:hover{ background:rgba(34,211,238,.06); }
+
+.metric{ font-weight:900; color:rgba(220,242,255,.90); }
+.muted{ color:rgba(210,235,255,.68); }
+.delta{ font-weight:950; letter-spacing:.02em; }
+
+.pos{ color:rgba(16,185,129,.92); }
+.neg{ color:rgba(239,68,68,.88); }
+.neu{ color:rgba(180,200,220,.55); }
+
+.commentary{ color:rgba(200,220,240,.70); line-height:1.45; }
+
+@media (max-width:1100px){
+  .topGrid{ grid-template-columns:1fr; }
+  .thead,.row{ grid-template-columns:1.2fr .85fr .85fr .75fr .65fr 1.6fr; }
+}

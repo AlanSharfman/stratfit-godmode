@@ -1,518 +1,167 @@
-/* src/components/compound/variances/VariancesView.module.css
-   STRATFIT — Scenario Variances Comparison View Styling
-*/
+/* STRATFIT — VariancesView (premium shell) */
 
-.container {
+.page {
+  min-height: 100%;
+  width: 100%;
+  padding: 14px 14px 18px;
+}
+
+.shell {
+  position: relative;
   height: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  padding: 32px;
-  overflow-y: auto;
-  overflow-x: hidden;
+  width: 100%;
+  border-radius: 18px;
+  padding: 16px 18px 18px;
+  overflow: hidden;
 
   background:
-    radial-gradient(120% 100% at 50% 0%, rgba(80,160,255,0.06), rgba(0,0,0,0) 50%),
-    linear-gradient(180deg, rgba(12,18,28,0.95), rgba(8,12,20,0.98));
-  border-radius: 14px;
+    radial-gradient(1200px 520px at 18% 10%, rgba(120, 180, 255, 0.10), rgba(0,0,0,0) 62%),
+    radial-gradient(900px 480px at 80% 18%, rgba(0, 255, 255, 0.06), rgba(0,0,0,0) 58%),
+    linear-gradient(180deg, rgba(14,18,24,0.92), rgba(8,10,12,0.96));
+
+  border: 1px solid rgba(140, 200, 255, 0.12);
+  box-shadow:
+    0 30px 70px rgba(0,0,0,0.70),
+    inset 0 1px 0 rgba(210, 240, 255, 0.10),
+    inset 0 -1px 0 rgba(0,0,0,0.65);
 }
 
-/* ============================================================
-   HEADER
-   ============================================================ */
+.shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.55;
+
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0) 18%),
+    repeating-linear-gradient(
+      180deg,
+      rgba(120, 180, 255, 0.06) 0px,
+      rgba(120, 180, 255, 0.06) 1px,
+      rgba(0,0,0,0) 1px,
+      rgba(0,0,0,0) 18px
+    );
+  mix-blend-mode: screen;
+}
 
 .header {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  padding-bottom: 18px;
-  border-bottom: 1px solid rgba(120,180,255,0.10);
+  position: relative;
+  z-index: 1;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(140, 200, 255, 0.10);
 }
 
-.scenarioSelector {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.selectorLabel {
-  font-size: 11px;
-  font-weight: 700;
+.kicker {
+  font-size: 12px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(160,200,255,0.7);
-}
-
-.scenarioButtons {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.scenarioButton {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 18px;
-  border-radius: 8px;
-  border: 1px solid;
-  background: transparent;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  color: rgba(200,220,255,0.8);
-  transition: all 150ms ease;
-}
-
-.scenarioButton:hover {
-  background: rgba(120,180,255,0.08);
-  color: rgba(220,240,255,0.95);
-}
-
-.scenarioButton.active {
-  color: rgba(255,255,255,0.95);
-}
-
-.scenarioDot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+  color: rgba(180, 220, 255, 0.70);
+  margin-bottom: 6px;
 }
 
 .titleRow {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.title {
+.h1 {
   margin: 0;
   font-size: 28px;
-  font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.95);
-  text-shadow: none;
+  color: rgba(235, 248, 255, 0.92);
+  text-shadow:
+    0 0 18px rgba(0, 255, 255, 0.12),
+    0 0 32px rgba(120, 180, 255, 0.10);
 }
 
-.subtitle {
-  font-size: 14px;
-  color: rgba(160,200,255,0.75);
-  letter-spacing: 0.03em;
-}
-
-.legend {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.legendItem {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.legendDot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-}
-
-.legendLabel {
-  font-size: 13px;
-  font-weight: 600;
-  color: rgba(200,220,255,0.8);
-  letter-spacing: 0.02em;
-}
-
-.legendLabel.active {
-  color: rgba(255,255,255,0.95);
-  text-shadow: none;
-}
-
-/* ============================================================
-   AI SUMMARY
-   ============================================================ */
-
-.aiSummary {
-  padding: 20px 24px;
-  border-radius: 12px;
-  background: rgba(20,30,45,0.5);
-  border: 1px solid rgba(120,180,255,0.08);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-}
-
-.aiHeader {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-.aiIcon {
-  font-size: 20px;
-}
-
-.aiTitle {
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(180,220,255,0.95);
-}
-
-.aiText {
-  margin: 0;
-  font-size: 15px;
-  line-height: 1.7;
-  color: rgba(220,240,255,0.90);
-}
-
-.aiRecommendation {
-  margin-top: 16px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.recBadge {
-  padding: 8px 18px;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: #000;
-  text-transform: uppercase;
-}
-
-/* ============================================================
-   SELECTED SCENARIO DEEP DIVE
-   ============================================================ */
-
-.deepDiveSection {
-  border-radius: 12px;
-  background: rgba(20,30,50,0.4);
-  border: 1px solid rgba(120,180,255,0.08);
-  overflow: hidden;
-}
-
-.deepDiveToggle {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 18px 24px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  transition: background 150ms ease;
-  text-align: left;
-}
-
-.deepDiveToggle:hover {
-  background: rgba(120,180,255,0.04);
-}
-
-.toggleIcon {
-  font-size: 12px;
-  color: rgba(160,200,255,0.7);
-  transition: transform 150ms ease;
-}
-
-.deepDiveTitle {
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(200,220,255,0.9);
-  flex: 1;
-}
-
-.deepDiveSubtitle {
-  font-size: 12px;
-  color: rgba(160,200,255,0.6);
-  letter-spacing: 0.02em;
-}
-
-.deepDiveContent {
-  padding: 0 24px 24px 24px;
-  border-top: 1px solid rgba(120,180,255,0.06);
-}
-
-/* ============================================================
-   VARIANCE TABLE
-   ============================================================ */
-
-.tableWrapper {
-  flex: 1;
-  overflow-x: auto;
-  overflow-y: auto;
-  border-radius: 10px;
-  background: rgba(0,0,0,0.25);
-  border: 1px solid rgba(120,180,255,0.08);
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-
-.table th,
-.table td {
-  padding: 14px 18px;
-  text-align: left;
-  white-space: nowrap;
-}
-
-.metricHeader {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: rgba(160,200,255,0.85);
-  background: rgba(20,30,50,0.6);
-  position: sticky;
-  top: 0;
-  z-index: 2;
-}
-
-.scenarioHeader {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  background: rgba(20,30,50,0.6);
-  border-bottom: 2px solid;
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  text-align: center;
-}
-
-.deltaHeader {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: rgba(200,190,160,0.8);
-  background: rgba(20,30,50,0.6);
-  text-align: center;
-  position: sticky;
-  top: 0;
-  z-index: 2;
-}
-
-.insightHeader {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: rgba(180,190,200,0.75);
-  background: rgba(20,30,50,0.6);
-  min-width: 240px;
-  position: sticky;
-  top: 0;
-  z-index: 2;
-}
-
-.rowEven {
-  background: rgba(15,25,40,0.4);
-}
-
-.rowOdd {
-  background: rgba(10,18,30,0.4);
-}
-
-.metricCell {
-  position: sticky;
-  left: 0;
-  z-index: 1;
-  background: inherit;
-  border-right: 1px solid rgba(120,180,255,0.08);
-}
-
-.metricName {
-  font-weight: 600;
-  font-size: 14px;
-  color: rgba(200,220,255,0.95);
-}
-
-.valueCell {
-  text-align: center;
-  position: relative;
-}
-
-.value {
-  font-weight: 600;
-  font-size: 14px;
-  color: rgba(220,240,255,0.90);
-  font-variant-numeric: tabular-nums;
-}
-
-.valueCell.best {
-  background: rgba(140,200,140,0.06);
-}
-
-.valueCell.best .value {
-  color: rgba(180,220,180,0.9);
-  font-weight: 700;
-}
-
-.valueCell.worst {
-  background: rgba(220,140,140,0.05);
-}
-
-.valueCell.worst .value {
-  color: rgba(220,160,160,0.85);
-}
-
-.valueCell.activeCurrent {
-  box-shadow: inset 0 0 0 2px rgba(120,180,220,0.25);
-}
-
-.bestBadge,
-.worstBadge {
-  display: block;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  margin-top: 4px;
-}
-
-.bestBadge {
-  color: rgba(180,220,180,0.75);
-}
-
-.worstBadge {
-  color: rgba(220,160,160,0.7);
-}
-
-.deltaCell {
-  text-align: center;
-  border-left: 1px solid rgba(255,200,100,0.15);
-  background: rgba(255,200,100,0.03);
-}
-
-.deltaValue {
-  font-weight: 700;
-  font-size: 14px;
-  font-variant-numeric: tabular-nums;
-}
-
-.insightCell {
-  border-left: 1px solid rgba(120,180,255,0.06);
-  white-space: normal;
-  max-width: 320px;
-}
-
-.insightText {
-  font-size: 13px;
-  line-height: 1.65;
-  color: rgba(180,200,230,0.85);
-}
-
-/* ============================================================
-   VISUAL BAR COMPARISON
-   ============================================================ */
-
-.barSection {
-  padding: 24px;
-  border-radius: 12px;
-  background: rgba(20,30,50,0.4);
-  border: 1px solid rgba(120,180,255,0.08);
-}
-
-.barTitle {
-  margin: 0 0 18px 0;
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(160,200,255,0.9);
-}
-
-.barGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 20px;
-}
-
-.barGroup {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.barLabel {
-  font-size: 13px;
-  font-weight: 600;
-  color: rgba(200,220,255,0.9);
-  letter-spacing: 0.02em;
-}
-
-.bars {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.barRow {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  height: 18px;
-}
-
-.barRowLabel {
+.badge {
   font-size: 11px;
-  font-weight: 600;
-  color: rgba(180,200,220,0.75);
-  min-width: 80px;
-  text-align: right;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 7px 10px;
+  border-radius: 999px;
+  color: rgba(180, 255, 255, 0.78);
+  border: 1px solid rgba(0, 255, 255, 0.16);
+  background: rgba(10, 16, 20, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(210, 240, 255, 0.10),
+    0 10px 22px rgba(0,0,0,0.35);
 }
 
-.bar {
-  height: 100%;
-  border-radius: 4px;
-  min-width: 2px;
-  transition: width 300ms ease-out;
+.notice {
+  margin-top: 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+
+  background: rgba(6, 10, 12, 0.55);
+  border: 1px solid rgba(255, 220, 120, 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 14px 34px rgba(0,0,0,0.35);
 }
 
-.barValue {
-  font-size: 12px;
-  font-weight: 600;
-  color: rgba(200,220,255,0.85);
-  font-variant-numeric: tabular-nums;
-  min-width: 70px;
-}
-
-/* ============================================================
-   SCROLLBAR STYLING
-   ============================================================ */
-
-.container::-webkit-scrollbar,
-.tableWrapper::-webkit-scrollbar {
+.noticeDot {
   width: 8px;
   height: 8px;
+  margin-top: 4px;
+  border-radius: 999px;
+  background: rgba(255, 210, 110, 0.85);
+  box-shadow: 0 0 18px rgba(255, 210, 110, 0.30);
+  flex: 0 0 auto;
 }
 
-.container::-webkit-scrollbar-track,
-.tableWrapper::-webkit-scrollbar-track {
-  background: rgba(0,0,0,0.2);
-  border-radius: 4px;
+.noticeText {
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: rgba(230, 240, 255, 0.78);
 }
 
-.container::-webkit-scrollbar-thumb,
-.tableWrapper::-webkit-scrollbar-thumb {
-  background: rgba(120,180,255,0.25);
-  border-radius: 4px;
+.content {
+  position: relative;
+  z-index: 1;
+  margin-top: 10px;
 }
 
-.container::-webkit-scrollbar-thumb:hover,
-.tableWrapper::-webkit-scrollbar-thumb:hover {
-  background: rgba(120,180,255,0.4);
+/* empty state that doesn't look like "nothing" */
+.empty {
+  position: relative;
+  z-index: 1;
+  padding: 22px 0 0;
+  min-height: 420px;
+  display: flex;
+  align-items: flex-start;
 }
 
+.emptyCard {
+  width: 420px;
+  max-width: 92%;
+  padding: 14px 14px 12px;
+  border-radius: 16px;
+  background: rgba(7, 10, 12, 0.55);
+  border: 1px solid rgba(140, 200, 255, 0.12);
+  box-shadow:
+    0 20px 46px rgba(0,0,0,0.45),
+    inset 0 1px 0 rgba(210, 240, 255, 0.08);
+}
+
+.emptyTitle {
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(235, 248, 255, 0.86);
+  margin-bottom: 6px;
+}
+
+.emptyBody {
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: rgba(190, 220, 255, 0.72);
+}

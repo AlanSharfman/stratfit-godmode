@@ -59,6 +59,8 @@ const INITIAL_LEVERS: LeverState = {
   fundingPressure: 20,
 };
 
+const ALL_SCENARIOS: ScenarioId[] = ["base", "upside", "downside", "extreme"];
+
 // SCENARIOS moved to ScenarioSelector component
 
 // ============================================================================
@@ -644,149 +646,116 @@ export default function App() {
     setScenarioInStore(scenario);
   }, [scenario, setScenarioInStore]);
 
+  // ✅ Always populate engineResults for all scenarios (so Variances can compare)
   useEffect(() => {
-    if (!metrics) return;
+    // buildEngineResult must be deterministic from (levers, scenarioId)
+    function buildEngineResultForScenario(sid: ScenarioId) {
+      const m = calculateMetrics(debouncedLevers, sid);
 
-    const cashRaw =
-      (metrics as any)?.cashPosition ??
-      (metrics as any)?.cash ??
-      (metrics as any)?.cashBalance ??
-      (metrics as any)?.cashOnHand ??
-      (metrics as any)?.balanceSheet?.cash ??
-      (metrics as any)?.series?.cash?.[0] ??
-      (metrics as any)?.timeline?.cash?.[0] ??
-      0;
+      // --- EVERYTHING BELOW HERE is your existing KPI derivation logic ---
+      // Replace references to `metrics` with `m`
+      // Replace references to `scenario` with `sid`
+      // Keep using store baseKpis comparisons if you want.
 
-    const cashValue = Number.isFinite(cashRaw) ? Number(cashRaw) : 0;
-    const cashValueDollars = cashValue > 0 && cashValue < 1_000_000 ? cashValue * 1_000_000 : cashValue;
+      const cashRaw =
+        (m as any)?.cashPosition ??
+        (m as any)?.cash ??
+        (m as any)?.cashBalance ??
+        (m as any)?.cashOnHand ??
+        (m as any)?.balanceSheet?.cash ??
+        (m as any)?.series?.cash?.[0] ??
+        (m as any)?.timeline?.cash?.[0] ??
+        0;
 
-    // ARR proxy (today): momentum is already displayed as $X.XM in the KPI console.
-    // Until we have a true projection in the engine output, we derive ARR_next12 deterministically from the same signal.
-    const arrCurrent = (metrics.momentum / 10) * 1_000_000;
-    const growthRate = Math.max(-0.5, Math.min(0.8, (metrics.momentum - 50) * 0.006));
-    const arrNext12 = arrCurrent * (1 + growthRate);
-    const arrGrowth = deriveArrGrowth({ arrCurrent, arrNext12 });
+      const cashValue = Number.isFinite(cashRaw) ? Number(cashRaw) : 0;
+      const cashValueDollars = cashValue > 0 && cashValue < 1_000_000 ? cashValue * 1_000_000 : cashValue;
 
-    // -----------------------------
-    // CUSTOMER ECONOMICS
-    // -----------------------------
+      const arrCurrent = (m.momentum / 10) * 1_000_000;
+      const growthRate = Math.max(-0.5, Math.min(0.8, (m.momentum - 50) * 0.006));
+      const arrNext12 = arrCurrent * (1 + growthRate);
+      const arrGrowth = deriveArrGrowth({ arrCurrent, arrNext12 });
 
-    // Base inputs (safe defaults if not explicitly modelled yet)
-    const avgRevenuePerCustomer = 12_000;   // $12k ARPA
-    const grossMargin = 0.74;               // 74%
-    const annualChurn = 0.12;               // 12%
+      const avgRevenuePerCustomer = 12_000;
+      const grossMargin = 0.74;
+      const annualChurn = 0.12;
 
-    // Growth proxies from your engine
-    const burn = metrics.burnQuality * 1000; // burnQuality is in K
-    const marketingSpend = burn * 0.45;      // 45% of burn is GTM
+      const burn = m.burnQuality * 1000;
+      const marketingSpend = burn * 0.45;
 
-    const arrDeltaValue = arrGrowth.arrDelta ?? 0;
-    const newCustomers = Math.max(1, arrDeltaValue / avgRevenuePerCustomer);
+      const arrDeltaValue = arrGrowth.arrDelta ?? 0;
+      const newCustomers = Math.max(1, arrDeltaValue / avgRevenuePerCustomer);
 
-    // CAC
-    const cac = marketingSpend / newCustomers;
+      const cac = marketingSpend / newCustomers;
+      const ltv = (avgRevenuePerCustomer * grossMargin) / annualChurn;
+      const cacPaybackMonths = (cac / (avgRevenuePerCustomer * grossMargin)) * 12;
+      const ltvCac = ltv / cac;
 
-    // LTV
-    const ltv = (avgRevenuePerCustomer * grossMargin) / annualChurn;
+      let cacScore = 0;
+      let cacLabel = "Poor";
+      if (ltvCac >= 5) cacScore += 50;
+      else if (ltvCac >= 3) cacScore += 30;
+      else if (ltvCac >= 2) cacScore += 15;
 
-    // Payback (months)
-    const cacPaybackMonths = (cac / (avgRevenuePerCustomer * grossMargin)) * 12;
+      if (cacPaybackMonths <= 12) cacScore += 50;
+      else if (cacPaybackMonths <= 18) cacScore += 30;
+      else if (cacPaybackMonths <= 24) cacScore += 15;
 
-    // LTV / CAC
-    const ltvCac = ltv / cac;
+      if (cacScore >= 70) cacLabel = "Strong";
+      else if (cacScore >= 40) cacLabel = "Moderate";
 
-    // -----------------------------
-    // CAC QUALITY SCORING
-    // -----------------------------
+      let growthRisk = 0;
+      if (ltvCac < 2) growthRisk += 15;
+      if (cacPaybackMonths > 24) growthRisk += 15;
+      if (cacPaybackMonths > 36) growthRisk += 10;
 
-    let cacScore = 0;
-    let cacLabel = "Poor";
+      const adjustedRiskIndex = Math.min(100, Math.max(0, m.riskIndex + growthRisk));
 
-    // LTV / CAC scoring
-    if (ltvCac >= 5) cacScore += 50;
-    else if (ltvCac >= 3) cacScore += 30;
-    else if (ltvCac >= 2) cacScore += 15;
+      const targetRunway = 24;
+      const safeCac = (cashValueDollars / targetRunway) / newCustomers;
 
-    // Payback scoring
-    if (cacPaybackMonths <= 12) cacScore += 50;
-    else if (cacPaybackMonths <= 18) cacScore += 30;
-    else if (cacPaybackMonths <= 24) cacScore += 15;
+      const growthStress = Math.min(1, (1 / Math.max(1, ltvCac)) + (cacPaybackMonths / 36));
 
-    // Label
-    if (cacScore >= 70) cacLabel = "Strong";
-    else if (cacScore >= 40) cacLabel = "Moderate";
+      const kpis = {
+        runway: { value: m.runway, display: `${Math.round(m.runway)} mo` },
+        cashPosition: { value: cashValueDollars, display: `$${(cashValueDollars / 1_000_000).toFixed(1)}M` },
+        momentum: { value: m.momentum, display: `$${(m.momentum / 10).toFixed(1)}M` },
+        arrCurrent: { value: arrCurrent, display: formatUsdCompact(arrCurrent) },
+        arrNext12: { value: arrNext12, display: formatUsdCompact(arrNext12) },
+        arrDelta: { value: arrGrowth.arrDelta ?? 0, display: arrGrowth.displayDelta },
+        arrGrowthPct: { value: arrGrowth.arrGrowthPct ?? 0, display: arrGrowth.displayPct },
+        burnQuality: { value: m.burnQuality, display: `$${Math.round(m.burnQuality)}K` },
+        riskIndex: { value: adjustedRiskIndex, display: `${Math.round(adjustedRiskIndex)}/100` },
+        earningsPower: { value: m.earningsPower, display: `${Math.round(m.earningsPower)}%` },
+        enterpriseValue: { value: m.enterpriseValue, display: `$${(m.enterpriseValue / 10).toFixed(1)}M` },
+        cac: { value: cac, display: `$${Math.round(cac).toLocaleString()}` },
+        cacPayback: { value: cacPaybackMonths, display: `${Math.round(cacPaybackMonths)} mo` },
+        ltvCac: { value: ltvCac, display: `${ltvCac.toFixed(1)}x` },
+        cacQuality: { value: cacScore, display: cacLabel },
+        safeCac: { value: safeCac, display: `$${Math.round(safeCac).toLocaleString()}` },
+        growthStress: { value: growthStress, display: `${Math.round(growthStress * 100)}%` },
+      };
 
-    // -----------------------------
-    // GROWTH RISK ADJUSTMENT
-    // -----------------------------
+      // Compare to base (once base exists this becomes meaningful)
+      const baseKpis = useScenarioStore.getState().engineResults?.base?.kpis;
 
-    let growthRisk = 0;
-    if (ltvCac < 2) growthRisk += 15;
-    if (cacPaybackMonths > 24) growthRisk += 15;
-    if (cacPaybackMonths > 36) growthRisk += 10;
+      function pctDelta(current: number, baseline: number | undefined) {
+        if (!baseline || baseline === 0) return 0;
+        return ((current - baseline) / Math.abs(baseline)) * 100;
+      }
 
-    // Adjusted risk index (incorporates growth efficiency)
-    const adjustedRiskIndex = Math.min(100, Math.max(0, metrics.riskIndex + growthRisk));
+      const cacDelta = pctDelta(cac, baseKpis?.cac?.value);
+      const paybackDelta = pctDelta(cacPaybackMonths, baseKpis?.cacPayback?.value);
+      const ltvCacDelta = pctDelta(ltvCac, baseKpis?.ltvCac?.value);
 
-    // -----------------------------
-    // SAFE CAC (Reverse Solver)
-    // -----------------------------
-    // What CAC gives us 24 months runway?
-    const targetRunway = 24;
-    const safeCac = (cashValueDollars / targetRunway) / newCustomers;
+      let growthQuality = "neutral";
+      if (cacDelta < -10 && ltvCacDelta > 10) growthQuality = "strong";
+      if (cacDelta > 10 || ltvCacDelta < -10) growthQuality = "weak";
 
-    // -----------------------------
-    // GROWTH STRESS (for Mountain Cracks)
-    // -----------------------------
-    const growthStress = Math.min(1, (1 / Math.max(1, ltvCac)) + (cacPaybackMonths / 36));
+      let capitalEfficiency = "stable";
+      if (paybackDelta < -15) capitalEfficiency = "improving";
+      if (paybackDelta > 15) capitalEfficiency = "deteriorating";
 
-    const kpis = {
-      runway: { value: metrics.runway, display: `${Math.round(metrics.runway)} mo` },
-      cashPosition: {
-        value: cashValueDollars,
-        display: `$${(cashValueDollars / 1_000_000).toFixed(1)}M`,
-      },
-      momentum: { value: metrics.momentum, display: `$${(metrics.momentum / 10).toFixed(1)}M` },
-      arrCurrent: { value: arrCurrent, display: formatUsdCompact(arrCurrent) },
-      arrNext12: { value: arrNext12, display: formatUsdCompact(arrNext12) },
-      arrDelta: { value: arrGrowth.arrDelta ?? 0, display: arrGrowth.displayDelta },
-      arrGrowthPct: { value: arrGrowth.arrGrowthPct ?? 0, display: arrGrowth.displayPct },
-      burnQuality: { value: metrics.burnQuality, display: `$${Math.round(metrics.burnQuality)}K` },
-      riskIndex: { value: adjustedRiskIndex, display: `${Math.round(adjustedRiskIndex)}/100` },
-      earningsPower: { value: metrics.earningsPower, display: `${Math.round(metrics.earningsPower)}%` },
-      enterpriseValue: { value: metrics.enterpriseValue, display: `$${(metrics.enterpriseValue / 10).toFixed(1)}M` },
-      cac: { value: cac, display: `$${Math.round(cac).toLocaleString()}` },
-      cacPayback: { value: cacPaybackMonths, display: `${Math.round(cacPaybackMonths)} mo` },
-      ltvCac: { value: ltvCac, display: `${ltvCac.toFixed(1)}x` },
-      cacQuality: { value: cacScore, display: cacLabel },
-      safeCac: { value: safeCac, display: `$${Math.round(safeCac).toLocaleString()}` },
-      growthStress: { value: growthStress, display: `${Math.round(growthStress * 100)}%` },
-    };
-
-    // -----------------------------
-    // CFO INTELLIGENCE (Scenario Commentary)
-    // -----------------------------
-
-    const baseKpis = useScenarioStore.getState().engineResults?.base?.kpis;
-
-    function pctDelta(current: number, baseline: number | undefined) {
-      if (!baseline || baseline === 0) return 0;
-      return ((current - baseline) / Math.abs(baseline)) * 100;
-    }
-
-    const cacDelta = pctDelta(cac, baseKpis?.cac?.value);
-    const paybackDelta = pctDelta(cacPaybackMonths, baseKpis?.cacPayback?.value);
-    const ltvCacDelta = pctDelta(ltvCac, baseKpis?.ltvCac?.value);
-
-    let growthQuality = "neutral";
-    if (cacDelta < -10 && ltvCacDelta > 10) growthQuality = "strong";
-    if (cacDelta > 10 || ltvCacDelta < -10) growthQuality = "weak";
-
-    let capitalEfficiency = "stable";
-    if (paybackDelta < -15) capitalEfficiency = "improving";
-    if (paybackDelta > 15) capitalEfficiency = "deteriorating";
-
-    const cfoSummary = `Customer economics in this scenario show ${growthQuality} growth quality.
+      const cfoSummary = `Customer economics in this scenario show ${growthQuality} growth quality.
 
 Customer acquisition cost ${cacDelta < 0 ? "fell" : "rose"} by ${Math.abs(cacDelta).toFixed(0)}%, while LTV/CAC ${ltvCacDelta > 0 ? "improved" : "deteriorated"} by ${Math.abs(ltvCacDelta).toFixed(0)}%.
 
@@ -794,25 +763,22 @@ Capital recovery time is ${capitalEfficiency}, with CAC payback ${paybackDelta <
 
 This materially ${growthQuality === "strong" ? "strengthens" : growthQuality === "weak" ? "weakens" : "maintains"} the company's ability to scale without external capital pressure.`;
 
-    const engineResult = {
-      kpis,
-      ai: {
-        summary: cfoSummary,
-      },
-    };
-    console.log("[ENGINE RESULT]", engineResult);
-    console.log("[ENGINE RESULT KEYS]", Object.keys(engineResult ?? {}));
+      const engineResult = { kpis, ai: { summary: cfoSummary } };
 
-    // Option A — Engine contract enforcement (cashPosition must exist)
-    if (
-      !engineResult?.kpis?.cashPosition ||
-      typeof engineResult.kpis.cashPosition.value !== "number"
-    ) {
-      throw new Error("ENGINE CONTRACT VIOLATION: cashPosition missing");
+      // Contract enforcement (keep)
+      if (!engineResult?.kpis?.cashPosition || typeof engineResult.kpis.cashPosition.value !== "number") {
+        throw new Error("ENGINE CONTRACT VIOLATION: cashPosition missing");
+      }
+
+      return engineResult;
     }
 
-    setEngineResult(activeScenarioId, engineResult);
-  }, [activeScenarioId, metrics, setEngineResult]);
+    // ✅ Populate all scenarios every time debouncedLevers changes
+    for (const sid of ALL_SCENARIOS) {
+      const engineResult = buildEngineResultForScenario(sid);
+      setEngineResult(sid, engineResult);
+    }
+  }, [debouncedLevers, setEngineResult]);
     
   // Map lever IDs to state keys
   const leverIdToStateKey: Record<string, keyof LeverState> = {
