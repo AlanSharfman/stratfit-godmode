@@ -135,7 +135,7 @@ export const ScenarioImpactPanel = memo(function ScenarioImpactPanel({
           <thead>
             <tr>
               <th className={styles.thMetric}>METRIC</th>
-              <th className={styles.thBase}>BASE</th>
+              <th className={styles.thBase}>Base Case</th>
               <th className={styles.thScenario}>SCENARIO</th>
               <th className={styles.thDelta}>Δ</th>
               <th className={styles.thDeltaP}>Δ%</th>

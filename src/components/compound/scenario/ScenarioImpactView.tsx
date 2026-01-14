@@ -1,4 +1,6 @@
-import React, { memo, useMemo } from "react";
+// src/components/compound/scenario/ScenarioImpactView.tsx
+
+import React, { memo, useMemo, useState } from "react";
 import { ScenarioImpactPanel } from "./ScenarioImpactPanel";
 import { useScenarioImpactRows } from "./useScenarioImpactRows";
 import { useScenarioStore } from "@/state/scenarioStore";
@@ -18,14 +20,62 @@ interface ScenarioSummary {
 }
 
 // ============================================================================
+// HELPERS (display-only)
+// ============================================================================
+
+type ScenarioId = "base" | "upside" | "downside" | "extreme" | string;
+
+function scenarioLabelOf(id: ScenarioId): string {
+  if (id === "base") return "Base Case";
+  if (id === "upside") return "Upside";
+  if (id === "downside") return "Downside";
+  if (id === "extreme") return "Stress";
+  return String(id);
+}
+
+function whatThisMeansBullets(id: ScenarioId): string[] {
+  // Display-only copy. No math changes.
+  switch (id) {
+    case "upside":
+      return [
+        "Assumes stronger execution and market conditions than the Base Case.",
+        "Use to stress capacity, hiring pace, and cash needs under higher growth.",
+        "Primary watch-outs: efficiency drift and cash conversion.",
+      ];
+    case "downside":
+      return [
+        "Assumes weaker demand and/or margin pressure vs the Base Case.",
+        "Use to identify the minimum operating shape that protects runway.",
+        "Primary watch-outs: CAC efficiency and burn discipline.",
+      ];
+    case "extreme":
+      return [
+        "Stress scenario tests survivability under adverse conditions.",
+        "Use to surface immediate runway risks and defensive actions.",
+        "Primary watch-outs: cash preservation and execution risk exposure.",
+      ];
+    case "base":
+    default:
+      return [
+        "Base Case is the current trajectory with current lever settings.",
+        "Use this as the benchmark for comparing alternative scenarios.",
+      ];
+  }
+}
+
+// ============================================================================
 // COMPONENT
 // ============================================================================
 
 export const ScenarioImpactView = memo(function ScenarioImpactView() {
+  const [showSpiderDetails, setShowSpiderDetails] = useState(false);
+
   const rows = useScenarioImpactRows();
   const scenario = useScenarioStore((s) => s.scenario);
   const kpis = useScenarioStore((s) => s.engineResults?.[s.scenario]?.kpis);
   const baseKpis = useScenarioStore((s) => s.engineResults?.base?.kpis);
+
+  const scenarioLabel = scenarioLabelOf(scenario);
 
   // Separate rows into sections
   const { scenarioMetrics, growthMetrics, riskMetrics } = useMemo(() => {
@@ -51,13 +101,16 @@ export const ScenarioImpactView = memo(function ScenarioImpactView() {
     return { scenarioMetrics, growthMetrics, riskMetrics };
   }, [rows]);
 
-  // Summary cards
+  // Summary cards (display only; uses existing KPI values)
   const summaryCards: ScenarioSummary[] = useMemo(() => {
     const val = (key: string) => kpis?.[key]?.value ?? 0;
     const baseVal = (key: string) => baseKpis?.[key]?.value ?? 0;
     const delta = (key: string) => val(key) - baseVal(key);
-    const deltaP = (key: string) => baseVal(key) !== 0 ? ((delta(key) / baseVal(key)) * 100).toFixed(0) : "0";
-    const fmtCurrency = (n: number) => n >= 1e6 ? `$${(n / 1e6).toFixed(1)}M` : `$${(n / 1e3).toFixed(0)}K`;
+    const deltaP = (key: string) =>
+      baseVal(key) !== 0 ? ((delta(key) / baseVal(key)) * 100).toFixed(0) : "0";
+
+    const fmtCurrency = (n: number) =>
+      n >= 1e6 ? `$${(n / 1e6).toFixed(1)}M` : `$${(n / 1e3).toFixed(0)}K`;
 
     return [
       {
@@ -79,7 +132,7 @@ export const ScenarioImpactView = memo(function ScenarioImpactView() {
         tone: delta("runway") >= 0 ? "pos" : "neg",
       },
       {
-        label: "Risk Score",
+        label: "Risk",
         value: `${Math.round(val("riskIndex"))}/100`,
         delta: `${delta("riskIndex") <= 0 ? "" : "+"}${Math.round(delta("riskIndex"))}`,
         tone: delta("riskIndex") <= 0 ? "pos" : "neg",
@@ -87,10 +140,7 @@ export const ScenarioImpactView = memo(function ScenarioImpactView() {
     ];
   }, [kpis, baseKpis]);
 
-  const scenarioLabel = scenario === "base" ? "Base Case" :
-    scenario === "upside" ? "Upside" :
-    scenario === "downside" ? "Downside" :
-    scenario === "extreme" ? "Stress Test" : scenario;
+  const meaningBullets = useMemo(() => whatThisMeansBullets(scenario), [scenario]);
 
   return (
     <div className={styles.container}>
@@ -100,14 +150,25 @@ export const ScenarioImpactView = memo(function ScenarioImpactView() {
       <section className={styles.overviewSection}>
         <div className={styles.overviewHeader}>
           <div className={styles.titleBlock}>
-            <h1 className={styles.pageTitle}>SCENARIO ANALYSIS</h1>
+            <h1 className={styles.pageTitle}>Scenario Deep Dive</h1>
             <div className={styles.scenarioBadge} data-scenario={scenario}>
               {scenarioLabel}
             </div>
           </div>
+
           <p className={styles.pageSubtitle}>
             Comparing <strong>Base Case</strong> → <strong>{scenarioLabel}</strong>
           </p>
+        </div>
+
+        {/* What this means (2–4 bullets) */}
+        <div className={styles.meaningPanel}>
+          <div className={styles.meaningTitle}>What this means</div>
+          <ul className={styles.meaningList}>
+            {meaningBullets.slice(0, 4).map((b) => (
+              <li key={b}>{b}</li>
+            ))}
+          </ul>
         </div>
 
         {/* Summary Cards + Spider Chart */}
@@ -127,10 +188,37 @@ export const ScenarioImpactView = memo(function ScenarioImpactView() {
             ))}
           </div>
 
-          {/* Right: Spider Chart */}
+          {/* Right: Spider Chart module */}
           <div className={styles.spiderWrap}>
-            <div className={styles.spiderHeader}>GROWTH EFFICIENCY</div>
+            <div className={styles.spiderHeaderRow}>
+              <div className={styles.spiderHeaderTitle}>Growth Efficiency Profile</div>
+              <button
+                type="button"
+                className={styles.spiderToggle}
+                onClick={() => setShowSpiderDetails((v) => !v)}
+              >
+                {showSpiderDetails ? "Hide details" : "Show details"}
+              </button>
+            </div>
+
+            <div className={styles.spiderLegend}>
+              <span className={styles.legendItem}>Unit economics</span>
+              <span className={styles.legendDot}>•</span>
+              <span className={styles.legendItem}>Payback</span>
+              <span className={styles.legendDot}>•</span>
+              <span className={styles.legendItem}>Margin</span>
+              <span className={styles.legendDot}>•</span>
+              <span className={styles.legendItem}>Momentum</span>
+            </div>
+
             <GrowthEfficiencySpider />
+
+            {showSpiderDetails ? (
+              <div className={styles.spiderDetails}>
+                Use this as a shape-check: strong profiles are balanced (not spiky). Large distortions typically mean
+                growth is being bought with efficiency, or efficiency is being protected at the expense of momentum.
+              </div>
+            ) : null}
           </div>
         </div>
       </section>
@@ -140,7 +228,7 @@ export const ScenarioImpactView = memo(function ScenarioImpactView() {
           ============================================================ */}
       <div className={styles.sectionDivider}>
         <span className={styles.dividerLine} />
-        <span className={styles.dividerLabel}>DETAILED VARIANCE ANALYSIS</span>
+        <span className={styles.dividerLabel}>Detailed variance analysis</span>
         <span className={styles.dividerLine} />
       </div>
 
@@ -149,7 +237,7 @@ export const ScenarioImpactView = memo(function ScenarioImpactView() {
           ============================================================ */}
       <section className={styles.metricsSection}>
         <ScenarioImpactPanel
-          title="CORE SCENARIO METRICS"
+          title="Core scenario metrics"
           subtitle="Revenue, Valuation & Financial Position"
           rows={scenarioMetrics}
           rightHint=""
@@ -168,7 +256,7 @@ export const ScenarioImpactView = memo(function ScenarioImpactView() {
           ============================================================ */}
       <section className={styles.metricsSection}>
         <ScenarioImpactPanel
-          title="GROWTH & EFFICIENCY METRICS"
+          title="Growth & efficiency metrics"
           subtitle="Customer Acquisition, LTV/CAC & Unit Economics"
           rows={growthMetrics}
           rightHint=""
@@ -187,7 +275,7 @@ export const ScenarioImpactView = memo(function ScenarioImpactView() {
           ============================================================ */}
       <section className={styles.metricsSection}>
         <ScenarioImpactPanel
-          title="RISK & RUNWAY METRICS"
+          title="Risk & runway metrics"
           subtitle="Burn Rate, Cash Position & Risk Exposure"
           rows={riskMetrics}
           rightHint=""
@@ -195,22 +283,22 @@ export const ScenarioImpactView = memo(function ScenarioImpactView() {
       </section>
 
       {/* ============================================================
-          AI COMMENTARY FOOTER
+          AI COMMENTARY FOOTER (display copy only)
           ============================================================ */}
       <section className={styles.aiFooter}>
         <div className={styles.aiHeader}>
           <span className={styles.aiIcon}>🧠</span>
-          <span className={styles.aiTitle}>CFO INTELLIGENCE SUMMARY</span>
+          <span className={styles.aiTitle}>CFO intelligence summary</span>
         </div>
         <p className={styles.aiText}>
           {scenario === "base" ? (
             "Base Case represents current trajectory with no strategic adjustments. Use this as your benchmark for evaluating alternative scenarios."
           ) : scenario === "upside" ? (
-            "Upside scenario models optimistic execution with strong market tailwinds. Higher growth trajectory with improved unit economics if key assumptions hold. Best-case planning scenario."
+            "Upside scenario models optimistic execution with strong market tailwinds. Higher growth trajectory with improved unit economics if key assumptions hold."
           ) : scenario === "downside" ? (
-            "Downside scenario assumes challenging market conditions or execution headwinds. Lower growth but maintains operational discipline. Prudent planning for uncertain environments."
+            "Downside scenario assumes challenging market conditions or execution headwinds. Lower growth but maintains operational discipline."
           ) : (
-            "Stress Test scenario evaluates extreme adverse conditions. Critical for assessing survivability, runway constraints, and defensive restructuring options. Worst-case resilience check."
+            "Stress scenario models adverse conditions to test survivability. Use this to surface runway constraints and defensive actions early."
           )}
         </p>
       </section>
