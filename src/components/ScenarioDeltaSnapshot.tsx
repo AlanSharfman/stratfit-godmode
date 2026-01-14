@@ -1,3 +1,4 @@
+import { buildDeltaRowsFromLedger, scoreTopMoves } from "@/logic/deltaMoves";
 // --- Spider fallback (ledger-only, deterministic) ---------------------------
 type SpiderAxis = { metric: string; label: string; value: number };
 
@@ -242,131 +243,31 @@ export default function ScenarioDeltaSnapshot() {
   const spiderBaseAxes = useMemo(() => {
     if (!ledger) return [];
     return buildSpiderAxes({
-      runwayMonths: { value: lnValue(ledger.runwayMonths) },
-      arrGrowthPct: { value: lnValue(ledger.arrGrowthPct) },
-      riskScore: { value: lnValue(ledger.riskScore) },
-      qualityScore: { value: lnValue(ledger.qualityScore) },
-      arr12: { value: lnValue(ledger.arr12) },
+      runwayMonths: { value: lnValue(ledger.runwayMonths?.base) },
+      arrGrowthPct: { value: lnValue(ledger.arrGrowthPct?.base) },
+      riskScore: { value: lnValue(ledger.riskScore?.base) },
+      qualityScore: { value: lnValue(ledger.qualityScore?.base) },
+      arr12: { value: lnValue(ledger.arr12?.base) },
     } as any);
   }, [ledger]);
 
   const spiderScenarioAxes = useMemo(() => {
     if (!ledger) return [];
     return buildSpiderAxes({
-      runwayMonths: { value: lnValue(ledger.runwayMonths) },
-      arrGrowthPct: { value: lnValue(ledger.arrGrowthPct) },
-      riskScore: { value: lnValue(ledger.riskScore) },
-      qualityScore: { value: lnValue(ledger.qualityScore) },
-      arr12: { value: lnValue(ledger.arr12) },
+      runwayMonths: { value: lnValue(ledger.runwayMonths?.scenario) },
+      arrGrowthPct: { value: lnValue(ledger.arrGrowthPct?.scenario) },
+      riskScore: { value: lnValue(ledger.riskScore?.scenario) },
+      qualityScore: { value: lnValue(ledger.qualityScore?.scenario) },
+      arr12: { value: lnValue(ledger.arr12?.scenario) },
     } as any);
   }, [ledger]);
 
   const rows: (DeltaRow & { deltaRaw?: number; deltaPctRaw?: number | null })[] = useMemo(() => {
-    const fmt = {
-      money: (v: number) => formatUsdCompact(v),
-      percent: (v: number) => `${v.toFixed(1)}%`,
-      int: (v: number) => Math.round(v).toLocaleString(),
-    };
-    if (!ledger) return [];
-
-    const arr12Base = ledger.arr12.base;
-    const arr12Sc = ledger.arr12.scenario;
-    const arr12Delta = ledger.arr12.delta;
-    const arr12PctRaw = ledger.arr12.deltaPct != null ? ledger.arr12.deltaPct * 100 : null;
-
-    const riskBase = ledger.riskScore.base;
-    const riskSc = ledger.riskScore.scenario;
-    const riskDelta = ledger.riskScore.delta;
-
-    const runwayBase = ledger.runwayMonths.base;
-    const runwaySc = ledger.runwayMonths.scenario;
-    const runwayDelta = ledger.runwayMonths.delta;
-
-    const gBase = ledger.arrGrowthPct.base;
-    const gSc = ledger.arrGrowthPct.scenario;
-    const gDelta = ledger.arrGrowthPct.delta;
-
-    const qBandBase = ledger.qualityBand.base;
-    const qBandSc = ledger.qualityBand.scenario;
-
-    const dt = (d: number): DeltaRow["deltaType"] =>
-      Math.abs(d) < 1e-9 ? "neutral" : d > 0 ? "positive" : "negative";
-
-    return [
-      {
-        metric: "ARR 12m",
-        base: fmt.money(arr12Base),
-        scenario: fmt.money(arr12Sc),
-        delta: fmt.money(arr12Delta),
-        deltaPct: arr12PctRaw == null ? "" : fmt.percent(arr12PctRaw),
-        deltaType: dt(arr12Delta),
-        commentary: "ARR impact is the primary scale driver.",
-        deltaRaw: arr12Delta,
-        deltaPctRaw: arr12PctRaw,
-      },
-      {
-        metric: "ARR Growth",
-        base: fmt.percent(gBase),
-        scenario: fmt.percent(gSc),
-        delta: fmt.percent(gDelta),
-        deltaPct: "",
-        deltaType: dt(gDelta),
-        commentary: "Growth trajectory change.",
-        deltaRaw: gDelta,
-        deltaPctRaw: null,
-      },
-      {
-        metric: "Runway (months)",
-        base: fmt.int(runwayBase),
-        scenario: fmt.int(runwaySc),
-        delta: fmt.int(runwayDelta),
-        deltaPct: "",
-        deltaType: dt(runwayDelta),
-        commentary: "Runway impact reflects survival window.",
-        deltaRaw: runwayDelta,
-        deltaPctRaw: null,
-      },
-      {
-        metric: "RiskScore",
-        base: fmt.int(riskBase),
-        scenario: fmt.int(riskSc),
-        delta: fmt.int(riskDelta),
-        deltaPct: "",
-        deltaType: dt(riskDelta),
-        commentary: "RiskScore shift indicates fragility.",
-        deltaRaw: riskDelta,
-        deltaPctRaw: null,
-      },
-      {
-        metric: "Quality Band",
-        base: qBandBase,
-        scenario: qBandSc,
-        delta: qBandBase === qBandSc ? "—" : `${qBandBase} → ${qBandSc}`,
-        deltaPct: "",
-        deltaType: qBandBase === qBandSc ? "neutral" : "negative",
-        commentary: "Structural quality change.",
-        deltaRaw: qBandBase === qBandSc ? 0 : -1,
-        deltaPctRaw: null,
-      },
-    ];
+    return buildDeltaRowsFromLedger(ledger as any);
   }, [ledger]);
 
   const topMoves = useMemo(() => {
-    if (rows.length === 0) return [];
-    const scored = rows.map((r) => {
-      const score =
-        typeof r.deltaPctRaw === "number"
-          ? Math.abs(r.deltaPctRaw)
-          : typeof r.deltaRaw === "number"
-          ? Math.abs(r.deltaRaw)
-          : 0;
-      return { r, score };
-    });
-
-    return scored
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 3)
-      .map(({ r }) => r);
+    return scoreTopMoves(rows, 3);
   }, [rows]);
 
   if (!ledger) return null;

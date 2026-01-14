@@ -293,8 +293,23 @@ export default function AIIntelligenceEnhanced({
     [levers, scenario, viewMode, ledger]
   );
 
-  // Guard if insights is null
-  if (!insights) return null;
+  // Always-defined, stable safeInsights object
+  const safeInsights = useMemo(() => {
+    return (
+      insights ?? {
+        observation: "",
+        metrics: [],
+        systemState: [],
+        risks: [],
+        actions: [],
+        timestamp: new Date(0),
+      }
+    );
+  }, [insights]);
+
+  // IMPORTANT: never early-return before all hooks (Rules of Hooks).
+  // If insights is null (eg initial render), keep hooks stable and render a safe fallback later.
+  const hasInsights = !!insights;
 
   // LIVE UPDATE SIGNAL (sliders): `levers` prop updates on every slider move
   const leverSignal = useMemo(() => JSON.stringify(levers), [levers]);
@@ -302,7 +317,7 @@ export default function AIIntelligenceEnhanced({
   const [activeTab, setActiveTab] = useState<"executive" | "risk" | "value" | "questions">("executive");
 
   // Typewriter key: restart only when the displayed brief text changes (or mode changes)
-  const briefText = insights.observation;
+  const briefText = safeInsights.observation;
   const briefContentKey = useMemo(() => `${activeTab}:${briefText}`, [activeTab, briefText]);
 
   const typedObservation = useTypewriter(briefText, briefContentKey, 15);
@@ -415,8 +430,8 @@ export default function AIIntelligenceEnhanced({
   };
 
   const riskScore = (() => {
-    if (!insights.risks || insights.risks.length === 0) return 0;
-    const sum = insights.risks.reduce((acc, r) => {
+    if (!safeInsights.risks || safeInsights.risks.length === 0) return 0;
+    const sum = safeInsights.risks.reduce((acc, r) => {
       if (!r?.severity) return acc;
       if (r.severity === "CRITICAL") return acc - 3;
       if (r.severity === "HIGH") return acc - 2;
@@ -427,7 +442,7 @@ export default function AIIntelligenceEnhanced({
   })();
 
   const valuationPosture =
-    !insights.risks || insights.risks.length === 0
+    !safeInsights.risks || safeInsights.risks.length === 0
       ? "Neutral"
       : riskScore <= -4
         ? "Compression"
@@ -438,15 +453,15 @@ export default function AIIntelligenceEnhanced({
             : "Expansion";
 
   const hasElevatedOrCriticalSystem =
-    Array.isArray(insights.systemState) &&
-    insights.systemState.some((s) => s.status === "ELEVATED" || s.status === "CRITICAL");
+    Array.isArray(safeInsights.systemState) &&
+    safeInsights.systemState.some((s) => s.status === "ELEVATED" || s.status === "CRITICAL");
   const hasAllStableSystem =
-    Array.isArray(insights.systemState) &&
-    insights.systemState.length > 0 &&
-    insights.systemState.every((s) => s.status === "STABLE");
+    Array.isArray(safeInsights.systemState) &&
+    safeInsights.systemState.length > 0 &&
+    safeInsights.systemState.every((s) => s.status === "STABLE");
 
   // --------------------------------------------------------------------------
-  // RISK MAP (RADAR) — derived deterministically from existing `insights.risks`
+  // RISK MAP (RADAR) — derived deterministically from existing `safeInsights.risks`
   // --------------------------------------------------------------------------
   type Axis = {
     key: string;
@@ -467,14 +482,14 @@ export default function AIIntelligenceEnhanced({
   );
 
   const overallExposure01 = useMemo(() => {
-    const rs = Array.isArray(insights.risks) ? insights.risks : [];
+    const rs = Array.isArray(safeInsights.risks) ? safeInsights.risks : [];
     if (rs.length === 0) return 0.5;
     const avg = rs.reduce((acc, r) => acc + severityWeight01(r?.severity), 0) / rs.length;
     return clamp01(avg);
-  }, [insights.risks]);
+  }, [safeInsights.risks]);
 
   const axisValues01 = useMemo(() => {
-    const rs = Array.isArray(insights.risks) ? insights.risks : [];
+    const rs = Array.isArray(safeInsights.risks) ? safeInsights.risks : [];
     const values = axes.map((axis) => {
       const hits = rs.filter((r) => {
         const t = `${r?.title ?? ""} ${r?.driver ?? ""} ${r?.impact ?? ""}`.toLowerCase();
@@ -485,7 +500,7 @@ export default function AIIntelligenceEnhanced({
       return clamp01(avg);
     });
     return values;
-  }, [axes, insights.risks, overallExposure01]);
+  }, [axes, safeInsights.risks, overallExposure01]);
 
   const bandFrom01 = (v01: number) => (v01 < 0.34 ? "Low" : v01 < 0.67 ? "Med" : "High");
 
@@ -517,12 +532,12 @@ export default function AIIntelligenceEnhanced({
     const polyPts = axisValues01.map((v, i) => pointAt(i, v, 1));
     const polyD = polyPts.map((p, idx) => `${idx === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ") + " Z";
 
-    const hasCritical = (insights.risks ?? []).some((r) => r?.severity === "CRITICAL");
-    const hasHigh = (insights.risks ?? []).some((r) => r?.severity === "HIGH");
+    const hasCritical = (safeInsights?.risks ?? []).some((r) => r?.severity === "CRITICAL");
+    const hasHigh = (safeInsights?.risks ?? []).some((r) => r?.severity === "HIGH");
     const fillClass = hasCritical ? styles.radarFillCritical : hasHigh ? styles.radarFillWarning : styles.radarFillWarning;
 
     return { cx, cy, r, gridPaths, axesLines, polyPts, polyD, fillClass };
-  }, [axes.length, axisValues01, insights.risks]);
+  }, [axes.length, axisValues01, safeInsights?.risks]);
 
   // --------------------------------------------------------------------------
   // QUESTIONS — deterministic Q&A when no dedicated dataset exists
@@ -540,7 +555,7 @@ export default function AIIntelligenceEnhanced({
     const focalAxis = axes[topAxisIndex]?.label ?? "Risk exposure";
     const posture = valuationPosture;
     const leverLine =
-      Array.isArray(insights.actions) && insights.actions.length > 0
+      Array.isArray(safeInsights.actions) && safeInsights.actions.length > 0
         ? "Several execution levers are available; prioritize the ones that reduce concentrated exposure first."
         : "Execution levers are limited; focus on stabilizing the dominant exposure driver first.";
 
@@ -563,7 +578,7 @@ export default function AIIntelligenceEnhanced({
         a: `${leverLine} Use the Risk Map to target the axis with the highest band first, then validate that the footprint contracts as sliders move.`,
       },
     ];
-  }, [axes, insights.actions, overallExposure01, topAxisIndex, valuationPosture]);
+  }, [axes, safeInsights.actions, overallExposure01, topAxisIndex, valuationPosture]);
 
   const openAnswerText = openQuestionIndex === null ? "" : (questions[openQuestionIndex]?.a ?? "");
   const answerContentKey = useMemo(
@@ -618,6 +633,7 @@ export default function AIIntelligenceEnhanced({
     };
   }, [valuationPosture]);
 
+  // Now it is safe to bail out (after all hooks are declared)
   return (
     <div ref={panelRef} className={styles.aiPanel} onScroll={handleScroll}>
       <div className={styles.header}>
@@ -691,7 +707,7 @@ export default function AIIntelligenceEnhanced({
               <span>SIGNALS</span>
             </div>
 
-            {insights.systemState.slice(0, 3).map((state, i) => {
+            {safeInsights.systemState.slice(0, 3).map((state, i) => {
               const conf =
                 state.status === "CRITICAL"
                   ? { label: "Lower confidence", className: styles.bandCritical }
@@ -713,7 +729,7 @@ export default function AIIntelligenceEnhanced({
               );
             })}
 
-            {insights.risks.slice(0, 4).map((risk, i) => {
+            {safeInsights.risks.slice(0, 4).map((risk, i) => {
               const conf = confidenceFromSeverity(risk?.severity);
               return (
                 <div key={`risk-signal-${i}`} className={`${styles.card} ${severityToCardAccent(risk.severity)}`}>
@@ -783,7 +799,7 @@ export default function AIIntelligenceEnhanced({
               </div>
             </div>
 
-            {insights.risks.map((risk, i) => {
+            {safeInsights.risks.map((risk, i) => {
               const category = categoryFromRisk(risk);
               const horizon =
                 typeof (risk as any)?.horizon === "string" && (risk as any).horizon.trim().length > 0
@@ -941,7 +957,7 @@ export default function AIIntelligenceEnhanced({
                     <li className={styles.bulletItem}>Allocate investment selectively with risk containment.</li>
                   </>
                 )}
-                {Array.isArray(insights.actions) && insights.actions.length > 0 ? (
+                {Array.isArray(safeInsights.actions) && safeInsights.actions.length > 0 ? (
                   <li className={styles.bulletItem}>Execution levers available: several action options available.</li>
                 ) : (
                   <li className={styles.bulletItem}>Execution levers available: action options identified.</li>

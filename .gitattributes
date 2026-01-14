@@ -1,0 +1,11 @@
+# Normalize text files to LF in repo, keep working copy behavior sane on Windows
+* text=auto
+
+# Code files
+*.ts  text eol=lf
+*.tsx text eol=lf
+*.js  text eol=lf
+*.jsx text eol=lf
+*.css text eol=lf
+*.md  text eol=lf
+*.json text eol=lf
