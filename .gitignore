@@ -41,3 +41,7 @@ node_modules/.vite/
 
 # Secrets
 .env.local
+
+# local safety backups
+*.bak
+*.bak*

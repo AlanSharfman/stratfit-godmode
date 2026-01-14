@@ -1,0 +1,25 @@
+{
+  "extends": "../../tsconfig.json",
+
+  "compilerOptions": {
+    "noEmit": true,
+
+    /* Ensure VS Code treats this as its own project */
+    "jsx": "react-jsx",
+
+    /* These help VS Code resolve imports consistently */
+    "baseUrl": "../../",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+
+    /* Keep it editor-only, fast, and not fragile */
+    "skipLibCheck": true
+  },
+
+  /* OVERRIDE root excludes so strategy files are included in THIS sub-project */
+  "exclude": [],
+
+  /* Explicitly include strategy sources so it never says “No inputs were found” */
+  "include": ["./**/*.ts", "./**/*.tsx"]
+}

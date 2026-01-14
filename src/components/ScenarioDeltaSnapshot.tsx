@@ -1,3 +1,43 @@
+// --- Spider fallback (ledger-only, deterministic) ---------------------------
+type SpiderAxis = { metric: string; label: string; value: number };
+
+function clamp100(n: number) {
+  return Math.max(0, Math.min(100, n));
+}
+
+function scoreLinear(v: number | null, min: number, max: number) {
+  if (v === null || !Number.isFinite(v) || max === min) return 50;
+  const t = (v - min) / (max - min);
+  return clamp100(t * 100);
+}
+
+/**
+ * Build a stable 5-axis spider from the canonical ScenarioDeltaLedger.
+ * This guarantees spokes + polygon always render (even if some values are missing).
+ */
+function axesFromLedger(ledger: {
+  runwayMonths?: { value: number | null };
+  arrGrowthPct?: { value: number | null }; // percent units
+  riskScore?: { value: number | null };    // higher = more risk
+  qualityScore?: { value: number | null };
+  arr12?: { value: number | null };
+}): SpiderAxis[] {
+  const runway = ledger.runwayMonths?.value ?? null;     // months
+  const growth = ledger.arrGrowthPct?.value ?? null;     // %
+  const risk = ledger.riskScore?.value ?? null;          // 0..100 (risk)
+  const quality = ledger.qualityScore?.value ?? null;    // 0..100
+  const arr12 = ledger.arr12?.value ?? null;             // currency
+
+  return [
+    { metric: "runway",  label: "Runway",  value: scoreLinear(runway, 6, 24) },
+    { metric: "growth",  label: "Growth",  value: scoreLinear(growth, -10, 30) },
+    // RiskScore is "risk"; spider fitness wants "health", so invert
+    { metric: "health",  label: "Health",  value: clamp100(100 - (risk ?? 50)) },
+    { metric: "quality", label: "Quality", value: clamp100(quality ?? 50) },
+    // ARR12 scale: tune min/max later; this is safe and stable for now
+    { metric: "scale",   label: "Scale",   value: scoreLinear(arr12, 1_000_000, 10_000_000) },
+  ];
+}
 // src/components/ScenarioDeltaSnapshot.tsx
 // Scenario Delta Snapshot — CFO-grade Base → Scenario comparison
 // Truth wired to engineResults (no demo data, no placeholders)
@@ -157,7 +197,9 @@ function getVarianceCommentary(
     },
     Valuation: {
       positive:
-        pctValue > 40
+
+      
+      pctValue > 40
           ? `Enterprise value creation accelerating. Fundamentals support multiple expansion.`
           : `Valuation uplift reflects improving growth and unit economics.`,
       negative:
@@ -174,35 +216,52 @@ function getVarianceCommentary(
 
 export default function ScenarioDeltaSnapshot() {
 
+  // Accepts any LedgerNumber-ish shape and returns a safe number.
+  function lnValue(x: unknown): number {
+    if (typeof x === "number" && Number.isFinite(x)) return x;
+    // common shapes: { value }, { n }, { raw }, etc
+    const v =
+      (x as any)?.value ??
+      (x as any)?.n ??
+      (x as any)?.raw ??
+      (x as any)?.num ??
+      null;
+    return typeof v === "number" && Number.isFinite(v) ? v : 0;
+  }
+
   const activeScenarioId = useScenarioStore((s) => s.activeScenarioId);
   const engineResults = useScenarioStore((s) => s.engineResults);
-
   const [open, setOpen] = useState(true);
-
   const scenarioKey = activeScenarioId ?? "base";
 
+  // Canonical hooks for all render logic
   const ledger = useMemo(() => {
     return buildScenarioDeltaLedger({ engineResults, activeScenario: scenarioKey });
   }, [engineResults, scenarioKey]);
 
-  if (!ledger) return null;
+  const spiderBaseAxes = useMemo(() => {
+    if (!ledger) return [];
+    return buildSpiderAxes({
+      runwayMonths: { value: lnValue(ledger.runwayMonths) },
+      arrGrowthPct: { value: lnValue(ledger.arrGrowthPct) },
+      riskScore: { value: lnValue(ledger.riskScore) },
+      qualityScore: { value: lnValue(ledger.qualityScore) },
+      arr12: { value: lnValue(ledger.arr12) },
+    } as any);
+  }, [ledger]);
 
-  const metricDefs = useMemo(
-    () => [
-      { key: "arr", label: "ARR (Run-Rate)", fmt: (v: number) => formatUsdCompact(v) },
-      { key: "arrNext12", label: "ARR in 12 Months", fmt: (v: number) => formatUsdCompact(v) },
-      { key: "grossMargin", label: "Gross Margin", fmt: (v: number) => formatPctCompact(v) },
-      { key: "burnRate", label: "Burn Rate", fmt: (v: number) => formatUsdCompact(v) },
-      { key: "runway", label: "Runway", fmt: (v: number) => fmtMo(v) },
-      { key: "cashPosition", label: "Cash Balance", fmt: (v: number) => formatUsdCompact(v) },
-      { key: "riskScore", label: "Risk Score", fmt: (v: number) => `${fmtInt(v)}/100` },
-      { key: "enterpriseValue", label: "Valuation", fmt: (v: number) => formatUsdCompact(v) },
-    ],
-    []
-  );
+  const spiderScenarioAxes = useMemo(() => {
+    if (!ledger) return [];
+    return buildSpiderAxes({
+      runwayMonths: { value: lnValue(ledger.runwayMonths) },
+      arrGrowthPct: { value: lnValue(ledger.arrGrowthPct) },
+      riskScore: { value: lnValue(ledger.riskScore) },
+      qualityScore: { value: lnValue(ledger.qualityScore) },
+      arr12: { value: lnValue(ledger.arr12) },
+    } as any);
+  }, [ledger]);
 
-  const rows: DeltaRow[] = useMemo(() => {
-    // Formatting helpers
+  const rows: (DeltaRow & { deltaRaw?: number; deltaPctRaw?: number | null })[] = useMemo(() => {
     const fmt = {
       money: (v: number) => formatUsdCompact(v),
       percent: (v: number) => `${v.toFixed(1)}%`,
@@ -213,7 +272,7 @@ export default function ScenarioDeltaSnapshot() {
     const arr12Base = ledger.arr12.base;
     const arr12Sc = ledger.arr12.scenario;
     const arr12Delta = ledger.arr12.delta;
-    const arr12Pct = ledger.arr12.deltaPct != null ? ledger.arr12.deltaPct * 100 : null;
+    const arr12PctRaw = ledger.arr12.deltaPct != null ? ledger.arr12.deltaPct * 100 : null;
 
     const riskBase = ledger.riskScore.base;
     const riskSc = ledger.riskScore.scenario;
@@ -239,9 +298,11 @@ export default function ScenarioDeltaSnapshot() {
         base: fmt.money(arr12Base),
         scenario: fmt.money(arr12Sc),
         delta: fmt.money(arr12Delta),
-        deltaPct: arr12Pct == null ? "" : fmt.percent(arr12Pct),
+        deltaPct: arr12PctRaw == null ? "" : fmt.percent(arr12PctRaw),
         deltaType: dt(arr12Delta),
         commentary: "ARR impact is the primary scale driver.",
+        deltaRaw: arr12Delta,
+        deltaPctRaw: arr12PctRaw,
       },
       {
         metric: "ARR Growth",
@@ -251,6 +312,8 @@ export default function ScenarioDeltaSnapshot() {
         deltaPct: "",
         deltaType: dt(gDelta),
         commentary: "Growth trajectory change.",
+        deltaRaw: gDelta,
+        deltaPctRaw: null,
       },
       {
         metric: "Runway (months)",
@@ -260,6 +323,8 @@ export default function ScenarioDeltaSnapshot() {
         deltaPct: "",
         deltaType: dt(runwayDelta),
         commentary: "Runway impact reflects survival window.",
+        deltaRaw: runwayDelta,
+        deltaPctRaw: null,
       },
       {
         metric: "RiskScore",
@@ -269,6 +334,8 @@ export default function ScenarioDeltaSnapshot() {
         deltaPct: "",
         deltaType: dt(riskDelta),
         commentary: "RiskScore shift indicates fragility.",
+        deltaRaw: riskDelta,
+        deltaPctRaw: null,
       },
       {
         metric: "Quality Band",
@@ -278,25 +345,31 @@ export default function ScenarioDeltaSnapshot() {
         deltaPct: "",
         deltaType: qBandBase === qBandSc ? "neutral" : "negative",
         commentary: "Structural quality change.",
+        deltaRaw: qBandBase === qBandSc ? 0 : -1,
+        deltaPctRaw: null,
       },
     ];
   }, [ledger]);
 
-    // PATCH 3: Define topMoves after rows
-    const topMoves = useMemo(() => {
-      const scored = rows.map((r) => {
-        const pct = Number(r.deltaPct);
-        const hasPct = Number.isFinite(pct) && r.deltaPct !== "";
-        const score = hasPct ? Math.abs(pct) : Math.abs(Number(r.delta) || 0);
-        return { r, score };
-      });
+  const topMoves = useMemo(() => {
+    if (rows.length === 0) return [];
+    const scored = rows.map((r) => {
+      const score =
+        typeof r.deltaPctRaw === "number"
+          ? Math.abs(r.deltaPctRaw)
+          : typeof r.deltaRaw === "number"
+          ? Math.abs(r.deltaRaw)
+          : 0;
+      return { r, score };
+    });
 
-      return scored
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 3)
-        .map(({ r }) => r);
-    }, [rows]);
+    return scored
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3)
+      .map(({ r }) => r);
+  }, [rows]);
 
+  if (!ledger) return null;
   return (
     <div className={styles.wrap}>
       <div className={styles.topBar}>
@@ -334,8 +407,8 @@ export default function ScenarioDeltaSnapshot() {
                   <div className={styles.radarStage}>
                     <SpiderRadar
                       title=""
-                      base={[]}
-                      scenario={[]}
+                      base={spiderBaseAxes}
+                      scenario={spiderScenarioAxes}
                       note=""
                     />
                   </div>

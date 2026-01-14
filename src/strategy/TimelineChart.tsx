@@ -15,6 +15,18 @@ import {
 import { useScenarioStore } from "@/state/scenarioStore";
 import { STRATEGY_LABEL_COLORS } from "./Strategy";
 import type { Strategy } from "./Strategy";
+import type { ValueType } from "recharts/types/component/DefaultTooltipContent";
+
+function valueTypeToNumber(v: ValueType | undefined): number {
+  if (typeof v === "number") return v;
+  if (typeof v === "string") {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  }
+  // ValueType can be (number|string)[] in some cases; fallback safely
+  return 0;
+}
+
 
 // Color palette for multiple strategies
 const STRATEGY_COLORS = [
@@ -208,7 +220,7 @@ export function TimelineChart({
               borderRadius: 8,
               fontSize: 12,
             }}
-            formatter={(value: number) => [formatValue(value), ""]}
+            formatter={(value) => [formatValue(valueTypeToNumber(value)), ""]}
             labelFormatter={(label) => `Month ${label}`}
           />
           <Legend />
