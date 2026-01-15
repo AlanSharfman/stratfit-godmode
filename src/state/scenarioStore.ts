@@ -120,6 +120,8 @@ export type ScenarioStoreState = {
   strategies: Strategy[];
   currentLevers: StrategyLevers | null;
   setCurrentLevers: (levers: StrategyLevers) => void;
+  setLeversPartial: (partial: Partial<StrategyLevers>) => void;
+  setLeverValue: (id: string, value: number) => void;
   saveStrategy: (name: string, notes?: string) => void;
   deleteStrategy: (id: string) => void;
   loadStrategy: (id: string) => Strategy | null;
@@ -333,7 +335,23 @@ export const useScenarioStore = create<ScenarioStoreState>((set, get) => ({
   // Strategy management
   strategies: [],
   currentLevers: null,
+
+  // Whole-object replace (used by existing flows)
   setCurrentLevers: (levers) => set({ currentLevers: levers }),
+
+  // Phase-IG slider perf support (safe partial updates)
+  // NOTE: these are intentionally no-ops if currentLevers is null
+  setLeversPartial: (partial) =>
+    set((state) => {
+      if (!state.currentLevers) return {};
+      return { currentLevers: { ...state.currentLevers, ...partial } };
+    }),
+
+  setLeverValue: (id, value) =>
+    set((state) => {
+      if (!state.currentLevers) return {};
+      return { currentLevers: { ...state.currentLevers, [id]: value } };
+    }),
   
   saveStrategy: (name, notes) => {
     const s = get();

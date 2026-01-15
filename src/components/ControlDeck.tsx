@@ -451,6 +451,31 @@ export function ControlDeck(props: {
   const pendingLeverUpdate = useRef<{ id: LeverId; intensity: number } | null>(null);
   const leverUpdateFrame = useRef<number | null>(null);
 
+  // PERF: throttle the "real" slider change pipeline (engine recompute / renders)
+  // We keep highlight updates separate (setActiveLever), but batch onChange to 1/frame.
+  const pendingOnChange = useRef<Map<LeverId, number>>(new Map());
+  const rafOnChangeId = useRef<number | null>(null);
+
+  const flushOnChange = useCallback(
+    (forceId?: LeverId) => {
+      if (forceId) {
+        const v = pendingOnChange.current.get(forceId);
+        if (v !== undefined) {
+          pendingOnChange.current.delete(forceId);
+          onChange(forceId, v);
+        }
+        return;
+      }
+
+      // flush all
+      for (const [id, v] of pendingOnChange.current.entries()) {
+        onChange(id, v);
+      }
+      pendingOnChange.current.clear();
+    },
+    [onChange]
+  );
+
   const rangeMap = useMemo(() => {
     const m = new Map<LeverId, { min: number; max: number; def: number }>();
     boxes.forEach((b) =>
@@ -558,17 +583,31 @@ export function ControlDeck(props: {
       setActiveLever(null, 0);
       leverReleaseTimeoutRef.current = null;
     }, 50);
+
+    // Ensure final slider value is committed immediately on release
+    flushOnChange(lastId ?? undefined);
+
     onChange("__end__", 0);
-  }, [setActiveLever, onChange]);
+  }, [setActiveLever, onChange, flushOnChange]);
 
   const handleSliderChange = useCallback(
     (id: LeverId, v: number) => {
       lastLeverIdRef.current = id;
-      // Throttle store updates, but always pass value change through
+
+      // keep highlight / focus responsive
       throttledSetActiveLever(id, computeIntensity01(id, v));
-      onChange(id, v);
+
+      // PERF: batch real updates to 1 per frame
+      pendingOnChange.current.set(id, v);
+
+      if (rafOnChangeId.current == null) {
+        rafOnChangeId.current = requestAnimationFrame(() => {
+          rafOnChangeId.current = null;
+          flushOnChange(); // flush latest values for all moved sliders this frame
+        });
+      }
     },
-    [computeIntensity01, throttledSetActiveLever, onChange]
+    [computeIntensity01, throttledSetActiveLever, flushOnChange]
   );
 
   // Build highlight color function for sliders
