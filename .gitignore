@@ -45,3 +45,7 @@ node_modules/.vite/
 # local safety backups
 *.bak
 *.bak*
+
+# local recovery artifacts
+_quarantine/
+
