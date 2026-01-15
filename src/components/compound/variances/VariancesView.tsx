@@ -47,7 +47,7 @@ export default function VariancesView() {
         {baseHasKpis ? (
           <section className={styles.content}>
             <ScenarioDeltaSnapshot />
-            <RiskBreakdownPanel />
+            <RiskBreakdownPanel ledger={null} />
           </section>
         ) : (
           <section className={styles.empty}>

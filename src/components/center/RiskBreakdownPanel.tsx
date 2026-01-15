@@ -3,9 +3,7 @@
 // Heatmap visuals derive ONLY from buildScenarioDeltaLedger(engineResults, activeScenario)
 
 import { useMemo } from "react";
-import { useShallow } from "zustand/react/shallow";
-import { useScenarioStore } from "@/state/scenarioStore";
-import { buildScenarioDeltaLedger } from "@/logic/scenarioDeltaLedger";
+import type { ScenarioDeltaLedger } from "@/logic/scenarioDeltaLedger";
 import styles from "./RiskBreakdownPanel.module.css";
 
 type Tone = "pos" | "neg" | "neutral";
@@ -143,21 +141,11 @@ const METRICS: MetricSpec[] = [
   },
 ];
 
-export default function RiskBreakdownPanel() {
-  const { engineResults, activeScenarioId } = useScenarioStore(
-    useShallow((s) => ({
-      engineResults: s.engineResults,
-      activeScenarioId: s.activeScenarioId,
-    }))
-  );
+type Props = {
+  ledger: ScenarioDeltaLedger | null;
+};
 
-  const ledger = useMemo(() => {
-    return buildScenarioDeltaLedger({
-      engineResults,
-      activeScenario: activeScenarioId ?? "base",
-    });
-  }, [engineResults, activeScenarioId]);
-
+export default function RiskBreakdownPanel({ ledger }: Props) {
   const rows = useMemo(() => {
     const l: any = ledger ?? {};
 

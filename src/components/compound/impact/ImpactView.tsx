@@ -1,8 +1,10 @@
 // src/components/compound/impact/ImpactView.tsx
 
+import { useMemo } from "react";
 import RiskBreakdownPanel from "@/components/center/RiskBreakdownPanel";
 import { useScenarioStore } from "@/state/scenarioStore";
 import { useShallow } from "zustand/react/shallow";
+import { buildScenarioDeltaLedger } from "@/logic/scenarioDeltaLedger";
 
 export default function ImpactView() {
   const { engineResults, activeScenarioId } = useScenarioStore(
@@ -24,19 +26,15 @@ export default function ImpactView() {
       </div>
     );
   }
+  
+  const ledger = useMemo(() => {
+    if (!engineResults) return null;
+    return buildScenarioDeltaLedger({ engineResults, activeScenario: activeScenarioId });
+  }, [engineResults, activeScenarioId]);
 
   return (
     <div className="relative h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-gradient-to-br from-slate-950/60 to-black/80 p-6 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
-      <div style={{
-        position: "absolute",
-        top: 10,
-        right: 16,
-        fontSize: 11,
-        opacity: 0.75
-      }}>
-        Truth: {hasEngine ? "ENGINE ✅" : "ENGINE ❌"} • activeScenarioId: {activeScenarioId ?? "—"}
-      </div>
-      <RiskBreakdownPanel />
+      <RiskBreakdownPanel ledger={ledger} />
     </div>
   );
 }
