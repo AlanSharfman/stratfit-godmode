@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { CenterView } from "@/components/CenterViewSegmented";
 import ScenarioMountain from "@/components/mountain/ScenarioMountain";
+
 import ScenarioDeltaSnapshot from "@/components/ScenarioDeltaSnapshot";
+import RiskBreakdownPanel from "@/components/center/RiskBreakdownPanel";
 
 import { useScenario, useDataPoints, useScenarioStore } from "@/state/scenarioStore";
 import { onCausal } from "@/ui/causalEvents";
@@ -57,6 +59,10 @@ export default function CenterViewPanel(props: {
                 dataPoints={dataPoints}
                 activeKpiIndex={hoveredKpiIndex}
               />
+            </div>
+
+            <div className="mt-3 px-1">
+              <RiskBreakdownPanel />
             </div>
           </div>
         )}
