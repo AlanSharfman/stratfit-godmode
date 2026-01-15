@@ -2,11 +2,30 @@
 // Option A: Expandable "Risk Breakdown" (heatmap-style) under Mountain
 // Canonical source: buildScenarioDeltaLedger(engineResults, activeScenario)
 
+
 import React, { useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useScenarioStore } from "@/state/scenarioStore";
 import { buildScenarioDeltaLedger } from "@/logic/scenarioDeltaLedger";
 import styles from "./RiskBreakdownPanel.module.css";
+
+const fmtInt = (v?: number | null) =>
+  v == null || !Number.isFinite(v) ? "—" : Math.round(v).toString();
+
+const fmt1 = (v?: number | null) =>
+  v == null || !Number.isFinite(v) ? "—" : v.toFixed(1);
+
+const fmtPct1 = (v?: number | null) =>
+  v == null || !Number.isFinite(v) ? "—" : `${v.toFixed(1)}%`;
+
+const fmtMoneyCompact = (v?: number | null) => {
+  if (v == null || !Number.isFinite(v)) return "—";
+  return new Intl.NumberFormat("en-AU", {
+    notation: "compact",
+    compactDisplay: "short",
+    maximumFractionDigits: 1,
+  }).format(v);
+};
 
 type Tone = "pos" | "neg" | "neutral";
 
@@ -21,11 +40,6 @@ function lnNumber(x: any): number | null {
 }
 
 function displayDelta(delta: any, suffix = ""): string {
-  const d =
-    delta?.display ??
-    delta?.delta?.display ??
-    null;
-  if (typeof d === "string" && d.trim()) return `${d}${suffix}`;
   const n = lnNumber(delta?.delta ?? delta);
   if (n === null) return "—";
   const fixed = Math.abs(n) >= 100 ? Math.round(n).toString() : n.toFixed(1);
@@ -72,40 +86,40 @@ export default function RiskBreakdownPanel() {
       {
         key: "runway",
         label: "Runway",
-        base: lnNumber(ledger.runwayMonths?.base) ?? "—",
-        scenario: lnNumber(ledger.runwayMonths?.scenario) ?? "—",
+        base: fmt1(ledger.runwayMonths?.base),
+        scenario: fmt1(ledger.runwayMonths?.scenario),
         delta: displayDelta(ledger.runwayMonths?.delta, " mo"),
         tone: toneFromDelta(runwayDelta, false),
       },
       {
         key: "arr12",
         label: "ARR (Next 12)",
-        base: lnNumber(ledger.arr12?.base) ?? "—",
-        scenario: lnNumber(ledger.arr12?.scenario) ?? "—",
+        base: fmtMoneyCompact(ledger.arr12?.base),
+        scenario: fmtMoneyCompact(ledger.arr12?.scenario),
         delta: displayDelta(ledger.arr12?.delta, ""),
         tone: toneFromDelta(arr12Delta, false),
       },
       {
         key: "growth",
         label: "ARR Growth",
-        base: lnNumber(ledger.arrGrowthPct?.base) ?? "—",
-        scenario: lnNumber(ledger.arrGrowthPct?.scenario) ?? "—",
+        base: fmtPct1(ledger.arrGrowthPct?.base),
+        scenario: fmtPct1(ledger.arrGrowthPct?.scenario),
         delta: displayDelta(ledger.arrGrowthPct?.delta, "%"),
         tone: toneFromDelta(growthDelta, false),
       },
       {
         key: "risk",
         label: "Risk Score",
-        base: lnNumber(ledger.riskScore?.base) ?? "—",
-        scenario: lnNumber(ledger.riskScore?.scenario) ?? "—",
+        base: fmtInt(ledger.riskScore?.base),
+        scenario: fmtInt(ledger.riskScore?.scenario),
         delta: displayDelta(ledger.riskScore?.delta, ""),
         tone: toneFromDelta(riskDelta, true), // invert: lower risk is "pos"
       },
       {
         key: "quality",
         label: "Quality",
-        base: lnNumber(ledger.qualityScore?.base) ?? "—",
-        scenario: lnNumber(ledger.qualityScore?.scenario) ?? "—",
+        base: fmtInt(ledger.qualityScore?.base),
+        scenario: fmtInt(ledger.qualityScore?.scenario),
         delta: displayDelta(ledger.qualityScore?.delta, ""),
         tone: toneFromDelta(qualityDelta, false),
       },
