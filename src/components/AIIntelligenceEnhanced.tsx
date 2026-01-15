@@ -296,17 +296,21 @@ export default function AIIntelligenceEnhanced({
   // --- EXPLICIT DIAGNOSTIC LOGGING ---
   // Log all key values on every render for deep visibility
   const viewMode = useScenarioStore((s) => s.viewMode);
+  const engineResults = useScenarioStore((s) => s.engineResults);
+  const activeScenarioId = useScenarioStore((s) => s.activeScenarioId);
+
   const cfoSummary = useScenarioStore((s) => (s.engineResults?.[scenario] as any)?.ai?.summary);
-  const scenarioKey = useScenarioStore((s) => s.activeScenarioId ?? "base");
-  const engineResultForScenario = useScenarioStore((s) => s.engineResults?.[scenarioKey]);
-  const baseResult = useScenarioStore((s) => s.engineResults?.base);
+
+  // Canonical: build from the one true engineResults object only
   const ledger = useMemo(() => {
-    if (!engineResultForScenario || !baseResult) return null;
-    return buildScenarioDeltaLedger({
-      engineResults: { base: baseResult, [scenarioKey]: engineResultForScenario } as any,
-      activeScenario: scenarioKey,
-    });
-  }, [baseResult, engineResultForScenario, scenarioKey]);
+    if (!engineResults || !activeScenarioId) return null;
+    return buildScenarioDeltaLedger({ engineResults, activeScenario: activeScenarioId });
+  }, [engineResults, activeScenarioId]);
+
+  // Keep existing vars used below (minimal disruption)
+  const scenarioKey = activeScenarioId;
+  const baseResult = engineResults?.base;
+  const engineResultForScenario = scenarioKey ? engineResults?.[scenarioKey] : undefined;
 
   // Log on every render for these values
   // (This is safe in dev, remove or gate behind process.env.NODE_ENV for prod)

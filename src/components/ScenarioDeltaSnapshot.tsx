@@ -264,17 +264,15 @@ export default function ScenarioDeltaSnapshot() {
     ].join("|");
   });
 
-  const baseResult = useScenarioStore((s) => s.engineResults?.base);
+  const engineResults = useScenarioStore((s) => s.engineResults);
 
+  const baseResult = useScenarioStore((s) => s.engineResults?.base);
   const engineResultForScenario = useScenarioStore((s) => s.engineResults?.[scenarioKey]);
 
   const ledger = useMemo(() => {
-    if (!baseResult?.kpis || !engineResultForScenario?.kpis) return null;
-    return buildScenarioDeltaLedger({
-      engineResults: { base: baseResult, [scenarioKey]: engineResultForScenario },
-      activeScenario: scenarioKey,
-    });
-  }, [baseResult, engineResultForScenario, scenarioKey]);
+    if (!engineResults) return null;
+    return buildScenarioDeltaLedger({ engineResults, activeScenario: scenarioKey });
+  }, [engineResults, scenarioKey]);
 
   const spiderBaseAxes = useMemo(() => {
     if (!ledger) return [];
@@ -308,6 +306,7 @@ export default function ScenarioDeltaSnapshot() {
   }, [spiderBaseAxes, spiderScenarioAxes, scenarioKey]);
 
   const rows: (DeltaRow & { deltaRaw?: number; deltaPctRaw?: number | null })[] = useMemo(() => {
+    if (!ledger) return [];
     return buildDeltaRowsFromLedger(ledger as any);
   }, [ledger]);
 

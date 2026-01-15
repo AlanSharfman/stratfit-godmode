@@ -38,7 +38,7 @@ export default function ScenarioIntelligencePanel() {
 
   const { activeScenarioId, engineResults, activeLeverId } = useScenarioStore(
     useShallow((s) => ({
-      activeScenarioId: s.scenario, // or s.activeScenarioId if that's canonical
+      activeScenarioId: s.activeScenarioId,
       engineResults: s.engineResults,
       activeLeverId: (s as any).activeLeverId ?? null,
     }))
