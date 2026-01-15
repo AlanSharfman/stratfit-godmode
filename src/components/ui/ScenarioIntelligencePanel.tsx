@@ -13,25 +13,21 @@ function titleScenario(id: string | null | undefined): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-function ledgerScenarioNumber(ln: any): number | null {
-  const v =
-    ln?.scenario?.value ??
-    ln?.scenario ??
-    ln?.value ??
-    null;
-  return typeof v === "number" && Number.isFinite(v) ? v : null;
+function getLedgerNumber(ln: any): number | null {
+  if (!ln) return null;
+  if (typeof ln === "number") return ln;
+  if (typeof ln === "object") {
+    if (typeof ln.value === "number") return ln.value;
+    if (typeof ln.scenario === "number") return ln.scenario;
+    if (typeof ln.delta === "number") return ln.delta;
+  }
+  return null;
 }
 
-function ledgerScenarioDisplay(ln: any, fallbackDecimals = 0, suffix = ""): string {
-  const d =
-    ln?.scenario?.display ??
-    ln?.display ??
-    null;
-  if (typeof d === "string" && d.trim()) return d;
-  const n = ledgerScenarioNumber(ln);
-  if (n === null) return "—";
-  const fixed = Number.isInteger(n) ? String(n) : n.toFixed(fallbackDecimals);
-  return `${fixed}${suffix}`;
+function formatLedgerNumber(ln: any, decimals = 0, suffix = ""): string {
+  const n = getLedgerNumber(ln);
+  if (n == null || isNaN(n)) return "—";
+  return n.toLocaleString(undefined, { maximumFractionDigits: decimals, minimumFractionDigits: decimals }) + suffix;
 }
 
 export default function ScenarioIntelligencePanel() {
@@ -63,10 +59,10 @@ export default function ScenarioIntelligencePanel() {
     }
     return {
       scenarioLabel: titleScenario(ledger.activeScenario),
-      runway: ledgerScenarioDisplay(ledger.runwayMonths, 0, " mo"),
-      growth: ledgerScenarioDisplay(ledger.arrGrowthPct, 1, "%"),
-      arr: ledgerScenarioDisplay(ledger.arr12, 0, ""),
-      risk: ledgerScenarioDisplay(ledger.riskScore, 0, ""),
+      runway: formatLedgerNumber(ledger.runwayMonths, 0, " mo"),
+      growth: formatLedgerNumber(ledger.arrGrowthPct, 1, "%"),
+      arr: formatLedgerNumber(ledger.arr12, 0, ""),
+      risk: formatLedgerNumber(ledger.riskScore, 0, ""),
       quality: ledger?.qualityBand?.scenario ? String(ledger.qualityBand.scenario) : "—",
     };
   }, [ledger]);
@@ -80,9 +76,9 @@ export default function ScenarioIntelligencePanel() {
         risk: "—" as const,
       };
     }
-    const runwayMonths = ledgerScenarioNumber(ledger.runwayMonths);
-    const growthPct = ledgerScenarioNumber(ledger.arrGrowthPct);
-    const riskScore = ledgerScenarioNumber(ledger.riskScore);
+    const runwayMonths = getLedgerNumber(ledger.runwayMonths);
+    const growthPct = getLedgerNumber(ledger.arrGrowthPct);
+    const riskScore = getLedgerNumber(ledger.riskScore);
 
     const runwayBand =
       runwayMonths === null ? "—" :
