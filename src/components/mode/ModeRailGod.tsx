@@ -13,8 +13,8 @@ type Props = {
 
 const MODES: Array<{ key: ModeKey; label: string; Icon: React.FC<any> }> = [
   { key: "terrain", label: "Terrain", Icon: Layers },
-  { key: "scenario", label: "Scenario", Icon: BarChart3 },
-  { key: "variances", label: "Variances", Icon: Activity },
+  { key: "scenario", label: "Impact", Icon: BarChart3 },
+  { key: "variances", label: "Compare", Icon: Activity },
 ];
 
 export default memo(function ModeRailGod({ value, onChange, className, disabled }: Props) {

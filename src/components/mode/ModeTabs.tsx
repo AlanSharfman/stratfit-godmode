@@ -35,7 +35,7 @@ export const ModeTabs = memo(function ModeTabs({ mode, onChange, className }: Pr
         className={cx(s.tab, mode === "scenario" && s.active)}
         onClick={() => onChange("scenario")}
       >
-        Scenario
+        Impact
       </button>
 
       <div className={s.divider} aria-hidden="true" />
@@ -44,7 +44,7 @@ export const ModeTabs = memo(function ModeTabs({ mode, onChange, className }: Pr
         className={cx(s.tab, mode === "variances" && s.active)}
         onClick={() => onChange("variances")}
       >
-        Variances
+        Compare
       </button>
     </div>
   );

@@ -31,20 +31,14 @@ export default function CenterViewPanel(props: {
   }, []);
 
   return (
-    <div className="relative flex h-full w-full flex-col rounded-xl bg-black/40 backdrop-blur-sm border border-white/5 overflow-hidden">
-      {/* Center Stage */}
-      {/* STRATFIT RULE:
-          Mountain dominance locked at ~65% viewport height.
-          Do not adjust without design sign-off. */}
+    <div className="relative flex h-full w-full flex-col rounded-xl bg-black/40 backdrop-blur-sm border border-white/5 overflow-auto">
       <div className="mountain-stage relative w-full flex-1 p-4" data-tour="mountain">
         {view === "terrain" && (
-          <div className="relative h-full w-full overflow-hidden rounded-3xl border border-slate-700/40 bg-black shadow-[0_8px_32px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.03)]">
+          <div className="relative h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-black shadow-[0_8px_32px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.03)]">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.4)_60%,rgba(0,0,0,0.85)_100%)]" />
             <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-black/60 via-black/20 to-transparent" />
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
             <div className="pointer-events-none absolute inset-0 rounded-3xl shadow-[inset_0_0_0_1px_rgba(34,211,238,0.06)]" />
-            
-            {/* Causal highlight band (no labels) — only after explicit user action */}
             {bandNonce > 0 ? (
               <div
                 key={bandNonce}
@@ -52,7 +46,6 @@ export default function CenterViewPanel(props: {
                 style={{ ["--sf-causal" as string]: bandColor } as React.CSSProperties}
               />
             ) : null}
-
             <div className="relative h-full w-full">
               <ScenarioMountain 
                 scenario={scenario} 
@@ -60,25 +53,25 @@ export default function CenterViewPanel(props: {
                 activeKpiIndex={hoveredKpiIndex}
               />
             </div>
-
             <div className="mt-3 px-1">
-              <RiskBreakdownPanel />
             </div>
           </div>
         )}
-
-        {view === "scenario" && (
+        {view === "impact" && (
           <div className="h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-gradient-to-br from-slate-950/60 to-black/80 p-6 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
-            <ScenarioDeltaSnapshot />
+            <RiskBreakdownPanel />
           </div>
         )}
-
-        {view === "variances" && (
-          <div style={{ padding: 12, opacity: 0.7 }}>
-            Variances (disabled)
+        {view === "compare" && (
+          <div className="h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-gradient-to-br from-slate-950/60 to-black/80 p-6 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
+            <ScenarioDeltaSnapshot />
           </div>
         )}
       </div>
     </div>
   );
 }
+
+
+
+

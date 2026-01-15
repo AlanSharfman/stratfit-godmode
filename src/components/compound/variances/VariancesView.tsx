@@ -1,4 +1,5 @@
 import ScenarioDeltaSnapshot from "@/components/ScenarioDeltaSnapshot";
+import RiskBreakdownPanel from "@/components/center/RiskBreakdownPanel";
 import { useScenarioStore } from "@/state/scenarioStore";
 import styles from "./VariancesView.module.css";
 
@@ -46,6 +47,7 @@ export default function VariancesView() {
         {baseHasKpis ? (
           <section className={styles.content}>
             <ScenarioDeltaSnapshot />
+            <RiskBreakdownPanel />
           </section>
         ) : (
           <section className={styles.empty}>

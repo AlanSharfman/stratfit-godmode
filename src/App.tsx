@@ -24,7 +24,7 @@ import { deriveArrGrowth, formatUsdCompact } from "@/utils/arrGrowth";
 import { getQualityScoreFromKpis, getQualityBandFromKpis } from "@/logic/qualityScore";
 import ScenarioMemoPage from "@/pages/ScenarioMemoPage";
 import ModeRailGod, { type ModeKey } from "@/components/mode/ModeRailGod";
-import { ScenarioImpactView } from "@/components/compound/scenario/ScenarioImpactView";
+import ImpactView from "@/components/compound/impact";
 import VariancesView from "@/components/compound/variances/VariancesView";
 import { useDebouncedValue, useThrottledValue } from "@/hooks/useDebouncedValue";
 import "@/styles/godmode-align-overrides.css";
@@ -1151,20 +1151,14 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
         {/* CENTER COLUMN: KPIs + Mountain OR Scenario Impact OR Variances */}
         <main className="center-column">
           {mode === "scenario" ? (
-            /* SCENARIO MODE: Show Scenario Delta Snapshot */
-            <ScenarioImpactView />
+            <ImpactView />
           ) : mode === "variances" ? (
-            /* VARIANCES MODE: Show Cross-Scenario Comparison */
             <VariancesView />
           ) : (
-            /* TERRAIN MODE: Show KPIs + Mountain */
             <>
-              {/* KPI CONSOLE */}
               <div className="kpi-section" data-tour="kpis">
                 <KPIConsole />
               </div>
-
-              {/* Mountain Visualization */}
               <CenterViewPanel view={centerView} />
             </>
           )}

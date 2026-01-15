@@ -1,4 +1,169 @@
 /* src/components/center/RiskBreakdownPanel.module.css */
+/* PHASE-IG: Heatmap Visual Lock
+   - Red = danger, Green = safety
+   - Brightness = magnitude (|delta| normalized)
+   - Motion reserved for later instability (NOT in Step 1)
+*/
+
+.panel {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+}
+
+.title {
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.92;
+}
+
+.sub {
+  font-size: 11px;
+  opacity: 0.62;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  padding: 0 10px 10px 10px;
+}
+
+.row {
+  /* intensity (0..1) comes from inline style --heat */
+  --heat: 0;
+
+  /* base heat RGB set by tone classes */
+  --heat-r: 120;
+  --heat-g: 200;
+  --heat-b: 120;
+
+  border-radius: 14px;
+  overflow: hidden;
+  position: relative;
+
+  /* subtle outer frame */
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
+}
+
+.cell {
+  position: relative;
+  padding: 12px 12px;
+  border-radius: 14px;
+
+  /* HEAT LAYER — single meaning:
+     - hue from tone (red/green/neutral)
+     - alpha from intensity
+  */
+  background:
+    linear-gradient(
+      180deg,
+      rgba(var(--heat-r), var(--heat-g), var(--heat-b), calc(0.10 + (var(--heat) * 0.55))),
+      rgba(var(--heat-r), var(--heat-g), var(--heat-b), calc(0.05 + (var(--heat) * 0.35)))
+    );
+
+  /* crisp inner edge */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.55);
+}
+
+.cellTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.metric {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.88;
+}
+
+.value {
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+}
+
+/* A11y-only delta: keep in DOM, not in cognition */
+.deltaA11y {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Tone → RGB */
+.toneNeg {
+  --heat-r: 255;
+  --heat-g: 70;
+  --heat-b: 70;
+}
+
+.tonePos {
+  --heat-r: 90;
+  --heat-g: 230;
+  --heat-b: 140;
+}
+
+.toneNeutral {
+  --heat-r: 145;
+  --heat-g: 165;
+  --heat-b: 190;
+}
+
+/* Visual hierarchy: Runway & Risk dominate */
+.rowDominant .cell {
+  padding: 14px 12px;
+}
+.rowDominant .value {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* ARR & Growth secondary */
+.rowSecondary .value {
+  font-size: 16px;
+  font-weight: 650;
+}
+
+/* Quality tertiary */
+.rowTertiary .value {
+  font-size: 15px;
+  font-weight: 620;
+  opacity: 0.95;
+}
+
+/* Optional: tighten on small widths */
+@media (max-width: 980px) {
+  .value {
+    font-size: 15px;
+  }
+  .rowDominant .value {
+    font-size: 17px;
+  }
+}
+/* src/components/center/RiskBreakdownPanel.module.css */
 
 .wrap {
   margin-top: 10px;
@@ -137,3 +302,5 @@
   color: rgba(140, 220, 255, 0.92);
   text-shadow: 0 0 14px rgba(120, 210, 255, 0.14);
 }
+
+
