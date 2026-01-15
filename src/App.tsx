@@ -1179,10 +1179,28 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
                     <CenterViewPanel view={centerView} />
                   </>
                 );
+              case "timeline":
+                return (
+                  <>
+                    <div className="kpi-section" data-tour="kpis">
+                      <KPIConsole />
+                    </div>
+                    <CenterViewPanel view={centerView} />
+                  </>
+                );
               case "impact":
                 return <ImpactView />;
               case "compare":
                 return <VariancesView />;
+              case "decision":
+                return (
+                  <>
+                    <div className="kpi-section" data-tour="kpis">
+                      <KPIConsole />
+                    </div>
+                    <CenterViewPanel view={centerView} />
+                  </>
+                );
               default: {
                 // TypeScript exhaustiveness check
                 const _exhaustive: never = mode;

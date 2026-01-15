@@ -9,9 +9,11 @@ type Props = {
 };
 
 const tabs: { key: CenterViewId; label: string }[] = [
-  { key: "terrain", label: "TERRAIN" },
-  { key: "impact", label: "IMPACT" },
-  { key: "compare", label: "COMPARE" },
+  { key: "terrain", label: "Terrain" },
+  { key: "timeline", label: "Timeline" },
+  { key: "impact", label: "Impact" },
+  { key: "compare", label: "Compare" },
+  { key: "decision", label: "Decision" },
 ];
 
 export default function CenterViewSegmented({ value, onChange, className }: Props) {

@@ -13,8 +13,10 @@ type Props = {
 
 const MODES: Array<{ key: CenterViewId; label: string; Icon: React.FC<any> }> = [
   { key: "terrain", label: "Terrain", Icon: Layers },
+  { key: "timeline", label: "Timeline", Icon: Activity },
   { key: "impact", label: "Impact", Icon: BarChart3 },
   { key: "compare", label: "Compare", Icon: Activity },
+  { key: "decision", label: "Decision", Icon: Layers },
 ];
 
 export default memo(function ModeRailGod({ value, onChange, className, disabled }: Props) {

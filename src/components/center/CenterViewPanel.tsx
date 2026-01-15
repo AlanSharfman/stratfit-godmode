@@ -81,6 +81,14 @@ export default function CenterViewPanel(props: { view?: CenterViewId }) {
             Compare (disabled)
           </div>
         )}
+
+        {view === "timeline" && (
+          <div className="w-full h-full">TIMELINE</div>
+        )}
+
+        {view === "decision" && (
+          <div className="w-full h-full">DECISION</div>
+        )}
       </div>
     </div>
   );
