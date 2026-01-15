@@ -59,8 +59,7 @@ export default function CenterViewPanel(props: { view?: CenterViewId }) {
 
             <div className="relative h-full w-full">
               <ScenarioMountain 
-                scenario={scenario} 
-                dataPoints={dataPoints}
+                scenario={scenario}     
                 activeKpiIndex={hoveredKpiIndex}
               />
             </div>
