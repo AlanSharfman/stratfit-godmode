@@ -19,9 +19,7 @@ type MetricSpec = {
   secondary?: boolean;
   tertiary?: boolean;
   invertGood?: boolean; // e.g. Risk: lower is good
-  // formatting for scenario value
   formatScenario: (n: number | null) => string;
-  // suffix for delta display (purely display; intensity/tone uses numeric delta)
   deltaSuffix?: string;
 };
 
@@ -31,7 +29,6 @@ function lnNumber(x: unknown): number | null {
     const n = Number(x);
     return Number.isFinite(n) ? n : null;
   }
-  // handle { value: number } shapes if they ever appear (safe)
   if (x && typeof x === "object" && "value" in (x as any)) {
     const v = (x as any).value;
     return typeof v === "number" && Number.isFinite(v) ? v : null;
@@ -52,7 +49,7 @@ function toneFromDelta(delta: number | null, invertGood = false): Tone {
 }
 
 function extractDeltaNumber(deltaField: any): number | null {
-  // canonical-safe: supports deltaField = { delta: number } or deltaField = number
+  // supports: deltaField = { delta: number } OR deltaField = number
   const n = lnNumber(deltaField?.delta ?? deltaField);
   return n === null ? null : n;
 }
@@ -91,27 +88,20 @@ function displayDelta(deltaField: any, suffix = ""): string {
 
 /**
  * PHASE-IG normalization: absolute delta magnitude -> [0..1] intensity
- * This is UI normalization only (not a model).
- * Uses ONLY the ledger delta numbers already present.
+ * UI-only normalization (NOT a model). Uses ONLY numeric ledger deltas.
  */
 function intensityForMetric(metric: MetricKey, absDelta: number): number {
   const x = Math.abs(absDelta);
 
-  // Map "meaningful danger" to full intensity.
-  // Units must reflect what the ledger already gives us:
-  // - runwayMonths: months
-  // - arr12: currency dollars
-  // - arrGrowthPct: percentage points
-  // - riskScore / qualityScore: points
   const scale: Record<MetricKey, number> = {
-    runwayMonths: 6,       // 6 months swing => full heat
-    arr12: 500_000,        // $0.5m swing => full heat (tuneable, but not a model)
-    arrGrowthPct: 10,      // 10pp swing => full heat
-    riskScore: 20,         // 20pt swing => full heat
-    qualityScore: 20,      // 20pt swing => full heat
+    runwayMonths: 6,       // months
+    arr12: 500_000,        // dollars
+    arrGrowthPct: 10,      // percentage points
+    riskScore: 20,         // points
+    qualityScore: 20,      // points
   };
 
-  return clamp01(x / Math.max(1e-9, scale[metric] ?? 1));
+  return clamp01(x / Math.max(1e-9, scale[metric]));
 }
 
 const METRICS: MetricSpec[] = [
@@ -126,7 +116,7 @@ const METRICS: MetricSpec[] = [
     key: "riskScore",
     label: "Risk",
     dominant: true,
-    invertGood: true, // lower risk is "pos"
+    invertGood: true,
     formatScenario: (n) => fmtInt(n),
     deltaSuffix: "",
   },
@@ -162,7 +152,6 @@ export default function RiskBreakdownPanel() {
   );
 
   const ledger = useMemo(() => {
-    // ✅ canonical single source of truth
     return buildScenarioDeltaLedger({
       engineResults,
       activeScenario: activeScenarioId ?? "base",
@@ -172,10 +161,10 @@ export default function RiskBreakdownPanel() {
   const rows = useMemo(() => {
     const l: any = ledger ?? {};
 
+    // IMPORTANT: we map the typed METRICS list (NOT Object.keys) to avoid string -> MetricKey issues.
     return METRICS.map((m) => {
       const bucket = l?.[m.key];
 
-      // canonical value source: scenario value
       const scenarioValue = lnNumber(bucket?.scenario);
       const deltaNum = extractDeltaNumber(bucket?.delta);
 
@@ -228,11 +217,10 @@ export default function RiskBreakdownPanel() {
               <div className={styles.cell}>
                 <div className={styles.cellTop}>
                   <div className={styles.metric}>{r.label}</div>
-                  <div className={styles.value}>{r.deltaText}</div>
+                  <div className={styles.value}>{r.scenarioText}</div>
                 </div>
 
-                {/* Delta is still shown (small) — helps validation while we lock heat behavior */}
-                <div className={styles.delta}>{r.scenarioText}</div>
+                <div className={styles.delta}>{r.deltaText}</div>
               </div>
             </div>
           );
@@ -241,5 +229,3 @@ export default function RiskBreakdownPanel() {
     </section>
   );
 }
-
-

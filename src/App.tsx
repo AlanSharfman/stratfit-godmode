@@ -6,8 +6,11 @@ import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { ScenarioId } from "./components/ScenarioSlidePanel";
 import KPIConsole from "./components/KPIConsole";
+
 import CenterViewPanel from "@/components/center/CenterViewPanel";
-import CenterViewSegmented, { CenterView } from "@/components/CenterViewSegmented";
+import CenterViewSegmented from "@/components/CenterViewSegmented";
+import type { CenterViewId } from "@/types/view";
+import { migrateCenterView } from "@/types/view";
 import { Moon } from "./components/Moon";
 import { ControlDeck, ControlBoxConfig } from "./components/ControlDeck";
 import AIIntelligence from "./components/AIIntelligenceEnhanced";
@@ -23,7 +26,7 @@ import TakeTheTour from "@/components/ui/TakeTheTour";
 import { deriveArrGrowth, formatUsdCompact } from "@/utils/arrGrowth";
 import { getQualityScoreFromKpis, getQualityBandFromKpis } from "@/logic/qualityScore";
 import ScenarioMemoPage from "@/pages/ScenarioMemoPage";
-import ModeRailGod, { type ModeKey } from "@/components/mode/ModeRailGod";
+import ModeRailGod from "@/components/mode/ModeRailGod";
 import ImpactView from "@/components/compound/impact";
 import VariancesView from "@/components/compound/variances/VariancesView";
 import { useDebouncedValue, useThrottledValue } from "@/hooks/useDebouncedValue";
@@ -406,18 +409,32 @@ export default function App() {
   const [immediateLevers, debouncedLevers] = useDebouncedValue(levers, 100);
   const throttledLevers = useThrottledValue(levers);
   
-  const [centerView, setCenterView] = useState<CenterView>("terrain");
+  // Canonical center view state
+  const CENTER_VIEW_KEY = "sf.centerView.v1";
+  const [centerView, setCenterView] = useState<CenterViewId>(() => {
+    try {
+      const raw = window.localStorage.getItem(CENTER_VIEW_KEY);
+      return migrateCenterView(raw);
+    } catch {}
+    return "terrain";
+  });
   const didMountRef = useRef(false);
 
   // GOD-MODE: Mode rail state with localStorage persistence
   const MODE_KEY = "sf.mode.v1";
-  const [mode, setMode] = useState<ModeKey>(() => {
+  const [mode, setMode] = useState<CenterViewId>(() => {
     try {
       const raw = window.localStorage.getItem(MODE_KEY);
-      if (raw === "terrain" || raw === "scenario" || raw === "variances") return raw;
+      return migrateCenterView(raw);
     } catch {}
     return "terrain";
   });
+  // Persist centerView to localStorage
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(CENTER_VIEW_KEY, centerView);
+    } catch {}
+  }, [centerView]);
 
   // Investor Pitch Mode - auto-applies investor-ready configuration
   const [pitchMode, setPitchMode] = useState(false);
@@ -1150,18 +1167,29 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
 
         {/* CENTER COLUMN: KPIs + Mountain OR Scenario Impact OR Variances */}
         <main className="center-column">
-          {mode === "scenario" ? (
-            <ImpactView />
-          ) : mode === "variances" ? (
-            <VariancesView />
-          ) : (
-            <>
-              <div className="kpi-section" data-tour="kpis">
-                <KPIConsole />
-              </div>
-              <CenterViewPanel view={centerView} />
-            </>
-          )}
+          {/* Canonical center view switch */}
+          {(() => {
+            switch (mode) {
+              case "terrain":
+                return (
+                  <>
+                    <div className="kpi-section" data-tour="kpis">
+                      <KPIConsole />
+                    </div>
+                    <CenterViewPanel view={centerView} />
+                  </>
+                );
+              case "impact":
+                return <ImpactView />;
+              case "compare":
+                return <VariancesView />;
+              default: {
+                // TypeScript exhaustiveness check
+                const _exhaustive: never = mode;
+                return null;
+              }
+            }
+          })()}
         </main>
 
         {/* RIGHT COLUMN: AI Intelligence */}

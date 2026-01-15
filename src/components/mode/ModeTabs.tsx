@@ -3,11 +3,11 @@ import s from "./ModeTabs.module.css";
 
 const MODE_RAIL_V2 = true; // ← set false to instantly rollback
 
-export type ModeKey = "terrain" | "scenario" | "variances";
+import type { CenterViewId } from "@/types/view";
 
 type Props = {
-  mode: ModeKey;
-  onChange: (m: ModeKey) => void;
+  mode: CenterViewId;
+  onChange: (m: CenterViewId) => void;
   className?: string;
 };
 
@@ -31,18 +31,18 @@ export const ModeTabs = memo(function ModeTabs({ mode, onChange, className }: Pr
 
       <div className={s.divider} aria-hidden="true" />
 
-      <button type="button" role="tab" aria-selected={mode === "scenario"}
-        className={cx(s.tab, mode === "scenario" && s.active)}
-        onClick={() => onChange("scenario")}
+      <button type="button" role="tab" aria-selected={mode === "impact"}
+        className={cx(s.tab, mode === "impact" && s.active)}
+        onClick={() => onChange("impact")}
       >
         Impact
       </button>
 
       <div className={s.divider} aria-hidden="true" />
 
-      <button type="button" role="tab" aria-selected={mode === "variances"}
-        className={cx(s.tab, mode === "variances" && s.active)}
-        onClick={() => onChange("variances")}
+      <button type="button" role="tab" aria-selected={mode === "compare"}
+        className={cx(s.tab, mode === "compare" && s.active)}
+        onClick={() => onChange("compare")}
       >
         Compare
       </button>

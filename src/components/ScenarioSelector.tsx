@@ -100,6 +100,7 @@ export default function ScenarioSelector({ scenario, onChange }: ScenarioSelecto
         <ActiveScenarioBezel
           label={currentScenario?.label ?? "Base Case"}
           subLabel={currentScenario?.desc}
+          scenarioId={scenario}
           onOpen={handleToggle}
         />
       </div>

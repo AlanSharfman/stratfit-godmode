@@ -1,4 +1,3 @@
-/* src/components/center/RiskBreakdownPanel.module.css */
 /* PHASE-IG: Heatmap Visual Lock
    - Red = danger, Green = safety
    - Brightness = magnitude (|delta| normalized)
@@ -118,6 +117,199 @@
   --heat-r: 255;
   --heat-g: 70;
   --heat-b: 70;
+/* src/components/center/RiskBreakdownPanel.module.css */
+/* G-D MODE: Impact Map shell */
+
+.panel {
+  position: relative;
+  width: 100%;
+  height: auto;
+  border-radius: 18px;
+  border: 1px solid rgba(120, 180, 255, 0.14);
+  background: radial-gradient(1200px 700px at 30% 10%, rgba(34, 211, 238, 0.08), transparent 55%),
+    linear-gradient(180deg, rgba(3, 7, 12, 0.78), rgba(0, 0, 0, 0.72));
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  padding: 16px;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.kicker {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(200, 235, 255, 0.7);
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: rgba(235, 250, 255, 0.95);
+  margin-top: 2px;
+}
+
+.sub {
+  font-size: 12px;
+  color: rgba(200, 235, 255, 0.55);
+  margin-top: 6px;
+}
+
+.legend {
+  display: flex;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.pill {
+  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(120, 180, 255, 0.14);
+  background: rgba(0, 0, 0, 0.35);
+  color: rgba(220, 245, 255, 0.82);
+}
+
+.pillStable {
+  border-color: rgba(16, 185, 129, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.08);
+}
+
+.pillWatch {
+  border-color: rgba(99, 102, 241, 0.24);
+  box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.08);
+}
+
+.pillEscalate {
+  border-color: rgba(239, 68, 68, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.08);
+}
+
+.lanes {
+  display: grid;
+  gap: 12px;
+}
+
+.lane {
+  position: relative;
+  border-radius: 16px;
+  border: 1px solid rgba(120, 180, 255, 0.12);
+  background: linear-gradient(180deg, rgba(10, 16, 24, 0.72), rgba(0, 0, 0, 0.62));
+  overflow: hidden;
+  padding: 14px 14px 12px 14px;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* Heat overlay */
+.lane::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: calc(0.10 + (var(--heat) * 0.30));
+  background: radial-gradient(900px 220px at 10% 20%, rgba(34, 211, 238, 0.25), transparent 55%),
+    radial-gradient(900px 220px at 90% 50%, rgba(99, 102, 241, 0.18), transparent 60%);
+  pointer-events: none;
+}
+
+/* Tone overrides */
+.tonePos::before {
+  background: radial-gradient(900px 220px at 10% 20%, rgba(16, 185, 129, 0.24), transparent 55%),
+    radial-gradient(900px 220px at 90% 50%, rgba(34, 211, 238, 0.18), transparent 60%);
+}
+
+.toneNeg::before {
+  background: radial-gradient(900px 220px at 10% 20%, rgba(239, 68, 68, 0.22), transparent 55%),
+    radial-gradient(900px 220px at 90% 50%, rgba(99, 102, 241, 0.14), transparent 60%);
+}
+
+.toneNeutral::before {
+  background: radial-gradient(900px 220px at 10% 20%, rgba(148, 163, 184, 0.12), transparent 55%),
+    radial-gradient(900px 220px at 90% 50%, rgba(34, 211, 238, 0.12), transparent 60%);
+}
+
+.laneTop {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  z-index: 1;
+}
+
+.laneTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(235, 250, 255, 0.92);
+}
+
+.laneSub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: rgba(200, 235, 255, 0.55);
+}
+
+.metricChips {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: 62%;
+}
+
+.chip {
+  min-width: 120px;
+  border-radius: 12px;
+  border: 1px solid rgba(120, 180, 255, 0.12);
+  background: rgba(0, 0, 0, 0.34);
+  padding: 8px 10px 7px 10px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.chipLabel {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(200, 235, 255, 0.62);
+}
+
+.chipValue {
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(235, 250, 255, 0.92);
+}
+
+.chipDelta {
+  margin-top: 4px;
+  font-size: 11px;
+  color: rgba(200, 235, 255, 0.60);
+}
+
+.heatBar {
+  position: relative;
+  z-index: 1;
+  margin-top: 10px;
+  height: 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(120, 180, 255, 0.12);
+  background: rgba(0, 0, 0, 0.40);
+  overflow: hidden;
+}
+
+.heatBar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: calc(18% + (var(--heat) * 82%));
+  background: linear-gradient(90deg, rgba(34, 211, 238, 0.85), rgba(99, 102, 241, 0.75));
+  box-shadow: 0 0 18px rgba(34, 211, 238, 0.20);
+}
 }
 
 .tonePos {

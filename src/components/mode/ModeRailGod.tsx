@@ -2,19 +2,19 @@ import React, { memo, useMemo } from "react";
 import styles from "./ModeRailGod.module.css";
 import { Layers, Activity, BarChart3 } from "lucide-react";
 
-export type ModeKey = "terrain" | "scenario" | "variances";
+import type { CenterViewId } from "@/types/view";
 
 type Props = {
-  value: ModeKey;
-  onChange: (next: ModeKey) => void;
+  value: CenterViewId;
+  onChange: (next: CenterViewId) => void;
   className?: string;
   disabled?: boolean;
 };
 
-const MODES: Array<{ key: ModeKey; label: string; Icon: React.FC<any> }> = [
+const MODES: Array<{ key: CenterViewId; label: string; Icon: React.FC<any> }> = [
   { key: "terrain", label: "Terrain", Icon: Layers },
-  { key: "scenario", label: "Impact", Icon: BarChart3 },
-  { key: "variances", label: "Compare", Icon: Activity },
+  { key: "impact", label: "Impact", Icon: BarChart3 },
+  { key: "compare", label: "Compare", Icon: Activity },
 ];
 
 export default memo(function ModeRailGod({ value, onChange, className, disabled }: Props) {
