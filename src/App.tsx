@@ -19,7 +19,7 @@ import type { LeverId } from "@/logic/mountainPeakModel";
 import { calculateMetrics } from "@/logic/calculateMetrics";
 import { emitCausal } from "@/ui/causalEvents";
 import TakeTheTour from "@/components/ui/TakeTheTour";
-import ScenarioIntelligencePanel from "@/components/ui/ScenarioIntelligencePanel";
+
 import { deriveArrGrowth, formatUsdCompact } from "@/utils/arrGrowth";
 import { getQualityScoreFromKpis, getQualityBandFromKpis } from "@/logic/qualityScore";
 import ScenarioMemoPage from "@/pages/ScenarioMemoPage";
@@ -1172,11 +1172,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
 
         {/* RIGHT COLUMN: AI Intelligence */}
         <aside className="right-column" data-tour="intel">
-          {ENABLE_SCENARIO_INTELLIGENCE ? (
-            <ScenarioIntelligencePanel />
-          ) : (
-            <AIIntelligence levers={levers} scenario={scenario} />
-          )}
+          <AIIntelligence levers={levers} scenario={scenario} />
         </aside>
       </div>
     </div>
