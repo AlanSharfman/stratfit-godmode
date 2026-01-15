@@ -1,17 +1,24 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import type { CenterViewId } from "@/types/view";
 import ScenarioMountain from "@/components/mountain/ScenarioMountain";
 
 import ScenarioDeltaSnapshot from "@/components/ScenarioDeltaSnapshot";
 
-import { useScenario, useDataPoints, useScenarioStore } from "@/state/scenarioStore";
+import { useScenario, useScenarioStore } from "@/state/scenarioStore";
 import { onCausal } from "@/ui/causalEvents";
+import { engineResultToMountainForces } from "@/logic/mountainForces";
 
 export default function CenterViewPanel(props: { view?: CenterViewId }) {
   const { view = "impact" } = props;
   const scenario = useScenario();
-  const dataPoints = useDataPoints();
+  const engineResults = useScenarioStore((s) => s.engineResults);
   const hoveredKpiIndex = useScenarioStore((s) => s.hoveredKpiIndex);
+
+  // PHASE-IG: Wire engineResults → mountain forces (7-vector for now)
+  const dataPoints = useMemo(() => {
+    const er = engineResults?.[scenario];
+    return engineResultToMountainForces(er);
+  }, [engineResults, scenario]);
 
   // CAUSAL HIGHLIGHT — Mountain band (Phase 1, UI-only)
   const [bandNonce, setBandNonce] = useState(0);

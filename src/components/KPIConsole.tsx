@@ -436,7 +436,7 @@ function InstrumentWidget({
 
 interface KPIInstrumentCardProps {
   cfg: KPIConfig;
-  data: { value: number; display: string } | undefined;
+  data: { value: number; display?: string } | undefined;
   secondaryLine?: string | null;
   state: "idle" | "hover" | "active";
   isDimmed: boolean;

@@ -23,9 +23,10 @@ import {
 export type ScenarioId = "base" | "upside" | "downside" | "stress";
 export type ViewMode = "operator" | "investor";
 
-export interface EngineResult {
-  kpis: Record<string, { value: number; display: string }>;
-}
+// PHASE-IG: Use canonical EngineResult from truth selectors
+import type { EngineResult as CanonicalEngineResult, EngineResults as CanonicalEngineResults } from "@/lib/truth/truthSelectors";
+export type EngineResult = CanonicalEngineResult;
+export type EngineResults = CanonicalEngineResults;
 
 // Solver path step for mountain visualization
 export interface SolverPathPoint {
