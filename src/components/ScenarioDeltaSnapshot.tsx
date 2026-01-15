@@ -230,15 +230,44 @@ export default function ScenarioDeltaSnapshot() {
     return typeof v === "number" && Number.isFinite(v) ? v : 0;
   }
 
-  const activeScenarioId = useScenarioStore((s) => s.activeScenarioId);
-  const engineResults = useScenarioStore((s) => s.engineResults);
-  const [open, setOpen] = useState(true);
-  const scenarioKey = activeScenarioId ?? "base";
+  const scenarioKey = useScenarioStore((s) => s.activeScenarioId ?? "base");
+  const [isOpen, setIsOpen] = useState<boolean>(true);
 
-  // Canonical hooks for all render logic
+  // Phase IG: subscribe to the canonical KPI primitives the ledger uses
+  const ledgerInputSig = useScenarioStore((s) => {
+    const base = s.engineResults?.base?.kpis;
+    const sc = s.engineResults?.[scenarioKey]?.kpis;
+
+    const baseRisk = (base?.riskScore?.value ?? base?.riskScore ?? 0) as number;
+    const scRisk = (sc?.riskScore?.value ?? sc?.riskScore ?? 0) as number;
+
+    const baseArr12 = (base?.arrNext12?.value ?? (base as any)?.arr12?.value ?? base?.arrNext12 ?? 0) as number;
+    const scArr12 = (sc?.arrNext12?.value ?? (sc as any)?.arr12?.value ?? sc?.arrNext12 ?? 0) as number;
+
+    const baseGrowth = (base?.arrGrowthPct?.value ?? base?.arrGrowthPct ?? 0) as number;
+    const scGrowth = (sc?.arrGrowthPct?.value ?? sc?.arrGrowthPct ?? 0) as number;
+
+    const baseRunway = (base?.runway?.value ?? (base as any)?.runwayMonths?.value ?? base?.runway ?? 0) as number;
+    const scRunway = (sc?.runway?.value ?? (sc as any)?.runwayMonths?.value ?? sc?.runway ?? 0) as number;
+
+    const baseQual = ((base as any)?.qualityScore?.value ?? 0) as number;
+    const scQual = ((sc as any)?.qualityScore?.value ?? 0) as number;
+
+    return [
+      scenarioKey,
+      baseRisk, scRisk,
+      baseArr12, scArr12,
+      baseGrowth, scGrowth,
+      baseRunway, scRunway,
+      baseQual, scQual,
+      Boolean(base), Boolean(sc),
+    ].join("|");
+  });
+
   const ledger = useMemo(() => {
+    const engineResults = useScenarioStore.getState().engineResults;
     return buildScenarioDeltaLedger({ engineResults, activeScenario: scenarioKey });
-  }, [engineResults, scenarioKey]);
+  }, [ledgerInputSig, scenarioKey]);
 
   const spiderBaseAxes = useMemo(() => {
     if (!ledger) return [];
@@ -262,6 +291,15 @@ export default function ScenarioDeltaSnapshot() {
     } as any);
   }, [ledger]);
 
+  // Zero-risk radar signature log
+  const radarSig = useMemo(() => {
+    const b = spiderBaseAxes.map((a: any) => Number(a.v01 ?? a.value01 ?? a.value ?? 0).toFixed(3)).join(",");
+    const s = spiderScenarioAxes.map((a: any) => Number(a.v01 ?? a.value01 ?? a.value ?? 0).toFixed(3)).join(",");
+    const sig = `${scenarioKey} | B[${b}] S[${s}]`;
+    console.log("[IG][VAR_RADAR_SIG]", sig);
+    return sig;
+  }, [spiderBaseAxes, spiderScenarioAxes, scenarioKey]);
+
   const rows: (DeltaRow & { deltaRaw?: number; deltaPctRaw?: number | null })[] = useMemo(() => {
     return buildDeltaRowsFromLedger(ledger as any);
   }, [ledger]);
@@ -270,7 +308,37 @@ export default function ScenarioDeltaSnapshot() {
     return scoreTopMoves(rows, 3);
   }, [rows]);
 
-  if (!ledger) return null;
+
+  if (!ledger) {
+    return (
+      <div className={styles.wrap}>
+        <div className={styles.card}>
+          <div className={styles.cardInner}>
+            <div className={styles.cardHeader}>
+              <div>
+                <div className={styles.cardTitle}>Scenario Delta Snapshot</div>
+                <div className={styles.cardHint}>
+                  Ledger unavailable — missing canonical inputs (base + {scenarioKey})
+                </div>
+              </div>
+            </div>
+            <div style={{ opacity: 0.85, fontSize: 13, lineHeight: 1.45 }}>
+              <div><b>Required</b>:</div>
+              <ul style={{ marginTop: 6 }}>
+                <li>engineResults.base.kpis</li>
+                <li>engineResults[{scenarioKey}].kpis</li>
+              </ul>
+              <div style={{ marginTop: 8 }}>
+                Phase IG truth block — we do not fabricate deltas.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+
   return (
     <div className={styles.wrap}>
       <div className={styles.topBar}>
@@ -281,12 +349,12 @@ export default function ScenarioDeltaSnapshot() {
           </div>
         </div>
 
-        <button type="button" onClick={() => setOpen((v) => !v)} className={styles.toggleBtn}>
-          {open ? "Hide" : "Show"}
+        <button type="button" onClick={() => setIsOpen((v: boolean) => !v)} className={styles.toggleBtn}>
+          {isOpen ? "Hide" : "Show"}
         </button>
       </div>
 
-      {open && (
+      {isOpen && (
         <>
           {/* Strategic Fitness Profile */}
           <div className={styles.card}>
@@ -393,3 +461,4 @@ export default function ScenarioDeltaSnapshot() {
     </div>
   );
 }
+

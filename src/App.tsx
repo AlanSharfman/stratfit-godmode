@@ -26,7 +26,7 @@ import ScenarioMemoPage from "@/pages/ScenarioMemoPage";
 import ModeRailGod, { type ModeKey } from "@/components/mode/ModeRailGod";
 import { ScenarioImpactView } from "@/components/compound/scenario/ScenarioImpactView";
 import VariancesView from "@/components/compound/variances/VariancesView";
-import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useDebouncedValue, useThrottledValue } from "@/hooks/useDebouncedValue";
 import "@/styles/godmode-align-overrides.css";
 
 // ============================================================================
@@ -404,6 +404,7 @@ export default function App() {
   // - immediateLevers: Used for visual feedback (sliders feel instant)
   // - debouncedLevers: Used for heavy engine calculations (prevents lag)
   const [immediateLevers, debouncedLevers] = useDebouncedValue(levers, 100);
+  const throttledLevers = useThrottledValue(levers);
   
   const [centerView, setCenterView] = useState<CenterView>("terrain");
   const didMountRef = useRef(false);
@@ -651,7 +652,16 @@ export default function App() {
   useEffect(() => {
     // buildEngineResult must be deterministic from (levers, scenarioId)
     function buildEngineResultForScenario(sid: ScenarioId) {
-      const m = calculateMetrics(debouncedLevers, sid);
+      const m = calculateMetrics(throttledLevers, sid);
+      if (sid === (activeScenarioId ?? "base")) {
+        console.log("[IG] engine recompute for active", sid, {
+          demand: throttledLevers.demandStrength,
+          pricing: throttledLevers.pricingPower,
+          momentum: (m as any)?.momentum,
+          riskIndex: (m as any)?.riskIndex,
+        });
+      }
+      console.log("[IG] sid", sid, "momentum", (m as any)?.momentum, "riskIndex", (m as any)?.riskIndex);
 
       // --- EVERYTHING BELOW HERE is your existing KPI derivation logic ---
       // Replace references to `metrics` with `m`
@@ -787,12 +797,21 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
       return engineResult;
     }
 
-    // ✅ Populate all scenarios every time debouncedLevers changes
+    // ✅ Populate all scenarios every time throttledLevers changes
     for (const sid of ALL_SCENARIOS) {
       const engineResult = buildEngineResultForScenario(sid);
       setEngineResult(sid, engineResult);
+      if (sid === (activeScenarioId ?? "base")) {
+        const snap = useScenarioStore.getState().engineResults?.[sid]?.kpis;
+        console.log("[IG] engineResults stored for active", sid, {
+          runway: snap?.runway?.value,
+          arrGrowth: snap?.arrGrowthPct?.value,
+          risk: snap?.riskScore?.value,
+          quality: (snap as any)?.qualityScore?.value,
+        });
+      }
     }
-  }, [debouncedLevers, setEngineResult]);
+  }, [throttledLevers, setEngineResult]);
     
   // Map lever IDs to state keys
   const leverIdToStateKey: Record<string, keyof LeverState> = {

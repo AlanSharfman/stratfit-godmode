@@ -308,7 +308,7 @@ export const useScenarioStore = create<ScenarioStoreState>((set, get) => ({
   setEngineResult: (scenarioId, result) =>
     set((state) => ({
       engineResults: {
-        ...state.engineResults,
+        ...(state.engineResults ?? {}),
         [scenarioId]: result,
       },
     })),

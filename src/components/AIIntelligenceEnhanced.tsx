@@ -59,6 +59,23 @@ const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 
 // ============================================================================
 // INSIGHT GENERATION — FULLY REACTIVE TO LEVER CHANGES
+
+// ------------------------------------------------------------------------------
+// STRUCTURED CLONE HELPER — replaces deepClone
+// ------------------------------------------------------------------------------
+const structuredCloneSafe = <T,>(obj: T): T => {
+  try {
+    // modern browsers / Vite generally support structuredClone
+    // but we keep JSON fallback for safety
+    // @ts-ignore
+    if (typeof structuredClone === "function") return structuredClone(obj);
+  } catch {}
+  try {
+    return JSON.parse(JSON.stringify(obj)) as T;
+  } catch {
+    return obj;
+  }
+};
 // ============================================================================
 
 function generateInsights(
@@ -274,39 +291,81 @@ export default function AIIntelligenceEnhanced({
   levers, 
   scenario 
 }: AIIntelligenceEnhancedProps) {
+
+
+  // --- EXPLICIT DIAGNOSTIC LOGGING ---
+  // Log all key values on every render for deep visibility
   const viewMode = useScenarioStore((s) => s.viewMode);
-
-  // CFO Intelligence from engine results
   const cfoSummary = useScenarioStore((s) => (s.engineResults?.[scenario] as any)?.ai?.summary);
-
-  // Canonical engineResults and ledger wiring (with hooks)
-  const engineResults = useScenarioStore((s) => s.engineResults);
+  const scenarioKey = useScenarioStore((s) => s.activeScenarioId ?? "base");
+  const engineResultForScenario = useScenarioStore((s) => s.engineResults?.[scenarioKey]);
+  const baseResult = useScenarioStore((s) => s.engineResults?.base);
   const ledger = useMemo(() => {
+    if (!engineResultForScenario || !baseResult) return null;
     return buildScenarioDeltaLedger({
-      engineResults,
-      activeScenario: scenario,
+      engineResults: { base: baseResult, [scenarioKey]: engineResultForScenario } as any,
+      activeScenario: scenarioKey,
     });
-  }, [engineResults, scenario]);
+  }, [baseResult, engineResultForScenario, scenarioKey]);
+
+  // Log on every render for these values
+  // (This is safe in dev, remove or gate behind process.env.NODE_ENV for prod)
+
+  // ============================================================================
+  // SECTION 1: SCENARIO TRUTH SIGNATURE + INSIGHTS + SAFE INSIGHTS
+  // ============================================================================
+
+  const scenarioTruthSig = useMemo(() => {
+    const baseKpis = (baseResult as any)?.kpis ?? null;
+    const scKpis = (engineResultForScenario as any)?.kpis ?? null;
+
+    const pick = (x: any) => (x == null ? "" : typeof x === "number" ? x : String(x));
+
+    const baseArr = pick(baseKpis?.arr12 ?? baseKpis?.arr ?? baseKpis?.revenue);
+    const scArr = pick(scKpis?.arr12 ?? scKpis?.arr ?? scKpis?.revenue);
+
+    const baseRunway = pick(baseKpis?.runwayMonths ?? baseKpis?.runway);
+    const scRunway = pick(scKpis?.runwayMonths ?? scKpis?.runway);
+
+    const baseGrowth = pick(baseKpis?.growthRate ?? baseKpis?.growth);
+    const scGrowth = pick(scKpis?.growthRate ?? scKpis?.growth);
+
+    const baseMargin = pick(baseKpis?.grossMargin ?? baseKpis?.margin);
+    const scMargin = pick(scKpis?.grossMargin ?? scKpis?.margin);
+
+    return [
+      scenarioKey,
+      baseArr, scArr,
+      baseRunway, scRunway,
+      baseGrowth, scGrowth,
+      baseMargin, scMargin,
+    ].join("|");
+  }, [scenarioKey, baseResult, engineResultForScenario]);
 
   const insights = useMemo(
     () => generateInsights(levers, scenario, viewMode, ledger),
-    [levers, scenario, viewMode, ledger]
+    [levers, scenario, viewMode, ledger, scenarioTruthSig]
   );
 
-  // Always-defined, stable safeInsights object
+  // Always-defined safeInsights — AND ensure fresh array references so memos re-trigger
   const safeInsights = useMemo(() => {
-    return (
-      insights ?? {
-        observation: "",
-        metrics: [],
-        systemState: [],
-        risks: [],
-        actions: [],
-        timestamp: new Date(0),
-      }
-    );
-  }, [insights]);
+    const base = insights ?? {
+      observation: "",
+      metrics: [],
+      systemState: [],
+      risks: [],
+      actions: [],
+      timestamp: new Date(0),
+    };
 
+    return {
+      ...base,
+      metrics: Array.isArray((base as any).metrics) ? [...(base as any).metrics] : [],
+      systemState: Array.isArray((base as any).systemState) ? [...(base as any).systemState] : [],
+      risks: Array.isArray((base as any).risks) ? [...(base as any).risks] : [],
+      actions: Array.isArray((base as any).actions) ? [...(base as any).actions] : [],
+    };
+  }, [insights, scenarioTruthSig]);
   // IMPORTANT: never early-return before all hooks (Rules of Hooks).
   // If insights is null (eg initial render), keep hooks stable and render a safe fallback later.
   const hasInsights = !!insights;
@@ -481,12 +540,15 @@ export default function AIIntelligenceEnhanced({
     []
   );
 
+
+
   const overallExposure01 = useMemo(() => {
     const rs = Array.isArray(safeInsights.risks) ? safeInsights.risks : [];
     if (rs.length === 0) return 0.5;
     const avg = rs.reduce((acc, r) => acc + severityWeight01(r?.severity), 0) / rs.length;
     return clamp01(avg);
-  }, [safeInsights.risks]);
+  }, [scenarioTruthSig, safeInsights.risks]);
+
 
   const axisValues01 = useMemo(() => {
     const rs = Array.isArray(safeInsights.risks) ? safeInsights.risks : [];
@@ -500,85 +562,83 @@ export default function AIIntelligenceEnhanced({
       return clamp01(avg);
     });
     return values;
-  }, [axes, safeInsights.risks, overallExposure01]);
+  }, [scenarioTruthSig, axes, safeInsights.risks, overallExposure01]);
+
+
+
+  // --- RADAR INPUT SIGNATURE (primitive-based) ---
+  // This signature is a stable, JSON-stringified array of the primitive values that drive the radar
+  const radarInputSig = useMemo(() => {
+    // Use only the primitive values that affect the radar: axisValues01, axes.length, and risk severities
+    const riskSeverities = Array.isArray(safeInsights.risks)
+      ? safeInsights.risks.map(r => r?.severity || "")
+      : [];
+    return JSON.stringify([
+      scenarioTruthSig,
+      ...axisValues01,
+      axes.length,
+      ...riskSeverities,
+    ]);
+  }, [scenarioTruthSig, axisValues01, axes.length, safeInsights.risks]);
+
+  // Log axisValues01 and radarInputSig after they are computed
+  console.log("[AIIntelligenceEnhanced] axisValues01", structuredCloneSafe(axisValues01));
+  console.log("[AIIntelligenceEnhanced] radarInputSig", radarInputSig);
 
   const bandFrom01 = (v01: number) => (v01 < 0.34 ? "Low" : v01 < 0.67 ? "Med" : "High");
 
+  // --------------------------------------------------------------------------
+  // RADAR OBJECT (minimal, safe, typed)
+  // --------------------------------------------------------------------------
+  type RadarAxisLine = { x1: number; y1: number; x2: number; y2: number };
   const radar = useMemo(() => {
-    const cx = 170;
-    const cy = 120;
-    const r = 84;
-    const rings = [0.33, 0.66, 1.0];
+    const cx = 140;
+    const cy = 140;
+    const r = 92;
     const n = axes.length;
-
-    const angleAt = (i: number) => (-Math.PI / 2) + (i * (2 * Math.PI) / n);
-    const pointAt = (i: number, v01: number, radiusScale = 1) => {
-      const a = angleAt(i);
-      const rr = r * clamp01(v01) * radiusScale;
-      return { x: cx + Math.cos(a) * rr, y: cy + Math.sin(a) * rr };
+    const pointAtLocal = (i: number, k: number, scale = 1) => {
+      const a = (Math.PI * 2 * i) / n - Math.PI / 2;
+      return {
+        x: cx + Math.cos(a) * (r * k * scale),
+        y: cy + Math.sin(a) * (r * k * scale),
+      };
     };
-
-    const gridPaths = rings.map((k) => {
-      const pts = Array.from({ length: n }, (_, i) => pointAt(i, k, 1));
-      const d = pts.map((p, idx) => `${idx === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ") + " Z";
-      return d;
+    const gridPaths = [0.25, 0.5, 0.75, 1].map((k) => {
+      const pts = Array.from({ length: n }, (_, i) => pointAtLocal(i, k, 1));
+      return pts.map((p, idx) => `${idx === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ") + " Z";
     });
-
-    const axesLines = Array.from({ length: n }, (_, i) => {
-      const p = pointAt(i, 1, 1.15);
-      return { x2: p.x, y2: p.y };
+    const axesLines: RadarAxisLine[] = Array.from({ length: n }, (_, i) => {
+      const p = pointAtLocal(i, 1, 1);
+      return { x1: cx, y1: cy, x2: p.x, y2: p.y };
     });
-
-    const polyPts = axisValues01.map((v, i) => pointAt(i, v, 1));
-    const polyD = polyPts.map((p, idx) => `${idx === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ") + " Z";
-
-    const hasCritical = (safeInsights?.risks ?? []).some((r) => r?.severity === "CRITICAL");
-    const hasHigh = (safeInsights?.risks ?? []).some((r) => r?.severity === "HIGH");
-    const fillClass = hasCritical ? styles.radarFillCritical : hasHigh ? styles.radarFillWarning : styles.radarFillWarning;
-
+    const polyPts = axisValues01.map((v, i) => pointAtLocal(i, clamp01(v), 1));
+    const polyD =
+      polyPts.length === 0
+        ? ""
+        : polyPts.map((p, idx) => `${idx === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ") + " Z";
+    const hasCritical = (safeInsights?.risks ?? []).some((rr: any) => rr?.severity === "CRITICAL");
+    const hasHigh = (safeInsights?.risks ?? []).some((rr: any) => rr?.severity === "HIGH");
+    const fillClass = hasCritical ? styles.radarCritical : hasHigh ? styles.radarHigh : styles.radarStable;
     return { cx, cy, r, gridPaths, axesLines, polyPts, polyD, fillClass };
-  }, [axes.length, axisValues01, safeInsights?.risks]);
+  }, [scenarioTruthSig, axes.length, axisValues01, safeInsights?.risks]);
 
   // --------------------------------------------------------------------------
   // QUESTIONS — deterministic Q&A when no dedicated dataset exists
   // --------------------------------------------------------------------------
-  const topAxisIndex = useMemo(() => {
-    let best = 0;
-    for (let i = 1; i < axisValues01.length; i++) {
-      if (axisValues01[i] > axisValues01[best]) best = i;
+  type QA = { q: string; a: string };
+  const questions: QA[] = useMemo(() => {
+    // If safeInsights provides questions, map them here.
+    // Otherwise return empty list.
+    const raw = (safeInsights as any)?.questions;
+    if (Array.isArray(raw)) {
+      return raw.map((x: any) => ({
+        q: String(x?.q ?? x?.question ?? ""),
+        a: String(x?.a ?? x?.answer ?? ""),
+      }));
     }
-    return best;
-  }, [axisValues01]);
+    return [];
+  }, [safeInsights, scenarioTruthSig]);
 
-  const questions = useMemo(() => {
-    const exposureBand = bandFrom01(overallExposure01);
-    const focalAxis = axes[topAxisIndex]?.label ?? "Risk exposure";
-    const posture = valuationPosture;
-    const leverLine =
-      Array.isArray(safeInsights.actions) && safeInsights.actions.length > 0
-        ? "Several execution levers are available; prioritize the ones that reduce concentrated exposure first."
-        : "Execution levers are limited; focus on stabilizing the dominant exposure driver first.";
-
-    return [
-      {
-        q: "What must be true to preserve optionality under current conditions?",
-        a:
-          posture === "Compression"
-            ? "Maintain resilience and reduce fragility in the highest-pressure area. Keep scope tight, minimize reversible commitments, and prioritize containment over expansion."
-            : posture === "Expansion"
-              ? "Protect execution quality while scaling. Prioritize controlled investment where signals are strongest, and keep risk containment mechanisms active."
-              : "Maintain execution discipline and keep optionality intact. Allocate investment selectively and tighten risk containment where exposure is rising.",
-      },
-      {
-        q: "Where is exposure concentrated right now, and how should we interpret it?",
-        a: `Overall exposure is ${exposureBand}. The map shows the largest pressure in “${focalAxis}”. A larger footprint indicates broader exposure; spikes indicate concentrated pressure points.`,
-      },
-      {
-        q: "Which actions are most credible to shift posture within the current envelope?",
-        a: `${leverLine} Use the Risk Map to target the axis with the highest band first, then validate that the footprint contracts as sliders move.`,
-      },
-    ];
-  }, [axes, safeInsights.actions, overallExposure01, topAxisIndex, valuationPosture]);
 
   const openAnswerText = openQuestionIndex === null ? "" : (questions[openQuestionIndex]?.a ?? "");
   const answerContentKey = useMemo(
@@ -754,19 +814,27 @@ export default function AIIntelligenceEnhanced({
             </div>
 
             <div className={`${styles.card} ${styles.radarCard}`}>
+              <div style={{position: 'absolute', right: 12, top: 8, zIndex: 2, fontSize: 11, color: '#0ff', fontWeight: 600, letterSpacing: 0.5, background: '#222', borderRadius: 4, padding: '2px 6px', opacity: 0.85}}>
+                SIG: {radarInputSig}
+              </div>
               <div className={`${styles.cardLabel} ${styles.neutral}`}>Exposure footprint</div>
               <div className={styles.radarWrap}>
-                <svg className={styles.radarSvg} viewBox="0 0 340 220" role="img" aria-label="Risk radar map">
+                {/* Proof badge for scenarioTruthSig (visible for 2 minutes) */}
+                <div style={{ opacity: 0.6, fontSize: 11, marginBottom: 6 }}>
+                  truthSig: {scenarioTruthSig}
+                </div>
+                {/* Force remount of radar SVG when radarInputSig changes */}
+                <svg key={radarInputSig} className={styles.radarSvg} viewBox="0 0 340 220" role="img" aria-label="Risk radar map">
                   {/* Grid rings */}
-                  {radar.gridPaths.map((d, i) => (
+                  {radar.gridPaths.map((d: string, i: number) => (
                     <path key={`g-${i}`} d={d} className={styles.radarGrid} />
                   ))}
                   {/* Axes */}
-                  {radar.axesLines.map((l, i) => (
+                  {radar.axesLines.map((l: { x1: number; y1: number; x2: number; y2: number }, i: number) => (
                     <line
                       key={`a-${i}`}
-                      x1={radar.cx}
-                      y1={radar.cy}
+                      x1={l.x1}
+                      y1={l.y1}
                       x2={l.x2}
                       y2={l.y2}
                       className={styles.radarAxis}
@@ -775,7 +843,7 @@ export default function AIIntelligenceEnhanced({
                   {/* Polygon */}
                   <path d={radar.polyD} className={`${styles.radarPoly} ${radar.fillClass}`} />
                   {/* Points */}
-                  {radar.polyPts.map((p, i) => (
+                  {radar.polyPts.map((p: { x: number; y: number }, i: number) => (
                     <circle key={`p-${i}`} cx={p.x} cy={p.y} r={3.4} className={styles.radarPoint} />
                   ))}
                   {/* Labels */}
