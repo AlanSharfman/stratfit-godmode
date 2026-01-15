@@ -264,10 +264,17 @@ export default function ScenarioDeltaSnapshot() {
     ].join("|");
   });
 
+  const baseResult = useScenarioStore((s) => s.engineResults?.base);
+
+  const engineResultForScenario = useScenarioStore((s) => s.engineResults?.[scenarioKey]);
+
   const ledger = useMemo(() => {
-    const engineResults = useScenarioStore.getState().engineResults;
-    return buildScenarioDeltaLedger({ engineResults, activeScenario: scenarioKey });
-  }, [ledgerInputSig, scenarioKey]);
+    if (!baseResult?.kpis || !engineResultForScenario?.kpis) return null;
+    return buildScenarioDeltaLedger({
+      engineResults: { base: baseResult, [scenarioKey]: engineResultForScenario },
+      activeScenario: scenarioKey,
+    });
+  }, [baseResult, engineResultForScenario, scenarioKey]);
 
   const spiderBaseAxes = useMemo(() => {
     if (!ledger) return [];
@@ -310,6 +317,9 @@ export default function ScenarioDeltaSnapshot() {
 
 
   if (!ledger) {
+    const hasBase = !!useScenarioStore.getState().engineResults?.base?.kpis;
+    const hasActive = !!useScenarioStore.getState().engineResults?.[scenarioKey]?.kpis;
+
     return (
       <div className={styles.wrap}>
         <div className={styles.card}>
@@ -317,19 +327,17 @@ export default function ScenarioDeltaSnapshot() {
             <div className={styles.cardHeader}>
               <div>
                 <div className={styles.cardTitle}>Scenario Delta Snapshot</div>
-                <div className={styles.cardHint}>
-                  Ledger unavailable — missing canonical inputs (base + {scenarioKey})
-                </div>
+                <div className={styles.cardHint}>Truth block — missing canonical inputs</div>
               </div>
             </div>
-            <div style={{ opacity: 0.85, fontSize: 13, lineHeight: 1.45 }}>
-              <div><b>Required</b>:</div>
-              <ul style={{ marginTop: 6 }}>
-                <li>engineResults.base.kpis</li>
-                <li>engineResults[{scenarioKey}].kpis</li>
-              </ul>
-              <div style={{ marginTop: 8 }}>
-                Phase IG truth block — we do not fabricate deltas.
+
+            <div style={{ fontSize: 12, lineHeight: 1.5, opacity: 0.9 }}>
+              <div><b>Required:</b> engineResults.base.kpis AND engineResults[{scenarioKey}].kpis</div>
+              <div><b>base present:</b> {String(hasBase)}</div>
+              <div><b>active present:</b> {String(hasActive)}</div>
+              <div style={{ marginTop: 8, opacity: 0.85 }}>
+                If active is false when switching scenarios, your scenario ID key does not match the populated engineResults keys,
+                or population is not running for that scenario.
               </div>
             </div>
           </div>
