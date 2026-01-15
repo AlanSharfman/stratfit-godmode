@@ -1,23 +1,19 @@
 // src/components/center/RiskBreakdownPanel.tsx
 // PHASE-IG: Investor-Grade Truth Lock
-// Heatmap visuals derive ONLY from buildScenarioDeltaLedger(engineResults, activeScenario)
+// Visuals derive ONLY from ScenarioDeltaLedger buckets (base/scenario/delta/deltaPct)
 
 import { useMemo } from "react";
 import type { ScenarioDeltaLedger } from "@/logic/scenarioDeltaLedger";
 import styles from "./RiskBreakdownPanel.module.css";
 
 type Tone = "pos" | "neg" | "neutral";
-
 type MetricKey = "runwayMonths" | "arr12" | "arrGrowthPct" | "riskScore" | "qualityScore";
 
 type MetricSpec = {
   key: MetricKey;
   label: string;
-  dominant?: boolean;
-  secondary?: boolean;
-  tertiary?: boolean;
   invertGood?: boolean; // e.g. Risk: lower is good
-  formatScenario: (n: number | null) => string;
+  format: (n: number | null) => string;
   deltaSuffix?: string;
 };
 
@@ -39,6 +35,11 @@ function clamp01(x: number): number {
   return Math.max(0, Math.min(1, x));
 }
 
+function deltaNumber(deltaField: any): number | null {
+  const n = lnNumber(deltaField?.delta ?? deltaField);
+  return n === null ? null : n;
+}
+
 function toneFromDelta(delta: number | null, invertGood = false): Tone {
   const d = delta ?? 0;
   if (!Number.isFinite(d) || Math.abs(d) <= 1e-9) return "neutral";
@@ -46,27 +47,18 @@ function toneFromDelta(delta: number | null, invertGood = false): Tone {
   return sign > 0 ? "pos" : "neg";
 }
 
-function extractDeltaNumber(deltaField: any): number | null {
-  // supports: deltaField = { delta: number } OR deltaField = number
-  const n = lnNumber(deltaField?.delta ?? deltaField);
-  return n === null ? null : n;
-}
-
 function fmtInt(n: number | null): string {
   if (n === null) return "—";
   return Math.round(n).toString();
 }
-
 function fmt1(n: number | null): string {
   if (n === null) return "—";
   return n.toFixed(1);
 }
-
 function fmtPct1(n: number | null): string {
   if (n === null) return "—";
   return `${n.toFixed(1)}%`;
 }
-
 function fmtMoneyCompact(n: number | null): string {
   if (n === null) return "—";
   return new Intl.NumberFormat("en-AU", {
@@ -77,102 +69,78 @@ function fmtMoneyCompact(n: number | null): string {
 }
 
 function displayDelta(deltaField: any, suffix = ""): string {
-  const n = extractDeltaNumber(deltaField);
+  const n = deltaNumber(deltaField);
   if (n === null) return "—";
-  const fixed = Math.abs(n) >= 100 ? Math.round(n).toString() : n.toFixed(1);
   const sign = n > 0 ? "+" : n < 0 ? "−" : "";
+  const mag = Math.abs(n);
+  const fixed = mag >= 100 ? Math.round(mag).toString() : mag.toFixed(1);
   return `${sign}${fixed}${suffix}`;
 }
 
 /**
- * PHASE-IG normalization: absolute delta magnitude -> [0..1] intensity
- * UI-only normalization (NOT a model). Uses ONLY numeric ledger deltas.
+ * Intensity is UI-only normalization of |delta| (NOT model math)
  */
 function intensityForMetric(metric: MetricKey, absDelta: number): number {
   const x = Math.abs(absDelta);
-
   const scale: Record<MetricKey, number> = {
-    runwayMonths: 6,       // months
-    arr12: 500_000,        // dollars
-    arrGrowthPct: 10,      // percentage points
-    riskScore: 20,         // points
-    qualityScore: 20,      // points
+    runwayMonths: 6,        // months
+    arr12: 500_000,         // dollars
+    arrGrowthPct: 10,       // percentage points
+    riskScore: 20,          // points
+    qualityScore: 20,       // points
   };
-
   return clamp01(x / Math.max(1e-9, scale[metric]));
 }
 
+/**
+ * Instrument track position (0..1) derived from base vs scenario.
+ * We map the two values onto a local domain for that row to show relative shift.
+ */
+function instrumentPos(base: number | null, scenario: number | null): { b: number; s: number } {
+  const b = base ?? 0;
+  const s = scenario ?? 0;
+  const min = Math.min(b, s);
+  const max = Math.max(b, s);
+  const span = Math.max(1e-6, max - min);
+  return { b: (b - min) / span, s: (s - min) / span };
+}
+
 const METRICS: MetricSpec[] = [
-  {
-    key: "runwayMonths",
-    label: "Runway",
-    dominant: true,
-    formatScenario: (n) => `${fmt1(n)} mo`,
-    deltaSuffix: " mo",
-  },
-  {
-    key: "riskScore",
-    label: "Risk",
-    dominant: true,
-    invertGood: true,
-    formatScenario: (n) => fmtInt(n),
-    deltaSuffix: "",
-  },
-  {
-    key: "arr12",
-    label: "ARR",
-    secondary: true,
-    formatScenario: (n) => `$${fmtMoneyCompact(n)}`,
-    deltaSuffix: "",
-  },
-  {
-    key: "arrGrowthPct",
-    label: "ARR Growth",
-    secondary: true,
-    formatScenario: (n) => fmtPct1(n),
-    deltaSuffix: "%",
-  },
-  {
-    key: "qualityScore",
-    label: "Quality",
-    tertiary: true,
-    formatScenario: (n) => fmtInt(n),
-    deltaSuffix: "",
-  },
+  { key: "runwayMonths", label: "Runway", format: (n) => `${fmt1(n)} mo`, deltaSuffix: " mo" },
+  { key: "riskScore", label: "Risk", invertGood: true, format: (n) => fmtInt(n) },
+  { key: "arr12", label: "ARR", format: (n) => `$${fmtMoneyCompact(n)}` },
+  { key: "arrGrowthPct", label: "ARR Growth", format: (n) => fmtPct1(n), deltaSuffix: "%" },
+  { key: "qualityScore", label: "Quality", format: (n) => fmtInt(n) },
 ];
 
-type Props = {
-  ledger: ScenarioDeltaLedger | null;
-};
+type Props = { ledger: ScenarioDeltaLedger | null };
 
 export default function RiskBreakdownPanel({ ledger }: Props) {
   const rows = useMemo(() => {
     const l: any = ledger ?? {};
 
-    // IMPORTANT: we map the typed METRICS list (NOT Object.keys) to avoid string -> MetricKey issues.
     return METRICS.map((m) => {
       const bucket = l?.[m.key];
 
       const baseValue = lnNumber(bucket?.base);
       const scenarioValue = lnNumber(bucket?.scenario);
-      const deltaNum = extractDeltaNumber(bucket?.delta);
+      const d = deltaNumber(bucket?.delta);
 
-      const tone = toneFromDelta(deltaNum, !!m.invertGood);
-      const intensity = intensityForMetric(m.key, Math.abs(deltaNum ?? 0));
+      const tone = toneFromDelta(d, !!m.invertGood);
+      const intensity = intensityForMetric(m.key, Math.abs(d ?? 0));
+
+      const pos = instrumentPos(baseValue, scenarioValue);
 
       return {
         key: m.key,
         label: m.label,
-        baseValue,
-        scenarioValue,
-        baseText: m.formatScenario(baseValue),
-        scenarioText: m.formatScenario(scenarioValue),
+        baseText: m.format(baseValue),
+        scenarioText: m.format(scenarioValue),
         deltaText: displayDelta(bucket?.delta, m.deltaSuffix ?? ""),
         tone,
         intensity,
-        dominant: !!m.dominant,
-        secondary: !!m.secondary,
-        tertiary: !!m.tertiary,
+        posB: pos.b,
+        posS: pos.s,
       };
     });
   }, [ledger]);
@@ -181,60 +149,45 @@ export default function RiskBreakdownPanel({ ledger }: Props) {
     <section className={styles.panel} aria-label="Risk Breakdown Heatmap">
       <div className={styles.header}>
         <div className={styles.title}>Risk Breakdown</div>
-        <div className={styles.sub}>Stress surface (ledger-driven)</div>
+        <div className={styles.sub}>Base → Scenario stress (ledger-driven)</div>
       </div>
 
       <div className={styles.grid} role="list">
         {rows.map((r) => {
-          const rowClass = r.dominant
-            ? styles.rowDominant
-            : r.secondary
-            ? styles.rowSecondary
-            : styles.rowTertiary;
-
           const toneClass =
-            r.tone === "pos"
-              ? styles.tonePos
-              : r.tone === "neg"
-              ? styles.toneNeg
-              : styles.toneNeutral;
+            r.tone === "pos" ? styles.tonePos : r.tone === "neg" ? styles.toneNeg : styles.toneNeutral;
 
           return (
             <div
               key={r.key}
               role="listitem"
-              className={`${styles.row} ${rowClass} ${toneClass}`}
-              style={{ ["--heat" as any]: r.intensity } as any}
+              className={`${styles.row} ${toneClass}`}
+              style={
+                {
+                  ["--heat" as any]: r.intensity,
+                  ["--bpos" as any]: r.posB,
+                  ["--spos" as any]: r.posS,
+                } as any
+              }
             >
-              <div className={styles.cell}>
-                <div className={styles.cellTop}>
-                  <div className={styles.metricLabel}>
-                    <div className={styles.metric}>{r.label}</div>
-                  </div>
-                  
-                  <div className={styles.markers}>
-                    {/* Base marker */}
-                    <div className={styles.markerGroup}>
-                      <div className={styles.markerDot} data-marker="base" />
-                      <div className={styles.markerValue}>{r.baseText}</div>
-                    </div>
-                    
-                    {/* Arrow */}
-                    <div className={styles.arrow}>→</div>
-                    
-                    {/* Scenario marker */}
-                    <div className={styles.markerGroup}>
-                      <div className={styles.markerDot} data-marker="scenario" />
-                      <div className={styles.markerValue}>{r.scenarioText}</div>
-                    </div>
-                  </div>
+              <div className={styles.left}>
+                <div className={styles.metric}>{r.label}</div>
+                <div className={styles.values}>
+                  <span className={styles.base}>Base: {r.baseText}</span>
+                  <span className={styles.scenario}>Scenario: {r.scenarioText}</span>
                 </div>
+              </div>
 
-                {/* Delta badge with tone ring glow */}
-                <div className={styles.deltaBadge}>
-                  <div className={styles.deltaRing} />
-                  <div className={styles.deltaText}>{r.deltaText}</div>
+              <div className={styles.trackWrap}>
+                <div className={styles.track}>
+                  <div className={styles.heat} />
+                  <div className={styles.baseMark} />
+                  <div className={styles.scMark} />
                 </div>
+              </div>
+
+              <div className={styles.right}>
+                <div className={styles.deltaBadge}>{r.deltaText}</div>
               </div>
             </div>
           );
