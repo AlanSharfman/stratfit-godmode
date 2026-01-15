@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import KPICard from "@/components/ui/KPICard";
 import Slider from "@/components/ui/Slider";
 import MountainEngine from "@/components/engine/MountainEngine";
-import AIInsightsPanel from "@/components/ui/AIInsightsPanel";
+
 import { ChevronDown } from "lucide-react";
 import OnboardingFlow from "@/components/onboarding/OnboardingFlow";
 import { useScenarioStore } from "@/state/scenarioStore";
@@ -127,25 +127,7 @@ export default function DashboardLayout() {
           />
         </div>
 
-        <AIInsightsPanel
-          scenario={scenario}
-          kpiValues={{
-            runway: dataPoints[0] ?? 50,
-            cash: dataPoints[1] ?? 60,
-            growth: dataPoints[2] ?? 75,
-            ebitda: dataPoints[3] ?? 80,
-            burn: dataPoints[4] ?? 70,
-            risk: dataPoints[5] ?? 65,
-            value: dataPoints[6] ?? 85
-          }}
-          sliderValues={{
-            revenueGrowth: dataPoints[0] ?? 50,
-            operatingExpenses: dataPoints[1] ?? 60,
-            hiringRate: dataPoints[2] ?? 75,
-            wageIncrease: dataPoints[3] ?? 80,
-            burnRate: dataPoints[4] ?? 70
-          }}
-        />
+
       </div>
 
       <div className="grid grid-cols-5 gap-4">
