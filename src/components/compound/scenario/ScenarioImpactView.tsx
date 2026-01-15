@@ -70,10 +70,11 @@ function whatThisMeansBullets(id: ScenarioId): string[] {
 export const ScenarioImpactView = memo(function ScenarioImpactView() {
   const [showSpiderDetails, setShowSpiderDetails] = useState(false);
 
-  const rows = useScenarioImpactRows();
   const scenario = useScenarioStore((s) => s.scenario);
-  const kpis = useScenarioStore((s) => s.engineResults?.[s.scenario]?.kpis);
-  const baseKpis = useScenarioStore((s) => s.engineResults?.base?.kpis);
+  const engineResults = useScenarioStore((s) => s.engineResults);
+  const rows = useScenarioImpactRows(engineResults, scenario);
+  const kpis = engineResults?.[scenario]?.kpis;
+  const baseKpis = engineResults?.base?.kpis;
 
   const scenarioLabel = scenarioLabelOf(scenario);
 

@@ -153,6 +153,7 @@ export default function RiskBreakdownPanel({ ledger }: Props) {
     return METRICS.map((m) => {
       const bucket = l?.[m.key];
 
+      const baseValue = lnNumber(bucket?.base);
       const scenarioValue = lnNumber(bucket?.scenario);
       const deltaNum = extractDeltaNumber(bucket?.delta);
 
@@ -162,6 +163,9 @@ export default function RiskBreakdownPanel({ ledger }: Props) {
       return {
         key: m.key,
         label: m.label,
+        baseValue,
+        scenarioValue,
+        baseText: m.formatScenario(baseValue),
         scenarioText: m.formatScenario(scenarioValue),
         deltaText: displayDelta(bucket?.delta, m.deltaSuffix ?? ""),
         tone,
@@ -204,11 +208,33 @@ export default function RiskBreakdownPanel({ ledger }: Props) {
             >
               <div className={styles.cell}>
                 <div className={styles.cellTop}>
-                  <div className={styles.metric}>{r.label}</div>
-                  <div className={styles.value}>{r.scenarioText}</div>
+                  <div className={styles.metricLabel}>
+                    <div className={styles.metric}>{r.label}</div>
+                  </div>
+                  
+                  <div className={styles.markers}>
+                    {/* Base marker */}
+                    <div className={styles.markerGroup}>
+                      <div className={styles.markerDot} data-marker="base" />
+                      <div className={styles.markerValue}>{r.baseText}</div>
+                    </div>
+                    
+                    {/* Arrow */}
+                    <div className={styles.arrow}>→</div>
+                    
+                    {/* Scenario marker */}
+                    <div className={styles.markerGroup}>
+                      <div className={styles.markerDot} data-marker="scenario" />
+                      <div className={styles.markerValue}>{r.scenarioText}</div>
+                    </div>
+                  </div>
                 </div>
 
-                <div className={styles.delta}>{r.deltaText}</div>
+                {/* Delta badge with tone ring glow */}
+                <div className={styles.deltaBadge}>
+                  <div className={styles.deltaRing} />
+                  <div className={styles.deltaText}>{r.deltaText}</div>
+                </div>
               </div>
             </div>
           );
