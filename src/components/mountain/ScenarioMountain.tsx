@@ -357,9 +357,9 @@ function AtmosphericHaze({ riskLevel, viewMode, scenario }: AtmosphericHazeProps
   const scenarioTone =
     scenario === "stress" ? 1.2 : scenario === "downside" ? 1.1 : scenario === "upside" ? 0.85 : 1.0;
 
-  const baseOpacity = 0.18 + riskFactor * 0.08 * scenarioTone;
+  const baseOpacity = 0.24 + riskFactor * 0.12 * scenarioTone;
   const finalOpacity = baseOpacity * viewFactor;
-  const altitudeOpacity = 0.08 * viewFactor;
+  const altitudeOpacity = 0.12 * viewFactor;
 
   return (
     <div className="atmospheric-haze">
@@ -369,7 +369,7 @@ function AtmosphericHaze({ riskLevel, viewMode, scenario }: AtmosphericHazeProps
       <div className="haze-layer haze-mid" style={{ opacity: finalOpacity * 0.25 }} />
 
       <style>{`
-        .atmospheric-haze { position: absolute; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+        .atmospheric-haze { position: absolute; inset: 0; pointer-events: none; z-index: 3; overflow: hidden; }
         .haze-layer { position: absolute; inset: 0; }
         .haze-altitude {
           background: linear-gradient(to bottom,
