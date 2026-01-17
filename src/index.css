@@ -388,20 +388,7 @@ body { overflow-x: hidden; }
 }
 
 /* RIGHT COLUMN: Intelligence Panel */
-.right-column {
-  min-height: 0;
-  min-width: 0; /* IMPORTANT: allow grid children to shrink without forcing overflow */
-  overflow: hidden;
-  border-radius: 14px;
-  background: linear-gradient(145deg, rgba(28, 32, 38, 0.9), rgba(24, 28, 34, 0.95));
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.07),
-    0 4px 12px rgba(0, 0, 0, 0.55);
-  padding: 20px;
-  margin-top: 291px; /* aligns Scenario Intelligence top with mountain compound corner */
-  align-self: start; /* align to top, not stretch */
-}
+/* RIGHT COLUMN: See scroll styles at bottom of file */
 
 /* ═══════════════════════════════════════════════════════════════
    SLIDERS CONTAINER — GOD-MODE STEPPED BEZEL (4-layer chassis)
@@ -2417,3 +2404,67 @@ body { overflow-x: hidden; }
   opacity: 0.55;
 }
 
+/* ========================================================================== */
+/* RIGHT PANEL SCROLL — GLOBAL (MUST BE GLOBAL)                                */
+/* ========================================================================== */
+
+.right-column {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  /* Prevent content shift when scrollbar appears */
+  scrollbar-gutter: stable;
+
+  /* Critical: allow the bottom card to expand without clipping */
+  padding: 20px 16px 80px;
+
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(34, 211, 238, 0.2) rgba(6, 10, 14, 0.4);
+
+  /* Styling */
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(28, 32, 38, 0.9), rgba(24, 28, 34, 0.95));
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.07),
+    0 4px 12px rgba(0, 0, 0, 0.55);
+  margin-top: 291px;
+  align-self: start;
+}
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+.right-column::-webkit-scrollbar {
+  width: 6px;
+}
+
+.right-column::-webkit-scrollbar-track {
+  background: rgba(6, 10, 14, 0.4);
+}
+
+.right-column::-webkit-scrollbar-thumb {
+  background: rgba(34, 211, 238, 0.2);
+  border-radius: 99px;
+  border: 1px solid rgba(6, 10, 14, 0.8);
+  transition: background 0.2s ease;
+}
+
+.right-column::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 211, 238, 0.4);
+}
+
+/* Flex/grid scroll safety: prevent "2mm scroll" traps */
+.main-content,
+.main,
+.app-main,
+.layout,
+.app-shell,
+.shell,
+.sfAppShell,
+.sfMain {
+  min-height: 0;
+}
