@@ -9,6 +9,7 @@ import { LeverState } from "@/logic/calculateMetrics";
 import { buildScenarioDeltaLedger } from "@/logic/scenarioDeltaLedger";
 import { Activity, MessageCircle, FileText, ChevronDown } from "lucide-react";
 import styles from "./AIIntelligenceEnhanced.module.css";
+import { StrategicModules } from "./StrategicModules";
 
 // ============================================================================
 // TYPES
@@ -1073,10 +1074,15 @@ export default function AIIntelligenceEnhanced({
         )}
 
         {activeTab === "questions" && (
-          <LockedTabPanel
-            title="STRATEGIC QUESTIONS"
-            description="AI prompts designed to surface second-order risks and non-obvious trade-offs based on scenario divergence. Unlocks after governance checks."
-          />
+          <>
+            <LockedTabPanel
+              title="STRATEGIC QUESTIONS"
+              description="AI prompts designed to surface second-order risks and non-obvious trade-offs based on scenario divergence. Unlocks after governance checks."
+            />
+            <div style={{ marginTop: 12 }}>
+              <StrategicModules />
+            </div>
+          </>
         )}
 
         {activeTab === "questions-DISABLED" && (
