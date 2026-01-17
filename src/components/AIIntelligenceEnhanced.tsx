@@ -765,48 +765,6 @@ export default function AIIntelligenceEnhanced({
                 </div>
               </div>
             )}
-
-            <div className={styles.sectionHeader}>
-              <Activity className={styles.sectionIcon} />
-              <span>SIGNALS</span>
-            </div>
-
-            {safeInsights.systemState.slice(0, 3).map((state, i) => {
-              const conf =
-                state.status === "CRITICAL"
-                  ? { label: "Lower confidence", className: styles.bandCritical }
-                  : state.status === "ELEVATED"
-                    ? { label: "Medium confidence", className: styles.bandWarning }
-                    : { label: "Higher confidence", className: styles.bandPositive };
-              const cue = state.status === "CRITICAL" ? "Escalate" : state.status === "ELEVATED" ? "Watch" : "Contained";
-
-              return (
-                <div key={`sys-${i}`} className={`${styles.card} ${statusToCardAccent(state.status)}`}>
-                  <div className={styles.chipRow}>
-                    <span className={`${styles.chip} ${styles.chipNeutral}`}>{state.label}</span>
-                    <span className={`${styles.chip} ${styles.chipCyan}`}>Cue: {cue}</span>
-                    <span className={`${styles.chip} ${conf.className}`}>{conf.label}</span>
-                  </div>
-                  <div className={styles.cardText}>{state.status}</div>
-                  <div className={styles.cardMeta}>{state.strain}% strain</div>
-                </div>
-              );
-            })}
-
-            {safeInsights.risks.slice(0, 4).map((risk, i) => {
-              const conf = confidenceFromSeverity(risk?.severity);
-              return (
-                <div key={`risk-signal-${i}`} className={`${styles.card} ${severityToCardAccent(risk.severity)}`}>
-                  <div className={styles.chipRow}>
-                    <span className={`${styles.chip} ${styles.chipNeutral}`}>{categoryFromRisk(risk)}</span>
-                    <span className={`${styles.chip} ${styles.chipCyan}`}>Cue: {cueFromSeverity(risk?.severity)}</span>
-                    <span className={`${styles.chip} ${conf.className}`}>{conf.label}</span>
-                  </div>
-                  <div className={styles.cardText}>{risk.title}</div>
-                  <div className={styles.cardSubtext}>{risk.driver}</div>
-                </div>
-              );
-            })}
           </>
         )}
 
