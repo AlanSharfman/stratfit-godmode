@@ -1,0 +1,282 @@
+/* src/components/blocks/ActiveScenario.module.css */
+/* STRATFIT — Active Scenario Selector Styling */
+/* God Mode professional dropdown */
+
+/* ============================================================================
+   CONTAINER
+   ============================================================================ */
+
+.container {
+  position: relative;
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(
+    135deg,
+    rgba(15, 23, 42, 0.95),
+    rgba(17, 24, 39, 0.9)
+  );
+  border: 1px solid rgba(71, 85, 105, 0.4);
+  border-radius: 12px;
+  box-shadow: 
+    inset 0 1px 2px rgba(0, 0, 0, 0.3),
+    0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* ============================================================================
+   HEADER
+   ============================================================================ */
+
+.header {
+  margin-bottom: 10px;
+}
+
+.label {
+  font-family: 'Monaco', 'Roboto Mono', 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: #64748b;
+}
+
+/* ============================================================================
+   CURRENT SELECTION (Button)
+   ============================================================================ */
+
+.current {
+  /* Reset */
+  all: unset;
+  box-sizing: border-box;
+  
+  /* Layout */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 12px 14px;
+  
+  /* Background */
+  background: rgba(17, 24, 39, 0.6);
+  
+  /* Border */
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  border-radius: 8px;
+  
+  /* Shadow */
+  box-shadow: 
+    inset 0 1px 2px rgba(0, 0, 0, 0.2),
+    0 2px 4px rgba(0, 0, 0, 0.2);
+  
+  /* Cursor */
+  cursor: pointer;
+  
+  /* Transition */
+  transition: all 0.3s ease;
+}
+
+.current:hover {
+  border-color: rgba(34, 211, 238, 0.5);
+  box-shadow: 
+    inset 0 1px 2px rgba(0, 0, 0, 0.2),
+    0 0 8px rgba(34, 211, 238, 0.15),
+    0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.currentContent {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.currentIcon {
+  color: #22d3ee;
+  flex-shrink: 0;
+}
+
+.currentText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.currentLabel {
+  font-size: 14px;
+  font-weight: 700;
+  color: #22d3ee;
+  letter-spacing: 0.5px;
+}
+
+.currentDesc {
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.chevron {
+  font-size: 10px;
+  color: #64748b;
+  margin-left: 8px;
+  transition: transform 0.2s ease;
+}
+
+/* ============================================================================
+   DROPDOWN MENU
+   ============================================================================ */
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 8px;
+  z-index: 100;
+  
+  /* Background */
+  background: linear-gradient(
+    135deg,
+    rgba(17, 24, 39, 0.98),
+    rgba(20, 27, 45, 0.98)
+  );
+  
+  /* Border */
+  border: 1px solid rgba(71, 85, 105, 0.4);
+  border-radius: 10px;
+  
+  /* Shadow */
+  box-shadow: 
+    inset 0 1px 2px rgba(0, 0, 0, 0.3),
+    0 8px 24px rgba(0, 0, 0, 0.5);
+  
+  /* Backdrop */
+  backdrop-filter: blur(12px);
+  
+  /* Animation */
+  animation: dropdownSlide 0.2s ease-out;
+}
+
+@keyframes dropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================================================
+   DROPDOWN OPTIONS
+   ============================================================================ */
+
+.option {
+  /* Reset */
+  all: unset;
+  box-sizing: border-box;
+  
+  /* Layout */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  
+  /* Border */
+  border-bottom: 1px solid rgba(71, 85, 105, 0.15);
+  
+  /* Cursor */
+  cursor: pointer;
+  
+  /* Transition */
+  transition: all 0.2s ease;
+}
+
+.option:first-child {
+  border-radius: 10px 10px 0 0;
+}
+
+.option:last-child {
+  border-bottom: none;
+  border-radius: 0 0 10px 10px;
+}
+
+.option:hover {
+  background: rgba(34, 211, 238, 0.08);
+}
+
+.option.active {
+  background: rgba(34, 211, 238, 0.12);
+}
+
+.optionIcon {
+  color: #94a3b8;
+  flex-shrink: 0;
+  transition: color 0.2s ease;
+}
+
+.option:hover .optionIcon {
+  color: #22d3ee;
+}
+
+.option.active .optionIcon {
+  color: #22d3ee;
+}
+
+.optionText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.optionLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: #e2e8f0;
+  letter-spacing: 0.3px;
+  transition: color 0.2s ease;
+}
+
+.option:hover .optionLabel {
+  color: #22d3ee;
+}
+
+.option.active .optionLabel {
+  color: #22d3ee;
+}
+
+.optionDesc {
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.checkmark {
+  font-size: 14px;
+  color: #22d3ee;
+  margin-left: 8px;
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
+@media (max-width: 1400px) {
+  .currentLabel {
+    font-size: 13px;
+  }
+  
+  .currentDesc {
+    font-size: 9px;
+  }
+  
+  .optionLabel {
+    font-size: 12px;
+  }
+  
+  .optionDesc {
+    font-size: 9px;
+  }
+}
+

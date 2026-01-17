@@ -15,6 +15,7 @@ import { Moon } from "./components/Moon";
 import { ControlDeck, ControlBoxConfig } from "./components/ControlDeck";
 import AIIntelligence from "./components/AIIntelligenceEnhanced";
 import ScenarioSelector from "./components/ScenarioSelector";
+import ActiveScenario, { type ScenarioType } from "@/components/blocks/ActiveScenario";
 import ScenarioBezel from "./components/kpi/ScenarioBezel";
 import OnboardingSequence from "./components/OnboardingSequenceNew";
 import { useScenarioStore, SCENARIO_COLORS } from "@/state/scenarioStore";
@@ -61,6 +62,81 @@ const INITIAL_LEVERS: LeverState = {
   executionRisk: 25,
   fundingPressure: 20,
 };
+
+// Scenario presets for the 5 strategic scenarios
+const SCENARIO_PRESETS: Record<ScenarioType, LeverState> = {
+  'base-case': {
+    demandStrength: 50,
+    pricingPower: 50,
+    expansionVelocity: 50,
+    costDiscipline: 50,
+    hiringIntensity: 50,
+    operatingDrag: 50,
+    marketVolatility: 50,
+    executionRisk: 50,
+    fundingPressure: 50,
+  },
+  'growth': {
+    demandStrength: 80,
+    pricingPower: 60,
+    expansionVelocity: 75,
+    costDiscipline: 40,
+    hiringIntensity: 70,
+    operatingDrag: 60,
+    marketVolatility: 50,
+    executionRisk: 45,
+    fundingPressure: 40,
+  },
+  'efficiency': {
+    demandStrength: 55,
+    pricingPower: 65,
+    expansionVelocity: 40,
+    costDiscipline: 70,
+    hiringIntensity: 40,
+    operatingDrag: 20,
+    marketVolatility: 50,
+    executionRisk: 35,
+    fundingPressure: 30,
+  },
+  'survival': {
+    demandStrength: 40,
+    pricingPower: 50,
+    expansionVelocity: 25,
+    costDiscipline: 80,
+    hiringIntensity: 20,
+    operatingDrag: 15,
+    marketVolatility: 70,
+    executionRisk: 30,
+    fundingPressure: 60,
+  },
+  'series-b': {
+    demandStrength: 70,
+    pricingPower: 60,
+    expansionVelocity: 65,
+    costDiscipline: 65,
+    hiringIntensity: 60,
+    operatingDrag: 30,
+    marketVolatility: 50,
+    executionRisk: 40,
+    fundingPressure: 35,
+  },
+};
+
+// Map new scenario types to old scenario IDs
+function mapScenarioTypeToId(type: ScenarioType): ScenarioId {
+  switch (type) {
+    case 'growth':
+    case 'series-b':
+      return 'upside';
+    case 'efficiency':
+      return 'base';
+    case 'survival':
+      return 'stress';
+    case 'base-case':
+    default:
+      return 'base';
+  }
+}
 
 const ALL_SCENARIOS: ScenarioId[] = ["base", "upside", "downside", "stress"];
 
@@ -400,6 +476,7 @@ export default function App() {
     window.localStorage.getItem("ENABLE_SCENARIO_INTELLIGENCE") === "1";
 
   const [scenario, setScenario] = useState<ScenarioId>("base");
+  const [activeScenarioType, setActiveScenarioType] = useState<ScenarioType>("base-case");
   const [levers, setLevers] = useState<LeverState>(INITIAL_LEVERS);
   
   // 🚀 PERFORMANCE OPTIMIZATION: Debounce expensive calculations
@@ -439,9 +516,29 @@ export default function App() {
     };
   }, [centerView]);
   
-  // Handle scenario change
+  // Handle scenario change from old selector
   const handleScenarioChange = useCallback((newScenario: ScenarioId) => {
     setScenario(newScenario);
+  }, []);
+
+  // Handle new scenario type change with presets
+  const handleScenarioTypeChange = useCallback((newType: ScenarioType) => {
+    setActiveScenarioType(newType);
+    
+    // Apply preset levers for this scenario
+    const presets = SCENARIO_PRESETS[newType];
+    setLevers(presets);
+    
+    // Map to old scenario ID for compatibility
+    const mappedScenario = mapScenarioTypeToId(newType);
+    setScenario(mappedScenario);
+    
+    // Emit causal event for visual feedback
+    emitCausal({
+      source: "scenario_switch",
+      bandStyle: "wash",
+      color: "rgba(34,211,238,0.18)",
+    });
   }, []);
 
   // Investor Pitch Mode effect - auto-apply investor-ready plan
@@ -1130,11 +1227,12 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
         {/* LEFT COLUMN: Scenario + Sliders */}
         <aside className="left-column">
           <div className="sf-leftStack">
-            {/* Active Scenario - Compact */}
+            {/* Active Scenario - New 5-Scenario Selector */}
             <div className="scenario-area">
-              <ScenarioBezel>
-                <ScenarioSelector scenario={scenario} onChange={handleScenarioChange} />
-              </ScenarioBezel>
+              <ActiveScenario 
+                currentScenario={activeScenarioType}
+                onScenarioChange={handleScenarioTypeChange}
+              />
             </div>
 
             {/* Spacer (fixed, CSS-controlled) */}
