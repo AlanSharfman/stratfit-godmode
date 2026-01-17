@@ -52,6 +52,67 @@ interface AIIntelligenceEnhancedProps {
 }
 
 // ============================================================================
+// LOCKED TAB PANEL COMPONENT (G-D MODE)
+// ============================================================================
+
+function LockedTabPanel({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <div style={{
+      borderRadius: 14,
+      border: "1px solid rgba(120, 220, 255, 0.12)",
+      background: "rgba(255,255,255,0.02)",
+      padding: "14px 14px 12px",
+      color: "rgba(232,240,248,0.86)"
+    }}>
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        fontWeight: 700,
+        letterSpacing: "0.06em",
+        textTransform: "uppercase",
+        fontSize: 12,
+        color: "rgba(232,240,248,0.92)"
+      }}>
+        <span style={{ fontSize: 14 }}>🔒</span>
+        <span>{title}</span>
+      </div>
+
+      <div style={{
+        marginTop: 8,
+        lineHeight: 1.45,
+        fontSize: 12.5,
+        color: "rgba(232,240,248,0.70)"
+      }}>
+        {description}
+      </div>
+
+      <div style={{
+        marginTop: 10,
+        display: "inline-flex",
+        alignItems: "center",
+        padding: "4px 10px",
+        borderRadius: 999,
+        border: "1px solid rgba(34, 211, 238, 0.18)",
+        background: "rgba(34, 211, 238, 0.06)",
+        color: "rgba(34, 211, 238, 0.85)",
+        fontSize: 11,
+        letterSpacing: "0.08em",
+        textTransform: "uppercase"
+      }}>
+        Locked Preview
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
 
@@ -769,6 +830,13 @@ export default function AIIntelligenceEnhanced({
         )}
 
         {activeTab === "risk" && (
+          <LockedTabPanel
+            title="RISK MAP"
+            description="Visualises how risk propagates across scenarios — concentration, escalation paths, and hidden fragility. This becomes interactive post-demo."
+          />
+        )}
+
+        {activeTab === "risk-DISABLED" && (
           <>
             <div className={styles.sectionHeader}>
               <Activity className={styles.sectionIcon} />
@@ -876,6 +944,13 @@ export default function AIIntelligenceEnhanced({
         )}
 
         {activeTab === "value" && (
+          <LockedTabPanel
+            title="VALUE INTELLIGENCE"
+            description="Translates scenario outcomes into value ranges, capital efficiency signals, and dilution-aware decision paths. Activation follows baseline validation."
+          />
+        )}
+
+        {activeTab === "value-DISABLED" && (
           <>
             <div className={styles.sectionHeader}>
               <FileText className={styles.sectionIcon} />
@@ -998,6 +1073,13 @@ export default function AIIntelligenceEnhanced({
         )}
 
         {activeTab === "questions" && (
+          <LockedTabPanel
+            title="STRATEGIC QUESTIONS"
+            description="AI prompts designed to surface second-order risks and non-obvious trade-offs based on scenario divergence. Unlocks after governance checks."
+          />
+        )}
+
+        {activeTab === "questions-DISABLED" && (
           <>
             <div className={styles.sectionHeader}>
               <MessageCircle className={styles.sectionIcon} />
