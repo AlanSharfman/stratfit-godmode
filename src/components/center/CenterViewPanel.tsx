@@ -1,12 +1,15 @@
 import React, { useEffect, useState, useMemo } from "react";
 import type { CenterViewId } from "@/types/view";
 import ScenarioMountain from "@/components/mountain/ScenarioMountain";
+import HudKpis from "./HudKpis";
 
 import ScenarioDeltaSnapshot from "@/components/ScenarioDeltaSnapshot";
 
 import { useScenario, useScenarioStore } from "@/state/scenarioStore";
 import { onCausal } from "@/ui/causalEvents";
 import { engineResultToMountainForces } from "@/logic/mountainForces";
+
+import styles from "./CenterViewPanel.module.css";
 
 export default function CenterViewPanel(props: { view?: CenterViewId }) {
   const { view = "impact" } = props;
@@ -35,24 +38,29 @@ export default function CenterViewPanel(props: { view?: CenterViewId }) {
   }, []);
 
   return (
-    <div className="relative flex h-full w-full flex-col rounded-xl bg-black/40 backdrop-blur-sm border border-white/5 overflow-auto">
-      {/* Center Stage */}
-      {/* STRATFIT RULE:
-          Mountain dominance locked at ~65% viewport height.
-          Do not adjust without design sign-off. */}
-      <div className="mountain-stage relative w-full flex-1 p-4" data-tour="mountain">
+    <div className={styles.sfCenterRoot}>
+      {/* G-D MODE: KPI HUD */}
+      <div className={styles.sfHudStage}>
+        <HudKpis />
+      </div>
+
+      {/* G-D MODE: Mountain Stage (fills remaining space) */}
+      <div className={styles.sfMountainStage} data-tour="mountain">
         {view === "terrain" && (
-          <div className="relative h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-black shadow-[0_8px_32px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.03)]">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.4)_60%,rgba(0,0,0,0.85)_100%)]" />
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-linear-to-b from-black/60 via-black/20 to-transparent" />
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-linear-to-t from-black/80 via-black/30 to-transparent" />
-            <div className="pointer-events-none absolute inset-0 rounded-3xl shadow-[inset_0_0_0_1px_rgba(34,211,238,0.06)]" />
-            
+          <div className={styles.sfViewWrapper}>
+            {/* Atmospheric overlays */}
+            <div className={styles.sfViewOverlays}>
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.4)_60%,rgba(0,0,0,0.85)_100%)]" />
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-linear-to-b from-black/60 via-black/20 to-transparent" />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-linear-to-t from-black/80 via-black/30 to-transparent" />
+              <div className="pointer-events-none absolute inset-0 rounded-3xl shadow-[inset_0_0_0_1px_rgba(34,211,238,0.06)]" />
+            </div>
+
             {/* Causal highlight band (no labels) — only after explicit user action */}
             {bandNonce > 0 ? (
               <div
                 key={bandNonce}
-                className={`sf-causal-band play ${bandStyle === "wash" ? "wash" : ""}`}
+                className={`${styles.sfCausalBand} sf-causal-band play ${bandStyle === "wash" ? "wash" : ""}`}
                 style={{ ["--sf-causal" as string]: bandColor } as React.CSSProperties}
               />
             ) : null}
@@ -64,20 +72,17 @@ export default function CenterViewPanel(props: { view?: CenterViewId }) {
                 activeKpiIndex={hoveredKpiIndex}
               />
             </div>
-
-            <div className="mt-3 px-1">
-            </div>
           </div>
         )}
 
         {view === "impact" && (
-          <div className="h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-linear-to-br from-slate-950/60 to-black/80 p-6 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
+          <div className={styles.sfViewWrapper} style={{ padding: "24px" }}>
             <ScenarioDeltaSnapshot />
           </div>
         )}
 
         {view === "compare" && (
-          <div style={{ padding: 12, opacity: 0.7 }}>
+          <div className={styles.sfViewWrapper} style={{ padding: "24px", opacity: 0.7 }}>
             Compare (disabled)
           </div>
         )}
