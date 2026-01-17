@@ -1,0 +1,300 @@
+/* src/components/intelligence/ScenarioIntegrityCheck.module.css */
+/* STRATFIT — Scenario Integrity Check Styling */
+/* G-D Mode professional aesthetic */
+
+/* ============================================================================
+   CONTAINER
+   ============================================================================ */
+
+.container {
+  width: 100%;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(71, 85, 105, 0.2);
+}
+
+/* ============================================================================
+   HEADER
+   ============================================================================ */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon {
+  font-size: 14px;
+  filter: grayscale(0.3);
+}
+
+.title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: #94a3b8;
+}
+
+.scoreBadge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.15));
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 6px;
+}
+
+.scoreValue {
+  font-size: 16px;
+  font-weight: 800;
+  color: #10b981;
+  line-height: 1;
+  text-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+}
+
+.scoreLabel {
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  color: #6ee7b7;
+  text-transform: uppercase;
+}
+
+/* ============================================================================
+   RUN BUTTON (Idle State)
+   ============================================================================ */
+
+.runButton {
+  /* Reset */
+  all: unset;
+  box-sizing: border-box;
+  
+  /* Layout */
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  
+  /* G-D Mode background */
+  background: linear-gradient(
+    135deg,
+    rgba(17, 24, 39, 0.8),
+    rgba(20, 27, 45, 0.9)
+  );
+  
+  /* Border */
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  border-radius: 10px;
+  
+  /* Shadow */
+  box-shadow: 
+    inset 0 1px 2px rgba(0, 0, 0, 0.3),
+    0 2px 6px rgba(0, 0, 0, 0.3);
+  
+  /* Cursor */
+  cursor: pointer;
+  
+  /* Transition */
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.runButton:hover {
+  border-color: rgba(34, 211, 238, 0.5);
+  box-shadow: 
+    inset 0 1px 2px rgba(0, 0, 0, 0.3),
+    0 0 12px rgba(34, 211, 238, 0.15),
+    0 3px 8px rgba(0, 0, 0, 0.4);
+  transform: translateY(-1px);
+}
+
+.buttonIcon {
+  font-size: 20px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(34, 211, 238, 0.1);
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.runButton:hover .buttonIcon {
+  background: rgba(34, 211, 238, 0.15);
+  transform: scale(1.05);
+}
+
+.buttonText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.buttonTitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: #e2e8f0;
+  letter-spacing: 0.5px;
+}
+
+.buttonSubtitle {
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* ============================================================================
+   SCANNING STATE
+   ============================================================================ */
+
+.scanningBox {
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(71, 85, 105, 0.2);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 100px;
+}
+
+.scanLine {
+  font-size: 10px;
+  font-family: 'Monaco', 'Courier New', monospace;
+  color: #22d3ee;
+  animation: scanPulse 1.5s ease-in-out infinite;
+  opacity: 0.7;
+}
+
+.scanLine:nth-child(2) { animation-delay: 0.2s; }
+.scanLine:nth-child(3) { animation-delay: 0.4s; }
+.scanLine:nth-child(4) { animation-delay: 0.6s; }
+
+@keyframes scanPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* ============================================================================
+   RESULTS STATE
+   ============================================================================ */
+
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.resultItem {
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.resultItem.warning {
+  background: rgba(251, 191, 36, 0.05);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+}
+
+.resultItem.pass {
+  background: rgba(16, 185, 129, 0.05);
+  border: 1px solid rgba(16, 185, 129, 0.15);
+  opacity: 0.7;
+}
+
+.resultIcon {
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.resultContent {
+  flex: 1;
+}
+
+.resultTitle {
+  font-size: 11px;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin-bottom: 4px;
+  letter-spacing: 0.3px;
+}
+
+.warning .resultTitle {
+  color: #fbbf24;
+}
+
+.pass .resultTitle {
+  color: #10b981;
+}
+
+.resultMessage {
+  font-size: 10px;
+  line-height: 1.5;
+  color: #94a3b8;
+}
+
+/* ============================================================================
+   RESET BUTTON
+   ============================================================================ */
+
+.resetButton {
+  /* Reset */
+  all: unset;
+  box-sizing: border-box;
+  
+  /* Layout */
+  width: 100%;
+  padding: 8px;
+  margin-top: 8px;
+  
+  /* Typography */
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  text-align: center;
+  color: #64748b;
+  
+  /* Border */
+  border-top: 1px solid rgba(71, 85, 105, 0.2);
+  
+  /* Cursor */
+  cursor: pointer;
+  
+  /* Transition */
+  transition: color 0.3s ease;
+}
+
+.resetButton:hover {
+  color: #94a3b8;
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
+@media (max-width: 1400px) {
+  .buttonTitle {
+    font-size: 11px;
+  }
+  
+  .buttonSubtitle {
+    font-size: 9px;
+  }
+}
+

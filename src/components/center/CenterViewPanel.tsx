@@ -1,9 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
-import type { CenterViewId } from "@/types/view";
 import ScenarioMountain from "@/components/mountain/ScenarioMountain";
-import HudKpis from "./HudKpis";
-
-import ScenarioDeltaSnapshot from "@/components/ScenarioDeltaSnapshot";
+import ViewModeSelector, { type ViewMode } from "@/components/blocks/ViewModeSelector";
+import TerrainToggles from "@/components/blocks/TerrainToggles";
 
 import { useScenario, useScenarioStore } from "@/state/scenarioStore";
 import { onCausal } from "@/ui/causalEvents";
@@ -11,8 +9,7 @@ import { engineResultToMountainForces } from "@/logic/mountainForces";
 
 import styles from "./CenterViewPanel.module.css";
 
-export default function CenterViewPanel(props: { view?: CenterViewId }) {
-  const { view = "impact" } = props;
+export default function CenterViewPanel() {
   const scenario = useScenario();
   const engineResults = useScenarioStore((s) => s.engineResults);
   const hoveredKpiIndex = useScenarioStore((s) => s.hoveredKpiIndex);
@@ -22,6 +19,14 @@ export default function CenterViewPanel(props: { view?: CenterViewId }) {
     const er = engineResults?.[scenario];
     return engineResultToMountainForces(er);
   }, [engineResults, scenario]);
+
+  // Main view mode state (Terrain | Impact | Compare)
+  const [viewMode, setViewMode] = useState<ViewMode>("terrain");
+
+  // Toggle states for Terrain view only
+  // DEMO DEFAULTS: Both OFF for clean initial presentation
+  const [timelineEnabled, setTimelineEnabled] = useState(false);
+  const [heatmapEnabled, setHeatmapEnabled] = useState(false);
 
   // CAUSAL HIGHLIGHT — Mountain band (Phase 1, UI-only)
   const [bandNonce, setBandNonce] = useState(0);
@@ -39,13 +44,29 @@ export default function CenterViewPanel(props: { view?: CenterViewId }) {
 
   return (
     <div className={styles.sfCenterRoot}>
-      <div className={styles.sfHudStage}>
-        <HudKpis />
+      {/* VIEW MODE SELECTOR - Integrated Rail */}
+      <div className={styles.sfViewSelector}>
+        <ViewModeSelector
+          activeMode={viewMode}
+          onChange={setViewMode}
+          rightSlot={
+            <TerrainToggles
+              timelineEnabled={timelineEnabled}
+              heatmapEnabled={heatmapEnabled}
+              onTimelineToggle={() => setTimelineEnabled(!timelineEnabled)}
+              onHeatmapToggle={() => setHeatmapEnabled(!heatmapEnabled)}
+              variant="rail"
+            />
+          }
+        />
       </div>
 
       {/* G-D MODE: Mountain Stage (fills remaining space) */}
       <div className={styles.sfMountainStage} data-tour="mountain">
-        {view === "terrain" && (
+        {/* ========================================
+            TERRAIN VIEW - Mountain with toggles
+            ======================================== */}
+        {viewMode === "terrain" && (
           <div className={styles.sfViewWrapper}>
             {/* Atmospheric overlays */}
             <div className={styles.sfViewOverlays}>
@@ -65,31 +86,62 @@ export default function CenterViewPanel(props: { view?: CenterViewId }) {
             ) : null}
 
             <div className="relative h-full w-full">
+              {/* TERRAIN TOGGLES - Top right corner */}
+              <TerrainToggles
+                timelineEnabled={timelineEnabled}
+                heatmapEnabled={heatmapEnabled}
+                onTimelineToggle={() => setTimelineEnabled(!timelineEnabled)}
+                onHeatmapToggle={() => setHeatmapEnabled(!heatmapEnabled)}
+              />
+
+              {/* MOUNTAIN */}
               <ScenarioMountain 
                 scenario={scenario} 
                 dataPoints={dataPoints}
                 activeKpiIndex={hoveredKpiIndex}
+                timelineEnabled={timelineEnabled}
+                heatmapEnabled={heatmapEnabled}
               />
             </div>
           </div>
         )}
 
-        {view === "impact" && (
-          <div className={styles.sfViewWrapper} style={{ padding: "24px" }}>
-            <ScenarioDeltaSnapshot />
+        {/* ========================================
+            IMPACT VIEW - Strategic Analysis
+            ======================================== */}
+        {viewMode === "impact" && (
+          <div className={styles.sfViewWrapper}>
+            <div className={styles.sfPlaceholderView}>
+              <div className={styles.sfPlaceholderIcon}>📊</div>
+              <h2 className={styles.sfPlaceholderTitle}>Impact Analysis</h2>
+              <p className={styles.sfPlaceholderText}>
+                Strategic breakdown of scenario consequences
+              </p>
+              <div className={styles.sfPlaceholderHint}>
+                Coming soon: Delta analysis, driver breakdown, cause & effect visualization
+              </div>
+            </div>
           </div>
         )}
 
-        {view === "compare" && (
-          <div className={styles.sfViewWrapper} style={{ padding: "24px", opacity: 0.7 }}>
-            Compare (disabled)
+        {/* ========================================
+            COMPARE VIEW - Scenario Comparison
+            ======================================== */}
+        {viewMode === "compare" && (
+          <div className={styles.sfViewWrapper}>
+            <div className={styles.sfPlaceholderView}>
+              <div className={styles.sfPlaceholderIcon}>⚖️</div>
+              <h2 className={styles.sfPlaceholderTitle}>Scenario Comparison</h2>
+              <p className={styles.sfPlaceholderText}>
+                Side-by-side analysis of strategic alternatives
+              </p>
+              <div className={styles.sfPlaceholderHint}>
+                Coming soon: Multi-scenario comparison, variance analysis, decision matrix
+              </div>
+            </div>
           </div>
         )}
       </div>
     </div>
   );
 }
-
-
-
-

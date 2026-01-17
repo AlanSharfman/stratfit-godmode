@@ -10,6 +10,7 @@ import { buildScenarioDeltaLedger } from "@/logic/scenarioDeltaLedger";
 import { Activity, MessageCircle, FileText, ChevronDown } from "lucide-react";
 import styles from "./AIIntelligenceEnhanced.module.css";
 import { StrategicModules } from "./StrategicModules";
+import ScenarioIntegrityCheck from "./intelligence/ScenarioIntegrityCheck";
 
 // ============================================================================
 // TYPES
@@ -827,6 +828,9 @@ export default function AIIntelligenceEnhanced({
                 </div>
               </div>
             )}
+
+            {/* Scenario Integrity Check */}
+            <ScenarioIntegrityCheck />
           </>
         )}
 

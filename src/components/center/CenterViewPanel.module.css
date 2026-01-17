@@ -1,112 +1,172 @@
-/* ========================================================================== */
-/* G-D MODE: CENTER VIEW PANEL CONTRACT                                        */
-/* ========================================================================== */
+/* src/components/center/CenterViewPanel.module.css */
+/* STRATFIT — Center View Panel Styles */
 
-/* === G-D MODE HUD CONTRACT === */
+/* ============================================================================
+   ROOT CONTAINER
+   ============================================================================ */
+
 .sfCenterRoot {
   display: flex;
   flex-direction: column;
   height: 100%;
-  min-height: 0; /* critical for nested flex scroll/containment */
-}
-
-.sfHudStage {
-  flex: 0 0 auto;
-  padding: 16px 18px 10px;
-  position: relative;
-  z-index: 5;
-}
-
-.sfHudRow {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 14px;
-  align-items: stretch;
-}
-
-@media (max-width: 1100px) {
-  .sfHudRow {
-    grid-template-columns: 1fr;
-  }
-}
-
-.sfHudCard {
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(120, 220, 255, 0.12);
-  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.45);
-  overflow: hidden;
-}
-
-.sfHudCardInner {
-  padding: 14px 14px 12px;
-}
-
-/* Typography polish: kill "white numericals" harshness */
-.sfHudCard,
-.sfHudCardInner {
-  color: rgba(232, 240, 248, 0.92);
-  -webkit-font-smoothing: antialiased;
-  text-rendering: geometricPrecision;
-}
-
-.sfHudLabel {
-  color: rgba(232, 240, 248, 0.62);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  font-size: 11px;
-  font-weight: 600;
-  margin-bottom: 6px;
-}
-
-.sfHudValue {
-  color: rgba(232, 240, 248, 0.94);
-  font-weight: 700;
-  font-size: 20px;
-  line-height: 1.2;
-}
-
-/* === Mountain stage must fill remaining space and never overflow frame === */
-.sfMountainStage {
-  flex: 1 1 auto;
-  min-height: 0;
-  position: relative;
-  overflow: hidden;
-  border-radius: 22px;
-  margin: 0 18px 16px;
-  background: radial-gradient(1200px 500px at 50% 30%, rgba(34, 211, 238, 0.10), transparent 65%),
-              rgba(0, 0, 0, 0.35);
-}
-
-.sfMountainStage canvas,
-.sfMountainStage > * {
   width: 100%;
-  height: 100%;
+  position: relative;
 }
 
-/* === View-specific wrappers === */
+/* ============================================================================
+   VIEW MODE SELECTOR - 3 Big Blocks at top
+   ============================================================================ */
+
+.sfViewSelector {
+  flex-shrink: 0;
+  width: 100%;
+  padding: 0 20px;
+  margin-bottom: 16px;
+}
+
+/* ============================================================================
+   MOUNTAIN STAGE - Main content area
+   ============================================================================ */
+
+.sfMountainStage {
+  position: relative;
+  flex: 1;
+  min-height: 0; /* Important for flex child */
+  width: 100%;
+  border-radius: 24px;
+  overflow: hidden;
+  
+  /* G-D Mode dark background */
+  background: linear-gradient(
+    135deg,
+    rgba(10, 14, 20, 0.95) 0%,
+    rgba(15, 23, 42, 0.9) 50%,
+    rgba(17, 24, 39, 0.95) 100%
+  );
+  
+  /* Subtle border */
+  border: 1px solid rgba(71, 85, 105, 0.2);
+  
+  /* Inner depth */
+  box-shadow: 
+    inset 0 2px 4px rgba(0, 0, 0, 0.3),
+    inset 0 -1px 2px rgba(255, 255, 255, 0.02),
+    0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* ============================================================================
+   VIEW WRAPPER - Contains each view's content
+   ============================================================================ */
+
 .sfViewWrapper {
   position: relative;
   width: 100%;
   height: 100%;
-  overflow: auto;
-  border-radius: 22px;
-  border: 1px solid rgba(120, 160, 180, 0.15);
-  background: rgba(0, 0, 0, 0.4);
-  box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.6),
-    inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .sfViewOverlays {
-  pointer-events: none;
   position: absolute;
   inset: 0;
+  pointer-events: none;
+  z-index: 1;
 }
+
+/* ============================================================================
+   CAUSAL BAND - Highlight effect
+   ============================================================================ */
 
 .sfCausalBand {
   position: absolute;
   inset: 0;
-  z-index: 10;
+  z-index: 2;
+  pointer-events: none;
 }
 
+/* ============================================================================
+   PLACEHOLDER VIEWS - For Impact & Compare
+   ============================================================================ */
+
+.sfPlaceholderView {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 40px;
+  text-align: center;
+  
+  /* Subtle background */
+  background: radial-gradient(
+    ellipse at center,
+    rgba(17, 24, 39, 0.8) 0%,
+    rgba(10, 14, 20, 0.95) 60%
+  );
+}
+
+.sfPlaceholderIcon {
+  font-size: 64px;
+  margin-bottom: 24px;
+  opacity: 0.6;
+  filter: grayscale(0.3);
+}
+
+.sfPlaceholderTitle {
+  font-size: 32px;
+  font-weight: 700;
+  color: #22d3ee;
+  margin-bottom: 12px;
+  text-shadow: 0 0 20px rgba(34, 211, 238, 0.3);
+}
+
+.sfPlaceholderText {
+  font-size: 16px;
+  color: #94a3b8;
+  margin-bottom: 24px;
+  max-width: 500px;
+  line-height: 1.6;
+}
+
+.sfPlaceholderHint {
+  font-size: 13px;
+  color: #64748b;
+  font-style: italic;
+  max-width: 600px;
+  line-height: 1.5;
+  padding: 16px 24px;
+  background: rgba(17, 24, 39, 0.6);
+  border: 1px solid rgba(71, 85, 105, 0.2);
+  border-radius: 12px;
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
+@media (max-width: 1400px) {
+  .sfViewSelector {
+    padding: 0 16px;
+    margin-bottom: 14px;
+  }
+  
+  .sfPlaceholderTitle {
+    font-size: 28px;
+  }
+  
+  .sfPlaceholderText {
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .sfPlaceholderIcon {
+    font-size: 48px;
+  }
+  
+  .sfPlaceholderTitle {
+    font-size: 24px;
+  }
+  
+  .sfPlaceholderText {
+    font-size: 14px;
+  }
+}

@@ -469,6 +469,8 @@ interface ScenarioMountainProps {
   activeLeverId?: LeverId | null;
   leverIntensity01?: number;
   className?: string;
+  timelineEnabled?: boolean;
+  heatmapEnabled?: boolean;
 }
 
 export default function ScenarioMountain({
@@ -478,9 +480,15 @@ export default function ScenarioMountain({
   activeLeverId = null,
   leverIntensity01 = 0,
   className,
+  timelineEnabled = false,
+  heatmapEnabled = false,
 }: ScenarioMountainProps) {
   const colors = SCENARIO_COLORS[scenario];
   const viewMode = useScenarioStore((s) => s.viewMode);
+  
+  // TODO: Implement timeline and heatmap rendering logic
+  // - timelineEnabled: Show historical progression overlay
+  // - heatmapEnabled: Show intensity/concentration visualization
   
   const {
     activeScenarioId,

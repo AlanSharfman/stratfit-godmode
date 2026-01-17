@@ -26,7 +26,6 @@ import TakeTheTour from "@/components/ui/TakeTheTour";
 import { deriveArrGrowth, formatUsdCompact } from "@/utils/arrGrowth";
 import { getQualityScoreFromKpis, getQualityBandFromKpis } from "@/logic/qualityScore";
 import ScenarioMemoPage from "@/pages/ScenarioMemoPage";
-import ModeRailGod from "@/components/mode/ModeRailGod";
 import ImpactView from "@/components/compound/impact";
 import VariancesView from "@/components/compound/variances/VariancesView";
 import { useDebouncedValue, useThrottledValue } from "@/hooks/useDebouncedValue";
@@ -410,25 +409,17 @@ export default function App() {
   const throttledLevers = useThrottledValue(levers);
   
   // Canonical center view state
+  // DEFAULT: "terrain" for investor demo
   const CENTER_VIEW_KEY = "sf.centerView.v1";
   const [centerView, setCenterView] = useState<CenterViewId>(() => {
     try {
       const raw = window.localStorage.getItem(CENTER_VIEW_KEY);
       return migrateCenterView(raw);
     } catch {}
-    return "terrain";
+    return "terrain"; // Demo default: Show terrain view on load
   });
   const didMountRef = useRef(false);
 
-  // GOD-MODE: Mode rail state with localStorage persistence
-  const MODE_KEY = "sf.mode.v1";
-  const [mode, setMode] = useState<CenterViewId>(() => {
-    try {
-      const raw = window.localStorage.getItem(MODE_KEY);
-      return migrateCenterView(raw);
-    } catch {}
-    return "terrain";
-  });
   // Persist centerView to localStorage
   useEffect(() => {
     try {
@@ -440,16 +431,13 @@ export default function App() {
   const [pitchMode, setPitchMode] = useState(false);
   const baseLeversRef = useRef<LeverState>(INITIAL_LEVERS);
 
+  // Set data attribute for CSS styling based on current view
   useEffect(() => {
-    try {
-      window.localStorage.setItem(MODE_KEY, mode);
-    } catch {}
-    // state cohesion hook — harmless now
-    document.documentElement.setAttribute("data-sf-mode", mode);
+    document.documentElement.setAttribute("data-sf-mode", centerView);
     return () => {
       document.documentElement.removeAttribute("data-sf-mode");
     };
-  }, [mode]);
+  }, [centerView]);
   
   // Handle scenario change
   const handleScenarioChange = useCallback((newScenario: ScenarioId) => {
@@ -1022,12 +1010,6 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
             <span className="status-dot" />
           </div>
         </div>
-        {/* GOD-MODE: Mode Rail — center command control */}
-        <div className="header-center sf-hdrCenter">
-          <div className="sf-modeSlot">
-            <ModeRailGod value={mode} onChange={setMode} />
-          </div>
-        </div>
 
         <div className="header-actions">
           <div className="header-action-buttons">
@@ -1144,7 +1126,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
       </header>
 
       {/* OPTION 1: UNIFIED 3-COLUMN LAYOUT */}
-      <div className={`main-content mode-${mode}`}>
+      <div className={`main-content mode-${centerView}`}>
         {/* LEFT COLUMN: Scenario + Sliders */}
         <aside className="left-column">
           <div className="sf-leftStack">
@@ -1169,14 +1151,14 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
         <main className="center-column">
           {/* Canonical center view switch */}
           {(() => {
-            switch (mode) {
+            switch (centerView) {
               case "terrain":
                 return (
                   <>
                     <div className="kpi-section" data-tour="kpis">
                       <KPIConsole />
                     </div>
-                    <CenterViewPanel view={centerView} />
+                    <CenterViewPanel />
                   </>
                 );
               case "impact":
@@ -1185,7 +1167,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
                 return <VariancesView />;
               default: {
                 // TypeScript exhaustiveness check
-                const _exhaustive: never = mode;
+                const _exhaustive: never = centerView;
                 return null;
               }
             }
