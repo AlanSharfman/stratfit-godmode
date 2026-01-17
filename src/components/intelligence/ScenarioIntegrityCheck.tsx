@@ -3,6 +3,7 @@
 // Professional CFO-grade validation
 
 import React, { useState } from 'react';
+import { ShieldCheck, AlertTriangle, CheckCircle, RotateCcw, Zap } from 'lucide-react';
 import styles from './ScenarioIntegrityCheck.module.css';
 
 type CheckStatus = 'idle' | 'scanning' | 'complete';
@@ -25,17 +26,17 @@ export default function ScenarioIntegrityCheck() {
     warnings: [
       {
         type: 'warning',
-        title: 'Growth-Spend Divergence',
-        message: 'Revenue growth +40% while Marketing reduced -15%. Historical conversion efficiency suggests correlation risk.'
+        title: 'GROWTH-SPEND DIVERGENCE',
+        message: 'Revenue growth while Marketing reduced Historical conversion efficiency suggests correlation risk.'
       },
       {
         type: 'warning',
-        title: 'Q4 Runway Constraint',
-        message: 'Cash buffer drops below 2-month threshold in Q4. Recommend liquidity reserve adjustment.'
+        title: 'Q4 RUNWAY CONSTRAINT',
+        message: 'Cash buffer drops below threshold in Q4. Recommend liquidity reserve adjustment.'
       },
       {
         type: 'pass',
-        title: 'Capital Efficiency Validated',
+        title: 'CAPITAL EFFICIENCY VALIDATED',
         message: 'Unit economics and CAC payback within industry norms. Sustainable growth trajectory confirmed.'
       }
     ]
@@ -48,13 +49,33 @@ export default function ScenarioIntegrityCheck() {
 
   const reset = () => setStatus('idle');
 
+  // Helper to highlight data in messages
+  const renderMessage = (message: string, type: 'warning' | 'pass') => {
+    if (type === 'warning' && message.includes('Revenue growth')) {
+      return (
+        <>
+          Revenue growth <span className={styles.dataHighlight}>+40%</span> while Marketing reduced{' '}
+          <span className={styles.dataHighlight}>-15%</span>. Historical conversion efficiency suggests correlation risk.
+        </>
+      );
+    }
+    if (type === 'warning' && message.includes('Cash buffer')) {
+      return (
+        <>
+          Cash buffer drops below <span className={styles.dataHighlight}>2-month</span> threshold in Q4. Recommend liquidity reserve adjustment.
+        </>
+      );
+    }
+    return message;
+  };
+
   return (
     <div className={styles.container}>
       {/* HEADER */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <span className={styles.icon}>🛡️</span>
-          <span className={styles.title}>SCENARIO INTEGRITY</span>
+          <ShieldCheck size={14} className={styles.icon} />
+          <span className={styles.title}>SYSTEM INTEGRITY</span>
         </div>
         {status === 'complete' && (
           <div className={styles.scoreBadge}>
@@ -67,7 +88,9 @@ export default function ScenarioIntegrityCheck() {
       {/* IDLE STATE - Run Button */}
       {status === 'idle' && (
         <button onClick={runCheck} className={styles.runButton}>
-          <div className={styles.buttonIcon}>⚡</div>
+          <div className={styles.buttonIcon}>
+            <Zap size={20} className={styles.buttonIconSvg} />
+          </div>
           <div className={styles.buttonText}>
             <div className={styles.buttonTitle}>RUN INTEGRITY CHECK</div>
             <div className={styles.buttonSubtitle}>AI validation • Logic audit</div>
@@ -95,22 +118,34 @@ export default function ScenarioIntegrityCheck() {
                 item.type === 'warning' ? styles.warning : styles.pass
               }`}
             >
+              {/* Left accent bar */}
+              <div className={styles.accentBar} />
+              
+              {/* Icon */}
               <div className={styles.resultIcon}>
-                {item.type === 'warning' ? '⚠️' : '✓'}
+                {item.type === 'warning' ? (
+                  <AlertTriangle size={13} />
+                ) : (
+                  <CheckCircle size={13} />
+                )}
               </div>
+              
+              {/* Content */}
               <div className={styles.resultContent}>
                 <div className={styles.resultTitle}>{item.title}</div>
-                <div className={styles.resultMessage}>{item.message}</div>
+                <div className={styles.resultMessage}>
+                  {renderMessage(item.message, item.type)}
+                </div>
               </div>
             </div>
           ))}
 
           <button onClick={reset} className={styles.resetButton}>
-            RESET CHECK
+            <RotateCcw size={10} />
+            <span>RESET DIAGNOSTICS</span>
           </button>
         </div>
       )}
     </div>
   );
 }
-

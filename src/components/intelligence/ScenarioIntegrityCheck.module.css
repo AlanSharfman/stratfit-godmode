@@ -1,6 +1,6 @@
 /* src/components/intelligence/ScenarioIntegrityCheck.module.css */
 /* STRATFIT — Scenario Integrity Check Styling */
-/* G-D Mode professional aesthetic */
+/* God Mode tactical cockpit aesthetic */
 
 /* ============================================================================
    CONTAINER
@@ -10,7 +10,7 @@
   width: 100%;
   margin-top: 20px;
   padding-top: 20px;
-  border-top: 1px solid rgba(71, 85, 105, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* ============================================================================
@@ -31,41 +31,42 @@
 }
 
 .icon {
-  font-size: 14px;
-  filter: grayscale(0.3);
+  color: #22d3ee;
 }
 
 .title {
-  font-size: 11px;
+  font-family: 'Monaco', 'Roboto Mono', 'JetBrains Mono', monospace;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1.2px;
-  color: #94a3b8;
+  letter-spacing: 0.2em;
+  color: #22d3ee;
 }
 
 .scoreBadge {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  padding: 4px 10px;
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.15));
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(16, 185, 129, 0.10);
+  border: 1px solid rgba(16, 185, 129, 0.20);
+  border-radius: 2px;
 }
 
 .scoreValue {
-  font-size: 16px;
-  font-weight: 800;
+  font-family: 'Monaco', 'Roboto Mono', 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
   color: #10b981;
-  line-height: 1;
-  text-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+  letter-spacing: 0.05em;
 }
 
 .scoreLabel {
-  font-size: 8px;
-  font-weight: 600;
-  letter-spacing: 0.8px;
-  color: #6ee7b7;
+  font-family: 'Monaco', 'Roboto Mono', 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #10b981;
   text-transform: uppercase;
 }
 
@@ -85,7 +86,7 @@
   width: 100%;
   padding: 14px 16px;
   
-  /* G-D Mode background */
+  /* God Mode background */
   background: linear-gradient(
     135deg,
     rgba(17, 24, 39, 0.8),
@@ -94,7 +95,7 @@
   
   /* Border */
   border: 1px solid rgba(34, 211, 238, 0.3);
-  border-radius: 10px;
+  border-radius: 2px;
   
   /* Shadow */
   box-shadow: 
@@ -118,7 +119,6 @@
 }
 
 .buttonIcon {
-  font-size: 20px;
   width: 36px;
   height: 36px;
   display: flex;
@@ -126,8 +126,12 @@
   justify-content: center;
   background: rgba(34, 211, 238, 0.1);
   border: 1px solid rgba(34, 211, 238, 0.3);
-  border-radius: 8px;
+  border-radius: 6px;
   transition: all 0.3s ease;
+}
+
+.buttonIconSvg {
+  color: #22d3ee;
 }
 
 .runButton:hover .buttonIcon {
@@ -143,10 +147,11 @@
 }
 
 .buttonTitle {
-  font-size: 12px;
+  font-family: 'Monaco', 'Roboto Mono', 'JetBrains Mono', monospace;
+  font-size: 11px;
   font-weight: 700;
   color: #e2e8f0;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.05em;
 }
 
 .buttonSubtitle {
@@ -163,7 +168,7 @@
   padding: 16px;
   background: rgba(0, 0, 0, 0.4);
   border: 1px solid rgba(71, 85, 105, 0.2);
-  border-radius: 8px;
+  border-radius: 2px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -172,7 +177,7 @@
 
 .scanLine {
   font-size: 10px;
-  font-family: 'Monaco', 'Courier New', monospace;
+  font-family: 'Monaco', 'Roboto Mono', 'JetBrains Mono', monospace;
   color: #22d3ee;
   animation: scanPulse 1.5s ease-in-out infinite;
   opacity: 0.7;
@@ -194,32 +199,69 @@
 .results {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .resultItem {
+  position: relative;
   display: flex;
-  gap: 10px;
+  gap: 12px;
   padding: 12px;
-  border-radius: 8px;
+  padding-left: 16px;
+  border-radius: 2px;
   transition: all 0.3s ease;
+}
+
+/* Left accent bar (hardware indicator) */
+.accentBar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
 }
 
 .resultItem.warning {
   background: rgba(251, 191, 36, 0.05);
-  border: 1px solid rgba(251, 191, 36, 0.2);
+  border: 1px solid rgba(251, 191, 36, 0.20);
+}
+
+.resultItem.warning .accentBar {
+  background: rgba(251, 191, 36, 0.50);
+}
+
+.resultItem.warning:hover {
+  background: rgba(251, 191, 36, 0.10);
 }
 
 .resultItem.pass {
   background: rgba(16, 185, 129, 0.05);
-  border: 1px solid rgba(16, 185, 129, 0.15);
-  opacity: 0.7;
+  border: 1px solid rgba(16, 185, 129, 0.20);
+  opacity: 0.75;
+}
+
+.resultItem.pass .accentBar {
+  background: rgba(16, 185, 129, 0.50);
+}
+
+.resultItem.pass:hover {
+  opacity: 1;
 }
 
 .resultIcon {
-  font-size: 14px;
   flex-shrink: 0;
   margin-top: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.warning .resultIcon {
+  color: #fbbf24;
+}
+
+.pass .resultIcon {
+  color: #10b981;
 }
 
 .resultContent {
@@ -227,25 +269,40 @@
 }
 
 .resultTitle {
-  font-size: 11px;
+  font-family: 'Monaco', 'Roboto Mono', 'JetBrains Mono', monospace;
+  font-size: 10px;
   font-weight: 700;
-  color: #e2e8f0;
   margin-bottom: 4px;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .warning .resultTitle {
-  color: #fbbf24;
+  color: #fcd34d;
 }
 
 .pass .resultTitle {
-  color: #10b981;
+  color: #6ee7b7;
 }
 
 .resultMessage {
   font-size: 10px;
   line-height: 1.5;
   color: #94a3b8;
+}
+
+.warning .resultMessage {
+  color: rgba(251, 191, 36, 0.80);
+}
+
+.pass .resultMessage {
+  color: rgba(16, 185, 129, 0.70);
+}
+
+/* Data highlighting within messages */
+.dataHighlight {
+  color: #ffffff;
+  font-weight: 600;
 }
 
 /* ============================================================================
@@ -260,28 +317,36 @@
   /* Layout */
   width: 100%;
   padding: 8px;
-  margin-top: 8px;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   
   /* Typography */
+  font-family: 'Monaco', 'Roboto Mono', 'JetBrains Mono', monospace;
   font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 1.5px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
   text-align: center;
   color: #64748b;
   
   /* Border */
-  border-top: 1px solid rgba(71, 85, 105, 0.2);
+  border: 1px dashed #334155;
+  border-radius: 2px;
   
   /* Cursor */
   cursor: pointer;
   
   /* Transition */
-  transition: color 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .resetButton:hover {
-  color: #94a3b8;
+  color: #ffffff;
+  border-color: #64748b;
+  background: rgba(71, 85, 105, 0.50);
 }
 
 /* ============================================================================
@@ -297,4 +362,3 @@
     font-size: 9px;
   }
 }
-
