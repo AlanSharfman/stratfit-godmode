@@ -23,7 +23,7 @@ export default function TerrainToggles({
 }: TerrainTogglesProps) {
   return (
     <div className={styles.togglesContainer}>
-      {/* Timeline Toggle */}
+      {/* Timeline Toggle - Standard Tactical Cyan */}
       <button
         className={`${styles.toggleButton} ${
           timelineEnabled ? styles.active : ""
@@ -39,18 +39,21 @@ export default function TerrainToggles({
         </span>
       </button>
 
-      {/* Heatmap Toggle */}
+      {/* Heatmap Toggle - Thermal Amber Mode */}
       <button
-        className={`${styles.toggleButton} ${
-          heatmapEnabled ? styles.active : ""
+        className={`${styles.toggleButton} ${styles.toggleButtonHeatmap} ${
+          heatmapEnabled ? styles.activeHeatmap : ""
         }`}
         onClick={onHeatmapToggle}
         aria-pressed={heatmapEnabled}
-        title="Show risk zones"
+        title="Show risk zones (thermal view)"
       >
-        <Grid3x3 size={12} className={styles.toggleIcon} />
-        <span className={styles.toggleLabel}>Heatmap</span>
-        <span className={styles.toggleIndicator}>
+        {/* Thermal noise background on active */}
+        <div className={`${styles.thermalOverlay} ${heatmapEnabled ? styles.thermalOverlayActive : ""}`} />
+        
+        <Grid3x3 size={12} className={`${styles.toggleIcon} ${styles.toggleIconHeatmap}`} />
+        <span className={`${styles.toggleLabel} ${styles.toggleLabelHeatmap}`}>Heatmap</span>
+        <span className={`${styles.toggleIndicator} ${styles.toggleIndicatorHeatmap}`}>
           {heatmapEnabled ? "●" : "○"}
         </span>
       </button>

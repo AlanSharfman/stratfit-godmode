@@ -25,8 +25,9 @@
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.04),
               inset 0 -1px 0 rgba(0,0,0,0.6);
   cursor: pointer;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
   position: relative;
+  overflow: hidden;
 }
 
 .toggleButton::after {
@@ -37,6 +38,10 @@
   border: 1px solid rgba(100,116,139,0.1);
   pointer-events: none;
 }
+
+/* ============================================================================
+   TIMELINE TOGGLE (Standard Tactical Cyan)
+   ============================================================================ */
 
 .toggleButton:hover {
   border-color: rgba(34,211,238,0.30);
@@ -51,6 +56,8 @@
 .toggleIcon {
   color: rgba(148, 163, 184, 0.70);
   transition: color 0.2s ease, filter 0.2s ease;
+  position: relative;
+  z-index: 10;
 }
 
 .toggleButton:hover .toggleIcon {
@@ -69,6 +76,8 @@
   color: #94a3b8;
   font-weight: 700;
   transition: color 0.2s ease, text-shadow 0.2s ease;
+  position: relative;
+  z-index: 10;
 }
 
 .toggleButton.active .toggleLabel {
@@ -80,8 +89,71 @@
   font-size: 8px;
   color: rgba(148, 163, 184, 0.40);
   transition: color 0.2s ease;
+  position: relative;
+  z-index: 10;
 }
 
 .toggleButton.active .toggleIndicator {
   color: rgba(34, 211, 238, 0.80);
+}
+
+/* ============================================================================
+   HEATMAP TOGGLE (Thermal Amber Mode)
+   ============================================================================ */
+
+/* Thermal overlay background */
+.thermalOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(251, 146, 60, 0.05);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.thermalOverlayActive {
+  opacity: 1;
+}
+
+/* Heatmap button hover - Amber */
+.toggleButtonHeatmap:hover {
+  border-color: rgba(251, 146, 60, 0.50);
+  background: rgba(120, 53, 15, 0.20);
+}
+
+/* Heatmap button active - Amber */
+.toggleButtonHeatmap.activeHeatmap {
+  border-color: rgba(251, 146, 60, 0.60);
+  background: rgba(120, 53, 15, 0.30);
+  box-shadow: inset 0 1px 0 rgba(251, 146, 60, 0.15),
+              0 0 12px rgba(251, 146, 60, 0.30);
+}
+
+/* Heatmap icon - Amber */
+.toggleButtonHeatmap:hover .toggleIconHeatmap {
+  color: rgba(251, 146, 60, 0.90);
+}
+
+.toggleButtonHeatmap.activeHeatmap .toggleIconHeatmap {
+  color: rgba(251, 146, 60, 0.96);
+  filter: drop-shadow(0 0 8px rgba(251, 146, 60, 0.5));
+}
+
+/* Heatmap label - Amber */
+.toggleButtonHeatmap:hover .toggleLabelHeatmap {
+  color: rgba(251, 146, 60, 0.90);
+}
+
+.toggleButtonHeatmap.activeHeatmap .toggleLabelHeatmap {
+  color: #fb923c;
+  text-shadow: 0 0 8px rgba(251, 146, 60, 0.35);
+}
+
+/* Heatmap indicator - Amber */
+.toggleButtonHeatmap:hover .toggleIndicatorHeatmap {
+  color: rgba(251, 146, 60, 0.70);
+}
+
+.toggleButtonHeatmap.activeHeatmap .toggleIndicatorHeatmap {
+  color: rgba(251, 146, 60, 0.90);
 }
