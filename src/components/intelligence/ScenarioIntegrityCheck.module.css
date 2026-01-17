@@ -71,8 +71,43 @@
 }
 
 /* ============================================================================
-   RUN BUTTON (Idle State)
+   RUN BUTTON (Idle State) - "ALIVE" VERSION
    ============================================================================ */
+
+/* Button container with pulsing glow */
+.buttonContainer {
+  margin-top: 16px;
+  position: relative;
+}
+
+/* Pulsing glow behind button */
+.buttonGlow {
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(
+    to right,
+    rgba(34, 211, 238, 0.20),
+    rgba(59, 130, 246, 0.20)
+  );
+  border-radius: 2px;
+  filter: blur(4px);
+  opacity: 0.3;
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+
+.buttonContainer:hover .buttonGlow {
+  opacity: 0.6;
+  animation-duration: 1s;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
 
 .runButton {
   /* Reset */
@@ -84,21 +119,19 @@
   align-items: center;
   gap: 12px;
   width: 100%;
-  padding: 12px 12px;
+  padding: 12px 16px;
   position: relative;
   overflow: hidden;
   
   /* God Mode background */
-  background: rgba(6, 78, 89, 0.20);
+  background: #0f172a;
   
-  /* Border */
-  border: 1px solid rgba(34, 211, 238, 0.20);
+  /* High-contrast border */
+  border: 1px solid rgba(34, 211, 238, 0.30);
   border-radius: 2px;
   
   /* Shadow */
-  box-shadow: 
-    inset 0 1px 2px rgba(0, 0, 0, 0.3),
-    0 2px 6px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
   
   /* Cursor */
   cursor: pointer;
@@ -109,34 +142,63 @@
 
 .runButton:hover {
   background: rgba(6, 78, 89, 0.30);
-  border-color: rgba(34, 211, 238, 0.40);
+  border-color: rgba(34, 211, 238, 0.60);
   box-shadow: 
-    inset 0 1px 2px rgba(0, 0, 0, 0.3),
-    0 0 12px rgba(34, 211, 238, 0.15),
-    0 3px 8px rgba(0, 0, 0, 0.4);
+    0 0 15px rgba(0, 0, 0, 0.3),
+    0 0 20px rgba(34, 211, 238, 0.15);
 }
 
-.buttonIcon {
-  width: 24px;
-  height: 24px;
+/* Icon wrapper with ripple effect */
+.buttonIconWrapper {
+  position: relative;
+  width: 32px;
+  height: 32px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(34, 211, 238, 0.10);
-  border: 1px solid rgba(34, 211, 238, 0.30);
+}
+
+/* Ripple/ping animation */
+.buttonIconRipple {
+  position: absolute;
+  inset: 0;
+  background: rgba(34, 211, 238, 0.20);
+  border-radius: 50%;
+  animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  opacity: 0.2;
+}
+
+@keyframes ping {
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.buttonIcon {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 78, 89, 0.50);
+  border: 1px solid rgba(34, 211, 238, 0.40);
   border-radius: 50%;
   transition: all 0.3s ease;
 }
 
 .buttonIconSvg {
-  color: #22d3ee;
+  color: #a5f3fc;
+  fill: #a5f3fc;
 }
 
 .runButton:hover .buttonIcon {
-  background: rgba(34, 211, 238, 0.15);
-  border-color: rgba(34, 211, 238, 0.40);
-  box-shadow: 0 0 10px rgba(34, 211, 238, 0.3);
+  background: rgba(34, 211, 238, 0.20);
+  border-color: rgba(34, 211, 238, 0.60);
+  box-shadow: 0 0 15px rgba(34, 211, 238, 0.4);
   transform: scale(1.05);
 }
 
@@ -147,39 +209,70 @@
   flex: 1;
 }
 
+/* Title row with CTA */
+.buttonTitleRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
 .buttonTitle {
   font-family: 'Monaco', 'Roboto Mono', 'JetBrains Mono', monospace;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
-  color: #bfdbfe;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
+  color: #ffffff;
+  letter-spacing: 0.1em;
   transition: color 0.3s ease;
 }
 
 .runButton:hover .buttonTitle {
-  color: #ffffff;
+  color: #a5f3fc;
+}
+
+/* Action required CTA */
+.buttonCta {
+  font-family: 'Monaco', 'Roboto Mono', 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  color: #fbbf24;
+  letter-spacing: 0.05em;
+  animation: pulseCta 2s ease-in-out infinite;
+}
+
+@keyframes pulseCta {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .buttonSubtitle {
   font-size: 9px;
-  color: rgba(34, 211, 238, 0.50);
+  color: #94a3b8;
   font-weight: 400;
   letter-spacing: 0.05em;
+  margin-top: 2px;
+  transition: color 0.3s ease;
 }
 
-/* Arrow on hover */
+.runButton:hover .buttonSubtitle {
+  color: #cbd5e1;
+}
+
+/* Arrow - always visible now */
 .buttonArrow {
   margin-left: auto;
-  color: #22d3ee;
-  opacity: 0;
-  transform: translateX(-8px);
+  color: rgba(34, 211, 238, 0.50);
+  opacity: 1;
   transition: all 0.3s ease;
 }
 
 .runButton:hover .buttonArrow {
-  opacity: 1;
-  transform: translateX(0);
+  color: #22d3ee;
+  transform: translateX(4px);
 }
 
 /* ============================================================================

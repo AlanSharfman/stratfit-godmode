@@ -87,18 +87,33 @@ export default function ScenarioIntegrityCheck() {
 
       {/* IDLE STATE - Run Button */}
       {status === 'idle' && (
-        <button onClick={runCheck} className={styles.runButton}>
-          <div className={styles.buttonIcon}>
-            <Zap size={12} className={styles.buttonIconSvg} />
-          </div>
-          <div className={styles.buttonText}>
-            <div className={styles.buttonTitle}>INITIATE_DIAGNOSTIC</div>
-            <div className={styles.buttonSubtitle}>AI Validation • Logic Audit</div>
-          </div>
-          <div className={styles.buttonArrow}>
-            <ChevronRight size={12} />
-          </div>
-        </button>
+        <div className={styles.buttonContainer}>
+          {/* Pulsing glow background */}
+          <div className={styles.buttonGlow} />
+          
+          <button onClick={runCheck} className={styles.runButton}>
+            <div className={styles.buttonIconWrapper}>
+              {/* Ripple effect */}
+              <div className={styles.buttonIconRipple} />
+              {/* Icon */}
+              <div className={styles.buttonIcon}>
+                <Zap size={14} className={styles.buttonIconSvg} />
+              </div>
+            </div>
+            
+            <div className={styles.buttonText}>
+              <div className={styles.buttonTitleRow}>
+                <span className={styles.buttonTitle}>RUN_DIAGNOSTIC</span>
+                <span className={styles.buttonCta}>[ ACTION REQUIRED ]</span>
+              </div>
+              <div className={styles.buttonSubtitle}>Validate scenario logic & integrity</div>
+            </div>
+            
+            <div className={styles.buttonArrow}>
+              <ChevronRight size={14} />
+            </div>
+          </button>
+        </div>
       )}
 
       {/* SCANNING STATE */}
