@@ -837,7 +837,7 @@ export default function AIIntelligenceEnhanced({
           />
         )}
 
-        {activeTab === "risk-DISABLED" && (
+        {false && activeTab === "risk" && (
           <>
             <div className={styles.sectionHeader}>
               <Activity className={styles.sectionIcon} />
@@ -951,7 +951,7 @@ export default function AIIntelligenceEnhanced({
           />
         )}
 
-        {activeTab === "value-DISABLED" && (
+        {false && activeTab === "value" && (
           <>
             <div className={styles.sectionHeader}>
               <FileText className={styles.sectionIcon} />
@@ -1085,7 +1085,7 @@ export default function AIIntelligenceEnhanced({
           </>
         )}
 
-        {activeTab === "questions-DISABLED" && (
+        {false && activeTab === "questions" && (
           <>
             <div className={styles.sectionHeader}>
               <MessageCircle className={styles.sectionIcon} />
