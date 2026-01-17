@@ -3,6 +3,7 @@
 // User-controlled rendering options
 
 import React from "react";
+import { CalendarDays, Grid3x3 } from "lucide-react";
 import styles from "./TerrainToggles.module.css";
 
 interface TerrainTogglesProps {
@@ -31,7 +32,7 @@ export default function TerrainToggles({
         aria-pressed={timelineEnabled}
         title="Show 36-month trajectory"
       >
-        <span className={styles.toggleIcon}>📍</span>
+        <CalendarDays size={12} className={styles.toggleIcon} />
         <span className={styles.toggleLabel}>Timeline</span>
         <span className={styles.toggleIndicator}>
           {timelineEnabled ? "●" : "○"}
@@ -47,7 +48,7 @@ export default function TerrainToggles({
         aria-pressed={heatmapEnabled}
         title="Show risk zones"
       >
-        <span className={styles.toggleIcon}>🔥</span>
+        <Grid3x3 size={12} className={styles.toggleIcon} />
         <span className={styles.toggleLabel}>Heatmap</span>
         <span className={styles.toggleIndicator}>
           {heatmapEnabled ? "●" : "○"}

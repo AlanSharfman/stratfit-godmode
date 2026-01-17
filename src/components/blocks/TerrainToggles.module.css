@@ -1,154 +1,87 @@
 /* src/components/blocks/TerrainToggles.module.css */
-/* STRATFIT — Terrain View Toggles Styling */
-/* Minimal, professional, G-D Mode aesthetic */
+/* STRATFIT — Terrain Rendering Toggles (Embedded Controls) */
 
 .togglesContainer {
-  position: absolute;
-  top: 16px;
-  right: 16px;
   display: flex;
-  gap: 10px;
-  z-index: 10;
+  gap: 8px;
+  z-index: 20;
 }
 
 .toggleButton {
-  /* Reset */
   all: unset;
   box-sizing: border-box;
-  
-  /* Layout */
+  height: 32px;
+  padding: 0 12px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  
-  /* Background - G-D Mode style */
+  gap: 6px;
   background: linear-gradient(
-    135deg,
-    rgba(17, 24, 39, 0.9),
-    rgba(20, 27, 45, 0.85)
+    180deg,
+    rgba(10,15,28,0.95),
+    rgba(7,11,22,0.95)
   );
-  
-  /* Border */
-  border: 1px solid rgba(71, 85, 105, 0.3);
-  border-radius: 10px;
-  
-  /* Shadow for depth */
-  box-shadow: 
-    inset 0 1px 2px rgba(0, 0, 0, 0.3),
-    0 2px 6px rgba(0, 0, 0, 0.3);
-  
-  /* Backdrop blur */
-  backdrop-filter: blur(8px);
-  
-  /* Smooth transitions */
-  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-  
-  /* Cursor */
+  border: 1px solid rgba(71,85,105,0.35);
+  border-radius: 8px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04),
+              inset 0 -1px 0 rgba(0,0,0,0.6);
   cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+}
+
+.toggleButton::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 6px;
+  border: 1px solid rgba(100,116,139,0.1);
+  pointer-events: none;
 }
 
 .toggleButton:hover {
-  border-color: rgba(100, 116, 139, 0.4);
-  box-shadow: 
-    inset 0 1px 2px rgba(0, 0, 0, 0.3),
-    0 3px 8px rgba(0, 0, 0, 0.4);
+  border-color: rgba(34,211,238,0.30);
 }
 
 .toggleButton.active {
-  border-color: rgba(34, 211, 238, 0.5);
-  box-shadow: 
-    inset 0 1px 2px rgba(0, 0, 0, 0.4),
-    0 0 12px rgba(34, 211, 238, 0.15),
-    0 3px 8px rgba(0, 0, 0, 0.4);
+  border-color: rgba(34,211,238,0.5);
+  box-shadow: inset 0 1px 0 rgba(34,211,238,0.12),
+              0 0 10px rgba(34,211,238,0.25);
 }
 
-/* ============================================================================
-   TYPOGRAPHY & ICONS
-   ============================================================================ */
-
 .toggleIcon {
-  font-size: 14px;
-  filter: grayscale(1) brightness(0.8);
-  transition: filter 0.3s ease;
+  color: rgba(148, 163, 184, 0.70);
+  transition: color 0.2s ease, filter 0.2s ease;
 }
 
 .toggleButton:hover .toggleIcon {
-  filter: grayscale(0.5) brightness(1);
+  color: rgba(148, 163, 184, 0.90);
 }
 
 .toggleButton.active .toggleIcon {
-  filter: grayscale(0) brightness(1.2);
+  color: rgba(34, 211, 238, 0.96);
+  filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.4));
 }
 
 .toggleLabel {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
-  color: #64748b;
-  transition: color 0.3s ease;
-}
-
-.toggleButton:hover .toggleLabel {
   color: #94a3b8;
+  font-weight: 700;
+  transition: color 0.2s ease, text-shadow 0.2s ease;
 }
 
 .toggleButton.active .toggleLabel {
   color: #22d3ee;
+  text-shadow: 0 0 6px rgba(34,211,238,0.25);
 }
 
 .toggleIndicator {
-  font-size: 12px;
-  color: #475569;
-  margin-left: 2px;
-  transition: color 0.3s ease;
+  font-size: 8px;
+  color: rgba(148, 163, 184, 0.40);
+  transition: color 0.2s ease;
 }
 
 .toggleButton.active .toggleIndicator {
-  color: #22d3ee;
-}
-
-/* ============================================================================
-   FOCUS STATES - ACCESSIBILITY
-   ============================================================================ */
-
-.toggleButton:focus-visible {
-  outline: 2px solid rgba(34, 211, 238, 0.6);
-  outline-offset: 2px;
-}
-
-/* ============================================================================
-   RESPONSIVE
-   ============================================================================ */
-
-@media (max-width: 1400px) {
-  .togglesContainer {
-    gap: 8px;
-  }
-  
-  .toggleButton {
-    padding: 7px 12px;
-  }
-  
-  .toggleLabel {
-    font-size: 10px;
-  }
-  
-  .toggleIcon {
-    font-size: 13px;
-  }
-}
-
-/* ============================================================================
-   REDUCED MOTION - ACCESSIBILITY
-   ============================================================================ */
-
-@media (prefers-reduced-motion: reduce) {
-  .toggleButton,
-  .toggleIcon,
-  .toggleLabel,
-  .toggleIndicator {
-    transition: none;
-  }
+  color: rgba(34, 211, 238, 0.80);
 }

@@ -1,5 +1,6 @@
 // src/components/blocks/ViewModeSelector.tsx
 import React from "react";
+import { Layers, Activity, SplitSquareHorizontal } from "lucide-react";
 import styles from "./ViewModeSelector.module.css";
 
 export type ViewMode = "terrain" | "impact" | "compare";
@@ -12,10 +13,10 @@ interface ViewModeSelectorProps {
   rightSlot?: React.ReactNode;
 }
 
-const MODES: Array<{ id: ViewMode; label: string }> = [
-  { id: "terrain", label: "Terrain" },
-  { id: "impact", label: "Impact" },
-  { id: "compare", label: "Compare" },
+const MODES: Array<{ id: ViewMode; label: string; icon: typeof Layers }> = [
+  { id: "terrain", label: "Terrain", icon: Layers },
+  { id: "impact", label: "Impact", icon: Activity },
+  { id: "compare", label: "Compare", icon: SplitSquareHorizontal },
 ];
 
 export default function ViewModeSelector({
@@ -30,6 +31,7 @@ export default function ViewModeSelector({
         <div className={styles.segment} role="tablist" aria-label="Center view">
           {MODES.map((m) => {
             const isActive = activeMode === m.id;
+            const Icon = m.icon;
             return (
               <button
                 key={m.id}
@@ -39,6 +41,7 @@ export default function ViewModeSelector({
                 className={`${styles.tab} ${isActive ? styles.tabActive : ""}`}
                 onClick={() => onChange(m.id)}
               >
+                <Icon size={14} className={styles.tabIcon} />
                 <span className={styles.tabLabel}>{m.label}</span>
               </button>
             );
