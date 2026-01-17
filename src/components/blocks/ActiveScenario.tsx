@@ -102,7 +102,7 @@ export default function ActiveScenario({
         aria-haspopup="true"
       >
         <div className={styles.currentContent}>
-          <CurrentIcon size={24} className={styles.currentIcon} />
+          <CurrentIcon size={32} className={styles.currentIcon} />
           <div className={styles.currentText}>
             <div className={styles.currentLabel}>{current.label}</div>
             <div className={styles.currentDesc}>{current.description}</div>
@@ -127,7 +127,7 @@ export default function ActiveScenario({
                 onClick={() => handleSelect(scenario.id)}
                 role="menuitem"
               >
-                <Icon size={22} className={styles.optionIcon} />
+                <Icon size={28} className={styles.optionIcon} />
                 <div className={styles.optionText}>
                   <div className={styles.optionLabel}>{scenario.label}</div>
                   <div className={styles.optionDesc}>{scenario.description}</div>

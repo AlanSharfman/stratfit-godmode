@@ -1,6 +1,6 @@
 /* src/components/blocks/ActiveScenario.module.css */
 /* STRATFIT — Active Scenario Selector Styling */
-/* God Mode professional dropdown */
+/* God Mode professional dropdown - ENLARGED VERSION */
 
 /* ============================================================================
    CONTAINER
@@ -9,17 +9,17 @@
 .container {
   position: relative;
   width: 100%;
-  padding: 20px;
+  padding: 28px;
   background: linear-gradient(
     135deg,
     rgba(15, 23, 42, 0.98),
     rgba(17, 24, 39, 0.95)
   );
-  border: 2px solid rgba(71, 85, 105, 0.5);
-  border-radius: 14px;
+  border: 3px solid rgba(71, 85, 105, 0.6);
+  border-radius: 16px;
   box-shadow: 
-    inset 0 2px 3px rgba(0, 0, 0, 0.4),
-    0 4px 12px rgba(0, 0, 0, 0.4);
+    inset 0 2px 4px rgba(0, 0, 0, 0.5),
+    0 6px 16px rgba(0, 0, 0, 0.5);
 }
 
 /* ============================================================================
@@ -27,16 +27,16 @@
    ============================================================================ */
 
 .header {
-  margin-bottom: 10px;
+  margin-bottom: 14px;
 }
 
 .label {
   font-family: 'Monaco', 'Roboto Mono', 'JetBrains Mono', monospace;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: #94a3b8;
+  letter-spacing: 2px;
+  color: #a5b4cf;
 }
 
 /* ============================================================================
@@ -53,19 +53,20 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 16px 18px;
+  padding: 20px 22px;
+  min-height: 72px;
   
   /* Background */
-  background: rgba(17, 24, 39, 0.8);
+  background: rgba(17, 24, 39, 0.9);
   
   /* Border */
-  border: 2px solid rgba(34, 211, 238, 0.4);
-  border-radius: 10px;
+  border: 3px solid rgba(34, 211, 238, 0.5);
+  border-radius: 12px;
   
   /* Shadow */
   box-shadow: 
-    inset 0 2px 3px rgba(0, 0, 0, 0.3),
-    0 3px 6px rgba(0, 0, 0, 0.3);
+    inset 0 2px 4px rgba(0, 0, 0, 0.4),
+    0 4px 8px rgba(0, 0, 0, 0.4);
   
   /* Cursor */
   cursor: pointer;
@@ -75,50 +76,52 @@
 }
 
 .current:hover {
-  border-color: rgba(34, 211, 238, 0.6);
+  border-color: rgba(34, 211, 238, 0.7);
   box-shadow: 
-    inset 0 1px 2px rgba(0, 0, 0, 0.2),
-    0 0 12px rgba(34, 211, 238, 0.2),
-    0 2px 6px rgba(0, 0, 0, 0.3);
+    inset 0 2px 4px rgba(0, 0, 0, 0.3),
+    0 0 16px rgba(34, 211, 238, 0.25),
+    0 4px 8px rgba(0, 0, 0, 0.4);
 }
 
 .currentContent {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   flex: 1;
 }
 
 .currentIcon {
   color: #22d3ee;
   flex-shrink: 0;
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
 }
 
 .currentText {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .currentLabel {
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 700;
   color: #22d3ee;
-  letter-spacing: 0.8px;
+  letter-spacing: 1px;
+  line-height: 1.2;
 }
 
 .currentDesc {
-  font-size: 12px;
-  color: #94a3b8;
+  font-size: 14px;
+  color: #a5b4cf;
   font-weight: 500;
+  line-height: 1.3;
 }
 
 .chevron {
-  font-size: 12px;
-  color: #94a3b8;
-  margin-left: 12px;
+  font-size: 16px;
+  color: #a5b4cf;
+  margin-left: 16px;
   transition: transform 0.2s ease;
 }
 
@@ -131,7 +134,7 @@
   top: 100%;
   left: 0;
   right: 0;
-  margin-top: 10px;
+  margin-top: 12px;
   z-index: 100;
   
   /* Background - Darker for more prominence */
@@ -142,16 +145,16 @@
   );
   
   /* Border - Thicker and more visible */
-  border: 2px solid rgba(71, 85, 105, 0.5);
-  border-radius: 12px;
+  border: 3px solid rgba(71, 85, 105, 0.6);
+  border-radius: 14px;
   
   /* Shadow - Much stronger for depth */
   box-shadow: 
-    inset 0 2px 3px rgba(0, 0, 0, 0.4),
-    0 10px 30px rgba(0, 0, 0, 0.6);
+    inset 0 2px 4px rgba(0, 0, 0, 0.5),
+    0 12px 36px rgba(0, 0, 0, 0.7);
   
   /* Backdrop */
-  backdrop-filter: blur(16px);
+  backdrop-filter: blur(20px);
   
   /* Animation */
   animation: dropdownSlide 0.2s ease-out;
@@ -180,12 +183,13 @@
   /* Layout - Larger padding for easier clicking */
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   width: 100%;
-  padding: 16px 20px;
+  padding: 18px 24px;
+  min-height: 68px;
   
   /* Border - More visible */
-  border-bottom: 1px solid rgba(71, 85, 105, 0.2);
+  border-bottom: 1px solid rgba(71, 85, 105, 0.25);
   
   /* Cursor */
   cursor: pointer;
@@ -195,27 +199,27 @@
 }
 
 .option:first-child {
-  border-radius: 12px 12px 0 0;
+  border-radius: 14px 14px 0 0;
 }
 
 .option:last-child {
   border-bottom: none;
-  border-radius: 0 0 12px 12px;
+  border-radius: 0 0 14px 14px;
 }
 
 .option:hover {
-  background: rgba(34, 211, 238, 0.1);
+  background: rgba(34, 211, 238, 0.12);
 }
 
 .option.active {
-  background: rgba(34, 211, 238, 0.15);
+  background: rgba(34, 211, 238, 0.18);
 }
 
 .optionIcon {
   color: #94a3b8;
   flex-shrink: 0;
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   transition: color 0.2s ease;
 }
 
@@ -230,16 +234,17 @@
 .optionText {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   flex: 1;
 }
 
 .optionLabel {
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 700;
   color: #e2e8f0;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
   transition: color 0.2s ease;
+  line-height: 1.2;
 }
 
 .option:hover .optionLabel {
@@ -251,15 +256,16 @@
 }
 
 .optionDesc {
-  font-size: 11px;
-  color: #94a3b8;
+  font-size: 13px;
+  color: #a5b4cf;
   font-weight: 500;
+  line-height: 1.3;
 }
 
 .checkmark {
-  font-size: 16px;
+  font-size: 20px;
   color: #22d3ee;
-  margin-left: 8px;
+  margin-left: 12px;
   font-weight: 700;
 }
 
@@ -269,30 +275,42 @@
 
 @media (max-width: 1400px) {
   .container {
-    padding: 16px;
+    padding: 22px;
   }
   
   .current {
-    padding: 14px 16px;
+    padding: 18px 20px;
+    min-height: 64px;
+  }
+  
+  .currentIcon {
+    width: 28px;
+    height: 28px;
   }
   
   .currentLabel {
-    font-size: 14px;
+    font-size: 18px;
   }
   
   .currentDesc {
-    font-size: 10px;
+    font-size: 12px;
   }
   
   .option {
-    padding: 14px 18px;
+    padding: 16px 20px;
+    min-height: 60px;
+  }
+  
+  .optionIcon {
+    width: 24px;
+    height: 24px;
   }
   
   .optionLabel {
-    font-size: 13px;
+    font-size: 16px;
   }
   
   .optionDesc {
-    font-size: 10px;
+    font-size: 11px;
   }
 }
