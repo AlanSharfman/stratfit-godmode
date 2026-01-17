@@ -76,7 +76,6 @@
   margin: 0 18px 16px;
   background: radial-gradient(1200px 500px at 50% 30%, rgba(34, 211, 238, 0.10), transparent 65%),
               rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(120, 220, 255, 0.10);
 }
 
 .sfMountainStage canvas,
