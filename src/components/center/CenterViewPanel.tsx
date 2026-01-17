@@ -86,14 +86,6 @@ export default function CenterViewPanel() {
             ) : null}
 
             <div className="relative h-full w-full">
-              {/* TERRAIN TOGGLES - Top right corner */}
-              <TerrainToggles
-                timelineEnabled={timelineEnabled}
-                heatmapEnabled={heatmapEnabled}
-                onTimelineToggle={() => setTimelineEnabled(!timelineEnabled)}
-                onHeatmapToggle={() => setHeatmapEnabled(!heatmapEnabled)}
-              />
-
               {/* MOUNTAIN */}
               <ScenarioMountain 
                 scenario={scenario} 
