@@ -279,7 +279,7 @@ const Terrain: React.FC<TerrainProps> = ({
     const targetCols = targetColorsRef.current;
     const currentCols = currentColorsRef.current;
 
-    const smoothing = 0.6; // 🔥 INCREASED from 0.45 - faster, more reactive response
+    const smoothing = 0.7; // 🔥 INCREASED from 0.6 - tiny bit more heave/breathing
     let needsUpdate = false;
 
     for (let i = 0; i < count; i++) {
