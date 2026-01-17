@@ -23,6 +23,7 @@ import type { LeverId } from "@/logic/mountainPeakModel";
 import { calculateMetrics } from "@/logic/calculateMetrics";
 import { emitCausal } from "@/ui/causalEvents";
 import TakeTheTour from "@/components/ui/TakeTheTour";
+import HeaderControlDeck from "@/components/layout/HeaderControlDeck";
 
 import { deriveArrGrowth, formatUsdCompact } from "@/utils/arrGrowth";
 import { getQualityScoreFromKpis, getQualityBandFromKpis } from "@/logic/qualityScore";
@@ -1109,116 +1110,49 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
         </div>
 
         <div className="header-actions">
-          <div className="header-action-buttons">
-            {/* Investor Pitch Mode Toggle */}
-            <button
-              className="header-action-btn"
-              title={pitchMode ? "Exit Pitch Mode" : "Enter Investor Pitch Mode"}
-              onClick={() => setPitchMode(!pitchMode)}
-              style={{
-                background: pitchMode
-                  ? "linear-gradient(180deg, rgba(168,85,247,0.25), rgba(168,85,247,0.12))"
-                  : undefined,
-                borderColor: pitchMode ? "rgba(168,85,247,0.45)" : undefined,
-                boxShadow: pitchMode ? "0 0 20px rgba(168,85,247,0.3), inset 0 1px 0 rgba(255,255,255,0.1)" : undefined,
-              }}
-            >
-              <span style={{ fontSize: 14 }}>{pitchMode ? "🎤" : "💼"}</span>
-              <span className="header-action-text" style={{ 
-                color: pitchMode ? "rgba(168,85,247,0.95)" : undefined 
-              }}>
-                {pitchMode ? "Pitching" : "Pitch Mode"}
-              </span>
-            </button>
-
-            {/* Export Investor Deck (PDF) */}
-            <button
-              className="header-action-btn"
-              title="Export Investor Deck as PDF"
-              onClick={async () => {
-                try {
-                  const r = await fetch("/api/export-pitch");
-                  const j = await r.json();
-                  if (j.url) {
-                    window.open(j.url, "_blank");
-                  } else {
-                    console.error("Export failed:", j.error);
-                  }
-                } catch (err) {
-                  console.error("Export failed:", err);
-                  // Fallback: trigger browser print dialog
-                  window.print();
+          <HeaderControlDeck
+            pitchMode={pitchMode}
+            onPitchModeToggle={() => setPitchMode(!pitchMode)}
+            onExport={async () => {
+              try {
+                const r = await fetch("/api/export-pitch");
+                const j = await r.json();
+                if (j.url) {
+                  window.open(j.url, "_blank");
+                } else {
+                  console.error("Export failed:", j.error);
                 }
-              }}
-            >
-              <svg className="header-action-icon sys-action-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-                <line x1="16" y1="13" x2="8" y2="13" />
-                <line x1="16" y1="17" x2="8" y2="17" />
-                <polyline points="10 9 9 9 8 9" />
-              </svg>
-              <span className="header-action-text">Export Deck</span>
-            </button>
-
-            {/* STANDARD ORDER: Load → Save → Share → Tour */}
-            <button
-              className="header-action-btn"
-              title="Load scenario"
-              onClick={() => {
-                emitCausal({
-                  source: "scenario_load",
-                  bandStyle: "wash",
-                  color: "rgba(34,211,238,0.18)",
-                });
-              }}
-            >
-              <svg className="header-action-icon sys-action-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="1 4 1 10 7 10" />
-                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
-              </svg>
-              <span className="header-action-text">Load</span>
-            </button>
-            <button
-              className="header-action-btn"
-              title="Save scenario"
-              onClick={() => {
-                emitCausal({
-                  source: "scenario_save",
-                  bandStyle: "wash",
-                  color: "rgba(34,211,238,0.18)",
-                });
-              }}
-            >
-              <svg className="header-action-icon sys-action-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                <polyline points="17 21 17 13 7 13 7 21" />
-                <polyline points="7 3 7 8 15 8" />
-              </svg>
-              <span className="header-action-text">Save</span>
-            </button>
-            <button
-              className="header-action-btn"
-              title="Share scenario"
-              onClick={() => {
-                emitCausal({
-                  source: "scenario_share",
-                  bandStyle: "wash",
-                  color: "rgba(34,211,238,0.18)",
-                });
-              }}
-            >
-              <svg className="header-action-icon sys-action-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="18" cy="5" r="3" />
-                <circle cx="6" cy="12" r="3" />
-                <circle cx="18" cy="19" r="3" />
-                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-              </svg>
-              <span className="header-action-text">Share</span>
-            </button>
-            <TakeTheTour />
-          </div>
+              } catch (err) {
+                console.error("Export failed:", err);
+                window.print();
+              }
+            }}
+            onLoad={() => {
+              emitCausal({
+                source: "scenario_load",
+                bandStyle: "wash",
+                color: "rgba(34,211,238,0.18)",
+              });
+            }}
+            onSave={() => {
+              emitCausal({
+                source: "scenario_save",
+                bandStyle: "wash",
+                color: "rgba(34,211,238,0.18)",
+              });
+            }}
+            onShare={() => {
+              emitCausal({
+                source: "scenario_share",
+                bandStyle: "wash",
+                color: "rgba(34,211,238,0.18)",
+              });
+            }}
+            onHelp={() => {
+              // Tour handler - can be wired to TakeTheTour if needed
+              console.log("Help/Tour requested");
+            }}
+          />
         </div>
       </header>
 
