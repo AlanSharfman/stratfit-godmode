@@ -39,10 +39,12 @@ export default function CenterViewPanel(props: { view?: CenterViewId }) {
 
   return (
     <div className={styles.sfCenterRoot}>
-      {/* G-D MODE: KPI HUD */}
-      <div className={styles.sfHudStage}>
-        <HudKpis />
-      </div>
+      {/* TEMP: disable duplicate KPI HUD (Enhanced owns HUD) */}
+      {false && (
+        <div className={styles.sfHudStage}>
+          <HudKpis />
+        </div>
+      )}
 
       {/* G-D MODE: Mountain Stage (fills remaining space) */}
       <div className={styles.sfMountainStage} data-tour="mountain">
