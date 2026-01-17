@@ -169,10 +169,10 @@ export default function AIColdPanel({
 
       <style>{`
         .cold-panel{
-          height:100%;
           width:100%;
           display:flex;
           flex-direction:column;
+          min-height: 0;
           gap:14px;
           padding:14px;
           border-radius:18px;

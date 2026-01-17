@@ -593,14 +593,14 @@ export default function AIIntelligence({
 
       <style>{`
         .ai-panel {
-          height: 100%;
           display: flex;
           flex-direction: column;
+          min-height: 0;
+          overflow: visible;
           background: #14181e;
           border: 1px solid #1e2530;
           border-radius: 8px;
           position: relative;
-          overflow: hidden;
         }
 
         .panel-edge {
