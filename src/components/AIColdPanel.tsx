@@ -30,12 +30,6 @@ export interface AIColdPanelProps {
   };
 }
 
-function badgeClass(sev?: Severity) {
-  if (sev === "HIGH") return "sev sev--high";
-  if (sev === "MED") return "sev sev--med";
-  return "sev sev--low";
-}
-
 function dirSymbol(dir?: Direction) {
   if (dir === "UP") return "↑";
   if (dir === "DOWN") return "↓";
@@ -51,24 +45,30 @@ export default function AIColdPanel({
 }: AIColdPanelProps) {
   const [showTrace, setShowTrace] = useState(false);
 
-  const riskSignals = useMemo(() => {
-    // Show up to 3 signals with severity first.
-    const rank = (s?: Severity) => (s === "HIGH" ? 3 : s === "MED" ? 2 : 1);
-    return [...kpis]
-      .filter((k) => k.severity)
-      .sort((a, b) => rank(b.severity) - rank(a.severity))
-      .slice(0, 3);
-  }, [kpis]);
-
   const brief = useMemo(() => {
-    // 3 factual bullets, derived from highest-signal KPIs + scenario name.
+    // 3 factual bullets, derived from scenario name and top KPIs.
     const bullets: string[] = [];
     bullets.push(`Scenario: ${scenarioName}`);
-    if (riskSignals[0]) bullets.push(`Primary signal: ${riskSignals[0].label} ${dirSymbol(riskSignals[0].direction)} (${riskSignals[0].value}${riskSignals[0].delta ? `, Δ ${riskSignals[0].delta}` : ""})`);
-    if (riskSignals[1]) bullets.push(`Secondary signal: ${riskSignals[1].label} ${dirSymbol(riskSignals[1].direction)} (${riskSignals[1].value}${riskSignals[1].delta ? `, Δ ${riskSignals[1].delta}` : ""})`);
+    
+    // Add top 2 KPIs with severity if available
+    const topKpis = [...kpis]
+      .filter((k) => k.severity)
+      .sort((a, b) => {
+        const rank = (s?: Severity) => (s === "HIGH" ? 3 : s === "MED" ? 2 : 1);
+        return rank(b.severity) - rank(a.severity);
+      })
+      .slice(0, 2);
+    
+    if (topKpis[0]) {
+      bullets.push(`Primary signal: ${topKpis[0].label} ${dirSymbol(topKpis[0].direction)} (${topKpis[0].value}${topKpis[0].delta ? `, Δ ${topKpis[0].delta}` : ""})`);
+    }
+    if (topKpis[1]) {
+      bullets.push(`Secondary signal: ${topKpis[1].label} ${dirSymbol(topKpis[1].direction)} (${topKpis[1].value}${topKpis[1].delta ? `, Δ ${topKpis[1].delta}` : ""})`);
+    }
+    
     while (bullets.length < 3) bullets.push("No critical deviations detected.");
     return bullets.slice(0, 3);
-  }, [scenarioName, riskSignals]);
+  }, [scenarioName, kpis]);
 
   return (
     <div className="cold-panel">
@@ -84,29 +84,6 @@ export default function AIColdPanel({
             <li key={i}>{b}</li>
           ))}
         </ul>
-      </section>
-
-      <section className="cold-section">
-        <div className="cold-section-title">RISK SIGNALS</div>
-        {riskSignals.length === 0 ? (
-          <div className="cold-muted">No high-salience risk signals.</div>
-        ) : (
-          <div className="signals">
-            {riskSignals.map((s) => (
-              <div key={s.key} className="signal">
-                <div className="signal-left">
-                  <span className={badgeClass(s.severity)}>{s.severity}</span>
-                  <span className="signal-label">{s.label}</span>
-                </div>
-                <div className="signal-right">
-                  <span className="signal-dir">{dirSymbol(s.direction)}</span>
-                  <span className="signal-val">{s.value}</span>
-                  {s.delta ? <span className="signal-delta">Δ {s.delta}</span> : null}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </section>
 
       <section className="cold-section">
@@ -242,43 +219,6 @@ export default function AIColdPanel({
         }
         .cold-strong{font-weight:850;color:rgba(235,248,255,0.92);}
         .cold-dim{color:rgba(235,248,255,0.62);}
-
-        .signals{display:flex;flex-direction:column;gap:8px;}
-        .signal{
-          display:flex;
-          align-items:center;
-          justify-content:space-between;
-          gap:10px;
-          padding:10px 10px;
-          border-radius:14px;
-          border:1px solid rgba(255,255,255,0.08);
-          background: rgba(0,0,0,0.18);
-        }
-        .signal-left{display:flex;align-items:center;gap:8px;min-width:0;}
-        .signal-label{
-          font-size:12.5px;
-          font-weight:850;
-          color:rgba(235,248,255,0.90);
-          white-space:nowrap;
-          overflow:hidden;
-          text-overflow:ellipsis;
-        }
-        .signal-right{display:flex;align-items:baseline;gap:8px;flex-shrink:0;}
-        .signal-dir{font-size:12px;color:rgba(235,248,255,0.62);font-weight:900;}
-        .signal-val{font-size:12.5px;color:rgba(235,248,255,0.90);font-weight:900;}
-        .signal-delta{font-size:11.5px;color:rgba(235,248,255,0.62);font-weight:800;}
-
-        .sev{
-          font-size:10px;
-          font-weight:950;
-          letter-spacing:0.10em;
-          padding:4px 8px;
-          border-radius:999px;
-          border:1px solid rgba(255,255,255,0.12);
-        }
-        .sev--low{color:rgba(120,240,255,0.95);}
-        .sev--med{color:rgba(140,255,210,0.95);}
-        .sev--high{color:rgba(255,120,120,0.95);}
 
         .cold-trace{margin-top:auto;display:flex;flex-direction:column;gap:10px;}
         .trace-btn{
