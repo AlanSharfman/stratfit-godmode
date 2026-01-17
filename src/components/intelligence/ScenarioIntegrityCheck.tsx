@@ -3,7 +3,7 @@
 // Professional CFO-grade validation
 
 import React, { useState } from 'react';
-import { ShieldCheck, AlertTriangle, CheckCircle, RotateCcw, Zap } from 'lucide-react';
+import { ShieldCheck, AlertTriangle, CheckCircle, RotateCcw, Zap, ChevronRight } from 'lucide-react';
 import styles from './ScenarioIntegrityCheck.module.css';
 
 type CheckStatus = 'idle' | 'scanning' | 'complete';
@@ -74,7 +74,7 @@ export default function ScenarioIntegrityCheck() {
       {/* HEADER */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <ShieldCheck size={14} className={styles.icon} />
+          <ShieldCheck size={12} className={styles.icon} />
           <span className={styles.title}>SYSTEM INTEGRITY</span>
         </div>
         {status === 'complete' && (
@@ -89,11 +89,14 @@ export default function ScenarioIntegrityCheck() {
       {status === 'idle' && (
         <button onClick={runCheck} className={styles.runButton}>
           <div className={styles.buttonIcon}>
-            <Zap size={20} className={styles.buttonIconSvg} />
+            <Zap size={12} className={styles.buttonIconSvg} />
           </div>
           <div className={styles.buttonText}>
-            <div className={styles.buttonTitle}>RUN INTEGRITY CHECK</div>
-            <div className={styles.buttonSubtitle}>AI validation • Logic audit</div>
+            <div className={styles.buttonTitle}>INITIATE_DIAGNOSTIC</div>
+            <div className={styles.buttonSubtitle}>AI Validation • Logic Audit</div>
+          </div>
+          <div className={styles.buttonArrow}>
+            <ChevronRight size={12} />
           </div>
         </button>
       )}
