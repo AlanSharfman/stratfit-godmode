@@ -272,16 +272,22 @@ body { overflow-x: hidden; }
 .logo{
   display:flex;
   align-items:center;
+  gap: 14px;
   background: transparent;
   padding: 12px 20px;
   border-radius: 8px;
+}
+.logo-icon{
+  width: 48px;
+  height: 48px;
+  filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.4));
 }
 .logo-text{
   font-size: 28px;
   font-weight: 900;
   letter-spacing: 6px;
-  color: #ffffff;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #22d3ee;
+  text-shadow: 0 0 12px rgba(34, 211, 238, 0.5);
 }
 
 .system-status{
