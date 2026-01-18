@@ -1,0 +1,198 @@
+/* KPI Header Container */
+.kpi-header-container {
+  will-change: max-height, opacity, transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+.kpi-header-container.visible {
+  /* Visible state handled by inline styles for dynamic control */
+}
+
+.kpi-header-container.hidden {
+  /* Hidden state handled by inline styles for dynamic control */
+}
+
+/* KPI Header Content */
+.kpi-header-content {
+  min-height: 200px;
+}
+
+/* Active Scenario Box */
+.active-scenario-box select option {
+  background: #0a0e1a;
+  color: #00d4ff;
+}
+
+/* KPI Box */
+.kpi-box {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.kpi-box:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* Animations */
+
+/* Pulse animation for Active Scenario background */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Blink animation for Active Scenario dot */
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+/* Slide in down animation for KPI boxes */
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Bar grow animation for bar charts */
+@keyframes barGrow {
+  from {
+    transform: scaleY(0);
+    transform-origin: bottom;
+  }
+  to {
+    transform: scaleY(1);
+    transform-origin: bottom;
+  }
+}
+
+/* Draw line animation for line charts */
+@keyframes drawLine {
+  from {
+    stroke-dasharray: 0 1000;
+  }
+  to {
+    stroke-dasharray: 1000 0;
+  }
+}
+
+/* Fade in animation for trend arrows */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1600px) {
+  .kpi-header-content {
+    gap: 12px !important;
+    padding: 0 24px !important;
+  }
+  
+  .active-scenario-box {
+    flex: 0 0 160px !important;
+    padding: 16px !important;
+  }
+  
+  .kpi-box {
+    padding: 16px !important;
+  }
+}
+
+@media (max-width: 1400px) {
+  .kpi-header-content {
+    gap: 10px !important;
+    padding: 0 20px !important;
+  }
+  
+  .active-scenario-box {
+    flex: 0 0 140px !important;
+    padding: 14px !important;
+  }
+  
+  .kpi-box {
+    padding: 14px !important;
+  }
+}
+
+@media (max-width: 1200px) {
+  .kpi-header-content {
+    flex-wrap: wrap !important;
+  }
+  
+  .active-scenario-box {
+    flex: 0 0 100% !important;
+    margin-bottom: 12px;
+  }
+  
+  .kpi-box {
+    flex: 0 0 calc(33.333% - 10px) !important;
+  }
+}
+
+/* Accessibility - Focus states */
+.active-scenario-box select:focus-visible {
+  outline: 2px solid #00d4ff;
+  outline-offset: 2px;
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .kpi-box {
+    border-width: 2px !important;
+  }
+  
+  .active-scenario-box {
+    border-width: 2px !important;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .kpi-header-container {
+    transition: none !important;
+  }
+  
+  .kpi-box {
+    animation: none !important;
+    transition: none !important;
+  }
+  
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Print Styling */
+@media print {
+  .kpi-header-container {
+    max-height: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  
+  .kpi-box {
+    break-inside: avoid;
+  }
+}
+

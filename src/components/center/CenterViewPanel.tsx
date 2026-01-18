@@ -4,6 +4,7 @@ import ViewModeSelector, { type ViewMode } from "@/components/blocks/ViewModeSel
 import TerrainToggles from "@/components/blocks/TerrainToggles";
 import CompareTabGodMode from "@/components/compare/CompareTabGodMode";
 import TradeOffsTab from "@/components/tradeoffs/TradeOffsTab";
+import KPIHeader from "@/components/kpi/KPIHeader";
 
 import { useScenario, useScenarioStore } from "@/state/scenarioStore";
 import { onCausal } from "@/ui/causalEvents";
@@ -63,6 +64,16 @@ export default function CenterViewPanel() {
           }
         />
       </div>
+
+      {/* COLLAPSIBLE KPI HEADER - Shows on Terrain, Hides on Compare/Trade-offs */}
+      <KPIHeader
+        isVisible={viewMode === "terrain"}
+        activeScenario={scenario}
+        onScenarioChange={(newScenario) => {
+          // Handle scenario change if needed
+          console.log('KPI Header scenario change:', newScenario);
+        }}
+      />
 
       {/* G-D MODE: Mountain Stage (fills remaining space) */}
       <div className={styles.sfMountainStage} data-tour="mountain">
