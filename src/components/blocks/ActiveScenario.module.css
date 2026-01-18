@@ -9,18 +9,64 @@
 .container {
   position: relative;
   width: 100%;
-  padding: 24px;  /* Was 20px */
-  background: linear-gradient(
-    135deg,
-    rgba(15, 23, 42, 0.98),
-    rgba(17, 24, 39, 0.95)
-  );
-  border: 3px solid rgba(34, 211, 238, 0.4);  /* Was 2px - THICK CYAN */
-  border-radius: 16px;  /* Was 14px */
-  box-shadow: 
-    inset 0 3px 5px rgba(0, 0, 0, 0.5),
-    0 0 20px rgba(34, 211, 238, 0.15),  /* Cyan glow */
-    0 6px 16px rgba(0, 0, 0, 0.5);
+  margin-top: 2mm;  /* Lowered by 2mm */
+  
+  /* EXACT CLONE: 4-LAYER CHASSIS FROM KPI BEZELS */
+  /* CHASSIS — OUTER GLOW FRAME */
+  border-radius: 18px;
+  padding: 3px;
+  background: linear-gradient(180deg, #1e252f 0%, #131920 100%);
+  border: none;
+  box-shadow:
+    0 0 0 1px #000000,
+    0 0 25px rgba(137, 196, 244, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* ============================================================================
+   RIM (LAYER 2) — GOD MODE CHROME (EXACT CLONE FROM KPI)
+   ============================================================================ */
+
+.rim {
+  position: relative;
+  height: 100%;
+  border-radius: 16px;
+  padding: 5px;
+  background: linear-gradient(180deg, #9CA8B5 0%, #050505 100%);
+  border: 1px solid rgba(140, 180, 220, 0.22);
+  box-shadow:
+    inset 0 1px 0 #FFFFFF,
+    inset 0 -1px 0 #000000;
+}
+
+/* ============================================================================
+   STEP (LAYER 3) — GOD MODE DARK STEEL (EXACT CLONE FROM KPI)
+   ============================================================================ */
+
+.step {
+  position: relative;
+  height: 100%;
+  border-radius: 13px;
+  padding: 6px;
+  background: linear-gradient(180deg, #2C3540 0%, #050505 100%);
+  border: none;
+  box-shadow:
+    0 0 0 4px #000000,
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 3px 6px rgba(0, 0, 0, 0.8);
+}
+
+/* ============================================================================
+   CONTENT WRAPPER - Padding and layout
+   ============================================================================ */
+
+.content {
+  position: relative;
+  height: 100%;
+  border-radius: 10px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ============================================================================
@@ -31,9 +77,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 18px;  /* Was 16px */
-  padding-bottom: 14px;  /* Was 12px */
-  border-bottom: 2px solid rgba(71, 85, 105, 0.3);  /* Thicker */
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 2px solid rgba(71, 85, 105, 0.3);
 }
 
 .headerLeft {
@@ -93,28 +139,26 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 20px 22px;  /* Was 16px 18px - MUCH BIGGER */
+  padding: 20px 22px;
   
-  background: rgba(17, 24, 39, 0.9);
-  
-  border: 2px solid rgba(34, 211, 238, 0.5);  /* Thicker, brighter */
+  /* WELL (LAYER 4) - COLD FUSION GLOW FROM INSIDE */
+  background: linear-gradient(180deg, #05151a 0%, #000000 100%);
   border-radius: 12px;
+  border: none;
   
+  /* COLD FUSION - Cyan light emanating from inside the well */
   box-shadow: 
-    inset 0 2px 4px rgba(0, 0, 0, 0.4),
-    0 0 12px rgba(34, 211, 238, 0.2),  /* Cyan glow */
-    0 4px 8px rgba(0, 0, 0, 0.4);
+    inset 0 0 20px rgba(0, 255, 255, 0.3),  /* Cyan glow */
+    inset 0 10px 20px #000000;  /* Maximum depth */
   
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .current:hover {
-  border-color: rgba(34, 211, 238, 0.7);
   box-shadow: 
-    inset 0 2px 4px rgba(0, 0, 0, 0.4),
-    0 0 20px rgba(34, 211, 238, 0.3),
-    0 6px 12px rgba(0, 0, 0, 0.5);
+    inset 0 0 24px rgba(0, 255, 255, 0.4),  /* Brighter cold fusion */
+    inset 0 10px 20px #000000;
   transform: translateY(-1px);
 }
 
@@ -165,7 +209,7 @@
   top: 100%;
   left: 0;
   right: 0;
-  margin-top: 12px;  /* Was 10px */
+  margin-top: 12px;
   z-index: 100;
   
   background: linear-gradient(
@@ -174,12 +218,13 @@
     rgba(17, 24, 39, 0.98)
   );
   
-  border: 3px solid rgba(34, 211, 238, 0.4);  /* Thick cyan border */
+  /* METAL BEZEL - Not cyan */
+  border: 3px solid rgba(100, 116, 139, 0.5);
   border-radius: 14px;
   
   box-shadow: 
     inset 0 3px 5px rgba(0, 0, 0, 0.5),
-    0 0 24px rgba(34, 211, 238, 0.2),  /* Cyan glow */
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),  /* Chrome highlight */
     0 12px 36px rgba(0, 0, 0, 0.7);
   
   backdrop-filter: blur(20px);
