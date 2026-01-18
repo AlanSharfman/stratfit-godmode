@@ -26,21 +26,15 @@ export default function HeaderControlDeck({
 }: HeaderControlDeckProps) {
   return (
     <div className="flex items-center">
-      {/* THE CONTAINER: A 'machined' glass capsule */}
+      {/* THE CONTAINER: A 'machined' glass capsule - ENLARGED */}
       <div 
-        className="flex items-center bg-[#0f172a]/80 backdrop-blur-md border border-white/10 rounded-full px-1 py-1 shadow-lg"
+        className="flex items-center bg-[#0f172a]/80 backdrop-blur-md border border-white/10 rounded-full px-2 py-1.5 shadow-lg"
         style={{
           boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
         }}
       >
-        {/* GROUP 1: PRESENTATION (The Action Items) */}
-        <div className="flex items-center px-2 gap-1">
-          <ControlButton 
-            icon={MonitorPlay} 
-            label="PITCH_MODE" 
-            active={pitchMode}
-            onClick={onPitchModeToggle}
-          />
+        {/* GROUP 1: PRIMARY ACTIONS */}
+        <div className="flex items-center px-2 gap-1.5">
           <ControlButton 
             icon={Download} 
             label="EXPORT"
@@ -49,10 +43,10 @@ export default function HeaderControlDeck({
         </div>
 
         {/* DIVIDER: A vertical etched line */}
-        <div className="w-[1px] h-4 bg-white/10 mx-1" />
+        <div className="w-[1px] h-5 bg-white/10 mx-1.5" />
 
         {/* GROUP 2: DATA STATE (The Utility Items) */}
-        <div className="flex items-center px-2 gap-1">
+        <div className="flex items-center px-2 gap-1.5">
           <ControlButton 
             icon={UploadCloud} 
             label="LOAD"
@@ -71,17 +65,17 @@ export default function HeaderControlDeck({
         </div>
 
         {/* DIVIDER */}
-        <div className="w-[1px] h-4 bg-white/10 mx-1" />
+        <div className="w-[1px] h-5 bg-white/10 mx-1.5" />
 
         {/* GROUP 3: SYSTEM (Subtle) */}
         <div className="flex items-center px-2">
-          {/* Replaced big "Take Tour" button with a subtle help icon - ENLARGED */}
+          {/* Help icon - ENLARGED */}
           <button 
-            className="p-2.5 text-slate-500 hover:text-cyan-400 transition-colors rounded-full hover:bg-white/5 min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="p-3 text-slate-500 hover:text-cyan-400 transition-colors rounded-full hover:bg-white/5 min-h-[48px] min-w-[48px] flex items-center justify-center"
             title="Take the tour"
             onClick={onHelp}
           >
-            <HelpCircle size={18} />
+            <HelpCircle size={20} />
           </button>
         </div>
       </div>
@@ -106,7 +100,7 @@ const ControlButton: React.FC<ControlButtonProps> = ({
   <button 
     onClick={onClick}
     className={`
-      flex items-center gap-2.5 px-4 py-2.5 rounded-full transition-all duration-300 group min-h-[44px]
+      flex items-center gap-3 px-5 py-3 rounded-full transition-all duration-300 group min-h-[48px]
       ${active 
         ? 'bg-cyan-500/10 border-2 border-cyan-500/50 text-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.2)]' 
         : 'border-2 border-transparent hover:bg-white/5 hover:border-white/10 text-slate-400 hover:text-white'
@@ -114,11 +108,11 @@ const ControlButton: React.FC<ControlButtonProps> = ({
     `}
   >
     <Icon 
-      size={16} 
+      size={18} 
       className={active ? "text-cyan-400" : "group-hover:text-cyan-200"} 
     />
-    {/* MONOSPACE IS KEY HERE - ENLARGED for demo safety */}
-    <span className="font-mono text-[12px] font-bold tracking-wider uppercase">
+    {/* Typical platform font size */}
+    <span className="font-mono text-[13px] font-bold tracking-wider uppercase">
       {label}
     </span>
   </button>
