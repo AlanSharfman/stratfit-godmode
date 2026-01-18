@@ -2,10 +2,12 @@ import React, { useEffect, useState, useMemo } from "react";
 import ScenarioMountain from "@/components/mountain/ScenarioMountain";
 import ViewModeSelector, { type ViewMode } from "@/components/blocks/ViewModeSelector";
 import TerrainToggles from "@/components/blocks/TerrainToggles";
+import CompareTabGodMode from "@/components/compare/CompareTabGodMode";
 
 import { useScenario, useScenarioStore } from "@/state/scenarioStore";
 import { onCausal } from "@/ui/causalEvents";
 import { engineResultToMountainForces } from "@/logic/mountainForces";
+import { COMPARE_SCENARIOS, mapScenarioId } from "@/data/compareScenarios";
 
 import styles from "./CenterViewPanel.module.css";
 
@@ -117,20 +119,14 @@ export default function CenterViewPanel() {
         )}
 
         {/* ========================================
-            COMPARE VIEW - Scenario Comparison
+            COMPARE VIEW - God Mode Dual Mountains
             ======================================== */}
         {viewMode === "compare" && (
           <div className={styles.sfViewWrapper}>
-            <div className={styles.sfPlaceholderView}>
-              <div className={styles.sfPlaceholderIcon}>⚖️</div>
-              <h2 className={styles.sfPlaceholderTitle}>Scenario Comparison</h2>
-              <p className={styles.sfPlaceholderText}>
-                Side-by-side analysis of strategic alternatives
-              </p>
-              <div className={styles.sfPlaceholderHint}>
-                Coming soon: Multi-scenario comparison, variance analysis, decision matrix
-              </div>
-            </div>
+            <CompareTabGodMode
+              selectedScenario={mapScenarioId(scenario)}
+              scenarios={COMPARE_SCENARIOS}
+            />
           </div>
         )}
       </div>
