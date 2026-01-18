@@ -272,17 +272,22 @@ body { overflow-x: hidden; }
 .logo{
   display:flex;
   align-items:center;
-  justify-content: center;
-  background: transparent; /* Let the cyan glow show! */
+  gap: 14px;
+  background: transparent;
   padding: 12px 20px;
   border-radius: 8px;
 }
-.logo-image{
-  height: 90px;
-  width: auto;
-  object-fit: contain;
-  display: block;
-  filter: brightness(1.2); /* Make it even brighter */
+.logo-icon{
+  width: 40px;
+  height: 40px;
+  filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.3));
+}
+.logo-text{
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 4px;
+  color: #22d3ee;
+  text-shadow: 0 0 12px rgba(34, 211, 238, 0.4);
 }
 
 .system-status{
