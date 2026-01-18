@@ -41,7 +41,7 @@ export default function ViewModeSelector({
                 className={`${styles.tab} ${isActive ? styles.tabActive : ""}`}
                 onClick={() => onChange(m.id)}
               >
-                <Icon size={14} className={styles.tabIcon} />
+                <Icon size={16} className={styles.tabIcon} />
                 <span className={styles.tabLabel}>{m.label}</span>
               </button>
             );
