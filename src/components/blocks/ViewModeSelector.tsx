@@ -15,8 +15,8 @@ interface ViewModeSelectorProps {
 
 const MODES: Array<{ id: ViewMode; label: string; icon: typeof Layers }> = [
   { id: "terrain", label: "Terrain", icon: Layers },
-  { id: "impact", label: "Trade offs", icon: Activity },
   { id: "compare", label: "Compare", icon: SplitSquareHorizontal },
+  { id: "impact", label: "Trade offs", icon: Activity },
 ];
 
 export default function ViewModeSelector({
