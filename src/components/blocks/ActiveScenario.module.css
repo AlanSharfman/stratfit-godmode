@@ -1,132 +1,163 @@
 /* src/components/blocks/ActiveScenario.module.css */
-/* STRATFIT — Active Scenario Selector Styling */
-/* God Mode professional dropdown - ENLARGED VERSION */
+/* STRATFIT — Active Scenario Selector - XXL VERSION */
+/* Maximum visibility and impact */
 
 /* ============================================================================
-   CONTAINER
+   CONTAINER - EXTRA LARGE
    ============================================================================ */
 
 .container {
   position: relative;
   width: 100%;
-  padding: 28px;
+  padding: 24px;  /* Was 20px */
   background: linear-gradient(
     135deg,
     rgba(15, 23, 42, 0.98),
     rgba(17, 24, 39, 0.95)
   );
-  border: 3px solid rgba(71, 85, 105, 0.6);
-  border-radius: 16px;
+  border: 3px solid rgba(34, 211, 238, 0.4);  /* Was 2px - THICK CYAN */
+  border-radius: 16px;  /* Was 14px */
   box-shadow: 
-    inset 0 2px 4px rgba(0, 0, 0, 0.5),
+    inset 0 3px 5px rgba(0, 0, 0, 0.5),
+    0 0 20px rgba(34, 211, 238, 0.15),  /* Cyan glow */
     0 6px 16px rgba(0, 0, 0, 0.5);
 }
 
 /* ============================================================================
-   HEADER
+   HEADER - LARGER
    ============================================================================ */
 
 .header {
-  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;  /* Was 16px */
+  padding-bottom: 14px;  /* Was 12px */
+  border-bottom: 2px solid rgba(71, 85, 105, 0.3);  /* Thicker */
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;  /* Was 8px */
+}
+
+.icon {
+  font-size: 18px;  /* Was 16px */
+  filter: grayscale(0.2);
 }
 
 .label {
-  font-family: 'Monaco', 'Roboto Mono', 'JetBrains Mono', monospace;
-  font-size: 13px;
+  font-size: 12px;  /* Was 11px */
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 2px;
-  color: #a5b4cf;
+  letter-spacing: 2px;  /* Was 1.5px */
+  color: #22d3ee;  /* Cyan instead of grey */
+}
+
+.scoreBadge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 6px 12px;  /* Bigger */
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.2));
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  border-radius: 8px;
+}
+
+.scoreValue {
+  font-size: 18px;  /* Was 16px */
+  font-weight: 800;
+  color: #10b981;
+  line-height: 1;
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+}
+
+.scoreLabel {
+  font-size: 9px;  /* Was 8px */
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: #6ee7b7;
+  text-transform: uppercase;
 }
 
 /* ============================================================================
-   CURRENT SELECTION (Button)
+   CURRENT SELECTION - EXTRA LARGE BUTTON
    ============================================================================ */
 
 .current {
-  /* Reset */
   all: unset;
   box-sizing: border-box;
   
-  /* Layout */
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 20px 22px;
-  min-height: 72px;
+  padding: 20px 22px;  /* Was 16px 18px - MUCH BIGGER */
   
-  /* Background */
   background: rgba(17, 24, 39, 0.9);
   
-  /* Border */
-  border: 3px solid rgba(34, 211, 238, 0.5);
+  border: 2px solid rgba(34, 211, 238, 0.5);  /* Thicker, brighter */
   border-radius: 12px;
   
-  /* Shadow */
   box-shadow: 
     inset 0 2px 4px rgba(0, 0, 0, 0.4),
+    0 0 12px rgba(34, 211, 238, 0.2),  /* Cyan glow */
     0 4px 8px rgba(0, 0, 0, 0.4);
   
-  /* Cursor */
   cursor: pointer;
-  
-  /* Transition */
   transition: all 0.3s ease;
 }
 
 .current:hover {
   border-color: rgba(34, 211, 238, 0.7);
   box-shadow: 
-    inset 0 2px 4px rgba(0, 0, 0, 0.3),
-    0 0 16px rgba(34, 211, 238, 0.25),
-    0 4px 8px rgba(0, 0, 0, 0.4);
+    inset 0 2px 4px rgba(0, 0, 0, 0.4),
+    0 0 20px rgba(34, 211, 238, 0.3),
+    0 6px 12px rgba(0, 0, 0, 0.5);
+  transform: translateY(-1px);
 }
 
 .currentContent {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;  /* Was 10px */
   flex: 1;
 }
 
 .currentIcon {
-  color: #22d3ee;
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+  font-size: 28px;  /* Was 24px - HUGE */
+  filter: grayscale(0);
 }
 
 .currentText {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 4px;  /* Was 2px */
 }
 
 .currentLabel {
-  font-size: 20px;
+  font-size: 18px;  /* Was 16px - HUGE */
   font-weight: 700;
   color: #22d3ee;
   letter-spacing: 1px;
-  line-height: 1.2;
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.3);
 }
 
 .currentDesc {
-  font-size: 14px;
-  color: #a5b4cf;
+  font-size: 13px;  /* Was 12px */
+  color: #cbd5e1;  /* Brighter */
   font-weight: 500;
-  line-height: 1.3;
 }
 
 .chevron {
-  font-size: 16px;
-  color: #a5b4cf;
-  margin-left: 16px;
-  transition: transform 0.2s ease;
+  font-size: 14px;  /* Was 12px */
+  color: #22d3ee;  /* Cyan */
+  margin-left: 14px;
 }
 
 /* ============================================================================
-   DROPDOWN MENU
+   DROPDOWN MENU - EXTRA LARGE
    ============================================================================ */
 
 .dropdown {
@@ -134,36 +165,32 @@
   top: 100%;
   left: 0;
   right: 0;
-  margin-top: 12px;
+  margin-top: 12px;  /* Was 10px */
   z-index: 100;
   
-  /* Background - Darker for more prominence */
   background: linear-gradient(
     135deg,
     rgba(15, 23, 42, 0.98),
     rgba(17, 24, 39, 0.98)
   );
   
-  /* Border - Thicker and more visible */
-  border: 3px solid rgba(71, 85, 105, 0.6);
+  border: 3px solid rgba(34, 211, 238, 0.4);  /* Thick cyan border */
   border-radius: 14px;
   
-  /* Shadow - Much stronger for depth */
   box-shadow: 
-    inset 0 2px 4px rgba(0, 0, 0, 0.5),
+    inset 0 3px 5px rgba(0, 0, 0, 0.5),
+    0 0 24px rgba(34, 211, 238, 0.2),  /* Cyan glow */
     0 12px 36px rgba(0, 0, 0, 0.7);
   
-  /* Backdrop */
   backdrop-filter: blur(20px);
   
-  /* Animation */
   animation: dropdownSlide 0.2s ease-out;
 }
 
 @keyframes dropdownSlide {
   from {
     opacity: 0;
-    transform: translateY(-8px);
+    transform: translateY(-10px);
   }
   to {
     opacity: 1;
@@ -172,29 +199,22 @@
 }
 
 /* ============================================================================
-   DROPDOWN OPTIONS
+   DROPDOWN OPTIONS - EXTRA LARGE
    ============================================================================ */
 
 .option {
-  /* Reset */
   all: unset;
   box-sizing: border-box;
   
-  /* Layout - Larger padding for easier clicking */
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 16px;  /* Was 14px */
   width: 100%;
-  padding: 18px 24px;
-  min-height: 68px;
+  padding: 18px 22px;  /* Was 16px 20px - BIGGER */
   
-  /* Border - More visible */
   border-bottom: 1px solid rgba(71, 85, 105, 0.25);
   
-  /* Cursor */
   cursor: pointer;
-  
-  /* Transition */
   transition: all 0.2s ease;
 }
 
@@ -208,43 +228,30 @@
 }
 
 .option:hover {
-  background: rgba(34, 211, 238, 0.12);
+  background: rgba(34, 211, 238, 0.1);
 }
 
 .option.active {
-  background: rgba(34, 211, 238, 0.18);
+  background: rgba(34, 211, 238, 0.15);
 }
 
 .optionIcon {
-  color: #94a3b8;
-  flex-shrink: 0;
-  width: 28px;
-  height: 28px;
-  transition: color 0.2s ease;
-}
-
-.option:hover .optionIcon {
-  color: #22d3ee;
-}
-
-.option.active .optionIcon {
-  color: #22d3ee;
+  font-size: 26px;  /* Was 22px - HUGE */
+  filter: grayscale(0);
 }
 
 .optionText {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;  /* Was 2px */
   flex: 1;
 }
 
 .optionLabel {
-  font-size: 18px;
+  font-size: 17px;  /* Was 15px - HUGE */
   font-weight: 700;
   color: #e2e8f0;
   letter-spacing: 0.6px;
-  transition: color 0.2s ease;
-  line-height: 1.2;
 }
 
 .option:hover .optionLabel {
@@ -256,17 +263,26 @@
 }
 
 .optionDesc {
-  font-size: 13px;
-  color: #a5b4cf;
+  font-size: 12px;  /* Was 11px */
+  color: #cbd5e1;  /* Brighter */
   font-weight: 500;
-  line-height: 1.3;
 }
 
 .checkmark {
-  font-size: 20px;
+  font-size: 16px;  /* Was 14px */
   color: #22d3ee;
-  margin-left: 12px;
-  font-weight: 700;
+  margin-left: 10px;
+}
+
+/* ============================================================================
+   OVERLAY
+   ============================================================================ */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  background: transparent;
 }
 
 /* ============================================================================
@@ -274,40 +290,16 @@
    ============================================================================ */
 
 @media (max-width: 1400px) {
-  .container {
-    padding: 22px;
-  }
-  
-  .current {
-    padding: 18px 20px;
-    min-height: 64px;
-  }
-  
-  .currentIcon {
-    width: 28px;
-    height: 28px;
-  }
-  
   .currentLabel {
-    font-size: 18px;
+    font-size: 16px;
   }
   
   .currentDesc {
     font-size: 12px;
   }
   
-  .option {
-    padding: 16px 20px;
-    min-height: 60px;
-  }
-  
-  .optionIcon {
-    width: 24px;
-    height: 24px;
-  }
-  
   .optionLabel {
-    font-size: 16px;
+    font-size: 15px;
   }
   
   .optionDesc {
