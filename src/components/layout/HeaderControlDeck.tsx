@@ -109,7 +109,7 @@ const ControlButton: React.FC<ControlButtonProps> = ({
   >
     <Icon 
       size={18} 
-      className={active ? "text-cyan-400" : "group-hover:text-cyan-200"} 
+      className="text-cyan-400"
     />
     {/* Typical platform font size */}
     <span className="font-mono text-[13px] font-bold tracking-wider uppercase">
