@@ -250,12 +250,13 @@
 }
 
 .buttonSubtitle {
-  font-size: 9px;
+  font-size: 11px;  /* Increased from 9px */
   color: #94a3b8;
   font-weight: 400;
   letter-spacing: 0.05em;
   margin-top: 2px;
   transition: color 0.3s ease;
+  line-height: 1.4;
 }
 
 .runButton:hover .buttonSubtitle {
@@ -291,11 +292,12 @@
 }
 
 .scanLine {
-  font-size: 10px;
+  font-size: 12px;  /* Increased from 10px for readability */
   font-family: 'Monaco', 'Roboto Mono', 'JetBrains Mono', monospace;
   color: #22d3ee;
   animation: scanPulse 1.5s ease-in-out infinite;
   opacity: 0.7;
+  line-height: 1.6;
 }
 
 .scanLine:nth-child(2) { animation-delay: 0.2s; }
@@ -385,7 +387,7 @@
 
 .resultTitle {
   font-family: 'Monaco', 'Roboto Mono', 'JetBrains Mono', monospace;
-  font-size: 10px;
+  font-size: 11px;  /* Increased from 10px */
   font-weight: 700;
   margin-bottom: 4px;
   letter-spacing: 0.08em;
@@ -401,9 +403,10 @@
 }
 
 .resultMessage {
-  font-size: 10px;
-  line-height: 1.5;
-  color: #94a3b8;
+  font-size: 13px;  /* Increased from 10px for executive readability */
+  line-height: 1.6;  /* Breathing room */
+  letter-spacing: 0.3px;
+  color: #F1F5F9;  /* Better contrast */
 }
 
 .warning .resultMessage {

@@ -462,23 +462,25 @@
 .bandWarning { composes: chipWarning; }
 .bandCritical { composes: chipCritical; }
 
-/* Card content */
+/* Card content - EXECUTIVE READABILITY */
 .cardText {
-  font-size: 14px;
-  line-height: 1.65;
-  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;  /* Increased for readability */
+  line-height: 1.6;  /* Added breathing room */
+  letter-spacing: 0.3px;  /* Helps small text clarity */
+  color: #F1F5F9;  /* Softer slate for less eye strain */
 }
 
 .cardSubtext {
   margin-top: 10px;
   font-size: 13px;
-  line-height: 1.65;
-  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.6;  /* Added breathing room */
+  letter-spacing: 0.3px;
+  color: rgba(255, 255, 255, 0.75);
 }
 
 .cardMeta {
   margin-top: 10px;
-  font-size: 11px;
+  font-size: 12px;  /* Increased from 11px */
   color: rgba(255, 255, 255, 0.5);
 }
 
@@ -506,8 +508,9 @@
 
 .kvValue {
   font-size: 13px;
-  line-height: 1.65;
-  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.6;  /* Breathing room */
+  letter-spacing: 0.3px;
+  color: #F1F5F9;  /* Better readability */
   overflow-wrap: anywhere;
 }
 
@@ -675,9 +678,10 @@
 .bulletList {
   margin: 10px 0 0;
   padding-left: 18px;
-  color: rgba(255, 255, 255, 0.82);
-  font-size: 14px;
-  line-height: 1.65;
+  color: #F1F5F9;  /* Better readability */
+  font-size: 13px;
+  line-height: 1.6;  /* Breathing room */
+  letter-spacing: 0.3px;
 }
 
 .bulletItem {
@@ -710,10 +714,11 @@
 }
 
 .accordionQuestion {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.9);
-  line-height: 1.5;
+  line-height: 1.6;
+  letter-spacing: 0.3px;
 }
 
 .accordionIcon {
@@ -730,8 +735,9 @@
 .accordionContent {
   padding: 0 18px 18px;
   font-size: 13px;
-  line-height: 1.65;
-  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.6;  /* Breathing room */
+  letter-spacing: 0.3px;
+  color: #F1F5F9;  /* Better readability */
 }
 
 .accordionLine {
