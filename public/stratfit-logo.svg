@@ -34,8 +34,8 @@
     </linearGradient>
   </defs>
   
-  <!-- Black background -->
-  <rect width="512" height="192" fill="#0a0e14"/>
+  <!-- Light background to match uploaded image -->
+  <rect width="512" height="192" fill="#f8f9fa"/>
   
   <!-- Three mountain peaks centered -->
   <g transform="translate(256, 92)">
@@ -52,7 +52,7 @@
     <polygon points="95,-30 122.5,5 150,32" fill="url(#peak3-highlight)"/>
   </g>
   
-  <!-- STRATFIT text - changed to cyan for dark background -->
+  <!-- STRATFIT text - dark blue as in uploaded image -->
   <text 
     x="256" 
     y="155" 
@@ -61,10 +61,10 @@
     font-size="38" 
     font-weight="800" 
     letter-spacing="6"
-    fill="#22d3ee"
+    fill="#1e3a5f"
   >STRATFIT</text>
   
-  <!-- Scenario Intelligence subtitle -->
+  <!-- Scenario Intelligence subtitle - dark blue as in uploaded image -->
   <text 
     x="256" 
     y="175" 
@@ -73,6 +73,6 @@
     font-size="11" 
     font-weight="600" 
     letter-spacing="2"
-    fill="#64748b"
+    fill="#1e3a5f"
   >— SCENARIO INTELLIGENCE —</text>
 </svg>
