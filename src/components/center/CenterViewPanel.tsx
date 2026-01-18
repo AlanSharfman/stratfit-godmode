@@ -3,6 +3,7 @@ import ScenarioMountain from "@/components/mountain/ScenarioMountain";
 import ViewModeSelector, { type ViewMode } from "@/components/blocks/ViewModeSelector";
 import TerrainToggles from "@/components/blocks/TerrainToggles";
 import CompareTabGodMode from "@/components/compare/CompareTabGodMode";
+import TradeOffsTab from "@/components/tradeoffs/TradeOffsTab";
 
 import { useScenario, useScenarioStore } from "@/state/scenarioStore";
 import { onCausal } from "@/ui/causalEvents";
@@ -101,20 +102,21 @@ export default function CenterViewPanel() {
         )}
 
         {/* ========================================
-            TRADE OFFS VIEW - Strategic Analysis
+            TRADE OFFS VIEW - Interactive Strategic Decision Sculpting
             ======================================== */}
         {viewMode === "impact" && (
           <div className={styles.sfViewWrapper}>
-            <div className={styles.sfPlaceholderView}>
-              <div className={styles.sfPlaceholderIcon}>📊</div>
-              <h2 className={styles.sfPlaceholderTitle}>Trade offs Analysis</h2>
-              <p className={styles.sfPlaceholderText}>
-                Strategic breakdown of scenario consequences and trade-offs
-              </p>
-              <div className={styles.sfPlaceholderHint}>
-                Coming soon: Delta analysis, driver breakdown, cause & effect visualization
-              </div>
-            </div>
+            <TradeOffsTab
+              baseScenario={{
+                cash: 2400000, // $2.4M default starting cash
+                runway: 18,    // 18 months default runway
+                name: scenario
+              }}
+              onScenarioUpdate={(updatedScenario) => {
+                // Handle scenario updates if needed
+                console.log('Trade-offs updated:', updatedScenario);
+              }}
+            />
           </div>
         )}
 
