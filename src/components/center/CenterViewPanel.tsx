@@ -22,7 +22,7 @@ export default function CenterViewPanel() {
     return engineResultToMountainForces(er);
   }, [engineResults, scenario]);
 
-  // Main view mode state (Terrain | Impact | Compare)
+  // Main view mode state (Terrain | Trade offs | Compare)
   const [viewMode, setViewMode] = useState<ViewMode>("terrain");
 
   // Toggle states for Terrain view only
@@ -101,15 +101,15 @@ export default function CenterViewPanel() {
         )}
 
         {/* ========================================
-            IMPACT VIEW - Strategic Analysis
+            TRADE OFFS VIEW - Strategic Analysis
             ======================================== */}
         {viewMode === "impact" && (
           <div className={styles.sfViewWrapper}>
             <div className={styles.sfPlaceholderView}>
               <div className={styles.sfPlaceholderIcon}>📊</div>
-              <h2 className={styles.sfPlaceholderTitle}>Impact Analysis</h2>
+              <h2 className={styles.sfPlaceholderTitle}>Trade offs Analysis</h2>
               <p className={styles.sfPlaceholderText}>
-                Strategic breakdown of scenario consequences
+                Strategic breakdown of scenario consequences and trade-offs
               </p>
               <div className={styles.sfPlaceholderHint}>
                 Coming soon: Delta analysis, driver breakdown, cause & effect visualization
