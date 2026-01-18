@@ -1095,18 +1095,6 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
       <header className="header">
         <div className="header-left">
           <div className="logo">
-            <svg 
-              className="logo-icon" 
-              width="40" 
-              height="40" 
-              viewBox="0 0 40 40" 
-              fill="none"
-            >
-              {/* 3 STACKED BLOCKS */}
-              <rect x="5" y="5" width="30" height="7" fill="#4a7cc9" rx="1" />
-              <rect x="5" y="16" width="30" height="7" fill="#5d8fd4" rx="1" />
-              <rect x="5" y="27" width="30" height="7" fill="#22d3ee" rx="1" />
-            </svg>
             <span className="logo-text">STRATFIT</span>
           </div>
           <div className={`system-status ${activeLeverId ? 'computing' : ''} ${viewMode === 'investor' ? 'investor' : ''}`}>
