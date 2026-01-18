@@ -6,6 +6,8 @@
   background: radial-gradient(ellipse at top, #0a0e1a 0%, #050810 100%);
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Animated background grid effect */
