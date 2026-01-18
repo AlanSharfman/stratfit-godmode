@@ -32,7 +32,7 @@ export default function TerrainToggles({
         aria-pressed={timelineEnabled}
         title="Show 36-month trajectory"
       >
-        <CalendarDays size={12} className={styles.toggleIcon} />
+        <CalendarDays size={18} className={styles.toggleIcon} />
         <span className={styles.toggleLabel}>Timeline</span>
         <span className={styles.toggleIndicator}>
           {timelineEnabled ? "●" : "○"}
@@ -51,7 +51,7 @@ export default function TerrainToggles({
         {/* Thermal noise background on active */}
         <div className={`${styles.thermalOverlay} ${heatmapEnabled ? styles.thermalOverlayActive : ""}`} />
         
-        <Grid3x3 size={12} className={`${styles.toggleIcon} ${styles.toggleIconHeatmap}`} />
+        <Grid3x3 size={18} className={`${styles.toggleIcon} ${styles.toggleIconHeatmap}`} />
         <span className={`${styles.toggleLabel} ${styles.toggleLabelHeatmap}`}>Heatmap</span>
         <span className={`${styles.toggleIndicator} ${styles.toggleIndicatorHeatmap}`}>
           {heatmapEnabled ? "●" : "○"}

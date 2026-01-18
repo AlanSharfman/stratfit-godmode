@@ -75,13 +75,13 @@ export default function HeaderControlDeck({
 
         {/* GROUP 3: SYSTEM (Subtle) */}
         <div className="flex items-center px-2">
-          {/* Replaced big "Take Tour" button with a subtle help icon */}
+          {/* Replaced big "Take Tour" button with a subtle help icon - ENLARGED */}
           <button 
-            className="p-1.5 text-slate-500 hover:text-cyan-400 transition-colors rounded-full hover:bg-white/5"
+            className="p-2.5 text-slate-500 hover:text-cyan-400 transition-colors rounded-full hover:bg-white/5 min-h-[44px] min-w-[44px] flex items-center justify-center"
             title="Take the tour"
             onClick={onHelp}
           >
-            <HelpCircle size={14} />
+            <HelpCircle size={18} />
           </button>
         </div>
       </div>
@@ -106,19 +106,19 @@ const ControlButton: React.FC<ControlButtonProps> = ({
   <button 
     onClick={onClick}
     className={`
-      flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 group
+      flex items-center gap-2.5 px-4 py-2.5 rounded-full transition-all duration-300 group min-h-[44px]
       ${active 
-        ? 'bg-cyan-500/10 border border-cyan-500/50 text-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.2)]' 
-        : 'border border-transparent hover:bg-white/5 hover:border-white/10 text-slate-400 hover:text-white'
+        ? 'bg-cyan-500/10 border-2 border-cyan-500/50 text-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.2)]' 
+        : 'border-2 border-transparent hover:bg-white/5 hover:border-white/10 text-slate-400 hover:text-white'
       }
     `}
   >
     <Icon 
-      size={12} 
+      size={16} 
       className={active ? "text-cyan-400" : "group-hover:text-cyan-200"} 
     />
-    {/* MONOSPACE IS KEY HERE */}
-    <span className="font-mono text-[10px] font-bold tracking-wider uppercase">
+    {/* MONOSPACE IS KEY HERE - ENLARGED for demo safety */}
+    <span className="font-mono text-[12px] font-bold tracking-wider uppercase">
       {label}
     </span>
   </button>
