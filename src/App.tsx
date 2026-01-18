@@ -1096,7 +1096,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
         <div className="header-left">
           <div className="logo">
             <img 
-              src="/assets/Stratfit Logo.jpg" 
+              src="/stratfit-logo.svg" 
               alt="STRATFIT" 
               className="logo-image"
             />
