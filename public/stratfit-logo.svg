@@ -1,4 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 192" width="512" height="192">
+  <!-- BLACK BACKGROUND -->
+  <rect width="512" height="192" fill="#000000"/>
+  
   <defs>
     <!-- Left peak gradients -->
     <linearGradient id="peak1-base" x1="0%" y1="100%" x2="50%" y2="0%">
@@ -34,9 +37,6 @@
     </linearGradient>
   </defs>
   
-  <!-- Light background to match uploaded image -->
-  <rect width="512" height="192" fill="#f8f9fa"/>
-  
   <!-- Three mountain peaks centered -->
   <g transform="translate(256, 92)">
     <!-- Left peak -->
@@ -52,7 +52,7 @@
     <polygon points="95,-30 122.5,5 150,32" fill="url(#peak3-highlight)"/>
   </g>
   
-  <!-- STRATFIT text - dark blue as in uploaded image -->
+  <!-- STRATFIT text - WHITE for black background -->
   <text 
     x="256" 
     y="155" 
@@ -61,10 +61,10 @@
     font-size="38" 
     font-weight="800" 
     letter-spacing="6"
-    fill="#1e3a5f"
+    fill="#ffffff"
   >STRATFIT</text>
   
-  <!-- Scenario Intelligence subtitle - dark blue as in uploaded image -->
+  <!-- Scenario Intelligence subtitle - LIGHT GRAY for black background -->
   <text 
     x="256" 
     y="175" 
@@ -73,6 +73,6 @@
     font-size="11" 
     font-weight="600" 
     letter-spacing="2"
-    fill="#1e3a5f"
+    fill="#94a3b8"
   >— SCENARIO INTELLIGENCE —</text>
 </svg>
