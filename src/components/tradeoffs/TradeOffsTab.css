@@ -1,0 +1,414 @@
+/* Trade-offs Tab Enhanced Styling */
+
+.tradeoffs-container {
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(ellipse at top, #0a0e1a 0%, #050810 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Animated background grid */
+.tradeoffs-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: gridMove 20s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes gridMove {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(50px, 50px);
+  }
+}
+
+/* Slider container hover effects */
+.slider-container {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.slider-container:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 212, 255, 0.2);
+}
+
+.slider-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -2px;
+  width: 2px;
+  height: 100%;
+  background: linear-gradient(180deg, transparent, #00d4ff, transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.slider-container:hover::before {
+  opacity: 1;
+}
+
+/* Custom range slider styling */
+input[type="range"] {
+  position: relative;
+  z-index: 2;
+}
+
+input[type="range"]:focus {
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 4px;
+}
+
+input[type="range"]::-moz-range-track {
+  height: 8px;
+  border-radius: 4px;
+}
+
+/* Slider thumb animations */
+input[type="range"]::-webkit-slider-thumb {
+  transition: all 0.2s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+input[type="range"]::-webkit-slider-thumb:active {
+  transform: scale(0.95);
+}
+
+input[type="range"]::-moz-range-thumb {
+  transition: all 0.2s ease;
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  transform: scale(1.2);
+}
+
+input[type="range"]::-moz-range-thumb:active {
+  transform: scale(0.95);
+}
+
+/* Template button styling */
+.template-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.template-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  transform: translate(-50%, -50%);
+  transition: width 0.3s ease, height 0.3s ease;
+}
+
+.template-button:hover::before {
+  width: 200%;
+  height: 200%;
+}
+
+/* Metrics display animations */
+.metric-row {
+  animation: slideIn 0.4s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Value change indicator */
+.value-change {
+  position: relative;
+  animation: pulse 0.5s ease-out;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Mountain overlay metrics */
+.mountain-metrics-overlay {
+  backdrop-filter: blur(10px);
+  animation: fadeInScale 0.5s ease-out;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Glow effects for active states */
+.glow-green {
+  box-shadow: 0 0 20px rgba(0, 255, 157, 0.3);
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
+.glow-red {
+  box-shadow: 0 0 20px rgba(255, 71, 87, 0.3);
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
+.glow-blue {
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+  0%, 100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.2);
+  }
+}
+
+/* Scrollbar styling for slider panel */
+.slider-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.slider-panel::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.slider-panel::-webkit-scrollbar-thumb {
+  background: rgba(0, 212, 255, 0.3);
+  border-radius: 3px;
+}
+
+.slider-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 212, 255, 0.5);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1400px) {
+  .slider-container {
+    padding: 16px;
+  }
+  
+  .template-button {
+    padding: 10px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .tradeoffs-main-content {
+    flex-direction: column;
+  }
+  
+  .slider-panel {
+    max-height: 400px;
+  }
+}
+
+/* Print styling */
+@media print {
+  .tradeoffs-container::before {
+    display: none;
+  }
+  
+  input[type="range"]::-webkit-slider-thumb {
+    print-color-adjust: exact;
+  }
+}
+
+/* Accessibility - Focus states */
+.template-button:focus-visible,
+input[type="range"]:focus-visible {
+  outline: 2px solid #00d4ff;
+  outline-offset: 2px;
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .slider-container {
+    border: 2px solid white;
+  }
+  
+  input[type="range"]::-webkit-slider-thumb {
+    border: 3px solid white;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .slider-container,
+  .template-button,
+  input[type="range"]::-webkit-slider-thumb {
+    transition: none;
+    animation: none;
+  }
+  
+  .tradeoffs-container::before {
+    animation: none;
+  }
+}
+
+/* Interactive state transitions */
+.interactive-element {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.interactive-element:active {
+  transform: scale(0.98);
+}
+
+/* Label emphasis on hover */
+.trade-label {
+  transition: all 0.3s ease;
+}
+
+.trade-label:hover {
+  text-shadow: 0 0 10px currentColor;
+  transform: translateX(2px);
+}
+
+/* Center marker styling */
+.center-marker {
+  animation: markerPulse 2s ease-in-out infinite;
+}
+
+@keyframes markerPulse {
+  0%, 100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+/* Value indicator animation */
+.value-indicator {
+  animation: indicatorFloat 1.5s ease-in-out infinite;
+}
+
+@keyframes indicatorFloat {
+  0%, 100% {
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    transform: translateX(-50%) translateY(-3px);
+  }
+}
+
+/* Impact badge styling */
+.impact-badge {
+  position: relative;
+  display: inline-block;
+}
+
+.impact-badge::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: inherit;
+  opacity: 0.5;
+  transform: translate(-50%, -50%) scale(1);
+  animation: ripple 2s ease-out infinite;
+}
+
+@keyframes ripple {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* Tooltip styling for slider descriptions */
+.slider-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(10, 14, 26, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 11px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 100;
+}
+
+.slider-container:hover .slider-tooltip {
+  opacity: 1;
+}
+
+/* Loading state */
+.loading-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.0) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+

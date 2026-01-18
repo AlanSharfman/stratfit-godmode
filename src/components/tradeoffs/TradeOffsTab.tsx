@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
+import './TradeOffsTab.css';
 
 interface TradeOffSlider {
   id: string;
@@ -167,30 +168,10 @@ const TradeOffsTab: React.FC<TradeOffsTabProps> = ({ onScenarioUpdate, baseScena
   };
 
   return (
-    <div style={{
-      width: '100%',
-      height: '100%',
-      backgroundColor: '#0a0e1a',
+    <div className="tradeoffs-container" style={{
       display: 'flex',
-      flexDirection: 'column',
-      overflow: 'hidden',
-      position: 'relative'
+      flexDirection: 'column'
     }}>
-      {/* Background grid effect */}
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundImage: `
-          linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px)
-        `,
-        backgroundSize: '50px 50px',
-        pointerEvents: 'none',
-        zIndex: 0
-      }} />
 
       {/* Header */}
       <div style={{
@@ -277,6 +258,7 @@ const TradeOffsTab: React.FC<TradeOffsTabProps> = ({ onScenarioUpdate, baseScena
                 <button
                   key={template.id}
                   onClick={() => applyTemplate(template.id)}
+                  className="template-button"
                   style={{
                     padding: '12px',
                     background: activeTemplate === template.id
@@ -314,7 +296,7 @@ const TradeOffsTab: React.FC<TradeOffsTabProps> = ({ onScenarioUpdate, baseScena
           </div>
 
           {/* Trade-off Sliders */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px', overflowY: 'auto', paddingRight: '8px' }}>
+          <div className="slider-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px', overflowY: 'auto', paddingRight: '8px' }}>
             {tradeOffs.map((tradeOff) => (
               <TradeOffSliderComponent
                 key={tradeOff.id}
@@ -371,12 +353,11 @@ const TradeOffsTab: React.FC<TradeOffsTabProps> = ({ onScenarioUpdate, baseScena
           </Canvas>
 
           {/* Overlay metrics on mountain */}
-          <div style={{
+          <div className="mountain-metrics-overlay" style={{
             position: 'absolute',
             top: '20px',
             right: '20px',
             background: 'rgba(10, 14, 26, 0.9)',
-            backdropFilter: 'blur(10px)',
             border: '1px solid rgba(0, 212, 255, 0.3)',
             borderRadius: '12px',
             padding: '16px',
@@ -446,6 +427,7 @@ const TradeOffSliderComponent: React.FC<{
 
   return (
     <div
+      className="slider-container"
       onMouseEnter={onHover}
       onMouseLeave={onLeave}
       style={{
@@ -457,7 +439,6 @@ const TradeOffSliderComponent: React.FC<{
           ? '1px solid rgba(0, 212, 255, 0.3)'
           : '1px solid rgba(255, 255, 255, 0.1)',
         borderRadius: '12px',
-        transition: 'all 0.3s ease',
         cursor: 'pointer'
       }}
     >
@@ -510,7 +491,7 @@ const TradeOffSliderComponent: React.FC<{
       {/* Slider Track */}
       <div style={{ position: 'relative', marginTop: '16px' }}>
         {/* Center marker */}
-        <div style={{
+        <div className="center-marker" style={{
           position: 'absolute',
           left: '50%',
           top: '-8px',
@@ -548,11 +529,10 @@ const TradeOffSliderComponent: React.FC<{
         />
 
         {/* Value indicator */}
-        <div style={{
+        <div className="value-indicator" style={{
           position: 'absolute',
           left: `${(tradeOff.value + 100) / 2}%`,
           top: '20px',
-          transform: 'translateX(-50%)',
           color: color,
           fontSize: '11px',
           fontWeight: '700',
@@ -700,7 +680,7 @@ const MetricsDisplay: React.FC<{ metrics: any; baseScenario: any }> = ({ metrics
           delta={runwayDelta}
           format={(v) => `${Math.round(v)}mo`}
         />
-        <div style={{
+        <div className="metric-row" style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -710,7 +690,7 @@ const MetricsDisplay: React.FC<{ metrics: any; baseScenario: any }> = ({ metrics
           <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px' }}>
             Risk Level
           </span>
-          <span style={{
+          <span className={metrics.risk > 70 ? 'glow-red' : metrics.risk > 40 ? 'impact-badge' : 'glow-green'} style={{
             color: metrics.risk > 70 ? '#ff4757' : metrics.risk > 40 ? '#ffa502' : '#00ff9d',
             fontSize: '13px',
             fontWeight: '700'
@@ -718,7 +698,7 @@ const MetricsDisplay: React.FC<{ metrics: any; baseScenario: any }> = ({ metrics
             {Math.round(metrics.risk)}%
           </span>
         </div>
-        <div style={{
+        <div className="metric-row" style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -727,7 +707,7 @@ const MetricsDisplay: React.FC<{ metrics: any; baseScenario: any }> = ({ metrics
           <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px' }}>
             Growth Potential
           </span>
-          <span style={{
+          <span className="glow-blue" style={{
             color: '#00d4ff',
             fontSize: '13px',
             fontWeight: '700'
@@ -751,7 +731,7 @@ const MetricDelta: React.FC<{
   const deltaColor = isPositive ? '#00ff9d' : '#ff4757';
 
   return (
-    <div style={{
+    <div className="metric-row" style={{
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
@@ -766,7 +746,7 @@ const MetricDelta: React.FC<{
           {format(value)}
         </span>
         {Math.abs(delta) > 0.01 && (
-          <span style={{
+          <span className="value-change" style={{
             color: deltaColor,
             fontSize: '11px',
             fontWeight: '600'
