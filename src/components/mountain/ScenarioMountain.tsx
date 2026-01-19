@@ -127,18 +127,25 @@ interface MassifPeak {
 }
 
 const MASSIF_PEAKS: MassifPeak[] = [
-  // === PRIMARY PEAKS (4 CLEARLY VISIBLE) ===
-  { x: -10, z: -1.5, amplitude: 1.5, sigmaX: 4.5, sigmaZ: 4.0 },  // LEFT PEAK
-  { x: 0, z: -2, amplitude: 1.8, sigmaX: 4.0, sigmaZ: 3.5 },      // CENTER PEAK (tallest)
-  { x: 10, z: -1.5, amplitude: 1.4, sigmaX: 4.5, sigmaZ: 4.0 },   // RIGHT PEAK
-  { x: -20, z: 0, amplitude: 1.0, sigmaX: 5.0, sigmaZ: 4.5 },     // FAR LEFT PEAK (4th)
+  // === PRIMARY PEAKS (The Big 3) ===
+  { x: 0, z: -2, amplitude: 2.0, sigmaX: 4.0, sigmaZ: 3.5 },      // CENTER PEAK (tallest & dominant)
+  { x: -12, z: -1.5, amplitude: 1.6, sigmaX: 4.5, sigmaZ: 4.0 },  // LEFT MAJOR PEAK
+  { x: 12, z: -1.5, amplitude: 1.5, sigmaX: 4.5, sigmaZ: 4.0 },   // RIGHT MAJOR PEAK
   
-  // === VALLEY UNDULATIONS (between peaks) ===
-  { x: -5, z: 1, amplitude: 0.6, sigmaX: 3.5, sigmaZ: 3.0 },      // Left valley rise
-  { x: 5, z: 1, amplitude: 0.55, sigmaX: 3.5, sigmaZ: 3.0 },      // Right valley rise
+  // === 4 NEW PROMINENT PEAKS (clearly visible additions) ===
+  { x: -22, z: -0.5, amplitude: 1.2, sigmaX: 4.0, sigmaZ: 3.8 },  // 🆕 FAR LEFT PEAK
+  { x: 22, z: -0.5, amplitude: 1.1, sigmaX: 4.0, sigmaZ: 3.8 },   // 🆕 FAR RIGHT PEAK  
+  { x: -6, z: 0, amplitude: 1.0, sigmaX: 3.5, sigmaZ: 3.2 },      // 🆕 LEFT-CENTER PEAK
+  { x: 6, z: 0, amplitude: 0.95, sigmaX: 3.5, sigmaZ: 3.2 },      // 🆕 RIGHT-CENTER PEAK
   
-  // === BACKGROUND ===
-  { x: 0, z: 5, amplitude: 0.35, sigmaX: 6.0, sigmaZ: 5.0 },      // Distant background
+  // === SECONDARY UNDULATIONS (valley rises) ===
+  { x: -16, z: 1, amplitude: 0.7, sigmaX: 3.8, sigmaZ: 3.4 },     // Mid-left valley
+  { x: 16, z: 1, amplitude: 0.65, sigmaX: 3.8, sigmaZ: 3.4 },     // Mid-right valley
+  
+  // === BACKGROUND DEPTH ===
+  { x: -8, z: 4, amplitude: 0.5, sigmaX: 5.0, sigmaZ: 4.5 },      // Back left
+  { x: 8, z: 4, amplitude: 0.45, sigmaX: 5.0, sigmaZ: 4.5 },      // Back right
+  { x: 0, z: 6, amplitude: 0.35, sigmaX: 6.5, sigmaZ: 5.5 },      // Far background center
 ];
 
 // ============================================================================
