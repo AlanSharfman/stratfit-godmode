@@ -27,23 +27,23 @@ import { buildPeakModel, LeverId } from "@/logic/mountainPeakModel";
 import { ScenarioId, SCENARIO_COLORS, useScenarioStore } from "@/state/scenarioStore";
 
 // ============================================================================
-// CONSTANTS — STABLE VERSION
+// CONSTANTS — ENHANCED VERSION (Wider, More Undulating)
 // ============================================================================
 
-const GRID_W = 120;
-const GRID_D = 60;
-const MESH_W = 50;
-const MESH_D = 25;
-const ISLAND_RADIUS = 22;
+const GRID_W = 140;           // WIDER grid for more detail
+const GRID_D = 70;            // DEEPER grid for more depth
+const MESH_W = 65;            // WIDER mesh (was 50) - fills 80% of container
+const MESH_D = 30;            // DEEPER mesh (was 25)
+const ISLAND_RADIUS = 28;     // LARGER island radius (was 22)
 
-const BASE_SCALE = 4.5;      // Increased: data-driven shape dominates
-const PEAK_SCALE = 3.0;      // Reduced: less drop when lever released
-const MASSIF_SCALE = 4.5;    // Slightly increased for stable backdrop
-const RIDGE_SHARPNESS = 1.4;
-const CLIFF_BOOST = 1.15;
+const BASE_SCALE = 5.0;       // Slightly increased for more dramatic peaks
+const PEAK_SCALE = 3.2;       // Slightly increased for more definition
+const MASSIF_SCALE = 5.0;     // Increased for more undulating background
+const RIDGE_SHARPNESS = 1.35; // Slightly softer for smoother undulations
+const CLIFF_BOOST = 1.12;
 
-const SOFT_CEILING = 9.0;
-const CEILING_START = 7.0;
+const SOFT_CEILING = 10.0;    // Higher ceiling for taller peaks
+const CEILING_START = 7.5;
 
 // ============================================================================
 // DETERMINISTIC NOISE
@@ -127,12 +127,19 @@ interface MassifPeak {
 }
 
 const MASSIF_PEAKS: MassifPeak[] = [
-  { x: 0, z: -2, amplitude: 1.5, sigmaX: 2.8, sigmaZ: 2.4 },
-  { x: -10, z: -1, amplitude: 1.2, sigmaX: 3.0, sigmaZ: 2.6 },
-  { x: 11, z: -1.5, amplitude: 1.1, sigmaX: 2.8, sigmaZ: 2.5 },
-  { x: -3, z: 3, amplitude: 0.85, sigmaX: 3.5, sigmaZ: 3.0 },
-  { x: -16, z: 2, amplitude: 0.6, sigmaX: 4.0, sigmaZ: 3.5 },
-  { x: 17, z: 1, amplitude: 0.55, sigmaX: 3.8, sigmaZ: 3.2 },
+  // Main central peaks
+  { x: 0, z: -2, amplitude: 1.6, sigmaX: 3.0, sigmaZ: 2.6 },
+  { x: -10, z: -1, amplitude: 1.3, sigmaX: 3.2, sigmaZ: 2.8 },
+  { x: 11, z: -1.5, amplitude: 1.2, sigmaX: 3.0, sigmaZ: 2.7 },
+  // Secondary peaks for more undulation
+  { x: -3, z: 3, amplitude: 0.95, sigmaX: 3.8, sigmaZ: 3.2 },
+  { x: -16, z: 2, amplitude: 0.75, sigmaX: 4.2, sigmaZ: 3.8 },
+  { x: 17, z: 1, amplitude: 0.7, sigmaX: 4.0, sigmaZ: 3.5 },
+  // NEW: Additional peaks for wider, more undulating terrain
+  { x: -22, z: -1, amplitude: 0.55, sigmaX: 3.5, sigmaZ: 3.0 },  // Far left peak
+  { x: 23, z: -0.5, amplitude: 0.5, sigmaX: 3.5, sigmaZ: 3.0 },  // Far right peak
+  { x: 6, z: 4, amplitude: 0.6, sigmaX: 4.0, sigmaZ: 3.5 },      // Mid-right background
+  { x: -8, z: 5, amplitude: 0.5, sigmaX: 4.5, sigmaZ: 4.0 },     // Mid-left background
 ];
 
 // ============================================================================
@@ -451,7 +458,7 @@ function AtmosphericHaze({ riskLevel, viewMode, scenario }: AtmosphericHazeProps
 function SubtleGrid() {
   return (
     <gridHelper 
-      args={[60, 40, "#0a1520", "#0a1520"]} 
+      args={[80, 50, "#0a1520", "#0a1520"]}  // Wider grid (was 60, 40)
       position={[0, -2.5, 0]} 
       rotation={[0, 0, 0]}
     />
@@ -514,6 +521,19 @@ export default function ScenarioMountain({
         background: `radial-gradient(ellipse 70% 50% at 50% 60%, ${colors.glow}, transparent 60%), #060a10`,
       }}
     >
+      {/* CYAN GLOW BEZEL - Subtle premium border */}
+      <div 
+        className="absolute inset-0 pointer-events-none z-10"
+        style={{
+          boxShadow: `
+            inset 0 0 1px 1px rgba(34, 211, 238, 0.15),
+            inset 0 0 20px 2px rgba(34, 211, 238, 0.05),
+            inset 0 0 40px 4px rgba(34, 211, 238, 0.02)
+          `,
+          borderRadius: '12px',
+        }}
+      />
+      
       <AtmosphericHaze 
         riskLevel={riskLevel}
         viewMode={viewMode}
@@ -527,11 +547,12 @@ export default function ScenarioMountain({
         fallback={<div style={{ width: "100%", height: "100%", background: "#0d1117" }} />}
       >
         <Suspense fallback={null}>
-        <PerspectiveCamera makeDefault position={[0, 6, 32]} fov={38} />
-        <ambientLight intensity={0.12} />
-        <directionalLight position={[8, 20, 10]} intensity={0.4} color="#ffffff" />
-        <directionalLight position={[-6, 12, -8]} intensity={0.08} color={colors.primary} />
-        <pointLight position={[0, 8, 0]} intensity={0.1} color={colors.primary} distance={30} decay={2} />
+        {/* Adjusted camera: pulled back to see wider mountain */}
+        <PerspectiveCamera makeDefault position={[0, 7, 38]} fov={42} />
+        <ambientLight intensity={0.14} />
+        <directionalLight position={[10, 22, 12]} intensity={0.45} color="#ffffff" />
+        <directionalLight position={[-8, 14, -10]} intensity={0.1} color={colors.primary} />
+        <pointLight position={[0, 10, 0]} intensity={0.12} color={colors.primary} distance={35} decay={2} />
         
         <Terrain
           dataPoints={dataPoints}
@@ -549,8 +570,8 @@ export default function ScenarioMountain({
           rotateSpeed={0.4}
           minPolarAngle={Math.PI / 4}
           maxPolarAngle={Math.PI / 2.2}
-          minAzimuthAngle={-Math.PI / 5}
-          maxAzimuthAngle={Math.PI / 5}
+          minAzimuthAngle={-Math.PI / 4.5}
+          maxAzimuthAngle={Math.PI / 4.5}
         />
         </Suspense>
       </Canvas>
