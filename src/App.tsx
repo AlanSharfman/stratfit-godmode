@@ -18,6 +18,7 @@ import ScenarioSelector from "./components/ScenarioSelector";
 import ActiveScenario, { type ScenarioType } from "@/components/blocks/ActiveScenario";
 import ScenarioBezel from "./components/kpi/ScenarioBezel";
 import OnboardingSequence from "./components/OnboardingSequenceNew";
+import MonteCarloPanel from "@/components/scenario/MonteCarloPanel";
 import { useScenarioStore, SCENARIO_COLORS } from "@/state/scenarioStore";
 import type { LeverId } from "@/logic/mountainPeakModel";
 import { calculateMetrics } from "@/logic/calculateMetrics";
@@ -1225,9 +1226,14 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
           })()}
         </main>
 
-        {/* RIGHT COLUMN: AI Intelligence */}
+        {/* RIGHT COLUMN: AI Intelligence + Monte Carlo Scenarios */}
         <aside className="right-column" data-tour="intel">
           <AIIntelligence levers={levers} scenario={scenario} />
+          
+          {/* Monte Carlo Scenarios Panel - NEW */}
+          <div style={{ marginTop: '20px' }}>
+            <MonteCarloPanel />
+          </div>
         </aside>
       </div>
     </div>
