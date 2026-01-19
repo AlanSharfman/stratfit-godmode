@@ -27,23 +27,23 @@ import { buildPeakModel, LeverId } from "@/logic/mountainPeakModel";
 import { ScenarioId, SCENARIO_COLORS, useScenarioStore } from "@/state/scenarioStore";
 
 // ============================================================================
-// CONSTANTS — ENHANCED VERSION (Wider, More Undulating)
+// CONSTANTS — PERFORMANCE OPTIMIZED + VISIBLE PEAKS
 // ============================================================================
 
-const GRID_W = 140;           // WIDER grid for more detail
-const GRID_D = 70;            // DEEPER grid for more depth
-const MESH_W = 65;            // WIDER mesh (was 50) - fills 80% of container
-const MESH_D = 30;            // DEEPER mesh (was 25)
-const ISLAND_RADIUS = 28;     // LARGER island radius (was 22)
+const GRID_W = 100;           // REDUCED for performance (was 140)
+const GRID_D = 50;            // REDUCED for performance (was 70)
+const MESH_W = 60;            // Wide enough for good coverage
+const MESH_D = 28;            // Good depth
+const ISLAND_RADIUS = 35;     // MUCH LARGER to show edge peaks (was 28)
 
-const BASE_SCALE = 5.0;       // Slightly increased for more dramatic peaks
-const PEAK_SCALE = 3.2;       // Slightly increased for more definition
-const MASSIF_SCALE = 5.0;     // Increased for more undulating background
-const RIDGE_SHARPNESS = 1.35; // Slightly softer for smoother undulations
-const CLIFF_BOOST = 1.12;
+const BASE_SCALE = 4.8;       // Slightly reduced for smoother look
+const PEAK_SCALE = 3.0;       
+const MASSIF_SCALE = 4.5;     
+const RIDGE_SHARPNESS = 1.3;  // Softer ridges
+const CLIFF_BOOST = 1.08;     // Reduced for gentler edges
 
-const SOFT_CEILING = 10.0;    // Higher ceiling for taller peaks
-const CEILING_START = 7.5;
+const SOFT_CEILING = 9.5;     
+const CEILING_START = 7.0;
 
 // ============================================================================
 // DETERMINISTIC NOISE
@@ -127,23 +127,18 @@ interface MassifPeak {
 }
 
 const MASSIF_PEAKS: MassifPeak[] = [
-  // Main central peaks - THE BIG THREE
-  { x: 0, z: -2, amplitude: 1.8, sigmaX: 3.2, sigmaZ: 2.8 },      // Center peak (tallest)
-  { x: -12, z: -1.5, amplitude: 1.5, sigmaX: 3.4, sigmaZ: 3.0 },  // Left major peak
-  { x: 12, z: -1.5, amplitude: 1.4, sigmaX: 3.2, sigmaZ: 2.9 },   // Right major peak
+  // === PRIMARY PEAKS (4 CLEARLY VISIBLE) ===
+  { x: -10, z: -1.5, amplitude: 1.5, sigmaX: 4.5, sigmaZ: 4.0 },  // LEFT PEAK
+  { x: 0, z: -2, amplitude: 1.8, sigmaX: 4.0, sigmaZ: 3.5 },      // CENTER PEAK (tallest)
+  { x: 10, z: -1.5, amplitude: 1.4, sigmaX: 4.5, sigmaZ: 4.0 },   // RIGHT PEAK
+  { x: -20, z: 0, amplitude: 1.0, sigmaX: 5.0, sigmaZ: 4.5 },     // FAR LEFT PEAK (4th)
   
-  // Secondary peaks - VISIBLE UNDULATIONS
-  { x: -6, z: 0, amplitude: 1.1, sigmaX: 2.8, sigmaZ: 2.5 },      // Left-center valley rise
-  { x: 6, z: 0, amplitude: 1.0, sigmaX: 2.8, sigmaZ: 2.5 },       // Right-center valley rise
+  // === VALLEY UNDULATIONS (between peaks) ===
+  { x: -5, z: 1, amplitude: 0.6, sigmaX: 3.5, sigmaZ: 3.0 },      // Left valley rise
+  { x: 5, z: 1, amplitude: 0.55, sigmaX: 3.5, sigmaZ: 3.0 },      // Right valley rise
   
-  // Tertiary peaks - ROLLING HILLS at edges
-  { x: -18, z: -1, amplitude: 0.9, sigmaX: 3.5, sigmaZ: 3.0 },    // Far left hill
-  { x: 18, z: -1, amplitude: 0.85, sigmaX: 3.5, sigmaZ: 3.0 },    // Far right hill
-  
-  // Background undulations - DEPTH
-  { x: -4, z: 4, amplitude: 0.7, sigmaX: 4.0, sigmaZ: 3.5 },      // Back left
-  { x: 4, z: 4, amplitude: 0.65, sigmaX: 4.0, sigmaZ: 3.5 },      // Back right
-  { x: 0, z: 5, amplitude: 0.5, sigmaX: 5.0, sigmaZ: 4.0 },       // Far back center
+  // === BACKGROUND ===
+  { x: 0, z: 5, amplitude: 0.35, sigmaX: 6.0, sigmaZ: 5.0 },      // Distant background
 ];
 
 // ============================================================================
@@ -290,7 +285,7 @@ const Terrain: React.FC<TerrainProps> = ({
     const targetCols = targetColorsRef.current;
     const currentCols = currentColorsRef.current;
 
-    const smoothing = 0.7; // 🔥 INCREASED from 0.6 - tiny bit more heave/breathing
+    const smoothing = 0.85; // FASTER response for slider performance
     let needsUpdate = false;
 
     for (let i = 0; i < count; i++) {
