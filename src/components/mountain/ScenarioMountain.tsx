@@ -1,10 +1,18 @@
 /**
- * 🚨 STRATFIT CANONICAL MOUNTAIN — FIXED VERSION 🚨
- * 
- * FIXES APPLIED:
- * - Restored proper peak visibility (ISLAND_RADIUS back to 26)
- * - Camera pulled back slightly for better framing
- * - Peaks repositioned to be within visible mask area
+ * 🚨 STRATFIT CANONICAL MOUNTAIN — DO NOT MODIFY 🚨
+ *
+ * This file defines the mountain’s:
+ * - Vertical amplitude
+ * - Noise fields
+ * - Silhouette
+ * - Peak behaviour
+ *
+ * ❌ NO height clamping
+ * ❌ NO normalisation
+ * ❌ NO container-based scaling
+ * ❌ NO UI-driven constraints
+ *
+ * Any layout or KPI changes MUST happen outside this system.
  */
 
 // src/components/mountain/ScenarioMountain.tsx
@@ -19,23 +27,23 @@ import { buildPeakModel, LeverId } from "@/logic/mountainPeakModel";
 import { ScenarioId, SCENARIO_COLORS, useScenarioStore } from "@/state/scenarioStore";
 
 // ============================================================================
-// CONSTANTS — FIXED: Visible peaks, proper sizing
+// CONSTANTS — STABLE VERSION
 // ============================================================================
 
-const GRID_W = 100;           // Good for performance
-const GRID_D = 50;            
-const MESH_W = 55;            // Slightly narrower for better framing
-const MESH_D = 26;            
-const ISLAND_RADIUS = 26;     // FIXED: Back to working value (was 35, too large)
+const GRID_W = 120;
+const GRID_D = 60;
+const MESH_W = 50;
+const MESH_D = 25;
+const ISLAND_RADIUS = 22;
 
-const BASE_SCALE = 5.2;       // INCREASED from 4.5 - taller base ridges
-const PEAK_SCALE = 3.5;       // INCREASED from 3.0 - more dramatic peaks
-const MASSIF_SCALE = 5.5;     // INCREASED from 4.8 - taller massif peaks     // Slightly increased for visible peaks
-const RIDGE_SHARPNESS = 1.35; 
-const CLIFF_BOOST = 1.1;      
+const BASE_SCALE = 4.5;      // Increased: data-driven shape dominates
+const PEAK_SCALE = 3.0;      // Reduced: less drop when lever released
+const MASSIF_SCALE = 4.5;    // Slightly increased for stable backdrop
+const RIDGE_SHARPNESS = 1.4;
+const CLIFF_BOOST = 1.15;
 
-const SOFT_CEILING = 12.0;     // RAISED from 9.0 - allows taller peaks
-const CEILING_START = 8.0;     // RAISED from 6.5 - compression starts higher
+const SOFT_CEILING = 9.0;
+const CEILING_START = 7.0;
 
 // ============================================================================
 // DETERMINISTIC NOISE
@@ -83,10 +91,10 @@ function paletteForScenario(s: ScenarioId) {
 
   return {
     sky: new THREE.Color("#080C14"),
-    low: new THREE.Color("#0a2830"),
-    mid: primary.clone().lerp(new THREE.Color("#1a2a35"), 0.3),
-    high: new THREE.Color("#ffffff").lerp(primary, 0.18),
-    peak: new THREE.Color("#f0f5f8"),
+    low: new THREE.Color("#0a2830"),  // Less cyan, more neutral dark
+    mid: primary.clone().lerp(new THREE.Color("#1a2a35"), 0.3),  // Desaturated mid
+    high: new THREE.Color("#ffffff").lerp(primary, 0.18),  // Less color at peaks
+    peak: new THREE.Color("#f0f5f8"),  // Slightly warm white
   };
 }
 
@@ -107,7 +115,7 @@ function heightColor(h01: number, pal: ReturnType<typeof paletteForScenario>, il
 }
 
 // ============================================================================
-// MASSIF PEAKS — FIXED: All peaks within ISLAND_RADIUS
+// MASSIF PEAKS — STABLE
 // ============================================================================
 
 interface MassifPeak {
@@ -119,27 +127,16 @@ interface MassifPeak {
 }
 
 const MASSIF_PEAKS: MassifPeak[] = [
-  // === PRIMARY PEAKS (The Big 3) - Centered for visibility ===
-  { x: 0, z: -1, amplitude: 2.2, sigmaX: 3.5, sigmaZ: 3.0 },      // CENTER PEAK (tallest)
-  { x: -10, z: -1, amplitude: 1.7, sigmaX: 4.0, sigmaZ: 3.5 },    // LEFT MAJOR 
-  { x: 10, z: -1, amplitude: 1.6, sigmaX: 4.0, sigmaZ: 3.5 },     // RIGHT MAJOR
-  
-  // === SECONDARY PEAKS (visible undulations) ===
-  { x: -5, z: 1, amplitude: 1.2, sigmaX: 3.0, sigmaZ: 2.8 },      // LEFT-CENTER
-  { x: 5, z: 1, amplitude: 1.1, sigmaX: 3.0, sigmaZ: 2.8 },       // RIGHT-CENTER
-  
-  // === TERTIARY (rolling hills at edges - within radius) ===
-  { x: -15, z: 0, amplitude: 0.9, sigmaX: 3.5, sigmaZ: 3.2 },     // FAR LEFT (moved closer)
-  { x: 15, z: 0, amplitude: 0.85, sigmaX: 3.5, sigmaZ: 3.2 },     // FAR RIGHT (moved closer)
-  
-  // === BACKGROUND DEPTH ===
-  { x: -7, z: 4, amplitude: 0.6, sigmaX: 4.5, sigmaZ: 4.0 },      
-  { x: 7, z: 4, amplitude: 0.55, sigmaX: 4.5, sigmaZ: 4.0 },      
-  { x: 0, z: 5, amplitude: 0.4, sigmaX: 5.5, sigmaZ: 5.0 },       
+  { x: 0, z: -2, amplitude: 1.5, sigmaX: 2.8, sigmaZ: 2.4 },
+  { x: -10, z: -1, amplitude: 1.2, sigmaX: 3.0, sigmaZ: 2.6 },
+  { x: 11, z: -1.5, amplitude: 1.1, sigmaX: 2.8, sigmaZ: 2.5 },
+  { x: -3, z: 3, amplitude: 0.85, sigmaX: 3.5, sigmaZ: 3.0 },
+  { x: -16, z: 2, amplitude: 0.6, sigmaX: 4.0, sigmaZ: 3.5 },
+  { x: 17, z: 1, amplitude: 0.55, sigmaX: 3.8, sigmaZ: 3.2 },
 ];
 
 // ============================================================================
-// TERRAIN COMPONENT
+// TERRAIN COMPONENT — STABLE, NO ERRATIC MOTION
 // ============================================================================
 
 interface TerrainProps {
@@ -168,6 +165,7 @@ const Terrain: React.FC<TerrainProps> = ({
 
   const pal = useMemo(() => paletteForScenario(scenario), [scenario]);
 
+  // Build peak model - no caching to ensure immediate response
   const peakModel = buildPeakModel({
     kpiCount: 7,
     activeKpiIndex,
@@ -182,6 +180,7 @@ const Terrain: React.FC<TerrainProps> = ({
     return geo;
   }, []);
 
+  // Calculate target heights
   useLayoutEffect(() => {
     if (!meshFillRef.current || !meshWireRef.current) return;
 
@@ -239,7 +238,7 @@ const Terrain: React.FC<TerrainProps> = ({
       h += rugged * (0.3 + h * 0.08);
 
       const dist = Math.sqrt(x * x + z * z * 1.4);
-      const mask = Math.max(0, 1 - Math.pow(dist / ISLAND_RADIUS, 1.3));  // REDUCED from 2.0 - less aggressive falloff
+      const mask = Math.max(0, 1 - Math.pow(dist / ISLAND_RADIUS, 2.0));
 
       const n = noise2(x, z) * 0.2;
 
@@ -264,6 +263,7 @@ const Terrain: React.FC<TerrainProps> = ({
     }
   }, [dataPoints, peakModel, pal, activeKpiIndex]);
 
+  // Smooth interpolation - NO erratic motion
   useFrame(() => {
     if (!meshFillRef.current || !meshWireRef.current) return;
     if (!targetHeightsRef.current || !currentHeightsRef.current) return;
@@ -279,12 +279,12 @@ const Terrain: React.FC<TerrainProps> = ({
     const targetCols = targetColorsRef.current;
     const currentCols = currentColorsRef.current;
 
-    const smoothing = 0.8;
+    const smoothing = 0.7; // 🔥 INCREASED from 0.6 - tiny bit more heave/breathing
     let needsUpdate = false;
 
     for (let i = 0; i < count; i++) {
       const diff = targets[i] - currents[i];
-      if (Math.abs(diff) > 0.0001) {
+      if (Math.abs(diff) > 0.0001) { // 🔥 tighter threshold (was 0.0002) - less settling delay
         currents[i] += diff * smoothing;
         needsUpdate = true;
       } else {
@@ -295,7 +295,7 @@ const Terrain: React.FC<TerrainProps> = ({
       for (let c = 0; c < 3; c++) {
         const ci = i * 3 + c;
         const colDiff = targetCols[ci] - currentCols[ci];
-        if (Math.abs(colDiff) > 0.0003) {
+        if (Math.abs(colDiff) > 0.0003) { // 🔥 tighter threshold (was 0.0005)
           currentCols[ci] += colDiff * smoothing;
         } else {
           currentCols[ci] = targetCols[ci];
@@ -355,20 +355,26 @@ function AtmosphericHaze({ riskLevel, viewMode, scenario }: AtmosphericHazeProps
                        scenario === "downside" ? 1.1 : 
                        scenario === "upside" ? 0.85 : 1.0;
   
+  // Reduced base opacity for bottom haze
   const baseOpacity = 0.18 + (riskFactor * 0.08 * scenarioTone);
   const finalOpacity = baseOpacity * viewFactor;
+  
+  // Altitude haze opacity (above mountain)
   const altitudeOpacity = 0.08 * viewFactor;
 
   return (
     <div className="atmospheric-haze">
+      {/* ALTITUDE HAZE - Above mountain (new) */}
       <div 
         className="haze-layer haze-altitude"
         style={{ opacity: altitudeOpacity }}
       />
+      {/* PRESSURE BAND - Subtle horizontal band above peak */}
       <div 
         className="haze-layer haze-pressure-band"
         style={{ opacity: altitudeOpacity * 0.6 }}
       />
+      {/* REDUCED bottom haze layers */}
       <div 
         className="haze-layer haze-deep"
         style={{ opacity: finalOpacity * 0.35 }}
@@ -392,6 +398,7 @@ function AtmosphericHaze({ riskLevel, viewMode, scenario }: AtmosphericHazeProps
           inset: 0;
         }
 
+        /* ALTITUDE HAZE - vertical gradient above mountain */
         .haze-altitude {
           background: linear-gradient(
             to bottom,
@@ -402,6 +409,7 @@ function AtmosphericHaze({ riskLevel, viewMode, scenario }: AtmosphericHazeProps
           );
         }
 
+        /* PRESSURE BAND - subtle horizontal density above peak */
         .haze-pressure-band {
           background: linear-gradient(
             to bottom,
@@ -413,6 +421,7 @@ function AtmosphericHaze({ riskLevel, viewMode, scenario }: AtmosphericHazeProps
           filter: blur(8px);
         }
 
+        /* REDUCED: Bottom haze layers */
         .haze-deep {
           background: radial-gradient(
             ellipse 120% 60% at 50% 70%,
@@ -442,7 +451,7 @@ function AtmosphericHaze({ riskLevel, viewMode, scenario }: AtmosphericHazeProps
 function SubtleGrid() {
   return (
     <gridHelper 
-      args={[70, 45, "#0a1520", "#0a1520"]}
+      args={[60, 40, "#0a1520", "#0a1520"]} 
       position={[0, -2.5, 0]} 
       rotation={[0, 0, 0]}
     />
@@ -477,6 +486,10 @@ export default function ScenarioMountain({
   const colors = SCENARIO_COLORS[scenario];
   const viewMode = useScenarioStore((s) => s.viewMode);
   
+  // TODO: Implement timeline and heatmap rendering logic
+  // - timelineEnabled: Show historical progression overlay
+  // - heatmapEnabled: Show intensity/concentration visualization
+  
   const {
     activeScenarioId,
     engineResults,
@@ -489,6 +502,9 @@ export default function ScenarioMountain({
 
   const engineResult = engineResults?.[activeScenarioId];
   const kpiValues = engineResult?.kpis || {};
+  
+  // riskLevel = danger score (higher = more dangerous)
+  // riskIndex is health (higher = healthier), so invert it
   const riskLevel = 100 - (kpiValues.riskIndex?.value ?? 50);
 
   return (
@@ -498,19 +514,6 @@ export default function ScenarioMountain({
         background: `radial-gradient(ellipse 70% 50% at 50% 60%, ${colors.glow}, transparent 60%), #060a10`,
       }}
     >
-      {/* CYAN GLOW BEZEL */}
-      <div 
-        className="absolute inset-0 pointer-events-none z-10"
-        style={{
-          boxShadow: `
-            inset 0 0 1px 1px rgba(34, 211, 238, 0.12),
-            inset 0 0 15px 2px rgba(34, 211, 238, 0.04),
-            inset 0 0 30px 4px rgba(34, 211, 238, 0.02)
-          `,
-          borderRadius: '12px',
-        }}
-      />
-      
       <AtmosphericHaze 
         riskLevel={riskLevel}
         viewMode={viewMode}
@@ -524,12 +527,11 @@ export default function ScenarioMountain({
         fallback={<div style={{ width: "100%", height: "100%", background: "#0d1117" }} />}
       >
         <Suspense fallback={null}>
-        {/* FIXED CAMERA: Better framing, shows peaks clearly */}
-        <PerspectiveCamera makeDefault position={[0, 8, 34]} fov={40} />
-        <ambientLight intensity={0.14} />
-        <directionalLight position={[10, 22, 12]} intensity={0.45} color="#ffffff" />
-        <directionalLight position={[-8, 14, -10]} intensity={0.1} color={colors.primary} />
-        <pointLight position={[0, 10, 0]} intensity={0.12} color={colors.primary} distance={35} decay={2} />
+        <PerspectiveCamera makeDefault position={[0, 6, 32]} fov={38} />
+        <ambientLight intensity={0.12} />
+        <directionalLight position={[8, 20, 10]} intensity={0.4} color="#ffffff" />
+        <directionalLight position={[-6, 12, -8]} intensity={0.08} color={colors.primary} />
+        <pointLight position={[0, 8, 0]} intensity={0.1} color={colors.primary} distance={30} decay={2} />
         
         <Terrain
           dataPoints={dataPoints}
