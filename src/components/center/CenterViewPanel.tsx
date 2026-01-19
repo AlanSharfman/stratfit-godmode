@@ -4,7 +4,7 @@ import ViewModeSelector, { type ViewMode } from "@/components/blocks/ViewModeSel
 import TerrainToggles from "@/components/blocks/TerrainToggles";
 import CompareTabGodMode from "@/components/compare/CompareTabGodMode";
 import TradeOffsTab from "@/components/tradeoffs/TradeOffsTab";
-import KPIHeader from "@/components/kpi/KPIHeader";
+// KPIHeader removed - already shown by KPIConsole in App.tsx
 
 import { useScenario, useScenarioStore } from "@/state/scenarioStore";
 import { onCausal } from "@/ui/causalEvents";
@@ -70,15 +70,8 @@ export default function CenterViewPanel() {
         />
       </div>
 
-      {/* COLLAPSIBLE KPI HEADER - Shows on Terrain, Hides on Compare/Trade-offs */}
-      <KPIHeader
-        isVisible={viewMode === "terrain"}
-        activeScenario={scenario}
-        onScenarioChange={(newScenario) => {
-          // Handle scenario change if needed
-          console.log('KPI Header scenario change:', newScenario);
-        }}
-      />
+      {/* NOTE: KPIHeader REMOVED - already shown by KPIConsole in App.tsx */}
+      {/* This fixes the duplicate KPI row issue and gives mountain more space */}
 
       {/* G-D MODE: Mountain Stage (fills remaining space) */}
       <div className={styles.sfMountainStage} data-tour="mountain">
@@ -105,21 +98,6 @@ export default function CenterViewPanel() {
             ) : null}
 
             <div className="relative h-full w-full">
-              {/* DEBUG: Visible indicator */}
-              <div style={{
-                position: 'absolute',
-                top: '20px',
-                left: '20px',
-                background: 'rgba(0, 212, 255, 0.9)',
-                color: 'black',
-                padding: '10px 20px',
-                borderRadius: '8px',
-                fontWeight: 'bold',
-                zIndex: 9999
-              }}>
-                TERRAIN VIEW
-              </div>
-              
               {/* MOUNTAIN */}
               <ScenarioMountain 
                 scenario={scenario} 

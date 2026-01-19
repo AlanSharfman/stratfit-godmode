@@ -127,19 +127,23 @@ interface MassifPeak {
 }
 
 const MASSIF_PEAKS: MassifPeak[] = [
-  // Main central peaks
-  { x: 0, z: -2, amplitude: 1.6, sigmaX: 3.0, sigmaZ: 2.6 },
-  { x: -10, z: -1, amplitude: 1.3, sigmaX: 3.2, sigmaZ: 2.8 },
-  { x: 11, z: -1.5, amplitude: 1.2, sigmaX: 3.0, sigmaZ: 2.7 },
-  // Secondary peaks for more undulation
-  { x: -3, z: 3, amplitude: 0.95, sigmaX: 3.8, sigmaZ: 3.2 },
-  { x: -16, z: 2, amplitude: 0.75, sigmaX: 4.2, sigmaZ: 3.8 },
-  { x: 17, z: 1, amplitude: 0.7, sigmaX: 4.0, sigmaZ: 3.5 },
-  // NEW: Additional peaks for wider, more undulating terrain
-  { x: -22, z: -1, amplitude: 0.55, sigmaX: 3.5, sigmaZ: 3.0 },  // Far left peak
-  { x: 23, z: -0.5, amplitude: 0.5, sigmaX: 3.5, sigmaZ: 3.0 },  // Far right peak
-  { x: 6, z: 4, amplitude: 0.6, sigmaX: 4.0, sigmaZ: 3.5 },      // Mid-right background
-  { x: -8, z: 5, amplitude: 0.5, sigmaX: 4.5, sigmaZ: 4.0 },     // Mid-left background
+  // Main central peaks - THE BIG THREE
+  { x: 0, z: -2, amplitude: 1.8, sigmaX: 3.2, sigmaZ: 2.8 },      // Center peak (tallest)
+  { x: -12, z: -1.5, amplitude: 1.5, sigmaX: 3.4, sigmaZ: 3.0 },  // Left major peak
+  { x: 12, z: -1.5, amplitude: 1.4, sigmaX: 3.2, sigmaZ: 2.9 },   // Right major peak
+  
+  // Secondary peaks - VISIBLE UNDULATIONS
+  { x: -6, z: 0, amplitude: 1.1, sigmaX: 2.8, sigmaZ: 2.5 },      // Left-center valley rise
+  { x: 6, z: 0, amplitude: 1.0, sigmaX: 2.8, sigmaZ: 2.5 },       // Right-center valley rise
+  
+  // Tertiary peaks - ROLLING HILLS at edges
+  { x: -18, z: -1, amplitude: 0.9, sigmaX: 3.5, sigmaZ: 3.0 },    // Far left hill
+  { x: 18, z: -1, amplitude: 0.85, sigmaX: 3.5, sigmaZ: 3.0 },    // Far right hill
+  
+  // Background undulations - DEPTH
+  { x: -4, z: 4, amplitude: 0.7, sigmaX: 4.0, sigmaZ: 3.5 },      // Back left
+  { x: 4, z: 4, amplitude: 0.65, sigmaX: 4.0, sigmaZ: 3.5 },      // Back right
+  { x: 0, z: 5, amplitude: 0.5, sigmaX: 5.0, sigmaZ: 4.0 },       // Far back center
 ];
 
 // ============================================================================
