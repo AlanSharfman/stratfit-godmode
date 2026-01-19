@@ -37,8 +37,8 @@ const MESH_D = 25;
 const ISLAND_RADIUS = 22;
 
 const BASE_SCALE = 4.5;      // Increased: data-driven shape dominates
-const PEAK_SCALE = 3.0;      // Reduced: less drop when lever released
-const MASSIF_SCALE = 4.5;    // Slightly increased for stable backdrop
+const PEAK_SCALE = 3.5;      // Enhanced: taller, more dramatic peaks
+const MASSIF_SCALE = 5.0;    // Enhanced: more variation in backdrop
 const RIDGE_SHARPNESS = 1.4;
 const CLIFF_BOOST = 1.15;
 
