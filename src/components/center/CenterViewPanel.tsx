@@ -26,6 +26,11 @@ export default function CenterViewPanel() {
 
   // Main view mode state (Terrain | Trade offs | Compare)
   const [viewMode, setViewMode] = useState<ViewMode>("terrain");
+  
+  // Debug: Log viewMode changes
+  useEffect(() => {
+    console.log('📍 CenterViewPanel viewMode changed to:', viewMode);
+  }, [viewMode]);
 
   // Toggle states for Terrain view only
   // DEMO DEFAULTS: Both OFF for clean initial presentation
@@ -81,7 +86,7 @@ export default function CenterViewPanel() {
             TERRAIN VIEW - Mountain with toggles
             ======================================== */}
         {viewMode === "terrain" && (
-          <div className={styles.sfViewWrapper}>
+          <div className={styles.sfViewWrapper} data-view="terrain">
             {/* Atmospheric overlays */}
             <div className={styles.sfViewOverlays}>
               <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.4)_60%,rgba(0,0,0,0.85)_100%)]" />
@@ -100,6 +105,21 @@ export default function CenterViewPanel() {
             ) : null}
 
             <div className="relative h-full w-full">
+              {/* DEBUG: Visible indicator */}
+              <div style={{
+                position: 'absolute',
+                top: '20px',
+                left: '20px',
+                background: 'rgba(0, 212, 255, 0.9)',
+                color: 'black',
+                padding: '10px 20px',
+                borderRadius: '8px',
+                fontWeight: 'bold',
+                zIndex: 9999
+              }}>
+                TERRAIN VIEW
+              </div>
+              
               {/* MOUNTAIN */}
               <ScenarioMountain 
                 scenario={scenario} 
@@ -116,7 +136,22 @@ export default function CenterViewPanel() {
             TRADE OFFS VIEW - Interactive Strategic Decision Sculpting
             ======================================== */}
         {viewMode === "impact" && (
-          <div className={styles.sfViewWrapper}>
+          <div className={styles.sfViewWrapper} data-view="trade-offs">
+            {/* DEBUG: Visible indicator */}
+            <div style={{
+              position: 'absolute',
+              top: '20px',
+              left: '20px',
+              background: 'rgba(255, 71, 87, 0.9)',
+              color: 'white',
+              padding: '10px 20px',
+              borderRadius: '8px',
+              fontWeight: 'bold',
+              zIndex: 9999
+            }}>
+              TRADE-OFFS VIEW
+            </div>
+            
             <TradeOffsTab
               baseScenario={{
                 cash: 2400000, // $2.4M default starting cash
@@ -135,7 +170,22 @@ export default function CenterViewPanel() {
             COMPARE VIEW - God Mode Dual Mountains
             ======================================== */}
         {viewMode === "compare" && (
-          <div className={styles.sfViewWrapper}>
+          <div className={styles.sfViewWrapper} data-view="compare">
+            {/* DEBUG: Visible indicator */}
+            <div style={{
+              position: 'absolute',
+              top: '20px',
+              left: '20px',
+              background: 'rgba(0, 255, 157, 0.9)',
+              color: 'black',
+              padding: '10px 20px',
+              borderRadius: '8px',
+              fontWeight: 'bold',
+              zIndex: 9999
+            }}>
+              COMPARE VIEW
+            </div>
+            
             <CompareTabGodMode
               selectedScenario={mapScenarioId(scenario)}
               scenarios={COMPARE_SCENARIOS}

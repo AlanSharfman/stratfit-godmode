@@ -39,7 +39,10 @@ export default function ViewModeSelector({
                 role="tab"
                 aria-selected={isActive}
                 className={`${styles.tab} ${isActive ? styles.tabActive : ""}`}
-                onClick={() => onChange(m.id)}
+                onClick={() => {
+                  console.log('🖱️ ViewModeSelector clicked:', m.id);
+                  onChange(m.id);
+                }}
               >
                 <Icon size={16} className={styles.tabIcon} />
                 <span className={styles.tabLabel}>{m.label}</span>

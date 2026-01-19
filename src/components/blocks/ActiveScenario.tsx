@@ -89,31 +89,38 @@ export default function ActiveScenario({
 
   return (
     <div className={styles.container} ref={containerRef}>
-      {/* HEADER */}
-      <div className={styles.header}>
-        <span className={styles.label}>ACTIVE SCENARIO</span>
-      </div>
+      {/* EXACT KPI BEZEL STRUCTURE: chassis → rim → step → content */}
+      <div className={styles.rim}>
+        <div className={styles.step}>
+          <div className={styles.content}>
+            {/* HEADER */}
+            <div className={styles.header}>
+              <span className={styles.label}>ACTIVE SCENARIO</span>
+            </div>
 
-      {/* CURRENT SELECTION - Clickable */}
-      <button 
-        className={styles.current}
-        onClick={() => setIsOpen(!isOpen)}
-        aria-expanded={isOpen}
-        aria-haspopup="true"
-      >
-        <div className={styles.currentContent}>
-          <CurrentIcon size={32} className={styles.currentIcon} />
-          <div className={styles.currentText}>
-            <div className={styles.currentLabel}>{current.label}</div>
-            <div className={styles.currentDesc}>{current.description}</div>
+            {/* CURRENT SELECTION - Clickable (THE WELL with COLD FUSION glow) */}
+            <button 
+              className={styles.current}
+              onClick={() => setIsOpen(!isOpen)}
+              aria-expanded={isOpen}
+              aria-haspopup="true"
+            >
+              <div className={styles.currentContent}>
+                <CurrentIcon size={32} className={styles.currentIcon} />
+                <div className={styles.currentText}>
+                  <div className={styles.currentLabel}>{current.label}</div>
+                  <div className={styles.currentDesc}>{current.description}</div>
+                </div>
+              </div>
+              <div className={styles.chevron}>
+                {isOpen ? '▲' : '▼'}
+              </div>
+            </button>
           </div>
         </div>
-        <div className={styles.chevron}>
-          {isOpen ? '▲' : '▼'}
-        </div>
-      </button>
+      </div>
 
-      {/* DROPDOWN MENU */}
+      {/* DROPDOWN MENU (Outside the bezel structure) */}
       {isOpen && (
         <div className={styles.dropdown} role="menu">
           {SCENARIOS.map((scenario) => {

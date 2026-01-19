@@ -1095,6 +1095,29 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
       <header className="header">
         <div className="header-left">
           <div className="logo">
+            <svg 
+              className="logo-icon" 
+              width="48" 
+              height="48" 
+              viewBox="0 0 48 48" 
+              fill="none"
+            >
+              {/* 3 ANGLED CYAN BLOCKS STACKED */}
+              {/* Bottom block (darkest cyan) */}
+              <path d="M8 38 L24 42 L40 38 L24 34 Z" fill="#0891b2" />
+              <path d="M8 38 L8 32 L24 28 L24 34 Z" fill="#0e7490" />
+              <path d="M40 38 L40 32 L24 28 L24 34 Z" fill="#0891b2" />
+              
+              {/* Middle block (medium cyan) */}
+              <path d="M8 28 L24 32 L40 28 L24 24 Z" fill="#06b6d4" />
+              <path d="M8 28 L8 22 L24 18 L24 24 Z" fill="#0891b2" />
+              <path d="M40 28 L40 22 L24 18 L24 24 Z" fill="#0e7490" />
+              
+              {/* Top block (brightest cyan) */}
+              <path d="M8 18 L24 22 L40 18 L24 14 Z" fill="#22d3ee" />
+              <path d="M8 18 L8 12 L24 8 L24 14 Z" fill="#06b6d4" />
+              <path d="M40 18 L40 12 L24 8 L24 14 Z" fill="#0891b2" />
+            </svg>
             <span className="logo-text">STRATFIT</span>
           </div>
           <div className={`system-status ${activeLeverId ? 'computing' : ''} ${viewMode === 'investor' ? 'investor' : ''}`}>
