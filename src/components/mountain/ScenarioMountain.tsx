@@ -28,9 +28,9 @@ const MESH_W = 55;            // Slightly narrower for better framing
 const MESH_D = 26;            
 const ISLAND_RADIUS = 26;     // FIXED: Back to working value (was 35, too large)
 
-const BASE_SCALE = 4.5;       
-const PEAK_SCALE = 3.0;       
-const MASSIF_SCALE = 4.8;     // Slightly increased for visible peaks
+const BASE_SCALE = 5.2;       // INCREASED from 4.5 - taller base ridges
+const PEAK_SCALE = 3.5;       // INCREASED from 3.0 - more dramatic peaks
+const MASSIF_SCALE = 5.5;     // INCREASED from 4.8 - taller massif peaks     // Slightly increased for visible peaks
 const RIDGE_SHARPNESS = 1.35; 
 const CLIFF_BOOST = 1.1;      
 
@@ -239,7 +239,7 @@ const Terrain: React.FC<TerrainProps> = ({
       h += rugged * (0.3 + h * 0.08);
 
       const dist = Math.sqrt(x * x + z * z * 1.4);
-      const mask = Math.max(0, 1 - Math.pow(dist / ISLAND_RADIUS, 2.0));
+      const mask = Math.max(0, 1 - Math.pow(dist / ISLAND_RADIUS, 1.3));  // REDUCED from 2.0 - less aggressive falloff
 
       const n = noise2(x, z) * 0.2;
 
