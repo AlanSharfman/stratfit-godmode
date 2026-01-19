@@ -34,8 +34,8 @@ const MASSIF_SCALE = 4.8;     // Slightly increased for visible peaks
 const RIDGE_SHARPNESS = 1.35; 
 const CLIFF_BOOST = 1.1;      
 
-const SOFT_CEILING = 9.0;     
-const CEILING_START = 6.5;
+const SOFT_CEILING = 12.0;     // RAISED from 9.0 - allows taller peaks
+const CEILING_START = 8.0;     // RAISED from 6.5 - compression starts higher
 
 // ============================================================================
 // DETERMINISTIC NOISE
