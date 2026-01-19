@@ -42,8 +42,8 @@ const MASSIF_SCALE = 5.0;    // Enhanced: more variation in backdrop
 const RIDGE_SHARPNESS = 1.4;
 const CLIFF_BOOST = 1.15;
 
-const SOFT_CEILING = 9.0;
-const CEILING_START = 7.0;
+const SOFT_CEILING = 9.0;    // RESTORED: original ceiling (no table-top)
+const CEILING_START = 7.0;   // RESTORED: original transition
 
 // ============================================================================
 // DETERMINISTIC NOISE
