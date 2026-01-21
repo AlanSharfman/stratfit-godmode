@@ -78,7 +78,7 @@ export default function BurnTrendBars({ series, value, trend = "neutral" }: Burn
   const gap = 4;
   const totalWidth = barCount * barWidth + (barCount - 1) * gap;
   const viewBoxWidth = totalWidth + 8; // Padding
-  const viewBoxHeight = 36;
+  const viewBoxHeight = 40; /* +12% height */
   
   // CYAN bars - no status badge
   const scaledViewBoxWidth = viewBoxWidth + 20;
@@ -88,7 +88,7 @@ export default function BurnTrendBars({ series, value, trend = "neutral" }: Burn
     <svg 
       viewBox={`0 0 ${scaledViewBoxWidth} ${scaledViewBoxHeight}`} 
       className="burn-trend-bars"
-      style={{ width: '100%', height: 'auto', maxHeight: '50px', overflow: 'visible' }}
+      style={{ width: '100%', height: 'auto', maxHeight: '56px', overflow: 'visible' }} /* +12% height */
     >
       <defs>
         {/* Cyan gradient for bars - brighter */}

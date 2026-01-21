@@ -604,8 +604,8 @@ body { overflow-x: hidden; }
   /* Internal alignment contract (instrument-grade) */
   --kpi-label-h: 16px; /* compact label */
   --kpi-value-h: 40px; /* slightly reduced */
-  --kpi-viz-min: 110px; /* +28% taller for widgets */
-  --kpi-widget-scale: 1.20; /* +25% larger widgets */
+  --kpi-viz-min: 110px; /* widget area height */
+  --kpi-widget-scale: 0.95; /* scaled to fit within boxes */
 }
 
 /* KPI row position nudge (fast, safe, reversible) */
@@ -880,7 +880,7 @@ body { overflow-x: hidden; }
   max-height: 100%;
   justify-self: center;
   align-self: center;
-  transform: scale(var(--kpi-widget-scale)) translateX(4px);
+  transform: scale(var(--kpi-widget-scale)) translateX(4px) translateY(-15%);
   transform-origin: 50% 50%;
 }
 
