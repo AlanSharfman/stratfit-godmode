@@ -44,7 +44,7 @@ export default function ViewModeSelector({
                   onChange(m.id);
                 }}
               >
-                <Icon size={16} className={styles.tabIcon} />
+                <Icon size={12} className={styles.tabIcon} />
                 <span className={styles.tabLabel}>{m.label}</span>
               </button>
             );

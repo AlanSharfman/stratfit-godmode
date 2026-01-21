@@ -12,7 +12,7 @@
   width: 100%;
   border-radius: 18px;
   padding: 16px 18px 18px;
-  overflow: hidden;
+  overflow: visible;
 
   background:
     radial-gradient(1200px 520px at 18% 10%, rgba(120, 180, 255, 0.10), rgba(0,0,0,0) 62%),
@@ -128,6 +128,7 @@
   position: relative;
   z-index: 1;
   margin-top: 10px;
+  overflow: visible;
 }
 
 /* empty state that doesn't look like "nothing" */

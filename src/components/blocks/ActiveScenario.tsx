@@ -1,55 +1,56 @@
 // src/components/blocks/ActiveScenario.tsx
 // STRATFIT — Active Scenario Selector
-// Dropdown for switching between strategic scenarios
+// Dropdown for switching between the 4 STRATEGY-BASED SITUATIONS
 
 import React, { useState, useRef, useEffect } from 'react';
-import { BarChart3, TrendingUp, Zap, Shield, Target } from 'lucide-react';
+import { Activity, Rocket, TrendingDown, Globe } from 'lucide-react';
 import styles from './ActiveScenario.module.css';
 
+// ===========================================
+// THE 4 STRATEGY-BASED SITUATIONS
+// ===========================================
 export type ScenarioType = 
-  | 'base-case'
-  | 'growth'
-  | 'efficiency'
-  | 'survival'
-  | 'series-b';
+  | 'current-trajectory'
+  | 'series-b-stress-test'
+  | 'profitability-push'
+  | 'apac-expansion';
 
 interface Scenario {
   id: ScenarioType;
   label: string;
   description: string;
-  icon: typeof BarChart3;
+  icon: typeof Activity;
+  color: string;
 }
 
 const SCENARIOS: Scenario[] = [
   {
-    id: 'base-case',
-    label: 'Base Case',
-    description: 'Current trajectory',
-    icon: BarChart3
+    id: 'current-trajectory',
+    label: 'Baseline Trajectory',
+    description: '',
+    icon: Activity,
+    color: '#00D9FF'
   },
   {
-    id: 'growth',
-    label: 'Growth',
-    description: 'Aggressive expansion',
-    icon: TrendingUp
+    id: 'series-b-stress-test',
+    label: 'Series B Raise',
+    description: 'Aggressive growth with $15M raise',
+    icon: Rocket,
+    color: '#00D9FF'  // Cyan
   },
   {
-    id: 'efficiency',
-    label: 'Efficiency',
-    description: 'Optimize margins',
-    icon: Zap
+    id: 'profitability-push',
+    label: 'Profitability Push',
+    description: 'Bootstrap to profitability',
+    icon: TrendingDown,
+    color: '#FF9500'  // Orange
   },
   {
-    id: 'survival',
-    label: 'Survival',
-    description: 'Extend runway',
-    icon: Shield
-  },
-  {
-    id: 'series-b',
-    label: 'Series B',
-    description: 'Next funding round',
-    icon: Target
+    id: 'apac-expansion',
+    label: 'Geographic Expansion',
+    description: 'Raise $8M, expand to APAC',
+    icon: Globe,
+    color: '#00FF88'  // Green
   }
 ];
 
@@ -89,24 +90,29 @@ export default function ActiveScenario({
 
   return (
     <div className={styles.container} ref={containerRef}>
-      {/* EXACT KPI BEZEL STRUCTURE: chassis → rim → step → content */}
       <div className={styles.rim}>
         <div className={styles.step}>
           <div className={styles.content}>
             {/* HEADER */}
             <div className={styles.header}>
-              <span className={styles.label}>ACTIVE SCENARIO</span>
+              <div className={styles.liveDot} />
+              <span className={styles.label}>ACTIVE SITUATION</span>
             </div>
 
-            {/* CURRENT SELECTION - Clickable (THE WELL with COLD FUSION glow) */}
+            {/* CURRENT SELECTION */}
             <button 
               className={styles.current}
               onClick={() => setIsOpen(!isOpen)}
               aria-expanded={isOpen}
               aria-haspopup="true"
+              style={{ '--scenario-color': current.color } as React.CSSProperties}
             >
               <div className={styles.currentContent}>
-                <CurrentIcon size={32} className={styles.currentIcon} />
+                <CurrentIcon 
+                  size={32} 
+                  className={styles.currentIcon}
+                  style={{ color: current.color }}
+                />
                 <div className={styles.currentText}>
                   <div className={styles.currentLabel}>{current.label}</div>
                   <div className={styles.currentDesc}>{current.description}</div>
@@ -120,7 +126,7 @@ export default function ActiveScenario({
         </div>
       </div>
 
-      {/* DROPDOWN MENU (Outside the bezel structure) */}
+      {/* DROPDOWN MENU */}
       {isOpen && (
         <div className={styles.dropdown} role="menu">
           {SCENARIOS.map((scenario) => {
@@ -134,7 +140,11 @@ export default function ActiveScenario({
                 onClick={() => handleSelect(scenario.id)}
                 role="menuitem"
               >
-                <Icon size={28} className={styles.optionIcon} />
+                <Icon 
+                  size={28} 
+                  className={styles.optionIcon}
+                  style={{ color: scenario.color }}
+                />
                 <div className={styles.optionText}>
                   <div className={styles.optionLabel}>{scenario.label}</div>
                   <div className={styles.optionDesc}>{scenario.description}</div>
@@ -150,4 +160,3 @@ export default function ActiveScenario({
     </div>
   );
 }
-

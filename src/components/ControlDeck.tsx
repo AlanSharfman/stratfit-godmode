@@ -1,5 +1,6 @@
 // src/components/ControlDeck.tsx
-// STRATFIT — Control Deck matching reference design
+// STRATFIT — GOD-MODE Control Deck matching reference exactly
+// Features: Corner bumpers, individual slider wells, metallic frames
 
 import React, { useMemo, useCallback, memo, useRef } from "react";
 import Slider from "./ui/Slider";
@@ -8,8 +9,6 @@ import { useShallow } from "zustand/react/shallow";
 import { useScenarioStore } from "@/state/scenarioStore";
 import type { LeverId } from "@/logic/mountainPeakModel";
 import { emitCausal } from "@/ui/causalEvents";
-import { CommandDeckBezel } from "@/components/command/CommandDeckBezel";
-import { SectionDivider, SectionSpacer } from "@/components/command/parts/SectionDivider";
 
 // ============================================================================
 // TYPES
@@ -37,47 +36,55 @@ export interface ControlBoxConfig {
 }
 
 // ============================================================================
-// KPI INDEX TO COLOR MAPPING (matches KPIConsole order)
-// 0: CASH, 1: BURN RATE, 2: RUNWAY, 3: ARR, 4: GROSS MARGIN, 5: RISK SCORE, 6: VALUATION
+// KPI MAPPING
 // ============================================================================
 
-// MUST MATCH KPIConsole.tsx accentColor values exactly!
 const KPI_COLORS: Record<number, string> = {
-  0: "#00ffcc", // CASH - teal
-  1: "#ff6b6b", // BURN RATE - red/coral (matches KPIConsole)
-  2: "#00d4ff", // RUNWAY - cyan
-  3: "#00ff88", // ARR - green
-  4: "#00ff88", // GROSS MARGIN - green
-  5: "#00ccff", // RISK SCORE - cyan (matches KPIConsole)
-  6: "#00ddff", // VALUATION - cyan
+  0: "#00ffcc",
+  1: "#ff6b6b",
+  2: "#00d4ff",
+  3: "#00ff88",
+  4: "#00ff88",
+  5: "#00ccff",
+  6: "#00ddff",
 };
-
-// ============================================================================
-// LEVER TO KPI MAPPING - Which sliders affect which KPIs (CORRECTED)
-// Based on calculateMetrics() in App.tsx
-// ============================================================================
 
 const LEVER_TO_KPI: Record<LeverId, number[]> = {
-  // GROWTH sliders
-  revenueGrowth: [3, 4, 6],         // Demand Strength → ARR, GROSS MARGIN, VALUATION
-  pricingAdjustment: [0, 3, 4, 6],  // Pricing Power → CASH, ARR, GROSS MARGIN, VALUATION
-  marketingSpend: [3, 6],           // Expansion Velocity → ARR, VALUATION
-  
-  // EFFICIENCY sliders
-  operatingExpenses: [0, 1, 2, 4],  // Cost Discipline → CASH, BURN RATE, RUNWAY, GROSS MARGIN
-  headcount: [1, 2],                // Hiring Intensity → BURN RATE, RUNWAY
-  cashSensitivity: [0, 1],          // Operating Drag → CASH, BURN RATE
-  
-  // RISK sliders
-  churnSensitivity: [5, 6],         // Market Volatility → RISK SCORE, VALUATION
-  fundingInjection: [2, 5],         // Execution Risk → RUNWAY, RISK SCORE
+  revenueGrowth: [3, 4, 6],
+  pricingAdjustment: [0, 3, 4, 6],
+  marketingSpend: [3, 6],
+  operatingExpenses: [0, 1, 2, 4],
+  headcount: [1, 2],
+  cashSensitivity: [0, 1],
+  churnSensitivity: [5, 6],
+  fundingInjection: [2, 5],
 };
 
 // ============================================================================
-// SLIDER ROW
+// CORNER BUMPER COMPONENT
 // ============================================================================
 
-interface SliderRowProps {
+const CornerBumper = memo(function CornerBumper({ position }: { position: 'tl' | 'tr' | 'bl' | 'br' }) {
+  const posStyles: Record<string, React.CSSProperties> = {
+    tl: { top: 8, left: 8 },
+    tr: { top: 8, right: 8 },
+    bl: { bottom: 8, left: 8 },
+    br: { bottom: 8, right: 8 },
+  };
+  
+  return (
+    <div className="corner-bumper" style={posStyles[position]}>
+      <div className="bumper-outer" />
+      <div className="bumper-inner" />
+    </div>
+  );
+});
+
+// ============================================================================
+// INDIVIDUAL SLIDER WELL (each slider gets its own recessed slot)
+// ============================================================================
+
+interface SliderWellProps {
   slider: ControlSliderConfig;
   highlightColor: string | null;
   onStart: () => void;
@@ -85,343 +92,89 @@ interface SliderRowProps {
   onChange: (v: number) => void;
 }
 
-const SliderRow = memo(function SliderRow({
+const SliderWell = memo(function SliderWell({
   slider,
   highlightColor,
   onStart,
   onEnd,
   onChange,
-}: SliderRowProps) {
-  const isHighlighted = highlightColor !== null;
+}: SliderWellProps) {
   const [tooltipRect, setTooltipRect] = React.useState<DOMRect | null>(null);
 
   return (
-    <div 
-      className={`slider-row ${isHighlighted ? "highlighted" : ""}`}
-      style={{ "--highlight-color": highlightColor || "#22d3ee" } as React.CSSProperties}
-    >
-      <div className="slider-header">
-        <span className="slider-label">
-          {slider.label}
-          {slider.tooltip && (
-            <span
-              className="info-icon"
-              onMouseEnter={(e) => setTooltipRect(e.currentTarget.getBoundingClientRect())}
-              onMouseLeave={() => setTooltipRect(null)}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setTooltipRect((prev) => (prev ? null : e.currentTarget.getBoundingClientRect()));
-              }}
-            >
-              <span className="info-icon__glyph">i</span>
-            </span>
-          )}
-        </span>
-        <span className="slider-value">
-          {slider.format ? slider.format(slider.value) : String(slider.value)}
-        </span>
+    <div className="slider-well">
+      <div className="slider-well-inner">
+        <div className="slider-header">
+          <span className="slider-label">
+            {slider.label}
+            {slider.tooltip && (
+              <span
+                className="info-dot"
+                onMouseEnter={(e) => setTooltipRect(e.currentTarget.getBoundingClientRect())}
+                onMouseLeave={() => setTooltipRect(null)}
+              >
+                <span className="info-glyph">i</span>
+              </span>
+            )}
+          </span>
+          <span className="slider-value">
+            {slider.format ? slider.format(slider.value) : `${slider.value}%`}
+          </span>
+        </div>
+        
+        {slider.tooltip && (
+          <SliderInfoTooltip anchorRect={tooltipRect}>
+            <div className="tt-title">{slider.label}</div>
+            <div className="tt-desc">{slider.tooltip.description}</div>
+            <div className="tt-impact">{slider.tooltip.impact}</div>
+          </SliderInfoTooltip>
+        )}
+        
+        <Slider
+          value={slider.value}
+          min={slider.min}
+          max={slider.max}
+          step={slider.step}
+          highlightColor={highlightColor}
+          onStart={onStart}
+          onEnd={onEnd}
+          onChange={onChange}
+        />
       </div>
-      
-      {slider.tooltip && (
-        <SliderInfoTooltip anchorRect={tooltipRect}>
-          <div className="tooltip-title">{slider.label}</div>
-          <div className="tooltip-description">{slider.tooltip.description}</div>
-          <div className="tooltip-impact">{slider.tooltip.impact}</div>
-        </SliderInfoTooltip>
-      )}
-      
-      <Slider
-        value={slider.value}
-        min={slider.min}
-        max={slider.max}
-        step={slider.step}
-        highlightColor={highlightColor}
-        onStart={onStart}
-        onEnd={onEnd}
-        onChange={onChange}
-      />
-
-      <style>{`
-        .slider-row {
-          padding: 8px 0;
-          position: relative;
-        }
-
-        .slider-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 8px;
-        }
-
-        .slider-label {
-          font-size: 16.5px;
-          font-weight: 600;
-          color: rgba(255, 255, 255, 0.7);
-          transition: all 80ms cubic-bezier(0.22, 1, 0.36, 1);
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          letter-spacing: 0.03em;
-        }
-
-        .info-icon {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          width: 18px;
-          height: 18px;
-          margin-left: 6px;
-          border-radius: 50%;
-          cursor: pointer;
-
-          /* Visible white circle */
-          background: rgba(12,16,22,0.75);
-          border: 1.5px solid rgba(255,255,255,0.55);
-
-          box-shadow:
-            inset 0 1px 0 rgba(255,255,255,0.12),
-            0 2px 6px rgba(0,0,0,0.40);
-
-          transition: 
-            transform 140ms ease,
-            border-color 140ms ease,
-            box-shadow 140ms ease,
-            background 140ms ease;
-        }
-
-        .info-icon:hover {
-          transform: scale(1.12);
-          border-color: rgba(255,255,255,0.75);
-          background:
-            radial-gradient(circle at 30% 30%, rgba(120,200,255,0.22), rgba(0,0,0,0) 60%),
-            rgba(12,18,26,0.75);
-          box-shadow:
-            inset 0 1px 0 rgba(255,255,255,0.12),
-            0 4px 12px rgba(0,0,0,0.45),
-            0 0 12px rgba(120,200,255,0.15);
-        }
-
-        .info-icon__glyph {
-          font-size: 11px;
-          font-weight: 800;
-          font-style: italic;
-          font-family: "Georgia", serif;
-          color: rgba(255,255,255,0.90);
-          text-shadow: none;
-          line-height: 1;
-          transform: translateY(-0.5px);
-        }
-
-        .info-icon:hover .info-icon__glyph {
-          color: #ffffff;
-          text-shadow: 0 0 6px rgba(255,255,255,0.35);
-        }
-
-        .slider-row:hover .info-icon {
-          /* no extra transform — hover state handles it */
-        }
-
-        .tooltip-title {
-          font-size: 11px;
-          font-weight: 700;
-          color: rgba(34, 211, 238, 0.9);
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          margin-bottom: 6px;
-        }
-
-        .tooltip-description {
-          font-size: 12px;
-          color: rgba(255, 255, 255, 0.8);
-          line-height: 1.5;
-          margin-bottom: 8px;
-        }
-
-        .tooltip-impact {
-          font-size: 10px;
-          color: rgba(148, 163, 184, 0.7);
-          font-style: italic;
-          padding-top: 6px;
-          border-top: 1px solid rgba(148, 163, 184, 0.15);
-        }
-
-        .slider-row.highlighted .slider-label {
-          color: var(--highlight-color);
-          text-shadow: 0 0 10px color-mix(in srgb, var(--highlight-color) 40%, transparent);
-        }
-
-        .slider-value {
-          font-size: 15px;
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.6);
-          font-variant-numeric: tabular-nums;
-          transition: all 80ms cubic-bezier(0.22, 1, 0.36, 1);
-          text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
-        }
-
-        .slider-row.highlighted .slider-value {
-          color: var(--highlight-color);
-          text-shadow: 0 0 15px color-mix(in srgb, var(--highlight-color) 50%, transparent);
-        }
-      `}</style>
     </div>
   );
 });
 
 // ============================================================================
-// CONTROL BOX
+// BEVELED SECTION FRAME
 // ============================================================================
 
-interface ControlBoxProps {
-  box: ControlBoxConfig;
-  hoveredKpiIndex: number | null;
-  onSliderStart: (id: LeverId, value: number) => void;
-  onSliderEnd: () => void;
-  onSliderChange: (id: LeverId, value: number) => void;
+interface SectionFrameProps {
+  title: string;
+  children: React.ReactNode;
 }
 
-const ControlBox = memo(function ControlBox({
-  box,
-  hoveredKpiIndex,
-  onSliderStart,
-  onSliderEnd,
-  onSliderChange,
-}: ControlBoxProps) {
-  const getHighlightColor = useCallback(
-    (sliderId: LeverId): string | null => {
-      if (hoveredKpiIndex === null) return null;
-      const relatedKpis = LEVER_TO_KPI[sliderId] || [];
-      if (relatedKpis.includes(hoveredKpiIndex)) {
-        return KPI_COLORS[hoveredKpiIndex] || "#22d3ee";
-      }
-      return null;
-    },
-    [hoveredKpiIndex]
-  );
-
-  const boxHighlightColor = useMemo(() => {
-    for (const slider of box.sliders) {
-      const color = getHighlightColor(slider.id);
-      if (color) return color;
-    }
-    return null;
-  }, [box.sliders, getHighlightColor]);
-
-  const isBoxHighlighted = boxHighlightColor !== null;
-
+const SectionFrame = memo(function SectionFrame({ title, children }: SectionFrameProps) {
   return (
-    <div 
-      className={`control-box ${isBoxHighlighted ? "highlighted" : ""}`}
-      style={{ "--box-color": boxHighlightColor || "#22d3ee" } as React.CSSProperties}
-    >
-      <div className="box-header">
-        <span className="box-title">{box.title}</span>
+    <div className="section-frame">
+      {/* Corner bumpers */}
+      <CornerBumper position="tl" />
+      <CornerBumper position="tr" />
+      <CornerBumper position="bl" />
+      <CornerBumper position="br" />
+      
+      {/* Header */}
+      <div className="section-header">
+        <span className="section-title">{title}</span>
+        <div className="section-toggle">
+          <div className="toggle-led" />
+        </div>
       </div>
-      <div className="box-sliders">
-        {box.sliders.map((s) => (
-          <SliderRow
-            key={s.id}
-            slider={s}
-            highlightColor={getHighlightColor(s.id)}
-            onStart={() => onSliderStart(s.id, s.value)}
-            onEnd={onSliderEnd}
-            onChange={(v) => onSliderChange(s.id, v)}
-          />
-        ))}
+      
+      {/* Slider wells container */}
+      <div className="section-content">
+        {children}
       </div>
-
-      <style>{`
-        .control-box {
-          padding: 18px 20px;
-          background: linear-gradient(135deg, rgba(20, 24, 30, 0.78), rgba(10, 12, 16, 0.70));
-          backdrop-filter: blur(12px);
-          border-radius: 12px;
-          border: 1px solid rgba(255,255,255,0.08);
-          box-shadow: 
-            0 4px 20px rgba(0, 0, 0, 0.4),
-            inset 0 1px 0 rgba(255, 255, 255, 0.05),
-            0 0 0 1px rgba(34, 211, 238, 0.1);
-          transition: all 80ms cubic-bezier(0.22, 1, 0.36, 1);
-          position: relative;
-        }
-
-        .control-box::before {
-          content: '';
-          position: absolute;
-          inset: -2px;
-          background: linear-gradient(135deg, rgba(34, 211, 238, 0.15), rgba(124, 58, 237, 0.1));
-          border-radius: 12px;
-          opacity: 0;
-          transition: opacity 250ms cubic-bezier(0.22, 1, 0.36, 1);
-          z-index: -1;
-        }
-
-        .control-box.highlighted::before {
-          opacity: 1;
-        }
-
-        .control-box.highlighted {
-          border-color: var(--box-color);
-          box-shadow: 
-            0 8px 32px color-mix(in srgb, var(--box-color) 30%, transparent),
-            0 0 40px color-mix(in srgb, var(--box-color) 20%, transparent),
-            inset 0 1px 0 rgba(255, 255, 255, 0.1),
-            inset 0 0 30px color-mix(in srgb, var(--box-color) 8%, transparent);
-          transform: translateY(-2px);
-        }
-
-        .box-header {
-          margin-bottom: 16px;
-          padding-bottom: 12px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-        }
-
-        .box-title {
-          font-size: 23px;
-          font-weight: 800;
-          letter-spacing: 0.15em;
-          text-transform: uppercase;
-          color: #fff !important;
-          opacity: 1 !important;
-          text-align: center;
-          width: 100%;
-          display: block;
-          text-shadow: 
-            0 0 18px rgba(255, 255, 255, 0.45),
-            0 0 5px rgba(255, 255, 255, 0.65),
-            0 1px 2px rgba(0,0,0,0.6);
-          transition: all 80ms cubic-bezier(0.22, 1, 0.36, 1);
-        }
-
-        .control-box.highlighted .box-title {
-          /* KEEP WHITE — never let highlight color override the title */
-          color: #fff !important;
-          text-shadow: 
-            0 0 20px rgba(255, 255, 255, 0.5),
-            0 0 6px rgba(255, 255, 255, 0.7),
-            0 1px 2px rgba(0,0,0,0.5);
-        }
-
-        .box-sliders {
-          padding: 16px;
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-
-          /* BLACK inner well (per reference) */
-          background:
-            radial-gradient(120% 140% at 18% 12%, rgba(255,255,255,0.06), rgba(0,0,0,0) 55%),
-            linear-gradient(180deg, rgba(3,4,6,0.70), rgba(0,0,0,0.78));
-          border: 1px solid rgba(255,255,255,0.06);
-          border-radius: 14px;
-
-          box-shadow:
-            inset 0 1px 0 rgba(255,255,255,0.06),
-            inset 0 -16px 28px rgba(0,0,0,0.60);
-        }
-      `}</style>
     </div>
   );
 });
@@ -434,11 +187,10 @@ export function ControlDeck(props: {
   boxes: ControlBoxConfig[];
   onChange: (id: LeverId | "__end__", value: number) => void;
 }) {
-  const leverReleaseTimeoutRef = React.useRef<number | null>(null);
-  const lastLeverIdRef = React.useRef<LeverId | null>(null);
+  const leverReleaseTimeoutRef = useRef<number | null>(null);
+  const lastLeverIdRef = useRef<LeverId | null>(null);
   const { boxes, onChange } = props;
 
-  // Consolidated store selectors to prevent rerender cascades
   const { hoveredKpiIndex, setActiveLever } = useScenarioStore(
     useShallow((s) => ({
       hoveredKpiIndex: s.hoveredKpiIndex,
@@ -446,7 +198,6 @@ export function ControlDeck(props: {
     }))
   );
 
-  // Throttle lever intensity updates (16ms = ~60fps, prevents excessive store updates)
   const lastLeverUpdate = useRef<number>(0);
   const pendingLeverUpdate = useRef<{ id: LeverId; intensity: number } | null>(null);
   const leverUpdateFrame = useRef<number | null>(null);
@@ -473,17 +224,14 @@ export function ControlDeck(props: {
     [rangeMap]
   );
 
-  // Ultra-responsive lever update - minimal throttling for smooth feel
   const throttledSetActiveLever = useCallback(
     (id: LeverId, intensity: number) => {
       const now = performance.now();
-      // Reduced throttle from 32ms to 8ms for smoother response
       if (now - lastLeverUpdate.current > 8) {
         lastLeverUpdate.current = now;
         setActiveLever(id, intensity);
         return;
       }
-      // Schedule update for next animation frame (instant visual feedback)
       pendingLeverUpdate.current = { id, intensity };
       if (leverUpdateFrame.current === null) {
         leverUpdateFrame.current = requestAnimationFrame(() => {
@@ -503,7 +251,6 @@ export function ControlDeck(props: {
     (id: LeverId, value: number) => {
       lastLeverIdRef.current = id;
       const intensity = computeIntensity01(id, value);
-      // Cancel any pending release
       if (leverReleaseTimeoutRef.current !== null) {
         window.clearTimeout(leverReleaseTimeoutRef.current);
         leverReleaseTimeoutRef.current = null;
@@ -514,7 +261,6 @@ export function ControlDeck(props: {
   );
 
   const handleSliderEnd = useCallback(() => {
-    // CAUSAL HIGHLIGHT — fire ONLY on release
     const lastId = lastLeverIdRef.current;
     if (lastId) {
       const leverType: "growth" | "efficiency" | "risk" | "pricing" =
@@ -528,12 +274,12 @@ export function ControlDeck(props: {
 
       const color =
         leverType === "growth"
-          ? "rgba(34,211,238,0.18)" // cyan/ice
+          ? "rgba(34,211,238,0.18)"
           : leverType === "efficiency"
-            ? "rgba(52,211,153,0.18)" // emerald
+            ? "rgba(52,211,153,0.18)"
             : leverType === "pricing"
-              ? "rgba(129,140,248,0.18)" // indigo
-              : "rgba(251,113,133,0.16)"; // muted red (risk)
+              ? "rgba(129,140,248,0.18)"
+              : "rgba(251,113,133,0.16)";
 
       emitCausal({
         source: "slider_release",
@@ -543,17 +289,14 @@ export function ControlDeck(props: {
       });
     }
 
-    // Cancel any pending throttled update
     if (leverUpdateFrame.current !== null) {
       cancelAnimationFrame(leverUpdateFrame.current);
       leverUpdateFrame.current = null;
     }
     pendingLeverUpdate.current = null;
-    // Cancel any pending release
     if (leverReleaseTimeoutRef.current !== null) {
       window.clearTimeout(leverReleaseTimeoutRef.current);
     }
-    // Instant release for snappy feel
     leverReleaseTimeoutRef.current = window.setTimeout(() => {
       setActiveLever(null, 0);
       leverReleaseTimeoutRef.current = null;
@@ -564,14 +307,12 @@ export function ControlDeck(props: {
   const handleSliderChange = useCallback(
     (id: LeverId, v: number) => {
       lastLeverIdRef.current = id;
-      // Throttle store updates, but always pass value change through
       throttledSetActiveLever(id, computeIntensity01(id, v));
       onChange(id, v);
     },
     [computeIntensity01, throttledSetActiveLever, onChange]
   );
 
-  // Build highlight color function for sliders
   const getHighlightColor = useCallback(
     (sliderId: LeverId): string | null => {
       if (hoveredKpiIndex === null) return null;
@@ -585,55 +326,296 @@ export function ControlDeck(props: {
   );
 
   return (
-    <CommandDeckBezel>
-      {boxes.map((box, boxIndex) => (
-        <React.Fragment key={box.id}>
-          <SectionDivider title={box.title} />
-          
-          <div className="section-well">
-            <div className="section-sliders">
-              {box.sliders.map((s) => (
-                <SliderRow
-                  key={s.id}
-                  slider={s}
-                  highlightColor={getHighlightColor(s.id)}
-                  onStart={() => handleSliderStart(s.id, s.value)}
-                  onEnd={handleSliderEnd}
-                  onChange={(v) => handleSliderChange(s.id, v)}
-                />
-              ))}
-            </div>
-          </div>
-          
-          {boxIndex < boxes.length - 1 && <SectionSpacer />}
-        </React.Fragment>
-      ))}
+    <div className="control-deck-godmode">
+      <div className="deck-scroll">
+        {boxes.map((box) => (
+          <SectionFrame key={box.id} title={box.title}>
+            {box.sliders.map((s) => (
+              <SliderWell
+                key={s.id}
+                slider={s}
+                highlightColor={getHighlightColor(s.id)}
+                onStart={() => handleSliderStart(s.id, s.value)}
+                onEnd={handleSliderEnd}
+                onChange={(v) => handleSliderChange(s.id, v)}
+              />
+            ))}
+          </SectionFrame>
+        ))}
+      </div>
 
       <style>{`
-        .section-well {
-          padding: 10px 10px;
-          border-radius: 14px;
-
-          /* super subtle band — not a card */
-          background:
-            radial-gradient(120% 120% at 18% 12%, rgba(255,255,255,0.05), rgba(0,0,0,0) 60%),
-            linear-gradient(180deg, rgba(0,0,0,0.22), rgba(0,0,0,0.10));
-
-          border: 1px solid rgba(255,255,255,0.06);
-
-          box-shadow:
-            inset 0 1px 0 rgba(255,255,255,0.05),
-            inset 0 -16px 24px rgba(0,0,0,0.35);
+        /* ═══════════════════════════════════════════════════════════════
+           CONTROL DECK CONTAINER
+           ═══════════════════════════════════════════════════════════════ */
+        
+        .control-deck-godmode {
+          width: 100%;
+          min-width: 280px;
+          max-width: 100%;
+          height: 100%;
+          min-height: 0;
+          display: flex;
+          flex-direction: column;
         }
 
-        .section-sliders {
+        .deck-scroll {
+          flex: 1;
+          min-height: 0;
+          overflow-y: auto;
+          overflow-x: hidden;
+          padding: 4px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .deck-scroll::-webkit-scrollbar { width: 5px; }
+        .deck-scroll::-webkit-scrollbar-track { background: transparent; }
+        .deck-scroll::-webkit-scrollbar-thumb { 
+          background: rgba(34,211,238,0.2); 
+          border-radius: 3px; 
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           SECTION FRAME — Metallic beveled container
+           ═══════════════════════════════════════════════════════════════ */
+        
+        .section-frame {
+          position: relative;
+          border-radius: 12px;
+          padding: 4px;
+          
+          /* Charcoal outer shell */
+          background: #1a1d21;
+          
+          border: 1px solid rgba(60, 65, 72, 0.5);
+          
+          box-shadow:
+            0 4px 16px rgba(0, 0, 0, 0.4),
+            0 2px 4px rgba(0, 0, 0, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.06),
+            inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           CORNER BUMPERS — Like hardware screws
+           ═══════════════════════════════════════════════════════════════ */
+        
+        .corner-bumper {
+          position: absolute;
+          width: 10px;
+          height: 10px;
+          z-index: 5;
+        }
+
+        .bumper-outer {
+          position: absolute;
+          inset: 0;
+          border-radius: 50%;
+          background: linear-gradient(145deg,
+            rgba(80, 100, 130, 0.8) 0%,
+            rgba(50, 65, 85, 0.9) 50%,
+            rgba(35, 45, 60, 0.95) 100%
+          );
+          box-shadow:
+            0 1px 2px rgba(0, 0, 0, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .bumper-inner {
+          position: absolute;
+          top: 2px;
+          left: 2px;
+          right: 2px;
+          bottom: 2px;
+          border-radius: 50%;
+          background: linear-gradient(145deg,
+            rgba(30, 40, 55, 0.9) 0%,
+            rgba(20, 28, 40, 1) 100%
+          );
+          box-shadow:
+            inset 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           SECTION HEADER
+           ═══════════════════════════════════════════════════════════════ */
+        
+        .section-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 10px 24px 8px;
+        }
+
+        .section-title {
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          color: rgba(255, 255, 255, 0.9);
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .section-toggle {
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          background: rgba(15, 22, 32, 0.9);
+          border: 1px solid rgba(60, 80, 100, 0.4);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow:
+            inset 0 1px 2px rgba(0, 0, 0, 0.4);
+        }
+
+        .toggle-led {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #22d3ee;
+          box-shadow:
+            0 0 4px #22d3ee,
+            0 0 8px rgba(34, 211, 238, 0.5);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           SECTION CONTENT — Container for slider wells
+           ═══════════════════════════════════════════════════════════════ */
+        
+        .section-content {
           display: flex;
           flex-direction: column;
           gap: 6px;
-          padding: 6px 4px;
+          padding: 4px 4px 8px;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           SLIDER WELL — Individual recessed slot for each slider
+           ═══════════════════════════════════════════════════════════════ */
+        
+        .slider-well {
+          border-radius: 10px;
+          padding: 3px;
+          
+          /* Outer rim of well */
+          background: linear-gradient(180deg,
+            rgba(25, 32, 42, 0.9) 0%,
+            rgba(35, 45, 58, 0.7) 50%,
+            rgba(30, 38, 50, 0.8) 100%
+          );
+          
+          box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.06),
+            0 1px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .slider-well-inner {
+          border-radius: 8px;
+          padding: 12px 14px 10px;
+          
+          /* Deep recessed interior */
+          background: linear-gradient(180deg,
+            rgba(8, 12, 18, 0.98) 0%,
+            rgba(12, 16, 24, 0.96) 50%,
+            rgba(10, 14, 20, 0.97) 100%
+          );
+          
+          box-shadow:
+            inset 0 2px 6px rgba(0, 0, 0, 0.6),
+            inset 0 1px 2px rgba(0, 0, 0, 0.4);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           SLIDER HEADER & LABELS
+           ═══════════════════════════════════════════════════════════════ */
+        
+        .slider-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 6px;
+        }
+
+        .slider-label {
+          font-size: 11px;
+          font-weight: 700;
+          color: rgba(255, 255, 255, 0.7);
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          /* God Mode: Underscore style for labels */
+          font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+        }
+
+        .slider-value {
+          font-size: 13px;
+          font-weight: 700;
+          color: #22d3ee;
+          font-variant-numeric: tabular-nums;
+          /* God Mode: Monospace bright cyan with glow */
+          font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+          text-shadow: 0 0 8px rgba(34, 211, 238, 0.5);
+        }
+
+        /* Info dot */
+        .info-dot {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          cursor: pointer;
+          background: rgba(20, 28, 40, 0.9);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          transition: all 150ms ease;
+        }
+
+        .info-dot:hover {
+          border-color: rgba(34, 211, 238, 0.5);
+          background: rgba(34, 211, 238, 0.1);
+        }
+
+        .info-glyph {
+          font-size: 10px;
+          font-weight: 700;
+          font-style: italic;
+          font-family: Georgia, serif;
+          color: rgba(255, 255, 255, 0.5);
+          line-height: 1;
+        }
+
+        /* Tooltips */
+        .tt-title {
+          font-size: 10px;
+          font-weight: 700;
+          color: rgba(34, 211, 238, 0.9);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          margin-bottom: 5px;
+        }
+
+        .tt-desc {
+          font-size: 11px;
+          color: rgba(255, 255, 255, 0.75);
+          line-height: 1.4;
+          margin-bottom: 6px;
+        }
+
+        .tt-impact {
+          font-size: 10px;
+          color: rgba(148, 163, 184, 0.6);
+          font-style: italic;
+          padding-top: 5px;
+          border-top: 1px solid rgba(255, 255, 255, 0.06);
         }
       `}</style>
-    </CommandDeckBezel>
+    </div>
   );
 }
 

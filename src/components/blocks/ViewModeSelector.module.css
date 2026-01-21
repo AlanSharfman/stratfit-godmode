@@ -3,29 +3,27 @@
 
 .rail {
   width: 100%;
-  height: 58px;
+  /* Increased by 25% */
+  height: 52px;
 
   display: flex;
   align-items: center;
   justify-content: space-between;
 
   padding: 0 10px;
-  margin: 10px 12px 0;
+  margin: 0;
 
-  background: linear-gradient(
-    180deg,
-    rgba(15, 23, 42, 0.98),
-    rgba(2, 6, 23, 0.98)
-  );
+  /* Charcoal background throughout */
+  background: #1a1d21;
 
   border: 1px solid rgba(71, 85, 105, 0.32);
-  border-bottom: 1px solid rgba(34, 211, 238, 0.20);
-  border-radius: 14px 14px 0 0;
+  border-radius: 12px;
 
+  /* No cyan accents - charcoal theme */
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    inset 0 -1px 0 rgba(34, 211, 238, 0.08),
-    0 10px 24px rgba(0, 0, 0, 0.35);
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+    0 8px 18px rgba(0, 0, 0, 0.35);
 
   position: relative;
 }
@@ -33,8 +31,8 @@
 .rail::after {
   content: "";
   position: absolute;
-  inset: 5px;
-  border-radius: 11px 11px 0 0;
+  inset: 4px;
+  border-radius: 8px;
   border: 1px solid rgba(100, 116, 139, 0.10);
   pointer-events: none;
 }
@@ -42,24 +40,22 @@
 .left {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .segment {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  /* Increased by 25% */
+  gap: 6px;
 
-  background: linear-gradient(
-    180deg,
-    rgba(9, 12, 22, 0.80),
-    rgba(6, 8, 16, 0.80)
-  );
+  /* Charcoal background */
+  background: #1a1d21;
 
   border: 1px solid rgba(71, 85, 105, 0.26);
-  border-radius: 12px;
+  border-radius: 10px;
 
-  padding: 6px;
+  padding: 5px;
 }
 
 .tab {
@@ -67,19 +63,38 @@
   cursor: pointer;
   box-sizing: border-box;
 
-  height: 42px;
-  padding: 0 18px;
+  /* Increased by 25% */
+  height: 38px;
+  padding: 0 15px;
 
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
 
-  border-radius: 11px;
+  border-radius: 8px;
   border: 1px solid transparent;
 
   transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
   position: relative;
+}
+
+/* Division line between menu items */
+.tab:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  right: -3px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 20px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.18) 30%,
+    rgba(255, 255, 255, 0.18) 70%,
+    transparent 100%
+  );
 }
 
 .tabIcon {
@@ -88,9 +103,10 @@
 }
 
 .tabLabel {
-  font-size: 13px;
+  /* Increased by 25% */
+  font-size: 12px;
   font-weight: 800;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.10em;
   text-transform: uppercase;
   color: rgba(148, 163, 184, 0.80);
 }

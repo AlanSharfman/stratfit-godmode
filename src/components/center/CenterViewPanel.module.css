@@ -14,7 +14,7 @@
 }
 
 /* ============================================================================
-   VIEW MODE SELECTOR - 3 Big Blocks at top
+   VIEW MODE SELECTOR - Inside mountain compound
    ============================================================================ */
 
 .sfViewSelector {
@@ -24,51 +24,122 @@
   margin-bottom: 16px;
 }
 
-/* ============================================================================
-   MOUNTAIN STAGE - Main content area
-   ============================================================================ */
-
-.sfMountainStage {
-  position: relative;
-  flex: 1;
-  min-height: 0; /* Important for flex child */
-  width: 100%;
-  border-radius: 24px;
-  overflow: hidden;
-  
-  /* G-D Mode dark background */
-  background: linear-gradient(
-    135deg,
-    rgba(10, 14, 20, 0.95) 0%,
-    rgba(15, 23, 42, 0.9) 50%,
-    rgba(17, 24, 39, 0.95) 100%
-  );
-  
-  /* Subtle border */
-  border: 1px solid rgba(71, 85, 105, 0.2);
-  
-  /* Inner depth */
-  box-shadow: 
-    inset 0 2px 4px rgba(0, 0, 0, 0.3),
-    inset 0 -1px 2px rgba(255, 255, 255, 0.02),
-    0 4px 12px rgba(0, 0, 0, 0.4);
+/* View selector positioned inside the mountain compound */
+.sfViewSelectorInner {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  z-index: 10;
+  pointer-events: auto;
 }
 
 /* ============================================================================
-   VIEW WRAPPER - Contains each view's content
+   MOUNTAIN STAGE - EXACT REPLICA OF KPI BEZEL
+   4-LAYER STRUCTURE: chassis → rim → step → well
+   ============================================================================ */
+
+/* ═══════════════════════════════════════════════════════════════
+   CHASSIS — OUTER GLOW FRAME (CHARCOAL)
+   Charcoal background to match user preference
+   ═══════════════════════════════════════════════════════════════ */
+.sfMountainStage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  overflow: visible;
+  
+  border-radius: 18px;
+  padding: 3px;
+  
+  /* Charcoal background */
+  background: #1a1d21;
+  
+  /* GOD-MODE: Smooth rise transition when KPIs close */
+  transition: 
+    transform 1.2s cubic-bezier(0.22, 1, 0.36, 1),
+    margin-top 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+  border: none;
+  
+  /* Hard black separator — no cyan glow */
+  box-shadow:
+    0 0 0 1px #000000,
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RIM (Layer 2) — GOD MODE CHROME (EXACT MATCH TO KPIBezel.rim)
+   Gradient: #9CA8B5 → #050505 (Silver → Pitch Black)
+   Highlight: Pure #FFFFFF (razor-sharp chrome edge)
+   ═══════════════════════════════════════════════════════════════ */
+.sfMountainStage::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 16px;
+  z-index: 0;
+  
+  background: linear-gradient(180deg, #9CA8B5 0%, #050505 100%);
+  border: 1px solid rgba(140, 180, 220, 0.22);
+  
+  box-shadow:
+    inset 0 1px 0 #FFFFFF,
+    inset 0 -1px 0 #000000;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STEP (Layer 3) — GOD MODE DARK STEEL (EXACT MATCH TO KPIBezel.step)
+   Gradient: #2C3540 → #050505
+   4px solid black border + Deep inner shadow
+   ═══════════════════════════════════════════════════════════════ */
+.sfMountainStage::after {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: 13px;
+  z-index: 1;
+  
+  background: linear-gradient(180deg, #2C3540 0%, #050505 100%);
+  border: none;
+  
+  /* 4px solid black border + Deep inner shadow (EXACT MATCH) */
+  box-shadow:
+    0 0 0 4px #000000,
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 3px 6px rgba(0, 0, 0, 0.8);
+}
+
+/* ============================================================================
+   VIEW WRAPPER - WELL (Layer 4) — CHARCOAL CONTENT (EXACT MATCH TO KPIBezel.well)
    ============================================================================ */
 
 .sfViewWrapper {
   position: relative;
-  width: 100%;
-  height: 100%;
+  width: calc(100% - 28px);
+  height: calc(100% - 70px); /* Account for menu inside compound */
+  margin: 56px 14px 14px 14px; /* Top margin for menu */
+  border-radius: 10px;
+  z-index: 2;
+  overflow: hidden;
+  
+  /* Charcoal - EXACT MATCH to KPI wells */
+  background: #1a1d21;
+  border: none;
+  
+  /* Subtle depth (EXACT MATCH) */
+  box-shadow: inset 0 10px 20px rgba(0,0,0,0.5);
+  
+  /* G-D MODE: Spectacular crystal clear mountain */
+  filter: brightness(1.5) contrast(1.2) saturate(1.15);
 }
 
 .sfViewOverlays {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 1;
+  z-index: 3;
 }
 
 /* ============================================================================
@@ -78,7 +149,7 @@
 .sfCausalBand {
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 4;
   pointer-events: none;
 }
 

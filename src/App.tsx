@@ -13,6 +13,7 @@ import type { CenterViewId } from "@/types/view";
 import { migrateCenterView } from "@/types/view";
 import { Moon } from "./components/Moon";
 import { ControlDeck, ControlBoxConfig } from "./components/ControlDeck";
+import { CommandDeckBezel } from "./components/command/CommandDeckBezel";
 import AIIntelligence from "./components/AIIntelligenceEnhanced";
 import ScenarioSelector from "./components/ScenarioSelector";
 import ActiveScenario, { type ScenarioType } from "@/components/blocks/ActiveScenario";
@@ -65,9 +66,9 @@ const INITIAL_LEVERS: LeverState = {
   fundingPressure: 20,
 };
 
-// Scenario presets for the 5 strategic scenarios
+// Scenario presets for the 4 strategy-based situations
 const SCENARIO_PRESETS: Record<ScenarioType, LeverState> = {
-  'base-case': {
+  'current-trajectory': {
     demandStrength: 50,
     pricingPower: 50,
     expansionVelocity: 50,
@@ -78,7 +79,7 @@ const SCENARIO_PRESETS: Record<ScenarioType, LeverState> = {
     executionRisk: 50,
     fundingPressure: 50,
   },
-  'growth': {
+  'series-b-stress-test': {
     demandStrength: 80,
     pricingPower: 60,
     expansionVelocity: 75,
@@ -89,7 +90,7 @@ const SCENARIO_PRESETS: Record<ScenarioType, LeverState> = {
     executionRisk: 45,
     fundingPressure: 40,
   },
-  'efficiency': {
+  'profitability-push': {
     demandStrength: 55,
     pricingPower: 65,
     expansionVelocity: 40,
@@ -100,41 +101,29 @@ const SCENARIO_PRESETS: Record<ScenarioType, LeverState> = {
     executionRisk: 35,
     fundingPressure: 30,
   },
-  'survival': {
-    demandStrength: 40,
-    pricingPower: 50,
-    expansionVelocity: 25,
-    costDiscipline: 80,
-    hiringIntensity: 20,
-    operatingDrag: 15,
-    marketVolatility: 70,
-    executionRisk: 30,
-    fundingPressure: 60,
-  },
-  'series-b': {
-    demandStrength: 70,
-    pricingPower: 60,
-    expansionVelocity: 65,
-    costDiscipline: 65,
-    hiringIntensity: 60,
-    operatingDrag: 30,
-    marketVolatility: 50,
-    executionRisk: 40,
-    fundingPressure: 35,
+  'apac-expansion': {
+    demandStrength: 65,
+    pricingPower: 55,
+    expansionVelocity: 70,
+    costDiscipline: 60,
+    hiringIntensity: 65,
+    operatingDrag: 40,
+    marketVolatility: 60,
+    executionRisk: 50,
+    fundingPressure: 45,
   },
 };
 
 // Map new scenario types to old scenario IDs
 function mapScenarioTypeToId(type: ScenarioType): ScenarioId {
   switch (type) {
-    case 'growth':
-    case 'series-b':
+    case 'series-b-stress-test':
       return 'upside';
-    case 'efficiency':
+    case 'profitability-push':
       return 'base';
-    case 'survival':
+    case 'apac-expansion':
       return 'stress';
-    case 'base-case':
+    case 'current-trajectory':
     default:
       return 'base';
   }
@@ -478,7 +467,7 @@ export default function App() {
     window.localStorage.getItem("ENABLE_SCENARIO_INTELLIGENCE") === "1";
 
   const [scenario, setScenario] = useState<ScenarioId>("base");
-  const [activeScenarioType, setActiveScenarioType] = useState<ScenarioType>("base-case");
+  const [activeScenarioType, setActiveScenarioType] = useState<ScenarioType>("current-trajectory");
   const [levers, setLevers] = useState<LeverState>(INITIAL_LEVERS);
   
   // 🚀 PERFORMANCE OPTIMIZATION: Debounce expensive calculations
@@ -498,6 +487,50 @@ export default function App() {
     return "terrain"; // Demo default: Show terrain view on load
   });
   const didMountRef = useRef(false);
+  
+  // Inner view mode from CenterViewPanel (for KPI animation)
+  // This tracks what tab is selected INSIDE the mountain panel
+  const [innerViewMode, setInnerViewMode] = useState<"terrain" | "impact" | "compare">("terrain");
+  
+  // KPI Garage Door Animation State - GOD MODE
+  // "visible" = fully open, "closing" = running close animation, "hidden" = fully closed
+  const [kpiAnimState, setKpiAnimState] = useState<"visible" | "closing" | "hidden">("visible");
+  const kpiAnimTimeoutRef = useRef<number | null>(null);
+  
+  // Handle KPI garage door animation with GOD-MODE timing
+  // Sequence: Click compare → 1s pause → 2.2s smooth close → content rises
+  useEffect(() => {
+    // Clear any existing timeouts
+    if (kpiAnimTimeoutRef.current) {
+      clearTimeout(kpiAnimTimeoutRef.current);
+      kpiAnimTimeoutRef.current = null;
+    }
+    
+    if (innerViewMode === "terrain") {
+      // Opening: Immediate visibility (CSS handles the smooth transition)
+      setKpiAnimState("visible");
+    } else {
+      // Closing sequence:
+      // 1. Wait 1 second (let compare page settle)
+      // 2. Trigger smooth 2.2s close animation
+      // 3. After animation, set hidden (margin-bottom transition lifts content)
+      kpiAnimTimeoutRef.current = window.setTimeout(() => {
+        setKpiAnimState("closing");
+        
+        // After animation completes (2.2s), transition to hidden
+        // The hidden state's margin-bottom transition (1s) lifts content smoothly
+        kpiAnimTimeoutRef.current = window.setTimeout(() => {
+          setKpiAnimState("hidden");
+        }, 2250); // Match CSS animation duration (2.2s) + 50ms buffer
+      }, 1000); // 1 second delay before closing starts
+    }
+    
+    return () => {
+      if (kpiAnimTimeoutRef.current) {
+        clearTimeout(kpiAnimTimeoutRef.current);
+      }
+    };
+  }, [innerViewMode]);
 
   // Persist centerView to localStorage
   useEffect(() => {
@@ -1192,27 +1225,30 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
             {/* Spacer (fixed, CSS-controlled) */}
             <div className="sf-leftSpacer" aria-hidden="true" />
 
-            {/* Control Panel */}
+            {/* Control Panel - GOD-MODE Bezel (matches Scenario Intelligence) */}
             <div className="sliders-container" data-tour="sliders">
-              <ControlDeck boxes={controlBoxes} onChange={handleLeverChange} />
+              <CommandDeckBezel>
+                <ControlDeck boxes={controlBoxes} onChange={handleLeverChange} />
+              </CommandDeckBezel>
             </div>
           </div>
         </aside>
 
         {/* CENTER COLUMN: KPIs + Mountain OR Scenario Impact OR Variances */}
         <main className="center-column">
-          {/* Canonical center view switch */}
+          {/* KPI Console - Always rendered, GOD-MODE garage door animation */}
+          <div 
+            className={`kpi-section kpi-section--animated kpi-section--${kpiAnimState}`} 
+            data-tour="kpis"
+          >
+            <KPIConsole />
+          </div>
+          
+          {/* View-specific content */}
           {(() => {
             switch (centerView) {
               case "terrain":
-                return (
-                  <>
-                    <div className="kpi-section" data-tour="kpis">
-                      <KPIConsole />
-                    </div>
-                    <CenterViewPanel />
-                  </>
-                );
+                return <CenterViewPanel onViewModeChange={setInnerViewMode} />;
               case "impact":
                 return <ImpactView />;
               case "compare":

@@ -39,7 +39,6 @@ function generatePlaceholderSeries(currentValue: number, length: number = 7): nu
 // ============================================================================
 export default function BurnTrendBars({ series, value, trend = "neutral" }: BurnTrendBarsProps) {
   const [mounted, setMounted] = useState(false);
-  const [showSheen, setShowSheen] = useState(false);
   
   // Generate series data
   const barData = useMemo(() => {
@@ -49,19 +48,6 @@ export default function BurnTrendBars({ series, value, trend = "neutral" }: Burn
     return generatePlaceholderSeries(value, 7);
   }, [series, value]);
   
-  // Determine trend from series if not provided
-  const effectiveTrend = useMemo(() => {
-    if (trend !== "neutral") return trend;
-    // Calculate trend from first vs last bar
-    if (barData.length >= 2) {
-      const first = barData[0];
-      const last = barData[barData.length - 1];
-      const diff = last - first;
-      if (Math.abs(diff) < first * 0.05) return "neutral"; // Less than 5% change
-      return diff > 0 ? "negative" : "positive"; // Higher burn = negative, lower burn = positive
-    }
-    return "neutral";
-  }, [barData, trend]);
   
   // Normalize bars to height range (6px to 28px)
   const normalizedBars = useMemo(() => {
@@ -87,13 +73,6 @@ export default function BurnTrendBars({ series, value, trend = "neutral" }: Burn
     return () => clearTimeout(timer);
   }, []);
   
-  // Sheen animation on value change
-  useEffect(() => {
-    setShowSheen(true);
-    const timer = setTimeout(() => setShowSheen(false), 600);
-    return () => clearTimeout(timer);
-  }, [value]);
-  
   const barCount = normalizedBars.length;
   const barWidth = 5;
   const gap = 4;
@@ -101,135 +80,101 @@ export default function BurnTrendBars({ series, value, trend = "neutral" }: Burn
   const viewBoxWidth = totalWidth + 8; // Padding
   const viewBoxHeight = 36;
   
-  // Get last bar color - always grey (neutral tone)
-  const getLastBarColor = () => {
-    // Clean grey for the final bar - no green, no orange
-    return {
-      gradient: ["rgba(148,163,184,0.9)", "rgba(120,135,155,0.75)"], // Slate grey
-      glow: "rgba(148,163,184,0.25)"
-    };
-  };
-  
-  const lastBarColors = getLastBarColor();
+  // CYAN bars - no status badge
+  const scaledViewBoxWidth = viewBoxWidth + 20;
+  const scaledViewBoxHeight = viewBoxHeight + 8;
   
   return (
     <svg 
-      viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`} 
+      viewBox={`0 0 ${scaledViewBoxWidth} ${scaledViewBoxHeight}`} 
       className="burn-trend-bars"
-      style={{ width: '100%', height: 'auto', maxHeight: '55px' }}
+      style={{ width: '100%', height: 'auto', maxHeight: '50px', overflow: 'visible' }}
     >
       <defs>
-        {/* Purple gradient for regular bars */}
-        <linearGradient id="burn-bar-purple" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="rgba(168,85,247,0.85)" />
-          <stop offset="100%" stopColor="rgba(139,92,246,0.7)" />
+        {/* Cyan gradient for bars - brighter */}
+        <linearGradient id="burn-bar-cyan" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="rgba(0,255,255,0.4)" />
+          <stop offset="50%" stopColor="rgba(0,255,255,0.85)" />
+          <stop offset="100%" stopColor="rgba(0,255,255,0.4)" />
         </linearGradient>
         
-        {/* Last bar gradient - changes based on trend */}
+        {/* Latest bar gradient - brighter */}
         <linearGradient id="burn-bar-latest" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor={lastBarColors.gradient[0]} />
-          <stop offset="100%" stopColor={lastBarColors.gradient[1]} />
+          <stop offset="0%" stopColor="rgba(0,255,255,0.5)" />
+          <stop offset="50%" stopColor="rgba(0,255,255,1)" />
+          <stop offset="100%" stopColor="rgba(0,255,255,0.5)" />
         </linearGradient>
         
-        {/* Sheen sweep gradient */}
-        <linearGradient id="burn-sheen" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="rgba(255,255,255,0)" />
-          <stop offset="50%" stopColor="rgba(255,255,255,0.08)" />
-          <stop offset="100%" stopColor="rgba(255,255,255,0)" />
-        </linearGradient>
+        {/* Glow filter */}
+        <filter id="burn-glow" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="1.5" result="blur"/>
+          <feMerge>
+            <feMergeNode in="blur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
       </defs>
       
-      {/* Baseline grid line */}
-      <line 
-        x1="4" 
-        y1={viewBoxHeight - 4} 
-        x2={viewBoxWidth - 4} 
-        y2={viewBoxHeight - 4}
-        stroke="rgba(80,90,110,0.2)"
-        strokeWidth="1"
-        strokeDasharray="2 3"
-      />
+      {/* Cyan brackets - brighter */}
+      <g stroke="rgba(0,255,255,0.7)" strokeWidth="0.5" fill="none">
+        <path d="M 2 6 L 2 2 L 6 2"/>
+        <path d={`M ${scaledViewBoxWidth - 8} 2 L ${scaledViewBoxWidth - 2} 2 L ${scaledViewBoxWidth - 2} 6`}/>
+        <path d={`M 2 ${scaledViewBoxHeight - 8} L 2 ${scaledViewBoxHeight - 2} L 6 ${scaledViewBoxHeight - 2}`}/>
+        <path d={`M ${scaledViewBoxWidth - 8} ${scaledViewBoxHeight - 2} L ${scaledViewBoxWidth - 2} ${scaledViewBoxHeight - 2} L ${scaledViewBoxWidth - 2} ${scaledViewBoxHeight - 8}`}/>
+      </g>
       
-      {/* Reference line at mid-height */}
+      {/* Cyan baseline - brighter */}
       <line 
-        x1="4" 
-        y1={viewBoxHeight - 18} 
-        x2={viewBoxWidth - 4} 
-        y2={viewBoxHeight - 18}
-        stroke="rgba(80,90,110,0.1)"
+        x1="6" 
+        y1={scaledViewBoxHeight - 6} 
+        x2={scaledViewBoxWidth - 6} 
+        y2={scaledViewBoxHeight - 6}
+        stroke="rgba(0,255,255,0.45)"
         strokeWidth="0.5"
       />
       
-      {/* Bars - all purple except last one */}
+      {/* Cyan tick marks - brighter */}
+      {normalizedBars.map((_, idx) => (
+        <line 
+          key={`tick-${idx}`}
+          x1={6 + idx * (barWidth + gap) + barWidth / 2}
+          y1={scaledViewBoxHeight - 5}
+          x2={6 + idx * (barWidth + gap) + barWidth / 2}
+          y2={scaledViewBoxHeight - 3}
+          stroke="rgba(0,255,255,0.55)"
+          strokeWidth="0.5"
+        />
+      ))}
+      
+      {/* Cyan bars - brighter */}
       {normalizedBars.map((bar, idx) => {
-        const x = 4 + idx * (barWidth + gap);
-        const y = viewBoxHeight - 4 - bar.height;
-        // Regular bars fade in opacity, last bar is full
-        const opacity = bar.isLatest ? 1 : 0.5 + (idx / barCount) * 0.35;
-        const delay = idx * 40; // Staggered animation
+        const x = 6 + idx * (barWidth + gap);
+        const scaledHeight = bar.height * 0.9;
+        const y = scaledViewBoxHeight - 6 - scaledHeight;
+        const opacity = bar.isLatest ? 1 : 0.6 + (idx / barCount) * 0.3;
+        const delay = idx * 20;
         
         return (
           <rect
             key={idx}
             x={x}
-            y={mounted ? y : viewBoxHeight - 4}
+            y={mounted ? y : scaledViewBoxHeight - 6}
             width={barWidth}
-            height={mounted ? bar.height : 0}
-            rx="1.5"
-            ry="1.5"
-            fill={bar.isLatest ? "url(#burn-bar-latest)" : "url(#burn-bar-purple)"}
+            height={mounted ? scaledHeight : 0}
+            rx="1"
+            ry="1"
+            fill={bar.isLatest ? "url(#burn-bar-latest)" : "url(#burn-bar-cyan)"}
+            filter={bar.isLatest ? "url(#burn-glow)" : undefined}
             opacity={opacity}
             style={{
-              transition: `y 80ms cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms, height 80ms cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms, fill 80ms ease`,
+              transition: `y 80ms cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms, height 80ms cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms`,
             }}
           />
         );
       })}
       
-      {/* Latest bar glow effect */}
-      {mounted && (
-        <rect
-          x={4 + (barCount - 1) * (barWidth + gap) - 1}
-          y={viewBoxHeight - 4 - normalizedBars[barCount - 1].height - 1}
-          width={barWidth + 2}
-          height={normalizedBars[barCount - 1].height + 2}
-          rx="2"
-          ry="2"
-          fill="none"
-          stroke={lastBarColors.glow}
-          strokeWidth="1"
-          style={{
-            transition: 'y 80ms cubic-bezier(0.22, 1, 0.36, 1), height 80ms cubic-bezier(0.22, 1, 0.36, 1), stroke 80ms ease',
-          }}
-        />
-      )}
-      
-      {/* Scan sheen overlay */}
-      {showSheen && (
-        <rect
-          x="0"
-          y="0"
-          width={viewBoxWidth}
-          height={viewBoxHeight}
-          fill="url(#burn-sheen)"
-          style={{
-            animation: 'burn-sheen-sweep 0.5s ease-out',
-          }}
-        />
-      )}
-      
-      <style>{`
-        @keyframes burn-sheen-sweep {
-          0% { 
-            transform: translateX(-100%);
-            opacity: 1;
-          }
-          100% { 
-            transform: translateX(100%);
-            opacity: 0;
-          }
-        }
-      `}</style>
+      {/* No status badge - removed per user request */}
     </svg>
   );
 }
+

@@ -120,40 +120,168 @@ const EMPTY_KPIS = Object.freeze({});
 // Shared easing
 const EASE_OUT = "cubic-bezier(0.22, 1, 0.36, 1)";
 
-// 1. CASH — Reserve ring showing cash level (no continuous motion)
+// ============================================================================
+// GOD MODE BULLET CHART — Tactical Sci-Fi Command Center Style
+// ============================================================================
+
+// CYAN ELEMENTS - Brighter
+function GodModeGrid({ id }: { id: string }) {
+  return (
+    <defs>
+      {/* Cyan gradient for bars - brighter */}
+      <linearGradient id={`${id}-beam`} x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stopColor="rgba(0,255,255,0.4)"/>
+        <stop offset="50%" stopColor="rgba(0,255,255,0.85)"/>
+        <stop offset="100%" stopColor="rgba(0,255,255,0.4)"/>
+      </linearGradient>
+      {/* Horizontal cyan bar - brighter */}
+      <linearGradient id={`${id}-hbeam`} x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stopColor="rgba(0,255,255,0.95)"/>
+        <stop offset="80%" stopColor="rgba(0,255,255,0.65)"/>
+        <stop offset="100%" stopColor="rgba(0,255,255,0.25)"/>
+      </linearGradient>
+      {/* Glow filter */}
+      <filter id={`${id}-glow`} x="-30%" y="-30%" width="160%" height="160%">
+        <feGaussianBlur stdDeviation="1.5" result="blur"/>
+        <feMerge>
+          <feMergeNode in="blur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+      <filter id={`${id}-glow-strong`} x="-30%" y="-30%" width="160%" height="160%">
+        <feGaussianBlur stdDeviation="2" result="blur"/>
+        <feMerge>
+          <feMergeNode in="blur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+      <filter id={`${id}-text-halo`} x="0%" y="0%" width="100%" height="100%">
+        <feComposite in="SourceGraphic" operator="over"/>
+      </filter>
+    </defs>
+  );
+}
+
+// CYAN brackets - brighter corner hints
+function TechBrackets({ x, y, w, h }: { x: number; y: number; w: number; h: number }) {
+  const bracketSize = 3;
+  return (
+    <g stroke="rgba(0,255,255,0.75)" strokeWidth="1" fill="none">
+      {/* Top-left bracket */}
+      <path d={`M ${x} ${y + bracketSize} L ${x} ${y} L ${x + bracketSize} ${y}`}/>
+      {/* Top-right bracket */}
+      <path d={`M ${x + w - bracketSize} ${y} L ${x + w} ${y} L ${x + w} ${y + bracketSize}`}/>
+      {/* Bottom-left bracket */}
+      <path d={`M ${x} ${y + h - bracketSize} L ${x} ${y + h} L ${x + bracketSize} ${y + h}`}/>
+      {/* Bottom-right bracket */}
+      <path d={`M ${x + w - bracketSize} ${y + h} L ${x + w} ${y + h} L ${x + w} ${y + h - bracketSize}`}/>
+    </g>
+  );
+}
+
+// Precision ruler tick marks - cyan glow
+function TickMarks({ x, y, width, count = 10 }: { x: number; y: number; width: number; count?: number }) {
+  const ticks = [];
+  for (let i = 0; i <= count; i++) {
+    const tickX = x + (i / count) * width;
+    const isMajor = i % 5 === 0;
+    ticks.push(
+      <line 
+        key={i}
+        x1={tickX} y1={y} 
+        x2={tickX} y2={y + (isMajor ? 3 : 1.5)}
+        stroke={isMajor ? "rgba(0,255,255,0.75)" : "rgba(0,255,255,0.4)"}
+        strokeWidth={0.5}
+      />
+    );
+  }
+  return <g>{ticks}</g>;
+}
+
+// GLOWING PILL BADGE - God Mode status indicator
+// SILENT INTELLIGENCE - Tiny geometric symbols, no glow
+function StatusBadge({ 
+  x, y, text, color, id, align = "end" 
+}: { 
+  x: number; y: number; text: string; color: string; id: string; align?: "start" | "middle" | "end" 
+}) {
+  const isRed = color.includes("FF33") || color.includes("ef44") || color.includes("FF00") || text === "CRIT" || text === "CRITICAL";
+  const isWarn = color.includes("FFB0") || text === "LOW" || text === "MED";
+  
+  // Matte colors - no glow, deep tones
+  const symbolColor = isRed ? "#8B3030" : isWarn ? "#8B7030" : "rgba(140,150,160,0.6)";
+  const symX = align === "end" ? x - 6 : align === "middle" ? x : x;
+  
+  // Tiny geometric symbols: triangle for critical, diamond for warning, circle for ok
+  if (isRed) {
+    // Small matte triangle (pointing up = alert)
+    return (
+      <polygon 
+        points={`${symX},${y - 3} ${symX + 4},${y + 3} ${symX - 4},${y + 3}`}
+        fill={symbolColor}
+        stroke="none"
+      />
+    );
+  } else if (isWarn) {
+    // Small matte diamond
+    return (
+      <polygon 
+        points={`${symX},${y - 3} ${symX + 3},${y} ${symX},${y + 3} ${symX - 3},${y}`}
+        fill={symbolColor}
+        stroke="none"
+      />
+    );
+  } else {
+    // Tiny matte circle (stable/ok)
+    return (
+      <circle 
+        cx={symX} cy={y}
+        r={2.5}
+        fill={symbolColor}
+        stroke="none"
+      />
+    );
+  }
+}
+
+// 1. CASH — Cyan Bullet Chart
 function CashInstrument({ value, state }: { value: number; state: "idle" | "hover" | "active" }) {
-  // Reserve level as percentage of ring fill (0-100 maps to arc)
-  const reservePct = Math.min(100, Math.max(0, value));
-  const circumference = 2 * Math.PI * 18;
-  const reserveArc = (reservePct / 100) * circumference;
+  const pct = Math.min(100, Math.max(0, value));
+  const barWidth = (pct / 100) * 88;
+  const targetX = 70; // 80% target line
+  const id = `cash-gm-${Math.random().toString(36).substr(2, 6)}`;
+  const status = pct >= 80 ? "OK" : pct >= 50 ? "LOW" : "CRIT";
+  const statusColor = pct >= 80 ? "#00FF00" : pct >= 50 ? "#FFB000" : "#FF3300";
   
   return (
-    <svg viewBox="0 0 48 48" className="instrument-svg">
-      {/* Outer track ring */}
-      <circle 
-        cx="24" cy="24" r="18" 
-        fill="none" 
-        stroke="rgba(50,60,75,0.3)" 
-        strokeWidth="3"
+    <svg viewBox="0 0 100 32" className="instrument-svg" style={{ overflow: 'visible' }}>
+      <GodModeGrid id={id} />
+      
+      {/* Track */}
+      <rect x="4" y="14" width="88" height="4" rx="0.5" fill="rgba(0,255,255,0.1)"/>
+      
+      {/* Precision tick marks underneath */}
+      <TickMarks x={4} y={20} width={88} count={10} />
+      
+      {/* Cyan bar */}
+      <rect 
+        x="4" y="14" 
+        width={barWidth} height="4" 
+        rx="0.5"
+        fill={`url(#${id}-hbeam)`}
+        filter={`url(#${id}-glow)`}
+        style={{ transition: `width 150ms ${EASE_OUT}` }}
       />
-      {/* Reserve level arc - fills based on cash position */}
-      <circle 
-        cx="24" cy="24" r="18" 
-        fill="none" 
-        stroke="rgba(34,211,238,0.6)" 
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeDasharray={`${reserveArc} ${circumference}`}
-        style={{ 
-          transform: 'rotate(-90deg)',
-          transformOrigin: '24px 24px',
-          transition: `stroke-dasharray 80ms ${EASE_OUT}`
-        }}
+      
+      {/* Target marker */}
+      <line 
+        x1={4 + targetX} y1="10" 
+        x2={4 + targetX} y2="22"
+        stroke="rgba(255,255,255,0.8)" strokeWidth="1.5"
       />
-      {/* Inner reference ring */}
-      <circle cx="24" cy="24" r="12" fill="none" stroke="rgba(60,70,85,0.25)" strokeWidth="1"/>
-      {/* Center indicator */}
-      <circle cx="24" cy="24" r="4" fill="rgba(34,211,238,0.5)"/>
+      
+      {/* STATUS SYMBOL */}
+      <StatusBadge x={96} y={16} text={status} color={statusColor} id={id} />
     </svg>
   );
 }
@@ -185,222 +313,273 @@ function BurnInstrument({ value, state, burnAmount, cashAmount }: {
   return <BurnTrendBars value={burn} trend={trend} />;
 }
 
-// 3. RUNWAY — Progress bar with rounded leading edge and end fade
+// 3. RUNWAY — Cyan Bullet Chart
 function RunwayInstrument({ value, state }: { value: number; state: "idle" | "hover" | "active" }) {
-  const pct = Math.min(100, Math.max(2, (value / 36) * 100));
-  const fillWidth = Math.max(6, pct * 0.88);
-  const fadeId = `runway-fade-${Math.random().toString(36).substr(2, 9)}`;
+  const months = Math.min(36, Math.max(0, value));
+  const pct = (months / 36) * 100;
+  const barWidth = Math.max(4, (pct / 100) * 88);
+  const targetX = 29; // 12 months target
+  const id = `runway-gm-${Math.random().toString(36).substr(2, 6)}`;
+  
+  const status = months >= 12 ? "OK" : months >= 6 ? "LOW" : "CRIT";
+  const statusColor = months >= 12 ? "#00FF00" : months >= 6 ? "#FFB000" : "#FF3300";
   
   return (
-    <svg viewBox="0 0 100 24" className="instrument-svg">
-      <defs>
-        {/* End fade gradient */}
-        <linearGradient id={fadeId} x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="rgba(34,211,238,0.6)"/>
-          <stop offset="85%" stopColor="rgba(34,211,238,0.6)"/>
-          <stop offset="100%" stopColor="rgba(34,211,238,0.15)"/>
-        </linearGradient>
-      </defs>
-      {/* Track with subtle end zone */}
-      <rect x="4" y="9" width="92" height="6" rx="3" fill="rgba(30,35,45,0.7)"/>
-      {/* Danger zone indicator at end */}
-      <rect x="82" y="9" width="14" height="6" rx="0" fill="rgba(239,68,68,0.12)"/>
-      {/* Runway fill with fade */}
+    <svg viewBox="0 0 100 32" className="instrument-svg" style={{ overflow: 'visible' }}>
+      <GodModeGrid id={id} />
+      
+      {/* Subtle danger zone */}
+      <rect x="4" y="14" width="15" height="4" fill="rgba(255,50,50,0.2)" rx="0.5"/>
+      
+      {/* Track */}
+      <rect x="4" y="14" width="88" height="4" rx="0.5" fill="rgba(0,255,255,0.1)"/>
+      
+      {/* Precision tick marks */}
+      <TickMarks x={4} y={20} width={88} count={12} />
+      
+      {/* Cyan bar */}
       <rect 
-        x="4" 
-        y="9" 
-        width={fillWidth} 
-        height="6" 
-        rx="3" 
-        fill={`url(#${fadeId})`}
-        style={{ transition: `width 80ms ${EASE_OUT}` }}
+        x="4" y="14" 
+        width={barWidth} height="4" 
+        rx="0.5"
+        fill={`url(#${id}-hbeam)`}
+        filter={`url(#${id}-glow)`}
+        style={{ transition: `width 150ms ${EASE_OUT}` }}
       />
-      {/* Rounded leading edge cap */}
-      <circle 
-        cx={4 + fillWidth - 3} 
-        cy="12" 
-        r="3.5" 
-        fill="rgba(34,211,238,0.7)"
-        style={{ transition: `cx 80ms ${EASE_OUT}` }}
+      
+      {/* Target marker */}
+      <line 
+        x1={4 + targetX} y1="10" 
+        x2={4 + targetX} y2="22"
+        stroke="rgba(255,255,255,0.8)" strokeWidth="1.5"
       />
+      
+      {/* STATUS SYMBOL */}
+      <StatusBadge x={96} y={16} text={status} color={statusColor} id={id} />
     </svg>
   );
 }
 
-// 4. ARR — Sparkline with thicker final segment, faded history
+// 4. ARR — Cyan Sparkline with trend arrow
 function MomentumInstrument({ value, state }: { value: number; state: "idle" | "hover" | "active" }) {
-  const fadeId = `arr-fade-${Math.random().toString(36).substr(2, 9)}`;
-  // Generate deterministic sparkline based on value
-  const points = Array.from({ length: 16 }, (_, i) => {
-    const base = 28 - (value / 100) * 12;
-    const variance = Math.sin(i * 0.8 + value * 0.1) * 6 + Math.cos(i * 1.2) * 3;
-    const trend = (i / 15) * (value / 100) * -8;
-    return { x: 4 + i * 5.5, y: Math.max(8, Math.min(38, base + variance + trend)) };
+  const id = `arr-gm-${Math.random().toString(36).substr(2, 6)}`;
+  
+  // Generate sparkline points
+  const points = Array.from({ length: 8 }, (_, i) => {
+    const base = 20 - (value / 100) * 8;
+    const variance = Math.sin(i * 0.8 + value * 0.1) * 4 + Math.cos(i * 1.2) * 2;
+    const trend = (i / 7) * (value / 100) * -6;
+    return { x: 6 + i * 10, y: Math.max(8, Math.min(28, base + variance + trend)) };
   });
   
-  // Split into history (faded) and recent (bold)
-  const historyPath = points.slice(0, 12).map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-  const recentPath = points.slice(11).map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+  const fullPath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+  const lastPoint = points[points.length - 1];
+  const isUpTrend = points[points.length - 1].y < points[0].y;
   
   return (
-    <svg viewBox="0 0 92 44" className="instrument-svg">
-      <defs>
-        <linearGradient id={fadeId} x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="rgba(100,115,130,0.2)"/>
-          <stop offset="100%" stopColor="rgba(100,115,130,0.5)"/>
-        </linearGradient>
-      </defs>
-      {/* Baseline reference */}
-      <line x1="4" y1="24" x2="88" y2="24" stroke="rgba(60,70,85,0.2)" strokeWidth="0.5" strokeDasharray="2 3"/>
-      {/* History segment (faded) */}
+    <svg viewBox="0 0 100 32" className="instrument-svg" style={{ overflow: 'visible' }}>
+      <GodModeGrid id={id} />
+      
+      {/* Cyan sparkline */}
       <path 
-        d={historyPath} 
+        d={fullPath} 
         fill="none" 
-        stroke={`url(#${fadeId})`}
+        stroke="rgba(0,255,255,0.7)"
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
-        style={{ transition: `d 80ms ${EASE_OUT}` }}
+        filter={`url(#${id}-glow)`}
       />
-      {/* Recent segment (bold) */}
-      <path 
-        d={recentPath} 
-        fill="none" 
-        stroke="rgba(140,160,180,0.8)" 
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        style={{ transition: `d 80ms ${EASE_OUT}` }}
-      />
-      {/* Current value dot */}
-      <circle cx={points[15].x} cy={points[15].y} r="3.5" fill="rgba(34,211,238,0.7)"/>
+      
+      {/* Cyan dot at end */}
+      <circle cx={lastPoint.x} cy={lastPoint.y} r="3" fill="rgba(0,255,255,0.9)" filter={`url(#${id}-glow)`}/>
+      
+      {/* Cyan arrow */}
+      {isUpTrend ? (
+        <polygon 
+          points="88,10 96,16 88,22"
+          fill="rgba(0,255,255,0.8)"
+          filter={`url(#${id}-glow)`}
+        />
+      ) : (
+        <polygon 
+          points="88,22 96,16 88,10"
+          fill="rgba(0,255,255,0.8)"
+          filter={`url(#${id}-glow)`}
+        />
+      )}
     </svg>
   );
 }
 
-// 5. GROSS MARGIN — Banded range with position indicator
+// 5. GROSS MARGIN — Cyan Range Indicator
 function EarningsInstrument({ value, state }: { value: number; state: "idle" | "hover" | "active" }) {
   const pct = Math.min(100, Math.max(0, value));
-  const indicatorX = 4 + (pct / 100) * 72;
+  const indicatorX = 8 + (pct / 100) * 84;
+  const id = `margin-gm-${Math.random().toString(36).substr(2, 6)}`;
+  
+  // Determine zone
+  const zone = pct >= 70 ? "OK" : pct >= 40 ? "MED" : "CRIT";
+  const zoneColor = pct >= 70 ? "#00FF00" : pct >= 40 ? "#FFB000" : "#FF3300";
   
   return (
-    <svg viewBox="0 0 80 32" className="instrument-svg">
-      {/* Low band (0-40%) - warning */}
-      <rect x="4" y="12" width="28.8" height="8" fill="rgba(239,68,68,0.15)"/>
-      {/* Mid band (40-70%) - acceptable */}
-      <rect x="32.8" y="12" width="21.6" height="8" fill="rgba(217,119,6,0.12)"/>
-      {/* High band (70-100%) - healthy */}
-      <rect x="54.4" y="12" width="21.6" height="8" fill="rgba(74,222,128,0.12)"/>
-      {/* Track outline */}
-      <rect x="4" y="12" width="72" height="8" rx="1" fill="none" stroke="rgba(60,70,85,0.35)" strokeWidth="1"/>
-      {/* Position indicator line */}
+    <svg viewBox="0 0 100 32" className="instrument-svg" style={{ overflow: 'visible' }}>
+      <GodModeGrid id={id} />
+      
+      {/* Colored bands - subtle */}
+      <rect x="8" y="12" width="34" height="8" fill="rgba(255,50,50,0.15)"/>
+      <rect x="42" y="12" width="25" height="8" fill="rgba(255,176,0,0.1)"/>
+      <rect x="67" y="12" width="25" height="8" fill="rgba(0,255,0,0.08)"/>
+      
+      {/* Cyan track outline */}
+      <rect x="8" y="12" width="84" height="8" rx="0.5" fill="none" stroke="rgba(0,255,255,0.3)" strokeWidth="0.5"/>
+      
+      {/* Tick marks */}
+      <TickMarks x={8} y={22} width={84} count={10} />
+      <text x="8" y="28" fontSize="4" fill="rgba(0,255,255,0.5)" fontFamily="'Roboto Mono', monospace">0</text>
+      <text x="88" y="28" fontSize="4" fill="rgba(0,255,255,0.5)" fontFamily="'Roboto Mono', monospace" textAnchor="end">100</text>
+      
+      {/* Cyan position indicator */}
       <line 
-        x1={indicatorX} 
-        y1="8" 
-        x2={indicatorX} 
-        y2="24" 
-        stroke="rgba(34,211,238,0.75)" 
-        strokeWidth="2"
-        strokeLinecap="round"
-        style={{ transition: `x1 80ms ${EASE_OUT}, x2 80ms ${EASE_OUT}` }}
+        x1={indicatorX} y1="8" 
+        x2={indicatorX} y2="24"
+        stroke="rgba(0,255,255,0.9)" strokeWidth="1.5"
+        filter={`url(#${id}-glow)`}
+        style={{ transition: `x1 150ms ${EASE_OUT}, x2 150ms ${EASE_OUT}` }}
       />
-      {/* Indicator cap */}
-      <circle 
-        cx={indicatorX} 
-        cy="16" 
-        r="3" 
-        fill="rgba(34,211,238,0.6)"
-        style={{ transition: `cx 80ms ${EASE_OUT}` }}
-      />
+      
+      {/* Cyan indicator dot */}
+      <circle cx={indicatorX} cy={16} r="3" fill="rgba(0,255,255,0.9)" filter={`url(#${id}-glow)`}/>
+      
+      {/* STATUS SYMBOL */}
+      <StatusBadge x={96} y={16} text={zone} color={zoneColor} id={id} />
     </svg>
   );
 }
 
-// 6. RISK SCORE — Thickened arc with single numeric display
+// 6. RISK SCORE — Cyan Arc Gauge
 function RiskInstrument({ value, state }: { value: number; state: "idle" | "hover" | "active" }) {
   const score = Math.min(100, Math.max(0, Math.round(value)));
-  const color = score < 35 ? "rgba(74,222,128,0.75)" : score < 65 ? "rgba(217,119,6,0.75)" : "rgba(239,68,68,0.75)";
+  const id = `risk-gm-${Math.random().toString(36).substr(2, 6)}`;
+  
+  // Cyan arc with risk-based color
+  const arcColor = score < 35 ? "#00FF00" : score < 65 ? "#FFB000" : "#FF3300";
+  const status = score < 35 ? "LOW" : score < 65 ? "MED" : "HIGH";
   
   return (
-    <svg viewBox="0 0 60 50" className="instrument-svg">
-      {/* Arc track - thicker */}
+    <svg viewBox="0 0 100 48" className="instrument-svg" style={{ overflow: 'visible' }}>
+      <GodModeGrid id={id} />
+      
+      {/* Cyan arc track */}
       <path 
-        d="M8 38 A 22 22 0 0 1 52 38" 
+        d="M18 40 A 32 32 0 0 1 82 40" 
         fill="none" 
-        stroke="rgba(40,48,60,0.5)" 
-        strokeWidth="5" 
+        stroke="rgba(0,255,255,0.2)" 
+        strokeWidth="3" 
         strokeLinecap="round"
       />
-      {/* Colored arc based on value - thicker */}
+      
+      {/* Cyan tick marks on arc */}
+      {[0, 25, 50, 75, 100].map((tick, i) => {
+        const angle = (Math.PI * tick) / 100;
+        const x1 = 50 - 28 * Math.cos(angle);
+        const y1 = 40 - 28 * Math.sin(angle);
+        const x2 = 50 - 34 * Math.cos(angle);
+        const y2 = 40 - 34 * Math.sin(angle);
+        return (
+          <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} 
+            stroke="rgba(0,255,255,0.5)" strokeWidth="1"/>
+        );
+      })}
+      
+      {/* Cyan colored arc with glow */}
       <path 
-        d="M8 38 A 22 22 0 0 1 52 38" 
+        d="M18 40 A 32 32 0 0 1 82 40" 
         fill="none" 
-        stroke={color}
-        strokeWidth="5" 
+        stroke="rgba(0,255,255,0.8)"
+        strokeWidth="3" 
         strokeLinecap="round"
-        strokeDasharray="110"
-        strokeDashoffset={110 - (score / 100) * 110}
-        style={{ transition: `stroke-dashoffset 80ms ${EASE_OUT}, stroke 80ms ${EASE_OUT}` }}
+        strokeDasharray="100"
+        strokeDashoffset={100 - (score / 100) * 100}
+        filter={`url(#${id}-glow)`}
+        style={{ transition: `stroke-dashoffset 150ms ${EASE_OUT}, stroke 150ms ${EASE_OUT}` }}
       />
-      {/* Score display - prominent single number */}
+      
+      {/* Cyan score display */}
       <text 
-        x="30" 
-        y="32" 
+        x="50" y="34" 
         textAnchor="middle" 
-        fontSize="14" 
+        fontSize="16" 
         fontWeight="600" 
-        fill="rgba(160,175,190,0.9)"
-        style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
+        fill="rgba(0,255,255,0.9)"
+        fontFamily="'Roboto Mono', monospace"
+        style={{ textRendering: 'geometricPrecision' }}
       >
         {score}
       </text>
+      
+      {/* STATUS SYMBOL - below score */}
+      <StatusBadge x={50} y={44} text={status} color={arcColor} id={id} align="middle" />
     </svg>
   );
 }
 
-// 7. VALUATION — Confidence band with baseline indicator
+// 7. VALUATION — Cyan Variance Indicator
 function ValueInstrument({ value, state }: { value: number; state: "idle" | "hover" | "active" }) {
   const normalized = Math.min(100, Math.max(0, value));
-  const baselineX = 40; // Center baseline
-  const indicatorX = 10 + (normalized / 100) * 60; // Current position
-  const bandWidth = Math.abs(indicatorX - baselineX) + 8;
-  const bandX = Math.min(indicatorX, baselineX) - 4;
+  const baselineX = 50; // Center baseline
+  const indicatorX = 8 + (normalized / 100) * 84;
+  const id = `val-gm-${Math.random().toString(36).substr(2, 6)}`;
+  
+  // Variance from baseline
+  const variance = normalized - 50;
+  const varColor = variance >= 0 ? "#00FF00" : "#FF3300";
+  const status = variance >= 10 ? "OK" : variance >= 0 ? "OK" : variance >= -10 ? "LOW" : "CRIT";
   
   return (
-    <svg viewBox="0 0 80 36" className="instrument-svg">
-      {/* Confidence band behind baseline */}
+    <svg viewBox="0 0 100 32" className="instrument-svg" style={{ overflow: 'visible' }}>
+      <GodModeGrid id={id} />
+      
+      {/* Cyan track */}
+      <rect x="8" y="14" width="84" height="4" rx="0.5" fill="rgba(0,255,255,0.1)"/>
+      
+      {/* Variance band */}
       <rect 
-        x={bandX} 
-        y="10" 
-        width={bandWidth} 
-        height="16" 
-        rx="2" 
-        fill="rgba(34,211,238,0.08)"
-        style={{ transition: `x 80ms ${EASE_OUT}, width 80ms ${EASE_OUT}` }}
+        x={Math.min(indicatorX, baselineX)} 
+        y="14" 
+        width={Math.abs(indicatorX - baselineX)} 
+        height="4" 
+        fill={variance >= 0 ? "rgba(0,255,0,0.3)" : "rgba(255,50,50,0.3)"}
+        style={{ transition: `x 150ms ${EASE_OUT}, width 150ms ${EASE_OUT}` }}
       />
-      {/* Track */}
-      <line x1="10" y1="18" x2="70" y2="18" stroke="rgba(55,65,80,0.4)" strokeWidth="1.5"/>
-      {/* Baseline marker */}
-      <line x1={baselineX} y1="12" x2={baselineX} y2="24" stroke="rgba(90,105,120,0.5)" strokeWidth="1.5"/>
-      {/* Current value indicator */}
+      
+      {/* Tick marks */}
+      <TickMarks x={8} y={20} width={84} count={10} />
+      
+      {/* Baseline marker - amber */}
       <line 
-        x1={indicatorX} 
-        y1="10" 
-        x2={indicatorX} 
-        y2="26" 
-        stroke="rgba(34,211,238,0.7)" 
-        strokeWidth="2"
-        strokeLinecap="round"
-        style={{ transition: `x1 80ms ${EASE_OUT}, x2 80ms ${EASE_OUT}` }}
+        x1={baselineX} y1="10" 
+        x2={baselineX} y2="22"
+        stroke="rgba(255,176,0,0.7)" strokeWidth="1.5"
+        strokeDasharray="2 1"
       />
-      {/* Indicator cap */}
-      <circle 
-        cx={indicatorX} 
-        cy="18" 
-        r="3.5" 
-        fill="rgba(34,211,238,0.6)"
-        style={{ transition: `cx 80ms ${EASE_OUT}` }}
+      
+      {/* Current value - cyan */}
+      <line 
+        x1={indicatorX} y1="10" 
+        x2={indicatorX} y2="22"
+        stroke="rgba(0,255,255,0.9)" strokeWidth="1.5"
+        filter={`url(#${id}-glow)`}
+        style={{ transition: `x1 150ms ${EASE_OUT}, x2 150ms ${EASE_OUT}` }}
       />
+      
+      {/* Cyan indicator dot */}
+      <circle cx={indicatorX} cy="16" r="3" fill="rgba(0,255,255,0.9)"
+        filter={`url(#${id}-glow)`}
+        style={{ transition: `cx 150ms ${EASE_OUT}` }}/>
+      
+      {/* STATUS SYMBOL */}
+      <StatusBadge x={96} y={16} text={status} color={varColor} id={id} />
     </svg>
   );
 }

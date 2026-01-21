@@ -1,0 +1,219 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   STRATFIT — KPI BOX GOD-MODE PATCH
+   ═══════════════════════════════════════════════════════════════════════════════
+   
+   WHAT: Subtle premium polish for KPI boxes
+   WHY:  Support the mountain hero without competing — alive but restrained
+   HOW:  Import this file AFTER KPIBezel.module.css or add to index.css
+   
+   Add to your index.css or main CSS:
+     @import "./styles/kpi-godmode-patch.css";
+   
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   1. BREATHING OUTER GLOW — Alive but not distracting
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+[class*="KPIBezel_chassis"] {
+  animation: kpiChassisBreath 6s ease-in-out infinite;
+}
+
+@keyframes kpiChassisBreath {
+  0%, 100% { 
+    box-shadow:
+      0 0 0 1px #000000,
+      0 0 25px rgba(137, 196, 244, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  }
+  50% { 
+    box-shadow:
+      0 0 0 1px #000000,
+      0 0 32px rgba(137, 196, 244, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   2. CORNER CHROME GLINTS — Premium machined touch
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+[class*="KPIBezel_well"] {
+  position: relative;
+}
+
+[class*="KPIBezel_well"]::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 18px;
+  height: 18px;
+  background: radial-gradient(
+    circle at 30% 30%,
+    rgba(255, 255, 255, 0.12),
+    transparent 60%
+  );
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0.8;
+}
+
+/* Bottom-right subtle glint */
+[class*="KPIBezel_well"]::after {
+  content: "";
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  width: 12px;
+  height: 12px;
+  background: radial-gradient(
+    circle at 70% 70%,
+    rgba(137, 196, 244, 0.08),
+    transparent 60%
+  );
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0.6;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   3. HOVER LIFT — Subtle depth on interaction
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+[class*="KPIBezel_chassis"] {
+  transition: 
+    transform 200ms cubic-bezier(0.22, 1, 0.36, 1), 
+    box-shadow 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+[class*="KPIBezel_chassis"]:hover {
+  transform: translateY(-2px);
+  animation: none; /* Pause breathing on hover */
+  box-shadow:
+    0 0 0 1px #000000,
+    0 0 35px rgba(137, 196, 244, 0.65),
+    0 8px 24px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   4. ACTIVE STATE — When KPI is linked to active slider
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+[class*="KPIBezel_chassis"].kpi-active,
+[class*="KPIBezel_wrap"].kpi-active [class*="KPIBezel_chassis"] {
+  animation: none;
+  box-shadow:
+    0 0 0 1px #000000,
+    0 0 40px rgba(34, 211, 238, 0.7),
+    0 0 0 2px rgba(34, 211, 238, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   5. RIM ENHANCEMENT — Crisper chrome edge
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+[class*="KPIBezel_rim"] {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 2px 0 rgba(255, 255, 255, 0.15),
+    inset 0 -1px 0 #000000,
+    inset 0 -2px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   6. STEP LAYER — Deeper inset shadow
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+[class*="KPIBezel_step"] {
+  box-shadow:
+    0 0 0 4px #000000,
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 2px 4px rgba(255, 255, 255, 0.08),
+    inset 0 4px 8px rgba(0, 0, 0, 0.9);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   7. WELL INNER SHADOW — Deeper recessed feel
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+[class*="KPIBezel_well"] {
+  box-shadow: 
+    inset 0 8px 16px rgba(0, 0, 0, 0.6),
+    inset 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   8. KPI VALUE GLOW — Make numbers pop subtly
+   Target your KPI value elements (adjust selector as needed)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Generic value styling - adjust selector to match your KPI card structure */
+[class*="KPIBezel"] [class*="value"],
+[class*="KPIBezel"] [class*="Value"],
+[class*="kpi"] [class*="value"],
+[class*="kpi"] [class*="Value"] {
+  text-shadow: 
+    0 0 10px currentColor,
+    0 0 20px color-mix(in srgb, currentColor 30%, transparent);
+  transition: text-shadow 200ms ease;
+}
+
+/* Intensify on hover */
+[class*="KPIBezel_chassis"]:hover [class*="value"],
+[class*="KPIBezel_chassis"]:hover [class*="Value"] {
+  text-shadow: 
+    0 0 12px currentColor,
+    0 0 24px color-mix(in srgb, currentColor 40%, transparent),
+    0 0 36px color-mix(in srgb, currentColor 20%, transparent);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   9. TITLE ENHANCEMENT — Crisper engraved look
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+[class*="KPIBezel_title"] {
+  text-shadow:
+    0 -1px 0 rgba(255, 255, 255, 0.12),
+    0 1px 0 rgba(0, 0, 0, 0.8),
+    0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   10. GRID GAP TIGHTENING — Slightly more cohesive grouping
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+[class*="KPIBezel_grid"] {
+  gap: 14px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   OPTIONAL: Staggered breathing (each box slightly offset)
+   Uncomment if you want boxes to breathe at different times
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/*
+[class*="KPIBezel_wrap"]:nth-child(1) [class*="KPIBezel_chassis"] { animation-delay: 0s; }
+[class*="KPIBezel_wrap"]:nth-child(2) [class*="KPIBezel_chassis"] { animation-delay: 1s; }
+[class*="KPIBezel_wrap"]:nth-child(3) [class*="KPIBezel_chassis"] { animation-delay: 2s; }
+[class*="KPIBezel_wrap"]:nth-child(4) [class*="KPIBezel_chassis"] { animation-delay: 3s; }
+[class*="KPIBezel_wrap"]:nth-child(5) [class*="KPIBezel_chassis"] { animation-delay: 4s; }
+[class*="KPIBezel_wrap"]:nth-child(6) [class*="KPIBezel_chassis"] { animation-delay: 5s; }
+*/
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   OPTIONAL: Reduce animation for users who prefer reduced motion
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  [class*="KPIBezel_chassis"] {
+    animation: none;
+  }
+  
+  [class*="KPIBezel_chassis"]:hover {
+    transform: none;
+  }
+}
+

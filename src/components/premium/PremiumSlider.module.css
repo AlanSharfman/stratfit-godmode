@@ -1,0 +1,415 @@
+/* src/components/premium/PremiumSlider.module.css
+   STRATFIT — GOD-MODE NEON SLIDER
+   Trillion-dollar sci-fi control aesthetics
+*/
+
+.container {
+  width: 100%;
+  padding: 10px 0;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.track {
+  position: relative;
+  width: 100%;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  touch-action: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TRACK BACKGROUND — Deep machined groove
+   ═══════════════════════════════════════════════════════════════ */
+.trackBg {
+  position: absolute;
+  width: 100%;
+  height: 10px;
+  border-radius: 5px;
+  
+  /* Triple-layer machined groove */
+  background: 
+    linear-gradient(180deg, 
+      rgba(0, 0, 0, 0.95) 0%,
+      rgba(8, 12, 20, 0.98) 35%,
+      rgba(12, 18, 28, 0.95) 65%,
+      rgba(18, 24, 35, 0.9) 100%
+    );
+  
+  /* Deep inset bevel with chrome rim */
+  box-shadow:
+    /* Inner shadow for depth */
+    inset 0 3px 6px rgba(0, 0, 0, 0.9),
+    inset 0 1px 2px rgba(0, 0, 0, 0.8),
+    /* Bottom highlight (machined edge) */
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08),
+    /* Outer rim */
+    0 0 0 1px rgba(40, 60, 90, 0.3),
+    0 1px 0 rgba(255, 255, 255, 0.04),
+    /* Subtle outer shadow */
+    0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Track groove lines (machined texture) */
+.trackBg::before {
+  content: "";
+  position: absolute;
+  inset: 2px 4px;
+  border-radius: 3px;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0px,
+    transparent 8px,
+    rgba(255, 255, 255, 0.02) 8px,
+    rgba(255, 255, 255, 0.02) 9px
+  );
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GLOW LAYER — Cinematic neon underglow
+   ═══════════════════════════════════════════════════════════════ */
+.glow {
+  position: absolute;
+  height: 24px;
+  border-radius: 12px;
+  will-change: width;
+  transform: translateZ(0);
+  top: 50%;
+  margin-top: -12px;
+  
+  /* Multi-layer glow for depth */
+  background: 
+    radial-gradient(
+      ellipse 100% 300% at 50% 100%,
+      rgba(34, 211, 238, 0.5) 0%,
+      rgba(34, 211, 238, 0.2) 40%,
+      transparent 70%
+    );
+  
+  filter: blur(8px);
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.highlighted .glow {
+  background: 
+    radial-gradient(
+      ellipse 100% 300% at 50% 100%,
+      color-mix(in srgb, var(--slider-color) 60%, transparent) 0%,
+      color-mix(in srgb, var(--slider-color) 25%, transparent) 40%,
+      transparent 70%
+    );
+  opacity: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FILL BAR — Intense neon energy bar
+   ═══════════════════════════════════════════════════════════════ */
+.fill {
+  position: absolute;
+  height: 10px;
+  border-radius: 5px;
+  will-change: width;
+  transition: none !important;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  
+  /* Vibrant saturated gradient */
+  background: linear-gradient(
+    180deg,
+    rgba(80, 230, 255, 1) 0%,
+    rgba(34, 211, 238, 1) 40%,
+    rgba(20, 184, 210, 1) 70%,
+    rgba(15, 160, 190, 1) 100%
+  );
+  
+  /* Intense multi-layer glow */
+  box-shadow:
+    /* Core bright glow */
+    0 0 8px rgba(34, 211, 238, 1),
+    0 0 16px rgba(34, 211, 238, 0.8),
+    0 0 32px rgba(34, 211, 238, 0.4),
+    0 0 48px rgba(34, 211, 238, 0.2),
+    /* Inner glass highlight */
+    inset 0 2px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -2px 0 rgba(0, 80, 100, 0.4),
+    /* Crisp edge */
+    0 0 0 1px rgba(34, 211, 238, 0.5);
+}
+
+/* Shimmer effect on fill */
+.fill::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 5px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.15) 50%,
+    transparent 100%
+  );
+  animation: fillShimmer 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes fillShimmer {
+  0%, 100% { transform: translateX(-100%); opacity: 0; }
+  50% { transform: translateX(100%); opacity: 1; }
+}
+
+.highlighted .fill {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--slider-color) 100%, white 20%) 0%,
+    var(--slider-color) 40%,
+    color-mix(in srgb, var(--slider-color) 85%, black) 70%,
+    color-mix(in srgb, var(--slider-color) 70%, black) 100%
+  );
+  
+  box-shadow:
+    0 0 8px var(--slider-color),
+    0 0 16px color-mix(in srgb, var(--slider-color) 80%, transparent),
+    0 0 32px color-mix(in srgb, var(--slider-color) 40%, transparent),
+    0 0 48px color-mix(in srgb, var(--slider-color) 20%, transparent),
+    inset 0 2px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.3),
+    0 0 0 1px color-mix(in srgb, var(--slider-color) 50%, transparent);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   THUMB — Premium chrome orb with energy halo
+   ═══════════════════════════════════════════════════════════════ */
+.thumb {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  transform: translateX(-50%) translateZ(0);
+  backface-visibility: hidden;
+  will-change: left, transform;
+  transition:
+    box-shadow 100ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 100ms cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 10;
+}
+
+.thumbInner {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  
+  /* Premium chrome gradient */
+  background: 
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 1) 0%, transparent 40%),
+    radial-gradient(circle at 70% 75%, rgba(0, 100, 120, 0.8) 0%, transparent 50%),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.98) 0%,
+      rgba(180, 230, 245, 0.95) 25%,
+      rgba(34, 211, 238, 0.9) 50%,
+      rgba(20, 180, 210, 1) 75%,
+      rgba(15, 150, 180, 1) 100%
+    );
+  
+  /* Chrome bezel border */
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  
+  box-shadow:
+    /* Outer glow layers */
+    0 0 20px rgba(34, 211, 238, 0.8),
+    0 0 40px rgba(34, 211, 238, 0.5),
+    0 0 60px rgba(34, 211, 238, 0.3),
+    /* Drop shadow for depth */
+    0 4px 8px rgba(0, 0, 0, 0.5),
+    0 8px 16px rgba(0, 0, 0, 0.3),
+    /* Inner chrome highlights */
+    inset 0 2px 4px rgba(255, 255, 255, 0.7),
+    inset 0 -2px 6px rgba(0, 80, 100, 0.5),
+    /* Rim light */
+    inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+}
+
+/* Center dot (power indicator) */
+.thumbInner::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow:
+    0 0 6px rgba(255, 255, 255, 0.8),
+    0 0 12px rgba(34, 211, 238, 0.6);
+}
+
+.highlighted .thumbInner {
+  background: 
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 1) 0%, transparent 40%),
+    radial-gradient(circle at 70% 75%, color-mix(in srgb, var(--slider-color) 80%, black) 0%, transparent 50%),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.98) 0%,
+      color-mix(in srgb, var(--slider-color) 60%, white) 25%,
+      var(--slider-color) 50%,
+      color-mix(in srgb, var(--slider-color) 85%, black) 75%,
+      color-mix(in srgb, var(--slider-color) 70%, black) 100%
+    );
+  
+  box-shadow:
+    0 0 20px var(--slider-color),
+    0 0 40px color-mix(in srgb, var(--slider-color) 60%, transparent),
+    0 0 60px color-mix(in srgb, var(--slider-color) 30%, transparent),
+    0 4px 8px rgba(0, 0, 0, 0.5),
+    0 8px 16px rgba(0, 0, 0, 0.3),
+    inset 0 2px 4px rgba(255, 255, 255, 0.7),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.4),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+}
+
+/* Outer pulsing halo ring */
+.thumbRing {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px solid rgba(34, 211, 238, 0.4);
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 150ms, transform 150ms;
+  pointer-events: none;
+  
+  /* Halo glow */
+  box-shadow:
+    0 0 8px rgba(34, 211, 238, 0.3),
+    inset 0 0 8px rgba(34, 211, 238, 0.2);
+}
+
+.highlighted .thumbRing {
+  border-color: color-mix(in srgb, var(--slider-color) 50%, transparent);
+  box-shadow:
+    0 0 8px color-mix(in srgb, var(--slider-color) 40%, transparent),
+    inset 0 0 8px color-mix(in srgb, var(--slider-color) 25%, transparent);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ACTIVE / DRAGGING STATE — Intense engagement
+   ═══════════════════════════════════════════════════════════════ */
+.track:active .thumb {
+  transform: translateX(-50%) translateZ(0) scale(1.2);
+}
+
+.track:active .thumbInner {
+  box-shadow:
+    /* Intense glow burst */
+    0 0 30px rgba(34, 211, 238, 1),
+    0 0 60px rgba(34, 211, 238, 0.7),
+    0 0 90px rgba(34, 211, 238, 0.4),
+    0 0 120px rgba(34, 211, 238, 0.2),
+    /* Depth */
+    0 6px 12px rgba(0, 0, 0, 0.6),
+    0 12px 24px rgba(0, 0, 0, 0.3),
+    /* Inner chrome */
+    inset 0 2px 4px rgba(255, 255, 255, 0.8),
+    inset 0 -2px 6px rgba(0, 80, 100, 0.6),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+}
+
+.track:active .thumbRing {
+  opacity: 1;
+  transform: scale(1);
+  animation: ringPulse 800ms ease-out infinite;
+}
+
+.track:active .fill {
+  box-shadow:
+    0 0 12px rgba(34, 211, 238, 1),
+    0 0 24px rgba(34, 211, 238, 0.9),
+    0 0 48px rgba(34, 211, 238, 0.5),
+    0 0 72px rgba(34, 211, 238, 0.3),
+    inset 0 2px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -2px 0 rgba(0, 80, 100, 0.5),
+    0 0 0 1px rgba(34, 211, 238, 0.7);
+}
+
+@keyframes ringPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+    border-width: 2px;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+    border-width: 1px;
+  }
+}
+
+/* Release animation */
+.thumbRelease .thumbInner {
+  animation: thumbReleasePop 280ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes thumbReleasePop {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.15); }
+  65% { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HOVER STATE — Subtle anticipation
+   ═══════════════════════════════════════════════════════════════ */
+.track:hover .thumb {
+  transform: translateX(-50%) translateZ(0) scale(1.08);
+}
+
+.track:hover .thumbInner {
+  box-shadow:
+    0 0 24px rgba(34, 211, 238, 0.9),
+    0 0 48px rgba(34, 211, 238, 0.5),
+    0 0 72px rgba(34, 211, 238, 0.25),
+    0 4px 8px rgba(0, 0, 0, 0.5),
+    0 8px 16px rgba(0, 0, 0, 0.3),
+    inset 0 2px 4px rgba(255, 255, 255, 0.7),
+    inset 0 -2px 6px rgba(0, 80, 100, 0.5),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+.track:hover .thumbRing {
+  opacity: 0.5;
+  transform: scale(1);
+}
+
+.track:hover .fill {
+  box-shadow:
+    0 0 10px rgba(34, 211, 238, 1),
+    0 0 20px rgba(34, 211, 238, 0.85),
+    0 0 40px rgba(34, 211, 238, 0.45),
+    0 0 56px rgba(34, 211, 238, 0.25),
+    inset 0 2px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -2px 0 rgba(0, 80, 100, 0.45),
+    0 0 0 1px rgba(34, 211, 238, 0.6);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   IDLE ANIMATION — Subtle breathing glow (optional)
+   ═══════════════════════════════════════════════════════════════ */
+.thumbInner {
+  animation: thumbBreath 4s ease-in-out infinite;
+}
+
+@keyframes thumbBreath {
+  0%, 100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.05);
+  }
+}
+

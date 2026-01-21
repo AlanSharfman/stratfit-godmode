@@ -9,11 +9,15 @@ import TradeOffsTab from "@/components/tradeoffs/TradeOffsTab";
 import { useScenario, useScenarioStore } from "@/state/scenarioStore";
 import { onCausal } from "@/ui/causalEvents";
 import { engineResultToMountainForces } from "@/logic/mountainForces";
-import { COMPARE_SCENARIOS, mapScenarioId } from "@/data/compareScenarios";
+// COMPARE_SCENARIOS now imported directly in CompareTabGodMode
 
 import styles from "./CenterViewPanel.module.css";
 
-export default function CenterViewPanel() {
+interface CenterViewPanelProps {
+  onViewModeChange?: (mode: ViewMode) => void;
+}
+
+export default function CenterViewPanel({ onViewModeChange }: CenterViewPanelProps) {
   const scenario = useScenario();
   const engineResults = useScenarioStore((s) => s.engineResults);
   const hoveredKpiIndex = useScenarioStore((s) => s.hoveredKpiIndex);
@@ -26,6 +30,12 @@ export default function CenterViewPanel() {
 
   // Main view mode state (Terrain | Trade offs | Compare)
   const [viewMode, setViewMode] = useState<ViewMode>("terrain");
+  
+  // Handle view mode change and notify parent
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode);
+    onViewModeChange?.(mode);
+  };
   
   // Debug: Log viewMode changes
   useEffect(() => {
@@ -53,28 +63,27 @@ export default function CenterViewPanel() {
 
   return (
     <div className={styles.sfCenterRoot}>
-      {/* VIEW MODE SELECTOR - Integrated Rail */}
-      <div className={styles.sfViewSelector}>
-        <ViewModeSelector
-          activeMode={viewMode}
-          onChange={setViewMode}
-          rightSlot={
-            <TerrainToggles
-              timelineEnabled={timelineEnabled}
-              heatmapEnabled={heatmapEnabled}
-              onTimelineToggle={() => setTimelineEnabled(!timelineEnabled)}
-              onHeatmapToggle={() => setHeatmapEnabled(!heatmapEnabled)}
-              variant="rail"
-            />
-          }
-        />
-      </div>
-
       {/* NOTE: KPIHeader REMOVED - already shown by KPIConsole in App.tsx */}
       {/* This fixes the duplicate KPI row issue and gives mountain more space */}
 
       {/* G-D MODE: Mountain Stage (fills remaining space) */}
       <div className={styles.sfMountainStage} data-tour="mountain">
+        {/* VIEW MODE SELECTOR - Inside mountain compound */}
+        <div className={styles.sfViewSelectorInner}>
+          <ViewModeSelector
+            activeMode={viewMode}
+            onChange={handleViewModeChange}
+            rightSlot={
+              <TerrainToggles
+                timelineEnabled={timelineEnabled}
+                heatmapEnabled={heatmapEnabled}
+                onTimelineToggle={() => setTimelineEnabled(!timelineEnabled)}
+                onHeatmapToggle={() => setHeatmapEnabled(!heatmapEnabled)}
+                variant="rail"
+              />
+            }
+          />
+        </div>
         {/* ========================================
             TERRAIN VIEW - Mountain with toggles
             ======================================== */}
@@ -164,10 +173,7 @@ export default function CenterViewPanel() {
               COMPARE VIEW
             </div>
             
-            <CompareTabGodMode
-              selectedScenario={mapScenarioId(scenario)}
-              scenarios={COMPARE_SCENARIOS}
-            />
+            <CompareTabGodMode />
           </div>
         )}
       </div>

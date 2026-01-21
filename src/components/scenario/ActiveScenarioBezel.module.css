@@ -1,5 +1,6 @@
 /* src/components/scenario/ActiveScenarioBezel.module.css
-   STRATFIT — Active Scenario bezel (G-D mode reference)
+   STRATFIT — Active Scenario bezel (EXACT REPLICA OF KPI BEZEL)
+   4-layer structure: chassis → rim → step → well
 */
 
 .shell{
@@ -13,38 +14,82 @@
 }
 
 .shell:focus-visible{
-  outline: 2px solid rgba(60, 230, 255, 0.35);
+  outline: 2px solid rgba(137, 196, 244, 0.5);
   outline-offset: 3px;
   border-radius: 20px;
 }
 
-/* OUTER CHASSIS — transparent, no black surround */
+/* ═══════════════════════════════════════════════════════════════
+   CHASSIS (Layer 1) — OUTER GLOW FRAME (EXACT MATCH TO KPIBezel)
+   ═══════════════════════════════════════════════════════════════ */
 .step{
   position:relative;
   border-radius:18px;
-  padding:14px;
+  padding:3px;
   overflow:visible;
 
-  border:1px solid rgba(120,180,255,0.12);
-  background: transparent;
+  background: linear-gradient(180deg, #1e252f 0%, #131920 100%);
+  border: none;
 
+  /* Hard black separator + Cool blue outer glow (EXACT MATCH) */
   box-shadow:
-    inset 0 1px 0 rgba(220,240,255,0.08);
+    0 0 0 1px #000000,
+    0 0 25px rgba(137, 196, 244, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
-/* INNER PLATE — light glass, no black */
+/* RIM (Layer 2) — GOD MODE CHROME */
+.step::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 16px;
+  z-index: 0;
+  pointer-events: none;
+  
+  background: linear-gradient(180deg, #9CA8B5 0%, #050505 100%);
+  border: 1px solid rgba(140, 180, 220, 0.22);
+  
+  box-shadow:
+    inset 0 1px 0 #FFFFFF,
+    inset 0 -1px 0 #000000;
+}
+
+/* STEP (Layer 3) — GOD MODE DARK STEEL */
+.step::after {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: 13px;
+  z-index: 1;
+  pointer-events: none;
+  
+  background: linear-gradient(180deg, #2C3540 0%, #050505 100%);
+  border: none;
+  
+  /* 4px solid black border + Deep inner shadow (EXACT MATCH) */
+  box-shadow:
+    0 0 0 4px #000000,
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 3px 6px rgba(0, 0, 0, 0.8);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   WELL (Layer 4) — CHARCOAL CONTENT (EXACT MATCH TO KPIBezel.well)
+   ═══════════════════════════════════════════════════════════════ */
 .inner{
   position:relative;
-  border-radius:14px;
-  padding:18px 18px 16px;
-  background:
-    radial-gradient(120% 130% at 20% 10%, rgba(140,180,220,0.12), rgba(0,0,0,0) 55%),
-    rgba(20,28,38,0.45);
-
-  border:1px solid rgba(120,180,255,0.10);
-
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.08);
+  z-index: 2;
+  margin: 11px;
+  border-radius: 10px;
+  padding: 18px 18px 16px;
+  
+  /* Charcoal - EXACT MATCH to KPI wells */
+  background: #1a1d21;
+  border: none;
+  
+  /* Subtle depth (EXACT MATCH) */
+  box-shadow: inset 0 10px 20px rgba(0,0,0,0.5);
 }
 
 /* shimmer film */
@@ -52,15 +97,15 @@
   content:"";
   position:absolute;
   inset:1px;
-  border-radius:13px;
+  border-radius:9px;
   pointer-events:none;
 
   background:
     linear-gradient(115deg,
       rgba(255,255,255,0.00) 0%,
-      rgba(255,255,255,0.06) 22%,
+      rgba(255,255,255,0.04) 22%,
       rgba(255,255,255,0.00) 45%,
-      rgba(0,255,255,0.04) 62%,
+      rgba(137,196,244,0.03) 62%,
       rgba(255,255,255,0.00) 78%
     );
 
@@ -79,10 +124,11 @@
 .kicker{
   letter-spacing: 0.14em;
   font-size: 11px;
-  color: rgba(255,255,255,0.62);
+  color: rgba(137, 196, 244, 0.8);
   text-transform: uppercase;
   text-align:center;
   margin: 0 0 10px;
+  font-weight: 700;
 }
 
 .row{
@@ -95,15 +141,15 @@
 .value{
   font-size:28px;
   font-weight:700;
-  color: rgba(50, 240, 255, 0.92);
-  text-shadow: 0 0 14px rgba(0, 220, 255, 0.18);
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 0 14px rgba(137, 196, 244, 0.3);
 }
 
 .chev{
   width:34px;
   height:34px;
   border-radius:10px;
-  border: 1px solid rgba(120,180,255,0.15);
+  border: 1px solid rgba(137, 196, 244, 0.25);
   background:
     radial-gradient(120% 120% at 30% 20%, rgba(255,255,255,0.08), rgba(0,0,0,0) 55%),
     rgba(30,40,55,0.50);
@@ -111,7 +157,7 @@
     inset 0 1px 0 rgba(255,255,255,0.10);
   display:grid;
   place-items:center;
-  color: rgba(230,245,255,0.75);
+  color: rgba(230,245,255,0.85);
   font-size: 12px;
   line-height: 1;
 }
@@ -120,7 +166,7 @@
   margin-top: 8px;
   font-size: 14.5px;
   font-weight: 500;
-  color: rgba(255,255,255,0.92);
+  color: rgba(255,255,255,0.95);
   text-shadow:
     0 0 10px rgba(255,255,255,0.25),
     0 1px 2px rgba(0,0,0,0.4);

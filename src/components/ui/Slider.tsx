@@ -1,6 +1,6 @@
 // src/components/ui/Slider.tsx
-// STRATFIT — Ultra-responsive Slider
-// Zero delay, direct DOM updates for smoothest possible response
+// STRATFIT — Professional GOD-MODE Slider
+// Bloomberg terminal aesthetic: reduced glow, numeric anchoring, visual detents
 
 import React, { useCallback, useRef, useEffect, memo } from "react";
 
@@ -33,27 +33,20 @@ const Slider = memo(function Slider({
   const isDragging = useRef(false);
   const valueRef = useRef(value);
   const pointerIdRef = useRef<number | null>(null);
-  const captureElRef = useRef<HTMLElement | null>(null);
   
   const percentage = ((value - min) / (max - min)) * 100;
   const isHighlighted = highlight || highlightColor !== null;
-  const activeColor = highlightColor || "#22d3ee"; // Default cyan
+  const activeColor = highlightColor || "#22d3ee";
 
   useEffect(() => {
     valueRef.current = value;
   }, [value]);
 
-  // Direct DOM update for instant visual feedback
   const updateVisuals = useCallback((pct: number) => {
-    if (fillRef.current) {
-      fillRef.current.style.width = `${pct}%`;
-    }
-    if (thumbRef.current) {
-      thumbRef.current.style.left = `${pct}%`;
-    }
+    if (fillRef.current) fillRef.current.style.width = `${pct}%`;
+    if (thumbRef.current) thumbRef.current.style.left = `${pct}%`;
   }, []);
 
-  // Sync visuals with value prop
   useEffect(() => {
     updateVisuals(percentage);
   }, [percentage, updateVisuals]);
@@ -73,33 +66,18 @@ const Slider = memo(function Slider({
     isDragging.current = false;
     onEnd?.();
 
-    // Micro polish: thumb micro-glow on release (UI-only; no state/store changes)
-    const el = thumbRef.current;
-    if (el) {
-      el.classList.remove("sf-thumb-release");
-      // Force reflow so animation can retrigger even on rapid releases
-      void el.offsetWidth;
-      el.classList.add("sf-thumb-release");
-      window.setTimeout(() => el.classList.remove("sf-thumb-release"), 220);
-    }
-
-    if (captureElRef.current && pointerIdRef.current !== null) {
+    if (trackRef.current && pointerIdRef.current !== null) {
       try {
-        captureElRef.current.releasePointerCapture(pointerIdRef.current);
-      } catch {
-        // ignore
-      }
+        trackRef.current.releasePointerCapture(pointerIdRef.current);
+      } catch { /* ignore */ }
     }
     pointerIdRef.current = null;
-    captureElRef.current = null;
   }, [onEnd]);
 
   useEffect(() => {
     const end = () => endDrag();
-
     window.addEventListener("pointerup", end);
     window.addEventListener("pointercancel", end);
-
     return () => {
       window.removeEventListener("pointerup", end);
       window.removeEventListener("pointercancel", end);
@@ -115,14 +93,12 @@ const Slider = memo(function Slider({
     const newPct = ((newValue - min) / (max - min)) * 100;
     updateVisuals(newPct);
 
-    // Avoid redundant state churn on pointerdown
     if (newValue !== valueRef.current) {
       valueRef.current = newValue;
       onChange(newValue);
     }
     
     pointerIdRef.current = e.pointerId;
-    captureElRef.current = trackRef.current;
     trackRef.current?.setPointerCapture(e.pointerId);
   }, [calculateValue, min, max, onChange, onStart, updateVisuals]);
 
@@ -132,143 +108,319 @@ const Slider = memo(function Slider({
     const newValue = calculateValue(e.clientX);
     const newPct = ((newValue - min) / (max - min)) * 100;
     
-    // Instant visual update
     updateVisuals(newPct);
     
-    // Immediate state update (only when value actually changes)
     if (newValue !== valueRef.current) {
       valueRef.current = newValue;
       onChange(newValue);
     }
   }, [calculateValue, min, max, onChange, updateVisuals]);
 
-  const handlePointerUp = useCallback((e: React.PointerEvent) => {
-    e.preventDefault();
-    endDrag();
-  }, [endDrag]);
-
   return (
     <div 
-      className={`slider-container ${isHighlighted ? "highlighted" : ""}`}
-      style={{ "--slider-color": activeColor } as React.CSSProperties}
+      className={`pro-slider ${isHighlighted ? "pro-hl" : ""}`}
+      style={{ "--pro-color": activeColor } as React.CSSProperties}
     >
+      {/* Track with detent markers */}
       <div 
         ref={trackRef}
-        className="slider-track"
+        className="pro-track"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
       >
-        <div ref={fillRef} className="slider-fill" />
-        <div ref={thumbRef} className="slider-thumb" />
+        {/* Track groove */}
+        <div className="pro-groove" />
+        
+        {/* Detent tick marks - 5 bands */}
+        <div className="pro-detents">
+          <div className="pro-tick" style={{ left: '0%' }} />
+          <div className="pro-tick" style={{ left: '25%' }} />
+          <div className="pro-tick pro-tick-center" style={{ left: '50%' }} />
+          <div className="pro-tick" style={{ left: '75%' }} />
+          <div className="pro-tick" style={{ left: '100%' }} />
+        </div>
+        
+        {/* Fill bar */}
+        <div ref={fillRef} className="pro-fill" />
+        
+        {/* Thumb */}
+        <div ref={thumbRef} className="pro-thumb">
+          <div className="pro-thumb-core" />
+        </div>
+      </div>
+      
+      {/* Numeric anchoring labels */}
+      <div className="pro-labels">
+        <span className="pro-label">Low</span>
+        <span className="pro-label pro-label-center">Neutral</span>
+        <span className="pro-label">High</span>
       </div>
 
       <style>{`
-        .slider-container {
+        /* ═══════════════════════════════════════════════════════════════
+           PROFESSIONAL SLIDER — Container
+           ═══════════════════════════════════════════════════════════════ */
+        
+        .pro-slider {
           width: 100%;
-          padding: 6px 0;
+          padding: 4px 0 2px;
           touch-action: none;
           user-select: none;
           -webkit-user-select: none;
         }
 
-        .slider-track {
+        .pro-track {
           position: relative;
           width: 100%;
-          height: 24px;
+          height: 28px;
           display: flex;
           align-items: center;
           cursor: pointer;
           touch-action: none;
         }
 
-        .slider-track::before {
-          content: '';
+        /* ═══════════════════════════════════════════════════════════════
+           TRACK GROOVE — Machined channel (same glass look, less glow)
+           ═══════════════════════════════════════════════════════════════ */
+        
+        .pro-groove {
           position: absolute;
           width: 100%;
-          height: 6px;
-          background: linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.8));
-          border: 1px solid rgba(34, 211, 238, 0.15);
-          border-radius: 3px;
-          box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
-        }
-
-        .slider-fill {
-          position: absolute;
-          height: 6px;
-          background: linear-gradient(90deg, rgba(34, 211, 238, 0.7), rgba(34, 211, 238, 0.9));
-          border-radius: 3px;
-          will-change: width;
-          transition: none !important;
-          transform: translateZ(0); /* 🔥 GPU acceleration */
-          backface-visibility: hidden; /* 🔥 Prevent paint flicker */
-          box-shadow: 
-            0 0 12px rgba(34, 211, 238, 0.4),
-            inset 0 1px 0 rgba(255, 255, 255, 0.2);
-        }
-
-        .slider-container.highlighted .slider-fill {
-          background: linear-gradient(90deg, 
-            color-mix(in srgb, var(--slider-color) 80%, transparent),
-            var(--slider-color)
+          height: 8px;
+          border-radius: 4px;
+          
+          /* Glass/machined groove */
+          background: linear-gradient(180deg,
+            rgba(0, 0, 0, 0.92) 0%,
+            rgba(8, 12, 20, 0.95) 40%,
+            rgba(15, 20, 30, 0.9) 100%
           );
-          box-shadow: 
-            0 0 16px color-mix(in srgb, var(--slider-color) 60%, transparent),
-            0 0 6px color-mix(in srgb, var(--slider-color) 80%, transparent),
-            inset 0 1px 0 rgba(255, 255, 255, 0.3);
+          
+          box-shadow:
+            inset 0 2px 4px rgba(0, 0, 0, 0.8),
+            inset 0 1px 1px rgba(0, 0, 0, 0.6),
+            inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+            0 1px 0 rgba(255, 255, 255, 0.03);
         }
 
-        .slider-thumb {
+        /* ═══════════════════════════════════════════════════════════════
+           DETENT TICK MARKS — Visual calibration bands
+           ═══════════════════════════════════════════════════════════════ */
+        
+        .pro-detents {
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          pointer-events: none;
+        }
+
+        .pro-tick {
+          position: absolute;
+          top: 50%;
+          width: 1px;
+          height: 14px;
+          transform: translate(-50%, -50%);
+          background: rgba(255, 255, 255, 0.12);
+        }
+
+        .pro-tick-center {
+          height: 18px;
+          width: 2px;
+          background: rgba(255, 255, 255, 0.18);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           FILL BAR — Cyan glass (reduced bloom ~35%)
+           ═══════════════════════════════════════════════════════════════ */
+        
+        .pro-fill {
+          position: absolute;
+          height: 8px;
+          border-radius: 4px;
+          will-change: width;
+          transform: translateZ(0);
+          
+          /* Cyan glass gradient */
+          background: linear-gradient(180deg,
+            rgba(70, 220, 250, 1) 0%,
+            rgba(34, 211, 238, 1) 45%,
+            rgba(22, 190, 220, 1) 100%
+          );
+          
+          /* Reduced glow - ~35% less bloom */
+          box-shadow:
+            0 0 5px rgba(34, 211, 238, 0.6),
+            0 0 10px rgba(34, 211, 238, 0.35),
+            0 0 18px rgba(34, 211, 238, 0.15),
+            inset 0 1px 0 rgba(255, 255, 255, 0.4),
+            inset 0 -1px 0 rgba(0, 80, 100, 0.3);
+        }
+
+        .pro-hl .pro-fill {
+          background: linear-gradient(180deg,
+            color-mix(in srgb, var(--pro-color) 100%, white 15%) 0%,
+            var(--pro-color) 45%,
+            color-mix(in srgb, var(--pro-color) 88%, black) 100%
+          );
+          
+          box-shadow:
+            0 0 5px color-mix(in srgb, var(--pro-color) 65%, transparent),
+            0 0 10px color-mix(in srgb, var(--pro-color) 38%, transparent),
+            0 0 18px color-mix(in srgb, var(--pro-color) 18%, transparent),
+            inset 0 1px 0 rgba(255, 255, 255, 0.4),
+            inset 0 -1px 0 rgba(0, 0, 0, 0.25);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           THUMB — Glass orb (reduced glow)
+           ═══════════════════════════════════════════════════════════════ */
+        
+        .pro-thumb {
           position: absolute;
           width: 14px;
           height: 14px;
-          background: linear-gradient(135deg, rgba(34, 211, 238, 0.95), rgba(34, 211, 238, 1));
-          border: 2px solid rgba(255, 255, 255, 0.3);
-          border-radius: 50%;
-          transform: translateX(-50%) translateZ(0); /* 🔥 GPU layer */
-          backface-visibility: hidden; /* 🔥 Prevent paint flicker */
-          box-shadow: 
-            0 0 16px rgba(34, 211, 238, 0.5),
-            0 2px 8px rgba(0, 0, 0, 0.4),
-            inset 0 1px 0 rgba(255, 255, 255, 0.4);
+          transform: translateX(-50%) translateZ(0);
           will-change: left, transform;
-          /* CRITICAL: do NOT transition "left" or the thumb will lag behind the pointer. */
-          transition:
-            box-shadow 80ms cubic-bezier(0.22, 1, 0.36, 1),
-            background 80ms cubic-bezier(0.22, 1, 0.36, 1),
-            border-color 80ms cubic-bezier(0.22, 1, 0.36, 1);
+          z-index: 10;
+          transition: transform 80ms ease;
         }
 
-        .slider-track:active .slider-thumb {
-          transform: translateX(-50%) translateZ(0) scale(1.15); /* 🔥 Slightly reduced scale for speed */
-          box-shadow: 
-            0 0 24px rgba(34, 211, 238, 0.8),
-            0 2px 12px rgba(0, 0, 0, 0.5),
-            inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        .pro-thumb-core {
+          position: absolute;
+          inset: 0;
+          border-radius: 50%;
+          
+          /* Glass orb gradient */
+          background: 
+            radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.95) 0%, transparent 42%),
+            radial-gradient(circle at 50% 50%,
+              rgba(130, 240, 255, 1) 0%,
+              rgba(34, 211, 238, 1) 42%,
+              rgba(22, 185, 215, 1) 100%
+            );
+          
+          /* Chrome border */
+          border: 1.5px solid rgba(255, 255, 255, 0.65);
+          
+          /* Glow reduced 25% */
+          box-shadow:
+            0 0 8px rgba(34, 211, 238, 0.5),
+            0 0 16px rgba(34, 211, 238, 0.25),
+            0 2px 4px rgba(0, 0, 0, 0.4),
+            inset 0 1px 1px rgba(255, 255, 255, 0.5),
+            inset 0 -1px 2px rgba(0, 80, 100, 0.4);
         }
 
-        .slider-container.highlighted .slider-thumb {
-          background: linear-gradient(135deg, 
-            color-mix(in srgb, var(--slider-color) 90%, white),
-            var(--slider-color)
-          );
-          border-color: color-mix(in srgb, var(--slider-color) 50%, white);
-          box-shadow: 
-            0 0 20px color-mix(in srgb, var(--slider-color) 70%, transparent),
-            0 0 8px var(--slider-color),
-            0 2px 8px rgba(0, 0, 0, 0.4),
-            inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        .pro-hl .pro-thumb-core {
+          background: 
+            radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.95) 0%, transparent 42%),
+            radial-gradient(circle at 50% 50%,
+              color-mix(in srgb, var(--pro-color) 55%, white) 0%,
+              var(--pro-color) 42%,
+              color-mix(in srgb, var(--pro-color) 82%, black) 100%
+            );
+          
+          box-shadow:
+            0 0 12px color-mix(in srgb, var(--pro-color) 55%, transparent),
+            0 0 24px color-mix(in srgb, var(--pro-color) 28%, transparent),
+            0 3px 6px rgba(0, 0, 0, 0.4),
+            inset 0 1px 2px rgba(255, 255, 255, 0.5),
+            inset 0 -1px 3px rgba(0, 0, 0, 0.35);
         }
 
-        .slider-thumb.sf-thumb-release {
-          animation: sfThumbRelease 180ms ease-out;
+        /* ═══════════════════════════════════════════════════════════════
+           HOVER STATE — Subtle engagement
+           ═══════════════════════════════════════════════════════════════ */
+        
+        .pro-track:hover .pro-thumb {
+          transform: translateX(-50%) scale(1.1);
         }
 
-        @keyframes sfThumbRelease {
-          0% { transform: translateX(-50%) translateZ(0) scale(1); }
-          55% { transform: translateX(-50%) translateZ(0) scale(1.06); box-shadow: 0 0 20px rgba(34, 211, 238, 0.6), 0 2px 10px rgba(0, 0, 0, 0.45); }
-          100% { transform: translateX(-50%) translateZ(0) scale(1); }
+        .pro-track:hover .pro-thumb-core {
+          box-shadow:
+            0 0 14px rgba(34, 211, 238, 0.6),
+            0 0 28px rgba(34, 211, 238, 0.3),
+            0 3px 7px rgba(0, 0, 0, 0.45),
+            inset 0 1px 2px rgba(255, 255, 255, 0.55),
+            inset 0 -1px 3px rgba(0, 80, 100, 0.45);
+        }
+
+        .pro-track:hover .pro-fill {
+          box-shadow:
+            0 0 6px rgba(34, 211, 238, 0.7),
+            0 0 12px rgba(34, 211, 238, 0.4),
+            0 0 22px rgba(34, 211, 238, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.45),
+            inset 0 -1px 0 rgba(0, 80, 100, 0.35);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           ACTIVE / DRAGGING STATE
+           ═══════════════════════════════════════════════════════════════ */
+        
+        .pro-track:active .pro-thumb {
+          transform: translateX(-50%) scale(1.15);
+        }
+
+        .pro-track:active .pro-thumb-core {
+          box-shadow:
+            0 0 16px rgba(34, 211, 238, 0.7),
+            0 0 32px rgba(34, 211, 238, 0.38),
+            0 0 48px rgba(34, 211, 238, 0.15),
+            0 4px 8px rgba(0, 0, 0, 0.5),
+            inset 0 1px 2px rgba(255, 255, 255, 0.6),
+            inset 0 -1px 3px rgba(0, 80, 100, 0.5);
+        }
+
+        .pro-track:active .pro-fill {
+          box-shadow:
+            0 0 8px rgba(34, 211, 238, 0.8),
+            0 0 16px rgba(34, 211, 238, 0.5),
+            0 0 28px rgba(34, 211, 238, 0.25),
+            inset 0 1px 0 rgba(255, 255, 255, 0.5),
+            inset 0 -1px 0 rgba(0, 80, 100, 0.4);
+        }
+
+        /* Highlight detents on active */
+        .pro-track:active .pro-tick {
+          background: rgba(34, 211, 238, 0.25);
+        }
+
+        .pro-track:active .pro-tick-center {
+          background: rgba(34, 211, 238, 0.4);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           NUMERIC ANCHORING LABELS
+           ═══════════════════════════════════════════════════════════════ */
+        
+        .pro-labels {
+          display: flex;
+          justify-content: space-between;
+          padding: 3px 2px 0;
+        }
+
+        .pro-label {
+          font-size: 9px;
+          font-weight: 500;
+          color: rgba(255, 255, 255, 0.35);
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+        }
+
+        .pro-label-center {
+          color: rgba(255, 255, 255, 0.45);
+        }
+
+        /* Highlight labels on hover/active */
+        .pro-slider:hover .pro-label {
+          color: rgba(255, 255, 255, 0.45);
+        }
+
+        .pro-slider:hover .pro-label-center {
+          color: rgba(34, 211, 238, 0.6);
         }
       `}</style>
     </div>
