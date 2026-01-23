@@ -227,53 +227,75 @@ export default function UnifiedHeader({
           color: #22d3ee;
         }
 
-        /* MAIN NAV TABS */
+        /* MAIN NAV TABS — RECTANGULAR PILLS */
         .uh-nav {
           display: flex;
           align-items: center;
-          gap: 2px;
-          padding: 4px;
-          background: rgba(0, 0, 0, 0.4);
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          border-radius: 10px;
+          gap: 8px;
+          padding: 0;
+          background: transparent;
+          border: none;
         }
         .uh-nav-tab {
           display: flex;
           align-items: center;
-          gap: 6px;
-          padding: 8px 14px;
-          background: transparent;
-          border: none;
-          border-radius: 6px;
+          gap: 8px;
+          padding: 10px 18px;
+          /* Rectangular pill with machined glass */
+          background: rgba(15, 23, 42, 0.6);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 8px;
+          /* Jewel inner glow */
+          box-shadow: 
+            inset 0 1px 0 0 rgba(255, 255, 255, 0.08),
+            inset 0 0 0 1px rgba(0, 240, 255, 0.03);
           font-size: 11px;
           font-weight: 700;
-          letter-spacing: 0.06em;
+          letter-spacing: 0.08em;
           text-transform: uppercase;
-          color: rgba(255, 255, 255, 0.45);
+          color: rgba(255, 255, 255, 0.5);
           cursor: pointer;
           transition: all 0.15s ease;
           white-space: nowrap;
+          backdrop-filter: blur(10px);
         }
         .uh-nav-tab:hover {
-          color: rgba(255, 255, 255, 0.8);
-          background: rgba(255, 255, 255, 0.05);
+          color: rgba(255, 255, 255, 0.9);
+          background: rgba(15, 23, 42, 0.8);
+          border-color: rgba(255, 255, 255, 0.15);
+          box-shadow: 
+            inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+            inset 0 0 0 1px rgba(0, 240, 255, 0.05),
+            0 4px 12px rgba(0, 0, 0, 0.3);
         }
         .uh-nav-tab.active {
           color: #22d3ee;
-          background: rgba(34, 211, 238, 0.12);
-          box-shadow: 0 0 12px rgba(34, 211, 238, 0.2);
+          background: rgba(15, 23, 42, 0.9);
+          border-color: rgba(34, 211, 238, 0.3);
+          box-shadow: 
+            inset 0 1px 0 0 rgba(34, 211, 238, 0.15),
+            inset 0 0 0 1px rgba(0, 240, 255, 0.1),
+            0 0 20px rgba(34, 211, 238, 0.15),
+            0 4px 12px rgba(0, 0, 0, 0.4);
         }
         .uh-nav-tab.simulate {
-          color: #22d3ee !important;
-          background: rgba(34, 211, 238, 0.08) !important;
-          border: 1px solid rgba(34, 211, 238, 0.2) !important;
+          color: #22d3ee;
+          background: rgba(34, 211, 238, 0.08);
+          border: 1px solid rgba(34, 211, 238, 0.25);
+          box-shadow: 
+            inset 0 1px 0 0 rgba(34, 211, 238, 0.1),
+            inset 0 0 0 1px rgba(0, 240, 255, 0.05);
         }
         .uh-nav-tab.simulate:hover,
         .uh-nav-tab.simulate.active {
-          color: #22d3ee !important;
-          background: rgba(34, 211, 238, 0.18) !important;
-          border-color: rgba(34, 211, 238, 0.4) !important;
-          box-shadow: 0 0 20px rgba(34, 211, 238, 0.3), inset 0 0 10px rgba(34, 211, 238, 0.1) !important;
+          color: #22d3ee;
+          background: rgba(34, 211, 238, 0.15);
+          border-color: rgba(34, 211, 238, 0.4);
+          box-shadow: 
+            inset 0 1px 0 0 rgba(34, 211, 238, 0.2),
+            inset 0 0 0 1px rgba(0, 240, 255, 0.1),
+            0 0 25px rgba(34, 211, 238, 0.25),
+            0 4px 16px rgba(0, 0, 0, 0.4);
         }
         .uh-nav-tab.simulate .uh-nav-icon {
           filter: drop-shadow(0 0 4px rgba(34, 211, 238, 0.6));
@@ -284,9 +306,9 @@ export default function UnifiedHeader({
         }
         .uh-nav-divider {
           width: 1px;
-          height: 20px;
-          background: rgba(255, 255, 255, 0.1);
-          margin: 0 4px;
+          height: 24px;
+          background: rgba(255, 255, 255, 0.08);
+          margin: 0 6px;
         }
 
         /* TERRAIN TOGGLES */

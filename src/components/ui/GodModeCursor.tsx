@@ -77,6 +77,8 @@ export default function GodModeCursor() {
       className={`god-mode-cursor ${isHovering ? 'cursor-hover' : ''}`}
       style={{
         transform: `translate(${position.x}px, ${position.y}px)`,
+        pointerEvents: 'none', // CRITICAL: Don't block clicks
+        zIndex: 999999,
       }}
     >
       {/* Trailing glow (follows with delay) */}
