@@ -988,8 +988,43 @@
 .accordionContent { padding: 0 14px 14px; font-size: 12px; line-height: 1.5; color: #F1F5F9; }
 
 /* Cursor/typewriter */
-.cursor { display: inline-block; width: 2px; height: 1em; margin-left: 2px; background: #22d3ee; animation: blink 1s step-end infinite; vertical-align: -2px; }
+.cursor { 
+  display: inline-block; 
+  width: 2px; 
+  height: 1.1em; 
+  margin-left: 2px; 
+  background: #22d3ee; 
+  animation: blink 0.8s step-end infinite; 
+  vertical-align: -2px;
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.6);
+}
 @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+
+/* Typewriter Container */
+.typewriterContainer {
+  padding: 12px 14px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(34, 211, 238, 0.1);
+  border-radius: 8px;
+  min-height: 120px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.typewriterOutput {
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  font-size: 11px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Category tags in typewriter text */
+.typewriterOutput::first-line {
+  color: #22d3ee;
+  font-weight: 600;
+}
 
 /* Scroll hints */
 .scrollHint { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); padding: 6px 14px; background: rgba(8, 12, 18, 0.92); backdrop-filter: blur(20px); border: 1px solid rgba(34, 211, 238, 0.25); border-radius: 14px; font-size: 10px; font-weight: 600; color: rgba(255, 255, 255, 0.6); pointer-events: none; }

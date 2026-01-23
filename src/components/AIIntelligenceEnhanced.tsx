@@ -12,6 +12,7 @@ import { Activity, AlertTriangle, TrendingUp, Shield, Zap, Target } from "lucide
 import styles from "./AIIntelligenceEnhanced.module.css";
 import { StrategicModules } from "./StrategicModules";
 import ScenarioIntegrityCheck from "./intelligence/ScenarioIntegrityCheck";
+import { useTypewriter } from "@/hooks/useTypewriter";
 
 // ============================================================================
 // TYPES
@@ -51,6 +52,21 @@ interface AIIntelligenceEnhancedProps {
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 const nn = (x: unknown) => (typeof x === "number" && Number.isFinite(x) ? x : null);
 const n = (x: unknown, fallback = 0) => (typeof x === "number" && Number.isFinite(x) ? x : fallback);
+
+// ============================================================================
+// TYPEWRITER TEXT COMPONENT
+// ============================================================================
+
+function TypewriterText({ text, speed = 15, className }: { text: string; speed?: number; className?: string }) {
+  const { displayText, isTyping } = useTypewriter({ text, speed, delay: 100 });
+  
+  return (
+    <span className={className}>
+      {displayText}
+      {isTyping && <span className={styles.cursor}>▌</span>}
+    </span>
+  );
+}
 
 // ============================================================================
 // SIGNAL BULLET COMPONENT
@@ -454,18 +470,14 @@ function AICommentary({ metrics, systemState }: {
     });
   }
 
+  // Combine all insights into one text for typewriter effect
+  const fullCommentary = insights.map(i => `[${i.category}] ${i.text}`).join('\n\n');
+
   return (
     <div className={styles.commentaryText}>
-      {insights.map((insight, i) => (
-        <div key={i} className={`${styles.commentaryItem} ${
-          insight.severity === "warning" ? styles.commentaryWarning :
-          insight.severity === "positive" ? styles.commentaryPositive :
-          styles.commentaryInfo
-        }`}>
-          <div className={styles.commentaryCategory}>{insight.category}</div>
-          <p className={styles.commentaryLine}>{insight.text}</p>
-        </div>
-      ))}
+      <div className={styles.typewriterContainer}>
+        <TypewriterText text={fullCommentary} speed={8} className={styles.typewriterOutput} />
+      </div>
     </div>
   );
 }
