@@ -49,8 +49,8 @@ header.unified-header {
 [class*="mainContent"] {
   flex: 1 !important;
   display: grid !important;
-  /* MOUNTAIN REDUCED 45%: Even wider side panels */
-  grid-template-columns: 420px 1fr 480px !important;
+  /* MOUNTAIN REDUCED 60% total: Even wider side panels */
+  grid-template-columns: 480px 1fr 540px !important;
   grid-template-rows: 1fr !important;
   gap: 16px !important;
   padding: 16px !important;
@@ -155,15 +155,14 @@ aside.left-column {
 .center-column,
 [class*="center-column"],
 main.center-column {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 12px !important;
+  display: grid !important;
+  /* LAYOUT SURGERY: Explicit row sizing with gap */
+  grid-template-rows: 160px 1fr !important; /* KPIs fixed, mountain fills rest */
+  gap: 32px !important; /* gap-8 = 32px breathing room */
   height: 100% !important;
   max-height: 100% !important;
   overflow: hidden !important;
-  /* Center the smaller mountain */
-  justify-content: flex-start !important;
-  align-items: stretch !important;
+  padding: 0 !important;
 }
 
 /* ============================================================================
@@ -173,17 +172,20 @@ main.center-column {
 .kpi-section,
 [class*="kpi-section"],
 [data-tour="kpis"] {
-  flex-shrink: 0 !important;
-  display: flex !important;
-  justify-content: center !important;
+  /* LAYOUT SURGERY: Fixed height KPI row */
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 24px !important;
+  width: 100% !important;
+  height: 160px !important;
+  min-height: 160px !important;
+  max-height: 160px !important;
   padding: 0 !important;
   margin: 0 !important;
-  margin-bottom: 12px !important;
   transform: none !important;
-  /* COMPACT: Max 130px height */
-  height: 130px !important;
-  min-height: 130px !important;
-  max-height: 130px !important;
+  position: relative !important;
+  z-index: 20 !important;
+  overflow: visible !important; /* Don't clip shadows */
 }
 
 /* KPI Console - centered container */
@@ -215,7 +217,7 @@ main.center-column {
 .kpi-groups {
   display: grid !important;
   grid-template-columns: repeat(3, 1fr) !important;
-  gap: 16px !important;
+  gap: 24px !important;
   width: 100% !important;
   height: 100% !important;
   align-items: stretch !important;
@@ -232,6 +234,16 @@ main.center-column {
   flex: 1 !important;
   width: 100% !important;
   height: 100% !important;
+}
+
+/* KPI Console wrapper */
+.kpi-command-console,
+.top-kpi-row,
+.console-container {
+  width: 100% !important;
+  height: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
 /* ============================================================================
@@ -256,14 +268,23 @@ main.center-column {
 [class*="kpi-bezel"] [class*="chassis"] {
   height: 100% !important;
   padding: 0 !important;
-  border-radius: 12px !important;
-  /* PREMIUM DARK BACKGROUND */
-  background: rgba(12, 16, 22, 0.85) !important;
-  /* Subtle border */
-  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  
+  /* MACHINED BEZEL: Tight corners, thin metal */
+  border-radius: 8px !important; /* rounded-lg */
+  
+  /* JEWEL BOX: Darker bg so Cyan pops */
+  background: rgba(15, 23, 42, 0.8) !important; /* bg-[#0F172A]/80 */
+  
+  /* Thin metal border */
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  
+  /* The secret inner glow + depth shadow */
   box-shadow: 
-    0 4px 20px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 20px 0 rgba(0, 0, 0, 0.5),
+    0 20px 40px -10px rgba(0, 0, 0, 0.8) !important;
+  
+  overflow: visible !important; /* Don't clip shadows */
 }
 
 [class*="KPIBezel"] [class*="rim"],
@@ -355,15 +376,16 @@ main.center-column {
   height: 100% !important;
   min-height: 0 !important;
   max-height: 100% !important;
+  overflow: visible !important;
 }
 
 .instrument-border {
   height: 100% !important;
-  background: transparent !important;
-  border-radius: 8px !important;
-  padding: 0 !important;
-  box-shadow: none !important;
-  border: none !important;
+  background: rgba(0, 0, 0, 0.2) !important;
+  border-radius: 6px !important; /* Tight corners */
+  padding: 8px !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
 }
 
 .instrument-well {
@@ -375,7 +397,7 @@ main.center-column {
   min-height: 0 !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 2px !important;
+  gap: 4px !important;
   box-shadow: none !important;
 }
 
@@ -425,30 +447,37 @@ main.center-column {
 }
 
 /* ============================================================================
-   KPI WIDGETS/SPARKLINES — 24px tall, cyan color
+   KPI WIDGETS/SPARKLINES — JEWEL BOX WIDGET LAYER
    ============================================================================ */
 
 .instrument-visual {
+  /* WIDGET LAYER: Force visible with z-index */
   position: relative !important;
   z-index: 10 !important;
   opacity: 1 !important;
   visibility: visible !important;
-  height: 24px !important;
-  min-height: 24px !important;
-  max-height: 24px !important;
+  
+  /* Widget dimensions: h-12 w-full mt-auto */
+  height: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
+  width: 100% !important;
+  margin-top: auto !important;
+  
   display: flex !important;
   align-items: center !important;
-  justify-content: flex-start !important;
+  justify-content: center !important;
+  
   background: transparent !important;
   border-radius: 0 !important;
   border: none !important;
-  padding: 0 !important;
-  margin-top: auto !important;
+  padding: 4px 0 !important;
   overflow: visible !important;
 }
 
 .instrument-visual > * {
-  z-index: 11 !important;
+  position: relative !important;
+  z-index: 10 !important;
   opacity: 1 !important;
   visibility: visible !important;
 }
@@ -456,33 +485,42 @@ main.center-column {
 .instrument-svg,
 .instrument-visual svg {
   width: 100% !important;
-  height: 24px !important;
-  min-height: 24px !important;
-  max-height: 24px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  max-height: 40px !important;
   opacity: 1 !important;
   visibility: visible !important;
-  z-index: 12 !important;
-  /* Subtle cyan glow */
-  filter: drop-shadow(0 0 3px rgba(34, 211, 238, 0.4)) !important;
+  position: relative !important;
+  z-index: 10 !important;
+  /* Cyan glow bloom */
+  filter: drop-shadow(0 0 4px rgba(0, 217, 255, 0.5)) !important;
 }
 
-/* Cyan strokes for sparklines */
+/* FORCE CYAN: Hardcode stroke/fill */
 .instrument-visual svg path,
 .instrument-visual svg line,
 .instrument-visual svg polyline {
-  stroke: #22d3ee !important;
+  stroke: #00D9FF !important; /* Cyan */
+  stroke-width: 2px !important;
 }
 
-.instrument-visual svg rect[fill] {
-  fill: rgba(34, 211, 238, 0.6) !important;
+.instrument-visual svg rect {
+  fill: rgba(0, 217, 255, 0.3) !important;
 }
 
-/* Canvas elements */
+.instrument-visual svg circle {
+  fill: #00D9FF !important;
+  stroke: #FFFFFF !important;
+}
+
+/* Canvas elements (Chart.js) */
 .instrument-visual canvas {
-  z-index: 12 !important;
+  position: relative !important;
+  z-index: 10 !important;
   opacity: 1 !important;
   visibility: visible !important;
-  height: 24px !important;
+  height: 40px !important;
+  width: 100% !important;
 }
 
 /* Active state */
@@ -520,14 +558,26 @@ main.center-column {
 
 [class*="sfCenterRoot"],
 [class*="CenterViewPanel"] {
-  flex: 1 !important;
-  min-height: 0 !important;
+  /* LAYOUT SURGERY: Constrained mountain height */
+  min-height: 400px !important;
+  max-height: 500px !important;
+  height: 100% !important;
   display: flex !important;
   flex-direction: column !important;
+  
+  /* MACHINED BEZEL: Thin metal, not plastic */
   background: #000 !important;
-  border-radius: 12px !important;
-  border: 1px solid rgba(255, 255, 255, 0.04) !important;
+  border-radius: 8px !important; /* rounded-lg = tight */
+  border: 1px solid rgba(255, 255, 255, 0.15) !important; /* 1px thin metal */
+  
+  /* The secret inner glow + depth shadow */
+  box-shadow: 
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 20px 0 rgba(0, 0, 0, 0.5),
+    0 20px 40px -10px rgba(0, 0, 0, 0.8) !important;
+  
   overflow: hidden !important;
+  margin: 0 !important;
 }
 
 [class*="sfMountainStage"] {
@@ -625,7 +675,7 @@ aside.right-column,
 @media (max-width: 1600px) {
   .main-content,
   [class*="main-content"] {
-    grid-template-columns: 400px 1fr 460px !important;
+    grid-template-columns: 460px 1fr 520px !important;
     gap: 14px !important;
     padding: 14px !important;
   }
@@ -634,7 +684,7 @@ aside.right-column,
 @media (max-width: 1400px) {
   .main-content,
   [class*="main-content"] {
-    grid-template-columns: 380px 1fr 440px !important;
+    grid-template-columns: 420px 1fr 480px !important;
     gap: 12px !important;
     padding: 12px !important;
   }
@@ -643,7 +693,7 @@ aside.right-column,
 @media (max-width: 1200px) {
   .main-content,
   [class*="main-content"] {
-    grid-template-columns: 340px 1fr 400px !important;
+    grid-template-columns: 380px 1fr 440px !important;
     gap: 10px !important;
     padding: 10px !important;
   }
