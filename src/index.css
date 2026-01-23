@@ -826,7 +826,7 @@ body { overflow-x: hidden; }
 .value-display {
   grid-column: 1;
   grid-row: 1;
-  font-size: 24px; /* REDUCED 15% (was 28px) */
+  font-size: 20px; /* REDUCED 30% total (was 28px) */
   font-weight: 900;
   color: rgba(255, 255, 255, 0.96);
   letter-spacing: -0.8px;
@@ -1122,7 +1122,7 @@ body { overflow-x: hidden; }
     gap: 14px;
   }
   .value-display {
-    font-size: 20px; /* REDUCED 15% */
+    font-size: 17px; /* REDUCED 30% total */
   }
 }
 
@@ -1134,7 +1134,7 @@ body { overflow-x: hidden; }
     padding: 14px 20px 16px;
   }
   .value-display {
-    font-size: 19px; /* REDUCED 15% */
+    font-size: 16px; /* REDUCED 30% total */
   }
   .instrument-label {
     font-size: 10px; /* +25% */
