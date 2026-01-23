@@ -49,8 +49,8 @@ header.unified-header {
 [class*="mainContent"] {
   flex: 1 !important;
   display: grid !important;
-  /* MOUNTAIN REDUCED 60% total: Even wider side panels */
-  grid-template-columns: 480px 1fr 540px !important;
+  /* MOUNTAIN REDUCED 75% total: Wider side panels */
+  grid-template-columns: 520px 1fr 580px !important;
   grid-template-rows: 1fr !important;
   gap: 16px !important;
   padding: 16px !important;
@@ -58,7 +58,7 @@ header.unified-header {
   max-height: calc(100vh - 56px) !important;
   overflow: hidden !important;
   background: transparent !important;
-  align-items: stretch !important; /* All columns same height */
+  align-items: stretch !important;
 }
 
 /* ============================================================================
@@ -157,7 +157,7 @@ aside.left-column {
 main.center-column {
   display: flex !important;
   flex-direction: column !important;
-  gap: 16px !important;
+  gap: 28px !important; /* MORE GAP - push mountain down */
   height: 100% !important;
   max-height: 100% !important;
   overflow: hidden !important;
@@ -592,6 +592,7 @@ main.center-column {
   
   overflow: hidden !important;
   margin: 0 !important;
+  margin-top: 8px !important; /* Push mountain down further */
 }
 
 [class*="sfMountainStage"] {
@@ -689,7 +690,7 @@ aside.right-column,
 @media (max-width: 1600px) {
   .main-content,
   [class*="main-content"] {
-    grid-template-columns: 460px 1fr 520px !important;
+    grid-template-columns: 500px 1fr 560px !important;
     gap: 14px !important;
     padding: 14px !important;
   }
@@ -698,7 +699,7 @@ aside.right-column,
 @media (max-width: 1400px) {
   .main-content,
   [class*="main-content"] {
-    grid-template-columns: 420px 1fr 480px !important;
+    grid-template-columns: 460px 1fr 520px !important;
     gap: 12px !important;
     padding: 12px !important;
   }
@@ -707,7 +708,7 @@ aside.right-column,
 @media (max-width: 1200px) {
   .main-content,
   [class*="main-content"] {
-    grid-template-columns: 380px 1fr 440px !important;
+    grid-template-columns: 420px 1fr 480px !important;
     gap: 10px !important;
     padding: 10px !important;
   }
