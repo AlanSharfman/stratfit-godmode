@@ -2486,113 +2486,23 @@ body { overflow-x: hidden; }
 }
 
 /* ============================================================================
-   FIX: Remove ugly thick borders from Command Panel (Left Lever Panel)
+   FIX: Remove border from sliders-container
    ============================================================================ */
 
-/* Left panel container - clean up borders */
-.left-panel,
-[class*="leftPanel"],
-[class*="LeftPanel"],
-[class*="leverPanel"],
-[class*="LeverPanel"],
-[class*="CommandPanel"],
-[class*="commandPanel"],
-[class*="ControlDeck"],
-[class*="controlDeck"] {
+.sliders-container {
   border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-/* The section containers (GROWTH, EFFICIENCY, RISK) */
-[class*="leverSection"],
-[class*="LeverSection"],
-[class*="controlSection"],
-[class*="ControlSection"],
-.lever-group,
-.control-group {
-  border: 1px solid rgba(255, 255, 255, 0.04) !important;
-  border-radius: 12px !important;
-  background: rgba(15, 15, 15, 0.6) !important;
   box-shadow: none !important;
   outline: none !important;
 }
 
-/* Active Situation dropdown box */
-[class*="ActiveSituation"],
-[class*="activeSituation"],
-[class*="ScenarioSelector"],
-[class*="scenarioSelector"],
-.active-situation {
-  border: 1px solid rgba(34, 211, 238, 0.2) !important;
-  border-radius: 10px !important;
-  box-shadow: 0 0 15px rgba(34, 211, 238, 0.05) !important;
-  outline: none !important;
-}
-
-/* Remove any double borders or outlines */
-[class*="lever"] *,
-[class*="Lever"] *,
-[class*="control"] *,
-[class*="Control"] * {
-  outline: none !important;
-}
-
-/* Section headers (GROWTH, EFFICIENCY, RISK labels) */
-[class*="sectionHeader"],
-[class*="SectionHeader"],
-[class*="groupHeader"],
-.section-header {
-  border: none !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
-  padding-bottom: 8px !important;
-  margin-bottom: 12px !important;
-}
-
-/* Individual lever rows */
-[class*="leverRow"],
-[class*="LeverRow"],
-[class*="sliderRow"],
-.lever-row {
+/* Also target the parent sf-leftStack if needed */
+.sf-leftStack {
   border: none !important;
   box-shadow: none !important;
 }
 
-/* The slider track */
-[class*="sliderTrack"],
-[class*="SliderTrack"],
-input[type="range"] {
+/* And the left-column aside */
+.left-column {
   border: none !important;
-  outline: none !important;
-}
-
-/* Remove focus outlines that might be causing thick borders */
-*:focus {
-  outline: none !important;
-}
-
-*:focus-visible {
-  outline: 2px solid rgba(34, 211, 238, 0.3) !important;
-  outline-offset: 2px !important;
-}
-
-/* ============================================================================
-   Clean Panel Aesthetic — Subtle, Premium Look
-   ============================================================================ */
-
-/* Main panel wrapper */
-[class*="CommandDeck"],
-[class*="commandDeck"],
-[class*="ControlDeck"],
-[class*="controlDeck"] > div {
-  background: rgba(12, 12, 12, 0.85) !important;
-  backdrop-filter: blur(20px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.03) !important;
-  border-radius: 14px !important;
-}
-
-/* Inner content padding */
-[class*="CommandDeck"] > div,
-[class*="ControlDeck"] > div {
-  padding: 16px !important;
+  box-shadow: none !important;
 }
