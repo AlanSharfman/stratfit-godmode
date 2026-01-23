@@ -1,9 +1,9 @@
 /* src/styles/godmode-unified-layout.css */
 /* STRATFIT GOD MODE — TRUE FRAMEWORK LAYOUT */
-/* All 3 columns aligned at TOP, KPIs only in center */
+/* The Rack System: Perfect height alignment across all panels */
 
 /* ============================================================================
-   RESET: Lock viewport - NO SCROLLING
+   GOD MODE CURSOR — Hide default, use custom
    ============================================================================ */
 
 html, body, #root {
@@ -12,6 +12,13 @@ html, body, #root {
   overflow: hidden !important;
   margin: 0 !important;
   padding: 0 !important;
+  /* GOD MODE: Custom cursor */
+  cursor: none !important;
+}
+
+/* Restore cursor on interactive elements for accessibility */
+button, a, input, select, textarea, [role="button"], [tabindex] {
+  cursor: none !important;
 }
 
 .app,
@@ -21,6 +28,7 @@ html, body, #root {
   overflow: hidden !important;
   display: flex !important;
   flex-direction: column !important;
+  cursor: none !important;
 }
 
 /* ============================================================================
@@ -62,7 +70,7 @@ header.unified-header {
 }
 
 /* ============================================================================
-   LEFT COLUMN — Control Panel (starts at TOP, same height as others)
+   LEFT COLUMN — Control Panel with JEWEL BEZEL
    ============================================================================ */
 
 .left-column,
@@ -74,14 +82,30 @@ aside.left-column {
   max-height: 100% !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
-  background: rgba(8, 12, 18, 0.6) !important;
-  border: 1px solid rgba(255, 255, 255, 0.04) !important;
-  border-radius: 14px !important;
+  
+  /* JEWEL BEZEL: Darker 70% opacity */
+  background: rgba(15, 23, 42, 0.7) !important;
+  
+  /* Heavy frosted glass */
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  
+  /* The "Jewel" Inner Glow */
+  box-shadow: 
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 0 1px rgba(0, 240, 255, 0.05),
+    0 25px 50px -12px rgba(0, 0, 0, 0.8) !important;
+  
+  /* Machined border */
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  
+  /* Tight precision curve */
+  border-radius: 10px !important;
   padding: 0 !important;
   
   /* Subtle scrollbar */
   scrollbar-width: thin !important;
-  scrollbar-color: rgba(255,255,255,0.08) transparent !important;
+  scrollbar-color: rgba(34, 211, 238, 0.2) transparent !important;
 }
 
 .left-column::-webkit-scrollbar {
@@ -151,7 +175,7 @@ main.center-column {
 }
 
 /* ============================================================================
-   KPI SECTION — GOD MODE "JEWEL BOX" AESTHETIC
+   KPI SECTION — THE RACK SYSTEM (Fixed Height Alignment)
    ============================================================================ */
 
 .kpi-section,
@@ -162,7 +186,12 @@ main.center-column {
   justify-content: center !important;
   padding: 0 !important;
   margin: 0 !important;
-  transform: none !important; /* Remove the scale(0.85) */
+  margin-bottom: 16px !important;
+  transform: none !important;
+  /* Fixed KPI row height */
+  height: 176px !important; /* h-44 equivalent */
+  min-height: 176px !important;
+  max-height: 176px !important;
 }
 
 /* KPI Console - centered container */
@@ -170,27 +199,31 @@ main.center-column {
   width: 100% !important;
   max-width: 1100px !important;
   margin: 0 auto !important;
+  height: 100% !important;
 }
 
 .top-kpi-row {
   display: flex !important;
   justify-content: center !important;
   width: 100% !important;
+  height: 100% !important;
 }
 
 .console-container {
   width: 100% !important;
   max-width: 1100px !important;
   margin: 0 auto !important;
+  height: 100% !important;
 }
 
-/* KPI GROUPS — Rigid 3-column grid */
+/* KPI GROUPS — Rigid 3-column grid with EXACT heights */
 .kpi-groups {
   display: grid !important;
   grid-template-columns: repeat(3, 1fr) !important;
-  gap: 20px !important;
+  gap: 24px !important;
   width: 100% !important;
-  align-items: start !important;
+  height: 100% !important;
+  align-items: stretch !important; /* Force equal heights */
 }
 
 /* Override the flex sizing */
@@ -198,34 +231,46 @@ main.center-column {
 .sf-kpi--narrow {
   flex: none !important;
   width: 100% !important;
+  height: 100% !important;
 }
 
 /* ============================================================================
-   KPI BEZEL — "JEWEL BOX" MACHINED GLASS
+   KPI BEZEL — "JEWEL BOX" MACHINED GLASS (EXACT h-44)
    ============================================================================ */
 
 [class*="KPIBezel"],
 [class*="kpi-bezel"],
 [data-kpi-group] > div:first-child {
-  /* Charcoal with 60% opacity */
-  background: rgba(15, 23, 42, 0.6) !important;
+  /* EXACT fixed height - h-44 = 176px */
+  height: 176px !important;
+  min-height: 176px !important;
+  max-height: 176px !important;
+  
+  /* Darker charcoal with 70% opacity */
+  background: rgba(15, 23, 42, 0.7) !important;
+  
   /* Heavy frosted glass */
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
-  /* The "Jewel" Inner Glow */
+  
+  /* The "Jewel" Inner Glow - CRUCIAL */
   box-shadow: 
-    inset 0 0 0 1px rgba(0, 240, 255, 0.1),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 0 1px rgba(0, 240, 255, 0.05),
     0 25px 50px -12px rgba(0, 0, 0, 0.8) !important;
+  
   /* Machined border */
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  /* Precision curve */
-  border-radius: 12px !important;
-  /* Padding */
-  padding: 16px !important;
-  /* Fixed height for compact aspect ratio */
-  min-height: 160px !important;
-  max-height: 180px !important;
-  overflow: visible !important;
+  
+  /* Tight precision curve */
+  border-radius: 10px !important;
+  
+  /* Internal flex layout */
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  padding: 14px !important;
+  overflow: hidden !important;
 }
 
 /* ============================================================================
@@ -400,7 +445,7 @@ main.center-column {
 }
 
 /* ============================================================================
-   RIGHT COLUMN — Scenario Intelligence (starts at TOP!)
+   RIGHT COLUMN — Scenario Intelligence with JEWEL BEZEL
    ============================================================================ */
 
 .right-column,
@@ -413,9 +458,25 @@ aside.right-column,
   max-height: 100% !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
-  background: rgba(8, 12, 18, 0.6) !important;
-  border: 1px solid rgba(255, 255, 255, 0.04) !important;
-  border-radius: 14px !important;
+  
+  /* JEWEL BEZEL: Darker 70% opacity */
+  background: rgba(15, 23, 42, 0.7) !important;
+  
+  /* Heavy frosted glass */
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  
+  /* The "Jewel" Inner Glow */
+  box-shadow: 
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 0 1px rgba(0, 240, 255, 0.05),
+    0 25px 50px -12px rgba(0, 0, 0, 0.8) !important;
+  
+  /* Machined border */
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  
+  /* Tight precision curve */
+  border-radius: 10px !important;
   padding: 0 !important;
   
   /* CRITICAL: Remove the margin-top that pushes it down */
@@ -425,7 +486,7 @@ aside.right-column,
   
   /* Subtle scrollbar */
   scrollbar-width: thin !important;
-  scrollbar-color: rgba(255,255,255,0.08) transparent !important;
+  scrollbar-color: rgba(34, 211, 238, 0.2) transparent !important;
 }
 
 .right-column::-webkit-scrollbar,
@@ -511,4 +572,145 @@ aside.right-column,
 [class*="commandDeckBezel"] > div {
   height: 100% !important;
   overflow: visible !important;
+}
+
+/* ============================================================================
+   GOD MODE TYPOGRAPHY — Section Headers
+   ============================================================================ */
+
+/* All section headers: GROWTH, RESILIENCE, MOMENTUM, etc. */
+[class*="bezel-title"],
+[class*="group-title"],
+[class*="section-title"],
+[class*="panel-header"] h2,
+[class*="panel-header"] h3,
+.slider-section-header,
+[data-kpi-group] [class*="title"],
+.kpi-bezel-title {
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.25em !important;
+  color: rgba(34, 211, 238, 0.8) !important;
+}
+
+/* ============================================================================
+   GOD MODE CUSTOM CURSOR STYLES
+   ============================================================================ */
+
+.god-mode-cursor {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  pointer-events: none !important;
+  z-index: 99999 !important;
+  mix-blend-mode: screen !important;
+}
+
+.cursor-crosshair {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  transform: translate(-50%, -50%);
+  transition: transform 0.1s ease-out, opacity 0.15s ease;
+}
+
+.cursor-crosshair::before,
+.cursor-crosshair::after {
+  content: '';
+  position: absolute;
+  background: rgba(34, 211, 238, 0.9);
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.6), 0 0 16px rgba(34, 211, 238, 0.3);
+}
+
+/* Vertical line */
+.cursor-crosshair::before {
+  width: 2px;
+  height: 20px;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+}
+
+/* Horizontal line */
+.cursor-crosshair::after {
+  width: 20px;
+  height: 2px;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+}
+
+/* Center dot */
+.cursor-dot {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #22d3ee;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.8);
+}
+
+/* Hover state - Bracket cursor */
+.cursor-hover .cursor-crosshair::before,
+.cursor-hover .cursor-crosshair::after {
+  opacity: 0;
+}
+
+.cursor-bracket {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.cursor-hover .cursor-bracket {
+  opacity: 1;
+}
+
+.cursor-bracket::before,
+.cursor-bracket::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border: 2px solid rgba(34, 211, 238, 0.9);
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.5);
+}
+
+/* Left bracket [ */
+.cursor-bracket::before {
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  border-right: none;
+  border-top-left-radius: 3px;
+  border-bottom-left-radius: 3px;
+}
+
+/* Right bracket ] */
+.cursor-bracket::after {
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  border-left: none;
+  border-top-right-radius: 3px;
+  border-bottom-right-radius: 3px;
+}
+
+/* Trailing glow */
+.cursor-trail {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  background: radial-gradient(circle, rgba(34, 211, 238, 0.15) 0%, transparent 70%);
+  transform: translate(-50%, -50%);
+  filter: blur(4px);
+  transition: transform 0.3s ease-out;
 }
