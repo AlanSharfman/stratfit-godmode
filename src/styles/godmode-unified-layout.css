@@ -49,8 +49,8 @@ header.unified-header {
 [class*="mainContent"] {
   flex: 1 !important;
   display: grid !important;
-  /* MOUNTAIN COMPOUND REDUCED FURTHER: Even wider side panels */
-  grid-template-columns: 580px 1fr 640px !important;
+  /* RESTORE original widths */
+  grid-template-columns: 480px 1fr 540px !important;
   grid-template-rows: 1fr !important;
   gap: 16px !important;
   padding: 16px !important;
@@ -573,11 +573,11 @@ main.center-column {
 
 [class*="sfCenterRoot"],
 [class*="CenterViewPanel"] {
-  /* MOUNTAIN: Fill remaining space, touch the floor */
-  flex: 1 !important;
-  min-height: 0 !important;
-  max-height: none !important;
-  height: auto !important;
+  /* MOUNTAIN COMPOUND: Height reduced 15% */
+  flex: 0 1 auto !important;
+  min-height: 300px !important;
+  max-height: calc(100% - 200px) !important; /* 15% shorter */
+  height: 85% !important; /* 85% of available space */
   display: flex !important;
   flex-direction: column !important;
   
@@ -591,7 +591,7 @@ main.center-column {
     0 10px 30px -10px rgba(0, 0, 0, 0.6) !important;
   
   overflow: hidden !important;
-  margin: 0 !important;
+  margin: 0 auto !important; /* Center horizontally */
   margin-top: 8px !important;
 }
 
@@ -698,7 +698,7 @@ aside.right-column,
 @media (max-width: 1600px) {
   .main-content,
   [class*="main-content"] {
-    grid-template-columns: 560px 1fr 620px !important;
+    grid-template-columns: 460px 1fr 520px !important;
     gap: 14px !important;
     padding: 14px !important;
   }
@@ -707,7 +707,7 @@ aside.right-column,
 @media (max-width: 1400px) {
   .main-content,
   [class*="main-content"] {
-    grid-template-columns: 520px 1fr 580px !important;
+    grid-template-columns: 420px 1fr 480px !important;
     gap: 12px !important;
     padding: 12px !important;
   }
@@ -716,7 +716,7 @@ aside.right-column,
 @media (max-width: 1200px) {
   .main-content,
   [class*="main-content"] {
-    grid-template-columns: 480px 1fr 540px !important;
+    grid-template-columns: 380px 1fr 440px !important;
     gap: 10px !important;
     padding: 10px !important;
   }
