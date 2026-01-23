@@ -471,11 +471,13 @@ body { overflow-x: hidden; }
 .kpi-section {
   flex-shrink: 0;
   overflow: visible;
-  margin-bottom: 22px; /* more breathing room below KPIs */
+  margin-bottom: 16px; /* REDUCED breathing room */
   border: none;
   background: transparent;
   border-radius: 0;
   backdrop-filter: none;
+  transform: scale(0.85); /* SCALE DOWN 15% */
+  transform-origin: top left;
 }
 
 .kpi-section > * {
@@ -602,10 +604,10 @@ body { overflow-x: hidden; }
   position: relative;
   overflow: visible; /* allow bezel glow to render */
   /* Internal alignment contract (instrument-grade) */
-  --kpi-label-h: 16px; /* compact label */
-  --kpi-value-h: 40px; /* slightly reduced */
-  --kpi-viz-min: 120px; /* INCREASED widget area height for better fit */
-  --kpi-widget-scale: 1.0; /* FULL SCALE - widgets fit wider boxes */
+  --kpi-label-h: 12px; /* REDUCED label height */
+  --kpi-value-h: 26px; /* REDUCED value height */
+  --kpi-viz-min: 70px; /* REDUCED widget area minimum height */
+  --kpi-widget-scale: 0.75; /* SCALED smaller to fit */
 }
 
 /* KPI row position nudge (fast, safe, reversible) */
@@ -774,18 +776,19 @@ body { overflow-x: hidden; }
   position: relative;
   /* IMPORTANT: No bottom-darkening gradient on widget parent (prevents fade-out). */
   background: rgba(10,20,18,0.94);
-  border-radius: 14px;
-  padding: 14px 20px 14px;  /* WIDER horizontal padding for better widget fit */
+  border-radius: 12px;
+  padding: 8px 16px 6px;  /* REDUCED padding for smaller boxes */
   width: 100%;
   height: 100%;
   display: grid; /* CRITICAL: identical internal layout for every card */
-  grid-template-rows: var(--kpi-label-h) var(--kpi-value-h) 1fr;
-  row-gap: 6px; /* REDUCED gap for more widget room */
-  align-content: stretch;
+  grid-template-rows: var(--kpi-label-h) var(--kpi-value-h) minmax(60px, 1fr);
+  row-gap: 3px; /* TIGHTER gap */
+  align-content: start; /* CHANGED: start alignment pushes content up */
   /* Remove shadows completely (user request) */
   box-shadow: none;
   border: 1px solid rgba(255,255,255,0.10); /* more visible tile boundary */
-  min-height: 150px; /* taller to fit widgets without cutoff */
+  min-height: 140px; /* REDUCED for smaller boxes */
+  overflow: visible;
 }
 
 /* ============================================
@@ -867,11 +870,13 @@ body { overflow-x: hidden; }
   place-items: center;
   min-height: var(--kpi-viz-min);
   height: 100%;
-  margin-top: 0;
+  margin-top: -10px; /* LIFT widgets UP */
   opacity: 1;
   visibility: visible !important;
   filter: none;
   overflow: visible;
+  position: relative;
+  z-index: 10;
 }
 
 /* Make widgets visible (without brightening the card background) */
@@ -882,9 +887,9 @@ body { overflow-x: hidden; }
   width: 100%;
   max-height: 100%;
   justify-self: center;
-  align-self: center;
-  transform: scale(var(--kpi-widget-scale)); /* SIMPLIFIED - no offset, centered */
-  transform-origin: 50% 50%;
+  align-self: start; /* CHANGED: align to top */
+  transform: scale(var(--kpi-widget-scale)) translateY(-5px); /* LIFT UP */
+  transform-origin: 50% 0%; /* origin at top */
   opacity: 1 !important;
   visibility: visible !important;
   z-index: 5;
