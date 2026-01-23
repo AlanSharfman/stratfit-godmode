@@ -1,0 +1,181 @@
+/* src/components/simulate/SimulateOverlay.module.css */
+/* CRITICAL: This overlay lives INSIDE the terrain container */
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(
+    to bottom,
+    rgba(15, 23, 42, 0.92) 0%,
+    rgba(0, 0, 0, 0.95) 100%
+  );
+  border-radius: 24px; /* Match terrain container */
+  animation: fadeIn 150ms ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.content {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.closeBtn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 8px;
+  background: transparent;
+  border: none;
+  color: rgba(148, 163, 184, 0.6);
+  cursor: pointer;
+  transition: color 150ms;
+}
+.closeBtn:hover {
+  color: rgba(226, 232, 240, 0.9);
+}
+
+/* Header */
+.header {
+  text-align: center;
+}
+.headerLabel {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  color: rgba(148, 163, 184, 0.7);
+  text-transform: uppercase;
+}
+.headerSub {
+  font-size: 12px;
+  color: rgba(148, 163, 184, 0.5);
+  margin-top: 4px;
+}
+
+/* Hero */
+.hero {
+  text-align: center;
+  padding: 16px 0;
+}
+.heroLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(148, 163, 184, 0.6);
+  margin-bottom: 8px;
+}
+.heroValue {
+  font-size: 64px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.heroSub {
+  font-size: 11px;
+  color: rgba(148, 163, 184, 0.45);
+  margin-top: 8px;
+}
+
+/* Sections */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sectionTitle {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: rgba(148, 163, 184, 0.5);
+  text-transform: uppercase;
+}
+
+/* Outcomes */
+.outcomes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.outcomeRow {
+  display: grid;
+  grid-template-columns: 90px 1fr 40px;
+  align-items: center;
+  gap: 12px;
+}
+.outcomeLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(226, 232, 240, 0.85);
+}
+.outcomeBar {
+  height: 6px;
+  background: rgba(51, 65, 85, 0.5);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.outcomeBarFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 300ms ease-out;
+}
+.outcomePct {
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: rgba(226, 232, 240, 0.85);
+  text-align: right;
+}
+
+/* Valuation Range */
+.range {
+  display: flex;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: rgba(51, 65, 85, 0.2);
+  border-radius: 8px;
+  border: 1px solid rgba(51, 65, 85, 0.3);
+}
+.rangeItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.rangeLabel {
+  font-size: 10px;
+  color: rgba(148, 163, 184, 0.5);
+  text-transform: uppercase;
+}
+.rangeValue {
+  font-size: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: rgba(226, 232, 240, 0.9);
+}
+.rangeMedian .rangeValue {
+  color: #22d3ee;
+  font-size: 18px;
+}
+
+/* Meta */
+.meta {
+  text-align: center;
+  font-size: 10px;
+  color: rgba(148, 163, 184, 0.35);
+  padding-top: 8px;
+  border-top: 1px solid rgba(51, 65, 85, 0.25);
+}
+
