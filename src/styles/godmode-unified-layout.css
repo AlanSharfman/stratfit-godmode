@@ -167,7 +167,7 @@ main.center-column {
 }
 
 /* ============================================================================
-   KPI SECTION — JEWEL BOX GEOMETRY (180px Fixed Height)
+   KPI SECTION — COMPACT PREMIUM DASHBOARD (130px Max Height)
    ============================================================================ */
 
 .kpi-section,
@@ -178,20 +178,21 @@ main.center-column {
   justify-content: center !important;
   padding: 0 !important;
   margin: 0 !important;
-  margin-bottom: 16px !important;
+  margin-bottom: 12px !important;
   transform: none !important;
-  /* Fixed KPI row height - JEWEL BOX */
-  height: 180px !important;
-  min-height: 180px !important;
-  max-height: 180px !important;
+  /* COMPACT: Max 130px height */
+  height: 130px !important;
+  min-height: 130px !important;
+  max-height: 130px !important;
 }
 
-/* KPI Console - centered container with max-width */
+/* KPI Console - centered container */
 .kpi-command-console {
   width: 100% !important;
-  max-width: 1200px !important;
-  margin: 0 auto !important;
+  max-width: 100% !important;
+  margin: 0 !important;
   height: 100% !important;
+  padding: 0 !important;
 }
 
 .top-kpi-row {
@@ -199,125 +200,213 @@ main.center-column {
   justify-content: center !important;
   width: 100% !important;
   height: 100% !important;
+  left: 0 !important;
 }
 
 .console-container {
   width: 100% !important;
-  max-width: 1200px !important;
-  margin: 0 auto !important;
+  max-width: 100% !important;
+  margin: 0 !important;
   height: 100% !important;
+  padding: 0 !important;
 }
 
-/* KPI GROUPS — Rigid 3-column grid */
+/* KPI GROUPS — Evenly spaced 3-column grid */
 .kpi-groups {
   display: grid !important;
   grid-template-columns: repeat(3, 1fr) !important;
-  gap: 24px !important;
+  gap: 16px !important;
   width: 100% !important;
   height: 100% !important;
   align-items: stretch !important;
 }
 
+/* Remove separator lines */
+.kpi-groups > div + div::before {
+  display: none !important;
+}
+
 /* Override the flex sizing */
 .sf-kpi--wide,
 .sf-kpi--narrow {
-  flex: none !important;
+  flex: 1 !important;
   width: 100% !important;
   height: 100% !important;
 }
 
 /* ============================================================================
-   KPI BEZEL — "JEWEL BOX" MACHINED GLASS (180px Box)
+   KPI BEZEL WRAPPER — Reset the complex bezel structure
    ============================================================================ */
 
-[class*="KPIBezel"],
-[class*="kpi-bezel"],
-[data-kpi-group] > div:first-child {
-  /* JEWEL BOX: 180px fixed height */
-  height: 180px !important;
-  min-height: 180px !important;
-  max-height: 180px !important;
-  
-  /* LOWER OPACITY so widgets pop through (40%) */
-  background: rgba(15, 23, 42, 0.4) !important;
-  
-  /* Heavy frosted glass */
-  backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
-  
-  /* The "Jewel" Inner Glow - CRUCIAL */
+[data-kpi-group] > div {
+  height: 100% !important;
+}
+
+/* Reset the wrap height */
+[class*="KPIBezel"] [class*="wrap"],
+[class*="kpi-bezel"] [class*="wrap"] {
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  margin: 0 !important;
+}
+
+/* Flatten the 4-layer chassis into simple card */
+[class*="KPIBezel"] [class*="chassis"],
+[class*="kpi-bezel"] [class*="chassis"] {
+  height: 100% !important;
+  padding: 0 !important;
+  border-radius: 12px !important;
+  /* PREMIUM DARK BACKGROUND */
+  background: rgba(12, 16, 22, 0.85) !important;
+  /* Subtle border */
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
   box-shadow: 
-    inset 0 0 0 1px rgba(0, 240, 255, 0.1),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-    0 25px 50px -12px rgba(0, 0, 0, 0.8) !important;
-  
-  /* Machined border */
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  
-  /* Tight precision curve */
-  border-radius: 10px !important;
-  
-  /* Internal flex layout - push content apart */
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: space-between !important;
-  padding: 14px !important;
-  overflow: visible !important;
+    0 4px 20px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+}
+
+[class*="KPIBezel"] [class*="rim"],
+[class*="kpi-bezel"] [class*="rim"] {
+  height: 100% !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+[class*="KPIBezel"] [class*="step"],
+[class*="kpi-bezel"] [class*="step"] {
+  height: 100% !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+[class*="KPIBezel"] [class*="well"],
+[class*="kpi-bezel"] [class*="well"] {
+  height: 100% !important;
+  padding: 12px 16px !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
 }
 
 /* ============================================================================
-   KPI INSTRUMENT CARDS — COMPACT JEWEL BOXES
+   KPI GROUP HEADER — Cyan accent title
+   ============================================================================ */
+
+[class*="KPIBezel"] [class*="header"],
+[class*="kpi-bezel"] [class*="header"] {
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 0 0 6px 0 !important;
+  margin-bottom: 6px !important;
+  background: transparent !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+[class*="KPIBezel"] [class*="title"],
+[class*="kpi-bezel"] [class*="title"] {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  color: #22d3ee !important; /* CYAN ACCENT */
+  text-shadow: 0 0 10px rgba(34, 211, 238, 0.3) !important;
+  padding: 0 !important;
+  transform: none !important;
+}
+
+[class*="KPIBezel"] [class*="title"]::after,
+[class*="kpi-bezel"] [class*="title"]::after {
+  display: none !important;
+}
+
+[class*="KPIBezel"] [class*="divider"],
+[class*="kpi-bezel"] [class*="divider"] {
+  display: none !important;
+}
+
+/* ============================================================================
+   KPI GRID — Horizontal row of metrics
+   ============================================================================ */
+
+[class*="KPIBezel"] [class*="grid"],
+[class*="kpi-bezel"] [class*="grid"] {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 16px !important;
+  padding: 0 !important;
+  flex: 1 !important;
+  align-items: stretch !important;
+}
+
+/* ============================================================================
+   KPI INSTRUMENT CARDS — COMPACT METRICS
    ============================================================================ */
 
 .kpi-instrument {
   position: relative !important;
-  min-height: 120px !important;
-  max-height: 140px !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
 }
 
 .instrument-border {
-  /* Glass morphism border */
-  background: linear-gradient(
-    160deg,
-    rgba(255, 255, 255, 0.12) 0%,
-    rgba(255, 255, 255, 0.05) 30%,
-    rgba(0, 0, 0, 0.15) 50%,
-    rgba(0, 240, 255, 0.08) 80%,
-    rgba(255, 255, 255, 0.1) 100%
-  ) !important;
-  border-radius: 10px !important;
-  padding: 2px !important;
-  box-shadow: inset 0 0 0 1px rgba(0, 240, 255, 0.08) !important;
+  height: 100% !important;
+  background: transparent !important;
+  border-radius: 8px !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  border: none !important;
 }
 
 .instrument-well {
-  /* Deep void background */
-  background: rgba(8, 12, 20, 0.95) !important;
-  border: 1px solid rgba(255, 255, 255, 0.06) !important;
-  border-radius: 8px !important;
-  padding: 10px 12px !important;
-  min-height: 110px !important;
-  display: grid !important;
-  grid-template-rows: auto auto 1fr !important;
-  gap: 4px !important;
+  height: 100% !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  box-shadow: none !important;
 }
 
 /* ============================================================================
-   KPI TYPOGRAPHY — GOD MODE
+   KPI TYPOGRAPHY — COMPACT DASHBOARD
    ============================================================================ */
+
+.instrument-label-row {
+  height: auto !important;
+  min-height: 0 !important;
+}
 
 .instrument-label {
   font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace !important;
-  font-size: 10px !important;
+  font-size: 9px !important;
   font-weight: 600 !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.2em !important;
-  color: rgba(34, 211, 238, 0.8) !important;
+  letter-spacing: 0.08em !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+  line-height: 1 !important;
+}
+
+.instrument-value-row {
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 4px !important;
 }
 
 .value-display {
-  font-family: 'Inter', -apple-system, sans-serif !important;
-  font-size: 22px !important;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace !important;
+  font-size: 18px !important;
   font-weight: 700 !important;
   color: rgba(255, 255, 255, 0.95) !important;
   letter-spacing: -0.02em !important;
@@ -325,36 +414,41 @@ main.center-column {
 }
 
 .value-unit {
-  font-size: 11px !important;
+  font-size: 10px !important;
+  color: rgba(255, 255, 255, 0.35) !important;
+  margin-left: 2px !important;
+}
+
+.value-secondary {
+  font-size: 10px !important;
   color: rgba(255, 255, 255, 0.4) !important;
-  margin-left: 4px !important;
 }
 
 /* ============================================================================
-   KPI WIDGETS — FORCE VISIBLE WITH HIGH Z-INDEX
+   KPI WIDGETS/SPARKLINES — 24px tall, cyan color
    ============================================================================ */
 
 .instrument-visual {
   position: relative !important;
-  z-index: 50 !important; /* HIGH z-index to pop above glass */
+  z-index: 10 !important;
   opacity: 1 !important;
   visibility: visible !important;
-  min-height: 36px !important;
-  max-height: 44px !important;
+  height: 24px !important;
+  min-height: 24px !important;
+  max-height: 24px !important;
   display: flex !important;
   align-items: center !important;
-  justify-content: center !important;
-  /* Internal bezel for chart area */
-  background: rgba(0, 0, 0, 0.3) !important;
-  border-radius: 6px !important;
-  border: 1px solid rgba(0, 240, 255, 0.1) !important;
-  padding: 6px 8px !important;
+  justify-content: flex-start !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  border: none !important;
+  padding: 0 !important;
   margin-top: auto !important;
   overflow: visible !important;
 }
 
 .instrument-visual > * {
-  z-index: 51 !important;
+  z-index: 11 !important;
   opacity: 1 !important;
   visibility: visible !important;
 }
@@ -362,75 +456,62 @@ main.center-column {
 .instrument-svg,
 .instrument-visual svg {
   width: 100% !important;
-  height: 100% !important;
-  min-height: 28px !important;
-  max-height: 36px !important;
+  height: 24px !important;
+  min-height: 24px !important;
+  max-height: 24px !important;
   opacity: 1 !important;
   visibility: visible !important;
-  z-index: 52 !important;
-  /* Cyan glow bloom */
-  filter: drop-shadow(0 0 6px rgba(0, 217, 255, 0.6)) !important;
+  z-index: 12 !important;
+  /* Subtle cyan glow */
+  filter: drop-shadow(0 0 3px rgba(34, 211, 238, 0.4)) !important;
 }
 
-/* Force all SVG strokes to be Cyan */
+/* Cyan strokes for sparklines */
 .instrument-visual svg path,
 .instrument-visual svg line,
-.instrument-visual svg polyline,
-.instrument-visual svg rect {
-  stroke: #00D9FF !important;
+.instrument-visual svg polyline {
+  stroke: #22d3ee !important;
 }
 
-/* Canvas elements (Chart.js) */
+.instrument-visual svg rect[fill] {
+  fill: rgba(34, 211, 238, 0.6) !important;
+}
+
+/* Canvas elements */
 .instrument-visual canvas {
-  z-index: 52 !important;
+  z-index: 12 !important;
   opacity: 1 !important;
   visibility: visible !important;
+  height: 24px !important;
 }
 
-/* Active state glow */
-.kpi-instrument.active .instrument-border {
-  background: linear-gradient(
-    160deg,
-    rgba(34, 211, 238, 0.5) 0%,
-    rgba(255, 255, 255, 0.1) 30%,
-    rgba(0, 0, 0, 0.15) 50%,
-    rgba(34, 211, 238, 0.15) 80%,
-    rgba(0, 240, 255, 0.4) 100%
-  ) !important;
-  box-shadow: 
-    inset 0 0 0 1px rgba(0, 240, 255, 0.3),
-    0 0 30px rgba(34, 211, 238, 0.2) !important;
-}
-
+/* Active state */
 .kpi-instrument.active .instrument-label {
-  color: rgba(34, 211, 238, 1) !important;
-  text-shadow: 0 0 10px rgba(34, 211, 238, 0.5) !important;
+  color: #22d3ee !important;
+}
+
+.kpi-instrument.active .value-display {
+  color: #22d3ee !important;
+  text-shadow: 0 0 10px rgba(34, 211, 238, 0.4) !important;
 }
 
 /* Hover state */
-.kpi-instrument:hover .instrument-border {
-  box-shadow: 
-    inset 0 0 0 1px rgba(0, 240, 255, 0.15),
-    0 0 20px rgba(34, 211, 238, 0.1) !important;
+.kpi-instrument:hover {
+  transform: none !important;
 }
 
-/* Glow layer */
+.kpi-instrument:hover .value-display {
+  color: rgba(255, 255, 255, 1) !important;
+}
+
+/* Glow layer - minimal */
 .instrument-glow {
-  position: absolute !important;
-  inset: -10px !important;
-  background: radial-gradient(ellipse at center, rgba(34, 211, 238, 0.15), transparent 70%) !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  z-index: 0 !important;
-  transition: opacity 0.3s ease !important;
+  display: none !important;
 }
 
-.kpi-instrument:hover .instrument-glow {
-  opacity: 0.5 !important;
-}
-
-.kpi-instrument.active .instrument-glow {
-  opacity: 1 !important;
+/* Focus ring - subtle */
+.focus-ring {
+  display: none !important;
 }
 
 /* ============================================================================
