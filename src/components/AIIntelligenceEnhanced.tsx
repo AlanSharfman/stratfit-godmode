@@ -302,7 +302,13 @@ function SensitivityBar({ label, sensitivity, impact, value }: SensitivityBarPro
 // EXECUTIVE SUMMARY COMPONENT — With Typewriter Effect
 // ============================================================================
 
-function ExecutiveSummary({ metrics }: { metrics: { runway: number; runwayDelta: number; growth: number; growthDelta: number; risk: number; quality: number } }) {
+function ExecutiveSummary({ 
+  metrics, 
+  onComplete 
+}: { 
+  metrics: { runway: number; runwayDelta: number; growth: number; growthDelta: number; risk: number; quality: number };
+  onComplete?: () => void;
+}) {
   const runwayBand = metrics.runway >= 18 ? "STRONG" : metrics.runway >= 12 ? "ADEQUATE" : "CONSTRAINED";
   const growthSignal = metrics.growthDelta >= 5 ? "ACCELERATING" : metrics.growthDelta <= -5 ? "CONTRACTING" : "STABLE";
   const riskPosture = metrics.risk >= 60 ? "ELEVATED" : metrics.risk >= 40 ? "MODERATE" : "CONTAINED";
@@ -318,9 +324,19 @@ function ExecutiveSummary({ metrics }: { metrics: { runway: number; runwayDelta:
 
 > RISK: Exposure is ${riskPosture}${riskPosture !== "CONTAINED" ? " — warrants attention." : " under current assumptions."}`;
 
+  const { displayText, isTyping } = useTypewriter({ 
+    text: summaryText, 
+    speed: 12, 
+    delay: 100,
+    onComplete 
+  });
+
   return (
     <div className={styles.typewriterContainer}>
-      <TypewriterText text={summaryText} speed={12} className={styles.typewriterOutput} />
+      <span className={styles.typewriterOutput}>
+        {displayText}
+        {isTyping && <span className={styles.cursor}>▌</span>}
+      </span>
     </div>
   );
 }
@@ -329,9 +345,10 @@ function ExecutiveSummary({ metrics }: { metrics: { runway: number; runwayDelta:
 // AI COMMENTARY COMPONENT — Comprehensive Analysis
 // ============================================================================
 
-function AICommentary({ metrics, systemState }: { 
+function AICommentary({ metrics, systemState, canStart = false }: { 
   metrics: { runway: number; runwayDelta: number; growth: number; growthDelta: number; risk: number; quality: number };
   systemState: Array<{ label: string; status: string; strain: number }>;
+  canStart?: boolean;
 }) {
   const insights: Array<{ category: string; text: string; severity: "info" | "warning" | "positive" }> = [];
   
@@ -470,10 +487,24 @@ function AICommentary({ metrics, systemState }: {
   // Combine all insights into one text for typewriter effect
   const fullCommentary = insights.map(i => `[${i.category}] ${i.text}`).join('\n\n');
 
+  // Only start typing when canStart is true (after Executive Summary completes)
+  const { displayText, isTyping } = useTypewriter({ 
+    text: canStart ? fullCommentary : '', 
+    speed: 8, 
+    delay: 300 // Small delay after Executive Summary completes
+  });
+
   return (
     <div className={styles.commentaryText}>
       <div className={styles.typewriterContainer}>
-        <TypewriterText text={fullCommentary} speed={8} className={styles.typewriterOutput} />
+        {canStart ? (
+          <span className={styles.typewriterOutput}>
+            {displayText}
+            {isTyping && <span className={styles.cursor}>▌</span>}
+          </span>
+        ) : (
+          <span className={styles.typewriterWaiting}>Analyzing scenario...</span>
+        )}
       </div>
     </div>
   );
@@ -667,6 +698,14 @@ export default function AIIntelligenceEnhanced({
 
   const [activeTab, setActiveTab] = useState<"cockpit" | "risk" | "value" | "modules">("cockpit");
   const panelRef = useRef<HTMLDivElement | null>(null);
+  
+  // Sequential typewriter state
+  const [executiveSummaryComplete, setExecutiveSummaryComplete] = useState(false);
+  
+  // Reset typewriter sequence when metrics change significantly
+  useEffect(() => {
+    setExecutiveSummaryComplete(false);
+  }, [metrics.runway, metrics.risk, metrics.growth]);
 
   return (
     <div ref={panelRef} className={styles.aiPanel}>
@@ -720,25 +759,32 @@ export default function AIIntelligenceEnhanced({
       <div className={styles.content}>
           {activeTab === "cockpit" && (
           <>
-              {/* EXECUTIVE SUMMARY */}
+              {/* EXECUTIVE SUMMARY — Types first */}
               <div className={styles.executiveSection}>
             <div className={styles.sectionHeader}>
                   <Activity size={14} />
                   <span>EXECUTIVE SUMMARY</span>
             </div>
                 <div className={styles.executiveCard}>
-                  <ExecutiveSummary metrics={metrics} />
+                  <ExecutiveSummary 
+                    metrics={metrics} 
+                    onComplete={() => setExecutiveSummaryComplete(true)}
+                  />
               </div>
             </div>
 
-              {/* AI COMMENTARY */}
+              {/* AI COMMENTARY — Types after Executive Summary completes */}
               <div className={styles.commentarySection}>
                 <div className={styles.sectionHeader}>
                   <Zap size={14} />
                   <span>AI COMMENTARY</span>
                 </div>
                 <div className={styles.commentaryCard}>
-                  <AICommentary metrics={metrics} systemState={systemState} />
+                  <AICommentary 
+                    metrics={metrics} 
+                    systemState={systemState} 
+                    canStart={executiveSummaryComplete}
+                  />
                 </div>
               </div>
 

@@ -1026,6 +1026,20 @@
   font-weight: 600;
 }
 
+/* Waiting state before typewriter starts */
+.typewriterWaiting {
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  font-size: 11px;
+  color: rgba(34, 211, 238, 0.5);
+  font-style: italic;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
 /* Scroll hints */
 .scrollHint { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); padding: 6px 14px; background: rgba(8, 12, 18, 0.92); backdrop-filter: blur(20px); border: 1px solid rgba(34, 211, 238, 0.25); border-radius: 14px; font-size: 10px; font-weight: 600; color: rgba(255, 255, 255, 0.6); pointer-events: none; }
 .bottomFade { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: linear-gradient(to bottom, transparent 0%, rgba(8, 12, 18, 0.8) 60%, rgba(8, 12, 18, 0.95) 100%); pointer-events: none; }
