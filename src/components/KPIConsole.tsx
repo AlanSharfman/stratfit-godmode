@@ -784,13 +784,7 @@ export default function KPIConsole() {
                         <KPIInstrumentCard
                           cfg={cfg}
                           data={data}
-                          secondaryLine={
-                            cfg.id === "arrGrowth"
-                              ? `Δ ARR ${kpiValues?.arrDelta?.display ?? "—"}`
-                              : cfg.id === "value"
-                                ? `Quality: ${kpiValues?.qualityBand?.display ?? kpiValues?.cacQuality?.display ?? "—"}`
-                                : null
-                          }
+                          secondaryLine={null} /* REMOVED delta displays */
                           state={state}
                           isDimmed={isDimmed}
                           accentColor={isActive ? scenarioColor : cfg.accentColor}

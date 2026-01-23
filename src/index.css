@@ -471,13 +471,15 @@ body { overflow-x: hidden; }
 .kpi-section {
   flex-shrink: 0;
   overflow: visible;
-  margin-bottom: 16px; /* REDUCED breathing room */
+  margin-bottom: 16px;
   border: none;
   background: transparent;
   border-radius: 0;
   backdrop-filter: none;
-  transform: scale(0.85); /* SCALE DOWN 15% */
-  transform-origin: top left;
+  transform: scale(0.85);
+  transform-origin: top center; /* CENTERED origin */
+  display: flex;
+  justify-content: center; /* CENTER the KPIs */
 }
 
 .kpi-section > * {
@@ -602,28 +604,28 @@ body { overflow-x: hidden; }
   width: 100%;
   padding: 0;
   position: relative;
-  overflow: visible; /* allow bezel glow to render */
-  /* Internal alignment contract (instrument-grade) */
-  --kpi-label-h: 12px; /* REDUCED label height */
-  --kpi-value-h: 26px; /* REDUCED value height */
-  --kpi-viz-min: 70px; /* REDUCED widget area minimum height */
-  --kpi-widget-scale: 0.75; /* SCALED smaller to fit */
+  overflow: visible;
+  /* Internal alignment contract */
+  --kpi-label-h: 16px;
+  --kpi-value-h: 28px;
+  --kpi-viz-min: 110px; /* widget area height */
+  --kpi-widget-scale: 1.0; /* FULL size widgets that fit */
 }
 
 /* KPI row position nudge (fast, safe, reversible) */
 .top-kpi-row{
   position: relative;
-  left: 0; /* ALIGNED with mountain compound borders */
+  left: 0;
+  display: flex;
+  justify-content: center; /* CENTER over mountain */
 }
 
 /* Container with premium glass morphism */
 .console-container {
   position: relative;
-  /* Left-align KPI cluster (do NOT center) — matches reference arrow */
-  margin: 0;
-  margin-left: 0; /* offset is handled by .top-kpi-row */
-  max-width: 1920px; /* WIDER console for larger KPI boxes */
-  padding: 0; /* no outer chassis box — groups are the chassis */
+  margin: 0 auto; /* CENTER horizontally */
+  max-width: 1920px;
+  padding: 0;
   background: transparent;
   border-radius: 0;
   border: none;
@@ -660,9 +662,11 @@ body { overflow-x: hidden; }
    ========================================================================== */
 
 .kpi-groups{
-  display: flex; /* bezel widths are controlled by BezelFrame flex sizing */
-  gap: 36px; /* REDUCED from 56px for wider boxes */
+  display: flex;
+  gap: 36px;
   align-items: stretch;
+  justify-content: center; /* CENTER the groups */
+  width: 100%;
 }
 
 /* Structural separators between clusters (not borders on cards) */
@@ -774,21 +778,20 @@ body { overflow-x: hidden; }
    ============================================ */
 .instrument-well {
   position: relative;
-  /* IMPORTANT: No bottom-darkening gradient on widget parent (prevents fade-out). */
   background: rgba(10,20,18,0.94);
-  border-radius: 12px;
-  padding: 8px 16px 6px;  /* REDUCED padding for smaller boxes */
+  border-radius: 14px;
+  padding: 14px 24px 16px;  /* MORE padding for widgets */
   width: 100%;
   height: 100%;
-  display: grid; /* CRITICAL: identical internal layout for every card */
-  grid-template-rows: var(--kpi-label-h) var(--kpi-value-h) minmax(60px, 1fr);
-  row-gap: 3px; /* TIGHTER gap */
-  align-content: start; /* CHANGED: start alignment pushes content up */
-  /* Remove shadows completely (user request) */
+  display: grid;
+  grid-template-rows: var(--kpi-label-h) var(--kpi-value-h) 1fr; /* flexible widget row */
+  row-gap: 6px;
+  align-content: start;
   box-shadow: none;
-  border: 1px solid rgba(255,255,255,0.10); /* more visible tile boundary */
-  min-height: 140px; /* REDUCED for smaller boxes */
-  overflow: visible;
+  border: 1px solid rgba(255,255,255,0.18);
+  min-height: 200px; /* TALLER boxes for widgets */
+  min-width: 180px; /* WIDER boxes */
+  overflow: hidden; /* clip widgets to fit */
 }
 
 /* ============================================
@@ -829,13 +832,14 @@ body { overflow-x: hidden; }
 .value-display {
   grid-column: 1;
   grid-row: 1;
-  font-size: 17px; /* REDUCED 15% (was 20px) */
-  font-weight: 900;
-  color: rgba(255, 255, 255, 0.96);
-  letter-spacing: -0.7px;
+  font-size: 15px; /* SMALLER */
+  font-weight: 700; /* LIGHTER weight */
+  color: rgba(255, 255, 255, 0.55); /* DIMMER - reduced brightness */
+  letter-spacing: -0.5px;
   line-height: 1;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
+  text-shadow: none; /* removed glow */
   transition: all 250ms cubic-bezier(0.22, 1, 0.36, 1);
+  margin-top: 11px; /* MOVED DOWN 3mm */
 }
 
 .kpi-instrument.active .value-display {
@@ -866,17 +870,22 @@ body { overflow-x: hidden; }
 }
 
 .instrument-visual {
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   min-height: var(--kpi-viz-min);
+  max-height: 120px; /* constrain height to fit */
   height: 100%;
-  margin-top: -10px; /* LIFT widgets UP */
+  margin-top: 0;
   opacity: 1;
   visibility: visible !important;
   filter: none;
-  overflow: visible;
+  overflow: hidden; /* clip to fit */
   position: relative;
   z-index: 10;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  padding: 10px;
 }
 
 /* Make widgets visible (without brightening the card background) */
@@ -885,21 +894,37 @@ body { overflow-x: hidden; }
 }
 .instrument-visual > *{
   width: 100%;
+  max-width: 100%;
   max-height: 100%;
-  justify-self: center;
-  align-self: start; /* CHANGED: align to top */
-  transform: scale(var(--kpi-widget-scale)) translateY(-5px); /* LIFT UP */
-  transform-origin: 50% 0%; /* origin at top */
+  object-fit: contain; /* fit within box */
+  transform: scale(var(--kpi-widget-scale));
+  transform-origin: center center;
   opacity: 1 !important;
   visibility: visible !important;
-  z-index: 5;
+  z-index: 10;
+  filter: brightness(1.8) saturate(2.0) contrast(1.5); /* BRIGHT + VISIBLE */
 }
 
 .instrument-svg {
   width: 100%;
-  height: 100%;
-  max-height: 160px; /* INCREASED to prevent cutoff in wider boxes */
+  height: auto;
+  max-width: 100%;
+  max-height: 100px; /* fit within box */
   transform-origin: center center;
+  filter: brightness(2.0) saturate(2.2) contrast(1.5) drop-shadow(0 0 8px rgba(34, 211, 238, 0.9)); /* VERY BRIGHT */
+}
+
+/* Make SVG strokes thicker */
+.instrument-svg path,
+.instrument-svg line,
+.instrument-svg circle,
+.instrument-svg rect {
+  stroke-width: 2.5px !important;
+}
+
+.instrument-svg text {
+  font-weight: 900 !important;
+  fill: rgba(255, 255, 255, 0.9) !important;
 }
 
 /* ============================================
@@ -1133,7 +1158,8 @@ body { overflow-x: hidden; }
     gap: 14px;
   }
   .value-display {
-    font-size: 14px; /* REDUCED 15% (was 17px) */
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5); /* DIMMER */
   }
 }
 
@@ -1145,10 +1171,11 @@ body { overflow-x: hidden; }
     padding: 14px 20px 16px;
   }
   .value-display {
-    font-size: 13px; /* REDUCED 15% (was 16px) */
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5); /* DIMMER */
   }
   .instrument-label {
-    font-size: 8px; /* REDUCED 15% (was 10px) */
+    font-size: 8px;
     letter-spacing: 2.0px;
     transform: translateX(3px);
   }
