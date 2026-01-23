@@ -174,7 +174,7 @@ const Slider = memo(function Slider({
         .pro-track {
           position: relative;
           width: 100%;
-          height: 28px;
+          height: 24px; /* REDUCED 15% (was 28px) */
           display: flex;
           align-items: center;
           cursor: pointer;
@@ -188,8 +188,8 @@ const Slider = memo(function Slider({
         .pro-groove {
           position: absolute;
           width: 100%;
-          height: 8px;
-          border-radius: 4px;
+          height: 7px; /* REDUCED 15% (was 8px) */
+          border-radius: 3px;
           
           /* Glass/machined groove */
           background: linear-gradient(180deg,
@@ -237,8 +237,8 @@ const Slider = memo(function Slider({
         
         .pro-fill {
           position: absolute;
-          height: 8px;
-          border-radius: 4px;
+          height: 7px; /* REDUCED 15% (was 8px) */
+          border-radius: 3px;
           will-change: width;
           transform: translateZ(0);
           
@@ -279,8 +279,8 @@ const Slider = memo(function Slider({
         
         .pro-thumb {
           position: absolute;
-          width: 14px;
-          height: 14px;
+          width: 12px; /* REDUCED 15% (was 14px) */
+          height: 12px; /* REDUCED 15% (was 14px) */
           transform: translateX(-50%) translateZ(0);
           will-change: left, transform;
           z-index: 10;

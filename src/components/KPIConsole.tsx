@@ -45,7 +45,7 @@ const KPI_CONFIG: KPIConfig[] = [
     label: "MONTHLY BURN",
     kpiKey: "burnQuality",
     unit: "/mo",
-    widgetType: "gauge",
+    widgetType: "chart", // CHANGED from gauge to chart
     accentColor: "#ef4444", // NO ORANGE
     relatedLevers: ["headcount", "cashSensitivity", "operatingExpenses"],
   },
