@@ -49,8 +49,8 @@ header.unified-header {
 [class*="mainContent"] {
   flex: 1 !important;
   display: grid !important;
-  /* MOUNTAIN REDUCED 30%: Wider side panels, smaller center */
-  grid-template-columns: 380px 1fr 420px !important;
+  /* MOUNTAIN REDUCED 45%: Even wider side panels */
+  grid-template-columns: 420px 1fr 480px !important;
   grid-template-rows: 1fr !important;
   gap: 16px !important;
   padding: 16px !important;
@@ -208,6 +208,11 @@ aside.right-column,
   border-radius: 14px !important;
   padding: 0 !important;
   
+  /* CRITICAL: Remove the margin-top that pushes it down */
+  margin-top: 0 !important;
+  margin: 0 !important;
+  align-self: stretch !important;
+  
   /* Subtle scrollbar */
   scrollbar-width: thin !important;
   scrollbar-color: rgba(255,255,255,0.08) transparent !important;
@@ -247,7 +252,7 @@ aside.right-column,
 @media (max-width: 1600px) {
   .main-content,
   [class*="main-content"] {
-    grid-template-columns: 360px 1fr 400px !important;
+    grid-template-columns: 400px 1fr 460px !important;
     gap: 14px !important;
     padding: 14px !important;
   }
@@ -256,7 +261,7 @@ aside.right-column,
 @media (max-width: 1400px) {
   .main-content,
   [class*="main-content"] {
-    grid-template-columns: 340px 1fr 380px !important;
+    grid-template-columns: 380px 1fr 440px !important;
     gap: 12px !important;
     padding: 12px !important;
   }
@@ -265,7 +270,7 @@ aside.right-column,
 @media (max-width: 1200px) {
   .main-content,
   [class*="main-content"] {
-    grid-template-columns: 300px 1fr 340px !important;
+    grid-template-columns: 340px 1fr 400px !important;
     gap: 10px !important;
     padding: 10px !important;
   }
