@@ -1,0 +1,388 @@
+/* src/styles/godmode-unified-layout.css */
+/* STRATFIT GOD MODE — TRUE FRAMEWORK LAYOUT */
+/* All 3 columns aligned at TOP, KPIs only in center */
+
+/* ============================================================================
+   RESET: Lock viewport - NO SCROLLING
+   ============================================================================ */
+
+html, body, #root {
+  height: 100vh !important;
+  max-height: 100vh !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.app,
+[class*="App"] {
+  height: 100vh !important;
+  max-height: 100vh !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* ============================================================================
+   HEADER — Fixed 56px (UnifiedHeader handles this)
+   ============================================================================ */
+
+.unified-header,
+header.unified-header {
+  flex-shrink: 0 !important;
+  height: 56px !important;
+  min-height: 56px !important;
+  max-height: 56px !important;
+}
+
+/* Hide old header */
+.header:not(.unified-header) {
+  display: none !important;
+}
+
+/* ============================================================================
+   MAIN CONTENT — 3-Column Grid, ALL START AT TOP
+   ============================================================================ */
+
+.main-content,
+[class*="main-content"],
+[class*="mainContent"] {
+  flex: 1 !important;
+  display: grid !important;
+  /* Wider side panels: LEFT 300px | CENTER flexible | RIGHT 340px */
+  grid-template-columns: 300px 1fr 340px !important;
+  grid-template-rows: 1fr !important;
+  gap: 12px !important;
+  padding: 12px !important;
+  height: calc(100vh - 56px) !important;
+  max-height: calc(100vh - 56px) !important;
+  overflow: hidden !important;
+  background: transparent !important;
+  align-items: stretch !important; /* All columns same height */
+}
+
+/* ============================================================================
+   LEFT COLUMN — Control Panel (starts at TOP, same height as others)
+   ============================================================================ */
+
+.left-column,
+[class*="left-column"],
+aside.left-column {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  background: rgba(8, 12, 18, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.04) !important;
+  border-radius: 14px !important;
+  padding: 0 !important;
+  
+  /* Subtle scrollbar */
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(255,255,255,0.08) transparent !important;
+}
+
+.left-column::-webkit-scrollbar {
+  width: 4px !important;
+}
+
+.left-column::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.left-column::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.08) !important;
+  border-radius: 2px !important;
+}
+
+/* Hide Active Situation - it's in header now */
+.scenario-area,
+[class*="scenario-area"],
+[class*="ActiveScenario"]:not(.unified-header *) {
+  display: none !important;
+}
+
+/* Hide spacer */
+.sf-leftSpacer,
+[class*="sf-leftSpacer"] {
+  display: none !important;
+}
+
+/* sf-leftStack - full height, no gaps */
+.sf-leftStack,
+[class*="sf-leftStack"] {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  gap: 0 !important;
+  padding: 0 !important;
+}
+
+/* Sliders container - full height */
+.sliders-container,
+[class*="sliders-container"] {
+  flex: 1 !important;
+  height: 100% !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 12px !important;
+}
+
+/* ============================================================================
+   CENTER COLUMN — KPIs at top, Mountain below
+   ============================================================================ */
+
+.center-column,
+[class*="center-column"],
+main.center-column {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+}
+
+/* ============================================================================
+   KPI SECTION — Compact row at top of center column
+   ============================================================================ */
+
+.kpi-section,
+[class*="kpi-section"],
+[data-tour="kpis"] {
+  flex-shrink: 0 !important;
+  height: auto !important;
+  min-height: 110px !important;
+  max-height: 130px !important;
+}
+
+/* KPI Console Container */
+[class*="KPIConsole"],
+[class*="kpiConsole"] {
+  display: flex !important;
+  gap: 12px !important;
+  height: 100% !important;
+  width: 100% !important;
+}
+
+/* KPI Card Groups (Resilience, Momentum, Quality) */
+[class*="kpi-group"],
+[class*="KpiGroup"],
+[class*="kpiCard"],
+[class*="KPICard"] {
+  flex: 1 !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 10px 14px !important;
+  background: rgba(12, 16, 22, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+}
+
+/* KPI Group Title */
+[class*="kpi-group-title"],
+[class*="KpiGroupTitle"],
+[class*="kpiHeader"] h3,
+[class*="kpiHeader"] .title {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  color: rgba(255, 255, 255, 0.45) !important;
+  margin-bottom: 8px !important;
+  padding-bottom: 6px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+/* KPI Metrics Row */
+[class*="kpi-metrics"],
+[class*="KpiMetrics"],
+[class*="kpiRow"] {
+  display: flex !important;
+  gap: 12px !important;
+  flex: 1 !important;
+  align-items: flex-start !important;
+}
+
+/* Individual KPI Item */
+[class*="kpi-item"],
+[class*="KpiItem"],
+[class*="kpiMetric"] {
+  flex: 1 !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+
+/* KPI Label */
+[class*="kpi-label"],
+[class*="KpiLabel"] {
+  font-size: 8px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  color: rgba(255, 255, 255, 0.35) !important;
+  white-space: nowrap !important;
+}
+
+/* KPI Value */
+[class*="kpi-value"],
+[class*="KpiValue"] {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: #fff !important;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace !important;
+  line-height: 1.2 !important;
+}
+
+/* KPI Sparkline */
+[class*="sparkline"],
+[class*="Sparkline"] {
+  height: 20px !important;
+  margin-top: auto !important;
+  opacity: 0.7 !important;
+}
+
+/* ============================================================================
+   MOUNTAIN COMPOUND — Fills remaining center space
+   ============================================================================ */
+
+[class*="sfCenterRoot"],
+[class*="CenterViewPanel"] {
+  flex: 1 !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: #000 !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.04) !important;
+  overflow: hidden !important;
+}
+
+[class*="sfMountainStage"] {
+  flex: 1 !important;
+  min-height: 0 !important;
+  border-radius: 12px !important;
+}
+
+/* Hide ViewModeSelector inside mountain - tabs are in header */
+[class*="sfViewSelectorInner"],
+[class*="ViewModeSelector"]:not(.unified-header *) {
+  display: none !important;
+}
+
+/* ============================================================================
+   RIGHT COLUMN — Scenario Intelligence (starts at TOP!)
+   ============================================================================ */
+
+.right-column,
+[class*="right-column"],
+aside.right-column,
+[data-tour="intel"] {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  background: rgba(8, 12, 18, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.04) !important;
+  border-radius: 14px !important;
+  padding: 0 !important;
+  
+  /* Subtle scrollbar */
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(255,255,255,0.08) transparent !important;
+}
+
+.right-column::-webkit-scrollbar,
+[data-tour="intel"]::-webkit-scrollbar {
+  width: 4px !important;
+}
+
+.right-column::-webkit-scrollbar-track,
+[data-tour="intel"]::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.right-column::-webkit-scrollbar-thumb,
+[data-tour="intel"]::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.08) !important;
+  border-radius: 2px !important;
+}
+
+/* AI Intelligence Component fills the right column */
+[class*="AIIntelligence"],
+[class*="ScenarioIntelligence"],
+[class*="aiIntelligence"] {
+  flex: 1 !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
+@media (max-width: 1600px) {
+  .main-content,
+  [class*="main-content"] {
+    grid-template-columns: 280px 1fr 320px !important;
+    gap: 10px !important;
+    padding: 10px !important;
+  }
+}
+
+@media (max-width: 1400px) {
+  .main-content,
+  [class*="main-content"] {
+    grid-template-columns: 260px 1fr 300px !important;
+    gap: 10px !important;
+    padding: 10px !important;
+  }
+}
+
+@media (max-width: 1200px) {
+  .main-content,
+  [class*="main-content"] {
+    grid-template-columns: 240px 1fr 280px !important;
+    gap: 8px !important;
+    padding: 8px !important;
+  }
+}
+
+/* ============================================================================
+   CLEANUP
+   ============================================================================ */
+
+/* Remove any mode-specific classes that might interfere */
+.mode-terrain,
+.mode-impact,
+.mode-compare,
+.mode-simulate {
+  /* Don't change grid layout based on mode */
+}
+
+/* Ensure CommandDeckBezel doesn't add extra padding */
+[class*="CommandDeckBezel"],
+[class*="commandDeckBezel"] {
+  padding: 0 !important;
+  margin: 0 !important;
+  height: 100% !important;
+}
+
+/* Fix any nested scrolling issues */
+[class*="CommandDeckBezel"] > div,
+[class*="commandDeckBezel"] > div {
+  height: 100% !important;
+  overflow: visible !important;
+}

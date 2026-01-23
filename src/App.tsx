@@ -34,6 +34,8 @@ import ImpactView from "@/components/compound/impact";
 import VariancesView from "@/components/compound/variances/VariancesView";
 import { useDebouncedValue, useThrottledValue } from "@/hooks/useDebouncedValue";
 import "@/styles/godmode-align-overrides.css";
+import "@/styles/godmode-unified-layout.css";
+import UnifiedHeader, { type ViewMode as HeaderViewMode } from '@/components/layout/UnifiedHeader';
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -491,6 +493,13 @@ export default function App() {
   // Inner view mode from CenterViewPanel (for KPI animation)
   // This tracks what tab is selected INSIDE the mountain panel
   const [innerViewMode, setInnerViewMode] = useState<"terrain" | "impact" | "compare">("terrain");
+  
+  // GOD MODE: Header-controlled view mode (navigation tabs in header)
+  const [headerViewMode, setHeaderViewMode] = useState<HeaderViewMode>("terrain");
+  
+  // GOD MODE: Terrain toggles (moved from CenterViewPanel to header)
+  const [timelineEnabled, setTimelineEnabled] = useState(false);
+  const [heatmapEnabled, setHeatmapEnabled] = useState(false);
   
   // KPI Garage Door Animation State - GOD MODE
   // "visible" = fully open, "closing" = running close animation, "hidden" = fully closed
@@ -1125,92 +1134,53 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
     <div className="app">
       {/* ONBOARDING SEQUENCE */}
       {showOnboarding && <OnboardingSequence onComplete={handleOnboardingComplete} />}
-      {/* HEADER */}
-      <header className="header">
-        <div className="header-left">
-          <div className="logo">
-            <svg 
-              className="logo-icon" 
-              width="48" 
-              height="48" 
-              viewBox="0 0 48 48" 
-              fill="none"
-            >
-              {/* 3 ANGLED CYAN BLOCKS STACKED */}
-              {/* Bottom block (darkest cyan) */}
-              <path d="M8 38 L24 42 L40 38 L24 34 Z" fill="#0891b2" />
-              <path d="M8 38 L8 32 L24 28 L24 34 Z" fill="#0e7490" />
-              <path d="M40 38 L40 32 L24 28 L24 34 Z" fill="#0891b2" />
-              
-              {/* Middle block (medium cyan) */}
-              <path d="M8 28 L24 32 L40 28 L24 24 Z" fill="#06b6d4" />
-              <path d="M8 28 L8 22 L24 18 L24 24 Z" fill="#0891b2" />
-              <path d="M40 28 L40 22 L24 18 L24 24 Z" fill="#0e7490" />
-              
-              {/* Top block (brightest cyan) */}
-              <path d="M8 18 L24 22 L40 18 L24 14 Z" fill="#22d3ee" />
-              <path d="M8 18 L8 12 L24 8 L24 14 Z" fill="#06b6d4" />
-              <path d="M40 18 L40 12 L24 8 L24 14 Z" fill="#0891b2" />
-            </svg>
-            <span className="logo-text">STRATFIT</span>
-          </div>
-          <div className={`system-status ${activeLeverId ? 'computing' : ''} ${viewMode === 'investor' ? 'investor' : ''}`}>
-            <span className="status-label">System Status</span>
-            <span className="status-separator">·</span>
-            <span className="status-live">Live</span>
-            <span className="status-dot" />
-          </div>
-        </div>
-
-        <div className="header-actions">
-          <HeaderControlDeck
-            pitchMode={pitchMode}
-            onPitchModeToggle={() => setPitchMode(!pitchMode)}
-            onExport={async () => {
-              try {
-                const r = await fetch("/api/export-pitch");
-                const j = await r.json();
-                if (j.url) {
-                  window.open(j.url, "_blank");
-                } else {
-                  console.error("Export failed:", j.error);
-                }
-              } catch (err) {
-                console.error("Export failed:", err);
-                window.print();
-              }
-            }}
-            onLoad={() => {
-              emitCausal({
-                source: "scenario_load",
-                bandStyle: "wash",
-                color: "rgba(34,211,238,0.18)",
-              });
-            }}
-            onSave={() => {
-              emitCausal({
-                source: "scenario_save",
-                bandStyle: "wash",
-                color: "rgba(34,211,238,0.18)",
-              });
-            }}
-            onShare={() => {
-              emitCausal({
-                source: "scenario_share",
-                bandStyle: "wash",
-                color: "rgba(34,211,238,0.18)",
-              });
-            }}
-            onHelp={() => {
-              // Tour handler - can be wired to TakeTheTour if needed
-              console.log("Help/Tour requested");
-            }}
-          />
-        </div>
-      </header>
+      {/* GOD MODE UNIFIED HEADER */}
+      <UnifiedHeader
+        currentScenario={activeScenarioType}
+        onScenarioChange={handleScenarioTypeChange}
+        activeView={headerViewMode}
+        onViewChange={setHeaderViewMode}
+        timelineEnabled={timelineEnabled}
+        heatmapEnabled={heatmapEnabled}
+        onTimelineToggle={() => setTimelineEnabled(!timelineEnabled)}
+        onHeatmapToggle={() => setHeatmapEnabled(!heatmapEnabled)}
+        onExport={async () => {
+          try {
+            const r = await fetch("/api/export-pitch");
+            const j = await r.json();
+            if (j.url) window.open(j.url, "_blank");
+          } catch (err) {
+            window.print();
+          }
+        }}
+        onLoad={() => {
+          emitCausal({
+            source: "scenario_load",
+            bandStyle: "wash",
+            color: "rgba(34,211,238,0.18)",
+          });
+        }}
+        onSave={() => {
+          emitCausal({
+            source: "scenario_save",
+            bandStyle: "wash",
+            color: "rgba(34,211,238,0.18)",
+          });
+        }}
+        onShare={() => {
+          emitCausal({
+            source: "scenario_share",
+            bandStyle: "wash",
+            color: "rgba(34,211,238,0.18)",
+          });
+        }}
+        onHelp={() => {
+          console.log("Help/Tour requested");
+        }}
+      />
 
       {/* OPTION 1: UNIFIED 3-COLUMN LAYOUT */}
-      <div className={`main-content mode-${centerView}`}>
+      <div className={`main-content mode-${headerViewMode}`}>
         {/* LEFT COLUMN: Scenario + Sliders */}
         <aside className="left-column">
           <div className="sf-leftStack">
@@ -1244,22 +1214,12 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
             <KPIConsole />
           </div>
           
-          {/* View-specific content */}
-          {(() => {
-            switch (centerView) {
-              case "terrain":
-                return <CenterViewPanel onViewModeChange={setInnerViewMode} />;
-              case "impact":
-                return <ImpactView />;
-              case "compare":
-                return <VariancesView />;
-              default: {
-                // TypeScript exhaustiveness check
-                const _exhaustive: never = centerView;
-                return null;
-              }
-            }
-          })()}
+          {/* View content based on header navigation */}
+          <CenterViewPanel 
+            viewMode={headerViewMode}
+            timelineEnabled={timelineEnabled}
+            heatmapEnabled={heatmapEnabled}
+          />
         </main>
 
         {/* RIGHT COLUMN: AI Intelligence */}
