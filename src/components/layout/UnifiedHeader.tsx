@@ -38,9 +38,9 @@ const SCENARIOS: Scenario[] = [
 // ===========================================
 const NAV_TABS: Array<{ id: ViewMode; label: string; icon: typeof Layers }> = [
   { id: "terrain", label: "TERRAIN", icon: Layers },
+  { id: "simulate", label: "SIMULATE", icon: Zap },        // THE MOAT! Right after Terrain
   { id: "compare", label: "COMPARE", icon: SplitSquareHorizontal },
   { id: "impact", label: "TRADE OFFS", icon: Activity },
-  { id: "simulate", label: "SIMULATE", icon: Zap },
 ];
 
 // ===========================================
@@ -264,13 +264,19 @@ export default function UnifiedHeader({
           box-shadow: 0 0 12px rgba(34, 211, 238, 0.2);
         }
         .uh-nav-tab.simulate {
-          color: rgba(34, 211, 238, 0.7);
+          color: #22d3ee !important;
+          background: rgba(34, 211, 238, 0.08) !important;
+          border: 1px solid rgba(34, 211, 238, 0.2) !important;
         }
         .uh-nav-tab.simulate:hover,
         .uh-nav-tab.simulate.active {
-          color: #22d3ee;
-          background: rgba(34, 211, 238, 0.15);
-          box-shadow: 0 0 16px rgba(34, 211, 238, 0.3);
+          color: #22d3ee !important;
+          background: rgba(34, 211, 238, 0.18) !important;
+          border-color: rgba(34, 211, 238, 0.4) !important;
+          box-shadow: 0 0 20px rgba(34, 211, 238, 0.3), inset 0 0 10px rgba(34, 211, 238, 0.1) !important;
+        }
+        .uh-nav-tab.simulate .uh-nav-icon {
+          filter: drop-shadow(0 0 4px rgba(34, 211, 238, 0.6));
         }
         .uh-nav-icon {
           width: 14px;
@@ -457,7 +463,7 @@ export default function UnifiedHeader({
                   <Icon className="uh-nav-icon" />
                   <span>{tab.label}</span>
                 </button>
-                {i === 2 && <div className="uh-nav-divider" />}
+                {i === 1 && <div className="uh-nav-divider" />}
               </React.Fragment>
             );
           })}
@@ -513,4 +519,3 @@ export default function UnifiedHeader({
     </>
   );
 }
-
