@@ -299,34 +299,31 @@ function SensitivityBar({ label, sensitivity, impact, value }: SensitivityBarPro
 }
 
 // ============================================================================
-// EXECUTIVE SUMMARY COMPONENT
+// EXECUTIVE SUMMARY COMPONENT — With Typewriter Effect
 // ============================================================================
 
 function ExecutiveSummary({ metrics }: { metrics: { runway: number; runwayDelta: number; growth: number; growthDelta: number; risk: number; quality: number } }) {
-  const runwayBand = metrics.runway >= 18 ? "strong" : metrics.runway >= 12 ? "adequate" : "constrained";
-  const growthSignal = metrics.growthDelta >= 5 ? "accelerating" : metrics.growthDelta <= -5 ? "contracting" : "stable";
-  const riskPosture = metrics.risk >= 60 ? "elevated" : metrics.risk >= 40 ? "moderate" : "contained";
+  const runwayBand = metrics.runway >= 18 ? "STRONG" : metrics.runway >= 12 ? "ADEQUATE" : "CONSTRAINED";
+  const growthSignal = metrics.growthDelta >= 5 ? "ACCELERATING" : metrics.growthDelta <= -5 ? "CONTRACTING" : "STABLE";
+  const riskPosture = metrics.risk >= 60 ? "ELEVATED" : metrics.risk >= 40 ? "MODERATE" : "CONTAINED";
+
+  // Build summary text for typewriter
+  const runwayDeltaText = metrics.runwayDelta !== 0 
+    ? ` (${metrics.runwayDelta > 0 ? "+" : ""}${Math.round(metrics.runwayDelta)} vs base)`
+    : "";
+  
+  const summaryText = `> RUNWAY: ${runwayBand} at ${Math.round(metrics.runway)} months${runwayDeltaText}
+
+> GROWTH: Momentum is ${growthSignal} with current lever configuration.
+
+> RISK: Exposure is ${riskPosture}${riskPosture !== "CONTAINED" ? " — warrants attention." : " under current assumptions."}`;
 
   return (
-    <div className={styles.executiveText}>
-      <p>
-        <span className={styles.highlight}>Runway posture is {runwayBand}</span> at {Math.round(metrics.runway)} months
-        {metrics.runwayDelta !== 0 && (
-          <span className={metrics.runwayDelta > 0 ? styles.deltaPositive : styles.deltaNegative}>
-            {" "}({metrics.runwayDelta > 0 ? "+" : ""}{Math.round(metrics.runwayDelta)} vs base)
-          </span>
-        )}.
-      </p>
-      <p>
-        Growth momentum is <span className={styles.highlight}>{growthSignal}</span> with current lever configuration.
-      </p>
-      <p>
-        Risk exposure is <span className={riskPosture === "elevated" ? styles.highlightWarning : styles.highlight}>{riskPosture}</span>
-        {riskPosture !== "contained" ? " and warrants attention." : " under current assumptions."}
-      </p>
+    <div className={styles.typewriterContainer}>
+      <TypewriterText text={summaryText} speed={12} className={styles.typewriterOutput} />
     </div>
   );
-  }
+}
 
 // ============================================================================
 // AI COMMENTARY COMPONENT — Comprehensive Analysis
