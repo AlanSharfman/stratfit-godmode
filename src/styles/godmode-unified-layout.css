@@ -49,8 +49,8 @@ header.unified-header {
 [class*="mainContent"] {
   flex: 1 !important;
   display: grid !important;
-  /* MOUNTAIN REDUCED 75% total: Wider side panels */
-  grid-template-columns: 520px 1fr 580px !important;
+  /* MOUNTAIN COMPOUND REDUCED FURTHER: Even wider side panels */
+  grid-template-columns: 580px 1fr 640px !important;
   grid-template-rows: 1fr !important;
   gap: 16px !important;
   padding: 16px !important;
@@ -592,7 +592,15 @@ main.center-column {
   
   overflow: hidden !important;
   margin: 0 !important;
-  margin-top: 8px !important; /* Push mountain down further */
+  margin-top: 8px !important;
+}
+
+/* MOUNTAIN CANVAS: Scale down 20% */
+[class*="sfMountainStage"],
+[class*="MountainCanvas"],
+[class*="mountainCanvas"] {
+  transform: scale(0.80) !important;
+  transform-origin: center center !important;
 }
 
 [class*="sfMountainStage"] {
@@ -690,7 +698,7 @@ aside.right-column,
 @media (max-width: 1600px) {
   .main-content,
   [class*="main-content"] {
-    grid-template-columns: 500px 1fr 560px !important;
+    grid-template-columns: 560px 1fr 620px !important;
     gap: 14px !important;
     padding: 14px !important;
   }
@@ -699,7 +707,7 @@ aside.right-column,
 @media (max-width: 1400px) {
   .main-content,
   [class*="main-content"] {
-    grid-template-columns: 460px 1fr 520px !important;
+    grid-template-columns: 520px 1fr 580px !important;
     gap: 12px !important;
     padding: 12px !important;
   }
@@ -708,7 +716,7 @@ aside.right-column,
 @media (max-width: 1200px) {
   .main-content,
   [class*="main-content"] {
-    grid-template-columns: 420px 1fr 480px !important;
+    grid-template-columns: 480px 1fr 540px !important;
     gap: 10px !important;
     padding: 10px !important;
   }
