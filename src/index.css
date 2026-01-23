@@ -798,9 +798,9 @@ body { overflow-x: hidden; }
 }
 
 .instrument-label {
-  font-size: 11px; /* +22% */
+  font-size: 9px; /* REDUCED 15% (was 11px) */
   font-weight: 800;
-  letter-spacing: 2.8px;
+  letter-spacing: 2.4px;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.75);
   transition: color 200ms ease;
@@ -826,10 +826,10 @@ body { overflow-x: hidden; }
 .value-display {
   grid-column: 1;
   grid-row: 1;
-  font-size: 20px; /* REDUCED 30% total (was 28px) */
+  font-size: 17px; /* REDUCED 15% (was 20px) */
   font-weight: 900;
   color: rgba(255, 255, 255, 0.96);
-  letter-spacing: -0.8px;
+  letter-spacing: -0.7px;
   line-height: 1;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
   transition: all 250ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -866,9 +866,12 @@ body { overflow-x: hidden; }
   display: grid;
   place-items: center;
   min-height: var(--kpi-viz-min);
+  height: 100%;
   margin-top: 0;
   opacity: 1;
+  visibility: visible !important;
   filter: none;
+  overflow: visible;
 }
 
 /* Make widgets visible (without brightening the card background) */
@@ -882,6 +885,9 @@ body { overflow-x: hidden; }
   align-self: center;
   transform: scale(var(--kpi-widget-scale)); /* SIMPLIFIED - no offset, centered */
   transform-origin: 50% 50%;
+  opacity: 1 !important;
+  visibility: visible !important;
+  z-index: 5;
 }
 
 .instrument-svg {
@@ -1122,7 +1128,7 @@ body { overflow-x: hidden; }
     gap: 14px;
   }
   .value-display {
-    font-size: 17px; /* REDUCED 30% total */
+    font-size: 14px; /* REDUCED 15% (was 17px) */
   }
 }
 
@@ -1134,11 +1140,11 @@ body { overflow-x: hidden; }
     padding: 14px 20px 16px;
   }
   .value-display {
-    font-size: 16px; /* REDUCED 30% total */
+    font-size: 13px; /* REDUCED 15% (was 16px) */
   }
   .instrument-label {
-    font-size: 10px; /* +25% */
-    letter-spacing: 2.2px;
+    font-size: 8px; /* REDUCED 15% (was 10px) */
+    letter-spacing: 2.0px;
     transform: translateX(3px);
   }
 }
