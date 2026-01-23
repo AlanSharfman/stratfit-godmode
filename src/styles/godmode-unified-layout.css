@@ -49,11 +49,11 @@ header.unified-header {
 [class*="mainContent"] {
   flex: 1 !important;
   display: grid !important;
-  /* Wider side panels: LEFT 300px | CENTER flexible | RIGHT 340px */
-  grid-template-columns: 300px 1fr 340px !important;
+  /* MOUNTAIN REDUCED 30%: Wider side panels, smaller center */
+  grid-template-columns: 380px 1fr 420px !important;
   grid-template-rows: 1fr !important;
-  gap: 12px !important;
-  padding: 12px !important;
+  gap: 16px !important;
+  padding: 16px !important;
   height: calc(100vh - 56px) !important;
   max-height: calc(100vh - 56px) !important;
   overflow: hidden !important;
@@ -145,6 +145,9 @@ main.center-column {
   height: 100% !important;
   max-height: 100% !important;
   overflow: hidden !important;
+  /* Center the smaller mountain */
+  justify-content: flex-start !important;
+  align-items: stretch !important;
 }
 
 /* ============================================================================
@@ -336,27 +339,27 @@ aside.right-column,
 @media (max-width: 1600px) {
   .main-content,
   [class*="main-content"] {
-    grid-template-columns: 280px 1fr 320px !important;
-    gap: 10px !important;
-    padding: 10px !important;
+    grid-template-columns: 360px 1fr 400px !important;
+    gap: 14px !important;
+    padding: 14px !important;
   }
 }
 
 @media (max-width: 1400px) {
   .main-content,
   [class*="main-content"] {
-    grid-template-columns: 260px 1fr 300px !important;
-    gap: 10px !important;
-    padding: 10px !important;
+    grid-template-columns: 340px 1fr 380px !important;
+    gap: 12px !important;
+    padding: 12px !important;
   }
 }
 
 @media (max-width: 1200px) {
   .main-content,
   [class*="main-content"] {
-    grid-template-columns: 240px 1fr 280px !important;
-    gap: 8px !important;
-    padding: 8px !important;
+    grid-template-columns: 300px 1fr 340px !important;
+    gap: 10px !important;
+    padding: 10px !important;
   }
 }
 
