@@ -36,7 +36,6 @@ import { useDebouncedValue, useThrottledValue } from "@/hooks/useDebouncedValue"
 import "@/styles/godmode-align-overrides.css";
 import "@/styles/godmode-unified-layout.css";
 import UnifiedHeader, { type ViewMode as HeaderViewMode } from '@/components/layout/UnifiedHeader';
-import GodModeCursor from '@/components/ui/GodModeCursor';
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -1133,9 +1132,6 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
   
   return (
     <div className="app">
-      {/* GOD MODE CURSOR */}
-      <GodModeCursor />
-      
       {/* ONBOARDING SEQUENCE */}
       {showOnboarding && <OnboardingSequence onComplete={handleOnboardingComplete} />}
       {/* GOD MODE UNIFIED HEADER */}
