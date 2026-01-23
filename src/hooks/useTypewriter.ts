@@ -2,12 +2,13 @@
 // GOD MODE — Typewriter Effect Hook
 // Creates a cinematic text reveal effect for AI commentary
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface UseTypewriterOptions {
   text: string;
   speed?: number; // ms per character
   delay?: number; // initial delay before starting
+  enabled?: boolean; // whether to start typing
   onComplete?: () => void;
 }
 
@@ -15,6 +16,7 @@ export function useTypewriter({
   text,
   speed = 20,
   delay = 0,
+  enabled = true,
   onComplete,
 }: UseTypewriterOptions) {
   const [displayText, setDisplayText] = useState('');
@@ -22,18 +24,36 @@ export function useTypewriter({
   const [isComplete, setIsComplete] = useState(false);
   const indexRef = useRef(0);
   const timeoutRef = useRef<number | null>(null);
+  const startTimeoutRef = useRef<number | null>(null);
+  const onCompleteRef = useRef(onComplete);
+  
+  // Keep onComplete ref updated without triggering effect
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   useEffect(() => {
-    // Reset when text changes
+    // Clear any existing timeouts
+    if (startTimeoutRef.current) {
+      window.clearTimeout(startTimeoutRef.current);
+    }
+    if (timeoutRef.current) {
+      window.clearTimeout(timeoutRef.current);
+    }
+    
+    // Reset state
     setDisplayText('');
     setIsComplete(false);
     setIsTyping(false);
     indexRef.current = 0;
 
-    if (!text) return;
+    // Don't start if not enabled or no text
+    if (!enabled || !text) {
+      return;
+    }
 
-    // Initial delay
-    const startTimeout = window.setTimeout(() => {
+    // Initial delay before starting
+    startTimeoutRef.current = window.setTimeout(() => {
       setIsTyping(true);
       
       const typeChar = () => {
@@ -44,7 +64,7 @@ export function useTypewriter({
         } else {
           setIsTyping(false);
           setIsComplete(true);
-          onComplete?.();
+          onCompleteRef.current?.();
         }
       };
 
@@ -52,33 +72,14 @@ export function useTypewriter({
     }, delay);
 
     return () => {
-      window.clearTimeout(startTimeout);
+      if (startTimeoutRef.current) {
+        window.clearTimeout(startTimeoutRef.current);
+      }
       if (timeoutRef.current) {
         window.clearTimeout(timeoutRef.current);
       }
     };
-  }, [text, speed, delay, onComplete]);
+  }, [text, speed, delay, enabled]);
 
   return { displayText, isTyping, isComplete };
 }
-
-// Utility to skip to end
-export function useTypewriterWithSkip(options: UseTypewriterOptions) {
-  const [skipped, setSkipped] = useState(false);
-  const result = useTypewriter({
-    ...options,
-    text: skipped ? options.text : options.text,
-  });
-
-  const skip = () => {
-    setSkipped(true);
-  };
-
-  return {
-    ...result,
-    displayText: skipped ? options.text : result.displayText,
-    isComplete: skipped || result.isComplete,
-    skip,
-  };
-}
-

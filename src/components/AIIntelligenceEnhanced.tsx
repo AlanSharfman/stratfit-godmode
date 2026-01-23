@@ -327,7 +327,8 @@ function ExecutiveSummary({
   const { displayText, isTyping } = useTypewriter({ 
     text: summaryText, 
     speed: 12, 
-    delay: 100,
+    delay: 200,
+    enabled: true, // Always enabled - starts first
     onComplete 
   });
 
@@ -489,9 +490,10 @@ function AICommentary({ metrics, systemState, canStart = false }: {
 
   // Only start typing when canStart is true (after Executive Summary completes)
   const { displayText, isTyping } = useTypewriter({ 
-    text: canStart ? fullCommentary : '', 
+    text: fullCommentary, 
     speed: 8, 
-    delay: 300 // Small delay after Executive Summary completes
+    delay: 300,
+    enabled: canStart // Only start when Executive Summary is done
   });
 
   return (
@@ -503,7 +505,7 @@ function AICommentary({ metrics, systemState, canStart = false }: {
             {isTyping && <span className={styles.cursor}>▌</span>}
           </span>
         ) : (
-          <span className={styles.typewriterWaiting}>Analyzing scenario...</span>
+          <span className={styles.typewriterWaiting}>Waiting for summary...</span>
         )}
       </div>
     </div>
