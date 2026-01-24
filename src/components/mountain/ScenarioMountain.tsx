@@ -825,7 +825,6 @@ export default function ScenarioMountain({
     <div
       className={`relative w-full h-full overflow-hidden ${className ?? ""}`}
       style={{
-        // NEURAL ENVIRONMENT: Strategic Deep Navy (reduces eye strain, makes cyan pop)
         background: "radial-gradient(circle at 50% 60%, #0f172a 0%, #0b1220 100%)",
         minHeight: '400px',
         height: '100%',
@@ -857,24 +856,17 @@ export default function ScenarioMountain({
         }}
       >
         <Suspense fallback={null}>
-        {/* NEURAL ENVIRONMENT: Strategic Deep Navy background */}
         <color attach="background" args={['#0b1220']} />
-        
-        {/* VOLUMETRIC FOG — Pushed way back to prevent grey washout */}
         <fog attach="fog" args={['#0b1220', 35, 95]} />
         
         <PerspectiveCamera makeDefault position={[0, 6, 32]} fov={38} />
         <ambientLight intensity={0.12} />
         <directionalLight position={[8, 20, 10]} intensity={0.4} color="#ffffff" />
         <directionalLight position={[-6, 12, -8]} intensity={0.06} color="#0ea5e9" />
-        {/* Accent lighting - uses strategic blue, not harsh neon */}
         <pointLight position={[0, 8, 0]} intensity={0.08} color="#0ea5e9" distance={30} decay={2} />
         
-        {/* GHOST TERRAIN — Static baseline (behind main mountain) */}
-        {/* Shows "Deviation from Baseline" — only visible after interaction */}
         <GhostTerrain isVisible={hasInteracted} />
         
-        {/* CINEMATIC WRAPPER — Search Pattern when idle, locks on when active */}
         <CinematicController riskLevel={effectiveRiskLevel}>
         <Terrain
           dataPoints={dataPoints}
@@ -882,12 +874,11 @@ export default function ScenarioMountain({
           activeLeverId={activeLeverId}
           leverIntensity01={leverIntensity01}
           scenario={scenario}
-            isDragging={isDragging}
-            neuralPulse={neuralBootComplete}
+          isDragging={isDragging}
+          neuralPulse={neuralBootComplete}
         />
         </CinematicController>
         
-        {/* DIGITAL HORIZON — Floor grid + floating particles (outside cinematic wrapper) */}
         <DigitalHorizon scenarioId={scenario} />
         
         <OrbitControls 

@@ -116,42 +116,43 @@
    VIEW WRAPPER - WELL (Layer 4) — CHARCOAL CONTENT (EXACT MATCH TO KPIBezel.well)
    ============================================================================ */
 
+/* Ensure the wrapper is the stacking context */
 .sfViewWrapper {
   position: absolute;
   inset: 14px;
-  border-radius: 10px;
-  z-index: 2;
   overflow: hidden;
+  border-radius: 14px;
   
-  /* Charcoal - EXACT MATCH to KPI wells */
+  /* CRITICAL: Must be above ::before (z:0) and ::after (z:1) pseudo-elements */
+  z-index: 5;
+
+  /* CRITICAL: create a predictable stacking context */
+  isolation: isolate;
+  
+  /* Charcoal background */
   background: #1a1d21;
-  border: none;
-  
-  /* Subtle depth (EXACT MATCH) */
-  box-shadow: inset 0 10px 20px rgba(0,0,0,0.5);
-  
-  /* G-D MODE: Spectacular crystal clear mountain */
-  filter: brightness(1.5) contrast(1.2) saturate(1.15);
 }
 
-.sfViewOverlays {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 3;
-}
-
-/* Fill container for mountain canvas */
+/* The container that holds the Canvas */
 .sfMountainFill {
   position: absolute;
   inset: 0;
+  z-index: 1;          /* Base */
 }
 
-/* Ambient dimmer (view-mode driven) */
+/* Any vignette / haze / decorative overlays */
+.sfViewOverlays {
+  position: absolute;
+  inset: 0;
+  z-index: 2;          /* Above canvas */
+  pointer-events: none;
+}
+
+/* Dimmer layer */
 .sfAmbientDim {
   position: absolute;
   inset: 0;
-  z-index: 6;
+  z-index: 3;
   pointer-events: none;
   background: radial-gradient(
     ellipse at center,
@@ -162,21 +163,16 @@
   transition: opacity 0.4s ease;
 }
 
-/* Overlay container for non-terrain pages */
+/* The non-terrain overlay panels */
 .sfTabOverlay {
   position: absolute;
   inset: 14px;
-  border-radius: 10px;
-  z-index: 8;
+  z-index: 10;         /* Above everything */
   overflow: auto;
+  border-radius: 10px;
 
-  /* IMPORTANT: allow mountain to remain visible behind UI */
   background: rgba(10, 14, 26, 0.40);
   backdrop-filter: blur(6px);
-
-  box-shadow:
-    inset 0 0 0 1px rgba(34, 211, 238, 0.06),
-    inset 0 10px 20px rgba(0,0,0,0.35);
 }
 
 /* ============================================================================
