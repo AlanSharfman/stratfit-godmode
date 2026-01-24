@@ -1,0 +1,353 @@
+/* src/components/simulation/SaveBaselineButton.css */
+/* STRATFIT — Save Baseline Button Styles */
+
+/* ============================================================================
+   BUTTON CONTAINER
+   ============================================================================ */
+
+.save-baseline-container {
+  display: flex;
+  gap: 2px;
+}
+
+/* ============================================================================
+   MAIN BUTTON
+   ============================================================================ */
+
+.save-baseline-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.save-baseline-btn.primary {
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.2), rgba(16, 185, 129, 0.2));
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  color: #22d3ee;
+}
+
+.save-baseline-btn.primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.3), rgba(16, 185, 129, 0.3));
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(34, 211, 238, 0.2);
+}
+
+.save-baseline-btn.secondary {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.save-baseline-btn.secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.save-baseline-btn.minimal {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 8px 12px;
+}
+
+.save-baseline-btn.minimal:hover:not(:disabled) {
+  color: #22d3ee;
+}
+
+.save-baseline-btn.disabled,
+.save-baseline-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Saving state */
+.save-baseline-btn.saving {
+  pointer-events: none;
+}
+
+.btn-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(34, 211, 238, 0.3);
+  border-top-color: #22d3ee;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Saved state */
+.save-baseline-btn.saved {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #10b981;
+}
+
+.btn-icon {
+  font-size: 14px;
+}
+
+.btn-text {
+  white-space: nowrap;
+}
+
+/* ============================================================================
+   SAVE AS BUTTON
+   ============================================================================ */
+
+.save-as-btn {
+  padding: 10px 8px;
+  background: rgba(34, 211, 238, 0.1);
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  border-left: none;
+  border-radius: 0 8px 8px 0;
+  color: #22d3ee;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.save-as-btn:hover {
+  background: rgba(34, 211, 238, 0.2);
+}
+
+/* ============================================================================
+   BASELINE INDICATOR
+   ============================================================================ */
+
+.baseline-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: rgba(34, 211, 238, 0.05);
+  border-radius: 6px;
+  font-size: 10px;
+}
+
+.indicator-dot {
+  width: 6px;
+  height: 6px;
+  background: #22d3ee;
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.indicator-text {
+  color: rgba(255, 255, 255, 0.7);
+  flex: 1;
+}
+
+.indicator-time {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ============================================================================
+   MODAL
+   ============================================================================ */
+
+.save-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.save-modal {
+  width: 100%;
+  max-width: 440px;
+  background: linear-gradient(180deg, #0d1a2d 0%, #0a1628 100%);
+  border: 1px solid rgba(34, 211, 238, 0.2);
+  border-radius: 16px;
+  overflow: hidden;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #22d3ee;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 6px;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: white;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  border-color: rgba(34, 211, 238, 0.4);
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+/* Preview */
+.scenario-preview {
+  padding: 12px;
+  background: rgba(34, 211, 238, 0.05);
+  border: 1px solid rgba(34, 211, 238, 0.1);
+  border-radius: 8px;
+}
+
+.preview-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  display: block;
+  margin-bottom: 8px;
+}
+
+.preview-stats {
+  display: flex;
+  justify-content: space-around;
+}
+
+.preview-stats .stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.preview-stats .stat-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  font-weight: 700;
+  color: #22d3ee;
+}
+
+.preview-stats .stat-label {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Footer */
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.btn-cancel {
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-save {
+  padding: 10px 20px;
+  background: rgba(34, 211, 238, 0.2);
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  border-radius: 8px;
+  color: #22d3ee;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-save:hover:not(:disabled) {
+  background: rgba(34, 211, 238, 0.3);
+}
+
+.btn-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

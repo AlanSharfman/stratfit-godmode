@@ -250,7 +250,8 @@ function AISection({
 // ============================================================================
 
 function getAIContent(viewMode: ViewMode, scenario: ScenarioId) {
-  if (viewMode === "operator") {
+  // "terrain" mode = operator view, "data" mode = investor view
+  if (viewMode === "terrain") {
     return {
       observation:
         scenario === "stress"
@@ -541,7 +542,7 @@ export default function AIIntelligence({
           <div className="header-text">
             <span className="header-title">STRATEGIC INSIGHTS</span>
             <span className="header-subtitle">
-              {viewMode === "operator" ? "Operator View" : "Investor View"}
+              {viewMode === "terrain" ? "Operator View" : "Data View"}
             </span>
           </div>
         </div>

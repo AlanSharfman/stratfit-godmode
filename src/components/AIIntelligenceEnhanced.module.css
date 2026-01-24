@@ -4,8 +4,12 @@
    ============================================================================ */
 
 /* ═══════════════════════════════════════════════════════════════
-   PANEL CONTAINER — FLAT SEAMLESS CHASSIS
-   No rounded corners, no bezels, no floating boxes
+   PANEL CONTAINER — SILVER JEWEL BEZEL
+   4-LAYER SYSTEM matching CommandDeckBezel
+   LAYER 1: CHASSIS (outer frame with metallic gradient)
+   LAYER 2: RIM (chrome silver step via ::before)
+   LAYER 3: STEP (dark steel recessed channel via ::after)
+   LAYER 4: WELL (charcoal content pit)
    ═══════════════════════════════════════════════════════════════ */
 
 .aiPanel {
@@ -14,22 +18,27 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  border-radius: 0;
-  padding: 0;
   overflow: hidden;
-  background: transparent;
-  border: none;
-  box-shadow: none;
+  
+  /* SIMPLIFIED — No complex bezel, content extends to edge */
+  border-radius: 8px;
+  padding: 0;
+  background: #0a0e14;
+  
+  /* Simple subtle border */
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  
+  /* Minimal shadow */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
-.aiPanel::before {
-  display: none;
-}
-
+/* REMOVED: Complex multi-layer bezel pseudo-elements */
+.aiPanel::before,
 .aiPanel::after {
-  display: none;
+  display: none !important;
 }
 
+/* LAYER 4: WELL — Content pit extends to bottom */
 .aiPanelWell {
   position: relative;
   z-index: 2;
@@ -37,16 +46,18 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  margin: 0;
-  border-radius: 0;
+  margin: 0;  /* NO MARGIN — content extends to edge */
   overflow: hidden;
+  
+  /* Dark background continues */
+  border-radius: 8px;
   background: transparent;
   border: none;
   box-shadow: none;
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   HEADER — Dense telemetry header
+   HEADER — Dense telemetry header within Silver Jewel Bezel
    ═══════════════════════════════════════════════════════════════ */
 
 .header {
@@ -54,28 +65,35 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  padding: 12px 16px 10px;
-  background: rgba(5, 9, 17, 0.95);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  
+  /* Header inside the charcoal well */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px 8px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: linear-gradient(180deg, rgba(35, 40, 50, 0.5) 0%, transparent 100%);
 }
 
 .headerTop {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
 }
 
+/* Match .section-title exactly */
 .title {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.25em;
   text-transform: uppercase;
-  color: rgba(34, 211, 238, 0.95);
+  color: rgba(34, 211, 238, 0.9);
+  text-shadow: 0 0 12px rgba(34, 211, 238, 0.4);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
 .titleIcon {
@@ -83,34 +101,62 @@
   filter: drop-shadow(0 0 4px rgba(34, 211, 238, 0.6));
 }
 
-/* Status pill */
+/* ═══════════════════════════════════════════════════════════════
+   LED INDICATOR — MATCHING LEFT PANEL .section-toggle / .toggle-led
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Status LED container — matches .section-toggle */
 .statusPill {
-  padding: 4px 10px;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  border-radius: 10px;
-  border: 1px solid;
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(2, 6, 23, 0.9);
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 0;
 }
 
+/* LED dot inside — matches .toggle-led */
+.statusPill::after {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #22d3ee;
+  box-shadow:
+    0 0 6px #22d3ee,
+    0 0 12px rgba(34, 211, 238, 0.6);
+  animation: led-pulse 2s ease-in-out infinite;
+}
+
+@keyframes led-pulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; box-shadow: 0 0 10px #22d3ee, 0 0 20px rgba(34, 211, 238, 0.8); }
+}
+
+/* Legacy status pill styles for backwards compatibility */
 .stable {
-  background: rgba(16, 185, 129, 0.12);
-  border-color: rgba(16, 185, 129, 0.3);
-  color: #10b981;
+  background: rgba(2, 6, 23, 0.9);
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.stable::after {
+  background: #10b981;
+  box-shadow: 0 0 6px #10b981, 0 0 12px rgba(16, 185, 129, 0.6);
 }
 
 .updating {
-  background: rgba(34, 211, 238, 0.12);
-  border-color: rgba(34, 211, 238, 0.3);
-  color: #22d3ee;
-  animation: statusPulse 1.5s ease-in-out infinite;
+  background: rgba(2, 6, 23, 0.9);
+  border-color: rgba(34, 211, 238, 0.4);
 }
 
-@keyframes statusPulse {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 1; }
+.updating::after {
+  background: #22d3ee;
+  box-shadow: 0 0 6px #22d3ee, 0 0 12px rgba(34, 211, 238, 0.6);
+  animation: led-pulse 1.5s ease-in-out infinite;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -154,6 +200,7 @@
 
 /* ═══════════════════════════════════════════════════════════════
    CONTENT AREA — Dense vertical data streams
+   Premium scrollbar matching CommandDeckBezel
    ═══════════════════════════════════════════════════════════════ */
 
 .content {
@@ -161,27 +208,37 @@
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 12px 16px;
+  padding: 14px 18px;  /* MORE BREATHING ROOM */
+  padding-right: 14px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;  /* More space between sections */
 }
 
+/* Premium scrollbar - bright charcoal, ultra thin */
 .content::-webkit-scrollbar {
-  width: 3px;
+  width: 1px;
 }
 
 .content::-webkit-scrollbar-track {
   background: transparent;
+  border-radius: 10px;
 }
 
 .content::-webkit-scrollbar-thumb {
-  background: rgba(34, 211, 238, 0.2);
-  border-radius: 2px;
+  background: rgba(60, 65, 72, 0.7);
+  border-radius: 10px;
+  border: none;
 }
 
 .content::-webkit-scrollbar-thumb:hover {
-  background: rgba(34, 211, 238, 0.35);
+  background: rgba(80, 85, 92, 0.85);
+}
+
+/* Firefox scrollbar - bright charcoal */
+.content {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(60, 65, 72, 0.7) transparent;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -267,33 +324,35 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   AI COMMENTARY — Contextual insights
+   AI COMMENTARY — MATCHES EXECUTIVE SUMMARY EXACTLY
    ═══════════════════════════════════════════════════════════════ */
 
 .commentarySection {
-  background: rgba(0, 0, 0, 0.25);
-  border-radius: 10px;
-  padding: 12px;
-  border: 1px solid rgba(34, 211, 238, 0.08);
+  /* MATCHES executiveSection — transparent, no border, no extra nesting */
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  border: none;
 }
 
 .commentaryCard {
-  background: linear-gradient(135deg, rgba(34, 211, 238, 0.05) 0%, rgba(0, 0, 0, 0.2) 100%);
-  border-radius: 8px;
-  padding: 14px;
-  border: 1px solid rgba(34, 211, 238, 0.12);
+  /* MATCHES executiveCard — same styling */
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  padding: 10px 12px;
+  border-left: 3px solid rgba(34, 211, 238, 0.4);
 }
 
 .commentaryText {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;  /* MORE GAP BETWEEN ITEMS */
 }
 
 .commentaryItem {
   background: rgba(0, 0, 0, 0.25);
   border-radius: 8px;
-  padding: 10px 12px;
+  padding: 14px 16px;  /* MORE PADDING */
   border-left: 3px solid;
 }
 
@@ -333,9 +392,9 @@
 }
 
 .commentaryLine {
-  font-size: 12px;
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;  /* LARGER, more readable */
+  line-height: 1.7;  /* MORE LINE HEIGHT */
+  color: rgba(255, 255, 255, 0.9);  /* BRIGHTER */
   margin: 0;
 }
 

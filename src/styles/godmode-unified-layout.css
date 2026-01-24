@@ -350,7 +350,8 @@ main.center-column {
 [class*="sfCenterRoot"],
 [class*="CenterViewPanel"] {
   flex: 1 !important;
-  min-height: 0 !important;
+  min-height: 400px !important;
+  height: 100% !important;
   width: 100% !important;
   position: relative !important;
   
@@ -389,9 +390,26 @@ main.center-column {
 /* Mountain stage */
 [class*="sfMountainStage"] {
   flex: 1 !important;
-  min-height: 0 !important;
+  min-height: 400px !important;
   width: 100% !important;
   height: 100% !important;
+  position: relative !important;
+}
+
+/* View wrapper inside mountain stage */
+[class*="sfViewWrapper"] {
+  position: absolute !important;
+  inset: 14px !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+/* Ensure Three.js canvas fills container */
+[class*="sfViewWrapper"] canvas,
+[class*="ScenarioMountain"] canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
 }
 
 /* Hide view selector */
@@ -401,16 +419,16 @@ main.center-column {
 }
 
 /* ============================================================================
-   RIGHT DECK — AI INTELLIGENCE (400px) — "Machined Glass" Style
+   RIGHT DECK — AI INTELLIGENCE (520px) — "Machined Glass" Style
    ============================================================================ */
 
 .right-column,
 [class*="right-column"],
 aside.right-column,
 [data-tour="intel"] {
-  width: 440px !important;
-  min-width: 440px !important;
-  max-width: 440px !important;
+  width: 520px !important;
+  min-width: 520px !important;
+  max-width: 520px !important;
   height: 100% !important;
   display: flex !important;
   flex-direction: column !important;
@@ -462,118 +480,179 @@ aside.right-column,
   border-radius: 2px !important;
 }
 
-/* AI Intelligence - THE SILVER JEWEL BEZEL */
+/* ════════════════════════════════════════════════════════════════════════════
+   AI INTELLIGENCE PANEL — SILVER JEWEL BEZEL DESIGN
+   
+   FORMULA: 4-LAYER SYSTEM matching CommandDeckBezel
+   LAYER 1: CHASSIS (outer frame with metallic gradient)
+   LAYER 2: RIM (chrome silver step via ::before)
+   LAYER 3: STEP (dark steel recessed channel via ::after)
+   LAYER 4: WELL (charcoal content pit)
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AI INTELLIGENCE PANEL — SIMPLIFIED, NO DOUBLE BEZEL
+   Content extends to bottom of page
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Target all possible class name variations */
 [class*="AIIntelligence"],
 [class*="ScenarioIntelligence"],
-[class*="aiIntelligence"] {
+[class*="aiIntelligence"],
+[class*="aiPanel"],
+[class*="ai-panel"],
+.right-column > div:first-child,
+[data-tour="intel"] > div:first-child {
   flex: 1 !important;
-  height: calc(100% - 24px) !important;
+  height: calc(100% - 16px) !important;  /* Nearly full height */
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
-  padding: 0 !important;
-  margin: 12px !important;
-  margin-top: 12px !important;
-  
-  /* === THE SILVER JEWEL STEPPED BEZEL === */
+  padding: 0 !important;  /* NO padding — content extends to edge */
+  margin: 8px !important;  /* Minimal margin */
+  margin-top: 8px !important;
   position: relative !important;
-  border-radius: 12px !important;
   
-  /* Layer 1: Deep Glass Base */
-  background: #0b1221 !important;
+  /* SIMPLIFIED — Clean, dark background */
+  border-radius: 8px !important;
+  background: #0a0e14 !important;
   
-  /* Layer 2: Silver Stepped Rim — The "Jewel" Effect */
-  border: none !important;
-  outline: 3px solid rgba(148, 163, 184, 0.25) !important;  /* Silver outer step */
-  outline-offset: 3px !important;
+  /* Simple subtle border */
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
   
-  box-shadow:
-    /* === OUTER STEPPED BEZEL === */
-    /* Step 1: Silver rim glow */
-    0 0 0 1px rgba(203, 213, 225, 0.15),
-    /* Step 2: Dark inset for depth */
-    0 0 0 4px rgba(15, 23, 42, 0.9),
-    /* Step 3: Silver accent ring */
-    0 0 0 5px rgba(148, 163, 184, 0.2),
-    /* Step 4: Final dark frame */
-    0 0 0 8px rgba(2, 6, 23, 0.8),
+  /* No outline */
+  outline: none !important;
+  
+  /* Minimal shadow */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
     
-    /* === INNER MACHINED EDGE === */
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.6),
-    inset 1px 0 0 rgba(255, 255, 255, 0.05),
-    inset -1px 0 0 rgba(255, 255, 255, 0.05),
-    
-    /* === DEPTH SHADOW === */
-    0 20px 60px -15px rgba(0, 0, 0, 0.9),
-    0 8px 24px -8px rgba(0, 0, 0, 0.6) !important;
+  /* Smooth transitions */
+  transition: box-shadow 0.3s ease !important;
 }
 
-/* Inner content padding */
+/* === HOVER STATE: Subtle glow === */
+[class*="AIIntelligence"]:hover,
+[class*="ScenarioIntelligence"]:hover,
+[class*="aiIntelligence"]:hover,
+[class*="aiPanel"]:hover,
+[class*="ai-panel"]:hover,
+.right-column > div:first-child:hover,
+[data-tour="intel"] > div:first-child:hover {
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.4),
+    0 0 30px rgba(34, 211, 238, 0.08) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   REMOVE ALL BEZEL PSEUDO-ELEMENTS — No double bezel
+   ═══════════════════════════════════════════════════════════════════════════ */
+[class*="AIIntelligence"]::before,
+[class*="ScenarioIntelligence"]::before,
+[class*="aiPanel"]::before,
+[class*="ai-panel"]::before,
+.right-column > div:first-child::before,
+[data-tour="intel"] > div:first-child::before,
+[class*="AIIntelligence"]::after,
+[class*="ScenarioIntelligence"]::after,
+[class*="aiPanel"]::after,
+[class*="ai-panel"]::after,
+.right-column > div:first-child::after,
+[data-tour="intel"] > div:first-child::after {
+  display: none !important;
+  content: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CONTENT WELL — No margin, extends to edges and bottom
+   ═══════════════════════════════════════════════════════════════════════════ */
 [class*="AIIntelligence"] > *,
 [class*="ScenarioIntelligence"] > *,
-[class*="aiIntelligence"] > * {
-  padding: 16px !important;
+[class*="aiIntelligence"] > *,
+[class*="aiPanel"] > *,
+[class*="ai-panel"] > *,
+.right-column > div:first-child > *,
+[data-tour="intel"] > div:first-child > * {
+  position: relative !important;
+  z-index: 2 !important;
+  margin: 0 !important;  /* NO margin — content extends to edge */
+  padding: 12px 16px !important;  /* Internal padding only */
+  border-radius: 0 !important;  /* No rounded corners inside */
+  background: transparent !important;  /* Transparent, uses parent bg */
+  box-shadow: none !important;
 }
 
-/* === SILVER CORNER RIVETS === */
-[class*="AIIntelligence"]::before,
-[class*="ScenarioIntelligence"]::before {
+/* Fix for nested content within the well */
+[class*="AIIntelligence"] > * > *,
+[class*="aiPanel"] > * > *,
+.right-column > div:first-child > * > * {
+  position: relative !important;
+  z-index: 2 !important;
+  margin: 0 !important;
+  padding: 0 !important;  /* Reset nested padding */
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AI PANEL HEADER — Header inside the Silver Jewel Well
+   ═══════════════════════════════════════════════════════════════════════════ */
+[class*="AIIntelligence"] [class*="header"],
+[class*="AIIntelligence"] [class*="Header"],
+[class*="aiPanel"] [class*="header"],
+.right-column [class*="panelHeader"],
+[data-tour="intel"] [class*="header"] {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 10px 14px 8px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  background: linear-gradient(180deg, rgba(35, 40, 50, 0.5) 0%, transparent 100%) !important;
+  border-radius: 10px 10px 0 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Title styling — matches .section-title exactly */
+[class*="AIIntelligence"] [class*="title"],
+[class*="AIIntelligence"] [class*="Title"],
+[class*="aiPanel"] [class*="title"],
+.right-column [class*="panelTitle"],
+[data-tour="intel"] [class*="title"] {
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.25em !important;
+  text-transform: uppercase !important;
+  color: rgba(34, 211, 238, 0.9) !important;
+  text-shadow: 0 0 12px rgba(34, 211, 238, 0.4) !important;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
+}
+
+/* Status LED indicator — like .toggle-led on left panels */
+[class*="AIIntelligence"] [class*="status"],
+[class*="AIIntelligence"] [class*="indicator"],
+[class*="aiPanel"] [class*="status"] {
+  width: 10px !important;
+  height: 10px !important;
+  border-radius: 50% !important;
+  background: rgba(2, 6, 23, 0.9) !important;
+  border: 1px solid rgba(34, 211, 238, 0.3) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+[class*="AIIntelligence"] [class*="status"]::after,
+[class*="AIIntelligence"] [class*="indicator"]::after {
   content: "" !important;
-  position: absolute !important;
-  top: 8px !important;
-  left: 8px !important;
   width: 5px !important;
   height: 5px !important;
-  background: linear-gradient(135deg, #94a3b8 0%, #475569 100%) !important;
   border-radius: 50% !important;
-  box-shadow: 
-    /* Other 3 corners */
-    calc(100% - 21px) 0 0 0 #64748b,
-    0 calc(100% - 21px) 0 0 #64748b,
-    calc(100% - 21px) calc(100% - 21px) 0 0 #64748b,
-    /* Inner shadow on each rivet */
-    inset 0 1px 2px rgba(255, 255, 255, 0.3),
-    inset 0 -1px 1px rgba(0, 0, 0, 0.5) !important;
-  z-index: 50 !important;
-  pointer-events: none !important;
-}
-
-/* === THE "WET GLASS" TOP HIGHLIGHT === */
-[class*="AIIntelligence"]::after,
-[class*="ScenarioIntelligence"]::after {
-  content: "" !important;
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  height: 1px !important;
-  background: linear-gradient(90deg, 
-    transparent 5%, 
-    rgba(203, 213, 225, 0.5) 20%,
-    rgba(255, 255, 255, 0.7) 50%,
-    rgba(203, 213, 225, 0.5) 80%,
-    transparent 95%
-  ) !important;
-  border-radius: 12px 12px 0 0 !important;
-  pointer-events: none !important;
-}
-
-/* === INNER GLASS REFLECTION === */
-[class*="AIIntelligence"] > *:first-child::before,
-[class*="ScenarioIntelligence"] > *:first-child::before {
-  content: "" !important;
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  height: 60px !important;
-  background: linear-gradient(180deg, 
-    rgba(255, 255, 255, 0.04) 0%,
-    transparent 100%
-  ) !important;
-  pointer-events: none !important;
-  border-radius: 12px 12px 0 0 !important;
+  background: #22d3ee !important;
+  box-shadow:
+    0 0 6px #22d3ee,
+    0 0 12px rgba(34, 211, 238, 0.6) !important;
+  animation: led-pulse 2s ease-in-out infinite !important;
 }
 
 /* ============================================================================
@@ -622,9 +701,9 @@ aside.right-column,
   [class*="right-column"],
   aside.right-column,
   [data-tour="intel"] {
-    width: 400px !important;
-    min-width: 400px !important;
-    max-width: 400px !important;
+    width: 480px !important;
+    min-width: 480px !important;
+    max-width: 480px !important;
   }
 }
 
@@ -641,9 +720,9 @@ aside.right-column,
   [class*="right-column"],
   aside.right-column,
   [data-tour="intel"] {
-    width: 340px !important;
-    min-width: 340px !important;
-    max-width: 340px !important;
+    width: 440px !important;
+    min-width: 440px !important;
+    max-width: 440px !important;
   }
 }
 
@@ -660,9 +739,9 @@ aside.right-column,
   [class*="right-column"],
   aside.right-column,
   [data-tour="intel"] {
-    width: 300px !important;
-    min-width: 300px !important;
-    max-width: 300px !important;
+    width: 400px !important;
+    min-width: 400px !important;
+    max-width: 400px !important;
   }
 }
 
@@ -679,9 +758,9 @@ aside.right-column,
   [class*="right-column"],
   aside.right-column,
   [data-tour="intel"] {
-    width: 260px !important;
-    min-width: 260px !important;
-    max-width: 260px !important;
+    width: 360px !important;
+    min-width: 360px !important;
+    max-width: 360px !important;
   }
   
   .kpi-section,
@@ -838,5 +917,131 @@ aside.right-column,
   50% {
     opacity: 0.7;
     border-color: rgba(34, 211, 238, 0.15);
+  }
+}
+
+/* COMMAND BRIDGE ANIMATIONS */
+
+/* Scanline moving across power bar */
+@keyframes scanline {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+/* Vertical scan across bridge */
+@keyframes bridgeScan {
+  0%, 100% { 
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% { 
+    transform: translateY(200%);
+    opacity: 0;
+  }
+}
+
+/* Hex cell pulse */
+@keyframes hexPulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 5px currentColor);
+  }
+  50% {
+    filter: drop-shadow(0 0 15px currentColor);
+  }
+}
+
+/* ============================================================================
+   NEURAL BOOT — SEQUENTIAL IGNITION ANIMATIONS
+   ============================================================================ */
+
+/* Chassis fade-in with glow */
+@keyframes neuralBootChassis {
+  0% {
+    opacity: 0.1;
+    filter: brightness(0.5);
+  }
+  50% {
+    filter: brightness(1.2);
+  }
+  100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+}
+
+/* Power pip light wave */
+@keyframes neuralBootPip {
+  0% {
+    transform: scaleY(0.3);
+    opacity: 0;
+    filter: brightness(0.5);
+  }
+  50% {
+    transform: scaleY(1.3);
+    filter: brightness(2);
+    box-shadow: 0 0 20px rgba(34, 211, 238, 1), 0 0 40px rgba(34, 211, 238, 0.5);
+  }
+  100% {
+    transform: scaleY(1);
+    opacity: 1;
+    filter: brightness(1);
+  }
+}
+
+/* Chevron spring deploy */
+@keyframes neuralBootChevron {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.2);
+  }
+  80% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Hex reactor ignition flash */
+@keyframes neuralBootHex {
+  0% {
+    filter: brightness(1) drop-shadow(0 0 0px transparent);
+    transform: scale(0.9);
+  }
+  30% {
+    filter: brightness(3) drop-shadow(0 0 40px #ffffff);
+    transform: scale(1.05);
+  }
+  60% {
+    filter: brightness(1.5) drop-shadow(0 0 20px #fbbf24);
+  }
+  100% {
+    filter: brightness(1) drop-shadow(0 0 15px rgba(251, 191, 36, 0.5));
+    transform: scale(1);
+  }
+}
+
+/* Mountain neural sync pulse */
+@keyframes neuralSyncPulse {
+  0% {
+    opacity: 0.6;
+  }
+  20% {
+    opacity: 1;
+    filter: drop-shadow(0 0 30px #00ffff);
+  }
+  100% {
+    opacity: 0.6;
+    filter: none;
   }
 }

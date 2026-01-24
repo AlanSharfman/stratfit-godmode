@@ -4,7 +4,7 @@
 // - No store changes, no engine changes.
 // - Fired ONLY on explicit user actions (slider release / scenario switch / save/load).
 
-export type CausalSource = "slider_release" | "scenario_switch" | "scenario_save" | "scenario_load" | "scenario_share";
+export type CausalSource = "slider_release" | "scenario_switch" | "scenario_save" | "scenario_load" | "scenario_share" | "simulation_saved" | "simulation_loaded";
 export type CausalBandStyle = "solid" | "wash";
 
 export type CausalEventDetail = {

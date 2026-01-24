@@ -2,7 +2,7 @@
 // STRATFIT — Reduce 10,000 Futures to Verdict
 // Tiers, kill-switches, causality chains
 
-import type { SimulationResult, MonteCarloOutput, LeverState } from './monteCarloEngine';
+import type { SingleSimulationResult, MonteCarloResult, LeverState } from './monteCarloEngine';
 
 // ============================================================================
 // VERDICT TYPES
@@ -93,12 +93,12 @@ function formatMoney(val: number): string {
 // ============================================================================
 
 function detectKillSwitch(
-  results: SimulationResult[], 
+  results: SingleSimulationResult[], 
   levers: LeverState
 ): KillSwitch {
   // Analyze what kills the failures
-  const failures = results.filter(r => !r.survived);
-  const survivors = results.filter(r => r.survived);
+  const failures = results.filter((r: SingleSimulationResult) => !r.didSurvive);
+  const survivors = results.filter((r: SingleSimulationResult) => r.didSurvive);
   
   if (failures.length === 0) {
     return {
@@ -162,8 +162,8 @@ function detectKillSwitch(
 // CAUSALITY CHAIN GENERATION
 // ============================================================================
 
-function generateCausality(results: SimulationResult[]): CausalityChain {
-  const failures = results.filter(r => !r.survived);
+function generateCausality(results: SingleSimulationResult[]): CausalityChain {
+  const failures = results.filter((r: SingleSimulationResult) => !r.didSurvive);
   
   if (failures.length === 0) {
     return {
@@ -173,7 +173,7 @@ function generateCausality(results: SimulationResult[]): CausalityChain {
     };
   }
 
-  // Count failure triggers
+  // Analyze failure patterns based on available data
   const triggerCounts: Record<string, number> = {
     revenue_miss: 0,
     burn_spike: 0,
@@ -182,9 +182,19 @@ function generateCausality(results: SimulationResult[]): CausalityChain {
     funding_gap: 0,
   };
 
-  failures.forEach(f => {
-    if (f.failureTrigger) {
-      triggerCounts[f.failureTrigger]++;
+  // Infer failure triggers from simulation results
+  failures.forEach((f: SingleSimulationResult) => {
+    // Infer trigger from final state
+    if (f.finalCash < 0) {
+      triggerCounts['funding_gap']++;
+    } else if (f.finalARR < f.peakARR * 0.5) {
+      triggerCounts['revenue_miss']++;
+    } else if (f.lowestCash < 100000) {
+      triggerCounts['burn_spike']++;
+    } else if (f.survivalMonths < 12) {
+      triggerCounts['market_shock']++;
+    } else {
+      triggerCounts['churn_spiral']++;
     }
   });
 
@@ -230,20 +240,20 @@ function generateCausality(results: SimulationResult[]): CausalityChain {
 // MAIN REDUCER
 // ============================================================================
 
-export function reduceToVerdict(output: MonteCarloOutput): SimulateVerdict {
-  const { results, runTimeMs, inputSnapshot } = output;
+export function reduceToVerdict(output: MonteCarloResult): SimulateVerdict {
+  const results = output.allSimulations;
   const count = results.length;
 
   // === SURVIVAL % ===
-  const survived = results.filter(r => r.survived).length;
+  const survived = results.filter((r: SingleSimulationResult) => r.didSurvive).length;
   const survivalPct = Math.round((survived / count) * 100);
   const { tier, label: tierLabel } = getSurvivalTier(survivalPct);
 
-  // === VALUATION RANGE ===
+  // === VALUATION RANGE (using finalARR as proxy) ===
   const valuations = results
-    .filter(r => r.survived && r.endValuation > 0)
-    .map(r => r.endValuation)
-    .sort((a, b) => a - b);
+    .filter((r: SingleSimulationResult) => r.didSurvive && r.finalARR > 0)
+    .map((r: SingleSimulationResult) => r.finalARR)
+    .sort((a: number, b: number) => a - b);
 
   const valuationRange: ValuationRange = {
     p10: Math.round(percentile(valuations, 10) * 10) / 10,
@@ -258,11 +268,11 @@ export function reduceToVerdict(output: MonteCarloOutput): SimulateVerdict {
   let crash = 0, survive = 0, grow = 0, breakout = 0;
 
   for (const r of results) {
-    if (!r.survived || (r.monthOfDeath && r.monthOfDeath <= 18)) {
+    if (!r.didSurvive || r.survivalMonths <= 18) {
       crash++;
-    } else if (r.endValuation >= breakoutThreshold) {
+    } else if (r.finalARR >= breakoutThreshold) {
       breakout++;
-    } else if (r.endValuation <= struggleThreshold || r.endCash < 0.5) {
+    } else if (r.finalARR <= struggleThreshold || r.finalCash < 500000) {
       survive++;
     } else {
       grow++;
@@ -283,7 +293,19 @@ export function reduceToVerdict(output: MonteCarloOutput): SimulateVerdict {
   }
 
   // === KILL-SWITCH ===
-  const killSwitch = detectKillSwitch(results, inputSnapshot.levers);
+  // Note: Using default levers since inputSnapshot is not available in new MonteCarloResult
+  const defaultLevers: LeverState = {
+    demandStrength: 50,
+    pricingPower: 50,
+    expansionVelocity: 50,
+    costDiscipline: 50,
+    hiringIntensity: 50,
+    operatingDrag: 50,
+    marketVolatility: 50,
+    executionRisk: 50,
+    fundingPressure: 50,
+  };
+  const killSwitch = detectKillSwitch(results, defaultLevers);
 
   // === CAUSALITY ===
   const causality = generateCausality(results);
@@ -306,7 +328,7 @@ export function reduceToVerdict(output: MonteCarloOutput): SimulateVerdict {
     killSwitch,
     causality,
     simulationCount: count,
-    runTimeMs,
+    runTimeMs: output.executionTimeMs,
     isOverlyOptimistic,
     isHighUncertainty,
     isKillSwitchViolated,

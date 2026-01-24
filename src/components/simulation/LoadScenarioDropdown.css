@@ -1,0 +1,301 @@
+/* src/components/simulation/LoadScenarioDropdown.css */
+/* STRATFIT — Load Scenario Dropdown Styles */
+
+/* ============================================================================
+   DROPDOWN CONTAINER
+   ============================================================================ */
+
+.load-scenario-dropdown {
+  position: relative;
+}
+
+/* ============================================================================
+   TRIGGER BUTTON
+   ============================================================================ */
+
+.dropdown-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.dropdown-trigger:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(34, 211, 238, 0.2);
+}
+
+.dropdown-trigger.open {
+  background: rgba(34, 211, 238, 0.1);
+  border-color: rgba(34, 211, 238, 0.3);
+  color: #22d3ee;
+}
+
+.dropdown-trigger.disabled,
+.dropdown-trigger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.trigger-icon {
+  font-size: 14px;
+}
+
+.trigger-text {
+  flex: 1;
+  text-align: left;
+}
+
+.trigger-arrow {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  transition: transform 0.2s ease;
+}
+
+.dropdown-trigger.open .trigger-arrow {
+  color: #22d3ee;
+}
+
+/* ============================================================================
+   DROPDOWN MENU
+   ============================================================================ */
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  min-width: 320px;
+  background: linear-gradient(180deg, #0d1a2d 0%, #0a1628 100%);
+  border: 1px solid rgba(34, 211, 238, 0.2);
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  overflow: hidden;
+  animation: dropdownOpen 0.2s ease;
+}
+
+@keyframes dropdownOpen {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.menu-header .count {
+  padding: 2px 8px;
+  background: rgba(34, 211, 238, 0.1);
+  border-radius: 10px;
+  color: #22d3ee;
+  font-size: 10px;
+}
+
+.menu-list {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.menu-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.menu-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.menu-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.menu-footer {
+  padding: 10px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.footer-hint {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ============================================================================
+   SCENARIO ITEM
+   ============================================================================ */
+
+.scenario-item {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.scenario-item:last-child {
+  border-bottom: none;
+}
+
+.scenario-item:hover {
+  background: rgba(34, 211, 238, 0.05);
+}
+
+.scenario-item.is-baseline {
+  background: rgba(34, 211, 238, 0.08);
+  border-left: 3px solid #22d3ee;
+}
+
+.item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.item-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.baseline-badge {
+  font-size: 8px;
+  font-weight: 700;
+  padding: 2px 6px;
+  background: rgba(34, 211, 238, 0.2);
+  border-radius: 8px;
+  color: #22d3ee;
+  letter-spacing: 0.05em;
+}
+
+.item-date {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  white-space: nowrap;
+}
+
+.item-description {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0 0 8px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Stats */
+.item-stats {
+  display: flex;
+  gap: 16px;
+}
+
+.item-stats .stat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.item-stats .stat-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: #22d3ee;
+}
+
+.item-stats .stat-label {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Actions */
+.item-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.scenario-item:hover .item-actions {
+  opacity: 1;
+}
+
+.action-btn {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.action-btn.baseline-btn:hover {
+  background: rgba(34, 211, 238, 0.15);
+  border-color: rgba(34, 211, 238, 0.3);
+  color: #22d3ee;
+}
+
+.action-btn.delete-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+.action-btn.delete-btn.confirm {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+  animation: pulse 0.5s ease infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+/* ============================================================================
+   EMPTY STATE
+   ============================================================================ */
+
+.load-scenario-dropdown.empty .dropdown-trigger {
+  color: rgba(255, 255, 255, 0.4);
+}

@@ -140,8 +140,7 @@ const SliderWell = memo(function SliderWell({
   return (
     <div 
       className={`slider-well ${isFocused ? 'slider-well-focused' : ''}`}
-      onPointerEnter={onFocus}
-      onPointerLeave={onBlur}
+      /* REMOVED: onPointerEnter/Leave from whole slider — Oracle only triggers on "i" icon */
     >
       <div className="slider-well-inner">
         <div className="slider-header">
@@ -150,8 +149,14 @@ const SliderWell = memo(function SliderWell({
             {slider.tooltip && (
               <span
                 className="info-dot"
-                onMouseEnter={(e) => setTooltipRect(e.currentTarget.getBoundingClientRect())}
-                onMouseLeave={() => setTooltipRect(null)}
+                onMouseEnter={(e) => {
+                  setTooltipRect(e.currentTarget.getBoundingClientRect());
+                  onFocus();  // ORACLE TRIGGER: Only on "i" icon hover
+                }}
+                onMouseLeave={() => {
+                  setTooltipRect(null);
+                  onBlur();   // ORACLE DISMISS: Only on "i" icon leave
+                }}
               >
                 <span className="info-glyph">i</span>
               </span>
@@ -461,19 +466,23 @@ export function ControlDeck(props: {
         
         .section-frame {
           position: relative;
-          border-radius: 12px;
-          padding: 4px;
+          border-radius: 10px;
+          padding: 3px;
           
-          /* Charcoal outer shell */
-          background: #1a1d21;
+          /* Deep titanium shell — "Bezel Strip" design */
+          background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(2, 6, 23, 0.98) 100%);
           
-          border: 1px solid rgba(60, 65, 72, 0.5);
+          /* Single 1px border — no corner bolts */
+          border: 1px solid rgba(255, 255, 255, 0.05);
           
           box-shadow:
-            0 4px 16px rgba(0, 0, 0, 0.4),
-            0 2px 4px rgba(0, 0, 0, 0.3),
-            inset 0 1px 0 rgba(255, 255, 255, 0.06),
-            inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+            0 4px 20px rgba(0, 0, 0, 0.5),
+            inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        }
+        
+        /* Remove corner bumpers for cleaner bezel strip look */
+        .section-frame .corner-bumper {
+          display: none;
         }
 
         /* ═══════════════════════════════════════════════════════════════
@@ -524,39 +533,45 @@ export function ControlDeck(props: {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 10px 24px 8px;
+          padding: 8px 16px 6px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.03);
         }
 
         .section-title {
-          font-size: 12px;
-          font-weight: 700;
-          letter-spacing: 0.18em;
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.25em;
           text-transform: uppercase;
-          color: rgba(255, 255, 255, 0.9);
-          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+          color: rgba(34, 211, 238, 0.9);
+          text-shadow: 0 0 12px rgba(34, 211, 238, 0.4);
+          font-family: 'JetBrains Mono', 'Fira Code', monospace;
         }
 
         .section-toggle {
-          width: 12px;
-          height: 12px;
+          width: 10px;
+          height: 10px;
           border-radius: 50%;
-          background: rgba(15, 22, 32, 0.9);
-          border: 1px solid rgba(60, 80, 100, 0.4);
+          background: rgba(2, 6, 23, 0.9);
+          border: 1px solid rgba(34, 211, 238, 0.3);
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow:
-            inset 0 1px 2px rgba(0, 0, 0, 0.4);
         }
 
         .toggle-led {
-          width: 6px;
-          height: 6px;
+          width: 5px;
+          height: 5px;
           border-radius: 50%;
           background: #22d3ee;
           box-shadow:
-            0 0 4px #22d3ee,
-            0 0 8px rgba(34, 211, 238, 0.5);
+            0 0 6px #22d3ee,
+            0 0 12px rgba(34, 211, 238, 0.6);
+          animation: led-pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes led-pulse {
+          0%, 100% { opacity: 0.8; }
+          50% { opacity: 1; box-shadow: 0 0 10px #22d3ee, 0 0 20px rgba(34, 211, 238, 0.8); }
         }
 
         /* ═══════════════════════════════════════════════════════════════
@@ -574,36 +589,57 @@ export function ControlDeck(props: {
            SLIDER WELL — Individual recessed slot for each slider
            ═══════════════════════════════════════════════════════════════ */
         
+        /* ═══════════════════════════════════════════════════════════════
+           ENERGY CHANNEL — Sleek track-focused slider design
+           ═══════════════════════════════════════════════════════════════ */
+        
         .slider-well {
-          border-radius: 10px;
-          padding: 3px;
+          border-radius: 6px;
+          padding: 2px;
           
-          /* Outer rim of well */
-          background: linear-gradient(180deg,
-            rgba(25, 32, 42, 0.9) 0%,
-            rgba(35, 45, 58, 0.7) 50%,
-            rgba(30, 38, 50, 0.8) 100%
-          );
-          
-          box-shadow:
-            inset 0 1px 0 rgba(255, 255, 255, 0.06),
-            0 1px 0 rgba(0, 0, 0, 0.2);
+          /* Minimal outer rim */
+          background: transparent;
+          border-left: 2px solid rgba(34, 211, 238, 0.1);
+          transition: border-color 200ms ease;
+        }
+        
+        .slider-well:hover {
+          border-left-color: rgba(34, 211, 238, 0.4);
         }
 
         .slider-well-inner {
-          border-radius: 8px;
-          padding: 12px 14px 10px;
+          border-radius: 4px;
+          padding: 10px 12px 8px;
           
-          /* Deep recessed interior */
+          /* Deep titanium interior */
           background: linear-gradient(180deg,
-            rgba(8, 12, 18, 0.98) 0%,
-            rgba(12, 16, 24, 0.96) 50%,
-            rgba(10, 14, 20, 0.97) 100%
+            rgba(2, 6, 23, 0.95) 0%,
+            rgba(8, 12, 24, 0.92) 100%
           );
           
-          box-shadow:
-            inset 0 2px 6px rgba(0, 0, 0, 0.6),
-            inset 0 1px 2px rgba(0, 0, 0, 0.4);
+          position: relative;
+          overflow: hidden;
+        }
+        
+        /* Energy channel glow track */
+        .slider-well-inner::before {
+          content: '';
+          position: absolute;
+          left: 0;
+          top: 0;
+          bottom: 0;
+          width: 2px;
+          background: linear-gradient(180deg, 
+            transparent 0%, 
+            rgba(34, 211, 238, 0.3) 50%, 
+            transparent 100%
+          );
+          opacity: 0;
+          transition: opacity 200ms ease;
+        }
+        
+        .slider-well:hover .slider-well-inner::before {
+          opacity: 1;
         }
 
         /* ═══════════════════════════════════════════════════════════════
@@ -683,23 +719,46 @@ export function ControlDeck(props: {
           text-shadow: 0 0 8px rgba(34, 211, 238, 0.5);
         }
 
-        /* Info dot */
+        /* Info dot — THE ORACLE TRIGGER (hover for AI explanation) */
         .info-dot {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          width: 14px;
-          height: 14px;
+          width: 16px;
+          height: 16px;
           border-radius: 50%;
-          cursor: pointer;
-          background: rgba(20, 28, 40, 0.9);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          transition: all 150ms ease;
+          cursor: help;  /* Help cursor indicates info */
+          background: rgba(34, 211, 238, 0.08);
+          border: 1px solid rgba(34, 211, 238, 0.3);
+          transition: all 200ms ease;
+          margin-left: 6px;
+          position: relative;
+        }
+
+        .info-dot::after {
+          content: '';
+          position: absolute;
+          inset: -2px;
+          border-radius: 50%;
+          border: 1px solid rgba(34, 211, 238, 0.15);
+          animation: info-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes info-pulse {
+          0%, 100% { opacity: 0.3; transform: scale(1); }
+          50% { opacity: 0.8; transform: scale(1.15); }
         }
 
         .info-dot:hover {
-          border-color: rgba(34, 211, 238, 0.5);
-          background: rgba(34, 211, 238, 0.1);
+          border-color: rgba(34, 211, 238, 0.8);
+          background: rgba(34, 211, 238, 0.2);
+          box-shadow: 0 0 12px rgba(34, 211, 238, 0.4);
+          transform: scale(1.1);
+        }
+
+        .info-dot:hover::after {
+          animation: none;
+          opacity: 0;
         }
 
         .info-glyph {
@@ -707,8 +766,12 @@ export function ControlDeck(props: {
           font-weight: 700;
           font-style: italic;
           font-family: Georgia, serif;
-          color: rgba(255, 255, 255, 0.5);
+          color: rgba(34, 211, 238, 0.7);
           line-height: 1;
+        }
+
+        .info-dot:hover .info-glyph {
+          color: #22d3ee;
         }
 
         /* Tooltips */

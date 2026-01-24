@@ -1,12 +1,6 @@
 // src/logic/monteCarloEngine.ts
 // STRATFIT — Monte Carlo Simulation Engine
-// 10,000 futures. One verdict.
-
-export type ScenarioId = "base" | "upside" | "downside" | "extreme";
-
-// ============================================================================
-// TYPES
-// ============================================================================
+// 10,000 Futures. One Truth.
 
 export interface LeverState {
   demandStrength: number;
@@ -20,204 +14,551 @@ export interface LeverState {
   fundingPressure: number;
 }
 
-export interface SimulationResult {
-  survived: boolean;
-  endCash: number;
-  endARR: number;
-  endValuation: number;
-  monthOfDeath?: number;
-  failureTrigger?: 'revenue_miss' | 'burn_spike' | 'market_shock' | 'churn_spiral' | 'funding_gap';
+export interface SimulationConfig {
+  iterations: number;
+  timeHorizonMonths: number;
+  startingCash: number;
+  startingARR: number;
+  monthlyBurn: number;
 }
 
-export interface MonteCarloOutput {
-  results: SimulationResult[];
-  runTimeMs: number;
-  inputSnapshot: {
-    levers: LeverState;
-    scenario: ScenarioId;
-  };
+export interface SingleSimulationResult {
+  id: number;
+  monthlySnapshots: MonthlySnapshot[];
+  finalARR: number;
+  finalCash: number;
+  finalRunway: number;
+  survivalMonths: number;
+  didSurvive: boolean;
+  didAchieveTarget: boolean;
+  peakARR: number;
+  lowestCash: number;
+}
+
+export interface MonthlySnapshot {
+  month: number;
+  arr: number;
+  cash: number;
+  burn: number;
+  runway: number;
+  growthRate: number;
+}
+
+export interface MonteCarloResult {
+  // Meta
+  iterations: number;
+  timeHorizonMonths: number;
+  executionTimeMs: number;
+  
+  // Survival Analysis
+  survivalRate: number;
+  survivalByMonth: number[];
+  medianSurvivalMonths: number;
+  
+  // ARR Distribution
+  arrDistribution: DistributionStats;
+  arrHistogram: HistogramBucket[];
+  arrPercentiles: PercentileSet;
+  arrConfidenceBands: ConfidenceBand[];
+  
+  // Cash Distribution
+  cashDistribution: DistributionStats;
+  cashPercentiles: PercentileSet;
+  
+  // Runway Distribution
+  runwayDistribution: DistributionStats;
+  runwayPercentiles: PercentileSet;
+  
+  // Scenario Snapshots
+  bestCase: SingleSimulationResult;
+  worstCase: SingleSimulationResult;
+  medianCase: SingleSimulationResult;
+  
+  // Sensitivity Analysis
+  sensitivityFactors: SensitivityFactor[];
+  
+  // All Simulations (for detailed analysis)
+  allSimulations: SingleSimulationResult[];
+}
+
+export interface DistributionStats {
+  mean: number;
+  median: number;
+  stdDev: number;
+  min: number;
+  max: number;
+  skewness: number;
+}
+
+export interface PercentileSet {
+  p5: number;
+  p10: number;
+  p25: number;
+  p50: number;
+  p75: number;
+  p90: number;
+  p95: number;
+}
+
+export interface HistogramBucket {
+  min: number;
+  max: number;
+  count: number;
+  frequency: number;
+}
+
+export interface ConfidenceBand {
+  month: number;
+  p10: number;
+  p25: number;
+  p50: number;
+  p75: number;
+  p90: number;
+}
+
+export interface SensitivityFactor {
+  lever: keyof LeverState;
+  label: string;
+  impact: number; // -1 to 1, correlation with outcome
+  direction: 'positive' | 'negative';
 }
 
 // ============================================================================
-// CONFIGURATION
+// RANDOM NUMBER GENERATION
 // ============================================================================
 
-const SIMULATION_COUNT = 10_000;
-const HORIZON_MONTHS = 36;
-
-// Default levers (matches App.tsx INITIAL_LEVERS)
-export const DEFAULT_LEVERS: LeverState = {
-  demandStrength: 60,
-  pricingPower: 50,
-  expansionVelocity: 45,
-  costDiscipline: 55,
-  hiringIntensity: 40,
-  operatingDrag: 35,
-  marketVolatility: 30,
-  executionRisk: 25,
-  fundingPressure: 20,
-};
-
-// ============================================================================
-// RANDOM UTILITIES (Fast seeded random - Mulberry32)
-// ============================================================================
-
-function mulberry32(seed: number) {
-  return function() {
-    let t = seed += 0x6D2B79F5;
-    t = Math.imul(t ^ t >>> 15, t | 1);
-    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-    return ((t ^ t >>> 14) >>> 0) / 4294967296;
-  };
+function gaussianRandom(mean: number = 0, stdDev: number = 1): number {
+  // Box-Muller transform for normal distribution
+  const u1 = Math.random();
+  const u2 = Math.random();
+  const z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+  return z0 * stdDev + mean;
 }
 
-function normalRandom(rand: () => number, mean: number, stdDev: number): number {
-  const u1 = rand();
-  const u2 = rand();
-  const z = Math.sqrt(-2 * Math.log(u1 + 0.0001)) * Math.cos(2 * Math.PI * u2);
-  return mean + z * stdDev;
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
 }
 
 // ============================================================================
-// SINGLE SIMULATION PATH
+// SIMULATION LOGIC
 // ============================================================================
 
-function runSinglePath(
-  levers: LeverState, 
-  scenario: ScenarioId, 
-  rand: () => number
-): SimulationResult {
-  // Normalize levers to 0-1
-  const demand = levers.demandStrength / 100;
-  const pricing = levers.pricingPower / 100;
-  const expansion = levers.expansionVelocity / 100;
-  const cost = levers.costDiscipline / 100;
-  const hiring = levers.hiringIntensity / 100;
-  const drag = levers.operatingDrag / 100;
-  const volatility = levers.marketVolatility / 100;
-  const execRisk = levers.executionRisk / 100;
-  const fundingPressure = levers.fundingPressure / 100;
-
-  // Scenario multiplier
-  const scenarioMult = scenario === 'upside' ? 1.18 
-    : scenario === 'downside' ? 0.82 
-    : scenario === 'extreme' ? 0.65 
-    : 1.0;
-
-  // Initial state (in $M)
-  let cash = (2.8 + pricing * 1.8 - drag * 1.0 + cost * 1.2) * scenarioMult;
-  let mrr = (0.08 + demand * 0.12 + expansion * 0.08 + pricing * 0.06) * scenarioMult;
-
-  // Monthly dynamics
-  const baseGrowth = (0.04 + demand * 0.06 + expansion * 0.04) * scenarioMult;
-  const baseChurn = 0.015 + volatility * 0.025 + execRisk * 0.015;
-  const baseBurn = (0.12 + hiring * 0.12 + drag * 0.06 - cost * 0.04);
-
-  let monthOfDeath: number | undefined;
-  let failureTrigger: SimulationResult['failureTrigger'];
-
-  // Track what might kill this path
-  let revenueShortfalls = 0;
-  let burnSpikes = 0;
-  let hadMarketShock = false;
-
-  // Run 36 months
-  for (let month = 1; month <= HORIZON_MONTHS; month++) {
-    // Apply variance
-    const growthVar = normalRandom(rand, 1, 0.18 + volatility * 0.12);
-    const churnVar = normalRandom(rand, 1, 0.12);
-    const burnVar = normalRandom(rand, 1, 0.10);
-
-    // Market shock (2.5% chance per month, worse in downside/extreme)
-    const shockChance = scenario === 'extreme' ? 0.045 : scenario === 'downside' ? 0.035 : 0.025;
-    const hasShock = rand() < shockChance;
-    const shockMult = hasShock ? (0.70 + rand() * 0.15) : 1;
+export function runSingleSimulation(
+  id: number,
+  levers: LeverState,
+  config: SimulationConfig
+): SingleSimulationResult {
+  const snapshots: MonthlySnapshot[] = [];
+  
+  let cash = config.startingCash;
+  let arr = config.startingARR;
+  let burn = config.monthlyBurn;
+  let didSurvive = true;
+  let survivalMonths = config.timeHorizonMonths;
+  let peakARR = arr;
+  let lowestCash = cash;
+  
+  // Convert levers to growth/risk factors (0-100 scale to multipliers)
+  const baseGrowthRate = (levers.demandStrength - 50) / 500; // -10% to +10% monthly
+  const pricingMultiplier = 1 + (levers.pricingPower - 50) / 200; // 0.75x to 1.25x
+  const expansionBoost = (levers.expansionVelocity - 50) / 400; // -12.5% to +12.5%
+  
+  const costEfficiency = levers.costDiscipline / 100; // 0 to 1
+  const hiringDrag = levers.hiringIntensity / 150; // 0 to 0.67
+  const operatingCost = levers.operatingDrag / 100; // 0 to 1
+  
+  const marketRisk = levers.marketVolatility / 100; // 0 to 1
+  const execRisk = levers.executionRisk / 100; // 0 to 1
+  const fundingRisk = levers.fundingPressure / 100; // 0 to 1
+  
+  // Volatility based on risk levers
+  const volatility = 0.02 + (marketRisk * 0.08); // 2% to 10% monthly volatility
+  
+  for (let month = 1; month <= config.timeHorizonMonths; month++) {
+    // Random shock for this month
+    const shock = gaussianRandom(0, volatility);
+    const executionShock = Math.random() < execRisk * 0.1 ? gaussianRandom(-0.1, 0.05) : 0;
     
-    if (hasShock) hadMarketShock = true;
-
-    // Revenue growth
-    const effectiveGrowth = baseGrowth * growthVar * shockMult;
-    const effectiveChurn = baseChurn * churnVar;
-    const netGrowth = effectiveGrowth - effectiveChurn;
+    // Calculate growth rate for this month
+    let monthlyGrowth = baseGrowthRate + expansionBoost + shock + executionShock;
+    monthlyGrowth *= pricingMultiplier;
     
-    if (netGrowth < 0.01) revenueShortfalls++;
+    // Apply funding pressure (reduces growth if high)
+    if (fundingRisk > 0.5 && cash < config.startingCash * 0.3) {
+      monthlyGrowth *= (1 - fundingRisk * 0.5);
+    }
     
-    mrr = Math.max(0.01, mrr * (1 + netGrowth));
-
-    // Burn calculation
-    const monthlyBurn = baseBurn * burnVar * (1 + hiring * 0.15);
-    if (monthlyBurn > baseBurn * 1.3) burnSpikes++;
-
-    // Cash flow
-    cash += mrr - monthlyBurn;
-
-    // Death check
-    if (cash <= 0 && !monthOfDeath) {
-      monthOfDeath = month;
-      
-      // Determine what triggered the failure
-      if (hadMarketShock && month < 18) {
-        failureTrigger = 'market_shock';
-      } else if (burnSpikes > 3) {
-        failureTrigger = 'burn_spike';
-      } else if (revenueShortfalls > 4) {
-        failureTrigger = 'revenue_miss';
-      } else if (effectiveChurn > baseChurn * 1.5) {
-        failureTrigger = 'churn_spiral';
-      } else {
-        failureTrigger = 'funding_gap';
-      }
-
-      // Emergency funding attempt (probability based on conditions)
-      const fundingChance = 0.25 * (1 - fundingPressure) * (1 - execRisk * 0.5) * (mrr > 0.1 ? 1.2 : 0.8);
-      if (rand() < fundingChance) {
-        cash += 1.5 + rand() * 2.0; // Emergency bridge
-        monthOfDeath = undefined;
-        failureTrigger = undefined;
-      }
+    // Update ARR
+    arr = arr * (1 + monthlyGrowth);
+    arr = Math.max(0, arr);
+    peakARR = Math.max(peakARR, arr);
+    
+    // Calculate burn (affected by efficiency)
+    const baseBurn = config.monthlyBurn;
+    const hiringSurge = hiringDrag * baseBurn * 0.3;
+    const operatingExtra = operatingCost * baseBurn * 0.2;
+    const efficiencySavings = costEfficiency * baseBurn * 0.25;
+    
+    burn = baseBurn + hiringSurge + operatingExtra - efficiencySavings;
+    burn = Math.max(burn * 0.5, burn); // Floor at 50% of base
+    
+    // Update cash
+    const monthlyRevenue = arr / 12;
+    const netCashFlow = monthlyRevenue - burn;
+    cash += netCashFlow;
+    lowestCash = Math.min(lowestCash, cash);
+    
+    // Calculate runway
+    const runway = burn > monthlyRevenue ? cash / (burn - monthlyRevenue) : 999;
+    
+    // Record snapshot
+    snapshots.push({
+      month,
+      arr,
+      cash,
+      burn,
+      runway: Math.min(runway, 120),
+      growthRate: monthlyGrowth,
+    });
+    
+    // Check survival
+    if (cash <= 0) {
+      didSurvive = false;
+      survivalMonths = month;
+      break;
     }
   }
-
-  // Calculate end state
-  const endARR = mrr * 12;
-  const survived = cash > 0;
   
-  // Valuation multiple based on health
-  const healthScore = survived ? (demand * 0.3 + pricing * 0.25 + cost * 0.2 + (1 - volatility) * 0.15 + (1 - execRisk) * 0.1) : 0;
-  const multiple = survived ? (3 + healthScore * 8) * scenarioMult : 0;
-  const endValuation = survived ? endARR * multiple : 0;
-
+  const finalSnapshot = snapshots[snapshots.length - 1];
+  const targetARR = config.startingARR * 2; // Target: 2x ARR growth
+  
   return {
-    survived,
-    endCash: Math.max(0, cash),
-    endARR,
-    endValuation,
-    monthOfDeath,
-    failureTrigger,
+    id,
+    monthlySnapshots: snapshots,
+    finalARR: finalSnapshot?.arr ?? 0,
+    finalCash: finalSnapshot?.cash ?? 0,
+    finalRunway: finalSnapshot?.runway ?? 0,
+    survivalMonths,
+    didSurvive,
+    didAchieveTarget: finalSnapshot?.arr >= targetARR,
+    peakARR,
+    lowestCash,
   };
 }
 
 // ============================================================================
-// PUBLIC API
+// STATISTICS FUNCTIONS
 // ============================================================================
 
-export function runMonteCarlo(
-  levers: LeverState = DEFAULT_LEVERS, 
-  scenario: ScenarioId = 'base'
-): MonteCarloOutput {
-  const start = performance.now();
-  const seed = Date.now();
+function calculateDistributionStats(values: number[]): DistributionStats {
+  const sorted = [...values].sort((a, b) => a - b);
+  const n = sorted.length;
   
-  const results: SimulationResult[] = new Array(SIMULATION_COUNT);
+  const sum = sorted.reduce((a, b) => a + b, 0);
+  const mean = sum / n;
   
-  for (let i = 0; i < SIMULATION_COUNT; i++) {
-    const rand = mulberry32(seed + i);
-    results[i] = runSinglePath(levers, scenario, rand);
+  const squaredDiffs = sorted.map(v => Math.pow(v - mean, 2));
+  const variance = squaredDiffs.reduce((a, b) => a + b, 0) / n;
+  const stdDev = Math.sqrt(variance);
+  
+  const median = n % 2 === 0 
+    ? (sorted[n/2 - 1] + sorted[n/2]) / 2 
+    : sorted[Math.floor(n/2)];
+  
+  // Skewness
+  const cubedDiffs = sorted.map(v => Math.pow((v - mean) / stdDev, 3));
+  const skewness = cubedDiffs.reduce((a, b) => a + b, 0) / n;
+  
+  return {
+    mean,
+    median,
+    stdDev,
+    min: sorted[0],
+    max: sorted[n - 1],
+    skewness,
+  };
+}
+
+function calculatePercentiles(values: number[]): PercentileSet {
+  const sorted = [...values].sort((a, b) => a - b);
+  const n = sorted.length;
+  
+  const getPercentile = (p: number) => {
+    const index = Math.floor((p / 100) * n);
+    return sorted[Math.min(index, n - 1)];
+  };
+  
+  return {
+    p5: getPercentile(5),
+    p10: getPercentile(10),
+    p25: getPercentile(25),
+    p50: getPercentile(50),
+    p75: getPercentile(75),
+    p90: getPercentile(90),
+    p95: getPercentile(95),
+  };
+}
+
+function createHistogram(values: number[], bucketCount: number = 20): HistogramBucket[] {
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min;
+  const bucketSize = range / bucketCount;
+  
+  const buckets: HistogramBucket[] = [];
+  
+  for (let i = 0; i < bucketCount; i++) {
+    const bucketMin = min + i * bucketSize;
+    const bucketMax = min + (i + 1) * bucketSize;
+    const count = values.filter(v => v >= bucketMin && v < bucketMax).length;
+    
+    buckets.push({
+      min: bucketMin,
+      max: bucketMax,
+      count,
+      frequency: count / values.length,
+    });
   }
+  
+  return buckets;
+}
 
+function calculateConfidenceBands(
+  simulations: SingleSimulationResult[],
+  timeHorizon: number
+): ConfidenceBand[] {
+  const bands: ConfidenceBand[] = [];
+  
+  for (let month = 1; month <= timeHorizon; month++) {
+    const arrValues = simulations
+      .filter(s => s.monthlySnapshots.length >= month)
+      .map(s => s.monthlySnapshots[month - 1].arr);
+    
+    if (arrValues.length === 0) continue;
+    
+    const sorted = arrValues.sort((a, b) => a - b);
+    const n = sorted.length;
+    
+    bands.push({
+      month,
+      p10: sorted[Math.floor(n * 0.1)],
+      p25: sorted[Math.floor(n * 0.25)],
+      p50: sorted[Math.floor(n * 0.5)],
+      p75: sorted[Math.floor(n * 0.75)],
+      p90: sorted[Math.floor(n * 0.9)],
+    });
+  }
+  
+  return bands;
+}
+
+function calculateSensitivity(
+  levers: LeverState,
+  config: SimulationConfig,
+  baseResult: number
+): SensitivityFactor[] {
+  const leverLabels: Record<keyof LeverState, string> = {
+    demandStrength: 'Demand Strength',
+    pricingPower: 'Pricing Power',
+    expansionVelocity: 'Expansion Velocity',
+    costDiscipline: 'Cost Discipline',
+    hiringIntensity: 'Hiring Intensity',
+    operatingDrag: 'Operating Drag',
+    marketVolatility: 'Market Volatility',
+    executionRisk: 'Execution Risk',
+    fundingPressure: 'Funding Pressure',
+  };
+  
+  const factors: SensitivityFactor[] = [];
+  
+  for (const lever of Object.keys(levers) as (keyof LeverState)[]) {
+    // Test +20% change
+    const modifiedLevers = { ...levers, [lever]: clamp(levers[lever] + 20, 0, 100) };
+    const testResult = runSingleSimulation(0, modifiedLevers, config);
+    
+    const impact = (testResult.finalARR - baseResult) / baseResult;
+    
+    factors.push({
+      lever,
+      label: leverLabels[lever],
+      impact: clamp(impact, -1, 1),
+      direction: impact >= 0 ? 'positive' : 'negative',
+    });
+  }
+  
+  // Sort by absolute impact
+  return factors.sort((a, b) => Math.abs(b.impact) - Math.abs(a.impact));
+}
+
+// ============================================================================
+// MAIN SIMULATION FUNCTION
+// ============================================================================
+
+export function runMonteCarloSimulation(
+  levers: LeverState,
+  config: SimulationConfig = {
+    iterations: 10000,
+    timeHorizonMonths: 36,
+    startingCash: 4000000,
+    startingARR: 4800000,
+    monthlyBurn: 47000,
+  }
+): MonteCarloResult {
+  const startTime = performance.now();
+  
+  // Run all simulations
+  const allSimulations: SingleSimulationResult[] = [];
+  
+  for (let i = 0; i < config.iterations; i++) {
+    allSimulations.push(runSingleSimulation(i, levers, config));
+  }
+  
+  // Calculate survival metrics
+  const survivors = allSimulations.filter(s => s.didSurvive);
+  const survivalRate = survivors.length / config.iterations;
+  
+  const survivalByMonth: number[] = [];
+  for (let month = 1; month <= config.timeHorizonMonths; month++) {
+    const survivingAtMonth = allSimulations.filter(s => s.survivalMonths >= month).length;
+    survivalByMonth.push(survivingAtMonth / config.iterations);
+  }
+  
+  const survivalMonths = allSimulations.map(s => s.survivalMonths);
+  const medianSurvivalMonths = calculatePercentiles(survivalMonths).p50;
+  
+  // Calculate ARR distributions
+  const finalARRs = allSimulations.map(s => s.finalARR);
+  const arrDistribution = calculateDistributionStats(finalARRs);
+  const arrHistogram = createHistogram(finalARRs, 25);
+  const arrPercentiles = calculatePercentiles(finalARRs);
+  const arrConfidenceBands = calculateConfidenceBands(allSimulations, config.timeHorizonMonths);
+  
+  // Calculate Cash distributions
+  const finalCash = allSimulations.map(s => s.finalCash);
+  const cashDistribution = calculateDistributionStats(finalCash);
+  const cashPercentiles = calculatePercentiles(finalCash);
+  
+  // Calculate Runway distributions
+  const finalRunway = allSimulations.map(s => s.finalRunway);
+  const runwayDistribution = calculateDistributionStats(finalRunway);
+  const runwayPercentiles = calculatePercentiles(finalRunway);
+  
+  // Find best, worst, median cases
+  const sortedByARR = [...allSimulations].sort((a, b) => a.finalARR - b.finalARR);
+  const worstCase = sortedByARR[Math.floor(config.iterations * 0.05)]; // P5
+  const medianCase = sortedByARR[Math.floor(config.iterations * 0.5)]; // P50
+  const bestCase = sortedByARR[Math.floor(config.iterations * 0.95)]; // P95
+  
+  // Calculate sensitivity
+  const sensitivityFactors = calculateSensitivity(levers, config, medianCase.finalARR);
+  
+  const executionTimeMs = performance.now() - startTime;
+  
   return {
-    results,
-    runTimeMs: Math.round(performance.now() - start),
-    inputSnapshot: { levers, scenario },
+    iterations: config.iterations,
+    timeHorizonMonths: config.timeHorizonMonths,
+    executionTimeMs,
+    
+    survivalRate,
+    survivalByMonth,
+    medianSurvivalMonths,
+    
+    arrDistribution,
+    arrHistogram,
+    arrPercentiles,
+    arrConfidenceBands,
+    
+    cashDistribution,
+    cashPercentiles,
+    
+    runwayDistribution,
+    runwayPercentiles,
+    
+    bestCase,
+    worstCase,
+    medianCase,
+    
+    sensitivityFactors,
+    allSimulations,
   };
 }
+
+// ============================================================================
+// CHUNKED SIMULATION PROCESSOR (for real-time progress updates)
+// ============================================================================
+
+export function processSimulationResults(
+  allSimulations: SingleSimulationResult[],
+  config: SimulationConfig,
+  levers: LeverState,
+  executionTimeMs: number
+): MonteCarloResult {
+  // Calculate survival metrics
+  const survivors = allSimulations.filter(s => s.didSurvive);
+  const survivalRate = survivors.length / allSimulations.length;
+  
+  const survivalByMonth: number[] = [];
+  for (let month = 1; month <= config.timeHorizonMonths; month++) {
+    const survivingAtMonth = allSimulations.filter(s => s.survivalMonths >= month).length;
+    survivalByMonth.push(survivingAtMonth / allSimulations.length);
+  }
+  
+  const survivalMonths = allSimulations.map(s => s.survivalMonths);
+  const medianSurvivalMonths = calculatePercentiles(survivalMonths).p50;
+  
+  // Calculate ARR distributions
+  const finalARRs = allSimulations.map(s => s.finalARR);
+  const arrDistribution = calculateDistributionStats(finalARRs);
+  const arrHistogram = createHistogram(finalARRs, 25);
+  const arrPercentiles = calculatePercentiles(finalARRs);
+  const arrConfidenceBands = calculateConfidenceBands(allSimulations, config.timeHorizonMonths);
+  
+  // Calculate Cash distributions
+  const finalCash = allSimulations.map(s => s.finalCash);
+  const cashDistribution = calculateDistributionStats(finalCash);
+  const cashPercentiles = calculatePercentiles(finalCash);
+  
+  // Calculate Runway distributions
+  const finalRunway = allSimulations.map(s => s.finalRunway);
+  const runwayDistribution = calculateDistributionStats(finalRunway);
+  const runwayPercentiles = calculatePercentiles(finalRunway);
+  
+  // Find best, worst, median cases
+  const sortedByARR = [...allSimulations].sort((a, b) => a.finalARR - b.finalARR);
+  const worstCase = sortedByARR[Math.floor(allSimulations.length * 0.05)]; // P5
+  const medianCase = sortedByARR[Math.floor(allSimulations.length * 0.5)]; // P50
+  const bestCase = sortedByARR[Math.floor(allSimulations.length * 0.95)]; // P95
+  
+  // Calculate sensitivity
+  const sensitivityFactors = calculateSensitivity(levers, config, medianCase.finalARR);
+  
+  return {
+    iterations: allSimulations.length,
+    timeHorizonMonths: config.timeHorizonMonths,
+    executionTimeMs,
+    
+    survivalRate,
+    survivalByMonth,
+    medianSurvivalMonths,
+    
+    arrDistribution,
+    arrHistogram,
+    arrPercentiles,
+    arrConfidenceBands,
+    
+    cashDistribution,
+    cashPercentiles,
+    
+    runwayDistribution,
+    runwayPercentiles,
+    
+    bestCase,
+    worstCase,
+    medianCase,
+    
+    sensitivityFactors,
+    allSimulations,
+  };
+}
+
+export default runMonteCarloSimulation;

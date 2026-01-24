@@ -31,6 +31,10 @@ interface UIState {
   // VOICE MODE: AI reads out intelligence when hovering sliders
   isVoiceEnabled: boolean;
   
+  // NEURAL BOOT: Signals mountain to pulse when KPI boot completes
+  neuralBootComplete: boolean;
+  bootPhase: 'idle' | 'chassis' | 'resilience' | 'momentum' | 'stability' | 'complete';
+  
   // Actions
   setActiveGroup: (group: SliderGroup) => void;
   setDragging: (dragging: boolean) => void;
@@ -38,6 +42,8 @@ interface UIState {
   setInteracted: () => void;
   setFocusedLever: (id: LeverFocusId) => void;
   toggleVoice: () => void;
+  setNeuralBootComplete: (complete: boolean) => void;
+  setBootPhase: (phase: UIState['bootPhase']) => void;
   
   // Combined action for slider start (clears timer, sets group, sets dragging, marks interaction)
   startSlider: (group: SliderGroup) => void;
@@ -53,6 +59,8 @@ export const useUIStore = create<UIState>((set, get) => ({
   hasInteracted: false,
   focusedLever: null,
   isVoiceEnabled: false, // Voice Mode OFF by default
+  neuralBootComplete: false,
+  bootPhase: 'complete', // GOD MODE: Start complete - widgets always visible immediately
   
   setActiveGroup: (group) => set({ activeGroup: group }),
   setDragging: (dragging) => set({ isDragging: dragging }),
@@ -60,6 +68,8 @@ export const useUIStore = create<UIState>((set, get) => ({
   setInteracted: () => set({ hasInteracted: true }),
   setFocusedLever: (id) => set({ focusedLever: id }),
   toggleVoice: () => set((state) => ({ isVoiceEnabled: !state.isVoiceEnabled })),
+  setNeuralBootComplete: (complete) => set({ neuralBootComplete: complete }),
+  setBootPhase: (phase) => set({ bootPhase: phase }),
   
   // Called when user starts dragging a slider
   startSlider: (group) => {

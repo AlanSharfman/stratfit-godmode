@@ -115,7 +115,7 @@ function paletteForScenario(s: ScenarioId) {
 
   // Create a darkened version for shadows
   const shadow = primary.clone().multiplyScalar(0.3);
-  
+
   return {
     sky: new THREE.Color("#071318"),
     low: shadow,
@@ -173,6 +173,7 @@ interface TerrainProps {
   leverIntensity01: number;
   scenario: ScenarioId;
   isDragging?: boolean; // For dynamic brightness
+  neuralPulse?: boolean; // NEURAL BOOT: Flash bright cyan when KPI boot completes
 }
 
 const Terrain: React.FC<TerrainProps> = ({
@@ -182,6 +183,7 @@ const Terrain: React.FC<TerrainProps> = ({
   leverIntensity01,
   scenario,
   isDragging = false,
+  neuralPulse = false,
 }) => {
   const groupRef = useRef<THREE.Group>(null);
   const meshFillRef = useRef<THREE.Mesh>(null);
@@ -350,13 +352,13 @@ const Terrain: React.FC<TerrainProps> = ({
     }
 
     // Always update for continuous breathing
-    pos.needsUpdate = true;
-    col.needsUpdate = true;
-    geo.computeVertexNormals();
+      pos.needsUpdate = true;
+      col.needsUpdate = true;
+      geo.computeVertexNormals();
 
-    const wireGeo = meshWireRef.current.geometry as THREE.PlaneGeometry;
-    wireGeo.attributes.position.needsUpdate = true;
-    wireGeo.computeVertexNormals();
+      const wireGeo = meshWireRef.current.geometry as THREE.PlaneGeometry;
+      wireGeo.attributes.position.needsUpdate = true;
+      wireGeo.computeVertexNormals();
   });
 
   return (
@@ -377,13 +379,15 @@ const Terrain: React.FC<TerrainProps> = ({
         />
       </mesh>
       {/* WIREFRAME — Luminous Teal at rest, Electric Cyan when active */}
+      {/* NEURAL BOOT: Bright pulse when neuralPulse is true */}
       <mesh ref={meshWireRef} geometry={geometry}>
         <meshBasicMaterial 
-          vertexColors 
+          vertexColors={!neuralPulse} // Override colors during pulse
+          color={neuralPulse ? "#00ffff" : undefined}
           wireframe 
           transparent 
-          // VISIBILITY BOOST: 0.6 idle (was 0.35), 1.0 active (was 0.8)
-          opacity={isDragging ? 1.0 : 0.6}
+          // VISIBILITY BOOST: 0.6 idle, 1.0 active, 1.0 during neural pulse
+          opacity={neuralPulse ? 1.0 : isDragging ? 1.0 : 0.6}
           toneMapped={false}
         />
       </mesh>
@@ -397,14 +401,14 @@ const Terrain: React.FC<TerrainProps> = ({
 
 interface AtmosphericHazeProps {
   riskLevel: number;
-  viewMode: "operator" | "investor";
+  viewMode: "data" | "terrain" | "operator" | "investor";
   scenario: ScenarioId;
   isSeismicActive?: boolean;
 }
 
 function AtmosphericHaze({ riskLevel, viewMode, scenario, isSeismicActive = false }: AtmosphericHazeProps) {
   const riskFactor = clamp01(riskLevel / 100);
-  const viewFactor = viewMode === "investor" ? 0.7 : 1.0;
+  const viewFactor = (viewMode === "investor" || viewMode === "data") ? 0.7 : 1.0;
   
   const scenarioTone = scenario === "stress" ? 1.2 : 
                        scenario === "downside" ? 1.1 : 
@@ -640,7 +644,7 @@ function DigitalHorizon({ scenarioId }: { scenarioId: ScenarioId }) {
     <>
       {/* 1. The Infinite Floor Grid — Color matches scenario */}
       <Grid 
-        position={[0, -2.5, 0]} 
+      position={[0, -2.5, 0]} 
         args={[50, 50]}
         cellSize={1} 
         cellThickness={0.8} 
@@ -800,12 +804,14 @@ export default function ScenarioMountain({
   const riskLevel = 100 - (kpiValues.riskIndex?.value ?? 50);
   
   // SEISMIC WIRE: Read from UI store for active risk interaction
-  const { activeGroup, isDragging, riskLevel: uiRiskLevel, hasInteracted } = useUIStore(
+  // NEURAL BOOT: neuralBootComplete signals the mountain to pulse
+  const { activeGroup, isDragging, riskLevel: uiRiskLevel, hasInteracted, neuralBootComplete } = useUIStore(
     useShallow((s) => ({
       activeGroup: s.activeGroup,
       isDragging: s.isDragging,
       riskLevel: s.riskLevel,
       hasInteracted: s.hasInteracted,
+      neuralBootComplete: s.neuralBootComplete,
     }))
   );
   
@@ -821,6 +827,9 @@ export default function ScenarioMountain({
       style={{
         // NEURAL ENVIRONMENT: Strategic Deep Navy (reduces eye strain, makes cyan pop)
         background: "radial-gradient(circle at 50% 60%, #0f172a 0%, #0b1220 100%)",
+        minHeight: '400px',
+        height: '100%',
+        width: '100%',
       }}
     >
       {/* THE VIGNETTE — Deep shadow frame */}
@@ -841,7 +850,7 @@ export default function ScenarioMountain({
       <Canvas
         gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
         dpr={Math.min(window.devicePixelRatio, 2)}
-        style={{ position: "relative", zIndex: 1, background: "transparent" }}
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 1, background: "transparent" }}
         fallback={<div style={{ width: "100%", height: "100%", background: "#0d1117" }} />}
         onCreated={({ gl }) => {
           gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -867,14 +876,15 @@ export default function ScenarioMountain({
         
         {/* CINEMATIC WRAPPER — Search Pattern when idle, locks on when active */}
         <CinematicController riskLevel={effectiveRiskLevel}>
-          <Terrain
-            dataPoints={dataPoints}
-            activeKpiIndex={activeKpiIndex}
-            activeLeverId={activeLeverId}
-            leverIntensity01={leverIntensity01}
-            scenario={scenario}
+        <Terrain
+          dataPoints={dataPoints}
+          activeKpiIndex={activeKpiIndex}
+          activeLeverId={activeLeverId}
+          leverIntensity01={leverIntensity01}
+          scenario={scenario}
             isDragging={isDragging}
-          />
+            neuralPulse={neuralBootComplete}
+        />
         </CinematicController>
         
         {/* DIGITAL HORIZON — Floor grid + floating particles (outside cinematic wrapper) */}

@@ -9,6 +9,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 400px;
   width: 100%;
   position: relative;
 }
@@ -46,7 +47,7 @@
 .sfMountainStage {
   position: relative;
   flex: 1;
-  min-height: 0;
+  min-height: 400px; /* Ensure mountain has minimum height */
   width: 100%;
   overflow: visible;
   
@@ -116,10 +117,8 @@
    ============================================================================ */
 
 .sfViewWrapper {
-  position: relative;
-  width: calc(100% - 28px);
-  height: calc(100% - 70px); /* Account for menu inside compound */
-  margin: 56px 14px 14px 14px; /* Top margin for menu */
+  position: absolute;
+  inset: 14px;
   border-radius: 10px;
   z-index: 2;
   overflow: hidden;
@@ -140,6 +139,133 @@
   inset: 0;
   pointer-events: none;
   z-index: 3;
+}
+
+/* Fill container for mountain canvas */
+.sfMountainFill {
+  position: absolute;
+  inset: 0;
+}
+
+/* Ambient dimmer (view-mode driven) */
+.sfAmbientDim {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0,0,0,0.15) 0%,
+    rgba(0,0,0,0.55) 70%,
+    rgba(0,0,0,0.75) 100%
+  );
+  transition: opacity 0.4s ease;
+}
+
+/* Overlay container for non-terrain pages */
+.sfTabOverlay {
+  position: absolute;
+  inset: 14px;
+  border-radius: 10px;
+  z-index: 8;
+  overflow: auto;
+
+  /* IMPORTANT: allow mountain to remain visible behind UI */
+  background: rgba(10, 14, 26, 0.40);
+  backdrop-filter: blur(6px);
+
+  box-shadow:
+    inset 0 0 0 1px rgba(34, 211, 238, 0.06),
+    inset 0 10px 20px rgba(0,0,0,0.35);
+}
+
+/* ============================================================================
+   TACTICAL BRACKETS — Corner mounting hardware
+   ============================================================================ */
+
+.tacticalBracket {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* L-shaped bracket using borders */
+.tacticalBracket::before,
+.tacticalBracket::after {
+  content: '';
+  position: absolute;
+  background: rgba(34, 211, 238, 0.6);
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.4);
+}
+
+/* Horizontal arm */
+.tacticalBracket::before {
+  height: 2px;
+  width: 16px;
+}
+
+/* Vertical arm */
+.tacticalBracket::after {
+  width: 2px;
+  height: 16px;
+}
+
+/* Top-Left */
+.tacticalBracket[data-corner="tl"] {
+  top: 4px;
+  left: 4px;
+}
+.tacticalBracket[data-corner="tl"]::before {
+  top: 0;
+  left: 0;
+}
+.tacticalBracket[data-corner="tl"]::after {
+  top: 0;
+  left: 0;
+}
+
+/* Top-Right */
+.tacticalBracket[data-corner="tr"] {
+  top: 4px;
+  right: 4px;
+}
+.tacticalBracket[data-corner="tr"]::before {
+  top: 0;
+  right: 0;
+}
+.tacticalBracket[data-corner="tr"]::after {
+  top: 0;
+  right: 0;
+}
+
+/* Bottom-Left */
+.tacticalBracket[data-corner="bl"] {
+  bottom: 4px;
+  left: 4px;
+}
+.tacticalBracket[data-corner="bl"]::before {
+  bottom: 0;
+  left: 0;
+}
+.tacticalBracket[data-corner="bl"]::after {
+  bottom: 0;
+  left: 0;
+}
+
+/* Bottom-Right */
+.tacticalBracket[data-corner="br"] {
+  bottom: 4px;
+  right: 4px;
+}
+.tacticalBracket[data-corner="br"]::before {
+  bottom: 0;
+  right: 0;
+}
+.tacticalBracket[data-corner="br"]::after {
+  bottom: 0;
+  right: 0;
 }
 
 /* ============================================================================

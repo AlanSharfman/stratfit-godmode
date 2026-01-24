@@ -36,8 +36,11 @@ import VariancesView from "@/components/compound/variances/VariancesView";
 import { useDebouncedValue, useThrottledValue } from "@/hooks/useDebouncedValue";
 import "@/styles/godmode-align-overrides.css";
 import "@/styles/godmode-unified-layout.css";
+import "@/styles/performance-optimizations.css";
 import UnifiedHeader, { type ViewMode as HeaderViewMode } from '@/components/layout/UnifiedHeader';
 import { useUIStore } from "@/state/uiStore";
+import { SimulateOverlay } from '@/components/simulate';
+import { SaveSimulationModal, LoadSimulationPanel } from '@/components/simulations';
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -456,7 +459,8 @@ function isViable(kpis: { runway?: { value: number }; ltvCac?: { value: number }
 export type { SolverPathStep };
 
 // ============================================================================
-// ORBITAL KPI SECTION — Drops in from ceiling on first interaction
+// KPI COMMAND BRIDGE — ALWAYS VISIBLE (God Mode Rule)
+// The KPI telemetry strip must never be hidden - locked visible on all views
 // ============================================================================
 
 function OrbitalKPISection({ kpiAnimState }: { kpiAnimState: "visible" | "closing" | "hidden" }) {
@@ -464,7 +468,7 @@ function OrbitalKPISection({ kpiAnimState }: { kpiAnimState: "visible" | "closin
   
   return (
     <div 
-      className={`kpi-section kpi-section--animated kpi-section--${kpiAnimState} ${hasInteracted ? 'orbital-active' : ''}`} 
+      className={`kpi-section kpi-section--animated kpi-section--visible ${hasInteracted ? 'orbital-active' : ''}`} 
       data-tour="kpis"
     >
       <KPISparklineSection />
@@ -517,52 +521,28 @@ export default function App() {
   // GOD MODE: Header-controlled view mode (navigation tabs in header)
   const [headerViewMode, setHeaderViewMode] = useState<HeaderViewMode>("terrain");
   
+  // GOD MODE: Monte Carlo Simulation Overlay
+  const [showSimulate, setShowSimulate] = useState(false);
+  
+  // GOD MODE: Save/Load Simulation Modals
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showLoadPanel, setShowLoadPanel] = useState(false);
+  
   // GOD MODE: Terrain toggles (moved from CenterViewPanel to header)
   const [timelineEnabled, setTimelineEnabled] = useState(false);
   const [heatmapEnabled, setHeatmapEnabled] = useState(false);
   
-  // KPI Garage Door Animation State - GOD MODE
-  // "visible" = fully open, "closing" = running close animation, "hidden" = fully closed
-  const [kpiAnimState, setKpiAnimState] = useState<"visible" | "closing" | "hidden">("visible");
-  const kpiAnimTimeoutRef = useRef<number | null>(null);
+  // KPI Section - ALWAYS VISIBLE (GOD MODE RULE: KPI line must always be shown)
+  // Locked to "visible" - never hide the command bridge telemetry
+  const kpiAnimState = "visible" as const;
   
   // ORACLE PROTOCOL: focusedLever tracked in ControlDeck and AIIntelligenceEnhanced
   // No dimming overlay - screen stays 100% lit at all times
   
-  // Handle KPI garage door animation with GOD-MODE timing
-  // Sequence: Click compare → 1s pause → 2.2s smooth close → content rises
-  useEffect(() => {
-    // Clear any existing timeouts
-    if (kpiAnimTimeoutRef.current) {
-      clearTimeout(kpiAnimTimeoutRef.current);
-      kpiAnimTimeoutRef.current = null;
-    }
-    
-    if (innerViewMode === "terrain") {
-      // Opening: Immediate visibility (CSS handles the smooth transition)
-      setKpiAnimState("visible");
-    } else {
-      // Closing sequence:
-      // 1. Wait 1 second (let compare page settle)
-      // 2. Trigger smooth 2.2s close animation
-      // 3. After animation, set hidden (margin-bottom transition lifts content)
-      kpiAnimTimeoutRef.current = window.setTimeout(() => {
-        setKpiAnimState("closing");
-        
-        // After animation completes (2.2s), transition to hidden
-        // The hidden state's margin-bottom transition (1s) lifts content smoothly
-        kpiAnimTimeoutRef.current = window.setTimeout(() => {
-          setKpiAnimState("hidden");
-        }, 2250); // Match CSS animation duration (2.2s) + 50ms buffer
-      }, 1000); // 1 second delay before closing starts
-    }
-    
-    return () => {
-      if (kpiAnimTimeoutRef.current) {
-        clearTimeout(kpiAnimTimeoutRef.current);
-      }
-    };
-  }, [innerViewMode]);
+  // GOD MODE RULE: KPI Section is ALWAYS VISIBLE
+  // No hiding, no animations, no exceptions - telemetry must always be shown
+  // (Previously had garage door animation that hid KPIs on non-terrain views)
+  // This is now disabled - KPIs stay visible on ALL views
 
   // Persist centerView to localStorage
   useEffect(() => {
@@ -698,7 +678,7 @@ export default function App() {
 
   // Sync current levers to store for strategy saving (use debounced to reduce store updates)
   useEffect(() => {
-    setCurrentLevers(debouncedLevers);
+    setCurrentLevers(debouncedLevers as import('@/state/scenarioStore').LeverSnapshot);
   }, [debouncedLevers, setCurrentLevers]);
 
   // Handle save strategy
@@ -1016,7 +996,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
     const boxes: ControlBoxConfig[] = [
       {
         id: "growth",
-        title: "Growth",
+        title: "GROWTH VECTOR",
         sliders: [
           { 
             id: "revenueGrowth" as LeverId, 
@@ -1061,7 +1041,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
       },
       {
         id: "efficiency",
-        title: "Efficiency",
+        title: "OPERATIONAL ENGINE",
         sliders: [
           { 
             id: "operatingExpenses" as LeverId, 
@@ -1106,7 +1086,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
       },
       {
         id: "risk",
-        title: "Risk",
+        title: "RISK PRESSURE",
         sliders: [
           { 
             id: "churnSensitivity" as LeverId, 
@@ -1138,8 +1118,8 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
       },
     ];
 
-    // Investor view: fewer sliders (only key controls)
-    if (viewMode === "investor") {
+    // Data view: fewer sliders (only key controls)
+    if (viewMode === "data") {
       return boxes.map(box => ({
         ...box,
         sliders: box.sliders.slice(0, 2) // Only first 2 sliders per group
@@ -1165,41 +1145,19 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
         currentScenario={activeScenarioType}
         onScenarioChange={handleScenarioTypeChange}
         activeView={headerViewMode}
-        onViewChange={setHeaderViewMode}
+        onViewChange={(view) => {
+          if (view === 'simulate') {
+            setShowSimulate(true);
+          } else {
+            setHeaderViewMode(view);
+          }
+        }}
         timelineEnabled={timelineEnabled}
         heatmapEnabled={heatmapEnabled}
         onTimelineToggle={() => setTimelineEnabled(!timelineEnabled)}
         onHeatmapToggle={() => setHeatmapEnabled(!heatmapEnabled)}
-        onExport={async () => {
-          try {
-            const r = await fetch("/api/export-pitch");
-            const j = await r.json();
-            if (j.url) window.open(j.url, "_blank");
-          } catch (err) {
-            window.print();
-          }
-        }}
-        onLoad={() => {
-          emitCausal({
-            source: "scenario_load",
-            bandStyle: "wash",
-            color: "rgba(34,211,238,0.18)",
-          });
-        }}
-        onSave={() => {
-          emitCausal({
-            source: "scenario_save",
-            bandStyle: "wash",
-            color: "rgba(34,211,238,0.18)",
-          });
-        }}
-        onShare={() => {
-          emitCausal({
-            source: "scenario_share",
-            bandStyle: "wash",
-            color: "rgba(34,211,238,0.18)",
-          });
-        }}
+        onSave={() => setShowSaveModal(true)}
+        onLoad={() => setShowLoadPanel(true)}
         onHelp={() => {
           console.log("Help/Tour requested");
         }}
@@ -1233,7 +1191,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
 
         {/* CENTER COLUMN: KPIs + Mountain OR Scenario Impact OR Variances */}
         <main className="center-column">
-          {/* KPI Sparklines - Orbital Drop: Hidden until first interaction */}
+          {/* KPI COMMAND BRIDGE - ALWAYS VISIBLE (God Mode Rule) */}
           <OrbitalKPISection kpiAnimState={kpiAnimState} />
           
           
@@ -1242,6 +1200,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
             viewMode={headerViewMode}
             timelineEnabled={timelineEnabled}
             heatmapEnabled={heatmapEnabled}
+            onSimulateRequest={() => setShowSimulate(true)}
           />
         </main>
 
@@ -1250,6 +1209,39 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
           <AIIntelligence levers={levers} scenario={scenario} />
         </aside>
       </div>
+      
+      {/* MONTE CARLO SIMULATION OVERLAY */}
+      <SimulateOverlay 
+        isOpen={showSimulate} 
+        onClose={() => setShowSimulate(false)}
+        levers={levers}
+      />
+      
+      {/* SAVE/LOAD SIMULATION MODALS */}
+      <SaveSimulationModal
+        isOpen={showSaveModal}
+        onClose={() => setShowSaveModal(false)}
+        onSaved={(id) => {
+          console.log('Simulation saved:', id);
+          emitCausal({
+            source: "simulation_saved",
+            bandStyle: "solid",
+            color: "rgba(34, 211, 153, 0.3)",
+          });
+        }}
+      />
+      <LoadSimulationPanel
+        isOpen={showLoadPanel}
+        onClose={() => setShowLoadPanel(false)}
+        onLoad={(simulation) => {
+          console.log('Simulation loaded:', simulation.name);
+          emitCausal({
+            source: "simulation_loaded",
+            bandStyle: "solid",
+            color: "rgba(34, 211, 238, 0.3)",
+          });
+        }}
+      />
     </div>
   );
 }

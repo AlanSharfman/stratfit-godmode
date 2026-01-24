@@ -224,7 +224,7 @@ export default function StrategicQuestions({ onPromptClick, isAnalyzing }: Strat
   const engineResult = engineResults?.[activeScenarioId];
   const kpiValues = engineResult?.kpis || {};
 
-  const prompts = viewMode === "investor" ? INVESTOR_PROMPTS : OPERATOR_PROMPTS;
+  const prompts = viewMode === "data" ? INVESTOR_PROMPTS : OPERATOR_PROMPTS;
 
   // Build current analysis state from store
   const analysisState: AnalysisState = useMemo(() => ({

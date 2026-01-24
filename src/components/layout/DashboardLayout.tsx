@@ -65,7 +65,7 @@ export default function DashboardLayout() {
             isActive={activeKPIIndex === i}
             isAnyActive={activeKPIIndex !== null}
             onSelect={() => setActiveKPIIndex(i)}
-            viewMode="operator"
+            viewMode="terrain"
           />
         ))}
       </div>

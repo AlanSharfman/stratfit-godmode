@@ -7,14 +7,18 @@ import {
   Activity, Rocket, TrendingDown, Globe,
   Layers, SplitSquareHorizontal, Zap,
   Calendar, Grid3X3,
-  Download, UploadCloud, Save, Share2, HelpCircle
+  HelpCircle,
+  Target,
+  Save,
+  FolderOpen
 } from 'lucide-react';
 import type { ScenarioType } from '@/components/blocks/ActiveScenario';
+import { ExportReportButton, ShareButton } from '@/components/common';
 
 // ===========================================
 // VIEW MODES (moved from ViewModeSelector)
 // ===========================================
-export type ViewMode = "terrain" | "impact" | "compare" | "simulate";
+export type ViewMode = "terrain" | "impact" | "compare" | "simulate" | "risk" | "decision" | "valuation";
 
 // ===========================================
 // SCENARIOS (moved from ActiveScenario)
@@ -36,11 +40,14 @@ const SCENARIOS: Scenario[] = [
 // ===========================================
 // NAV TABS
 // ===========================================
-const NAV_TABS: Array<{ id: ViewMode; label: string; icon: typeof Layers }> = [
+const NAV_TABS: Array<{ id: string; label: string; icon: typeof Layers }> = [
   { id: "terrain", label: "TERRAIN", icon: Layers },
-  { id: "simulate", label: "SIMULATE", icon: Zap },        // THE MOAT! Right after Terrain
+  { id: "simulate", label: "SIMULATE", icon: Zap },
   { id: "compare", label: "COMPARE", icon: SplitSquareHorizontal },
   { id: "impact", label: "TRADE OFFS", icon: Activity },
+  { id: "risk", label: "RISK", icon: Activity },
+  { id: "decision", label: "DECISION", icon: Target },
+  { id: "valuation", label: "VALUATION", icon: TrendingDown },
 ];
 
 // ===========================================
@@ -59,10 +66,8 @@ interface UnifiedHeaderProps {
   onTimelineToggle: () => void;
   onHeatmapToggle: () => void;
   // Actions
-  onExport: () => void;
-  onLoad: () => void;
-  onSave: () => void;
-  onShare: () => void;
+  onSave?: () => void;
+  onLoad?: () => void;
   onHelp?: () => void;
 }
 
@@ -77,11 +82,9 @@ export default function UnifiedHeader({
   timelineEnabled,
   heatmapEnabled,
   onTimelineToggle,
-  onHeatmapToggle,
-  onExport,
-  onLoad,
   onSave,
-  onShare,
+  onLoad,
+  onHeatmapToggle,
   onHelp,
 }: UnifiedHeaderProps) {
   const [scenarioDropdownOpen, setScenarioDropdownOpen] = useState(false);
@@ -480,7 +483,7 @@ export default function UnifiedHeader({
               <React.Fragment key={tab.id}>
                 <button
                   className={`uh-nav-tab ${activeView === tab.id ? 'active' : ''} ${isSimulate ? 'simulate' : ''}`}
-                  onClick={() => onViewChange(tab.id)}
+                  onClick={() => onViewChange(tab.id as ViewMode)}
                 >
                   <Icon className="uh-nav-icon" />
                   <span>{tab.label}</span>
@@ -515,23 +518,19 @@ export default function UnifiedHeader({
 
         {/* HEADER ACTIONS */}
         <div className="uh-actions">
-          <button className="uh-action-btn" onClick={onExport}>
-            <Download size={14} />
-            <span>EXPORT</span>
-          </button>
-          <div className="uh-action-divider" />
-          <button className="uh-action-btn" onClick={onLoad}>
-            <UploadCloud size={14} />
-            <span>LOAD</span>
-          </button>
-          <button className="uh-action-btn" onClick={onSave}>
-            <Save size={14} />
+          <button className="uh-action-btn" onClick={onSave} title="Save Simulation">
+            <Save size={16} />
             <span>SAVE</span>
           </button>
-          <button className="uh-action-btn" onClick={onShare}>
-            <Share2 size={14} />
-            <span>SHARE</span>
+          <div className="uh-action-divider" />
+          <button className="uh-action-btn" onClick={onLoad} title="Load Simulation">
+            <FolderOpen size={16} />
+            <span>LOAD</span>
           </button>
+          <div className="uh-action-divider" />
+          <ExportReportButton variant="full" />
+          <div className="uh-action-divider" />
+          <ShareButton variant="full" />
           <div className="uh-action-divider" />
           <button className="uh-help-btn" onClick={onHelp}>
             <HelpCircle size={18} />

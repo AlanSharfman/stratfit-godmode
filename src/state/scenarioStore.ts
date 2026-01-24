@@ -1,500 +1,498 @@
 // src/state/scenarioStore.ts
-// STRATFIT — Deterministic Engine State
-// Two Views, One Engine, Same Truth
+// STRATFIT — Scenario Management Store
 
-import { create } from "zustand";
-import type { LeverId } from "@/logic/mountainPeakModel";
-import type { Strategy, StrategyLevers, TimelinePoint, StrategyKpis } from "@/strategy/Strategy";
-import { classifyStrategy, findBreakEven, calculateExitValue } from "@/strategy/Strategy";
-import { calculateMetrics } from "@/logic/calculateMetrics";
-import { 
-  createDefaultSAFE, 
-  createDefaultTermSheet,
-  calculateSAFEDilution,
-  calculateEquityDilution,
-  calculateIRR,
-  calculateInvestorProceeds,
-} from "@/finance/TermSheet";
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
-export type ScenarioId = "base" | "upside" | "downside" | "stress";
-export type ViewMode = "operator" | "investor";
+export interface LeverSnapshot {
+  demandStrength: number;
+  pricingPower: number;
+  expansionVelocity: number;
+  costDiscipline: number;
+  hiringIntensity: number;
+  operatingDrag: number;
+  marketVolatility: number;
+  executionRisk: number;
+  fundingPressure: number;
+  // Index signature for Record<string, number> compatibility
+  [key: string]: number;
+}
 
-// PHASE-IG: Use canonical EngineResult from truth selectors
-import type { EngineResult as CanonicalEngineResult, EngineResults as CanonicalEngineResults } from "@/lib/truth/truthSelectors";
-export type EngineResult = CanonicalEngineResult;
-export type EngineResults = CanonicalEngineResults;
+export interface SimulationSnapshot {
+  // Core metrics
+  survivalRate: number;
+  medianARR: number;
+  medianRunway: number;
+  medianCash: number;
+  
+  // Percentiles
+  arrP10: number;
+  arrP50: number;
+  arrP90: number;
+  runwayP10: number;
+  runwayP50: number;
+  runwayP90: number;
+  cashP10: number;
+  cashP50: number;
+  cashP90: number;
+  
+  // Score
+  overallScore: number;
+  overallRating: 'CRITICAL' | 'CAUTION' | 'STABLE' | 'STRONG' | 'EXCEPTIONAL';
+  
+  // Time series (for Timeline)
+  monthlyARR: number[];
+  monthlyRunway: number[];
+  monthlySurvival: number[];
+  
+  // Confidence bands
+  arrBands: { month: number; p10: number; p50: number; p90: number }[];
+  
+  // Sensitivity (for Heatmap)
+  leverSensitivity: {
+    lever: string;
+    label: string;
+    impact: number;
+  }[];
+  
+  // Meta
+  simulatedAt: Date;
+  iterations: number;
+  executionTimeMs: number;
+}
 
-// Solver path step for mountain visualization
-export interface SolverPathPoint {
-  riskIndex: number;      // 0-100
-  enterpriseValue: number; // dollars
-  runway: number;         // months
+export interface Scenario {
+  id: string;
+  name: string;
+  description?: string;
+  levers: LeverSnapshot;
+  simulation: SimulationSnapshot | null;
+  createdAt: Date;
+  updatedAt: Date;
+  isBaseline: boolean;
+}
+
+export interface ScenarioDelta {
+  // Absolute deltas
+  survivalDelta: number;
+  arrDelta: number;
+  runwayDelta: number;
+  scoreDelta: number;
+  
+  // Percentage deltas
+  arrDeltaPercent: number;
+  runwayDeltaPercent: number;
+  
+  // Divergence (0-100)
+  divergenceScore: number;
+  divergenceLabel: string;
+  
+  // Lever differences (for Heatmap)
+  leverDeltas: {
+    lever: string;
+    label: string;
+    valueA: number;
+    valueB: number;
+    delta: number;
+    impactOnDivergence: number;
+  }[];
+  
+  // Monthly divergence (for Timeline)
+  monthlyDivergence: {
+    month: number;
+    arrA: number;
+    arrB: number;
+    gap: number;
+    gapPercent: number;
+  }[];
 }
 
 // ============================================================================
-// SCENARIO COLORS
+// CONSTANTS
 // ============================================================================
+
+const LEVER_LABELS: Record<string, string> = {
+  demandStrength: 'Demand Strength',
+  pricingPower: 'Pricing Power',
+  expansionVelocity: 'Expansion Velocity',
+  costDiscipline: 'Cost Discipline',
+  hiringIntensity: 'Hiring Intensity',
+  operatingDrag: 'Operating Drag',
+  marketVolatility: 'Market Volatility',
+  executionRisk: 'Execution Risk',
+  fundingPressure: 'Funding Pressure',
+};
+
+// Scenario IDs and Colors
+export type ScenarioId = 'base' | 'upside' | 'downside' | 'stress';
 
 export const SCENARIO_COLORS: Record<ScenarioId, { primary: string; secondary: string; glow: string }> = {
   base: {
-    primary: "#22d3ee",
-    secondary: "#7c3aed",
-    glow: "rgba(34, 211, 238, 0.4)",
+    primary: '#22d3ee',
+    secondary: '#0891b2',
+    glow: 'rgba(34, 211, 238, 0.3)',
   },
   upside: {
-    primary: "#34d399",
-    secondary: "#22d3ee",
-    glow: "rgba(52, 211, 153, 0.4)",
+    primary: '#34d399',
+    secondary: '#059669',
+    glow: 'rgba(52, 211, 153, 0.3)',
   },
   downside: {
-    primary: "#fbbf24",
-    secondary: "#f97316",
-    glow: "rgba(251, 191, 36, 0.4)",
+    primary: '#fbbf24',
+    secondary: '#d97706',
+    glow: 'rgba(251, 191, 36, 0.3)',
   },
   stress: {
-    primary: "#ef4444",
-    secondary: "#fb7185",
-    glow: "rgba(239, 68, 68, 0.4)",
+    primary: '#f87171',
+    secondary: '#dc2626',
+    glow: 'rgba(248, 113, 113, 0.3)',
   },
 };
 
-// ============================================================================
-// STORE INTERFACE
-// ============================================================================
-
-export type NoteEntry = {
-  timestamp: string;
-  mode: "operator" | "investor";
-  question: string;
-  answerBullets: string[];
-  comparedToBase: boolean;
-  scenarioScope: string;
+const LEVER_IMPACT_WEIGHTS: Record<string, number> = {
+  demandStrength: 0.85,
+  pricingPower: 0.70,
+  expansionVelocity: 0.60,
+  costDiscipline: 0.65,
+  hiringIntensity: 0.55,
+  operatingDrag: 0.50,
+  marketVolatility: 0.75,
+  executionRisk: 0.70,
+  fundingPressure: 0.60,
 };
 
-export type ScenarioStoreState = {
-  // View Mode: Operator or Investor
-  viewMode: ViewMode;
-  setViewMode: (v: ViewMode) => void;
-
-  scenario: ScenarioId;
-  setScenario: (s: ScenarioId) => void;
-
-  dataPoints: number[];
-  setDataPoints: (dp: number[]) => void;
-
-  hoveredKpiIndex: number | null;
-  setHoveredKpiIndex: (i: number | null) => void;
-
-  activeLeverId: LeverId | null;
-  leverIntensity01: number;
-  setActiveLever: (id: LeverId | null, intensity01: number) => void;
-
-  getScenarioColors: () => { primary: string; secondary: string; glow: string };
-  
-  // Motion amplitude based on view
-  getMotionAmplitude: () => number;
-
-  // Scenario Delta Snapshot toggle (persisted to localStorage)
-  showScenarioImpact: boolean;
-  setShowScenarioImpact: (show: boolean) => void;
-  toggleScenarioImpact: () => void;
-
-  activeScenarioId: ScenarioId;
-  comparisonTargetScenarioId: ScenarioId | null;
-  engineResults: Record<ScenarioId, EngineResult>;
-  setEngineResult: (scenarioId: ScenarioId, result: EngineResult) => void;
-
-  // Scenario Notes persistence
-  scenarioNotesByScenarioId: Record<string, NoteEntry[]>;
-  addScenarioNote: (scenarioId: string, note: NoteEntry) => void;
-
-  // Solver path for mountain visualization
-  solverPath: SolverPathPoint[];
-  setSolverPath: (path: SolverPathPoint[]) => void;
-
-  // Strategy management
-  strategies: Strategy[];
-  currentLevers: StrategyLevers | null;
-  setCurrentLevers: (levers: StrategyLevers) => void;
-  saveStrategy: (name: string, notes?: string) => void;
-  deleteStrategy: (id: string) => void;
-  loadStrategy: (id: string) => Strategy | null;
-}
-
-// ============================================================================
-// TIMELINE PROJECTION WITH FUNDING ROUNDS, DILUTION & SAFE/EQUITY
-// ============================================================================
-
-function projectStrategy(
-  levers: StrategyLevers,
-  scenario: ScenarioId,
-  months: number = 36,
-  step: number = 3
-): TimelinePoint[] {
-  const projections: TimelinePoint[] = [];
-  const state = { ...levers, fundingPressure: 0 };
-  
-  // Initialize cash position (default $3M if not set)
-  let cash = 3_000_000;
-  let totalFunding = 0;
-  let fundingRounds = 0;
-  let founderOwnership = 1; // 100% - founders start with full ownership
-  let lastFundingType: "safe" | "equity" | undefined = undefined;
-
-  for (let t = 0; t <= months; t += step) {
-    // Run engine for this time point
-    const metrics = calculateMetrics(state, scenario);
-    
-    // Calculate derived values (similar to App.tsx engine)
-    const burnMonthly = metrics.burnQuality * 1000; // burnQuality is in $K
-    const marketingSpend = burnMonthly * 0.45;
-    const avgRevenuePerCustomer = 12_000;
-    const grossMargin = 0.74;
-    const annualChurn = 0.12;
-    
-    const arrCurrent = (metrics.momentum / 10) * 1_000_000;
-    const growthRate = Math.max(-0.5, Math.min(0.8, (metrics.momentum - 50) * 0.006));
-    const arrNext12 = arrCurrent * (1 + growthRate);
-    const arrDelta = arrNext12 - arrCurrent;
-    const newCustomers = Math.max(1, arrDelta / avgRevenuePerCustomer);
-    
-    const cac = marketingSpend / newCustomers;
-    const ltv = (avgRevenuePerCustomer * grossMargin) / annualChurn;
-    const ltvCac = ltv / cac;
-    const cacPaybackMonths = (cac / (avgRevenuePerCustomer * grossMargin)) * 12;
-
-    // Growth risk adjustment
-    let growthRisk = 0;
-    if (ltvCac < 2) growthRisk += 15;
-    if (cacPaybackMonths > 24) growthRisk += 15;
-    if (cacPaybackMonths > 36) growthRisk += 10;
-    const adjustedRiskIndex = Math.min(100, Math.max(0, metrics.riskIndex + growthRisk));
-
-    // Apply monthly burn (step months at a time)
-    cash -= burnMonthly * step;
-
-    // Enterprise value (scaled)
-    const enterpriseValue = (metrics.enterpriseValue / 10) * 1_000_000;
-
-    // Trigger funding if cash is low (< $500K)
-    if (cash < 500_000) {
-      // Raise enough for 18 months of runway, minimum $3M
-      const raiseAmount = Math.max(3_000_000, burnMonthly * 18);
-      cash += raiseAmount;
-      totalFunding += raiseAmount;
-      fundingRounds += 1;
-      
-      // Pre-money valuation (floor at 2x raise to avoid crazy dilution)
-      const preMoney = Math.max(enterpriseValue, raiseAmount * 2);
-      
-      // Determine funding type: Round 1 = SAFE, later rounds = priced equity
-      const isSAFE = fundingRounds === 1;
-      
-      if (isSAFE) {
-        // SAFE with standard terms
-        const safe = createDefaultSAFE(preMoney, raiseAmount);
-        const { dilution } = calculateSAFEDilution(safe, preMoney);
-        
-        founderOwnership *= (1 - dilution);
-        lastFundingType = "safe";
-      } else {
-        // Priced equity round
-        const termSheet = createDefaultTermSheet(preMoney, raiseAmount, fundingRounds);
-        const { dilution } = calculateEquityDilution(termSheet);
-        
-        founderOwnership *= (1 - dilution);
-        lastFundingType = "equity";
-      }
-    }
-    
-    // Calculate runway based on current cash and burn
-    const runway = burnMonthly > 0 ? cash / burnMonthly : 999;
-
-    projections.push({
-      month: t,
-      arr: arrNext12,
-      valuation: enterpriseValue,
-      runway,
-      cash,
-      risk: adjustedRiskIndex,
-      fundingRounds,
-      totalFunding,
-      founderOwnership,
-      lastFundingType,
-    });
-
-    // Natural drift forward (compounding effects over time)
-    state.expansionVelocity = Math.min(100, state.expansionVelocity * 1.02);
-    state.costDiscipline = Math.min(100, state.costDiscipline * 1.01);
-    state.demandStrength = Math.min(100, state.demandStrength * 1.008);
-    state.pricingPower = Math.min(100, state.pricingPower * 1.003);
-    // Risk factors naturally decrease slightly with time (learning)
-    state.marketVolatility = Math.max(0, state.marketVolatility * 0.995);
-    state.executionRisk = Math.max(0, state.executionRisk * 0.99);
-  }
-
-  return projections;
-}
+const generateId = () => `scenario_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
 // ============================================================================
 // STORE
 // ============================================================================
 
-export const useScenarioStore = create<ScenarioStoreState>((set, get) => ({
-  viewMode: "operator",
-  setViewMode: (v) => set({ viewMode: v }),
-
-  scenario: "base",
-  setScenario: (s) => set({ scenario: s, activeScenarioId: s }),
-
-  dataPoints: [],
-  setDataPoints: (dp) => set({ dataPoints: Array.isArray(dp) ? dp : [] }),
-
-  hoveredKpiIndex: null,
-  setHoveredKpiIndex: (i) => set({ hoveredKpiIndex: i }),
-
-  activeLeverId: null,
-  leverIntensity01: 0,
-  setActiveLever: (id, intensity01) =>
-    set({ activeLeverId: id, leverIntensity01: Math.max(0, Math.min(1, intensity01)) }),
-
-  getScenarioColors: () => {
-    const scenario = get().scenario;
-    return SCENARIO_COLORS[scenario];
-  },
-
-  // Operator: full motion (1.0), Investor: restrained (0.6)
-  getMotionAmplitude: () => {
-    const viewMode = get().viewMode;
-    return viewMode === "operator" ? 1.0 : 0.6;
-  },
-
-  // Scenario Delta Snapshot toggle - initialized from localStorage
-  showScenarioImpact: (() => {
-    try {
-      return localStorage.getItem("stratfit_showScenarioImpact") === "true";
-    } catch {
-      return false;
-    }
-  })(),
-  
-  setShowScenarioImpact: (show) => {
-    try {
-      localStorage.setItem("stratfit_showScenarioImpact", String(show));
-    } catch {}
-    set({ showScenarioImpact: show });
-  },
-  
-  toggleScenarioImpact: () => {
-    const current = get().showScenarioImpact;
-    const next = !current;
-    try {
-      localStorage.setItem("stratfit_showScenarioImpact", String(next));
-    } catch {}
-    set({ showScenarioImpact: next });
-  },
-
-  activeScenarioId: "base",
-  comparisonTargetScenarioId: null,
-  engineResults: {
-    base: {} as EngineResult,
-    upside: {} as EngineResult,
-    downside: {} as EngineResult,
-    stress: {} as EngineResult,
-  },
-  setEngineResult: (scenarioId, result) =>
-    set((state) => ({
-      engineResults: {
-        ...(state.engineResults ?? {}),
-        [scenarioId]: result,
-      },
-    })),
-
-  scenarioNotesByScenarioId: {},
-  addScenarioNote: (scenarioId, note) =>
-    set((state) => ({
-      scenarioNotesByScenarioId: {
-        ...state.scenarioNotesByScenarioId,
-        [scenarioId]: [
-          ...(state.scenarioNotesByScenarioId[scenarioId] || []),
-          note,
-        ],
-      },
-    })),
-
-  // Solver path for mountain visualization
-  solverPath: [],
-  setSolverPath: (path) => set({ solverPath: path }),
-
-  // Strategy management
-  strategies: [],
-  currentLevers: null,
-  setCurrentLevers: (levers) => set({ currentLevers: levers }),
-  
-  saveStrategy: (name, notes) => {
-    const s = get();
-    const id = Date.now().toString();
-    const scenario = s.scenario;
-    const result = s.engineResults[scenario];
-    const levers = s.currentLevers;
-
-    if (!levers) {
-      console.warn("Cannot save strategy: no levers set");
-      return;
-    }
-
-    const kpis = (result?.kpis ?? {}) as StrategyKpis;
-    
-    // Auto-classify the strategy
-    const label = classifyStrategy(kpis);
-    
-    // Generate 36-month timeline projection
-    const timeline = projectStrategy(levers, scenario, 36, 3);
-    
-    // Calculate break-even month
-    const breakEvenMonth = findBreakEven(timeline);
-    
-    // Get funding totals and cap table from final timeline point
-    const finalPoint = timeline[timeline.length - 1];
-    const totalFunding = finalPoint?.totalFunding ?? 0;
-    const fundingRounds = finalPoint?.fundingRounds ?? 0;
-    const founderOwnership = finalPoint?.founderOwnership ?? 1;
-    
-    // Build cap table
-    const capTable = {
-      founders: founderOwnership,
-      investors: 1 - founderOwnership,
-    };
-    
-    // Calculate exit values at 8x ARR
-    const exitValue = calculateExitValue({
-      timeline,
-      capTable,
-    } as Strategy, 8);
-    
-    const founderProceeds = exitValue.founders;
-    
-    // Calculate investor proceeds with liquidation preference consideration
-    const investorProceedsResult = calculateInvestorProceeds(
-      exitValue.enterprise,
-      capTable.investors,
-      totalFunding,
-      1 // 1x liquidation preference
-    );
-    const investorProceeds = investorProceedsResult.proceeds;
-    
-    // Calculate investor IRR (36 months = 3 years)
-    const years = 36 / 12;
-    const investorIRR = totalFunding > 0 
-      ? calculateIRR(totalFunding, investorProceeds, years)
-      : 0;
-
-    const newStrategy: Strategy = {
-      id,
-      name,
-      label,
-      scenario,
-      levers: { ...levers },
-      kpis,
-      timeline,
-      breakEvenMonth,
-      totalFunding,
-      fundingRounds,
-      capTable,
-      investorIRR,
-      investorProceeds,
-      founderProceeds,
-      createdAt: new Date().toISOString(),
-      notes,
-    };
-
-    // Persist to localStorage
-    const updated = [...s.strategies, newStrategy];
-    try {
-      localStorage.setItem("stratfit_strategies", JSON.stringify(updated));
-    } catch {}
-
-    set({ strategies: updated });
-  },
-
-  deleteStrategy: (id) => {
-    const s = get();
-    const updated = s.strategies.filter((strat) => strat.id !== id);
-    try {
-      localStorage.setItem("stratfit_strategies", JSON.stringify(updated));
-    } catch {}
-    set({ strategies: updated });
-  },
-
-  loadStrategy: (id) => {
-    const s = get();
-    return s.strategies.find((strat) => strat.id === id) ?? null;
-  },
-}));
-
-// Initialize strategies from localStorage
-try {
-  const stored = localStorage.getItem("stratfit_strategies");
-  if (stored) {
-    const parsed = JSON.parse(stored) as Strategy[];
-    useScenarioStore.setState({ strategies: parsed });
-  }
-} catch {}
-
-// ============================================================================
-// SELECTOR HOOKS
-// ============================================================================
-
-export const useScenario = () => useScenarioStore((s) => s.scenario);
-export const useViewMode = () => useScenarioStore((s) => s.viewMode);
-export const useDataPoints = () => useScenarioStore((s) => s.dataPoints);
-export const useHoveredKpiIndex = () => useScenarioStore((s) => s.hoveredKpiIndex);
-export const useScenarioColors = () => {
-  const scenario = useScenarioStore((s) => s.scenario);
-  return SCENARIO_COLORS[scenario];
-};
-
-// ============================================================================
-// DEBUG: Expose store to window for console inspection
-// ============================================================================
-if (typeof window !== "undefined") {
-  // Lazy import to avoid circular dependency
-  const getRiskScore = (er: EngineResult | null | undefined) => {
-    const riskIndex = er?.kpis?.riskIndex?.value ?? 50;
-    return Math.round(100 - riskIndex);
-  };
-
-  const getQualityScore = (er: EngineResult | null | undefined) => {
-    const kpis = er?.kpis;
-    if (!kpis) return 0.5;
-    const normalize = (x: number, min: number, max: number) => Math.max(0, Math.min(1, (x - min) / (max - min)));
-    const ltvCac = kpis.ltvCac?.value ?? 3;
-    const cacPayback = kpis.cacPayback?.value ?? 18;
-    const earningsPower = kpis.earningsPower?.value ?? 50;
-    const burnQuality = kpis.burnQuality?.value ?? 50;
-    return Math.round((
-      0.35 * normalize(ltvCac, 2, 6) +
-      0.25 * (1 - normalize(cacPayback, 6, 36)) +
-      0.25 * normalize(earningsPower, 20, 80) +
-      0.15 * normalize(burnQuality, 20, 80)
-    ) * 100) / 100;
-  };
-
-  (window as any).__STRATFIT__ = {
-    scenarioStore: useScenarioStore,
-    get engineResults() {
-      return useScenarioStore.getState().engineResults;
-    },
-    getRiskScore,
-    getQualityScore,
-  };
-  // Shortcut for quick console access
-  Object.defineProperty(window, "engineResults", {
-    get: () => useScenarioStore.getState().engineResults,
-    configurable: true,
-  });
+// Strategy type for saved strategies
+export interface Strategy {
+  id: string;
+  name: string;
+  levers: LeverSnapshot;
+  kpis?: Record<string, number>;
+  timeline?: { month: number; valuation: number; arr: number; runway: number; cash: number; risk: number; totalFunding: number }[];
+  createdAt: Date;
 }
+
+// KPI value type
+export interface KPIValue {
+  value: number;
+  display?: string;
+}
+
+// Engine result type
+export interface EngineResult {
+  kpis: Record<string, KPIValue>;
+  ai?: { summary: string };
+  timeline?: { month: number; valuation: number; arr: number; runway: number; cash: number; risk: number; totalFunding: number }[];
+}
+
+// Solver path point type
+export interface SolverPathPoint {
+  riskIndex: number;
+  enterpriseValue: number;
+  runway: number;
+}
+
+interface ScenarioState {
+  // Scenarios
+  baseline: Scenario | null;
+  savedScenarios: Scenario[];
+  maxScenarios: number;
+  
+  // View state
+  compareViewMode: 'data' | 'terrain';
+  viewMode: 'terrain' | 'data';
+  hoveredKpiIndex: number | null;
+  activeLeverId: string | null;
+  leverIntensity01: number;
+  activeScenarioId: ScenarioId;
+  scenario: ScenarioId; // Alias for activeScenarioId for backward compatibility
+  
+  // Strategies (for saving/loading user strategies)
+  strategies: Strategy[];
+  currentLevers: LeverSnapshot | null;
+  
+  // Engine results per scenario
+  engineResults: Record<string, EngineResult>;
+  
+  // Solver path for visualization
+  solverPath: SolverPathPoint[];
+  
+  // Data points for visualization
+  dataPoints: unknown[];
+  
+  // Actions
+  saveAsBaseline: (name: string, levers: LeverSnapshot, simulation: SimulationSnapshot) => void;
+  saveScenario: (name: string, levers: LeverSnapshot, simulation: SimulationSnapshot) => Scenario;
+  loadScenario: (id: string) => Scenario | null;
+  setBaseline: (id: string) => void;
+  deleteScenario: (id: string) => void;
+  renameScenario: (id: string, name: string) => void;
+  setCompareViewMode: (mode: 'data' | 'terrain') => void;
+  
+  // New actions for App.tsx
+  setHoveredKpiIndex: (index: number | null) => void;
+  setDataPoints: (points: unknown[]) => void;
+  setScenario: (id: string) => void;
+  setEngineResult: (scenarioId: string, result: EngineResult) => void;
+  setSolverPath: (path: SolverPathPoint[]) => void;
+  saveStrategy: (name: string) => void;
+  setCurrentLevers: (levers: LeverSnapshot) => void;
+  setActiveLever: (leverId: string | null, intensity: number) => void;
+  
+  // Calculations
+  calculateDelta: (scenarioA: Scenario, scenarioB: Scenario) => ScenarioDelta;
+}
+
+export const useScenarioStore = create<ScenarioState>()(
+  persist(
+    (set, get) => ({
+      baseline: null,
+      savedScenarios: [],
+      maxScenarios: 5,
+      compareViewMode: 'terrain',
+      viewMode: 'terrain',
+      hoveredKpiIndex: null,
+      activeLeverId: null,
+      leverIntensity01: 0.5,
+      activeScenarioId: 'base',
+      scenario: 'base', // Alias for activeScenarioId
+      strategies: [],
+      currentLevers: null,
+      engineResults: {},
+      solverPath: [],
+      dataPoints: [],
+      
+      setHoveredKpiIndex: (index) => set({ hoveredKpiIndex: index }),
+      setDataPoints: (points) => set({ dataPoints: points }),
+      setScenario: (id) => set({ activeScenarioId: id as ScenarioId, scenario: id as ScenarioId }),
+      setEngineResult: (scenarioId, result) => set((state) => ({
+        engineResults: { ...state.engineResults, [scenarioId]: result }
+      })),
+      setSolverPath: (path) => set({ solverPath: path }),
+      saveStrategy: (name) => {
+        const currentLevers = get().currentLevers;
+        if (!currentLevers) return;
+        
+        const strategy: Strategy = {
+          id: generateId(),
+          name,
+          levers: { ...currentLevers },
+          createdAt: new Date(),
+        };
+        
+        set((state) => ({
+          strategies: [...state.strategies, strategy]
+        }));
+      },
+      setCurrentLevers: (levers) => set({ currentLevers: levers }),
+      setActiveLever: (leverId, intensity) => set({ activeLeverId: leverId, leverIntensity01: intensity }),
+      
+      saveAsBaseline: (name, levers, simulation) => {
+        const scenario: Scenario = {
+          id: generateId(),
+          name,
+          levers: { ...levers },
+          simulation: { ...simulation, simulatedAt: new Date() },
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          isBaseline: true,
+        };
+        
+        const updated = get().savedScenarios.map(s => ({ ...s, isBaseline: false }));
+        
+        set({
+          baseline: scenario,
+          savedScenarios: [scenario, ...updated.filter(s => s.id !== scenario.id)].slice(0, 5),
+        });
+      },
+      
+      saveScenario: (name, levers, simulation) => {
+        const scenario: Scenario = {
+          id: generateId(),
+          name,
+          levers: { ...levers },
+          simulation: { ...simulation, simulatedAt: new Date() },
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          isBaseline: false,
+        };
+        
+        const scenarios = [scenario, ...get().savedScenarios].slice(0, 5);
+        set({ savedScenarios: scenarios });
+        
+        return scenario;
+      },
+      
+      loadScenario: (id) => {
+        return get().savedScenarios.find(s => s.id === id) || null;
+      },
+      
+      setBaseline: (id) => {
+        const scenarios = get().savedScenarios.map(s => ({
+          ...s,
+          isBaseline: s.id === id,
+        }));
+        const newBaseline = scenarios.find(s => s.id === id) || null;
+        set({ baseline: newBaseline, savedScenarios: scenarios });
+      },
+      
+      deleteScenario: (id) => {
+        const scenarios = get().savedScenarios.filter(s => s.id !== id);
+        const baseline = get().baseline?.id === id ? null : get().baseline;
+        set({ savedScenarios: scenarios, baseline });
+      },
+      
+      renameScenario: (id, name) => {
+        const scenarios = get().savedScenarios.map(s =>
+          s.id === id ? { ...s, name, updatedAt: new Date() } : s
+        );
+        const baseline = get().baseline?.id === id
+          ? { ...get().baseline!, name, updatedAt: new Date() }
+          : get().baseline;
+        set({ savedScenarios: scenarios, baseline });
+      },
+      
+      setCompareViewMode: (mode) => set({ compareViewMode: mode }),
+      
+      calculateDelta: (scenarioA, scenarioB) => {
+        const simA = scenarioA.simulation;
+        const simB = scenarioB.simulation;
+        
+        if (!simA || !simB) {
+          return {
+            survivalDelta: 0,
+            arrDelta: 0,
+            runwayDelta: 0,
+            scoreDelta: 0,
+            arrDeltaPercent: 0,
+            runwayDeltaPercent: 0,
+            divergenceScore: 0,
+            divergenceLabel: 'No Data',
+            leverDeltas: [],
+            monthlyDivergence: [],
+          };
+        }
+        
+        // Calculate divergence score (0-100)
+        const survivalDiff = Math.abs(simA.survivalRate - simB.survivalRate);
+        const avgARR = (simA.medianARR + simB.medianARR) / 2;
+        const arrDiff = avgARR > 0 ? Math.abs(simA.medianARR - simB.medianARR) / avgARR : 0;
+        const runwayDiff = Math.abs(simA.medianRunway - simB.medianRunway) / 48;
+        const scoreDiff = Math.abs(simA.overallScore - simB.overallScore) / 100;
+        
+        const divergenceScore = Math.min(
+          Math.round((survivalDiff * 0.35 + arrDiff * 0.30 + runwayDiff * 0.20 + scoreDiff * 0.15) * 100),
+          100
+        );
+        
+        // Divergence label
+        let divergenceLabel = 'Nearly Identical';
+        if (divergenceScore >= 15) divergenceLabel = 'Moderate Differences';
+        if (divergenceScore >= 35) divergenceLabel = 'Significant Divergence';
+        if (divergenceScore >= 60) divergenceLabel = 'Major Strategic Shift';
+        if (divergenceScore >= 85) divergenceLabel = 'Fundamentally Different';
+        
+        // Lever deltas
+        const leverDeltas = Object.keys(scenarioA.levers).map(key => {
+          const k = key as keyof LeverSnapshot;
+          const valueA = scenarioA.levers[k];
+          const valueB = scenarioB.levers[k];
+          const delta = valueB - valueA;
+          const impactWeight = LEVER_IMPACT_WEIGHTS[key] || 0.5;
+          const impactOnDivergence = Math.abs(delta) * impactWeight / 100;
+          
+          return {
+            lever: key,
+            label: LEVER_LABELS[key] || key,
+            valueA,
+            valueB,
+            delta,
+            impactOnDivergence,
+          };
+        }).sort((a, b) => Math.abs(b.impactOnDivergence) - Math.abs(a.impactOnDivergence));
+        
+        // Monthly divergence
+        const monthlyDivergence: ScenarioDelta['monthlyDivergence'] = [];
+        const arrA = simA.monthlyARR || Array(36).fill(simA.medianARR);
+        const arrB = simB.monthlyARR || Array(36).fill(simB.medianARR);
+        
+        for (let i = 0; i < 36; i++) {
+          const a = arrA[i] || simA.medianARR;
+          const b = arrB[i] || simB.medianARR;
+          const gap = b - a;
+          const gapPercent = a > 0 ? (gap / a) * 100 : 0;
+          
+          monthlyDivergence.push({
+            month: i + 1,
+            arrA: a,
+            arrB: b,
+            gap,
+            gapPercent,
+          });
+        }
+        
+        return {
+          survivalDelta: (simB.survivalRate - simA.survivalRate) * 100,
+          arrDelta: simB.medianARR - simA.medianARR,
+          runwayDelta: simB.medianRunway - simA.medianRunway,
+          scoreDelta: simB.overallScore - simA.overallScore,
+          arrDeltaPercent: simA.medianARR > 0
+            ? ((simB.medianARR - simA.medianARR) / simA.medianARR) * 100
+            : 0,
+          runwayDeltaPercent: simA.medianRunway > 0
+            ? ((simB.medianRunway - simA.medianRunway) / simA.medianRunway) * 100
+            : 0,
+          divergenceScore,
+          divergenceLabel,
+          leverDeltas,
+          monthlyDivergence,
+        };
+      },
+    }),
+    {
+      name: 'stratfit-scenarios',
+      version: 2, // Bump version to reset cached state with new structure
+      partialize: (state) => ({
+        // Only persist these keys - exclude runtime-computed state
+        baseline: state.baseline,
+        savedScenarios: state.savedScenarios,
+        strategies: state.strategies,
+        compareViewMode: state.compareViewMode,
+      }),
+      merge: (persistedState, currentState) => ({
+        ...currentState,
+        ...(persistedState as Partial<ScenarioState>),
+        // Always use fresh runtime state for these (don't persist)
+        engineResults: {},
+        solverPath: [],
+        dataPoints: [],
+        hoveredKpiIndex: null,
+        activeLeverId: null,
+        scenario: 'base' as ScenarioId,
+        activeScenarioId: 'base' as ScenarioId,
+      }),
+    }
+  )
+);
+
+// Type exports
+export type ViewMode = 'terrain' | 'data';
+
+// Selectors
+export const useBaseline = () => useScenarioStore((s) => s.baseline);
+export const useSavedScenarios = () => useScenarioStore((s) => s.savedScenarios);
+export const useCompareViewMode = () => useScenarioStore((s) => s.compareViewMode);
+export const useScenario = () => useScenarioStore((s) => s.activeScenarioId);
+export const useStrategies = () => useScenarioStore((s) => s.strategies);
+export const useEngineResults = () => useScenarioStore((s) => s.engineResults);
+
+export default useScenarioStore;
