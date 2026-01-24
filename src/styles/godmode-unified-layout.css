@@ -149,15 +149,15 @@ aside.left-column {
 }
 
 /* ============================================================================
-   CENTER COLUMN — KPIs at top, Mountain below
+   CENTER COLUMN — GRID with explicit rows: KPIs (auto) + Mountain (1fr)
    ============================================================================ */
 
 .center-column,
 [class*="center-column"],
 main.center-column {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 28px !important; /* MORE GAP - push mountain down */
+  display: grid !important;
+  grid-template-rows: auto 1fr !important; /* KPIs auto, Mountain fills rest */
+  gap: 32px !important; /* gap-y-8 = 32px NO FLY ZONE */
   height: 100% !important;
   max-height: 100% !important;
   overflow: hidden !important;
@@ -165,27 +165,26 @@ main.center-column {
 }
 
 /* ============================================================================
-   KPI SECTION — COMPACT PREMIUM DASHBOARD (130px Max Height)
+   KPI SECTION — JEWEL BOX ROW (160px Fixed Height)
    ============================================================================ */
 
 .kpi-section,
 [class*="kpi-section"],
 [data-tour="kpis"] {
-  /* KPI ROW: Fixed height, spread horizontally */
-  flex-shrink: 0 !important;
-  display: flex !important;
-  justify-content: center !important;
-  align-items: stretch !important;
+  /* KPI ROW: h-[160px] w-full grid grid-cols-3 gap-6 z-20 relative */
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 24px !important; /* gap-6 */
   width: 100% !important;
-  height: 140px !important;
-  min-height: 140px !important;
-  max-height: 140px !important;
+  height: 160px !important;
+  min-height: 160px !important;
+  max-height: 160px !important;
   padding: 0 !important;
   margin: 0 !important;
   transform: none !important;
   position: relative !important;
   z-index: 20 !important;
-  overflow: visible !important;
+  overflow: visible !important; /* Don't clip shadows */
 }
 
 /* KPI Console - centered container */
@@ -278,28 +277,29 @@ main.center-column {
   margin: 0 !important;
 }
 
-/* Flatten the 4-layer chassis into simple card */
+/* KPI JEWEL BOX: Darker bg, thin metal border, inner glow */
 [class*="KPIBezel"] [class*="chassis"],
-[class*="kpi-bezel"] [class*="chassis"] {
+[class*="kpi-bezel"] [class*="chassis"],
+[data-kpi-group] > div {
   height: 100% !important;
   padding: 0 !important;
   
-  /* MACHINED BEZEL: Tight corners, thin metal */
+  /* MACHINED BEZEL: Tight corners */
   border-radius: 8px !important; /* rounded-lg */
   
-  /* JEWEL BOX: Darker bg so Cyan pops */
-  background: rgba(15, 23, 42, 0.8) !important; /* bg-[#0F172A]/80 */
+  /* JEWEL BOX: bg-[#0F172A]/80 - Darker to make Cyan pop */
+  background: rgba(15, 23, 42, 0.8) !important;
   
-  /* Thin metal border */
+  /* Thin metal border: border-white/15 */
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
   
-  /* The secret inner glow + depth shadow */
+  /* THE SECRET: Inner glow + depth shadow */
   box-shadow: 
     inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
     inset 0 0 20px 0 rgba(0, 0, 0, 0.5),
     0 20px 40px -10px rgba(0, 0, 0, 0.8) !important;
   
-  overflow: visible !important; /* Don't clip shadows */
+  overflow: visible !important;
 }
 
 [class*="KPIBezel"] [class*="rim"],
@@ -462,17 +462,17 @@ main.center-column {
 }
 
 /* ============================================================================
-   KPI WIDGETS/SPARKLINES — JEWEL BOX WIDGET LAYER
+   KPI WIDGETS/SPARKLINES — z-10 relative, h-12 w-full mt-auto
    ============================================================================ */
 
 .instrument-visual {
-  /* WIDGET LAYER: Force visible with z-index */
+  /* WIDGET LAYER: z-10 relative */
   position: relative !important;
   z-index: 10 !important;
   opacity: 1 !important;
   visibility: visible !important;
   
-  /* Widget dimensions: h-12 w-full mt-auto */
+  /* h-12 w-full mt-auto */
   height: 48px !important;
   min-height: 48px !important;
   max-height: 48px !important;
@@ -484,9 +484,8 @@ main.center-column {
   justify-content: center !important;
   
   background: transparent !important;
-  border-radius: 0 !important;
   border: none !important;
-  padding: 4px 0 !important;
+  padding: 4px !important;
   overflow: visible !important;
 }
 
@@ -507,20 +506,20 @@ main.center-column {
   visibility: visible !important;
   position: relative !important;
   z-index: 10 !important;
-  /* Cyan glow bloom */
-  filter: drop-shadow(0 0 4px rgba(0, 217, 255, 0.5)) !important;
+  /* Cyan glow */
+  filter: drop-shadow(0 0 4px rgba(0, 217, 255, 0.6)) !important;
 }
 
-/* FORCE CYAN: Hardcode stroke/fill */
+/* FORCE CYAN #00D9FF and WHITE #FFFFFF */
 .instrument-visual svg path,
 .instrument-visual svg line,
 .instrument-visual svg polyline {
-  stroke: #00D9FF !important; /* Cyan */
+  stroke: #00D9FF !important;
   stroke-width: 2px !important;
 }
 
 .instrument-visual svg rect {
-  fill: rgba(0, 217, 255, 0.3) !important;
+  fill: rgba(0, 217, 255, 0.4) !important;
 }
 
 .instrument-visual svg circle {
@@ -528,7 +527,7 @@ main.center-column {
   stroke: #FFFFFF !important;
 }
 
-/* Canvas elements (Chart.js) */
+/* Canvas (Chart.js) */
 .instrument-visual canvas {
   position: relative !important;
   z-index: 10 !important;
@@ -573,34 +572,50 @@ main.center-column {
 
 [class*="sfCenterRoot"],
 [class*="CenterViewPanel"] {
-  /* MOUNTAIN COMPOUND: Height reduced 15% */
-  flex: 0 1 auto !important;
-  min-height: 300px !important;
-  max-height: calc(100% - 200px) !important; /* 15% shorter */
-  height: 85% !important; /* 85% of available space */
+  /* MOUNTAIN COMPOUND: max-height 500px, min-height 400px */
+  width: 100% !important;
+  min-height: 400px !important;
+  max-height: 500px !important;
+  height: 100% !important;
   display: flex !important;
   flex-direction: column !important;
   
-  /* MACHINED BEZEL: Thin metal */
+  /* MACHINED BEZEL: Thin metal, not plastic */
   background: #000 !important;
-  border-radius: 8px !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 8px !important; /* rounded-lg */
+  border: 1px solid rgba(255, 255, 255, 0.15) !important; /* border-white/15 */
   
+  /* Inner glow + depth shadow */
   box-shadow: 
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.05),
-    0 10px 30px -10px rgba(0, 0, 0, 0.6) !important;
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 20px 0 rgba(0, 0, 0, 0.5),
+    0 20px 40px -10px rgba(0, 0, 0, 0.8) !important;
   
   overflow: hidden !important;
-  margin: 0 auto !important; /* Center horizontally */
-  margin-top: 8px !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
-/* MOUNTAIN CANVAS: Scale down 20% */
+/* MOUNTAIN CANVAS: Full size within 500px container */
 [class*="sfMountainStage"],
 [class*="MountainCanvas"],
-[class*="mountainCanvas"] {
-  transform: scale(0.80) !important;
-  transform-origin: center center !important;
+[class*="mountainCanvas"],
+[class*="mountainWrapper"],
+[class*="MountainWrapper"] {
+  width: 100% !important;
+  height: 100% !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  transform: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Mountain internal elements - no extra shadows */
+[class*="sfMountainStage"] *,
+[class*="MountainCanvas"] * {
+  box-shadow: none !important;
 }
 
 [class*="sfMountainStage"] {
