@@ -82,7 +82,6 @@ export function engineResultToMountainForces(er: EngineResult | null): number[] 
   const riskSafety = invNorm(riskScore, 0, 100);
   
   // DEBUG: Log risk values
-  console.log("[MOUNTAIN] riskIndex:", er.kpis.riskIndex?.value, "riskScore:", riskScore, "riskSafety:", riskSafety);
 
   return [
     norm(get("arrNext12"), 0, 10_000_000),            // 0: Revenue (0-10M)

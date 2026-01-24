@@ -53,7 +53,6 @@ export function calculateMetrics(levers: LeverState, scenario: ScenarioId): Metr
   const enterpriseValue = Math.max(5, (demand * 40 + pricing * 30 + expansion * 20 - volatility * 15) * mult);
   
   // DEBUG: Log risk calculation
-  console.log("[METRICS] volatility:", volatility, "execRisk:", execRisk, "funding:", funding, "→ riskIndex:", riskIndex);
 
   return { runway, cashPosition, momentum, burnQuality, riskIndex, earningsPower, enterpriseValue };
 }

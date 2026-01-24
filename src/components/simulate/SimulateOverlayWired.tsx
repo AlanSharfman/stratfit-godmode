@@ -3,8 +3,9 @@
 // Saves results to simulationStore for use across dashboard
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Save, Check } from 'lucide-react';
 import { useSimulationStore } from '@/state/simulationStore';
+import { useSavedSimulationsStore } from '@/state/savedSimulationsStore';
 import { 
   type MonteCarloResult, 
   type LeverState,
@@ -40,9 +41,13 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
   const [result, setResult] = useState<MonteCarloResult | null>(null);
   const [verdict, setVerdict] = useState<Verdict | null>(null);
   const [activeSection, setActiveSection] = useState<'overview' | 'distribution' | 'scenarios' | 'drivers'>('overview');
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
 
   // Connect to simulation store
   const { setSimulationResult, startSimulation: storeStartSimulation } = useSimulationStore();
+  
+  // Connect to saved simulations store
+  const saveSimulation = useSavedSimulationsStore((s) => s.saveSimulation);
 
   // Simulation config
   const config: SimulationConfig = useMemo(() => ({
@@ -113,6 +118,44 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
       setPhase('complete');
     }, 300);
   }, [levers, config, setSimulationResult, storeStartSimulation]);
+
+  // Handle saving current simulation
+  const handleSaveSimulation = useCallback(() => {
+    if (!result || !verdict) return;
+    
+    setSaveState('saving');
+    
+    const timestamp = new Date().toLocaleString('en-US', { 
+      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+    });
+    
+    saveSimulation({
+      name: `Simulation ${timestamp}`,
+      description: `Score: ${verdict.overallScore} | Survival: ${Math.round(result.survivalRate * 100)}%`,
+      levers: levers as any,
+      summary: {
+        survivalRate: result.survivalRate,
+        survivalPercent: `${Math.round(result.survivalRate * 100)}%`,
+        arrMedian: result.arrPercentiles.p50,
+        arrP10: result.arrPercentiles.p10,
+        arrP90: result.arrPercentiles.p90,
+        runwayMedian: result.runwayPercentiles.p50,
+        runwayP10: result.runwayPercentiles.p10,
+        runwayP90: result.runwayPercentiles.p90,
+        cashMedian: result.cashPercentiles?.p50 ?? 0,
+        cashP10: result.cashPercentiles?.p10 ?? 0,
+        cashP90: result.cashPercentiles?.p90 ?? 0,
+        overallScore: verdict.overallScore,
+        overallRating: verdict.overallRating,
+      },
+      isBaseline: false,
+    });
+    
+    setTimeout(() => {
+      setSaveState('saved');
+      setTimeout(() => setSaveState('idle'), 2000);
+    }, 300);
+  }, [result, verdict, levers, saveSimulation]);
 
   // Auto-run on open
   useEffect(() => {
@@ -214,23 +257,49 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
               </p>
             </div>
 
-            {/* Navigation Tabs */}
-            <nav className="simulate-nav">
-              {[
-                { id: 'overview', label: 'OVERVIEW' },
-                { id: 'distribution', label: 'DISTRIBUTION' },
-                { id: 'scenarios', label: 'SCENARIOS' },
-                { id: 'drivers', label: 'DRIVERS' },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  className={`simulate-nav-tab ${activeSection === tab.id ? 'active' : ''}`}
-                  onClick={() => setActiveSection(tab.id as typeof activeSection)}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </nav>
+            {/* Navigation Tabs + Save Button */}
+            <div className="simulate-nav-row">
+              <nav className="simulate-nav">
+                {[
+                  { id: 'overview', label: 'OVERVIEW' },
+                  { id: 'distribution', label: 'DISTRIBUTION' },
+                  { id: 'scenarios', label: 'SCENARIOS' },
+                  { id: 'drivers', label: 'DRIVERS' },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    className={`simulate-nav-tab ${activeSection === tab.id ? 'active' : ''}`}
+                    onClick={() => setActiveSection(tab.id as typeof activeSection)}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </nav>
+              
+              {/* SAVE SIMULATION BUTTON */}
+              <button 
+                className={`simulate-save-btn ${saveState}`}
+                onClick={handleSaveSimulation}
+                disabled={saveState !== 'idle'}
+              >
+                {saveState === 'saved' ? (
+                  <>
+                    <Check size={16} />
+                    SAVED
+                  </>
+                ) : saveState === 'saving' ? (
+                  <>
+                    <RefreshCw size={16} className="spin" />
+                    SAVING...
+                  </>
+                ) : (
+                  <>
+                    <Save size={16} />
+                    SAVE SIMULATION
+                  </>
+                )}
+              </button>
+            </div>
 
             {/* Content Sections */}
             <div className="simulate-content">
