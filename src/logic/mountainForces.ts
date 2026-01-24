@@ -77,6 +77,12 @@ export function engineResultToMountainForces(er: EngineResult | null): number[] 
   if (!er?.kpis) return [0.5, 0.5, 0.6, 0.4, 0.5, 0.45, 0.35];
 
   const get = (key: string) => er.kpis[key]?.value ?? 0;
+  
+  const riskScore = getRiskScore(er);
+  const riskSafety = invNorm(riskScore, 0, 100);
+  
+  // DEBUG: Log risk values
+  console.log("[MOUNTAIN] riskIndex:", er.kpis.riskIndex?.value, "riskScore:", riskScore, "riskSafety:", riskSafety);
 
   return [
     norm(get("arrNext12"), 0, 10_000_000),            // 0: Revenue (0-10M)
@@ -85,7 +91,7 @@ export function engineResultToMountainForces(er: EngineResult | null): number[] 
     norm(get("cashPosition"), 0, 5_000_000),          // 3: Cash (0-5M)
     invNorm(get("burnQuality") * 1000, 0, 200_000),   // 4: Burn (inverted)
     norm(get("ltvCac"), 0, 6),                        // 5: Efficiency (LTV/CAC)
-    invNorm(getRiskScore(er), 0, 100),                // 6: Risk (safety)
+    riskSafety,                                        // 6: Risk (safety)
   ].map(clamp01);
 }
 

@@ -6,6 +6,7 @@ import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { ScenarioId } from "./components/ScenarioSlidePanel";
 import KPIConsole from "./components/KPIConsole";
+import KPISparklineSection from "./components/KPISparklineSection";
 
 import CenterViewPanel from "@/components/center/CenterViewPanel";
 import CenterViewSegmented from "@/components/CenterViewSegmented";
@@ -36,6 +37,7 @@ import { useDebouncedValue, useThrottledValue } from "@/hooks/useDebouncedValue"
 import "@/styles/godmode-align-overrides.css";
 import "@/styles/godmode-unified-layout.css";
 import UnifiedHeader, { type ViewMode as HeaderViewMode } from '@/components/layout/UnifiedHeader';
+import { useUIStore } from "@/state/uiStore";
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -116,18 +118,19 @@ const SCENARIO_PRESETS: Record<ScenarioType, LeverState> = {
   },
 };
 
-// Map new scenario types to old scenario IDs
+// Map new scenario types to old scenario IDs (determines mountain color)
+// base = Teal (Baseline), upside = Green (Growth), downside = Amber (Caution), stress = Red (Risk)
 function mapScenarioTypeToId(type: ScenarioType): ScenarioId {
   switch (type) {
     case 'series-b-stress-test':
-      return 'upside';
+      return 'upside';      // Green - Aggressive growth
     case 'profitability-push':
-      return 'base';
+      return 'downside';    // Amber - Cautious/conservative path
     case 'apac-expansion':
-      return 'stress';
+      return 'stress';      // Red - High risk expansion
     case 'current-trajectory':
     default:
-      return 'base';
+      return 'base';        // Teal - Baseline trajectory
   }
 }
 
@@ -453,6 +456,23 @@ function isViable(kpis: { runway?: { value: number }; ltvCac?: { value: number }
 export type { SolverPathStep };
 
 // ============================================================================
+// ORBITAL KPI SECTION — Drops in from ceiling on first interaction
+// ============================================================================
+
+function OrbitalKPISection({ kpiAnimState }: { kpiAnimState: "visible" | "closing" | "hidden" }) {
+  const hasInteracted = useUIStore((s) => s.hasInteracted);
+  
+  return (
+    <div 
+      className={`kpi-section kpi-section--animated kpi-section--${kpiAnimState} ${hasInteracted ? 'orbital-active' : ''}`} 
+      data-tour="kpis"
+    >
+      <KPISparklineSection />
+    </div>
+  );
+}
+
+// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
@@ -505,6 +525,9 @@ export default function App() {
   // "visible" = fully open, "closing" = running close animation, "hidden" = fully closed
   const [kpiAnimState, setKpiAnimState] = useState<"visible" | "closing" | "hidden">("visible");
   const kpiAnimTimeoutRef = useRef<number | null>(null);
+  
+  // ORACLE PROTOCOL: focusedLever tracked in ControlDeck and AIIntelligenceEnhanced
+  // No dimming overlay - screen stays 100% lit at all times
   
   // Handle KPI garage door animation with GOD-MODE timing
   // Sequence: Click compare → 1s pause → 2.2s smooth close → content rises
@@ -576,6 +599,9 @@ export default function App() {
     // Map to old scenario ID for compatibility
     const mappedScenario = mapScenarioTypeToId(newType);
     setScenario(mappedScenario);
+    
+    // CRITICAL: Also update the global store so mountain changes color
+    useScenarioStore.getState().setScenario(mappedScenario);
     
     // Emit causal event for visual feedback
     emitCausal({
@@ -1181,6 +1207,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
 
       {/* OPTION 1: UNIFIED 3-COLUMN LAYOUT */}
       <div className={`main-content mode-${headerViewMode}`}>
+        
         {/* LEFT COLUMN: Scenario + Sliders */}
         <aside className="left-column">
           <div className="sf-leftStack">
@@ -1206,13 +1233,9 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
 
         {/* CENTER COLUMN: KPIs + Mountain OR Scenario Impact OR Variances */}
         <main className="center-column">
-          {/* KPI Console - Always rendered, GOD-MODE garage door animation */}
-          <div 
-            className={`kpi-section kpi-section--animated kpi-section--${kpiAnimState}`} 
-            data-tour="kpis"
-          >
-            <KPIConsole />
-          </div>
+          {/* KPI Sparklines - Orbital Drop: Hidden until first interaction */}
+          <OrbitalKPISection kpiAnimState={kpiAnimState} />
+          
           
           {/* View content based on header navigation */}
           <CenterViewPanel 

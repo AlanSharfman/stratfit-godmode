@@ -377,34 +377,41 @@ function MomentumInstrument({ value, state }: { value: number; state: "idle" | "
   const isUpTrend = points[points.length - 1].y < points[0].y;
   
   return (
-    <svg viewBox="0 0 100 32" className="instrument-svg" style={{ overflow: 'visible' }}>
+    <svg
+      viewBox="0 0 100 32"
+      className="instrument-svg h-16 z-20 relative"
+      style={{ overflow: 'visible' }}
+    >
       <GodModeGrid id={id} />
-      
       {/* Cyan sparkline */}
-      <path 
-        d={fullPath} 
-        fill="none" 
-        stroke="rgba(0,255,255,0.7)"
-        strokeWidth="1.5"
+      <path
+        d={fullPath}
+        fill="none"
+        stroke="#00D9FF"
+        strokeWidth={2}
         strokeLinecap="round"
         strokeLinejoin="round"
         filter={`url(#${id}-glow)`}
       />
-      
       {/* Cyan dot at end */}
-      <circle cx={lastPoint.x} cy={lastPoint.y} r="3" fill="rgba(0,255,255,0.9)" filter={`url(#${id}-glow)`}/>
-      
+      <circle
+        cx={lastPoint.x}
+        cy={lastPoint.y}
+        r="3"
+        fill="#00D9FF"
+        filter={`url(#${id}-glow)`}
+      />
       {/* Cyan arrow */}
       {isUpTrend ? (
-        <polygon 
+        <polygon
           points="88,10 96,16 88,22"
-          fill="rgba(0,255,255,0.8)"
+          fill="#00D9FF"
           filter={`url(#${id}-glow)`}
         />
       ) : (
-        <polygon 
+        <polygon
           points="88,22 96,16 88,10"
-          fill="rgba(0,255,255,0.8)"
+          fill="#00D9FF"
           filter={`url(#${id}-glow)`}
         />
       )}
@@ -670,7 +677,7 @@ const KPIInstrumentCard = memo(function KPIInstrumentCard({
           </div>
           
           {/* Visual widget */}
-          <div className="instrument-visual">
+          <div className="instrument-visual relative z-20 h-16 flex items-center justify-center">
             <InstrumentWidget 
               type={cfg.widgetType} 
               value={data?.value ?? 0} 

@@ -7,6 +7,7 @@ import Slider from "./ui/Slider";
 import SliderInfoTooltip from "./ui/SliderInfoTooltip";
 import { useShallow } from "zustand/react/shallow";
 import { useScenarioStore } from "@/state/scenarioStore";
+import { useUIStore } from "@/state/uiStore";
 import type { LeverId } from "@/logic/mountainPeakModel";
 import { emitCausal } from "@/ui/causalEvents";
 
@@ -87,25 +88,64 @@ const CornerBumper = memo(function CornerBumper({ position }: { position: 'tl' |
 interface SliderWellProps {
   slider: ControlSliderConfig;
   highlightColor: string | null;
-  onStart: () => void;
+  boxId: string;
+  onStart: (boxId: string) => void;
   onEnd: () => void;
   onChange: (v: number) => void;
+  onFocus: () => void;
+  onBlur: () => void;
+  isFocused: boolean;
 }
 
 const SliderWell = memo(function SliderWell({
   slider,
   highlightColor,
+  boxId,
   onStart,
   onEnd,
   onChange,
+  onFocus,
+  onBlur,
+  isFocused,
 }: SliderWellProps) {
   const [tooltipRect, setTooltipRect] = React.useState<DOMRect | null>(null);
+  const [inputValue, setInputValue] = React.useState(String(slider.value));
+  
+  // Sync input when slider value changes externally
+  React.useEffect(() => {
+    setInputValue(String(slider.value));
+  }, [slider.value]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+  };
+
+  const handleInputBlur = () => {
+    const numVal = parseFloat(inputValue);
+    if (!isNaN(numVal)) {
+      const clamped = Math.max(slider.min, Math.min(slider.max, numVal));
+      onChange(clamped);
+      setInputValue(String(clamped));
+    } else {
+      setInputValue(String(slider.value));
+    }
+  };
+
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      (e.target as HTMLInputElement).blur();
+    }
+  };
 
   return (
-    <div className="slider-well">
+    <div 
+      className={`slider-well ${isFocused ? 'slider-well-focused' : ''}`}
+      onPointerEnter={onFocus}
+      onPointerLeave={onBlur}
+    >
       <div className="slider-well-inner">
         <div className="slider-header">
-          <span className="slider-label">
+          <span className={`slider-label ${isFocused ? 'slider-label-focused' : ''}`}>
             {slider.label}
             {slider.tooltip && (
               <span
@@ -117,9 +157,6 @@ const SliderWell = memo(function SliderWell({
               </span>
             )}
           </span>
-          <span className="slider-value">
-            {slider.format ? slider.format(slider.value) : `${slider.value}%`}
-          </span>
         </div>
         
         {slider.tooltip && (
@@ -130,16 +167,34 @@ const SliderWell = memo(function SliderWell({
           </SliderInfoTooltip>
         )}
         
-        <Slider
-          value={slider.value}
-          min={slider.min}
-          max={slider.max}
-          step={slider.step}
-          highlightColor={highlightColor}
-          onStart={onStart}
-          onEnd={onEnd}
-          onChange={onChange}
-        />
+        {/* Slider + Digital Readout Row */}
+        <div className="slider-track-row">
+          <div className="slider-track-container">
+            <Slider
+              value={slider.value}
+              min={slider.min}
+              max={slider.max}
+              step={slider.step}
+              highlightColor={highlightColor}
+              onStart={() => onStart(boxId)}
+              onEnd={onEnd}
+              onChange={onChange}
+            />
+          </div>
+          {/* Tactical Precision: Editable Digital Readout */}
+          <div className="precision-readout">
+            <input
+              type="text"
+              className="precision-input"
+              value={inputValue}
+              onChange={handleInputChange}
+              onBlur={handleInputBlur}
+              onKeyDown={handleInputKeyDown}
+              onFocus={() => onStart(boxId)}
+            />
+            <span className="precision-unit">%</span>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -197,6 +252,14 @@ export function ControlDeck(props: {
       setActiveLever: s.setActiveLever,
     }))
   );
+  
+  // ORACLE PROTOCOL: Track focused lever for contextual intelligence
+  const { focusedLever, setFocusedLever } = useUIStore(
+    useShallow((s) => ({
+      focusedLever: s.focusedLever,
+      setFocusedLever: s.setFocusedLever,
+    }))
+  );
 
   const lastLeverUpdate = useRef<number>(0);
   const pendingLeverUpdate = useRef<{ id: LeverId; intensity: number } | null>(null);
@@ -248,7 +311,7 @@ export function ControlDeck(props: {
   );
 
   const handleSliderStart = useCallback(
-    (id: LeverId, value: number) => {
+    (id: LeverId, value: number, boxId: string) => {
       lastLeverIdRef.current = id;
       const intensity = computeIntensity01(id, value);
       if (leverReleaseTimeoutRef.current !== null) {
@@ -256,6 +319,13 @@ export function ControlDeck(props: {
         leverReleaseTimeoutRef.current = null;
       }
       setActiveLever(id, intensity);
+      
+      // HOLOGRAPHIC ACTIVATION: Project specific KPI card
+      // - growth → MOMENTUM card
+      // - efficiency → RESILIENCE card  
+      // - risk → QUALITY card
+      const group = boxId as 'growth' | 'efficiency' | 'risk';
+      useUIStore.getState().startSlider(group);
     },
     [computeIntensity01, setActiveLever]
   );
@@ -302,6 +372,10 @@ export function ControlDeck(props: {
       leverReleaseTimeoutRef.current = null;
     }, 50);
     onChange("__end__", 0);
+    
+    // HOLOGRAPHIC ACTIVATION: Start 10-second projection timer
+    // Panel stays lit for 10 seconds after release
+    useUIStore.getState().endSlider();
   }, [setActiveLever, onChange]);
 
   const handleSliderChange = useCallback(
@@ -335,9 +409,13 @@ export function ControlDeck(props: {
                 key={s.id}
                 slider={s}
                 highlightColor={getHighlightColor(s.id)}
-                onStart={() => handleSliderStart(s.id, s.value)}
+                boxId={box.id}
+                onStart={(boxId) => handleSliderStart(s.id, s.value, boxId)}
                 onEnd={handleSliderEnd}
                 onChange={(v) => handleSliderChange(s.id, v)}
+                onFocus={() => setFocusedLever(s.id as any)}
+                onBlur={() => setFocusedLever(null)}
+                isFocused={focusedLever === s.id}
               />
             ))}
           </SectionFrame>
@@ -529,6 +607,49 @@ export function ControlDeck(props: {
         }
 
         /* ═══════════════════════════════════════════════════════════════
+           ORACLE PROTOCOL — Focus State (Hover Intelligence)
+           ═══════════════════════════════════════════════════════════════ */
+        
+        .slider-well-focused {
+          background: linear-gradient(180deg,
+            rgba(34, 211, 238, 0.15) 0%,
+            rgba(34, 211, 238, 0.08) 50%,
+            rgba(34, 211, 238, 0.12) 100%
+          );
+          box-shadow:
+            0 0 15px rgba(34, 211, 238, 0.2),
+            0 0 30px rgba(34, 211, 238, 0.1),
+            inset 0 1px 0 rgba(34, 211, 238, 0.3);
+          animation: oracle-pulse 2s ease-in-out infinite;
+        }
+        
+        .slider-well-focused .slider-well-inner {
+          border: 1px solid rgba(34, 211, 238, 0.3);
+          box-shadow:
+            inset 0 2px 6px rgba(0, 0, 0, 0.6),
+            inset 0 0 20px rgba(34, 211, 238, 0.05);
+        }
+        
+        .slider-label-focused {
+          color: #ffffff !important;
+          text-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+        }
+        
+        .slider-value-focused {
+          color: #67e8f9 !important;
+          text-shadow: 0 0 12px rgba(34, 211, 238, 0.8);
+        }
+        
+        @keyframes oracle-pulse {
+          0%, 100% { 
+            box-shadow: 0 0 15px rgba(34, 211, 238, 0.2), 0 0 30px rgba(34, 211, 238, 0.1);
+          }
+          50% { 
+            box-shadow: 0 0 20px rgba(34, 211, 238, 0.35), 0 0 40px rgba(34, 211, 238, 0.2);
+          }
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
            SLIDER HEADER & LABELS
            ═══════════════════════════════════════════════════════════════ */
         
@@ -613,6 +734,73 @@ export function ControlDeck(props: {
           font-style: italic;
           padding-top: 5px;
           border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           SLIDER TRACK ROW — Slider + Precision Input
+           ═══════════════════════════════════════════════════════════════ */
+        
+        .slider-track-row {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .slider-track-container {
+          flex: 1;
+          min-width: 0;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           PRECISION INPUT — Tactical Digital Readout (Raw Data Style)
+           ═══════════════════════════════════════════════════════════════ */
+        
+        .precision-input {
+          width: 64px;
+          flex-shrink: 0;
+          padding: 4px 0;
+          background: transparent;
+          border: none;
+          border-bottom: 2px solid rgba(0, 217, 255, 0.5);
+          border-radius: 0;
+          color: #ffffff;
+          font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+          font-size: 18px;
+          font-weight: 700;
+          text-align: right;
+          outline: none;
+          transition: all 150ms ease;
+          text-shadow: 0 0 12px rgba(0, 217, 255, 0.4);
+        }
+
+        .precision-input:hover {
+          border-bottom-color: rgba(0, 217, 255, 0.7);
+          color: #00D9FF;
+        }
+
+        .precision-input:focus {
+          border-bottom-color: #00D9FF;
+          color: #00D9FF;
+          text-shadow: 0 0 16px rgba(0, 217, 255, 0.6);
+        }
+
+        .precision-input::selection {
+          background: rgba(0, 217, 255, 0.3);
+        }
+
+        /* Precision readout wrapper */
+        .precision-readout {
+          display: flex;
+          align-items: baseline;
+          gap: 2px;
+          flex-shrink: 0;
+        }
+
+        .precision-unit {
+          font-size: 12px;
+          font-weight: 600;
+          color: rgba(255, 255, 255, 0.35);
+          font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
         }
       `}</style>
     </div>

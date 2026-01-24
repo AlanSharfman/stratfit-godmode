@@ -8,11 +8,107 @@ import { useScenarioStore, ViewMode } from "@/state/scenarioStore";
 import type { ScenarioId } from "@/state/scenarioStore";
 import { LeverState } from "@/logic/calculateMetrics";
 import { buildScenarioDeltaLedger } from "@/logic/scenarioDeltaLedger";
-import { Activity, AlertTriangle, TrendingUp, Shield, Zap, Target } from "lucide-react";
+import { Activity, AlertTriangle, TrendingUp, Shield, Zap, Target, ArrowRight, AlertOctagon, Volume2, VolumeX } from "lucide-react";
 import styles from "./AIIntelligenceEnhanced.module.css";
 import { StrategicModules } from "./StrategicModules";
 import ScenarioIntegrityCheck from "./intelligence/ScenarioIntegrityCheck";
 import { useTypewriter } from "@/hooks/useTypewriter";
+import { useUIStore, LeverFocusId } from "@/state/uiStore";
+import { useVoiceInterface } from "@/hooks/useVoiceInterface";
+
+// ============================================================================
+// ORACLE PROTOCOL — Contextual Intelligence Mapping
+// ============================================================================
+
+interface OracleIntelligence {
+  title: string;
+  category: string;
+  impact: string;
+  warning: string;
+  primaryKpi: string;
+  secondaryKpi?: string;
+  tradeOff: string;
+}
+
+const ORACLE_CONTENT: Record<NonNullable<LeverFocusId>, OracleIntelligence> = {
+  // GROWTH LEVERS
+  revenueGrowth: {
+    title: "DEMAND VELOCITY",
+    category: "GROWTH",
+    impact: "Direct correlation to Top-Line ARR. This is your primary growth engine.",
+    warning: "High demand requires matching Ops capacity to prevent delivery failure and customer churn.",
+    primaryKpi: "ARR",
+    secondaryKpi: "MRR Growth",
+    tradeOff: "↑ Demand → ↑ Revenue → ↑ Hiring Pressure → ↓ Runway",
+  },
+  pricingAdjustment: {
+    title: "PRICING POWER",
+    category: "GROWTH",
+    impact: "Affects ACV (Annual Contract Value) and gross margins. High-leverage growth without hiring.",
+    warning: "Over-pricing in competitive markets risks pipeline velocity and deal closure rates.",
+    primaryKpi: "Gross Margin",
+    secondaryKpi: "ACV",
+    tradeOff: "↑ Price → ↑ Margin → ↓ Win Rate → ↓ Volume",
+  },
+  marketingSpend: {
+    title: "EXPANSION VELOCITY",
+    category: "GROWTH",
+    impact: "Drives pipeline generation and new logo acquisition. Critical for hypergrowth.",
+    warning: "CAC inflation risk. Ensure LTV/CAC ratio stays above 3:1 threshold.",
+    primaryKpi: "Pipeline Value",
+    secondaryKpi: "CAC Payback",
+    tradeOff: "↑ Marketing → ↑ Pipeline → ↑ Burn → ↓ Efficiency",
+  },
+  
+  // EFFICIENCY LEVERS
+  operatingExpenses: {
+    title: "COST DISCIPLINE",
+    category: "EFFICIENCY",
+    impact: "Direct control over burn rate. Extends runway without revenue dependency.",
+    warning: "Aggressive cuts can damage morale, product velocity, and competitive position.",
+    primaryKpi: "Burn Rate",
+    secondaryKpi: "Runway",
+    tradeOff: "↑ Cuts → ↑ Runway → ↓ Velocity → ↓ Morale",
+  },
+  headcount: {
+    title: "HEADCOUNT DEPLOYMENT",
+    category: "EFFICIENCY",
+    impact: "Increases product velocity and delivery capacity. Essential for scaling.",
+    warning: "Burn Rate Impact: CRITICAL. Each hire is a 12-month cash commitment. Monitor Runway closely.",
+    primaryKpi: "Burn Rate",
+    secondaryKpi: "Product Velocity",
+    tradeOff: "↑ Hiring → ↑ Capacity → ↑ Burn → ↓ Runway",
+  },
+  cashSensitivity: {
+    title: "OPERATING DRAG",
+    category: "EFFICIENCY",
+    impact: "Infrastructure, tooling, and overhead costs. Often hidden runway erosion.",
+    warning: "Legacy systems and technical debt compound here. Annual review recommended.",
+    primaryKpi: "OpEx Ratio",
+    secondaryKpi: "Burn Quality",
+    tradeOff: "↓ Drag → ↑ Efficiency → ↑ Investment Capacity",
+  },
+  
+  // RISK LEVERS  
+  churnSensitivity: {
+    title: "MARKET VOLATILITY",
+    category: "RISK",
+    impact: "Economic headwinds, competitive pressure, and customer churn risk.",
+    warning: "High volatility = unpredictable revenue. Affects valuation multiples severely.",
+    primaryKpi: "Churn Rate",
+    secondaryKpi: "NRR",
+    tradeOff: "↑ Volatility → ↓ Predictability → ↓ Valuation Multiple",
+  },
+  fundingInjection: {
+    title: "EXECUTION RISK",
+    category: "RISK",
+    impact: "Team capacity, delivery reliability, and operational excellence.",
+    warning: "High execution risk signals product-market fit concerns or team capability gaps.",
+    primaryKpi: "Quality Score",
+    secondaryKpi: "Delivery Rate",
+    tradeOff: "↑ Risk → ↓ Investor Confidence → ↓ Fundraising Terms",
+  },
+};
 
 // ============================================================================
 // TYPES
@@ -65,6 +161,121 @@ function TypewriterText({ text, speed = 15, className }: { text: string; speed?:
       {displayText}
       {isTyping && <span className={styles.cursor}>▌</span>}
     </span>
+  );
+}
+
+// ============================================================================
+// ORACLE OVERLAY — Contextual Intelligence Display
+// ============================================================================
+
+function OracleOverlay({ leverId }: { leverId: NonNullable<LeverFocusId> }) {
+  const intel = ORACLE_CONTENT[leverId];
+  const { displayText: titleText, isTyping: titleTyping } = useTypewriter({ 
+    text: intel.title, 
+    speed: 30, 
+    delay: 0 
+  });
+  const { displayText: impactText, isTyping: impactTyping } = useTypewriter({ 
+    text: intel.impact, 
+    speed: 15, 
+    delay: 150 
+  });
+  const { displayText: warningText } = useTypewriter({ 
+    text: intel.warning, 
+    speed: 12, 
+    delay: 400 
+  });
+  const { displayText: tradeOffText } = useTypewriter({ 
+    text: intel.tradeOff, 
+    speed: 20, 
+    delay: 700 
+  });
+
+  const categoryColor = 
+    intel.category === "GROWTH" ? "#22d3ee" :
+    intel.category === "EFFICIENCY" ? "#10b981" :
+    "#f59e0b";
+
+  return (
+    <div className={styles.oracleOverlay}>
+      {/* Terminal Header */}
+      <div className={styles.oracleHeader}>
+        {/* Radar Icon — Active Scanning */}
+        <div className={styles.radarIconSmall}>
+          <div className={styles.radarSweepFast} />
+          <div className={styles.radarDotSmall} />
+        </div>
+        <span className={styles.oracleLabel}>TARGET LOCK</span>
+        <span 
+          className={styles.oracleCategory}
+          style={{ color: categoryColor, borderColor: categoryColor }}
+        >
+          {intel.category}
+        </span>
+      </div>
+
+      {/* Title */}
+      <div className={styles.oracleTitle}>
+        <span className={styles.oracleTitleText}>
+          {titleText}
+          {titleTyping && <span className={styles.oracleCursor}>▌</span>}
+        </span>
+      </div>
+
+      {/* Primary KPI Badge */}
+      <div className={styles.oracleKpiBadges}>
+        <span className={styles.oracleKpiBadge}>
+          <Target size={10} />
+          {intel.primaryKpi}
+        </span>
+        {intel.secondaryKpi && (
+          <span className={styles.oracleKpiBadgeSecondary}>
+            {intel.secondaryKpi}
+          </span>
+        )}
+      </div>
+
+      {/* Impact Section */}
+      <div className={styles.oracleSection}>
+        <div className={styles.oracleSectionHeader}>
+          <ArrowRight size={12} />
+          <span>IMPACT</span>
+        </div>
+        <p className={styles.oracleSectionText}>
+          {impactText}
+          {impactTyping && <span className={styles.oracleCursor}>▌</span>}
+        </p>
+      </div>
+
+      {/* Warning Section */}
+      <div className={styles.oracleSectionWarning}>
+        <div className={styles.oracleSectionHeader}>
+          <AlertOctagon size={12} />
+          <span>WARNING</span>
+        </div>
+        <p className={styles.oracleSectionText}>
+          {warningText}
+        </p>
+      </div>
+
+      {/* Trade-off Chain */}
+      <div className={styles.oracleTradeOff}>
+        <div className={styles.oracleSectionHeader}>
+          <Zap size={12} />
+          <span>TRADE-OFF CHAIN</span>
+        </div>
+        <div className={styles.oracleTradeOffText}>
+          {tradeOffText}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className={styles.oracleFooter}>
+        <span className={styles.oracleHint}>
+          Release to dismiss • Drag to adjust
+        </span>
+      </div>
+    </div>
   );
 }
 
@@ -299,8 +510,17 @@ function SensitivityBar({ label, sensitivity, impact, value }: SensitivityBarPro
 }
 
 // ============================================================================
-// EXECUTIVE SUMMARY COMPONENT — With Typewriter Effect
+// EXECUTIVE SUMMARY COMPONENT — 5-Point Intelligence Feed
 // ============================================================================
+
+interface IntelligenceFeedItem {
+  label: string;
+  value: string;
+  status: string;
+  color: string;
+  bgColor: string;
+  detail: string;
+}
 
 function ExecutiveSummary({ 
   metrics, 
@@ -309,35 +529,147 @@ function ExecutiveSummary({
   metrics: { runway: number; runwayDelta: number; growth: number; growthDelta: number; risk: number; quality: number };
   onComplete?: () => void;
 }) {
-  const runwayBand = metrics.runway >= 18 ? "STRONG" : metrics.runway >= 12 ? "ADEQUATE" : "CONSTRAINED";
-  const growthSignal = metrics.growthDelta >= 5 ? "ACCELERATING" : metrics.growthDelta <= -5 ? "CONTRACTING" : "STABLE";
-  const riskPosture = metrics.risk >= 60 ? "ELEVATED" : metrics.risk >= 40 ? "MODERATE" : "CONTAINED";
+  // Build dynamic 5-row intelligence feed based on actual metrics
+  const INTELLIGENCE_FEED: IntelligenceFeedItem[] = useMemo(() => {
+    // 1. RUNWAY HORIZON
+    const runwayStatus = metrics.runway >= 24 ? "OPTIMAL" : metrics.runway >= 12 ? "STABLE" : "CRITICAL";
+    const runwayColor = metrics.runway >= 24 ? "text-emerald-400" : metrics.runway >= 12 ? "text-cyan-400" : "text-red-400";
+    const runwayBg = metrics.runway >= 24 ? "bg-emerald-400" : metrics.runway >= 12 ? "bg-cyan-400" : "bg-red-400";
+    
+    // 2. GROWTH VELOCITY
+    const growthStatus = metrics.growthDelta >= 5 ? "ACCELERATING" : metrics.growthDelta <= -5 ? "DECLINING" : "STABLE";
+    const growthColor = metrics.growthDelta >= 5 ? "text-emerald-400" : metrics.growthDelta <= -5 ? "text-amber-400" : "text-cyan-400";
+    const growthBg = metrics.growthDelta >= 5 ? "bg-emerald-400" : metrics.growthDelta <= -5 ? "bg-amber-400" : "bg-cyan-400";
+    
+    // 3. BURN EFFICIENCY
+    const burnMultiple = metrics.runway > 0 ? Math.round((metrics.growth / metrics.runway) * 10) / 10 : 0;
+    const burnStatus = burnMultiple <= 1 ? "EFFICIENT" : burnMultiple <= 2 ? "WARNING" : "CRITICAL";
+    const burnColor = burnMultiple <= 1 ? "text-emerald-400" : burnMultiple <= 2 ? "text-amber-400" : "text-red-400";
+    const burnBg = burnMultiple <= 1 ? "bg-emerald-400" : burnMultiple <= 2 ? "bg-amber-400" : "bg-red-400";
+    
+    // 4. MARKET EXPOSURE
+    const riskStatus = metrics.risk >= 60 ? "ELEVATED" : metrics.risk >= 40 ? "MODERATE" : "SECURE";
+    const riskColor = metrics.risk >= 60 ? "text-red-400" : metrics.risk >= 40 ? "text-amber-400" : "text-indigo-400";
+    const riskBg = metrics.risk >= 60 ? "bg-red-400" : metrics.risk >= 40 ? "bg-amber-400" : "bg-indigo-400";
+    
+    // 5. AI PREDICTION
+    const qualityScore = metrics.quality;
+    const predictionStatus = qualityScore >= 70 ? "SERIES B READY" : qualityScore >= 50 ? "GROWTH STAGE" : "SEED STAGE";
+    const predictionColor = qualityScore >= 70 ? "text-fuchsia-400" : qualityScore >= 50 ? "text-violet-400" : "text-slate-400";
+    const predictionBg = qualityScore >= 70 ? "bg-fuchsia-400" : qualityScore >= 50 ? "bg-violet-400" : "bg-slate-400";
 
-  // Build summary text for typewriter
-  const runwayDeltaText = metrics.runwayDelta !== 0 
-    ? ` (${metrics.runwayDelta > 0 ? "+" : ""}${Math.round(metrics.runwayDelta)} vs base)`
-    : "";
-  
-  const summaryText = `> RUNWAY: ${runwayBand} at ${Math.round(metrics.runway)} months${runwayDeltaText}
+    return [
+      {
+        label: "RUNWAY HORIZON",
+        value: `${Math.round(metrics.runway)} MONTHS`,
+        status: runwayStatus,
+        color: runwayColor,
+        bgColor: runwayBg,
+        detail: metrics.runway >= 24 
+          ? "Cash position allows for aggressive R&D cycles and strategic hiring."
+          : metrics.runway >= 12
+            ? "Adequate runway. Begin planning next round within 6 months."
+            : "Critical runway threshold. Immediate action required."
+      },
+      {
+        label: "GROWTH VELOCITY",
+        value: `${metrics.growthDelta >= 0 ? "+" : ""}${Math.round(metrics.growthDelta)}% MoM`,
+        status: growthStatus,
+        color: growthColor,
+        bgColor: growthBg,
+        detail: metrics.growthDelta >= 5
+          ? "Momentum accelerating. Validate ops capacity can sustain trajectory."
+          : metrics.growthDelta <= -5
+            ? "Deceleration detected. Analyze pipeline conversion and churn."
+            : "Stable momentum. Customer acquisition cost within targets."
+      },
+      {
+        label: "BURN EFFICIENCY",
+        value: `${burnMultiple}x MULTIPLE`,
+        status: burnStatus,
+        color: burnColor,
+        bgColor: burnBg,
+        detail: burnMultiple <= 1
+          ? "Burn rate is efficient. Unit economics are healthy."
+          : burnMultiple <= 2
+            ? "Burn rate elevated. Monitor mid-market segment economics."
+            : "Critical burn. Implement immediate cost discipline measures."
+      },
+      {
+        label: "MARKET EXPOSURE",
+        value: metrics.risk >= 60 ? "HIGH VOLATILITY" : metrics.risk >= 40 ? "MODERATE" : "LOW VOLATILITY",
+        status: riskStatus,
+        color: riskColor,
+        bgColor: riskBg,
+        detail: metrics.risk >= 60
+          ? "Elevated risk exposure. Hedge against macro-economic shocks."
+          : metrics.risk >= 40
+            ? "Moderate exposure. Maintain defensive positioning options."
+            : "Defensive positioning strong. Risk-adjusted returns favorable."
+      },
+      {
+        label: "AI PREDICTION",
+        value: predictionStatus,
+        status: "PROJECTED",
+        color: predictionColor,
+        bgColor: predictionBg,
+        detail: qualityScore >= 70
+          ? "Trajectory aligns with top-quartile venture benchmarks."
+          : qualityScore >= 50
+            ? "Growth stage metrics. Focus on efficiency to unlock next tier."
+            : "Early stage indicators. Prioritize product-market fit validation."
+      }
+    ];
+  }, [metrics]);
 
-> GROWTH: Momentum is ${growthSignal} with current lever configuration.
-
-> RISK: Exposure is ${riskPosture}${riskPosture !== "CONTAINED" ? " — warrants attention." : " under current assumptions."}`;
-
-  const { displayText, isTyping } = useTypewriter({ 
-    text: summaryText, 
-    speed: 12, 
-    delay: 200,
-    enabled: true, // Always enabled - starts first
-    onComplete 
-  });
+  // Trigger onComplete after initial render
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onComplete?.();
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [onComplete]);
 
   return (
-    <div className={styles.typewriterContainer}>
-      <span className={styles.typewriterOutput}>
-        {displayText}
-        {isTyping && <span className={styles.cursor}>▌</span>}
-      </span>
+    <div className="flex flex-col gap-2">
+      {INTELLIGENCE_FEED.map((item, index) => (
+        <div 
+          key={index} 
+          className="group flex flex-col p-3 rounded-lg border border-white/5 bg-slate-900/40 hover:bg-slate-800/60 transition-all duration-200 hover:border-white/10"
+          style={{ 
+            animationDelay: `${index * 100}ms`,
+            animation: 'fadeInUp 0.4s ease-out forwards',
+            opacity: 0,
+          }}
+        >
+          {/* HEADER ROW: LABEL + VALUE */}
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-2">
+              {/* Status Dot — Glowing */}
+              <div 
+                className={`w-1.5 h-1.5 rounded-full ${item.bgColor}`}
+                style={{ boxShadow: `0 0 8px currentColor` }}
+              />
+              <span className="text-[10px] font-mono text-slate-400 tracking-wider uppercase">
+                {item.label}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`text-[9px] font-mono text-slate-500 uppercase`}>
+                {item.status}
+              </span>
+              <span className={`text-xs font-bold font-mono ${item.color}`}>
+                {item.value}
+              </span>
+            </div>
+          </div>
+
+          {/* DETAIL ROW: The Insight */}
+          <div className="text-[11px] text-slate-300/80 leading-tight pl-3.5 border-l border-white/10">
+            {item.detail}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -541,6 +873,25 @@ export default function AIIntelligenceEnhanced({
   const viewMode = useScenarioStore((s) => s.viewMode);
   const engineResults = useScenarioStore((s) => s.engineResults);
   const activeScenarioId = useScenarioStore((s) => s.activeScenarioId);
+  
+  // ORACLE PROTOCOL: Track focused lever for contextual intelligence
+  const focusedLever = useUIStore((s) => s.focusedLever);
+  
+  // VOICE MODE: AI reads intelligence aloud
+  const isVoiceEnabled = useUIStore((s) => s.isVoiceEnabled);
+  const toggleVoice = useUIStore((s) => s.toggleVoice);
+  
+  // Prepare voice text from Oracle content
+  const voiceText = useMemo(() => {
+    if (!focusedLever) return null;
+    const data = ORACLE_CONTENT[focusedLever];
+    if (!data) return null;
+    // Construct a concise tactical readout
+    return `${data.title}. ${data.impact} Warning: ${data.warning}`;
+  }, [focusedLever]);
+  
+  // Activate voice interface
+  useVoiceInterface(voiceText);
 
   // Build ledger
   const ledger = useMemo(() => {
@@ -712,15 +1063,47 @@ export default function AIIntelligenceEnhanced({
   return (
     <div ref={panelRef} className={styles.aiPanel}>
       <div className={styles.aiPanelWell}>
-        {/* HEADER */}
+        
+        {/* ORACLE PROTOCOL — Shows when lever is focused */}
+        {focusedLever && (
+          <OracleOverlay leverId={focusedLever} />
+        )}
+        
+        {/* NORMAL CONTENT — Hidden when Oracle is active */}
+        <div className={focusedLever ? styles.contentHidden : ''}>
+        
+        {/* HEADER — ACTIVE NAVIGATION */}
       <div className={styles.header}>
         <div className={styles.headerTop}>
             <div className={styles.title}>
-              <Zap size={14} className={styles.titleIcon} />
-              SCENARIO INTELLIGENCE
+              {/* Radar Icon — Spinning Scanner */}
+              <div className={styles.radarIcon}>
+                <div className={styles.radarSweep} />
+                <div className={styles.radarDot} />
+              </div>
+              ACTIVE NAVIGATION
             </div>
-          <div className={`${styles.statusPill} ${status === "UPDATING" ? styles.updating : styles.stable}`}>
-            {status}
+          <div className={styles.headerControls}>
+            {/* VOICE MODE TOGGLE */}
+            <button 
+              onClick={toggleVoice}
+              className={`${styles.voiceToggle} ${isVoiceEnabled ? styles.voiceOn : styles.voiceOff}`}
+              title={isVoiceEnabled ? 'Voice Mode: ON' : 'Voice Mode: OFF'}
+            >
+              {isVoiceEnabled ? (
+                <Volume2 className="w-3 h-3" />
+              ) : (
+                <VolumeX className="w-3 h-3" />
+              )}
+              <span className={styles.voiceLabel}>
+                {isVoiceEnabled ? 'VOICE' : 'MUTED'}
+              </span>
+            </button>
+            
+            {/* STATUS PILL */}
+            <div className={`${styles.navStatusPill} ${focusedLever ? styles.maneuvering : styles.autopilot}`}>
+              {focusedLever ? 'MANEUVERING' : 'AUTOPILOT'}
+            </div>
           </div>
         </div>
       </div>
@@ -867,7 +1250,8 @@ export default function AIIntelligenceEnhanced({
           </>
         )}
             </div>
-                  </div>
+        </div> {/* End NORMAL CONTENT wrapper */}
+      </div>
     </div>
   );
 }

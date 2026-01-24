@@ -51,6 +51,9 @@ export function calculateMetrics(levers: LeverState, scenario: ScenarioId): Metr
   const riskIndex = Math.round((volatility * 30 + execRisk * 35 + funding * 25) * (2 - mult));
   const earningsPower = Math.round((demand * 25 + pricing * 30 + cost * 25) * mult);
   const enterpriseValue = Math.max(5, (demand * 40 + pricing * 30 + expansion * 20 - volatility * 15) * mult);
+  
+  // DEBUG: Log risk calculation
+  console.log("[METRICS] volatility:", volatility, "execRisk:", execRisk, "funding:", funding, "→ riskIndex:", riskIndex);
 
   return { runway, cashPosition, momentum, burnQuality, riskIndex, earningsPower, enterpriseValue };
 }

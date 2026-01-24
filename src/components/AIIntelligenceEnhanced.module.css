@@ -1,12 +1,11 @@
 /* ============================================================================
-   STRATFIT — GOD-MODE AI COCKPIT
-   "Stop writing reports. Start building a Cockpit."
-   Signal Widgets, Vitality Gauges, Mini-Risk Map
+   STRATFIT — GOD-MODE TELEMETRY PANEL
+   Dense data streams. No cards. Just signal.
    ============================================================================ */
 
 /* ═══════════════════════════════════════════════════════════════
-   PANEL CONTAINER — EXACT REPLICA OF KPI BEZEL
-   4-layer structure: chassis → rim → step → well
+   PANEL CONTAINER — FLAT SEAMLESS CHASSIS
+   No rounded corners, no bezels, no floating boxes
    ═══════════════════════════════════════════════════════════════ */
 
 .aiPanel {
@@ -15,54 +14,20 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  border-radius: 18px;
-  padding: 3px;
-  overflow: visible;
-  /* Charcoal background matching other compounds */
-  background: #1a1d21;
-  
-  /* No cyan - clean metallic bezel */
+  border-radius: 0;
+  padding: 0;
+  overflow: hidden;
+  background: transparent;
   border: none;
-  
-  /* No cyan glow - just black border */
-  box-shadow:
-    0 0 0 1px #000000,
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  box-shadow: none;
 }
 
 .aiPanel::before {
-  content: "";
-  position: absolute;
-  inset: 3px;
-  border-radius: 16px;
-  z-index: 0;
-  pointer-events: none;
-  /* Silver visible uniformly all around */
-  background: #7A858F;
-  border: 1px solid rgba(140, 180, 220, 0.22);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.6),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.3),
-    inset 1px 0 0 rgba(255, 255, 255, 0.2),
-    inset -1px 0 0 rgba(255, 255, 255, 0.2);
+  display: none;
 }
 
 .aiPanel::after {
-  content: "";
-  position: absolute;
-  inset: 8px;
-  border-radius: 13px;
-  z-index: 1;
-  pointer-events: none;
-  /* Dark steel visible uniformly all around */
-  background: #242A32;
-  border: none;
-  box-shadow:
-    0 0 0 4px rgba(0, 0, 0, 0.9),
-    inset 0 1px 0 rgba(255, 255, 255, 0.25),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.1),
-    inset 1px 0 0 rgba(255, 255, 255, 0.08),
-    inset -1px 0 0 rgba(255, 255, 255, 0.08);
+  display: none;
 }
 
 .aiPanelWell {
@@ -72,18 +37,16 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  /* Margin to ensure bezel visible all around - especially bottom */
-  margin: 16px;
-  margin-bottom: 18px; /* Extra bottom margin for bezel visibility */
-  border-radius: 10px;
+  margin: 0;
+  border-radius: 0;
   overflow: hidden;
-  background: #1a1d21;
+  background: transparent;
   border: none;
-  box-shadow: inset 0 10px 20px rgba(0,0,0,0.5);
+  box-shadow: none;
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   HEADER — Compact cockpit header
+   HEADER — Dense telemetry header
    ═══════════════════════════════════════════════════════════════ */
 
 .header {
@@ -91,11 +54,11 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  padding: 14px 18px 12px;
-  background: rgba(8, 12, 18, 0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(34, 211, 238, 0.15);
+  padding: 12px 16px 10px;
+  background: rgba(5, 9, 17, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .headerTop {
@@ -190,7 +153,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   CONTENT AREA
+   CONTENT AREA — Dense vertical data streams
    ═══════════════════════════════════════════════════════════════ */
 
 .content {
@@ -198,27 +161,27 @@
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 14px;
+  padding: 12px 16px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
 }
 
 .content::-webkit-scrollbar {
-  width: 5px;
+  width: 3px;
 }
 
 .content::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.02);
+  background: transparent;
 }
 
 .content::-webkit-scrollbar-thumb {
-  background: rgba(34, 211, 238, 0.25);
-  border-radius: 3px;
+  background: rgba(34, 211, 238, 0.2);
+  border-radius: 2px;
 }
 
 .content::-webkit-scrollbar-thumb:hover {
-  background: rgba(34, 211, 238, 0.4);
+  background: rgba(34, 211, 238, 0.35);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -250,31 +213,31 @@
    ═══════════════════════════════════════════════════════════════ */
 
 /* ═══════════════════════════════════════════════════════════════
-   EXECUTIVE SUMMARY — Professional briefing style
+   EXECUTIVE SUMMARY — Dense briefing style
    ═══════════════════════════════════════════════════════════════ */
 
 .executiveSection {
-  background: rgba(0, 0, 0, 0.25);
-  border-radius: 10px;
-  padding: 12px;
-  border: 1px solid rgba(34, 211, 238, 0.1);
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  border: none;
 }
 
 .executiveCard {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
-  padding: 14px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  padding: 10px 12px;
   border-left: 3px solid rgba(34, 211, 238, 0.4);
 }
 
 .executiveText {
-  font-size: 12px;
-  line-height: 1.7;
-  color: rgba(255, 255, 255, 0.85);
+  font-size: 11px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.75);
 }
 
 .executiveText p {
-  margin: 0 0 10px 0;
+  margin: 0 0 8px 0;
 }
 
 .executiveText p:last-child {
@@ -1043,3 +1006,404 @@
 /* Scroll hints */
 .scrollHint { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); padding: 6px 14px; background: rgba(8, 12, 18, 0.92); backdrop-filter: blur(20px); border: 1px solid rgba(34, 211, 238, 0.25); border-radius: 14px; font-size: 10px; font-weight: 600; color: rgba(255, 255, 255, 0.6); pointer-events: none; }
 .bottomFade { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: linear-gradient(to bottom, transparent 0%, rgba(8, 12, 18, 0.8) 60%, rgba(8, 12, 18, 0.95) 100%); pointer-events: none; }
+
+/* ═══════════════════════════════════════════════════════════════
+   ORACLE PROTOCOL — Contextual Intelligence Overlay
+   ═══════════════════════════════════════════════════════════════ */
+
+.contentHidden {
+  display: none;
+}
+
+.oracleOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: linear-gradient(180deg, 
+    rgba(8, 12, 18, 0.98) 0%, 
+    rgba(10, 15, 22, 0.96) 50%, 
+    rgba(8, 12, 18, 0.98) 100%
+  );
+  border-left: 2px solid rgba(34, 211, 238, 0.4);
+  animation: oracleSlideIn 0.3s ease-out;
+  overflow-y: auto;
+}
+
+@keyframes oracleSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.oracleHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(34, 211, 238, 0.15);
+}
+
+.oracleIcon {
+  color: #22d3ee;
+  animation: oraclePulse 2s ease-in-out infinite;
+}
+
+@keyframes oraclePulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+.oracleLabel {
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: rgba(34, 211, 238, 0.8);
+  text-transform: uppercase;
+}
+
+.oracleCategory {
+  margin-left: auto;
+  padding: 2px 8px;
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  border: 1px solid;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.oracleTitle {
+  padding: 12px 0;
+}
+
+.oracleTitleText {
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 0 20px rgba(34, 211, 238, 0.4);
+  letter-spacing: 0.05em;
+}
+
+.oracleCursor {
+  display: inline-block;
+  width: 3px;
+  height: 1em;
+  margin-left: 2px;
+  background: #22d3ee;
+  animation: blink 0.8s step-end infinite;
+  vertical-align: middle;
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.8);
+}
+
+.oracleKpiBadges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.oracleKpiBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: #22d3ee;
+  background: rgba(34, 211, 238, 0.1);
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+
+.oracleKpiBadgeSecondary {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+
+.oracleSection {
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  border: 1px solid rgba(34, 211, 238, 0.1);
+}
+
+.oracleSectionWarning {
+  padding: 10px 12px;
+  background: rgba(245, 158, 11, 0.08);
+  border-radius: 8px;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.oracleSectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+}
+
+.oracleSectionWarning .oracleSectionHeader {
+  color: #f59e0b;
+}
+
+.oracleSectionText {
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  font-size: 11px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0;
+}
+
+.oracleTradeOff {
+  padding: 10px 12px;
+  background: linear-gradient(90deg, 
+    rgba(34, 211, 238, 0.08) 0%, 
+    rgba(16, 185, 129, 0.08) 50%, 
+    rgba(245, 158, 11, 0.08) 100%
+  );
+  border-radius: 8px;
+  border: 1px solid rgba(34, 211, 238, 0.2);
+}
+
+.oracleTradeOffText {
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: #22d3ee;
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.3);
+  letter-spacing: 0.02em;
+}
+
+.oracleFooter {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.oracleHint {
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.05em;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ACTIVE NAVIGATION — Radar & Status Indicators
+   ═══════════════════════════════════════════════════════════════ */
+
+.radarIcon {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(34, 211, 238, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 4px;
+}
+
+.radarSweep {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border-top: 2px solid #22d3ee;
+  border-right: 2px solid transparent;
+  border-bottom: 2px solid transparent;
+  border-left: 2px solid transparent;
+  animation: radarSpin 2s linear infinite;
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.4);
+}
+
+@keyframes radarSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.radarDot {
+  width: 4px;
+  height: 4px;
+  background: #22d3ee;
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(34, 211, 238, 0.8);
+}
+
+.navStatusPill {
+  padding: 3px 10px;
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  border-radius: 6px;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+}
+
+.autopilot {
+  background: rgba(71, 85, 105, 0.3);
+  border: 1px solid rgba(100, 116, 139, 0.4);
+  color: #94a3b8;
+}
+
+.maneuvering {
+  background: rgba(34, 211, 238, 0.15);
+  border: 1px solid rgba(34, 211, 238, 0.5);
+  color: #67e8f9;
+  animation: maneuverPulse 1.5s ease-in-out infinite;
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.3);
+}
+
+@keyframes maneuverPulse {
+  0%, 100% { 
+    box-shadow: 0 0 12px rgba(34, 211, 238, 0.3);
+    border-color: rgba(34, 211, 238, 0.5);
+  }
+  50% { 
+    box-shadow: 0 0 20px rgba(34, 211, 238, 0.5);
+    border-color: rgba(34, 211, 238, 0.8);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HEADER CONTROLS — Voice Toggle + Status
+   ═══════════════════════════════════════════════════════════════ */
+
+.headerControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* VOICE MODE TOGGLE — The Audio Interface */
+.voiceToggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  border-radius: 6px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid;
+  background: transparent;
+}
+
+.voiceToggle:hover {
+  transform: scale(1.02);
+}
+
+.voiceToggle:active {
+  transform: scale(0.98);
+}
+
+.voiceLabel {
+  font-size: 8px;
+  letter-spacing: 0.1em;
+}
+
+/* Voice OFF State — Muted/Silent */
+.voiceOff {
+  background: rgba(71, 85, 105, 0.2);
+  border-color: rgba(71, 85, 105, 0.4);
+  color: #64748b;
+}
+
+.voiceOff:hover {
+  background: rgba(71, 85, 105, 0.3);
+  border-color: rgba(100, 116, 139, 0.5);
+  color: #94a3b8;
+}
+
+/* Voice ON State — Active/Speaking */
+.voiceOn {
+  background: rgba(34, 211, 238, 0.15);
+  border-color: rgba(34, 211, 238, 0.5);
+  color: #22d3ee;
+  box-shadow: 
+    0 0 15px rgba(34, 211, 238, 0.2),
+    inset 0 0 10px rgba(34, 211, 238, 0.1);
+  animation: voicePulse 2s ease-in-out infinite;
+}
+
+.voiceOn:hover {
+  background: rgba(34, 211, 238, 0.25);
+  border-color: rgba(34, 211, 238, 0.7);
+}
+
+@keyframes voicePulse {
+  0%, 100% { 
+    box-shadow: 
+      0 0 15px rgba(34, 211, 238, 0.2),
+      inset 0 0 10px rgba(34, 211, 238, 0.1);
+  }
+  50% { 
+    box-shadow: 
+      0 0 25px rgba(34, 211, 238, 0.4),
+      inset 0 0 15px rgba(34, 211, 238, 0.15);
+  }
+}
+
+/* Small Radar for Oracle Overlay */
+.radarIconSmall {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(34, 211, 238, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.radarSweepFast {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border-top: 2px solid #22d3ee;
+  border-right: 2px solid transparent;
+  border-bottom: 2px solid transparent;
+  border-left: 2px solid transparent;
+  animation: radarSpin 1s linear infinite;
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.6);
+}
+
+.radarDotSmall {
+  width: 3px;
+  height: 3px;
+  background: #22d3ee;
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(34, 211, 238, 1);
+}

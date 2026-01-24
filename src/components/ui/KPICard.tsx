@@ -3,6 +3,7 @@
 
 import React, { useEffect, useState } from "react";
 import { ViewMode } from "@/state/scenarioStore";
+import { useUIStore } from "@/state/uiStore";
 
 export interface KPICardProps {
   index: number;
@@ -521,6 +522,9 @@ export default function KPICard({
   isActive = false, isAnyActive = false, onSelect, viewMode, highlightColor = "#22d3ee"
 }: KPICardProps) {
   
+  // STEALTH PROTOCOL: Subscribe to dragging state
+  const isDragging = useUIStore((s) => s.isDragging);
+  
   const reduceMotion = isAnyActive && !isActive;
 
   const isCashCard = widgetType === "liquidityReservoir";
@@ -556,18 +560,31 @@ export default function KPICard({
     }
   };
 
+  // STEALTH PROTOCOL: Compute visual states
+  const stealthOpacity = isDragging ? 1 : 0.2;
+  const stealthScale = isDragging ? 1 : 0.95;
+  const stealthFilter = isDragging ? 'none' : 'grayscale(0.6)';
+  const stealthGlow = isDragging ? '0 0 20px rgba(0, 217, 255, 0.5), 0 0 40px rgba(0, 217, 255, 0.25)' : 'none';
+
   return (
     <div
-      className={`kpi-card ${isActive ? "active" : ""} ${isCashCard ? "hero" : ""} ${reduceMotion ? "inactive-dim" : ""}`}
+      className={`kpi-card ${isActive ? "active" : ""} ${isCashCard ? "hero" : ""} ${reduceMotion ? "inactive-dim" : ""} ${isDragging ? "stealth-ignited" : "stealth-ghosted"}`}
       onClick={() => onSelect?.(index)}
       style={{
         width: cardWidth,
         height: cardHeight,
-        transform: isActive ? 'translateY(-6px) scale(1.03)' : isAnyActive ? 'scale(0.98)' : 'none',
-        opacity: isAnyActive && !isActive ? 0.7 : 1,
+        transform: isActive 
+          ? 'translateY(-6px) scale(1.03)' 
+          : isAnyActive 
+            ? 'scale(0.98)' 
+            : `scale(${stealthScale})`,
+        opacity: isAnyActive && !isActive ? 0.7 : stealthOpacity,
+        filter: stealthFilter,
         zIndex: isActive ? 50 : 1,
         ['--accent-color' as string]: activeColor,
         ['--accent-glow' as string]: colors.glow,
+        boxShadow: isDragging ? stealthGlow : undefined,
+        transition: 'all 500ms ease-out',
       }}
     >
       {/* Metallic outer frame */}
@@ -836,6 +853,35 @@ export default function KPICard({
 
         .kpi-card.inactive-dim:hover {
           transform: scale(0.988);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           STEALTH PROTOCOL — Ghosted/Ignited States
+           ═══════════════════════════════════════════════════════════════ */
+        
+        .kpi-card.stealth-ghosted {
+          opacity: 0.2;
+          filter: grayscale(0.6);
+          transform: scale(0.95);
+          transition: all 500ms ease-out;
+        }
+
+        .kpi-card.stealth-ignited {
+          opacity: 1;
+          filter: none;
+          transform: scale(1);
+          box-shadow: 
+            0 0 20px rgba(0, 217, 255, 0.4),
+            0 0 40px rgba(0, 217, 255, 0.2);
+          transition: all 500ms ease-out;
+        }
+
+        .kpi-card.stealth-ignited .card-frame {
+          background: linear-gradient(155deg, 
+            rgba(0, 217, 255, 0.6) 0%, 
+            rgba(0, 217, 255, 0.2) 40%, 
+            rgba(0, 217, 255, 0.6) 100%
+          );
         }
 
         @media (prefers-reduced-motion: reduce) {

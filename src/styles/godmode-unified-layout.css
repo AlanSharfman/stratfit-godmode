@@ -1,30 +1,35 @@
 /* src/styles/godmode-unified-layout.css */
-/* STRATFIT GOD MODE — TRUE FRAMEWORK LAYOUT */
-/* The Rack System: Perfect height alignment across all panels */
+/* STRATFIT GOD MODE — UNIFIED COMMAND CHASSIS */
+/* No gaps. No floating boxes. One seamless console. */
 
 /* ============================================================================
-   RESET: Lock viewport - NO SCROLLING
+   ROOT: THE COMMAND CHASSIS
    ============================================================================ */
 
 html, body, #root {
   height: 100vh !important;
+  width: 100vw !important;
   max-height: 100vh !important;
+  max-width: 100vw !important;
   overflow: hidden !important;
   margin: 0 !important;
   padding: 0 !important;
+  background: #050911 !important;
 }
 
 .app,
 [class*="App"] {
   height: 100vh !important;
+  width: 100vw !important;
   max-height: 100vh !important;
   overflow: hidden !important;
   display: flex !important;
   flex-direction: column !important;
+  background: #050911 !important;
 }
 
 /* ============================================================================
-   HEADER — Fixed 56px (UnifiedHeader handles this)
+   HEADER — Command Bar (56px)
    ============================================================================ */
 
 .unified-header,
@@ -33,75 +38,91 @@ header.unified-header {
   height: 56px !important;
   min-height: 56px !important;
   max-height: 56px !important;
+  width: 100% !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: rgba(5, 9, 17, 0.95) !important;
+  backdrop-filter: blur(20px) !important;
+  /* Allow dropdown to overflow */
+  overflow: visible !important;
+  position: relative !important;
+  z-index: 1000 !important;
 }
 
-/* Hide old header */
+/* Ensure scenario dropdown can overflow header bounds */
+.unified-header .uh-scenario-container,
+.uh-scenario-container {
+  position: relative !important;
+  z-index: 1001 !important;
+}
+
+.unified-header .uh-scenario-dropdown,
+.uh-scenario-dropdown {
+  z-index: 9999 !important;
+}
+
 .header:not(.unified-header) {
   display: none !important;
 }
 
 /* ============================================================================
-   MAIN CONTENT — 3-Column Grid, ALL START AT TOP
+   MAIN CONTENT — 3-Column Chassis (No Gaps, No Padding)
    ============================================================================ */
 
 .main-content,
 [class*="main-content"],
 [class*="mainContent"] {
   flex: 1 !important;
-  display: grid !important;
-  /* RESTORE original widths */
-  grid-template-columns: 480px 1fr 540px !important;
-  grid-template-rows: 1fr !important;
-  gap: 16px !important;
-  padding: 16px !important;
+  display: flex !important;
+  flex-direction: row !important;
   height: calc(100vh - 56px) !important;
   max-height: calc(100vh - 56px) !important;
+  width: 100% !important;
   overflow: hidden !important;
-  background: transparent !important;
-  align-items: stretch !important;
+  background: #050911 !important;
+  /* NO GAP - seamless chassis */
+  gap: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
 /* ============================================================================
-   LEFT COLUMN — Control Panel with JEWEL BEZEL
+   LEFT DECK — PRECISION CONTROLS (420px)
    ============================================================================ */
 
 .left-column,
 [class*="left-column"],
 aside.left-column {
+  width: 420px !important;
+  min-width: 420px !important;
+  max-width: 420px !important;
+  height: 100% !important;
   display: flex !important;
   flex-direction: column !important;
-  height: 100% !important;
-  max-height: 100% !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
   
-  /* JEWEL BEZEL: Darker 70% opacity */
-  background: rgba(15, 23, 42, 0.7) !important;
+  /* Seamless border - no rounded corners */
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 0 !important;
   
-  /* Heavy frosted glass */
+  /* Subtle glass */
+  background: rgba(15, 23, 42, 0.4) !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
   
-  /* The "Jewel" Inner Glow */
-  box-shadow: 
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-    inset 0 0 0 1px rgba(0, 240, 255, 0.05),
-    0 25px 50px -12px rgba(0, 0, 0, 0.8) !important;
+  /* Remove shadows - we want flat chassis */
+  box-shadow: none !important;
+  border-top: none !important;
+  border-bottom: none !important;
+  border-left: none !important;
   
-  /* Machined border */
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
   
-  /* Tight precision curve */
-  border-radius: 10px !important;
-  padding: 0 !important;
-  
-  /* Subtle scrollbar */
   scrollbar-width: thin !important;
-  scrollbar-color: rgba(34, 211, 238, 0.2) transparent !important;
+  scrollbar-color: rgba(34, 211, 238, 0.15) transparent !important;
 }
 
 .left-column::-webkit-scrollbar {
-  width: 4px !important;
+  width: 3px !important;
 }
 
 .left-column::-webkit-scrollbar-track {
@@ -109,24 +130,23 @@ aside.left-column {
 }
 
 .left-column::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.08) !important;
+  background: rgba(34, 211, 238, 0.2) !important;
   border-radius: 2px !important;
 }
 
-/* Hide Active Situation - it's in header now */
+/* Hide legacy elements - Scenario selector is in the header menu */
 .scenario-area,
 [class*="scenario-area"],
 [class*="ActiveScenario"]:not(.unified-header *) {
   display: none !important;
 }
 
-/* Hide spacer */
 .sf-leftSpacer,
 [class*="sf-leftSpacer"] {
   display: none !important;
 }
 
-/* sf-leftStack - full height, no gaps */
+/* Left stack fills container */
 .sf-leftStack,
 [class*="sf-leftStack"] {
   display: flex !important;
@@ -136,552 +156,299 @@ aside.left-column {
   padding: 0 !important;
 }
 
-/* Sliders container - full height */
+
+/* Sliders container */
 .sliders-container,
 [class*="sliders-container"] {
   flex: 1 !important;
-  height: 100% !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
   border: none !important;
   box-shadow: none !important;
-  padding: 12px !important;
+  padding: 16px !important;
 }
 
 /* ============================================================================
-   CENTER COLUMN — GRID with explicit rows: KPIs (auto) + Mountain (1fr)
+   CENTER DECK — THE HUD & VIEWPORT
    ============================================================================ */
 
 .center-column,
 [class*="center-column"],
 main.center-column {
-  display: grid !important;
-  grid-template-rows: auto 1fr !important; /* KPIs auto, Mountain fills rest */
-  gap: 32px !important; /* gap-y-8 = 32px NO FLY ZONE */
+  flex: 1 !important;
   height: 100% !important;
-  max-height: 100% !important;
-  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  position: relative !important;
+  
+  /* The Void */
+  background: #000000 !important;
+  
+  /* No gaps, no padding */
+  gap: 0 !important;
   padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  
+  /* No borders or radius - seamless */
+  border: none !important;
+  border-radius: 0 !important;
 }
 
 /* ============================================================================
-   KPI SECTION — JEWEL BOX ROW (160px Fixed Height)
+   ZONE A: KPI JEWEL BOXES — Always Visible, Mag-Lev Reactive
    ============================================================================ */
 
 .kpi-section,
 [class*="kpi-section"],
 [data-tour="kpis"] {
-  /* KPI ROW: h-[160px] w-full grid grid-cols-3 gap-6 z-20 relative */
-  display: grid !important;
-  grid-template-columns: repeat(3, 1fr) !important;
-  gap: 24px !important; /* gap-6 */
+  /* Container for floating cards */
   width: 100% !important;
-  height: 160px !important;
-  min-height: 160px !important;
-  max-height: 160px !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  transform: none !important;
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+  
+  /* FLOATING above the mountain */
   position: relative !important;
   z-index: 20 !important;
-  overflow: visible !important; /* Don't clip shadows */
-}
-
-/* KPI Console - centered container */
-.kpi-command-console {
-  width: 100% !important;
-  max-width: 100% !important;
-  margin: 0 !important;
-  height: 100% !important;
-  padding: 0 !important;
-}
-
-.top-kpi-row {
-  display: flex !important;
-  justify-content: center !important;
-  width: 100% !important;
-  height: 100% !important;
-  left: 0 !important;
-}
-
-.console-container {
-  width: 100% !important;
-  max-width: 100% !important;
-  margin: 0 !important;
-  height: 100% !important;
-  padding: 0 !important;
-}
-
-/* KPI GROUPS — Spread horizontally across full width */
-.kpi-groups {
-  display: flex !important;
-  flex-direction: row !important;
-  justify-content: space-between !important;
-  align-items: stretch !important;
-  gap: 20px !important;
-  width: 100% !important;
-  height: 100% !important;
-}
-
-/* Remove separator lines */
-.kpi-groups > div + div::before {
-  display: none !important;
-}
-
-/* Each KPI group takes equal space */
-.sf-kpi--wide,
-.sf-kpi--narrow,
-.kpi-groups > div {
-  flex: 1 1 0 !important;
-  min-width: 0 !important;
-  height: 100% !important;
-}
-
-/* KPI Console wrapper - full width */
-.kpi-command-console {
-  width: 100% !important;
-  height: 100% !important;
-  padding: 0 !important;
-  margin: 0 !important;
-}
-
-.top-kpi-row {
-  display: flex !important;
-  width: 100% !important;
-  height: 100% !important;
-  left: 0 !important;
-  position: relative !important;
-}
-
-.console-container {
-  width: 100% !important;
-  height: 100% !important;
-  padding: 0 !important;
-  margin: 0 !important;
-}
-
-/* ============================================================================
-   KPI BEZEL WRAPPER — Reset the complex bezel structure
-   ============================================================================ */
-
-[data-kpi-group] > div {
-  height: 100% !important;
-}
-
-/* Reset the wrap height */
-[class*="KPIBezel"] [class*="wrap"],
-[class*="kpi-bezel"] [class*="wrap"] {
-  height: 100% !important;
-  min-height: 0 !important;
-  max-height: 100% !important;
-  margin: 0 !important;
-}
-
-/* KPI JEWEL BOX: Darker bg, thin metal border, inner glow */
-[class*="KPIBezel"] [class*="chassis"],
-[class*="kpi-bezel"] [class*="chassis"],
-[data-kpi-group] > div {
-  height: 100% !important;
-  padding: 0 !important;
   
-  /* MACHINED BEZEL: Tight corners */
-  border-radius: 8px !important; /* rounded-lg */
+  /* Padding and margin for breathing room */
+  padding: 16px 24px !important;
+  margin-bottom: 0 !important;
   
-  /* JEWEL BOX: bg-[#0F172A]/80 - Darker to make Cyan pop */
-  background: rgba(15, 23, 42, 0.8) !important;
-  
-  /* Thin metal border: border-white/15 */
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  
-  /* THE SECRET: Inner glow + depth shadow */
-  box-shadow: 
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-    inset 0 0 20px 0 rgba(0, 0, 0, 0.5),
-    0 20px 40px -10px rgba(0, 0, 0, 0.8) !important;
-  
-  overflow: visible !important;
-}
-
-[class*="KPIBezel"] [class*="rim"],
-[class*="kpi-bezel"] [class*="rim"] {
-  height: 100% !important;
-  padding: 0 !important;
+  /* Transparent background - cards float on void */
   background: transparent !important;
   border: none !important;
-  box-shadow: none !important;
-}
-
-[class*="KPIBezel"] [class*="step"],
-[class*="kpi-bezel"] [class*="step"] {
-  height: 100% !important;
-  padding: 0 !important;
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-
-[class*="KPIBezel"] [class*="well"],
-[class*="kpi-bezel"] [class*="well"] {
-  height: 100% !important;
-  padding: 12px 16px !important;
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  border-radius: 0 !important;
-}
-
-/* ============================================================================
-   KPI GROUP HEADER — Cyan accent title
-   ============================================================================ */
-
-[class*="KPIBezel"] [class*="header"],
-[class*="kpi-bezel"] [class*="header"] {
+  
+  display: block !important;
+  
+  /* ALWAYS VISIBLE - no hiding */
   height: auto !important;
-  min-height: 0 !important;
-  padding: 0 0 6px 0 !important;
-  margin-bottom: 6px !important;
-  background: transparent !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
-}
-
-[class*="KPIBezel"] [class*="title"],
-[class*="kpi-bezel"] [class*="title"] {
-  font-size: 11px !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.1em !important;
-  text-transform: uppercase !important;
-  color: #22d3ee !important; /* CYAN ACCENT */
-  text-shadow: 0 0 10px rgba(34, 211, 238, 0.3) !important;
-  padding: 0 !important;
+  min-height: auto !important;
+  max-height: none !important;
+  opacity: 1 !important;
+  overflow: visible !important;
   transform: none !important;
 }
 
-[class*="KPIBezel"] [class*="title"]::after,
-[class*="kpi-bezel"] [class*="title"]::after {
-  display: none !important;
-}
-
-[class*="KPIBezel"] [class*="divider"],
-[class*="kpi-bezel"] [class*="divider"] {
-  display: none !important;
-}
-
-/* ============================================================================
-   KPI GRID — Horizontal row of metrics
-   ============================================================================ */
-
-[class*="KPIBezel"] [class*="grid"],
-[class*="kpi-bezel"] [class*="grid"] {
-  display: flex !important;
-  flex-direction: row !important;
-  gap: 16px !important;
+/* KPI Sparkline Section - 3 card grid */
+.kpi-sparkline-section,
+[class*="kpi-sparkline-section"] {
+  width: 100% !important;
   padding: 0 !important;
-  flex: 1 !important;
-  align-items: stretch !important;
 }
 
-/* ============================================================================
-   KPI INSTRUMENT CARDS — COMPACT METRICS
-   ============================================================================ */
-
-.kpi-instrument {
-  position: relative !important;
-  flex: 1 !important;
-  min-width: 0 !important;
-  height: 100% !important;
-  min-height: 0 !important;
-  max-height: 100% !important;
-  overflow: visible !important;
+/* The monolith grid */
+.kpi-monolith-grid,
+.kpi-sparkline-section > .grid {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr auto !important;
+  gap: 20px !important;
+  width: 100% !important;
+  margin-bottom: 16px !important;
+  align-items: center !important;
 }
 
-.instrument-border {
-  height: 100% !important;
-  background: rgba(0, 0, 0, 0.2) !important;
-  border-radius: 6px !important; /* Tight corners */
-  padding: 8px !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
-}
-
-.instrument-well {
-  height: 100% !important;
-  background: transparent !important;
-  border: none !important;
-  border-radius: 0 !important;
-  padding: 0 !important;
-  min-height: 0 !important;
+/* Individual Monolith Card */
+.kpi-monolith-card {
+  height: 200px !important;
+  min-height: 200px !important;
+  
+  /* Glass floating box */
+  background: rgba(15, 23, 42, 0.80) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  
+  /* Rounded corners */
+  border-radius: 16px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  
+  /* Depth shadow */
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.6),
+    0 10px 20px -5px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+  
+  /* Internal layout */
+  padding: 24px !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 4px !important;
-  box-shadow: none !important;
+  justify-content: space-between !important;
+  
+  overflow: hidden !important;
+  position: relative !important;
 }
 
-/* ============================================================================
-   KPI TYPOGRAPHY — COMPACT DASHBOARD
-   ============================================================================ */
-
-.instrument-label-row {
-  height: auto !important;
-  min-height: 0 !important;
+/* Stealth mode - active glow */
+.kpi-monolith-card.is-active {
+  border-color: rgba(0, 217, 255, 0.3) !important;
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.6),
+    0 10px 20px -5px rgba(0, 0, 0, 0.4),
+    0 0 40px rgba(0, 217, 255, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
 }
 
-.instrument-label {
-  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace !important;
-  font-size: 9px !important;
-  font-weight: 600 !important;
+/* Card title */
+.kpi-monolith-title {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.08em !important;
-  color: rgba(255, 255, 255, 0.5) !important;
+  letter-spacing: 0.2em !important;
+  color: rgba(34, 211, 238, 0.6) !important;
+  margin-bottom: 8px !important;
+}
+
+.kpi-monolith-card.is-active .kpi-monolith-title {
+  color: rgba(34, 211, 238, 0.9) !important;
+}
+
+/* Card value */
+.kpi-monolith-value {
+  font-family: 'Inter', -apple-system, sans-serif !important;
+  font-size: 32px !important;
+  font-weight: 800 !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  letter-spacing: -0.02em !important;
   line-height: 1 !important;
 }
 
-.instrument-value-row {
-  display: flex !important;
-  align-items: baseline !important;
-  gap: 4px !important;
+.kpi-monolith-card.is-active .kpi-monolith-value {
+  color: #ffffff !important;
 }
 
-.value-display {
-  font-family: 'JetBrains Mono', 'SF Mono', monospace !important;
-  font-size: 18px !important;
-  font-weight: 700 !important;
-  color: rgba(255, 255, 255, 0.95) !important;
-  letter-spacing: -0.02em !important;
-  line-height: 1.1 !important;
+/* Card unit */
+.kpi-monolith-unit {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: rgba(148, 163, 184, 0.5) !important;
+  margin-left: 4px !important;
 }
 
-.value-unit {
-  font-size: 10px !important;
-  color: rgba(255, 255, 255, 0.35) !important;
-  margin-left: 2px !important;
-}
-
-.value-secondary {
-  font-size: 10px !important;
-  color: rgba(255, 255, 255, 0.4) !important;
-}
-
-/* ============================================================================
-   KPI WIDGETS/SPARKLINES — z-10 relative, h-12 w-full mt-auto
-   ============================================================================ */
-
-.instrument-visual {
-  /* WIDGET LAYER: z-10 relative */
-  position: relative !important;
-  z-index: 10 !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  
-  /* h-12 w-full mt-auto */
-  height: 48px !important;
-  min-height: 48px !important;
-  max-height: 48px !important;
+/* Widget container - bottom of card */
+.kpi-monolith-widget {
+  height: 60px !important;
   width: 100% !important;
   margin-top: auto !important;
-  
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  
-  background: transparent !important;
-  border: none !important;
-  padding: 4px !important;
-  overflow: visible !important;
-}
-
-.instrument-visual > * {
   position: relative !important;
-  z-index: 10 !important;
-  opacity: 1 !important;
-  visibility: visible !important;
 }
 
-.instrument-svg,
-.instrument-visual svg {
-  width: 100% !important;
-  height: 40px !important;
-  min-height: 40px !important;
-  max-height: 40px !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  position: relative !important;
-  z-index: 10 !important;
-  /* Cyan glow */
-  filter: drop-shadow(0 0 4px rgba(0, 217, 255, 0.6)) !important;
-}
-
-/* FORCE CYAN #00D9FF and WHITE #FFFFFF */
-.instrument-visual svg path,
-.instrument-visual svg line,
-.instrument-visual svg polyline {
-  stroke: #00D9FF !important;
-  stroke-width: 2px !important;
-}
-
-.instrument-visual svg rect {
-  fill: rgba(0, 217, 255, 0.4) !important;
-}
-
-.instrument-visual svg circle {
-  fill: #00D9FF !important;
-  stroke: #FFFFFF !important;
-}
-
-/* Canvas (Chart.js) */
-.instrument-visual canvas {
-  position: relative !important;
-  z-index: 10 !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  height: 40px !important;
-  width: 100% !important;
-}
-
-/* Active state */
-.kpi-instrument.active .instrument-label {
-  color: #22d3ee !important;
-}
-
-.kpi-instrument.active .value-display {
-  color: #22d3ee !important;
-  text-shadow: 0 0 10px rgba(34, 211, 238, 0.4) !important;
-}
-
-/* Hover state */
-.kpi-instrument:hover {
-  transform: none !important;
-}
-
-.kpi-instrument:hover .value-display {
-  color: rgba(255, 255, 255, 1) !important;
-}
-
-/* Glow layer - minimal */
-.instrument-glow {
-  display: none !important;
-}
-
-/* Focus ring - subtle */
-.focus-ring {
+/* Legacy KPI groups - hide */
+.kpi-groups,
+[data-kpi-group],
+.sf-kpi--wide,
+.sf-kpi--narrow,
+[class*="KPIBezel"],
+[data-kpi-group] > div {
   display: none !important;
 }
 
 /* ============================================================================
-   MOUNTAIN COMPOUND — Fills remaining center space
+   ZONE B: THE MOUNTAIN — THE VOID (Orbital Drop Compatible)
    ============================================================================ */
 
 [class*="sfCenterRoot"],
 [class*="CenterViewPanel"] {
-  /* MOUNTAIN COMPOUND: max-height 500px, min-height 400px */
-  width: 100% !important;
-  min-height: 400px !important;
-  max-height: 500px !important;
-  height: 100% !important;
-  display: flex !important;
-  flex-direction: column !important;
-  
-  /* MACHINED BEZEL: Thin metal, not plastic */
-  background: #000 !important;
-  border-radius: 8px !important; /* rounded-lg */
-  border: 1px solid rgba(255, 255, 255, 0.15) !important; /* border-white/15 */
-  
-  /* Inner glow + depth shadow */
-  box-shadow: 
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-    inset 0 0 20px 0 rgba(0, 0, 0, 0.5),
-    0 20px 40px -10px rgba(0, 0, 0, 0.8) !important;
-  
-  overflow: hidden !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-/* MOUNTAIN CANVAS: Full size within 500px container */
-[class*="sfMountainStage"],
-[class*="MountainCanvas"],
-[class*="mountainCanvas"],
-[class*="mountainWrapper"],
-[class*="MountainWrapper"] {
-  width: 100% !important;
-  height: 100% !important;
   flex: 1 !important;
   min-height: 0 !important;
-  overflow: hidden !important;
-  transform: none !important;
+  width: 100% !important;
+  position: relative !important;
+  
+  /* The Void - deep radial gradient */
+  background: radial-gradient(circle at 50% 60%, #111827 0%, #000000 100%) !important;
+  
+  /* No borders, no radius */
+  border: none !important;
+  border-radius: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
+  
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  z-index: 10 !important;
+  
+  /* ORBITAL DROP: Mountain fills everything by default */
+  height: 100% !important;
+  
+  /* Hydraulic transition when KPIs compress the space */
+  transition: height 1000ms cubic-bezier(0.25, 0.8, 0.25, 1) !important;
 }
 
-/* Mountain internal elements - no extra shadows */
-[class*="sfMountainStage"] *,
-[class*="MountainCanvas"] * {
-  box-shadow: none !important;
+/* Vignette overlay */
+[class*="sfCenterRoot"]::before,
+[class*="CenterViewPanel"]::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  pointer-events: none !important;
+  box-shadow: inset 0 0 150px rgba(0, 0, 0, 0.9) !important;
+  z-index: 5 !important;
 }
 
+/* Mountain stage */
 [class*="sfMountainStage"] {
   flex: 1 !important;
   min-height: 0 !important;
-  border-radius: 12px !important;
+  width: 100% !important;
+  height: 100% !important;
 }
 
-/* Hide ViewModeSelector inside mountain - tabs are in header */
+/* Hide view selector */
 [class*="sfViewSelectorInner"],
 [class*="ViewModeSelector"]:not(.unified-header *) {
   display: none !important;
 }
 
 /* ============================================================================
-   RIGHT COLUMN — Scenario Intelligence with THICK JEWEL BEZEL
+   RIGHT DECK — AI INTELLIGENCE (400px) — "Machined Glass" Style
    ============================================================================ */
 
 .right-column,
 [class*="right-column"],
 aside.right-column,
 [data-tour="intel"] {
+  width: 440px !important;
+  min-width: 440px !important;
+  max-width: 440px !important;
+  height: 100% !important;
   display: flex !important;
   flex-direction: column !important;
-  height: calc(100% - 12px) !important; /* Account for top margin */
-  max-height: calc(100% - 12px) !important;
+  position: relative !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;  /* ALIGN TO TOP */
+  padding: 0 !important;
+  margin: 0 !important;
+  
+  /* No border on the column itself - the bezel inside handles it */
+  border-left: none !important;
+  border-radius: 0 !important;
+  
+  /* Deep background */
+  background: #050911 !important;
+  
+  /* Subtle inner shadow */
+  box-shadow: 
+    inset 10px 0 30px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+  
+  border-top: none !important;
+  border-bottom: none !important;
+  border-right: none !important;
+  
   overflow-y: auto !important;
   overflow-x: hidden !important;
-  
-  /* JEWEL BEZEL: Darker 70% opacity */
-  background: rgba(15, 23, 42, 0.7) !important;
-  
-  /* Heavy frosted glass */
-  backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
-  
-  /* THICK BEZEL: Enhanced inner glow and shadows */
-  box-shadow: 
-    inset 0 2px 0 0 rgba(255, 255, 255, 0.12),
-    inset 0 0 0 2px rgba(0, 240, 255, 0.08),
-    inset 0 -1px 0 0 rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(255, 255, 255, 0.08),
-    0 30px 60px -15px rgba(0, 0, 0, 0.85) !important;
-  
-  /* THICKER Machined border */
-  border: 2px solid rgba(255, 255, 255, 0.12) !important;
-  
-  /* Precision curve */
-  border-radius: 12px !important;
   padding: 0 !important;
   
-  /* MOVE DOWN 3mm (~11px) */
-  margin-top: 11px !important;
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-  margin-bottom: 0 !important;
-  align-self: flex-start !important;
-  
-  /* Subtle scrollbar */
   scrollbar-width: thin !important;
-  scrollbar-color: rgba(34, 211, 238, 0.2) transparent !important;
+  scrollbar-color: rgba(34, 211, 238, 0.15) transparent !important;
 }
+
+/* Corner Bolts moved to AI Intelligence panel bezel */
 
 .right-column::-webkit-scrollbar,
 [data-tour="intel"]::-webkit-scrollbar {
-  width: 4px !important;
+  width: 3px !important;
 }
 
 .right-column::-webkit-scrollbar-track,
@@ -691,73 +458,255 @@ aside.right-column,
 
 .right-column::-webkit-scrollbar-thumb,
 [data-tour="intel"]::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.08) !important;
+  background: rgba(34, 211, 238, 0.2) !important;
   border-radius: 2px !important;
 }
 
-/* AI Intelligence Component fills the right column */
+/* AI Intelligence - THE SILVER JEWEL BEZEL */
 [class*="AIIntelligence"],
 [class*="ScenarioIntelligence"],
 [class*="aiIntelligence"] {
   flex: 1 !important;
-  height: 100% !important;
+  height: calc(100% - 24px) !important;
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
+  padding: 0 !important;
+  margin: 12px !important;
+  margin-top: 12px !important;
+  
+  /* === THE SILVER JEWEL STEPPED BEZEL === */
+  position: relative !important;
+  border-radius: 12px !important;
+  
+  /* Layer 1: Deep Glass Base */
+  background: #0b1221 !important;
+  
+  /* Layer 2: Silver Stepped Rim — The "Jewel" Effect */
+  border: none !important;
+  outline: 3px solid rgba(148, 163, 184, 0.25) !important;  /* Silver outer step */
+  outline-offset: 3px !important;
+  
+  box-shadow:
+    /* === OUTER STEPPED BEZEL === */
+    /* Step 1: Silver rim glow */
+    0 0 0 1px rgba(203, 213, 225, 0.15),
+    /* Step 2: Dark inset for depth */
+    0 0 0 4px rgba(15, 23, 42, 0.9),
+    /* Step 3: Silver accent ring */
+    0 0 0 5px rgba(148, 163, 184, 0.2),
+    /* Step 4: Final dark frame */
+    0 0 0 8px rgba(2, 6, 23, 0.8),
+    
+    /* === INNER MACHINED EDGE === */
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.6),
+    inset 1px 0 0 rgba(255, 255, 255, 0.05),
+    inset -1px 0 0 rgba(255, 255, 255, 0.05),
+    
+    /* === DEPTH SHADOW === */
+    0 20px 60px -15px rgba(0, 0, 0, 0.9),
+    0 8px 24px -8px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Inner content padding */
+[class*="AIIntelligence"] > *,
+[class*="ScenarioIntelligence"] > *,
+[class*="aiIntelligence"] > * {
+  padding: 16px !important;
+}
+
+/* === SILVER CORNER RIVETS === */
+[class*="AIIntelligence"]::before,
+[class*="ScenarioIntelligence"]::before {
+  content: "" !important;
+  position: absolute !important;
+  top: 8px !important;
+  left: 8px !important;
+  width: 5px !important;
+  height: 5px !important;
+  background: linear-gradient(135deg, #94a3b8 0%, #475569 100%) !important;
+  border-radius: 50% !important;
+  box-shadow: 
+    /* Other 3 corners */
+    calc(100% - 21px) 0 0 0 #64748b,
+    0 calc(100% - 21px) 0 0 #64748b,
+    calc(100% - 21px) calc(100% - 21px) 0 0 #64748b,
+    /* Inner shadow on each rivet */
+    inset 0 1px 2px rgba(255, 255, 255, 0.3),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.5) !important;
+  z-index: 50 !important;
+  pointer-events: none !important;
+}
+
+/* === THE "WET GLASS" TOP HIGHLIGHT === */
+[class*="AIIntelligence"]::after,
+[class*="ScenarioIntelligence"]::after {
+  content: "" !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 1px !important;
+  background: linear-gradient(90deg, 
+    transparent 5%, 
+    rgba(203, 213, 225, 0.5) 20%,
+    rgba(255, 255, 255, 0.7) 50%,
+    rgba(203, 213, 225, 0.5) 80%,
+    transparent 95%
+  ) !important;
+  border-radius: 12px 12px 0 0 !important;
+  pointer-events: none !important;
+}
+
+/* === INNER GLASS REFLECTION === */
+[class*="AIIntelligence"] > *:first-child::before,
+[class*="ScenarioIntelligence"] > *:first-child::before {
+  content: "" !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 60px !important;
+  background: linear-gradient(180deg, 
+    rgba(255, 255, 255, 0.04) 0%,
+    transparent 100%
+  ) !important;
+  pointer-events: none !important;
+  border-radius: 12px 12px 0 0 !important;
 }
 
 /* ============================================================================
-   RESPONSIVE
+   TELEMETRY STYLING — Dense Data Streams
    ============================================================================ */
 
+/* Signal flags - pill style */
+[class*="AIIntelligence"] [class*="signal"],
+[class*="AIIntelligence"] [class*="insight"],
+[class*="executiveText"],
+[class*="commentaryText"] {
+  font-size: 11px !important;
+  line-height: 1.4 !important;
+  padding: 8px 12px !important;
+  margin: 4px 0 !important;
+  border-radius: 4px !important;
+  border-left: 3px solid rgba(34, 211, 238, 0.5) !important;
+  background: rgba(34, 211, 238, 0.05) !important;
+}
+
+/* Status pills */
+[class*="signalPositive"],
+[class*="insight"][data-status="positive"] {
+  border-left-color: #10b981 !important;
+  background: rgba(16, 185, 129, 0.08) !important;
+}
+
+[class*="signalWarning"],
+[class*="insight"][data-status="warning"] {
+  border-left-color: #f59e0b !important;
+  background: rgba(245, 158, 11, 0.08) !important;
+}
+
+[class*="signalCritical"],
+[class*="insight"][data-status="critical"] {
+  border-left-color: #ef4444 !important;
+  background: rgba(239, 68, 68, 0.08) !important;
+}
+
+/* ============================================================================
+   RESPONSIVE — Maintain Chassis Proportions
+   ============================================================================ */
+
+@media (max-width: 1800px) {
+  .right-column,
+  [class*="right-column"],
+  aside.right-column,
+  [data-tour="intel"] {
+    width: 400px !important;
+    min-width: 400px !important;
+    max-width: 400px !important;
+  }
+}
+
 @media (max-width: 1600px) {
-  .main-content,
-  [class*="main-content"] {
-    grid-template-columns: 460px 1fr 520px !important;
-    gap: 14px !important;
-    padding: 14px !important;
+  .left-column,
+  [class*="left-column"],
+  aside.left-column {
+    width: 380px !important;
+    min-width: 380px !important;
+    max-width: 380px !important;
+  }
+  
+  .right-column,
+  [class*="right-column"],
+  aside.right-column,
+  [data-tour="intel"] {
+    width: 340px !important;
+    min-width: 340px !important;
+    max-width: 340px !important;
   }
 }
 
 @media (max-width: 1400px) {
-  .main-content,
-  [class*="main-content"] {
-    grid-template-columns: 420px 1fr 480px !important;
-    gap: 12px !important;
-    padding: 12px !important;
+  .left-column,
+  [class*="left-column"],
+  aside.left-column {
+    width: 340px !important;
+    min-width: 340px !important;
+    max-width: 340px !important;
+  }
+  
+  .right-column,
+  [class*="right-column"],
+  aside.right-column,
+  [data-tour="intel"] {
+    width: 300px !important;
+    min-width: 300px !important;
+    max-width: 300px !important;
   }
 }
 
 @media (max-width: 1200px) {
-  .main-content,
-  [class*="main-content"] {
-    grid-template-columns: 380px 1fr 440px !important;
-    gap: 10px !important;
-    padding: 10px !important;
+  .left-column,
+  [class*="left-column"],
+  aside.left-column {
+    width: 300px !important;
+    min-width: 300px !important;
+    max-width: 300px !important;
+  }
+  
+  .right-column,
+  [class*="right-column"],
+  aside.right-column,
+  [data-tour="intel"] {
+    width: 260px !important;
+    min-width: 260px !important;
+    max-width: 260px !important;
+  }
+  
+  .kpi-section,
+  [class*="kpi-section"],
+  [data-tour="kpis"] {
+    height: 110px !important;
+    min-height: 110px !important;
+    max-height: 110px !important;
   }
 }
 
 /* ============================================================================
-   CLEANUP
+   CLEANUP — Remove Legacy Padding
    ============================================================================ */
 
-/* Remove any mode-specific classes that might interfere */
-.mode-terrain,
-.mode-impact,
-.mode-compare,
-.mode-simulate {
-  /* Don't change grid layout based on mode */
-}
-
-/* Ensure CommandDeckBezel doesn't add extra padding */
 [class*="CommandDeckBezel"],
 [class*="commandDeckBezel"] {
   padding: 0 !important;
   margin: 0 !important;
   height: 100% !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
 }
 
-/* Fix any nested scrolling issues */
 [class*="CommandDeckBezel"] > div,
 [class*="commandDeckBezel"] > div {
   height: 100% !important;
@@ -765,23 +714,129 @@ aside.right-column,
 }
 
 /* ============================================================================
-   GOD MODE TYPOGRAPHY — Section Headers
+   LIVING DATA ANIMATIONS — The Machine Breathes
    ============================================================================ */
 
-/* All section headers: GROWTH, RESILIENCE, MOMENTUM, etc. */
-[class*="bezel-title"],
-[class*="group-title"],
-[class*="section-title"],
-[class*="panel-header"] h2,
-[class*="panel-header"] h3,
-.slider-section-header,
-[data-kpi-group] [class*="title"],
-.kpi-bezel-title {
-  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace !important;
-  font-size: 10px !important;
-  font-weight: 600 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.25em !important;
-  color: rgba(34, 211, 238, 0.8) !important;
+/* SCANLINE SHIMMER — Constant monitoring effect */
+@keyframes shimmer {
+  0% { 
+    transform: translateY(-150%); 
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% { 
+    transform: translateY(250%); 
+    opacity: 0;
+  }
 }
 
+/* PULSE GLOW — Breathing neon effect */
+@keyframes pulseGlow {
+  0%, 100% { 
+    opacity: 0.6;
+    filter: brightness(1);
+  }
+  50% { 
+    opacity: 1;
+    filter: brightness(1.3);
+  }
+}
+
+/* REACTOR SPIN — Slow idle monitoring */
+@keyframes reactorSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* EQUALIZER WAVE — Sonar ripple effect */
+@keyframes equalizerWave {
+  0%, 100% { 
+    transform: scaleY(0.4);
+  }
+  50% { 
+    transform: scaleY(1);
+  }
+}
+
+/* STROBE — Fast active flash */
+@keyframes strobe {
+  0%, 100% { 
+    opacity: 0.8;
+    background-color: rgba(34, 211, 238, 0.8);
+  }
+  50% { 
+    opacity: 1;
+    background-color: rgba(255, 255, 255, 0.9);
+  }
+}
+
+/* FADE IN UP — Staggered list animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* PULSE DOT — Glowing status indicator */
+@keyframes pulseDot {
+  0%, 100% {
+    box-shadow: 0 0 4px currentColor;
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 12px currentColor;
+    transform: scale(1.2);
+  }
+}
+
+/* KPI MODULE PULSE — Idle heartbeat (slow) */
+@keyframes kpiPulse {
+  0%, 100% {
+    box-shadow: 
+      0 10px 40px -10px rgba(0,0,0,0.7), 
+      0 4px 12px -4px rgba(0,0,0,0.5),
+      inset 0 0 0 1px rgba(34, 211, 238, 0);
+  }
+  50% {
+    box-shadow: 
+      0 10px 40px -10px rgba(0,0,0,0.7), 
+      0 4px 12px -4px rgba(0,0,0,0.5),
+      inset 0 0 0 1px rgba(34, 211, 238, 0.15);
+  }
+}
+
+/* KPI MODULE PULSE ACTIVE — Fast heartbeat */
+@keyframes kpiPulseActive {
+  0%, 100% {
+    box-shadow: 
+      0 0 30px -5px rgba(0, 217, 255, 0.3),
+      0 20px 50px -10px rgba(0,0,0,0.8);
+  }
+  50% {
+    box-shadow: 
+      0 0 50px -5px rgba(0, 217, 255, 0.5),
+      0 20px 50px -10px rgba(0,0,0,0.8);
+  }
+}
+
+/* BEZEL PULSE — Outer rim breathing */
+@keyframes bezelPulse {
+  0%, 100% {
+    opacity: 0.4;
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+  50% {
+    opacity: 0.7;
+    border-color: rgba(34, 211, 238, 0.15);
+  }
+}
