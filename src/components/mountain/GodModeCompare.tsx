@@ -454,12 +454,12 @@ function createMassifGeometry(): THREE.PlaneGeometry {
       secondaryHeight += gaussianPeak(x, y, peak.cx, peak.cy, peak.height, peak.power, peak.spread);
     }
     
-    // RIDGE SHARPENING: abs(simplex.noise2D) for sharp geological ridges
-    const ridgeNoise = Math.abs(simplex.noise2D(x * 0.8, y * 0.8)) * 0.8;
-    // Deep valleys with additional noise layer
-    const valleyNoise = Math.abs(simplex.noise2D(x * 1.5, y * 1.5)) * 0.4;
+    // RIDGE SHARPENING: abs(simplex.noise2D(x * 0.6, y * 0.6)) creates sharp "Teeth"
+    const ridgeNoise = Math.abs(simplex.noise2D(x * 0.6, y * 0.6)) * 1.0;
+    // Valley carving for depth
+    const valleyNoise = Math.abs(simplex.noise2D(x * 1.2, y * 1.2)) * 0.5;
     // Micro detail for surface texture
-    const microDetail = simplex.noise2D(x * 3.0, y * 3.0) * 0.1;
+    const microDetail = simplex.noise2D(x * 2.5, y * 2.5) * 0.15;
     
     // Combine: Primary radial peak + secondary peaks + ridge detail
     const totalHeight = radialPeak + secondaryHeight + ridgeNoise + valleyNoise + microDetail;
@@ -927,6 +927,53 @@ function UnifiedDestinyField({ scenarioA, scenarioB, hoverData }: UnifiedFieldPr
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// GHOST RANGE — Distant faint wireframe mountains for market scale context
+// Provides visual depth and represents the broader market landscape
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function GhostRange() {
+  const geometry = useMemo(() => {
+    const geo = new THREE.PlaneGeometry(30, 20, 64, 64);
+    const pos = geo.attributes.position;
+    
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i);
+      const y = pos.getY(i);
+      
+      // Distant mountain range silhouette
+      const dist = Math.sqrt(x * x + y * y);
+      const mask = Math.pow(Math.max(0, 1 - dist / 14), 1.5);
+      
+      // Multiple peaks for range effect
+      const peak1 = Math.exp(-((x + 8) ** 2 + (y - 3) ** 2) / 20) * 3;
+      const peak2 = Math.exp(-((x - 10) ** 2 + (y + 2) ** 2) / 25) * 2.5;
+      const peak3 = Math.exp(-((x - 2) ** 2 + (y - 6) ** 2) / 15) * 2;
+      const noise = Math.sin(x * 0.5) * Math.cos(y * 0.5) * 0.5;
+      
+      const height = (peak1 + peak2 + peak3 + noise) * mask;
+      pos.setZ(i, height);
+    }
+    
+    geo.computeVertexNormals();
+    return geo;
+  }, []);
+
+  return (
+    <group position={[0, -8, -15]} rotation={[-Math.PI / 3, 0, 0]}>
+      <mesh geometry={geometry}>
+        <meshBasicMaterial
+          wireframe
+          color="#4a5568"
+          transparent
+          opacity={0.06}
+          toneMapped={false}
+        />
+      </mesh>
+    </group>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // TITANIUM COMMAND BRIDGE — Split bezel header with wet glass highlights
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -1266,24 +1313,27 @@ export default function GodModeCompare() {
       >
         <Canvas
           camera={{ 
-            position: [0, 8, 16], // FIXED OPTIMAL VIEW: Centered, elevated
-            fov: 40 
+            position: [8, 6, 12], // EXECUTIVE PERSPECTIVE: Looking at the Summit
+            fov: 42 
           }}
           gl={{ 
             antialias: true, 
             alpha: true, 
             powerPreference: 'high-performance',
             toneMapping: THREE.ACESFilmicToneMapping,
-            toneMappingExposure: 1.6,
+            toneMappingExposure: 1.5,
           }}
           dpr={[1, 2]}
         >
           <Suspense fallback={null}>
             <color attach="background" args={['#030508']} />
-            <fog attach="fog" args={['#030508', 25, 60]} />
+            <fog attach="fog" args={['#030508', 20, 50]} />
             
             {/* ENVIRONMENT: City preset for high-contrast glass reflections */}
             <Environment preset="city" />
+
+            {/* GHOST RANGE — Distant faint wireframe mountains for market scale context */}
+            <GhostRange />
 
             {/* UNIFIED DESTINY FIELD - Crystal Massif */}
             <UnifiedDestinyField 
@@ -1292,14 +1342,14 @@ export default function GodModeCompare() {
               hoverData={hoverData}
             />
             
-            {/* FIXED VIEW — No rotation at all, zoom only */}
+            {/* FIXED VIEW — No rotation, zoom only */}
             <OrbitControls
-              target={[0, 0, 0]}
+              target={[0, 1, 0]}
               enableZoom={true}
               enablePan={false}
               enableRotate={false}
               zoomSpeed={0.5}
-              minDistance={12}
+              minDistance={10}
               maxDistance={25}
               enableDamping={true}
               dampingFactor={0.1}
