@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import type { CenterViewId } from "@/types/view";
 import ScenarioMountain from "@/components/mountain/ScenarioMountain";
-import GodModePhotorealistic from "@/components/mountain/GodModePhotorealistic";
+import GodModeCompare from "@/components/mountain/GodModeCompare";
 
 // Tab Components
 import { RiskTab } from "@/components/Risk";
@@ -94,10 +94,10 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
           </div>
         )}
 
-        {/* COMPARE - Cinema-Grade God Mode: Photorealistic backplate + data overlay */}
+        {/* COMPARE - God Mode: Unified Destiny Field with Titanium Command Bridge */}
         {view === "compare" && (
           <div className="h-full w-full overflow-hidden rounded-3xl border border-slate-700/40 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
-            <GodModePhotorealistic />
+            <GodModeCompare />
           </div>
         )}
 
