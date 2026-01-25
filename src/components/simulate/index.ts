@@ -1,7 +1,7 @@
 // src/components/simulate/index.ts
 // STRATFIT — Simulation Module Exports
 
-export { default as SimulateOverlay } from './SimulateOverlay';
+export { default as SimulateOverlay } from './SimulateOverlayWired';
 export { default as SimulateHeader } from './SimulateHeader';
 export { default as VerdictPanel } from './VerdictPanel';
 export { default as ProbabilityDistribution } from './ProbabilityDistribution';
