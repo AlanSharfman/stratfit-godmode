@@ -4,7 +4,7 @@
 
 import React, { useMemo, useRef, useState, Suspense, useCallback } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { MeshTransmissionMaterial, Environment, Float } from '@react-three/drei';
+import { MeshTransmissionMaterial, Environment, Float, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { useSimulationStore } from '@/state/simulationStore';
 import { useSavedSimulationsStore } from '@/state/savedSimulationsStore';
@@ -777,13 +777,30 @@ export default function GodModeCompare() {
             <directionalLight position={[10, 20, 10]} intensity={1.0} color="#ffffff" />
             <spotLight position={[0, 20, 5]} intensity={1.5} angle={0.5} penumbra={0.5} color="#ffffff" />
 
-            <Float speed={0.3} rotationIntensity={0.05} floatIntensity={0.1}>
+            <Float speed={0.3} rotationIntensity={0.02} floatIntensity={0.05}>
               <UnifiedDestinyField 
                 scenarioA={scenarioA} 
                 scenarioB={scenarioB} 
                 laserX={hoverData?.normalizedX ?? null}
               />
             </Float>
+            
+            {/* ORBIT CONTROLS - Drag to rotate the mountain 360° */}
+            <OrbitControls
+              enableZoom={true}
+              enablePan={false}
+              enableRotate={true}
+              rotateSpeed={0.8}
+              zoomSpeed={0.5}
+              minDistance={10}
+              maxDistance={35}
+              minPolarAngle={Math.PI / 6}      // Don't go below horizon
+              maxPolarAngle={Math.PI / 2.2}    // Don't flip upside down
+              minAzimuthAngle={-Math.PI / 2}   // 90° left
+              maxAzimuthAngle={Math.PI / 2}    // 90° right
+              autoRotate={false}
+              makeDefault
+            />
           </Suspense>
         </Canvas>
       </div>
