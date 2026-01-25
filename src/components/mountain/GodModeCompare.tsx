@@ -174,36 +174,47 @@ function ProbabilityFan({ color, score, isBaseline }: ProbabilityFanProps) {
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SURFACE HEIGHT SAMPLER - Gets exact Z height from mountain geometry
+// This is THE FIX that makes lava "undulate" over ridges and valleys
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function getMountainHeightAt(x: number, y: number, geometry: THREE.PlaneGeometry): number {
+function getMountainHeight(x: number, y: number, geometry: THREE.PlaneGeometry): number {
   const pos = geometry.attributes.position;
-  const width = 16; // Must match geometry width
-  const height = 14; // Must match geometry height
-  const segmentsX = 128; // Must match geometry segments
-  const segmentsY = 128;
+  const width = 16; // Geometry width
+  const height = 14; // Geometry height
+  const segmentsX = 128; // Geometry X segments
+  const segmentsY = 128; // Geometry Y segments
   
-  // Convert world XY to geometry grid indices
-  const gridX = ((x + width / 2) / width) * segmentsX;
-  const gridY = ((y + height / 2) / height) * segmentsY;
+  // Convert world XY coordinates to geometry grid indices
+  const normalizedX = (x + width / 2) / width; // 0-1 range
+  const normalizedY = (y + height / 2) / height; // 0-1 range
   
-  // Clamp to valid range
-  const ix = Math.max(0, Math.min(segmentsX, Math.floor(gridX)));
-  const iy = Math.max(0, Math.min(segmentsY, Math.floor(gridY)));
+  // Get grid position with bilinear interpolation for smooth sampling
+  const gx = normalizedX * segmentsX;
+  const gy = normalizedY * segmentsY;
   
-  // Get vertex index (row-major order)
-  const idx = iy * (segmentsX + 1) + ix;
+  // Integer indices for the 4 surrounding vertices
+  const ix0 = Math.max(0, Math.min(segmentsX - 1, Math.floor(gx)));
+  const iy0 = Math.max(0, Math.min(segmentsY - 1, Math.floor(gy)));
+  const ix1 = Math.min(segmentsX, ix0 + 1);
+  const iy1 = Math.min(segmentsY, iy0 + 1);
   
-  // Return Z height at this vertex (with bounds check)
-  if (idx >= 0 && idx < pos.count) {
-    return pos.getZ(idx);
-  }
+  // Fractional parts for interpolation
+  const fx = gx - ix0;
+  const fy = gy - iy0;
   
-  // Fallback: calculate height mathematically
-  const maxDist = 8.0;
-  const dist = Math.sqrt(x * x + y * y);
-  const normalized = Math.max(0, 1.0 - dist / maxDist);
-  return Math.pow(normalized, 1.8) * 6.0;
+  // Get Z heights at 4 corners (row-major vertex indexing)
+  const stride = segmentsX + 1;
+  const z00 = pos.getZ(iy0 * stride + ix0);
+  const z10 = pos.getZ(iy0 * stride + ix1);
+  const z01 = pos.getZ(iy1 * stride + ix0);
+  const z11 = pos.getZ(iy1 * stride + ix1);
+  
+  // Bilinear interpolation for smooth height
+  const z0 = z00 * (1 - fx) + z10 * fx;
+  const z1 = z01 * (1 - fx) + z11 * fx;
+  const z = z0 * (1 - fy) + z1 * fy;
+  
+  return z;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -223,53 +234,37 @@ function LavaPath({ color, score, isBaseline, otherScore, geometry }: LavaPathPr
   const tubeRef = useRef<THREE.Mesh>(null);
   const pipRefs = useRef<THREE.Mesh[]>([]);
   
-  const scoreDiff = score - otherScore;
-  const divergenceFactor = scoreDiff / 100;
+  const side = isBaseline ? -1 : 1;
+  // STRATEGIC DRIFT: The worse the score, the further from optimal center path
+  const driftIntensity = (100 - score) * 0.04 * side;
   
   // SURFACE-AWARE FLOW: Sample 100 points along mountain surface
   const curve = useMemo(() => {
-    const points: THREE.Vector3[] = [];
-    const side = isBaseline ? -1 : 1;
-    const drift = (100 - score) * 0.03 * side; // Score affects lateral drift
+    const curvePoints: THREE.Vector3[] = [];
     
     for (let i = 0; i <= 100; i++) {
       const t = i / 100;
       
-      // CONVERGENCE → DIVERGENCE path
-      const convergenceT = Math.min(t / 0.15, 1);
-      const divergenceT = Math.max(0, (t - 0.15) / 0.85);
+      // 1. Calculate the XY trajectory down the slab
+      // Both paths START at peak [0, 0] then diverge
+      const x = t * 5.5 * side + driftIntensity * Math.sin(t * Math.PI);
+      const y = (1 - t) * 5.5; // Flow from peak (y=5.5) toward base (y=0)
       
-      // X: Start at center, diverge outward based on score
-      const baseX = side * divergenceT * 4.0;
-      const driftX = drift * Math.sin(t * Math.PI * 1.5); // Sinuous drift
-      const scoreShift = divergenceFactor * divergenceT * 2.0;
-      const x = baseX + driftX - scoreShift;
+      // 2. THE FIX: Sample the mountain's actual height at this coordinate
+      const z = getMountainHeight(x, y, geometry);
       
-      // Y: Flow from peak (0) toward base (7)
-      const y = -1 + t * 8;
+      // 3. NORMAL OFFSET: Sit 0.06 units above surface for photorealism
+      const surfaceOffset = 0.06;
       
-      // Z: SAMPLE ACTUAL MOUNTAIN HEIGHT at this XY position
-      const surfaceZ = getMountainHeightAt(x, y, geometry);
-      
-      // Add ridge-following variation (undulation)
-      const ridgeWobble = noise2D(x * 0.5, y * 0.5) * 0.15;
-      
-      // Score bonus: higher score = elevated path
-      const elevationBonus = (score / 100) * divergenceT * 0.8;
-      
-      // SURFACE OFFSET: Sit 0.12 units above mesh (prevents z-fighting)
-      const surfaceOffset = 0.12;
-      
-      const z = surfaceZ + ridgeWobble + elevationBonus + surfaceOffset;
-      
-      points.push(new THREE.Vector3(x, y, z));
+      curvePoints.push(new THREE.Vector3(x, y, z + surfaceOffset));
     }
     
-    return new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.5);
-  }, [score, otherScore, isBaseline, divergenceFactor, geometry]);
+    return new THREE.CatmullRomCurve3(curvePoints, false, 'catmullrom', 0.5);
+  }, [score, driftIntensity, side, geometry]);
   
+  // 3D Tube with high emissive intensity
   const tubeGeometry = useMemo(() => {
-    return new THREE.TubeGeometry(curve, 100, 0.06, 8, false);
+    return new THREE.TubeGeometry(curve, 100, 0.04, 8, false);
   }, [curve]);
 
   // Animate the path glow and kinetic pips
@@ -295,30 +290,18 @@ function LavaPath({ color, score, isBaseline, otherScore, geometry }: LavaPathPr
 
   return (
     <group>
-      {/* OUTER ATMOSPHERIC GLOW - Wide soft bloom */}
-      <mesh geometry={new THREE.TubeGeometry(curve, 100, 0.2, 8, false)}>
+      {/* OUTER BLOOM - Soft atmospheric glow */}
+      <mesh geometry={new THREE.TubeGeometry(curve, 100, 0.15, 8, false)}>
         <meshBasicMaterial
           color={color}
           transparent
-          opacity={0.1}
+          opacity={0.12}
           toneMapped={false}
           depthWrite={false}
         />
       </mesh>
       
-      {/* MID GLOW LAYER */}
-      <mesh geometry={new THREE.TubeGeometry(curve, 100, 0.12, 8, false)}>
-        <meshStandardMaterial
-          color={color}
-          emissive={color}
-          emissiveIntensity={2}
-          transparent
-          opacity={0.4}
-          toneMapped={false}
-        />
-      </mesh>
-      
-      {/* MAIN LAVA TUBE - Bright emissive core */}
+      {/* MAIN LAVA TUBE - High-velocity neon glow (emissiveIntensity: 5) */}
       <mesh ref={tubeRef} geometry={tubeGeometry}>
         <meshStandardMaterial
           color={color}
@@ -328,31 +311,31 @@ function LavaPath({ color, score, isBaseline, otherScore, geometry }: LavaPathPr
         />
       </mesh>
       
-      {/* WHITE HOT CENTER - The "lava" core */}
-      <mesh geometry={new THREE.TubeGeometry(curve, 100, 0.02, 8, false)}>
+      {/* WHITE HOT CORE - Plasma conduit center */}
+      <mesh geometry={new THREE.TubeGeometry(curve, 100, 0.015, 8, false)}>
         <meshBasicMaterial
           color="#ffffff"
           toneMapped={false}
         />
       </mesh>
       
-      {/* KINETIC DATA PIPS - Flow particles */}
+      {/* KINETIC DATA PIPS - Velocity particles */}
       {pips.map((_, i) => (
         <mesh 
           key={i} 
           ref={(el) => { if (el) pipRefs.current[i] = el; }}
         >
-          <sphereGeometry args={[0.1, 12, 12]} />
+          <sphereGeometry args={[0.08, 12, 12]} />
           <meshStandardMaterial
             color="#ffffff"
             emissive={color}
-            emissiveIntensity={6}
+            emissiveIntensity={5}
             toneMapped={false}
           />
         </mesh>
       ))}
       
-      {/* PROBABILITY FAN - Monte Carlo uncertainty at endpoint */}
+      {/* PROBABILITY FAN - Monte Carlo uncertainty spread */}
       <ProbabilityFan color={color} score={score} isBaseline={isBaseline} />
     </group>
   );
@@ -441,9 +424,9 @@ function UnifiedDestinyField({ scenarioA, scenarioB, laserX }: UnifiedFieldProps
         />
       </mesh>
 
-      {/* CONVERGENCE POINT - "YOU ARE HERE" - Where both strategies begin
-          Positioned at peak summit (sampling actual geometry height) */}
-      <group position={[0, -1, getMountainHeightAt(0, -1, geometry) + 0.3]}>
+      {/* CONVERGENCE POINT - "YOU ARE HERE" - Summit where both paths begin
+          Both paths start at peak [0, 5.5] which is maximum potential */}
+      <group position={[0, 5.5, getMountainHeight(0, 5.5, geometry) + 0.2]}>
         {/* Core sphere */}
         <mesh>
           <sphereGeometry args={[0.25, 32, 32]} />
