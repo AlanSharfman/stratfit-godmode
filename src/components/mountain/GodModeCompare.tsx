@@ -4,10 +4,82 @@
 
 import React, { useMemo, useRef, useState, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { MeshTransmissionMaterial, Environment, Float, Html } from '@react-three/drei';
+import { MeshTransmissionMaterial, Environment, Float } from '@react-three/drei';
 import * as THREE from 'three';
 import { useSimulationStore } from '@/state/simulationStore';
 import { useSavedSimulationsStore } from '@/state/savedSimulationsStore';
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STRATEGIC AUTOPILOT ENGINE
+// Interprets the "Lava Rivers" to provide executive verdict
+// ═══════════════════════════════════════════════════════════════════════════════
+
+interface ScenarioData {
+  arr: number;
+  survival: number;
+  runway: number;
+  score: number;
+}
+
+interface StrategicVerdict {
+  verdict: string;
+  color: string;
+  analysis: string;
+  recommendation: string;
+}
+
+const getStrategicVerdict = (scenarioA: ScenarioData, scenarioB: ScenarioData): StrategicVerdict => {
+  const arrDelta = ((scenarioB.arr - scenarioA.arr) / scenarioA.arr) * 100;
+  const survivalDelta = scenarioB.survival - scenarioA.survival;
+
+  // HIGH-STAKES AGGRESSION: Growth at the cost of safety
+  if (arrDelta > 30 && survivalDelta < -20) {
+    return {
+      verdict: "HIGH-STAKES AGGRESSION",
+      color: "#ef4444",
+      analysis: `Scenario B accelerates ARR by ${arrDelta.toFixed(0)}%, but creates a 'Survival Gap' of ${Math.abs(survivalDelta).toFixed(0)} points.`,
+      recommendation: "Stagger hiring intensity to recover 12 months of runway."
+    };
+  }
+
+  // OPTIMAL ASCENT: The "Genius" trajectory
+  if (arrDelta > 5 && survivalDelta >= 0) {
+    return {
+      verdict: "OPTIMAL ASCENT",
+      color: "#10b981",
+      analysis: "You have found a growth vector that increases revenue without compromising stability.",
+      recommendation: "Lock this as your new Baseline Trajectory."
+    };
+  }
+
+  // DEFENSIVE RETREAT: Trading growth for safety
+  if (arrDelta < -10 && survivalDelta > 15) {
+    return {
+      verdict: "DEFENSIVE RETREAT",
+      color: "#3b82f6",
+      analysis: `Trading ${Math.abs(arrDelta).toFixed(0)}% ARR for ${survivalDelta.toFixed(0)} points of survival.`,
+      recommendation: "Acceptable for bridge periods. Set a 6-month review trigger."
+    };
+  }
+
+  // CRITICAL DIVERGENCE: Both declining
+  if (arrDelta < -5 && survivalDelta < -10) {
+    return {
+      verdict: "CRITICAL DIVERGENCE",
+      color: "#dc2626",
+      analysis: "Both growth and stability are declining. This trajectory leads to accelerated runway depletion.",
+      recommendation: "Revert to Baseline immediately. Review Cost Discipline and Market Volatility levers."
+    };
+  }
+
+  // MARGINAL VARIANCE: No significant change
+  return {
+    verdict: "MARGINAL VARIANCE",
+    color: "#fbbf24",
+    analysis: "Strategic divergence is minimal. Current lever shifts do not significantly alter outcomes.",
+    recommendation: "Explore more aggressive Pricing Power or Demand Strength."
+  };
+};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // LAVA PATH - Internal Emissive Flow
@@ -20,16 +92,9 @@ interface LavaPathProps {
 }
 
 function LavaPath({ color, score, direction }: LavaPathProps) {
-  const ref = useRef<THREE.Mesh>(null);
+  const tubeRef = useRef<THREE.Mesh>(null);
+  const pipRefs = useRef<THREE.Mesh[]>([]);
   const drift = (100 - score) / 100;
-  
-  // Animate the path flow
-  useFrame((state) => {
-    if (ref.current) {
-      const material = ref.current.material as THREE.MeshStandardMaterial;
-      material.emissiveIntensity = 2.5 + Math.sin(state.clock.elapsedTime * 2) * 0.5;
-    }
-  });
   
   // Generate path curve from peak down the slope
   const curve = useMemo(() => {
@@ -40,27 +105,82 @@ function LavaPath({ color, score, direction }: LavaPathProps) {
       // Calculate Z based on mountain surface (simplified radial)
       const dist = Math.sqrt(x * x + (y - 2) * (y - 2));
       const radial = Math.pow(Math.max(0, 1.0 - dist / 6.0), 2.2);
-      const z = radial * 4.2 + 0.1; // Slightly above surface
+      const z = radial * 4.2 + 0.15; // Slightly above surface
       points.push(new THREE.Vector3(x, y, z));
     }
     return new THREE.CatmullRomCurve3(points);
   }, [direction, drift]);
   
   const tubeGeometry = useMemo(() => {
-    return new THREE.TubeGeometry(curve, 64, 0.08, 8, false);
+    return new THREE.TubeGeometry(curve, 64, 0.06, 8, false);
   }, [curve]);
 
+  // Animate the path glow and kinetic pips
+  useFrame((state) => {
+    // Pulse the main tube
+    if (tubeRef.current) {
+      const material = tubeRef.current.material as THREE.MeshStandardMaterial;
+      material.emissiveIntensity = 2.5 + Math.sin(state.clock.elapsedTime * 2) * 0.5;
+    }
+    
+    // Animate kinetic data pips along the curve
+    pipRefs.current.forEach((pip, i) => {
+      if (pip) {
+        const t = ((state.clock.elapsedTime * 0.15 + i * 0.25) % 1);
+        const point = curve.getPointAt(t);
+        pip.position.copy(point);
+        // Pulse pip size
+        const scale = 1 + Math.sin(state.clock.elapsedTime * 4 + i) * 0.3;
+        pip.scale.setScalar(scale);
+      }
+    });
+  });
+
+  // Create kinetic data pips
+  const pips = useMemo(() => [0, 1, 2, 3], []);
+
   return (
-    <mesh ref={ref} geometry={tubeGeometry}>
-      <meshStandardMaterial
-        color={color}
-        emissive={color}
-        emissiveIntensity={3}
-        transparent
-        opacity={0.9}
-        toneMapped={false}
-      />
-    </mesh>
+    <group>
+      {/* Main lava tube */}
+      <mesh ref={tubeRef} geometry={tubeGeometry}>
+        <meshStandardMaterial
+          color={color}
+          emissive={color}
+          emissiveIntensity={3}
+          transparent
+          opacity={0.85}
+          toneMapped={false}
+        />
+      </mesh>
+      
+      {/* Outer glow tube */}
+      <mesh geometry={new THREE.TubeGeometry(curve, 64, 0.15, 8, false)}>
+        <meshStandardMaterial
+          color={color}
+          emissive={color}
+          emissiveIntensity={1}
+          transparent
+          opacity={0.15}
+          toneMapped={false}
+        />
+      </mesh>
+      
+      {/* Kinetic data pips - animated particles showing momentum */}
+      {pips.map((_, i) => (
+        <mesh 
+          key={i} 
+          ref={(el) => { if (el) pipRefs.current[i] = el; }}
+        >
+          <sphereGeometry args={[0.12, 16, 16]} />
+          <meshStandardMaterial
+            color="#ffffff"
+            emissive={color}
+            emissiveIntensity={5}
+            toneMapped={false}
+          />
+        </mesh>
+      ))}
+    </group>
   );
 }
 
@@ -100,17 +220,17 @@ function UnifiedDestinyField({ scenarioA, scenarioB }: UnifiedFieldProps) {
 
   return (
     <group rotation={[-Math.PI / 2.6, 0, 0]} position={[0, -1, 0]}>
-      {/* THE REFRACTIVE GLASS CHASSIS */}
+      {/* THE REFRACTIVE GLASS CHASSIS - Machined aerospace slab */}
       <mesh geometry={geometry}>
         <MeshTransmissionMaterial
-          transmission={0.98}
-          thickness={5.0} // Thick aerospace glass
-          roughness={0.08}
-          chromaticAberration={0.12} // PRISM EFFECT
-          anisotropy={0.4}
-          distortion={0.3}
-          color="#0d111a"
-          backside={true} // Crucial for internal path refraction
+          transmission={0.95}
+          thickness={5.0} // Thick glass feel - creates depth
+          roughness={0.05} // Highly polished
+          chromaticAberration={0.08} // Prism effect on ridges
+          anisotropy={0.3}
+          distortion={0.4}
+          color="#0a121f" // Deep aerospace slate
+          backside={true} // Forces light to bounce internally
         />
       </mesh>
 
@@ -228,6 +348,51 @@ function KPIComparisonBar({ scenarioA, scenarioB }: KPIBarProps) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// STRATEGIC AUTOPILOT PANEL
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function StrategicAutopilotPanel({ scenarioA, scenarioB }: { scenarioA: ScenarioData; scenarioB: ScenarioData }) {
+  const verdict = useMemo(() => getStrategicVerdict(scenarioA, scenarioB), [scenarioA, scenarioB]);
+
+  return (
+    <div className="absolute bottom-4 right-4 w-80 bg-black/85 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden z-10 shadow-2xl">
+      {/* Header */}
+      <div className="flex items-center gap-2 px-4 py-3 bg-white/5 border-b border-white/10">
+        <span className="text-sm">🎯</span>
+        <span className="text-[10px] font-bold tracking-widest text-white/60">STRATEGIC AUTOPILOT</span>
+      </div>
+      
+      {/* Verdict Badge */}
+      <div className="p-4">
+        <div 
+          className="inline-block px-3 py-1.5 rounded text-xs font-bold tracking-wide mb-3"
+          style={{ 
+            backgroundColor: `${verdict.color}20`, 
+            color: verdict.color,
+            border: `1px solid ${verdict.color}40`
+          }}
+        >
+          {verdict.verdict}
+        </div>
+        
+        {/* Analysis */}
+        <p className="text-xs text-white/80 leading-relaxed mb-3">
+          {verdict.analysis}
+        </p>
+        
+        {/* Recommendation */}
+        <div className="pt-3 border-t border-white/10">
+          <div className="text-[9px] font-bold tracking-widest text-white/40 mb-1">RECOMMENDATION</div>
+          <p className="text-xs text-white/70 leading-relaxed">
+            {verdict.recommendation}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -334,25 +499,8 @@ export default function GodModeCompare() {
         </div>
       </div>
 
-      {/* Strategic Autopilot Panel */}
-      <div className="absolute bottom-4 right-4 w-72 bg-black/80 backdrop-blur-xl border border-white/10 rounded-xl p-4 z-10">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-sm">🎯</span>
-          <span className="text-[10px] font-bold tracking-widest text-white/60">STRATEGIC AUTOPILOT</span>
-        </div>
-        <div className={`inline-block px-3 py-1 rounded text-xs font-bold mb-2 ${
-          scenarioB.score >= scenarioA.score
-            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-            : 'bg-red-500/20 text-red-400 border border-red-500/30'
-        }`}>
-          {scenarioB.score >= scenarioA.score ? 'OPTIMAL ASCENT' : 'CRITICAL DIVERGENCE'}
-        </div>
-        <p className="text-xs text-white/70 leading-relaxed">
-          {scenarioB.score >= scenarioA.score
-            ? 'Exploration scenario shows improved trajectory. Consider locking as new baseline.'
-            : 'Both growth and stability declining. Revert to baseline immediately.'}
-        </p>
-      </div>
+      {/* Strategic Autopilot Panel - Uses verdict engine */}
+      <StrategicAutopilotPanel scenarioA={scenarioA} scenarioB={scenarioB} />
     </div>
   );
 }
