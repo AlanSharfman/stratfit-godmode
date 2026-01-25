@@ -670,31 +670,6 @@ function UnifiedDestinyField({ scenarioA, scenarioB, hoverData }: UnifiedFieldPr
         />
       </mesh>
 
-      {/* CONVERGENCE POINT — Summit beacon */}
-      <group position={[0, 0, getMassifHeight(0, 0, geometry) + 0.3]}>
-        <mesh>
-          <sphereGeometry args={[0.2, 32, 32]} />
-          <meshStandardMaterial
-            color="#ffffff"
-            emissive="#ffffff"
-            emissiveIntensity={8}
-            toneMapped={false}
-          />
-        </mesh>
-        <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.3, 0.4, 32]} />
-          <meshBasicMaterial color="#ffffff" transparent opacity={0.6} side={THREE.DoubleSide} />
-        </mesh>
-        <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.5, 0.55, 32]} />
-          <meshBasicMaterial color="#00D9FF" transparent opacity={0.3} side={THREE.DoubleSide} />
-        </mesh>
-        {/* Vertical beacon */}
-        <mesh position={[0, 0, 0.8]}>
-          <cylinderGeometry args={[0.01, 0.01, 1.5, 8]} />
-          <meshBasicMaterial color="#ffffff" transparent opacity={0.8} />
-        </mesh>
-      </group>
       
       {/* LAVA RIVERS — Surface-aware strategic paths */}
       <LavaRiver 
