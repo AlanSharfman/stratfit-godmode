@@ -581,132 +581,65 @@ function LavaRiver({ color, score, isBaseline, geometry }: LavaRiverProps) {
     };
   }, [score, driftIntensity, side, geometry]);
   
-  // VOLUMETRIC 3D LAVA RIVER — Thick, glowing, physically present
-  // Higher radial segments (24-32) for smooth round appearance
-  const tubes = useMemo(() => ({
-    // Layer 1: Wide atmospheric bloom (very soft)
-    atmosphericBloom: new THREE.TubeGeometry(curve, 80, 0.35, 24, false),
-    // Layer 2: Outer glow halo
-    outerHalo: new THREE.TubeGeometry(curve, 80, 0.22, 24, false),
-    // Layer 3: Mid glow body (main visible volume)
-    midBody: new THREE.TubeGeometry(curve, 80, 0.12, 24, false),
-    // Layer 4: Main lava conduit (thick and solid)
-    mainConduit: new THREE.TubeGeometry(curve, 80, 0.07, 32, false),
-    // Layer 5: Hot inner core
-    hotCore: new THREE.TubeGeometry(curve, 80, 0.035, 24, false),
-    // Layer 6: White-hot plasma center
-    plasmaCenter: new THREE.TubeGeometry(curve, 80, 0.015, 16, false),
+  // PLASMA VEIN — Clean 3-layer approach: Bloom + Core + Particles
+  // TubeGeometry gives 3D mass, high emissive makes it look like liquid light
+  const tubeGeo = useMemo(() => ({
+    bloom: new THREE.TubeGeometry(curve, 100, 0.12, 16, false),    // Outer glow bloom
+    core: new THREE.TubeGeometry(curve, 100, 0.04, 8, false),      // Main plasma vein
+    center: new THREE.TubeGeometry(curve, 100, 0.015, 8, false),   // White-hot center
   }), [curve]);
 
-  // Refs for animated materials
-  const glowRef = useRef<THREE.Mesh>(null);
-  const midRef = useRef<THREE.Mesh>(null);
-  
-  // Animate glow intensity with organic pulsing - EmissiveIntensity 5.0 to glow through glass
+  // Animate emissive intensity for liquid light pulsing
   useFrame((state) => {
     const time = state.clock.elapsedTime;
     
-    // Pulsing glow layers with high emissive intensity
+    // Main core pulsing - looks like flowing plasma
     if (tubeRef.current) {
       const mat = tubeRef.current.material as THREE.MeshStandardMaterial;
-      mat.emissiveIntensity = 5.0 + Math.sin(time * 2.5) * 1.5 + Math.sin(time * 5.7) * 0.8;
-    }
-    if (glowRef.current) {
-      const mat = glowRef.current.material as THREE.MeshBasicMaterial;
-      mat.opacity = 0.12 + Math.sin(time * 3.2) * 0.04;
-    }
-    if (midRef.current) {
-      const mat = midRef.current.material as THREE.MeshBasicMaterial;
-      mat.opacity = 0.25 + Math.sin(time * 4.1) * 0.08;
+      mat.emissiveIntensity = 8 + Math.sin(time * 3) * 2;
     }
     
-    // Flowing energy particles along the path
+    // Energy particles flowing along the path
     pipRefs.current.forEach((pip, i) => {
       if (pip) {
-        // Staggered flow with varying speeds (organic feel)
-        const speed = 0.04 + (i % 3) * 0.015;
-        const offset = i * 0.08;
-        const t = ((time * speed + offset) % 1);
+        const speed = 0.06 + (i % 4) * 0.02;
+        const t = ((time * speed + i * 0.1) % 1);
         const point = curve.getPointAt(t);
         pip.position.copy(point);
-        
-        // Organic pulsing size
-        const pulse = Math.sin(time * 6 + i * 1.7) * 0.5 + Math.sin(time * 11 + i * 2.3) * 0.2;
-        const baseScale = 0.6 + (1 - t) * 0.4; // Larger near summit, smaller at base
-        pip.scale.setScalar(baseScale + pulse * 0.3);
-        
-        // Fade opacity near endpoints
-        const edgeFade = Math.min(t * 5, (1 - t) * 5, 1);
-        (pip.material as THREE.MeshStandardMaterial).opacity = edgeFade;
+        pip.scale.setScalar(0.8 + Math.sin(time * 8 + i * 2) * 0.3);
       }
     });
   });
 
-  // More particles for realistic flow
-  const pips = useMemo(() => Array.from({ length: 12 }, (_, i) => i), []);
+  // Flowing energy particles
+  const pips = useMemo(() => Array.from({ length: 8 }, (_, i) => i), []);
 
   return (
     <group>
-      {/* LAYER 1: ATMOSPHERIC BLOOM — Very wide, soft glow */}
-      <mesh geometry={tubes.atmosphericBloom}>
+      {/* BLOOM LAYER — Soft outer glow for atmosphere */}
+      <mesh geometry={tubeGeo.bloom}>
         <meshBasicMaterial
           color={color}
           transparent
-          opacity={0.06}
+          opacity={0.25}
           toneMapped={false}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
       </mesh>
       
-      {/* LAYER 2: OUTER HALO — Soft bloom ring */}
-      <mesh ref={glowRef} geometry={tubes.outerHalo}>
-        <meshBasicMaterial
-          color={color}
-          transparent
-          opacity={0.15}
-          toneMapped={false}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-        />
-      </mesh>
-      
-      {/* LAYER 3: MID BODY — Main visible volume */}
-      <mesh ref={midRef} geometry={tubes.midBody}>
-        <meshBasicMaterial
-          color={color}
-          transparent
-          opacity={0.4}
-          toneMapped={false}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-        />
-      </mesh>
-      
-      {/* LAYER 4: MAIN CONDUIT — Thick solid emissive core */}
-      <mesh ref={tubeRef} geometry={tubes.mainConduit}>
+      {/* PLASMA CORE — High emissive, looks like liquid light */}
+      <mesh ref={tubeRef} geometry={tubeGeo.core}>
         <meshStandardMaterial
           color={color}
           emissive={color}
-          emissiveIntensity={6.0}
-          toneMapped={false}
-          roughness={0.15}
-          metalness={0.3}
-        />
-      </mesh>
-      
-      {/* LAYER 5: HOT CORE — Bright emission */}
-      <mesh geometry={tubes.hotCore}>
-        <meshStandardMaterial
-          color="#ffffff"
-          emissive={color}
-          emissiveIntensity={10}
+          emissiveIntensity={8}
           toneMapped={false}
         />
       </mesh>
       
-      {/* LAYER 6: PLASMA CENTER — Pure white-hot */}
-      <mesh geometry={tubes.plasmaCenter}>
+      {/* WHITE-HOT CENTER — Pure brightness */}
+      <mesh geometry={tubeGeo.center}>
         <meshBasicMaterial
           color="#ffffff"
           toneMapped={false}
