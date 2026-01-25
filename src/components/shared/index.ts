@@ -12,3 +12,15 @@ export {
   Tooltip,
   SectionDivider,
 } from './GodModeUI';
+
+// Metric Tooltips — SaaS metrics education
+export {
+  MetricLabel,
+  MetricTooltip,
+  MetricBadge,
+  getMetric,
+  getMetricsByCategory,
+  searchMetrics,
+} from './MetricTooltip';
+
+export type { MetricDefinition } from './MetricTooltip';

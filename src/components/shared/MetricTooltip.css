@@ -1,0 +1,437 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   STRATFIT — Metric Tooltip Styles
+   God Mode styling for SaaS metrics education tooltips
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   METRIC LABEL WRAPPER
+   ───────────────────────────────────────────────────────────────────────────── */
+.metric-label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.metric-label-text {
+  font-weight: inherit;
+  color: inherit;
+}
+
+/* Info Button */
+.metric-info-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: all 0.2s ease;
+}
+
+.metric-info-btn:hover {
+  opacity: 1;
+}
+
+.info-icon {
+  font-size: 12px;
+  color: #22d3ee;
+  font-style: normal;
+}
+
+/* Size Variants */
+.metric-label.small .metric-info-btn {
+  width: 14px;
+  height: 14px;
+}
+
+.metric-label.small .info-icon {
+  font-size: 10px;
+}
+
+.metric-label.large .metric-info-btn {
+  width: 20px;
+  height: 20px;
+}
+
+.metric-label.large .info-icon {
+  font-size: 14px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   TOOLTIP WRAPPER (for standalone)
+   ───────────────────────────────────────────────────────────────────────────── */
+.metric-tooltip-wrapper {
+  position: relative;
+  display: inline;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   TOOLTIP CONTAINER
+   ───────────────────────────────────────────────────────────────────────────── */
+.metric-tooltip {
+  position: absolute;
+  z-index: 1000;
+  width: 320px;
+  padding: 0;
+  pointer-events: auto;
+  animation: tooltipFadeIn 0.2s ease;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Position Variants */
+.metric-tooltip.top {
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 10px;
+}
+
+.metric-tooltip.bottom {
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 10px;
+}
+
+.metric-tooltip.left {
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-right: 10px;
+}
+
+.metric-tooltip.right {
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 10px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   TOOLTIP CONTENT CARD
+   ───────────────────────────────────────────────────────────────────────────── */
+.tooltip-content {
+  background: #0f172a;
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.5),
+    0 0 30px rgba(34, 211, 238, 0.1);
+  backdrop-filter: blur(20px);
+}
+
+/* Arrow (using pseudo-element) */
+.metric-tooltip.top .tooltip-content::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 8px solid transparent;
+  border-top-color: rgba(34, 211, 238, 0.3);
+}
+
+.metric-tooltip.bottom .tooltip-content::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 8px solid transparent;
+  border-bottom-color: rgba(34, 211, 238, 0.3);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   TOOLTIP HEADER
+   ───────────────────────────────────────────────────────────────────────────── */
+.tooltip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.tooltip-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tooltip-short {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #22d3ee;
+  letter-spacing: 0.05em;
+}
+
+.tooltip-full {
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+.tooltip-category {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--category-color, #64748b);
+  border-radius: 100px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--category-color, #94a3b8);
+  white-space: nowrap;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   TOOLTIP DEFINITION
+   ───────────────────────────────────────────────────────────────────────────── */
+.tooltip-definition {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #e2e8f0;
+  margin-bottom: 12px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   TOOLTIP FORMULA
+   ───────────────────────────────────────────────────────────────────────────── */
+.tooltip-formula {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  border-left: 3px solid #22d3ee;
+}
+
+.formula-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.formula-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: #fbbf24;
+  background: none;
+  padding: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   TOOLTIP EXAMPLE
+   ───────────────────────────────────────────────────────────────────────────── */
+.tooltip-example {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: 8px;
+  border-left: 3px solid #10b981;
+}
+
+.example-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #10b981;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.example-text {
+  font-size: 0.85rem;
+  color: #a7f3d0;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   TOOLTIP BENCHMARKS (Good/Bad)
+   ───────────────────────────────────────────────────────────────────────────── */
+.tooltip-benchmarks {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.benchmark {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.8rem;
+}
+
+.benchmark-icon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.benchmark.good .benchmark-icon {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.benchmark.bad .benchmark-icon {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.benchmark.good .benchmark-text {
+  color: #a7f3d0;
+}
+
+.benchmark.bad .benchmark-text {
+  color: #fca5a5;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   METRIC BADGE
+   ───────────────────────────────────────────────────────────────────────────── */
+.metric-badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  cursor: default;
+}
+
+.badge-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.badge-trend {
+  margin-left: 4px;
+  font-size: 0.8rem;
+}
+
+.badge-trend.up {
+  color: #10b981;
+}
+
+.badge-trend.down {
+  color: #ef4444;
+}
+
+.badge-trend.neutral {
+  color: #fbbf24;
+}
+
+/* Badge Variants */
+.metric-badge.up {
+  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.metric-badge.down {
+  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   RESPONSIVE
+   ───────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .metric-tooltip {
+    width: 280px;
+    /* On mobile, prefer top/bottom to avoid edge overflow */
+  }
+  
+  .metric-tooltip.left,
+  .metric-tooltip.right {
+    left: 50%;
+    right: auto;
+    top: 100%;
+    transform: translateX(-50%);
+    margin: 10px 0 0 0;
+  }
+  
+  .tooltip-header {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .tooltip-formula,
+  .tooltip-example {
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   DARK MODE ENHANCEMENTS
+   ───────────────────────────────────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  .tooltip-content {
+    background: #0a1628;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   HOVER GLOW EFFECT
+   ───────────────────────────────────────────────────────────────────────────── */
+.metric-info-btn:hover .info-icon {
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.6);
+}
+
+.tooltip-content {
+  transition: box-shadow 0.3s ease;
+}
+
+.tooltip-content:hover {
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.5),
+    0 0 40px rgba(34, 211, 238, 0.15);
+}
+
