@@ -1,12 +1,12 @@
 // src/components/simulate/SimulateOverlayWired.tsx
 // STRATFIT — Monte Carlo Simulation Overlay (Wired to Store)
-// NOW WITH PROPER SAVE/LOAD INTEGRATION FOR ALL TABS
+// FIXED VERSION - Correct types for all stores and components
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { RefreshCw, Save, Check, FolderOpen, Star } from 'lucide-react';
+import { RefreshCw, Save, Check, Star } from 'lucide-react';
 import { useSimulationStore } from '@/state/simulationStore';
 import { useSavedSimulationsStore } from '@/state/savedSimulationsStore';
-import { useScenarioStore } from '@/state/scenarioStore';
+import { useScenarioStore, type LeverSnapshot } from '@/state/scenarioStore';
 import { useLeverStore } from '@/state/leverStore';
 import { 
   type MonteCarloResult, 
@@ -27,7 +27,6 @@ import SensitivityBars from './SensitivityBars';
 import SimulateNarrative from './SimulateNarrative';
 
 // Import Save/Load components
-import SaveBaselineButton from '../simulation/SaveBaselineButton';
 import LoadScenarioDropdown from '../simulation/LoadScenarioDropdown';
 
 import './SimulateStyles.css';
@@ -60,8 +59,8 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
   const savedSimulations = useSavedSimulationsStore((s) => s.simulations);
   
   // Connect to scenario store (for COMPARE/RISK/DECISION tabs)
-  const saveAsBaseline = useScenarioStore((s) => s.saveAsBaseline);
-  const saveScenario = useScenarioStore((s) => s.saveScenario);
+  const saveAsBaselineToScenario = useScenarioStore((s) => s.saveAsBaseline);
+  const saveScenarioToStore = useScenarioStore((s) => s.saveScenario);
   const hasLegacyBaseline = useScenarioStore((s) => s.baseline !== null);
   
   // Lever store for loading scenarios
@@ -81,6 +80,19 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
     const savedBaseline = savedSimulations.find(s => s.isBaseline);
     return !!savedBaseline || hasLegacyBaseline;
   }, [savedSimulations, hasLegacyBaseline]);
+
+  // Convert LeverState to LeverSnapshot for stores
+  const leversAsSnapshot = useMemo((): LeverSnapshot => ({
+    demandStrength: levers.demandStrength,
+    pricingPower: levers.pricingPower,
+    expansionVelocity: levers.expansionVelocity,
+    costDiscipline: levers.costDiscipline,
+    hiringIntensity: levers.hiringIntensity,
+    operatingDrag: levers.operatingDrag,
+    marketVolatility: levers.marketVolatility,
+    executionRisk: levers.executionRisk,
+    fundingPressure: levers.fundingPressure,
+  }), [levers]);
 
   // Run simulation with REAL progress updates
   const runSimulation = useCallback(async () => {
@@ -117,24 +129,17 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
     setResult(simResult);
     setVerdict(simVerdict);
 
-    // Store in simulation store for immediate use (3 args: result, verdict, levers)
-    const leverSnapshot = Object.entries(levers).reduce((acc, [key, val]) => {
-      acc[key] = val;
-      return acc;
-    }, {} as Record<string, number>);
-    
-    setSimulationResult(simResult, simVerdict, leverSnapshot);
+    // Store in simulation store - CORRECT: 3 arguments
+    setSimulationResult(simResult, simVerdict, leversAsSnapshot);
 
     setTimeout(() => {
       setPhase('complete');
     }, 300);
-  }, [levers, config, setSimulationResult, storeStartSimulation]);
+  }, [levers, leversAsSnapshot, config, setSimulationResult, storeStartSimulation]);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // SAVE FUNCTIONS - SAVES TO BOTH STORES FOR FULL TAB COMPATIBILITY
+  // SAVE AS BASELINE - SAVES TO BOTH STORES
   // ═══════════════════════════════════════════════════════════════════════════
-
-  // Quick save as baseline (one-click)
   const handleSaveAsBaseline = useCallback(() => {
     if (!result || !verdict) return;
     
@@ -144,11 +149,11 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
       month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
     });
     
-    // 1. Save to savedSimulationsStore
-    const savedSim = saveSimulation({
+    // 1. Save to savedSimulationsStore - CORRECT: summary with all required fields
+    const saved = saveSimulation({
       name: `Baseline (${timestamp})`,
       description: `Score: ${verdict.overallScore} | Survival: ${Math.round(result.survivalRate * 100)}%`,
-      levers: levers as any,
+      levers: leversAsSnapshot,
       summary: {
         survivalRate: result.survivalRate,
         survivalPercent: `${Math.round(result.survivalRate * 100)}%`,
@@ -167,15 +172,15 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
       isBaseline: true,
     });
     
-    // Mark it as baseline
-    if (savedSim?.id) {
-      setAsBaseline(savedSim.id);
+    // Mark as baseline using the returned ID - CORRECT: string ID
+    if (saved?.id) {
+      setAsBaseline(saved.id);
     }
     
-    // 2. ALSO save to scenarioStore (for COMPARE/RISK/DECISION tabs)
-    saveAsBaseline(
+    // 2. ALSO save to scenarioStore (enables COMPARE/RISK/DECISION tabs)
+    saveAsBaselineToScenario(
       `Baseline (${timestamp})`,
-      levers as any,
+      leversAsSnapshot,
       {
         survivalRate: result.survivalRate,
         medianARR: result.arrPercentiles.p50,
@@ -191,12 +196,12 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
         cashP50: result.cashPercentiles.p50,
         cashP90: result.cashPercentiles.p90,
         overallScore: verdict.overallScore,
-        overallRating: verdict.overallRating as any,
+        overallRating: verdict.overallRating as 'CRITICAL' | 'CAUTION' | 'STABLE' | 'STRONG' | 'EXCEPTIONAL',
         monthlyARR: [],
         monthlyRunway: [],
         monthlySurvival: [],
-        arrBands: result.arrConfidenceBands || [],
-        leverSensitivity: result.sensitivityFactors || [],
+        arrBands: result.arrConfidenceBands?.map(b => ({ month: b.month, p10: b.p10, p50: b.p50, p90: b.p90 })) || [],
+        leverSensitivity: result.sensitivityFactors?.map(f => ({ lever: String(f.lever), label: f.label, impact: f.impact })) || [],
         simulatedAt: new Date(),
         iterations: config.iterations,
         executionTimeMs: result.executionTimeMs,
@@ -207,19 +212,21 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
       setSaveState('saved');
       setTimeout(() => setSaveState('idle'), 2000);
     }, 300);
-  }, [result, verdict, levers, saveSimulation, setAsBaseline, saveAsBaseline, config.iterations]);
+  }, [result, verdict, leversAsSnapshot, saveSimulation, setAsBaseline, saveAsBaselineToScenario, config.iterations]);
 
-  // Save as named scenario (with modal)
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SAVE AS NAMED SCENARIO
+  // ═══════════════════════════════════════════════════════════════════════════
   const handleSaveScenario = useCallback(() => {
     if (!result || !verdict || !scenarioName.trim()) return;
     
     setSaveState('saving');
     
-    // 1. Save to savedSimulationsStore
+    // Save to savedSimulationsStore
     saveSimulation({
       name: scenarioName.trim(),
       description: `Score: ${verdict.overallScore} | Survival: ${Math.round(result.survivalRate * 100)}%`,
-      levers: levers as any,
+      levers: leversAsSnapshot,
       summary: {
         survivalRate: result.survivalRate,
         survivalPercent: `${Math.round(result.survivalRate * 100)}%`,
@@ -238,10 +245,10 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
       isBaseline: false,
     });
     
-    // 2. ALSO save to scenarioStore
-    saveScenario(
+    // Also save to scenarioStore
+    saveScenarioToStore(
       scenarioName.trim(),
-      levers as any,
+      leversAsSnapshot,
       {
         survivalRate: result.survivalRate,
         medianARR: result.arrPercentiles.p50,
@@ -257,12 +264,12 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
         cashP50: result.cashPercentiles.p50,
         cashP90: result.cashPercentiles.p90,
         overallScore: verdict.overallScore,
-        overallRating: verdict.overallRating as any,
+        overallRating: verdict.overallRating as 'CRITICAL' | 'CAUTION' | 'STABLE' | 'STRONG' | 'EXCEPTIONAL',
         monthlyARR: [],
         monthlyRunway: [],
         monthlySurvival: [],
-        arrBands: result.arrConfidenceBands || [],
-        leverSensitivity: result.sensitivityFactors || [],
+        arrBands: result.arrConfidenceBands?.map(b => ({ month: b.month, p10: b.p10, p50: b.p50, p90: b.p90 })) || [],
+        leverSensitivity: result.sensitivityFactors?.map(f => ({ lever: String(f.lever), label: f.label, impact: f.impact })) || [],
         simulatedAt: new Date(),
         iterations: config.iterations,
         executionTimeMs: result.executionTimeMs,
@@ -275,16 +282,13 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
       setScenarioName('');
       setTimeout(() => setSaveState('idle'), 2000);
     }, 300);
-  }, [result, verdict, levers, scenarioName, saveSimulation, saveScenario, config.iterations]);
+  }, [result, verdict, leversAsSnapshot, scenarioName, saveSimulation, saveScenarioToStore, config.iterations]);
 
-  // Load scenario - applies levers and re-runs simulation
+  // Load scenario - applies levers and re-runs
   const handleLoadScenario = useCallback((scenario: any) => {
-    // Apply the saved lever values
     if (scenario.levers) {
       setLevers(scenario.levers);
     }
-    
-    // Re-run simulation with loaded levers
     setTimeout(() => {
       runSimulation();
     }, 100);
@@ -314,7 +318,7 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
         <div className="simulate-header-row">
           <SimulateHeader 
             onClose={onClose}
-            onRerun={runSimulation}
+            onRerun={runSimulation}  // FIXED: Added onRerun prop
             phase={phase}
             iterations={config.iterations}
             executionTime={result?.executionTimeMs}
@@ -360,13 +364,11 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
             <div className="simulate-headline">
               <h2 className="simulate-verdict-title">{verdict.headline}</h2>
               <p className="simulate-verdict-summary">
-                Based on {config.iterations.toLocaleString()} simulations, your company's trajectory has been analyzed.
-                Each simulation accounts for market uncertainty and execution variability. 
-                The results show the <em>range of probable outcomes</em>, not a single prediction.
+                Based on {config.iterations.toLocaleString()} simulations over {config.timeHorizonMonths} months.
               </p>
             </div>
 
-            {/* Navigation Tabs + Save Buttons */}
+            {/* Nav Tabs + Save Buttons */}
             <div className="simulate-nav-row">
               <nav className="simulate-nav">
                 {[
@@ -387,39 +389,26 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
               
               {/* SAVE BUTTONS */}
               <div className="simulate-save-actions">
-                {/* Save as Baseline (Quick) */}
                 <button 
-                  className={`simulate-save-btn baseline ${saveState} ${hasBaseline ? 'has-baseline' : ''}`}
+                  className={`simulate-save-btn baseline ${saveState}`}
                   onClick={handleSaveAsBaseline}
                   disabled={saveState !== 'idle'}
-                  title={hasBaseline ? 'Replace current baseline' : 'Set as baseline for comparison'}
                 >
                   {saveState === 'saved' ? (
-                    <>
-                      <Check size={16} />
-                      SAVED
-                    </>
+                    <><Check size={16} /> SAVED</>
                   ) : saveState === 'saving' ? (
-                    <>
-                      <RefreshCw size={16} className="spin" />
-                      SAVING...
-                    </>
+                    <><RefreshCw size={16} className="spin" /> SAVING...</>
                   ) : (
-                    <>
-                      <Star size={16} />
-                      {hasBaseline ? 'UPDATE BASELINE' : 'SET AS BASELINE'}
-                    </>
+                    <><Star size={16} /> {hasBaseline ? 'UPDATE BASELINE' : 'SET AS BASELINE'}</>
                   )}
                 </button>
                 
-                {/* Save as Named Scenario */}
                 <button 
                   className="simulate-save-btn scenario"
                   onClick={() => setShowSaveModal(true)}
                   disabled={saveState !== 'idle'}
                 >
-                  <Save size={16} />
-                  SAVE SCENARIO
+                  <Save size={16} /> SAVE SCENARIO
                 </button>
               </div>
             </div>
@@ -433,21 +422,19 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
 
             {activeSection === 'distribution' && (
               <div className="simulate-section simulate-distribution">
-                <div className="distribution-explainer">
-                  <p className="explainer-heading">UNDERSTANDING THE DISTRIBUTION</p>
-                  <p className="explainer-text">
-                    This shows all possible ARR outcomes across {config.iterations.toLocaleString()} simulations.
-                    The shaded region represents the most likely range (P25-P75).
-                  </p>
-                </div>
-                
                 <div className="distribution-grid">
                   <div className="distribution-main">
                     <h3 className="section-title">ARR DISTRIBUTION</h3>
-                    <ProbabilityDistribution histogram={result.arrHistogram} percentiles={result.arrPercentiles} stats={result.arrDistribution} />
+                    {/* FIXED: Added stats prop */}
+                    <ProbabilityDistribution 
+                      histogram={result.arrHistogram} 
+                      percentiles={result.arrPercentiles}
+                      stats={result.arrDistribution}
+                    />
                   </div>
                   <div className="distribution-side">
                     <h3 className="section-title">CONFIDENCE BANDS</h3>
+                    {/* FIXED: prop is "data" not "bands" */}
                     <ConfidenceFan data={result.arrConfidenceBands} />
                   </div>
                 </div>
@@ -456,13 +443,6 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
 
             {activeSection === 'scenarios' && (
               <div className="simulate-section simulate-scenarios">
-                <div className="scenarios-explainer">
-                  <p className="explainer-heading">BEST / MEDIAN / WORST CASES</p>
-                  <p className="explainer-text">
-                    Use these to understand the range of outcomes you should prepare for.
-                  </p>
-                </div>
-                
                 <ScenarioCards 
                   bestCase={result.bestCase}
                   worstCase={result.worstCase}
@@ -474,14 +454,6 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
 
             {activeSection === 'drivers' && (
               <div className="simulate-section simulate-drivers">
-                <div className="drivers-explainer">
-                  <p className="explainer-heading">WHAT MOVES THE NEEDLE</p>
-                  <p className="explainer-text">
-                    Not all levers are equal. This shows which inputs have the greatest impact on your outcomes. 
-                    Focus your strategy on the levers at the top.
-                  </p>
-                </div>
-                
                 <div className="drivers-grid">
                   <div className="drivers-main">
                     <h3 className="section-title">SENSITIVITY ANALYSIS</h3>
@@ -494,12 +466,12 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
               </div>
             )}
 
-            {/* Baseline Status Indicator */}
+            {/* Baseline Hint */}
             {!hasBaseline && (
               <div className="simulate-baseline-hint">
                 <Star size={16} />
                 <span>
-                  <strong>Tip:</strong> Save this as your baseline to unlock COMPARE, RISK, and DECISION tabs.
+                  <strong>Tip:</strong> Save as baseline to unlock COMPARE, RISK, and DECISION tabs.
                 </span>
               </div>
             )}
@@ -512,14 +484,12 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
         <div className="save-modal-overlay" onClick={() => setShowSaveModal(false)}>
           <div className="save-modal" onClick={e => e.stopPropagation()}>
             <h3 className="save-modal-title">Save Scenario</h3>
-            <p className="save-modal-desc">
-              Give this scenario a name to save it for later comparison.
-            </p>
+            <p className="save-modal-desc">Name this scenario for later comparison.</p>
             
             <input
               type="text"
               className="save-modal-input"
-              placeholder="e.g., Aggressive Growth, Conservative, Q2 Plan..."
+              placeholder="e.g., Aggressive Growth, Conservative..."
               value={scenarioName}
               onChange={e => setScenarioName(e.target.value)}
               autoFocus
@@ -527,10 +497,7 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
             />
             
             <div className="save-modal-actions">
-              <button 
-                className="save-modal-btn cancel"
-                onClick={() => setShowSaveModal(false)}
-              >
+              <button className="save-modal-btn cancel" onClick={() => setShowSaveModal(false)}>
                 Cancel
               </button>
               <button 
@@ -538,8 +505,7 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
                 onClick={handleSaveScenario}
                 disabled={!scenarioName.trim()}
               >
-                <Save size={16} />
-                Save Scenario
+                <Save size={16} /> Save
               </button>
             </div>
           </div>

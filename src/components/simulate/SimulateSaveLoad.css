@@ -1,12 +1,9 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   STRATFIT — Simulate Save/Load Styles
-   Additional styles for Save/Load integration in SimulateOverlayWired
-   ADD THESE TO YOUR SimulateStyles.css
+   SAVE/LOAD STYLES FOR SIMULATE OVERLAY
+   ADD THESE TO THE BOTTOM OF YOUR SimulateStyles.css
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   HEADER ROW WITH LOAD DROPDOWN
-   ───────────────────────────────────────────────────────────────────────────── */
+/* Header Row with Load Dropdown */
 .simulate-header-row {
   display: flex;
   justify-content: space-between;
@@ -19,16 +16,23 @@
   flex-shrink: 0;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   SAVE ACTIONS ROW
-   ───────────────────────────────────────────────────────────────────────────── */
+/* Nav Row with Save Buttons */
+.simulate-nav-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+/* Save Actions */
 .simulate-save-actions {
   display: flex;
   gap: 12px;
   align-items: center;
 }
 
-/* Save Buttons */
 .simulate-save-btn {
   display: inline-flex;
   align-items: center;
@@ -44,7 +48,7 @@
   border: none;
 }
 
-/* Baseline Button */
+/* Baseline Button - Gold/Yellow */
 .simulate-save-btn.baseline {
   background: linear-gradient(135deg, #fbbf24, #f59e0b);
   color: #1e1b4b;
@@ -55,12 +59,7 @@
   box-shadow: 0 8px 25px rgba(251, 191, 36, 0.4);
 }
 
-.simulate-save-btn.baseline.has-baseline {
-  background: linear-gradient(135deg, #a855f7, #7c3aed);
-  color: white;
-}
-
-/* Scenario Button */
+/* Scenario Button - Cyan outline */
 .simulate-save-btn.scenario {
   background: rgba(34, 211, 238, 0.15);
   border: 1px solid rgba(34, 211, 238, 0.4);
@@ -99,9 +98,7 @@
   to { transform: rotate(360deg); }
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   BASELINE HINT
-   ───────────────────────────────────────────────────────────────────────────── */
+/* Baseline Hint */
 .simulate-baseline-hint {
   display: flex;
   align-items: center;
@@ -119,9 +116,7 @@
   color: #fcd34d;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   SAVE MODAL
-   ───────────────────────────────────────────────────────────────────────────── */
+/* Save Modal */
 .save-modal-overlay {
   position: fixed;
   inset: 0;
@@ -131,12 +126,6 @@
   justify-content: center;
   z-index: 1000;
   backdrop-filter: blur(4px);
-  animation: fadeIn 0.2s ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }
 
 .save-modal {
@@ -146,18 +135,6 @@
   padding: 32px;
   width: 100%;
   max-width: 440px;
-  animation: slideUp 0.3s ease;
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .save-modal-title {
@@ -171,7 +148,6 @@
   font-size: 0.95rem;
   color: #94a3b8;
   margin-bottom: 24px;
-  line-height: 1.5;
 }
 
 .save-modal-input {
@@ -183,17 +159,12 @@
   color: #f8fafc;
   font-size: 1rem;
   margin-bottom: 24px;
-  transition: all 0.3s ease;
 }
 
 .save-modal-input:focus {
   outline: none;
   border-color: #22d3ee;
   box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.15);
-}
-
-.save-modal-input::placeholder {
-  color: #64748b;
 }
 
 .save-modal-actions {
@@ -239,19 +210,12 @@
 .save-modal-btn.save:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   RESPONSIVE
-   ───────────────────────────────────────────────────────────────────────────── */
+/* Responsive */
 @media (max-width: 768px) {
   .simulate-header-row {
     flex-direction: column;
-  }
-  
-  .simulate-load-section {
-    width: 100%;
   }
   
   .simulate-nav-row {
@@ -261,15 +225,10 @@
   
   .simulate-save-actions {
     width: 100%;
-    justify-content: stretch;
   }
   
   .simulate-save-btn {
     flex: 1;
     justify-content: center;
-  }
-  
-  .save-modal {
-    margin: 20px;
   }
 }
