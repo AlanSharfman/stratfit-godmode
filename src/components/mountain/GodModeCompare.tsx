@@ -834,19 +834,22 @@ export default function GodModeCompare() {
               />
             </Float>
             
-            {/* ORBIT CONTROLS - Drag to rotate the mountain 360° */}
+            {/* ORBIT CONTROLS - Full 360° rotation freedom */}
             <OrbitControls
               enableZoom={true}
-              enablePan={false}
+              enablePan={true}
               enableRotate={true}
-              rotateSpeed={0.8}
-              zoomSpeed={0.5}
-              minDistance={10}
-              maxDistance={35}
-              minPolarAngle={Math.PI / 6}      // Don't go below horizon
-              maxPolarAngle={Math.PI / 2.2}    // Don't flip upside down
-              minAzimuthAngle={-Math.PI / 2}   // 90° left
-              maxAzimuthAngle={Math.PI / 2}    // 90° right
+              rotateSpeed={1.2}           // Faster rotation response
+              zoomSpeed={0.8}             // Responsive zoom
+              panSpeed={0.8}              // Responsive pan
+              minDistance={5}             // Can zoom in close
+              maxDistance={50}            // Can zoom out far
+              minPolarAngle={0.1}         // Almost straight up (nearly 0°)
+              maxPolarAngle={Math.PI - 0.1} // Almost straight down (nearly 180°)
+              minAzimuthAngle={-Infinity} // FULL 360° left/right - no limits!
+              maxAzimuthAngle={Infinity}  // FULL 360° - spin freely!
+              enableDamping={true}        // Smooth inertia
+              dampingFactor={0.05}        // Smooth deceleration
               autoRotate={false}
               makeDefault
             />
