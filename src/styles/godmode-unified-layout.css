@@ -1045,3 +1045,16 @@ aside.right-column,
     filter: none;
   }
 }
+
+/* ============================================================================
+   COMPARE VIEW — Hide left slider section for full mountain focus
+   ============================================================================ */
+
+.main-content.mode-compare .left-column .sf-leftStack {
+  visibility: hidden;
+  opacity: 0;
+}
+
+.main-content.mode-compare .left-column {
+  background: transparent !important;
+}
