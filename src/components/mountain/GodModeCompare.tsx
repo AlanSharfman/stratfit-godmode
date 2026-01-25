@@ -581,21 +581,21 @@ function LavaRiver({ color, score, isBaseline, geometry }: LavaRiverProps) {
     };
   }, [score, driftIntensity, side, geometry]);
   
-  // REALISTIC MULTI-LAYER TUBE SYSTEM for volumetric lava appearance
-  // Main conduit radius: 0.04 as specified
+  // VOLUMETRIC 3D LAVA RIVER — Thick, glowing, physically present
+  // Higher radial segments (24-32) for smooth round appearance
   const tubes = useMemo(() => ({
-    // Layer 1: Wide atmospheric haze (heat distortion)
-    atmosphericHaze: new THREE.TubeGeometry(curve, 100, 0.20, 16, false),
-    // Layer 2: Outer glow corona
-    outerGlow: new THREE.TubeGeometry(curve, 100, 0.12, 12, false),
-    // Layer 3: Mid glow (main visible body)
-    midGlow: new THREE.TubeGeometry(curve, 100, 0.06, 12, false),
-    // Layer 4: Main lava conduit (radius: 0.04 as specified)
-    mainTube: new THREE.TubeGeometry(curve, 100, 0.04, 12, false),
+    // Layer 1: Wide atmospheric bloom (very soft)
+    atmosphericBloom: new THREE.TubeGeometry(curve, 80, 0.35, 24, false),
+    // Layer 2: Outer glow halo
+    outerHalo: new THREE.TubeGeometry(curve, 80, 0.22, 24, false),
+    // Layer 3: Mid glow body (main visible volume)
+    midBody: new THREE.TubeGeometry(curve, 80, 0.12, 24, false),
+    // Layer 4: Main lava conduit (thick and solid)
+    mainConduit: new THREE.TubeGeometry(curve, 80, 0.07, 32, false),
     // Layer 5: Hot inner core
-    innerCore: new THREE.TubeGeometry(curve, 100, 0.015, 8, false),
+    hotCore: new THREE.TubeGeometry(curve, 80, 0.035, 24, false),
     // Layer 6: White-hot plasma center
-    plasmaCore: new THREE.TubeGeometry(curve, 100, 0.005, 6, false),
+    plasmaCenter: new THREE.TubeGeometry(curve, 80, 0.015, 16, false),
   }), [curve]);
 
   // Refs for animated materials
@@ -647,66 +647,66 @@ function LavaRiver({ color, score, isBaseline, geometry }: LavaRiverProps) {
 
   return (
     <group>
-      {/* LAYER 1: ATMOSPHERIC HEAT HAZE — Very subtle, wide */}
-      <mesh geometry={tubes.atmosphericHaze}>
+      {/* LAYER 1: ATMOSPHERIC BLOOM — Very wide, soft glow */}
+      <mesh geometry={tubes.atmosphericBloom}>
         <meshBasicMaterial
           color={color}
           transparent
-          opacity={0.03}
+          opacity={0.06}
           toneMapped={false}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
       </mesh>
       
-      {/* LAYER 2: OUTER GLOW CORONA — Soft bloom */}
-      <mesh ref={glowRef} geometry={tubes.outerGlow}>
+      {/* LAYER 2: OUTER HALO — Soft bloom ring */}
+      <mesh ref={glowRef} geometry={tubes.outerHalo}>
         <meshBasicMaterial
           color={color}
           transparent
-          opacity={0.12}
+          opacity={0.15}
           toneMapped={false}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
       </mesh>
       
-      {/* LAYER 3: MID GLOW — Visible body of the flow */}
-      <mesh ref={midRef} geometry={tubes.midGlow}>
+      {/* LAYER 3: MID BODY — Main visible volume */}
+      <mesh ref={midRef} geometry={tubes.midBody}>
         <meshBasicMaterial
           color={color}
           transparent
-          opacity={0.3}
+          opacity={0.4}
           toneMapped={false}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
       </mesh>
       
-      {/* LAYER 4: MAIN LAVA CONDUIT — Solid emissive core (EmissiveIntensity 5.0) */}
-      <mesh ref={tubeRef} geometry={tubes.mainTube}>
+      {/* LAYER 4: MAIN CONDUIT — Thick solid emissive core */}
+      <mesh ref={tubeRef} geometry={tubes.mainConduit}>
         <meshStandardMaterial
           color={color}
           emissive={color}
-          emissiveIntensity={5.0}
+          emissiveIntensity={6.0}
           toneMapped={false}
-          roughness={0.2}
-          metalness={0.2}
+          roughness={0.15}
+          metalness={0.3}
         />
       </mesh>
       
-      {/* LAYER 5: HOT INNER CORE — Maximum emission to glow through refractive glass */}
-      <mesh geometry={tubes.innerCore}>
+      {/* LAYER 5: HOT CORE — Bright emission */}
+      <mesh geometry={tubes.hotCore}>
         <meshStandardMaterial
           color="#ffffff"
           emissive={color}
-          emissiveIntensity={8}
+          emissiveIntensity={10}
           toneMapped={false}
         />
       </mesh>
       
-      {/* LAYER 6: WHITE-HOT PLASMA CENTER — Pure white */}
-      <mesh geometry={tubes.plasmaCore}>
+      {/* LAYER 6: PLASMA CENTER — Pure white-hot */}
+      <mesh geometry={tubes.plasmaCenter}>
         <meshBasicMaterial
           color="#ffffff"
           toneMapped={false}
@@ -882,9 +882,9 @@ function UnifiedDestinyField({ scenarioA, scenarioB, hoverData }: UnifiedFieldPr
   // Generate the MULTI-PEAK MASSIF geometry
   const geometry = useMemo(() => createMassifGeometry(), []);
 
-  // FIXED POSITION - No floating animation
+  // FIXED OPTIMAL POSITION - Perfectly visible, no animation
   return (
-    <group ref={groupRef} rotation={[-Math.PI / 2.8, 0, 0]} position={[0, 0, 0]}>
+    <group ref={groupRef} rotation={[-Math.PI / 2.4, 0, 0]} position={[0, -1.5, 0]}>
       {/* LAYER 1: SOLID OBSIDIAN BASE — Dark volcanic core (no white) */}
       <mesh geometry={geometry}>
         <meshStandardMaterial
@@ -1299,21 +1299,21 @@ export default function GodModeCompare() {
       >
         <Canvas
           camera={{ 
-            position: [8, 6, 12], // HERO VIEW: Command perspective
-            fov: 42 
+            position: [0, 8, 16], // FIXED OPTIMAL VIEW: Centered, elevated
+            fov: 40 
           }}
           gl={{ 
             antialias: true, 
             alpha: true, 
             powerPreference: 'high-performance',
             toneMapping: THREE.ACESFilmicToneMapping,
-            toneMappingExposure: 1.4,
+            toneMappingExposure: 1.6,
           }}
           dpr={[1, 2]}
         >
           <Suspense fallback={null}>
-            <color attach="background" args={['#050810']} />
-            <fog attach="fog" args={['#050810', 20, 50]} />
+            <color attach="background" args={['#030508']} />
+            <fog attach="fog" args={['#030508', 25, 60]} />
             
             {/* ENVIRONMENT: City preset for high-contrast glass reflections */}
             <Environment preset="city" />
@@ -1325,23 +1325,17 @@ export default function GodModeCompare() {
               hoverData={hoverData}
             />
             
-            {/* CONSTRAINED ORBIT CONTROLS — 90° rotation limit */}
+            {/* FIXED VIEW — No rotation at all, zoom only */}
             <OrbitControls
-              target={[0, 1, 0]}
+              target={[0, 0, 0]}
               enableZoom={true}
               enablePan={false}
-              enableRotate={true}
-              rotateSpeed={0.8}
-              zoomSpeed={0.6}
-              minDistance={8}
-              maxDistance={35}
-              minPolarAngle={Math.PI / 6}       // 30° from top
-              maxPolarAngle={Math.PI / 2.2}     // ~82° (don't flip under)
-              minAzimuthAngle={-Math.PI / 4}    // 45° left limit
-              maxAzimuthAngle={Math.PI / 4}     // 45° right limit (total 90°)
+              enableRotate={false}
+              zoomSpeed={0.5}
+              minDistance={12}
+              maxDistance={25}
               enableDamping={true}
-              dampingFactor={0.08}
-              autoRotate={false}
+              dampingFactor={0.1}
               makeDefault
             />
           </Suspense>
