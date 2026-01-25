@@ -736,9 +736,9 @@ function UnifiedDestinyField({ scenarioA, scenarioB, hoverData }: UnifiedFieldPr
   // Generate the MULTI-PEAK MASSIF geometry
   const geometry = useMemo(() => createMassifGeometry(), []);
 
-  // FIXED POSITION - No floating animation
+  // FIXED POSITION - Eye-level view, no animation
   return (
-    <group ref={groupRef} rotation={[-Math.PI / 2.8, 0, 0]} position={[0, 0, 0]}>
+    <group ref={groupRef} rotation={[-Math.PI / 2.5, 0, 0]} position={[0, -1, 0]}>
       {/* LAYER 1: SOLID OBSIDIAN BASE — Dark volcanic core (no white) */}
       <mesh geometry={geometry}>
         <meshStandardMaterial
@@ -1090,8 +1090,8 @@ export default function GodModeCompare() {
       >
         <Canvas
           camera={{ 
-            position: [8, 6, 12], // HERO VIEW: Command perspective
-            fov: 42 
+            position: [0, 3, 15], // EYE-LEVEL: Straight-on centered view
+            fov: 45 
           }}
           gl={{ 
             antialias: true, 
@@ -1104,7 +1104,7 @@ export default function GodModeCompare() {
         >
           <Suspense fallback={null}>
             <color attach="background" args={['#050810']} />
-            <fog attach="fog" args={['#050810', 20, 50]} />
+            <fog attach="fog" args={['#050810', 25, 60]} />
             
             {/* ENVIRONMENT: City preset for high-contrast glass reflections */}
             <Environment preset="city" />
@@ -1116,23 +1116,17 @@ export default function GodModeCompare() {
               hoverData={hoverData}
             />
             
-            {/* CONSTRAINED ORBIT CONTROLS — 90° rotation limit */}
+            {/* FIXED VIEW — No rotation, zoom only */}
             <OrbitControls
-              target={[0, 1, 0]}
+              target={[0, 0, 0]}
               enableZoom={true}
               enablePan={false}
-              enableRotate={true}
-              rotateSpeed={0.8}
+              enableRotate={false}
               zoomSpeed={0.6}
-              minDistance={8}
-              maxDistance={35}
-              minPolarAngle={Math.PI / 6}       // 30° from top
-              maxPolarAngle={Math.PI / 2.2}     // ~82° (don't flip under)
-              minAzimuthAngle={-Math.PI / 4}    // 45° left limit
-              maxAzimuthAngle={Math.PI / 4}     // 45° right limit (total 90°)
+              minDistance={10}
+              maxDistance={30}
               enableDamping={true}
               dampingFactor={0.08}
-              autoRotate={false}
               makeDefault
             />
           </Suspense>
