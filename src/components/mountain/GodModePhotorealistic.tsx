@@ -208,12 +208,47 @@ export default function GodModePhotorealistic() {
   }, [hoverPosition, scenarioA.trajectory, scenarioB.trajectory]);
 
   return (
-    <div className="godmode-hybrid-container">
+    <div 
+      className="godmode-hybrid-container"
+      style={{
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        minHeight: '500px',
+        overflow: 'hidden',
+        background: '#030508'
+      }}
+    >
       
       {/* ═══════════════════════════════════════════════════════════════════
           LAYER 1: CINEMATIC BACKPLATE (The Realism)
+          Multi-layered CSS gradients creating photorealistic mountain
           ═══════════════════════════════════════════════════════════════════ */}
-      <div className="cinema-backplate" />
+      <div 
+        className="cinema-backplate" 
+        style={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 0,
+          background: `
+            radial-gradient(1px 1px at 10% 8%, rgba(255,255,255,0.6) 0%, transparent 100%),
+            radial-gradient(1.5px 1.5px at 25% 12%, rgba(255,255,255,0.4) 0%, transparent 100%),
+            radial-gradient(1px 1px at 40% 5%, rgba(255,255,255,0.7) 0%, transparent 100%),
+            radial-gradient(1px 1px at 55% 15%, rgba(255,255,255,0.5) 0%, transparent 100%),
+            radial-gradient(1.2px 1.2px at 70% 8%, rgba(255,255,255,0.5) 0%, transparent 100%),
+            radial-gradient(1px 1px at 85% 4%, rgba(255,255,255,0.6) 0%, transparent 100%),
+            radial-gradient(ellipse 8% 4% at 50% 12%, rgba(200,220,255,0.3) 0%, transparent 70%),
+            linear-gradient(145deg, transparent 0%, transparent 10%, rgba(140,160,200,0.08) 11%, rgba(100,130,180,0.12) 14%, rgba(80,110,160,0.08) 18%, transparent 22%),
+            linear-gradient(168deg, transparent 0%, transparent 9%, #1a2540 10%, #162035 15%, #0f1625 25%, #0a1018 40%, #050810 60%),
+            linear-gradient(155deg, transparent 0%, transparent 12%, #14203a 13%, #0f1828 25%, #080f18 45%, #040608 70%),
+            linear-gradient(185deg, transparent 0%, transparent 11%, #16223c 12%, #101a2a 24%, #0a1018 42%, #050810 65%),
+            linear-gradient(160deg, transparent 0%, transparent 28%, rgba(20,35,60,0.6) 30%, rgba(15,25,45,0.4) 40%, transparent 55%),
+            linear-gradient(200deg, transparent 0%, transparent 26%, rgba(22,38,65,0.5) 28%, rgba(16,28,50,0.3) 38%, transparent 50%),
+            radial-gradient(ellipse 120% 35% at 50% 85%, rgba(15,40,80,0.4) 0%, rgba(8,20,45,0.2) 40%, transparent 70%),
+            linear-gradient(180deg, #020408 0%, #050a14 15%, #081020 35%, #0a1830 60%, #0c2040 100%)
+          `
+        }}
+      />
       
       {/* ═══════════════════════════════════════════════════════════════════
           LAYER 2: VOLUMETRIC FOG (Depth Enhancement)
