@@ -408,18 +408,18 @@ interface AtmosphericHazeProps {
 
 function AtmosphericHaze({ riskLevel, viewMode, scenario, isSeismicActive = false }: AtmosphericHazeProps) {
   const riskFactor = clamp01(riskLevel / 100);
-  const viewFactor = (viewMode === "investor" || viewMode === "data") ? 0.7 : 1.0;
+  const viewFactor = (viewMode === "investor" || viewMode === "data") ? 0.5 : 0.7;
   
-  const scenarioTone = scenario === "stress" ? 1.2 : 
-                       scenario === "downside" ? 1.1 : 
-                       scenario === "upside" ? 0.85 : 1.0;
+  const scenarioTone = scenario === "stress" ? 1.1 : 
+                       scenario === "downside" ? 1.0 : 
+                       scenario === "upside" ? 0.7 : 0.85;
   
-  // Reduced base opacity for bottom haze
-  const baseOpacity = 0.18 + (riskFactor * 0.08 * scenarioTone);
+  // BRIGHTENED: Reduced base opacity significantly
+  const baseOpacity = 0.08 + (riskFactor * 0.05 * scenarioTone);
   const finalOpacity = baseOpacity * viewFactor;
   
-  // Altitude haze opacity (above mountain)
-  const altitudeOpacity = 0.08 * viewFactor;
+  // Altitude haze opacity (above mountain) - reduced
+  const altitudeOpacity = 0.04 * viewFactor;
   
   // SEISMIC: Amber warning overlay when risk is being actively manipulated
   const seismicIntensity = isSeismicActive ? Math.min(1, riskFactor * 1.5) : 0;
@@ -447,14 +447,14 @@ function AtmosphericHaze({ riskLevel, viewMode, scenario, isSeismicActive = fals
         className="haze-layer haze-pressure-band"
         style={{ opacity: altitudeOpacity * 0.6 }}
       />
-      {/* REDUCED bottom haze layers */}
+      {/* MINIMAL bottom haze layers - brightened */}
       <div 
         className="haze-layer haze-deep"
-        style={{ opacity: finalOpacity * 0.35 }}
+        style={{ opacity: finalOpacity * 0.2 }}
       />
       <div 
         className="haze-layer haze-mid"
-        style={{ opacity: finalOpacity * 0.25 }}
+        style={{ opacity: finalOpacity * 0.15 }}
       />
 
       <style>{`
@@ -471,45 +471,43 @@ function AtmosphericHaze({ riskLevel, viewMode, scenario, isSeismicActive = fals
           inset: 0;
         }
 
-        /* ALTITUDE HAZE - vertical gradient above mountain */
+        /* ALTITUDE HAZE - lighter vertical gradient above mountain */
         .haze-altitude {
           background: linear-gradient(
             to bottom,
-            rgba(18, 28, 42, 0.35) 0%,
-            rgba(14, 22, 34, 0.2) 20%,
-            rgba(10, 18, 28, 0.08) 40%,
-            transparent 55%
+            rgba(20, 35, 55, 0.15) 0%,
+            rgba(18, 30, 48, 0.08) 20%,
+            transparent 40%
           );
         }
 
-        /* PRESSURE BAND - subtle horizontal density above peak */
+        /* PRESSURE BAND - very subtle horizontal band */
         .haze-pressure-band {
           background: linear-gradient(
             to bottom,
-            transparent 15%,
-            rgba(22, 34, 48, 0.15) 25%,
-            rgba(18, 28, 42, 0.1) 32%,
-            transparent 42%
+            transparent 20%,
+            rgba(30, 50, 70, 0.06) 28%,
+            transparent 38%
           );
-          filter: blur(8px);
+          filter: blur(6px);
         }
 
-        /* REDUCED: Bottom haze layers */
+        /* BRIGHTENED: Bottom haze layers - much lighter */
         .haze-deep {
           background: radial-gradient(
-            ellipse 120% 60% at 50% 70%,
-            rgba(10, 20, 32, 0.5) 0%,
-            rgba(8, 16, 26, 0.25) 40%,
-            transparent 65%
+            ellipse 120% 60% at 50% 75%,
+            rgba(15, 30, 50, 0.2) 0%,
+            rgba(12, 25, 40, 0.08) 40%,
+            transparent 60%
           );
         }
 
         .haze-mid {
           background: radial-gradient(
-            ellipse 100% 50% at 45% 65%,
-            rgba(14, 26, 40, 0.35) 0%,
-            rgba(10, 20, 32, 0.15) 35%,
-            transparent 55%
+            ellipse 100% 50% at 45% 70%,
+            rgba(20, 38, 58, 0.12) 0%,
+            rgba(15, 30, 48, 0.05) 35%,
+            transparent 50%
           );
         }
         
@@ -825,17 +823,17 @@ export default function ScenarioMountain({
     <div
       className={`relative w-full h-full overflow-hidden ${className ?? ""}`}
       style={{
-        background: "radial-gradient(circle at 50% 60%, #0f172a 0%, #0b1220 100%)",
+        background: "radial-gradient(circle at 50% 55%, #1a2744 0%, #0f1a2e 60%, #0a1220 100%)",
         minHeight: '400px',
         height: '100%',
         width: '100%',
       }}
     >
-      {/* THE VIGNETTE — Deep shadow frame */}
+      {/* THE VIGNETTE — Subtle shadow frame (reduced intensity) */}
       <div 
         className="absolute inset-0 pointer-events-none z-[2]"
         style={{
-          boxShadow: "inset 0 0 120px rgba(11, 18, 32, 0.8)",
+          boxShadow: "inset 0 0 80px rgba(11, 18, 32, 0.4)",
         }}
       />
       
@@ -856,12 +854,14 @@ export default function ScenarioMountain({
         }}
       >
         <Suspense fallback={null}>
-        <color attach="background" args={['#0b1220']} />
-        <fog attach="fog" args={['#0b1220', 35, 95]} />
+        <color attach="background" args={['#0f1a2e']} />
+        <fog attach="fog" args={['#0f1a2e', 40, 100]} />
         
         <PerspectiveCamera makeDefault position={[0, 6, 32]} fov={38} />
-        <ambientLight intensity={0.12} />
-        <directionalLight position={[8, 20, 10]} intensity={0.4} color="#ffffff" />
+        <ambientLight intensity={0.25} />
+        <directionalLight position={[8, 20, 10]} intensity={0.6} color="#ffffff" />
+        {/* Cyan rim light for vibrancy */}
+        <directionalLight position={[-10, 15, -5]} intensity={0.15} color="#22d3ee" />
         <directionalLight position={[-6, 12, -8]} intensity={0.06} color="#0ea5e9" />
         <pointLight position={[0, 8, 0]} intensity={0.08} color="#0ea5e9" distance={30} decay={2} />
         

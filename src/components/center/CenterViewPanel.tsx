@@ -1,15 +1,13 @@
 import React, { useEffect, useState, useMemo } from "react";
 import type { CenterViewId } from "@/types/view";
 import ScenarioMountain from "@/components/mountain/ScenarioMountain";
-import GodModeMountain from "@/components/mountain/GodModeMountain";
-import ScenarioDeltaSnapshot from "@/components/ScenarioDeltaSnapshot";
+import GodModePhotorealistic from "@/components/mountain/GodModePhotorealistic";
 
 // Tab Components
 import { RiskTab } from "@/components/Risk";
 import { DecisionTab } from "@/components/Decision";
 import { ValuationTab } from "@/components/valuation";
-import { CompareTab } from "@/components/compare";
-import { ImpactTab } from "@/components/impact";
+import { ImpactGodMode } from "@/components/impact";
 
 import { useScenario, useScenarioStore } from "@/state/scenarioStore";
 import { onCausal } from "@/ui/causalEvents";
@@ -58,11 +56,9 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
           Do not adjust without design sign-off. */}
       <div className="mountain-stage relative w-full flex-1 p-4" data-tour="mountain">
         {view === "terrain" && (
-          <div className="relative h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-black shadow-[0_8px_32px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.03)]">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.4)_60%,rgba(0,0,0,0.85)_100%)]" />
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-linear-to-b from-black/60 via-black/20 to-transparent" />
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-linear-to-t from-black/80 via-black/30 to-transparent" />
-            <div className="pointer-events-none absolute inset-0 rounded-3xl shadow-[inset_0_0_0_1px_rgba(34,211,238,0.06)]" />
+          <div className="relative h-full w-full overflow-auto rounded-3xl border border-cyan-500/20 bg-gradient-to-b from-slate-950 via-slate-900 to-black shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08),0_0_60px_rgba(34,211,238,0.08)]">
+            {/* Cyan accent border glow - enhanced */}
+            <div className="pointer-events-none absolute inset-0 rounded-3xl shadow-[inset_0_0_0_1px_rgba(34,211,238,0.2),inset_0_0_30px_rgba(34,211,238,0.05)]" />
             
             {/* Causal highlight band (no labels) — only after explicit user action */}
             {bandNonce > 0 ? (
@@ -73,15 +69,13 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
               />
             ) : null}
 
-            <div className="relative h-full w-full">
+            {/* Mountain with brightness boost */}
+            <div className="relative h-full w-full" style={{ filter: 'brightness(1.15) saturate(1.2) contrast(1.05)' }}>
               <ScenarioMountain 
                 scenario={scenario} 
                 dataPoints={dataPoints}
                 activeKpiIndex={hoveredKpiIndex}
               />
-            </div>
-
-            <div className="mt-3 px-1">
             </div>
           </div>
         )}
@@ -100,17 +94,17 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
           </div>
         )}
 
-        {/* COMPARE - God Mode: Dual scenario holographic glass mountain with lava rivers */}
+        {/* COMPARE - Cinema-Grade God Mode: Photorealistic backplate + data overlay */}
         {view === "compare" && (
           <div className="h-full w-full overflow-hidden rounded-3xl border border-slate-700/40 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
-            <GodModeMountain />
+            <GodModePhotorealistic />
           </div>
         )}
 
         {/* IMPACT - Sensitivity analysis */}
         {view === "impact" && (
           <div className="h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-linear-to-br from-slate-950/60 to-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
-            <ImpactTab />
+            <ImpactGodMode />
           </div>
         )}
 

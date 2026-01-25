@@ -31,8 +31,6 @@ import HeaderControlDeck from "@/components/layout/HeaderControlDeck";
 import { deriveArrGrowth, formatUsdCompact } from "@/utils/arrGrowth";
 import { getQualityScoreFromKpis, getQualityBandFromKpis } from "@/logic/qualityScore";
 import ScenarioMemoPage from "@/pages/ScenarioMemoPage";
-import CinematicTest from "@/pages/CinematicTest";
-import GodModeTest from "@/pages/GodModeTest";
 import ImpactView from "@/components/compound/impact";
 import VariancesView from "@/components/compound/variances/VariancesView";
 import { useDebouncedValue, useThrottledValue } from "@/hooks/useDebouncedValue";
@@ -488,15 +486,6 @@ export default function App() {
     return <ScenarioMemoPage />;
   }
 
-  // Cinematic mountain test route — visit /cinematic to preview
-  if (typeof window !== "undefined" && window.location.pathname === "/cinematic") {
-    return <CinematicTest />;
-  }
-
-  // God Mode holographic mountain — visit /godmode to preview
-  if (typeof window !== "undefined" && window.location.pathname === "/godmode") {
-    return <GodModeTest />;
-  }
 
   // FEATURE FLAG — Scenario Intelligence (Cold Brief) — reversible, UI-only
   // Enable via: localStorage.setItem("ENABLE_SCENARIO_INTELLIGENCE","1"); location.reload();

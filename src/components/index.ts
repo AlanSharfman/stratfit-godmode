@@ -38,5 +38,4 @@ export {
 export { DecisionTab } from './Decision';
 export { RiskTab } from './Risk';
 export { ValuationTab } from './valuation';
-export { CompareTab } from './compare';
-export { ImpactTab } from './impact';
+export { ImpactGodMode } from './impact';
