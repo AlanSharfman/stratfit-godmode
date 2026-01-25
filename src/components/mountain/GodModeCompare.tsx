@@ -173,14 +173,49 @@ function ProbabilityFan({ color, score, isBaseline }: ProbabilityFanProps) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// LAVA PATH - Internal Emissive Flow with Surface Snapping
+// SURFACE HEIGHT SAMPLER - Gets exact Z height from mountain geometry
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function getMountainHeightAt(x: number, y: number, geometry: THREE.PlaneGeometry): number {
+  const pos = geometry.attributes.position;
+  const width = 16; // Must match geometry width
+  const height = 14; // Must match geometry height
+  const segmentsX = 128; // Must match geometry segments
+  const segmentsY = 128;
+  
+  // Convert world XY to geometry grid indices
+  const gridX = ((x + width / 2) / width) * segmentsX;
+  const gridY = ((y + height / 2) / height) * segmentsY;
+  
+  // Clamp to valid range
+  const ix = Math.max(0, Math.min(segmentsX, Math.floor(gridX)));
+  const iy = Math.max(0, Math.min(segmentsY, Math.floor(gridY)));
+  
+  // Get vertex index (row-major order)
+  const idx = iy * (segmentsX + 1) + ix;
+  
+  // Return Z height at this vertex (with bounds check)
+  if (idx >= 0 && idx < pos.count) {
+    return pos.getZ(idx);
+  }
+  
+  // Fallback: calculate height mathematically
+  const maxDist = 8.0;
+  const dist = Math.sqrt(x * x + y * y);
+  const normalized = Math.max(0, 1.0 - dist / maxDist);
+  return Math.pow(normalized, 1.8) * 6.0;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// LAVA PATH - Surface-Aware Undulating Flow
+// Paths "cling" to ridges and dip into valleys
 // ═══════════════════════════════════════════════════════════════════════════════
 
 interface LavaPathProps {
   color: string;
   score: number;
-  isBaseline: boolean; // true = Baseline (A), false = Exploration (B)
-  otherScore: number; // The other scenario's score for calculating divergence
+  isBaseline: boolean;
+  otherScore: number;
   geometry: THREE.PlaneGeometry;
 }
 
@@ -188,53 +223,53 @@ function LavaPath({ color, score, isBaseline, otherScore, geometry }: LavaPathPr
   const tubeRef = useRef<THREE.Mesh>(null);
   const pipRefs = useRef<THREE.Mesh[]>([]);
   
-  // Calculate divergence - how much this path differs from the other
   const scoreDiff = score - otherScore;
-  const divergenceFactor = scoreDiff / 100; // -1 to 1 range
+  const divergenceFactor = scoreDiff / 100;
   
-  // Generate path: BOTH start at peak, then DIVERGE based on strategic outcome
-  // Path flows ON TOP of the mountain surface
+  // SURFACE-AWARE FLOW: Sample 100 points along mountain surface
   const curve = useMemo(() => {
     const points: THREE.Vector3[] = [];
-    const maxDist = 8.0;
+    const side = isBaseline ? -1 : 1;
+    const drift = (100 - score) * 0.03 * side; // Score affects lateral drift
     
-    for (let t = 0; t <= 1; t += 0.02) {
-      // CONVERGENCE ZONE (t=0 to 0.2): Both paths start together at peak
-      // DIVERGENCE ZONE (t=0.2 to 1): Paths separate based on score
+    for (let i = 0; i <= 100; i++) {
+      const t = i / 100;
       
-      const convergenceT = Math.min(t / 0.2, 1); // 0-1 during first 20%
-      const divergenceT = Math.max(0, (t - 0.2) / 0.8); // 0-1 after 20%
+      // CONVERGENCE → DIVERGENCE path
+      const convergenceT = Math.min(t / 0.15, 1);
+      const divergenceT = Math.max(0, (t - 0.15) / 0.85);
       
-      // X position: slight side offset that grows with divergence
-      const sideOffset = isBaseline ? -1 : 1; // Baseline left, Exploration right
-      const xDivergence = sideOffset * divergenceT * 2.5; // Spread apart
-      const xScoreShift = divergenceFactor * divergenceT * 1.5; // Higher score = closer to center
-      const x = xDivergence - xScoreShift;
+      // X: Start at center, diverge outward based on score
+      const baseX = side * divergenceT * 4.0;
+      const driftX = drift * Math.sin(t * Math.PI * 1.5); // Sinuous drift
+      const scoreShift = divergenceFactor * divergenceT * 2.0;
+      const x = baseX + driftX - scoreShift;
       
-      // Y position: flow from peak (back) toward viewer (front)
-      const y = -2 + t * 8; // Start at back, flow forward
+      // Y: Flow from peak (0) toward base (7)
+      const y = -1 + t * 8;
       
-      // Z position (height): Calculate mountain surface height, then ADD offset to be ON TOP
-      const dist = Math.sqrt(x * x + y * y);
-      const normalized = Math.max(0, 1.0 - dist / maxDist);
-      const mountainSurface = Math.pow(normalized, 1.8) * 6.0; // Exact mountain height
-      const ridge = noise2D(x * 0.3, y * 0.3) * 0.4 * normalized;
+      // Z: SAMPLE ACTUAL MOUNTAIN HEIGHT at this XY position
+      const surfaceZ = getMountainHeightAt(x, y, geometry);
       
-      // Score bonus: higher score paths stay elevated
-      const elevationBonus = (score / 100) * divergenceT * 1.0;
+      // Add ridge-following variation (undulation)
+      const ridgeWobble = noise2D(x * 0.5, y * 0.5) * 0.15;
       
-      // SURFACE OFFSET: Place lava ON TOP of mountain (not inside)
-      const surfaceOffset = 0.5; // Units above the surface
+      // Score bonus: higher score = elevated path
+      const elevationBonus = (score / 100) * divergenceT * 0.8;
       
-      const z = mountainSurface + ridge + elevationBonus + surfaceOffset;
+      // SURFACE OFFSET: Sit 0.12 units above mesh (prevents z-fighting)
+      const surfaceOffset = 0.12;
+      
+      const z = surfaceZ + ridgeWobble + elevationBonus + surfaceOffset;
       
       points.push(new THREE.Vector3(x, y, z));
     }
-    return new THREE.CatmullRomCurve3(points);
-  }, [score, otherScore, isBaseline, divergenceFactor]);
+    
+    return new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.5);
+  }, [score, otherScore, isBaseline, divergenceFactor, geometry]);
   
   const tubeGeometry = useMemo(() => {
-    return new THREE.TubeGeometry(curve, 64, 0.1, 8, false);
+    return new THREE.TubeGeometry(curve, 100, 0.06, 8, false);
   }, [curve]);
 
   // Animate the path glow and kinetic pips
@@ -260,17 +295,30 @@ function LavaPath({ color, score, isBaseline, otherScore, geometry }: LavaPathPr
 
   return (
     <group>
-      {/* OUTER GLOW */}
-      <mesh geometry={new THREE.TubeGeometry(curve, 64, 0.25, 8, false)}>
+      {/* OUTER ATMOSPHERIC GLOW - Wide soft bloom */}
+      <mesh geometry={new THREE.TubeGeometry(curve, 100, 0.2, 8, false)}>
         <meshBasicMaterial
           color={color}
           transparent
-          opacity={0.15}
+          opacity={0.1}
+          toneMapped={false}
+          depthWrite={false}
+        />
+      </mesh>
+      
+      {/* MID GLOW LAYER */}
+      <mesh geometry={new THREE.TubeGeometry(curve, 100, 0.12, 8, false)}>
+        <meshStandardMaterial
+          color={color}
+          emissive={color}
+          emissiveIntensity={2}
+          transparent
+          opacity={0.4}
           toneMapped={false}
         />
       </mesh>
       
-      {/* MAIN LAVA TUBE - Bright emissive */}
+      {/* MAIN LAVA TUBE - Bright emissive core */}
       <mesh ref={tubeRef} geometry={tubeGeometry}>
         <meshStandardMaterial
           color={color}
@@ -280,31 +328,31 @@ function LavaPath({ color, score, isBaseline, otherScore, geometry }: LavaPathPr
         />
       </mesh>
       
-      {/* WHITE HOT CORE */}
-      <mesh geometry={new THREE.TubeGeometry(curve, 64, 0.03, 8, false)}>
+      {/* WHITE HOT CENTER - The "lava" core */}
+      <mesh geometry={new THREE.TubeGeometry(curve, 100, 0.02, 8, false)}>
         <meshBasicMaterial
           color="#ffffff"
           toneMapped={false}
         />
       </mesh>
       
-      {/* Kinetic data pips */}
+      {/* KINETIC DATA PIPS - Flow particles */}
       {pips.map((_, i) => (
         <mesh 
           key={i} 
           ref={(el) => { if (el) pipRefs.current[i] = el; }}
         >
-          <sphereGeometry args={[0.15, 12, 12]} />
+          <sphereGeometry args={[0.1, 12, 12]} />
           <meshStandardMaterial
             color="#ffffff"
             emissive={color}
-            emissiveIntensity={8}
+            emissiveIntensity={6}
             toneMapped={false}
           />
         </mesh>
       ))}
       
-      {/* Probability Fan - uncertainty spread at outcome zone */}
+      {/* PROBABILITY FAN - Monte Carlo uncertainty at endpoint */}
       <ProbabilityFan color={color} score={score} isBaseline={isBaseline} />
     </group>
   );
@@ -393,27 +441,35 @@ function UnifiedDestinyField({ scenarioA, scenarioB, laserX }: UnifiedFieldProps
         />
       </mesh>
 
-      {/* CONVERGENCE POINT - Where both strategies begin (current state) 
-          Positioned ON TOP of peak (peak is ~6 units high at center) */}
-      <mesh position={[0, 0, 6.8]}>
-        <sphereGeometry args={[0.35, 32, 32]} />
-        <meshStandardMaterial
-          color="#ffffff"
-          emissive="#ffffff"
-          emissiveIntensity={4}
-          toneMapped={false}
-        />
-      </mesh>
-      {/* Convergence glow ring */}
-      <mesh position={[0, 0, 6.8]} rotation={[0, 0, 0]}>
-        <ringGeometry args={[0.5, 0.7, 32]} />
-        <meshBasicMaterial color="#ffffff" transparent opacity={0.4} side={THREE.DoubleSide} />
-      </mesh>
-      {/* Vertical beam from peak */}
-      <mesh position={[0, 0, 7.5]}>
-        <cylinderGeometry args={[0.03, 0.03, 1.5, 8]} />
-        <meshBasicMaterial color="#ffffff" transparent opacity={0.5} />
-      </mesh>
+      {/* CONVERGENCE POINT - "YOU ARE HERE" - Where both strategies begin
+          Positioned at peak summit (sampling actual geometry height) */}
+      <group position={[0, -1, getMountainHeightAt(0, -1, geometry) + 0.3]}>
+        {/* Core sphere */}
+        <mesh>
+          <sphereGeometry args={[0.25, 32, 32]} />
+          <meshStandardMaterial
+            color="#ffffff"
+            emissive="#ffffff"
+            emissiveIntensity={5}
+            toneMapped={false}
+          />
+        </mesh>
+        {/* Inner glow ring */}
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.35, 0.45, 32]} />
+          <meshBasicMaterial color="#ffffff" transparent opacity={0.5} side={THREE.DoubleSide} />
+        </mesh>
+        {/* Outer pulse ring */}
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.55, 0.6, 32]} />
+          <meshBasicMaterial color="#00D9FF" transparent opacity={0.3} side={THREE.DoubleSide} />
+        </mesh>
+        {/* Vertical beacon */}
+        <mesh position={[0, 0, 0.8]}>
+          <cylinderGeometry args={[0.015, 0.015, 1.5, 8]} />
+          <meshBasicMaterial color="#ffffff" transparent opacity={0.7} />
+        </mesh>
+      </group>
       
       {/* THE LAVA RIVERS - Strategic Divergence Visualization
           Both paths START at the convergence point (current state)
