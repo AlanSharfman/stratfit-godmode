@@ -193,6 +193,7 @@ function LavaPath({ color, score, isBaseline, otherScore, geometry }: LavaPathPr
   const divergenceFactor = scoreDiff / 100; // -1 to 1 range
   
   // Generate path: BOTH start at peak, then DIVERGE based on strategic outcome
+  // Path flows ON TOP of the mountain surface
   const curve = useMemo(() => {
     const points: THREE.Vector3[] = [];
     const maxDist = 8.0;
@@ -213,16 +214,19 @@ function LavaPath({ color, score, isBaseline, otherScore, geometry }: LavaPathPr
       // Y position: flow from peak (back) toward viewer (front)
       const y = -2 + t * 8; // Start at back, flow forward
       
-      // Z position (height): Higher score = stays higher on mountain longer
-      const dist = Math.sqrt(x * x + (y - 2) * (y - 2));
+      // Z position (height): Calculate mountain surface height, then ADD offset to be ON TOP
+      const dist = Math.sqrt(x * x + y * y);
       const normalized = Math.max(0, 1.0 - dist / maxDist);
-      const baseHeight = Math.pow(normalized, 1.8) * 6.0;
+      const mountainSurface = Math.pow(normalized, 1.8) * 6.0; // Exact mountain height
+      const ridge = noise2D(x * 0.3, y * 0.3) * 0.4 * normalized;
       
       // Score bonus: higher score paths stay elevated
-      const elevationBonus = (score / 100) * divergenceT * 1.5;
-      const ridge = noise2D(x * 0.3, y * 0.3) * 0.3 * normalized;
+      const elevationBonus = (score / 100) * divergenceT * 1.0;
       
-      const z = baseHeight + ridge + elevationBonus + 0.2;
+      // SURFACE OFFSET: Place lava ON TOP of mountain (not inside)
+      const surfaceOffset = 0.5; // Units above the surface
+      
+      const z = mountainSurface + ridge + elevationBonus + surfaceOffset;
       
       points.push(new THREE.Vector3(x, y, z));
     }
@@ -389,20 +393,26 @@ function UnifiedDestinyField({ scenarioA, scenarioB, laserX }: UnifiedFieldProps
         />
       </mesh>
 
-      {/* CONVERGENCE POINT - Where both strategies begin (current state) */}
-      <mesh position={[0, -2, 6.2]}>
-        <sphereGeometry args={[0.3, 32, 32]} />
+      {/* CONVERGENCE POINT - Where both strategies begin (current state) 
+          Positioned ON TOP of peak (peak is ~6 units high at center) */}
+      <mesh position={[0, 0, 6.8]}>
+        <sphereGeometry args={[0.35, 32, 32]} />
         <meshStandardMaterial
           color="#ffffff"
           emissive="#ffffff"
-          emissiveIntensity={3}
+          emissiveIntensity={4}
           toneMapped={false}
         />
       </mesh>
       {/* Convergence glow ring */}
-      <mesh position={[0, -2, 6.2]} rotation={[Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.4, 0.6, 32]} />
-        <meshBasicMaterial color="#ffffff" transparent opacity={0.3} side={THREE.DoubleSide} />
+      <mesh position={[0, 0, 6.8]} rotation={[0, 0, 0]}>
+        <ringGeometry args={[0.5, 0.7, 32]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.4} side={THREE.DoubleSide} />
+      </mesh>
+      {/* Vertical beam from peak */}
+      <mesh position={[0, 0, 7.5]}>
+        <cylinderGeometry args={[0.03, 0.03, 1.5, 8]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.5} />
       </mesh>
       
       {/* THE LAVA RIVERS - Strategic Divergence Visualization
