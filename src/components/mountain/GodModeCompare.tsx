@@ -1010,90 +1010,124 @@ function TitaniumCommandBridge({ scenarioA, scenarioB }: TitaniumBridgeProps) {
   };
 
   const scoreDelta = scenarioB.score - scenarioA.score;
+  const arrDelta = scenarioB.arr - scenarioA.arr;
+  const arrDeltaPercent = ((arrDelta / scenarioA.arr) * 100);
+
+  // Titanium panel styling
+  const panelStyle = {
+    background: 'linear-gradient(135deg, rgba(15,20,30,0.92) 0%, rgba(8,12,20,0.96) 100%)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    boxShadow: '0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)',
+    border: '1px solid rgba(255,255,255,0.06)',
+  };
 
   return (
-    <div className="absolute top-0 left-0 right-0 z-20">
-      <div 
-        className="mx-4 mt-4 rounded-xl overflow-hidden"
-        style={{
-          background: 'linear-gradient(180deg, rgba(20,25,35,0.95) 0%, rgba(10,14,22,0.98) 100%)',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.3)',
-          border: '1px solid rgba(255,255,255,0.08)',
-        }}
-      >
-        {/* Wet glass highlight strip */}
-        <div 
-          className="absolute top-0 left-0 right-0 h-[1px]"
-          style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.35) 20%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0.35) 80%, transparent)' }}
-        />
-        
-        <div className="flex items-stretch">
-          {/* Scenario A — Cyan Anchor */}
-          <div className="flex-1 px-6 py-4 border-r border-cyan-500/20 relative">
-            <div 
-              className="absolute left-0 top-0 bottom-0 w-1"
-              style={{ background: 'linear-gradient(180deg, #00D9FF 0%, #0891b2 100%)' }}
-            />
-            <div className="text-[10px] font-bold tracking-[0.15em] text-cyan-400 mb-2 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(0,217,255,0.8)]" />
-              BASELINE TRAJECTORY
+    <>
+      {/* ═══════════════════════════════════════════════════════════════════════ */}
+      {/* LEFT WING: Scenario A (Baseline) Telemetry — Anchored top-left */}
+      {/* ═══════════════════════════════════════════════════════════════════════ */}
+      <div className="absolute top-4 left-4 z-20 w-64">
+        <div className="rounded-xl overflow-hidden" style={panelStyle}>
+          {/* Cyan accent strip */}
+          <div 
+            className="h-1 w-full"
+            style={{ background: 'linear-gradient(90deg, #00D9FF 0%, #0891b2 50%, transparent 100%)' }}
+          />
+          
+          <div className="p-4">
+            {/* Header */}
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(0,217,255,0.8)]" />
+              <span className="text-[9px] font-bold tracking-[0.2em] text-cyan-400">
+                SCENARIO A: BASELINE
+              </span>
             </div>
-            <div className="flex gap-6">
+            
+            {/* Metrics Grid */}
+            <div className="grid grid-cols-3 gap-3">
               <div>
-                <div className="text-[9px] text-white/40 tracking-wide">ARR</div>
-                <div className="text-xl font-black text-white">{formatCurrency(scenarioA.arr)}</div>
+                <div className="text-[8px] text-white/40 tracking-wider mb-1">ARR</div>
+                <div className="text-lg font-black text-white">{formatCurrency(scenarioA.arr)}</div>
               </div>
               <div>
-                <div className="text-[9px] text-white/40 tracking-wide">SURVIVAL</div>
-                <div className="text-xl font-black text-white">{scenarioA.survival.toFixed(0)}%</div>
+                <div className="text-[8px] text-white/40 tracking-wider mb-1">SURVIVAL</div>
+                <div className="text-lg font-black text-white">{scenarioA.survival.toFixed(0)}%</div>
               </div>
               <div>
-                <div className="text-[9px] text-white/40 tracking-wide">SCORE</div>
-                <div className="text-xl font-black text-cyan-400">{scenarioA.score}</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Delta Badge — Center */}
-          <div className="px-6 py-4 flex flex-col items-center justify-center bg-black/40 min-w-[120px]">
-            <div className="text-[9px] text-white/40 tracking-[0.2em] mb-1">DELTA</div>
-            <div 
-              className={`text-3xl font-black tracking-tight ${scoreDelta >= 0 ? 'text-emerald-400' : 'text-red-400'}`}
-              style={{ textShadow: scoreDelta >= 0 ? '0 0 20px rgba(16,185,129,0.6)' : '0 0 20px rgba(239,68,68,0.6)' }}
-            >
-              {scoreDelta >= 0 ? '+' : ''}{scoreDelta}
-            </div>
-            <div className="text-[8px] text-white/30 mt-1">STRATEGIC SHIFT</div>
-          </div>
-
-          {/* Scenario B — Amber Anchor */}
-          <div className="flex-1 px-6 py-4 border-l border-amber-500/20 relative">
-            <div 
-              className="absolute right-0 top-0 bottom-0 w-1"
-              style={{ background: 'linear-gradient(180deg, #F59E0B 0%, #d97706 100%)' }}
-            />
-            <div className="text-[10px] font-bold tracking-[0.15em] text-amber-400 mb-2 flex items-center gap-2 justify-end">
-              EXPLORATION PATH
-              <span className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.8)]" />
-            </div>
-            <div className="flex gap-6 justify-end">
-              <div className="text-right">
-                <div className="text-[9px] text-white/40 tracking-wide">ARR</div>
-                <div className="text-xl font-black text-white">{formatCurrency(scenarioB.arr)}</div>
-              </div>
-              <div className="text-right">
-                <div className="text-[9px] text-white/40 tracking-wide">SURVIVAL</div>
-                <div className="text-xl font-black text-white">{scenarioB.survival.toFixed(0)}%</div>
-              </div>
-              <div className="text-right">
-                <div className="text-[9px] text-white/40 tracking-wide">SCORE</div>
-                <div className="text-xl font-black text-amber-400">{scenarioB.score}</div>
+                <div className="text-[8px] text-white/40 tracking-wider mb-1">SCORE</div>
+                <div className="text-lg font-black text-cyan-400">{scenarioA.score}</div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* ═══════════════════════════════════════════════════════════════════════ */}
+      {/* RIGHT WING: Scenario B (Exploration) Telemetry — Anchored top-right */}
+      {/* ═══════════════════════════════════════════════════════════════════════ */}
+      <div className="absolute top-4 right-4 z-20 w-64">
+        <div className="rounded-xl overflow-hidden" style={panelStyle}>
+          {/* Amber accent strip */}
+          <div 
+            className="h-1 w-full"
+            style={{ background: 'linear-gradient(90deg, transparent 0%, #d97706 50%, #F59E0B 100%)' }}
+          />
+          
+          <div className="p-4">
+            {/* Header */}
+            <div className="flex items-center gap-2 mb-3 justify-end">
+              <span className="text-[9px] font-bold tracking-[0.2em] text-amber-400">
+                SCENARIO B: EXPLORATION
+              </span>
+              <div className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.8)]" />
+            </div>
+            
+            {/* Metrics Grid */}
+            <div className="grid grid-cols-3 gap-3 text-right">
+              <div>
+                <div className="text-[8px] text-white/40 tracking-wider mb-1">ARR</div>
+                <div className="text-lg font-black text-white">{formatCurrency(scenarioB.arr)}</div>
+              </div>
+              <div>
+                <div className="text-[8px] text-white/40 tracking-wider mb-1">SURVIVAL</div>
+                <div className="text-lg font-black text-white">{scenarioB.survival.toFixed(0)}%</div>
+              </div>
+              <div>
+                <div className="text-[8px] text-white/40 tracking-wider mb-1">SCORE</div>
+                <div className="text-lg font-black text-amber-400">{scenarioB.score}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ═══════════════════════════════════════════════════════════════════════ */}
+      {/* TOP CENTER: Delta Badge — Small, non-intrusive */}
+      {/* ═══════════════════════════════════════════════════════════════════════ */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
+        <div 
+          className="px-4 py-2 rounded-lg flex items-center gap-3"
+          style={{
+            ...panelStyle,
+            border: `1px solid ${scoreDelta >= 0 ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`,
+          }}
+        >
+          <div className="text-[8px] text-white/50 tracking-[0.15em]">Δ SCORE</div>
+          <div 
+            className={`text-xl font-black ${scoreDelta >= 0 ? 'text-emerald-400' : 'text-red-400'}`}
+            style={{ textShadow: scoreDelta >= 0 ? '0 0 15px rgba(16,185,129,0.5)' : '0 0 15px rgba(239,68,68,0.5)' }}
+          >
+            {scoreDelta >= 0 ? '+' : ''}{scoreDelta}
+          </div>
+          <div className="h-4 w-px bg-white/20" />
+          <div className="text-[8px] text-white/50 tracking-[0.15em]">Δ ARR</div>
+          <div className={`text-sm font-bold ${arrDelta >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+            {arrDelta >= 0 ? '+' : ''}{arrDeltaPercent.toFixed(0)}%
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -1291,9 +1325,9 @@ export default function GodModeCompare() {
       {/* TITANIUM COMMAND BRIDGE */}
       <TitaniumCommandBridge scenarioA={scenarioA} scenarioB={scenarioB} />
 
-      {/* 3D CANVAS — Command Bridge perspective */}
+      {/* 3D CANVAS — Unobstructed view with summit clearance */}
       <div
-        className="absolute inset-0 pt-28"
+        className="absolute inset-0"
         onMouseMove={handleCanvasMove}
         onMouseLeave={() => setHoverData(null)}
       >
