@@ -100,35 +100,37 @@ const getStrategicVerdict = (scenarioA: ScenarioData, scenarioB: ScenarioData): 
 interface ProbabilityFanProps {
   color: string;
   score: number;
-  direction: number;
+  isBaseline: boolean;
 }
 
-function ProbabilityFan({ color, score, direction }: ProbabilityFanProps) {
+function ProbabilityFan({ color, score, isBaseline }: ProbabilityFanProps) {
   const particlesRef = useRef<THREE.Points>(null);
   
-  // Generate fan particles representing Monte Carlo uncertainty at mountain base
+  // Generate fan particles representing Monte Carlo uncertainty (outcome spread)
   const { positions, scales } = useMemo(() => {
-    const count = 150;
+    const count = 100;
     const pos = new Float32Array(count * 3);
     const scl = new Float32Array(count);
-    const uncertainty = (100 - score) / 100;
+    const uncertainty = (100 - score) / 100; // Lower score = more uncertainty spread
+    
+    // Fan appears at the END of the path (outcome zone)
+    const baseX = isBaseline ? -2.5 : 2.5;
+    const baseY = 5; // Front of mountain (where paths end)
     
     for (let i = 0; i < count; i++) {
-      // Fan out at the base edge of the mountain
-      const angle = (Math.random() - 0.5) * Math.PI * 0.4;
-      const dist = 5 + Math.random() * 2;
-      const baseX = direction * dist * Math.cos(angle);
-      const baseY = dist * Math.sin(angle) * 0.5;
-      const baseZ = Math.random() * 0.5 * uncertainty;
+      // Spread based on uncertainty
+      const spreadX = (Math.random() - 0.5) * 3 * uncertainty;
+      const spreadY = (Math.random() - 0.5) * 2 * uncertainty;
+      const spreadZ = Math.random() * 1.5 * uncertainty;
       
-      pos[i * 3] = baseX;
-      pos[i * 3 + 1] = baseY;
-      pos[i * 3 + 2] = baseZ;
-      scl[i] = 0.03 + Math.random() * 0.05;
+      pos[i * 3] = baseX + spreadX;
+      pos[i * 3 + 1] = baseY + spreadY;
+      pos[i * 3 + 2] = spreadZ + 0.3;
+      scl[i] = 0.02 + Math.random() * 0.04;
     }
     
     return { positions: pos, scales: scl };
-  }, [score, direction]);
+  }, [score, isBaseline]);
 
   // Animate particles
   useFrame((state) => {
@@ -177,41 +179,58 @@ function ProbabilityFan({ color, score, direction }: ProbabilityFanProps) {
 interface LavaPathProps {
   color: string;
   score: number;
-  direction: number;
+  isBaseline: boolean; // true = Baseline (A), false = Exploration (B)
+  otherScore: number; // The other scenario's score for calculating divergence
   geometry: THREE.PlaneGeometry;
 }
 
-function LavaPath({ color, score, direction, geometry }: LavaPathProps) {
+function LavaPath({ color, score, isBaseline, otherScore, geometry }: LavaPathProps) {
   const tubeRef = useRef<THREE.Mesh>(null);
   const pipRefs = useRef<THREE.Mesh[]>([]);
-  const drift = (100 - score) / 100 * 0.5; // Reduced drift
   
-  // Generate path that follows the mountain slope from peak to base
+  // Calculate divergence - how much this path differs from the other
+  const scoreDiff = score - otherScore;
+  const divergenceFactor = scoreDiff / 100; // -1 to 1 range
+  
+  // Generate path: BOTH start at peak, then DIVERGE based on strategic outcome
   const curve = useMemo(() => {
     const points: THREE.Vector3[] = [];
     const maxDist = 8.0;
     
-    // Path goes from near peak (t=0) to base (t=1)
     for (let t = 0; t <= 1; t += 0.02) {
-      // Start near center, spread outward
-      const spreadFactor = t * 1.2; // How far from center
-      const x = direction * (spreadFactor * 5 + drift * t);
-      const y = spreadFactor * 5 - 3; // Move from center outward
+      // CONVERGENCE ZONE (t=0 to 0.2): Both paths start together at peak
+      // DIVERGENCE ZONE (t=0.2 to 1): Paths separate based on score
       
-      // Calculate height matching mountain surface
-      const dist = Math.sqrt(x * x + y * y);
+      const convergenceT = Math.min(t / 0.2, 1); // 0-1 during first 20%
+      const divergenceT = Math.max(0, (t - 0.2) / 0.8); // 0-1 after 20%
+      
+      // X position: slight side offset that grows with divergence
+      const sideOffset = isBaseline ? -1 : 1; // Baseline left, Exploration right
+      const xDivergence = sideOffset * divergenceT * 2.5; // Spread apart
+      const xScoreShift = divergenceFactor * divergenceT * 1.5; // Higher score = closer to center
+      const x = xDivergence - xScoreShift;
+      
+      // Y position: flow from peak (back) toward viewer (front)
+      const y = -2 + t * 8; // Start at back, flow forward
+      
+      // Z position (height): Higher score = stays higher on mountain longer
+      const dist = Math.sqrt(x * x + (y - 2) * (y - 2));
       const normalized = Math.max(0, 1.0 - dist / maxDist);
-      const peakHeight = Math.pow(normalized, 1.8) * 6.0;
-      const ridge = noise2D(x * 0.3, y * 0.3) * 0.4 * normalized;
-      const z = peakHeight + ridge + 0.15; // Slightly above surface
+      const baseHeight = Math.pow(normalized, 1.8) * 6.0;
+      
+      // Score bonus: higher score paths stay elevated
+      const elevationBonus = (score / 100) * divergenceT * 1.5;
+      const ridge = noise2D(x * 0.3, y * 0.3) * 0.3 * normalized;
+      
+      const z = baseHeight + ridge + elevationBonus + 0.2;
       
       points.push(new THREE.Vector3(x, y, z));
     }
     return new THREE.CatmullRomCurve3(points);
-  }, [direction, drift]);
+  }, [score, otherScore, isBaseline, divergenceFactor]);
   
   const tubeGeometry = useMemo(() => {
-    return new THREE.TubeGeometry(curve, 64, 0.08, 8, false);
+    return new THREE.TubeGeometry(curve, 64, 0.1, 8, false);
   }, [curve]);
 
   // Animate the path glow and kinetic pips
@@ -281,8 +300,8 @@ function LavaPath({ color, score, direction, geometry }: LavaPathProps) {
         </mesh>
       ))}
       
-      {/* Probability Fan at base */}
-      <ProbabilityFan color={color} score={score} direction={direction} />
+      {/* Probability Fan - uncertainty spread at outcome zone */}
+      <ProbabilityFan color={color} score={score} isBaseline={isBaseline} />
     </group>
   );
 }
@@ -370,9 +389,53 @@ function UnifiedDestinyField({ scenarioA, scenarioB, laserX }: UnifiedFieldProps
         />
       </mesh>
 
-      {/* THE LAVA RIVERS - Internal emissive paths */}
-      <LavaPath color="#00D9FF" score={scenarioA.score} direction={-1} geometry={geometry} />
-      <LavaPath color="#F59E0B" score={scenarioB.score} direction={1} geometry={geometry} />
+      {/* CONVERGENCE POINT - Where both strategies begin (current state) */}
+      <mesh position={[0, -2, 6.2]}>
+        <sphereGeometry args={[0.3, 32, 32]} />
+        <meshStandardMaterial
+          color="#ffffff"
+          emissive="#ffffff"
+          emissiveIntensity={3}
+          toneMapped={false}
+        />
+      </mesh>
+      {/* Convergence glow ring */}
+      <mesh position={[0, -2, 6.2]} rotation={[Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.4, 0.6, 32]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.3} side={THREE.DoubleSide} />
+      </mesh>
+      
+      {/* THE LAVA RIVERS - Strategic Divergence Visualization
+          Both paths START at the convergence point (current state)
+          Then DIVERGE based on where each strategy leads
+          Higher score = stays higher on mountain = better outcome */}
+      <LavaPath 
+        color="#00D9FF" 
+        score={scenarioA.score} 
+        otherScore={scenarioB.score}
+        isBaseline={true}
+        geometry={geometry} 
+      />
+      <LavaPath 
+        color="#F59E0B" 
+        score={scenarioB.score}
+        otherScore={scenarioA.score}
+        isBaseline={false}
+        geometry={geometry} 
+      />
+      
+      {/* DIVERGENCE GAP INDICATOR - Shows the strategic delta */}
+      {Math.abs(scenarioA.score - scenarioB.score) > 3 && (
+        <mesh position={[0, 3, 2]}>
+          <planeGeometry args={[0.05, 3]} />
+          <meshBasicMaterial 
+            color={scenarioA.score > scenarioB.score ? "#00D9FF" : "#F59E0B"} 
+            transparent 
+            opacity={0.4}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      )}
 
       {/* LASER SLICER - Vertical light beam following cursor */}
       {laserX !== null && (
