@@ -9,7 +9,6 @@ import React, { useMemo, useRef, useState, Suspense, useCallback } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { 
   MeshTransmissionMaterial, 
-  Environment, 
   Float, 
   OrbitControls,
   Html 
@@ -623,29 +622,29 @@ function UnifiedDestinyField({ scenarioA, scenarioB, hoverData }: UnifiedFieldPr
 
   return (
     <group ref={groupRef} rotation={[-Math.PI / 2.3, 0, 0]} position={[0, -1.5, 0]}>
-      {/* LAYER 1: SOLID OBSIDIAN BASE — Dark volcanic core */}
+      {/* LAYER 1: SOLID OBSIDIAN BASE — Dark volcanic core (no white) */}
       <mesh geometry={geometry}>
         <meshStandardMaterial
-          color="#080c14"
-          roughness={0.3}
-          metalness={0.8}
-          side={THREE.DoubleSide}
+          color="#050810"
+          roughness={0.5}
+          metalness={0.9}
+          side={THREE.FrontSide}
         />
       </mesh>
 
-      {/* LAYER 2: MACHINED CRYSTAL SURFACE — MeshTransmissionMaterial */}
+      {/* LAYER 2: MACHINED CRYSTAL SURFACE — Refractive glass (no white backside) */}
       <mesh geometry={geometry} position={[0, 0, 0.02]}>
         <MeshTransmissionMaterial
-          transmission={0.98}
-          thickness={5.0}
-          roughness={0.05}
-          ior={1.15}
-          chromaticAberration={0.12}
-          backside={true}
-          color="#1a2a40"
-          distortion={0.1}
-          distortionScale={0.2}
-          temporalDistortion={0.1}
+          transmission={0.6}
+          thickness={2.0}
+          roughness={0.1}
+          ior={1.2}
+          chromaticAberration={0.08}
+          backside={false}
+          color="#0a1525"
+          distortion={0.05}
+          distortionScale={0.1}
+          temporalDistortion={0.05}
         />
       </mesh>
 
@@ -750,10 +749,8 @@ function UnifiedDestinyField({ scenarioA, scenarioB, hoverData }: UnifiedFieldPr
       />
       
       {/* Subtle fill light */}
-      <ambientLight intensity={0.2} />
-      <directionalLight position={[5, 10, 10]} intensity={0.8} color="#ffffff" />
-      
-      <Environment preset="night" />
+      <ambientLight intensity={0.15} />
+      <directionalLight position={[5, 10, 10]} intensity={0.6} color="#ffffff" />
     </group>
   );
 }
@@ -1025,22 +1022,21 @@ export default function GodModeCompare() {
               />
             </Float>
             
-            {/* FULL 360° ORBIT CONTROLS */}
+            {/* CONSTRAINED ORBIT CONTROLS — 90° rotation limit */}
             <OrbitControls
               enableZoom={true}
-              enablePan={true}
+              enablePan={false}
               enableRotate={true}
-              rotateSpeed={1.2}
-              zoomSpeed={0.8}
-              panSpeed={0.8}
-              minDistance={5}
-              maxDistance={50}
-              minPolarAngle={0.1}
-              maxPolarAngle={Math.PI - 0.1}
-              minAzimuthAngle={-Infinity}
-              maxAzimuthAngle={Infinity}
+              rotateSpeed={0.8}
+              zoomSpeed={0.6}
+              minDistance={8}
+              maxDistance={35}
+              minPolarAngle={Math.PI / 4}       // 45° from top (don't go too high)
+              maxPolarAngle={Math.PI / 2.2}     // ~82° (don't flip under)
+              minAzimuthAngle={-Math.PI / 4}    // 45° left limit
+              maxAzimuthAngle={Math.PI / 4}     // 45° right limit (total 90°)
               enableDamping={true}
-              dampingFactor={0.05}
+              dampingFactor={0.08}
               autoRotate={false}
               makeDefault
             />
