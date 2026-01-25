@@ -93,49 +93,38 @@ const generateTrajectory = (baseArr: number, score: number): number[] => {
   return trajectory;
 };
 
-// Generate lava path - matches Gemini reference image style
-// Flows from peak down the mountain with natural S-curves
-const generateLavaPath = (score: number, side: 'left' | 'right') => {
-  // Score affects how much the path diverges (lower score = more spread)
-  const divergence = (100 - score) / 100;
-  const sideMultiplier = side === 'left' ? -1 : 1;
+// CONTOUR-STYLE paths - horizontal lines tracing mountain topology
+// Like the reference image with neon lines following elevation bands
+const generateContourPath = (elevation: number, scenario: 'baseline' | 'exploration', score: number) => {
+  // elevation: 0 = bottom, 1 = peak
+  // Score affects vertical offset between scenarios
+  const offset = scenario === 'exploration' ? (100 - score) * 0.12 : 0;
   
-  // Peak position - centered at top of mountain
-  const peakX = 500;
-  const peakY = 120; // Slightly lower to match image
+  // Y position for this elevation level
+  const baseY = 600 - (elevation * 500);
+  const y = baseY + offset;
   
-  // Create natural flowing path down the mountain
-  // Each point: x spreads outward, y goes down
-  if (side === 'left') {
-    // CYAN path - flows down left slope with S-curve
-    return `
-      M ${peakX} ${peakY}
-      C ${peakX - 20} ${peakY + 60}, 
-        ${peakX - 60} ${peakY + 100}, 
-        ${peakX - 80 - divergence * 30} ${peakY + 150}
-      S ${peakX - 140 - divergence * 40} ${peakY + 250}, 
-        ${peakX - 180 - divergence * 50} ${peakY + 320}
-      S ${peakX - 240 - divergence * 60} ${peakY + 400}, 
-        ${peakX - 280 - divergence * 80} ${peakY + 480}
-      S ${peakX - 320 - divergence * 100} ${peakY + 540}, 
-        ${peakX - 350 - divergence * 120} 650
-    `.replace(/\s+/g, ' ').trim();
-  } else {
-    // ORANGE path - flows down right slope with S-curve
-    return `
-      M ${peakX} ${peakY}
-      C ${peakX + 20} ${peakY + 60}, 
-        ${peakX + 60} ${peakY + 100}, 
-        ${peakX + 80 + divergence * 30} ${peakY + 150}
-      S ${peakX + 140 + divergence * 40} ${peakY + 250}, 
-        ${peakX + 180 + divergence * 50} ${peakY + 320}
-      S ${peakX + 240 + divergence * 60} ${peakY + 400}, 
-        ${peakX + 280 + divergence * 80} ${peakY + 480}
-      S ${peakX + 320 + divergence * 100} ${peakY + 540}, 
-        ${peakX + 350 + divergence * 120} 650
-    `.replace(/\s+/g, ' ').trim();
-  }
+  // Width narrows toward peak
+  const width = 900 * (1 - elevation * 0.6);
+  const startX = 500 - width / 2;
+  const endX = 500 + width / 2;
+  
+  // Peak height varies by elevation
+  const peakH = 20 + elevation * 50;
+  const cx = 500; // center
+  
+  // Create path following mountain contours with multiple peaks
+  return `M ${startX} ${y + 15}
+    Q ${startX + width * 0.15} ${y}, ${startX + width * 0.25} ${y - peakH * 0.3}
+    Q ${startX + width * 0.35} ${y - peakH * 0.5}, ${startX + width * 0.42} ${y - peakH * 0.35}
+    Q ${cx - 20} ${y - peakH * 0.7}, ${cx} ${y - peakH}
+    Q ${cx + 20} ${y - peakH * 0.7}, ${startX + width * 0.58} ${y - peakH * 0.35}
+    Q ${startX + width * 0.65} ${y - peakH * 0.5}, ${startX + width * 0.75} ${y - peakH * 0.3}
+    Q ${startX + width * 0.85} ${y}, ${endX} ${y + 15}`;
 };
+
+// Elevation levels for contour lines
+const CONTOUR_LEVELS = [0.12, 0.24, 0.36, 0.48, 0.60, 0.72, 0.84, 0.94];
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT - HOLLYWOOD HYBRID TECHNIQUE
@@ -469,121 +458,106 @@ export default function GodModePhotorealistic() {
             <circle cx="500" cy="120" r="20" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
           </g>
           
-          {/* CONVERGED STATE - Single white/blue glowing path */}
-          {isConverged ? (
-            <g className="converged-path">
-              <path
-                d={generateLavaPath((scenarioA.score + scenarioB.score) / 2, 'left')}
-                fill="none"
-                stroke="#ffffff"
-                strokeWidth="4"
-                strokeLinecap="round"
-                filter="url(#neon-bloom-white)"
-                className="neon-line converged"
-              />
-              {/* Animated particles */}
-              {[0, 1.2, 2.4].map((delay, i) => (
-                <circle key={i} r="4" fill="#ffffff" className="flow-particle">
-                  <animateMotion
-                    dur="4s"
-                    repeatCount="indefinite"
-                    begin={`${delay}s`}
-                    path={generateLavaPath((scenarioA.score + scenarioB.score) / 2, 'left')}
-                  />
-                </circle>
-              ))}
-            </g>
-          ) : (
-            <>
-              {/* SCENARIO A (Cyan) - Baseline */}
-              <g className="scenario-path cyan">
-                {/* Outer glow halo */}
+          {/* CONTOUR-STYLE VISUALIZATION - Multiple elevation bands */}
+          {/* Like the reference image with neon lines tracing mountain topology */}
+          
+          {/* BASELINE CONTOURS (Cyan) */}
+          <g className="baseline-contours">
+            {CONTOUR_LEVELS.map((elev, i) => (
+              <g key={`cyan-${i}`}>
+                {/* Glow layer */}
                 <path
-                  d={generateLavaPath(scenarioA.score, 'left')}
+                  d={generateContourPath(elev, 'baseline', scenarioA.score)}
                   fill="none"
                   stroke="#00ffff"
-                  strokeWidth="12"
+                  strokeWidth="6"
                   strokeLinecap="round"
-                  opacity="0.15"
+                  opacity={0.15}
                   filter="url(#neon-bloom-cyan)"
                 />
-                {/* Core neon line */}
+                {/* Core line */}
                 <path
-                  d={generateLavaPath(scenarioA.score, 'left')}
+                  d={generateContourPath(elev, 'baseline', scenarioA.score)}
                   fill="none"
                   stroke="#00ffff"
-                  strokeWidth="3"
+                  strokeWidth={2.2 - elev * 0.6}
                   strokeLinecap="round"
+                  opacity={0.95 - elev * 0.15}
                   filter="url(#neon-bloom-cyan)"
-                  className="neon-line cyan"
+                  style={{ mixBlendMode: 'screen' }}
                 />
-                {/* Hot white core */}
+                {/* White hot core */}
                 <path
-                  d={generateLavaPath(scenarioA.score, 'left')}
+                  d={generateContourPath(elev, 'baseline', scenarioA.score)}
                   fill="none"
                   stroke="#ffffff"
-                  strokeWidth="1"
+                  strokeWidth={0.6}
                   strokeLinecap="round"
-                  opacity="0.8"
+                  opacity={0.5 - elev * 0.15}
                 />
-                {/* Animated particles */}
-                {[0, 1.5, 3].map((delay, i) => (
-                  <circle key={i} r="4" fill="#00ffff" filter="url(#neon-bloom-cyan)" className="flow-particle">
+                {/* Flow particle */}
+                {i % 2 === 0 && (
+                  <circle r="3" fill="#00ffff" filter="url(#neon-bloom-cyan)">
                     <animateMotion
-                      dur="5s"
+                      dur={`${10 + i * 3}s`}
                       repeatCount="indefinite"
-                      begin={`${delay}s`}
-                      path={generateLavaPath(scenarioA.score, 'left')}
+                      begin={`${i * 0.8}s`}
+                      path={generateContourPath(elev, 'baseline', scenarioA.score)}
                     />
                   </circle>
-                ))}
+                )}
               </g>
-              
-              {/* SCENARIO B (Orange) - Exploration */}
-              <g className="scenario-path orange">
-                {/* Outer glow halo */}
+            ))}
+          </g>
+          
+          {/* EXPLORATION CONTOURS (Orange) */}
+          <g className="exploration-contours">
+            {CONTOUR_LEVELS.map((elev, i) => (
+              <g key={`orange-${i}`}>
+                {/* Glow layer */}
                 <path
-                  d={generateLavaPath(scenarioB.score, 'right')}
+                  d={generateContourPath(elev, 'exploration', scenarioB.score)}
                   fill="none"
-                  stroke="#ffaa00"
-                  strokeWidth="12"
+                  stroke="#ff8800"
+                  strokeWidth="6"
                   strokeLinecap="round"
-                  opacity="0.15"
+                  opacity={0.15}
                   filter="url(#neon-bloom-orange)"
                 />
-                {/* Core neon line */}
+                {/* Core line */}
                 <path
-                  d={generateLavaPath(scenarioB.score, 'right')}
+                  d={generateContourPath(elev, 'exploration', scenarioB.score)}
                   fill="none"
-                  stroke="#ffaa00"
-                  strokeWidth="3"
+                  stroke="#ff8800"
+                  strokeWidth={2.2 - elev * 0.6}
                   strokeLinecap="round"
+                  opacity={0.95 - elev * 0.15}
                   filter="url(#neon-bloom-orange)"
-                  className="neon-line orange"
+                  style={{ mixBlendMode: 'screen' }}
                 />
-                {/* Hot white core */}
+                {/* White hot core */}
                 <path
-                  d={generateLavaPath(scenarioB.score, 'right')}
+                  d={generateContourPath(elev, 'exploration', scenarioB.score)}
                   fill="none"
                   stroke="#ffffff"
-                  strokeWidth="1"
+                  strokeWidth={0.6}
                   strokeLinecap="round"
-                  opacity="0.8"
+                  opacity={0.4 - elev * 0.12}
                 />
-                {/* Animated particles */}
-                {[0, 1.5, 3].map((delay, i) => (
-                  <circle key={i} r="4" fill="#ffaa00" filter="url(#neon-bloom-orange)" className="flow-particle">
+                {/* Flow particle */}
+                {i % 2 === 1 && (
+                  <circle r="3" fill="#ff8800" filter="url(#neon-bloom-orange)">
                     <animateMotion
-                      dur="5s"
+                      dur={`${12 + i * 3}s`}
                       repeatCount="indefinite"
-                      begin={`${delay}s`}
-                      path={generateLavaPath(scenarioB.score, 'right')}
+                      begin={`${i * 1.2}s`}
+                      path={generateContourPath(elev, 'exploration', scenarioB.score)}
                     />
                   </circle>
-                ))}
+                )}
               </g>
-            </>
-          )}
+            ))}
+          </g>
           
           {/* DELTA BLADE - Vertical scan line */}
           {hoverPosition && (
