@@ -10,7 +10,8 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { 
   MeshTransmissionMaterial, 
   OrbitControls,
-  Html 
+  Html,
+  Environment
 } from '@react-three/drei';
 import * as THREE from 'three';
 import { useSimulationStore } from '@/state/simulationStore';
@@ -284,34 +285,46 @@ function createMassifGeometry(): THREE.PlaneGeometry {
   const geo = new THREE.PlaneGeometry(12, 10, 256, 256);
   const pos = geo.attributes.position;
   
-  // Peak configurations: [cx, cy, height, power, spread]
-  const peaks = [
-    { cx: 0, cy: 0, height: 4.5, power: 2.5, spread: 3.5 },      // Primary Summit
-    { cx: -3, cy: 2, height: 2.8, power: 2.0, spread: 2.5 },     // Strategic Ridge 1
-    { cx: 4, cy: -1, height: 2.2, power: 2.2, spread: 2.2 },     // Strategic Ridge 2
-    { cx: 1, cy: 3, height: 2.0, power: 1.8, spread: 2.0 },      // Strategic Ridge 3
+  // Secondary Gaussian peaks for massif character
+  const secondaryPeaks = [
+    { cx: -3, cy: 2, height: 2.5, power: 2.0, spread: 2.5 },     // Strategic Ridge 1
+    { cx: 4, cy: -1, height: 2.0, power: 2.2, spread: 2.2 },     // Strategic Ridge 2
+    { cx: 1, cy: 3, height: 1.8, power: 1.8, spread: 2.0 },      // Strategic Ridge 3
   ];
   
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i);
     const y = pos.getY(i);
     
-    // ISLAND MASK: Force perimeter to flat zero
+    // Distance from center
     const dist = Math.sqrt(x * x + y * y);
+    
+    // ISLAND MASK: Force perimeter to flat zero
     const islandMask = Math.pow(Math.max(0, 1.0 - dist / 5.5), 2.0);
     
-    // Sum all Gaussian peaks
-    let totalHeight = 0;
-    for (const peak of peaks) {
-      totalHeight += gaussianPeak(x, y, peak.cx, peak.cy, peak.height, peak.power, peak.spread);
+    // PRIMARY SUMMIT: Radial Peak using pow(dist, 2.5) * 4.5
+    // Inverted: highest at center (dist=0), falls off with distance
+    const normalizedDist = dist / 5.0; // Normalize to 0-1 range
+    const radialPeak = Math.pow(Math.max(0, 1 - normalizedDist), 2.5) * 4.5;
+    
+    // Sum secondary Gaussian peaks
+    let secondaryHeight = 0;
+    for (const peak of secondaryPeaks) {
+      secondaryHeight += gaussianPeak(x, y, peak.cx, peak.cy, peak.height, peak.power, peak.spread);
     }
     
-    // RIDGE SHARPENING: Sharp ridges and deep valleys
-    const ridgeNoise = Math.abs(simplex.noise2D(x * 0.8, y * 0.8)) * 0.6;
-    const microDetail = simplex.noise2D(x * 2.5, y * 2.5) * 0.15;
+    // RIDGE SHARPENING: abs(simplex.noise2D) for sharp geological ridges
+    const ridgeNoise = Math.abs(simplex.noise2D(x * 0.8, y * 0.8)) * 0.8;
+    // Deep valleys with additional noise layer
+    const valleyNoise = Math.abs(simplex.noise2D(x * 1.5, y * 1.5)) * 0.4;
+    // Micro detail for surface texture
+    const microDetail = simplex.noise2D(x * 3.0, y * 3.0) * 0.1;
     
-    // Final height with island mask constraint
-    const finalHeight = (totalHeight + ridgeNoise + microDetail) * islandMask;
+    // Combine: Primary radial peak + secondary peaks + ridge detail
+    const totalHeight = radialPeak + secondaryHeight + ridgeNoise + valleyNoise + microDetail;
+    
+    // Apply island mask constraint
+    const finalHeight = totalHeight * islandMask;
     
     pos.setZ(i, finalHeight);
   }
@@ -387,10 +400,11 @@ function LavaRiver({ color, score, isBaseline, geometry }: LavaRiverProps) {
   const driftIntensity = (1 - scoreNormalized) * 3.0; // 0-3 units of drift
   
   // Generate surface-aware curve representing 36-MONTH TIMELINE
+  // CONSTRAINT: Every point MUST sample the Mountain's Z-height and offset by +0.05
   const { curve, endPosition } = useMemo(() => {
     const curvePoints: THREE.Vector3[] = [];
-    const SURFACE_OFFSET = 0.1; // Sit above surface for visibility
-    const STEPS = 80;
+    const SURFACE_OFFSET = 0.05; // Normal displacement to sit perfectly "over the top"
+    const STEPS = 100; // High resolution for smooth ridge/valley following
     
     for (let i = 0; i <= STEPS; i++) {
       const t = i / STEPS; // 0 = Month 0 (summit), 1 = Month 36 (base)
@@ -402,14 +416,16 @@ function LavaRiver({ color, score, isBaseline, geometry }: LavaRiverProps) {
       
       // X-AXIS: Strategic divergence from optimal center
       // Both paths start near center, then diverge based on score
-      const timeBasedSpread = t * 2.0; // Gradual spread over timeline
-      const scoreDrift = driftIntensity * t; // Linear drift based on score
-      const waviness = Math.sin(t * Math.PI * 1.5) * 0.3 * t; // Gentle curves
+      const timeBasedSpread = t * 2.5; // Gradual spread over timeline
+      const scoreDrift = driftIntensity * t * t; // Accelerating drift for worse scores
+      const waviness = Math.sin(t * Math.PI * 2) * 0.4 * t; // Sinuous path follows terrain
       
-      const x = side * (0.1 + timeBasedSpread + scoreDrift) + waviness * side;
+      const x = side * (0.15 + timeBasedSpread + scoreDrift) + waviness * side;
       
-      // Z-AXIS: Sample terrain height + surface offset (cling to surface)
-      const z = getMassifHeight(x, y, geometry) + SURFACE_OFFSET;
+      // Z-AXIS: Sample EXACT terrain height + offset
+      // This makes paths flow OVER ridges and INTO valleys
+      const terrainZ = getMassifHeight(x, y, geometry);
+      const z = terrainZ + SURFACE_OFFSET;
       
       curvePoints.push(new THREE.Vector3(x, y, z));
     }
@@ -422,19 +438,20 @@ function LavaRiver({ color, score, isBaseline, geometry }: LavaRiverProps) {
   }, [score, driftIntensity, side, geometry]);
   
   // REALISTIC MULTI-LAYER TUBE SYSTEM for volumetric lava appearance
+  // Main conduit radius: 0.04 as specified
   const tubes = useMemo(() => ({
     // Layer 1: Wide atmospheric haze (heat distortion)
-    atmosphericHaze: new THREE.TubeGeometry(curve, 100, 0.25, 16, false),
+    atmosphericHaze: new THREE.TubeGeometry(curve, 100, 0.20, 16, false),
     // Layer 2: Outer glow corona
-    outerGlow: new THREE.TubeGeometry(curve, 100, 0.15, 12, false),
+    outerGlow: new THREE.TubeGeometry(curve, 100, 0.12, 12, false),
     // Layer 3: Mid glow (main visible body)
-    midGlow: new THREE.TubeGeometry(curve, 100, 0.08, 12, false),
-    // Layer 4: Main lava conduit
-    mainTube: new THREE.TubeGeometry(curve, 100, 0.045, 12, false),
+    midGlow: new THREE.TubeGeometry(curve, 100, 0.06, 12, false),
+    // Layer 4: Main lava conduit (radius: 0.04 as specified)
+    mainTube: new THREE.TubeGeometry(curve, 100, 0.04, 12, false),
     // Layer 5: Hot inner core
-    innerCore: new THREE.TubeGeometry(curve, 100, 0.02, 8, false),
+    innerCore: new THREE.TubeGeometry(curve, 100, 0.015, 8, false),
     // Layer 6: White-hot plasma center
-    plasmaCore: new THREE.TubeGeometry(curve, 100, 0.008, 6, false),
+    plasmaCore: new THREE.TubeGeometry(curve, 100, 0.005, 6, false),
   }), [curve]);
 
   // Refs for animated materials
@@ -605,25 +622,39 @@ function DeltaBlade3D({ normalizedX, month, valA, valB }: DeltaBladeProps) {
   const divergence = valA > 0 ? ((delta / valA) * 100) : 0;
 
   return (
-    <group position={[xPos, 0, 4]}>
-      {/* THE SLICER — Thin vertical cyan laser line (not a sheet) */}
+    <group position={[xPos, 0, 3]}>
+      {/* THE DELTA BLADE — Vertical 1px white emissive laser */}
       <mesh ref={bladeRef}>
-        <boxGeometry args={[0.01, 0.01, 6]} />
+        <boxGeometry args={[0.008, 10, 0.008]} />
         <meshBasicMaterial 
-          color="#00D9FF" 
+          color="#ffffff" 
           transparent 
-          opacity={0.8}
+          opacity={0.9}
+          toneMapped={false}
           blending={THREE.AdditiveBlending}
         />
       </mesh>
       
-      {/* Subtle glow */}
+      {/* Inner glow halo */}
       <mesh>
-        <boxGeometry args={[0.03, 0.03, 6]} />
+        <boxGeometry args={[0.02, 10, 0.02]} />
+        <meshBasicMaterial 
+          color="#ffffff" 
+          transparent 
+          opacity={0.4}
+          toneMapped={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
+      
+      {/* Outer cyan bloom */}
+      <mesh>
+        <boxGeometry args={[0.06, 10, 0.06]} />
         <meshBasicMaterial 
           color="#00D9FF" 
           transparent 
-          opacity={0.2}
+          opacity={0.15}
+          toneMapped={false}
           blending={THREE.AdditiveBlending}
         />
       </mesh>
@@ -718,19 +749,19 @@ function UnifiedDestinyField({ scenarioA, scenarioB, hoverData }: UnifiedFieldPr
         />
       </mesh>
 
-      {/* LAYER 2: MACHINED CRYSTAL SURFACE — Refractive glass (no white backside) */}
+      {/* LAYER 2: MACHINED CRYSTAL SURFACE — High transmission refractive glass */}
       <mesh geometry={geometry} position={[0, 0, 0.02]}>
         <MeshTransmissionMaterial
-          transmission={0.6}
-          thickness={2.0}
-          roughness={0.1}
-          ior={1.2}
-          chromaticAberration={0.08}
-          backside={false}
-          color="#0a1525"
-          distortion={0.05}
-          distortionScale={0.1}
-          temporalDistortion={0.05}
+          transmission={0.98}
+          thickness={5.0}
+          roughness={0.05}
+          ior={1.15}
+          chromaticAberration={0.12}
+          backside={true}
+          color="#0a1a30"
+          distortion={0.08}
+          distortionScale={0.15}
+          temporalDistortion={0.08}
         />
       </mesh>
 
@@ -1059,23 +1090,26 @@ export default function GodModeCompare() {
       >
         <Canvas
           camera={{ 
-            position: [0, 5, 12], // Eye-level centered view
-            fov: 50 
+            position: [8, 6, 12], // HERO VIEW: Command perspective
+            fov: 42 
           }}
           gl={{ 
             antialias: true, 
             alpha: true, 
             powerPreference: 'high-performance',
             toneMapping: THREE.ACESFilmicToneMapping,
-            toneMappingExposure: 1.2,
+            toneMappingExposure: 1.4,
           }}
           dpr={[1, 2]}
         >
           <Suspense fallback={null}>
             <color attach="background" args={['#050810']} />
-            <fog attach="fog" args={['#050810', 15, 40]} />
+            <fog attach="fog" args={['#050810', 20, 50]} />
+            
+            {/* ENVIRONMENT: City preset for high-contrast glass reflections */}
+            <Environment preset="city" />
 
-            {/* FIXED MOUNTAIN - No floating */}
+            {/* UNIFIED DESTINY FIELD - Crystal Massif */}
             <UnifiedDestinyField 
               scenarioA={scenarioA} 
               scenarioB={scenarioB} 
@@ -1084,6 +1118,7 @@ export default function GodModeCompare() {
             
             {/* CONSTRAINED ORBIT CONTROLS — 90° rotation limit */}
             <OrbitControls
+              target={[0, 1, 0]}
               enableZoom={true}
               enablePan={false}
               enableRotate={true}
@@ -1091,7 +1126,7 @@ export default function GodModeCompare() {
               zoomSpeed={0.6}
               minDistance={8}
               maxDistance={35}
-              minPolarAngle={Math.PI / 4}       // 45° from top (don't go too high)
+              minPolarAngle={Math.PI / 6}       // 30° from top
               maxPolarAngle={Math.PI / 2.2}     // ~82° (don't flip under)
               minAzimuthAngle={-Math.PI / 4}    // 45° left limit
               maxAzimuthAngle={Math.PI / 4}     // 45° right limit (total 90°)
