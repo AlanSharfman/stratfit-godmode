@@ -421,80 +421,151 @@ function LavaRiver({ color, score, isBaseline, geometry }: LavaRiverProps) {
     };
   }, [score, driftIntensity, side, geometry]);
   
-  // Tube geometries for multi-layer rendering
-  const { outerGlow, mainTube, innerCore } = useMemo(() => ({
-    outerGlow: new THREE.TubeGeometry(curve, 120, 0.12, 8, false),
-    mainTube: new THREE.TubeGeometry(curve, 120, 0.04, 12, false),
-    innerCore: new THREE.TubeGeometry(curve, 120, 0.012, 8, false),
+  // REALISTIC MULTI-LAYER TUBE SYSTEM for volumetric lava appearance
+  const tubes = useMemo(() => ({
+    // Layer 1: Wide atmospheric haze (heat distortion)
+    atmosphericHaze: new THREE.TubeGeometry(curve, 100, 0.25, 16, false),
+    // Layer 2: Outer glow corona
+    outerGlow: new THREE.TubeGeometry(curve, 100, 0.15, 12, false),
+    // Layer 3: Mid glow (main visible body)
+    midGlow: new THREE.TubeGeometry(curve, 100, 0.08, 12, false),
+    // Layer 4: Main lava conduit
+    mainTube: new THREE.TubeGeometry(curve, 100, 0.045, 12, false),
+    // Layer 5: Hot inner core
+    innerCore: new THREE.TubeGeometry(curve, 100, 0.02, 8, false),
+    // Layer 6: White-hot plasma center
+    plasmaCore: new THREE.TubeGeometry(curve, 100, 0.008, 6, false),
   }), [curve]);
 
-  // Animate glow intensity and kinetic pips (flow from summit to base = time progression)
+  // Refs for animated materials
+  const glowRef = useRef<THREE.Mesh>(null);
+  const midRef = useRef<THREE.Mesh>(null);
+  
+  // Animate glow intensity with organic pulsing
   useFrame((state) => {
+    const time = state.clock.elapsedTime;
+    
+    // Pulsing glow layers
     if (tubeRef.current) {
-      const material = tubeRef.current.material as THREE.MeshStandardMaterial;
-      material.emissiveIntensity = 4 + Math.sin(state.clock.elapsedTime * 3) * 1.5;
+      const mat = tubeRef.current.material as THREE.MeshStandardMaterial;
+      mat.emissiveIntensity = 3 + Math.sin(time * 2.5) * 1.5 + Math.sin(time * 5.7) * 0.5;
+    }
+    if (glowRef.current) {
+      const mat = glowRef.current.material as THREE.MeshBasicMaterial;
+      mat.opacity = 0.12 + Math.sin(time * 3.2) * 0.04;
+    }
+    if (midRef.current) {
+      const mat = midRef.current.material as THREE.MeshBasicMaterial;
+      mat.opacity = 0.25 + Math.sin(time * 4.1) * 0.08;
     }
     
-    // Pips flow DOWN the path (representing time moving forward: Month 0 → Month 36)
+    // Flowing energy particles along the path
     pipRefs.current.forEach((pip, i) => {
       if (pip) {
-        // Stagger pips along the timeline, moving forward continuously
-        const t = ((state.clock.elapsedTime * 0.05 + i * 0.12) % 1);
+        // Staggered flow with varying speeds (organic feel)
+        const speed = 0.04 + (i % 3) * 0.015;
+        const offset = i * 0.08;
+        const t = ((time * speed + offset) % 1);
         const point = curve.getPointAt(t);
         pip.position.copy(point);
-        // Pulse effect
-        const scale = 0.8 + Math.sin(state.clock.elapsedTime * 4 + i * 2) * 0.4;
-        pip.scale.setScalar(scale);
+        
+        // Organic pulsing size
+        const pulse = Math.sin(time * 6 + i * 1.7) * 0.5 + Math.sin(time * 11 + i * 2.3) * 0.2;
+        const baseScale = 0.6 + (1 - t) * 0.4; // Larger near summit, smaller at base
+        pip.scale.setScalar(baseScale + pulse * 0.3);
+        
+        // Fade opacity near endpoints
+        const edgeFade = Math.min(t * 5, (1 - t) * 5, 1);
+        (pip.material as THREE.MeshStandardMaterial).opacity = edgeFade;
       }
     });
   });
 
-  const pips = useMemo(() => [0, 1, 2, 3, 4, 5, 6, 7], []);
+  // More particles for realistic flow
+  const pips = useMemo(() => Array.from({ length: 12 }, (_, i) => i), []);
 
   return (
     <group>
-      {/* OUTER ATMOSPHERIC BLOOM */}
-      <mesh geometry={outerGlow}>
+      {/* LAYER 1: ATMOSPHERIC HEAT HAZE — Very subtle, wide */}
+      <mesh geometry={tubes.atmosphericHaze}>
         <meshBasicMaterial
           color={color}
           transparent
-          opacity={0.08}
+          opacity={0.03}
           toneMapped={false}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
       </mesh>
       
-      {/* MAIN LAVA CONDUIT — High emissive neon */}
-      <mesh ref={tubeRef} geometry={mainTube}>
+      {/* LAYER 2: OUTER GLOW CORONA — Soft bloom */}
+      <mesh ref={glowRef} geometry={tubes.outerGlow}>
+        <meshBasicMaterial
+          color={color}
+          transparent
+          opacity={0.12}
+          toneMapped={false}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
+      
+      {/* LAYER 3: MID GLOW — Visible body of the flow */}
+      <mesh ref={midRef} geometry={tubes.midGlow}>
+        <meshBasicMaterial
+          color={color}
+          transparent
+          opacity={0.3}
+          toneMapped={false}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
+      
+      {/* LAYER 4: MAIN LAVA CONDUIT — Solid emissive core */}
+      <mesh ref={tubeRef} geometry={tubes.mainTube}>
         <meshStandardMaterial
           color={color}
           emissive={color}
-          emissiveIntensity={5}
+          emissiveIntensity={4}
+          toneMapped={false}
+          roughness={0.3}
+          metalness={0.1}
+        />
+      </mesh>
+      
+      {/* LAYER 5: HOT INNER CORE — Brighter emission */}
+      <mesh geometry={tubes.innerCore}>
+        <meshStandardMaterial
+          color="#ffffff"
+          emissive={color}
+          emissiveIntensity={6}
           toneMapped={false}
         />
       </mesh>
       
-      {/* WHITE-HOT PLASMA CORE */}
-      <mesh geometry={innerCore}>
+      {/* LAYER 6: WHITE-HOT PLASMA CENTER — Pure white */}
+      <mesh geometry={tubes.plasmaCore}>
         <meshBasicMaterial
           color="#ffffff"
           toneMapped={false}
         />
       </mesh>
       
-      {/* KINETIC DATA PIPS — Velocity particles */}
+      {/* FLOWING ENERGY PARTICLES — Organic movement */}
       {pips.map((_, i) => (
         <mesh 
           key={i} 
           ref={(el) => { if (el) pipRefs.current[i] = el; }}
         >
-          <sphereGeometry args={[0.06, 12, 12]} />
+          <sphereGeometry args={[0.04, 8, 8]} />
           <meshStandardMaterial
             color="#ffffff"
             emissive={color}
-            emissiveIntensity={6}
+            emissiveIntensity={8}
             toneMapped={false}
+            transparent
+            opacity={1}
           />
         </mesh>
       ))}
