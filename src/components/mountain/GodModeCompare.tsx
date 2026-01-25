@@ -359,7 +359,14 @@ function getMassifHeight(x: number, y: number, geometry: THREE.PlaneGeometry): n
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// SURFACE-AWARE LAVA RIVER — Topographically tethered strategic paths
+// SURFACE-AWARE LAVA RIVER — Strategic Timeline Paths (36-Month Projection)
+// 
+// LOGIC:
+// - Month 0 (t=0): Both paths START at the SUMMIT (current state/position)
+// - Month 36 (t=1): Paths END at the BASE (projected future outcome)
+// - Higher score = path stays closer to center (optimal trajectory)
+// - Lower score = path drifts outward (suboptimal trajectory)
+// - Baseline (cyan) goes LEFT, Exploration (amber) goes RIGHT
 // ═══════════════════════════════════════════════════════════════════════════════
 
 interface LavaRiverProps {
@@ -373,26 +380,41 @@ function LavaRiver({ color, score, isBaseline, geometry }: LavaRiverProps) {
   const tubeRef = useRef<THREE.Mesh>(null);
   const pipRefs = useRef<THREE.Mesh[]>([]);
   
+  // STRATEGIC DRIFT CALCULATION:
+  // - side: baseline goes left (-1), exploration goes right (+1)
+  // - driftIntensity: worse score = more outward drift from optimal center
   const side = isBaseline ? -1 : 1;
-  const driftIntensity = (100 - score) * 0.025 * side;
+  const scoreNormalized = score / 100; // 0-1 range
+  const driftIntensity = (1 - scoreNormalized) * 3.0; // 0-3 units of drift
   
-  // Generate surface-aware curve with NORMAL DISPLACEMENT
+  // Generate surface-aware curve representing 36-MONTH TIMELINE
   const { curve, endPosition } = useMemo(() => {
     const curvePoints: THREE.Vector3[] = [];
-    const SURFACE_OFFSET = 0.05; // Normal displacement to sit "over the top"
+    const SURFACE_OFFSET = 0.08; // Sit slightly above surface
+    const TIMELINE_MONTHS = 36;
+    const STEPS = 100;
     
-    for (let i = 0; i <= 120; i++) {
-      const t = i / 120;
+    for (let i = 0; i <= STEPS; i++) {
+      const t = i / STEPS; // 0 = Month 0, 1 = Month 36
+      const month = t * TIMELINE_MONTHS;
       
-      // Path trajectory: Start from summit, diverge based on score
-      const sinuousDrift = Math.sin(t * Math.PI * 2.5) * 0.3 * t;
-      const x = side * 0.3 + t * 4.0 * side + driftIntensity * Math.sin(t * Math.PI) + sinuousDrift;
-      const y = (1 - t) * 4.0 - 1.0; // Summit to base
+      // Y-AXIS: Time progression (summit = now, base = 36 months)
+      // Start at y=3 (near summit), end at y=-3 (base)
+      const y = 3 - t * 6;
       
-      // THE "CLING" LOGIC: Sample exact Z-height from massif
-      const z = getMassifHeight(x, y, geometry);
+      // X-AXIS: Strategic divergence from optimal center
+      // Both paths start at x=0 (current state), then diverge
+      // Formula: x = side * (initial_offset + time_drift + score_drift)
+      const timeBasedSpread = t * 1.5; // Natural spread over time
+      const scoreDrift = driftIntensity * t * t; // Accelerating drift for worse scores
+      const waviness = Math.sin(t * Math.PI * 2) * 0.2 * t; // Subtle sinuous path
       
-      curvePoints.push(new THREE.Vector3(x, y, z + SURFACE_OFFSET));
+      const x = side * (0.2 + timeBasedSpread + scoreDrift + waviness);
+      
+      // Z-AXIS: Sample terrain height + surface offset
+      const z = getMassifHeight(x, y, geometry) + SURFACE_OFFSET;
+      
+      curvePoints.push(new THREE.Vector3(x, y, z));
     }
     
     const lastPoint = curvePoints[curvePoints.length - 1];
@@ -409,19 +431,22 @@ function LavaRiver({ color, score, isBaseline, geometry }: LavaRiverProps) {
     innerCore: new THREE.TubeGeometry(curve, 120, 0.012, 8, false),
   }), [curve]);
 
-  // Animate glow intensity and kinetic pips
+  // Animate glow intensity and kinetic pips (flow from summit to base = time progression)
   useFrame((state) => {
     if (tubeRef.current) {
       const material = tubeRef.current.material as THREE.MeshStandardMaterial;
       material.emissiveIntensity = 4 + Math.sin(state.clock.elapsedTime * 3) * 1.5;
     }
     
+    // Pips flow DOWN the path (representing time moving forward: Month 0 → Month 36)
     pipRefs.current.forEach((pip, i) => {
       if (pip) {
-        const t = ((state.clock.elapsedTime * 0.08 + i * 0.15) % 1);
+        // Stagger pips along the timeline, moving forward continuously
+        const t = ((state.clock.elapsedTime * 0.05 + i * 0.12) % 1);
         const point = curve.getPointAt(t);
         pip.position.copy(point);
-        const scale = 1.0 + Math.sin(state.clock.elapsedTime * 6 + i * 1.5) * 0.3;
+        // Pulse effect
+        const scale = 0.8 + Math.sin(state.clock.elapsedTime * 4 + i * 2) * 0.4;
         pip.scale.setScalar(scale);
       }
     });
@@ -621,7 +646,7 @@ function UnifiedDestinyField({ scenarioA, scenarioB, hoverData }: UnifiedFieldPr
   });
 
   return (
-    <group ref={groupRef} rotation={[-Math.PI / 2.3, 0, 0]} position={[0, -1.5, 0]}>
+    <group ref={groupRef} rotation={[-Math.PI / 2.5, 0, 0]} position={[0, -2, -1]}>
       {/* LAYER 1: SOLID OBSIDIAN BASE — Dark volcanic core (no white) */}
       <mesh geometry={geometry}>
         <meshStandardMaterial
@@ -973,8 +998,8 @@ export default function GodModeCompare() {
       >
         <Canvas
           camera={{ 
-            position: [8, 6, 12], // HERO VIEW: Looking up at the summit
-            fov: 42 
+            position: [0, 8, 14], // Centered view looking at the mountain
+            fov: 45 
           }}
           gl={{ 
             antialias: true, 
