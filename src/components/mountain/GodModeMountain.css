@@ -1,0 +1,350 @@
+/* src/components/mountain/GodModeMountain.css */
+/* STRATFIT — TRUE GOD MODE (Gemini-Corrected) */
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   CONTAINER
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.godmode-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 600px;
+  background: linear-gradient(180deg, #050a12 0%, #0a1628 50%, #0d1f3c 100%);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  overflow: hidden;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   TITANIUM COMMAND BRIDGE (Header)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.titanium-bridge {
+  position: relative;
+  padding: 16px 32px;
+  background: linear-gradient(180deg, 
+    rgba(30, 40, 60, 0.95) 0%, 
+    rgba(20, 30, 50, 0.9) 100%
+  );
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+/* Wet Glass Top Highlight */
+.bridge-wet-glass {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 20%,
+    rgba(255, 255, 255, 0.5) 50%,
+    rgba(255, 255, 255, 0.1) 80%,
+    transparent 100%
+  );
+}
+
+/* Split Border - Cyan Left, Amber Right */
+.bridge-split-border {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  display: flex;
+}
+
+.border-cyan {
+  flex: 1;
+  background: linear-gradient(90deg, transparent 0%, #00d4ff 50%, #00d4ff 100%);
+  opacity: 0.7;
+}
+
+.border-amber {
+  flex: 1;
+  background: linear-gradient(90deg, #F59E0B 0%, #F59E0B 50%, transparent 100%);
+  opacity: 0.7;
+}
+
+/* Bridge Content */
+.bridge-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.bridge-section {
+  flex: 1;
+  max-width: 42%;
+}
+
+.bridge-section.baseline {
+  text-align: left;
+}
+
+.bridge-section.current {
+  text-align: right;
+}
+
+.section-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  padding: 4px 10px;
+  border-radius: 3px;
+  margin-bottom: 8px;
+}
+
+.baseline .section-tag {
+  color: #00d4ff;
+  background: rgba(0, 212, 255, 0.15);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+}
+
+.current .section-tag {
+  color: #F59E0B;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.metrics-row {
+  display: flex;
+  gap: 20px;
+}
+
+.current .metrics-row {
+  justify-content: flex-end;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.metric-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.metric-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #f8fafc;
+  letter-spacing: -0.02em;
+}
+
+.metric-value.cyan {
+  color: #00d4ff;
+}
+
+.metric-value.amber {
+  color: #F59E0B;
+}
+
+/* Divergence Badge */
+.bridge-delta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+.delta-label {
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.15em;
+}
+
+.delta-value {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   3D TERRAIN VIEWPORT
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.terrain-viewport {
+  flex: 1;
+  position: relative;
+  min-height: 350px;
+}
+
+.terrain-viewport canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Legend */
+.viewport-legend {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 24px;
+  padding: 8px 16px;
+  background: rgba(10, 20, 40, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  backdrop-filter: blur(8px);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.legend-dot.cyan {
+  background: #00d4ff;
+  box-shadow: 0 0 8px #00d4ff;
+}
+
+.legend-dot.amber {
+  background: #F59E0B;
+  box-shadow: 0 0 8px #F59E0B;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   DELTA NARRATIVE PANEL (AI Briefing)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.narrative-panel {
+  padding: 16px 32px;
+  background: linear-gradient(180deg,
+    rgba(15, 25, 45, 0.95) 0%,
+    rgba(10, 20, 35, 0.98) 100%
+  );
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.narrative-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.narrative-icon {
+  font-size: 16px;
+}
+
+.narrative-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.narrative-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.verdict-badge {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 5px 12px;
+  border-radius: 4px;
+  border: 1px solid;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.analysis-text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0;
+}
+
+.recommendation-box {
+  display: flex;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border-left: 3px solid #fbbf24;
+  border-radius: 0 6px 6px 0;
+}
+
+.rec-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #fbbf24;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+.rec-text {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.4;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 900px) {
+  .bridge-content {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .bridge-section {
+    max-width: 100%;
+    text-align: center !important;
+  }
+  
+  .metrics-row {
+    justify-content: center !important;
+  }
+  
+  .bridge-delta {
+    order: -1;
+  }
+}
+
+@media (max-width: 600px) {
+  .titanium-bridge {
+    padding: 12px 16px;
+  }
+  
+  .metric-value {
+    font-size: 14px;
+  }
+  
+  .narrative-panel {
+    padding: 12px 16px;
+  }
+  
+  .viewport-legend {
+    flex-direction: column;
+    gap: 8px;
+  }
+}

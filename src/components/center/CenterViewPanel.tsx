@@ -1,59 +1,42 @@
-// src/components/center/CenterViewPanel.tsx
-// STRATFIT GOD MODE — Clean Mountain Compound
-// TABS MOVED TO HEADER — Mountain is ALWAYS visible, tabs overlay on top
-
 import React, { useEffect, useState, useMemo } from "react";
+import type { CenterViewId } from "@/types/view";
 import ScenarioMountain from "@/components/mountain/ScenarioMountain";
-import TradeOffsTab from "@/components/tradeoffs/TradeOffsTab";
-import CompareTab from "@/components/compare/CompareTab";
+import GodModeMountain from "@/components/mountain/GodModeMountain";
+import ScenarioDeltaSnapshot from "@/components/ScenarioDeltaSnapshot";
+
+// Tab Components
 import { RiskTab } from "@/components/Risk";
 import { DecisionTab } from "@/components/Decision";
 import { ValuationTab } from "@/components/valuation";
+import { CompareTab } from "@/components/compare";
+import { ImpactTab } from "@/components/impact";
 
-import { useScenarioStore } from "@/state/scenarioStore";
-import { useShallow } from "zustand/react/shallow";
+import { useScenario, useScenarioStore } from "@/state/scenarioStore";
 import { onCausal } from "@/ui/causalEvents";
 import { engineResultToMountainForces } from "@/logic/mountainForces";
 
-import styles from "./CenterViewPanel.module.css";
-
-// View mode is now controlled by parent (App.tsx via header)
-export type ViewMode = "terrain" | "impact" | "compare" | "simulate" | "risk" | "decision" | "valuation";
-
 interface CenterViewPanelProps {
-  viewMode: ViewMode;
+  view?: CenterViewId;
+  viewMode?: CenterViewId;
   timelineEnabled?: boolean;
   heatmapEnabled?: boolean;
   onSimulateRequest?: () => void;
 }
 
-export default function CenterViewPanel({ 
-  viewMode,
-  timelineEnabled = false,
-  heatmapEnabled = false,
-  onSimulateRequest,
-}: CenterViewPanelProps) {
-  const {
-    activeScenarioId,
-    engineResults,
-    hoveredKpiIndex,
-    activeLeverId,
-    leverIntensity01,
-  } = useScenarioStore(
-    useShallow((s) => ({
-      activeScenarioId: s.activeScenarioId,
-      engineResults: s.engineResults,
-      hoveredKpiIndex: s.hoveredKpiIndex,
-      activeLeverId: s.activeLeverId,
-      leverIntensity01: s.leverIntensity01,
-    }))
-  );
+export default function CenterViewPanel(props: CenterViewPanelProps) {
+  // Support both `view` and `viewMode` props for compatibility
+  const view = props.viewMode ?? props.view ?? "terrain";
+  const scenario = useScenario();
+  const engineResults = useScenarioStore((s) => s.engineResults);
+  const hoveredKpiIndex = useScenarioStore((s) => s.hoveredKpiIndex);
 
+  // PHASE-IG: Wire engineResults → mountain forces (7-vector for now)
   const dataPoints = useMemo(() => {
-    const er = engineResults?.[activeScenarioId];
+    const er = engineResults?.[scenario];
     return engineResultToMountainForces(er);
-  }, [engineResults, activeScenarioId]);
+  }, [engineResults, scenario]);
 
+  // CAUSAL HIGHLIGHT — Mountain band (Phase 1, UI-only)
   const [bandNonce, setBandNonce] = useState(0);
   const [bandStyle, setBandStyle] = useState<"solid" | "wash">("solid");
   const [bandColor, setBandColor] = useState("rgba(34,211,238,0.18)");
@@ -67,109 +50,87 @@ export default function CenterViewPanel({
     return off;
   }, []);
 
-  useEffect(() => {
-    if (viewMode === 'simulate' && onSimulateRequest) {
-      onSimulateRequest();
-    }
-  }, [viewMode, onSimulateRequest]);
-
-  const dimOpacity =
-    viewMode === "terrain" ? 0 :
-    viewMode === "simulate" ? 0.55 :
-    viewMode === "compare" || viewMode === "impact" ? 0.25 :
-    viewMode === "risk" || viewMode === "decision" || viewMode === "valuation" ? 0.40 :
-    0.30;
-
   return (
-    <div className={styles.sfCenterRoot}>
-      <div className={styles.sfMountainStage} data-tour="mountain">
-        
-        {/* MOUNTAIN WRAPPER - uses inline styles to guarantee visibility */}
-        <div 
-          style={{
-            position: 'absolute',
-            top: 14,
-            left: 14,
-            right: 14,
-            bottom: 14,
-            borderRadius: 14,
-            overflow: 'hidden',
-            zIndex: 5,
-            background: '#0b1220',
-            // GOD MODE: Crystal clear vibrant mountain
-            filter: 'brightness(1.5) contrast(1.2) saturate(1.15)',
-          }}
-        >
-          {/* MOUNTAIN CANVAS - fills the wrapper */}
-          <ScenarioMountain 
-            scenario={activeScenarioId}
-            dataPoints={dataPoints as number[]}
-            activeKpiIndex={hoveredKpiIndex}
-            activeLeverId={activeLeverId as any}
-            leverIntensity01={leverIntensity01}
-            timelineEnabled={timelineEnabled}
-            heatmapEnabled={heatmapEnabled}
-          />
+    <div className="relative flex h-full w-full flex-col rounded-xl bg-black/40 backdrop-blur-sm border border-white/5 overflow-auto">
+      {/* Center Stage */}
+      {/* STRATFIT RULE:
+          Mountain dominance locked at ~65% viewport height.
+          Do not adjust without design sign-off. */}
+      <div className="mountain-stage relative w-full flex-1 p-4" data-tour="mountain">
+        {view === "terrain" && (
+          <div className="relative h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-black shadow-[0_8px_32px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.03)]">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.4)_60%,rgba(0,0,0,0.85)_100%)]" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-linear-to-b from-black/60 via-black/20 to-transparent" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-linear-to-t from-black/80 via-black/30 to-transparent" />
+            <div className="pointer-events-none absolute inset-0 rounded-3xl shadow-[inset_0_0_0_1px_rgba(34,211,238,0.06)]" />
+            
+            {/* Causal highlight band (no labels) — only after explicit user action */}
+            {bandNonce > 0 ? (
+              <div
+                key={bandNonce}
+                className={`sf-causal-band play ${bandStyle === "wash" ? "wash" : ""}`}
+                style={{ ["--sf-causal" as string]: bandColor } as React.CSSProperties}
+              />
+            ) : null}
 
-          {/* DIMMER LAYER */}
-          {dimOpacity > 0 && (
-            <div 
-              style={{
-                position: 'absolute',
-                inset: 0,
-                zIndex: 10,
-                pointerEvents: 'none',
-                background: `radial-gradient(ellipse at center, rgba(0,0,0,${dimOpacity * 0.3}) 0%, rgba(0,0,0,${dimOpacity}) 70%, rgba(0,0,0,${dimOpacity * 1.2}) 100%)`,
-              }}
-            />
-          )}
+            <div className="relative h-full w-full">
+              <ScenarioMountain 
+                scenario={scenario} 
+                dataPoints={dataPoints}
+                activeKpiIndex={hoveredKpiIndex}
+              />
+            </div>
 
-          {/* TACTICAL BRACKETS */}
-          <div className={styles.tacticalBracket} data-corner="tl" />
-          <div className={styles.tacticalBracket} data-corner="tr" />
-          <div className={styles.tacticalBracket} data-corner="bl" />
-          <div className={styles.tacticalBracket} data-corner="br" />
-
-          {/* CAUSAL BAND */}
-          {bandNonce > 0 && (
-            <div
-              key={bandNonce}
-              className={`${styles.sfCausalBand} sf-causal-band play ${bandStyle === "wash" ? "wash" : ""}`}
-              style={{ ["--sf-causal" as string]: bandColor } as React.CSSProperties}
-            />
-          )}
-        </div>
-
-        {/* TAB OVERLAYS */}
-        {viewMode === "impact" && (
-          <div className={styles.sfTabOverlay}>
-            <TradeOffsTab
-              baseScenario={{ cash: 2400000, runway: 18, name: "Base Scenario" }}
-              onScenarioUpdate={(s) => console.log('Trade-offs updated:', s)}
-            />
+            <div className="mt-3 px-1">
+            </div>
           </div>
         )}
 
-        {viewMode === "compare" && (
-          <div className={styles.sfTabOverlay}>
-            <CompareTab />
+        {/* SIMULATE - Shows during simulation (same mountain + overlay) */}
+        {view === "simulate" && (
+          <div className="relative h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-black shadow-[0_8px_32px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.03)]">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.4)_60%,rgba(0,0,0,0.85)_100%)]" />
+            <div className="relative h-full w-full">
+              <ScenarioMountain 
+                scenario={scenario} 
+                dataPoints={dataPoints}
+                activeKpiIndex={hoveredKpiIndex}
+              />
+            </div>
           </div>
         )}
 
-        {viewMode === "risk" && (
-          <div className={styles.sfTabOverlay}>
+        {/* COMPARE - God Mode: Dual scenario holographic glass mountain with lava rivers */}
+        {view === "compare" && (
+          <div className="h-full w-full overflow-hidden rounded-3xl border border-slate-700/40 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
+            <GodModeMountain />
+          </div>
+        )}
+
+        {/* IMPACT - Sensitivity analysis */}
+        {view === "impact" && (
+          <div className="h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-linear-to-br from-slate-950/60 to-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
+            <ImpactTab />
+          </div>
+        )}
+
+        {/* RISK - Risk breakdown and threat assessment */}
+        {view === "risk" && (
+          <div className="h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-linear-to-br from-slate-950/60 to-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
             <RiskTab />
           </div>
         )}
 
-        {viewMode === "decision" && (
-          <div className={styles.sfTabOverlay}>
+        {/* DECISION - Decision support and recommendations */}
+        {view === "decision" && (
+          <div className="h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-linear-to-br from-slate-950/60 to-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
             <DecisionTab />
           </div>
         )}
 
-        {viewMode === "valuation" && (
-          <div className={styles.sfTabOverlay}>
+        {/* VALUATION - Company valuation scenarios */}
+        {view === "valuation" && (
+          <div className="h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-linear-to-br from-slate-950/60 to-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
             <ValuationTab />
           </div>
         )}

@@ -362,7 +362,7 @@ const Terrain: React.FC<TerrainProps> = ({
   });
 
   return (
-    <group ref={groupRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]}>
+    <group ref={groupRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} scale={[0.9, 0.9, 0.9]}>
       {/* FILL — Subtle depth layer, brighter when engaged */}
       <mesh ref={meshFillRef} geometry={geometry}>
         <meshStandardMaterial

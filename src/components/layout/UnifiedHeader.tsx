@@ -4,11 +4,12 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  Activity, Rocket, TrendingDown, Globe,
+  Activity, Rocket, TrendingDown, TrendingUp, Globe,
   Layers, SplitSquareHorizontal, Zap,
   Calendar, Grid3X3,
   HelpCircle,
   Target,
+  AlertTriangle,
   Save,
   FolderOpen
 } from 'lucide-react';
@@ -40,14 +41,14 @@ const SCENARIOS: Scenario[] = [
 // ===========================================
 // NAV TABS
 // ===========================================
-const NAV_TABS: Array<{ id: string; label: string; icon: typeof Layers }> = [
+const NAV_TABS: Array<{ id: ViewMode; label: string; icon: typeof Layers }> = [
   { id: "terrain", label: "TERRAIN", icon: Layers },
   { id: "simulate", label: "SIMULATE", icon: Zap },
   { id: "compare", label: "COMPARE", icon: SplitSquareHorizontal },
-  { id: "impact", label: "TRADE OFFS", icon: Activity },
-  { id: "risk", label: "RISK", icon: Activity },
+  { id: "impact", label: "IMPACT", icon: Activity },
+  { id: "risk", label: "RISK", icon: AlertTriangle },
+  { id: "valuation", label: "VALUATION", icon: TrendingUp },
   { id: "decision", label: "DECISION", icon: Target },
-  { id: "valuation", label: "VALUATION", icon: TrendingDown },
 ];
 
 // ===========================================
@@ -242,8 +243,12 @@ export default function UnifiedHeader({
         .uh-nav-tab {
           display: flex;
           align-items: center;
+          justify-content: center;
           gap: 8px;
           padding: 10px 18px;
+          min-width: 110px;
+          flex-shrink: 0;
+          white-space: nowrap;
           /* Rectangular pill with machined glass */
           background: rgba(15, 23, 42, 0.6);
           border: 1px solid rgba(255, 255, 255, 0.1);

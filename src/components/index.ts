@@ -35,14 +35,8 @@ export {
 // ─────────────────────────────────────────────────────────────────────────────
 // TAB COMPONENTS
 // ─────────────────────────────────────────────────────────────────────────────
-export {
-  DecisionTab,
-  ActionCard,
-  DEMO_RESULTS,
-} from './tabs';
-
-export type {
-  SimulationResults,
-  PathAnalysis,
-  DecisionTabProps,
-} from './tabs';
+export { DecisionTab } from './Decision';
+export { RiskTab } from './Risk';
+export { ValuationTab } from './valuation';
+export { CompareTab } from './compare';
+export { ImpactTab } from './impact';
