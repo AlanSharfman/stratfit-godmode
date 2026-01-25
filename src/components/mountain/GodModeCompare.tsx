@@ -106,19 +106,20 @@ interface ProbabilityFanProps {
 function ProbabilityFan({ color, score, direction }: ProbabilityFanProps) {
   const particlesRef = useRef<THREE.Points>(null);
   
-  // Generate fan particles representing Monte Carlo uncertainty
+  // Generate fan particles representing Monte Carlo uncertainty at mountain base
   const { positions, scales } = useMemo(() => {
-    const count = 200;
+    const count = 150;
     const pos = new Float32Array(count * 3);
     const scl = new Float32Array(count);
-    const uncertainty = (100 - score) / 100; // Higher uncertainty = wider spread
+    const uncertainty = (100 - score) / 100;
     
     for (let i = 0; i < count; i++) {
-      // Fan out at the base of the mountain
-      const spread = (Math.random() - 0.5) * 3 * uncertainty;
-      const baseX = direction * 3 + spread;
-      const baseY = -4.5 + Math.random() * 0.5;
-      const baseZ = Math.random() * 0.3;
+      // Fan out at the base edge of the mountain
+      const angle = (Math.random() - 0.5) * Math.PI * 0.4;
+      const dist = 5 + Math.random() * 2;
+      const baseX = direction * dist * Math.cos(angle);
+      const baseY = dist * Math.sin(angle) * 0.5;
+      const baseZ = Math.random() * 0.5 * uncertainty;
       
       pos[i * 3] = baseX;
       pos[i * 3 + 1] = baseY;
@@ -183,31 +184,34 @@ interface LavaPathProps {
 function LavaPath({ color, score, direction, geometry }: LavaPathProps) {
   const tubeRef = useRef<THREE.Mesh>(null);
   const pipRefs = useRef<THREE.Mesh[]>([]);
-  const drift = (100 - score) / 100;
+  const drift = (100 - score) / 100 * 0.5; // Reduced drift
   
-  // Generate path curve snapped to surface topology
+  // Generate path that follows the mountain slope from peak to base
   const curve = useMemo(() => {
     const points: THREE.Vector3[] = [];
-    const pos = geometry.attributes.position;
+    const maxDist = 8.0;
     
-    for (let t = 0; t <= 1; t += 0.015) {
-      const x = direction * (t * 3.5 + drift * t * 2.5);
-      const y = -4.5 + t * 9;
+    // Path goes from near peak (t=0) to base (t=1)
+    for (let t = 0; t <= 1; t += 0.02) {
+      // Start near center, spread outward
+      const spreadFactor = t * 1.2; // How far from center
+      const x = direction * (spreadFactor * 5 + drift * t);
+      const y = spreadFactor * 5 - 3; // Move from center outward
       
-      // Sample Z from geometry using raycasting logic (simplified)
-      const dist = Math.sqrt(x * x + (y - 0.5) * (y - 0.5));
-      const radialBase = Math.max(0, 1.0 - dist / 6.0);
-      const peakShape = Math.pow(radialBase, 2.5);
-      const ridgeDetail = noise2D(x * 0.5, y * 0.5) * 0.6;
-      const z = (peakShape * 4.5) + (ridgeDetail * peakShape) - 0.05; // Slightly inside surface
+      // Calculate height matching mountain surface
+      const dist = Math.sqrt(x * x + y * y);
+      const normalized = Math.max(0, 1.0 - dist / maxDist);
+      const peakHeight = Math.pow(normalized, 1.8) * 6.0;
+      const ridge = noise2D(x * 0.3, y * 0.3) * 0.4 * normalized;
+      const z = peakHeight + ridge + 0.15; // Slightly above surface
       
       points.push(new THREE.Vector3(x, y, z));
     }
     return new THREE.CatmullRomCurve3(points);
-  }, [direction, drift, geometry]);
+  }, [direction, drift]);
   
   const tubeGeometry = useMemo(() => {
-    return new THREE.TubeGeometry(curve, 80, 0.05, 8, false);
+    return new THREE.TubeGeometry(curve, 64, 0.08, 8, false);
   }, [curve]);
 
   // Animate the path glow and kinetic pips
@@ -233,61 +237,45 @@ function LavaPath({ color, score, direction, geometry }: LavaPathProps) {
 
   return (
     <group>
-      {/* ULTRA WIDE GLOW - Outer atmosphere */}
-      <mesh geometry={new THREE.TubeGeometry(curve, 80, 0.35, 8, false)}>
+      {/* OUTER GLOW */}
+      <mesh geometry={new THREE.TubeGeometry(curve, 64, 0.25, 8, false)}>
         <meshBasicMaterial
           color={color}
           transparent
-          opacity={0.08}
+          opacity={0.15}
           toneMapped={false}
         />
       </mesh>
       
-      {/* Wide glow aura */}
-      <mesh geometry={new THREE.TubeGeometry(curve, 80, 0.22, 8, false)}>
-        <meshStandardMaterial
-          color={color}
-          emissive={color}
-          emissiveIntensity={2}
-          transparent
-          opacity={0.2}
-          toneMapped={false}
-        />
-      </mesh>
-      
-      {/* Internal core path - BRIGHT AND VISIBLE */}
+      {/* MAIN LAVA TUBE - Bright emissive */}
       <mesh ref={tubeRef} geometry={tubeGeometry}>
         <meshStandardMaterial
           color={color}
           emissive={color}
-          emissiveIntensity={6}
-          transparent
-          opacity={1}
+          emissiveIntensity={5}
           toneMapped={false}
         />
       </mesh>
       
-      {/* White hot center core */}
-      <mesh geometry={new THREE.TubeGeometry(curve, 80, 0.025, 8, false)}>
+      {/* WHITE HOT CORE */}
+      <mesh geometry={new THREE.TubeGeometry(curve, 64, 0.03, 8, false)}>
         <meshBasicMaterial
           color="#ffffff"
-          transparent
-          opacity={0.9}
           toneMapped={false}
         />
       </mesh>
       
-      {/* Kinetic data pips - velocity indicators */}
+      {/* Kinetic data pips */}
       {pips.map((_, i) => (
         <mesh 
           key={i} 
           ref={(el) => { if (el) pipRefs.current[i] = el; }}
         >
-          <sphereGeometry args={[0.12, 16, 16]} />
+          <sphereGeometry args={[0.15, 12, 12]} />
           <meshStandardMaterial
             color="#ffffff"
             emissive={color}
-            emissiveIntensity={10}
+            emissiveIntensity={8}
             toneMapped={false}
           />
         </mesh>
@@ -313,27 +301,28 @@ interface UnifiedFieldProps {
 function UnifiedDestinyField({ scenarioA, scenarioB, laserX }: UnifiedFieldProps) {
   const groupRef = useRef<THREE.Group>(null);
   
-  // Generate the "Topographic Slab" geometry - HIGH RES 256x256
+  // Generate proper MOUNTAIN geometry - cone-like peak
   const geometry = useMemo(() => {
-    const geo = new THREE.PlaneGeometry(12, 10, 256, 256);
+    const geo = new THREE.PlaneGeometry(16, 14, 128, 128);
     const pos = geo.attributes.position;
     
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i);
       const y = pos.getY(i);
       
-      // 1. Calculate distance from peak center
+      // Distance from center (where peak will be)
       const dist = Math.sqrt(x * x + y * y);
+      const maxDist = 8.0;
       
-      // 2. HIGH-POWER RADIAL FALLOFF - Creates the "Slab Peak" not dome
-      const radialBase = Math.max(0, 1.0 - dist / 6.0);
-      const peakShape = Math.pow(radialBase, 2.5);
+      // MOUNTAIN PEAK - Cone shape that rises to a point
+      const normalized = Math.max(0, 1.0 - dist / maxDist);
+      const peakHeight = Math.pow(normalized, 1.8) * 6.0; // Sharp peak, 6 units tall
       
-      // 3. SIMPLEX RIDGE DETAIL - Only where peak exists
-      const ridgeDetail = noise2D(x * 0.5, y * 0.5) * 0.6;
+      // Add some ridge noise for texture
+      const ridge = noise2D(x * 0.3, y * 0.3) * 0.4 * normalized;
       
-      // 4. Combined height - peak + ridges scaled by peak shape
-      pos.setZ(i, (peakShape * 4.5) + (ridgeDetail * peakShape));
+      // Set Z as the height (plane is XY, Z is up)
+      pos.setZ(i, peakHeight + ridge);
     }
     
     geo.computeVertexNormals();
@@ -348,56 +337,36 @@ function UnifiedDestinyField({ scenarioA, scenarioB, laserX }: UnifiedFieldProps
   });
 
   return (
-    <group ref={groupRef} rotation={[-Math.PI / 2.4, 0, 0]} position={[0, -0.8, 0]}>
-      {/* SOLID BASE LAYER - Ensures mountain is always visible */}
-      <mesh geometry={geometry} position={[0, 0, -0.05]}>
-        <meshStandardMaterial
-          color="#0a1525"
-          roughness={0.3}
-          metalness={0.7}
-          transparent
-          opacity={0.95}
-        />
-      </mesh>
-
-      {/* THE MACHINED AEROSPACE GLASS CHASSIS */}
+    <group ref={groupRef} rotation={[-Math.PI / 2.2, 0, 0]} position={[0, -2, 2]}>
+      {/* SOLID MOUNTAIN BASE - Dark core */}
       <mesh geometry={geometry}>
+        <meshStandardMaterial
+          color="#0a1828"
+          roughness={0.4}
+          metalness={0.6}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      {/* GLASS SURFACE LAYER */}
+      <mesh geometry={geometry} position={[0, 0, 0.02]}>
         <MeshTransmissionMaterial
-          transmission={0.7} // Reduced for better visibility
-          thickness={2.5} // Reduced for clearer rendering
-          roughness={0.1}
-          chromaticAberration={0.06} // Subtle prism effect
-          anisotropy={0.2}
-          distortion={0.2}
-          distortionScale={0.2}
-          temporalDistortion={0.05}
-          color="#0d1a2a" // Slightly lighter for visibility
-          backside={true}
-        />
-      </mesh>
-
-      {/* SURFACE HIGHLIGHT - Emissive edge glow */}
-      <mesh geometry={geometry} position={[0, 0, 0.01]}>
-        <meshStandardMaterial
+          transmission={0.4}
+          thickness={1.5}
+          roughness={0.15}
+          chromaticAberration={0.03}
           color="#1a3050"
-          transparent
-          opacity={0.3}
-          emissive="#0a2040"
-          emissiveIntensity={0.5}
-          roughness={0.2}
-          metalness={0.8}
+          backside={false}
         />
       </mesh>
 
-      {/* INTERNAL ETCHING - Wireframe overlay */}
-      <mesh geometry={geometry} position={[0, 0, 0.03]}>
-        <meshStandardMaterial
+      {/* GLOWING WIREFRAME GRID */}
+      <mesh geometry={geometry} position={[0, 0, 0.05]}>
+        <meshBasicMaterial
           wireframe
           color="#00D9FF"
           transparent
-          opacity={0.25}
-          emissive="#00D9FF"
-          emissiveIntensity={3.0}
+          opacity={0.4}
         />
       </mesh>
 
@@ -413,16 +382,14 @@ function UnifiedDestinyField({ scenarioA, scenarioB, laserX }: UnifiedFieldProps
         </mesh>
       )}
 
-      <Environment preset="night" />
+      {/* LIGHTING FOR MOUNTAIN */}
+      <ambientLight intensity={0.3} />
+      <directionalLight position={[5, 10, 8]} intensity={1.2} color="#ffffff" castShadow />
+      <pointLight position={[-5, 3, 3]} intensity={4} color="#00D9FF" distance={15} decay={2} />
+      <pointLight position={[5, 3, 3]} intensity={4} color="#F59E0B" distance={15} decay={2} />
+      <pointLight position={[0, 8, 0]} intensity={2} color="#ffffff" distance={20} decay={2} />
       
-      {/* Enhanced lighting for visibility */}
-      <ambientLight intensity={0.15} />
-      <directionalLight position={[0, 10, 5]} intensity={0.8} color="#ffffff" />
-      <pointLight position={[-4, 2, 4]} intensity={3} color="#00D9FF" distance={12} decay={2} />
-      <pointLight position={[4, 2, 4]} intensity={3} color="#F59E0B" distance={12} decay={2} />
-      <pointLight position={[0, 5, 2]} intensity={2} color="#ffffff" distance={15} decay={2} />
-      {/* Rim light for definition */}
-      <spotLight position={[0, 8, -5]} intensity={1.5} angle={0.5} penumbra={0.8} color="#00aaff" />
+      <Environment preset="night" />
     </group>
   );
 }
@@ -735,17 +702,17 @@ export default function GodModeCompare() {
         onMouseLeave={() => setHoverData(null)}
       >
         <Canvas
-          camera={{ position: [0, 7, 14], fov: 42 }}
+          camera={{ position: [0, 12, 18], fov: 40 }}
           gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
           dpr={[1, 2]}
         >
           <Suspense fallback={null}>
-            <color attach="background" args={['#050810']} />
-            <fog attach="fog" args={['#050810', 15, 35]} />
+            <color attach="background" args={['#080c14']} />
+            <fog attach="fog" args={['#080c14', 20, 50]} />
             
-            <ambientLight intensity={0.2} />
-            <directionalLight position={[10, 20, 10]} intensity={0.6} />
-            <spotLight position={[0, 15, 0]} intensity={1} angle={0.4} penumbra={0.5} color="#ffffff" />
+            <ambientLight intensity={0.4} />
+            <directionalLight position={[10, 20, 10]} intensity={1.0} color="#ffffff" />
+            <spotLight position={[0, 20, 5]} intensity={1.5} angle={0.5} penumbra={0.5} color="#ffffff" />
 
             <Float speed={0.3} rotationIntensity={0.05} floatIntensity={0.1}>
               <UnifiedDestinyField 
