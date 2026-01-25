@@ -512,25 +512,25 @@ function DeltaBlade3D({ normalizedX, month, valA, valB }: DeltaBladeProps) {
   const divergence = valA > 0 ? ((delta / valA) * 100) : 0;
 
   return (
-    <group position={[xPos, 0, 3]}>
-      {/* THE SLICER — Vertical 1px white emissive laser */}
+    <group position={[xPos, 0, 4]}>
+      {/* THE SLICER — Thin vertical cyan laser line (not a sheet) */}
       <mesh ref={bladeRef}>
-        <boxGeometry args={[0.02, 12, 8]} />
+        <boxGeometry args={[0.01, 0.01, 6]} />
         <meshBasicMaterial 
-          color="#ffffff" 
+          color="#00D9FF" 
           transparent 
-          opacity={0.7}
+          opacity={0.8}
           blending={THREE.AdditiveBlending}
         />
       </mesh>
       
-      {/* Glow halo */}
+      {/* Subtle glow */}
       <mesh>
-        <boxGeometry args={[0.08, 12, 8]} />
+        <boxGeometry args={[0.03, 0.03, 6]} />
         <meshBasicMaterial 
           color="#00D9FF" 
           transparent 
-          opacity={0.15}
+          opacity={0.2}
           blending={THREE.AdditiveBlending}
         />
       </mesh>
