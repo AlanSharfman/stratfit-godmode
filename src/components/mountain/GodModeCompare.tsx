@@ -233,26 +233,46 @@ function LavaPath({ color, score, direction, geometry }: LavaPathProps) {
 
   return (
     <group>
-      {/* Internal core path - INSIDE the glass */}
-      <mesh ref={tubeRef} geometry={tubeGeometry}>
-        <meshStandardMaterial
+      {/* ULTRA WIDE GLOW - Outer atmosphere */}
+      <mesh geometry={new THREE.TubeGeometry(curve, 80, 0.35, 8, false)}>
+        <meshBasicMaterial
           color={color}
-          emissive={color}
-          emissiveIntensity={4}
           transparent
-          opacity={0.95}
+          opacity={0.08}
           toneMapped={false}
         />
       </mesh>
       
       {/* Wide glow aura */}
-      <mesh geometry={new THREE.TubeGeometry(curve, 80, 0.18, 8, false)}>
+      <mesh geometry={new THREE.TubeGeometry(curve, 80, 0.22, 8, false)}>
         <meshStandardMaterial
           color={color}
           emissive={color}
-          emissiveIntensity={1.5}
+          emissiveIntensity={2}
           transparent
-          opacity={0.12}
+          opacity={0.2}
+          toneMapped={false}
+        />
+      </mesh>
+      
+      {/* Internal core path - BRIGHT AND VISIBLE */}
+      <mesh ref={tubeRef} geometry={tubeGeometry}>
+        <meshStandardMaterial
+          color={color}
+          emissive={color}
+          emissiveIntensity={6}
+          transparent
+          opacity={1}
+          toneMapped={false}
+        />
+      </mesh>
+      
+      {/* White hot center core */}
+      <mesh geometry={new THREE.TubeGeometry(curve, 80, 0.025, 8, false)}>
+        <meshBasicMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.9}
           toneMapped={false}
         />
       </mesh>
@@ -263,11 +283,11 @@ function LavaPath({ color, score, direction, geometry }: LavaPathProps) {
           key={i} 
           ref={(el) => { if (el) pipRefs.current[i] = el; }}
         >
-          <sphereGeometry args={[0.1, 16, 16]} />
+          <sphereGeometry args={[0.12, 16, 16]} />
           <meshStandardMaterial
             color="#ffffff"
             emissive={color}
-            emissiveIntensity={8}
+            emissiveIntensity={10}
             toneMapped={false}
           />
         </mesh>
@@ -329,31 +349,55 @@ function UnifiedDestinyField({ scenarioA, scenarioB, laserX }: UnifiedFieldProps
 
   return (
     <group ref={groupRef} rotation={[-Math.PI / 2.4, 0, 0]} position={[0, -0.8, 0]}>
-      {/* THE MACHINED AEROSPACE GLASS CHASSIS */}
-      <mesh geometry={geometry}>
-        <MeshTransmissionMaterial
-          transmission={0.98}
-          thickness={5.0} // Solid mass - data flows THROUGH
-          roughness={0.05} // Highly polished machined surface
-          chromaticAberration={0.12} // Prism effect on ridges
-          anisotropy={0.3}
-          distortion={0.4}
-          distortionScale={0.3}
-          temporalDistortion={0.1}
-          color="#0a121f" // Deep aerospace slate
-          backside={true} // CRUCIAL: Forces light to refract internally
+      {/* SOLID BASE LAYER - Ensures mountain is always visible */}
+      <mesh geometry={geometry} position={[0, 0, -0.05]}>
+        <meshStandardMaterial
+          color="#0a1525"
+          roughness={0.3}
+          metalness={0.7}
+          transparent
+          opacity={0.95}
         />
       </mesh>
 
-      {/* INTERNAL ETCHING - 1px wireframe overlay */}
-      <mesh geometry={geometry} position={[0, 0, 0.02]}>
+      {/* THE MACHINED AEROSPACE GLASS CHASSIS */}
+      <mesh geometry={geometry}>
+        <MeshTransmissionMaterial
+          transmission={0.7} // Reduced for better visibility
+          thickness={2.5} // Reduced for clearer rendering
+          roughness={0.1}
+          chromaticAberration={0.06} // Subtle prism effect
+          anisotropy={0.2}
+          distortion={0.2}
+          distortionScale={0.2}
+          temporalDistortion={0.05}
+          color="#0d1a2a" // Slightly lighter for visibility
+          backside={true}
+        />
+      </mesh>
+
+      {/* SURFACE HIGHLIGHT - Emissive edge glow */}
+      <mesh geometry={geometry} position={[0, 0, 0.01]}>
+        <meshStandardMaterial
+          color="#1a3050"
+          transparent
+          opacity={0.3}
+          emissive="#0a2040"
+          emissiveIntensity={0.5}
+          roughness={0.2}
+          metalness={0.8}
+        />
+      </mesh>
+
+      {/* INTERNAL ETCHING - Wireframe overlay */}
+      <mesh geometry={geometry} position={[0, 0, 0.03]}>
         <meshStandardMaterial
           wireframe
           color="#00D9FF"
           transparent
-          opacity={0.15}
+          opacity={0.25}
           emissive="#00D9FF"
-          emissiveIntensity={2.0}
+          emissiveIntensity={3.0}
         />
       </mesh>
 
@@ -371,9 +415,14 @@ function UnifiedDestinyField({ scenarioA, scenarioB, laserX }: UnifiedFieldProps
 
       <Environment preset="night" />
       
-      {/* Additional accent lights */}
-      <pointLight position={[-3, 0, 3]} intensity={2} color="#00D9FF" distance={8} />
-      <pointLight position={[3, 0, 3]} intensity={2} color="#F59E0B" distance={8} />
+      {/* Enhanced lighting for visibility */}
+      <ambientLight intensity={0.15} />
+      <directionalLight position={[0, 10, 5]} intensity={0.8} color="#ffffff" />
+      <pointLight position={[-4, 2, 4]} intensity={3} color="#00D9FF" distance={12} decay={2} />
+      <pointLight position={[4, 2, 4]} intensity={3} color="#F59E0B" distance={12} decay={2} />
+      <pointLight position={[0, 5, 2]} intensity={2} color="#ffffff" distance={15} decay={2} />
+      {/* Rim light for definition */}
+      <spotLight position={[0, 8, -5]} intensity={1.5} angle={0.5} penumbra={0.8} color="#00aaff" />
     </group>
   );
 }
