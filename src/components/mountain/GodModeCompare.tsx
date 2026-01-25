@@ -9,7 +9,6 @@ import React, { useMemo, useRef, useState, Suspense, useCallback } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { 
   MeshTransmissionMaterial, 
-  Float, 
   OrbitControls,
   Html 
 } from '@react-three/drei';
@@ -390,28 +389,26 @@ function LavaRiver({ color, score, isBaseline, geometry }: LavaRiverProps) {
   // Generate surface-aware curve representing 36-MONTH TIMELINE
   const { curve, endPosition } = useMemo(() => {
     const curvePoints: THREE.Vector3[] = [];
-    const SURFACE_OFFSET = 0.08; // Sit slightly above surface
-    const TIMELINE_MONTHS = 36;
-    const STEPS = 100;
+    const SURFACE_OFFSET = 0.1; // Sit above surface for visibility
+    const STEPS = 80;
     
     for (let i = 0; i <= STEPS; i++) {
-      const t = i / STEPS; // 0 = Month 0, 1 = Month 36
-      const month = t * TIMELINE_MONTHS;
+      const t = i / STEPS; // 0 = Month 0 (summit), 1 = Month 36 (base)
       
-      // Y-AXIS: Time progression (summit = now, base = 36 months)
-      // Start at y=3 (near summit), end at y=-3 (base)
-      const y = 3 - t * 6;
+      // Y-AXIS: Time progression down the mountain
+      // Geometry is 12x10, so Y ranges from -5 to +5
+      // Start near summit (y=4), end near base (y=-4)
+      const y = 4 - t * 8;
       
       // X-AXIS: Strategic divergence from optimal center
-      // Both paths start at x=0 (current state), then diverge
-      // Formula: x = side * (initial_offset + time_drift + score_drift)
-      const timeBasedSpread = t * 1.5; // Natural spread over time
-      const scoreDrift = driftIntensity * t * t; // Accelerating drift for worse scores
-      const waviness = Math.sin(t * Math.PI * 2) * 0.2 * t; // Subtle sinuous path
+      // Both paths start near center, then diverge based on score
+      const timeBasedSpread = t * 2.0; // Gradual spread over timeline
+      const scoreDrift = driftIntensity * t; // Linear drift based on score
+      const waviness = Math.sin(t * Math.PI * 1.5) * 0.3 * t; // Gentle curves
       
-      const x = side * (0.2 + timeBasedSpread + scoreDrift + waviness);
+      const x = side * (0.1 + timeBasedSpread + scoreDrift) + waviness * side;
       
-      // Z-AXIS: Sample terrain height + surface offset
+      // Z-AXIS: Sample terrain height + surface offset (cling to surface)
       const z = getMassifHeight(x, y, geometry) + SURFACE_OFFSET;
       
       curvePoints.push(new THREE.Vector3(x, y, z));
@@ -637,16 +634,9 @@ function UnifiedDestinyField({ scenarioA, scenarioB, hoverData }: UnifiedFieldPr
   // Generate the MULTI-PEAK MASSIF geometry
   const geometry = useMemo(() => createMassifGeometry(), []);
 
-  // Gentle floating animation
-  useFrame((state) => {
-    if (groupRef.current) {
-      groupRef.current.rotation.z = Math.sin(state.clock.elapsedTime * 0.15) * 0.015;
-      groupRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.3) * 0.05;
-    }
-  });
-
+  // FIXED POSITION - No floating animation
   return (
-    <group ref={groupRef} rotation={[-Math.PI / 2.5, 0, 0]} position={[0, -2, -1]}>
+    <group ref={groupRef} rotation={[-Math.PI / 2.8, 0, 0]} position={[0, 0, 0]}>
       {/* LAYER 1: SOLID OBSIDIAN BASE — Dark volcanic core (no white) */}
       <mesh geometry={geometry}>
         <meshStandardMaterial
@@ -998,8 +988,8 @@ export default function GodModeCompare() {
       >
         <Canvas
           camera={{ 
-            position: [0, 8, 14], // Centered view looking at the mountain
-            fov: 45 
+            position: [0, 5, 12], // Eye-level centered view
+            fov: 50 
           }}
           gl={{ 
             antialias: true, 
@@ -1014,13 +1004,12 @@ export default function GodModeCompare() {
             <color attach="background" args={['#050810']} />
             <fog attach="fog" args={['#050810', 15, 40]} />
 
-            <Float speed={0.2} rotationIntensity={0.01} floatIntensity={0.03}>
-              <UnifiedDestinyField 
-                scenarioA={scenarioA} 
-                scenarioB={scenarioB} 
-                hoverData={hoverData}
-              />
-            </Float>
+            {/* FIXED MOUNTAIN - No floating */}
+            <UnifiedDestinyField 
+              scenarioA={scenarioA} 
+              scenarioB={scenarioB} 
+              hoverData={hoverData}
+            />
             
             {/* CONSTRAINED ORBIT CONTROLS — 90° rotation limit */}
             <OrbitControls
