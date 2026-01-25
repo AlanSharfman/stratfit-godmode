@@ -117,7 +117,7 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
     setResult(simResult);
     setVerdict(simVerdict);
 
-    // Store in simulation store for immediate use (3 arguments: result, verdict, levers)
+    // Store in simulation store for immediate use (3 args: result, verdict, levers)
     const leverSnapshot = Object.entries(levers).reduce((acc, [key, val]) => {
       acc[key] = val;
       return acc;
@@ -167,7 +167,7 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
       isBaseline: true,
     });
     
-    // Mark it as baseline (savedSim is a SavedSimulation object with an id)
+    // Mark it as baseline
     if (savedSim?.id) {
       setAsBaseline(savedSim.id);
     }
