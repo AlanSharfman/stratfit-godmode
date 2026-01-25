@@ -4,7 +4,8 @@ import Slider from "@/components/ui/Slider";
 import MountainEngine from "@/components/engine/MountainEngine";
 
 import { ChevronDown } from "lucide-react";
-import OnboardingFlow from "@/components/onboarding/OnboardingFlow";
+// OnboardingFlow removed - use OnboardingPage instead if needed
+// import { OnboardingPage } from "@/components/onboarding";
 import { useScenarioStore } from "@/state/scenarioStore";
 
 const KPI_LABELS = ["Runway", "Cash", "Growth", "EBITDA", "Burn", "Risk", "Value"];
@@ -139,8 +140,7 @@ export default function DashboardLayout() {
         ))}
       </div>
 
-      {/* Onboarding Overlay (localStorage-gated internally) */}
-      <OnboardingFlow />
+      {/* Onboarding placeholder - use OnboardingPage if needed */}
     </div>
   );
 }

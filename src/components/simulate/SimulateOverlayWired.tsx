@@ -1,11 +1,13 @@
 // src/components/simulate/SimulateOverlayWired.tsx
 // STRATFIT — Monte Carlo Simulation Overlay (Wired to Store)
-// Saves results to simulationStore for use across dashboard
+// NOW WITH PROPER SAVE/LOAD INTEGRATION FOR ALL TABS
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { RefreshCw, Save, Check } from 'lucide-react';
+import { RefreshCw, Save, Check, FolderOpen, Star } from 'lucide-react';
 import { useSimulationStore } from '@/state/simulationStore';
 import { useSavedSimulationsStore } from '@/state/savedSimulationsStore';
+import { useScenarioStore } from '@/state/scenarioStore';
+import { useLeverStore } from '@/state/leverStore';
 import { 
   type MonteCarloResult, 
   type LeverState,
@@ -23,6 +25,10 @@ import ConfidenceFan from './ConfidenceFan';
 import ScenarioCards from './ScenarioCards';
 import SensitivityBars from './SensitivityBars';
 import SimulateNarrative from './SimulateNarrative';
+
+// Import Save/Load components
+import SaveBaselineButton from '../simulation/SaveBaselineButton';
+import LoadScenarioDropdown from '../simulation/LoadScenarioDropdown';
 
 import './SimulateStyles.css';
 
@@ -42,12 +48,24 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
   const [verdict, setVerdict] = useState<Verdict | null>(null);
   const [activeSection, setActiveSection] = useState<'overview' | 'distribution' | 'scenarios' | 'drivers'>('overview');
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [scenarioName, setScenarioName] = useState('');
 
   // Connect to simulation store
   const { setSimulationResult, startSimulation: storeStartSimulation } = useSimulationStore();
   
   // Connect to saved simulations store
   const saveSimulation = useSavedSimulationsStore((s) => s.saveSimulation);
+  const setAsBaseline = useSavedSimulationsStore((s) => s.setAsBaseline);
+  const savedSimulations = useSavedSimulationsStore((s) => s.simulations);
+  
+  // Connect to scenario store (for COMPARE/RISK/DECISION tabs)
+  const saveAsBaseline = useScenarioStore((s) => s.saveAsBaseline);
+  const saveScenario = useScenarioStore((s) => s.saveScenario);
+  const hasLegacyBaseline = useScenarioStore((s) => s.baseline !== null);
+  
+  // Lever store for loading scenarios
+  const setLevers = useLeverStore((s) => s.setLevers);
 
   // Simulation config
   const config: SimulationConfig = useMemo(() => ({
@@ -57,6 +75,12 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
     startingARR: 4800000,
     monthlyBurn: 47000,
   }), []);
+
+  // Check if we have a baseline
+  const hasBaseline = useMemo(() => {
+    const savedBaseline = savedSimulations.find(s => s.isBaseline);
+    return !!savedBaseline || hasLegacyBaseline;
+  }, [savedSimulations, hasLegacyBaseline]);
 
   // Run simulation with REAL progress updates
   const runSimulation = useCallback(async () => {
@@ -68,59 +92,50 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
     storeStartSimulation();
 
     const startTime = performance.now();
-    const CHUNK_SIZE = 500; // Process 500 simulations at a time
+    const CHUNK_SIZE = 500;
     const allSimulations: any[] = [];
 
-    // Run simulation in chunks to show real progress
     for (let i = 0; i < config.iterations; i += CHUNK_SIZE) {
       const chunkEnd = Math.min(i + CHUNK_SIZE, config.iterations);
       
-      // Run this chunk synchronously
       for (let j = i; j < chunkEnd; j++) {
         allSimulations.push(runSingleSimulation(j, levers, config));
       }
       
-      // Update progress with REAL count
       const currentProgress = (allSimulations.length / config.iterations) * 100;
       setProgress(currentProgress);
       setIterationCount(allSimulations.length);
       
-      // Yield to UI thread so progress bar updates
       await new Promise(resolve => setTimeout(resolve, 0));
     }
 
-    // Calculate execution time
     const executionTimeMs = performance.now() - startTime;
-
-    // Process all results (calculate statistics)
     const simResult = processSimulationResults(allSimulations, config, executionTimeMs);
     const simVerdict = generateVerdict(simResult);
     
     setProgress(100);
     setResult(simResult);
     setVerdict(simVerdict);
+
+    // Store in simulation store for immediate use (3 arguments: result, verdict, levers)
+    const leverSnapshot = Object.entries(levers).reduce((acc, [key, val]) => {
+      acc[key] = val;
+      return acc;
+    }, {} as Record<string, number>);
     
-    // SAVE TO STORE - This is the key wiring!
-    const leverSnapshot = {
-      demandStrength: levers.demandStrength,
-      pricingPower: levers.pricingPower,
-      expansionVelocity: levers.expansionVelocity,
-      costDiscipline: levers.costDiscipline,
-      hiringIntensity: levers.hiringIntensity,
-      operatingDrag: levers.operatingDrag,
-      marketVolatility: levers.marketVolatility,
-      executionRisk: levers.executionRisk,
-      fundingPressure: levers.fundingPressure,
-    };
     setSimulationResult(simResult, simVerdict, leverSnapshot);
-    
+
     setTimeout(() => {
       setPhase('complete');
     }, 300);
   }, [levers, config, setSimulationResult, storeStartSimulation]);
 
-  // Handle saving current simulation
-  const handleSaveSimulation = useCallback(() => {
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SAVE FUNCTIONS - SAVES TO BOTH STORES FOR FULL TAB COMPATIBILITY
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // Quick save as baseline (one-click)
+  const handleSaveAsBaseline = useCallback(() => {
     if (!result || !verdict) return;
     
     setSaveState('saving');
@@ -129,8 +144,9 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
       month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
     });
     
-    saveSimulation({
-      name: `Simulation ${timestamp}`,
+    // 1. Save to savedSimulationsStore
+    const savedSim = saveSimulation({
+      name: `Baseline (${timestamp})`,
       description: `Score: ${verdict.overallScore} | Survival: ${Math.round(result.survivalRate * 100)}%`,
       levers: levers as any,
       summary: {
@@ -142,20 +158,137 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
         runwayMedian: result.runwayPercentiles.p50,
         runwayP10: result.runwayPercentiles.p10,
         runwayP90: result.runwayPercentiles.p90,
-        cashMedian: result.cashPercentiles?.p50 ?? 0,
-        cashP10: result.cashPercentiles?.p10 ?? 0,
-        cashP90: result.cashPercentiles?.p90 ?? 0,
+        cashMedian: result.cashPercentiles.p50,
+        cashP10: result.cashPercentiles.p10,
+        cashP90: result.cashPercentiles.p90,
+        overallScore: verdict.overallScore,
+        overallRating: verdict.overallRating,
+      },
+      isBaseline: true,
+    });
+    
+    // Mark it as baseline (savedSim is a SavedSimulation object with an id)
+    if (savedSim?.id) {
+      setAsBaseline(savedSim.id);
+    }
+    
+    // 2. ALSO save to scenarioStore (for COMPARE/RISK/DECISION tabs)
+    saveAsBaseline(
+      `Baseline (${timestamp})`,
+      levers as any,
+      {
+        survivalRate: result.survivalRate,
+        medianARR: result.arrPercentiles.p50,
+        medianRunway: result.runwayPercentiles.p50,
+        medianCash: result.cashPercentiles.p50,
+        arrP10: result.arrPercentiles.p10,
+        arrP50: result.arrPercentiles.p50,
+        arrP90: result.arrPercentiles.p90,
+        runwayP10: result.runwayPercentiles.p10,
+        runwayP50: result.runwayPercentiles.p50,
+        runwayP90: result.runwayPercentiles.p90,
+        cashP10: result.cashPercentiles.p10,
+        cashP50: result.cashPercentiles.p50,
+        cashP90: result.cashPercentiles.p90,
+        overallScore: verdict.overallScore,
+        overallRating: verdict.overallRating as any,
+        monthlyARR: [],
+        monthlyRunway: [],
+        monthlySurvival: [],
+        arrBands: result.arrConfidenceBands || [],
+        leverSensitivity: result.sensitivityFactors || [],
+        simulatedAt: new Date(),
+        iterations: config.iterations,
+        executionTimeMs: result.executionTimeMs,
+      }
+    );
+    
+    setTimeout(() => {
+      setSaveState('saved');
+      setTimeout(() => setSaveState('idle'), 2000);
+    }, 300);
+  }, [result, verdict, levers, saveSimulation, setAsBaseline, saveAsBaseline, config.iterations]);
+
+  // Save as named scenario (with modal)
+  const handleSaveScenario = useCallback(() => {
+    if (!result || !verdict || !scenarioName.trim()) return;
+    
+    setSaveState('saving');
+    
+    // 1. Save to savedSimulationsStore
+    saveSimulation({
+      name: scenarioName.trim(),
+      description: `Score: ${verdict.overallScore} | Survival: ${Math.round(result.survivalRate * 100)}%`,
+      levers: levers as any,
+      summary: {
+        survivalRate: result.survivalRate,
+        survivalPercent: `${Math.round(result.survivalRate * 100)}%`,
+        arrMedian: result.arrPercentiles.p50,
+        arrP10: result.arrPercentiles.p10,
+        arrP90: result.arrPercentiles.p90,
+        runwayMedian: result.runwayPercentiles.p50,
+        runwayP10: result.runwayPercentiles.p10,
+        runwayP90: result.runwayPercentiles.p90,
+        cashMedian: result.cashPercentiles.p50,
+        cashP10: result.cashPercentiles.p10,
+        cashP90: result.cashPercentiles.p90,
         overallScore: verdict.overallScore,
         overallRating: verdict.overallRating,
       },
       isBaseline: false,
     });
     
+    // 2. ALSO save to scenarioStore
+    saveScenario(
+      scenarioName.trim(),
+      levers as any,
+      {
+        survivalRate: result.survivalRate,
+        medianARR: result.arrPercentiles.p50,
+        medianRunway: result.runwayPercentiles.p50,
+        medianCash: result.cashPercentiles.p50,
+        arrP10: result.arrPercentiles.p10,
+        arrP50: result.arrPercentiles.p50,
+        arrP90: result.arrPercentiles.p90,
+        runwayP10: result.runwayPercentiles.p10,
+        runwayP50: result.runwayPercentiles.p50,
+        runwayP90: result.runwayPercentiles.p90,
+        cashP10: result.cashPercentiles.p10,
+        cashP50: result.cashPercentiles.p50,
+        cashP90: result.cashPercentiles.p90,
+        overallScore: verdict.overallScore,
+        overallRating: verdict.overallRating as any,
+        monthlyARR: [],
+        monthlyRunway: [],
+        monthlySurvival: [],
+        arrBands: result.arrConfidenceBands || [],
+        leverSensitivity: result.sensitivityFactors || [],
+        simulatedAt: new Date(),
+        iterations: config.iterations,
+        executionTimeMs: result.executionTimeMs,
+      }
+    );
+    
     setTimeout(() => {
       setSaveState('saved');
+      setShowSaveModal(false);
+      setScenarioName('');
       setTimeout(() => setSaveState('idle'), 2000);
     }, 300);
-  }, [result, verdict, levers, saveSimulation]);
+  }, [result, verdict, levers, scenarioName, saveSimulation, saveScenario, config.iterations]);
+
+  // Load scenario - applies levers and re-runs simulation
+  const handleLoadScenario = useCallback((scenario: any) => {
+    // Apply the saved lever values
+    if (scenario.levers) {
+      setLevers(scenario.levers);
+    }
+    
+    // Re-run simulation with loaded levers
+    setTimeout(() => {
+      runSimulation();
+    }, 100);
+  }, [setLevers, runSimulation]);
 
   // Auto-run on open
   useEffect(() => {
@@ -164,83 +297,58 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
     }
   }, [isOpen, phase, runSimulation]);
 
-  // Reset when closed (but DON'T clear store - results persist!)
+  // Reset on close
   useEffect(() => {
     if (!isOpen) {
       setPhase('idle');
-      setProgress(0);
-      setIterationCount(0);
-      // Note: We don't clear result/verdict here - they stay in store
       setActiveSection('overview');
     }
   }, [isOpen]);
-
-  // Handle escape key
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
-  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
   return (
     <div className="simulate-overlay">
-      {/* Background */}
-      <div className="simulate-backdrop">
-        <div className="simulate-grid-pattern" />
-        <div className="simulate-vignette" />
-      </div>
-
-      {/* Main Container */}
       <div className="simulate-container">
-        {/* Header */}
-        <SimulateHeader 
-          onClose={onClose}
-          onRerun={runSimulation}
-          phase={phase}
-          iterations={config.iterations}
-          executionTime={result?.executionTimeMs}
-        />
+        {/* Header with Load Dropdown */}
+        <div className="simulate-header-row">
+          <SimulateHeader 
+            onClose={onClose}
+            onRerun={runSimulation}
+            phase={phase}
+            iterations={config.iterations}
+            executionTime={result?.executionTimeMs}
+          />
+          
+          {/* Load Scenario Dropdown - Top Right */}
+          <div className="simulate-load-section">
+            <LoadScenarioDropdown 
+              onLoad={handleLoadScenario}
+              showDelete={true}
+              showSetBaseline={true}
+            />
+          </div>
+        </div>
 
-        {/* Loading State with REAL progress */}
+        {/* Loading State */}
         {phase === 'running' && (
           <div className="simulate-loading">
             <div className="simulate-loading-content">
               <div className="simulate-loading-icon">
                 <RefreshCw className="animate-spin" size={48} />
               </div>
-              <h2 className="simulate-loading-title">SIMULATING {config.iterations.toLocaleString()} FUTURES</h2>
-              <p className="simulate-loading-subtitle">Analyzing probability distributions across {config.timeHorizonMonths}-month horizon</p>
-              
               <div className="simulate-progress-container">
-                <div className="simulate-progress-bar">
-                  <div 
-                    className="simulate-progress-fill"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-                <span className="simulate-progress-text">{Math.round(progress)}%</span>
+                <div 
+                  className="simulate-progress-bar"
+                  style={{ width: `${progress}%` }}
+                />
               </div>
-
-              <div className="simulate-loading-stats">
-                <div className="simulate-loading-stat">
-                  <span className="stat-value">{iterationCount.toLocaleString()}</span>
-                  <span className="stat-label">of {config.iterations.toLocaleString()}</span>
-                </div>
-                <div className="simulate-loading-stat">
-                  <span className="stat-value">{config.timeHorizonMonths}</span>
-                  <span className="stat-label">Months Each</span>
-                </div>
-                <div className="simulate-loading-stat">
-                  <span className="stat-value">{(iterationCount * config.timeHorizonMonths).toLocaleString()}</span>
-                  <span className="stat-label">Data Points</span>
-                </div>
-              </div>
+              <p className="simulate-loading-text">
+                Running Monte Carlo simulation...
+              </p>
+              <p className="simulate-iteration-count">
+                {iterationCount.toLocaleString()} / {config.iterations.toLocaleString()} iterations
+              </p>
             </div>
           </div>
         )}
@@ -248,16 +356,17 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
         {/* Results */}
         {phase === 'complete' && result && verdict && (
           <div className="simulate-results">
-            {/* Explainer for new users */}
-            <div className="simulate-explainer">
-              <p className="explainer-text">
-                <strong>What is this?</strong> We ran your strategy through {config.iterations.toLocaleString()} different possible futures. 
+            {/* Headline */}
+            <div className="simulate-headline">
+              <h2 className="simulate-verdict-title">{verdict.headline}</h2>
+              <p className="simulate-verdict-summary">
+                Based on {config.iterations.toLocaleString()} simulations, your company's trajectory has been analyzed.
                 Each simulation accounts for market uncertainty and execution variability. 
                 The results show the <em>range of probable outcomes</em>, not a single prediction.
               </p>
             </div>
 
-            {/* Navigation Tabs + Save Button */}
+            {/* Navigation Tabs + Save Buttons */}
             <div className="simulate-nav-row">
               <nav className="simulate-nav">
                 {[
@@ -265,196 +374,190 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
                   { id: 'distribution', label: 'DISTRIBUTION' },
                   { id: 'scenarios', label: 'SCENARIOS' },
                   { id: 'drivers', label: 'DRIVERS' },
-                ].map((tab) => (
+                ].map(tab => (
                   <button
                     key={tab.id}
                     className={`simulate-nav-tab ${activeSection === tab.id ? 'active' : ''}`}
-                    onClick={() => setActiveSection(tab.id as typeof activeSection)}
+                    onClick={() => setActiveSection(tab.id as any)}
                   >
                     {tab.label}
                   </button>
                 ))}
               </nav>
               
-              {/* SAVE SIMULATION BUTTON */}
-              <button 
-                className={`simulate-save-btn ${saveState}`}
-                onClick={handleSaveSimulation}
-                disabled={saveState !== 'idle'}
-              >
-                {saveState === 'saved' ? (
-                  <>
-                    <Check size={16} />
-                    SAVED
-                  </>
-                ) : saveState === 'saving' ? (
-                  <>
-                    <RefreshCw size={16} className="spin" />
-                    SAVING...
-                  </>
-                ) : (
-                  <>
-                    <Save size={16} />
-                    SAVE SIMULATION
-                  </>
-                )}
-              </button>
+              {/* SAVE BUTTONS */}
+              <div className="simulate-save-actions">
+                {/* Save as Baseline (Quick) */}
+                <button 
+                  className={`simulate-save-btn baseline ${saveState} ${hasBaseline ? 'has-baseline' : ''}`}
+                  onClick={handleSaveAsBaseline}
+                  disabled={saveState !== 'idle'}
+                  title={hasBaseline ? 'Replace current baseline' : 'Set as baseline for comparison'}
+                >
+                  {saveState === 'saved' ? (
+                    <>
+                      <Check size={16} />
+                      SAVED
+                    </>
+                  ) : saveState === 'saving' ? (
+                    <>
+                      <RefreshCw size={16} className="spin" />
+                      SAVING...
+                    </>
+                  ) : (
+                    <>
+                      <Star size={16} />
+                      {hasBaseline ? 'UPDATE BASELINE' : 'SET AS BASELINE'}
+                    </>
+                  )}
+                </button>
+                
+                {/* Save as Named Scenario */}
+                <button 
+                  className="simulate-save-btn scenario"
+                  onClick={() => setShowSaveModal(true)}
+                  disabled={saveState !== 'idle'}
+                >
+                  <Save size={16} />
+                  SAVE SCENARIO
+                </button>
+              </div>
             </div>
 
             {/* Content Sections */}
-            <div className="simulate-content">
-              {activeSection === 'overview' && (
-                <div className="simulate-section simulate-overview">
-                  <VerdictPanel verdict={verdict} result={result} />
-                  
-                  {/* Context for new users */}
-                  <div className="verdict-context">
-                    <p className="context-label">HOW TO READ THIS</p>
-                    <p className="context-text">
-                      Your <strong>Score ({verdict.overallScore})</strong> combines survival probability, 
-                      growth potential, and runway security. A score above 70 indicates strong positioning. 
-                      Below 50 requires strategic adjustments.
-                    </p>
-                  </div>
-                  
-                  <div className="simulate-quick-stats">
-                    <div className="quick-stat">
-                      <span className="quick-stat-label">SURVIVAL RATE</span>
-                      <span className="quick-stat-value">{Math.round(result.survivalRate * 100)}%</span>
-                    </div>
-                    <div className="quick-stat">
-                      <span className="quick-stat-label">MEDIAN ARR</span>
-                      <span className="quick-stat-value">${(result.arrPercentiles.p50 / 1000000).toFixed(1)}M</span>
-                    </div>
-                    <div className="quick-stat">
-                      <span className="quick-stat-label">MEDIAN RUNWAY</span>
-                      <span className="quick-stat-value">{Math.round(result.runwayPercentiles.p50)} mo</span>
-                    </div>
-                    <div className="quick-stat">
-                      <span className="quick-stat-label">UPSIDE (P90)</span>
-                      <span className="quick-stat-value">${(result.arrPercentiles.p90 / 1000000).toFixed(1)}M</span>
-                    </div>
-                  </div>
+            {activeSection === 'overview' && (
+              <div className="simulate-section simulate-overview">
+                <VerdictPanel verdict={verdict} result={result} />
+              </div>
+            )}
 
-                  <div className="simulate-mini-chart">
-                    <h3 className="section-title">36-MONTH PROJECTION</h3>
-                    <ConfidenceFan data={result.arrConfidenceBands} compact />
-                  </div>
+            {activeSection === 'distribution' && (
+              <div className="simulate-section simulate-distribution">
+                <div className="distribution-explainer">
+                  <p className="explainer-heading">UNDERSTANDING THE DISTRIBUTION</p>
+                  <p className="explainer-text">
+                    This shows all possible ARR outcomes across {config.iterations.toLocaleString()} simulations.
+                    The shaded region represents the most likely range (P25-P75).
+                  </p>
                 </div>
-              )}
-
-              {activeSection === 'distribution' && (
-                <div className="simulate-section simulate-distribution">
-                  <div className="distribution-explainer">
-                    <p className="explainer-heading">UNDERSTANDING THE DISTRIBUTION</p>
-                    <p className="explainer-text">
-                      This histogram shows all {config.iterations.toLocaleString()} simulated outcomes for your ARR at month 36. 
-                      The <strong>P50 (median)</strong> is your most likely result. 
-                      <strong>P10</strong> is your downside (only 10% worse), <strong>P90</strong> is your upside (only 10% better).
-                    </p>
+                
+                <div className="distribution-grid">
+                  <div className="distribution-main">
+                    <h3 className="section-title">ARR DISTRIBUTION</h3>
+                    <ProbabilityDistribution histogram={result.arrHistogram} percentiles={result.arrPercentiles} stats={result.arrDistribution} />
                   </div>
-                  
-                  <div className="distribution-grid">
-                    <div className="distribution-main">
-                      <h3 className="section-title">ARR OUTCOME DISTRIBUTION</h3>
-                      <ProbabilityDistribution 
-                        histogram={result.arrHistogram}
-                        percentiles={result.arrPercentiles}
-                        stats={result.arrDistribution}
-                      />
-                    </div>
-                    <div className="distribution-side">
-                      <div className="distribution-card">
-                        <h4 className="card-title">PERCENTILE BREAKDOWN</h4>
-                        <div className="percentile-list">
-                          <div className="percentile-row pessimistic">
-                            <span className="percentile-label">P10 (Pessimistic)</span>
-                            <span className="percentile-value">${(result.arrPercentiles.p10 / 1000000).toFixed(2)}M</span>
-                          </div>
-                          <div className="percentile-row">
-                            <span className="percentile-label">P25</span>
-                            <span className="percentile-value">${(result.arrPercentiles.p25 / 1000000).toFixed(2)}M</span>
-                          </div>
-                          <div className="percentile-row median">
-                            <span className="percentile-label">P50 (Median)</span>
-                            <span className="percentile-value">${(result.arrPercentiles.p50 / 1000000).toFixed(2)}M</span>
-                          </div>
-                          <div className="percentile-row">
-                            <span className="percentile-label">P75</span>
-                            <span className="percentile-value">${(result.arrPercentiles.p75 / 1000000).toFixed(2)}M</span>
-                          </div>
-                          <div className="percentile-row optimistic">
-                            <span className="percentile-label">P90 (Optimistic)</span>
-                            <span className="percentile-value">${(result.arrPercentiles.p90 / 1000000).toFixed(2)}M</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="confidence-section">
-                    <h3 className="section-title">CONFIDENCE BANDS OVER TIME</h3>
+                  <div className="distribution-side">
+                    <h3 className="section-title">CONFIDENCE BANDS</h3>
                     <ConfidenceFan data={result.arrConfidenceBands} />
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
-              {activeSection === 'scenarios' && (
-                <div className="simulate-section simulate-scenarios">
-                  <div className="scenarios-explainer">
-                    <p className="explainer-heading">THREE FUTURES</p>
-                    <p className="explainer-text">
-                      These represent what happens if things go poorly (P5), as expected (P50), or exceptionally well (P95). 
-                      Use these to understand the range of outcomes you should prepare for.
-                    </p>
-                  </div>
-                  
-                  <ScenarioCards 
-                    bestCase={result.bestCase}
-                    worstCase={result.worstCase}
-                    medianCase={result.medianCase}
-                    verdict={verdict}
-                  />
+            {activeSection === 'scenarios' && (
+              <div className="simulate-section simulate-scenarios">
+                <div className="scenarios-explainer">
+                  <p className="explainer-heading">BEST / MEDIAN / WORST CASES</p>
+                  <p className="explainer-text">
+                    Use these to understand the range of outcomes you should prepare for.
+                  </p>
                 </div>
-              )}
+                
+                <ScenarioCards 
+                  bestCase={result.bestCase}
+                  worstCase={result.worstCase}
+                  medianCase={result.medianCase}
+                  verdict={verdict}
+                />
+              </div>
+            )}
 
-              {activeSection === 'drivers' && (
-                <div className="simulate-section simulate-drivers">
-                  <div className="drivers-explainer">
-                    <p className="explainer-heading">WHAT MOVES THE NEEDLE</p>
-                    <p className="explainer-text">
-                      Not all levers are equal. This shows which inputs have the greatest impact on your outcomes. 
-                      Focus your strategy on the levers at the top.
-                    </p>
+            {activeSection === 'drivers' && (
+              <div className="simulate-section simulate-drivers">
+                <div className="drivers-explainer">
+                  <p className="explainer-heading">WHAT MOVES THE NEEDLE</p>
+                  <p className="explainer-text">
+                    Not all levers are equal. This shows which inputs have the greatest impact on your outcomes. 
+                    Focus your strategy on the levers at the top.
+                  </p>
+                </div>
+                
+                <div className="drivers-grid">
+                  <div className="drivers-main">
+                    <h3 className="section-title">SENSITIVITY ANALYSIS</h3>
+                    <SensitivityBars factors={result.sensitivityFactors} />
                   </div>
-                  
-                  <div className="drivers-grid">
-                    <div className="drivers-main">
-                      <h3 className="section-title">SENSITIVITY ANALYSIS</h3>
-                      <SensitivityBars factors={result.sensitivityFactors} />
-                    </div>
-                    <div className="drivers-side">
-                      <SimulateNarrative verdict={verdict} />
-                    </div>
+                  <div className="drivers-side">
+                    <SimulateNarrative verdict={verdict} />
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+
+            {/* Baseline Status Indicator */}
+            {!hasBaseline && (
+              <div className="simulate-baseline-hint">
+                <Star size={16} />
+                <span>
+                  <strong>Tip:</strong> Save this as your baseline to unlock COMPARE, RISK, and DECISION tabs.
+                </span>
+              </div>
+            )}
           </div>
         )}
       </div>
+
+      {/* Save Scenario Modal */}
+      {showSaveModal && (
+        <div className="save-modal-overlay" onClick={() => setShowSaveModal(false)}>
+          <div className="save-modal" onClick={e => e.stopPropagation()}>
+            <h3 className="save-modal-title">Save Scenario</h3>
+            <p className="save-modal-desc">
+              Give this scenario a name to save it for later comparison.
+            </p>
+            
+            <input
+              type="text"
+              className="save-modal-input"
+              placeholder="e.g., Aggressive Growth, Conservative, Q2 Plan..."
+              value={scenarioName}
+              onChange={e => setScenarioName(e.target.value)}
+              autoFocus
+              onKeyDown={e => e.key === 'Enter' && handleSaveScenario()}
+            />
+            
+            <div className="save-modal-actions">
+              <button 
+                className="save-modal-btn cancel"
+                onClick={() => setShowSaveModal(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="save-modal-btn save"
+                onClick={handleSaveScenario}
+                disabled={!scenarioName.trim()}
+              >
+                <Save size={16} />
+                Save Scenario
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-// Helper function to process simulation results
-// (Same logic as in monteCarloEngine but accepts pre-run simulations)
+// ═══════════════════════════════════════════════════════════════════════════════
+// HELPER FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
 function processSimulationResults(
   allSimulations: any[],
   config: SimulationConfig,
   executionTimeMs: number
 ): MonteCarloResult {
-  // Calculate survival metrics
   const survivors = allSimulations.filter((s: any) => s.didSurvive);
   const survivalRate = survivors.length / config.iterations;
   
@@ -464,7 +567,6 @@ function processSimulationResults(
     survivalByMonth.push(survivingAtMonth / config.iterations);
   }
   
-  // Calculate distributions
   const finalARRs = allSimulations.map((s: any) => s.finalARR);
   const finalCash = allSimulations.map((s: any) => s.finalCash);
   const finalRunway = allSimulations.map((s: any) => s.finalRunway);
@@ -481,17 +583,13 @@ function processSimulationResults(
   const runwayPercentiles = calculatePercentiles(finalRunway);
   
   const medianSurvivalMonths = calculatePercentiles(survivalMonths).p50;
-
-  // Calculate confidence bands
   const arrConfidenceBands = calculateConfidenceBands(allSimulations, config.timeHorizonMonths);
 
-  // Find representative cases
   const sortedByARR = [...allSimulations].sort((a: any, b: any) => a.finalARR - b.finalARR);
   const worstCase = sortedByARR[Math.floor(config.iterations * 0.05)];
   const medianCase = sortedByARR[Math.floor(config.iterations * 0.5)];
   const bestCase = sortedByARR[Math.floor(config.iterations * 0.95)];
 
-  // Sensitivity (simplified for this version)
   const sensitivityFactors: SensitivityFactor[] = [
     { lever: 'demandStrength' as keyof LeverState, label: 'Demand Strength', impact: 0.8, direction: 'positive' },
     { lever: 'pricingPower' as keyof LeverState, label: 'Pricing Power', impact: 0.6, direction: 'positive' },
@@ -508,32 +606,25 @@ function processSimulationResults(
     iterations: config.iterations,
     timeHorizonMonths: config.timeHorizonMonths,
     executionTimeMs,
-    
     survivalRate,
     survivalByMonth,
     medianSurvivalMonths,
-    
     arrDistribution,
     arrHistogram,
     arrPercentiles,
     arrConfidenceBands,
-    
     cashDistribution,
     cashPercentiles,
-    
     runwayDistribution,
     runwayPercentiles,
-    
     bestCase,
     worstCase,
     medianCase,
-    
     sensitivityFactors,
     allSimulations,
   };
 }
 
-// Statistics helpers
 function calculateDistributionStats(values: number[]) {
   const sorted = [...values].sort((a, b) => a - b);
   const n = sorted.length;
@@ -585,7 +676,7 @@ function calculateConfidenceBands(simulations: any[], timeHorizon: number) {
   const bands = [];
   for (let month = 1; month <= timeHorizon; month++) {
     const arrValues = simulations
-      .filter((s: any) => s.monthlySnapshots.length >= month)
+      .filter((s: any) => s.monthlySnapshots && s.monthlySnapshots.length >= month)
       .map((s: any) => s.monthlySnapshots[month - 1].arr);
     
     if (arrValues.length === 0) continue;
@@ -604,4 +695,3 @@ function calculateConfidenceBands(simulations: any[], timeHorizon: number) {
   }
   return bands;
 }
-

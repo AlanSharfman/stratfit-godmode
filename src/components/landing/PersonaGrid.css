@@ -1,0 +1,275 @@
+/* src/components/landing/PersonaGrid.css */
+/* STRATFIT — Persona Grid Styles */
+/* Premium cards with individual persona colors */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GRID LAYOUT
+═══════════════════════════════════════════════════════════════════════════ */
+
+.persona-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.persona-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.persona-row.secondary {
+  /* Slightly smaller cards for secondary personas */
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PERSONA CARD
+═══════════════════════════════════════════════════════════════════════════ */
+
+.persona-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 32px 24px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  text-align: left;
+  min-height: 280px;
+}
+
+.persona-card:hover {
+  transform: translateY(-8px);
+  border-color: var(--persona-color);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.3),
+    0 0 60px color-mix(in srgb, var(--persona-color) 30%, transparent);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CARD BACKGROUND EFFECTS
+═══════════════════════════════════════════════════════════════════════════ */
+
+.card-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: 20px;
+}
+
+.card-bg .bg-glow {
+  position: absolute;
+  top: -50%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200%;
+  height: 100%;
+  background: radial-gradient(
+    ellipse 50% 80% at 50% 0%,
+    color-mix(in srgb, var(--persona-color) 15%, transparent) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.persona-card:hover .bg-glow {
+  opacity: 1;
+}
+
+.card-bg .bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 30px 30px;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.persona-card:hover .bg-grid {
+  opacity: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CARD CONTENT
+═══════════════════════════════════════════════════════════════════════════ */
+
+.card-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Icon */
+.card-icon {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.icon-emoji {
+  font-size: 36px;
+  position: relative;
+  z-index: 2;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+.icon-ring {
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--persona-color);
+  border-radius: 16px;
+  opacity: 0.3;
+  transform: rotate(0deg);
+  transition: all 0.4s ease;
+}
+
+.persona-card:hover .icon-ring {
+  opacity: 0.6;
+  transform: rotate(5deg) scale(1.1);
+  border-color: var(--persona-color);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--persona-color) 40%, transparent);
+}
+
+/* Title */
+.card-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #f8fafc;
+  margin-bottom: 12px;
+  transition: color 0.3s ease;
+}
+
+.persona-card:hover .card-title {
+  color: var(--persona-color);
+}
+
+/* Question */
+.card-question {
+  font-size: 14px;
+  font-style: italic;
+  color: #94a3b8;
+  line-height: 1.5;
+  flex-grow: 1;
+  margin-bottom: 20px;
+}
+
+/* Action */
+.card-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.action-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--persona-color);
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: all 0.3s ease;
+}
+
+.action-arrow {
+  font-size: 16px;
+  color: var(--persona-color);
+  transform: translateX(-20px);
+  opacity: 0;
+  transition: all 0.3s ease 0.1s;
+}
+
+.persona-card:hover .action-text {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.persona-card:hover .action-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CARD BORDER EFFECT
+═══════════════════════════════════════════════════════════════════════════ */
+
+.card-border {
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    var(--persona-color) 0%,
+    transparent 50%,
+    var(--persona-color) 100%
+  );
+  -webkit-mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.persona-card:hover .card-border {
+  opacity: 0.6;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE DESIGN
+═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1200px) {
+  .persona-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .persona-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .persona-card {
+    padding: 24px 20px;
+    min-height: 240px;
+  }
+  
+  .card-icon {
+    width: 56px;
+    height: 56px;
+  }
+  
+  .icon-emoji {
+    font-size: 32px;
+  }
+  
+  .card-title {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .persona-card {
+    padding: 20px 16px;
+    min-height: 220px;
+  }
+}

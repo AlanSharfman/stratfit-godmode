@@ -1,0 +1,507 @@
+/* src/components/landing/ThreeFutures.css */
+/* STRATFIT — 3 Futures Section Styles */
+/* Growth / Stability / Survival framework */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION CONTAINER
+═══════════════════════════════════════════════════════════════════════════ */
+
+.three-futures-section {
+  position: relative;
+  padding: 100px 40px;
+  overflow: hidden;
+}
+
+/* Background */
+.futures-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.futures-bg .bg-gradient {
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(ellipse 60% 40% at 20% 50%, rgba(34, 211, 238, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 50%, rgba(16, 185, 129, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 30% at 50% 50%, rgba(251, 191, 36, 0.05) 0%, transparent 50%);
+}
+
+.futures-bg .bg-lines {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.02) 0px,
+    rgba(255, 255, 255, 0.02) 1px,
+    transparent 1px,
+    transparent 100px
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CONTENT
+═══════════════════════════════════════════════════════════════════════════ */
+
+.futures-content {
+  position: relative;
+  z-index: 5;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Header */
+.futures-header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 20px;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  border-radius: 100px;
+  margin-bottom: 24px;
+}
+
+.badge-icon {
+  font-size: 16px;
+}
+
+.badge-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: #fbbf24;
+}
+
+.futures-title {
+  font-size: 48px;
+  font-weight: 800;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, #f8fafc 0%, #fbbf24 50%, #f8fafc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.futures-subtitle {
+  font-size: 18px;
+  color: #94a3b8;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FUTURES GRID
+═══════════════════════════════════════════════════════════════════════════ */
+
+.futures-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  margin-bottom: 60px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FUTURE CARD
+═══════════════════════════════════════════════════════════════════════════ */
+
+.future-card {
+  position: relative;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 24px;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.future-card:hover {
+  border-color: var(--future-color);
+  box-shadow: 
+    0 20px 50px rgba(0, 0, 0, 0.3),
+    0 0 60px color-mix(in srgb, var(--future-color) 20%, transparent);
+  transform: translateY(-8px);
+}
+
+.future-card.expanded {
+  border-color: var(--future-color);
+}
+
+/* Card Background */
+.future-card .card-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.future-card .bg-glow {
+  position: absolute;
+  top: -100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    ellipse 40% 30% at 50% 0%,
+    color-mix(in srgb, var(--future-color) 15%, transparent) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.future-card:hover .bg-glow,
+.future-card.expanded .bg-glow {
+  opacity: 1;
+}
+
+.future-card .bg-pattern {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.future-card:hover .bg-pattern,
+.future-card.expanded .bg-pattern {
+  opacity: 1;
+}
+
+/* Card Main Content */
+.card-main {
+  position: relative;
+  z-index: 2;
+  padding: 40px 32px;
+  cursor: pointer;
+  text-align: center;
+}
+
+/* Icon */
+.future-card .card-icon {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.future-card .icon-emoji {
+  font-size: 48px;
+  position: relative;
+  z-index: 2;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+  transition: transform 0.4s ease;
+}
+
+.future-card:hover .icon-emoji {
+  transform: scale(1.1);
+}
+
+.future-card .icon-ring {
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--future-color);
+  border-radius: 20px;
+  opacity: 0.3;
+  transition: all 0.4s ease;
+}
+
+.future-card:hover .icon-ring {
+  opacity: 0.6;
+  transform: rotate(8deg) scale(1.15);
+  box-shadow: 0 0 30px color-mix(in srgb, var(--future-color) 40%, transparent);
+}
+
+/* Title & Tagline */
+.future-card .card-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  color: var(--future-color);
+  margin-bottom: 8px;
+}
+
+.future-card .card-tagline {
+  font-size: 16px;
+  font-style: italic;
+  color: #94a3b8;
+  margin-bottom: 24px;
+}
+
+/* Risk/Reward Badges */
+.risk-reward-badges {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 20px;
+  background: color-mix(in srgb, var(--badge-color) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--badge-color) 30%, transparent);
+  border-radius: 12px;
+  min-width: 90px;
+}
+
+.badge-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: #64748b;
+}
+
+.badge-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--badge-color);
+}
+
+/* Expand Indicator */
+.expand-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.expand-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+  transition: color 0.3s ease;
+}
+
+.future-card:hover .expand-text {
+  color: var(--future-color);
+}
+
+.expand-arrow {
+  font-size: 10px;
+  color: #64748b;
+  transition: all 0.3s ease;
+}
+
+.future-card:hover .expand-arrow {
+  color: var(--future-color);
+}
+
+.expand-arrow.up {
+  transform: translateY(-2px);
+}
+
+.expand-arrow.down {
+  transform: translateY(2px);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   EXPANDED DETAILS
+═══════════════════════════════════════════════════════════════════════════ */
+
+.card-details {
+  position: relative;
+  z-index: 2;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: all 0.4s ease;
+}
+
+.card-details.visible {
+  max-height: 400px;
+  opacity: 1;
+  padding: 0 32px 32px;
+}
+
+.details-description {
+  font-size: 15px;
+  line-height: 1.7;
+  color: #cbd5e1;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+}
+
+.characteristics-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--future-color);
+  margin-bottom: 16px;
+}
+
+.characteristics-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.characteristic-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.char-bullet {
+  flex-shrink: 0;
+  color: var(--future-color);
+  font-weight: 700;
+}
+
+.char-text {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #94a3b8;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CARD BORDER EFFECT
+═══════════════════════════════════════════════════════════════════════════ */
+
+.future-card .card-border {
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  padding: 1px;
+  background: var(--future-gradient);
+  -webkit-mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.future-card:hover .card-border,
+.future-card.expanded .card-border {
+  opacity: 0.5;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════════════════════════════════════ */
+
+.futures-footer {
+  text-align: center;
+  padding: 40px;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+}
+
+.footer-question {
+  font-size: 24px;
+  font-weight: 700;
+  color: #f8fafc;
+  margin-bottom: 12px;
+}
+
+.footer-answer {
+  font-size: 18px;
+  color: #94a3b8;
+}
+
+.footer-answer .highlight {
+  color: #22d3ee;
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE DESIGN
+═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1200px) {
+  .futures-grid {
+    gap: 24px;
+  }
+  
+  .card-main {
+    padding: 32px 24px;
+  }
+}
+
+@media (max-width: 900px) {
+  .futures-grid {
+    grid-template-columns: 1fr;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  .futures-title {
+    font-size: 36px;
+  }
+}
+
+@media (max-width: 480px) {
+  .three-futures-section {
+    padding: 60px 20px;
+  }
+  
+  .futures-title {
+    font-size: 28px;
+  }
+  
+  .futures-subtitle {
+    font-size: 16px;
+  }
+  
+  .card-main {
+    padding: 28px 20px;
+  }
+  
+  .future-card .icon-emoji {
+    font-size: 40px;
+  }
+  
+  .future-card .card-title {
+    font-size: 20px;
+  }
+  
+  .risk-reward-badges {
+    flex-direction: row;
+    gap: 12px;
+  }
+  
+  .badge {
+    padding: 10px 16px;
+    min-width: 80px;
+  }
+  
+  .footer-question {
+    font-size: 20px;
+  }
+  
+  .footer-answer {
+    font-size: 16px;
+  }
+}

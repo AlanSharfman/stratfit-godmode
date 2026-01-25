@@ -1,0 +1,460 @@
+/* src/components/landing/FlowDiagram.css */
+/* STRATFIT — Flow Diagram Styles */
+/* 7-screen Gemini-style flow with connectors */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CONTAINER
+═══════════════════════════════════════════════════════════════════════════ */
+
+.flow-diagram {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 40px 20px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FLOW ROWS
+═══════════════════════════════════════════════════════════════════════════ */
+
+.flow-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.main-row {
+  /* First 4 steps: TERRAIN → SIMULATE → COMPARE → RISK */
+}
+
+.secondary-row {
+  /* Last 3 steps reversed: EXPORT ← DECISION ← VALUATION */
+}
+
+.vertical-connector {
+  justify-content: flex-end;
+  padding-right: 100px;
+  height: 60px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FLOW STEP CARD
+═══════════════════════════════════════════════════════════════════════════ */
+
+.flow-step-card {
+  position: relative;
+  width: 180px;
+  height: 200px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.flow-step-card:hover,
+.flow-step-card.hovered {
+  transform: translateY(-8px);
+  border-color: var(--step-color);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.3),
+    0 0 40px color-mix(in srgb, var(--step-color) 25%, transparent);
+}
+
+.flow-step-card.active {
+  border-color: var(--step-color);
+  box-shadow: 0 0 60px color-mix(in srgb, var(--step-color) 30%, transparent);
+}
+
+/* Background */
+.flow-step-card .step-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.flow-step-card .bg-gradient {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 100% 60% at 50% 0%,
+    color-mix(in srgb, var(--step-color) 10%, transparent) 0%,
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.flow-step-card:hover .bg-gradient,
+.flow-step-card.active .bg-gradient {
+  opacity: 1;
+}
+
+/* Content */
+.step-content {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Step Number */
+.step-number {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--step-color) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--step-color) 40%, transparent);
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--step-color);
+}
+
+/* Icon */
+.step-icon {
+  font-size: 36px;
+  margin-top: 8px;
+  margin-bottom: 12px;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+  transition: transform 0.3s ease;
+}
+
+.flow-step-card:hover .step-icon {
+  transform: scale(1.15);
+}
+
+/* Title */
+.step-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--step-color);
+  margin-bottom: 4px;
+}
+
+/* Subtitle */
+.step-subtitle {
+  font-size: 11px;
+  color: #64748b;
+  margin-bottom: 12px;
+}
+
+/* Mini Preview */
+.step-preview {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.preview-mountain {
+  width: 100%;
+  height: 50px;
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
+}
+
+.flow-step-card:hover .preview-mountain {
+  opacity: 1;
+}
+
+.mini-mountain {
+  width: 100%;
+  height: 100%;
+}
+
+/* Border Effect */
+.step-border {
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  padding: 1px;
+  background: linear-gradient(135deg, var(--step-color) 0%, transparent 50%, var(--step-color) 100%);
+  -webkit-mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.flow-step-card:hover .step-border,
+.flow-step-card.active .step-border {
+  opacity: 0.6;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CONNECTORS
+═══════════════════════════════════════════════════════════════════════════ */
+
+.flow-connector {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+}
+
+.flow-connector.horizontal {
+  width: 60px;
+}
+
+.connector-line {
+  flex: 1;
+  height: 2px;
+  background: linear-gradient(90deg, #22d3ee, #a855f7);
+  border-radius: 1px;
+  opacity: 0.4;
+}
+
+.connector-arrow {
+  font-size: 16px;
+  color: #22d3ee;
+  animation: arrow-pulse 2s ease-in-out infinite;
+}
+
+@keyframes arrow-pulse {
+  0%, 100% { opacity: 0.5; transform: translateX(0); }
+  50% { opacity: 1; transform: translateX(3px); }
+}
+
+.flow-connector.reverse .connector-arrow {
+  animation: arrow-pulse-reverse 2s ease-in-out infinite;
+}
+
+@keyframes arrow-pulse-reverse {
+  0%, 100% { opacity: 0.5; transform: translateX(0); }
+  50% { opacity: 1; transform: translateX(-3px); }
+}
+
+/* Bend Connector */
+.connector-bend {
+  position: relative;
+  width: 100px;
+  height: 100%;
+}
+
+.connector-bend.right {
+  margin-left: auto;
+}
+
+.bend-line {
+  position: absolute;
+  background: linear-gradient(135deg, #ef4444, #10b981);
+  opacity: 0.4;
+}
+
+.bend-line.horizontal {
+  top: 0;
+  right: 0;
+  width: 50px;
+  height: 2px;
+}
+
+.bend-line.vertical {
+  top: 0;
+  right: 0;
+  width: 2px;
+  height: 100%;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TOOLTIP
+═══════════════════════════════════════════════════════════════════════════ */
+
+.step-tooltip {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 400px;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid var(--step-color);
+  border-radius: 16px;
+  backdrop-filter: blur(20px);
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.5),
+    0 0 40px color-mix(in srgb, var(--step-color) 20%, transparent);
+  z-index: 100;
+  animation: tooltip-appear 0.3s ease;
+}
+
+@keyframes tooltip-appear {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.tooltip-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.tooltip-icon {
+  font-size: 32px;
+}
+
+.tooltip-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--step-color);
+}
+
+.tooltip-description {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #cbd5e1;
+  margin-bottom: 16px;
+}
+
+.tooltip-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.tooltip-features li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.feature-dot {
+  color: var(--step-color);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE DESIGN
+═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1200px) {
+  .flow-step-card {
+    width: 150px;
+    height: 180px;
+  }
+  
+  .step-icon {
+    font-size: 28px;
+  }
+  
+  .step-title {
+    font-size: 12px;
+  }
+  
+  .flow-connector.horizontal {
+    width: 40px;
+  }
+}
+
+@media (max-width: 900px) {
+  .flow-diagram {
+    gap: 16px;
+  }
+  
+  .flow-row {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  
+  .flow-step-card {
+    width: calc(50% - 16px);
+    max-width: 180px;
+  }
+  
+  .flow-connector.horizontal {
+    display: none;
+  }
+  
+  .vertical-connector {
+    display: none;
+  }
+  
+  .step-tooltip {
+    width: 90%;
+    max-width: 400px;
+    bottom: 20px;
+  }
+}
+
+@media (max-width: 600px) {
+  .flow-step-card {
+    width: 100%;
+    max-width: 300px;
+    height: 160px;
+  }
+  
+  .step-content {
+    flex-direction: row;
+    align-items: center;
+    padding: 16px 20px;
+  }
+  
+  .step-number {
+    position: static;
+    margin-right: 16px;
+  }
+  
+  .step-icon {
+    font-size: 32px;
+    margin: 0 16px 0 0;
+  }
+  
+  .step-preview {
+    display: none;
+  }
+  
+  .step-subtitle {
+    margin-bottom: 0;
+  }
+  
+  .step-tooltip {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: 100%;
+    transform: none;
+    border-radius: 16px 16px 0 0;
+    padding: 20px;
+  }
+  
+  .tooltip-features {
+    grid-template-columns: 1fr;
+  }
+}

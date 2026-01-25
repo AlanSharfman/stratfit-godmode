@@ -1,0 +1,520 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   STRATFIT — Shared God Mode UI Styles
+   Reusable premium UI component styling
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   CSS VARIABLES
+   ───────────────────────────────────────────────────────────────────────────── */
+:root {
+  --gm-bg-void: #030712;
+  --gm-bg-deep: #0a1628;
+  --gm-bg-card: rgba(15, 23, 42, 0.8);
+  --gm-cyan: #22d3ee;
+  --gm-cyan-dim: rgba(34, 211, 238, 0.3);
+  --gm-gold: #fbbf24;
+  --gm-emerald: #10b981;
+  --gm-red: #ef4444;
+  --gm-orange: #f97316;
+  --gm-purple: #a855f7;
+  --gm-text: #f8fafc;
+  --gm-text-dim: #94a3b8;
+  --gm-border: rgba(148, 163, 184, 0.2);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   GLOW BUTTON
+   ───────────────────────────────────────────────────────────────────────────── */
+.glow-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 600;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+/* Sizes */
+.glow-button.small {
+  padding: 8px 16px;
+  font-size: 0.85rem;
+}
+
+.glow-button.medium {
+  padding: 12px 24px;
+  font-size: 0.95rem;
+}
+
+.glow-button.large {
+  padding: 16px 32px;
+  font-size: 1.1rem;
+}
+
+/* Variants */
+.glow-button.primary {
+  background: linear-gradient(135deg, var(--gm-cyan), #0891b2);
+  color: var(--gm-bg-void);
+}
+
+.glow-button.primary:hover {
+  box-shadow: 0 8px 30px rgba(34, 211, 238, 0.4);
+}
+
+.glow-button.secondary {
+  background: transparent;
+  border: 1px solid var(--gm-border);
+  color: var(--gm-text);
+}
+
+.glow-button.secondary:hover {
+  border-color: var(--gm-cyan);
+  color: var(--gm-cyan);
+}
+
+.glow-button.danger {
+  background: linear-gradient(135deg, var(--gm-red), #dc2626);
+  color: white;
+}
+
+.glow-button.danger:hover {
+  box-shadow: 0 8px 30px rgba(239, 68, 68, 0.4);
+}
+
+.glow-button.success {
+  background: linear-gradient(135deg, var(--gm-emerald), #059669);
+  color: white;
+}
+
+.glow-button.success:hover {
+  box-shadow: 0 8px 30px rgba(16, 185, 129, 0.4);
+}
+
+.glow-button:hover {
+  transform: translateY(-2px);
+}
+
+.glow-button.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.glow-button .button-icon {
+  font-size: 1.1em;
+}
+
+.glow-button .button-glow {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.5s ease;
+}
+
+.glow-button:hover .button-glow {
+  transform: translateX(100%);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   GOD MODE CARD
+   ───────────────────────────────────────────────────────────────────────────── */
+.godmode-card {
+  position: relative;
+  background: var(--gm-bg-card);
+  border-radius: 16px;
+  padding: 24px;
+  overflow: hidden;
+  backdrop-filter: blur(20px);
+}
+
+.godmode-card .card-glow {
+  position: absolute;
+  top: -50%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 100px;
+  background: radial-gradient(ellipse, var(--card-accent), transparent 70%);
+  opacity: 0.15;
+  filter: blur(30px);
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.godmode-card .card-border {
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  padding: 1px;
+  background: linear-gradient(135deg, var(--card-accent), transparent 50%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.5;
+  transition: opacity 0.3s ease;
+}
+
+.godmode-card.hoverable {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.godmode-card.hoverable:hover {
+  transform: translateY(-4px);
+}
+
+.godmode-card.hoverable:hover .card-glow {
+  opacity: 0.25;
+}
+
+.godmode-card.hoverable:hover .card-border {
+  opacity: 1;
+}
+
+.godmode-card .card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.godmode-card .card-icon {
+  font-size: 1.5rem;
+}
+
+.godmode-card .card-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--gm-text);
+  margin: 0;
+}
+
+.godmode-card .card-subtitle {
+  font-size: 0.85rem;
+  color: var(--gm-text-dim);
+  margin: 4px 0 0;
+}
+
+.godmode-card .card-content {
+  position: relative;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   ANIMATED BADGE
+   ───────────────────────────────────────────────────────────────────────────── */
+.animated-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 100px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  animation: badge-pulse 3s ease-in-out infinite;
+}
+
+@keyframes badge-pulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(34, 211, 238, 0.2); }
+  50% { box-shadow: 0 0 20px rgba(34, 211, 238, 0.4); }
+}
+
+.animated-badge.default {
+  background: rgba(34, 211, 238, 0.15);
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  color: var(--gm-cyan);
+}
+
+.animated-badge.success {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: var(--gm-emerald);
+}
+
+.animated-badge.warning {
+  background: rgba(251, 191, 36, 0.15);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  color: var(--gm-gold);
+}
+
+.animated-badge.danger {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--gm-red);
+}
+
+.animated-badge.purple {
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  color: var(--gm-purple);
+}
+
+.animated-badge .badge-icon {
+  font-size: 1rem;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   STAT DISPLAY
+   ───────────────────────────────────────────────────────────────────────────── */
+.stat-display {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  border-left: 3px solid var(--stat-color);
+}
+
+.stat-display .stat-icon {
+  font-size: 1.5rem;
+}
+
+.stat-display .stat-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-display .stat-label {
+  font-size: 0.8rem;
+  color: var(--gm-text-dim);
+  margin-bottom: 2px;
+}
+
+.stat-display .stat-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--stat-color);
+}
+
+.stat-display .stat-trend {
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+.stat-display .stat-trend.up {
+  color: var(--gm-emerald);
+}
+
+.stat-display .stat-trend.down {
+  color: var(--gm-red);
+}
+
+.stat-display .stat-trend.neutral {
+  color: var(--gm-gold);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   PROGRESS RING
+   ───────────────────────────────────────────────────────────────────────────── */
+.progress-ring {
+  position: relative;
+}
+
+.progress-ring svg {
+  transform: rotate(-90deg);
+}
+
+.progress-ring .ring-bg {
+  stroke: var(--gm-border);
+}
+
+.progress-ring .ring-fill {
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.5s ease;
+}
+
+.progress-ring .ring-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.progress-ring .ring-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.progress-ring .ring-text {
+  font-size: 0.7rem;
+  color: var(--gm-text-dim);
+  margin-top: 2px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SHIMMER TEXT
+   ───────────────────────────────────────────────────────────────────────────── */
+.shimmer-text {
+  background: linear-gradient(
+    90deg,
+    var(--gm-text) 0%,
+    var(--gm-cyan) 25%,
+    var(--gm-gold) 50%,
+    var(--gm-cyan) 75%,
+    var(--gm-text) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3s linear infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   LOADING SPINNER
+   ───────────────────────────────────────────────────────────────────────────── */
+.loading-spinner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-spinner.small .spinner-ring {
+  width: 24px;
+  height: 24px;
+  border-width: 2px;
+}
+
+.loading-spinner.medium .spinner-ring {
+  width: 40px;
+  height: 40px;
+  border-width: 3px;
+}
+
+.loading-spinner.large .spinner-ring {
+  width: 60px;
+  height: 60px;
+  border-width: 4px;
+}
+
+.loading-spinner .spinner-ring {
+  border-radius: 50%;
+  border-style: solid;
+  border-color: var(--gm-border);
+  border-top-color: var(--spinner-color);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   TOOLTIP
+   ───────────────────────────────────────────────────────────────────────────── */
+.tooltip-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip-content {
+  position: absolute;
+  padding: 8px 12px;
+  background: var(--gm-bg-deep);
+  border: 1px solid var(--gm-border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--gm-text);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: all 0.2s ease;
+  z-index: 1000;
+}
+
+.tooltip-wrapper:hover .tooltip-content {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.tooltip-wrapper.top .tooltip-content {
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  margin-bottom: 8px;
+}
+
+.tooltip-wrapper.top:hover .tooltip-content {
+  transform: translateX(-50%) translateY(0);
+}
+
+.tooltip-wrapper.bottom .tooltip-content {
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+  margin-top: 8px;
+}
+
+.tooltip-wrapper.bottom:hover .tooltip-content {
+  transform: translateX(-50%) translateY(0);
+}
+
+.tooltip-wrapper.left .tooltip-content {
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%) translateX(4px);
+  margin-right: 8px;
+}
+
+.tooltip-wrapper.left:hover .tooltip-content {
+  transform: translateY(-50%) translateX(0);
+}
+
+.tooltip-wrapper.right .tooltip-content {
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%) translateX(-4px);
+  margin-left: 8px;
+}
+
+.tooltip-wrapper.right:hover .tooltip-content {
+  transform: translateY(-50%) translateX(0);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SECTION DIVIDER
+   ───────────────────────────────────────────────────────────────────────────── */
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 32px 0;
+}
+
+.divider-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gm-border), transparent);
+}
+
+.divider-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--gm-text-dim);
+  text-transform: uppercase;
+}
