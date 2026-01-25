@@ -400,30 +400,33 @@ function LavaRiver({ color, score, isBaseline, geometry }: LavaRiverProps) {
   const driftIntensity = (1 - scoreNormalized) * 3.0; // 0-3 units of drift
   
   // Generate surface-aware curve representing 36-MONTH TIMELINE
-  // CONSTRAINT: Every point MUST sample the Mountain's Z-height and offset by +0.05
+  // CRITICAL: Every point MUST sample the Mountain's Z-height
+  // The lava physically CLIMBS ridges and DIPS into valleys
   const { curve, endPosition } = useMemo(() => {
     const curvePoints: THREE.Vector3[] = [];
-    const SURFACE_OFFSET = 0.05; // Normal displacement to sit perfectly "over the top"
-    const STEPS = 100; // High resolution for smooth ridge/valley following
+    const SURFACE_OFFSET = 0.06; // Normal offset to flow OVER the glass, not through it
+    const STEPS = 120; // High resolution for precise ridge/valley following
     
     for (let i = 0; i <= STEPS; i++) {
       const t = i / STEPS; // 0 = Month 0 (summit), 1 = Month 36 (base)
       
-      // Y-AXIS: Time progression down the mountain
-      // Geometry is 12x10, so Y ranges from -5 to +5
-      // Start near summit (y=4), end near base (y=-4)
-      const y = 4 - t * 8;
+      // Y-AXIS: Time progression down the mountain (Strategic High Ground → Base)
+      // Start at summit ridge (y=3.5), end at base valley (y=-4)
+      const y = 3.5 - t * 7.5;
       
-      // X-AXIS: Strategic divergence from optimal center
-      // Both paths start near center, then diverge based on score
-      const timeBasedSpread = t * 2.5; // Gradual spread over timeline
-      const scoreDrift = driftIntensity * t * t; // Accelerating drift for worse scores
-      const waviness = Math.sin(t * Math.PI * 2) * 0.4 * t; // Sinuous path follows terrain
+      // X-AXIS: Resource Velocity divergence based on strategic score
+      // Both paths start near center, then diverge based on score quality
+      const timeBasedSpread = t * t * 2.0; // Accelerating spread over timeline
+      const scoreDrift = driftIntensity * t * 1.5; // Linear drift for worse scores
       
-      const x = side * (0.15 + timeBasedSpread + scoreDrift) + waviness * side;
+      // Sinuous path that follows terrain ridges naturally
+      const ridgeWave = Math.sin(t * Math.PI * 3) * 0.3 * (1 - t * 0.5);
+      const microWave = Math.sin(t * Math.PI * 7) * 0.1 * t;
       
-      // Z-AXIS: Sample EXACT terrain height + offset
-      // This makes paths flow OVER ridges and INTO valleys
+      const x = side * (0.2 + timeBasedSpread + scoreDrift) + (ridgeWave + microWave) * side;
+      
+      // Z-AXIS: Sample EXACT terrain height at [x, y] + normal offset
+      // THIS IS THE "CLING LOGIC" - makes lava tethered to ridges
       const terrainZ = getMassifHeight(x, y, geometry);
       const z = terrainZ + SURFACE_OFFSET;
       
@@ -458,14 +461,14 @@ function LavaRiver({ color, score, isBaseline, geometry }: LavaRiverProps) {
   const glowRef = useRef<THREE.Mesh>(null);
   const midRef = useRef<THREE.Mesh>(null);
   
-  // Animate glow intensity with organic pulsing
+  // Animate glow intensity with organic pulsing - EmissiveIntensity 5.0 to glow through glass
   useFrame((state) => {
     const time = state.clock.elapsedTime;
     
-    // Pulsing glow layers
+    // Pulsing glow layers with high emissive intensity
     if (tubeRef.current) {
       const mat = tubeRef.current.material as THREE.MeshStandardMaterial;
-      mat.emissiveIntensity = 3 + Math.sin(time * 2.5) * 1.5 + Math.sin(time * 5.7) * 0.5;
+      mat.emissiveIntensity = 5.0 + Math.sin(time * 2.5) * 1.5 + Math.sin(time * 5.7) * 0.8;
     }
     if (glowRef.current) {
       const mat = glowRef.current.material as THREE.MeshBasicMaterial;
@@ -539,24 +542,24 @@ function LavaRiver({ color, score, isBaseline, geometry }: LavaRiverProps) {
         />
       </mesh>
       
-      {/* LAYER 4: MAIN LAVA CONDUIT — Solid emissive core */}
+      {/* LAYER 4: MAIN LAVA CONDUIT — Solid emissive core (EmissiveIntensity 5.0) */}
       <mesh ref={tubeRef} geometry={tubes.mainTube}>
         <meshStandardMaterial
           color={color}
           emissive={color}
-          emissiveIntensity={4}
+          emissiveIntensity={5.0}
           toneMapped={false}
-          roughness={0.3}
-          metalness={0.1}
+          roughness={0.2}
+          metalness={0.2}
         />
       </mesh>
       
-      {/* LAYER 5: HOT INNER CORE — Brighter emission */}
+      {/* LAYER 5: HOT INNER CORE — Maximum emission to glow through refractive glass */}
       <mesh geometry={tubes.innerCore}>
         <meshStandardMaterial
           color="#ffffff"
           emissive={color}
-          emissiveIntensity={6}
+          emissiveIntensity={8}
           toneMapped={false}
         />
       </mesh>
@@ -659,9 +662,9 @@ function DeltaBlade3D({ normalizedX, month, valA, valB }: DeltaBladeProps) {
         />
       </mesh>
       
-      {/* DYNAMIC HUD — Board-deck tooltip */}
+      {/* BOARD-DECK HUD — Calculated variance at intersection point */}
       <Html
-        position={[0.5, 4, 0]}
+        position={[0.5, 4.5, 0]}
         center
         style={{
           pointerEvents: 'none',
@@ -669,49 +672,51 @@ function DeltaBlade3D({ normalizedX, month, valA, valB }: DeltaBladeProps) {
         }}
       >
         <div 
-          className="backdrop-blur-xl rounded-lg border border-white/20 p-4 min-w-[200px]"
+          className="backdrop-blur-xl rounded-lg border border-cyan-500/30 p-4 min-w-[220px]"
           style={{
-            background: 'linear-gradient(180deg, rgba(10,15,25,0.95) 0%, rgba(5,8,15,0.98) 100%)',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1)',
+            background: 'linear-gradient(180deg, rgba(0,20,40,0.95) 0%, rgba(5,10,20,0.98) 100%)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.8), 0 0 20px rgba(0,217,255,0.15), inset 0 1px 0 rgba(0,217,255,0.2)',
           }}
         >
-          {/* Month Header */}
-          <div className="flex items-center justify-between mb-2 pb-2 border-b border-white/10">
-            <span className="text-[9px] font-bold tracking-[0.2em] text-white/40">
-              MONTH {month + 1}
-            </span>
-            <div className="w-2 h-2 rounded-full bg-white animate-pulse shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
+          {/* Month-X Variance Header */}
+          <div className="flex items-center justify-between mb-3 pb-2 border-b border-cyan-500/20">
+            <div>
+              <span className="text-[8px] font-bold tracking-[0.25em] text-cyan-400/60 block">
+                MONTH-{month + 1} VARIANCE
+              </span>
+              <span className="text-[10px] text-white/40">Strategic Intersection</span>
+            </div>
+            <div className="w-2.5 h-2.5 rounded-full bg-white animate-pulse shadow-[0_0_12px_rgba(255,255,255,0.9)]" />
           </div>
           
-          {/* ARR Values */}
-          <div className="flex items-baseline gap-3 mb-3">
-            <div className="text-2xl font-black text-white tracking-tight">
-              ${valB.toFixed(1)}M
-            </div>
-            <div className={`text-sm font-bold ${delta >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-              {delta >= 0 ? '▲' : '▼'} ${Math.abs(delta).toFixed(2)}M
+          {/* Total ARR Delta — The key metric */}
+          <div className="mb-3">
+            <div className="text-[8px] font-bold tracking-[0.2em] text-white/40 mb-1">TOTAL ARR DELTA</div>
+            <div className="flex items-baseline gap-3">
+              <div className={`text-3xl font-black tracking-tight ${delta >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                {delta >= 0 ? '+' : ''}${delta.toFixed(2)}M
+              </div>
+              <div className={`text-sm font-bold ${delta >= 0 ? 'text-emerald-400/70' : 'text-red-400/70'}`}>
+                {delta >= 0 ? '▲' : '▼'} {Math.abs(divergence).toFixed(1)}%
+              </div>
             </div>
           </div>
           
-          {/* Strategic Divergence */}
-          <div className="flex items-center justify-between pt-2 border-t border-white/10">
-            <span className="text-[9px] text-white/40 tracking-wider">DIVERGENCE</span>
-            <span className={`text-sm font-bold ${Math.abs(divergence) > 10 ? 'text-amber-400' : 'text-white/70'}`}>
-              {divergence > 0 ? '+' : ''}{divergence.toFixed(1)}%
-            </span>
-          </div>
-          
-          {/* Scenario Breakdown */}
-          <div className="flex gap-4 mt-2 text-[10px]">
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(0,217,255,0.6)]" />
-              <span className="text-white/50">A:</span>
-              <span className="text-cyan-300">${valA.toFixed(2)}M</span>
+          {/* Path Intersection Values */}
+          <div className="grid grid-cols-2 gap-3 pt-3 border-t border-white/10">
+            <div>
+              <div className="flex items-center gap-1.5 mb-1">
+                <div className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(0,217,255,0.8)]" />
+                <span className="text-[8px] font-bold tracking-wider text-cyan-400/80">BASELINE</span>
+              </div>
+              <div className="text-lg font-black text-white">${valA.toFixed(2)}M</div>
             </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.6)]" />
-              <span className="text-white/50">B:</span>
-              <span className="text-amber-300">${valB.toFixed(2)}M</span>
+            <div>
+              <div className="flex items-center gap-1.5 mb-1">
+                <div className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.8)]" />
+                <span className="text-[8px] font-bold tracking-wider text-amber-400/80">EXPLORE</span>
+              </div>
+              <div className="text-lg font-black text-white">${valB.toFixed(2)}M</div>
             </div>
           </div>
         </div>
@@ -736,9 +741,9 @@ function UnifiedDestinyField({ scenarioA, scenarioB, hoverData }: UnifiedFieldPr
   // Generate the MULTI-PEAK MASSIF geometry
   const geometry = useMemo(() => createMassifGeometry(), []);
 
-  // FIXED POSITION - Eye-level view, no animation
+  // FIXED POSITION - No floating animation
   return (
-    <group ref={groupRef} rotation={[-Math.PI / 2.5, 0, 0]} position={[0, -1, 0]}>
+    <group ref={groupRef} rotation={[-Math.PI / 2.8, 0, 0]} position={[0, 0, 0]}>
       {/* LAYER 1: SOLID OBSIDIAN BASE — Dark volcanic core (no white) */}
       <mesh geometry={geometry}>
         <meshStandardMaterial
@@ -1090,8 +1095,8 @@ export default function GodModeCompare() {
       >
         <Canvas
           camera={{ 
-            position: [0, 3, 15], // EYE-LEVEL: Straight-on centered view
-            fov: 45 
+            position: [8, 6, 12], // HERO VIEW: Command perspective
+            fov: 42 
           }}
           gl={{ 
             antialias: true, 
@@ -1104,7 +1109,7 @@ export default function GodModeCompare() {
         >
           <Suspense fallback={null}>
             <color attach="background" args={['#050810']} />
-            <fog attach="fog" args={['#050810', 25, 60]} />
+            <fog attach="fog" args={['#050810', 20, 50]} />
             
             {/* ENVIRONMENT: City preset for high-contrast glass reflections */}
             <Environment preset="city" />
@@ -1116,17 +1121,23 @@ export default function GodModeCompare() {
               hoverData={hoverData}
             />
             
-            {/* FIXED VIEW — No rotation, zoom only */}
+            {/* CONSTRAINED ORBIT CONTROLS — 90° rotation limit */}
             <OrbitControls
-              target={[0, 0, 0]}
+              target={[0, 1, 0]}
               enableZoom={true}
               enablePan={false}
-              enableRotate={false}
+              enableRotate={true}
+              rotateSpeed={0.8}
               zoomSpeed={0.6}
-              minDistance={10}
-              maxDistance={30}
+              minDistance={8}
+              maxDistance={35}
+              minPolarAngle={Math.PI / 6}       // 30° from top
+              maxPolarAngle={Math.PI / 2.2}     // ~82° (don't flip under)
+              minAzimuthAngle={-Math.PI / 4}    // 45° left limit
+              maxAzimuthAngle={Math.PI / 4}     // 45° right limit (total 90°)
               enableDamping={true}
               dampingFactor={0.08}
+              autoRotate={false}
               makeDefault
             />
           </Suspense>
