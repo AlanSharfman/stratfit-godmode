@@ -93,36 +93,48 @@ const generateTrajectory = (baseArr: number, score: number): number[] => {
   return trajectory;
 };
 
-// Generate lava path with natural curves
+// Generate lava path - matches Gemini reference image style
+// Flows from peak down the mountain with natural S-curves
 const generateLavaPath = (score: number, side: 'left' | 'right') => {
-  const drift = (100 - score) / 100;
+  // Score affects how much the path diverges (lower score = more spread)
+  const divergence = (100 - score) / 100;
   const sideMultiplier = side === 'left' ? -1 : 1;
   
+  // Peak position - centered at top of mountain
   const peakX = 500;
-  const peakY = 95;
+  const peakY = 120; // Slightly lower to match image
   
-  const points = [
-    { x: peakX, y: peakY },
-    { x: peakX + sideMultiplier * 15 * drift, y: 140 },
-    { x: peakX + sideMultiplier * 40 * drift, y: 200 },
-    { x: peakX + sideMultiplier * 70 * drift, y: 260 },
-    { x: peakX + sideMultiplier * 100 * drift, y: 320 },
-    { x: peakX + sideMultiplier * 130 * drift, y: 380 },
-    { x: peakX + sideMultiplier * 160 * drift, y: 440 },
-    { x: peakX + sideMultiplier * (180 + drift * 80), y: 520 },
-    { x: peakX + sideMultiplier * (200 + drift * 100), y: 600 },
-  ];
-  
-  let path = `M ${points[0].x} ${points[0].y}`;
-  for (let i = 1; i < points.length; i++) {
-    const prev = points[i - 1];
-    const curr = points[i];
-    const cpX = (prev.x + curr.x) / 2;
-    const cpY = prev.y + (curr.y - prev.y) * 0.7;
-    path += ` Q ${cpX} ${cpY} ${curr.x} ${curr.y}`;
+  // Create natural flowing path down the mountain
+  // Each point: x spreads outward, y goes down
+  if (side === 'left') {
+    // CYAN path - flows down left slope with S-curve
+    return `
+      M ${peakX} ${peakY}
+      C ${peakX - 20} ${peakY + 60}, 
+        ${peakX - 60} ${peakY + 100}, 
+        ${peakX - 80 - divergence * 30} ${peakY + 150}
+      S ${peakX - 140 - divergence * 40} ${peakY + 250}, 
+        ${peakX - 180 - divergence * 50} ${peakY + 320}
+      S ${peakX - 240 - divergence * 60} ${peakY + 400}, 
+        ${peakX - 280 - divergence * 80} ${peakY + 480}
+      S ${peakX - 320 - divergence * 100} ${peakY + 540}, 
+        ${peakX - 350 - divergence * 120} 650
+    `.replace(/\s+/g, ' ').trim();
+  } else {
+    // ORANGE path - flows down right slope with S-curve
+    return `
+      M ${peakX} ${peakY}
+      C ${peakX + 20} ${peakY + 60}, 
+        ${peakX + 60} ${peakY + 100}, 
+        ${peakX + 80 + divergence * 30} ${peakY + 150}
+      S ${peakX + 140 + divergence * 40} ${peakY + 250}, 
+        ${peakX + 180 + divergence * 50} ${peakY + 320}
+      S ${peakX + 240 + divergence * 60} ${peakY + 400}, 
+        ${peakX + 280 + divergence * 80} ${peakY + 480}
+      S ${peakX + 320 + divergence * 100} ${peakY + 540}, 
+        ${peakX + 350 + divergence * 120} 650
+    `.replace(/\s+/g, ' ').trim();
   }
-  
-  return path;
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -221,34 +233,137 @@ export default function GodModePhotorealistic() {
     >
       
       {/* ═══════════════════════════════════════════════════════════════════
-          LAYER 1: CINEMATIC BACKPLATE (The Realism)
-          Multi-layered CSS gradients creating photorealistic mountain
+          LAYER 1: CINEMATIC MOUNTAIN BACKPLATE
+          CSS-rendered mountain that works immediately
           ═══════════════════════════════════════════════════════════════════ */}
-      <div 
-        className="cinema-backplate" 
-        style={{
-          position: 'absolute',
-          inset: 0,
-          zIndex: 0,
-          background: `
-            radial-gradient(1px 1px at 10% 8%, rgba(255,255,255,0.6) 0%, transparent 100%),
-            radial-gradient(1.5px 1.5px at 25% 12%, rgba(255,255,255,0.4) 0%, transparent 100%),
-            radial-gradient(1px 1px at 40% 5%, rgba(255,255,255,0.7) 0%, transparent 100%),
-            radial-gradient(1px 1px at 55% 15%, rgba(255,255,255,0.5) 0%, transparent 100%),
-            radial-gradient(1.2px 1.2px at 70% 8%, rgba(255,255,255,0.5) 0%, transparent 100%),
-            radial-gradient(1px 1px at 85% 4%, rgba(255,255,255,0.6) 0%, transparent 100%),
-            radial-gradient(ellipse 8% 4% at 50% 12%, rgba(200,220,255,0.3) 0%, transparent 70%),
-            linear-gradient(145deg, transparent 0%, transparent 10%, rgba(140,160,200,0.08) 11%, rgba(100,130,180,0.12) 14%, rgba(80,110,160,0.08) 18%, transparent 22%),
-            linear-gradient(168deg, transparent 0%, transparent 9%, #1a2540 10%, #162035 15%, #0f1625 25%, #0a1018 40%, #050810 60%),
-            linear-gradient(155deg, transparent 0%, transparent 12%, #14203a 13%, #0f1828 25%, #080f18 45%, #040608 70%),
-            linear-gradient(185deg, transparent 0%, transparent 11%, #16223c 12%, #101a2a 24%, #0a1018 42%, #050810 65%),
-            linear-gradient(160deg, transparent 0%, transparent 28%, rgba(20,35,60,0.6) 30%, rgba(15,25,45,0.4) 40%, transparent 55%),
-            linear-gradient(200deg, transparent 0%, transparent 26%, rgba(22,38,65,0.5) 28%, rgba(16,28,50,0.3) 38%, transparent 50%),
-            radial-gradient(ellipse 120% 35% at 50% 85%, rgba(15,40,80,0.4) 0%, rgba(8,20,45,0.2) 40%, transparent 70%),
-            linear-gradient(180deg, #020408 0%, #050a14 15%, #081020 35%, #0a1830 60%, #0c2040 100%)
-          `
-        }}
-      />
+      
+      {/* SKY GRADIENT - Dusk atmosphere */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        zIndex: 0,
+        background: `linear-gradient(180deg, 
+          #050a15 0%,
+          #0a1525 10%,
+          #0f2035 20%,
+          #152a45 30%,
+          #1a3555 40%,
+          #254565 50%,
+          #2d5575 58%,
+          #254560 65%,
+          #1a3548 75%,
+          #0f2030 85%,
+          #0a1520 95%,
+          #050a10 100%
+        )`
+      }} />
+      
+      {/* STARS */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        zIndex: 1,
+        background: `
+          radial-gradient(1.2px 1.2px at 8% 6%, #fff 0%, transparent 100%),
+          radial-gradient(1px 1px at 15% 12%, rgba(255,255,255,0.7) 0%, transparent 100%),
+          radial-gradient(1.5px 1.5px at 25% 4%, #fff 0%, transparent 100%),
+          radial-gradient(1px 1px at 35% 10%, rgba(255,255,255,0.6) 0%, transparent 100%),
+          radial-gradient(1.3px 1.3px at 48% 7%, rgba(255,255,255,0.8) 0%, transparent 100%),
+          radial-gradient(1px 1px at 58% 14%, rgba(255,255,255,0.5) 0%, transparent 100%),
+          radial-gradient(1.4px 1.4px at 72% 5%, #fff 0%, transparent 100%),
+          radial-gradient(1px 1px at 82% 11%, rgba(255,255,255,0.6) 0%, transparent 100%),
+          radial-gradient(1.2px 1.2px at 92% 8%, rgba(255,255,255,0.7) 0%, transparent 100%),
+          radial-gradient(0.8px 0.8px at 20% 18%, rgba(255,255,255,0.4) 0%, transparent 100%),
+          radial-gradient(0.8px 0.8px at 65% 16%, rgba(255,255,255,0.4) 0%, transparent 100%)
+        `,
+        pointerEvents: 'none'
+      }} />
+      
+      {/* DISTANT MOUNTAIN RANGE - Far background */}
+      <div style={{
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: '55%',
+        zIndex: 2,
+        background: 'linear-gradient(180deg, transparent 0%, rgba(20,40,65,0.5) 20%, rgba(15,30,50,0.7) 50%, rgba(12,24,40,0.85) 100%)',
+        clipPath: 'polygon(0% 100%, 0% 45%, 8% 40%, 18% 35%, 28% 42%, 38% 32%, 45% 38%, 52% 30%, 58% 36%, 68% 28%, 78% 38%, 88% 32%, 100% 40%, 100% 100%)',
+        pointerEvents: 'none'
+      }} />
+      
+      {/* MIDDLE MOUNTAIN RANGE */}
+      <div style={{
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: '65%',
+        zIndex: 3,
+        background: 'linear-gradient(180deg, transparent 0%, rgba(18,35,55,0.6) 15%, rgba(14,28,45,0.8) 40%, rgba(10,20,35,0.95) 70%, #08141f 100%)',
+        clipPath: 'polygon(0% 100%, 0% 50%, 10% 45%, 18% 42%, 25% 48%, 32% 38%, 38% 44%, 44% 32%, 48% 22%, 50% 15%, 52% 22%, 56% 32%, 62% 44%, 68% 38%, 75% 48%, 82% 42%, 90% 48%, 100% 45%, 100% 100%)',
+        pointerEvents: 'none'
+      }} />
+      
+      {/* MAIN MOUNTAIN - Central peak */}
+      <div style={{
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: '72%',
+        zIndex: 4,
+        background: `linear-gradient(175deg, 
+          transparent 0%,
+          transparent 12%,
+          rgba(45,70,100,0.4) 14%,
+          rgba(30,50,75,0.6) 18%,
+          rgba(22,40,62,0.8) 25%,
+          rgba(15,28,45,0.9) 35%,
+          rgba(10,20,35,0.95) 50%,
+          #0a1422 70%,
+          #060e18 100%
+        )`,
+        clipPath: 'polygon(0% 100%, 0% 60%, 12% 52%, 22% 48%, 30% 42%, 38% 35%, 44% 26%, 47% 18%, 50% 12%, 53% 18%, 56% 26%, 62% 35%, 70% 42%, 78% 48%, 88% 52%, 100% 58%, 100% 100%)',
+        pointerEvents: 'none'
+      }} />
+      
+      {/* SNOW CAP GLOW */}
+      <div style={{
+        position: 'absolute',
+        top: '16%',
+        left: '47%',
+        width: '6%',
+        height: '10%',
+        zIndex: 5,
+        background: 'radial-gradient(ellipse 100% 80% at 50% 30%, rgba(180,200,230,0.3) 0%, rgba(140,170,210,0.15) 40%, transparent 70%)',
+        pointerEvents: 'none'
+      }} />
+      
+      {/* FOREGROUND RIDGE */}
+      <div style={{
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: '22%',
+        zIndex: 6,
+        background: 'linear-gradient(180deg, rgba(6,12,20,0.85) 0%, #040810 40%, #020406 100%)',
+        clipPath: 'polygon(0% 100%, 0% 35%, 12% 28%, 25% 38%, 38% 22%, 50% 32%, 62% 18%, 75% 30%, 88% 22%, 100% 35%, 100% 100%)',
+        pointerEvents: 'none'
+      }} />
+      
+      {/* HORIZON GLOW */}
+      <div style={{
+        position: 'absolute',
+        bottom: '25%',
+        left: 0,
+        right: 0,
+        height: '30%',
+        zIndex: 1,
+        background: 'radial-gradient(ellipse 120% 80% at 50% 100%, rgba(40,70,110,0.2) 0%, transparent 60%)',
+        pointerEvents: 'none'
+      }} />
       
       {/* ═══════════════════════════════════════════════════════════════════
           LAYER 2: VOLUMETRIC FOG (Depth Enhancement)
@@ -307,6 +422,52 @@ export default function GodModePhotorealistic() {
               </feMerge>
             </filter>
           </defs>
+          
+          {/* GRID OVERLAY - Coordinate system matching mountain contours */}
+          <g className="grid-overlay" opacity="0.35" style={{ mixBlendMode: 'screen' }}>
+            {/* Curved contour lines following mountain shape */}
+            {[0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1].map((level, i) => {
+              const y = 150 + (1 - level) * 450;
+              const spread = (1 - level) * 350;
+              return (
+                <g key={`contour-${i}`}>
+                  <path 
+                    d={`M ${100 - spread * 0.3} ${y + 30} Q 500 ${y - 20} ${900 + spread * 0.3} ${y + 30}`}
+                    fill="none" 
+                    stroke="rgba(80,140,200,0.4)" 
+                    strokeWidth="0.8"
+                    strokeDasharray="3,6"
+                  />
+                  {/* Left label */}
+                  <text 
+                    x={70 - spread * 0.25} 
+                    y={y + 35} 
+                    fill="rgba(100,160,220,0.6)" 
+                    fontSize="11" 
+                    fontFamily="monospace"
+                  >
+                    {level.toFixed(1)}
+                  </text>
+                  {/* Right label */}
+                  <text 
+                    x={930 + spread * 0.25} 
+                    y={y + 35} 
+                    fill="rgba(100,160,220,0.6)" 
+                    fontSize="11" 
+                    fontFamily="monospace"
+                    textAnchor="end"
+                  >
+                    {level.toFixed(1)}
+                  </text>
+                </g>
+              );
+            })}
+            
+            {/* Peak marker with glow */}
+            <circle cx="500" cy="120" r="6" fill="rgba(255,255,255,0.9)" />
+            <circle cx="500" cy="120" r="12" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" />
+            <circle cx="500" cy="120" r="20" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+          </g>
           
           {/* CONVERGED STATE - Single white/blue glowing path */}
           {isConverged ? (
