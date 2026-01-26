@@ -103,10 +103,7 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
           Do not adjust without design sign-off. */}
       <div className="mountain-stage relative w-full flex-1 p-4" data-tour="mountain">
         {view === "terrain" && (
-          <div className="relative h-full w-full overflow-auto rounded-3xl border border-cyan-500/20 bg-gradient-to-b from-slate-950 via-slate-900 to-black shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08),0_0_60px_rgba(34,211,238,0.08)]">
-            {/* Cyan accent border glow - enhanced */}
-            <div className="pointer-events-none absolute inset-0 rounded-3xl shadow-[inset_0_0_0_1px_rgba(34,211,238,0.2),inset_0_0_30px_rgba(34,211,238,0.05)]" />
-            
+          <div className="relative h-full w-full overflow-hidden rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
             {/* Causal highlight band (no labels) — only after explicit user action */}
             {bandNonce > 0 ? (
               <div
@@ -116,8 +113,8 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
               />
             ) : null}
 
-            {/* Mountain with brightness boost */}
-            <div className="relative h-full w-full" style={{ filter: 'brightness(1.15) saturate(1.2) contrast(1.05)' }}>
+            {/* Photorealistic Mountain - no filters needed */}
+            <div className="relative h-full w-full">
               <ScenarioMountain 
                 scenario={scenario} 
                 dataPoints={dataPoints}
@@ -129,8 +126,7 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
 
         {/* SIMULATE - Shows during simulation (same mountain + overlay) */}
         {view === "simulate" && (
-          <div className="relative h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-black shadow-[0_8px_32px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.03)]">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.4)_60%,rgba(0,0,0,0.85)_100%)]" />
+          <div className="relative h-full w-full overflow-hidden rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
             <div className="relative h-full w-full">
               <ScenarioMountain 
                 scenario={scenario} 
