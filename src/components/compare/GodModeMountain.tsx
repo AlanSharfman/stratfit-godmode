@@ -5,10 +5,10 @@ import { createNoise2D } from "simplex-noise";
 
 // --- CONFIGURATION: OBSIDIAN INSTRUMENT ---
 const CONFIG = {
-  height: 5.8,               // Taller, more majestic
-  baseColor: "#050b14",      // Pitch Black (Fixes the white washout)
-  roughness: 0.5,            // Smooth polish with some texture
-  transmission: 0.25,        // Dense, dark glass
+  height: 5.8,
+  baseColor: "#050b14",      // Pitch Black
+  roughness: 0.5,            // Smooth polish
+  transmission: 0.25,        // Dense glass
   thickness: 2.5,
   ior: 1.2,
   chromaticAberration: 0.02, 
@@ -22,27 +22,23 @@ const noise2D = createNoise2D();
 
 type Scenario = { score?: number };
 
-// --- NEW MATH: MANUAL SCULPT (Mimics your Photo) ---
+// --- MANUAL SCULPT MATH (Matches your Photo) ---
 function surfaceZ(x: number, y: number) {
   // 1. THE HERO PEAK (Central Summit)
-  // We move it slightly back (y+1) to match the photo perspective
   const dx1 = x;
   const dy1 = y - 1.0;
   const dist1 = Math.sqrt(dx1*dx1 + dy1*dy1);
   const mainPeak = Math.pow(Math.max(0, 1.0 - dist1 / 5.5), 2.5) * CONFIG.height;
 
-  // 2. THE SIDE SHOULDER (The smaller peak to the right)
-  // Matches the silhouette of your photo
+  // 2. THE SIDE SHOULDER (Right Side)
   const dx2 = x - 2.5; 
   const dy2 = y - 0.5;
   const dist2 = Math.sqrt(dx2*dx2 + dy2*dy2);
   const sidePeak = Math.pow(Math.max(0, 1.0 - dist2 / 3.0), 2.0) * (CONFIG.height * 0.5);
 
-  // 3. THE RIDGE TEXTURE (Subtle, not messy)
-  // We use large scale noise to create "faces" rather than small jagged spikes
+  // 3. RIDGE TEXTURE (Large faces)
   const ridge = Math.abs(noise2D(x * 0.4, y * 0.4)); 
   
-  // Combine: Main Peak + Side Peak + Subtle Ridge Texture
   return Math.max(mainPeak, sidePeak) - (ridge * 0.5 * Math.max(0, 1.0 - dist1/6.0));
 }
 
@@ -53,10 +49,9 @@ function generateTrajectory(score: number, side: -1 | 1) {
   for (let i = 0; i <= 120; i++) {
     const t = i / 120;
     const y = 4.6 - t * 9.2;
-    // Curved path that wraps around the new peak shape
     const x = t * 3.9 * side + Math.sin(t * Math.PI * 2) * divergence * 0.45;
     const z = surfaceZ(x, y);
-    points.push(new THREE.Vector3(x, y, z + 0.1)); // Lifted slightly
+    points.push(new THREE.Vector3(x, y, z + 0.1));
   }
   return new THREE.CatmullRomCurve3(points);
 }
@@ -69,7 +64,7 @@ export const GodModeMountain: React.FC<{ scenarioA: Scenario; scenarioB: Scenari
   const scoreB = scenarioB.score ?? 65;
 
   const geometry = useMemo(() => {
-    const geo = new THREE.PlaneGeometry(12, 12, 200, 200); // 200 segs is enough
+    const geo = new THREE.PlaneGeometry(12, 12, 200, 200);
     const pos = geo.attributes.position as THREE.BufferAttribute;
     for (let i = 0; i < pos.count; i++) {
       pos.setZ(i, surfaceZ(pos.getX(i), pos.getY(i)));
@@ -88,7 +83,7 @@ export const GodModeMountain: React.FC<{ scenarioA: Scenario; scenarioB: Scenari
 
   const dashedGeo = useMemo(() => {
     const geo = new THREE.BufferGeometry().setFromPoints([
-      pA.clone().setZ(pA.z + 0.2), // Raised to ensure visibility
+      pA.clone().setZ(pA.z + 0.2),
       pB.clone().setZ(pB.z + 0.2)
     ]);
     return geo;
@@ -101,14 +96,12 @@ export const GodModeMountain: React.FC<{ scenarioA: Scenario; scenarioB: Scenari
 
   return (
     <group rotation={[-Math.PI / 2.5, 0, 0]} position={[0, -1, 0]}>
-      {/* LIGHTING FIX: Reduced Intensity from 30 -> 10 to kill whiteout */}
       <ambientLight intensity={0.2} />
       <spotLight position={[0, 15, 10]} intensity={10} angle={0.5} penumbra={1} color="white" />
       
       <pointLight position={[-10, 0, -5]} intensity={2} color="#22d3ee" distance={20} />
       <pointLight position={[10, 0, -5]} intensity={2} color="#eab308" distance={20} />
 
-      {/* OBSIDIAN BASE */}
       <mesh geometry={geometry} receiveShadow>
         <MeshTransmissionMaterial
           roughness={CONFIG.roughness}
@@ -122,7 +115,6 @@ export const GodModeMountain: React.FC<{ scenarioA: Scenario; scenarioB: Scenari
         />
       </mesh>
 
-      {/* WIREFRAME OVERLAY */}
       <mesh geometry={geometry} position={[0, 0, 0.01]}>
         <meshBasicMaterial 
           wireframe 
@@ -135,7 +127,6 @@ export const GodModeMountain: React.FC<{ scenarioA: Scenario; scenarioB: Scenari
         />
       </mesh>
 
-      {/* CYAN DATA VEIN */}
       <mesh>
         <tubeGeometry args={[pathA, 140, CONFIG.veinWidth, 8, false]} />
         <meshStandardMaterial
@@ -144,7 +135,6 @@ export const GodModeMountain: React.FC<{ scenarioA: Scenario; scenarioB: Scenari
         />
       </mesh>
 
-      {/* GOLD DATA VEIN */}
       <mesh>
         <tubeGeometry args={[pathB, 140, CONFIG.veinWidth, 8, false]} />
         <meshStandardMaterial
