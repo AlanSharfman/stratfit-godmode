@@ -2,9 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { ViewToggle } from "@/components/compare/ViewToggle";
-import { GodModeMountain } from "@/components/compare/GodModeMountain"; 
 import { FinancialGridSafetyNet } from "@/components/compare/FinancialGridSafetyNet";
-import { Canvas } from "@react-three/fiber";
+import CompareScene from "@/components/compare/CompareScene";
 
 type ViewMode = "terrain" | "grid";
 const STORAGE_KEY = "stratfit_view_mode";
@@ -44,23 +43,7 @@ export default function ComparePage() {
       <div className="flex-1 relative bg-black">
         {viewMode === "terrain" ? (
           <div className="w-full h-full animate-in fade-in duration-500">
-            <Canvas
-              camera={{ position: [0, 80, 180], fov: 45 }}
-              gl={{
-                antialias: true,
-                alpha: false,
-                powerPreference: "high-performance",
-              }}
-              dpr={[1, 2]}
-            >
-              {/* Dark background */}
-              <color attach="background" args={['#050b14']} />
-
-              {/* No OrbitControls - locked camera */}
-              {/* No EffectComposer - no bloom/post */}
-
-              <GodModeMountain scenarioA={{ score: 72 }} scenarioB={{ score: 65 }} />
-            </Canvas>
+            <CompareScene />
           </div>
         ) : (
           <div className="w-full h-full animate-in fade-in duration-300">

@@ -1047,20 +1047,27 @@ aside.right-column,
 }
 
 /* ============================================================================
-   COMPARE VIEW — Show Strategic Autopilot in left column
+   COMPARE VIEW — Full-width layout, hide side panels
    ============================================================================ */
 
-.main-content.mode-compare .left-column .sf-leftStack {
-  visibility: visible;
-  opacity: 1;
+/* Hide left and right columns in compare mode */
+.main-content.mode-compare .left-column,
+.main-content.mode-compare .right-column {
+  display: none !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  overflow: hidden !important;
 }
 
-.main-content.mode-compare .left-column {
-  background: transparent !important;
+/* Center column takes full width in compare mode */
+.main-content.mode-compare .center-column {
+  width: 100% !important;
+  max-width: 100% !important;
+  flex: 1 !important;
 }
 
-.main-content.mode-compare .compare-autopilot-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+/* Hide KPI section in compare mode - the compare page has its own UI */
+.main-content.mode-compare .kpi-section {
+  display: none !important;
 }

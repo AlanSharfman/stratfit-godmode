@@ -85,6 +85,13 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
   const [bandStyle, setBandStyle] = useState<"solid" | "wash">("solid");
   const [bandColor, setBandColor] = useState("rgba(34,211,238,0.18)");
 
+  // COMPARE timeline: T+0 .. T+36 mapped to 0..1
+  const [compareT, setCompareT] = useState(0.5);
+
+  // COMPARE UI state
+  const [autopilotOpen, setAutopilotOpen] = useState(false);     // drawer summary
+  const [findingsOpen, setFindingsOpen] = useState(false);       // overlay
+
   useEffect(() => {
     const off = onCausal((detail) => {
       setBandStyle(detail.bandStyle);
@@ -93,6 +100,11 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
     });
     return off;
   }, []);
+
+  // Auto-open Key Findings at end of timeline (T+36)
+  useEffect(() => {
+    if (compareT >= 0.999) setFindingsOpen(true);
+  }, [compareT]);
 
   return (
     <div className="relative flex h-full w-full flex-col rounded-xl bg-black/40 backdrop-blur-sm border border-white/5 overflow-auto">
@@ -142,7 +154,151 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
 
         {/* COMPARE - God Mode: Gravity = Time Mountain Visualization */}
         {view === "compare" && (
-          <div className="h-full w-full overflow-hidden rounded-3xl border border-slate-700/40 shadow-[0_8px_32px_rgba(0,0,0,0.6)] bg-[#050b14]">
+          <div className="h-full w-full overflow-hidden rounded-3xl border border-slate-700/40 shadow-[0_8px_32px_rgba(0,0,0,0.6)] bg-[#050b14] relative">
+            {/* COMPARE TIMELINE (Focus Control) */}
+            <div className="pointer-events-auto absolute left-1/2 top-5 z-20 -translate-x-1/2 rounded-xl border border-white/10 bg-black/35 px-4 py-2 backdrop-blur-md shadow-[0_10px_40px_rgba(0,0,0,0.45)]">
+              <div className="flex items-center gap-3">
+                <div className="text-[11px] tracking-[0.22em] text-white/60">TIMELINE</div>
+                <div className="text-[11px] font-semibold text-white/80">
+                  T+{Math.round(compareT * 36)}
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.001}
+                  value={compareT}
+                  onChange={(e) => setCompareT(parseFloat(e.target.value))}
+                  className="w-[260px] accent-cyan-300"
+                />
+              </div>
+            </div>
+
+            {/* AUTOPILOT DRAWER (summary, default closed) */}
+            <div className="pointer-events-auto absolute left-6 bottom-6 z-30">
+              <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-md shadow-[0_14px_60px_rgba(0,0,0,0.55)] overflow-hidden w-[360px]">
+                <button
+                  onClick={() => setAutopilotOpen(v => !v)}
+                  className="w-full flex items-center justify-between px-4 py-3"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-xl bg-cyan-400/15 border border-cyan-300/20 flex items-center justify-center">
+                      <span className="text-cyan-200 text-sm">⚡</span>
+                    </div>
+                    <div className="text-left">
+                      <div className="text-[11px] tracking-[0.22em] text-white/55">STRATEGIC AUTOPILOT</div>
+                      <div className="text-[12px] font-semibold text-white/85">Path Divergence Analysis</div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] px-2 py-1 rounded-full border border-amber-400/20 bg-amber-400/10 text-amber-200">
+                      HIGH RISK
+                    </span>
+                    <span className="text-white/60 text-xs">{autopilotOpen ? "▾" : "▸"}</span>
+                  </div>
+                </button>
+
+                {autopilotOpen && (
+                  <div className="px-4 pb-4">
+                    <div className="text-[12px] leading-relaxed text-white/75">
+                      Divergence is <span className="text-white/90 font-semibold">ACCELERATING</span>. Gap widens after Month 36.
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-3 gap-2">
+                      <div className="rounded-xl border border-white/10 bg-white/5 p-2">
+                        <div className="text-[10px] text-white/50 tracking-[0.18em]">TOTAL AREA</div>
+                        <div className="text-cyan-200 font-semibold">147.4</div>
+                      </div>
+                      <div className="rounded-xl border border-white/10 bg-white/5 p-2">
+                        <div className="text-[10px] text-white/50 tracking-[0.18em]">MAX GAP</div>
+                        <div className="text-amber-200 font-semibold">9.3</div>
+                      </div>
+                      <div className="rounded-xl border border-white/10 bg-white/5 p-2">
+                        <div className="text-[10px] text-white/50 tracking-[0.18em]">MOMENTUM</div>
+                        <div className="text-rose-200 font-semibold">↗</div>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        onClick={() => setFindingsOpen(true)}
+                        className="flex-1 rounded-xl border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-[12px] text-cyan-100"
+                      >
+                        View Key Findings
+                      </button>
+                      <button
+                        className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[12px] text-white/70"
+                      >
+                        Lock Baseline
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* KEY FINDINGS OVERLAY (event-based) */}
+            {findingsOpen && (
+              <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center">
+                <div
+                  className="absolute inset-0 bg-black/55"
+                  onClick={() => setFindingsOpen(false)}
+                />
+                <div className="relative w-[720px] max-w-[92vw] rounded-3xl border border-white/10 bg-black/55 backdrop-blur-xl shadow-[0_18px_90px_rgba(0,0,0,0.75)] overflow-hidden">
+                  <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+                    <div>
+                      <div className="text-[11px] tracking-[0.22em] text-white/55">COMPARE • KEY FINDINGS</div>
+                      <div className="text-[16px] font-semibold text-white/90">Path Divergence Summary</div>
+                    </div>
+                    <button
+                      onClick={() => setFindingsOpen(false)}
+                      className="h-9 w-9 rounded-xl border border-white/10 bg-white/5 text-white/70"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div className="px-6 py-5 space-y-3">
+                    <div className="rounded-2xl border border-cyan-300/15 bg-cyan-300/5 p-4">
+                      <div className="text-[12px] font-semibold text-cyan-100">1) Divergence Accelerates After Month 36</div>
+                      <div className="text-[12px] text-white/70 mt-1">
+                        Decision impact compounds over time; the trajectories separate materially in the late stage.
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-indigo-300/15 bg-indigo-300/5 p-4">
+                      <div className="text-[12px] font-semibold text-indigo-100">2) Exploration Adds Growth, Raises Volatility</div>
+                      <div className="text-[12px] text-white/70 mt-1">
+                        Higher upside potential, but volatility increases — buffer requirements rise.
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-amber-300/15 bg-amber-300/5 p-4">
+                      <div className="text-[12px] font-semibold text-amber-100">3) Recommendation</div>
+                      <div className="text-[12px] text-white/70 mt-1">
+                        Treat this as a controlled experiment: cap downside exposure, add contingency triggers, and re-run at Month 12 checkpoints.
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="px-6 py-4 border-t border-white/10 flex items-center justify-end gap-2">
+                    <button
+                      onClick={() => setFindingsOpen(false)}
+                      className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-[12px] text-white/75"
+                    >
+                      Close
+                    </button>
+                    <button
+                      className="rounded-xl border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-[12px] text-cyan-100"
+                    >
+                      Export Findings
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <Canvas
               camera={{ position: [0, 4.2, 11.5], fov: 42 }}
               gl={{
@@ -159,6 +315,7 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
               <GodModeMountain 
                 scenarioA={godModeScenarioA}
                 scenarioB={godModeScenarioB}
+                t={compareT}
               />
               <EffectComposer disableNormalPass>
                 <Bloom
