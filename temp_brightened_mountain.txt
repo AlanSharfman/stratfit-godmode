@@ -368,12 +368,12 @@ const Terrain: React.FC<TerrainProps> = ({
         <meshStandardMaterial
           vertexColors
           transparent
-          opacity={isDragging ? 0.35 : 0.22}
+          opacity={isDragging ? 0.25 : 0.12}
           roughness={0.2}
           metalness={0.8}
           side={THREE.DoubleSide}
           emissive={pal.mid}
-          emissiveIntensity={isDragging ? 0.2 : 0.1}
+          emissiveIntensity={isDragging ? 0.15 : 0.06}
           depthWrite={false}
           toneMapped={false}
         />
@@ -386,8 +386,8 @@ const Terrain: React.FC<TerrainProps> = ({
           color={neuralPulse ? "#00ffff" : undefined}
           wireframe 
           transparent 
-          // VISIBILITY BOOST: 0.85 idle, 1.0 active, 1.0 during neural pulse
-          opacity={neuralPulse ? 1.0 : isDragging ? 1.0 : 0.85}
+          // VISIBILITY BOOST: 0.6 idle, 1.0 active, 1.0 during neural pulse
+          opacity={neuralPulse ? 1.0 : isDragging ? 1.0 : 0.6}
           toneMapped={false}
         />
       </mesh>
