@@ -818,50 +818,50 @@ function UnifiedDestinyField({ scenarioA, scenarioB, hoverData }: UnifiedFieldPr
   // FIXED OPTIMAL POSITION - Perfectly visible, no animation
   return (
     <group ref={groupRef} rotation={[-Math.PI / 2.4, 0, 0]} position={[0, -1.5, 0]}>
-      {/* LAYER 1: GLACIER BASE — Cool grey-blue core */}
+      {/* LAYER 1: GLACIER BASE — Clean white-grey core */}
       <mesh geometry={geometry}>
         <meshStandardMaterial
-          color="#2a3a4a"
-          roughness={0.4}
-          metalness={0.7}
+          color="#6a7a8a"
+          roughness={0.35}
+          metalness={0.6}
           side={THREE.FrontSide}
         />
       </mesh>
 
-      {/* LAYER 2: ICE CRYSTAL SURFACE — White-blue refractive glass */}
+      {/* LAYER 2: ICE CRYSTAL SURFACE — Pure white refractive glass with blue tint */}
       <mesh geometry={geometry} position={[0, 0, 0.02]}>
         <MeshTransmissionMaterial
-          transmission={0.95}
+          transmission={0.92}
           thickness={4.0}
-          roughness={0.08}
-          ior={1.2}
-          chromaticAberration={0.15}
+          roughness={0.06}
+          ior={1.25}
+          chromaticAberration={0.18}
           backside={true}
-          color="#8fa8c8"
-          distortion={0.06}
-          distortionScale={0.12}
-          temporalDistortion={0.05}
+          color="#d8e8f8"
+          distortion={0.05}
+          distortionScale={0.1}
+          temporalDistortion={0.04}
         />
       </mesh>
 
-      {/* LAYER 3: INTERNAL FROST LINES — Subtle white wireframe */}
+      {/* LAYER 3: INTERNAL FROST LINES — White wireframe etching */}
       <mesh geometry={geometry} position={[0, 0, 0.01]}>
         <meshBasicMaterial
           wireframe
-          color="#c8d8e8"
+          color="#f0f4f8"
           transparent
-          opacity={0.12}
+          opacity={0.15}
           toneMapped={false}
         />
       </mesh>
       
-      {/* LAYER 4: SURFACE CONTOUR GRID — Light blue data lines */}
+      {/* LAYER 4: SURFACE CONTOUR GRID — Light blue accent data lines */}
       <mesh geometry={geometry} position={[0, 0, 0.04]}>
         <meshBasicMaterial
           wireframe
-          color="#7eb8e8"
+          color="#88b8e8"
           transparent
-          opacity={0.22}
+          opacity={0.25}
           toneMapped={false}
         />
       </mesh>
@@ -891,37 +891,37 @@ function UnifiedDestinyField({ scenarioA, scenarioB, hoverData }: UnifiedFieldPr
         />
       )}
 
-      {/* COMMAND BRIDGE LIGHTING */}
-      {/* High-intensity white light above summit */}
+      {/* COMMAND BRIDGE LIGHTING — White/Grey/Blue Theme */}
+      {/* High-intensity pure white summit light */}
       <pointLight 
-        position={[0, 0, 8]} 
-        intensity={18} 
+        position={[0, 0, 10]} 
+        intensity={20} 
         color="#ffffff" 
-        distance={25} 
+        distance={30} 
         decay={2} 
       />
       
       {/* Cool blue rim light — left edge */}
       <pointLight 
-        position={[-8, 0, 3]} 
+        position={[-10, 0, 4]} 
+        intensity={12} 
+        color="#6aa8e0" 
+        distance={20} 
+        decay={2} 
+      />
+      
+      {/* Cool white rim light — right edge */}
+      <pointLight 
+        position={[10, 0, 4]} 
         intensity={10} 
-        color="#4da6ff" 
+        color="#ffffff" 
         distance={18} 
         decay={2} 
       />
       
-      {/* Warm white rim light — right edge */}
-      <pointLight 
-        position={[8, 0, 3]} 
-        intensity={8} 
-        color="#f0f4ff" 
-        distance={15} 
-        decay={2} 
-      />
-      
-      {/* Subtle blue-white fill light */}
-      <ambientLight intensity={0.2} color="#e8f0ff" />
-      <directionalLight position={[5, 10, 10]} intensity={0.8} color="#ffffff" />
+      {/* Soft grey-blue ambient fill */}
+      <ambientLight intensity={0.25} color="#d0e0f0" />
+      <directionalLight position={[5, 12, 12]} intensity={1.0} color="#f8faff" />
     </group>
   );
 }
