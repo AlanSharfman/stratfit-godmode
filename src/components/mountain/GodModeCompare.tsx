@@ -818,50 +818,50 @@ function UnifiedDestinyField({ scenarioA, scenarioB, hoverData }: UnifiedFieldPr
   // FIXED OPTIMAL POSITION - Perfectly visible, no animation
   return (
     <group ref={groupRef} rotation={[-Math.PI / 2.4, 0, 0]} position={[0, -1.5, 0]}>
-      {/* LAYER 1: SOLID OBSIDIAN BASE — Dark volcanic core (no white) */}
+      {/* LAYER 1: GLACIER BASE — Cool grey-blue core */}
       <mesh geometry={geometry}>
         <meshStandardMaterial
-          color="#050810"
-          roughness={0.5}
-          metalness={0.9}
+          color="#2a3a4a"
+          roughness={0.4}
+          metalness={0.7}
           side={THREE.FrontSide}
         />
       </mesh>
 
-      {/* LAYER 2: MACHINED CRYSTAL SURFACE — High transmission refractive glass */}
+      {/* LAYER 2: ICE CRYSTAL SURFACE — White-blue refractive glass */}
       <mesh geometry={geometry} position={[0, 0, 0.02]}>
         <MeshTransmissionMaterial
-          transmission={0.98}
-          thickness={5.0}
-          roughness={0.05}
-          ior={1.15}
-          chromaticAberration={0.12}
+          transmission={0.95}
+          thickness={4.0}
+          roughness={0.08}
+          ior={1.2}
+          chromaticAberration={0.15}
           backside={true}
-          color="#0a1a30"
-          distortion={0.08}
-          distortionScale={0.15}
-          temporalDistortion={0.08}
+          color="#8fa8c8"
+          distortion={0.06}
+          distortionScale={0.12}
+          temporalDistortion={0.05}
         />
       </mesh>
 
-      {/* LAYER 3: INTERNAL ETCHING — High-frequency cyan wireframe */}
+      {/* LAYER 3: INTERNAL FROST LINES — Subtle white wireframe */}
       <mesh geometry={geometry} position={[0, 0, 0.01]}>
         <meshBasicMaterial
           wireframe
-          color="#00D9FF"
+          color="#c8d8e8"
           transparent
-          opacity={0.1}
+          opacity={0.12}
           toneMapped={false}
         />
       </mesh>
       
-      {/* LAYER 4: SURFACE WIREFRAME GRID — Laser-etched data lines */}
+      {/* LAYER 4: SURFACE CONTOUR GRID — Light blue data lines */}
       <mesh geometry={geometry} position={[0, 0, 0.04]}>
         <meshBasicMaterial
           wireframe
-          color="#00D9FF"
+          color="#7eb8e8"
           transparent
-          opacity={0.25}
+          opacity={0.22}
           toneMapped={false}
         />
       </mesh>
@@ -895,33 +895,33 @@ function UnifiedDestinyField({ scenarioA, scenarioB, hoverData }: UnifiedFieldPr
       {/* High-intensity white light above summit */}
       <pointLight 
         position={[0, 0, 8]} 
-        intensity={15} 
+        intensity={18} 
         color="#ffffff" 
-        distance={20} 
+        distance={25} 
         decay={2} 
       />
       
-      {/* Cyan rim light — left edge */}
+      {/* Cool blue rim light — left edge */}
       <pointLight 
         position={[-8, 0, 3]} 
-        intensity={8} 
-        color="#00D9FF" 
-        distance={15} 
+        intensity={10} 
+        color="#4da6ff" 
+        distance={18} 
         decay={2} 
       />
       
-      {/* Amber rim light — right edge */}
+      {/* Warm white rim light — right edge */}
       <pointLight 
         position={[8, 0, 3]} 
         intensity={8} 
-        color="#F59E0B" 
+        color="#f0f4ff" 
         distance={15} 
         decay={2} 
       />
       
-      {/* Subtle fill light */}
-      <ambientLight intensity={0.15} />
-      <directionalLight position={[5, 10, 10]} intensity={0.6} color="#ffffff" />
+      {/* Subtle blue-white fill light */}
+      <ambientLight intensity={0.2} color="#e8f0ff" />
+      <directionalLight position={[5, 10, 10]} intensity={0.8} color="#ffffff" />
     </group>
   );
 }
@@ -963,9 +963,9 @@ function GhostRange() {
       <mesh geometry={geometry}>
         <meshBasicMaterial
           wireframe
-          color="#4a5568"
+          color="#6a8aac"
           transparent
-          opacity={0.06}
+          opacity={0.08}
           toneMapped={false}
         />
       </mesh>
@@ -1299,7 +1299,7 @@ export default function GodModeCompare() {
     <div 
       className="relative w-full h-full min-h-[500px] overflow-hidden" 
       style={{ 
-        background: 'radial-gradient(ellipse at 50% 30%, #0a1020 0%, #050810 50%, #030508 100%)' 
+        background: 'radial-gradient(ellipse at 50% 30%, #1a2a3a 0%, #0f1824 50%, #0a1018 100%)' 
       }}
     >
       {/* TITANIUM COMMAND BRIDGE */}
@@ -1326,8 +1326,8 @@ export default function GodModeCompare() {
           dpr={[1, 2]}
         >
           <Suspense fallback={null}>
-            <color attach="background" args={['#030508']} />
-            <fog attach="fog" args={['#030508', 20, 50]} />
+            <color attach="background" args={['#0a1018']} />
+            <fog attach="fog" args={['#0f1824', 18, 45]} />
             
             {/* ENVIRONMENT: City preset for high-contrast glass reflections */}
             <Environment preset="city" />
