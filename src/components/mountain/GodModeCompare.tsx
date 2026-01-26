@@ -589,24 +589,34 @@ function LavaRiver({ color, score, isBaseline, geometry }: LavaRiverProps) {
     center: new THREE.TubeGeometry(curve, 100, 0.015, 8, false),   // White-hot center
   }), [curve]);
 
-  // Animate emissive intensity for liquid light pulsing
+  // Animate emissive intensity with HEARTBEAT PULSE effect
   useFrame((state) => {
     const time = state.clock.elapsedTime;
     
-    // Main core pulsing - volumetric glow inside glass
+    // HEARTBEAT PULSE — Double-beat rhythm like a heartbeat
+    // First beat (strong), second beat (weaker), pause, repeat
+    const heartbeatCycle = time * 1.2; // ~72 BPM
+    const phase = heartbeatCycle % 1;
+    const beat1 = Math.exp(-Math.pow((phase - 0.1) * 10, 2)) * 3; // Strong beat at 10%
+    const beat2 = Math.exp(-Math.pow((phase - 0.25) * 12, 2)) * 1.5; // Weaker beat at 25%
+    const heartbeat = beat1 + beat2;
+    
+    // Main core pulsing - volumetric glow with heartbeat
     if (tubeRef.current) {
       const mat = tubeRef.current.material as THREE.MeshStandardMaterial;
-      mat.emissiveIntensity = 6 + Math.sin(time * 2.5) * 1.5;
+      mat.emissiveIntensity = 5 + heartbeat + Math.sin(time * 4) * 0.5;
     }
     
-    // Energy particles flowing along the path
+    // Energy particles flowing along the path (Summit → Base = Month 0 → 36)
     pipRefs.current.forEach((pip, i) => {
       if (pip) {
-        const speed = 0.05 + (i % 4) * 0.015;
-        const t = ((time * speed + i * 0.12) % 1);
+        const speed = 0.04 + (i % 5) * 0.012;
+        const t = ((time * speed + i * 0.1) % 1);
         const point = curve.getPointAt(t);
         pip.position.copy(point);
-        pip.scale.setScalar(0.7 + Math.sin(time * 6 + i * 2) * 0.25);
+        // Particles pulse with heartbeat too
+        const particlePulse = 0.6 + heartbeat * 0.15 + Math.sin(time * 5 + i * 1.5) * 0.2;
+        pip.scale.setScalar(particlePulse);
       }
     });
   });
@@ -835,7 +845,7 @@ function UnifiedDestinyField({ scenarioA, scenarioB, hoverData }: UnifiedFieldPr
           thickness={5.0}
           roughness={0.05}
           ior={1.2}
-          chromaticAberration={0.08}
+          chromaticAberration={0.1}
           backside={true}
           color="#0a121f"
           distortion={0.04}
@@ -1359,12 +1369,13 @@ export default function GodModeCompare() {
         </Canvas>
       </div>
 
-      {/* SYSTEM INTEGRITY FOOTER BAR */}
+      {/* SYSTEM INTEGRITY FOOTER BAR — 0.85 backdrop-blur diagnostic strip */}
       <div 
         className="absolute bottom-0 left-0 right-0 h-12 z-20 flex items-center justify-between px-4"
         style={{
-          background: 'linear-gradient(180deg, transparent 0%, rgba(5,8,16,0.95) 40%)',
-          backdropFilter: 'blur(8px)',
+          background: 'linear-gradient(180deg, transparent 0%, rgba(5,8,16,0.92) 30%)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
         }}
       >
         {/* Left: Path Legend */}
