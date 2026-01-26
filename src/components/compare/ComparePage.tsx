@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { ViewToggle } from "@/components/compare/ViewToggle";
-import { GodModeMountain } from "@/components/compare/GodModeMountain"; // Ensure this imports the correct file!
+import { GodModeMountain } from "@/components/compare/GodModeMountain"; 
 import { FinancialGridSafetyNet } from "@/components/compare/FinancialGridSafetyNet";
 import { Canvas } from "@react-three/fiber";
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
@@ -55,17 +55,21 @@ export default function ComparePage() {
               }}
               dpr={[1, 2]} 
               onCreated={({ gl }) => {
-                gl.toneMappingExposure = 0.9; 
+                // EXPOSURE FIX: Darker camera setting
+                gl.toneMappingExposure = 0.8; 
               }}
             >
-              <Environment preset="studio" blur={1} /> 
+              {/* CRITICAL FIX: Forces the void to be dark slate, not white */}
+              <color attach="background" args={['#050b14']} />
 
-              {/* CLEAN RENDER: No invalid 't' prop here */}
+              <Environment preset="city" blur={1} background={false} /> 
+
               <GodModeMountain scenarioA={{ score: 72 }} scenarioB={{ score: 65 }} />
 
               <EffectComposer disableNormalPass>
+                {/* BLOOM FIX: High threshold ignores the mountain reflection */}
                 <Bloom
-                  luminanceThreshold={1.2} 
+                  luminanceThreshold={1.5} 
                   luminanceSmoothing={0.2}
                   intensity={0.4} 
                   mipmapBlur
