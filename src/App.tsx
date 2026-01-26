@@ -487,6 +487,27 @@ export default function App() {
     return <ScenarioMemoPage />;
   }
 
+  // TEST ROUTES — Isolated component testing
+  // Access: http://localhost:5173/test/dormant
+  if (typeof window !== "undefined" && window.location.pathname === "/test/dormant") {
+    const DormantTest = React.lazy(() => import("@/pages/DormantTest"));
+    return (
+      <React.Suspense fallback={<div className="w-screen h-screen bg-black flex items-center justify-center text-white">Loading...</div>}>
+        <DormantTest />
+      </React.Suspense>
+    );
+  }
+
+  // Access: http://localhost:5173/test/mountain
+  if (typeof window !== "undefined" && window.location.pathname === "/test/mountain") {
+    const MountainTest = React.lazy(() => import("@/pages/MountainTestPage"));
+    return (
+      <React.Suspense fallback={<div className="w-screen h-screen bg-black flex items-center justify-center text-white">Loading...</div>}>
+        <MountainTest />
+      </React.Suspense>
+    );
+  }
+
 
   // FEATURE FLAG — Scenario Intelligence (Cold Brief) — reversible, UI-only
   // Enable via: localStorage.setItem("ENABLE_SCENARIO_INTELLIGENCE","1"); location.reload();
