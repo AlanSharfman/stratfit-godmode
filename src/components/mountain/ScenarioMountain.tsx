@@ -575,7 +575,7 @@ export default function ScenarioMountain({
       >
         <Suspense fallback={null}>
         {/* Headroom: aim slightly lower so taller peaks don't clip without compressing */}
-        <PerspectiveCamera makeDefault position={[0, 6, 32]} fov={38} />
+        <PerspectiveCamera makeDefault position={[0, 8, 45]} fov={42} />
         <ambientLight intensity={0.12} />
         <directionalLight position={[8, 20, 10]} intensity={0.4} color="#ffffff" />
         <directionalLight position={[-6, 12, -8]} intensity={0.08} color={colors.primary} />
