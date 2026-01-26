@@ -5,8 +5,6 @@ import { ViewToggle } from "@/components/compare/ViewToggle";
 import { GodModeMountain } from "@/components/compare/GodModeMountain"; 
 import { FinancialGridSafetyNet } from "@/components/compare/FinancialGridSafetyNet";
 import { Canvas } from "@react-three/fiber";
-import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
-import { Environment } from "@react-three/drei";
 
 type ViewMode = "terrain" | "grid";
 const STORAGE_KEY = "stratfit_view_mode";
@@ -47,35 +45,21 @@ export default function ComparePage() {
         {viewMode === "terrain" ? (
           <div className="w-full h-full animate-in fade-in duration-500">
             <Canvas
-              camera={{ position: [0, 4.2, 10.2], fov: 38 }}
+              camera={{ position: [0, 80, 180], fov: 45 }}
               gl={{
                 antialias: true,
                 alpha: false,
                 powerPreference: "high-performance",
               }}
-              dpr={[1, 2]} 
-              onCreated={({ gl }) => {
-                // EXPOSURE FIX: Darker camera setting
-                gl.toneMappingExposure = 0.8; 
-              }}
+              dpr={[1, 2]}
             >
-              {/* CRITICAL FIX: Forces the void to be dark slate, not white */}
+              {/* Dark background */}
               <color attach="background" args={['#050b14']} />
 
-              <Environment preset="city" blur={1} background={false} /> 
+              {/* No OrbitControls - locked camera */}
+              {/* No EffectComposer - no bloom/post */}
 
               <GodModeMountain scenarioA={{ score: 72 }} scenarioB={{ score: 65 }} />
-
-              <EffectComposer disableNormalPass>
-                {/* BLOOM FIX: High threshold ignores the mountain reflection */}
-                <Bloom
-                  luminanceThreshold={1.5} 
-                  luminanceSmoothing={0.2}
-                  intensity={0.4} 
-                  mipmapBlur
-                />
-                <Vignette eskil={false} offset={0.1} darkness={0.8} />
-              </EffectComposer>
             </Canvas>
           </div>
         ) : (

@@ -96,11 +96,10 @@ export const GodModeMountain: React.FC<{ scenarioA: Scenario; scenarioB: Scenari
 
   return (
     <group position={[0, -20, 0]}>
-      {/* LIGHTING */}
-      <ambientLight intensity={0.3} />
-      <directionalLight position={[50, 80, 50]} intensity={1} color="white" />
-      <pointLight position={[-40, 20, -20]} intensity={0.5} color="#22d3ee" distance={100} />
-      <pointLight position={[40, 20, -20]} intensity={0.5} color="#eab308" distance={100} />
+      {/* LIGHTING - LOCKED DISCIPLINE */}
+      <ambientLight intensity={0.25} />
+      <directionalLight position={[40, 80, 40]} intensity={1.1} />
+      <directionalLight position={[-40, 20, -20]} intensity={0.3} />
 
       {/* TERRAIN MESH */}
       <mesh geometry={geometry} receiveShadow castShadow>
