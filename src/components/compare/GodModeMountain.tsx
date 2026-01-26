@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useEffect } from "react";
 import * as THREE from "three";
 import { Grid, Html, MeshTransmissionMaterial, Text } from "@react-three/drei";
-import { createNoise2D } from "simplex-noise";
+import { generateTerrainHeight } from "@/terrain/terrainGenerator";
 
 // --- CONFIGURATION: MATTE OBSIDIAN (Anti-Chrome) ---
 const CONFIG = {
@@ -18,28 +18,28 @@ const CONFIG = {
   gridColor: "#1e293b",
 };
 
-const noise2D = createNoise2D();
-
 type Scenario = { score?: number };
 
-// --- MANUAL SCULPT MATH ---
-function surfaceZ(x: number, y: number) {
-  const dx1 = x;
-  const dy1 = y - 1.0;
-  const dist1 = Math.sqrt(dx1*dx1 + dy1*dy1);
-  const mainPeak = Math.pow(Math.max(0, 1.0 - dist1 / 5.5), 2.5) * CONFIG.height;
+// Timeline value for terrain animation (static for now)
+const timeline = 0;
 
-  const dx2 = x - 2.5; 
-  const dy2 = y - 0.5;
-  const dist2 = Math.sqrt(dx2*dx2 + dy2*dy2);
-  const sidePeak = Math.pow(Math.max(0, 1.0 - dist2 / 3.0), 2.0) * (CONFIG.height * 0.5);
-
-  const ridge = Math.abs(noise2D(x * 0.4, y * 0.4)); 
+// --- TERRAIN HEIGHT WRAPPER ---
+function surfaceZ(x: number, y: number, scenarioModifier: number = 0) {
+  const height = generateTerrainHeight({
+    x: x * 10, // Scale to match terrain generator expectations
+    z: y * 10,
+    time: timeline,
+    modifier: scenarioModifier
+  });
   
-  return Math.max(mainPeak, sidePeak) - (ridge * 0.5 * Math.max(0, 1.0 - dist1/6.0));
+  // Normalize and apply island mask
+  const dist = Math.sqrt(x * x + y * y);
+  const islandMask = Math.pow(Math.max(0, 1.0 - dist / 5.5), 1.5);
+  
+  return Math.max(0, height * 0.3 * islandMask);
 }
 
-function generateTrajectory(score: number, side: -1 | 1) {
+function generateTrajectory(score: number, side: -1 | 1, scenarioModifier: number = 0) {
   const points: THREE.Vector3[] = [];
   const divergence = (100 - score) * 0.10 * side;
 
@@ -47,7 +47,7 @@ function generateTrajectory(score: number, side: -1 | 1) {
     const t = i / 120;
     const y = 4.6 - t * 9.2;
     const x = t * 3.9 * side + Math.sin(t * Math.PI * 2) * divergence * 0.45;
-    const z = surfaceZ(x, y);
+    const z = surfaceZ(x, y, scenarioModifier);
     points.push(new THREE.Vector3(x, y, z + 0.15)); 
   }
   return new THREE.CatmullRomCurve3(points);
@@ -59,19 +59,22 @@ export const GodModeMountain: React.FC<{ scenarioA: Scenario; scenarioB: Scenari
 }) => {
   const scoreA = scenarioA.score ?? 72;
   const scoreB = scenarioB.score ?? 65;
+  
+  // Scenario modifier based on score difference
+  const scenarioModifier = (scoreB - scoreA) * 0.1;
 
   const geometry = useMemo(() => {
     const geo = new THREE.PlaneGeometry(12, 12, 200, 200); 
     const pos = geo.attributes.position as THREE.BufferAttribute;
     for (let i = 0; i < pos.count; i++) {
-      pos.setZ(i, surfaceZ(pos.getX(i), pos.getY(i)));
+      pos.setZ(i, surfaceZ(pos.getX(i), pos.getY(i), scenarioModifier));
     }
     geo.computeVertexNormals();
     return geo;
-  }, []);
+  }, [scenarioModifier]);
 
-  const pathA = useMemo(() => generateTrajectory(scoreA, -1), [scoreA]);
-  const pathB = useMemo(() => generateTrajectory(scoreB, 1), [scoreB]);
+  const pathA = useMemo(() => generateTrajectory(scoreA, -1, 0), [scoreA]);
+  const pathB = useMemo(() => generateTrajectory(scoreB, 1, scenarioModifier), [scoreB, scenarioModifier]);
 
   const tSlice = 0.5; 
   const pA = useMemo(() => pathA.getPoint(tSlice), [pathA]);

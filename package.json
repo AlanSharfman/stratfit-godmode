@@ -19,6 +19,7 @@
     "framer-motion": "^12.23.25",
     "gsap": "^3.14.1",
     "lucide-react": "^0.556.0",
+    "noisejs": "^2.1.0",
     "puppeteer": "^24.34.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
