@@ -1,15 +1,20 @@
 import React, { useMemo, useRef, useEffect } from "react";
 import * as THREE from "three";
-import { Grid, Html, Text } from "@react-three/drei";
+import { Grid, Html, MeshTransmissionMaterial, Text } from "@react-three/drei";
 import { createNoise2D } from "simplex-noise";
 
-// --- CONFIGURATION ---
+// --- CONFIGURATION: MATTE OBSIDIAN (Anti-Chrome) ---
 const CONFIG = {
-  height: 6.5,               // Taller, more aggressive peak
-  baseColor: "#0f172a",      // Deep Slate (Not pitch black, so we see shadows)
-  highlightColor: "#334155", // Lighter slate for the ridges
-  veinWidth: 0.02,
-  veinGlow: 6.0, 
+  height: 5.8,
+  baseColor: "#000000",      // PURE BLACK
+  roughness: 0.7,            // MATTE FINISH (Kills the chrome reflection)
+  transmission: 0.2,         // Very dense, barely see-through
+  thickness: 3.0,
+  ior: 1.1,                  // Low refraction = less warping
+  chromaticAberration: 0.01, 
+  wireOpacity: 0.03,
+  veinWidth: 0.014,
+  veinGlow: 10.0,            // Super bright veins to cut through the matte black
   gridColor: "#1e293b",
 };
 
@@ -17,38 +22,32 @@ const noise2D = createNoise2D();
 
 type Scenario = { score?: number };
 
-// --- NEW MATH: RIDGED FRACTAL (The "Rock" Algorithm) ---
+// --- MANUAL SCULPT MATH ---
 function surfaceZ(x: number, y: number) {
-  // 1. THE MAIN CONE (The Silhouette)
-  const dist = Math.sqrt(x*x + y*y);
-  // We use a sharper exponent (3.0) to make it steep, not round
-  const baseShape = Math.pow(Math.max(0, 1.0 - dist / 5.8), 3.0) * CONFIG.height;
+  const dx1 = x;
+  const dy1 = y - 1.0;
+  const dist1 = Math.sqrt(dx1*dx1 + dy1*dy1);
+  const mainPeak = Math.pow(Math.max(0, 1.0 - dist1 / 5.5), 2.5) * CONFIG.height;
 
-  // 2. THE RIDGE LAYERS (The Texture)
-  // We use Math.abs() to create sharp "V" shapes instead of smooth "U" shapes
-  const ridge1 = Math.abs(noise2D(x * 0.4, y * 0.4)); // Big cuts
-  const ridge2 = Math.abs(noise2D(x * 1.5, y * 1.5)); // Medium facets
-  const ridge3 = Math.abs(noise2D(x * 4.0, y * 4.0)); // Fine grit
+  const dx2 = x - 2.5; 
+  const dy2 = y - 0.5;
+  const dist2 = Math.sqrt(dx2*dx2 + dy2*dy2);
+  const sidePeak = Math.pow(Math.max(0, 1.0 - dist2 / 3.0), 2.0) * (CONFIG.height * 0.5);
 
-  // 3. COMBINE (Subtracting noise creates "Canyons")
-  // We only apply noise where the mountain exists (baseShape > 0.1)
-  if (baseShape < 0.1) return 0;
+  const ridge = Math.abs(noise2D(x * 0.4, y * 0.4)); 
   
-  const details = (ridge1 * 1.5) + (ridge2 * 0.5) + (ridge3 * 0.1);
-  
-  // The magic: Subtract details from the base to "carve" it
-  return Math.max(0, baseShape - (details * 0.6 * (baseShape / CONFIG.height)));
+  return Math.max(mainPeak, sidePeak) - (ridge * 0.5 * Math.max(0, 1.0 - dist1/6.0));
 }
 
 function generateTrajectory(score: number, side: -1 | 1) {
   const points: THREE.Vector3[] = [];
   const divergence = (100 - score) * 0.10 * side;
+
   for (let i = 0; i <= 120; i++) {
     const t = i / 120;
     const y = 4.6 - t * 9.2;
     const x = t * 3.9 * side + Math.sin(t * Math.PI * 2) * divergence * 0.45;
     const z = surfaceZ(x, y);
-    // Lift the line slightly higher so it doesn't clip through the sharp ridges
     points.push(new THREE.Vector3(x, y, z + 0.15)); 
   }
   return new THREE.CatmullRomCurve3(points);
@@ -62,65 +61,73 @@ export const GodModeMountain: React.FC<{ scenarioA: Scenario; scenarioB: Scenari
   const scoreB = scenarioB.score ?? 65;
 
   const geometry = useMemo(() => {
-    // LOWER RESOLUTION (120) + FLAT SHADING = Low Poly Rock Look
-    // Higher resolution (300) makes it look smooth/plastic again.
-    const geo = new THREE.PlaneGeometry(12, 12, 140, 140); 
-    const pos = geo.attributes.position;
-    
+    const geo = new THREE.PlaneGeometry(12, 12, 200, 200); 
+    const pos = geo.attributes.position as THREE.BufferAttribute;
     for (let i = 0; i < pos.count; i++) {
       pos.setZ(i, surfaceZ(pos.getX(i), pos.getY(i)));
     }
-    
     geo.computeVertexNormals();
     return geo;
   }, []);
 
   const pathA = useMemo(() => generateTrajectory(scoreA, -1), [scoreA]);
   const pathB = useMemo(() => generateTrajectory(scoreB, 1), [scoreB]);
-  
+
   const tSlice = 0.5; 
   const pA = useMemo(() => pathA.getPoint(tSlice), [pathA]);
   const pB = useMemo(() => pathB.getPoint(tSlice), [pathB]);
   const mid = useMemo(() => pA.clone().add(pB).multiplyScalar(0.5), [pA, pB]);
-  
-  // Dashed line geometry
+
   const dashedGeo = useMemo(() => {
-    return new THREE.BufferGeometry().setFromPoints([
+    const geo = new THREE.BufferGeometry().setFromPoints([
       pA.clone().setZ(pA.z + 0.2), 
       pB.clone().setZ(pB.z + 0.2)
     ]);
+    return geo;
   }, [pA, pB]);
+
+  const dashedLineRef = useRef<THREE.Line>(null);
+  useEffect(() => {
+    if (dashedLineRef.current) dashedLineRef.current.computeLineDistances();
+  }, [dashedGeo]);
 
   return (
     <group rotation={[-Math.PI / 2.5, 0, 0]} position={[0, -1, 0]}>
-      {/* SHARP LIGHTING for FACETS */}
-      <ambientLight intensity={0.2} />
-      {/* Side light to catch the edges of the facets */}
-      <directionalLight position={[10, 5, 2]} intensity={2} color="#38bdf8" /> 
-      <directionalLight position={[-10, 5, 2]} intensity={2} color="#f472b6" /> 
+      {/* LIGHTING FIX: Drastically lowered intensity */}
+      <ambientLight intensity={0.1} />
+      <spotLight position={[0, 15, 10]} intensity={5} angle={0.5} penumbra={1} color="white" />
+      
+      <pointLight position={[-10, 0, -5]} intensity={1} color="#22d3ee" distance={20} />
+      <pointLight position={[10, 0, -5]} intensity={1} color="#eab308" distance={20} />
 
-      {/* 1. THE FACETED OBSIDIAN TERRAIN */}
-      <mesh geometry={geometry} receiveShadow castShadow>
-        {/* flatShading={true} is the KEY fix here */}
-        <meshStandardMaterial 
+      {/* OBSIDIAN BASE */}
+      <mesh geometry={geometry} receiveShadow>
+        <MeshTransmissionMaterial
+          roughness={CONFIG.roughness}
+          transmission={CONFIG.transmission}
+          thickness={CONFIG.thickness}
+          ior={CONFIG.ior}
+          chromaticAberration={CONFIG.chromaticAberration}
           color={CONFIG.baseColor}
-          roughness={0.4}
-          metalness={0.6}
-          flatShading={true} 
+          backside
+          anisotropicBlur={0.5} // High blur to stop sharp reflections
         />
       </mesh>
 
-      {/* 2. WIREFRAME GHOST (Tech Layer) */}
+      {/* WIREFRAME OVERLAY */}
       <mesh geometry={geometry} position={[0, 0, 0.01]}>
         <meshBasicMaterial 
           wireframe 
           color="white" 
           transparent 
-          opacity={0.05}
+          opacity={CONFIG.wireOpacity}
+          polygonOffset
+          polygonOffsetFactor={-1}
+          polygonOffsetUnits={-1}
         />
       </mesh>
 
-      {/* 3. CYAN DATA VEIN */}
+      {/* CYAN DATA VEIN */}
       <mesh>
         <tubeGeometry args={[pathA, 140, CONFIG.veinWidth, 8, false]} />
         <meshStandardMaterial
@@ -129,22 +136,22 @@ export const GodModeMountain: React.FC<{ scenarioA: Scenario; scenarioB: Scenari
         />
       </mesh>
 
-      {/* 4. GOLD DATA VEIN */}
+      {/* GOLD DATA VEIN */}
       <mesh>
         <tubeGeometry args={[pathB, 140, CONFIG.veinWidth, 8, false]} />
         <meshStandardMaterial
-          color="#fbbf24" emissive="#fbbf24" emissiveIntensity={CONFIG.veinGlow}
+          color="#eab308" emissive="#eab308" emissiveIntensity={CONFIG.veinGlow}
           toneMapped={false} transparent opacity={1}
         />
       </mesh>
 
       <group position={[6.2, 0, 0]}>
-        <Text position={[0, 4.6, 0.2]} fontSize={0.25} color="#64748b" anchorX="left">NOW (T+0)</Text>
-        <Text position={[0, 0, 0.2]} fontSize={0.25} color="#64748b" anchorX="left">T+18</Text>
-        <Text position={[0, -4.6, 0.2]} fontSize={0.25} color="#64748b" anchorX="left">HORIZON (T+36)</Text>
+        <Text position={[0, 4.6, 0.2]} fontSize={0.25} color="#475569" anchorX="left">NOW (T+0)</Text>
+        <Text position={[0, 0, 0.2]} fontSize={0.25} color="#475569" anchorX="left">T+18</Text>
+        <Text position={[0, -4.6, 0.2]} fontSize={0.25} color="#475569" anchorX="left">HORIZON (T+36)</Text>
       </group>
 
-      <line geometry={dashedGeo}>
+      <line ref={dashedLineRef} geometry={dashedGeo}>
         <lineDashedMaterial color="white" transparent opacity={0.4} dashSize={0.2} gapSize={0.1} />
       </line>
 
@@ -155,7 +162,7 @@ export const GodModeMountain: React.FC<{ scenarioA: Scenario; scenarioB: Scenari
       </Html>
 
       <Grid
-        position={[0, 0, -0.05]} args={[20, 20]}
+        position={[0, 0, -0.1]} args={[20, 20]}
         cellSize={1} 
         cellThickness={1} 
         cellColor={CONFIG.gridColor}
