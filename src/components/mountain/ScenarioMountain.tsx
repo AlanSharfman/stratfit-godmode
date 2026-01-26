@@ -1,480 +1,517 @@
 // src/components/mountain/ScenarioMountain.tsx
-// STRATFIT — Photorealistic Alpine Mountain Visualization
-// Cinematic natural landscape with snow-capped peaks, mist, forests, and water
+// STRATFIT — Stable Mountain with Atmospheric Haze
 
-import React, { useMemo, useRef, Suspense } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { 
-  OrbitControls, 
-  PerspectiveCamera, 
-  Environment,
-  Sky,
-} from "@react-three/drei";
-import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
+import React, { useEffect, useMemo, useRef, useLayoutEffect, Suspense, useState } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import * as THREE from "three";
 import { useShallow } from "zustand/react/shallow";
 import { buildPeakModel, LeverId } from "@/logic/mountainPeakModel";
 import { ScenarioId, SCENARIO_COLORS, useScenarioStore } from "@/state/scenarioStore";
+import GhostMountain from "@/components/mountain/GhostMountain";
 
 // ============================================================================
-// CONSTANTS
+// CONSTANTS — STABLE VERSION
 // ============================================================================
 
-const TERRAIN_SIZE = 100;
-const TERRAIN_SEGMENTS = 200;
+const GRID_W = 120;
+const GRID_D = 60;
+const MESH_W = 50;
+const MESH_D = 25;
+const ISLAND_RADIUS = 22;
+
+// ---------------------------------------------------------------------------
+// STRATFIT AMPLITUDE TUNING (UI ONLY)
+// Peaks must reflect true scenario amplitude (no auto-fit normalization).
+// Tune these two constants only:
+// ---------------------------------------------------------------------------
+export const PEAK_GAIN = 1.35;
+export const HEADROOM = 0.18; // 10–20% visual headroom to avoid clipping
+
+const BASE_SCALE = 4.5 * PEAK_GAIN;      // data-driven ridge gain
+const PEAK_SCALE = 3.0 * PEAK_GAIN;      // lever-driven peaks gain
+const MASSIF_SCALE = 4.5 * PEAK_GAIN;    // backdrop massif gain
+const RIDGE_SHARPNESS = 1.4;
+const CLIFF_BOOST = 1.15;
+
+// Soft ceiling (no hard clamp) — raised so extremes can exceed prior "safe" heights.
+const SOFT_CEILING = 14.0;
+const CEILING_START = 10.5;
+
+// Base vertical anchoring (lower = more headroom above; does not compress)
+const BASE_Y = -2.25;
 
 // ============================================================================
-// NOISE FUNCTIONS — Layered for realistic terrain
+// DETERMINISTIC NOISE
 // ============================================================================
 
-function hash(n: number): number {
-  return ((Math.sin(n) * 43758.5453123) % 1 + 1) % 1;
+function noise2(x: number, z: number): number {
+  const n1 = Math.sin(x * 0.7 + z * 0.35) * 0.2;
+  const n2 = Math.cos(x * 1.2 - z * 0.6) * 0.15;
+  const n3 = Math.sin(x * 2.1 + z * 1.8) * 0.08;
+  return n1 + n2 + n3;
 }
 
-function noise2D(x: number, y: number): number {
-  const i = Math.floor(x);
-  const j = Math.floor(y);
-  const u = x - i;
-  const v = y - j;
-  
-  const a = hash(i + j * 57);
-  const b = hash(i + 1 + j * 57);
-  const c = hash(i + (j + 1) * 57);
-  const d = hash(i + 1 + (j + 1) * 57);
-  
-  const smoothU = u * u * (3 - 2 * u);
-  const smoothV = v * v * (3 - 2 * v);
-  
-  return a * (1 - smoothU) * (1 - smoothV) + 
-         b * smoothU * (1 - smoothV) + 
-         c * (1 - smoothU) * smoothV + 
-         d * smoothU * smoothV;
+function ridgeNoise(x: number, z: number): number {
+  const base = Math.sin(x * 0.5) * Math.cos(z * 0.3);
+  const detail = Math.abs(Math.sin(x * 2.5 + z * 1.5)) * 0.35;
+  return base * 0.15 + detail * 0.2;
 }
 
-function fbm(x: number, y: number, octaves: number = 6): number {
-  let value = 0;
-  let amplitude = 0.5;
-  let frequency = 1;
-  
-  for (let i = 0; i < octaves; i++) {
-    value += amplitude * noise2D(x * frequency, y * frequency);
-    amplitude *= 0.5;
-    frequency *= 2;
+function gaussian1(x: number, c: number, s: number): number {
+  const t = (x - c) / Math.max(0.1, s);
+  return Math.exp(-0.5 * t * t);
+}
+
+function gaussian2(dx: number, dz: number, sx: number, sz: number): number {
+  return Math.exp(-0.5 * ((dx * dx) / (sx * sx) + (dz * dz) / (sz * sz)));
+}
+
+const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+function applySoftCeiling(h: number): number {
+  if (h <= CEILING_START) return h;
+  const excess = h - CEILING_START;
+  const range = SOFT_CEILING - CEILING_START;
+  return CEILING_START + range * (1 - Math.exp(-excess / range));
+}
+
+// ============================================================================
+// PALETTE
+// ============================================================================
+
+function paletteForScenario(s: ScenarioId) {
+  const colors = SCENARIO_COLORS[s];
+  const primary = new THREE.Color(colors.primary);
+
+  return {
+    sky: new THREE.Color("#080C14"),
+    low: new THREE.Color("#0a2830"),  // Less cyan, more neutral dark
+    mid: primary.clone().lerp(new THREE.Color("#1a2a35"), 0.3),  // Desaturated mid
+    high: new THREE.Color("#ffffff").lerp(primary, 0.18),  // Less color at peaks
+    peak: new THREE.Color("#f0f5f8"),  // Slightly warm white
+  };
+}
+
+function heightColor(h01: number, pal: ReturnType<typeof paletteForScenario>, illumination: number = 0) {
+  const t = clamp01(h01);
+  let c: THREE.Color;
+
+  if (t < 0.15) c = pal.sky.clone().lerp(pal.low, t / 0.15);
+  else if (t < 0.45) c = pal.low.clone().lerp(pal.mid, (t - 0.15) / 0.3);
+  else if (t < 0.75) c = pal.mid.clone().lerp(pal.high, (t - 0.45) / 0.3);
+  else c = pal.high.clone().lerp(pal.peak, (t - 0.75) / 0.25);
+
+  if (illumination > 0) {
+    c.lerp(new THREE.Color("#ffffff"), illumination * 0.3);
   }
-  
-  return value;
-}
 
-function ridgeNoise(x: number, y: number): number {
-  return 1 - Math.abs(noise2D(x, y) * 2 - 1);
+  return c;
 }
 
 // ============================================================================
-// MOUNTAIN TERRAIN — Photorealistic geometry
+// MASSIF PEAKS — STABLE
+// ============================================================================
+
+interface MassifPeak {
+  x: number;
+  z: number;
+  amplitude: number;
+  sigmaX: number;
+  sigmaZ: number;
+}
+
+const MASSIF_PEAKS: MassifPeak[] = [
+  { x: 0, z: -2, amplitude: 1.5, sigmaX: 2.8, sigmaZ: 2.4 },
+  { x: -10, z: -1, amplitude: 1.2, sigmaX: 3.0, sigmaZ: 2.6 },
+  { x: 11, z: -1.5, amplitude: 1.1, sigmaX: 2.8, sigmaZ: 2.5 },
+  { x: -3, z: 3, amplitude: 0.85, sigmaX: 3.5, sigmaZ: 3.0 },
+  { x: -16, z: 2, amplitude: 0.6, sigmaX: 4.0, sigmaZ: 3.5 },
+  { x: 17, z: 1, amplitude: 0.55, sigmaX: 3.8, sigmaZ: 3.2 },
+];
+
+// ============================================================================
+// TERRAIN COMPONENT — STABLE, NO ERRATIC MOTION
 // ============================================================================
 
 interface TerrainProps {
   dataPoints: number[];
+  activeKpiIndex: number | null;
+  activeLeverId: LeverId | null;
+  leverIntensity01: number;
   scenario: ScenarioId;
 }
 
-function MountainTerrain({ dataPoints, scenario }: TerrainProps) {
-  const meshRef = useRef<THREE.Mesh>(null);
-  
+const Terrain: React.FC<TerrainProps> = ({
+  dataPoints,
+  activeKpiIndex,
+  activeLeverId,
+  leverIntensity01,
+  scenario,
+}) => {
+  const groupRef = useRef<THREE.Group>(null);
+  const baseYRef = useRef(BASE_Y);
+  const reduceMotionRef = useRef<boolean | null>(null);
+  const meshFillRef = useRef<THREE.Mesh>(null);
+  const meshWireRef = useRef<THREE.Mesh>(null);
+  const lastScenarioRef = useRef<ScenarioId | null>(null);
+  const [ghostGeo, setGhostGeo] = useState<THREE.PlaneGeometry | null>(null);
+  const [ghostKey, setGhostKey] = useState(0);
+  const targetHeightsRef = useRef<Float32Array | null>(null);
+  const currentHeightsRef = useRef<Float32Array | null>(null);
+  const targetColorsRef = useRef<Float32Array | null>(null);
+  const currentColorsRef = useRef<Float32Array | null>(null);
+  const maxHeightRef = useRef(1);
+
+  const pal = useMemo(() => paletteForScenario(scenario), [scenario]);
+
+  // Build peak model - no caching to ensure immediate response
+  const peakModel = buildPeakModel({
+    kpiCount: 7,
+    activeKpiIndex,
+    activeLeverId,
+    leverIntensity01: clamp01(leverIntensity01),
+  });
+
   const geometry = useMemo(() => {
-    const geo = new THREE.PlaneGeometry(
-      TERRAIN_SIZE, 
-      TERRAIN_SIZE, 
-      TERRAIN_SEGMENTS, 
-      TERRAIN_SEGMENTS
-    );
-    
-    const pos = geo.attributes.position;
-    const colors = new Float32Array(pos.count * 3);
-    
-    // Data influence (normalized 0-1)
+    const geo = new THREE.PlaneGeometry(MESH_W, MESH_D, GRID_W, GRID_D);
+    const count = geo.attributes.position.count;
+    geo.setAttribute("color", new THREE.BufferAttribute(new Float32Array(count * 3), 3));
+    return geo;
+  }, []);
+
+  // Calculate target heights
+  useLayoutEffect(() => {
+    if (!meshFillRef.current || !meshWireRef.current) return;
+
+    const geo = meshFillRef.current.geometry as THREE.PlaneGeometry;
+    const pos = geo.attributes.position as THREE.BufferAttribute;
+    const count = pos.count;
+    const wHalf = MESH_W / 2;
+
     const dp = dataPoints?.length === 7 ? dataPoints : [0.5, 0.5, 0.6, 0.4, 0.5, 0.45, 0.35];
-    const avgData = dp.reduce((a, b) => a + b, 0) / dp.length;
-    const heightMultiplier = 0.85 + avgData * 0.3;
-    
-    for (let i = 0; i < pos.count; i++) {
+
+    if (!targetHeightsRef.current || targetHeightsRef.current.length !== count) {
+      targetHeightsRef.current = new Float32Array(count);
+      currentHeightsRef.current = new Float32Array(count);
+      targetColorsRef.current = new Float32Array(count * 3);
+      currentColorsRef.current = new Float32Array(count * 3);
+    }
+
+    const heights = targetHeightsRef.current;
+    const targetColors = targetColorsRef.current!;
+    const illuminations = new Float32Array(count);
+    let maxH = 0.01;
+
+    for (let i = 0; i < count; i++) {
       const x = pos.getX(i);
       const z = pos.getY(i);
-      
-      // Normalized coordinates
-      const nx = x / TERRAIN_SIZE;
-      const nz = z / TERRAIN_SIZE;
-      
-      // Distance from center for island falloff
-      const dist = Math.sqrt(nx * nx + nz * nz) * 2;
-      const falloff = Math.max(0, 1 - Math.pow(dist, 1.8));
-      
-      // Main peak (central, tall)
-      const mainPeakDist = Math.sqrt(nx * nx + (nz + 0.08) * (nz + 0.08));
-      const mainPeak = Math.exp(-mainPeakDist * mainPeakDist * 6) * 38;
-      
-      // Secondary peak (right, shorter)
-      const peak2X = nx - 0.22;
-      const peak2Z = nz + 0.02;
-      const peak2Dist = Math.sqrt(peak2X * peak2X + peak2Z * peak2Z);
-      const peak2 = Math.exp(-peak2Dist * peak2Dist * 10) * 24;
-      
-      // Third peak (left shoulder)
-      const peak3X = nx + 0.18;
-      const peak3Z = nz - 0.08;
-      const peak3Dist = Math.sqrt(peak3X * peak3X + peak3Z * peak3Z);
-      const peak3 = Math.exp(-peak3Dist * peak3Dist * 14) * 16;
-      
-      // Ridge noise for rocky detail
-      const ridge = ridgeNoise(nx * 4 + 0.5, nz * 5) * 6 * falloff;
-      
-      // Layered noise for natural terrain variation
-      const largeNoise = fbm(nx * 2.5 + 10, nz * 2.5 + 10, 4) * 10;
-      const mediumNoise = fbm(nx * 6 + 20, nz * 6 + 20, 3) * 4;
-      const fineNoise = fbm(nx * 15 + 30, nz * 15 + 30, 2) * 1.2;
-      
-      // Combine all height factors
-      let height = mainPeak + peak2 + peak3 + ridge;
-      height += (largeNoise + mediumNoise + fineNoise) * falloff;
-      
-      // Apply data-driven multiplier
-      height *= heightMultiplier;
-      
-      // Apply falloff
-      height *= falloff;
-      
-      // Water level cutoff
-      const waterLevel = -3;
-      if (height < waterLevel) height = waterLevel;
-      
-      pos.setZ(i, height);
-      
-      // Calculate vertex colors based on height
-      const normalizedHeight = Math.max(0, height) / 38;
-      
-      let r, g, b;
-      
-      if (normalizedHeight > 0.65) {
-        // Snow caps - bright white/cream with pinkish highlight (sunlit snow)
-        const snowAmount = Math.min(1, (normalizedHeight - 0.65) / 0.35);
-        r = 0.92 + snowAmount * 0.08;
-        g = 0.90 + snowAmount * 0.08;
-        b = 0.95 + snowAmount * 0.05;
-      } else if (normalizedHeight > 0.35) {
-        // Rocky terrain - blue-grey like in the reference
-        const rockBlend = (normalizedHeight - 0.35) / 0.3;
-        r = 0.35 + rockBlend * 0.25;
-        g = 0.40 + rockBlend * 0.22;
-        b = 0.50 + rockBlend * 0.18;
-      } else if (normalizedHeight > 0.08) {
-        // Forest zone - deep green
-        const forestBlend = (normalizedHeight - 0.08) / 0.27;
-        r = 0.08 + forestBlend * 0.12;
-        g = 0.25 + forestBlend * 0.18;
-        b = 0.12 + forestBlend * 0.15;
-      } else {
-        // Low ground / shoreline - darker green
-        r = 0.06;
-        g = 0.18;
-        b = 0.10;
+      const kpiX = ((x + wHalf) / MESH_W) * 6;
+
+      let ridge = 0;
+      let illumination = 0;
+
+      for (let idx = 0; idx < 7; idx++) {
+        const v = clamp01(dp[idx]);
+        const g = gaussian1(kpiX, idx, 0.48);
+        ridge += Math.pow(v, RIDGE_SHARPNESS) * g;
+
+        if (activeKpiIndex === idx) {
+          illumination = Math.max(illumination, g * 0.6);
+        }
       }
-      
-      colors[i * 3] = r;
-      colors[i * 3 + 1] = g;
-      colors[i * 3 + 2] = b;
+
+      let h = ridge * BASE_SCALE;
+
+      for (const m of MASSIF_PEAKS) {
+        const g = gaussian2(x - m.x, z - m.z, m.sigmaX, m.sigmaZ);
+        h += g * m.amplitude * MASSIF_SCALE;
+      }
+
+      for (const p of peakModel.peaks) {
+        const idx = clamp01(p.index / 6);
+        const peakX = lerp(-wHalf, wHalf, idx);
+        h += gaussian2(x - peakX, z + 1.5, 0.8 + p.sigma * 0.8, 0.7 + p.sigma * 0.8) * p.amplitude * PEAK_SCALE;
+      }
+
+      const rugged = ridgeNoise(x, z);
+      h += rugged * (0.3 + h * 0.08);
+
+      const dist = Math.sqrt(x * x + z * z * 1.4);
+      const mask = Math.max(0, 1 - Math.pow(dist / ISLAND_RADIUS, 2.0));
+
+      const n = noise2(x, z) * 0.2;
+
+      const cliff = Math.pow(mask, 0.45) * CLIFF_BOOST;
+      let finalH = Math.max(0, (h + n) * mask * cliff);
+      finalH = applySoftCeiling(finalH);
+
+      heights[i] = finalH;
+      illuminations[i] = illumination;
+      if (finalH > maxH) maxH = finalH;
     }
-    
-    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    geo.computeVertexNormals();
-    
-    return geo;
-  }, [dataPoints]);
-  
-  return (
-    <mesh 
-      ref={meshRef} 
-      geometry={geometry}
-      rotation={[-Math.PI / 2, 0, 0]}
-      position={[0, -8, -5]}
-      receiveShadow
-      castShadow
-    >
-      <meshStandardMaterial
-        vertexColors
-        roughness={0.82}
-        metalness={0.02}
-        flatShading={false}
-        side={THREE.DoubleSide}
-      />
-    </mesh>
-  );
-}
 
-// ============================================================================
-// WATER PLANE — Reflective lake surface
-// ============================================================================
+    maxHeightRef.current = maxH;
 
-function WaterSurface() {
-  const waterRef = useRef<THREE.Mesh>(null);
-  
-  useFrame((state) => {
-    if (waterRef.current) {
-      // Subtle shimmer effect
-      const material = waterRef.current.material as THREE.MeshStandardMaterial;
-      const time = state.clock.elapsedTime;
-      material.envMapIntensity = 1.2 + Math.sin(time * 0.3) * 0.1;
-    }
-  });
-  
-  return (
-    <mesh 
-      ref={waterRef}
-      rotation={[-Math.PI / 2, 0, 0]} 
-      position={[0, -11, 30]}
-      receiveShadow
-    >
-      <planeGeometry args={[150, 50, 32, 32]} />
-      <meshStandardMaterial
-        color="#3a7ca5"
-        roughness={0.05}
-        metalness={0.85}
-        transparent
-        opacity={0.92}
-        envMapIntensity={1.3}
-      />
-    </mesh>
-  );
-}
-
-// ============================================================================
-// FOREST — Instanced pine trees
-// ============================================================================
-
-function Forest() {
-  const count = 600;
-  const meshRef = useRef<THREE.InstancedMesh>(null);
-  
-  useMemo(() => {
-    if (!meshRef.current) return;
-    
-    const tempMatrix = new THREE.Matrix4();
-    const tempColor = new THREE.Color();
-    
     for (let i = 0; i < count; i++) {
-      // Distribute trees in a band
-      const angle = (Math.random() - 0.5) * Math.PI * 1.2;
-      const radius = 28 + Math.random() * 18;
-      const x = Math.sin(angle) * radius + (Math.random() - 0.5) * 15;
-      const z = 18 + Math.random() * 22;
-      const y = -8.5 + Math.random() * 0.8;
-      
-      // Random scale and rotation
-      const scale = 0.6 + Math.random() * 1.0;
-      const rotY = Math.random() * Math.PI * 2;
-      
-      tempMatrix.identity();
-      tempMatrix.makeRotationY(rotY);
-      tempMatrix.scale(new THREE.Vector3(scale, scale * (1.2 + Math.random() * 0.4), scale));
-      tempMatrix.setPosition(x, y, z);
-      
-      meshRef.current.setMatrixAt(i, tempMatrix);
-      
-      // Vary tree colors - different shades of deep green
-      const greenBase = 0.12 + Math.random() * 0.15;
-      tempColor.setRGB(0.03 + Math.random() * 0.04, greenBase, 0.06 + Math.random() * 0.04);
-      meshRef.current.setColorAt(i, tempColor);
+      const h = heights[i];
+      // Color headroom is independent of geometry amplitude — prevents "always white" peaks.
+      const h01 = clamp01(h / (maxH * (1 + HEADROOM)));
+      const c = heightColor(h01, pal, illuminations[i]);
+      targetColors[i * 3] = c.r;
+      targetColors[i * 3 + 1] = c.g;
+      targetColors[i * 3 + 2] = c.b;
     }
-    
-    meshRef.current.instanceMatrix.needsUpdate = true;
-    if (meshRef.current.instanceColor) {
-      meshRef.current.instanceColor.needsUpdate = true;
-    }
-  }, []);
-  
-  // Simple cone geometry for trees
-  const treeGeo = useMemo(() => {
-    const geo = new THREE.ConeGeometry(0.7, 2.8, 6);
-    geo.translate(0, 1.4, 0);
-    return geo;
-  }, []);
-  
-  return (
-    <instancedMesh 
-      ref={meshRef} 
-      args={[treeGeo, undefined, count]}
-      castShadow
-      receiveShadow
-    >
-      <meshStandardMaterial
-        roughness={0.85}
-        metalness={0}
-      />
-    </instancedMesh>
-  );
-}
+  }, [dataPoints, peakModel, pal, activeKpiIndex]);
 
-// ============================================================================
-// MIST LAYERS — Fog planes at different heights
-// ============================================================================
-
-function MistLayers() {
-  const mist1Ref = useRef<THREE.Mesh>(null);
-  const mist2Ref = useRef<THREE.Mesh>(null);
-  
+  // Smooth interpolation - NO erratic motion
   useFrame((state) => {
-    const time = state.clock.elapsedTime;
-    
-    if (mist1Ref.current) {
-      mist1Ref.current.position.x = Math.sin(time * 0.05) * 3;
-      const mat = mist1Ref.current.material as THREE.MeshBasicMaterial;
-      mat.opacity = 0.25 + Math.sin(time * 0.1) * 0.05;
+    if (!meshFillRef.current || !meshWireRef.current) return;
+    if (!targetHeightsRef.current || !currentHeightsRef.current) return;
+    if (!targetColorsRef.current || !currentColorsRef.current) return;
+
+    // Visual-only: subtle "breathing/heave" so the mountain feels alive.
+    // This does NOT affect the underlying heights/colors (engine truth stays the same).
+    if (reduceMotionRef.current === null) {
+      reduceMotionRef.current =
+        typeof window !== "undefined" &&
+        window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches === true;
     }
-    
-    if (mist2Ref.current) {
-      mist2Ref.current.position.x = Math.cos(time * 0.03) * 2;
-      const mat = mist2Ref.current.material as THREE.MeshBasicMaterial;
-      mat.opacity = 0.18 + Math.sin(time * 0.08 + 1) * 0.04;
+    if (!reduceMotionRef.current && groupRef.current) {
+      const t = state.clock.getElapsedTime();
+      const a = Math.sin(t * 0.55) * 0.5 + Math.sin(t * 0.22) * 0.5; // slow, organic
+      const scale = 1 + a * 0.007; // <1% scale
+      groupRef.current.scale.set(scale, scale, scale);
+      groupRef.current.position.y = baseYRef.current + a * 0.06;
+    }
+
+    const geo = meshFillRef.current.geometry as THREE.PlaneGeometry;
+    const pos = geo.attributes.position as THREE.BufferAttribute;
+    const col = geo.attributes.color as THREE.BufferAttribute;
+    const count = pos.count;
+
+    const targets = targetHeightsRef.current;
+    const currents = currentHeightsRef.current;
+    const targetCols = targetColorsRef.current;
+    const currentCols = currentColorsRef.current;
+
+    const smoothing = 0.45; // IMMEDIATE response - snappy but smooth (unchanged)
+    let needsUpdate = false;
+
+    for (let i = 0; i < count; i++) {
+      const diff = targets[i] - currents[i];
+      if (Math.abs(diff) > 0.0002) { // tighter threshold (was 0.0005)
+        currents[i] += diff * smoothing;
+        needsUpdate = true;
+      } else {
+        currents[i] = targets[i];
+      }
+      pos.setZ(i, currents[i]);
+
+      for (let c = 0; c < 3; c++) {
+        const ci = i * 3 + c;
+        const colDiff = targetCols[ci] - currentCols[ci];
+        if (Math.abs(colDiff) > 0.0005) { // tighter threshold (was 0.001)
+          currentCols[ci] += colDiff * smoothing;
+        } else {
+          currentCols[ci] = targetCols[ci];
+        }
+      }
+      col.setXYZ(i, currentCols[i * 3], currentCols[i * 3 + 1], currentCols[i * 3 + 2]);
+    }
+
+    if (needsUpdate) {
+      pos.needsUpdate = true;
+      col.needsUpdate = true;
+      geo.computeVertexNormals();
+
+      const wireGeo = meshWireRef.current.geometry as THREE.PlaneGeometry;
+      wireGeo.attributes.position.needsUpdate = true;
+      wireGeo.computeVertexNormals();
     }
   });
-  
+
+  // Ghost mountain snapshot: capture previous geometry ONLY on scenario commit (not on slider drag)
+  useEffect(() => {
+    const prev = lastScenarioRef.current;
+    if (prev === null) {
+      lastScenarioRef.current = scenario;
+      return;
+    }
+    if (prev === scenario) return;
+
+    // Snapshot current wire geometry BEFORE new scenario settles visually.
+    const wire = meshWireRef.current;
+    if (wire) {
+      const geo = wire.geometry as THREE.PlaneGeometry;
+      const snap = geo.clone() as THREE.PlaneGeometry;
+      // Deep-copy attributes so it is frozen (no recompute / no mutation)
+      const pos = snap.attributes.position as THREE.BufferAttribute;
+      snap.setAttribute("position", new THREE.BufferAttribute(pos.array.slice(0), pos.itemSize));
+      const col = snap.attributes.color as THREE.BufferAttribute | undefined;
+      if (col) {
+        snap.setAttribute("color", new THREE.BufferAttribute(col.array.slice(0), col.itemSize));
+      }
+      snap.computeVertexNormals();
+      setGhostGeo(snap);
+      setGhostKey((k) => k + 1);
+    }
+
+    lastScenarioRef.current = scenario;
+  }, [scenario]);
+
   return (
-    <>
-      {/* Lower mist band */}
-      <mesh ref={mist1Ref} position={[0, -2, 8]} rotation={[-Math.PI / 12, 0, 0]}>
-        <planeGeometry args={[120, 25]} />
-        <meshBasicMaterial
-          color="#d0e4f0"
-          transparent
-          opacity={0.28}
-          side={THREE.DoubleSide}
-          depthWrite={false}
+    <group ref={groupRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]}>
+      {/* Ghost layer (previous scenario snapshot) — fades out, wireframe only */}
+      {ghostGeo ? (
+        <GhostMountain
+          key={`ghost-${ghostKey}`}
+          geometry={ghostGeo}
+          durationMs={700}
+          color="rgba(34,211,238,0.55)"
+          opacityStart={0.45}
+          onDone={() => setGhostGeo(null)}
         />
-      </mesh>
-      
-      {/* Mid-height mist */}
-      <mesh ref={mist2Ref} position={[0, 6, -5]} rotation={[-Math.PI / 8, 0, 0]}>
-        <planeGeometry args={[100, 20]} />
-        <meshBasicMaterial
-          color="#c5dae8"
+      ) : null}
+      <mesh ref={meshFillRef} geometry={geometry}>
+        <meshStandardMaterial
+          vertexColors
           transparent
           opacity={0.2}
+          roughness={0.1}
+          metalness={0.9}
           side={THREE.DoubleSide}
+          emissive={pal.mid}
+          emissiveIntensity={0.02}
           depthWrite={false}
         />
       </mesh>
-    </>
+      <mesh ref={meshWireRef} geometry={geometry}>
+        <meshBasicMaterial vertexColors wireframe transparent opacity={0.82} toneMapped={false} />
+      </mesh>
+    </group>
   );
-}
+};
 
 // ============================================================================
-// LIGHTING SETUP — Cinematic golden hour
+// ATMOSPHERIC HAZE
 // ============================================================================
 
-function CinematicLighting() {
-  return (
-    <>
-      {/* Main sun light - warm golden hour from left */}
-      <directionalLight
-        position={[-40, 50, -30]}
-        intensity={2.8}
-        color="#fff8e8"
-        castShadow
-        shadow-mapSize={[2048, 2048]}
-        shadow-camera-far={200}
-        shadow-camera-left={-60}
-        shadow-camera-right={60}
-        shadow-camera-top={60}
-        shadow-camera-bottom={-60}
-        shadow-bias={-0.0001}
-      />
-      
-      {/* Fill light - cool blue from right side (shadow areas) */}
-      <directionalLight
-        position={[30, 25, 20]}
-        intensity={0.5}
-        color="#a8c8e8"
-      />
-      
-      {/* Back rim light for mountain silhouette */}
-      <directionalLight
-        position={[0, 35, -50]}
-        intensity={0.4}
-        color="#ffe8d8"
-      />
-      
-      {/* Ambient for overall illumination */}
-      <ambientLight intensity={0.45} color="#9ec5e8" />
-      
-      {/* Hemisphere light - sky blue from above, green from below (grass reflection) */}
-      <hemisphereLight
-        args={['#87ceeb', '#4a6741', 0.35]}
-      />
-    </>
-  );
-}
-
-// ============================================================================
-// SCENE WRAPPER
-// ============================================================================
-
-interface MountainSceneProps {
-  dataPoints: number[];
+interface AtmosphericHazeProps {
+  riskLevel: number;
+  viewMode: "operator" | "investor";
   scenario: ScenarioId;
 }
 
-function MountainScene({ dataPoints, scenario }: MountainSceneProps) {
-  const { scene } = useThree();
+function AtmosphericHaze({ riskLevel, viewMode, scenario }: AtmosphericHazeProps) {
+  const riskFactor = clamp01(riskLevel / 100);
+  const viewFactor = viewMode === "investor" ? 0.7 : 1.0;
   
-  // Set atmospheric fog
-  useMemo(() => {
-    scene.fog = new THREE.FogExp2('#c8dbe8', 0.006);
-  }, [scene]);
+  const scenarioTone = scenario === "stress" ? 1.2 : 
+                       scenario === "downside" ? 1.1 : 
+                       scenario === "upside" ? 0.85 : 1.0;
   
+  // Reduced base opacity for bottom haze
+  const baseOpacity = 0.18 + (riskFactor * 0.08 * scenarioTone);
+  const finalOpacity = baseOpacity * viewFactor;
+  
+  // Altitude haze opacity (above mountain)
+  const altitudeOpacity = 0.08 * viewFactor;
+
   return (
-    <>
-      <CinematicLighting />
-      
-      {/* Sky dome */}
-      <Sky
-        distance={450000}
-        sunPosition={[-40, 50, -30]}
-        inclination={0.5}
-        azimuth={0.2}
-        rayleigh={0.6}
-        turbidity={10}
-        mieCoefficient={0.005}
-        mieDirectionalG={0.85}
+    <div className="atmospheric-haze">
+      {/* ALTITUDE HAZE - Above mountain (new) */}
+      <div 
+        className="haze-layer haze-altitude"
+        style={{ opacity: altitudeOpacity }}
       />
-      
-      {/* Environment for reflections */}
-      <Environment preset="dawn" background={false} />
-      
-      {/* Main terrain */}
-      <MountainTerrain dataPoints={dataPoints} scenario={scenario} />
-      
-      {/* Water */}
-      <WaterSurface />
-      
-      {/* Forest */}
-      <Forest />
-      
-      {/* Mist layers */}
-      <MistLayers />
-      
-      {/* Camera controls */}
-      <OrbitControls
-        enableZoom={true}
-        enablePan={false}
-        enableRotate={true}
-        rotateSpeed={0.25}
-        zoomSpeed={0.4}
-        minDistance={35}
-        maxDistance={90}
-        minPolarAngle={Math.PI / 8}
-        maxPolarAngle={Math.PI / 2.3}
-        target={[0, 8, 0]}
+      {/* PRESSURE BAND - Subtle horizontal band above peak */}
+      <div 
+        className="haze-layer haze-pressure-band"
+        style={{ opacity: altitudeOpacity * 0.6 }}
       />
-    </>
+      {/* REDUCED bottom haze layers */}
+      <div 
+        className="haze-layer haze-deep"
+        style={{ opacity: finalOpacity * 0.35 }}
+      />
+      <div 
+        className="haze-layer haze-mid"
+        style={{ opacity: finalOpacity * 0.25 }}
+      />
+
+      <style>{`
+        .atmospheric-haze {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          z-index: 0;
+          overflow: hidden;
+        }
+
+        .haze-layer {
+          position: absolute;
+          inset: 0;
+        }
+
+        /* ALTITUDE HAZE - vertical gradient above mountain */
+        .haze-altitude {
+          background: linear-gradient(
+            to bottom,
+            rgba(18, 28, 42, 0.35) 0%,
+            rgba(14, 22, 34, 0.2) 20%,
+            rgba(10, 18, 28, 0.08) 40%,
+            transparent 55%
+          );
+        }
+
+        /* PRESSURE BAND - subtle horizontal density above peak */
+        .haze-pressure-band {
+          background: linear-gradient(
+            to bottom,
+            transparent 15%,
+            rgba(22, 34, 48, 0.15) 25%,
+            rgba(18, 28, 42, 0.1) 32%,
+            transparent 42%
+          );
+          filter: blur(8px);
+        }
+
+        /* REDUCED: Bottom haze layers */
+        .haze-deep {
+          background: radial-gradient(
+            ellipse 120% 60% at 50% 70%,
+            rgba(10, 20, 32, 0.5) 0%,
+            rgba(8, 16, 26, 0.25) 40%,
+            transparent 65%
+          );
+        }
+
+        .haze-mid {
+          background: radial-gradient(
+            ellipse 100% 50% at 45% 65%,
+            rgba(14, 26, 40, 0.35) 0%,
+            rgba(10, 20, 32, 0.15) 35%,
+            transparent 55%
+          );
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ============================================================================
+// GRID HELPER
+// ============================================================================
+
+function SubtleGrid() {
+  return (
+    <gridHelper 
+      args={[60, 40, "#0a1520", "#0a1520"]} 
+      position={[0, -2.5, 0]} 
+      rotation={[0, 0, 0]}
+    />
   );
 }
 
@@ -499,60 +536,73 @@ export default function ScenarioMountain({
   leverIntensity01 = 0,
   className,
 }: ScenarioMountainProps) {
+  const colors = SCENARIO_COLORS[scenario];
+  const viewMode = useScenarioStore((s) => s.viewMode);
+  
+  const {
+    activeScenarioId,
+    engineResults,
+  } = useScenarioStore(
+    useShallow((s) => ({
+      activeScenarioId: s.activeScenarioId,
+      engineResults: s.engineResults,
+    }))
+  );
+
+  const engineResult = engineResults?.[activeScenarioId];
+  const kpiValues = engineResult?.kpis || {};
+  
+  const riskLevel = kpiValues.riskIndex?.value ?? 25;
+
   return (
     <div
       className={`relative w-full h-full overflow-hidden ${className ?? ""}`}
       style={{
-        background: "linear-gradient(180deg, #7eb8db 0%, #a8cde4 30%, #c8dce8 60%, #d8e8f0 100%)",
+        background: `radial-gradient(ellipse 70% 50% at 50% 60%, ${colors.glow}, transparent 60%), #060a10`,
       }}
     >
+      <AtmosphericHaze 
+        riskLevel={riskLevel}
+        viewMode={viewMode as "operator" | "investor"}
+        scenario={scenario}
+      />
+      
       <Canvas
-        shadows
-        gl={{ 
-          antialias: true, 
-          alpha: false,
-          powerPreference: "high-performance",
-          toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.15,
-        }}
-        dpr={[1, 2]}
-        style={{ position: "absolute", inset: 0 }}
+        gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+        dpr={[1, 1.5]}
+        style={{ position: "relative", zIndex: 1, background: "transparent" }}
+        fallback={<div style={{ width: "100%", height: "100%", background: "#0d1117" }} />}
       >
         <Suspense fallback={null}>
-          <PerspectiveCamera 
-            makeDefault 
-            position={[0, 15, 55]} 
-            fov={42}
-            near={0.1}
-            far={600}
-          />
-          
-          <MountainScene dataPoints={dataPoints} scenario={scenario} />
-          
-          {/* Post-processing effects */}
-          <EffectComposer>
-            <Bloom
-              luminanceThreshold={0.85}
-              luminanceSmoothing={0.5}
-              intensity={0.25}
-              radius={0.7}
-            />
-            <Vignette
-              eskil={false}
-              offset={0.12}
-              darkness={0.35}
-            />
-          </EffectComposer>
+        {/* Headroom: aim slightly lower so taller peaks don't clip without compressing */}
+        <PerspectiveCamera makeDefault position={[0, 6, 32]} fov={38} />
+        <ambientLight intensity={0.12} />
+        <directionalLight position={[8, 20, 10]} intensity={0.4} color="#ffffff" />
+        <directionalLight position={[-6, 12, -8]} intensity={0.08} color={colors.primary} />
+        <pointLight position={[0, 8, 0]} intensity={0.1} color={colors.primary} distance={30} decay={2} />
+        
+        <Terrain
+          dataPoints={dataPoints}
+          activeKpiIndex={activeKpiIndex}
+          activeLeverId={activeLeverId}
+          leverIntensity01={leverIntensity01}
+          scenario={scenario}
+        />
+        
+        <SubtleGrid />
+        <OrbitControls 
+          enableZoom={false} 
+          enablePan={false} 
+          enableRotate={true}
+          rotateSpeed={0.4}
+          target={[0, BASE_Y * 0.55, 0]}
+          minPolarAngle={Math.PI / 4}
+          maxPolarAngle={Math.PI / 2.2}
+          minAzimuthAngle={-Math.PI / 5}
+          maxAzimuthAngle={Math.PI / 5}
+        />
         </Suspense>
       </Canvas>
-      
-      {/* Subtle atmospheric gradient overlay */}
-      <div 
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: "linear-gradient(180deg, transparent 50%, rgba(200, 220, 235, 0.2) 100%)",
-        }}
-      />
     </div>
   );
 }
