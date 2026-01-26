@@ -16,14 +16,16 @@ export function generateTerrainHeight({
   modifier = 0
 }: TerrainInputs): number {
 
-  const scale = 0.015
+  const scale = 0.02
 
   const base =
-    noise.perlin2(x * scale, z * scale) * 12 +
-    noise.perlin2(x * scale * 0.5, z * scale * 0.5) * 8
+    noise.perlin2(x * scale, z * scale) * 25 +
+    noise.perlin2(x * scale * 0.5, z * scale * 0.5) * 15
 
-  const delta = modifier * Math.sin(time * 0.02)
+  const delta =
+    modifier * 8 * Math.sin(time * 0.15)
 
-  return base + delta
+  const height = base + delta
+
+  return height
 }
-
