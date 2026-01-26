@@ -593,26 +593,26 @@ function LavaRiver({ color, score, isBaseline, geometry }: LavaRiverProps) {
   useFrame((state) => {
     const time = state.clock.elapsedTime;
     
-    // Main core pulsing - looks like flowing plasma
+    // Main core pulsing - volumetric glow inside glass
     if (tubeRef.current) {
       const mat = tubeRef.current.material as THREE.MeshStandardMaterial;
-      mat.emissiveIntensity = 8 + Math.sin(time * 3) * 2;
+      mat.emissiveIntensity = 6 + Math.sin(time * 2.5) * 1.5;
     }
     
     // Energy particles flowing along the path
     pipRefs.current.forEach((pip, i) => {
       if (pip) {
-        const speed = 0.06 + (i % 4) * 0.02;
-        const t = ((time * speed + i * 0.1) % 1);
+        const speed = 0.05 + (i % 4) * 0.015;
+        const t = ((time * speed + i * 0.12) % 1);
         const point = curve.getPointAt(t);
         pip.position.copy(point);
-        pip.scale.setScalar(0.8 + Math.sin(time * 8 + i * 2) * 0.3);
+        pip.scale.setScalar(0.7 + Math.sin(time * 6 + i * 2) * 0.25);
       }
     });
   });
 
   // Flowing energy particles
-  const pips = useMemo(() => Array.from({ length: 8 }, (_, i) => i), []);
+  const pips = useMemo(() => Array.from({ length: 10 }, (_, i) => i), []);
 
   return (
     <group>
@@ -621,24 +621,24 @@ function LavaRiver({ color, score, isBaseline, geometry }: LavaRiverProps) {
         <meshBasicMaterial
           color={color}
           transparent
-          opacity={0.25}
+          opacity={0.3}
           toneMapped={false}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
       </mesh>
       
-      {/* PLASMA CORE — High emissive, looks like liquid light */}
+      {/* PLASMA CORE — Volumetric liquid light inside glass */}
       <mesh ref={tubeRef} geometry={tubeGeo.core}>
         <meshStandardMaterial
           color={color}
           emissive={color}
-          emissiveIntensity={8}
+          emissiveIntensity={6}
           toneMapped={false}
         />
       </mesh>
       
-      {/* WHITE-HOT CENTER — Pure brightness */}
+      {/* WHITE-HOT CENTER — Pure brightness core */}
       <mesh geometry={tubeGeo.center}>
         <meshBasicMaterial
           color="#ffffff"
@@ -646,20 +646,20 @@ function LavaRiver({ color, score, isBaseline, geometry }: LavaRiverProps) {
         />
       </mesh>
       
-      {/* FLOWING ENERGY PARTICLES — Organic movement */}
+      {/* KINETIC ENERGY PARTICLES — Flowing data pips */}
       {pips.map((_, i) => (
         <mesh 
           key={i} 
           ref={(el) => { if (el) pipRefs.current[i] = el; }}
         >
-          <sphereGeometry args={[0.04, 8, 8]} />
+          <sphereGeometry args={[0.035, 8, 8]} />
           <meshStandardMaterial
             color="#ffffff"
             emissive={color}
-            emissiveIntensity={8}
+            emissiveIntensity={6}
             toneMapped={false}
             transparent
-            opacity={1}
+            opacity={0.9}
           />
         </mesh>
       ))}
@@ -815,67 +815,67 @@ function UnifiedDestinyField({ scenarioA, scenarioB, hoverData }: UnifiedFieldPr
   // Generate the MULTI-PEAK MASSIF geometry
   const geometry = useMemo(() => createMassifGeometry(), []);
 
-  // FIXED OPTIMAL POSITION - Perfectly visible, no animation
+  // TITANIUM CRYSTAL MASSIF — Hero angle positioning
   return (
     <group ref={groupRef} rotation={[-Math.PI / 2.4, 0, 0]} position={[0, -1.5, 0]}>
-      {/* LAYER 1: GLACIER BASE — Clean white-grey core */}
+      {/* LAYER 1: AEROSPACE SLATE BASE — Deep dark core */}
       <mesh geometry={geometry}>
         <meshStandardMaterial
-          color="#6a7a8a"
-          roughness={0.35}
-          metalness={0.6}
+          color="#0a121f"
+          roughness={0.3}
+          metalness={0.8}
           side={THREE.FrontSide}
         />
       </mesh>
 
-      {/* LAYER 2: ICE CRYSTAL SURFACE — Pure white refractive glass with blue tint */}
+      {/* LAYER 2: TITANIUM CRYSTAL SURFACE — Dark refractive glass */}
       <mesh geometry={geometry} position={[0, 0, 0.02]}>
         <MeshTransmissionMaterial
-          transmission={0.92}
-          thickness={4.0}
-          roughness={0.06}
-          ior={1.25}
-          chromaticAberration={0.18}
+          transmission={0.95}
+          thickness={5.0}
+          roughness={0.05}
+          ior={1.2}
+          chromaticAberration={0.08}
           backside={true}
-          color="#d8e8f8"
-          distortion={0.05}
-          distortionScale={0.1}
-          temporalDistortion={0.04}
+          color="#0a121f"
+          distortion={0.04}
+          distortionScale={0.08}
+          temporalDistortion={0.02}
         />
       </mesh>
 
-      {/* LAYER 3: INTERNAL FROST LINES — White wireframe etching */}
+      {/* LAYER 3: INTERNAL DATA ETCHING — Faint cyan wireframe */}
       <mesh geometry={geometry} position={[0, 0, 0.01]}>
         <meshBasicMaterial
           wireframe
-          color="#f0f4f8"
+          color="#00ffff"
+          transparent
+          opacity={0.08}
+          toneMapped={false}
+        />
+      </mesh>
+      
+      {/* LAYER 4: SURFACE TOPOLOGY GRID — Subtle silver lines */}
+      <mesh geometry={geometry} position={[0, 0, 0.04]}>
+        <meshBasicMaterial
+          wireframe
+          color="#4a5a6a"
           transparent
           opacity={0.15}
           toneMapped={false}
         />
       </mesh>
-      
-      {/* LAYER 4: SURFACE CONTOUR GRID — Light blue accent data lines */}
-      <mesh geometry={geometry} position={[0, 0, 0.04]}>
-        <meshBasicMaterial
-          wireframe
-          color="#88b8e8"
-          transparent
-          opacity={0.25}
-          toneMapped={false}
-        />
-      </mesh>
 
       
-      {/* LAVA RIVERS — Surface-aware strategic paths */}
+      {/* KINETIC LAVA VEINS — Volumetric glow paths */}
       <LavaRiver 
-        color="#00D9FF" 
+        color="#00ffff" 
         score={scenarioA.score} 
         isBaseline={true}
         geometry={geometry} 
       />
       <LavaRiver 
-        color="#F59E0B" 
+        color="#f59e0b" 
         score={scenarioB.score}
         isBaseline={false}
         geometry={geometry} 
@@ -891,37 +891,37 @@ function UnifiedDestinyField({ scenarioA, scenarioB, hoverData }: UnifiedFieldPr
         />
       )}
 
-      {/* COMMAND BRIDGE LIGHTING — White/Grey/Blue Theme */}
-      {/* High-intensity pure white summit light */}
+      {/* TITANIUM COMMAND BRIDGE LIGHTING */}
+      {/* High-intensity white summit spotlight */}
       <pointLight 
-        position={[0, 0, 10]} 
-        intensity={20} 
+        position={[0, 2, 12]} 
+        intensity={25} 
         color="#ffffff" 
-        distance={30} 
+        distance={35} 
         decay={2} 
       />
       
-      {/* Cool blue rim light — left edge */}
+      {/* Cyan rim light — left edge (matches lava A) */}
       <pointLight 
-        position={[-10, 0, 4]} 
-        intensity={12} 
-        color="#6aa8e0" 
+        position={[-12, 0, 5]} 
+        intensity={8} 
+        color="#00ffff" 
         distance={20} 
         decay={2} 
       />
       
-      {/* Cool white rim light — right edge */}
+      {/* Amber rim light — right edge (matches lava B) */}
       <pointLight 
-        position={[10, 0, 4]} 
-        intensity={10} 
-        color="#ffffff" 
-        distance={18} 
+        position={[12, 0, 5]} 
+        intensity={8} 
+        color="#f59e0b" 
+        distance={20} 
         decay={2} 
       />
       
-      {/* Soft grey-blue ambient fill */}
-      <ambientLight intensity={0.25} color="#d0e0f0" />
-      <directionalLight position={[5, 12, 12]} intensity={1.0} color="#f8faff" />
+      {/* Deep space ambient */}
+      <ambientLight intensity={0.12} color="#1a2a3a" />
+      <directionalLight position={[5, 15, 15]} intensity={0.6} color="#ffffff" />
     </group>
   );
 }
@@ -959,13 +959,13 @@ function GhostRange() {
   }, []);
 
   return (
-    <group position={[0, -8, -15]} rotation={[-Math.PI / 3, 0, 0]}>
+    <group position={[0, -10, -20]} rotation={[-Math.PI / 3, 0, 0]}>
       <mesh geometry={geometry}>
         <meshBasicMaterial
           wireframe
-          color="#6a8aac"
+          color="#8a9aaa"
           transparent
-          opacity={0.08}
+          opacity={0.04}
           toneMapped={false}
         />
       </mesh>
@@ -1299,13 +1299,13 @@ export default function GodModeCompare() {
     <div 
       className="relative w-full h-full min-h-[500px] overflow-hidden" 
       style={{ 
-        background: 'radial-gradient(ellipse at 50% 30%, #1a2a3a 0%, #0f1824 50%, #0a1018 100%)' 
+        background: 'radial-gradient(ellipse at 50% 40%, #0f1520 0%, #080c14 50%, #050810 100%)' 
       }}
     >
       {/* TITANIUM COMMAND BRIDGE */}
       <TitaniumCommandBridge scenarioA={scenarioA} scenarioB={scenarioB} />
 
-      {/* 3D CANVAS — Unobstructed view with summit clearance */}
+      {/* 3D CANVAS — Hero angle three-quarter view */}
       <div
         className="absolute inset-0"
         onMouseMove={handleCanvasMove}
@@ -1313,21 +1313,21 @@ export default function GodModeCompare() {
       >
         <Canvas
           camera={{ 
-            position: [8, 6, 12], // EXECUTIVE PERSPECTIVE: Looking at the Summit
-            fov: 42 
+            position: [10, 8, 14], // HERO ANGLE: Low three-quarter view
+            fov: 40 
           }}
           gl={{ 
             antialias: true, 
             alpha: true, 
             powerPreference: 'high-performance',
             toneMapping: THREE.ACESFilmicToneMapping,
-            toneMappingExposure: 1.5,
+            toneMappingExposure: 1.2,
           }}
           dpr={[1, 2]}
         >
           <Suspense fallback={null}>
-            <color attach="background" args={['#0a1018']} />
-            <fog attach="fog" args={['#0f1824', 18, 45]} />
+            <color attach="background" args={['#050810']} />
+            <fog attach="fog" args={['#080c14', 20, 50]} />
             
             {/* ENVIRONMENT: City preset for high-contrast glass reflections */}
             <Environment preset="city" />
@@ -1359,23 +1359,54 @@ export default function GodModeCompare() {
         </Canvas>
       </div>
 
-      {/* LEGEND */}
-      <div className="absolute bottom-4 left-4 flex gap-4 z-10">
-        <div className="flex items-center gap-2 bg-black/60 backdrop-blur-sm px-3 py-2 rounded-lg border border-white/10">
-          <div className="w-3 h-3 rounded-full bg-cyan-400 shadow-[0_0_12px_rgba(0,217,255,0.8)]" />
-          <span className="text-white/80 text-xs font-medium">Baseline (A)</span>
+      {/* SYSTEM INTEGRITY FOOTER BAR */}
+      <div 
+        className="absolute bottom-0 left-0 right-0 h-12 z-20 flex items-center justify-between px-4"
+        style={{
+          background: 'linear-gradient(180deg, transparent 0%, rgba(5,8,16,0.95) 40%)',
+          backdropFilter: 'blur(8px)',
+        }}
+      >
+        {/* Left: Path Legend */}
+        <div className="flex gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(0,255,255,0.8)]" />
+            <span className="text-white/70 text-[10px] font-medium tracking-wider">BASELINE (A)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.8)]" />
+            <span className="text-white/70 text-[10px] font-medium tracking-wider">EXPLORATION (B)</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2 bg-black/60 backdrop-blur-sm px-3 py-2 rounded-lg border border-white/10">
-          <div className="w-3 h-3 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.8)]" />
-          <span className="text-white/80 text-xs font-medium">Exploration (B)</span>
+
+        {/* Center: System Status */}
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-[9px] text-white/50 tracking-widest">RENDER</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+            <span className="text-[9px] text-white/50 tracking-widest">SYNC</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            <span className="text-[9px] text-white/50 tracking-widest">INTEGRITY</span>
+          </div>
+        </div>
+
+        {/* Right: Timeline Range */}
+        <div className="flex items-center gap-2">
+          <span className="text-[9px] text-white/40 tracking-wider">PROJECTION</span>
+          <span className="text-[10px] text-cyan-400/80 font-mono">0 → 36 MONTHS</span>
         </div>
       </div>
 
       {/* CRT SCAN LINES */}
       <div 
-        className="absolute inset-0 pointer-events-none z-30 opacity-[0.03]"
+        className="absolute inset-0 pointer-events-none z-30 opacity-[0.02]"
         style={{
-          backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,217,255,0.15) 2px, rgba(0,217,255,0.15) 4px)',
+          backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,255,0.1) 2px, rgba(0,255,255,0.1) 4px)',
         }}
       />
     </div>
