@@ -1128,7 +1128,7 @@ function StrategicAutopilotPanel({ scenarioA, scenarioB }: { scenarioA: Scenario
 
   return (
     <div 
-      className="absolute bottom-4 right-4 w-96 overflow-hidden z-10"
+      className="absolute bottom-4 left-4 w-96 overflow-hidden z-10"
       style={{
         background: 'linear-gradient(180deg, rgba(10,15,25,0.97) 0%, rgba(5,8,15,0.99) 100%)',
         boxShadow: '0 8px 32px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.08)',
