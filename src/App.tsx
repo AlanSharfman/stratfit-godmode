@@ -41,7 +41,7 @@ import UnifiedHeader, { type ViewMode as HeaderViewMode } from '@/components/lay
 import { useUIStore } from "@/state/uiStore";
 import { SimulateOverlay } from '@/components/simulate';
 import { SaveSimulationModal, LoadSimulationPanel } from '@/components/simulations';
-import { StrategicAutopilotPanel, type ScenarioData } from '@/components/mountain/GodModeCompare';
+import { StrategicAutopilotPanel, type ScenarioData } from '@/components/compare/StrategicAutopilotPanel';
 import { ComparePage } from '@/components/compare';
 
 // ============================================================================

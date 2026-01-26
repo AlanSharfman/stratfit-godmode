@@ -87,7 +87,7 @@ export default function ComparePage() {
               
               <color attach="background" args={["#080c10"]} />
 
-              <GodModeMountain scenarioA={{ score: 72 }} scenarioB={{ score: 65 }} t={t} />
+              <GodModeMountain scenarioA={{ score: 72 }} scenarioB={{ score: 65 }} />
 
               <OrbitControls
                 enablePan={false}

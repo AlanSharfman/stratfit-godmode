@@ -2,7 +2,6 @@ import React, { useEffect, useState, useMemo } from "react";
 import * as THREE from "three";
 import type { CenterViewId } from "@/types/view";
 import ScenarioMountain from "@/components/mountain/ScenarioMountain";
-import GodModeCompare from "@/components/mountain/GodModeCompare";
 import { GodModeMountain } from "@/components/compare/GodModeMountain";
 import { Canvas } from "@react-three/fiber";
 import { EffectComposer, Bloom, Vignette, SMAA } from "@react-three/postprocessing";
@@ -160,7 +159,6 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
               <GodModeMountain 
                 scenarioA={godModeScenarioA}
                 scenarioB={godModeScenarioB}
-                t={0.5}
               />
               <EffectComposer disableNormalPass>
                 <Bloom

@@ -5,4 +5,5 @@ export { default as ComparePage } from './ComparePage';
 export { GodModeMountain } from './GodModeMountain';
 export { ViewToggle } from './ViewToggle';
 export { FinancialGridSafetyNet } from './FinancialGridSafetyNet';
+export { StrategicAutopilotPanel, type ScenarioData } from './StrategicAutopilotPanel';
 
