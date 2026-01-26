@@ -1,38 +1,46 @@
-// src/components/compare/GodModeMountain.tsx
-// STRATFIT — Obsidian Instrument with Photorealistic Background
-// Glass mountain with trajectory veins over realistic alpine backdrop
-
 import React, { useMemo, useRef, useEffect } from "react";
 import * as THREE from "three";
-import { Grid, Html, Text, useTexture } from "@react-three/drei";
-import { MeshTransmissionMaterial } from "@react-three/drei";
+import { Grid, Html, MeshTransmissionMaterial, Text } from "@react-three/drei";
 import { createNoise2D } from "simplex-noise";
-import { useThree } from "@react-three/fiber";
 
-// --- CONFIGURATION: OBSIDIAN INSTRUMENT SPEC ---
+// --- CONFIGURATION: OBSIDIAN INSTRUMENT ---
 const CONFIG = {
   height: 5.2,
-  baseColor: "#0b1220",
-  roughness: 0.55,
-  transmission: 0.35,
-  thickness: 2.0,
+  baseColor: "#050b14",      // Pitch Black (Best for instrument look)
+  roughness: 0.55,           // Chiseled stone feel
+  transmission: 0.35,        // Dense glass opacity
+  thickness: 2.5,
   ior: 1.25,
-  chromaticAberration: 0.01,
-  wireOpacity: 0.025,
+  chromaticAberration: 0.02, // Slight prism effect on edges
+  wireOpacity: 0.03,
   veinWidth: 0.014,
-  veinGlow: 5.5,
-  gridColor: "#223046",
+  veinGlow: 8.0,             // Bright neon to pop against black
+  gridColor: "#1e293b",
 };
 
 const noise2D = createNoise2D();
 
 type Scenario = { score?: number };
 
+// --- NEW MATH: CHISELED OBSIDIAN ---
 function surfaceZ(x: number, y: number) {
   const dist = Math.sqrt(x * x + y * y);
-  const peak = Math.pow(Math.max(0, 1.0 - dist / 5.1), 2.75) * CONFIG.height;
-  const riskNoise = Math.abs(noise2D(x * 0.55, y * 0.55));
-  return peak + riskNoise * 0.55 * (peak / CONFIG.height);
+  
+  // 1. THE CONE (Base Shape)
+  // Tighter radius (5.0) for a steeper, more dramatic peak
+  const baseShape = Math.max(0, 1.0 - dist / 5.0);
+  const peak = Math.pow(baseShape, 2.2) * CONFIG.height;
+
+  // 2. THE CHISEL (Sharp Ridges)
+  // We use Math.abs() to create sharp "V" creases instead of smooth waves.
+  // This removes the "melting" look.
+  const n1 = Math.abs(noise2D(x * 0.6, y * 0.6)); // Large cuts
+  const n2 = Math.abs(noise2D(x * 1.5, y * 1.5)); // Fine detail fractures
+  
+  // Subtracting noise cuts into the volume, creating cliffs
+  const cuts = (n1 + n2 * 0.5) * 1.2;
+  
+  return peak - (cuts * baseShape * 0.8); 
 }
 
 function generateTrajectory(score: number, side: -1 | 1) {
@@ -49,29 +57,16 @@ function generateTrajectory(score: number, side: -1 | 1) {
   return new THREE.CatmullRomCurve3(points);
 }
 
-export const GodModeMountain: React.FC<{ scenarioA: Scenario; scenarioB: Scenario; t?: number }> = ({
+export const GodModeMountain: React.FC<{ scenarioA: Scenario; scenarioB: Scenario }> = ({
   scenarioA,
   scenarioB,
-  t = 0.5,
 }) => {
-  const { scene } = useThree();
-  
-  // 1. LOAD BACKGROUND IMAGE
-  // Make sure 'realistic-mountain.jpg' is in your /public folder
-  const backgroundTexture = useTexture("/realistic-mountain.jpg");
-
-  // 2. SET AS SCENE BACKGROUND
-  useEffect(() => {
-    backgroundTexture.colorSpace = THREE.SRGBColorSpace; // Correct color encoding
-    scene.background = backgroundTexture;
-    return () => { scene.background = null; }; // Cleanup
-  }, [scene, backgroundTexture]);
-
   const scoreA = scenarioA.score ?? 72;
   const scoreB = scenarioB.score ?? 65;
 
   const geometry = useMemo(() => {
-    const geo = new THREE.PlaneGeometry(12, 12, 240, 240);
+    // Increased segments (256) for sharper ridge definition
+    const geo = new THREE.PlaneGeometry(12, 12, 256, 256);
     const pos = geo.attributes.position as THREE.BufferAttribute;
     for (let i = 0; i < pos.count; i++) {
       pos.setZ(i, surfaceZ(pos.getX(i), pos.getY(i)));
@@ -83,15 +78,15 @@ export const GodModeMountain: React.FC<{ scenarioA: Scenario; scenarioB: Scenari
   const pathA = useMemo(() => generateTrajectory(scoreA, -1), [scoreA]);
   const pathB = useMemo(() => generateTrajectory(scoreB, 1), [scoreB]);
 
-  const tSlice = THREE.MathUtils.clamp(t, 0, 1);
-  const pA = useMemo(() => pathA.getPoint(tSlice), [pathA, tSlice]);
-  const pB = useMemo(() => pathB.getPoint(tSlice), [pathB, tSlice]);
+  const tSlice = 0.5; 
+  const pA = useMemo(() => pathA.getPoint(tSlice), [pathA]);
+  const pB = useMemo(() => pathB.getPoint(tSlice), [pathB]);
   const mid = useMemo(() => pA.clone().add(pB).multiplyScalar(0.5), [pA, pB]);
 
   const dashedGeo = useMemo(() => {
     const geo = new THREE.BufferGeometry().setFromPoints([
-      pA.clone().setZ(pA.z + 0.12),
-      pB.clone().setZ(pB.z + 0.12)
+      pA.clone().setZ(pA.z + 0.15), // Raised slightly for visibility
+      pB.clone().setZ(pB.z + 0.15)
     ]);
     return geo;
   }, [pA, pB]);
@@ -101,21 +96,16 @@ export const GodModeMountain: React.FC<{ scenarioA: Scenario; scenarioB: Scenari
     if (dashedLineRef.current) dashedLineRef.current.computeLineDistances();
   }, [dashedGeo]);
 
-  const monthAtT = Math.round(tSlice * 36);
-  const arrDelta = ((scoreA - scoreB) / 100 * 2.1 * (1 + tSlice)).toFixed(1);
-
   return (
     <group rotation={[-Math.PI / 2.5, 0, 0]} position={[0, -1, 0]}>
-      {/* 3. ADJUST LIGHTING FOR NEW BACKGROUND */}
-      {/* Lower ambient light to let the background set the mood */}
+      {/* LIGHTING RESET: Back to "Instrument" settings (no sun glare) */}
       <ambientLight intensity={0.2} />
-      {/* Stronger key light to define the obsidian shape against the bright background */}
-      <spotLight position={[0, 15, 10]} intensity={30} angle={0.5} penumbra={1} color="white" />
+      <spotLight position={[0, 15, 10]} intensity={15} angle={0.5} penumbra={1} color="white" />
       
       <pointLight position={[-10, 0, -5]} intensity={2} color="#22d3ee" distance={20} />
       <pointLight position={[10, 0, -5]} intensity={2} color="#eab308" distance={20} />
 
-      {/* OBSIDIAN MOUNTAIN - Glass/transmission material */}
+      {/* 1. OBSIDIAN BASE */}
       <mesh geometry={geometry} receiveShadow>
         <MeshTransmissionMaterial
           roughness={CONFIG.roughness}
@@ -125,16 +115,16 @@ export const GodModeMountain: React.FC<{ scenarioA: Scenario; scenarioB: Scenari
           chromaticAberration={CONFIG.chromaticAberration}
           color={CONFIG.baseColor}
           backside
-          anisotropicBlur={0.1}
+          anisotropicBlur={0.2} // Blurs reflection slightly for "Matte" look
         />
       </mesh>
 
-      {/* Subtle wireframe overlay */}
+      {/* 2. WIREFRAME OVERLAY (Precision) */}
       <mesh geometry={geometry} position={[0, 0, 0.01]}>
-        <meshBasicMaterial
-          wireframe
-          color="white"
-          transparent
+        <meshBasicMaterial 
+          wireframe 
+          color="white" 
+          transparent 
           opacity={CONFIG.wireOpacity}
           polygonOffset
           polygonOffsetFactor={-1}
@@ -142,70 +132,46 @@ export const GodModeMountain: React.FC<{ scenarioA: Scenario; scenarioB: Scenari
         />
       </mesh>
 
-      {/* CYAN TRAJECTORY - Baseline path */}
+      {/* 3. CYAN DATA VEIN */}
       <mesh>
         <tubeGeometry args={[pathA, 140, CONFIG.veinWidth, 8, false]} />
         <meshStandardMaterial
-          color="#22d3ee" 
-          emissive="#22d3ee" 
-          emissiveIntensity={CONFIG.veinGlow}
-          toneMapped={false} 
-          transparent 
-          opacity={0.9}
+          color="#22d3ee" emissive="#22d3ee" emissiveIntensity={CONFIG.veinGlow}
+          toneMapped={false} transparent opacity={0.9}
         />
       </mesh>
 
-      {/* GOLD TRAJECTORY - Exploration path */}
+      {/* 4. GOLD DATA VEIN */}
       <mesh>
         <tubeGeometry args={[pathB, 140, CONFIG.veinWidth, 8, false]} />
         <meshStandardMaterial
-          color="#eab308" 
-          emissive="#eab308" 
-          emissiveIntensity={CONFIG.veinGlow}
-          toneMapped={false} 
-          transparent 
-          opacity={0.9}
+          color="#eab308" emissive="#eab308" emissiveIntensity={CONFIG.veinGlow}
+          toneMapped={false} transparent opacity={0.9}
         />
       </mesh>
 
-      {/* TIMELINE MARKERS */}
+      {/* LABELS */}
       <group position={[6.2, 0, 0]}>
-        <Text position={[0, 4.6, 0.2]} fontSize={0.25} color="#64748b" anchorX="left">
-          NOW (T+0)
-        </Text>
-        <Text position={[0, 0, 0.2]} fontSize={0.25} color="#64748b" anchorX="left">
-          T+18
-        </Text>
-        <Text position={[0, -4.6, 0.2]} fontSize={0.25} color="#64748b" anchorX="left">
-          HORIZON (T+36)
-        </Text>
+        <Text position={[0, 4.6, 0.2]} fontSize={0.25} color="#475569" anchorX="left">NOW (T+0)</Text>
+        <Text position={[0, 0, 0.2]} fontSize={0.25} color="#475569" anchorX="left">T+18</Text>
+        <Text position={[0, -4.6, 0.2]} fontSize={0.25} color="#475569" anchorX="left">HORIZON (T+36)</Text>
       </group>
 
       {/* DIVERGENCE LINE */}
       <line ref={dashedLineRef} geometry={dashedGeo}>
-        <lineDashedMaterial 
-          color="white" 
-          transparent 
-          opacity={0.4} 
-          dashSize={0.2} 
-          gapSize={0.1} 
-        />
+        <lineDashedMaterial color="white" transparent opacity={0.4} dashSize={0.2} gapSize={0.1} />
       </line>
 
-      {/* DATA TAG - ARR Delta */}
+      {/* DELTA BADGE */}
       <Html position={[mid.x, mid.y, mid.z + 0.5]} center zIndexRange={[100, 0]}>
-        <div className="px-2.5 py-1.5 bg-slate-900/90 border border-slate-700 rounded text-[10px] text-white shadow-xl backdrop-blur-md font-mono whitespace-nowrap">
-          <span className="text-slate-500">T+{monthAtT}</span>
-          <span className="text-slate-600 mx-1.5">│</span>
-          <span className="text-slate-400">Δ</span>
-          <span className="text-emerald-400 font-semibold ml-1">+${arrDelta}M</span>
+        <div className="px-2 py-1 bg-slate-900/90 border border-slate-700 rounded-[2px] text-[10px] text-white shadow-xl backdrop-blur-md font-mono whitespace-nowrap">
+          <span className="text-slate-400">Δ</span> <span className="text-emerald-400 font-semibold">+$2.1M ARR</span>
         </div>
       </Html>
 
-      {/* Faded grid to blend with the realistic background */}
+      {/* FLOOR GRID */}
       <Grid
-        position={[0, 0, -0.1]} 
-        args={[20, 20]}
+        position={[0, 0, -0.1]} args={[20, 20]}
         cellSize={1} 
         cellThickness={1} 
         cellColor={CONFIG.gridColor}
