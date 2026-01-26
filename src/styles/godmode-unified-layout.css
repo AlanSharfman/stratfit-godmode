@@ -1047,14 +1047,20 @@ aside.right-column,
 }
 
 /* ============================================================================
-   COMPARE VIEW — Hide left slider section for full mountain focus
+   COMPARE VIEW — Show Strategic Autopilot in left column
    ============================================================================ */
 
 .main-content.mode-compare .left-column .sf-leftStack {
-  visibility: hidden;
-  opacity: 0;
+  visibility: visible;
+  opacity: 1;
 }
 
 .main-content.mode-compare .left-column {
   background: transparent !important;
+}
+
+.main-content.mode-compare .compare-autopilot-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }

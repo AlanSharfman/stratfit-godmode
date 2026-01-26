@@ -130,7 +130,7 @@ const gaussianPeak = (
 // STRATEGIC AUTOPILOT ENGINE — Executive verdict interpreter
 // ═══════════════════════════════════════════════════════════════════════════════
 
-interface ScenarioData {
+export interface ScenarioData {
   arr: number;
   survival: number;
   runway: number;
@@ -1115,7 +1115,7 @@ function TitaniumCommandBridge({ scenarioA, scenarioB }: TitaniumBridgeProps) {
 // STRATEGIC AUTOPILOT PANEL — AI executive verdict
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function StrategicAutopilotPanel({ scenarioA, scenarioB }: { scenarioA: ScenarioData; scenarioB: ScenarioData }) {
+export function StrategicAutopilotPanel({ scenarioA, scenarioB }: { scenarioA: ScenarioData; scenarioB: ScenarioData }) {
   const briefing = useMemo(() => getStrategicBriefing(scenarioA, scenarioB), [scenarioA, scenarioB]);
   const { divergenceMetrics: dm } = briefing;
 
@@ -1128,10 +1128,8 @@ function StrategicAutopilotPanel({ scenarioA, scenarioB }: { scenarioA: Scenario
 
   return (
     <div 
-      className="fixed z-50 w-72 max-h-[calc(100vh-280px)] overflow-y-auto"
+      className="w-full overflow-y-auto"
       style={{
-        left: '8px',
-        top: '280px',
         background: 'linear-gradient(180deg, rgba(10,15,25,0.98) 0%, rgba(5,8,15,0.99) 100%)',
         boxShadow: '0 8px 32px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.08)',
         border: '1px solid rgba(0,217,255,0.15)',
@@ -1373,9 +1371,6 @@ export default function GodModeCompare() {
         </div>
       </div>
 
-      {/* STRATEGIC AUTOPILOT PANEL */}
-      <StrategicAutopilotPanel scenarioA={scenarioA} scenarioB={scenarioB} />
-      
       {/* CRT SCAN LINES */}
       <div 
         className="absolute inset-0 pointer-events-none z-30 opacity-[0.03]"

@@ -41,6 +41,7 @@ import UnifiedHeader, { type ViewMode as HeaderViewMode } from '@/components/lay
 import { useUIStore } from "@/state/uiStore";
 import { SimulateOverlay } from '@/components/simulate';
 import { SaveSimulationModal, LoadSimulationPanel } from '@/components/simulations';
+import { StrategicAutopilotPanel, type ScenarioData } from '@/components/mountain/GodModeCompare';
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -1167,26 +1168,49 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
       {/* OPTION 1: UNIFIED 3-COLUMN LAYOUT */}
       <div className={`main-content mode-${headerViewMode}`}>
         
-        {/* LEFT COLUMN: Scenario + Sliders */}
+        {/* LEFT COLUMN: Scenario + Sliders OR Strategic Autopilot (Compare view) */}
         <aside className="left-column">
           <div className="sf-leftStack">
-            {/* Active Scenario - New 5-Scenario Selector */}
-            <div className="scenario-area">
-              <ActiveScenario 
-                currentScenario={activeScenarioType}
-                onScenarioChange={handleScenarioTypeChange}
-              />
-            </div>
+            {headerViewMode === 'compare' ? (
+              /* COMPARE VIEW: Strategic Autopilot replaces sliders */
+              <div className="compare-autopilot-container p-2">
+                <StrategicAutopilotPanel 
+                  scenarioA={{
+                    arr: engineResults?.base?.kpis?.arrCurrent?.value || 2100000,
+                    survival: engineResults?.base?.kpis?.runway?.value ? Math.min(100, (engineResults.base.kpis.runway.value / 36) * 100) : 78,
+                    runway: engineResults?.base?.kpis?.runway?.value || 16,
+                    score: engineResults?.base?.kpis?.qualityScore ? Math.round((engineResults.base.kpis.qualityScore as any).value * 100) : 72,
+                  }}
+                  scenarioB={{
+                    arr: engineResults?.upside?.kpis?.arrCurrent?.value || 5500000,
+                    survival: engineResults?.upside?.kpis?.runway?.value ? Math.min(100, (engineResults.upside.kpis.runway.value / 36) * 100) : 100,
+                    runway: engineResults?.upside?.kpis?.runway?.value || 36,
+                    score: engineResults?.upside?.kpis?.qualityScore ? Math.round((engineResults.upside.kpis.qualityScore as any).value * 100) : 90,
+                  }}
+                />
+              </div>
+            ) : (
+              /* OTHER VIEWS: Normal sliders */
+              <>
+                {/* Active Scenario - New 5-Scenario Selector */}
+                <div className="scenario-area">
+                  <ActiveScenario 
+                    currentScenario={activeScenarioType}
+                    onScenarioChange={handleScenarioTypeChange}
+                  />
+                </div>
 
-            {/* Spacer (fixed, CSS-controlled) */}
-            <div className="sf-leftSpacer" aria-hidden="true" />
+                {/* Spacer (fixed, CSS-controlled) */}
+                <div className="sf-leftSpacer" aria-hidden="true" />
 
-            {/* Control Panel - GOD-MODE Bezel (matches Scenario Intelligence) */}
-            <div className="sliders-container" data-tour="sliders">
-              <CommandDeckBezel>
-                <ControlDeck boxes={controlBoxes} onChange={handleLeverChange} />
-              </CommandDeckBezel>
-            </div>
+                {/* Control Panel - GOD-MODE Bezel (matches Scenario Intelligence) */}
+                <div className="sliders-container" data-tour="sliders">
+                  <CommandDeckBezel>
+                    <ControlDeck boxes={controlBoxes} onChange={handleLeverChange} />
+                  </CommandDeckBezel>
+                </div>
+              </>
+            )}
           </div>
         </aside>
 
