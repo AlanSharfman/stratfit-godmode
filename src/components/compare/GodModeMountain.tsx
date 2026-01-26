@@ -1,20 +1,13 @@
 import React, { useMemo, useRef, useEffect } from "react";
 import * as THREE from "three";
-import { Grid, Html, MeshTransmissionMaterial, Text } from "@react-three/drei";
+import { Grid, Html, Text } from "@react-three/drei";
 import { generateTerrainHeight } from "@/terrain/terrainGenerator";
 
-// --- CONFIGURATION: MATTE OBSIDIAN (Anti-Chrome) ---
+// --- CONFIGURATION: MATTE OBSIDIAN ---
 const CONFIG = {
-  height: 5.8,
-  baseColor: "#000000",      // PURE BLACK
-  roughness: 0.7,            // MATTE FINISH (Kills the chrome reflection)
-  transmission: 0.2,         // Very dense, barely see-through
-  thickness: 3.0,
-  ior: 1.1,                  // Low refraction = less warping
-  chromaticAberration: 0.01, 
   wireOpacity: 0.03,
   veinWidth: 0.014,
-  veinGlow: 10.0,            // Super bright veins to cut through the matte black
+  veinGlow: 10.0,
   gridColor: "#1e293b",
 };
 
@@ -105,15 +98,11 @@ export const GodModeMountain: React.FC<{ scenarioA: Scenario; scenarioB: Scenari
 
       {/* OBSIDIAN BASE */}
       <mesh geometry={geometry} receiveShadow>
-        <MeshTransmissionMaterial
-          roughness={CONFIG.roughness}
-          transmission={CONFIG.transmission}
-          thickness={CONFIG.thickness}
-          ior={CONFIG.ior}
-          chromaticAberration={CONFIG.chromaticAberration}
-          color={CONFIG.baseColor}
-          backside
-          anisotropicBlur={0.5} // High blur to stop sharp reflections
+        <meshStandardMaterial
+          color="#0d111a"
+          roughness={0.88}
+          metalness={0.02}
+          envMapIntensity={0.15}
         />
       </mesh>
 
