@@ -2,7 +2,7 @@
 // STRATFIT — Scenario Intelligence Platform
 // Two Views, One Engine, Same Truth
 
-import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import React, { useState, useCallback, useMemo, useEffect, useRef, lazy, Suspense } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { ScenarioId } from "./components/ScenarioSlidePanel";
 import KPIConsole from "./components/KPIConsole";
@@ -490,21 +490,21 @@ export default function App() {
   // TEST ROUTES — Isolated component testing
   // Access: http://localhost:5173/test/dormant
   if (typeof window !== "undefined" && window.location.pathname === "/test/dormant") {
-    const DormantTest = React.lazy(() => import("@/pages/DormantTest"));
+    const DormantTest = lazy(() => import("@/pages/DormantTest"));
     return (
-      <React.Suspense fallback={<div className="w-screen h-screen bg-black flex items-center justify-center text-white">Loading...</div>}>
+      <Suspense fallback={<div className="w-screen h-screen bg-black flex items-center justify-center text-white">Loading...</div>}>
         <DormantTest />
-      </React.Suspense>
+      </Suspense>
     );
   }
 
   // Access: http://localhost:5173/test/mountain
   if (typeof window !== "undefined" && window.location.pathname === "/test/mountain") {
-    const MountainTest = React.lazy(() => import("@/pages/MountainTestPage"));
+    const MountainTest = lazy(() => import("@/pages/MountainTestPage"));
     return (
-      <React.Suspense fallback={<div className="w-screen h-screen bg-black flex items-center justify-center text-white">Loading...</div>}>
+      <Suspense fallback={<div className="w-screen h-screen bg-black flex items-center justify-center text-white">Loading...</div>}>
         <MountainTest />
-      </React.Suspense>
+      </Suspense>
     );
   }
 
