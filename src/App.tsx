@@ -2,7 +2,7 @@
 // STRATFIT — Scenario Intelligence Platform
 // Two Views, One Engine, Same Truth
 
-import React, { useState, useCallback, useMemo, useEffect, useRef, lazy, Suspense } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { ScenarioId } from "./components/ScenarioSlidePanel";
 import KPIConsole from "./components/KPIConsole";
@@ -42,6 +42,7 @@ import { useUIStore } from "@/state/uiStore";
 import { SimulateOverlay } from '@/components/simulate';
 import { SaveSimulationModal, LoadSimulationPanel } from '@/components/simulations';
 import { StrategicAutopilotPanel, type ScenarioData } from '@/components/mountain/GodModeCompare';
+import { ComparePage } from '@/components/compare';
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -487,25 +488,9 @@ export default function App() {
     return <ScenarioMemoPage />;
   }
 
-  // TEST ROUTES — Isolated component testing
-  // Access: http://localhost:5173/test/dormant
-  if (typeof window !== "undefined" && window.location.pathname === "/test/dormant") {
-    const DormantTest = lazy(() => import("@/pages/DormantTest"));
-    return (
-      <Suspense fallback={<div className="w-screen h-screen bg-black flex items-center justify-center text-white">Loading...</div>}>
-        <DormantTest />
-      </Suspense>
-    );
-  }
-
-  // Access: http://localhost:5173/test/mountain
-  if (typeof window !== "undefined" && window.location.pathname === "/test/mountain") {
-    const MountainTest = lazy(() => import("@/pages/MountainTestPage"));
-    return (
-      <Suspense fallback={<div className="w-screen h-screen bg-black flex items-center justify-center text-white">Loading...</div>}>
-        <MountainTest />
-      </Suspense>
-    );
+  // Compare route — Production-ready Risk Topography Instrument
+  if (typeof window !== "undefined" && window.location.pathname === "/compare") {
+    return <ComparePage />;
   }
 
 

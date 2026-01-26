@@ -1,756 +1,481 @@
-/**
- * 🚨 STRATFIT CANONICAL MOUNTAIN — DO NOT MODIFY 🚨
- *
- * This file defines the mountain’s:
- * - Vertical amplitude
- * - Noise fields
- * - Silhouette
- * - Peak behaviour
- *
- * ❌ NO height clamping
- * ❌ NO normalisation
- * ❌ NO container-based scaling
- * ❌ NO UI-driven constraints
- *
- * Any layout or KPI changes MUST happen outside this system.
- */
-
 // src/components/mountain/ScenarioMountain.tsx
-// STRATFIT — Stable Mountain with Atmospheric Haze
+// STRATFIT — Photorealistic Alpine Mountain Visualization
+// Cinematic natural landscape with snow-capped peaks, mist, forests, and water
 
-import React, { useMemo, useRef, useLayoutEffect, Suspense, useState, useEffect } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, PerspectiveCamera, Grid } from "@react-three/drei";
-import { NeuralBackground } from "@/components/visuals/NeuralBackground";
+import React, { useMemo, useRef, Suspense } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { 
+  OrbitControls, 
+  PerspectiveCamera, 
+  Environment,
+  Sky,
+} from "@react-three/drei";
+import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
 import * as THREE from "three";
 import { useShallow } from "zustand/react/shallow";
 import { buildPeakModel, LeverId } from "@/logic/mountainPeakModel";
-import { ScenarioId, useScenarioStore } from "@/state/scenarioStore";
-import { useUIStore } from "@/state/uiStore";
+import { ScenarioId, SCENARIO_COLORS, useScenarioStore } from "@/state/scenarioStore";
 
 // ============================================================================
-// CONSTANTS — STABLE VERSION
+// CONSTANTS
 // ============================================================================
 
-const GRID_W = 120;
-const GRID_D = 60;
-const MESH_W = 50;
-const MESH_D = 25;
-const ISLAND_RADIUS = 22;
-
-const BASE_SCALE = 4.5;      // Increased: data-driven shape dominates
-const PEAK_SCALE = 3.5;      // Enhanced: taller, more dramatic peaks
-const MASSIF_SCALE = 5.0;    // Enhanced: more variation in backdrop
-const RIDGE_SHARPNESS = 1.4;
-const CLIFF_BOOST = 1.15;
-
-const SOFT_CEILING = 9.0;    // RESTORED: original ceiling (no table-top)
-const CEILING_START = 7.0;   // RESTORED: original transition
+const TERRAIN_SIZE = 100;
+const TERRAIN_SEGMENTS = 200;
 
 // ============================================================================
-// DETERMINISTIC NOISE
+// NOISE FUNCTIONS — Layered for realistic terrain
 // ============================================================================
 
-function noise2(x: number, z: number): number {
-  const n1 = Math.sin(x * 0.7 + z * 0.35) * 0.2;
-  const n2 = Math.cos(x * 1.2 - z * 0.6) * 0.15;
-  const n3 = Math.sin(x * 2.1 + z * 1.8) * 0.08;
-  return n1 + n2 + n3;
+function hash(n: number): number {
+  return ((Math.sin(n) * 43758.5453123) % 1 + 1) % 1;
 }
 
-function ridgeNoise(x: number, z: number): number {
-  const base = Math.sin(x * 0.5) * Math.cos(z * 0.3);
-  const detail = Math.abs(Math.sin(x * 2.5 + z * 1.5)) * 0.35;
-  return base * 0.15 + detail * 0.2;
+function noise2D(x: number, y: number): number {
+  const i = Math.floor(x);
+  const j = Math.floor(y);
+  const u = x - i;
+  const v = y - j;
+  
+  const a = hash(i + j * 57);
+  const b = hash(i + 1 + j * 57);
+  const c = hash(i + (j + 1) * 57);
+  const d = hash(i + 1 + (j + 1) * 57);
+  
+  const smoothU = u * u * (3 - 2 * u);
+  const smoothV = v * v * (3 - 2 * v);
+  
+  return a * (1 - smoothU) * (1 - smoothV) + 
+         b * smoothU * (1 - smoothV) + 
+         c * (1 - smoothU) * smoothV + 
+         d * smoothU * smoothV;
 }
 
-function gaussian1(x: number, c: number, s: number): number {
-  const t = (x - c) / Math.max(0.1, s);
-  return Math.exp(-0.5 * t * t);
-}
-
-function gaussian2(dx: number, dz: number, sx: number, sz: number): number {
-  return Math.exp(-0.5 * ((dx * dx) / (sx * sx) + (dz * dz) / (sz * sz)));
-}
-
-const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-
-function applySoftCeiling(h: number): number {
-  if (h <= CEILING_START) return h;
-  const excess = h - CEILING_START;
-  const range = SOFT_CEILING - CEILING_START;
-  return CEILING_START + range * (1 - Math.exp(-excess / range));
-}
-
-// ============================================================================
-// PALETTE
-// ============================================================================
-
-// SCENARIO-AWARE COLOR PALETTES
-// Each scenario has its own identity color while maintaining brightness
-const SCENARIO_PALETTE_COLORS: Record<ScenarioId, { idle: string; active: string }> = {
-  base: { 
-    idle: '#22d3ee',   // Luminous Teal
-    active: '#00D9FF'  // Electric Cyan
-  },
-  upside: { 
-    idle: '#34d399',   // Emerald 400
-    active: '#00ff9d'  // Neon Green
-  },
-  downside: { 
-    idle: '#fbbf24',   // Amber 400
-    active: '#fcd34d'  // Bright Amber
-  },
-  stress: { 
-    idle: '#f87171',   // Red 400
-    active: '#ff4444'  // Bright Red
+function fbm(x: number, y: number, octaves: number = 6): number {
+  let value = 0;
+  let amplitude = 0.5;
+  let frequency = 1;
+  
+  for (let i = 0; i < octaves; i++) {
+    value += amplitude * noise2D(x * frequency, y * frequency);
+    amplitude *= 0.5;
+    frequency *= 2;
   }
-};
-
-function paletteForScenario(s: ScenarioId) {
-  // Get scenario-specific primary color
-  const scenarioColor = SCENARIO_PALETTE_COLORS[s] || SCENARIO_PALETTE_COLORS.base;
-  const primary = new THREE.Color(scenarioColor.idle);
-
-  // Create a darkened version for shadows
-  const shadow = primary.clone().multiplyScalar(0.3);
-
-  return {
-    sky: new THREE.Color("#071318"),
-    low: shadow,
-    mid: primary.clone().lerp(new THREE.Color("#1a2a35"), 0.3),
-    high: new THREE.Color("#e0f0f5").lerp(primary, 0.25),
-    peak: new THREE.Color("#f8fcff"),
-  };
+  
+  return value;
 }
 
-function heightColor(h01: number, pal: ReturnType<typeof paletteForScenario>, illumination: number = 0) {
-  const t = clamp01(h01);
-  let c: THREE.Color;
-
-  if (t < 0.15) c = pal.sky.clone().lerp(pal.low, t / 0.15);
-  else if (t < 0.45) c = pal.low.clone().lerp(pal.mid, (t - 0.15) / 0.3);
-  else if (t < 0.75) c = pal.mid.clone().lerp(pal.high, (t - 0.45) / 0.3);
-  else c = pal.high.clone().lerp(pal.peak, (t - 0.75) / 0.25);
-
-  if (illumination > 0) {
-    c.lerp(new THREE.Color("#ffffff"), illumination * 0.3);
-  }
-
-  return c;
+function ridgeNoise(x: number, y: number): number {
+  return 1 - Math.abs(noise2D(x, y) * 2 - 1);
 }
 
 // ============================================================================
-// MASSIF PEAKS — STABLE
-// ============================================================================
-
-interface MassifPeak {
-  x: number;
-  z: number;
-  amplitude: number;
-  sigmaX: number;
-  sigmaZ: number;
-}
-
-const MASSIF_PEAKS: MassifPeak[] = [
-  { x: 0, z: -2, amplitude: 1.5, sigmaX: 2.8, sigmaZ: 2.4 },
-  { x: -10, z: -1, amplitude: 1.2, sigmaX: 3.0, sigmaZ: 2.6 },
-  { x: 11, z: -1.5, amplitude: 1.1, sigmaX: 2.8, sigmaZ: 2.5 },
-  { x: -3, z: 3, amplitude: 0.85, sigmaX: 3.5, sigmaZ: 3.0 },
-  { x: -16, z: 2, amplitude: 0.6, sigmaX: 4.0, sigmaZ: 3.5 },
-  { x: 17, z: 1, amplitude: 0.55, sigmaX: 3.8, sigmaZ: 3.2 },
-];
-
-// ============================================================================
-// TERRAIN COMPONENT — STABLE, NO ERRATIC MOTION
+// MOUNTAIN TERRAIN — Photorealistic geometry
 // ============================================================================
 
 interface TerrainProps {
   dataPoints: number[];
-  activeKpiIndex: number | null;
-  activeLeverId: LeverId | null;
-  leverIntensity01: number;
   scenario: ScenarioId;
-  isDragging?: boolean; // For dynamic brightness
-  neuralPulse?: boolean; // NEURAL BOOT: Flash bright cyan when KPI boot completes
 }
 
-const Terrain: React.FC<TerrainProps> = ({
-  dataPoints,
-  activeKpiIndex,
-  activeLeverId,
-  leverIntensity01,
-  scenario,
-  isDragging = false,
-  neuralPulse = false,
-}) => {
-  const groupRef = useRef<THREE.Group>(null);
-  const meshFillRef = useRef<THREE.Mesh>(null);
-  const meshWireRef = useRef<THREE.Mesh>(null);
-  const targetHeightsRef = useRef<Float32Array | null>(null);
-  const currentHeightsRef = useRef<Float32Array | null>(null);
-  const targetColorsRef = useRef<Float32Array | null>(null);
-  const currentColorsRef = useRef<Float32Array | null>(null);
-  const maxHeightRef = useRef(1);
-
-  const pal = useMemo(() => paletteForScenario(scenario), [scenario]);
-
-  // Build peak model - no caching to ensure immediate response
-  const peakModel = buildPeakModel({
-    kpiCount: 7,
-    activeKpiIndex,
-    activeLeverId,
-    leverIntensity01: clamp01(leverIntensity01),
-  });
-
-  const geometry = useMemo(() => {
-    const geo = new THREE.PlaneGeometry(MESH_W, MESH_D, GRID_W, GRID_D);
-    const count = geo.attributes.position.count;
-    geo.setAttribute("color", new THREE.BufferAttribute(new Float32Array(count * 3), 3));
-    return geo;
-  }, []);
-
-  // Calculate target heights
-  useLayoutEffect(() => {
-    if (!meshFillRef.current || !meshWireRef.current) return;
-
-    const geo = meshFillRef.current.geometry as THREE.PlaneGeometry;
-    const pos = geo.attributes.position as THREE.BufferAttribute;
-    const count = pos.count;
-    const wHalf = MESH_W / 2;
-
-    const dp = dataPoints?.length === 7 ? dataPoints : [0.5, 0.5, 0.6, 0.4, 0.5, 0.45, 0.35];
-
-    if (!targetHeightsRef.current || targetHeightsRef.current.length !== count) {
-      targetHeightsRef.current = new Float32Array(count);
-      currentHeightsRef.current = new Float32Array(count);
-      targetColorsRef.current = new Float32Array(count * 3);
-      currentColorsRef.current = new Float32Array(count * 3);
-    }
-
-    const heights = targetHeightsRef.current;
-    const targetColors = targetColorsRef.current!;
-    const illuminations = new Float32Array(count);
-    let maxH = 0.01;
-
-    for (let i = 0; i < count; i++) {
-      const x = pos.getX(i);
-      const z = pos.getY(i);
-      const kpiX = ((x + wHalf) / MESH_W) * 6;
-
-      let ridge = 0;
-      let illumination = 0;
-
-      for (let idx = 0; idx < 7; idx++) {
-        const v = clamp01(dp[idx]);
-        const g = gaussian1(kpiX, idx, 0.48);
-        ridge += Math.pow(v, RIDGE_SHARPNESS) * g;
-
-        if (activeKpiIndex === idx) {
-          illumination = Math.max(illumination, g * 0.6);
-        }
-      }
-
-      let h = ridge * BASE_SCALE;
-
-      for (const m of MASSIF_PEAKS) {
-        const g = gaussian2(x - m.x, z - m.z, m.sigmaX, m.sigmaZ);
-        h += g * m.amplitude * MASSIF_SCALE;
-      }
-
-      for (const p of peakModel.peaks) {
-        const idx = clamp01(p.index / 6);
-        const peakX = lerp(-wHalf, wHalf, idx);
-        h += gaussian2(x - peakX, z + 1.5, 0.8 + p.sigma * 0.8, 0.7 + p.sigma * 0.8) * p.amplitude * PEAK_SCALE;
-      }
-
-      const rugged = ridgeNoise(x, z);
-      h += rugged * (0.3 + h * 0.08);
-
-      const dist = Math.sqrt(x * x + z * z * 1.4);
-      const mask = Math.max(0, 1 - Math.pow(dist / ISLAND_RADIUS, 2.0));
-
-      const n = noise2(x, z) * 0.2;
-
-      const cliff = Math.pow(mask, 0.45) * CLIFF_BOOST;
-      let finalH = Math.max(0, (h + n) * mask * cliff);
-      finalH = applySoftCeiling(finalH);
-
-      heights[i] = finalH;
-      illuminations[i] = illumination;
-      if (finalH > maxH) maxH = finalH;
-    }
-
-    maxHeightRef.current = maxH;
-
-    for (let i = 0; i < count; i++) {
-      const h = heights[i];
-      const h01 = clamp01(h / (maxH * 0.82));
-      const c = heightColor(h01, pal, illuminations[i]);
-      targetColors[i * 3] = c.r;
-      targetColors[i * 3 + 1] = c.g;
-      targetColors[i * 3 + 2] = c.b;
-    }
-  }, [dataPoints, peakModel, pal, activeKpiIndex]);
-
-  // Smooth interpolation + BREATHING ANIMATION
-  const breathTimeRef = useRef(0);
+function MountainTerrain({ dataPoints, scenario }: TerrainProps) {
+  const meshRef = useRef<THREE.Mesh>(null);
   
-  useFrame((_, delta) => {
-    if (!meshFillRef.current || !meshWireRef.current) return;
-    if (!targetHeightsRef.current || !currentHeightsRef.current) return;
-    if (!targetColorsRef.current || !currentColorsRef.current) return;
-
-    // Advance breath time
-    breathTimeRef.current += delta;
-    const breathTime = breathTimeRef.current;
+  const geometry = useMemo(() => {
+    const geo = new THREE.PlaneGeometry(
+      TERRAIN_SIZE, 
+      TERRAIN_SIZE, 
+      TERRAIN_SEGMENTS, 
+      TERRAIN_SEGMENTS
+    );
     
-    // Breathing parameters - slow, organic heave
-    const breathCycle = Math.sin(breathTime * 0.4) * 0.5 + 0.5; // 0-1 oscillation, ~2.5s cycle
-    const breathIntensity = 0.12; // How much the mountain heaves
-    const breathWave = Math.sin(breathTime * 0.25); // Secondary slower wave
-
-    const geo = meshFillRef.current.geometry as THREE.PlaneGeometry;
-    const pos = geo.attributes.position as THREE.BufferAttribute;
-    const col = geo.attributes.color as THREE.BufferAttribute;
-    const count = pos.count;
-
-    const targets = targetHeightsRef.current;
-    const currents = currentHeightsRef.current;
-    const targetCols = targetColorsRef.current;
-    const currentCols = currentColorsRef.current;
-
-    const smoothing = 0.7;
-
-    for (let i = 0; i < count; i++) {
-      const baseTarget = targets[i];
-      
-      // Apply breathing offset based on height (taller peaks breathe more)
-      const heightFactor = baseTarget / Math.max(maxHeightRef.current, 1);
-      const breathOffset = breathIntensity * heightFactor * (breathCycle + breathWave * 0.3);
-      const breathingTarget = baseTarget + breathOffset;
-      
-      const diff = breathingTarget - currents[i];
-      if (Math.abs(diff) > 0.0001) {
-        currents[i] += diff * smoothing;
-      } else {
-        currents[i] = breathingTarget;
-      }
-      pos.setZ(i, currents[i]);
-
-      for (let c = 0; c < 3; c++) {
-        const ci = i * 3 + c;
-        const colDiff = targetCols[ci] - currentCols[ci];
-        if (Math.abs(colDiff) > 0.0003) {
-          currentCols[ci] += colDiff * smoothing;
-        } else {
-          currentCols[ci] = targetCols[ci];
-        }
-      }
-      col.setXYZ(i, currentCols[i * 3], currentCols[i * 3 + 1], currentCols[i * 3 + 2]);
-    }
-
-    // Always update for continuous breathing
-      pos.needsUpdate = true;
-      col.needsUpdate = true;
-      geo.computeVertexNormals();
-
-      const wireGeo = meshWireRef.current.geometry as THREE.PlaneGeometry;
-      wireGeo.attributes.position.needsUpdate = true;
-      wireGeo.computeVertexNormals();
-  });
-
-  return (
-    <group ref={groupRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} scale={[0.9, 0.9, 0.9]}>
-      {/* FILL — Subtle depth layer, brighter when engaged */}
-      <mesh ref={meshFillRef} geometry={geometry}>
-        <meshStandardMaterial
-          vertexColors
-          transparent
-          opacity={isDragging ? 0.25 : 0.12}
-          roughness={0.2}
-          metalness={0.8}
-          side={THREE.DoubleSide}
-          emissive={pal.mid}
-          emissiveIntensity={isDragging ? 0.15 : 0.06}
-          depthWrite={false}
-          toneMapped={false}
-        />
-      </mesh>
-      {/* WIREFRAME — Luminous Teal at rest, Electric Cyan when active */}
-      {/* NEURAL BOOT: Bright pulse when neuralPulse is true */}
-      <mesh ref={meshWireRef} geometry={geometry}>
-        <meshBasicMaterial 
-          vertexColors={!neuralPulse} // Override colors during pulse
-          color={neuralPulse ? "#00ffff" : undefined}
-          wireframe 
-          transparent 
-          // VISIBILITY BOOST: 0.6 idle, 1.0 active, 1.0 during neural pulse
-          opacity={neuralPulse ? 1.0 : isDragging ? 1.0 : 0.6}
-          toneMapped={false}
-        />
-      </mesh>
-    </group>
-  );
-};
-
-// ============================================================================
-// ATMOSPHERIC HAZE
-// ============================================================================
-
-interface AtmosphericHazeProps {
-  riskLevel: number;
-  viewMode: "data" | "terrain" | "operator" | "investor";
-  scenario: ScenarioId;
-  isSeismicActive?: boolean;
-}
-
-function AtmosphericHaze({ riskLevel, viewMode, scenario, isSeismicActive = false }: AtmosphericHazeProps) {
-  const riskFactor = clamp01(riskLevel / 100);
-  const viewFactor = (viewMode === "investor" || viewMode === "data") ? 0.5 : 0.7;
-  
-  const scenarioTone = scenario === "stress" ? 1.1 : 
-                       scenario === "downside" ? 1.0 : 
-                       scenario === "upside" ? 0.7 : 0.85;
-  
-  // BRIGHTENED: Reduced base opacity significantly
-  const baseOpacity = 0.08 + (riskFactor * 0.05 * scenarioTone);
-  const finalOpacity = baseOpacity * viewFactor;
-  
-  // Altitude haze opacity (above mountain) - reduced
-  const altitudeOpacity = 0.04 * viewFactor;
-  
-  // SEISMIC: Amber warning overlay when risk is being actively manipulated
-  const seismicIntensity = isSeismicActive ? Math.min(1, riskFactor * 1.5) : 0;
-
-  return (
-    <div className="atmospheric-haze">
-      {/* SEISMIC OVERLAY - Amber warning pulse when risk sliders active */}
-      {isSeismicActive && (
-        <div 
-          className="haze-layer haze-seismic"
-          style={{ 
-            opacity: seismicIntensity * 0.4,
-            animation: 'seismic-pulse 150ms ease-in-out infinite'
-          }}
-        />
-      )}
-      
-      {/* ALTITUDE HAZE - Above mountain (new) */}
-      <div 
-        className="haze-layer haze-altitude"
-        style={{ opacity: altitudeOpacity }}
-      />
-      {/* PRESSURE BAND - Subtle horizontal band above peak */}
-      <div 
-        className="haze-layer haze-pressure-band"
-        style={{ opacity: altitudeOpacity * 0.6 }}
-      />
-      {/* MINIMAL bottom haze layers - brightened */}
-      <div 
-        className="haze-layer haze-deep"
-        style={{ opacity: finalOpacity * 0.2 }}
-      />
-      <div 
-        className="haze-layer haze-mid"
-        style={{ opacity: finalOpacity * 0.15 }}
-      />
-
-      <style>{`
-        .atmospheric-haze {
-          position: absolute;
-          inset: 0;
-          pointer-events: none;
-          z-index: 0;
-          overflow: hidden;
-        }
-
-        .haze-layer {
-          position: absolute;
-          inset: 0;
-        }
-
-        /* ALTITUDE HAZE - lighter vertical gradient above mountain */
-        .haze-altitude {
-          background: linear-gradient(
-            to bottom,
-            rgba(20, 35, 55, 0.15) 0%,
-            rgba(18, 30, 48, 0.08) 20%,
-            transparent 40%
-          );
-        }
-
-        /* PRESSURE BAND - very subtle horizontal band */
-        .haze-pressure-band {
-          background: linear-gradient(
-            to bottom,
-            transparent 20%,
-            rgba(30, 50, 70, 0.06) 28%,
-            transparent 38%
-          );
-          filter: blur(6px);
-        }
-
-        /* BRIGHTENED: Bottom haze layers - much lighter */
-        .haze-deep {
-          background: radial-gradient(
-            ellipse 120% 60% at 50% 75%,
-            rgba(15, 30, 50, 0.2) 0%,
-            rgba(12, 25, 40, 0.08) 40%,
-            transparent 60%
-          );
-        }
-
-        .haze-mid {
-          background: radial-gradient(
-            ellipse 100% 50% at 45% 70%,
-            rgba(20, 38, 58, 0.12) 0%,
-            rgba(15, 30, 48, 0.05) 35%,
-            transparent 50%
-          );
-        }
-        
-        /* SEISMIC OVERLAY - Amber warning when risk active */
-        .haze-seismic {
-          background: radial-gradient(
-            ellipse 100% 80% at 50% 60%,
-            rgba(245, 158, 11, 0.25) 0%,
-            rgba(245, 158, 11, 0.1) 40%,
-            transparent 70%
-          );
-          mix-blend-mode: screen;
-        }
-        
-        @keyframes seismic-pulse {
-          0%, 100% { transform: translate(0, 0); }
-          25% { transform: translate(-2px, 1px); }
-          50% { transform: translate(1px, -1px); }
-          75% { transform: translate(2px, 1px); }
-        }
-      `}</style>
-    </div>
-  );
-}
-
-// ============================================================================
-// GRID HELPER
-// ============================================================================
-
-// ============================================================================
-// GHOST TERRAIN — Static Baseline (Doesn't react to sliders)
-// Shows "Where you started" vs "Where you're going"
-// Only visible after user starts interacting
-// ============================================================================
-
-function GhostTerrain({ isVisible }: { isVisible: boolean }) {
-  const geometry = useMemo(() => {
-    const geo = new THREE.PlaneGeometry(MESH_W, MESH_D, GRID_W / 2, GRID_D / 2);
     const pos = geo.attributes.position;
-    const count = pos.count;
-    const wHalf = MESH_W / 2;
+    const colors = new Float32Array(pos.count * 3);
     
-    // Static baseline datapoints (neutral values)
-    const baselineDP = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5];
+    // Data influence (normalized 0-1)
+    const dp = dataPoints?.length === 7 ? dataPoints : [0.5, 0.5, 0.6, 0.4, 0.5, 0.45, 0.35];
+    const avgData = dp.reduce((a, b) => a + b, 0) / dp.length;
+    const heightMultiplier = 0.85 + avgData * 0.3;
     
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i);
       const z = pos.getY(i);
-      const kpiX = ((x + wHalf) / MESH_W) * 6;
       
-      let ridge = 0;
-      for (let idx = 0; idx < 7; idx++) {
-        const v = baselineDP[idx];
-        const g = gaussian1(kpiX, idx, 0.48);
-        ridge += Math.pow(v, RIDGE_SHARPNESS) * g;
+      // Normalized coordinates
+      const nx = x / TERRAIN_SIZE;
+      const nz = z / TERRAIN_SIZE;
+      
+      // Distance from center for island falloff
+      const dist = Math.sqrt(nx * nx + nz * nz) * 2;
+      const falloff = Math.max(0, 1 - Math.pow(dist, 1.8));
+      
+      // Main peak (central, tall)
+      const mainPeakDist = Math.sqrt(nx * nx + (nz + 0.08) * (nz + 0.08));
+      const mainPeak = Math.exp(-mainPeakDist * mainPeakDist * 6) * 38;
+      
+      // Secondary peak (right, shorter)
+      const peak2X = nx - 0.22;
+      const peak2Z = nz + 0.02;
+      const peak2Dist = Math.sqrt(peak2X * peak2X + peak2Z * peak2Z);
+      const peak2 = Math.exp(-peak2Dist * peak2Dist * 10) * 24;
+      
+      // Third peak (left shoulder)
+      const peak3X = nx + 0.18;
+      const peak3Z = nz - 0.08;
+      const peak3Dist = Math.sqrt(peak3X * peak3X + peak3Z * peak3Z);
+      const peak3 = Math.exp(-peak3Dist * peak3Dist * 14) * 16;
+      
+      // Ridge noise for rocky detail
+      const ridge = ridgeNoise(nx * 4 + 0.5, nz * 5) * 6 * falloff;
+      
+      // Layered noise for natural terrain variation
+      const largeNoise = fbm(nx * 2.5 + 10, nz * 2.5 + 10, 4) * 10;
+      const mediumNoise = fbm(nx * 6 + 20, nz * 6 + 20, 3) * 4;
+      const fineNoise = fbm(nx * 15 + 30, nz * 15 + 30, 2) * 1.2;
+      
+      // Combine all height factors
+      let height = mainPeak + peak2 + peak3 + ridge;
+      height += (largeNoise + mediumNoise + fineNoise) * falloff;
+      
+      // Apply data-driven multiplier
+      height *= heightMultiplier;
+      
+      // Apply falloff
+      height *= falloff;
+      
+      // Water level cutoff
+      const waterLevel = -3;
+      if (height < waterLevel) height = waterLevel;
+      
+      pos.setZ(i, height);
+      
+      // Calculate vertex colors based on height
+      const normalizedHeight = Math.max(0, height) / 38;
+      
+      let r, g, b;
+      
+      if (normalizedHeight > 0.65) {
+        // Snow caps - bright white/cream with pinkish highlight (sunlit snow)
+        const snowAmount = Math.min(1, (normalizedHeight - 0.65) / 0.35);
+        r = 0.92 + snowAmount * 0.08;
+        g = 0.90 + snowAmount * 0.08;
+        b = 0.95 + snowAmount * 0.05;
+      } else if (normalizedHeight > 0.35) {
+        // Rocky terrain - blue-grey like in the reference
+        const rockBlend = (normalizedHeight - 0.35) / 0.3;
+        r = 0.35 + rockBlend * 0.25;
+        g = 0.40 + rockBlend * 0.22;
+        b = 0.50 + rockBlend * 0.18;
+      } else if (normalizedHeight > 0.08) {
+        // Forest zone - deep green
+        const forestBlend = (normalizedHeight - 0.08) / 0.27;
+        r = 0.08 + forestBlend * 0.12;
+        g = 0.25 + forestBlend * 0.18;
+        b = 0.12 + forestBlend * 0.15;
+      } else {
+        // Low ground / shoreline - darker green
+        r = 0.06;
+        g = 0.18;
+        b = 0.10;
       }
       
-      let h = ridge * BASE_SCALE * 0.6; // Slightly lower than main
-      
-      // Add basic massif shape
-      for (const m of MASSIF_PEAKS) {
-        const g = gaussian2(x - m.x, z - m.z, m.sigmaX * 1.2, m.sigmaZ * 1.2);
-        h += g * m.amplitude * MASSIF_SCALE * 0.5;
-      }
-      
-      // Island mask
-      const dist = Math.sqrt(x * x + z * z * 1.4);
-      const mask = Math.max(0, 1 - Math.pow(dist / ISLAND_RADIUS, 2.0));
-      h = Math.max(0, h * mask * 0.8);
-      
-      pos.setZ(i, h);
+      colors[i * 3] = r;
+      colors[i * 3 + 1] = g;
+      colors[i * 3 + 2] = b;
     }
     
+    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     geo.computeVertexNormals();
+    
     return geo;
-  }, []);
-  
-  // TACTICAL GREY: Ghost is a faint blueprint schematic
-  const targetOpacity = isVisible ? 0.08 : 0;  // 8% wireframe — subtle reference
-  const fillOpacity = isVisible ? 0.02 : 0;    // 2% fill — barely there
+  }, [dataPoints]);
   
   return (
-    <group 
-      rotation={[-Math.PI / 2, 0, 0]} 
-      position={[0, -2.15, 0]}
-      scale={[0.995, 0.995, 0.995]} // Slightly smaller to avoid Z-fighting
+    <mesh 
+      ref={meshRef} 
+      geometry={geometry}
+      rotation={[-Math.PI / 2, 0, 0]}
+      position={[0, -8, -5]}
+      receiveShadow
+      castShadow
     >
-      {/* Ghost Wireframe — Tactical Silver baseline (blueprint look) */}
-      <mesh geometry={geometry}>
-        <meshBasicMaterial 
-          color="#cbd5e1"       // Silver/Light Slate — neutral reference
-          wireframe 
-          transparent 
-          opacity={targetOpacity}
-          side={THREE.DoubleSide}
-          depthWrite={false}
-          toneMapped={false}
-        />
-      </mesh>
-      {/* Subtle fill for depth */}
-      <mesh geometry={geometry}>
-        <meshBasicMaterial 
-          color="#94a3b8"       // Slate Grey — neutral fill
-          transparent 
-          opacity={fillOpacity}
-          side={THREE.DoubleSide}
-          depthWrite={false}
-          toneMapped={false}
-        />
-      </mesh>
-    </group>
+      <meshStandardMaterial
+        vertexColors
+        roughness={0.82}
+        metalness={0.02}
+        flatShading={false}
+        side={THREE.DoubleSide}
+      />
+    </mesh>
   );
 }
 
 // ============================================================================
-// DIGITAL HORIZON — Infinite Floor Grid + Data Dust (Scenario-Aware)
+// WATER PLANE — Reflective lake surface
 // ============================================================================
 
-// Grid colors that complement each scenario
-const SCENARIO_GRID_COLORS: Record<ScenarioId, string> = {
-  base: "#38bdf8",     // Sky Blue
-  upside: "#34d399",   // Emerald
-  downside: "#fbbf24", // Amber
-  stress: "#f87171",   // Red
-};
+function WaterSurface() {
+  const waterRef = useRef<THREE.Mesh>(null);
+  
+  useFrame((state) => {
+    if (waterRef.current) {
+      // Subtle shimmer effect
+      const material = waterRef.current.material as THREE.MeshStandardMaterial;
+      const time = state.clock.elapsedTime;
+      material.envMapIntensity = 1.2 + Math.sin(time * 0.3) * 0.1;
+    }
+  });
+  
+  return (
+    <mesh 
+      ref={waterRef}
+      rotation={[-Math.PI / 2, 0, 0]} 
+      position={[0, -11, 30]}
+      receiveShadow
+    >
+      <planeGeometry args={[150, 50, 32, 32]} />
+      <meshStandardMaterial
+        color="#3a7ca5"
+        roughness={0.05}
+        metalness={0.85}
+        transparent
+        opacity={0.92}
+        envMapIntensity={1.3}
+      />
+    </mesh>
+  );
+}
 
-function DigitalHorizon({ scenarioId }: { scenarioId: ScenarioId }) {
-  const gridColor = SCENARIO_GRID_COLORS[scenarioId] || SCENARIO_GRID_COLORS.base;
-  const lightColor = SCENARIO_PALETTE_COLORS[scenarioId]?.idle || "#22d3ee";
+// ============================================================================
+// FOREST — Instanced pine trees
+// ============================================================================
+
+function Forest() {
+  const count = 600;
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  
+  useMemo(() => {
+    if (!meshRef.current) return;
+    
+    const tempMatrix = new THREE.Matrix4();
+    const tempColor = new THREE.Color();
+    
+    for (let i = 0; i < count; i++) {
+      // Distribute trees in a band
+      const angle = (Math.random() - 0.5) * Math.PI * 1.2;
+      const radius = 28 + Math.random() * 18;
+      const x = Math.sin(angle) * radius + (Math.random() - 0.5) * 15;
+      const z = 18 + Math.random() * 22;
+      const y = -8.5 + Math.random() * 0.8;
+      
+      // Random scale and rotation
+      const scale = 0.6 + Math.random() * 1.0;
+      const rotY = Math.random() * Math.PI * 2;
+      
+      tempMatrix.identity();
+      tempMatrix.makeRotationY(rotY);
+      tempMatrix.scale(new THREE.Vector3(scale, scale * (1.2 + Math.random() * 0.4), scale));
+      tempMatrix.setPosition(x, y, z);
+      
+      meshRef.current.setMatrixAt(i, tempMatrix);
+      
+      // Vary tree colors - different shades of deep green
+      const greenBase = 0.12 + Math.random() * 0.15;
+      tempColor.setRGB(0.03 + Math.random() * 0.04, greenBase, 0.06 + Math.random() * 0.04);
+      meshRef.current.setColorAt(i, tempColor);
+    }
+    
+    meshRef.current.instanceMatrix.needsUpdate = true;
+    if (meshRef.current.instanceColor) {
+      meshRef.current.instanceColor.needsUpdate = true;
+    }
+  }, []);
+  
+  // Simple cone geometry for trees
+  const treeGeo = useMemo(() => {
+    const geo = new THREE.ConeGeometry(0.7, 2.8, 6);
+    geo.translate(0, 1.4, 0);
+    return geo;
+  }, []);
+  
+  return (
+    <instancedMesh 
+      ref={meshRef} 
+      args={[treeGeo, undefined, count]}
+      castShadow
+      receiveShadow
+    >
+      <meshStandardMaterial
+        roughness={0.85}
+        metalness={0}
+      />
+    </instancedMesh>
+  );
+}
+
+// ============================================================================
+// MIST LAYERS — Fog planes at different heights
+// ============================================================================
+
+function MistLayers() {
+  const mist1Ref = useRef<THREE.Mesh>(null);
+  const mist2Ref = useRef<THREE.Mesh>(null);
+  
+  useFrame((state) => {
+    const time = state.clock.elapsedTime;
+    
+    if (mist1Ref.current) {
+      mist1Ref.current.position.x = Math.sin(time * 0.05) * 3;
+      const mat = mist1Ref.current.material as THREE.MeshBasicMaterial;
+      mat.opacity = 0.25 + Math.sin(time * 0.1) * 0.05;
+    }
+    
+    if (mist2Ref.current) {
+      mist2Ref.current.position.x = Math.cos(time * 0.03) * 2;
+      const mat = mist2Ref.current.material as THREE.MeshBasicMaterial;
+      mat.opacity = 0.18 + Math.sin(time * 0.08 + 1) * 0.04;
+    }
+  });
   
   return (
     <>
-      {/* 1. The Infinite Floor Grid — Color matches scenario */}
-      <Grid 
-      position={[0, -2.5, 0]} 
-        args={[50, 50]}
-        cellSize={1} 
-        cellThickness={0.8} 
-        cellColor="#1e293b"
-        sectionSize={5} 
-        sectionThickness={1.5} 
-        sectionColor={gridColor}  // Dynamic scenario color
-        fadeDistance={40}
-        fadeStrength={1.2}
-        infiniteGrid
+      {/* Lower mist band */}
+      <mesh ref={mist1Ref} position={[0, -2, 8]} rotation={[-Math.PI / 12, 0, 0]}>
+        <planeGeometry args={[120, 25]} />
+        <meshBasicMaterial
+          color="#d0e4f0"
+          transparent
+          opacity={0.28}
+          side={THREE.DoubleSide}
+          depthWrite={false}
+        />
+      </mesh>
+      
+      {/* Mid-height mist */}
+      <mesh ref={mist2Ref} position={[0, 6, -5]} rotation={[-Math.PI / 8, 0, 0]}>
+        <planeGeometry args={[100, 20]} />
+        <meshBasicMaterial
+          color="#c5dae8"
+          transparent
+          opacity={0.2}
+          side={THREE.DoubleSide}
+          depthWrite={false}
+        />
+      </mesh>
+    </>
+  );
+}
+
+// ============================================================================
+// LIGHTING SETUP — Cinematic golden hour
+// ============================================================================
+
+function CinematicLighting() {
+  return (
+    <>
+      {/* Main sun light - warm golden hour from left */}
+      <directionalLight
+        position={[-40, 50, -30]}
+        intensity={2.8}
+        color="#fff8e8"
+        castShadow
+        shadow-mapSize={[2048, 2048]}
+        shadow-camera-far={200}
+        shadow-camera-left={-60}
+        shadow-camera-right={60}
+        shadow-camera-top={60}
+        shadow-camera-bottom={-60}
+        shadow-bias={-0.0001}
       />
       
-      {/* 2. NEURAL CONSTELLATION — Floating nodes that connect when simulating */}
-      <NeuralBackground />
-      
-      {/* 3. SUBSURFACE GLOW — Color matches scenario */}
-      <pointLight 
-        position={[0, -4, 0]} 
-        intensity={1.2}
-        color={lightColor}        // Dynamic scenario color
-        distance={25} 
-        decay={2}
+      {/* Fill light - cool blue from right side (shadow areas) */}
+      <directionalLight
+        position={[30, 25, 20]}
+        intensity={0.5}
+        color="#a8c8e8"
       />
-      <pointLight 
-        position={[0, -3, 5]} 
-        intensity={0.7}
-        color={lightColor}        // Dynamic scenario color
-        distance={18} 
-        decay={2}
+      
+      {/* Back rim light for mountain silhouette */}
+      <directionalLight
+        position={[0, 35, -50]}
+        intensity={0.4}
+        color="#ffe8d8"
+      />
+      
+      {/* Ambient for overall illumination */}
+      <ambientLight intensity={0.45} color="#9ec5e8" />
+      
+      {/* Hemisphere light - sky blue from above, green from below (grass reflection) */}
+      <hemisphereLight
+        args={['#87ceeb', '#4a6741', 0.35]}
       />
     </>
   );
 }
 
 // ============================================================================
-// CINEMATIC CONTROLLER — "Search Pattern" Idle Animation
+// SCENE WRAPPER
 // ============================================================================
 
-interface CinematicControllerProps {
-  children: React.ReactNode;
-  riskLevel?: number;
+interface MountainSceneProps {
+  dataPoints: number[];
+  scenario: ScenarioId;
 }
 
-function CinematicController({ children, riskLevel = 0 }: CinematicControllerProps) {
-  const groupRef = useRef<THREE.Group>(null);
-  const hasInteracted = useUIStore((s) => s.hasInteracted);
+function MountainScene({ dataPoints, scenario }: MountainSceneProps) {
+  const { scene } = useThree();
   
-  useFrame((state, delta) => {
-    if (!groupRef.current) return;
-    
-    const t = state.clock.elapsedTime;
-    
-    // 1. RISK REACTION (Seismic Shake) — Always active when risk is high
-    const riskShake = riskLevel > 40 
-      ? (Math.random() - 0.5) * 0.015 * (riskLevel / 100) 
-      : 0;
-    
-    if (!hasInteracted) {
-      // 2. IDLE MODE: THE "SEARCH PATTERN"
-      // Creates a mesmerizing non-repeating orbit by mixing different frequencies
-      
-      // Yaw (Left <-> Right): Wide slow sweep with variation
-      const yaw = Math.sin(t * 0.18) * 0.45 + Math.sin(t * 0.07) * 0.15;
-      groupRef.current.rotation.y = yaw;
-      
-      // Pitch (Up <-> Down): Slight vertical tilt to show depth
-      const pitch = Math.cos(t * 0.25) * 0.12 + Math.sin(t * 0.11) * 0.05;
-      groupRef.current.rotation.x = pitch;
-      
-      // Roll (Tilt): Very subtle banking as it "flies"
-      const roll = Math.sin(t * 0.3) * 0.03;
-      groupRef.current.rotation.z = roll;
-      
-      // Bobbing (Floating): Gentle breathing + seismic shake
-      const bobbing = Math.sin(t * 0.4) * 0.12 + Math.cos(t * 0.22) * 0.06;
-      groupRef.current.position.y = bobbing + riskShake;
-      
-    } else {
-      // 3. ACTIVE MODE: LOCK TO STATION
-      // Smoothly return to center for data analysis
-      groupRef.current.rotation.y = THREE.MathUtils.damp(
-        groupRef.current.rotation.y, 
-        0, 
-        3.5, 
-        delta
-      );
-      groupRef.current.rotation.x = THREE.MathUtils.damp(
-        groupRef.current.rotation.x, 
-        0, 
-        3.5, 
-        delta
-      );
-      groupRef.current.rotation.z = THREE.MathUtils.damp(
-        groupRef.current.rotation.z, 
-        0, 
-        3.5, 
-        delta
-      );
-      groupRef.current.position.y = THREE.MathUtils.damp(
-        groupRef.current.position.y, 
-        0, 
-        3.5, 
-        delta
-      ) + riskShake;
-    }
-  });
+  // Set atmospheric fog
+  useMemo(() => {
+    scene.fog = new THREE.FogExp2('#c8dbe8', 0.006);
+  }, [scene]);
   
-  return <group ref={groupRef}>{children}</group>;
+  return (
+    <>
+      <CinematicLighting />
+      
+      {/* Sky dome */}
+      <Sky
+        distance={450000}
+        sunPosition={[-40, 50, -30]}
+        inclination={0.5}
+        azimuth={0.2}
+        rayleigh={0.6}
+        turbidity={10}
+        mieCoefficient={0.005}
+        mieDirectionalG={0.85}
+      />
+      
+      {/* Environment for reflections */}
+      <Environment preset="dawn" background={false} />
+      
+      {/* Main terrain */}
+      <MountainTerrain dataPoints={dataPoints} scenario={scenario} />
+      
+      {/* Water */}
+      <WaterSurface />
+      
+      {/* Forest */}
+      <Forest />
+      
+      {/* Mist layers */}
+      <MistLayers />
+      
+      {/* Camera controls */}
+      <OrbitControls
+        enableZoom={true}
+        enablePan={false}
+        enableRotate={true}
+        rotateSpeed={0.25}
+        zoomSpeed={0.4}
+        minDistance={35}
+        maxDistance={90}
+        minPolarAngle={Math.PI / 8}
+        maxPolarAngle={Math.PI / 2.3}
+        target={[0, 8, 0]}
+      />
+    </>
+  );
 }
 
 // ============================================================================
@@ -764,8 +489,6 @@ interface ScenarioMountainProps {
   activeLeverId?: LeverId | null;
   leverIntensity01?: number;
   className?: string;
-  timelineEnabled?: boolean;
-  heatmapEnabled?: boolean;
 }
 
 export default function ScenarioMountain({
@@ -775,124 +498,61 @@ export default function ScenarioMountain({
   activeLeverId = null,
   leverIntensity01 = 0,
   className,
-  timelineEnabled = false,
-  heatmapEnabled = false,
 }: ScenarioMountainProps) {
-  const viewMode = useScenarioStore((s) => s.viewMode);
-  
-  // TODO: Implement timeline and heatmap rendering logic
-  // - timelineEnabled: Show historical progression overlay
-  // - heatmapEnabled: Show intensity/concentration visualization
-  
-  const {
-    activeScenarioId,
-    engineResults,
-  } = useScenarioStore(
-    useShallow((s) => ({
-      activeScenarioId: s.activeScenarioId,
-      engineResults: s.engineResults,
-    }))
-  );
-
-  const engineResult = engineResults?.[activeScenarioId];
-  const kpiValues = engineResult?.kpis || {};
-  
-  // riskLevel = danger score (higher = more dangerous)
-  // riskIndex is health (higher = healthier), so invert it
-  const riskLevel = 100 - (kpiValues.riskIndex?.value ?? 50);
-  
-  // SEISMIC WIRE: Read from UI store for active risk interaction
-  // NEURAL BOOT: neuralBootComplete signals the mountain to pulse
-  const { activeGroup, isDragging, riskLevel: uiRiskLevel, hasInteracted, neuralBootComplete } = useUIStore(
-    useShallow((s) => ({
-      activeGroup: s.activeGroup,
-      isDragging: s.isDragging,
-      riskLevel: s.riskLevel,
-      hasInteracted: s.hasInteracted,
-      neuralBootComplete: s.neuralBootComplete,
-    }))
-  );
-  
-  // Is risk actively being manipulated?
-  const isSeismicActive = activeGroup === 'risk' && isDragging;
-  
-  // Use UI store's riskLevel when actively dragging risk sliders
-  const effectiveRiskLevel = isSeismicActive ? uiRiskLevel : riskLevel;
-
   return (
     <div
       className={`relative w-full h-full overflow-hidden ${className ?? ""}`}
       style={{
-        background: "radial-gradient(circle at 50% 55%, #1a2744 0%, #0f1a2e 60%, #0a1220 100%)",
-        minHeight: '400px',
-        height: '100%',
-        width: '100%',
+        background: "linear-gradient(180deg, #7eb8db 0%, #a8cde4 30%, #c8dce8 60%, #d8e8f0 100%)",
       }}
     >
-      {/* THE VIGNETTE — Subtle shadow frame (reduced intensity) */}
-      <div 
-        className="absolute inset-0 pointer-events-none z-[2]"
-        style={{
-          boxShadow: "inset 0 0 80px rgba(11, 18, 32, 0.4)",
-        }}
-      />
-      
-      <AtmosphericHaze 
-        riskLevel={effectiveRiskLevel}
-        viewMode={viewMode}
-        scenario={scenario}
-        isSeismicActive={isSeismicActive}
-      />
-      
       <Canvas
-        gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
-        dpr={Math.min(window.devicePixelRatio, 2)}
-        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 1, background: "transparent" }}
-        fallback={<div style={{ width: "100%", height: "100%", background: "#0d1117" }} />}
-        onCreated={({ gl }) => {
-          gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        shadows
+        gl={{ 
+          antialias: true, 
+          alpha: false,
+          powerPreference: "high-performance",
+          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMappingExposure: 1.15,
         }}
+        dpr={[1, 2]}
+        style={{ position: "absolute", inset: 0 }}
       >
         <Suspense fallback={null}>
-        <color attach="background" args={['#0f1a2e']} />
-        <fog attach="fog" args={['#0f1a2e', 40, 100]} />
-        
-        <PerspectiveCamera makeDefault position={[0, 6, 32]} fov={38} />
-        <ambientLight intensity={0.25} />
-        <directionalLight position={[8, 20, 10]} intensity={0.6} color="#ffffff" />
-        {/* Cyan rim light for vibrancy */}
-        <directionalLight position={[-10, 15, -5]} intensity={0.15} color="#22d3ee" />
-        <directionalLight position={[-6, 12, -8]} intensity={0.06} color="#0ea5e9" />
-        <pointLight position={[0, 8, 0]} intensity={0.08} color="#0ea5e9" distance={30} decay={2} />
-        
-        <GhostTerrain isVisible={hasInteracted} />
-        
-        <CinematicController riskLevel={effectiveRiskLevel}>
-        <Terrain
-          dataPoints={dataPoints}
-          activeKpiIndex={activeKpiIndex}
-          activeLeverId={activeLeverId}
-          leverIntensity01={leverIntensity01}
-          scenario={scenario}
-          isDragging={isDragging}
-          neuralPulse={neuralBootComplete}
-        />
-        </CinematicController>
-        
-        <DigitalHorizon scenarioId={scenario} />
-        
-        <OrbitControls 
-          enableZoom={false} 
-          enablePan={false} 
-          enableRotate={true}
-          rotateSpeed={0.4}
-          minPolarAngle={Math.PI / 4}
-          maxPolarAngle={Math.PI / 2.2}
-          minAzimuthAngle={-Math.PI / 5}
-          maxAzimuthAngle={Math.PI / 5}
-        />
+          <PerspectiveCamera 
+            makeDefault 
+            position={[0, 15, 55]} 
+            fov={42}
+            near={0.1}
+            far={600}
+          />
+          
+          <MountainScene dataPoints={dataPoints} scenario={scenario} />
+          
+          {/* Post-processing effects */}
+          <EffectComposer>
+            <Bloom
+              luminanceThreshold={0.85}
+              luminanceSmoothing={0.5}
+              intensity={0.25}
+              radius={0.7}
+            />
+            <Vignette
+              eskil={false}
+              offset={0.12}
+              darkness={0.35}
+            />
+          </EffectComposer>
         </Suspense>
       </Canvas>
+      
+      {/* Subtle atmospheric gradient overlay */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: "linear-gradient(180deg, transparent 50%, rgba(200, 220, 235, 0.2) 100%)",
+        }}
+      />
     </div>
   );
 }

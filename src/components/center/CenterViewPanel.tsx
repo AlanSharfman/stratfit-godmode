@@ -1,7 +1,21 @@
 import React, { useEffect, useState, useMemo } from "react";
+import * as THREE from "three";
 import type { CenterViewId } from "@/types/view";
 import ScenarioMountain from "@/components/mountain/ScenarioMountain";
 import GodModeCompare from "@/components/mountain/GodModeCompare";
+import { GodModeMountain } from "@/components/compare/GodModeMountain";
+import { Canvas } from "@react-three/fiber";
+import { EffectComposer, Bloom, Vignette, SMAA } from "@react-three/postprocessing";
+import { Environment } from "@react-three/drei";
+
+// ScenarioData interface for mountain visualization
+interface ScenarioData {
+  score: number;
+  arr: number;
+  survival: number;
+  runway: number;
+  label?: string;
+}
 
 // Tab Components
 import { RiskTab } from "@/components/Risk";
@@ -12,6 +26,8 @@ import { ImpactGodMode } from "@/components/impact";
 import { useScenario, useScenarioStore } from "@/state/scenarioStore";
 import { onCausal } from "@/ui/causalEvents";
 import { engineResultToMountainForces } from "@/logic/mountainForces";
+import { useSimulationStore } from "@/state/simulationStore";
+import { useSavedSimulationsStore } from "@/state/savedSimulationsStore";
 
 interface CenterViewPanelProps {
   view?: CenterViewId;
@@ -33,6 +49,37 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
     const er = engineResults?.[scenario];
     return engineResultToMountainForces(er);
   }, [engineResults, scenario]);
+
+  // GOD MODE MOUNTAIN: Get simulation data from stores
+  const simulationSummary = useSimulationStore((s) => s.summary);
+  const savedBaseline = useSavedSimulationsStore((s) => s.simulations.find((sim) => sim.isBaseline));
+
+  // Build scenario data for GodModeMountain (Gravity = Time visualization)
+  const godModeScenarioA: ScenarioData = useMemo(() => ({
+    score: savedBaseline?.summary.overallScore || 
+           (engineResults?.base?.kpis?.qualityScore ? Math.round((engineResults.base.kpis.qualityScore as any).value * 100) : 72),
+    arr: savedBaseline?.summary.arrMedian || 
+         engineResults?.base?.kpis?.arrCurrent?.value || 2100000,
+    survival: savedBaseline?.summary.survivalRate 
+              ? savedBaseline.summary.survivalRate * 100 
+              : (engineResults?.base?.kpis?.runway?.value ? Math.min(100, (engineResults.base.kpis.runway.value / 36) * 100) : 78),
+    runway: savedBaseline?.summary.runwayMedian || 
+            engineResults?.base?.kpis?.runway?.value || 18,
+    label: "BASELINE"
+  }), [savedBaseline, engineResults]);
+
+  const godModeScenarioB: ScenarioData = useMemo(() => ({
+    score: simulationSummary?.overallScore || 
+           (engineResults?.[scenario]?.kpis?.qualityScore ? Math.round((engineResults[scenario].kpis.qualityScore as any).value * 100) : 65),
+    arr: simulationSummary?.arrMedian || 
+         engineResults?.[scenario]?.kpis?.arrCurrent?.value || 2400000,
+    survival: simulationSummary?.survivalRate 
+              ? simulationSummary.survivalRate * 100 
+              : (engineResults?.[scenario]?.kpis?.runway?.value ? Math.min(100, (engineResults[scenario].kpis.runway.value / 36) * 100) : 68),
+    runway: simulationSummary?.runwayMedian || 
+            engineResults?.[scenario]?.kpis?.runway?.value || 16,
+    label: "EXPLORATION"
+  }), [simulationSummary, engineResults, scenario]);
 
   // CAUSAL HIGHLIGHT — Mountain band (Phase 1, UI-only)
   const [bandNonce, setBandNonce] = useState(0);
@@ -94,10 +141,39 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
           </div>
         )}
 
-        {/* COMPARE - God Mode: Unified Destiny Field with Titanium Command Bridge */}
+        {/* COMPARE - God Mode: Gravity = Time Mountain Visualization */}
         {view === "compare" && (
-          <div className="h-full w-full overflow-hidden rounded-3xl border border-slate-700/40 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
-            <GodModeCompare />
+          <div className="h-full w-full overflow-hidden rounded-3xl border border-slate-700/40 shadow-[0_8px_32px_rgba(0,0,0,0.6)] bg-[#050b14]">
+            <Canvas
+              camera={{ position: [0, 4.2, 11.5], fov: 42 }}
+              gl={{
+                antialias: true,
+                alpha: false,
+                powerPreference: "high-performance",
+              }}
+              dpr={[1, 2]}
+              onCreated={({ gl }) => {
+                gl.toneMappingExposure = 0.95; // Lower exposure for silhouette definition
+              }}
+            >
+              <Environment preset="studio" blur={0.9} />
+              <GodModeMountain 
+                scenarioA={godModeScenarioA}
+                scenarioB={godModeScenarioB}
+                t={0.5}
+              />
+              <EffectComposer disableNormalPass>
+                <Bloom
+                  luminanceThreshold={1.25}
+                  luminanceSmoothing={0.25}
+                  intensity={0.25}
+                  radius={0.35}
+                  mipmapBlur
+                />
+                <Vignette eskil={false} offset={0.12} darkness={0.7} />
+                <SMAA />
+              </EffectComposer>
+            </Canvas>
           </div>
         )}
 
