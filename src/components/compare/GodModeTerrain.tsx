@@ -1,13 +1,12 @@
-// src/components/compare/GodModeTerrain.tsx
-// STRATFIT — Main entry point for Compare view
-// This file is kept for backward compatibility with existing routing
+import React from "react";
+import ComparePage from "./ComparePage";
 
-import ComparePage from './ComparePage'
-
+/**
+ * Compatibility wrapper for the existing "compare" center view.
+ * The rest of the app expects a default-exported `GodModeTerrain` component.
+ */
 export default function GodModeTerrain() {
-  return (
-    <div className="w-full h-full">
-      <ComparePage />
-    </div>
-  )
+  return <ComparePage />;
 }
+
+

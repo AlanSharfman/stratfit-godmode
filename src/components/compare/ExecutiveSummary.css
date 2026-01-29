@@ -1,0 +1,81 @@
+/* ExecutiveSummary.css */
+
+.exec-summary{
+  position: relative;
+  border-radius: 18px;
+  padding: 26px 28px 30px 28px;
+
+  background: rgba(255,255,255,0.018);
+  border: 1px solid rgba(255,255,255,0.045);
+
+  box-shadow:
+    0 12px 28px rgba(0,0,0,0.38),
+    inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+/* top rail */
+.exec-summary::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:28px;
+  right:28px;
+  height:1px;
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.05),
+    rgba(255,255,255,0.12),
+    rgba(255,255,255,0.05)
+  );
+}
+
+.exec-header{
+  margin-bottom: 18px;
+}
+
+.exec-title{
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 900;
+  color: rgba(255,255,255,0.80);
+  margin-bottom: 6px;
+}
+
+.exec-verdict{
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: rgba(255,255,255,0.95);
+}
+
+.exec-grid{
+  display: grid;
+  gap: 12px;
+}
+
+.exec-row{
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  align-items: start;
+
+  padding: 12px 14px;
+  border-radius: 10px;
+
+  background: rgba(0,0,0,0.18);
+  border: 1px solid rgba(255,255,255,0.035);
+}
+
+.exec-metric{
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: rgba(255,255,255,0.80);
+}
+
+.exec-assessment{
+  font-size: 13px;
+  color: rgba(255,255,255,0.85);
+  line-height: 1.35;
+}

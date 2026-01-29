@@ -1,0 +1,130 @@
+/* DualMountainInstrument.css */
+
+.dual-mountain-shell{
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+}
+
+/* Instrument Bays — Neutral Steel Material */
+.mountain-card{
+  position: relative;
+  height: 100%;
+  border-radius: 16px;
+
+  /*
+    Remove directional radial sweep.
+    Use neutral machined surface.
+  */
+  background: rgba(255,255,255,0.022);
+
+  border: 1px solid rgba(255,255,255,0.050);
+
+  /* Controlled depth — lighter + cleaner */
+  box-shadow:
+    0 10px 22px rgba(0,0,0,0.38),
+    inset 0 1px 0 rgba(255,255,255,0.045),
+    inset 0 -1px 0 rgba(0,0,0,0.45);
+
+  overflow: hidden;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Instrument Header Rail — Lighter + Less Dominant */
+.mountain-card::before{
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  top: 10px;
+  height: 34px;
+  border-radius: 12px;
+
+  background: rgba(0,0,0,0.12);
+  border: 1px solid rgba(255,255,255,0.045);
+  pointer-events: none;
+}
+
+.mountain-title{
+  position: relative;
+  z-index: 2;
+  margin: 6px 0 14px 4px;
+
+  letter-spacing: 0.16em;
+  font-weight: 800;
+  font-size: 11px;
+  color: rgba(255,255,255,0.78);
+  text-transform: uppercase;
+}
+
+/* Canvas Bay — Flatter, Cleaner, More Air */
+.mountain-canvas-bay{
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  border-radius: 14px;
+
+  background: rgba(0,0,0,0.16);
+  border: 1px solid rgba(255,255,255,0.055);
+
+  /*
+    Reduce inset depth to prevent visual compression
+  */
+  box-shadow:
+    inset 0 0 0 1px rgba(0,0,0,0.24),
+    inset 0 12px 20px rgba(0,0,0,0.22);
+
+  overflow: hidden;
+}
+
+/* Instrument Corners — Keep Hardware Read */
+.mountain-canvas-bay::before,
+.mountain-canvas-bay::after{
+  content:"";
+  position:absolute;
+  width: 18px;
+  height: 18px;
+  border: 1px solid rgba(255,255,255,0.055);
+  opacity: 0.75;
+  pointer-events:none;
+}
+
+.mountain-canvas-bay::before{
+  left: 10px;
+  top: 10px;
+  border-right: none;
+  border-bottom: none;
+  border-radius: 6px 0 0 0;
+}
+
+.mountain-canvas-bay::after{
+  right: 10px;
+  bottom: 10px;
+  border-left: none;
+  border-top: none;
+  border-radius: 0 0 6px 0;
+}
+
+/* Ensure the internal mountain renderer can expand within a flex column */
+.sf-compare-mountain{
+  height: 100%;
+  width: 100%;
+}
+
+@media (max-width: 1100px){
+  .dual-mountain-shell{
+    grid-template-columns: 1fr;
+    height: auto;
+    gap: 16px;
+  }
+
+  .mountain-card{
+    /* ScenarioMountain enforces a 400px minHeight internally */
+    min-height: 520px;
+  }
+}
