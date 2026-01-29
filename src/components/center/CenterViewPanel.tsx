@@ -19,7 +19,7 @@ interface ScenarioData {
 
 // Tab Components
 import { RiskTab } from "@/components/Risk";
-import { DecisionTab } from "@/components/Decision";
+import DecidePage from "@/app/decide/page";
 import { ValuationTab } from "@/components/valuation";
 import { ImpactGodMode } from "@/components/impact";
 
@@ -28,6 +28,7 @@ import { onCausal } from "@/ui/causalEvents";
 import { engineResultToMountainForces } from "@/logic/mountainForces";
 import { useSimulationStore } from "@/state/simulationStore";
 import { useSavedSimulationsStore } from "@/state/savedSimulationsStore";
+import { StrategicMetrics } from "@/components/terrain/StrategicMetrics";
 
 interface CenterViewPanelProps {
   view?: CenterViewId;
@@ -43,12 +44,36 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
   const scenario = useScenario();
   const engineResults = useScenarioStore((s) => s.engineResults);
   const hoveredKpiIndex = useScenarioStore((s) => s.hoveredKpiIndex);
+  const engineResult = engineResults?.[scenario];
 
   // PHASE-IG: Wire engineResults → mountain forces (7-vector for now)
   const dataPoints = useMemo(() => {
-    const er = engineResults?.[scenario];
-    return engineResultToMountainForces(er);
-  }, [engineResults, scenario]);
+    return engineResultToMountainForces(engineResult);
+  }, [engineResult]);
+
+  const strategicMetrics = useMemo(() => {
+    const runwayMonthsRaw = engineResult?.kpis?.runway?.value;
+    const runwayMonths = typeof runwayMonthsRaw === "number" && Number.isFinite(runwayMonthsRaw) ? runwayMonthsRaw : 24;
+
+    const growthRaw = (engineResult?.kpis as any)?.arrGrowthPct?.value;
+    let growthRate =
+      typeof growthRaw === "number" && Number.isFinite(growthRaw)
+        ? growthRaw
+        : 0.08; // 8% default (ratio)
+    if (growthRate > 1) growthRate = growthRate / 100; // handle percent-form values
+
+    const survivalRaw =
+      (engineResult?.kpis as any)?.survivalRate?.value ??
+      (engineResult?.kpis as any)?.survival?.value;
+    let survivalProbability =
+      typeof survivalRaw === "number" && Number.isFinite(survivalRaw)
+        ? survivalRaw
+        : 85;
+    if (survivalProbability <= 1) survivalProbability = survivalProbability * 100; // handle 0..1 form
+    survivalProbability = Math.max(0, Math.min(100, Math.round(survivalProbability)));
+
+    return { runwayMonths, growthRate, survivalProbability };
+  }, [engineResult]);
 
   // GOD MODE MOUNTAIN: Get simulation data from stores
   const simulationSummary = useSimulationStore((s) => s.summary);
@@ -103,9 +128,18 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
           Do not adjust without design sign-off. */}
       <div className="mountain-stage relative w-full flex-1 p-4" data-tour="mountain">
         {view === "terrain" && (
-          <div className="relative h-full w-full overflow-hidden rounded-3xl border border-cyan-500/20 bg-gradient-to-b from-slate-950 via-slate-900 to-black shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08),0_0_60px_rgba(34,211,238,0.08)]">
+          <div className="relative h-full w-full overflow-hidden rounded-3xl border border-cyan-500/20 bg-gradient-to-b from-slate-950 via-slate-900 to-black shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08),0_0_60px_rgba(34,211,238,0.08)] flex flex-col">
             {/* Cyan accent border glow */}
             <div className="pointer-events-none absolute inset-0 rounded-3xl shadow-[inset_0_0_0_1px_rgba(34,211,238,0.2),inset_0_0_30px_rgba(34,211,238,0.05)]" />
+
+            {/* Terrain header: 3 strategic metrics */}
+            <div className="relative z-10 p-4 border-b border-white/10">
+              <StrategicMetrics
+                runwayMonths={strategicMetrics.runwayMonths}
+                growthRate={strategicMetrics.growthRate}
+                survivalProbability={strategicMetrics.survivalProbability}
+              />
+            </div>
             
             {/* Causal highlight band (no labels) — only after explicit user action */}
             {bandNonce > 0 ? (
@@ -117,7 +151,7 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
             ) : null}
 
             {/* Dark Wireframe Mountain */}
-            <div className="relative h-full w-full" style={{ filter: 'brightness(1.15) saturate(1.2) contrast(1.05)' }}>
+            <div className="relative flex-1 w-full" style={{ filter: 'brightness(1.15) saturate(1.2) contrast(1.05)' }}>
               <ScenarioMountain 
                 scenario={scenario} 
                 dataPoints={dataPoints}
@@ -163,10 +197,10 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
           </div>
         )}
 
-        {/* DECISION - Decision support and recommendations */}
+        {/* DECIDE - full decision experience */}
         {view === "decision" && (
-          <div className="h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-linear-to-br from-slate-950/60 to-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
-            <DecisionTab />
+          <div className="h-full w-full overflow-hidden rounded-3xl border border-slate-700/40 bg-black shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
+            <DecidePage />
           </div>
         )}
 

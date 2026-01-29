@@ -25,6 +25,7 @@
     "puppeteer": "^24.34.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-router-dom": "^7.1.0",
     "recharts": "^3.6.0",
     "simplex-noise": "^4.0.3",
     "three": "^0.181.2"

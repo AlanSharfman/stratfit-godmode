@@ -426,8 +426,8 @@ export const useScenarioStore = create<ScenarioState>()(
         const arrB = simB.monthlyARR || Array(36).fill(simB.medianARR);
         
         for (let i = 0; i < 36; i++) {
-          const a = arrA[i] || simA.medianARR;
-          const b = arrB[i] || simB.medianARR;
+          const a = arrA[i] ?? simA.medianARR;
+          const b = arrB[i] ?? simB.medianARR;
           const gap = b - a;
           const gapPercent = a > 0 ? (gap / a) * 100 : 0;
           

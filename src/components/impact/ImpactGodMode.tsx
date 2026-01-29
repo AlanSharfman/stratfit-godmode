@@ -1,614 +1,740 @@
-// src/components/impact/ImpactGodMode.tsx
-// STRATFIT — GOD MODE IMPACT: Strategic Command Center
-// "Stop guessing. Know exactly where to focus."
+'use client'
 
-import React, { useMemo, useState } from 'react';
-import { useSimulationStore } from '@/state/simulationStore';
-import { useLeverStore } from '@/state/leverStore';
-import './ImpactGodMode.css';
+import React, { useMemo, useState } from 'react'
+import { 
+  Zap, 
+  Target, 
+  AlertTriangle, 
+  TrendingUp, 
+  Trophy,
+  Sparkles,
+  ChevronRight,
+  Shield,
+  DollarSign,
+  Users,
+  Gauge,
+  Flame,
+  Lock,
+  CheckCircle,
+  Info
+} from 'lucide-react'
+import { useSimulationStore } from '@/state/simulationStore'
+import { useLeverStore } from '@/state/leverStore'
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES
 // ═══════════════════════════════════════════════════════════════════════════════
 
-interface LeverImpact {
-  id: string;
-  name: string;
-  currentValue: number;
-  impactScore: number; // 0-100, how much this lever affects outcomes
-  dollarImpact: number; // $ value per 1% change
-  direction: 'growth' | 'risk'; // Does increasing help or hurt?
-  effort: 'low' | 'medium' | 'high'; // How hard to change
-  category: 'growth' | 'operational' | 'risk';
-  insight: string;
+interface Lever {
+  id: string
+  name: string
+  value: number
+  impactScore: number
+  dollarImpact: number
+  effort: 'low' | 'medium' | 'high'
+  category: 'growth' | 'operations' | 'risk'
 }
 
-interface KillZone {
-  lever: string;
-  threshold: number;
-  currentValue: number;
-  consequence: string;
-  timeToImpact: string;
-  severity: 'warning' | 'critical';
+interface DangerZone {
+  lever: string
+  current: number
+  threshold: number
+  severity: 'warning' | 'critical'
+  message: string
 }
 
-interface Unlock {
-  name: string;
-  requirement: string;
-  currentProgress: number;
-  targetValue: number;
-  reward: string;
-  rewardValue: string;
+interface Achievement {
+  id: string
+  name: string
+  description: string
+  requirement: string
+  progress: number
+  unlocked: boolean
 }
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// IMPACT CALCULATION ENGINE
-// ═══════════════════════════════════════════════════════════════════════════════
-
-const calculateLeverImpacts = (levers: Record<string, number>, summary: any): LeverImpact[] => {
-  const baseARR = summary?.arrMedian || 2000000;
-  
-  const impacts: LeverImpact[] = [
-    {
-      id: 'demandStrength',
-      name: 'Demand Strength',
-      currentValue: levers.demandStrength || 50,
-      impactScore: 92,
-      dollarImpact: Math.round(baseARR * 0.028), // 2.8% ARR per point
-      direction: 'growth' as const,
-      effort: 'high' as const,
-      category: 'growth' as const,
-      insight: 'Your highest-leverage growth driver. Each point = new customers.',
-    },
-    {
-      id: 'pricingPower',
-      name: 'Pricing Power',
-      currentValue: levers.pricingPower || 50,
-      impactScore: 85,
-      dollarImpact: Math.round(baseARR * 0.032), // 3.2% ARR per point
-      direction: 'growth' as const,
-      effort: 'low' as const,
-      category: 'growth' as const,
-      insight: 'Fastest path to profitability. Increase without losing customers.',
-    },
-    {
-      id: 'costDiscipline',
-      name: 'Cost Discipline',
-      currentValue: levers.costDiscipline || 50,
-      impactScore: 78,
-      dollarImpact: Math.round(baseARR * 0.018), // Runway extension value
-      direction: 'growth' as const,
-      effort: 'medium' as const,
-      category: 'operational' as const,
-      insight: 'Every dollar saved = dollar available for growth or runway.',
-    },
-    {
-      id: 'expansionVelocity',
-      name: 'Expansion Velocity',
-      currentValue: levers.expansionVelocity || 50,
-      impactScore: 72,
-      dollarImpact: Math.round(baseARR * 0.022),
-      direction: 'growth' as const,
-      effort: 'medium' as const,
-      category: 'growth' as const,
-      insight: 'Net revenue retention. Grow revenue from existing customers.',
-    },
-    {
-      id: 'hiringIntensity',
-      name: 'Hiring Intensity',
-      currentValue: levers.hiringIntensity || 50,
-      impactScore: 65,
-      dollarImpact: Math.round(baseARR * -0.015), // Costs money
-      direction: 'risk' as const,
-      effort: 'high' as const,
-      category: 'operational' as const,
-      insight: 'More hires = more burn. Only hire for clear revenue drivers.',
-    },
-    {
-      id: 'marketVolatility',
-      name: 'Market Volatility',
-      currentValue: levers.marketVolatility || 50,
-      impactScore: 58,
-      dollarImpact: Math.round(baseARR * -0.025),
-      direction: 'risk' as const,
-      effort: 'low' as const,
-      category: 'risk' as const,
-      insight: 'External factor. Build buffers and diversify revenue streams.',
-    },
-    {
-      id: 'executionRisk',
-      name: 'Execution Risk',
-      currentValue: levers.executionRisk || 50,
-      impactScore: 52,
-      dollarImpact: Math.round(baseARR * -0.012),
-      direction: 'risk' as const,
-      effort: 'medium' as const,
-      category: 'risk' as const,
-      insight: 'Team and process risk. Invest in systems and talent.',
-    },
-    {
-      id: 'operatingDrag',
-      name: 'Operating Drag',
-      currentValue: levers.operatingDrag || 50,
-      impactScore: 45,
-      dollarImpact: Math.round(baseARR * -0.008),
-      direction: 'risk' as const,
-      effort: 'medium' as const,
-      category: 'operational' as const,
-      insight: 'Hidden inefficiencies. Audit processes quarterly.',
-    },
-  ];
-  
-  return impacts.sort((a, b) => b.impactScore - a.impactScore);
-};
-
-const calculateKillZones = (levers: Record<string, number>, summary: any): KillZone[] => {
-  const zones: KillZone[] = [];
-  
-  if ((levers.demandStrength || 50) < 40) {
-    zones.push({
-      lever: 'Demand Strength',
-      threshold: 35,
-      currentValue: levers.demandStrength || 50,
-      consequence: 'Revenue growth stalls, unable to raise next round',
-      timeToImpact: '6-9 months',
-      severity: levers.demandStrength < 35 ? 'critical' : 'warning',
-    });
-  }
-  
-  if ((levers.costDiscipline || 50) < 35) {
-    zones.push({
-      lever: 'Cost Discipline',
-      threshold: 30,
-      currentValue: levers.costDiscipline || 50,
-      consequence: 'Runway drops below 12 months, forced to raise or cut',
-      timeToImpact: '3-6 months',
-      severity: levers.costDiscipline < 30 ? 'critical' : 'warning',
-    });
-  }
-  
-  if ((levers.marketVolatility || 50) > 70) {
-    zones.push({
-      lever: 'Market Volatility',
-      threshold: 75,
-      currentValue: levers.marketVolatility || 50,
-      consequence: 'Customer churn accelerates, pipeline becomes unpredictable',
-      timeToImpact: '2-4 months',
-      severity: levers.marketVolatility > 75 ? 'critical' : 'warning',
-    });
-  }
-  
-  if ((levers.executionRisk || 50) > 65) {
-    zones.push({
-      lever: 'Execution Risk',
-      threshold: 70,
-      currentValue: levers.executionRisk || 50,
-      consequence: 'Key milestones missed, investor confidence drops',
-      timeToImpact: '1-3 months',
-      severity: levers.executionRisk > 70 ? 'critical' : 'warning',
-    });
-  }
-  
-  // Always show at least one potential risk
-  if (zones.length === 0) {
-    zones.push({
-      lever: 'Hiring Intensity',
-      threshold: 75,
-      currentValue: levers.hiringIntensity || 50,
-      consequence: 'Burn rate exceeds growth, unit economics deteriorate',
-      timeToImpact: '4-6 months',
-      severity: 'warning',
-    });
-  }
-  
-  return zones;
-};
-
-const calculateUnlocks = (levers: Record<string, number>, summary: any): Unlock[] => {
-  return [
-    {
-      name: 'Series A Ready',
-      requirement: 'Demand Strength ≥ 70',
-      currentProgress: levers.demandStrength || 50,
-      targetValue: 70,
-      reward: 'Unlocks institutional investor interest',
-      rewardValue: '$2-5M raise potential',
-    },
-    {
-      name: 'Default Alive',
-      requirement: 'Cost Discipline ≥ 65 + Runway ≥ 18mo',
-      currentProgress: Math.min(levers.costDiscipline || 50, (summary?.runwayMedian || 12) * 3.6),
-      targetValue: 65,
-      reward: 'Survive without additional funding',
-      rewardValue: 'Infinite runway optionality',
-    },
-    {
-      name: 'Pricing Champion',
-      requirement: 'Pricing Power ≥ 75',
-      currentProgress: levers.pricingPower || 50,
-      targetValue: 75,
-      reward: 'Premium positioning, margin expansion',
-      rewardValue: '+15-25% gross margin',
-    },
-    {
-      name: 'Growth Machine',
-      requirement: 'Expansion Velocity ≥ 70',
-      currentProgress: levers.expansionVelocity || 50,
-      targetValue: 70,
-      reward: 'Net Revenue Retention > 120%',
-      rewardValue: 'Compound growth unlocked',
-    },
-  ];
-};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export default function ImpactGodMode() {
-  const [selectedQuadrant, setSelectedQuadrant] = useState<string | null>(null);
-  const summary = useSimulationStore((s) => s.summary);
-  const levers = useLeverStore((s) => s.levers);
+export function ImpactGodMode() {
+  const { summary } = useSimulationStore()
+  const { levers } = useLeverStore()
   
-  // Calculate all impact data
-  const leverImpacts = useMemo(() => calculateLeverImpacts(levers, summary), [levers, summary]);
-  const killZones = useMemo(() => calculateKillZones(levers, summary), [levers, summary]);
-  const unlocks = useMemo(() => calculateUnlocks(levers, summary), [levers, summary]);
-  
-  // Find the #1 priority lever
-  const topLever = leverImpacts[0];
-  
-  // Calculate focus score (are they focusing on the right things?)
-  const focusScore = useMemo(() => {
-    const highImpactLevers = leverImpacts.slice(0, 3);
-    const avgHighImpactValue = highImpactLevers.reduce((sum, l) => sum + l.currentValue, 0) / 3;
-    const lowImpactLevers = leverImpacts.slice(-3);
-    const avgLowImpactValue = lowImpactLevers.reduce((sum, l) => sum + l.currentValue, 0) / 3;
-    
-    // Good focus = high impact levers are high, low impact are lower (not over-invested)
-    const score = Math.round((avgHighImpactValue / 100) * 70 + (1 - avgLowImpactValue / 100) * 30);
-    return Math.min(100, Math.max(0, score + 20));
-  }, [leverImpacts]);
-  
-  // Format currency
-  const formatCurrency = (val: number) => {
-    if (val >= 1000000) return `$${(val / 1000000).toFixed(1)}M`;
-    if (val >= 1000) return `$${(val / 1000).toFixed(0)}K`;
-    return `$${val.toFixed(0)}`;
-  };
-  
-  // Get effort/impact quadrant for each lever
-  const getQuadrant = (lever: LeverImpact): string => {
-    const highImpact = lever.impactScore >= 65;
-    const lowEffort = lever.effort === 'low' || lever.effort === 'medium';
-    
-    if (highImpact && lowEffort) return 'quick-wins';
-    if (highImpact && !lowEffort) return 'strategic-bets';
-    if (!highImpact && lowEffort) return 'fill-ins';
-    return 'money-pits';
-  };
+  const [selectedQuadrant, setSelectedQuadrant] = useState<string | null>(null)
+  const [showLeverDetail, setShowLeverDetail] = useState<string | null>(null)
+
+  // Calculate lever impacts
+  const leverData = useMemo(() => calculateLeverImpacts(levers, summary), [levers, summary])
+  const topLever = leverData[0]
+  const focusScore = useMemo(() => calculateFocusScore(leverData, levers), [leverData, levers])
+  const dangerZones = useMemo(() => calculateDangerZones(levers), [levers])
+  const achievements = useMemo(() => calculateAchievements(levers, summary), [levers, summary])
+  const quadrants = useMemo(() => categorizeByQuadrant(leverData), [leverData])
 
   return (
-    <div className="impact-godmode">
-      {/* ═══════════════════════════════════════════════════════════════════
-          HERO: THE ONE THING
-          ═══════════════════════════════════════════════════════════════════ */}
-      <section className="hero-section">
-        <div className="hero-left">
-          <span className="hero-label">YOUR #1 PRIORITY RIGHT NOW</span>
-          <h1 className="hero-lever">{topLever.name}</h1>
-          <p className="hero-insight">{topLever.insight}</p>
-          <div className="hero-value">
-            <span className="value-label">Each 1% improvement =</span>
-            <span className="value-amount">{formatCurrency(topLever.dollarImpact)}</span>
-            <span className="value-period">/ year</span>
-          </div>
-        </div>
-        
-        <div className="hero-right">
-          <div className="focus-score-ring">
-            <svg viewBox="0 0 120 120" className="score-ring-svg">
-              <circle
-                cx="60"
-                cy="60"
-                r="54"
-                fill="none"
-                stroke="rgba(255,255,255,0.1)"
-                strokeWidth="8"
-              />
-              <circle
-                cx="60"
-                cy="60"
-                r="54"
-                fill="none"
-                stroke={focusScore >= 70 ? '#10b981' : focusScore >= 50 ? '#fbbf24' : '#ef4444'}
-                strokeWidth="8"
-                strokeLinecap="round"
-                strokeDasharray={`${(focusScore / 100) * 339} 339`}
-                transform="rotate(-90 60 60)"
-                className="score-ring-progress"
-              />
-            </svg>
-            <div className="score-ring-content">
-              <span className="score-value">{focusScore}</span>
-              <span className="score-label">FOCUS</span>
-            </div>
-          </div>
-          <p className="focus-description">
-            {focusScore >= 70 
-              ? "You're focused on the right levers. Stay the course."
-              : focusScore >= 50
-              ? "Good focus, but room to optimize your priorities."
-              : "Refocus effort on high-impact levers below."
-            }
-          </p>
-        </div>
-      </section>
+    <div className="min-h-full bg-black p-6 space-y-6">
+      {/* Header */}
+      <ImpactHeader topLever={topLever} focusScore={focusScore} />
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          POWER RANKINGS
-          ═══════════════════════════════════════════════════════════════════ */}
-      <section className="power-rankings">
-        <div className="section-header">
-          <h2>LEVER POWER RANKINGS</h2>
-          <p className="section-subtitle">Ranked by impact on your survival and growth</p>
-        </div>
-        
-        <div className="rankings-list">
-          {leverImpacts.map((lever, index) => (
-            <div 
-              key={lever.id} 
-              className={`ranking-item ${lever.direction} ${getQuadrant(lever)}`}
-            >
-              <div className="rank-number">#{index + 1}</div>
-              
-              <div className="lever-info">
-                <div className="lever-name-row">
-                  <span className="lever-name">{lever.name}</span>
-                  <span className={`effort-badge ${lever.effort}`}>
-                    {lever.effort === 'low' ? '⚡ Quick' : lever.effort === 'medium' ? '⏱️ Medium' : '🏋️ Hard'}
-                  </span>
-                </div>
-                <div className="lever-current">
-                  Currently at <strong>{lever.currentValue}%</strong>
-                </div>
-              </div>
-              
-              <div className="impact-bar-section">
-                <div className="impact-bar-bg">
-                  <div 
-                    className={`impact-bar-fill ${lever.direction}`}
-                    style={{ width: `${lever.impactScore}%` }}
-                  />
-                </div>
-                <span className="impact-score">{lever.impactScore}</span>
-              </div>
-              
-              <div className="dollar-impact">
-                <span className={`impact-direction ${lever.direction}`}>
-                  {lever.direction === 'growth' ? '▲' : '▼'}
-                </span>
-                <span className="impact-value">{formatCurrency(Math.abs(lever.dollarImpact))}</span>
-                <span className="impact-unit">/pt</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* Lever Power Rankings */}
+      <LeverPowerRankings 
+        levers={leverData} 
+        selectedLever={showLeverDetail}
+        onSelectLever={setShowLeverDetail}
+      />
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          EFFORT vs IMPACT MATRIX
-          ═══════════════════════════════════════════════════════════════════ */}
-      <section className="matrix-section">
-        <div className="section-header">
-          <h2>WHERE TO FOCUS</h2>
-          <p className="section-subtitle">Effort vs. Impact — prioritize wisely</p>
-        </div>
-        
-        <div className="effort-impact-matrix">
-          <div className="matrix-labels">
-            <span className="label-y-top">HIGH IMPACT</span>
-            <span className="label-y-bottom">LOW IMPACT</span>
-            <span className="label-x-left">LOW EFFORT</span>
-            <span className="label-x-right">HIGH EFFORT</span>
-          </div>
-          
-          <div className="matrix-grid">
-            {/* Quick Wins - Top Left */}
-            <div 
-              className={`matrix-quadrant quick-wins ${selectedQuadrant === 'quick-wins' ? 'selected' : ''}`}
-              onClick={() => setSelectedQuadrant(selectedQuadrant === 'quick-wins' ? null : 'quick-wins')}
-            >
-              <div className="quadrant-header">
-                <span className="quadrant-icon">🎯</span>
-                <span className="quadrant-title">QUICK WINS</span>
-              </div>
-              <span className="quadrant-action">DO THESE FIRST</span>
-              <div className="quadrant-levers">
-                {leverImpacts.filter(l => getQuadrant(l) === 'quick-wins').map(l => (
-                  <span key={l.id} className="lever-pill">{l.name}</span>
-                ))}
-              </div>
-            </div>
-            
-            {/* Strategic Bets - Top Right */}
-            <div 
-              className={`matrix-quadrant strategic-bets ${selectedQuadrant === 'strategic-bets' ? 'selected' : ''}`}
-              onClick={() => setSelectedQuadrant(selectedQuadrant === 'strategic-bets' ? null : 'strategic-bets')}
-            >
-              <div className="quadrant-header">
-                <span className="quadrant-icon">🚀</span>
-                <span className="quadrant-title">STRATEGIC BETS</span>
-              </div>
-              <span className="quadrant-action">PLAN & INVEST</span>
-              <div className="quadrant-levers">
-                {leverImpacts.filter(l => getQuadrant(l) === 'strategic-bets').map(l => (
-                  <span key={l.id} className="lever-pill">{l.name}</span>
-                ))}
-              </div>
-            </div>
-            
-            {/* Fill-ins - Bottom Left */}
-            <div 
-              className={`matrix-quadrant fill-ins ${selectedQuadrant === 'fill-ins' ? 'selected' : ''}`}
-              onClick={() => setSelectedQuadrant(selectedQuadrant === 'fill-ins' ? null : 'fill-ins')}
-            >
-              <div className="quadrant-header">
-                <span className="quadrant-icon">📋</span>
-                <span className="quadrant-title">FILL-INS</span>
-              </div>
-              <span className="quadrant-action">DELEGATE</span>
-              <div className="quadrant-levers">
-                {leverImpacts.filter(l => getQuadrant(l) === 'fill-ins').map(l => (
-                  <span key={l.id} className="lever-pill">{l.name}</span>
-                ))}
-              </div>
-            </div>
-            
-            {/* Money Pits - Bottom Right */}
-            <div 
-              className={`matrix-quadrant money-pits ${selectedQuadrant === 'money-pits' ? 'selected' : ''}`}
-              onClick={() => setSelectedQuadrant(selectedQuadrant === 'money-pits' ? null : 'money-pits')}
-            >
-              <div className="quadrant-header">
-                <span className="quadrant-icon">⚠️</span>
-                <span className="quadrant-title">MONEY PITS</span>
-              </div>
-              <span className="quadrant-action">AVOID / REDUCE</span>
-              <div className="quadrant-levers">
-                {leverImpacts.filter(l => getQuadrant(l) === 'money-pits').map(l => (
-                  <span key={l.id} className="lever-pill">{l.name}</span>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Where To Focus Matrix */}
+      <WhereToFocusMatrix 
+        quadrants={quadrants}
+        selectedQuadrant={selectedQuadrant}
+        onSelectQuadrant={setSelectedQuadrant}
+      />
 
-      <div className="bottom-row">
-        {/* ═══════════════════════════════════════════════════════════════════
-            KILL ZONES
-            ═══════════════════════════════════════════════════════════════════ */}
-        <section className="kill-zones">
-          <div className="section-header">
-            <h2>⚠️ DANGER ZONES</h2>
-            <p className="section-subtitle">Thresholds that trigger existential risk</p>
-          </div>
-          
-          <div className="kill-zones-list">
-            {killZones.map((zone, i) => (
-              <div key={i} className={`kill-zone-card ${zone.severity}`}>
-                <div className="zone-header">
-                  <span className={`severity-badge ${zone.severity}`}>
-                    {zone.severity === 'critical' ? '🔴 CRITICAL' : '🟡 WARNING'}
-                  </span>
-                  <span className="zone-time">{zone.timeToImpact}</span>
-                </div>
-                <div className="zone-lever">
-                  {zone.lever} {zone.severity === 'critical' ? '<' : 'approaching'} {zone.threshold}%
-                </div>
-                <div className="zone-progress">
-                  <div className="zone-bar-bg">
-                    <div 
-                      className="zone-bar-fill"
-                      style={{ 
-                        width: `${zone.currentValue}%`,
-                        background: zone.currentValue > zone.threshold 
-                          ? 'linear-gradient(90deg, #10b981, #34d399)' 
-                          : 'linear-gradient(90deg, #ef4444, #f87171)'
-                      }}
-                    />
-                    <div 
-                      className="zone-threshold-marker"
-                      style={{ left: `${zone.threshold}%` }}
-                    />
-                  </div>
-                  <div className="zone-values">
-                    <span>Current: {zone.currentValue}%</span>
-                    <span className="threshold">Threshold: {zone.threshold}%</span>
-                  </div>
-                </div>
-                <div className="zone-consequence">{zone.consequence}</div>
-              </div>
-            ))}
-          </div>
-        </section>
+      {/* Two Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Danger Zones */}
+        <DangerZonesPanel zones={dangerZones} />
 
-        {/* ═══════════════════════════════════════════════════════════════════
-            UNLOCKS
-            ═══════════════════════════════════════════════════════════════════ */}
-        <section className="unlocks-section">
-          <div className="section-header">
-            <h2>🏆 ACHIEVEMENTS TO UNLOCK</h2>
-            <p className="section-subtitle">Hit these milestones to level up</p>
-          </div>
-          
-          <div className="unlocks-list">
-            {unlocks.map((unlock, i) => {
-              const progress = Math.min(100, (unlock.currentProgress / unlock.targetValue) * 100);
-              const isUnlocked = progress >= 100;
-              
-              return (
-                <div key={i} className={`unlock-card ${isUnlocked ? 'unlocked' : ''}`}>
-                  <div className="unlock-header">
-                    <span className="unlock-name">{unlock.name}</span>
-                    {isUnlocked && <span className="unlocked-badge">✓ UNLOCKED</span>}
-                  </div>
-                  <div className="unlock-requirement">{unlock.requirement}</div>
-                  <div className="unlock-progress">
-                    <div className="unlock-bar-bg">
-                      <div 
-                        className="unlock-bar-fill"
-                        style={{ width: `${progress}%` }}
-                      />
-                    </div>
-                    <span className="unlock-percent">{Math.round(progress)}%</span>
-                  </div>
-                  <div className="unlock-reward">
-                    <span className="reward-label">Reward:</span>
-                    <span className="reward-text">{unlock.reward}</span>
-                  </div>
-                  <div className="unlock-value">{unlock.rewardValue}</div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
+        {/* Achievements */}
+        <AchievementsPanel achievements={achievements} />
       </div>
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          AI STRATEGIC ADVISOR
-          ═══════════════════════════════════════════════════════════════════ */}
-      <section className="ai-advisor">
-        <div className="advisor-header">
-          <span className="advisor-icon">🧠</span>
-          <span className="advisor-title">AI STRATEGIC ADVISOR</span>
-        </div>
-        <div className="advisor-content">
-          <div className="advisor-insight">
-            <strong>Primary Insight:</strong> {topLever.name} is your biggest lever right now. 
-            A focused 10-point improvement would add approximately {formatCurrency(topLever.dollarImpact * 10)} in annual value.
-          </div>
-          
-          <div className="advisor-recommendation">
-            <strong>This Week's Focus:</strong>
-            {focusScore >= 70 
-              ? ` Maintain momentum on ${topLever.name}. Consider running experiments on ${leverImpacts[1].name} as your second priority.`
-              : focusScore >= 50
-              ? ` Shift attention from lower-impact activities to ${topLever.name} and ${leverImpacts[1].name}. These two levers control 65% of your outcomes.`
-              : ` Stop. You're spreading effort too thin. This week, focus ONLY on ${topLever.name}. Everything else can wait.`
-            }
-          </div>
-          
-          {killZones.some(z => z.severity === 'critical') && (
-            <div className="advisor-warning">
-              <strong>⚠️ Urgent:</strong> You have critical risk zones that need immediate attention. 
-              Address these before pursuing growth initiatives.
-            </div>
-          )}
-        </div>
-      </section>
+      {/* AI Strategic Advisor */}
+      <AIStrategicAdvisor 
+        topLever={topLever}
+        focusScore={focusScore}
+        dangerZones={dangerZones}
+        levers={leverData}
+      />
     </div>
-  );
+  )
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// HEADER
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function ImpactHeader({ topLever, focusScore }: { topLever: Lever; focusScore: number }) {
+  return (
+    <div className="flex items-start justify-between">
+      <div>
+        <div className="inline-flex items-center gap-2 px-3 py-1 bg-cyan-500/20 border border-cyan-500/30 rounded-full mb-4">
+          <Zap className="w-3 h-3 text-cyan-400" />
+          <span className="text-[10px] text-cyan-400 font-mono tracking-wider">YOUR #1 PRIORITY RIGHT NOW</span>
+        </div>
+        
+        <h1 className="text-4xl font-light text-white mb-2">{topLever.name}</h1>
+        <p className="text-white/50 mb-4">
+          Your highest leverage growth driver. Each point = new customers.
+        </p>
+        
+        <div className="flex items-baseline gap-2">
+          <span className="text-white/40 text-sm">Each 1% improvement =</span>
+          <span className="text-3xl font-mono text-white">${formatCompact(topLever.dollarImpact / 100)}</span>
+          <span className="text-white/40 text-sm">/ year</span>
+        </div>
+      </div>
+
+      {/* Focus Score */}
+      <div className="text-center">
+        <div className={`w-24 h-24 rounded-full border-4 flex items-center justify-center ${
+          focusScore >= 70 ? 'border-emerald-500 text-emerald-400' :
+          focusScore >= 50 ? 'border-amber-500 text-amber-400' :
+          'border-red-500 text-red-400'
+        }`}>
+          <span className="text-3xl font-mono">{focusScore}</span>
+        </div>
+        <div className="text-[10px] text-white/40 mt-2 tracking-wider">FOCUS</div>
+        <div className="text-xs text-white/60 mt-1">
+          {focusScore >= 70 ? "You're focused on the right levers. Stay the course." :
+           focusScore >= 50 ? "Some optimization needed." :
+           "Refocus on high-impact levers."}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// LEVER POWER RANKINGS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function LeverPowerRankings({ 
+  levers, 
+  selectedLever, 
+  onSelectLever 
+}: { 
+  levers: Lever[]
+  selectedLever: string | null
+  onSelectLever: (id: string | null) => void
+}) {
+  return (
+    <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-white font-medium flex items-center gap-2">
+          <Target className="w-5 h-5 text-cyan-400" />
+          LEVER POWER RANKINGS
+        </h2>
+        <span className="text-white/40 text-xs">Ranked by impact on your survival and growth</span>
+      </div>
+
+      <div className="space-y-3">
+        {levers.map((lever, index) => (
+          <LeverRow 
+            key={lever.id}
+            lever={lever}
+            rank={index + 1}
+            isSelected={selectedLever === lever.id}
+            onSelect={() => onSelectLever(selectedLever === lever.id ? null : lever.id)}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function LeverRow({ 
+  lever, 
+  rank, 
+  isSelected, 
+  onSelect 
+}: { 
+  lever: Lever
+  rank: number
+  isSelected: boolean
+  onSelect: () => void
+}) {
+  const effortColors = {
+    low: { bg: 'bg-emerald-500/20', text: 'text-emerald-400', label: 'Quick' },
+    medium: { bg: 'bg-amber-500/20', text: 'text-amber-400', label: 'Medium' },
+    high: { bg: 'bg-red-500/20', text: 'text-red-400', label: 'Hard' },
+  }
+  
+  const effort = effortColors[lever.effort]
+  const barWidth = (lever.impactScore / 100) * 100
+
+  return (
+    <div 
+      className={`flex items-center gap-4 p-3 rounded-xl cursor-pointer transition-all ${
+        isSelected ? 'bg-cyan-500/10 border border-cyan-500/30' : 'hover:bg-white/5'
+      }`}
+      onClick={onSelect}
+    >
+      {/* Rank */}
+      <div className="w-8 text-white/30 font-mono text-sm">#{rank}</div>
+      
+      {/* Name + Effort */}
+      <div className="w-48">
+        <div className="flex items-center gap-2">
+          <span className="text-white font-medium">{lever.name}</span>
+          <span className={`text-[9px] px-1.5 py-0.5 rounded ${effort.bg} ${effort.text}`}>
+            {effort.label}
+          </span>
+        </div>
+        <div className="text-white/40 text-xs">Currently at {lever.value}%</div>
+      </div>
+      
+      {/* Impact Bar */}
+      <div className="flex-1 flex items-center gap-4">
+        <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+          <div 
+            className={`h-full rounded-full transition-all ${
+              rank <= 2 ? 'bg-gradient-to-r from-cyan-500 to-emerald-500' :
+              rank <= 5 ? 'bg-gradient-to-r from-cyan-500/70 to-emerald-500/70' :
+              'bg-gradient-to-r from-amber-500/50 to-amber-500/30'
+            }`}
+            style={{ width: `${barWidth}%` }}
+          />
+        </div>
+        
+        {/* Score + Dollar Impact */}
+        <div className="flex items-center gap-4 w-32">
+          <span className="text-white font-mono">{lever.impactScore}</span>
+          <span className="text-emerald-400 font-mono text-sm">
+            +${formatCompact(lever.dollarImpact)}
+          </span>
+        </div>
+      </div>
+      
+      <ChevronRight className={`w-4 h-4 text-white/30 transition-transform ${isSelected ? 'rotate-90' : ''}`} />
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// WHERE TO FOCUS MATRIX
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function WhereToFocusMatrix({ 
+  quadrants, 
+  selectedQuadrant, 
+  onSelectQuadrant 
+}: { 
+  quadrants: Record<string, Lever[]>
+  selectedQuadrant: string | null
+  onSelectQuadrant: (q: string | null) => void
+}) {
+  const quadrantConfig = {
+    quickWins: {
+      title: 'QUICK WINS',
+      subtitle: 'DO THESE FIRST',
+      icon: <Zap className="w-4 h-4" />,
+      color: 'text-emerald-400',
+      bg: 'bg-emerald-500/10',
+      border: 'border-emerald-500/30',
+    },
+    strategicBets: {
+      title: 'STRATEGIC BETS',
+      subtitle: 'PLAN & INVEST',
+      icon: <Target className="w-4 h-4" />,
+      color: 'text-cyan-400',
+      bg: 'bg-cyan-500/10',
+      border: 'border-cyan-500/30',
+    },
+    fillIns: {
+      title: 'FILL-INS',
+      subtitle: 'DELEGATE',
+      icon: <CheckCircle className="w-4 h-4" />,
+      color: 'text-white/40',
+      bg: 'bg-white/5',
+      border: 'border-white/10',
+    },
+    moneyPits: {
+      title: 'MONEY PITS',
+      subtitle: 'AVOID / REDUCE',
+      icon: <AlertTriangle className="w-4 h-4" />,
+      color: 'text-red-400',
+      bg: 'bg-red-500/10',
+      border: 'border-red-500/30',
+    },
+  }
+
+  return (
+    <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-white font-medium">WHERE TO FOCUS</h2>
+        <span className="text-white/40 text-xs">Effort vs. Impact — prioritize wisely</span>
+      </div>
+
+      {/* Axis Labels */}
+      <div className="relative">
+        <div className="absolute -left-6 top-1/2 -translate-y-1/2 -rotate-90 text-[10px] text-white/30 tracking-wider">
+          LOW EFFORT
+        </div>
+        <div className="absolute -right-6 top-1/2 -translate-y-1/2 rotate-90 text-[10px] text-white/30 tracking-wider">
+          HIGH EFFORT
+        </div>
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-4 text-[10px] text-white/30 tracking-wider">
+          HIGH IMPACT
+        </div>
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-4 text-[10px] text-white/30 tracking-wider">
+          LOW IMPACT
+        </div>
+
+        {/* Quadrant Grid */}
+        <div className="grid grid-cols-2 gap-3">
+          {Object.entries(quadrantConfig).map(([key, config]) => (
+            <QuadrantCell
+              key={key}
+              config={config}
+              levers={quadrants[key] || []}
+              isSelected={selectedQuadrant === key}
+              onSelect={() => onSelectQuadrant(selectedQuadrant === key ? null : key)}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function QuadrantCell({ 
+  config, 
+  levers, 
+  isSelected, 
+  onSelect 
+}: { 
+  config: any
+  levers: Lever[]
+  isSelected: boolean
+  onSelect: () => void
+}) {
+  return (
+    <div 
+      className={`p-4 rounded-xl border cursor-pointer transition-all ${config.bg} ${
+        isSelected ? config.border + ' ring-1 ring-current' : 'border-white/5 hover:border-white/20'
+      }`}
+      onClick={onSelect}
+    >
+      <div className={`flex items-center gap-2 ${config.color} mb-1`}>
+        {config.icon}
+        <span className="text-xs font-medium">{config.title}</span>
+      </div>
+      <div className="text-[10px] text-white/40 mb-3">{config.subtitle}</div>
+      
+      <div className="flex flex-wrap gap-1.5">
+        {levers.map(lever => (
+          <span 
+            key={lever.id}
+            className="px-2 py-1 bg-black/30 rounded text-xs text-white/70"
+          >
+            {lever.name}
+          </span>
+        ))}
+        {levers.length === 0 && (
+          <span className="text-xs text-white/30 italic">None</span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DANGER ZONES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function DangerZonesPanel({ zones }: { zones: DangerZone[] }) {
+  return (
+    <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-white font-medium flex items-center gap-2">
+          <AlertTriangle className="w-5 h-5 text-amber-400" />
+          DANGER ZONES
+        </h2>
+        <span className="text-white/40 text-xs">Thresholds that trigger accelerated risk</span>
+      </div>
+
+      {zones.length === 0 ? (
+        <div className="flex items-center gap-3 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+          <Shield className="w-5 h-5 text-emerald-400" />
+          <span className="text-emerald-400 text-sm">All clear — no danger zones triggered</span>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {zones.map((zone, i) => (
+            <DangerZoneRow key={i} zone={zone} />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function DangerZoneRow({ zone }: { zone: DangerZone }) {
+  const progress = (zone.current / zone.threshold) * 100
+  const isCritical = zone.severity === 'critical'
+
+  return (
+    <div className={`p-4 rounded-xl border ${
+      isCritical 
+        ? 'bg-red-500/10 border-red-500/30' 
+        : 'bg-amber-500/10 border-amber-500/30'
+    }`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          {isCritical ? (
+            <Flame className="w-4 h-4 text-red-400 animate-pulse" />
+          ) : (
+            <AlertTriangle className="w-4 h-4 text-amber-400" />
+          )}
+          <span className={isCritical ? 'text-red-400' : 'text-amber-400'}>
+            {isCritical ? 'CRITICAL' : 'WARNING'}
+          </span>
+        </div>
+        <span className="text-white/60 text-sm">
+          {zone.current}% / {zone.threshold}%
+        </span>
+      </div>
+      
+      <div className="text-white font-medium mb-2">{zone.lever} approaching {zone.threshold}%</div>
+      
+      <div className="h-2 bg-black/30 rounded-full overflow-hidden mb-2">
+        <div 
+          className={`h-full rounded-full transition-all ${
+            isCritical ? 'bg-red-500' : 'bg-amber-500'
+          }`}
+          style={{ width: `${Math.min(progress, 100)}%` }}
+        />
+      </div>
+      
+      <div className="text-white/50 text-xs">{zone.message}</div>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ACHIEVEMENTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function AchievementsPanel({ achievements }: { achievements: Achievement[] }) {
+  const unlocked = achievements.filter(a => a.unlocked).length
+  const total = achievements.length
+
+  return (
+    <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-white font-medium flex items-center gap-2">
+          <Trophy className="w-5 h-5 text-amber-400" />
+          ACHIEVEMENTS TO UNLOCK
+        </h2>
+        <span className="text-white/40 text-xs">{unlocked}/{total} milestones on track of</span>
+      </div>
+
+      <div className="space-y-3">
+        {achievements.map((achievement) => (
+          <AchievementRow key={achievement.id} achievement={achievement} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function AchievementRow({ achievement }: { achievement: Achievement }) {
+  return (
+    <div className={`p-3 rounded-xl border ${
+      achievement.unlocked 
+        ? 'bg-emerald-500/10 border-emerald-500/30' 
+        : 'bg-white/[0.02] border-white/10'
+    }`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          {achievement.unlocked ? (
+            <CheckCircle className="w-4 h-4 text-emerald-400" />
+          ) : (
+            <Lock className="w-4 h-4 text-white/30" />
+          )}
+          <span className={achievement.unlocked ? 'text-white' : 'text-white/60'}>
+            {achievement.name}
+          </span>
+        </div>
+        <span className={`text-xs font-mono ${
+          achievement.unlocked ? 'text-emerald-400' : 'text-white/40'
+        }`}>
+          {achievement.progress}%
+        </span>
+      </div>
+      
+      <div className="h-1.5 bg-black/30 rounded-full overflow-hidden mb-2">
+        <div 
+          className={`h-full rounded-full transition-all ${
+            achievement.unlocked 
+              ? 'bg-emerald-500' 
+              : achievement.progress >= 70 
+                ? 'bg-cyan-500' 
+                : 'bg-white/20'
+          }`}
+          style={{ width: `${achievement.progress}%` }}
+        />
+      </div>
+      
+      <div className="text-white/40 text-xs">{achievement.requirement}</div>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// AI STRATEGIC ADVISOR
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function AIStrategicAdvisor({ 
+  topLever, 
+  focusScore,
+  dangerZones,
+  levers 
+}: { 
+  topLever: Lever
+  focusScore: number
+  dangerZones: DangerZone[]
+  levers: Lever[]
+}) {
+  const advice = generateStrategicAdvice(topLever, focusScore, dangerZones, levers)
+
+  return (
+    <div className="bg-gradient-to-r from-violet-500/10 to-cyan-500/10 border border-violet-500/20 rounded-2xl p-6">
+      <div className="flex items-center gap-2 text-violet-400 mb-4">
+        <Sparkles className="w-5 h-5" />
+        <span className="text-xs font-mono tracking-wider">AI STRATEGIC ADVISOR</span>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <span className="text-cyan-400 font-mono text-xs">[PRIMARY INSIGHT]</span>
+          <p className="text-white/80 mt-1">{advice.primary}</p>
+        </div>
+
+        <div>
+          <span className="text-amber-400 font-mono text-xs">[WATCH OUT]</span>
+          <p className="text-white/80 mt-1">{advice.warning}</p>
+        </div>
+
+        <div>
+          <span className="text-emerald-400 font-mono text-xs">[RECOMMENDED ACTION]</span>
+          <p className="text-white/80 mt-1">{advice.action}</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CALCULATIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function calculateLeverImpacts(levers: any, summary: any): Lever[] {
+  const baseARR = summary?.medianARR ?? 1000000
+  
+  const leverConfig = [
+    { id: 'demandStrength', name: 'Demand Strength', effort: 'high' as const, multiplier: 1.0 },
+    { id: 'pricingPower', name: 'Pricing Power', effort: 'low' as const, multiplier: 0.85 },
+    { id: 'costDiscipline', name: 'Cost Discipline', effort: 'medium' as const, multiplier: 0.75 },
+    { id: 'expansionVelocity', name: 'Expansion Velocity', effort: 'medium' as const, multiplier: 0.72 },
+    { id: 'hiringIntensity', name: 'Hiring Intensity', effort: 'high' as const, multiplier: 0.65 },
+    { id: 'marketVolatility', name: 'Market Volatility', effort: 'low' as const, multiplier: 0.55 },
+    { id: 'executionRisk', name: 'Execution Risk', effort: 'medium' as const, multiplier: 0.50 },
+    { id: 'operatingDrag', name: 'Operating Drag', effort: 'medium' as const, multiplier: 0.45 },
+  ]
+
+  return leverConfig.map((config, index) => {
+    const value = levers?.[config.id] ?? 50
+    const impactScore = Math.round(config.multiplier * 100 - index * 5)
+    const dollarImpact = Math.round(baseARR * config.multiplier * 0.1)
+
+    return {
+      id: config.id,
+      name: config.name,
+      value,
+      impactScore,
+      dollarImpact,
+      effort: config.effort,
+      category: index < 4 ? 'growth' : index < 6 ? 'operations' : 'risk',
+    } as Lever
+  }).sort((a, b) => b.impactScore - a.impactScore)
+}
+
+function calculateFocusScore(levers: Lever[], leverValues: any): number {
+  // Higher focus score when high-impact levers are optimized
+  const topLevers = levers.slice(0, 3)
+  const avgTopLeverValue = topLevers.reduce((sum, l) => sum + (leverValues?.[l.id] ?? 50), 0) / 3
+  return Math.round(avgTopLeverValue * 1.2)
+}
+
+function calculateDangerZones(levers: any): DangerZone[] {
+  const zones: DangerZone[] = []
+
+  const thresholds = [
+    { id: 'hiringIntensity', name: 'Hiring Intensity', threshold: 75, message: 'Fast hiring burns cash and risks culture dilution' },
+    { id: 'marketVolatility', name: 'Market Volatility', threshold: 70, message: 'High volatility increases forecast uncertainty' },
+    { id: 'executionRisk', name: 'Execution Risk', threshold: 65, message: 'Execution risk compounds with team growth' },
+    { id: 'operatingDrag', name: 'Operating Drag', threshold: 60, message: 'Operational inefficiency erodes margins' },
+  ]
+
+  thresholds.forEach(t => {
+    const value = levers?.[t.id] ?? 50
+    if (value >= t.threshold * 0.85) {
+      zones.push({
+        lever: t.name,
+        current: value,
+        threshold: t.threshold,
+        severity: value >= t.threshold ? 'critical' : 'warning',
+        message: t.message,
+      })
+    }
+  })
+
+  return zones
+}
+
+function calculateAchievements(levers: any, summary: any): Achievement[] {
+  const survivalRate = summary?.survivalRate ?? 0.5
+  const medianARR = summary?.medianARR ?? 1000000
+
+  return [
+    {
+      id: 'seriesA',
+      name: 'Series A Ready',
+      description: 'Meet Series A benchmarks',
+      requirement: `Require: Survival >80% and $2M+ ARR trajectory`,
+      progress: Math.min(100, Math.round((survivalRate * 100 + medianARR / 40000) / 2)),
+      unlocked: survivalRate > 0.8 && medianARR > 2000000,
+    },
+    {
+      id: 'rebootDone',
+      name: 'Reboot Done',
+      description: 'Complete strategic repositioning',
+      requirement: `Require: Cost Discipline >60% without destroying growth`,
+      progress: Math.min(100, Math.round((levers?.costDiscipline ?? 50) * 1.5)),
+      unlocked: (levers?.costDiscipline ?? 50) > 60 && (levers?.demandStrength ?? 50) > 40,
+    },
+    {
+      id: 'pricingChampion',
+      name: 'Pricing Champion',
+      description: 'Maximize pricing leverage',
+      requirement: `Require: Pricing Power >70% with stable churn`,
+      progress: Math.round((levers?.pricingPower ?? 50) * 1.3),
+      unlocked: (levers?.pricingPower ?? 50) > 70,
+    },
+    {
+      id: 'growthMachine',
+      name: 'Growth Machine',
+      description: 'Achieve sustainable growth',
+      requirement: `Require: Net Revenue Retention >120%`,
+      progress: Math.min(100, Math.round((levers?.expansionVelocity ?? 50) + (levers?.demandStrength ?? 50)) / 2 * 1.2),
+      unlocked: (levers?.expansionVelocity ?? 50) > 65 && (levers?.demandStrength ?? 50) > 65,
+    },
+  ]
+}
+
+function categorizeByQuadrant(levers: Lever[]): Record<string, Lever[]> {
+  const quadrants: Record<string, Lever[]> = {
+    quickWins: [],
+    strategicBets: [],
+    fillIns: [],
+    moneyPits: [],
+  }
+
+  levers.forEach(lever => {
+    const highImpact = lever.impactScore >= 70
+    const lowEffort = lever.effort === 'low'
+
+    if (highImpact && lowEffort) {
+      quadrants.quickWins.push(lever)
+    } else if (highImpact && !lowEffort) {
+      quadrants.strategicBets.push(lever)
+    } else if (!highImpact && lowEffort) {
+      quadrants.fillIns.push(lever)
+    } else {
+      quadrants.moneyPits.push(lever)
+    }
+  })
+
+  return quadrants
+}
+
+function generateStrategicAdvice(
+  topLever: Lever,
+  focusScore: number,
+  dangerZones: DangerZone[],
+  levers: Lever[]
+): { primary: string; warning: string; action: string } {
+  const primary = `**${topLever.name}** is your biggest lever right now. A focused 10-point improvement here equals approximately **$${formatCompact(topLever.dollarImpact)}** in annual value.`
+
+  const warning = dangerZones.length > 0
+    ? `You have ${dangerZones.length} danger zone${dangerZones.length > 1 ? 's' : ''} approaching threshold. **${dangerZones[0].lever}** at ${dangerZones[0].current}% needs attention before it compounds risk.`
+    : focusScore < 60
+      ? `Your focus score of ${focusScore} suggests energy may be spread across too many initiatives. Consider doubling down on your top 2-3 levers.`
+      : `No immediate threats detected. Maintain discipline and continue optimizing high-impact levers.`
+
+  const action = focusScore >= 70
+    ? `Stay the course. Your current focus on "${topLever.name}" is aligned with maximum impact. Consider moving to "Pricing Power" as your secondary focus.`
+    : `Reallocate resources to "${topLever.name}" and reduce effort on lower-impact levers like "${levers[levers.length - 1].name}".`
+
+  return { primary, warning, action }
+}
+
+function formatCompact(value: number): string {
+  if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`
+  if (value >= 1000) return `${(value / 1000).toFixed(0)}K`
+  return value.toString()
+}
+
+export default ImpactGodMode

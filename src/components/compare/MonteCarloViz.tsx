@@ -2,7 +2,7 @@
 // STRATFIT — MONTE CARLO SPAGHETTI VISUALIZATION
 
 import { useRef, useMemo } from 'react'
-import { Text } from '@react-three/drei'
+import { Line, Text } from '@react-three/drei'
 import * as THREE from 'three'
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -89,8 +89,8 @@ function SimulationBundle({
 }: SimulationBundleProps) {
   const linesRef = useRef<THREE.Group>(null)
   
-  const { lineGeometries, meanPath, p5Path, p95Path } = useMemo(() => {
-    const geometries: THREE.BufferGeometry[] = []
+  const { linePoints, meanPoints, p5Points, p95Points } = useMemo(() => {
+    const pathsPoints: THREE.Vector3[][] = []
     const allPaths: number[][] = []
     const timeSteps = 36
     const startValue = 3.2
@@ -100,16 +100,14 @@ function SimulationBundle({
       const path = generateSimulationPath(scenario, seedOffset + i * 7919, startValue, timeSteps)
       allPaths.push(path)
       
-      // Create line geometry
+      // Create line points
       const points: THREE.Vector3[] = []
       for (let t = 0; t <= timeSteps; t++) {
         const x = (t / timeSteps) * 12 - 6 // -6 to 6
         const y = (path[t] - startValue) * 0.8 // Scale Y
         points.push(new THREE.Vector3(x, y, 0))
       }
-      
-      const geo = new THREE.BufferGeometry().setFromPoints(points)
-      geometries.push(geo)
+      pathsPoints.push(points)
     }
     
     // Calculate statistics
@@ -125,66 +123,47 @@ function SimulationBundle({
     }
     
     // Create mean line geometry
-    const meanPoints: THREE.Vector3[] = []
-    const p5Points: THREE.Vector3[] = []
-    const p95Points: THREE.Vector3[] = []
+    const meanPts: THREE.Vector3[] = []
+    const p5Pts: THREE.Vector3[] = []
+    const p95Pts: THREE.Vector3[] = []
     
     for (let t = 0; t <= timeSteps; t++) {
       const x = (t / timeSteps) * 12 - 6
-      meanPoints.push(new THREE.Vector3(x, (mean[t] - startValue) * 0.8, 0.01))
-      p5Points.push(new THREE.Vector3(x, (p5[t] - startValue) * 0.8, 0.01))
-      p95Points.push(new THREE.Vector3(x, (p95[t] - startValue) * 0.8, 0.01))
+      meanPts.push(new THREE.Vector3(x, (mean[t] - startValue) * 0.8, 0.01))
+      p5Pts.push(new THREE.Vector3(x, (p5[t] - startValue) * 0.8, 0.01))
+      p95Pts.push(new THREE.Vector3(x, (p95[t] - startValue) * 0.8, 0.01))
     }
     
     return {
-      lineGeometries: geometries,
-      meanPath: new THREE.BufferGeometry().setFromPoints(meanPoints),
-      p5Path: new THREE.BufferGeometry().setFromPoints(p5Points),
-      p95Path: new THREE.BufferGeometry().setFromPoints(p95Points),
+      linePoints: pathsPoints,
+      meanPoints: meanPts,
+      p5Points: p5Pts,
+      p95Points: p95Pts,
     }
   }, [scenario, seedOffset, numLines])
 
   return (
     <group ref={linesRef}>
       {/* Individual simulation lines */}
-      {lineGeometries.map((geo, i) => (
-        <line key={i} geometry={geo}>
-          <lineBasicMaterial 
-            color={color} 
-            transparent 
-            opacity={opacity * 0.15}
-            blending={THREE.AdditiveBlending}
-          />
-        </line>
+      {linePoints.map((pts, i) => (
+        <Line
+          key={i}
+          points={pts}
+          color={color}
+          transparent
+          opacity={opacity * 0.15}
+          lineWidth={1}
+        />
       ))}
       
       {/* Mean line (bold) */}
-      <line geometry={meanPath}>
-        <lineBasicMaterial 
-          color={color} 
-          transparent 
-          opacity={opacity * 0.9}
-          linewidth={2}
-        />
-      </line>
+      <Line points={meanPoints} color={color} transparent opacity={opacity * 0.9} lineWidth={2} />
       
       {/* P5 line (dashed feel via lower opacity) */}
-      <line geometry={p5Path}>
-        <lineBasicMaterial 
-          color={color} 
-          transparent 
-          opacity={opacity * 0.4}
-        />
-      </line>
+      <Line points={p5Points} color={color} transparent opacity={opacity * 0.4} lineWidth={1} />
       
       {/* P95 line */}
-      <line geometry={p95Path}>
-        <lineBasicMaterial 
-          color={color} 
-          transparent 
-          opacity={opacity * 0.4}
-        />
-      </line>
+      <Line points={p95Points} color={color} transparent opacity={opacity * 0.4} lineWidth={1} />
     </group>
   )
 }
@@ -196,20 +175,17 @@ function SimulationBundle({
 function TimeMarker({ timeline }: { timeline: number }) {
   const x = timeline * 12 - 6
   
-  const geometry = useMemo(() => {
-    const points = [
+  const points = useMemo(() => {
+    return [
       new THREE.Vector3(x, -2, 0.02),
       new THREE.Vector3(x, 6, 0.02),
     ]
-    return new THREE.BufferGeometry().setFromPoints(points)
   }, [x])
 
   return (
     <group>
       {/* Vertical line */}
-      <line geometry={geometry}>
-        <lineBasicMaterial color="#ffffff" transparent opacity={0.6} />
-      </line>
+      <Line points={points} color="#ffffff" transparent opacity={0.6} lineWidth={1} />
       
       {/* Time marker dot */}
       <mesh position={[x, -2.3, 0]}>
@@ -226,44 +202,42 @@ function TimeMarker({ timeline }: { timeline: number }) {
 
 function AxisSystem() {
   // Horizontal axis (time)
-  const xAxisGeo = useMemo(() => {
-    const points = [
+  const xAxisPoints = useMemo(() => {
+    return [
       new THREE.Vector3(-6.5, -1.8, 0),
       new THREE.Vector3(6.5, -1.8, 0),
     ]
-    return new THREE.BufferGeometry().setFromPoints(points)
   }, [])
   
   // Vertical axis (value)
-  const yAxisGeo = useMemo(() => {
-    const points = [
+  const yAxisPoints = useMemo(() => {
+    return [
       new THREE.Vector3(-6.5, -1.8, 0),
       new THREE.Vector3(-6.5, 5.5, 0),
     ]
-    return new THREE.BufferGeometry().setFromPoints(points)
   }, [])
   
   // Grid lines
   const gridLines = useMemo(() => {
-    const lines: THREE.BufferGeometry[] = []
+    const lines: THREE.Vector3[][] = []
     
     // Horizontal grid
     for (let y = 0; y <= 4; y++) {
-      const points = [
+      const pts = [
         new THREE.Vector3(-6.5, y - 0.8, -0.01),
         new THREE.Vector3(6.5, y - 0.8, -0.01),
       ]
-      lines.push(new THREE.BufferGeometry().setFromPoints(points))
+      lines.push(pts)
     }
     
     // Vertical grid (time markers)
     for (let t = 0; t <= 3; t++) {
       const x = (t / 3) * 12 - 6
-      const points = [
+      const pts = [
         new THREE.Vector3(x, -1.8, -0.01),
         new THREE.Vector3(x, 5.5, -0.01),
       ]
-      lines.push(new THREE.BufferGeometry().setFromPoints(points))
+      lines.push(pts)
     }
     
     return lines
@@ -272,18 +246,12 @@ function AxisSystem() {
   return (
     <group>
       {/* Axes */}
-      <line geometry={xAxisGeo}>
-        <lineBasicMaterial color="#334155" />
-      </line>
-      <line geometry={yAxisGeo}>
-        <lineBasicMaterial color="#334155" />
-      </line>
+      <Line points={xAxisPoints} color="#334155" lineWidth={1} />
+      <Line points={yAxisPoints} color="#334155" lineWidth={1} />
       
       {/* Grid */}
-      {gridLines.map((geo, i) => (
-        <line key={i} geometry={geo}>
-          <lineBasicMaterial color="#1e293b" transparent opacity={0.5} />
-        </line>
+      {gridLines.map((pts, i) => (
+        <Line key={i} points={pts} color="#1e293b" transparent opacity={0.5} lineWidth={1} />
       ))}
       
       {/* Time labels */}

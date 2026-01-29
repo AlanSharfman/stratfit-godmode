@@ -15,7 +15,7 @@ import { migrateCenterView } from "@/types/view";
 import { Moon } from "./components/Moon";
 import { ControlDeck, ControlBoxConfig } from "./components/ControlDeck";
 import { CommandDeckBezel } from "./components/command/CommandDeckBezel";
-import AIIntelligence from "./components/AIIntelligenceEnhanced";
+import AIPanel from "@/components/terrain/AIPanel";
 import ScenarioSelector from "./components/ScenarioSelector";
 import ActiveScenario, { type ScenarioType } from "@/components/blocks/ActiveScenario";
 import ScenarioBezel from "./components/kpi/ScenarioBezel";
@@ -37,7 +37,8 @@ import { useDebouncedValue, useThrottledValue } from "@/hooks/useDebouncedValue"
 import "@/styles/godmode-align-overrides.css";
 import "@/styles/godmode-unified-layout.css";
 import "@/styles/performance-optimizations.css";
-import UnifiedHeader, { type ViewMode as HeaderViewMode } from '@/components/layout/UnifiedHeader';
+import { MainNav } from "@/components/navigation";
+import type { ViewMode as HeaderViewMode } from "@/components/layout/UnifiedHeader";
 import { useUIStore } from "@/state/uiStore";
 import { SimulateOverlay } from '@/components/simulate';
 import { SaveSimulationModal, LoadSimulationPanel } from '@/components/simulations';
@@ -1148,27 +1149,39 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
     <div className="app">
       {/* ONBOARDING SEQUENCE */}
       {showOnboarding && <OnboardingSequence onComplete={handleOnboardingComplete} />}
-      {/* GOD MODE UNIFIED HEADER */}
-      <UnifiedHeader
-        currentScenario={activeScenarioType}
-        onScenarioChange={handleScenarioTypeChange}
-        activeView={headerViewMode}
-        onViewChange={(view) => {
-          if (view === 'simulate') {
-            setShowSimulate(true);
-          } else {
-            setHeaderViewMode(view);
-          }
+      {/* MAIN NAV (5 items) */}
+      <MainNav
+        activeScenario={{
+          name: activeScenarioType ?? "New Scenario",
+          lastModified: "Active",
         }}
-        timelineEnabled={timelineEnabled}
-        heatmapEnabled={heatmapEnabled}
-        onTimelineToggle={() => setTimelineEnabled(!timelineEnabled)}
-        onHeatmapToggle={() => setHeatmapEnabled(!heatmapEnabled)}
+        activeItemId={
+          showSimulate
+            ? "simulate"
+            : headerViewMode === "decision"
+              ? "decision"
+              : headerViewMode === "valuation"
+                ? "valuation"
+                : headerViewMode === "compare"
+                  ? "compare"
+                  : headerViewMode === "impact"
+                    ? "impact"
+                  : "terrain"
+        }
+        onNavigate={(id) => {
+          // close overlay if user navigates elsewhere
+          if (id !== "simulate") setShowSimulate(false);
+          if (id === "simulate") return setShowSimulate(true);
+          if (id === "decision") return setHeaderViewMode("decision");
+          if (id === "valuation") return setHeaderViewMode("valuation");
+          if (id === "compare") return setHeaderViewMode("compare");
+          if (id === "impact") return setHeaderViewMode("impact");
+          return setHeaderViewMode("terrain");
+        }}
         onSave={() => setShowSaveModal(true)}
         onLoad={() => setShowLoadPanel(true)}
-        onHelp={() => {
-          console.log("Help/Tour requested");
-        }}
+        onExport={() => console.log("Export")}
+        onShare={() => console.log("Share")}
       />
 
       {/* OPTION 1: UNIFIED 3-COLUMN LAYOUT (Compare mode = full-width center only) */}
@@ -1219,7 +1232,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
         {/* RIGHT COLUMN: AI Intelligence - Hidden in Compare, Risk, Valuation, Decision, and Impact modes */}
         {headerViewMode !== 'compare' && headerViewMode !== 'risk' && headerViewMode !== 'valuation' && headerViewMode !== 'decision' && headerViewMode !== 'impact' && (
         <aside className="right-column" data-tour="intel">
-          <AIIntelligence levers={levers} scenario={scenario} />
+          <AIPanel levers={levers} scenario={scenario} />
         </aside>
         )}
       </div>
