@@ -1,0 +1,134 @@
+/* ComparePage.css */
+
+:root{
+  --bg0: #0f1113;
+  --bg1: #121417;
+
+  --panel: rgba(255,255,255,0.032);
+  --panel2: rgba(255,255,255,0.020);
+
+  --edge: rgba(255,255,255,0.055);
+  --edge2: rgba(255,255,255,0.035);
+
+  --textA: rgba(255,255,255,0.95);
+  --textB: rgba(255,255,255,0.80);
+  --textC: rgba(255,255,255,0.60);
+  --textD: rgba(255,255,255,0.46);
+
+  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+}
+
+.compare-page-root{
+  width: 100%;
+
+  /* Use dvh when available to avoid zoom/URL-bar viewport weirdness */
+  min-height: 100vh;
+  min-height: 100dvh;
+
+  background: var(--bg0);
+  color: var(--textA);
+
+  /* Keep it clean: vignette only (no banding / striation) */
+  background-image:
+    radial-gradient(1200px 700px at 20% 8%, rgba(255,255,255,0.040), rgba(255,255,255,0) 62%),
+    radial-gradient(900px 600px at 85% 12%, rgba(255,255,255,0.022), rgba(255,255,255,0) 58%),
+    radial-gradient(1100px 900px at 50% 120%, rgba(0,0,0,0.40), rgba(0,0,0,0) 55%);
+  background-blend-mode: normal;
+
+  /* Responsive spacing — prevents “cut off” at 150% zoom */
+  padding: clamp(22px, 3.2vw, 44px) clamp(18px, 4vw, 56px);
+  padding-bottom: clamp(64px, 10vh, 120px); /* bottom safety */
+
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+  gap: clamp(26px, 3.6vh, 56px);
+
+  font-size: 13px;
+  line-height: 1.35;
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Safety: if any parent clamps height, this still scrolls cleanly */
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+@media (max-width: 1100px){
+  .compare-page-root{
+    padding: 28px 18px;
+    padding-bottom: 88px;
+    gap: 34px;
+  }
+}
+
+.compare-mountain-section{
+  width: 100%;
+  display: flex;
+
+  /* CRITICAL: avoid rigid 60vh + min-height collisions at 150% zoom */
+  /* ScenarioMountain enforces minHeight: 400px, plus card chrome */
+  height: clamp(520px, 56vh, 760px);
+  min-height: 520px;
+}
+
+/* --- STABILITY PANEL WRAPPER (no layout changes, just material container) --- */
+
+.compare-stability-section{
+  width: 100%;
+  padding: 26px 28px 30px 28px;
+  position: relative;
+
+  background: rgba(255,255,255,0.018);
+  border: 1px solid rgba(255,255,255,0.045);
+  border-radius: 18px;
+
+  box-shadow:
+    0 12px 28px rgba(0,0,0,0.38),
+    inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.compare-stability-section::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:28px;
+  right:28px;
+  height:1px;
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.05),
+    rgba(255,255,255,0.12),
+    rgba(255,255,255,0.05)
+  );
+}
+
+.compare-delta-section{
+  width: 100%;
+}
+
+.compare-summary-section{
+  width: 100%;
+  margin-top: 28px;
+  min-height: 120px; /* prevents collapse */
+}
+
+.compare-interpretation {
+  padding: 26px 56px 10px 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.founder-interpretation {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+}
+
+.institutional-interpretation {
+  font-size: 12px;
+  color: rgba(255,255,255,0.6);
+}

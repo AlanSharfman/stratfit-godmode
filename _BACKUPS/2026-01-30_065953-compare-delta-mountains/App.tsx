@@ -31,6 +31,7 @@ import HeaderControlDeck from "@/components/layout/HeaderControlDeck";
 import { deriveArrGrowth, formatUsdCompact } from "@/utils/arrGrowth";
 import { getQualityScoreFromKpis, getQualityBandFromKpis } from "@/logic/qualityScore";
 import ScenarioMemoPage from "@/pages/ScenarioMemoPage";
+import MonteCarloDebugPage from "@/pages/montecarlo-debug";
 import ImpactView from "@/components/compound/impact";
 import VariancesView from "@/components/compound/variances/VariancesView";
 import { useDebouncedValue, useThrottledValue } from "@/hooks/useDebouncedValue";
@@ -489,7 +490,9 @@ export default function App() {
   }
 
   // Monte Carlo debug route — renders full audit summary in-page (not console).
-  // NOTE: Monte Carlo debug route temporarily disabled because the page file is not present in this branch.
+  if (typeof window !== "undefined" && window.location.pathname === "/montecarlo-debug") {
+    return <MonteCarloDebugPage />;
+  }
 
   // Compare route — Production-ready Risk Topography Instrument
   if (typeof window !== "undefined" && window.location.pathname === "/compare") {

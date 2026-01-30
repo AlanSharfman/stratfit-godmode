@@ -1,0 +1,65 @@
+.delta-strip {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 18px 56px;
+
+  background: #0c0f14;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.delta-strip::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: rgba(34, 211, 238, 0.65);
+}
+
+.delta-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.delta-label {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  font-weight: 800;
+  color: rgba(255,255,255,0.6);
+}
+
+.delta-direction {
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.delta-direction.positive {
+  color: rgba(34, 211, 238, 0.9);
+}
+
+.delta-direction.negative {
+  color: rgba(239, 68, 68, 0.9);
+}
+
+.delta-metrics {
+  display: flex;
+  gap: 28px;
+  font-variant-numeric: tabular-nums;
+}
+
+.metric {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.88);
+}
+
+

@@ -18,77 +18,14 @@
 // src/components/mountain/ScenarioMountain.tsx
 // STRATFIT — Stable Mountain with Atmospheric Haze
 
-import React, { useMemo, useRef, useLayoutEffect, Suspense, useState, useEffect } from "react";
+import React, { useMemo, useRef, useLayoutEffect, Suspense } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, PerspectiveCamera, Grid, Line as DreiLine } from "@react-three/drei";
-import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
-import { NeuralBackground } from "@/components/visuals/NeuralBackground";
+import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import * as THREE from "three";
 import { useShallow } from "zustand/react/shallow";
 import { buildPeakModel, LeverId } from "@/logic/mountainPeakModel";
-import { Scenario, ScenarioId, useScenarioStore } from "@/state/scenarioStore";
-import { useUIStore } from "@/state/uiStore";
+import { ScenarioId, SCENARIO_COLORS, useScenarioStore, type Scenario } from "@/state/scenarioStore";
 import { engineResultToMountainForces } from "@/logic/mountainForces";
-
-// ============================================================================
-// MODE CONFIG
-// ============================================================================
-
-interface ModeConfig {
-  terrainOpacity: number;
-  wireframeOpacity: number;
-  glowMultiplier: number;
-  colorSaturation: number;
-  animationSpeed: number;
-  pulseEnabled: boolean;
-  hazeOpacity: number;
-  pathGlow: number;
-  bloomIntensity: number;
-  autoRotate: boolean;
-  autoRotateSpeed: number;
-}
-
-const MODE_CONFIGS: Record<"default" | "celebration" | "ghost", ModeConfig> = {
-  default: {
-    terrainOpacity: 1,
-    wireframeOpacity: 1,
-    glowMultiplier: 1,
-    colorSaturation: 1,
-    animationSpeed: 1,
-    pulseEnabled: false,
-    hazeOpacity: 1,
-    pathGlow: 1,
-    bloomIntensity: 0,
-    autoRotate: false,
-    autoRotateSpeed: 0,
-  },
-  celebration: {
-    terrainOpacity: 1,
-    wireframeOpacity: 0.8,
-    glowMultiplier: 2.5,
-    colorSaturation: 1.2,
-    animationSpeed: 0.5,
-    pulseEnabled: true,
-    hazeOpacity: 0.15,
-    pathGlow: 3,
-    bloomIntensity: 0.8,
-    autoRotate: true,
-    autoRotateSpeed: 0.5,
-  },
-  ghost: {
-    terrainOpacity: 0.15,
-    wireframeOpacity: 0.1,
-    glowMultiplier: 0,
-    colorSaturation: 0.3,
-    animationSpeed: 0.2,
-    pulseEnabled: false,
-    hazeOpacity: 0,
-    pathGlow: 0.3,
-    bloomIntensity: 0,
-    autoRotate: false,
-    autoRotateSpeed: 0,
-  },
-};
 
 // ============================================================================
 // CONSTANTS — STABLE VERSION
@@ -149,47 +86,16 @@ function applySoftCeiling(h: number): number {
 // PALETTE
 // ============================================================================
 
-// SCENARIO-AWARE COLOR PALETTES
-// Each scenario has its own identity color while maintaining brightness
-const SCENARIO_PALETTE_COLORS: Record<ScenarioId, { idle: string; active: string }> = {
-  base: { 
-    idle: '#22d3ee',   // Luminous Teal
-    active: '#00D9FF'  // Electric Cyan
-  },
-  upside: { 
-    idle: '#34d399',   // Emerald 400
-    active: '#00ff9d'  // Neon Green
-  },
-  downside: { 
-    idle: '#fbbf24',   // Amber 400
-    active: '#fcd34d'  // Bright Amber
-  },
-  stress: { 
-    idle: '#f87171',   // Red 400
-    active: '#ff4444'  // Bright Red
-  }
-};
-
-function paletteForScenario(s: ScenarioId, baseColor?: string, saturationMultiplier: number = 1) {
-  // Scenario-specific primary color OR scenario-provided color
-  const scenarioColor = SCENARIO_PALETTE_COLORS[s] || SCENARIO_PALETTE_COLORS.base;
-  const primary = new THREE.Color(baseColor || scenarioColor.idle);
-
-  if (saturationMultiplier !== 1) {
-    const hsl = { h: 0, s: 0, l: 0 };
-    primary.getHSL(hsl);
-    primary.setHSL(hsl.h, Math.min(1, hsl.s * saturationMultiplier), hsl.l);
-  }
-
-  // Create a darkened version for shadows
-  const shadow = primary.clone().multiplyScalar(0.3);
+function paletteForScenario(s: ScenarioId) {
+  const colors = SCENARIO_COLORS[s];
+  const primary = new THREE.Color(colors.primary);
 
   return {
-    sky: new THREE.Color("#071318"),
-    low: shadow,
-    mid: primary.clone().lerp(new THREE.Color("#1a2a35"), 0.3),
-    high: new THREE.Color("#e0f0f5").lerp(primary, 0.25),
-    peak: new THREE.Color("#f8fcff"),
+    sky: new THREE.Color("#080C14"),
+    low: new THREE.Color("#0a2830"),  // Less cyan, more neutral dark
+    mid: primary.clone().lerp(new THREE.Color("#1a2a35"), 0.3),  // Desaturated mid
+    high: new THREE.Color("#ffffff").lerp(primary, 0.18),  // Less color at peaks
+    peak: new THREE.Color("#f0f5f8"),  // Slightly warm white
   };
 }
 
@@ -240,15 +146,6 @@ interface TerrainProps {
   activeLeverId: LeverId | null;
   leverIntensity01: number;
   scenario: ScenarioId;
-  baseColor?: string;
-  mode?: "default" | "celebration" | "ghost";
-  glowIntensity?: number;
-  modeConfig?: ModeConfig;
-  isDragging?: boolean; // For dynamic brightness
-  neuralPulse?: boolean; // NEURAL BOOT: Flash bright cyan when KPI boot completes
-  opacityMultiplier?: number; // Mode control
-  wireOpacityMultiplier?: number; // Mode control
-  glowMultiplier?: number; // Mode control
 }
 
 const Terrain: React.FC<TerrainProps> = ({
@@ -257,29 +154,19 @@ const Terrain: React.FC<TerrainProps> = ({
   activeLeverId,
   leverIntensity01,
   scenario,
-  baseColor,
-  mode = "default",
-  glowIntensity = 1,
-  modeConfig = MODE_CONFIGS.default,
-  isDragging = false,
-  neuralPulse = false,
-  opacityMultiplier = 1,
-  wireOpacityMultiplier = 1,
-  glowMultiplier = 1,
 }) => {
   const groupRef = useRef<THREE.Group>(null);
   const meshFillRef = useRef<THREE.Mesh>(null);
   const meshWireRef = useRef<THREE.Mesh>(null);
+  const fillMatRef = useRef<THREE.MeshStandardMaterial>(null);
+  const wireMatRef = useRef<THREE.MeshBasicMaterial>(null);
   const targetHeightsRef = useRef<Float32Array | null>(null);
   const currentHeightsRef = useRef<Float32Array | null>(null);
   const targetColorsRef = useRef<Float32Array | null>(null);
   const currentColorsRef = useRef<Float32Array | null>(null);
   const maxHeightRef = useRef(1);
 
-  const pal = useMemo(() => {
-    const sat = modeConfig?.colorSaturation ?? 1;
-    return paletteForScenario(scenario, baseColor, sat);
-  }, [scenario, baseColor, modeConfig]);
+  const pal = useMemo(() => paletteForScenario(scenario), [scenario]);
 
   // Build peak model - no caching to ensure immediate response
   const peakModel = buildPeakModel({
@@ -379,34 +266,21 @@ const Terrain: React.FC<TerrainProps> = ({
     }
   }, [dataPoints, peakModel, pal, activeKpiIndex]);
 
-  // Smooth interpolation + BREATHING ANIMATION
-  const breathTimeRef = useRef(0);
-  const fxTimeRef = useRef(0);
-  
-  useFrame((_, delta) => {
+  // Reactivity signal: drives “spectacle” (clarity + stars + subtle motion) without randomness.
+  const reactivityTarget01 = clamp01(
+    clamp01(leverIntensity01) * 1.2 + (activeKpiIndex !== null ? 0.25 : 0)
+  );
+  const reactivity01Ref = useRef(0);
+
+  // Smooth interpolation - NO erratic motion
+  useFrame((state) => {
     if (!meshFillRef.current || !meshWireRef.current) return;
     if (!targetHeightsRef.current || !currentHeightsRef.current) return;
     if (!targetColorsRef.current || !currentColorsRef.current) return;
 
-    // Celebration effects timing (R3F-safe: Terrain is inside <Canvas>)
-    fxTimeRef.current += delta * (modeConfig.animationSpeed ?? 1);
-    const pulse =
-      mode === "celebration" && modeConfig.pulseEnabled
-        ? 1 + Math.sin(fxTimeRef.current * 2) * 0.15 * glowIntensity
-        : 1;
-    const scalePulse =
-      mode === "celebration" && modeConfig.pulseEnabled
-        ? 1 + Math.sin(fxTimeRef.current * 1.5) * 0.075
-        : 1;
-
-    // Advance breath time
-    breathTimeRef.current += delta;
-    const breathTime = breathTimeRef.current;
-    
-    // Breathing parameters - slow, organic heave
-    const breathCycle = Math.sin(breathTime * 0.4) * 0.5 + 0.5; // 0-1 oscillation, ~2.5s cycle
-    const breathIntensity = 0.12; // How much the mountain heaves
-    const breathWave = Math.sin(breathTime * 0.25); // Secondary slower wave
+    // Smooth reactivity ramp to avoid pops when sliders start moving
+    reactivity01Ref.current += (reactivityTarget01 - reactivity01Ref.current) * 0.08;
+    const react01 = reactivity01Ref.current;
 
     const geo = meshFillRef.current.geometry as THREE.PlaneGeometry;
     const pos = geo.attributes.position as THREE.BufferAttribute;
@@ -418,28 +292,23 @@ const Terrain: React.FC<TerrainProps> = ({
     const targetCols = targetColorsRef.current;
     const currentCols = currentColorsRef.current;
 
-    const smoothing = 0.7;
+    const smoothing = 0.7; // 🔥 INCREASED from 0.6 - tiny bit more heave/breathing
+    let needsUpdate = false;
 
     for (let i = 0; i < count; i++) {
-      const baseTarget = targets[i];
-      
-      // Apply breathing offset based on height (taller peaks breathe more)
-      const heightFactor = baseTarget / Math.max(maxHeightRef.current, 1);
-      const breathOffset = breathIntensity * heightFactor * (breathCycle + breathWave * 0.3);
-      const breathingTarget = baseTarget + breathOffset;
-      
-      const diff = breathingTarget - currents[i];
-      if (Math.abs(diff) > 0.0001) {
+      const diff = targets[i] - currents[i];
+      if (Math.abs(diff) > 0.0001) { // 🔥 tighter threshold (was 0.0002) - less settling delay
         currents[i] += diff * smoothing;
+        needsUpdate = true;
       } else {
-        currents[i] = breathingTarget;
+        currents[i] = targets[i];
       }
       pos.setZ(i, currents[i]);
 
       for (let c = 0; c < 3; c++) {
         const ci = i * 3 + c;
         const colDiff = targetCols[ci] - currentCols[ci];
-        if (Math.abs(colDiff) > 0.0003) {
+        if (Math.abs(colDiff) > 0.0003) { // 🔥 tighter threshold (was 0.0005)
           currentCols[ci] += colDiff * smoothing;
         } else {
           currentCols[ci] = targetCols[ci];
@@ -448,7 +317,7 @@ const Terrain: React.FC<TerrainProps> = ({
       col.setXYZ(i, currentCols[i * 3], currentCols[i * 3 + 1], currentCols[i * 3 + 2]);
     }
 
-    // Always update for continuous breathing
+    if (needsUpdate) {
       pos.needsUpdate = true;
       col.needsUpdate = true;
       geo.computeVertexNormals();
@@ -456,47 +325,56 @@ const Terrain: React.FC<TerrainProps> = ({
       const wireGeo = meshWireRef.current.geometry as THREE.PlaneGeometry;
       wireGeo.attributes.position.needsUpdate = true;
       wireGeo.computeVertexNormals();
+    }
 
-      // Apply celebration pulse to materials (without rerendering)
-      const fillMat = meshFillRef.current.material as THREE.MeshStandardMaterial;
-      fillMat.emissiveIntensity = (isDragging ? 0.2 : 0.1) * glowMultiplier * pulse;
+    // Subtle deterministic “alive” motion during interaction (no jitter)
+    if (groupRef.current) {
+      const t = state.clock.getElapsedTime();
+      const sway = Math.sin(t * 1.35) * 0.02 * react01;
+      const lift = Math.sin(t * 1.8 + 1.2) * 0.12 * react01;
+      groupRef.current.rotation.z = sway;
+      groupRef.current.position.y = -2 + lift;
+    }
 
-      const wireMat = meshWireRef.current.material as THREE.MeshBasicMaterial;
-      wireMat.opacity = (neuralPulse ? 1.0 : isDragging ? 1.0 : 0.85) * wireOpacityMultiplier * pulse;
+    // Clarity + “lights up” on interaction (material-only: safe & stable)
+    if (fillMatRef.current) {
+      const m = fillMatRef.current;
+      const targetOpacity = 0.22 + 0.20 * react01;
+      const targetEmissive = 0.02 + 0.26 * react01;
+      m.opacity += (targetOpacity - m.opacity) * 0.10;
+      m.emissiveIntensity += (targetEmissive - m.emissiveIntensity) * 0.10;
+    }
 
-      // Celebration "breathing" scale (1.0 .. ~1.15)
-      if (groupRef.current) {
-        groupRef.current.scale.setScalar(0.9 * scalePulse);
-      }
+    if (wireMatRef.current) {
+      const m = wireMatRef.current;
+      const targetWire = 0.78 + 0.18 * react01;
+      m.opacity += (targetWire - m.opacity) * 0.12;
+    }
   });
 
   return (
-    <group ref={groupRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} scale={[0.9, 0.9, 0.9]}>
-      {/* FILL — Subtle depth layer, brighter when engaged */}
+    <group ref={groupRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]}>
       <mesh ref={meshFillRef} geometry={geometry}>
         <meshStandardMaterial
+          ref={fillMatRef}
           vertexColors
           transparent
-          opacity={(isDragging ? 0.35 : 0.22) * opacityMultiplier}
-          roughness={0.2}
-          metalness={0.8}
+          opacity={0.22}
+          roughness={0.1}
+          metalness={0.9}
           side={THREE.DoubleSide}
           emissive={pal.mid}
-          emissiveIntensity={(isDragging ? 0.2 : 0.1) * glowMultiplier}
+          emissiveIntensity={0.02}
           depthWrite={false}
-          toneMapped={false}
         />
       </mesh>
-      {/* WIREFRAME — Luminous Teal at rest, Electric Cyan when active */}
-      {/* NEURAL BOOT: Bright pulse when neuralPulse is true */}
       <mesh ref={meshWireRef} geometry={geometry}>
-        <meshBasicMaterial 
-          vertexColors={!neuralPulse} // Override colors during pulse
-          color={neuralPulse ? "#00ffff" : undefined}
-          wireframe 
-          transparent 
-          // VISIBILITY BOOST: 0.85 idle, 1.0 active, 1.0 during neural pulse
-          opacity={(neuralPulse ? 1.0 : isDragging ? 1.0 : 0.85) * wireOpacityMultiplier}
+        <meshBasicMaterial
+          ref={wireMatRef}
+          vertexColors
+          wireframe
+          transparent
+          opacity={0.78}
           toneMapped={false}
         />
       </mesh>
@@ -510,43 +388,33 @@ const Terrain: React.FC<TerrainProps> = ({
 
 interface AtmosphericHazeProps {
   riskLevel: number;
-  viewMode: "data" | "terrain" | "operator" | "investor";
+  viewMode: "terrain" | "data" | "operator" | "investor";
   scenario: ScenarioId;
-  isSeismicActive?: boolean;
-  opacityMultiplier?: number;
+  reactivity01?: number;
 }
 
-function AtmosphericHaze({ riskLevel, viewMode, scenario, isSeismicActive = false, opacityMultiplier = 1 }: AtmosphericHazeProps) {
+function AtmosphericHaze({ riskLevel, viewMode, scenario, reactivity01 = 0 }: AtmosphericHazeProps) {
   const riskFactor = clamp01(riskLevel / 100);
-  const viewFactor = (viewMode === "investor" || viewMode === "data") ? 0.5 : 0.7;
+  const viewFactor = viewMode === "investor" || viewMode === "data" ? 0.7 : 1.0;
+  const react01 = clamp01(reactivity01);
   
-  const scenarioTone = scenario === "stress" ? 1.1 : 
-                       scenario === "downside" ? 1.0 : 
-                       scenario === "upside" ? 0.7 : 0.85;
+  const scenarioTone = scenario === "stress" ? 1.2 : 
+                       scenario === "downside" ? 1.1 : 
+                       scenario === "upside" ? 0.85 : 1.0;
   
-  // BRIGHTENED: Reduced base opacity significantly
-  const baseOpacity = 0.08 + (riskFactor * 0.05 * scenarioTone);
-  const finalOpacity = baseOpacity * viewFactor * opacityMultiplier;
+  // Reduced base opacity for bottom haze
+  const baseOpacity = 0.18 + (riskFactor * 0.08 * scenarioTone);
+  const finalOpacity = baseOpacity * viewFactor;
   
-  // Altitude haze opacity (above mountain) - reduced
-  const altitudeOpacity = 0.04 * viewFactor * opacityMultiplier;
-  
-  // SEISMIC: Amber warning overlay when risk is being actively manipulated
-  const seismicIntensity = isSeismicActive ? Math.min(1, riskFactor * 1.5) : 0;
+  // Altitude haze opacity (above mountain)
+  const altitudeOpacity = 0.08 * viewFactor;
+  const starsOpacity = clamp01(Math.pow(react01, 0.65)) * 0.85 * viewFactor;
 
   return (
     <div className="atmospheric-haze">
-      {/* SEISMIC OVERLAY - Amber warning pulse when risk sliders active */}
-      {isSeismicActive && (
-        <div 
-          className="haze-layer haze-seismic"
-          style={{ 
-            opacity: seismicIntensity * 0.4,
-            animation: 'seismic-pulse 150ms ease-in-out infinite'
-          }}
-        />
-      )}
-      
+      {/* STARS — appear when sliders move / interaction ramps */}
+      <div className="haze-layer haze-stars" style={{ opacity: starsOpacity }} />
+
       {/* ALTITUDE HAZE - Above mountain (new) */}
       <div 
         className="haze-layer haze-altitude"
@@ -557,14 +425,14 @@ function AtmosphericHaze({ riskLevel, viewMode, scenario, isSeismicActive = fals
         className="haze-layer haze-pressure-band"
         style={{ opacity: altitudeOpacity * 0.6 }}
       />
-      {/* MINIMAL bottom haze layers - brightened */}
+      {/* REDUCED bottom haze layers */}
       <div 
         className="haze-layer haze-deep"
-        style={{ opacity: finalOpacity * 0.2 }}
+        style={{ opacity: finalOpacity * 0.35 }}
       />
       <div 
         className="haze-layer haze-mid"
-        style={{ opacity: finalOpacity * 0.15 }}
+        style={{ opacity: finalOpacity * 0.25 }}
       />
 
       <style>{`
@@ -581,62 +449,62 @@ function AtmosphericHaze({ riskLevel, viewMode, scenario, isSeismicActive = fals
           inset: 0;
         }
 
-        /* ALTITUDE HAZE - lighter vertical gradient above mountain */
+        /* STARS - subtle point field, visible on interaction */
+        .haze-stars {
+          background-image:
+            radial-gradient(circle at 12% 18%, rgba(214, 235, 255, 0.95) 0px, rgba(214, 235, 255, 0.0) 2px),
+            radial-gradient(circle at 28% 10%, rgba(214, 235, 255, 0.75) 0px, rgba(214, 235, 255, 0.0) 1.8px),
+            radial-gradient(circle at 46% 22%, rgba(214, 235, 255, 0.9) 0px, rgba(214, 235, 255, 0.0) 2.2px),
+            radial-gradient(circle at 63% 14%, rgba(214, 235, 255, 0.8) 0px, rgba(214, 235, 255, 0.0) 2px),
+            radial-gradient(circle at 78% 26%, rgba(214, 235, 255, 0.85) 0px, rgba(214, 235, 255, 0.0) 2.1px),
+            radial-gradient(circle at 88% 12%, rgba(214, 235, 255, 0.65) 0px, rgba(214, 235, 255, 0.0) 1.8px),
+            radial-gradient(circle at 18% 32%, rgba(214, 235, 255, 0.7) 0px, rgba(214, 235, 255, 0.0) 2px),
+            radial-gradient(circle at 40% 35%, rgba(214, 235, 255, 0.6) 0px, rgba(214, 235, 255, 0.0) 1.6px),
+            radial-gradient(circle at 70% 34%, rgba(214, 235, 255, 0.7) 0px, rgba(214, 235, 255, 0.0) 1.9px);
+          filter: blur(0.25px);
+          transform: translateZ(0);
+        }
+
+        /* ALTITUDE HAZE - vertical gradient above mountain */
         .haze-altitude {
           background: linear-gradient(
             to bottom,
-            rgba(20, 35, 55, 0.15) 0%,
-            rgba(18, 30, 48, 0.08) 20%,
-            transparent 40%
+            rgba(18, 28, 42, 0.35) 0%,
+            rgba(14, 22, 34, 0.2) 20%,
+            rgba(10, 18, 28, 0.08) 40%,
+            transparent 55%
           );
         }
 
-        /* PRESSURE BAND - very subtle horizontal band */
+        /* PRESSURE BAND - subtle horizontal density above peak */
         .haze-pressure-band {
           background: linear-gradient(
             to bottom,
-            transparent 20%,
-            rgba(30, 50, 70, 0.06) 28%,
-            transparent 38%
+            transparent 15%,
+            rgba(22, 34, 48, 0.15) 25%,
+            rgba(18, 28, 42, 0.1) 32%,
+            transparent 42%
           );
-          filter: blur(6px);
+          filter: blur(8px);
         }
 
-        /* BRIGHTENED: Bottom haze layers - much lighter */
+        /* REDUCED: Bottom haze layers */
         .haze-deep {
           background: radial-gradient(
-            ellipse 120% 60% at 50% 75%,
-            rgba(15, 30, 50, 0.2) 0%,
-            rgba(12, 25, 40, 0.08) 40%,
-            transparent 60%
+            ellipse 120% 60% at 50% 70%,
+            rgba(10, 20, 32, 0.5) 0%,
+            rgba(8, 16, 26, 0.25) 40%,
+            transparent 65%
           );
         }
 
         .haze-mid {
           background: radial-gradient(
-            ellipse 100% 50% at 45% 70%,
-            rgba(20, 38, 58, 0.12) 0%,
-            rgba(15, 30, 48, 0.05) 35%,
-            transparent 50%
+            ellipse 100% 50% at 45% 65%,
+            rgba(14, 26, 40, 0.35) 0%,
+            rgba(10, 20, 32, 0.15) 35%,
+            transparent 55%
           );
-        }
-        
-        /* SEISMIC OVERLAY - Amber warning when risk active */
-        .haze-seismic {
-          background: radial-gradient(
-            ellipse 100% 80% at 50% 60%,
-            rgba(245, 158, 11, 0.25) 0%,
-            rgba(245, 158, 11, 0.1) 40%,
-            transparent 70%
-          );
-          mix-blend-mode: screen;
-        }
-        
-        @keyframes seismic-pulse {
-          0%, 100% { transform: translate(0, 0); }
-          25% { transform: translate(-2px, 1px); }
-          50% { transform: translate(1px, -1px); }
-          75% { transform: translate(2px, 1px); }
         }
       `}</style>
     </div>
@@ -647,220 +515,14 @@ function AtmosphericHaze({ riskLevel, viewMode, scenario, isSeismicActive = fals
 // GRID HELPER
 // ============================================================================
 
-// ============================================================================
-// GHOST TERRAIN — Static Baseline (Doesn't react to sliders)
-// Shows "Where you started" vs "Where you're going"
-// Only visible after user starts interacting
-// ============================================================================
-
-function GhostTerrain({ isVisible, opacityMultiplier = 1 }: { isVisible: boolean; opacityMultiplier?: number }) {
-  const geometry = useMemo(() => {
-    const geo = new THREE.PlaneGeometry(MESH_W, MESH_D, GRID_W / 2, GRID_D / 2);
-    const pos = geo.attributes.position;
-    const count = pos.count;
-    const wHalf = MESH_W / 2;
-    
-    // Static baseline datapoints (neutral values)
-    const baselineDP = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5];
-    
-    for (let i = 0; i < count; i++) {
-      const x = pos.getX(i);
-      const z = pos.getY(i);
-      const kpiX = ((x + wHalf) / MESH_W) * 6;
-      
-      let ridge = 0;
-      for (let idx = 0; idx < 7; idx++) {
-        const v = baselineDP[idx];
-        const g = gaussian1(kpiX, idx, 0.48);
-        ridge += Math.pow(v, RIDGE_SHARPNESS) * g;
-      }
-      
-      let h = ridge * BASE_SCALE * 0.6; // Slightly lower than main
-      
-      // Add basic massif shape
-      for (const m of MASSIF_PEAKS) {
-        const g = gaussian2(x - m.x, z - m.z, m.sigmaX * 1.2, m.sigmaZ * 1.2);
-        h += g * m.amplitude * MASSIF_SCALE * 0.5;
-      }
-      
-      // Island mask
-      const dist = Math.sqrt(x * x + z * z * 1.4);
-      const mask = Math.max(0, 1 - Math.pow(dist / ISLAND_RADIUS, 2.0));
-      h = Math.max(0, h * mask * 0.8);
-      
-      pos.setZ(i, h);
-    }
-    
-    geo.computeVertexNormals();
-    return geo;
-  }, []);
-  
-  // TACTICAL GREY: Ghost is a faint blueprint schematic
-  const targetOpacity = (isVisible ? 0.08 : 0) * opacityMultiplier;  // 8% wireframe — subtle reference
-  const fillOpacity = (isVisible ? 0.02 : 0) * opacityMultiplier;    // 2% fill — barely there
-  
+function SubtleGrid() {
   return (
-    <group 
-      rotation={[-Math.PI / 2, 0, 0]} 
-      position={[0, -2.15, 0]}
-      scale={[0.995, 0.995, 0.995]} // Slightly smaller to avoid Z-fighting
-    >
-      {/* Ghost Wireframe — Tactical Silver baseline (blueprint look) */}
-      <mesh geometry={geometry}>
-        <meshBasicMaterial 
-          color="#cbd5e1"       // Silver/Light Slate — neutral reference
-          wireframe 
-          transparent 
-          opacity={targetOpacity}
-          side={THREE.DoubleSide}
-          depthWrite={false}
-          toneMapped={false}
-        />
-      </mesh>
-      {/* Subtle fill for depth */}
-      <mesh geometry={geometry}>
-        <meshBasicMaterial 
-          color="#94a3b8"       // Slate Grey — neutral fill
-          transparent 
-          opacity={fillOpacity}
-          side={THREE.DoubleSide}
-          depthWrite={false}
-          toneMapped={false}
-        />
-      </mesh>
-    </group>
-  );
-}
-
-// ============================================================================
-// DIGITAL HORIZON — Infinite Floor Grid + Data Dust (Scenario-Aware)
-// ============================================================================
-
-// Grid colors that complement each scenario
-const SCENARIO_GRID_COLORS: Record<ScenarioId, string> = {
-  base: "#38bdf8",     // Sky Blue
-  upside: "#34d399",   // Emerald
-  downside: "#fbbf24", // Amber
-  stress: "#f87171",   // Red
-};
-
-function DigitalHorizon({ scenarioId, glowMultiplier = 1, baseOpacity = 1 }: { scenarioId: ScenarioId; glowMultiplier?: number; baseOpacity?: number }) {
-  const gridColor = SCENARIO_GRID_COLORS[scenarioId] || SCENARIO_GRID_COLORS.base;
-  const lightColor = SCENARIO_PALETTE_COLORS[scenarioId]?.idle || "#22d3ee";
-  
-  return (
-    <>
-      {/* 1. The Infinite Floor Grid — Color matches scenario */}
-      <Grid 
+    <gridHelper 
+      args={[60, 40, "#0a1520", "#0a1520"]} 
       position={[0, -2.5, 0]} 
-        args={[50, 50]}
-        cellSize={1} 
-        cellThickness={0.8} 
-        cellColor="#1e293b"
-        sectionSize={5} 
-        sectionThickness={1.5} 
-        sectionColor={gridColor}  // Dynamic scenario color
-        fadeDistance={40}
-        fadeStrength={1.2}
-        infiniteGrid
-      />
-      
-      {/* 2. NEURAL CONSTELLATION — Floating nodes that connect when simulating */}
-      <NeuralBackground />
-      
-      {/* 3. SUBSURFACE GLOW — Color matches scenario */}
-      <pointLight 
-        position={[0, -4, 0]} 
-        intensity={1.2 * glowMultiplier * baseOpacity}
-        color={lightColor}        // Dynamic scenario color
-        distance={25} 
-        decay={2}
-      />
-      <pointLight 
-        position={[0, -3, 5]} 
-        intensity={0.7 * glowMultiplier * baseOpacity}
-        color={lightColor}        // Dynamic scenario color
-        distance={18} 
-        decay={2}
-      />
-    </>
+      rotation={[0, 0, 0]}
+    />
   );
-}
-
-// ============================================================================
-// CINEMATIC CONTROLLER — "Search Pattern" Idle Animation
-// ============================================================================
-
-interface CinematicControllerProps {
-  children: React.ReactNode;
-  riskLevel?: number;
-}
-
-function CinematicController({ children, riskLevel = 0 }: CinematicControllerProps) {
-  const groupRef = useRef<THREE.Group>(null);
-  const hasInteracted = useUIStore((s) => s.hasInteracted);
-  
-  useFrame((state, delta) => {
-    if (!groupRef.current) return;
-    
-    const t = state.clock.elapsedTime;
-    
-    // 1. RISK REACTION (Seismic Shake) — Always active when risk is high
-    const riskShake = riskLevel > 40 
-      ? (Math.random() - 0.5) * 0.015 * (riskLevel / 100) 
-      : 0;
-    
-    if (!hasInteracted) {
-      // 2. IDLE MODE: THE "SEARCH PATTERN"
-      // Creates a mesmerizing non-repeating orbit by mixing different frequencies
-      
-      // Yaw (Left <-> Right): Wide slow sweep with variation
-      const yaw = Math.sin(t * 0.18) * 0.45 + Math.sin(t * 0.07) * 0.15;
-      groupRef.current.rotation.y = yaw;
-      
-      // Pitch (Up <-> Down): Slight vertical tilt to show depth
-      const pitch = Math.cos(t * 0.25) * 0.12 + Math.sin(t * 0.11) * 0.05;
-      groupRef.current.rotation.x = pitch;
-      
-      // Roll (Tilt): Very subtle banking as it "flies"
-      const roll = Math.sin(t * 0.3) * 0.03;
-      groupRef.current.rotation.z = roll;
-      
-      // Bobbing (Floating): Gentle breathing + seismic shake
-      const bobbing = Math.sin(t * 0.4) * 0.12 + Math.cos(t * 0.22) * 0.06;
-      groupRef.current.position.y = bobbing + riskShake;
-      
-    } else {
-      // 3. ACTIVE MODE: LOCK TO STATION
-      // Smoothly return to center for data analysis
-      groupRef.current.rotation.y = THREE.MathUtils.damp(
-        groupRef.current.rotation.y, 
-        0, 
-        3.5, 
-        delta
-      );
-      groupRef.current.rotation.x = THREE.MathUtils.damp(
-        groupRef.current.rotation.x, 
-        0, 
-        3.5, 
-        delta
-      );
-      groupRef.current.rotation.z = THREE.MathUtils.damp(
-        groupRef.current.rotation.z, 
-        0, 
-        3.5, 
-        delta
-      );
-      groupRef.current.position.y = THREE.MathUtils.damp(
-        groupRef.current.position.y, 
-        0, 
-        3.5, 
-        delta
-      ) + riskShake;
-    }
-  });
-  
-  return <group ref={groupRef}>{children}</group>;
 }
 
 // ============================================================================
@@ -868,7 +530,7 @@ function CinematicController({ children, riskLevel = 0 }: CinematicControllerPro
 // ============================================================================
 
 interface ScenarioMountainProps {
-  scenario: Scenario | ScenarioId;
+  scenario: Scenario | ScenarioId | (Record<string, any> & { id?: string; color?: string });
   dataPoints?: number[];
   activeKpiIndex?: number | null;
   activeLeverId?: LeverId | null;
@@ -876,14 +538,27 @@ interface ScenarioMountainProps {
   className?: string;
   timelineEnabled?: boolean;
   heatmapEnabled?: boolean;
-  mode?: 'default' | 'celebration' | 'ghost';
+  mode?: "default" | "celebration" | "ghost";
   glowIntensity?: number;
   showPath?: boolean;
   showMilestones?: boolean;
   pathColor?: string;
 }
 
-export function ScenarioMountain({
+function normalizeScenarioId(input: unknown): ScenarioId {
+  const key =
+    typeof input === "string"
+      ? input
+      : typeof input === "object" && input && "id" in (input as any)
+        ? String((input as any).id)
+        : "base";
+
+  return key === "base" || key === "upside" || key === "downside" || key === "stress"
+    ? (key as ScenarioId)
+    : "base";
+}
+
+function ScenarioMountainComponent({
   scenario,
   dataPoints,
   activeKpiIndex = null,
@@ -892,28 +567,16 @@ export function ScenarioMountain({
   className,
   timelineEnabled = false,
   heatmapEnabled = false,
-  mode = 'default',
-  glowIntensity = 1,
-  showPath = false,
-  showMilestones = false,
-  pathColor,
+  // Accepted for compatibility with newer call sites; this renderer ignores these for now.
+  mode: _mode = "default",
+  glowIntensity: _glowIntensity = 1,
+  showPath: _showPath = false,
+  showMilestones: _showMilestones = false,
+  pathColor: _pathColor,
 }: ScenarioMountainProps) {
+  const scenarioId = normalizeScenarioId(scenario);
+  const colors = SCENARIO_COLORS[scenarioId];
   const viewMode = useScenarioStore((s) => s.viewMode);
-
-  const config = MODE_CONFIGS[mode] ?? MODE_CONFIGS.default;
-
-  const scenarioKey = typeof scenario === "string" ? scenario : scenario.id;
-  const scenarioColor = typeof scenario === "string" ? undefined : (scenario as any)?.color;
-  const scenarioId: ScenarioId = (
-    scenarioKey === "base" || scenarioKey === "upside" || scenarioKey === "downside" || scenarioKey === "stress"
-      ? (scenarioKey as ScenarioId)
-      : "base"
-  );
-
-  const glowMultiplier = config.glowMultiplier * glowIntensity;
-  const terrainOpacityMultiplier = config.terrainOpacity;
-  const wireOpacityMultiplier = config.wireframeOpacity;
-  const hazeOpacityMultiplier = config.hazeOpacity;
   
   // TODO: Implement timeline and heatmap rendering logic
   // - timelineEnabled: Show historical progression overlay
@@ -929,385 +592,85 @@ export function ScenarioMountain({
     }))
   );
 
-  // BUG FIX #1: Use scenario.id (NOT activeScenarioId). Supports ScenarioId strings too.
-  const engineResult =
-    (engineResults as Record<string, any> | undefined)?.[
-      typeof scenario === "string" ? scenario : scenario.id
-    ];
+  const engineResult = engineResults?.[scenarioId] ?? engineResults?.[activeScenarioId];
   const kpiValues = engineResult?.kpis || {};
-
-  const resolvedDataPoints = useMemo(() => {
-    if (Array.isArray(dataPoints) && dataPoints.length > 0) return dataPoints;
-    return engineResultToMountainForces((engineResult ?? null) as any);
-  }, [dataPoints, engineResult]);
   
   // riskLevel = danger score (higher = more dangerous)
   // riskIndex is health (higher = healthier), so invert it
   const riskLevel = 100 - (kpiValues.riskIndex?.value ?? 50);
-  
-  // SEISMIC WIRE: Read from UI store for active risk interaction
-  // NEURAL BOOT: neuralBootComplete signals the mountain to pulse
-  const { activeGroup, isDragging, riskLevel: uiRiskLevel, hasInteracted, neuralBootComplete } = useUIStore(
-    useShallow((s) => ({
-      activeGroup: s.activeGroup,
-      isDragging: s.isDragging,
-      riskLevel: s.riskLevel,
-      hasInteracted: s.hasInteracted,
-      neuralBootComplete: s.neuralBootComplete,
-    }))
+  const reactivity01 = clamp01(
+    clamp01(leverIntensity01 ?? 0) * 1.2 + (activeKpiIndex !== null ? 0.25 : 0)
   );
-  
-  // Is risk actively being manipulated?
-  const isSeismicActive = activeGroup === 'risk' && isDragging;
-  
-  // Use UI store's riskLevel when actively dragging risk sliders
-  const effectiveRiskLevel = isSeismicActive ? uiRiskLevel : riskLevel;
 
-  const solverPath = useScenarioStore((s) => s.solverPath);
+  const resolvedDataPoints = useMemo(() => {
+    if (Array.isArray(dataPoints) && dataPoints.length) return dataPoints;
+    return engineResultToMountainForces((engineResult ?? null) as any);
+  }, [dataPoints, engineResult]);
+
+  const backgroundCss = useMemo(() => {
+    // Navy “spectacle” sky when interacting; otherwise keep the neutral base.
+    const base = new THREE.Color("#060a10");
+    const navy = new THREE.Color("#07142a");
+    base.lerp(navy, reactivity01 * 0.9);
+    const bg = base.getStyle();
+    return `radial-gradient(ellipse 70% 50% at 50% 60%, ${colors.glow}, transparent 60%), ${bg}`;
+  }, [colors.glow, reactivity01]);
 
   return (
     <div
       className={`relative w-full h-full overflow-hidden ${className ?? ""}`}
       style={{
-        background: "radial-gradient(circle at 50% 55%, #1a2744 0%, #0f1a2e 60%, #0a1220 100%)",
-        minHeight: '400px',
-        height: '100%',
-        width: '100%',
+        background: backgroundCss,
       }}
     >
-      {/* THE VIGNETTE — Subtle shadow frame (reduced intensity) */}
-      <div 
-        className="absolute inset-0 pointer-events-none z-[2]"
-        style={{
-          boxShadow: "inset 0 0 80px rgba(11, 18, 32, 0.4)",
-        }}
-      />
-      
       <AtmosphericHaze 
-        riskLevel={effectiveRiskLevel}
+        riskLevel={riskLevel}
         viewMode={viewMode}
         scenario={scenarioId}
-        isSeismicActive={isSeismicActive}
-        opacityMultiplier={hazeOpacityMultiplier}
+        reactivity01={reactivity01}
       />
       
       <Canvas
         gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
-        dpr={Math.min(window.devicePixelRatio, 2)}
-        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 1, background: "transparent" }}
+        dpr={[1, 1.5]}
+        style={{ position: "relative", zIndex: 1, background: "transparent" }}
         fallback={<div style={{ width: "100%", height: "100%", background: "#0d1117" }} />}
-        onCreated={({ gl }) => {
-          gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        }}
       >
         <Suspense fallback={null}>
-        <color attach="background" args={['#0f1a2e']} />
-        <fog attach="fog" args={['#0f1a2e', 40, 100]} />
-        
         <PerspectiveCamera makeDefault position={[0, 6, 32]} fov={38} />
-        <ambientLight intensity={0.25} />
-        <directionalLight position={[8, 20, 10]} intensity={0.6} color="#ffffff" />
-        {/* Cyan rim light for vibrancy */}
-        <directionalLight position={[-10, 15, -5]} intensity={0.15} color="#22d3ee" />
-        <directionalLight position={[-6, 12, -8]} intensity={0.06} color="#0ea5e9" />
-        <pointLight position={[0, 8, 0]} intensity={0.08} color="#0ea5e9" distance={30} decay={2} />
+        <ambientLight intensity={0.12 + 0.08 * reactivity01} />
+        <directionalLight position={[8, 20, 10]} intensity={0.4 + 0.25 * reactivity01} color="#ffffff" />
+        <directionalLight position={[-6, 12, -8]} intensity={0.08 + 0.16 * reactivity01} color={colors.primary} />
+        <pointLight position={[0, 8, 0]} intensity={0.1 + 0.22 * reactivity01} color={colors.primary} distance={30} decay={2} />
         
-        <GhostTerrain isVisible={showPath && hasInteracted} opacityMultiplier={config.pathGlow} />
-        
-        <CinematicController riskLevel={effectiveRiskLevel}>
         <Terrain
           dataPoints={resolvedDataPoints}
           activeKpiIndex={activeKpiIndex}
           activeLeverId={activeLeverId}
           leverIntensity01={leverIntensity01}
           scenario={scenarioId}
-          baseColor={pathColor ?? scenarioColor}
-          mode={mode}
-          glowIntensity={glowIntensity}
-          modeConfig={config}
-          isDragging={isDragging}
-          neuralPulse={neuralBootComplete}
-          opacityMultiplier={terrainOpacityMultiplier}
-          wireOpacityMultiplier={wireOpacityMultiplier}
-          glowMultiplier={glowMultiplier}
         />
-        </CinematicController>
         
-        <DigitalHorizon scenarioId={scenarioId} glowMultiplier={glowMultiplier} baseOpacity={terrainOpacityMultiplier} />
-
-        {/* Strategic Path + Milestones overlays */}
-        {showPath ? (
-          <StrategicPath
-            solverPath={solverPath?.length ? solverPath : [
-              { riskIndex: 60, enterpriseValue: 1, runway: 12 },
-              { riskIndex: 55, enterpriseValue: 2, runway: 16 },
-              { riskIndex: 50, enterpriseValue: 3, runway: 20 },
-              { riskIndex: 45, enterpriseValue: 4, runway: 26 },
-              { riskIndex: 40, enterpriseValue: 5, runway: 32 },
-            ]}
-            color={pathColor ?? scenarioColor ?? SCENARIO_PALETTE_COLORS[scenarioId]?.active ?? "#22d3ee"}
-            mode={mode}
-            glowIntensity={glowIntensity}
-          />
-        ) : null}
-        {showMilestones ? (
-          <MilestoneOrbs
-            color={pathColor ?? SCENARIO_PALETTE_COLORS[scenarioId]?.active ?? "#22d3ee"}
-            mode={mode}
-            glowIntensity={glowIntensity}
-            solverPath={solverPath}
-          />
-        ) : null}
-        
+        <SubtleGrid />
         <OrbitControls 
-          enableZoom={mode !== "ghost" ? false : false}
-          enablePan={mode !== "ghost" ? false : false}
-          enableRotate={mode !== "ghost"}
-          autoRotate={config.autoRotate}
-          autoRotateSpeed={config.autoRotateSpeed}
+          enableZoom={false} 
+          enablePan={false} 
+          enableRotate={true}
           rotateSpeed={0.4}
           minPolarAngle={Math.PI / 4}
           maxPolarAngle={Math.PI / 2.2}
           minAzimuthAngle={-Math.PI / 5}
           maxAzimuthAngle={Math.PI / 5}
         />
-
-        {/* Celebration bloom / glow */}
-        <EffectComposer enabled={config.bloomIntensity > 0 && mode !== "ghost"}>
-          <Bloom
-            intensity={config.bloomIntensity * glowIntensity}
-            luminanceThreshold={0.2}
-            luminanceSmoothing={0.9}
-            mipmapBlur
-          />
-          <Vignette offset={0.5} darkness={mode === "celebration" ? 0.35 : 0} />
-        </EffectComposer>
         </Suspense>
       </Canvas>
     </div>
   );
 }
 
-export default ScenarioMountain;
-
-// ============================================================================
-// STRATEGIC PATH + MILESTONES (lightweight overlays; no terrain rewrite)
-// ============================================================================
-
-function StrategicPath({
-  solverPath,
-  color,
-  mode,
-  glowIntensity,
-}: {
-  solverPath: { riskIndex: number; enterpriseValue: number; runway: number }[];
-  color: string;
-  mode: "default" | "celebration" | "ghost";
-  glowIntensity: number;
-}) {
-  const config = MODE_CONFIGS[mode] ?? MODE_CONFIGS.default;
-  const lineRef = useRef<any>(null);
-  const glowRef = useRef<any>(null);
-
-  // Map solverPath points into a compact, stable curve above the mountain.
-  // This is intentionally heuristic: it gives a consistent "trajectory" overlay
-  // without needing to know the terrain heightfield in world-space.
-  const points = useMemo(() => {
-    if (!solverPath?.length) return [];
-    const maxRunway = Math.max(...solverPath.map((p) => p.runway || 0), 1);
-    const minEV = Math.min(...solverPath.map((p) => p.enterpriseValue || 0));
-    const maxEV = Math.max(...solverPath.map((p) => p.enterpriseValue || 0), minEV + 1);
-
-    return solverPath.map((p, i) => {
-      const t = solverPath.length <= 1 ? 0 : i / (solverPath.length - 1);
-      const runway01 = (p.runway ?? 0) / maxRunway;
-      const ev01 = ((p.enterpriseValue ?? 0) - minEV) / (maxEV - minEV);
-      const risk01 = clamp01((p.riskIndex ?? 50) / 100);
-
-      const x = (t - 0.5) * 10;                 // left↔right across the scene
-      const y = -1.2 + t * 0.8;                 // slightly forward over time
-      const z = 0.3 + runway01 * 2.2 + ev01 * 1.2 - risk01 * 0.8; // lift
-      return new THREE.Vector3(x, y, z);
-    });
-  }, [solverPath]);
-
-  const curvePoints = useMemo(() => {
-    if (points.length < 2) return points;
-    const curve = new THREE.CatmullRomCurve3(points, false, "centripetal", 0.5);
-    return curve.getPoints(120);
-  }, [points]);
-
-  useFrame((state) => {
-    const t = state.clock.elapsedTime;
-    const pulse = mode === "celebration" ? (0.8 + Math.sin(t * 2) * 0.2) : 1;
-    if (lineRef.current) {
-      const m = lineRef.current.material as { opacity?: number } | undefined;
-      if (m) m.opacity = (mode === "ghost" ? 0.2 : 0.9) * pulse;
-      // Flow feel in celebration mode (dashed line offset)
-      const md = lineRef.current.material as any;
-      if (mode === "celebration" && md) md.dashOffset = -t * 0.8;
-    }
-    if (glowRef.current) {
-      const m = glowRef.current.material as { opacity?: number } | undefined;
-      if (m) m.opacity = 0.25 * config.pathGlow * glowIntensity * pulse;
-      const mg = glowRef.current.material as any;
-      if (mode === "celebration" && mg) mg.dashOffset = -t * 0.8;
-    }
-  });
-
-  if (!curvePoints.length) return null;
-  if (mode === "ghost" && config.pathGlow <= 0) return null;
-
-  return (
-    <group>
-      <DreiLine
-        ref={glowRef}
-        points={curvePoints}
-        color={color}
-        transparent
-        opacity={0.25 * config.pathGlow * glowIntensity}
-        lineWidth={3}
-        dashed={mode === "celebration"}
-        dashScale={1}
-        dashSize={0.8}
-        gapSize={0.6}
-      />
-      <DreiLine
-        ref={lineRef}
-        points={curvePoints}
-        color={color}
-        transparent
-        opacity={mode === "ghost" ? 0.2 : 0.9}
-        lineWidth={1.5}
-        dashed={mode === "celebration"}
-        dashScale={1}
-        dashSize={0.8}
-        gapSize={0.6}
-      />
-    </group>
-  );
+// Named export for newer call sites
+export function ScenarioMountain(props: ScenarioMountainProps) {
+  return <ScenarioMountainComponent {...props} />;
 }
 
-function MilestoneOrbs({
-  color,
-  mode,
-  glowIntensity,
-  solverPath,
-}: {
-  color: string;
-  mode: "default" | "celebration" | "ghost";
-  glowIntensity: number;
-  solverPath?: { riskIndex: number; enterpriseValue: number; runway: number }[];
-}) {
-  const config = MODE_CONFIGS[mode] ?? MODE_CONFIGS.default;
-  if (mode === "ghost") return null;
-
-  const milestones = useMemo(() => {
-    const sp = solverPath?.length
-      ? solverPath
-      : [
-          { riskIndex: 60, enterpriseValue: 1, runway: 12 },
-          { riskIndex: 55, enterpriseValue: 2, runway: 16 },
-          { riskIndex: 50, enterpriseValue: 3, runway: 20 },
-          { riskIndex: 45, enterpriseValue: 4, runway: 26 },
-          { riskIndex: 40, enterpriseValue: 5, runway: 32 },
-        ];
-
-    const maxRunway = Math.max(...sp.map((p) => p.runway || 0), 1);
-    const minEV = Math.min(...sp.map((p) => p.enterpriseValue || 0));
-    const maxEV = Math.max(...sp.map((p) => p.enterpriseValue || 0), minEV + 1);
-
-    const pts = sp.map((p, i) => {
-      const t = sp.length <= 1 ? 0 : i / (sp.length - 1);
-      const runway01 = (p.runway ?? 0) / maxRunway;
-      const ev01 = ((p.enterpriseValue ?? 0) - minEV) / (maxEV - minEV);
-      const risk01 = clamp01((p.riskIndex ?? 50) / 100);
-      const x = (t - 0.5) * 10;
-      const y = -1.2 + t * 0.8;
-      const z = 0.3 + runway01 * 2.2 + ev01 * 1.2 - risk01 * 0.8;
-      return new THREE.Vector3(x, y, z);
-    });
-
-    const typeOrder = ["revenue", "funding", "team", "revenue", "product"] as const;
-    const picks = [0.15, 0.35, 0.55, 0.75, 0.92];
-
-    return picks.map((t, idx) => {
-      const i = Math.max(0, Math.min(pts.length - 1, Math.round(t * (pts.length - 1))));
-      return { pos: pts[i], type: typeOrder[idx] };
-    });
-  }, [solverPath]);
-
-  const typeColors: Record<string, string> = {
-    revenue: "#10b981",
-    team: "#3b82f6",
-    product: "#f59e0b",
-    funding: "#a855f7",
-    risk: "#ef4444",
-  };
-
-  return (
-    <group>
-      {milestones.map((m, i) => (
-        <MilestoneOrb
-          key={i}
-          position={m.pos}
-          color={typeColors[m.type] ?? color}
-          mode={mode}
-          glowIntensity={glowIntensity}
-          glowMultiplier={config.glowMultiplier}
-        />
-      ))}
-    </group>
-  );
-}
-
-function MilestoneOrb({
-  position,
-  color,
-  mode,
-  glowIntensity,
-  glowMultiplier,
-}: {
-  position: THREE.Vector3;
-  color: string;
-  mode: "default" | "celebration" | "ghost";
-  glowIntensity: number;
-  glowMultiplier: number;
-}) {
-  const meshRef = useRef<THREE.Mesh>(null);
-  const glowRef = useRef<THREE.Mesh>(null);
-
-  useFrame((state) => {
-    if (!meshRef.current) return;
-    const t = state.clock.elapsedTime;
-    meshRef.current.position.y = position.y + Math.sin(t * 2) * 0.05;
-    if (mode === "celebration") {
-      const s = 1 + Math.sin(t * 3) * 0.2 * glowIntensity;
-      meshRef.current.scale.setScalar(s);
-      if (glowRef.current) glowRef.current.scale.setScalar(s * 2);
-    }
-  });
-
-  return (
-    <group position={position}>
-      {mode === "celebration" ? (
-        <mesh ref={glowRef}>
-          <sphereGeometry args={[0.15, 16, 16]} />
-          <meshBasicMaterial color={color} transparent opacity={0.15 * glowMultiplier} depthWrite={false} />
-        </mesh>
-      ) : null}
-      <mesh ref={meshRef}>
-        <sphereGeometry args={[0.08, 16, 16]} />
-        <meshStandardMaterial
-          color={color}
-          emissive={color}
-          emissiveIntensity={glowMultiplier * glowIntensity * 0.35}
-          transparent
-          opacity={1}
-          depthWrite={false}
-        />
-      </mesh>
-      {mode === "celebration" ? <pointLight color={color} intensity={glowIntensity * 0.35} distance={2} decay={2} /> : null}
-    </group>
-  );
-}
+export default ScenarioMountainComponent;
