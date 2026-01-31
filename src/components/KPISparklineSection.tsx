@@ -262,7 +262,6 @@ const getParticleConfig = (value: number) => {
 };
 
 const StarshipTelemetry = memo(function StarshipTelemetry({ value, isActive, isDragging, bootPhase, onStreamPulse }: StarshipTelemetryProps) {
-  const [tick, setTick] = useState(0);
   const [pulsePhase, setPulsePhase] = useState(0);
   const [deployed, setDeployed] = useState(false);
   const [streamActive, setStreamActive] = useState(false);
@@ -295,20 +294,22 @@ const StarshipTelemetry = memo(function StarshipTelemetry({ value, isActive, isD
   // Animation loop — DYNAMIC speed based on momentum
   useEffect(() => {
     if (!streamActive && bootPhase !== 'complete') return;
+
+    // Deterministic respawn jitter (no Math.random; stable across renders)
+    const respawnJitter = ((Math.sin(effectiveSpeed * 12.9898) * 43758.5453) % 1) * 5;
     
     // Speed scales with dragging AND momentum
     const dragMultiplier = isDragging ? 2 : isActive ? 1.2 : 1;
     const effectiveSpeed = particleConfig.baseSpeed * dragMultiplier;
     
     const interval = setInterval(() => {
-      setTick(t => t + 1);
       setPulsePhase(p => p + (particleConfig.mode === 'thrust' ? 0.2 : 0.08));
       setFlickerPhase(f => f + 0.3); // For stall mode flickering
       
       // Move pips with momentum-aware speed
       setPipPositions(prev => prev.map(pos => {
         const newPos = pos + effectiveSpeed;
-        return newPos > 100 ? -10 + (Math.random() * 5) : newPos;
+        return newPos > 100 ? -10 + respawnJitter : newPos;
       }));
       
       // Notify parent for wet glass sync (pulse intensity 0-1)
@@ -374,20 +375,50 @@ const StarshipTelemetry = memo(function StarshipTelemetry({ value, isActive, isD
   const basePulse = 0.7 + Math.sin(pulsePhase) * 0.3;
   const pulseIntensity = basePulse * particleConfig.glowIntensity;
   
-  // CHEVRON MICRO-JITTER — Only during HIGH THRUST (engine vibration)
-  const thrustJitterX = isHighThrust ? (Math.random() - 0.5) * 1.5 : 0;
-  const thrustJitterY = isHighThrust ? (Math.random() - 0.5) * 1.5 : 0;
-  
-  // Standard jitter for dragging
-  const jitterX = isDragging ? (Math.random() - 0.5) * 2 + thrustJitterX : thrustJitterX;
-  const jitterY = isDragging ? (Math.random() - 0.5) * 2 + thrustJitterY : thrustJitterY;
-  
-  // Horizon line vibration
-  const horizonJitter = isDragging 
-    ? (Math.random() - 0.5) * 3 
-    : isHighThrust 
-      ? (Math.random() - 0.5) * 2 
-      : isActive ? (Math.random() - 0.5) * 1 : 0;
+  // CHEVRON MICRO-JITTER — Render-pure (no Math.random during render)
+  // Jitter is generated once per interaction state change (memoized), not per render frame.
+  const jitter = useMemo(() => {
+    if (!isHighThrust && !isDragging && !isActive) {
+      return {
+        thrustJitterX: 0,
+        thrustJitterY: 0,
+        horizonJitter: 0,
+        signA: 1,
+        signB: 1,
+      };
+    }
+
+    // Deterministic pseudo-jitter (pure) keyed off interaction state flags.
+    const key =
+      (isHighThrust ? 1 : 0) * 101 +
+      (isDragging ? 1 : 0) * 211 +
+      (isActive ? 1 : 0) * 307;
+
+    const frac = (n: number) => n - Math.floor(n);
+    const centered = (seed: number) => frac(Math.sin(seed) * 43758.5453123) - 0.5;
+
+    const jA = centered(1000 + key * 1.11);
+    const jB = centered(2000 + key * 1.37);
+    const jC = centered(3000 + key * 1.73);
+
+    return {
+      thrustJitterX: isHighThrust ? jA * 1.5 : 0,
+      thrustJitterY: isHighThrust ? jB * 1.5 : 0,
+      horizonJitter: isDragging ? jC * 3 : isHighThrust ? jC * 2 : isActive ? jC * 1 : 0,
+      signA: jA >= 0 ? 1 : -1,
+      signB: jB >= 0 ? 1 : -1,
+    };
+  }, [isHighThrust, isDragging, isActive]);
+
+  const thrustJitterX = jitter.thrustJitterX;
+  const thrustJitterY = jitter.thrustJitterY;
+
+  // Standard jitter for dragging (stable amplitude; time-varying from phases)
+  const jitterWave = Math.sin(pulsePhase * 2.0) * 0.6 + Math.sin(flickerPhase * 1.3) * 0.4;
+  const jitterX = isDragging ? jitterWave * 2 * jitter.signA + thrustJitterX : thrustJitterX;
+  const jitterY = isDragging ? jitterWave * 2 * jitter.signB + thrustJitterY : thrustJitterY;
+
+  const horizonJitter = jitter.horizonJitter;
   
   // STALL FLICKER — Opacity fluctuates when stalling
   const stallFlicker = isStalling ? 0.3 + Math.sin(flickerPhase * 3) * 0.4 : 1;
@@ -701,7 +732,7 @@ const StabilityDial = memo(function StabilityDial({
   onIgnitionComplete 
 }: StabilityDialProps) {
   const [displayValue, setDisplayValue] = useState(0);
-  const [bootActive, setBootActive] = useState(false);
+  const bootActive = bootPhase === 'stability' || bootPhase === 'complete';
   const velocityRef = useRef(0);
   const targetValueRef = useRef(value);
   const animationRef = useRef<number | null>(null);
@@ -710,7 +741,6 @@ const StabilityDial = memo(function StabilityDial({
   // NEURAL BOOT — Sweep animation at T+1200ms
   useEffect(() => {
     if (bootPhase === 'stability') {
-      setBootActive(true);
       targetValueRef.current = value;
       velocityRef.current = 0;
       
@@ -749,7 +779,6 @@ const StabilityDial = memo(function StabilityDial({
         if (animationRef.current) cancelAnimationFrame(animationRef.current);
       };
     } else if (bootPhase === 'complete') {
-      setBootActive(true);
       setDisplayValue(value);
     }
   }, [bootPhase, value, onIgnitionComplete]);

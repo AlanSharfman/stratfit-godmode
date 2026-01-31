@@ -43,25 +43,12 @@ import { useUIStore } from "@/state/uiStore";
 import { SimulateOverlay } from '@/components/simulate';
 import { SaveSimulationModal, LoadSimulationPanel } from '@/components/simulations';
 import { ComparePage } from '@/components/compare';
+import StrategicDeclarationPage from '@/pages/StrategicDeclarationPage';
+import type { LeverState } from "@/types/lever";
 
 // ============================================================================
 // TYPES & CONSTANTS
 // ============================================================================
-
-interface LeverState {
-  // Growth
-  demandStrength: number;
-  pricingPower: number;
-  expansionVelocity: number;
-  // Efficiency
-  costDiscipline: number;
-  hiringIntensity: number;
-  operatingDrag: number;
-  // Risk
-  marketVolatility: number;
-  executionRisk: number;
-  fundingPressure: number;
-}
 
 const INITIAL_LEVERS: LeverState = {
   demandStrength: 60,
@@ -488,6 +475,11 @@ export default function App() {
     return <ScenarioMemoPage />;
   }
 
+  // Strategic Declaration route (no router) — model-ready intake
+  if (typeof window !== "undefined" && window.location.pathname.startsWith("/declaration")) {
+    return <StrategicDeclarationPage />;
+  }
+
   // Monte Carlo debug route — renders full audit summary in-page (not console).
   // NOTE: Monte Carlo debug route temporarily disabled because the page file is not present in this branch.
 
@@ -533,7 +525,19 @@ export default function App() {
   const [headerViewMode, setHeaderViewMode] = useState<HeaderViewMode>("terrain");
   
   // GOD MODE: Monte Carlo Simulation Overlay
-  const [showSimulate, setShowSimulate] = useState(false);
+  const [showSimulate, setShowSimulate] = useState(() => {
+    try {
+      // Dedicated boot route (no router): /simulate should open the overlay on load.
+      if (typeof window !== "undefined" && window.location.pathname === "/simulate") return true;
+      // Declaration handoff (stable): set by StrategicDeclarationPage before hard navigation.
+      const flag = window.localStorage.getItem("sf.openSimulateOnBoot");
+      if (flag === "1") {
+        window.localStorage.removeItem("sf.openSimulateOnBoot");
+        return true;
+      }
+    } catch {}
+    return false;
+  });
   
   // GOD MODE: Save/Load Simulation Modals
   const [showSaveModal, setShowSaveModal] = useState(false);
@@ -1242,7 +1246,15 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
       {/* MONTE CARLO SIMULATION OVERLAY */}
       <SimulateOverlay 
         isOpen={showSimulate} 
-        onClose={() => setShowSimulate(false)}
+        onClose={() => {
+          setShowSimulate(false);
+          // If user booted into /simulate, normalize URL back to root on close.
+          try {
+            if (typeof window !== "undefined" && window.location.pathname === "/simulate") {
+              window.history.replaceState(null, "", "/");
+            }
+          } catch {}
+        }}
         levers={levers}
       />
       

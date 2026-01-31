@@ -1,17 +1,7 @@
 // src/logic/calculateMetrics.ts
 // Pure function to calculate metrics based on scenario state and levers
 
-export interface LeverState {
-  demandStrength: number;
-  pricingPower: number;
-  expansionVelocity: number;
-  costDiscipline: number;
-  hiringIntensity: number;
-  operatingDrag: number;
-  marketVolatility: number;
-  executionRisk: number;
-  fundingPressure: number;
-}
+import type { LeverState } from "@/types/lever";
 
 export interface MetricsResult {
   runway: number;

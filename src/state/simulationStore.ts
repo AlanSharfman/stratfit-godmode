@@ -3,7 +3,7 @@
 // Persists Monte Carlo results for use across the dashboard
 
 import { create } from 'zustand';
-import type { MonteCarloResult } from '@/logic/monteCarloEngine';
+import type { LeverState, MonteCarloResult } from '@/logic/monteCarloEngine';
 import type { Verdict } from '@/logic/verdictGenerator';
 
 // Simplified results for quick access
@@ -51,15 +51,15 @@ interface SimulationState {
   summary: SimulationSummary | null;
   
   // Lever snapshot (what levers were used for this simulation)
-  leverSnapshot: Record<string, number> | null;
+  leverSnapshot: LeverState | null;
   
   // Actions
   startSimulation: () => void;
-  setSimulationResult: (result: MonteCarloResult, verdict: Verdict, levers: Record<string, number>) => void;
+  setSimulationResult: (result: MonteCarloResult, verdict: Verdict, levers: LeverState) => void;
   clearSimulation: () => void;
   
   // Helpers
-  hasResultsForCurrentLevers: (currentLevers: Record<string, number>) => boolean;
+  hasResultsForCurrentLevers: (currentLevers: LeverState) => boolean;
 }
 
 // Format currency helper
@@ -145,11 +145,10 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
     const snapshot = get().leverSnapshot;
     if (!snapshot) return false;
     
-    // Check if all lever values are the same
-    for (const key of Object.keys(currentLevers)) {
-      if (snapshot[key] !== currentLevers[key]) {
-        return false;
-      }
+    // Check if all lever values are the same (typed keys)
+    const keys = Object.keys(currentLevers) as (keyof LeverState)[];
+    for (const key of keys) {
+      if (snapshot[key] !== currentLevers[key]) return false;
     }
     return true;
   },

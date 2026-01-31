@@ -2,7 +2,7 @@
 // STRATFIT — Neural Constellation Background
 // Floating nodes that connect when user is actively simulating
 
-import { useRef, useMemo, useState, useEffect } from 'react';
+import { useRef, useMemo, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useUIStore } from '@/state/uiStore';
@@ -16,25 +16,35 @@ interface Node {
   baseOpacity: number;
 }
 
+// Deterministic pseudo-random (render-pure) generator.
+const frac = (n: number) => n - Math.floor(n);
+function prng01(seed: number): number {
+  // NOTE: deterministic + pure; avoids Math.random() in render.
+  return frac(Math.sin(seed) * 43758.5453123);
+}
+function prngCentered(seed: number): number {
+  return prng01(seed) - 0.5;
+}
+
 export function NeuralBackground() {
   const isDragging = useUIStore((s) => s.isDragging);
   const groupRef = useRef<THREE.Group>(null);
   const [tick, setTick] = useState(0);
   
-  // Initialize nodes with random positions and velocities
+  // Initialize nodes with deterministic pseudo-random positions and velocities
   const nodes = useMemo<Node[]>(() => {
-    return Array.from({ length: NODE_COUNT }, () => ({
+    return Array.from({ length: NODE_COUNT }, (_, i) => ({
       position: new THREE.Vector3(
-        (Math.random() - 0.5) * 70,     // Wide spread X
-        (Math.random() - 0.5) * 35 + 8, // Upper sky Y
-        (Math.random() - 0.5) * 50 - 25 // Deep depth Z
+        prngCentered(1000 + i * 11.1) * 70,     // Wide spread X
+        prngCentered(2000 + i * 17.3) * 35 + 8, // Upper sky Y
+        prngCentered(3000 + i * 23.7) * 50 - 25 // Deep depth Z
       ),
       velocity: new THREE.Vector3(
-        (Math.random() - 0.5) * 0.015,
-        (Math.random() - 0.5) * 0.012,
-        (Math.random() - 0.5) * 0.008
+        prngCentered(4000 + i * 29.9) * 0.015,
+        prngCentered(5000 + i * 31.7) * 0.012,
+        prngCentered(6000 + i * 37.1) * 0.008
       ),
-      baseOpacity: Math.random() * 0.4 + 0.2
+      baseOpacity: prng01(7000 + i * 41.3) * 0.4 + 0.2,
     }));
   }, []);
 

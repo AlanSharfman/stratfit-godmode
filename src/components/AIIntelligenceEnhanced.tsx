@@ -6,7 +6,7 @@
 import React, { useMemo, useEffect, useRef, useState } from "react";
 import { useScenarioStore, ViewMode } from "@/state/scenarioStore";
 import type { ScenarioId } from "@/state/scenarioStore";
-import { LeverState } from "@/logic/calculateMetrics";
+import type { LeverState } from "@/types/lever";
 import { buildScenarioDeltaLedger } from "@/logic/scenarioDeltaLedger";
 import { Activity, AlertTriangle, TrendingUp, Shield, Zap, Target, ArrowRight, AlertOctagon, Volume2, VolumeX } from "lucide-react";
 import styles from "./AIIntelligenceEnhanced.module.css";

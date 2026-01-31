@@ -3,21 +3,13 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import type { LeverState } from '@/types/lever';
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
-export interface LeverSnapshot {
-  demandStrength: number;
-  pricingPower: number;
-  expansionVelocity: number;
-  costDiscipline: number;
-  hiringIntensity: number;
-  operatingDrag: number;
-  marketVolatility: number;
-  executionRisk: number;
-  fundingPressure: number;
+export interface LeverSnapshot extends LeverState {
   // Index signature for Record<string, number> compatibility
   [key: string]: number;
 }

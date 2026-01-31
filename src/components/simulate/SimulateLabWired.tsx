@@ -68,7 +68,7 @@ export default function SimulateLabWired() {
     }
 
     const executionTimeMs = performance.now() - startTime;
-    const simResult = processSimulationResults(allSimulations, config, executionTimeMs);
+    const simResult = processSimulationResults(allSimulations, config, levers, executionTimeMs);
     const simVerdict = generateVerdict(simResult);
 
     setProgress(100);

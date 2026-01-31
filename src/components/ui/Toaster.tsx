@@ -1,5 +1,3 @@
-'use client'
-
 import React from 'react'
 import { CheckCircle, AlertCircle, Info, X } from 'lucide-react'
 

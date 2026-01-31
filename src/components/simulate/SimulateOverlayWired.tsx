@@ -8,13 +8,15 @@ import { useSimulationStore } from "@/state/simulationStore";
 import { useSavedSimulationsStore } from "@/state/savedSimulationsStore";
 import { useScenarioStore, type LeverSnapshot } from "@/state/scenarioStore";
 import { useLeverStore } from "@/state/leverStore";
+import { useStrategicDeclarationStore } from "@/stores/strategicDeclarationStore";
+import { compileStrategicDeclaration } from "@/logic/strategicCompiler";
 
 import {
   type MonteCarloResult,
   type LeverState,
   type SimulationConfig,
-  type SensitivityFactor,
   runSingleSimulation,
+  processSimulationResults,
 } from "@/logic/monteCarloEngine";
 import { generateVerdict, type Verdict } from "@/logic/verdictGenerator";
 
@@ -75,6 +77,10 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
   // Stores
   const { setSimulationResult, startSimulation: storeStartSimulation } = useSimulationStore();
 
+  // Strategic Declaration (if locked, it overrides levers/config via compiler)
+  const buildPayload = useStrategicDeclarationStore((s) => s.buildPayload);
+  const declarationLocked = useStrategicDeclarationStore((s) => s.locked);
+
   const saveSimulation = useSavedSimulationsStore((s) => s.saveSimulation);
   const setAsBaseline = useSavedSimulationsStore((s) => s.setAsBaseline);
   const savedSimulations = useSavedSimulationsStore((s) => s.simulations);
@@ -97,26 +103,41 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
     []
   );
 
+  // If a Strategic Declaration is locked, compile it into engine levers + config.
+  const compiled = useMemo(() => {
+    if (!declarationLocked) return null;
+    const payload = buildPayload();
+    if (!payload) return null;
+    try {
+      return compileStrategicDeclaration(payload);
+    } catch {
+      return null;
+    }
+  }, [declarationLocked, buildPayload]);
+
+  const simLevers: LeverState = compiled?.levers ?? levers;
+  const simConfig: SimulationConfig = compiled?.config ?? config;
+
   // Baseline existence
   const hasBaseline = useMemo(() => {
     const savedBaseline = savedSimulations.find((s) => s.isBaseline);
     return !!savedBaseline || hasLegacyBaseline;
   }, [savedSimulations, hasLegacyBaseline]);
 
-  // Convert levers to snapshot
+  // Convert levers to snapshot (this snapshot MUST match the levers used for the run)
   const leversAsSnapshot = useMemo(
     (): LeverSnapshot => ({
-      demandStrength: levers.demandStrength,
-      pricingPower: levers.pricingPower,
-      expansionVelocity: levers.expansionVelocity,
-      costDiscipline: levers.costDiscipline,
-      hiringIntensity: levers.hiringIntensity,
-      operatingDrag: levers.operatingDrag,
-      marketVolatility: levers.marketVolatility,
-      executionRisk: levers.executionRisk,
-      fundingPressure: levers.fundingPressure,
+      demandStrength: simLevers.demandStrength,
+      pricingPower: simLevers.pricingPower,
+      expansionVelocity: simLevers.expansionVelocity,
+      costDiscipline: simLevers.costDiscipline,
+      hiringIntensity: simLevers.hiringIntensity,
+      operatingDrag: simLevers.operatingDrag,
+      marketVolatility: simLevers.marketVolatility,
+      executionRisk: simLevers.executionRisk,
+      fundingPressure: simLevers.fundingPressure,
     }),
-    [levers]
+    [simLevers]
   );
 
   // Run simulation with progress (institutional, no toy spinner UI)
@@ -132,14 +153,14 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
     const CHUNK_SIZE = 500;
     const allSimulations: any[] = [];
 
-    for (let i = 0; i < config.iterations; i += CHUNK_SIZE) {
-      const chunkEnd = Math.min(i + CHUNK_SIZE, config.iterations);
+    for (let i = 0; i < simConfig.iterations; i += CHUNK_SIZE) {
+      const chunkEnd = Math.min(i + CHUNK_SIZE, simConfig.iterations);
 
       for (let j = i; j < chunkEnd; j++) {
-        allSimulations.push(runSingleSimulation(j, levers, config));
+        allSimulations.push(runSingleSimulation(j, simLevers, simConfig));
       }
 
-      const currentProgress = (allSimulations.length / config.iterations) * 100;
+      const currentProgress = (allSimulations.length / simConfig.iterations) * 100;
       setProgress(currentProgress);
       setIterationCount(allSimulations.length);
 
@@ -148,18 +169,18 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
     }
 
     const executionTimeMs = performance.now() - startTime;
-    const simResult = processSimulationResults(allSimulations, config, executionTimeMs);
+    const simResult = processSimulationResults(allSimulations, simConfig, simLevers, executionTimeMs);
     const simVerdict = generateVerdict(simResult);
 
     setProgress(100);
     setResult(simResult);
     setVerdict(simVerdict);
 
-    // Store in simulation store
-    setSimulationResult(simResult, simVerdict, leversAsSnapshot);
+    // Store in simulation store (snapshot must match the levers used for this run)
+    setSimulationResult(simResult, simVerdict, simLevers);
 
     setTimeout(() => setPhase("complete"), 150);
-  }, [config, levers, leversAsSnapshot, setSimulationResult, storeStartSimulation]);
+  }, [simConfig, simLevers, setSimulationResult, storeStartSimulation]);
 
   // SAVE AS BASELINE
   const handleSaveAsBaseline = useCallback(() => {
@@ -223,7 +244,7 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
       leverSensitivity:
         result.sensitivityFactors?.map((f) => ({ lever: String(f.lever), label: f.label, impact: f.impact })) || [],
       simulatedAt: new Date(),
-      iterations: config.iterations,
+      iterations: simConfig.iterations,
       executionTimeMs: result.executionTimeMs,
     });
 
@@ -231,7 +252,7 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
       setSaveState("saved");
       setTimeout(() => setSaveState("idle"), 1800);
     }, 250);
-  }, [config.iterations, leversAsSnapshot, result, saveAsBaselineToScenario, saveSimulation, setAsBaseline, verdict]);
+  }, [leversAsSnapshot, result, saveAsBaselineToScenario, saveSimulation, setAsBaseline, simConfig.iterations, verdict]);
 
   // SAVE NAMED SCENARIO
   const handleSaveScenario = useCallback(() => {
@@ -284,7 +305,7 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
       leverSensitivity:
         result.sensitivityFactors?.map((f) => ({ lever: String(f.lever), label: f.label, impact: f.impact })) || [],
       simulatedAt: new Date(),
-      iterations: config.iterations,
+      iterations: simConfig.iterations,
       executionTimeMs: result.executionTimeMs,
     });
 
@@ -294,7 +315,7 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
       setScenarioName("");
       setTimeout(() => setSaveState("idle"), 1800);
     }, 250);
-  }, [leversAsSnapshot, result, saveScenarioToStore, saveSimulation, scenarioName, verdict]);
+  }, [leversAsSnapshot, result, saveScenarioToStore, saveSimulation, scenarioName, verdict, simConfig.iterations]);
 
   // Load scenario: apply levers and rerun
   const handleLoadScenario = useCallback(
@@ -314,8 +335,8 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
       type: "Evidence Pack",
       generatedAt: new Date().toISOString(),
       simulations: {
-        iterations: config.iterations,
-        timeHorizonMonths: config.timeHorizonMonths,
+        iterations: simConfig.iterations,
+        timeHorizonMonths: simConfig.timeHorizonMonths,
         executionTimeMs: result.executionTimeMs,
       },
       verdict: {
@@ -365,7 +386,7 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
-  }, [config.iterations, config.timeHorizonMonths, leversAsSnapshot, result, verdict]);
+  }, [leversAsSnapshot, result, simConfig.iterations, simConfig.timeHorizonMonths, verdict]);
 
   // Auto-run on open
   useEffect(() => {
@@ -431,11 +452,11 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
                   <div>
                     <div className="text-slate-200 text-sm font-semibold">Running 10,000 futures</div>
                     <div className="text-slate-400 text-xs mt-1">
-                      Stress-testing your strategy over {config.timeHorizonMonths} months.
+                      Stress-testing your strategy over {simConfig.timeHorizonMonths} months.
                     </div>
                   </div>
                   <div className="text-xs text-slate-400">
-                    {iterationCount.toLocaleString()} / {config.iterations.toLocaleString()}
+                    {iterationCount.toLocaleString()} / {simConfig.iterations.toLocaleString()}
                   </div>
                 </div>
 
@@ -469,7 +490,8 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
                     <div className="text-[10px] tracking-[0.22em] uppercase text-slate-400">Outcome</div>
                     <div className="text-slate-100 text-xl font-semibold mt-1">{verdict.headline}</div>
                     <div className="text-slate-400 text-xs mt-2">
-                      Based on {config.iterations.toLocaleString()} simulations over {config.timeHorizonMonths} months.
+                      Based on {simConfig.iterations.toLocaleString()} simulations over {simConfig.timeHorizonMonths} months.
+                      {compiled ? " • Declaration-Driven" : ""}
                     </div>
                   </div>
 
@@ -547,7 +569,6 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
               <div className="mt-5 rounded-2xl border border-slate-800/60 bg-black/25 p-5">
                 <div className="text-[10px] tracking-[0.22em] uppercase text-slate-400">Verdict</div>
                 <div className="mt-3">
-                  {/* FIX: VerdictPanel requires result prop */}
                   <VerdictPanel verdict={verdict as any} result={result as any} />
                 </div>
               </div>
@@ -668,147 +689,4 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
       )}
     </div>
   );
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-// HELPER FUNCTIONS
-// ═══════════════════════════════════════════════════════════════════════
-
-function processSimulationResults(allSimulations: any[], config: SimulationConfig, executionTimeMs: number): MonteCarloResult {
-  const survivors = allSimulations.filter((s: any) => s.didSurvive);
-  const survivalRate = survivors.length / config.iterations;
-
-  const survivalByMonth: number[] = [];
-  for (let month = 1; month <= config.timeHorizonMonths; month++) {
-    const survivingAtMonth = allSimulations.filter((s: any) => s.survivalMonths >= month).length;
-    survivalByMonth.push(survivingAtMonth / config.iterations);
-  }
-
-  const finalARRs = allSimulations.map((s: any) => s.finalARR);
-  const finalCash = allSimulations.map((s: any) => s.finalCash);
-  const finalRunway = allSimulations.map((s: any) => s.finalRunway);
-  const survivalMonths = allSimulations.map((s: any) => s.survivalMonths);
-
-  const arrDistribution = calculateDistributionStats(finalARRs);
-  const arrHistogram = createHistogram(finalARRs, 25);
-  const arrPercentiles = calculatePercentiles(finalARRs);
-
-  const cashDistribution = calculateDistributionStats(finalCash);
-  const cashPercentiles = calculatePercentiles(finalCash);
-
-  const runwayDistribution = calculateDistributionStats(finalRunway);
-  const runwayPercentiles = calculatePercentiles(finalRunway);
-
-  const medianSurvivalMonths = calculatePercentiles(survivalMonths).p50;
-  const arrConfidenceBands = calculateConfidenceBands(allSimulations, config.timeHorizonMonths);
-
-  const sortedByARR = [...allSimulations].sort((a: any, b: any) => a.finalARR - b.finalARR);
-  const worstCase = sortedByARR[Math.floor(config.iterations * 0.05)];
-  const medianCase = sortedByARR[Math.floor(config.iterations * 0.5)];
-  const bestCase = sortedByARR[Math.floor(config.iterations * 0.95)];
-
-  const sensitivityFactors: SensitivityFactor[] = [
-    { lever: "demandStrength" as keyof LeverState, label: "Demand Strength", impact: 0.8, direction: "positive" as any },
-    { lever: "pricingPower" as keyof LeverState, label: "Pricing Power", impact: 0.6, direction: "positive" as any },
-    { lever: "costDiscipline" as keyof LeverState, label: "Cost Discipline", impact: 0.5, direction: "positive" as any },
-    { lever: "marketVolatility" as keyof LeverState, label: "Market Volatility", impact: -0.7, direction: "negative" as any },
-    { lever: "executionRisk" as keyof LeverState, label: "Execution Risk", impact: -0.5, direction: "negative" as any },
-    { lever: "expansionVelocity" as keyof LeverState, label: "Expansion Velocity", impact: 0.4, direction: "positive" as any },
-    { lever: "hiringIntensity" as keyof LeverState, label: "Hiring Intensity", impact: -0.3, direction: "negative" as any },
-    { lever: "operatingDrag" as keyof LeverState, label: "Operating Drag", impact: -0.4, direction: "negative" as any },
-    { lever: "fundingPressure" as keyof LeverState, label: "Funding Pressure", impact: -0.6, direction: "negative" as any },
-  ];
-
-  return {
-    iterations: config.iterations,
-    timeHorizonMonths: config.timeHorizonMonths,
-    executionTimeMs,
-    survivalRate,
-    survivalByMonth,
-    medianSurvivalMonths,
-    arrDistribution,
-    arrHistogram,
-    arrPercentiles,
-    arrConfidenceBands,
-    cashDistribution,
-    cashPercentiles,
-    runwayDistribution,
-    runwayPercentiles,
-    bestCase,
-    worstCase,
-    medianCase,
-    sensitivityFactors,
-    allSimulations,
-  };
-}
-
-function calculateDistributionStats(values: number[]) {
-  const sorted = [...values].sort((a, b) => a - b);
-  const n = sorted.length;
-  const sum = sorted.reduce((a, b) => a + b, 0);
-  const mean = sum / n;
-  const squaredDiffs = sorted.map((v) => Math.pow(v - mean, 2));
-  const variance = squaredDiffs.reduce((a, b) => a + b, 0) / n;
-  const stdDev = Math.sqrt(variance);
-  const median = n % 2 === 0 ? (sorted[n / 2 - 1] + sorted[n / 2]) / 2 : sorted[Math.floor(n / 2)];
-  const cubedDiffs = sorted.map((v) => Math.pow((v - mean) / (stdDev || 1), 3));
-  const skewness = cubedDiffs.reduce((a, b) => a + b, 0) / n;
-
-  return { mean, median, stdDev, min: sorted[0], max: sorted[n - 1], skewness };
-}
-
-function calculatePercentiles(values: number[]) {
-  const sorted = [...values].sort((a, b) => a - b);
-  const n = sorted.length;
-  const getPercentile = (p: number) => sorted[Math.min(Math.floor((p / 100) * n), n - 1)];
-
-  return {
-    p5: getPercentile(5),
-    p10: getPercentile(10),
-    p25: getPercentile(25),
-    p50: getPercentile(50),
-    p75: getPercentile(75),
-    p90: getPercentile(90),
-    p95: getPercentile(95),
-  };
-}
-
-function createHistogram(values: number[], bucketCount: number = 20) {
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = max - min;
-  const bucketSize = range / bucketCount;
-
-  const buckets = [];
-  for (let i = 0; i < bucketCount; i++) {
-    const bucketMin = min + i * bucketSize;
-    const bucketMax = min + (i + 1) * bucketSize;
-    const count = values.filter((v) => v >= bucketMin && v < bucketMax).length;
-    buckets.push({ min: bucketMin, max: bucketMax, count, frequency: count / values.length });
-  }
-  return buckets;
-}
-
-function calculateConfidenceBands(simulations: any[], timeHorizon: number) {
-  const bands = [];
-  for (let month = 1; month <= timeHorizon; month++) {
-    const arrValues = simulations
-      .filter((s: any) => s.monthlySnapshots && s.monthlySnapshots.length >= month)
-      .map((s: any) => s.monthlySnapshots[month - 1].arr);
-
-    if (arrValues.length === 0) continue;
-
-    const sorted = arrValues.sort((a: number, b: number) => a - b);
-    const n = sorted.length;
-
-    bands.push({
-      month,
-      p10: sorted[Math.floor(n * 0.1)],
-      p25: sorted[Math.floor(n * 0.25)],
-      p50: sorted[Math.floor(n * 0.5)],
-      p75: sorted[Math.floor(n * 0.75)],
-      p90: sorted[Math.floor(n * 0.9)],
-    });
-  }
-  return bands;
 }

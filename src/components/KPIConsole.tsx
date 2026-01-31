@@ -8,7 +8,7 @@
 // STRATFIT — Executive Command Console
 // World-class KPI instrument panel with terrain + lever linkage
 
-import React, { useEffect, useState, useCallback, memo } from "react";
+import React, { useEffect, useState, useCallback, memo, useId } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useScenarioStore, SCENARIO_COLORS } from "@/state/scenarioStore";
 import BurnTrendBars from "./BurnTrendBars";
@@ -249,7 +249,7 @@ function CashInstrument({ value, state }: { value: number; state: "idle" | "hove
   const pct = Math.min(100, Math.max(0, value));
   const barWidth = (pct / 100) * 88;
   const targetX = 70; // 80% target line
-  const id = `cash-gm-${Math.random().toString(36).substr(2, 6)}`;
+  const id = `cash-gm-${useId().replace(/:/g, "")}`;
   const status = pct >= 80 ? "OK" : pct >= 50 ? "LOW" : "CRIT";
   const statusColor = pct >= 80 ? "#00FF00" : pct >= 50 ? "#FFB000" : "#FF3300";
   
@@ -319,7 +319,7 @@ function RunwayInstrument({ value, state }: { value: number; state: "idle" | "ho
   const pct = (months / 36) * 100;
   const barWidth = Math.max(4, (pct / 100) * 88);
   const targetX = 29; // 12 months target
-  const id = `runway-gm-${Math.random().toString(36).substr(2, 6)}`;
+  const id = `runway-gm-${useId().replace(/:/g, "")}`;
   
   const status = months >= 12 ? "OK" : months >= 6 ? "LOW" : "CRIT";
   const statusColor = months >= 12 ? "#00FF00" : months >= 6 ? "#FFB000" : "#FF3300";
@@ -362,7 +362,7 @@ function RunwayInstrument({ value, state }: { value: number; state: "idle" | "ho
 
 // 4. ARR — Cyan Sparkline with trend arrow
 function MomentumInstrument({ value, state }: { value: number; state: "idle" | "hover" | "active" }) {
-  const id = `arr-gm-${Math.random().toString(36).substr(2, 6)}`;
+  const id = `arr-gm-${useId().replace(/:/g, "")}`;
   
   // Generate sparkline points
   const points = Array.from({ length: 8 }, (_, i) => {
@@ -423,7 +423,7 @@ function MomentumInstrument({ value, state }: { value: number; state: "idle" | "
 function EarningsInstrument({ value, state }: { value: number; state: "idle" | "hover" | "active" }) {
   const pct = Math.min(100, Math.max(0, value));
   const indicatorX = 8 + (pct / 100) * 84;
-  const id = `margin-gm-${Math.random().toString(36).substr(2, 6)}`;
+  const id = `margin-gm-${useId().replace(/:/g, "")}`;
   
   // Determine zone
   const zone = pct >= 70 ? "OK" : pct >= 40 ? "MED" : "CRIT";
@@ -467,7 +467,7 @@ function EarningsInstrument({ value, state }: { value: number; state: "idle" | "
 // 6. RISK SCORE — Cyan Arc Gauge
 function RiskInstrument({ value, state }: { value: number; state: "idle" | "hover" | "active" }) {
   const score = Math.min(100, Math.max(0, Math.round(value)));
-  const id = `risk-gm-${Math.random().toString(36).substr(2, 6)}`;
+  const id = `risk-gm-${useId().replace(/:/g, "")}`;
   
   // Cyan arc with risk-based color
   const arcColor = score < 35 ? "#00FF00" : score < 65 ? "#FFB000" : "#FF3300";
@@ -536,7 +536,7 @@ function ValueInstrument({ value, state }: { value: number; state: "idle" | "hov
   const normalized = Math.min(100, Math.max(0, value));
   const baselineX = 50; // Center baseline
   const indicatorX = 8 + (normalized / 100) * 84;
-  const id = `val-gm-${Math.random().toString(36).substr(2, 6)}`;
+  const id = `val-gm-${useId().replace(/:/g, "")}`;
   
   // Variance from baseline
   const variance = normalized - 50;

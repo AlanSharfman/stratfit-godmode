@@ -2,17 +2,8 @@
 // STRATFIT — Monte Carlo Simulation Engine
 // 10,000 Futures. One Truth.
 
-export interface LeverState {
-  demandStrength: number;
-  pricingPower: number;
-  expansionVelocity: number;
-  costDiscipline: number;
-  hiringIntensity: number;
-  operatingDrag: number;
-  marketVolatility: number;
-  executionRisk: number;
-  fundingPressure: number;
-}
+import type { LeverState as CanonicalLeverState } from "@/types/lever";
+export type LeverState = CanonicalLeverState;
 
 export interface SimulationConfig {
   iterations: number;

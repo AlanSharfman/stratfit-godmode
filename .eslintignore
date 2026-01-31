@@ -1,0 +1,6 @@
+_archive/**
+**/*.BAK*
+**/*.OLD.*
+**/*.BACKUP.*
+**/*_DISABLED/**
+

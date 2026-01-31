@@ -18,7 +18,7 @@ const DEFAULT_LEVERS: LeverSnapshot = {
   fundingPressure: 50,
 };
 
-interface LeverState {
+interface LeverStoreState {
   // Current lever values
   levers: LeverSnapshot;
   
@@ -42,7 +42,7 @@ interface LeverState {
   loadSnapshot: (snapshot: LeverSnapshot) => void;
 }
 
-export const useLeverStore = create<LeverState>()(
+export const useLeverStore = create<LeverStoreState>()(
   persist(
     (set, get) => ({
       levers: { ...DEFAULT_LEVERS },
