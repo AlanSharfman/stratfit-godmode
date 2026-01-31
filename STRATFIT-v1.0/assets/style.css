@@ -1,0 +1,397 @@
+body.simulate {
+  margin: 0;
+  background-color: #0A0B0D;
+  font-family: 'IBM Plex Sans', sans-serif;
+  color: #E6E6E6;
+}
+
+.context-bar {
+  background-color: #101214;
+  color: #3DE0F5;
+  padding: 12px 24px;
+  font-size: 13px;
+  font-family: monospace;
+  position: sticky;
+  top: 0;
+}
+
+.verdict-strip {
+  background-color: #4C5BD4;
+  padding: 24px;
+  text-align: center;
+}
+.verdict-strip__main {
+  font-size: 28px;
+  font-weight: 700;
+}
+.verdict-strip__sub {
+  font-size: 14px;
+  margin: 12px 0;
+}
+.verdict-strip__actions button {
+  margin: 4px;
+}
+
+.btn {
+  background: none;
+  border: 1px solid #9BA1AA;
+  color: #E6E6E6;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.btn--outline {
+  border-color: #3DE0F5;
+  color: #3DE0F5;
+}
+.btn--violet {
+  background-color: #8E6DD3;
+  border: none;
+  color: white;
+}
+
+.evidence {
+  display: flex;
+  gap: 24px;
+  padding: 24px;
+}
+.evidence__column {
+  flex: 1;
+  background-color: #131417;
+  padding: 16px;
+  border: 1px solid #2C2F36;
+  position: relative;
+}
+
+.metric--red {
+  color: #E63946;
+}
+.metric--emerald {
+  color: #18D57F;
+}
+.metric--indigo {
+  color: #4C5BD4;
+}
+
+.bar {
+  margin-bottom: 12px;
+}
+.bar label {
+  display: block;
+  font-size: 13px;
+}
+.bar__fill {
+  height: 8px;
+  border-radius: 4px;
+  margin-top: 4px;
+}
+.bar--red { background-color: #E63946; }
+.bar--indigo { background-color: #4C5BD4; }
+.bar--emerald { background-color: #18D57F; }
+
+.funnel-plot__svg {
+  width: 100%;
+  height: 80px;
+}
+.funnel-plot__labels {
+  text-align: center;
+  font-size: 12px;
+  color: #9BA1AA;
+  margin-top: 8px;
+}
+
+.funnel-tooltip {
+  position: absolute;
+  background: #1A1D21;
+  color: #E6E6E6;
+  padding: 6px 10px;
+  font-size: 12px;
+  border: 1px solid #3DE0F5;
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.summary-table {
+  padding: 16px 24px;
+}
+.summary-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: monospace;
+}
+.summary-table th, .summary-table td {
+  border: 1px solid #3DE0F5;
+  padding: 6px 12px;
+  text-align: center;
+}
+
+.assumptions {
+  padding: 16px 24px;
+  background-color: #131417;
+  color: #9BA1AA;
+}
+.assumptions ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.nav-strip {
+  display: flex;
+  justify-content: space-around;
+  background-color: #101214;
+  padding: 12px;
+}
+.nav-btn {
+  background: none;
+  border: 1px solid #3DE0F5;
+  color: #3DE0F5;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-family: monospace;
+}
+.nav-btn:hover {
+  background-color: #3DE0F5;
+  color: #0A0B0D;
+}
+
+.module-placeholder{
+  padding: 24px;
+}
+
+.module-placeholder h1{
+  margin: 0 0 10px 0;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.module-placeholder p{
+  margin: 0;
+  color: #9BA1AA;
+}
+
+.strategy-options {
+  display: flex;
+  gap: 16px;
+  margin: 20px 0;
+}
+.strategy-btn {
+  padding: 10px 20px;
+  font-weight: bold;
+  background-color: #101214;
+  border: 2px solid #3DE0F5;
+  color: #3DE0F5;
+  cursor: pointer;
+}
+.strategy-btn:hover {
+  background-color: #3DE0F5;
+  color: #0A0B0D;
+}
+.summary-box {
+  background-color: #131417;
+  border: 1px solid #2C2F36;
+  padding: 16px;
+  margin-top: 20px;
+}
+
+.audit-log{
+  padding: 0 24px 24px 24px;
+}
+
+.audit-log h2{
+  margin: 18px 0 10px 0;
+  font-size: 14px;
+  color: #E6E6E6;
+}
+
+#audit-list{
+  margin: 0;
+  padding-left: 18px;
+  color: #9BA1AA;
+  font-family: monospace;
+  font-size: 12px;
+}
+
+#audit-list li{
+  margin: 6px 0;
+}
+
+#play-options {
+  list-style-type: none;
+  padding: 0;
+}
+#play-options li {
+  padding: 6px 12px;
+  background-color: #131417;
+  margin: 4px 0;
+  border: 1px solid #3DE0F5;
+  cursor: pointer;
+}
+#play-options li.selected {
+  background-color: #18D57F;
+  color: #0A0B0D;
+  border-color: #18D57F;
+}
+
+#overlay-controls {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #9BA1AA;
+}
+
+.funnel-overlay {
+  fill: none;
+  stroke: #9C27B0;
+  stroke-width: 2;
+  stroke-dasharray: 4 2;
+  opacity: 0.7;
+}
+
+/* Governance (Decision) */
+#comments-section {
+  margin-top: 10px;
+}
+#comment-list {
+  list-style-type: none;
+  padding: 0;
+}
+#comment-list li {
+  padding: 6px;
+  border-bottom: 1px solid #2a2a2a;
+  font-size: 13px;
+  color: #d1d1d1;
+}
+#comment-input {
+  width: 100%;
+  min-height: 60px;
+  margin-top: 6px;
+  background-color: #1a1a1a;
+  color: #fff;
+  border: 1px solid #333;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+#approval-actions{
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+}
+
+#approval-actions button{
+  padding: 8px 12px;
+  background: #101214;
+  border: 1px solid #3DE0F5;
+  color: #3DE0F5;
+  cursor: pointer;
+}
+
+#approval-actions button:disabled{
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Vault table (minimal) */
+#vault-table{
+  width: 100%;
+  border-collapse: collapse;
+  font-family: monospace;
+  font-size: 12px;
+}
+
+#vault-table th,
+#vault-table td{
+  border: 1px solid #2C2F36;
+  padding: 8px 10px;
+  text-align: left;
+  color: #E6E6E6;
+}
+
+#vault-table th{
+  color: #9BA1AA;
+  background: #101214;
+}
+
+#vault-table a{
+  color: #3DE0F5;
+  text-decoration: none;
+}
+
+#vault-table a:hover{
+  text-decoration: underline;
+}
+
+/* Compare table (optional) */
+.compare-table {
+  width: 100%;
+  margin-top: 16px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.compare-table td {
+  border: 1px solid #333;
+  padding: 8px;
+  text-align: left;
+}
+.compare-table td:first-child {
+  font-weight: bold;
+}
+
+/* Portfolio Designer */
+#portfolio-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+}
+#portfolio-table th, #portfolio-table td {
+  border: 1px solid #2a2a2a;
+  padding: 8px;
+  font-size: 13px;
+}
+#portfolio-table input[type="number"] {
+  width: 60px;
+}
+
+/* Model Hub */
+#model-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+#model-table th, #model-table td {
+  border: 1px solid #2a2a2a;
+  padding: 8px;
+  font-size: 13px;
+}
+
+/* STRATFIT Copilot (Chat) */
+#chat-box {
+  background: #0F1114;
+  border: 1px solid #2E2E2E;
+  padding: 10px;
+  margin-top: 16px;
+}
+#chat-history {
+  max-height: 200px;
+  overflow-y: auto;
+  font-size: 13px;
+  color: #ccc;
+  margin-bottom: 8px;
+}
+#chat-input {
+  width: 80%;
+  padding: 6px;
+  background: #1B1F24;
+  border: 1px solid #333;
+  color: white;
+}
+/* Scoped so we don't restyle every button in the OS */
+#copilot button {
+  padding: 6px 10px;
+  margin-left: 8px;
+  background: #3DE0F5;
+  color: black;
+  border: none;
+  cursor: pointer;
+}
+
+

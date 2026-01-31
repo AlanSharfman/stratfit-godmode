@@ -1,0 +1,8 @@
+{
+  "name": "STRATFIT Simulate (Static Prototype)",
+  "version": 1,
+  "dataPath": "src/data/run-snapshot.json",
+  "notes": "Static prototype config. Future: runtime config for API endpoints, auth, and feature flags."
+}
+
+

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>STRATFIT | Decision Vault</title>
+  <link rel="stylesheet" href="../src/css/simulate.css" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="simulate">
+  <header class="context-bar">
+    <div style="font-weight:700;">Decision Vault</div>
+    <div style="color:#9BA1AA;font-size:12px;">All past strategy decisions</div>
+  </header>
+
+  <section class="summary-box" style="margin: 20px 24px 0 24px;">
+    <label>Filter by Strategy:
+      <select id="filter-strategy">
+        <option value="">All</option>
+        <option value="ACCUMULATE">ACCUMULATE</option>
+        <option value="DEFENSIVE">DEFENSIVE</option>
+        <option value="NEUTRAL">NEUTRAL</option>
+      </select>
+    </label>
+    <button id="export-csv" class="btn" style="margin-left: 10px;">Export CSV</button>
+  </section>
+
+  <section class="summary-box" style="margin: 20px 24px 24px 24px;">
+    <table id="vault-table">
+      <thead>
+        <tr>
+          <th>Run ID</th>
+          <th>Strategy</th>
+          <th>Alpha</th>
+          <th>Confidence</th>
+          <th>User</th>
+          <th>Timestamp</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <nav class="nav-strip">
+    <button class="nav-btn">TERRAIN</button>
+    <button class="nav-btn">COMPARE</button>
+    <button class="nav-btn">RISK</button>
+    <button class="nav-btn">VALUATION</button>
+    <button class="nav-btn">DECISION</button>
+  </nav>
+
+  <div style="padding: 12px 24px;">
+    <a href="vault.html">Decision Vault →</a>
+  </div>
+
+  <script src="../src/js/auth.js"></script>
+  <script src="../src/js/simulate.js"></script>
+  <script src="../src/js/vault.js"></script>
+</body>
+</html>
+
+

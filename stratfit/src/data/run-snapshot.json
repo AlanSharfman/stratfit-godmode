@@ -1,0 +1,23 @@
+{
+  "runId": "SF-2026-X9",
+  "iterations": 100000,
+  "horizon": "36mo",
+  "seed": "0x921",
+  "modelHash": "7eaf...92",
+  "timestamp": "2026-01-30T14:05:00Z",
+  "alpha": 12.4,
+  "confidence": 92.1,
+  "status": "ACCUMULATE",
+  "percentiles": {
+    "p10": [85, 80, 74, 68, 63, 60, 57, 54],
+    "p50": [85, 87, 89, 92, 96, 100, 104, 109],
+    "p90": [85, 93, 100, 108, 117, 126, 136, 147]
+  },
+  "drivers": [
+    {"name": "FX Headwind", "impact": -8.2},
+    {"name": "CAPEX Drag", "impact": -5.1},
+    {"name": "Revenue Growth", "impact": +6.4}
+  ]
+}
+
+

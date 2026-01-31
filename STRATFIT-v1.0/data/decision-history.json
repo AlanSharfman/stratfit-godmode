@@ -1,0 +1,25 @@
+[
+  { "runId": "SIM-2026-X1",  "strategy": "ACCUMULATE", "alpha": 6.4,  "volatility": 13.8, "skew": -0.2,  "regime": "Bull",    "approved": true  },
+  { "runId": "SIM-2026-X2",  "strategy": "DEFENSIVE",  "alpha": 2.1,  "volatility": 11.4, "skew": 0.1,   "regime": "Bear",    "approved": true  },
+  { "runId": "SIM-2026-X3",  "strategy": "LEVERED",    "alpha": 8.9,  "volatility": 22.3, "skew": -1.2,  "regime": "Neutral", "approved": false },
+  { "runId": "SIM-2026-X4",  "strategy": "ACCUMULATE", "alpha": 5.9,  "volatility": 12.6, "skew": -0.15, "regime": "Bull",    "approved": true  },
+  { "runId": "SIM-2026-X5",  "strategy": "NEUTRAL",    "alpha": 4.2,  "volatility": 14.2, "skew": -0.35, "regime": "Neutral", "approved": false },
+  { "runId": "SIM-2026-X6",  "strategy": "DEFENSIVE",  "alpha": 3.3,  "volatility": 10.9, "skew": 0.05,  "regime": "Bear",    "approved": true  },
+  { "runId": "SIM-2026-X7",  "strategy": "ACCUMULATE", "alpha": 7.1,  "volatility": 15.1, "skew": -0.55, "regime": "Bull",    "approved": false },
+  { "runId": "SIM-2026-X8",  "strategy": "NEUTRAL",    "alpha": 5.1,  "volatility": 12.1, "skew": -0.05, "regime": "Neutral", "approved": true  },
+  { "runId": "SIM-2026-X9",  "strategy": "DEFENSIVE",  "alpha": 2.8,  "volatility": 12.0, "skew": 0.12,  "regime": "Bear",    "approved": true  },
+  { "runId": "SIM-2026-X10", "strategy": "LEVERED",    "alpha": 10.2, "volatility": 25.7, "skew": -1.5,  "regime": "Bull",    "approved": false },
+
+  { "runId": "SIM-2026-X11", "strategy": "ACCUMULATE", "alpha": 6.8,  "volatility": 13.2, "skew": -0.08, "regime": "Bull",    "approved": true  },
+  { "runId": "SIM-2026-X12", "strategy": "DEFENSIVE",  "alpha": 1.9,  "volatility": 9.8,  "skew": 0.22,  "regime": "Bear",    "approved": true  },
+  { "runId": "SIM-2026-X13", "strategy": "NEUTRAL",    "alpha": 3.9,  "volatility": 16.8, "skew": -0.9,  "regime": "Neutral", "approved": false },
+  { "runId": "SIM-2026-X14", "strategy": "ACCUMULATE", "alpha": 5.7,  "volatility": 14.0, "skew": -0.18, "regime": "Bull",    "approved": true  },
+  { "runId": "SIM-2026-X15", "strategy": "DEFENSIVE",  "alpha": 2.4,  "volatility": 13.9, "skew": -0.4,  "regime": "Bear",    "approved": false },
+  { "runId": "SIM-2026-X16", "strategy": "NEUTRAL",    "alpha": 4.8,  "volatility": 11.6, "skew": -0.12, "regime": "Neutral", "approved": true  },
+  { "runId": "SIM-2026-X17", "strategy": "ACCUMULATE", "alpha": 7.6,  "volatility": 13.9, "skew": -0.22, "regime": "Bull",    "approved": true  },
+  { "runId": "SIM-2026-X18", "strategy": "LEVERED",    "alpha": 9.4,  "volatility": 19.2, "skew": -0.8,  "regime": "Neutral", "approved": false },
+  { "runId": "SIM-2026-X19", "strategy": "DEFENSIVE",  "alpha": 3.1,  "volatility": 11.2, "skew": 0.02,  "regime": "Bear",    "approved": true  },
+  { "runId": "SIM-2026-X20", "strategy": "NEUTRAL",    "alpha": 4.5,  "volatility": 12.9, "skew": -0.25, "regime": "Neutral", "approved": true  }
+]
+
+

@@ -1,0 +1,16 @@
+{
+  "timestamp": "2026-01-30T22:00Z",
+  "versionHash": "STRATFIT-v1.0-37a9c2d9b6d8f4a3e179f1b9fd88f456",
+  "signature": {
+    "algorithm": "SHA256",
+    "value": "309477fccd4e68534afdf0c78e5720f6dcc5d085c13909924c3b39f3ea4e9c78",
+    "formula": "SHA256(run_ids + strategy + confidence + alpha)",
+    "input": "SF-2026-X9ACCUMULATE92.112.4"
+  },
+  "version": "STRATFIT-v1.0",
+  "author": {
+    "role": "Approver",
+    "name": "Jane Doe"
+  },
+  "notes": "Generated for v1.0 package governance header."
+}

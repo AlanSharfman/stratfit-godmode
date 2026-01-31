@@ -103,17 +103,15 @@ const primaryNav: NavItem[] = [
 function Logo() {
   return (
     <Link to="/" className="flex items-center gap-3 group">
-      <div className="relative w-8 h-8">
-        {/* Mountain icon with glow */}
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-violet-600 rounded-lg opacity-20 group-hover:opacity-30 transition-opacity" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Mountain className="w-5 h-5 text-cyan-400" />
-        </div>
-      </div>
-      <div>
-        <div className="text-white font-semibold tracking-wide">STRATFIT</div>
-        <div className="text-[9px] text-white/40 tracking-[0.2em]">SCENARIO INTELLIGENCE</div>
-      </div>
+      <img
+        src="/stratfit-logo.svg"
+        alt="STRATFIT"
+        className="h-10 w-auto select-none"
+        style={{
+          filter: "drop-shadow(0 6px 18px rgba(34, 211, 238, 0.10)) drop-shadow(0 12px 28px rgba(0,0,0,0.55))",
+        }}
+        draggable={false}
+      />
     </Link>
   )
 }
@@ -121,17 +119,15 @@ function Logo() {
 function LogoButton({ onClick }: { onClick?: () => void }) {
   return (
     <button type="button" onClick={onClick} className="flex items-center gap-3 group">
-      <div className="relative w-8 h-8">
-        {/* Mountain icon with glow */}
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-violet-600 rounded-lg opacity-20 group-hover:opacity-30 transition-opacity" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Mountain className="w-5 h-5 text-cyan-400" />
-        </div>
-      </div>
-      <div>
-        <div className="text-white font-semibold tracking-wide">STRATFIT</div>
-        <div className="text-[9px] text-white/40 tracking-[0.2em]">SCENARIO INTELLIGENCE</div>
-      </div>
+      <img
+        src="/stratfit-logo.svg"
+        alt="STRATFIT"
+        className="h-10 w-auto select-none"
+        style={{
+          filter: "drop-shadow(0 6px 18px rgba(34, 211, 238, 0.10)) drop-shadow(0 12px 28px rgba(0,0,0,0.55))",
+        }}
+        draggable={false}
+      />
     </button>
   )
 }
@@ -430,8 +426,15 @@ export function MainNavCompact({ className = '' }: { className?: string }) {
       <div className="h-full px-4 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
-          <Mountain className="w-5 h-5 text-cyan-400" />
-          <span className="text-white font-semibold">STRATFIT</span>
+          <img
+            src="/stratfit-logo.svg"
+            alt="STRATFIT"
+            className="h-8 w-auto select-none"
+            style={{
+              filter: "drop-shadow(0 6px 18px rgba(34, 211, 238, 0.10)) drop-shadow(0 12px 28px rgba(0,0,0,0.55))",
+            }}
+            draggable={false}
+          />
         </Link>
 
         {/* Center: Current page */}

@@ -1,0 +1,217 @@
+{
+  "files": [
+    {
+      "path": "stratfit-v1.0.manifest.json",
+      "sha256": "f492fb4a9b7e14e80cfc02289011fb513321542be368ee06631c8d77a755204b",
+      "bytes": 6771
+    },
+    {
+      "path": "assets\\style.css",
+      "sha256": "56a897149b3c206bb7606d7eba5d9797cbabbbc05aa956028c6fd5d305733bbb",
+      "bytes": 6688
+    },
+    {
+      "path": "audit\\stratfit-audit-log.json",
+      "sha256": "c31f2ed97e8aef9f00329627c3d912718dccfa6e6d92f98a4cc34ff51d81f69d",
+      "bytes": 518
+    },
+    {
+      "path": "data\\committee-votes.json",
+      "sha256": "b678abeddb081fefc7c4af0a69c6f395c844d83204e3dbcf63e216ef8ba7f0ea",
+      "bytes": 408
+    },
+    {
+      "path": "data\\decision-history.json",
+      "sha256": "32e700648c2b242a735040ed885e15aed7950097dafa18b1e3469c6e18a9c25e",
+      "bytes": 2971
+    },
+    {
+      "path": "data\\guardrails.json",
+      "sha256": "93c97e37ceaddb3acd6a8c9cd1513df5ac74be0c83131fdcf4eb2f4f5f2192b2",
+      "bytes": 90
+    },
+    {
+      "path": "data\\locked-decisions.json",
+      "sha256": "ab9bc45a58b0637540353dc0415a17a87fb05c692f10e4283978f3a2646784ba",
+      "bytes": 8
+    },
+    {
+      "path": "data\\portfolio-live.json",
+      "sha256": "94f4f7ed9d640406468c9d436311bc8c550681486052638fa79cbce0e0cab7b4",
+      "bytes": 114
+    },
+    {
+      "path": "data\\sensor-mock.json",
+      "sha256": "c53e8f9e5ac862c4221d12c50ed7b5de168a8d7470e875b1a6539fbecc3e4dff",
+      "bytes": 94
+    },
+    {
+      "path": "public\\committee.html",
+      "sha256": "1b466605703bad0f3812bb4da2fed642e80989a5d5ea9e97a575f9bb64dda0c5",
+      "bytes": 1322
+    },
+    {
+      "path": "public\\decision.html",
+      "sha256": "00f855183637d054d63ad10ebb2696c1bcd0b8ac474645774dc6a39cc75f5539",
+      "bytes": 4223
+    },
+    {
+      "path": "public\\model-hub.html",
+      "sha256": "e4ee4bf42a088d0384c8be846fd130d37f53b5f16f0dabbd4af664bca3e368ef",
+      "bytes": 1086
+    },
+    {
+      "path": "public\\monitor.html",
+      "sha256": "39f4a84386f98972e0d5642105bfc54a656652b8750e6805c7a19c0711ae796f",
+      "bytes": 1322
+    },
+    {
+      "path": "public\\os.html",
+      "sha256": "d9faa95be5f91b50a3d7e6341da44f71c14889dc2b28c7d84706b271e1921c52",
+      "bytes": 3449
+    },
+    {
+      "path": "public\\portfolio.html",
+      "sha256": "b4b33985b0baa06d3f4639276f08b575a23973cb47ed7fc0e49dda65f0de7719",
+      "bytes": 1961
+    },
+    {
+      "path": "public\\simulate.html",
+      "sha256": "88c1afca612995b0d7a5bc9b9ce1fbbc1b16f3fdb9992e420e94b68be905b092",
+      "bytes": 4219
+    },
+    {
+      "path": "public\\terrain-d3.html",
+      "sha256": "6aac344220b4144093395512d19ecc528186f5c9634593c12a6ba5fe7a741110",
+      "bytes": 1195
+    },
+    {
+      "path": "public\\terrain.html",
+      "sha256": "17f7f67b3de6b379ba5a077526fbc334515d74b00f5f90f1d7f0d5d39a68053f",
+      "bytes": 1557
+    },
+    {
+      "path": "public\\timeline.html",
+      "sha256": "b1c2541db0300cebc4f28a7a14c7f11fdb20e7e09480c46b3effa9ebf2b1920d",
+      "bytes": 1210
+    },
+    {
+      "path": "public\\vault.html",
+      "sha256": "95eb59e709428e6cef7b8568e46d64844a211711853b05d0c4a3e8916c08c9a3",
+      "bytes": 3923
+    },
+    {
+      "path": "public\\api\\live\\macro-drift",
+      "sha256": "65345dec044532e0ce2d5cda4a5e16bc07e33585e564744e82e4c1f49a165057",
+      "bytes": 24
+    },
+    {
+      "path": "public\\api\\live\\regime",
+      "sha256": "76df95e8e20942c36a1bd1fae290d78034647a0ebc0fcc23af47c767b9844c1a",
+      "bytes": 25
+    },
+    {
+      "path": "public\\api\\live\\vix",
+      "sha256": "dd7c38b71747c52880b06eab6b4225ae661a52724318f549c8f69275d7f910ae",
+      "bytes": 23
+    },
+    {
+      "path": "public\\api\\live\\yield-curve",
+      "sha256": "e2d549c56a3f1780f7bc0a9f6f4e8fb1303719ce86d16a7b8336da3b4e7b671a",
+      "bytes": 24
+    },
+    {
+      "path": "reports\\templates\\.keep",
+      "sha256": "dba5166ad9db9ba648c1032ebbd34dcd0d085b50023b839ef5c68ca1db93a563",
+      "bytes": 4
+    },
+    {
+      "path": "src\\js\\audit.js",
+      "sha256": "09c4587702a69d7de7a043cfae2a849ed949200c8ea27d55d93341299841f3fb",
+      "bytes": 341
+    },
+    {
+      "path": "src\\js\\auth.js",
+      "sha256": "6c060dab489d2951eed72c7857b92067a654ae02d711effdda8d183665a1835c",
+      "bytes": 153
+    },
+    {
+      "path": "src\\js\\committee.js",
+      "sha256": "f870e03724afbfe60954cb1152bd36eee527d75340bb11fc75d2c1ee63b7f4f6",
+      "bytes": 2404
+    },
+    {
+      "path": "src\\js\\copilot.js",
+      "sha256": "88029818aba88827c0f7aab969b569a276bd6ee94d97ed7cca7d5f9ff64fe282",
+      "bytes": 2266
+    },
+    {
+      "path": "src\\js\\decision.js",
+      "sha256": "54077561d775dcba9f0bcef428c5ba08d0f508af13b5929a2e31dc092f0f6408",
+      "bytes": 17893
+    },
+    {
+      "path": "src\\js\\live-feed.js",
+      "sha256": "f8b8a308bd0135d170723f1d72126a5c0d6882a22dfa3e6e8e46fb9dc72f5122",
+      "bytes": 1320
+    },
+    {
+      "path": "src\\js\\model-hub.js",
+      "sha256": "94f5ed21f19855fa2fffb5cbf013792482fe3b4f36f006b3bc4ddfc33ac10a00",
+      "bytes": 1816
+    },
+    {
+      "path": "src\\js\\monitor.js",
+      "sha256": "18ef6ebc1301ebb1a52ee8feb128cb47dcbf005f72947439227dda6e0a4d45b8",
+      "bytes": 2338
+    },
+    {
+      "path": "src\\js\\oms.js",
+      "sha256": "01c5001ff95460b5a100b107376d01f94ad286aad84455b4566cffd6360b3c6f",
+      "bytes": 1890
+    },
+    {
+      "path": "src\\js\\pdf.js",
+      "sha256": "fdb701cd107fd37af05a076c142a265a53e1bde67bc752ad7dc8ff90ee6be13c",
+      "bytes": 1403
+    },
+    {
+      "path": "src\\js\\portfolio.js",
+      "sha256": "0017abf0215edb878b249ce3a351b2f484b334273f96a4b0e3f255f84746807c",
+      "bytes": 5705
+    },
+    {
+      "path": "src\\js\\simulate.js",
+      "sha256": "096e53c687314948e6296383881595787e5c13883b77030025d601525058d771",
+      "bytes": 6877
+    },
+    {
+      "path": "src\\js\\terrain-d3.js",
+      "sha256": "300874b4878ba0a78279b9ce0a9ef2e3ae816626f3900bbba831ee469844b983",
+      "bytes": 2222
+    },
+    {
+      "path": "src\\js\\terrain.js",
+      "sha256": "90a467ff813f324131a8b8d4f15958389cf81f67a2484dea476225077e51768f",
+      "bytes": 3123
+    },
+    {
+      "path": "src\\js\\timeline.js",
+      "sha256": "ca0f447237e855f2ff9bf21919d99c6939859f8ebbd94ff35175bc3c0090492a",
+      "bytes": 1816
+    },
+    {
+      "path": "src\\js\\verdict-engine.js",
+      "sha256": "22974ce5c81527bf995e3f57656a6ac9dca5ce158ebc711d60d5d6ac7616903a",
+      "bytes": 596
+    },
+    {
+      "path": "src\\js\\verdict-trainer.js",
+      "sha256": "27fb5ab2e85b2208a176b0afe1214ed6184a718e0a89e5260e77cefeddfe3b74",
+      "bytes": 1023
+    }
+  ],
+  "createdAt": "2026-01-30T22:00Z",
+  "version": "STRATFIT-v1.0",
+  "versionHash": "STRATFIT-v1.0-37a9c2d9b6d8f4a3e179f1b9fd88f456"
+}

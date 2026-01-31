@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>STRATFIT | Terrain View</title>
+  <link rel="stylesheet" href="../src/css/simulate.css" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    #terrain-canvas {
+      width: 100%;
+      height: 600px;
+      background: #0B0D11;
+      border: 1px solid #222;
+      position: relative;
+      overflow: hidden;
+    }
+    .terrain-node {
+      position: absolute;
+      border-radius: 50%;
+      width: 10px;
+      height: 10px;
+      cursor: pointer;
+    }
+    .tooltip {
+      position: absolute;
+      background: #111;
+      color: #fff;
+      font-size: 12px;
+      padding: 4px 6px;
+      border: 1px solid #555;
+      display: none;
+      pointer-events: none;
+      z-index: 20;
+    }
+  </style>
+</head>
+<body class="simulate">
+  <header class="context-bar">
+    <div style="font-weight:700;">Market Terrain</div>
+    <div style="color:#9BA1AA;font-size:12px;">Visual simulation exposure map</div>
+  </header>
+
+  <section class="summary-box" style="margin: 20px 24px 24px 24px;">
+    <div id="terrain-canvas"></div>
+    <div class="tooltip" id="tooltip"></div>
+  </section>
+
+  <section id="sensor-grid" class="summary-box" style="margin: 0 24px 24px 24px;">
+    <h2>Sensor Grid</h2>
+    <ul id="sensor-list"></ul>
+    <p id="terrain-alert" style="color: #FF5252; font-weight: bold;"></p>
+  </section>
+
+  <script type="module" src="../src/js/terrain.js"></script>
+</body>
+</html>
+
+

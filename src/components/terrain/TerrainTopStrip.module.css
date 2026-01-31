@@ -1,0 +1,245 @@
+.topStrip {
+  height: 96px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 28px;
+  padding: 14px 20px;
+  border-radius: 16px;
+  background: rgba(10, 16, 28, 0.62);
+  border: 1px solid rgba(120, 170, 220, 0.12);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(10px);
+}
+
+.pod {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  align-items: center;
+  border-right: 1px solid rgba(120, 170, 220, 0.08);
+  padding-right: 18px;
+}
+
+.pod:last-child {
+  border-right: none;
+  padding-right: 0;
+}
+
+.stabilityPod {
+  grid-template-columns: 1fr 120px;
+}
+
+.podHeader {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  right: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.podTitle {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  color: rgba(180, 210, 255, 0.55);
+}
+
+.chip {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(120, 170, 220, 0.12);
+  background: rgba(8, 12, 20, 0.45);
+  color: rgba(200, 230, 255, 0.75);
+}
+
+.chipCyan {
+  border-color: rgba(80, 220, 255, 0.18);
+  color: rgba(120, 235, 255, 0.85);
+}
+
+.chipEmerald {
+  border-color: rgba(60, 255, 170, 0.18);
+  color: rgba(95, 255, 185, 0.9);
+}
+
+.chipRed {
+  border-color: rgba(255, 90, 110, 0.18);
+  color: rgba(255, 135, 150, 0.9);
+}
+
+.podBody {
+  padding-top: 16px;
+}
+
+.primaryValue {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.bigNumber {
+  font-size: 28px;
+  font-weight: 650;
+  color: rgba(235, 245, 255, 0.92);
+}
+
+.unit {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: rgba(170, 205, 255, 0.65);
+  transform: translateY(-2px);
+}
+
+.subLabel {
+  margin-top: 2px;
+  font-size: 12px;
+  color: rgba(160, 195, 240, 0.55);
+}
+
+.podViz {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  height: 100%;
+}
+
+/* RESILIENCE BARS */
+.resilienceBars {
+  width: 200px;
+  height: 34px;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.bar {
+  width: 10px;
+  height: calc(10px + (var(--i) * 1.2px));
+  border-radius: 6px;
+  background: rgba(80, 220, 255, 0.68);
+  opacity: 0.7;
+  animation: barPulse 1.6s ease-in-out infinite;
+  animation-delay: calc(var(--i) * 55ms);
+}
+
+@keyframes barPulse {
+  0%, 100% { opacity: 0.55; transform: translateY(0); }
+  50% { opacity: 0.95; transform: translateY(-2px); }
+}
+
+/* STABILITY RING (uses legacy class name for zero-risk refactor) */
+.survivalRing {
+  width: 54px;
+  height: 54px;
+  border-radius: 999px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(120, 170, 220, 0.12);
+  background: rgba(6, 10, 18, 0.35);
+  box-shadow: 0 0 24px rgba(80, 220, 255, 0.08);
+}
+
+.survivalRing::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 999px;
+  border: 2px solid rgba(80, 220, 255, 0.35);
+  animation: ringSpin 2.6s linear infinite;
+}
+
+.survivalRing[data-tier="strong"]::before { border-color: rgba(90, 255, 190, 0.45); }
+.survivalRing[data-tier="stable"]::before { border-color: rgba(80, 220, 255, 0.40); }
+.survivalRing[data-tier="risk"]::before { border-color: rgba(255, 110, 130, 0.40); }
+
+@keyframes ringSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.ringInner {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: rgba(8, 12, 20, 0.7);
+  border: 1px solid rgba(120, 170, 220, 0.10);
+}
+
+/* MOMENTUM ARROW */
+.momentumArrowWrap {
+  width: 220px;
+  height: 44px;
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.momentumArrow {
+  width: 220px;
+  height: 44px;
+  transform-origin: 18px 22px;
+  opacity: 0.92;
+}
+
+.momentumArrowWrap[data-dir="up"] .momentumArrow { transform: rotate(-12deg); }
+.momentumArrowWrap[data-dir="down"] .momentumArrow { transform: rotate(12deg); }
+.momentumArrowWrap[data-dir="flat"] .momentumArrow { transform: rotate(0deg); opacity: 0.8; }
+
+.momentumSweep {
+  animation: sweep 2.5s ease-in-out infinite;
+}
+
+@keyframes sweep {
+  0% { transform: translateX(-70px); opacity: 0; }
+  15% { opacity: 0.6; }
+  50% { opacity: 0.55; }
+  85% { opacity: 0.45; }
+  100% { transform: translateX(240px); opacity: 0; }
+}
+
+/* trailing motion line */
+.momentumStreaks {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 50%;
+  height: 18px;
+  transform: translateY(-50%);
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.streak {
+  position: absolute;
+  left: -40%;
+  top: 50%;
+  width: 48%;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(80,220,255,0), rgba(80,220,255,0.55), rgba(80,220,255,0));
+  transform: translateY(-50%);
+  opacity: 0.55;
+  animation: streak 1.8s linear infinite;
+}
+
+.streak:nth-child(2) {
+  top: 35%;
+  opacity: 0.35;
+  animation-duration: 2.2s;
+}
+
+.streak:nth-child(3) {
+  top: 65%;
+  opacity: 0.28;
+  animation-duration: 2.6s;
+}
+
+@keyframes streak {
+  0% { transform: translate(-20%, -50%); }
+  100% { transform: translate(240%, -50%); }
+}

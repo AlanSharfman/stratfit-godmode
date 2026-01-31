@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>STRATFIT | Committee Voting</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="simulate">
+  <header class="context-bar">
+    <div style="font-weight:700;">🏛 STRATFIT Committee Vote</div>
+    <div style="color:#9BA1AA;font-size:12px;">Approve or reject <span id="committee-runid">SIM-2026-X9</span></div>
+  </header>
+
+  <section class="summary-box" style="margin: 20px 24px 0 24px;">
+    <h2>Voting Panel</h2>
+    <p><strong>Logged in as:</strong> <span id="committee-user"></span></p>
+
+    <textarea id="comment" placeholder="Add rationale..." style="width:100%; min-height: 80px; background:#0f1113; border:1px solid #2C2F36; color:#E6E6E6; padding:10px; box-sizing:border-box;"></textarea><br>
+    <button class="btn" id="btn-approve">✅ Approve</button>
+    <button class="btn" id="btn-reject">❌ Reject</button>
+  </section>
+
+  <section class="summary-box" style="margin: 20px 24px 24px 24px;">
+    <h2>Votes So Far</h2>
+    <div id="vote-log"></div>
+  </section>
+
+  <script src="../src/js/auth.js"></script>
+  <script type="module" src="../src/js/committee.js"></script>
+</body>
+</html>
+
+

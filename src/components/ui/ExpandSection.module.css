@@ -1,0 +1,58 @@
+/* src/ui/ExpandSection.module.css */
+
+.wrap { width: 100%; }
+
+.head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 14px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.left { display: grid; gap: 6px; text-align: left; }
+
+.title {
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.86;
+}
+
+.sub {
+  font-size: 13px;
+  opacity: 0.74;
+  line-height: 1.35;
+}
+
+.right {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  border: 1px solid rgba(140, 190, 255, 0.14);
+  background: rgba(0,0,0,0.18);
+  display: grid;
+  place-items: center;
+}
+
+.chev {
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid rgba(200, 235, 255, 0.70);
+  border-bottom: 2px solid rgba(200, 235, 255, 0.70);
+  transform: rotate(45deg);
+  transition: transform 160ms ease;
+}
+
+.right[data-open="true"] .chev {
+  transform: rotate(225deg);
+}
+
+.body {
+  border-top: 1px solid rgba(140, 190, 255, 0.10);
+}

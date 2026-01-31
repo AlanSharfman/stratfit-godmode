@@ -128,12 +128,7 @@ export default function UnifiedHeader({
           gap: 10px;
           flex-shrink: 0;
         }
-        .uh-logo-text {
-          font-size: 18px;
-          font-weight: 800;
-          letter-spacing: 0.08em;
-          color: #fff;
-        }
+        /* .uh-logo-text removed: we render the brand via /stratfit-logo.svg */
         .uh-status {
           display: flex;
           align-items: center;
@@ -422,18 +417,17 @@ export default function UnifiedHeader({
       <header className="unified-header">
         {/* LOGO */}
         <div className="uh-logo">
-          <svg width="36" height="36" viewBox="0 0 48 48" fill="none">
-            <path d="M8 38 L24 42 L40 38 L24 34 Z" fill="#0891b2" />
-            <path d="M8 38 L8 32 L24 28 L24 34 Z" fill="#0e7490" />
-            <path d="M40 38 L40 32 L24 28 L24 34 Z" fill="#0891b2" />
-            <path d="M8 28 L24 32 L40 28 L24 24 Z" fill="#06b6d4" />
-            <path d="M8 28 L8 22 L24 18 L24 24 Z" fill="#0891b2" />
-            <path d="M40 28 L40 22 L24 18 L24 24 Z" fill="#0e7490" />
-            <path d="M8 18 L24 22 L40 18 L24 14 Z" fill="#22d3ee" />
-            <path d="M8 18 L8 12 L24 8 L24 14 Z" fill="#06b6d4" />
-            <path d="M40 18 L40 12 L24 8 L24 14 Z" fill="#0891b2" />
-          </svg>
-          <span className="uh-logo-text">STRATFIT</span>
+          <img
+            src="/stratfit-logo.svg"
+            alt="STRATFIT"
+            style={{
+              height: 32,
+              width: "auto",
+              filter:
+                "drop-shadow(0 6px 18px rgba(34, 211, 238, 0.10)) drop-shadow(0 12px 28px rgba(0,0,0,0.55))",
+            }}
+            draggable={false}
+          />
           <div className="uh-status">
             <span>System Status</span>
             <span>·</span>

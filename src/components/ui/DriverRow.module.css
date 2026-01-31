@@ -1,0 +1,40 @@
+/* src/ui/DriverRow.module.css */
+
+.row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 12px 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(140, 190, 255, 0.10);
+    background: rgba(0,0,0,0.14);
+  }
+  
+  .label {
+    font-size: 14px;
+    opacity: 0.92;
+  }
+  
+  .note {
+    margin-top: 6px;
+    font-size: 13px;
+    opacity: 0.72;
+    line-height: 1.35;
+  }
+  
+  .badge {
+    font-size: 12px;
+    padding: 8px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(140, 190, 255, 0.18);
+    background: rgba(6, 10, 18, 0.55);
+    opacity: 0.92;
+  }
+  
+  .badge[data-impact="high"] { border-color: rgba(80, 190, 255, 0.45); }
+  .badge[data-impact="medium"] { border-color: rgba(70, 220, 180, 0.28); }
+  .badge[data-impact="low"] { border-color: rgba(140, 190, 255, 0.18); }
+  
+  .row[data-dir="hurts"] .badge { border-color: rgba(255, 80, 80, 0.30); }
+  

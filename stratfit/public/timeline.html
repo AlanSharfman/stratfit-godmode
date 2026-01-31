@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>STRATFIT | Strategic Timeline</title>
+  <link rel="stylesheet" href="../src/css/simulate.css" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    #timeline {
+      margin-top: 20px;
+      width: 100%;
+      height: 500px;
+      background: #0B0D11;
+      border: 1px solid #222;
+      position: relative;
+      overflow: hidden;
+    }
+    .timeline-event {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #00BCD4;
+      cursor: pointer;
+    }
+    .timeline-label {
+      position: absolute;
+      color: #fff;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body class="simulate">
+  <header class="context-bar">
+    <div style="font-weight:700;">Strategic Timeline</div>
+    <div style="color:#9BA1AA;font-size:12px;">View the full history of simulations, decisions, and shifts.</div>
+  </header>
+
+  <section id="timeline" class="summary-box" style="margin: 20px 24px 24px 24px;"></section>
+
+  <script src="../src/js/timeline.js"></script>
+</body>
+</html>
+
+

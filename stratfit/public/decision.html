@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>STRATFIT — Decision</title>
+  <link rel="stylesheet" href="../src/css/simulate.css" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="simulate">
+  <header class="context-bar">
+    DECISION MODULE
+  </header>
+
+  <section id="suggestion-panel" class="summary-box">
+    <h2>STRATEGY SUGGESTION</h2>
+    <p id="ai-recommendation">Evaluating run...</p>
+    <p id="ai-reasoning" style="font-size: 13px; color: #9BA1AA;"></p>
+  </section>
+
+  <section id="playbook-panel" class="summary-box" style="display:none;">
+    <h2>TACTICAL PLAYBOOK</h2>
+    <ul id="play-options"></ul>
+  </section>
+
+  <section id="whatif-impact" class="summary-box" style="margin-top: 20px;">
+    <h2>What-If Impact Projection</h2>
+    <p>Strategy adjustments will modify simulation assumptions.</p>
+    <div>
+      <p>Projected Alpha: <span id="proj-alpha"></span></p>
+      <p>Projected Volatility: <span id="proj-volatility"></span></p>
+      <p>Projected Confidence: <span id="proj-confidence"></span></p>
+    </div>
+  </section>
+
+  <section id="funnel-overlay-panel" class="summary-box" style="margin-top: 20px;">
+    <h2>Projected Funnel Overlay</h2>
+
+    <div id="overlay-controls">
+      <label>
+        <input type="checkbox" id="toggle-overlay" />
+        Show Projected Funnel Overlay
+      </label>
+    </div>
+
+    <svg id="funnel-svg" width="100%" height="160px" viewBox="0 0 300 160"></svg>
+  </section>
+
+  <section class="decision-engine">
+    <h1>STRATEGY DECISION</h1>
+    <p>Loaded run: <span id="decision-runid"></span></p>
+
+    <div class="strategy-options">
+      <button class="strategy-btn" data-choice="defensive">DEFENSIVE</button>
+      <button class="strategy-btn" data-choice="accumulate">ACCUMULATE</button>
+      <button class="strategy-btn" data-choice="neutral">NEUTRAL</button>
+    </div>
+
+    <div id="decision-summary" class="summary-box">
+      <!-- Populated dynamically -->
+    </div>
+
+    <section id="governance-panel" class="summary-box">
+      <h2>Governance</h2>
+      <p>Status: <span id="decision-status">Pending</span></p>
+
+      <div id="comments-section">
+        <h3>Comments</h3>
+        <ul id="comment-list"></ul>
+        <textarea id="comment-input" placeholder="Add comment..."></textarea>
+        <button id="submit-comment">Post</button>
+      </div>
+
+      <div id="approval-actions">
+        <button id="btn-approve">Approve</button>
+        <button id="btn-lock-final" style="display:none;">Lock Final Decision</button>
+      </div>
+    </section>
+
+    <button id="export-decision" class="btn btn--violet" disabled>EXPORT DECISION PACK</button>
+  </section>
+
+  <section class="audit-log">
+    <h2>Previous Decisions</h2>
+    <ul id="audit-list"></ul>
+  </section>
+
+  <div style="padding: 12px 24px;">
+    <a href="vault.html">Decision Vault →</a>
+  </div>
+
+  <nav class="nav-strip">
+    <button class="nav-btn">TERRAIN</button>
+    <button class="nav-btn">COMPARE</button>
+    <button class="nav-btn">RISK</button>
+    <button class="nav-btn">VALUATION</button>
+    <button class="nav-btn">DECISION</button>
+  </nav>
+
+  <script src="../src/js/auth.js"></script>
+  <script src="../src/js/simulate.js"></script>
+  <script src="../src/js/libs/jspdf.umd.min.js"></script>
+  <script src="../src/js/decision.js"></script>
+</body>
+</html>
+
+

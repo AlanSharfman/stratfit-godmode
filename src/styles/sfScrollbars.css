@@ -1,0 +1,33 @@
+/* src/styles/sfScrollbars.css
+ *
+ * Centralized scrollbar styling used by scroll-owning containers (e.g. compare/risk/impact panels).
+ * Keep this file dependency-light and safe for all browsers.
+ */
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(34, 211, 238, 0.35) rgba(0, 0, 0, 0.35);
+}
+
+/* Chromium / WebKit */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(34, 211, 238, 0.25);
+  border-radius: 999px;
+  border: 2px solid rgba(0, 0, 0, 0.35);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 211, 238, 0.40);
+}
+
+

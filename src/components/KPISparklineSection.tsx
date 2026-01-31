@@ -169,7 +169,7 @@ const PowerPips = memo(function PowerPips({ value, isActive, isDragging, bootPha
   const isPostBoot = bootPhase === 'complete' || bootComplete;
 
   return (
-    <div className="flex items-end gap-1 h-10">
+    <div className="flex items-end gap-1 h-8">
       {Array.from({ length: PIP_COUNT }).map((_, i) => {
         const isFilled = i < filledPips;
         const isScanning = isPostBoot && scanPos >= i && scanPos <= i + 2;
@@ -188,7 +188,7 @@ const PowerPips = memo(function PowerPips({ value, isActive, isDragging, bootPha
             key={i}
             className="rounded-sm transition-all"
             style={{
-              width: '8px',
+              width: '6px',
               height: `${height}%`,
               opacity: showPip ? 1 : 0.1,
               background: isFilled 
@@ -1187,7 +1187,7 @@ export default function KPISparklineSection() {
           NEURAL BOOT — Sequential ignition with opacity fade-in
          ═══════════════════════════════════════════════════════════════════ */}
       <div 
-        className="relative w-full h-28 flex items-stretch"
+        className="relative w-full h-24 flex items-stretch"
         style={{
           background: 'linear-gradient(180deg, #0f172a 0%, #0b1221 50%, #020617 100%)',
           borderRadius: '8px',
@@ -1227,18 +1227,18 @@ export default function KPISparklineSection() {
             ZONE 1: RESILIENCE — Segmented Power
            ════════════════════════════════════════════════════════════════ */}
         <div 
-          className="flex-1 flex items-center px-6 py-4 relative"
+          className="flex-1 flex items-center px-4 py-3 relative"
           style={{ borderRight: '1px solid rgba(255,255,255,0.08)' }}
         >
           {/* Text Block */}
           <div className="flex flex-col mr-6">
-            <div className={`text-[11px] font-mono font-bold tracking-[0.3em] uppercase mb-1 transition-all duration-300 ${isResilienceActive ? 'text-cyan-300 drop-shadow-[0_0_10px_rgba(34,211,238,1)]' : 'text-slate-300'}`}>
+            <div className={`text-[10px] font-mono font-bold tracking-[0.28em] uppercase mb-0.5 transition-all duration-300 ${isResilienceActive ? 'text-cyan-300 drop-shadow-[0_0_10px_rgba(34,211,238,1)]' : 'text-slate-300'}`}>
               R E S I L I E N C E
             </div>
-            <div className={`text-4xl font-bold tracking-tight transition-all duration-300 ${isResilienceActive ? 'text-white drop-shadow-[0_0_20px_rgba(34,211,238,0.6)]' : 'text-white'}`}>
+            <div className={`text-3xl font-bold tracking-tight transition-all duration-300 ${isResilienceActive ? 'text-white drop-shadow-[0_0_20px_rgba(34,211,238,0.6)]' : 'text-white'}`}>
               {cash}
             </div>
-            <div className={`text-[10px] font-mono mt-1 transition-colors duration-300 ${isResilienceActive ? 'text-cyan-400' : 'text-slate-400'}`}>
+            <div className={`text-[9px] font-mono mt-0.5 transition-colors duration-300 ${isResilienceActive ? 'text-cyan-400' : 'text-slate-400'}`}>
               RUNWAY: {runway}
             </div>
           </div>
@@ -1267,7 +1267,7 @@ export default function KPISparklineSection() {
             ZONE 2: MOMENTUM — Vector Thrust Indicator
            ════════════════════════════════════════════════════════════════ */}
         <div 
-          className="flex-1 flex items-center px-6 py-4 relative"
+          className="flex-1 flex items-center px-4 py-3 relative"
           style={{ borderRight: '1px solid rgba(255,255,255,0.08)' }}
         >
           {/* Color-reactive top highlight — SYNCED to Particle Stream Pulse */}
@@ -1292,9 +1292,9 @@ export default function KPISparklineSection() {
           />
           
           {/* Text Block */}
-          <div className="flex flex-col mr-4 min-w-[100px]">
+          <div className="flex flex-col mr-3 min-w-[92px]">
             <div 
-              className="text-[11px] font-mono font-bold tracking-[0.3em] uppercase mb-1 transition-all duration-300"
+              className="text-[10px] font-mono font-bold tracking-[0.28em] uppercase mb-0.5 transition-all duration-300"
               style={{
                 color: isMomentumActive ? vectorColor : 'rgb(203, 213, 225)',
                 textShadow: isMomentumActive ? `0 0 10px ${vectorColor}` : 'none',
@@ -1302,11 +1302,11 @@ export default function KPISparklineSection() {
             >
               M O M E N T U M
             </div>
-            <div className={`text-4xl font-bold tracking-tight transition-all duration-300 ${isMomentumActive ? 'text-white drop-shadow-[0_0_20px_rgba(34,211,238,0.6)]' : 'text-white'}`}>
+            <div className={`text-3xl font-bold tracking-tight transition-all duration-300 ${isMomentumActive ? 'text-white drop-shadow-[0_0_20px_rgba(34,211,238,0.6)]' : 'text-white'}`}>
               {momentum}
             </div>
             <div 
-              className="text-[10px] font-mono mt-1 transition-colors duration-300"
+              className="text-[9px] font-mono mt-0.5 transition-colors duration-300"
               style={{
                 color: isMomentumActive ? vectorColor : 'rgb(148, 163, 184)',
               }}
@@ -1339,7 +1339,7 @@ export default function KPISparklineSection() {
         {/* ════════════════════════════════════════════════════════════════
             ZONE 3: SYSTEM STABILITY — Aerospace Command Dial
            ════════════════════════════════════════════════════════════════ */}
-        <div className="flex flex-col items-center justify-center px-3 py-2 relative" style={{ minWidth: 180 }}>
+        <div className="flex flex-col items-center justify-center px-2 py-2 relative" style={{ minWidth: 160 }}>
           {/* Stability Command Dial — Premium aerospace gauge */}
           <StabilityDial 
             value={stabilityPct} 

@@ -1,0 +1,18 @@
+[
+  {
+    "runId": "SIM-2026-X9",
+    "user": "jane.doe@fund.com",
+    "vote": "APPROVE",
+    "comment": "Meets alpha + regime alignment",
+    "timestamp": "2026-01-30T23:58Z"
+  },
+  {
+    "runId": "SIM-2026-X9",
+    "user": "committee.member@fund.com",
+    "vote": "APPROVE",
+    "comment": "Risk within guardrails; execution plan acceptable",
+    "timestamp": "2026-01-31T00:03Z"
+  }
+]
+
+

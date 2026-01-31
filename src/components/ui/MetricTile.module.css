@@ -1,0 +1,27 @@
+/* src/ui/MetricTile.module.css */
+.tile {
+    border-radius: 16px;
+    border: 1px solid rgba(140, 190, 255, 0.12);
+    background: rgba(0,0,0,0.18);
+    padding: 12px 12px;
+  }
+  
+  .label {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    opacity: 0.74;
+  }
+  
+  .value {
+    margin-top: 8px;
+    font-size: 22px;
+    letter-spacing: -0.01em;
+  }
+  
+  .sub {
+    margin-top: 6px;
+    font-size: 12px;
+    opacity: 0.70;
+  }
+  
