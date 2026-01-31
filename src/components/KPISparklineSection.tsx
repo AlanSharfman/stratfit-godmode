@@ -294,13 +294,14 @@ const StarshipTelemetry = memo(function StarshipTelemetry({ value, isActive, isD
   // Animation loop — DYNAMIC speed based on momentum
   useEffect(() => {
     if (!streamActive && bootPhase !== 'complete') return;
-
-    // Deterministic respawn jitter (no Math.random; stable across renders)
-    const respawnJitter = ((Math.sin(effectiveSpeed * 12.9898) * 43758.5453) % 1) * 5;
     
     // Speed scales with dragging AND momentum
     const dragMultiplier = isDragging ? 2 : isActive ? 1.2 : 1;
     const effectiveSpeed = particleConfig.baseSpeed * dragMultiplier;
+
+    // Deterministic respawn jitter (no Math.random; stable across renders)
+    // (Must be computed AFTER effectiveSpeed is initialized)
+    const respawnJitter = ((Math.sin(effectiveSpeed * 12.9898) * 43758.5453) % 1) * 5;
     
     const interval = setInterval(() => {
       setPulsePhase(p => p + (particleConfig.mode === 'thrust' ? 0.2 : 0.08));
