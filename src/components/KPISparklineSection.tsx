@@ -1212,6 +1212,22 @@ export default function KPISparklineSection() {
 
   return (
     <div className="kpi-sparkline-section">
+      <div
+        style={{
+          position: "fixed",
+          top: 10,
+          left: 10,
+          zIndex: 999999,
+          background: "#0B1220",
+          color: "#37D4FF",
+          border: "1px solid #37D4FF",
+          padding: "6px 10px",
+          fontSize: 12,
+          fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+        }}
+      >
+        KPISparklineSection LIVE: {new Date().toISOString()}
+      </div>
       {/* ═══════════════════════════════════════════════════════════════════
           TITANIUM COMMAND BRIDGE — Unified Telemetry Strip
           NEURAL BOOT — Sequential ignition with opacity fade-in
