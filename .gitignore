@@ -49,3 +49,5 @@ node_modules/.vite/
 # local recovery artifacts
 _quarantine/
 
+
+_request_dump/
