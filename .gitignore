@@ -55,3 +55,7 @@ _quarantine/
 # Local request dumps / dev output
 _request_dump/
 
+# Local dumps / debug output (audit)
+_broken_mountain_backup/
+_BACKUPS/
+
