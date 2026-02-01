@@ -49,3 +49,9 @@ node_modules/.vite/
 # local recovery artifacts
 _quarantine/
 
+# TypeScript incremental build info
+*.tsbuildinfo
+
+# Local request dumps / dev output
+_request_dump/
+

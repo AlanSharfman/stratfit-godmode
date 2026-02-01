@@ -31,7 +31,6 @@ import HeaderControlDeck from "@/components/layout/HeaderControlDeck";
 import { deriveArrGrowth, formatUsdCompact } from "@/utils/arrGrowth";
 import { getQualityScoreFromKpis, getQualityBandFromKpis } from "@/logic/qualityScore";
 import ScenarioMemoPage from "@/pages/ScenarioMemoPage";
-import MonteCarloDebugPage from "@/pages/montecarlo-debug";
 import ImpactView from "@/components/compound/impact";
 import VariancesView from "@/components/compound/variances/VariancesView";
 import { useDebouncedValue, useThrottledValue } from "@/hooks/useDebouncedValue";
@@ -487,11 +486,6 @@ export default function App() {
   // Simple memo route (no router) — used for Print-to-PDF export.
   if (typeof window !== "undefined" && window.location.pathname.startsWith("/memo/")) {
     return <ScenarioMemoPage />;
-  }
-
-  // Monte Carlo debug route — renders full audit summary in-page (not console).
-  if (typeof window !== "undefined" && window.location.pathname === "/montecarlo-debug") {
-    return <MonteCarloDebugPage />;
   }
 
   // Compare route — Production-ready Risk Topography Instrument
