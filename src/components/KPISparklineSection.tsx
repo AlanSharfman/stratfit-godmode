@@ -4,6 +4,7 @@
 // NEURAL BOOT — Sequential ignition startup sequence
 
 import React, { useMemo, useEffect, useState, memo, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useShallow } from "zustand/react/shallow";
 import { useScenarioStore } from "@/state/scenarioStore";
 import { useUIStore } from "@/state/uiStore";
@@ -1212,22 +1213,27 @@ export default function KPISparklineSection() {
 
   return (
     <div className="kpi-sparkline-section">
-      <div
-        style={{
-          position: "fixed",
-          top: 10,
-          left: 10,
-          zIndex: 999999,
-          background: "#0B1220",
-          color: "#37D4FF",
-          border: "1px solid #37D4FF",
-          padding: "6px 10px",
-          fontSize: 12,
-          fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-        }}
-      >
-        KPISparklineSection LIVE: {new Date().toISOString()}
-      </div>
+      {typeof document !== "undefined"
+        ? createPortal(
+            <div
+              style={{
+                position: "fixed",
+                top: 10,
+                left: 10,
+                zIndex: 999999,
+                background: "#0B1220",
+                color: "#37D4FF",
+                border: "1px solid #37D4FF",
+                padding: "6px 10px",
+                fontSize: 12,
+                fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+              }}
+            >
+              KPISparklineSection LIVE: {new Date().toISOString()}
+            </div>,
+            document.body
+          )
+        : null}
       {/* ═══════════════════════════════════════════════════════════════════
           TITANIUM COMMAND BRIDGE — Unified Telemetry Strip
           NEURAL BOOT — Sequential ignition with opacity fade-in

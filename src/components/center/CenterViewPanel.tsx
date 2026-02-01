@@ -1,12 +1,18 @@
 import React, { useEffect, useState, useMemo } from "react";
-import * as THREE from "three";
 import type { CenterViewId } from "@/types/view";
 import ScenarioMountain from "@/components/mountain/ScenarioMountain";
-import { GodModeMountain } from "@/components/compare/GodModeMountain";
 import GodModeTerrain from "@/components/compare/GodModeTerrain";
-import { Canvas } from "@react-three/fiber";
-import { EffectComposer, Bloom, Vignette, SMAA } from "@react-three/postprocessing";
-import { Environment } from "@react-three/drei";
+
+// Tab Components
+import { RiskTab } from "@/components/Risk";
+import { ValuationTab } from "@/components/valuation";
+import { ImpactGodMode } from "@/components/impact";
+
+import { useScenario, useScenarioStore } from "@/state/scenarioStore";
+import { onCausal } from "@/ui/causalEvents";
+import { engineResultToMountainForces } from "@/logic/mountainForces";
+import { useSimulationStore } from "@/state/simulationStore";
+import { useSavedSimulationsStore } from "@/state/savedSimulationsStore";
 
 // ScenarioData interface for mountain visualization
 interface ScenarioData {
@@ -16,18 +22,6 @@ interface ScenarioData {
   runway: number;
   label?: string;
 }
-
-// Tab Components
-import { RiskTab } from "@/components/Risk";
-import DecidePage from "@/app/decide/page";
-import { ValuationTab } from "@/components/valuation";
-import { ImpactGodMode } from "@/components/impact";
-
-import { useScenario, useScenarioStore } from "@/state/scenarioStore";
-import { onCausal } from "@/ui/causalEvents";
-import { engineResultToMountainForces } from "@/logic/mountainForces";
-import { useSimulationStore } from "@/state/simulationStore";
-import { useSavedSimulationsStore } from "@/state/savedSimulationsStore";
 
 interface CenterViewPanelProps {
   view?: CenterViewId;
@@ -40,6 +34,7 @@ interface CenterViewPanelProps {
 export default function CenterViewPanel(props: CenterViewPanelProps) {
   // Support both `view` and `viewMode` props for compatibility
   const view = props.viewMode ?? props.view ?? "terrain";
+
   const scenario = useScenario();
   const engineResults = useScenarioStore((s) => s.engineResults);
   const hoveredKpiIndex = useScenarioStore((s) => s.hoveredKpiIndex);
@@ -52,34 +47,61 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
 
   // GOD MODE MOUNTAIN: Get simulation data from stores
   const simulationSummary = useSimulationStore((s) => s.summary);
-  const savedBaseline = useSavedSimulationsStore((s) => s.simulations.find((sim) => sim.isBaseline));
+  const savedBaseline = useSavedSimulationsStore((s) =>
+    s.simulations.find((sim) => sim.isBaseline)
+  );
 
   // Build scenario data for GodModeMountain (Gravity = Time visualization)
-  const godModeScenarioA: ScenarioData = useMemo(() => ({
-    score: savedBaseline?.summary.overallScore || 
-           (engineResults?.base?.kpis?.qualityScore ? Math.round((engineResults.base.kpis.qualityScore as any).value * 100) : 72),
-    arr: savedBaseline?.summary.arrMedian || 
-         engineResults?.base?.kpis?.arrCurrent?.value || 2100000,
-    survival: savedBaseline?.summary.survivalRate 
-              ? savedBaseline.summary.survivalRate * 100 
-              : (engineResults?.base?.kpis?.runway?.value ? Math.min(100, (engineResults.base.kpis.runway.value / 36) * 100) : 78),
-    runway: savedBaseline?.summary.runwayMedian || 
-            engineResults?.base?.kpis?.runway?.value || 18,
-    label: "BASELINE"
-  }), [savedBaseline, engineResults]);
+  // (Kept because you may be using these in subcomponents / future compare wiring)
+  const godModeScenarioA: ScenarioData = useMemo(
+    () => ({
+      score:
+        savedBaseline?.summary.overallScore ||
+        (engineResults?.base?.kpis?.qualityScore
+          ? Math.round((engineResults.base.kpis.qualityScore as any).value * 100)
+          : 72),
+      arr:
+        savedBaseline?.summary.arrMedian ||
+        engineResults?.base?.kpis?.arrCurrent?.value ||
+        2100000,
+      survival: savedBaseline?.summary.survivalRate
+        ? savedBaseline.summary.survivalRate * 100
+        : engineResults?.base?.kpis?.runway?.value
+        ? Math.min(100, (engineResults.base.kpis.runway.value / 36) * 100)
+        : 78,
+      runway:
+        savedBaseline?.summary.runwayMedian ||
+        engineResults?.base?.kpis?.runway?.value ||
+        18,
+      label: "BASELINE",
+    }),
+    [savedBaseline, engineResults]
+  );
 
-  const godModeScenarioB: ScenarioData = useMemo(() => ({
-    score: simulationSummary?.overallScore || 
-           (engineResults?.[scenario]?.kpis?.qualityScore ? Math.round((engineResults[scenario].kpis.qualityScore as any).value * 100) : 65),
-    arr: simulationSummary?.arrMedian || 
-         engineResults?.[scenario]?.kpis?.arrCurrent?.value || 2400000,
-    survival: simulationSummary?.survivalRate 
-              ? simulationSummary.survivalRate * 100 
-              : (engineResults?.[scenario]?.kpis?.runway?.value ? Math.min(100, (engineResults[scenario].kpis.runway.value / 36) * 100) : 68),
-    runway: simulationSummary?.runwayMedian || 
-            engineResults?.[scenario]?.kpis?.runway?.value || 16,
-    label: "EXPLORATION"
-  }), [simulationSummary, engineResults, scenario]);
+  const godModeScenarioB: ScenarioData = useMemo(
+    () => ({
+      score:
+        simulationSummary?.overallScore ||
+        (engineResults?.[scenario]?.kpis?.qualityScore
+          ? Math.round((engineResults[scenario].kpis.qualityScore as any).value * 100)
+          : 65),
+      arr:
+        simulationSummary?.arrMedian ||
+        engineResults?.[scenario]?.kpis?.arrCurrent?.value ||
+        2400000,
+      survival: simulationSummary?.survivalRate
+        ? simulationSummary.survivalRate * 100
+        : engineResults?.[scenario]?.kpis?.runway?.value
+        ? Math.min(100, (engineResults[scenario].kpis.runway.value / 36) * 100)
+        : 68,
+      runway:
+        simulationSummary?.runwayMedian ||
+        engineResults?.[scenario]?.kpis?.runway?.value ||
+        16,
+      label: "EXPLORATION",
+    }),
+    [simulationSummary, engineResults, scenario]
+  );
 
   // CAUSAL HIGHLIGHT — Mountain band (Phase 1, UI-only)
   const [bandNonce, setBandNonce] = useState(0);
@@ -106,7 +128,7 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
           <div className="relative h-full w-full overflow-hidden rounded-3xl border border-cyan-500/20 bg-gradient-to-b from-slate-950 via-slate-900 to-black shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08),0_0_60px_rgba(34,211,238,0.08)] flex flex-col">
             {/* Cyan accent border glow */}
             <div className="pointer-events-none absolute inset-0 rounded-3xl shadow-[inset_0_0_0_1px_rgba(34,211,238,0.2),inset_0_0_30px_rgba(34,211,238,0.05)]" />
-            
+
             {/* Causal highlight band (no labels) — only after explicit user action */}
             {bandNonce > 0 ? (
               <div
@@ -117,9 +139,12 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
             ) : null}
 
             {/* Dark Wireframe Mountain */}
-            <div className="relative flex-1 w-full" style={{ filter: 'brightness(1.15) saturate(1.2) contrast(1.05)' }}>
-              <ScenarioMountain 
-                scenario={scenario} 
+            <div
+              className="relative flex-1 w-full"
+              style={{ filter: "brightness(1.15) saturate(1.2) contrast(1.05)" }}
+            >
+              <ScenarioMountain
+                scenario={scenario}
                 dataPoints={dataPoints}
                 activeKpiIndex={hoveredKpiIndex}
               />
@@ -132,8 +157,8 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
           <div className="relative h-full w-full overflow-hidden rounded-3xl border border-slate-700/40 bg-black shadow-[0_8px_32px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.03)]">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.4)_60%,rgba(0,0,0,0.85)_100%)]" />
             <div className="relative h-full w-full">
-              <ScenarioMountain 
-                scenario={scenario} 
+              <ScenarioMountain
+                scenario={scenario}
                 dataPoints={dataPoints}
                 activeKpiIndex={hoveredKpiIndex}
               />
@@ -141,36 +166,37 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
           </div>
         )}
 
-        {/* COMPARE - God Mode: Full Nature Environment */}
+        {/* COMPARE - God Mode */}
         {view === "compare" && (
           <div className="h-full w-full overflow-hidden rounded-3xl border border-slate-700/40 shadow-[0_8px_32px_rgba(0,0,0,0.6)] bg-[#050b14] relative">
-            {/* GodModeTerrain has CompareHybridPanel with all UI integrated */}
             <GodModeTerrain />
           </div>
         )}
 
-        {/* IMPACT - Sensitivity analysis */}
+        {/* IMPACT */}
         {view === "impact" && (
           <div className="h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-linear-to-br from-slate-950/60 to-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
             <ImpactGodMode />
           </div>
         )}
 
-        {/* RISK - Risk breakdown and threat assessment */}
+        {/* RISK */}
         {view === "risk" && (
           <div className="h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-linear-to-br from-slate-950/60 to-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
             <RiskTab />
           </div>
         )}
 
-        {/* DECIDE - full decision experience */}
+        {/* DECISION — HARD LOCK */}
         {view === "decision" && (
-          <div className="h-full w-full overflow-hidden rounded-3xl border border-slate-700/40 bg-black shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
-            <DecidePage />
+          <div className="h-full w-full flex items-center justify-center bg-black">
+            <div className="text-cyan-400 text-2xl font-mono tracking-widest">
+              DECISION ENGINE ACTIVE
+            </div>
           </div>
         )}
 
-        {/* VALUATION - Company valuation scenarios */}
+        {/* VALUATION */}
         {view === "valuation" && (
           <div className="h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-linear-to-br from-slate-950/60 to-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
             <ValuationTab />

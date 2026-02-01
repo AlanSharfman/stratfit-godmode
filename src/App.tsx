@@ -40,10 +40,9 @@ import "@/styles/performance-optimizations.css";
 import { MainNav } from "@/components/navigation";
 import type { ViewMode as HeaderViewMode } from "@/components/layout/UnifiedHeader";
 import { useUIStore } from "@/state/uiStore";
-import { SimulateOverlay } from '@/components/simulate';
+import SimulateOverlayWired from "@/components/simulate/SimulateOverlayWired";
 import { SaveSimulationModal, LoadSimulationPanel } from '@/components/simulations';
 import { ComparePage } from '@/components/compare';
-import StrategicDeclarationPage from '@/pages/StrategicDeclarationPage';
 import type { LeverState } from "@/types/lever";
 
 // ============================================================================
@@ -460,7 +459,7 @@ function OrbitalKPISection({ kpiAnimState }: { kpiAnimState: "visible" | "closin
       className={`kpi-section kpi-section--animated kpi-section--visible ${hasInteracted ? 'orbital-active' : ''}`} 
       data-tour="kpis"
     >
-      <KPISparklineSection />
+      <div style={{ color: "#37D4FF" }}>APP TSX IS LIVE ✅ {Date.now()}</div>
     </div>
   );
 }
@@ -473,11 +472,6 @@ export default function App() {
   // Simple memo route (no router) — used for Print-to-PDF export.
   if (typeof window !== "undefined" && window.location.pathname.startsWith("/memo/")) {
     return <ScenarioMemoPage />;
-  }
-
-  // Strategic Declaration route (no router) — model-ready intake
-  if (typeof window !== "undefined" && window.location.pathname.startsWith("/declaration")) {
-    return <StrategicDeclarationPage />;
   }
 
   // Monte Carlo debug route — renders full audit summary in-page (not console).
@@ -529,7 +523,6 @@ export default function App() {
     try {
       // Dedicated boot route (no router): /simulate should open the overlay on load.
       if (typeof window !== "undefined" && window.location.pathname === "/simulate") return true;
-      // Declaration handoff (stable): set by StrategicDeclarationPage before hard navigation.
       const flag = window.localStorage.getItem("sf.openSimulateOnBoot");
       if (flag === "1") {
         window.localStorage.removeItem("sf.openSimulateOnBoot");
@@ -1177,11 +1170,29 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
         onNavigate={(id) => {
           // close overlay if user navigates elsewhere
           if (id !== "simulate") setShowSimulate(false);
-          if (id === "simulate") return setShowSimulate(true);
-          if (id === "decision") return setHeaderViewMode("decision");
-          if (id === "valuation") return setHeaderViewMode("valuation");
-          if (id === "compare") return setHeaderViewMode("compare");
-          if (id === "impact") return setHeaderViewMode("impact");
+          if (id === "simulate") {
+            setCenterView("simulate");
+            setHeaderViewMode("simulate");
+            return setShowSimulate(true);
+          }
+          if (id === "decision") {
+            setCenterView("decision");
+            return setHeaderViewMode("decision");
+          }
+          if (id === "valuation") {
+            setCenterView("valuation");
+            return setHeaderViewMode("valuation");
+          }
+          if (id === "compare") {
+            setCenterView("compare");
+            return setHeaderViewMode("compare");
+          }
+          if (id === "impact") {
+            setCenterView("impact");
+            return setHeaderViewMode("impact");
+          }
+          // Terrain (default)
+          setCenterView("terrain");
           return setHeaderViewMode("terrain");
         }}
         onSave={() => setShowSaveModal(true)}
@@ -1244,7 +1255,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
       </div>
       
       {/* MONTE CARLO SIMULATION OVERLAY */}
-      <SimulateOverlay 
+      <SimulateOverlayWired 
         isOpen={showSimulate} 
         onClose={() => {
           setShowSimulate(false);
