@@ -138,6 +138,17 @@ function gaussian2(dx: number, dz: number, sx: number, sz: number): number {
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
+// Smooth, deterministic "noise" for subtle camera/scene shake.
+// Avoids per-frame Math.random() jitter (which reads as instability).
+function smoothSeismicNoise(t: number, seed: number) {
+  // Sum of sines at incommensurate-ish frequencies → organic but continuous.
+  const a = Math.sin(t * 7.13 + seed * 1.7);
+  const b = Math.sin(t * 12.77 + seed * 3.1);
+  const c = Math.sin(t * 19.31 + seed * 5.3);
+  // Normalize-ish to [-1, 1]
+  return (a * 0.62 + b * 0.28 + c * 0.10);
+}
+
 function applySoftCeiling(h: number): number {
   if (h <= CEILING_START) return h;
   const excess = h - CEILING_START;
@@ -382,6 +393,7 @@ const Terrain: React.FC<TerrainProps> = ({
   // Smooth interpolation + BREATHING ANIMATION
   const breathTimeRef = useRef(0);
   const fxTimeRef = useRef(0);
+  const normalsAccumRef = useRef(0);
   
   useFrame((_, delta) => {
     if (!meshFillRef.current || !meshWireRef.current) return;
@@ -418,7 +430,10 @@ const Terrain: React.FC<TerrainProps> = ({
     const targetCols = targetColorsRef.current;
     const currentCols = currentColorsRef.current;
 
-    const smoothing = 0.7;
+    // Frame-rate independent smoothing (prevents "jitter" when FPS varies).
+    const dt = Math.min(0.05, Math.max(0.001, delta)); // cap delta to avoid jumps
+    const lambda = 10; // higher = snappier interpolation
+    const alpha = 1 - Math.exp(-lambda * dt);
 
     for (let i = 0; i < count; i++) {
       const baseTarget = targets[i];
@@ -429,33 +444,30 @@ const Terrain: React.FC<TerrainProps> = ({
       const breathingTarget = baseTarget + breathOffset;
       
       const diff = breathingTarget - currents[i];
-      if (Math.abs(diff) > 0.0001) {
-        currents[i] += diff * smoothing;
-      } else {
-        currents[i] = breathingTarget;
-      }
+      if (Math.abs(diff) > 0.0001) currents[i] += diff * alpha;
+      else currents[i] = breathingTarget;
       pos.setZ(i, currents[i]);
 
       for (let c = 0; c < 3; c++) {
         const ci = i * 3 + c;
         const colDiff = targetCols[ci] - currentCols[ci];
-        if (Math.abs(colDiff) > 0.0003) {
-          currentCols[ci] += colDiff * smoothing;
-        } else {
-          currentCols[ci] = targetCols[ci];
-        }
+        if (Math.abs(colDiff) > 0.0003) currentCols[ci] += colDiff * alpha;
+        else currentCols[ci] = targetCols[ci];
       }
       col.setXYZ(i, currentCols[i * 3], currentCols[i * 3 + 1], currentCols[i * 3 + 2]);
     }
 
     // Always update for continuous breathing
-      pos.needsUpdate = true;
-      col.needsUpdate = true;
-      geo.computeVertexNormals();
+    pos.needsUpdate = true;
+    col.needsUpdate = true;
 
-      const wireGeo = meshWireRef.current.geometry as THREE.PlaneGeometry;
-      wireGeo.attributes.position.needsUpdate = true;
-      wireGeo.computeVertexNormals();
+    // Normals are expensive; updating them at a lower rate reduces stutter.
+    // (Wireframe uses MeshBasicMaterial so normals are irrelevant there.)
+    normalsAccumRef.current += dt;
+    if (normalsAccumRef.current >= 0.05) { // ~20 Hz
+      normalsAccumRef.current = 0;
+      geo.computeVertexNormals();
+    }
 
       // Apply celebration pulse to materials (without rerendering)
       const fillMat = meshFillRef.current.material as THREE.MeshStandardMaterial;
@@ -799,6 +811,7 @@ interface CinematicControllerProps {
 function CinematicController({ children, riskLevel = 0 }: CinematicControllerProps) {
   const groupRef = useRef<THREE.Group>(null);
   const hasInteracted = useUIStore((s) => s.hasInteracted);
+  const riskShakeRef = useRef(0);
   
   useFrame((state, delta) => {
     if (!groupRef.current) return;
@@ -806,9 +819,13 @@ function CinematicController({ children, riskLevel = 0 }: CinematicControllerPro
     const t = state.clock.elapsedTime;
     
     // 1. RISK REACTION (Seismic Shake) — Always active when risk is high
-    const riskShake = riskLevel > 40 
-      ? (Math.random() - 0.5) * 0.015 * (riskLevel / 100) 
-      : 0;
+    const dt = Math.min(0.05, Math.max(0.001, delta));
+    const riskShakeTarget =
+      riskLevel > 40
+        ? smoothSeismicNoise(t, 0.37) * 0.015 * (riskLevel / 100)
+        : 0;
+    riskShakeRef.current = THREE.MathUtils.damp(riskShakeRef.current, riskShakeTarget, 10, dt);
+    const riskShake = riskShakeRef.current;
     
     if (!hasInteracted) {
       // 2. IDLE MODE: THE "SEARCH PATTERN"
