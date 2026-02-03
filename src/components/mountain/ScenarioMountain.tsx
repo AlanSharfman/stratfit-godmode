@@ -458,8 +458,8 @@ const Terrain: React.FC<TerrainProps> = ({
     }
 
     // Always update for continuous breathing
-    pos.needsUpdate = true;
-    col.needsUpdate = true;
+      pos.needsUpdate = true;
+      col.needsUpdate = true;
 
     // Normals are expensive; updating them at a lower rate reduces stutter.
     // (Wireframe uses MeshBasicMaterial so normals are irrelevant there.)
@@ -823,7 +823,7 @@ function CinematicController({ children, riskLevel = 0 }: CinematicControllerPro
     const riskShakeTarget =
       riskLevel > 40
         ? smoothSeismicNoise(t, 0.37) * 0.015 * (riskLevel / 100)
-        : 0;
+      : 0;
     riskShakeRef.current = THREE.MathUtils.damp(riskShakeRef.current, riskShakeTarget, 10, dt);
     const riskShake = riskShakeRef.current;
     

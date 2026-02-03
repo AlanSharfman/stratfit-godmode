@@ -293,7 +293,12 @@ export const useScenarioStore = create<ScenarioState>()(
           strategies: [...state.strategies, strategy]
         }));
       },
-      setCurrentLevers: (levers) => set({ currentLevers: levers }),
+      setCurrentLevers: (levers) => {
+        // Baseline is locked: do not allow baseline lever snapshots to be overwritten.
+        // Strategy Studio (non-base scenarios) may update currentLevers for saving/versioning.
+        if (get().activeScenarioId === "base") return;
+        set({ currentLevers: levers });
+      },
       setActiveLever: (leverId, intensity) => set({ activeLeverId: leverId, leverIntensity01: intensity }),
       
       saveAsBaseline: (name, levers, simulation) => {

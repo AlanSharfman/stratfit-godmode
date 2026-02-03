@@ -2,20 +2,19 @@
 // STRATFIT Truth Selectors — single canonical source for deltas, risk, quality.
 // No UI layer may compute these independently.
 
-export type ScenarioId = "base" | "upside" | "downside" | "stress";
+import type { EngineResult, ScenarioId } from "@/state/scenarioStore";
 
-type KPIValue = { value: number; display?: string };
-type KPIMap = Record<string, KPIValue>;
+// Re-export the canonical types so all callers can import from here if desired.
+export type { EngineResult, ScenarioId };
 
-export type EngineResult = {
-  kpis: KPIMap;
-  // allow future expansion without breaking imports
-  cashflow?: unknown;
-  valuation?: unknown;
-  risk?: unknown;
-};
+// NOTE:
+// We deliberately DO NOT define a second EngineResult contract here.
+// EngineResult is canonical in scenarioStore:
+//   { kpis: Record<string, { value:number; display?:string }>, ai?, timeline? }
+// Any future cashflow/valuation/risk structures must be derived or explicitly added
+// to the canonical EngineResult later (not invented here).
 
-export type EngineResults = Record<ScenarioId, EngineResult>;
+export type EngineResults = Record<string, EngineResult>;
 
 // -----------------------------
 // helpers
@@ -59,26 +58,22 @@ export function getRiskScore(er: EngineResult): number {
 // -----------------------------
 // Quality (FORMULA LOCK)
 // Quality = unit economics + efficiency (NOT growth/scale/runway).
-// Inputs are taken from your dump keys.
+// Inputs are taken from KPI keys.
 // -----------------------------
 export function getQualityScore(er: EngineResult): number {
   const ltvCac = getKpi(er, "ltvCac");
   const payback = getKpi(er, "cacPayback");
   const earningsPower = getKpi(er, "earningsPower"); // proxy for margin/efficiency
-  const burnQuality = getKpi(er, "burnQuality");     // proxy for burn discipline
+  const burnQuality = getKpi(er, "burnQuality"); // proxy for burn discipline
 
   // normalize to 0..1
   const ltvScore = Number.isFinite(ltvCac) ? norm(ltvCac, 2, 6) : 0;
-  const paybackScore = Number.isFinite(payback) ? invNorm(payback, 36, 6) : 0; // lower payback is better
+  const paybackScore = Number.isFinite(payback) ? invNorm(payback, 36, 6) : 0; // lower is better
   const earnScore = Number.isFinite(earningsPower) ? norm(earningsPower, 20, 80) : 0;
   const burnScore = Number.isFinite(burnQuality) ? norm(burnQuality, 20, 80) : 0;
 
   // weights locked
-  const score =
-    0.35 * ltvScore +
-    0.25 * paybackScore +
-    0.25 * earnScore +
-    0.15 * burnScore;
+  const score = 0.35 * ltvScore + 0.25 * paybackScore + 0.25 * earnScore + 0.15 * burnScore;
 
   return clamp01(score);
 }
@@ -104,4 +99,3 @@ export function deltaPct(base: number, scenario: number): number | null {
   if (!Number.isFinite(scenario)) return null;
   return (scenario - base) / base;
 }
-

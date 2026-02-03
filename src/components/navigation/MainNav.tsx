@@ -1,362 +1,53 @@
-'use client'
-
-import React, { useState } from 'react'
-import { useLocation, Link } from 'react-router-dom'
+import React from "react";
 import {
+  ClipboardList,
   Mountain,
-  Zap,
+  SlidersHorizontal,
   GitCompare,
+  ShieldAlert,
   DollarSign,
-  CheckCircle,
-  Activity,
+  CheckCircle2,
   Save,
   FolderOpen,
   Download,
   Share2,
   ChevronDown,
-  Layers,
-  HelpCircle,
-} from 'lucide-react'
+} from "lucide-react";
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// TYPES
-// ═══════════════════════════════════════════════════════════════════════════════
+import "./MainNav.css";
 
-interface NavItem {
-  id: string
-  label: string
-  href: string
-  icon: React.ReactNode
-  description: string
-}
+type NavId =
+  | "onboarding"
+  | "terrain"
+  | "strategy"
+  | "compare"
+  | "risk"
+  | "valuation"
+  | "decision";
 
-interface ActiveScenario {
-  name: string
-  lastModified: string
-}
+type Props = {
+  activeScenario: { name: string; lastModified?: string } | null;
+  activeItemId: NavId;
+  onNavigate: (id: NavId) => void;
+  onSave?: () => void;
+  onLoad?: () => void;
+  onExport?: () => void;
+  onShare?: () => void;
+};
 
-interface MainNavProps {
-  activeScenario?: ActiveScenario
-  /** Optional: controlled navigation (no react-router required) */
-  activeItemId?: string
-  onNavigate?: (id: string) => void
-  onSave?: () => void
-  onLoad?: () => void
-  onExport?: () => void
-  onShare?: () => void
-  className?: string
-}
+type NavItem = { id: NavId; label: string; icon: React.ReactNode };
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// NAV CONFIGURATION
-// ═══════════════════════════════════════════════════════════════════════════════
+const NAV: NavItem[] = [
+  { id: "onboarding", label: "Onboarding", icon: <ClipboardList size={16} /> },
+  { id: "terrain", label: "Terrain", icon: <Mountain size={16} /> },
+  { id: "strategy", label: "Strategy Studio", icon: <SlidersHorizontal size={16} /> },
+  { id: "compare", label: "Compare", icon: <GitCompare size={16} /> },
+  { id: "risk", label: "Risk", icon: <ShieldAlert size={16} /> },
+  { id: "valuation", label: "Valuation", icon: <DollarSign size={16} /> },
+  { id: "decision", label: "Decision", icon: <CheckCircle2 size={16} /> },
+];
 
-const primaryNav: NavItem[] = [
-  {
-    id: 'terrain',
-    label: 'TERRAIN',
-    href: '/terrain',
-    icon: <Mountain className="w-4 h-4" />,
-    description: 'Build & test your strategy',
-  },
-  {
-    id: 'simulate',
-    label: 'SIMULATE',
-    href: '/simulate',
-    icon: <Zap className="w-4 h-4" />,
-    description: 'Run 10,000 simulations',
-  },
-  {
-    id: 'compare',
-    label: 'COMPARE',
-    href: '/compare',
-    icon: <GitCompare className="w-4 h-4" />,
-    description: 'Compare two futures',
-  },
-  {
-    id: 'impact',
-    label: 'IMPACT',
-    href: '/impact',
-    icon: <Activity className="w-4 h-4" />,
-    description: 'Analyze what matters most',
-  },
-  {
-    id: 'valuation',
-    label: 'VALUATION',
-    href: '/valuation',
-    icon: <DollarSign className="w-4 h-4" />,
-    description: 'Calculate your worth',
-  },
-  {
-    id: 'decision',
-    label: 'DECISION',
-    href: '/decision',
-    icon: <CheckCircle className="w-4 h-4" />,
-    description: 'Make your decision',
-  },
-]
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// LOGO
-// ═══════════════════════════════════════════════════════════════════════════════
-
-function Logo() {
-  return (
-    <Link to="/" className="flex items-center gap-3 group">
-      <div className="relative w-8 h-8">
-        {/* Mountain icon with glow */}
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-violet-600 rounded-lg opacity-20 group-hover:opacity-30 transition-opacity" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Mountain className="w-5 h-5 text-cyan-400" />
-        </div>
-      </div>
-      <div>
-        <div className="text-white font-semibold tracking-wide">STRATFIT</div>
-        <div className="text-[9px] text-white/40 tracking-[0.2em]">SCENARIO INTELLIGENCE</div>
-      </div>
-    </Link>
-  )
-}
-
-function LogoButton({ onClick }: { onClick?: () => void }) {
-  return (
-    <button type="button" onClick={onClick} className="flex items-center gap-3 group">
-      <div className="relative w-8 h-8">
-        {/* Mountain icon with glow */}
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-violet-600 rounded-lg opacity-20 group-hover:opacity-30 transition-opacity" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Mountain className="w-5 h-5 text-cyan-400" />
-        </div>
-      </div>
-      <div>
-        <div className="text-white font-semibold tracking-wide">STRATFIT</div>
-        <div className="text-[9px] text-white/40 tracking-[0.2em]">SCENARIO INTELLIGENCE</div>
-      </div>
-    </button>
-  )
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// ACTIVE SCENARIO BADGE
-// ═══════════════════════════════════════════════════════════════════════════════
-
-function ActiveScenarioBadge({ scenario, onClick }: { scenario: ActiveScenario; onClick?: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-lg hover:bg-emerald-500/20 transition-all group"
-    >
-      <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-      <div className="text-left">
-        <div className="text-emerald-400 text-xs font-medium">{scenario.name}</div>
-        <div className="text-[9px] text-white/40">Active Scenario</div>
-      </div>
-      <ChevronDown className="w-3 h-3 text-emerald-400/60 group-hover:text-emerald-400 transition-colors" />
-    </button>
-  )
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// PRIMARY NAV ITEM
-// ═══════════════════════════════════════════════════════════════════════════════
-
-function PrimaryNavItem({ item, isActive }: { item: NavItem; isActive: boolean }) {
-  return (
-    <Link
-      to={item.href}
-      className={`relative flex items-center gap-2 px-4 py-2.5 rounded-lg font-mono text-xs tracking-wide transition-all group ${
-        isActive
-          ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-          : 'text-white/50 hover:text-white hover:bg-white/5'
-      }`}
-    >
-      <span className={`transition-colors ${isActive ? 'text-cyan-400' : 'text-white/40 group-hover:text-white/70'}`}>
-        {item.icon}
-      </span>
-      <span>{item.label}</span>
-      
-      {/* Hover tooltip */}
-      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-1.5 bg-slate-900 border border-white/10 rounded-lg text-[10px] text-white/70 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-        {item.description}
-      </div>
-      
-      {/* Active indicator line */}
-      {isActive && (
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-cyan-400 rounded-full" />
-      )}
-    </Link>
-  )
-}
-
-function PrimaryNavButton({
-  item,
-  isActive,
-  onClick,
-}: {
-  item: NavItem
-  isActive: boolean
-  onClick?: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`relative flex items-center gap-2 px-4 py-2.5 rounded-lg font-mono text-xs tracking-wide transition-all group ${
-        isActive
-          ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-          : 'text-white/50 hover:text-white hover:bg-white/5'
-      }`}
-    >
-      <span className={`transition-colors ${isActive ? 'text-cyan-400' : 'text-white/40 group-hover:text-white/70'}`}>
-        {item.icon}
-      </span>
-      <span>{item.label}</span>
-
-      {/* Hover tooltip */}
-      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-1.5 bg-slate-900 border border-white/10 rounded-lg text-[10px] text-white/70 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-        {item.description}
-      </div>
-
-      {/* Active indicator line */}
-      {isActive && (
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-cyan-400 rounded-full" />
-      )}
-    </button>
-  )
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// UTILITY BUTTON
-// ═══════════════════════════════════════════════════════════════════════════════
-
-function UtilityButton({ 
-  icon, 
-  label, 
-  onClick,
-  variant = 'default' 
-}: { 
-  icon: React.ReactNode
-  label: string
-  onClick?: () => void
-  variant?: 'default' | 'primary'
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-mono transition-all ${
-        variant === 'primary'
-          ? 'bg-violet-500/20 border border-violet-500/30 text-violet-300 hover:bg-violet-500/30'
-          : 'text-white/40 hover:text-white hover:bg-white/5'
-      }`}
-    >
-      {icon}
-      <span className="hidden xl:inline">{label}</span>
-    </button>
-  )
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// MAIN NAVIGATION COMPONENT
-// ═══════════════════════════════════════════════════════════════════════════════
-
-export function MainNav(props: MainNavProps) {
-  // If the caller provides an onNavigate handler, we render a controlled nav
-  // that does not depend on react-router context.
-  if (props.onNavigate) {
-    return <ControlledMainNav {...props} />
-  }
-  return <RouterMainNav {...props} />
-}
-
-function RouterMainNav({
-  activeScenario,
-  onSave,
-  onLoad,
-  onExport,
-  onShare,
-  className = '',
-}: MainNavProps) {
-  const location = useLocation()
-  const pathname = location.pathname
-  const [showScenarioMenu, setShowScenarioMenu] = useState(false)
-
-  // Determine active nav item
-  const getActiveItem = () => {
-    for (const item of primaryNav) {
-      if (pathname.startsWith(item.href)) {
-        return item.id
-      }
-    }
-    return 'terrain' // default
-  }
-
-  const activeItem = getActiveItem()
-
-  return (
-    <header className={`h-16 bg-black/80 backdrop-blur-xl border-b border-white/10 ${className}`}>
-      <div className="h-full px-6 flex items-center justify-between">
-        {/* Left: Logo + Active Scenario */}
-        <div className="flex items-center gap-6">
-          <Logo />
-          
-          {activeScenario && (
-            <>
-              <div className="w-px h-8 bg-white/10" />
-              <ActiveScenarioBadge 
-                scenario={activeScenario} 
-                onClick={() => setShowScenarioMenu(!showScenarioMenu)}
-              />
-            </>
-          )}
-        </div>
-
-        {/* Center: Primary Navigation */}
-        <nav className="flex items-center gap-1">
-          {primaryNav.map((item) => (
-            <PrimaryNavItem
-              key={item.id}
-              item={item}
-              isActive={activeItem === item.id}
-            />
-          ))}
-        </nav>
-
-        {/* Right: Utility Actions */}
-        <div className="flex items-center gap-2">
-          <UtilityButton
-            icon={<Save className="w-4 h-4" />}
-            label="SAVE"
-            onClick={onSave}
-          />
-          <UtilityButton
-            icon={<FolderOpen className="w-4 h-4" />}
-            label="LOAD"
-            onClick={onLoad}
-          />
-          <UtilityButton
-            icon={<Download className="w-4 h-4" />}
-            label="EXPORT"
-            onClick={onExport}
-          />
-          <UtilityButton
-            icon={<Share2 className="w-4 h-4" />}
-            label="SHARE"
-            onClick={onShare}
-            variant="primary"
-          />
-          
-          <div className="w-px h-6 bg-white/10 mx-2" />
-          
-          <button className="w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-white hover:bg-white/5 transition-all">
-            <HelpCircle className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-    </header>
-  )
-}
-
-function ControlledMainNav({
+export function MainNav({
   activeScenario,
   activeItemId,
   onNavigate,
@@ -364,193 +55,138 @@ function ControlledMainNav({
   onLoad,
   onExport,
   onShare,
-  className = '',
-}: MainNavProps) {
-  const [showScenarioMenu, setShowScenarioMenu] = useState(false)
-  const activeItem = activeItemId || 'terrain'
+}: Props) {
+  const scenarioName = activeScenario?.name ?? "Current Trajectory";
+  const scenarioMeta = activeScenario?.lastModified ?? "Active";
 
   return (
-    <header className={`h-16 bg-black/80 backdrop-blur-xl border-b border-white/10 ${className}`}>
-      <div className="h-full px-6 flex items-center justify-between">
-        {/* Left: Logo + Active Scenario */}
-        <div className="flex items-center gap-6">
-          <LogoButton onClick={() => onNavigate?.('terrain')} />
+    <header className="sf-nav" role="banner">
+      <div className="sf-nav-inner">
+        {/* LEFT: Brand + Scenario */}
+        <div className="sf-nav-left">
+          <button
+            type="button"
+            className="sf-brand"
+            onClick={() => onNavigate("terrain")}
+            aria-label="Go to Terrain"
+          >
+            <span className="sf-logoMark" aria-hidden />
+            <span className="sf-brandText">
+              <span className="sf-brandName">STRATFIT</span>
+              <span className="sf-brandSub">Scenario Intelligence</span>
+            </span>
+          </button>
 
-          {activeScenario && (
-            <>
-              <div className="w-px h-8 bg-white/10" />
-              <ActiveScenarioBadge
-                scenario={activeScenario}
-                onClick={() => setShowScenarioMenu(!showScenarioMenu)}
-              />
-            </>
-          )}
+          <span className="sf-nav-divider" aria-hidden />
+
+          <button
+            type="button"
+            className="sf-scenarioPill"
+            onClick={() => onNavigate("terrain")}
+            aria-label="Active scenario"
+          >
+            <span className="sf-scenarioDot" aria-hidden />
+            <span className="sf-scenarioLabel">Active Scenario</span>
+            <span className="sf-scenarioName" title={scenarioName}>
+              {scenarioName}
+            </span>
+            <span className="sf-scenarioMeta">{scenarioMeta}</span>
+            <span className="sf-scenarioCaret" aria-hidden>
+              <ChevronDown size={14} />
+            </span>
+          </button>
         </div>
 
-        {/* Center: Primary Navigation */}
-        <nav className="flex items-center gap-1">
-          {primaryNav.map((item) => (
-            <PrimaryNavButton
-              key={item.id}
-              item={item}
-              isActive={activeItem === item.id}
-              onClick={() => onNavigate?.(item.id)}
-            />
-          ))}
+        {/* CENTER: Canonical Nav */}
+        <nav className="sf-nav-center" aria-label="Primary">
+          {NAV.map((item) => {
+            const isActive = item.id === activeItemId;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onNavigate(item.id)}
+                className={isActive ? "sf-nav-item isActive" : "sf-nav-item"}
+                aria-current={isActive ? "page" : undefined}
+              >
+                <span className={isActive ? "sf-nav-icon isActive" : "sf-nav-icon"}>{item.icon}</span>
+                <span className="sf-nav-label">{item.label}</span>
+                <span className="sf-nav-rail" aria-hidden />
+              </button>
+            );
+          })}
         </nav>
 
-        {/* Right: Utility Actions */}
-        <div className="flex items-center gap-2">
-          <UtilityButton icon={<Save className="w-4 h-4" />} label="SAVE" onClick={onSave} />
-          <UtilityButton icon={<FolderOpen className="w-4 h-4" />} label="LOAD" onClick={onLoad} />
-          <UtilityButton icon={<Download className="w-4 h-4" />} label="EXPORT" onClick={onExport} />
-          <UtilityButton
-            icon={<Share2 className="w-4 h-4" />}
-            label="SHARE"
-            onClick={onShare}
-            variant="primary"
-          />
+        {/* RIGHT: Actions */}
+        <div className="sf-nav-right">
+          <ActionButton label="Save" icon={<Save size={16} />} onClick={onSave} />
+          <ActionButton label="Load" icon={<FolderOpen size={16} />} onClick={onLoad} />
+          <ActionButton label="Export" icon={<Download size={16} />} onClick={onExport} />
+          <ActionButton label="Share" icon={<Share2 size={16} />} onClick={onShare} primary />
         </div>
       </div>
     </header>
-  )
+  );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// COMPACT NAV (for mobile or smaller screens)
-// ═══════════════════════════════════════════════════════════════════════════════
-
-export function MainNavCompact({ className = '' }: { className?: string }) {
-  const location = useLocation()
-  const pathname = location.pathname
-  const [menuOpen, setMenuOpen] = useState(false)
-
+function ActionButton({
+  label,
+  icon,
+  onClick,
+  primary,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  onClick?: () => void;
+  primary?: boolean;
+}) {
   return (
-    <header className={`h-14 bg-black/80 backdrop-blur-xl border-b border-white/10 ${className}`}>
-      <div className="h-full px-4 flex items-center justify-between">
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-2">
-          <Mountain className="w-5 h-5 text-cyan-400" />
-          <span className="text-white font-semibold">STRATFIT</span>
-        </Link>
-
-        {/* Center: Current page */}
-        <div className="text-sm text-white/60 font-mono">
-          {primaryNav.find(item => pathname.startsWith(item.href))?.label || 'TERRAIN'}
-        </div>
-
-        {/* Menu toggle */}
-        <button
-          onClick={() => setMenuOpen(!menuOpen)}
-          className="w-10 h-10 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/5 transition-all"
-        >
-          <Layers className="w-5 h-5" />
-        </button>
-      </div>
-
-      {/* Dropdown menu */}
-      {menuOpen && (
-        <div className="absolute top-14 left-0 right-0 bg-black/95 border-b border-white/10 p-4 z-50">
-          <nav className="grid grid-cols-2 gap-2">
-            {primaryNav.map((item) => (
-              <Link
-                key={item.id}
-                to={item.href}
-                onClick={() => setMenuOpen(false)}
-                className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
-                  pathname.startsWith(item.href)
-                    ? 'bg-cyan-500/20 text-cyan-300'
-                    : 'text-white/60 hover:bg-white/5'
-                }`}
-              >
-                {item.icon}
-                <div>
-                  <div className="text-sm font-medium">{item.label}</div>
-                  <div className="text-[10px] text-white/40">{item.description}</div>
-                </div>
-              </Link>
-            ))}
-          </nav>
-        </div>
-      )}
-    </header>
-  )
+    <button
+      type="button"
+      className={primary ? "sf-actionBtn sf-actionBtnPrimary" : "sf-actionBtn"}
+      onClick={onClick}
+      disabled={!onClick}
+      aria-disabled={!onClick}
+    >
+      <span className="sf-actionIcon" aria-hidden>
+        {icon}
+      </span>
+      <span className="sf-actionText">{label}</span>
+    </button>
+  );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// PAGE HEADER (for sub-navigation within pages)
-// ═══════════════════════════════════════════════════════════════════════════════
-
-interface PageHeaderProps {
-  title: string
-  subtitle?: string
-  icon?: React.ReactNode
-  badge?: React.ReactNode
-  actions?: React.ReactNode
-  tabs?: { id: string; label: string; icon?: React.ReactNode }[]
-  activeTab?: string
-  onTabChange?: (tabId: string) => void
+// Kept for compatibility with existing exports; uses a minimal configuration.
+export function MainNavCompact() {
+  return (
+    <MainNav
+      activeScenario={{ name: "Current Trajectory", lastModified: "Active" }}
+      activeItemId="terrain"
+      onNavigate={() => {}}
+    />
+  );
 }
 
 export function PageHeader({
   title,
   subtitle,
-  icon,
-  badge,
   actions,
-  tabs,
-  activeTab,
-  onTabChange,
-}: PageHeaderProps) {
+  className,
+}: {
+  title: string;
+  subtitle?: string;
+  actions?: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <div className="border-b border-white/10">
-      {/* Title row */}
-      <div className="h-14 px-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {icon && (
-            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-cyan-400">
-              {icon}
-            </div>
-          )}
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-white font-medium">{title}</h1>
-              {badge}
-            </div>
-            {subtitle && (
-              <div className="text-[11px] text-white/40">{subtitle}</div>
-            )}
-          </div>
-        </div>
-        
-        {actions && (
-          <div className="flex items-center gap-2">
-            {actions}
-          </div>
-        )}
+    <div className={className ? `sf-pageHeader ${className}` : "sf-pageHeader"}>
+      <div className="sf-pageHeader-left">
+        <div className="sf-pageHeader-title">{title}</div>
+        {subtitle ? <div className="sf-pageHeader-subtitle">{subtitle}</div> : null}
       </div>
-
-      {/* Tabs row (if provided) */}
-      {tabs && tabs.length > 0 && (
-        <div className="h-12 px-6 flex items-center gap-1">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => onTabChange?.(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-mono transition-all ${
-                activeTab === tab.id
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                  : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-              }`}
-            >
-              {tab.icon}
-              <span>{tab.label}</span>
-            </button>
-          ))}
-        </div>
-      )}
+      {actions ? <div className="sf-pageHeader-actions">{actions}</div> : null}
     </div>
-  )
+  );
 }
 
 

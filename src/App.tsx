@@ -31,18 +31,29 @@ import HeaderControlDeck from "@/components/layout/HeaderControlDeck";
 import { deriveArrGrowth, formatUsdCompact } from "@/utils/arrGrowth";
 import { getQualityScoreFromKpis, getQualityBandFromKpis } from "@/logic/qualityScore";
 import ScenarioMemoPage from "@/pages/ScenarioMemoPage";
-import ImpactView from "@/components/compound/impact";
 import VariancesView from "@/components/compound/variances/VariancesView";
 import { useDebouncedValue, useThrottledValue } from "@/hooks/useDebouncedValue";
 import "@/styles/godmode-align-overrides.css";
 import "@/styles/godmode-unified-layout.css";
 import "@/styles/performance-optimizations.css";
 import { MainNav } from "@/components/navigation";
-import type { ViewMode as HeaderViewMode } from "@/components/layout/UnifiedHeader";
 import { useUIStore } from "@/state/uiStore";
+import { useBaselineStore } from "@/state/onboardingStore";
+import { baselineToLevers } from "@/logic/baselineToLevers";
+import { useStrategyStore } from "@/state/strategyStore";
+import InstitutionalDisclosure from "@/components/InstitutionalDisclosure";
 import { SimulateOverlay } from '@/components/simulate';
 import { SaveSimulationModal, LoadSimulationPanel } from '@/components/simulations';
 import { ComparePage } from '@/components/compare';
+
+type HeaderViewMode =
+  | "onboarding"
+  | "terrain"
+  | "strategy"
+  | "compare"
+  | "risk"
+  | "valuation"
+  | "decision";
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -490,7 +501,12 @@ export default function App() {
 
   // Compare route — Production-ready Risk Topography Instrument
   if (typeof window !== "undefined" && window.location.pathname === "/compare") {
-    return <ComparePage />;
+    return (
+      <>
+        <ComparePage />
+        <InstitutionalDisclosure />
+      </>
+    );
   }
 
 
@@ -503,6 +519,16 @@ export default function App() {
   const [scenario, setScenario] = useState<ScenarioId>("base");
   const [activeScenarioType, setActiveScenarioType] = useState<ScenarioType>("current-trajectory");
   const [levers, setLevers] = useState<LeverState>(INITIAL_LEVERS);
+  const baselineLocked = useBaselineStore((s) => s.baselineLocked);
+  const baseline = useBaselineStore((s) => s.baseline);
+  const baselineHydrated = useBaselineStore((s) => s.hydrated);
+  const baselineLevers = useMemo(() => {
+    if (baselineLocked && baseline) {
+      return baselineToLevers(baseline) as unknown as LeverState;
+    }
+    return INITIAL_LEVERS;
+  }, [baselineLocked, baseline]);
+  const lastNonBaseLeversRef = useRef<LeverState>(INITIAL_LEVERS);
   
   // 🚀 PERFORMANCE OPTIMIZATION: Debounce expensive calculations
   // - immediateLevers: Used for visual feedback (sliders feel instant)
@@ -524,10 +550,10 @@ export default function App() {
   
   // Inner view mode from CenterViewPanel (for KPI animation)
   // This tracks what tab is selected INSIDE the mountain panel
-  const [innerViewMode, setInnerViewMode] = useState<"terrain" | "impact" | "compare">("terrain");
+  const [innerViewMode, setInnerViewMode] = useState<"terrain" | "compare">("terrain");
   
   // GOD MODE: Header-controlled view mode (navigation tabs in header)
-  const [headerViewMode, setHeaderViewMode] = useState<HeaderViewMode>("terrain");
+  const [headerViewMode, setHeaderViewMode] = useState<HeaderViewMode>("onboarding");
   
   // GOD MODE: Monte Carlo Simulation Overlay
   const [showSimulate, setShowSimulate] = useState(false);
@@ -582,7 +608,6 @@ export default function App() {
     
     // Apply preset levers for this scenario
     const presets = SCENARIO_PRESETS[newType];
-    setLevers(presets);
     
     // Map to old scenario ID for compatibility
     const mappedScenario = mapScenarioTypeToId(newType);
@@ -590,6 +615,13 @@ export default function App() {
     
     // CRITICAL: Also update the global store so mountain changes color
     useScenarioStore.getState().setScenario(mappedScenario);
+
+    // Baseline is locked: base scenario levers come ONLY from baseline truth mapping.
+    if (mappedScenario === "base" && baselineLocked) {
+      setLevers(baselineLevers);
+    } else {
+      setLevers(presets);
+    }
     
     // Emit causal event for visual feedback
     emitCausal({
@@ -597,11 +629,12 @@ export default function App() {
       bandStyle: "wash",
       color: "rgba(34,211,238,0.18)",
     });
-  }, []);
+  }, [baselineLocked, baselineLevers]);
 
   // Investor Pitch Mode effect - auto-apply investor-ready plan
   useEffect(() => {
     if (pitchMode) {
+      if (scenario === "base" && baselineLocked) return;
       // Store current levers as base for restoration
       baseLeversRef.current = { ...levers };
       
@@ -630,7 +663,7 @@ export default function App() {
       setSolverPath([]);
       useScenarioStore.getState().setSolverPath([]);
     }
-  }, [pitchMode, scenario]);
+  }, [pitchMode, scenario, baselineLocked]);
 
   // Scenario switch causal highlight — fire AFTER state update (and never on initial mount)
   useEffect(() => {
@@ -712,6 +745,7 @@ export default function App() {
     successColor: string, 
     failMsg: string
   ) => {
+    if (scenario === "base" && baselineLocked) return;
     if (result && result.final) {
       setLevers(result.final.levers);
       setSolverPath(result.path);
@@ -734,7 +768,7 @@ export default function App() {
       setSolverPath([]);
       setSolverPathInStore([]);
     }
-  }, [setSolverPathInStore]);
+  }, [setSolverPathInStore, scenario, baselineLocked]);
 
   const handleFindViable = useCallback(() => {
     applySolverResult(
@@ -769,6 +803,7 @@ export default function App() {
   }, [levers, scenario, applySolverResult]);
 
   const handleTradeoffChange = useCallback((value: number) => {
+    if (scenario === "base" && baselineLocked) return;
     setRiskTradeoff(value);
     const result = findTradeoffPlan(levers, scenario, value);
     if (result && result.final) {
@@ -780,7 +815,7 @@ export default function App() {
         color: `rgba(${Math.round(255 * value)},${Math.round(180 - 80 * value)},${Math.round(120 + 130 * (1 - value))},0.25)`,
       });
     }
-  }, [levers, scenario]);
+  }, [levers, scenario, baselineLocked]);
 
   // Clear solver path when levers change manually
   useEffect(() => {
@@ -812,7 +847,10 @@ export default function App() {
   useEffect(() => {
     // buildEngineResult must be deterministic from (levers, scenarioId)
     function buildEngineResultForScenario(sid: ScenarioId) {
-      const m = calculateMetrics(throttledLevers, sid);
+      const m = calculateMetrics(
+        sid === "base" && baselineLocked ? (baselineLevers as any) : throttledLevers,
+        sid
+      );
       if (sid === (activeScenarioId ?? "base")) {
         console.log("[IG] engine recompute for active", sid, {
           demand: throttledLevers.demandStrength,
@@ -983,10 +1021,13 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
     cashSensitivity: "operatingDrag",
     churnSensitivity: "marketVolatility",
     fundingInjection: "executionRisk",
+    fundingPressure: "fundingPressure",
   };
   
   const handleLeverChange = useCallback(
     (id: LeverId | "__end__", value: number) => {
+      // Baseline is locked: do not allow lever edits when baseline (base) is the active scenario.
+      if (scenario === "base") return;
       if (id === "__end__") {
         setHoveredKpiIndex(null);
         // CRITICAL: end drag in the store so AI stops "analyzing"
@@ -1122,6 +1163,21 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
               impact: "Higher = missed targets, emergency fundraising, runway compression"
             }
           },
+          {
+            // NOTE: This lever is already part of LeverState and baselineToLevers.
+            // We expose it in Studio controls now (scenarios only; base remains locked).
+            id: "fundingPressure" as unknown as LeverId,
+            label: "Funding Pressure",
+            value: immediateLevers.fundingPressure,
+            min: 0,
+            max: 100,
+            defaultValue: 20,
+            format: (v) => `${v}%`,
+            tooltip: {
+              description: "Capital availability constraints, investor terms friction, fundraising difficulty",
+              impact: "Higher = more dilution risk, tighter decision window, higher survivability pressure"
+            }
+          },
         ],
       },
     ];
@@ -1139,43 +1195,95 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
   
   // Onboarding state - ALWAYS SHOW FOR DEMO
   const [showOnboarding, setShowOnboarding] = useState(true);
+  useEffect(() => {
+    if (!baselineHydrated) return;
+    // Default: show onboarding only when baseline is not locked.
+    // User can also open onboarding explicitly via nav.
+    if (!baselineLocked) {
+      setShowOnboarding(true);
+      setHeaderViewMode("onboarding");
+    } else if (headerViewMode === "onboarding") {
+      // keep user's choice, but don't force overlay open
+    } else {
+      setShowOnboarding(false);
+    }
+  }, [baselineHydrated, baselineLocked]);
 
   const handleOnboardingComplete = useCallback(() => {
     setShowOnboarding(false);
-  }, []);
+    try {
+      const s = useStrategyStore.getState();
+      if (!s.activeVersionId) {
+        s.createBaselineV1({});
+      }
+    } catch {}
+    // Ensure base levers reflect baseline truth after locking.
+    if (baselineLocked && scenario === "base") {
+      setLevers(baselineLevers);
+    }
+    setHeaderViewMode("terrain");
+  }, [baselineLocked, baselineLevers, scenario]);
+
+  const hideColumns =
+    headerViewMode === "onboarding" ||
+    headerViewMode === "compare" ||
+    headerViewMode === "risk" ||
+    headerViewMode === "valuation" ||
+    headerViewMode === "decision";
+
+  const centerViewMode: import("@/types/view").CenterViewId =
+    headerViewMode === "strategy" ? "strategy"
+    : headerViewMode === "onboarding" ? "terrain"
+    : headerViewMode;
+
+  // Baseline lock: keep base scenario levers pinned to baseline mapping.
+  useEffect(() => {
+    if (scenario !== "base") {
+      lastNonBaseLeversRef.current = levers;
+      return;
+    }
+    if (baselineLocked) {
+      setLevers(baselineLevers);
+    }
+  }, [scenario, baselineLocked, baselineLevers]);
   
   return (
     <div className="app">
       {/* ONBOARDING SEQUENCE */}
-      {showOnboarding && <OnboardingSequence onComplete={handleOnboardingComplete} />}
-      {/* MAIN NAV (5 items) */}
+      {showOnboarding && (
+        <OnboardingSequence
+          onComplete={handleOnboardingComplete}
+          allowDismiss={baselineLocked}
+        />
+      )}
+      {/* MAIN NAV (7 items) */}
       <MainNav
         activeScenario={{
-          name: activeScenarioType ?? "New Scenario",
+          name: activeScenarioType ?? "Current Trajectory",
           lastModified: "Active",
         }}
-        activeItemId={
-          showSimulate
-            ? "simulate"
-            : headerViewMode === "decision"
-              ? "decision"
-              : headerViewMode === "valuation"
-                ? "valuation"
-                : headerViewMode === "compare"
-                  ? "compare"
-                  : headerViewMode === "impact"
-                    ? "impact"
-                  : "terrain"
-        }
+        activeItemId={headerViewMode}
         onNavigate={(id) => {
-          // close overlay if user navigates elsewhere
-          if (id !== "simulate") setShowSimulate(false);
-          if (id === "simulate") return setShowSimulate(true);
-          if (id === "decision") return setHeaderViewMode("decision");
-          if (id === "valuation") return setHeaderViewMode("valuation");
-          if (id === "compare") return setHeaderViewMode("compare");
-          if (id === "impact") return setHeaderViewMode("impact");
-          return setHeaderViewMode("terrain");
+          if (id === "onboarding") {
+            setShowSimulate(false);
+            setShowOnboarding(true);
+            setHeaderViewMode("onboarding");
+            return;
+          }
+
+          setShowSimulate(false);
+          setShowOnboarding(false);
+
+          if (
+            id === "terrain" ||
+            id === "strategy" ||
+            id === "compare" ||
+            id === "risk" ||
+            id === "valuation" ||
+            id === "decision"
+          ) {
+            setHeaderViewMode(id as HeaderViewMode);
+          }
         }}
         onSave={() => setShowSaveModal(true)}
         onLoad={() => setShowLoadPanel(true)}
@@ -1186,8 +1294,8 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
       {/* OPTION 1: UNIFIED 3-COLUMN LAYOUT (Compare mode = full-width center only) */}
       <div className={`main-content mode-${headerViewMode}`}>
         
-        {/* LEFT COLUMN: Hidden in Compare, Risk, Valuation, Decision, and Impact modes */}
-        {headerViewMode !== 'compare' && headerViewMode !== 'risk' && headerViewMode !== 'valuation' && headerViewMode !== 'decision' && headerViewMode !== 'impact' && (
+        {/* LEFT COLUMN: Hidden in Onboarding, Compare, Risk, Valuation, and Decision modes */}
+        {!hideColumns && (
           <aside className="left-column">
             <div className="sf-leftStack">
               {/* Active Scenario - New 5-Scenario Selector */}
@@ -1213,23 +1321,23 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
 
         {/* CENTER COLUMN: KPIs + Mountain OR Scenario Impact OR Variances */}
         <main className="center-column">
-          {/* KPI COMMAND BRIDGE - Hidden on Compare, Risk, Valuation, Decision, and Impact views */}
-          {headerViewMode !== 'compare' && headerViewMode !== 'risk' && headerViewMode !== 'valuation' && headerViewMode !== 'decision' && headerViewMode !== 'impact' && (
+          {/* KPI COMMAND BRIDGE - Hidden on Onboarding, Compare, Risk, Valuation, and Decision views */}
+          {!hideColumns && (
             <OrbitalKPISection kpiAnimState={kpiAnimState} />
           )}
           
           
           {/* View content based on header navigation */}
           <CenterViewPanel 
-            viewMode={headerViewMode}
+            viewMode={centerViewMode}
             timelineEnabled={timelineEnabled}
             heatmapEnabled={heatmapEnabled}
             onSimulateRequest={() => setShowSimulate(true)}
           />
         </main>
 
-        {/* RIGHT COLUMN: AI Intelligence - Hidden in Compare, Risk, Valuation, Decision, and Impact modes */}
-        {headerViewMode !== 'compare' && headerViewMode !== 'risk' && headerViewMode !== 'valuation' && headerViewMode !== 'decision' && headerViewMode !== 'impact' && (
+        {/* RIGHT COLUMN: AI Intelligence - Hidden in Onboarding, Compare, Risk, Valuation, and Decision modes */}
+        {!hideColumns && (
         <aside className="right-column" data-tour="intel">
           <AIPanel levers={levers} scenario={scenario} />
         </aside>
@@ -1268,6 +1376,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
           });
         }}
       />
+      <InstitutionalDisclosure />
     </div>
   );
 }

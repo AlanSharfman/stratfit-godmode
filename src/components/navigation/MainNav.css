@@ -1,0 +1,325 @@
+/* STRATFIT — Institutional Nav Material System
+   Goals:
+   - Raised sections, crisp borders, restrained depth
+   - No galaxy/game HUD, no glow gimmicks, no orange
+   - Cyan used as the active rail only (tasteful)
+*/
+
+.sf-nav {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  padding: 0 22px;
+
+  /* Not pure black: avoids oppressive look */
+  background: #0f1823;
+  border-bottom: 1px solid rgba(170, 190, 210, 0.12);
+
+  /* Subtle elevation: soft + tight */
+  box-shadow:
+    0 10px 26px rgba(0, 0, 0, 0.28),
+    0 1px 0 rgba(255, 255, 255, 0.03) inset;
+}
+
+.sf-nav-inner {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+/* ---------------- Left: Brand + Scenario ---------------- */
+
+.sf-nav-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 320px;
+}
+
+.sf-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 8px 10px;
+  border-radius: 12px;
+
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(170, 190, 210, 0.12);
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.22),
+    0 1px 0 rgba(255, 255, 255, 0.03) inset;
+
+  color: rgba(236, 244, 252, 0.92);
+  cursor: pointer;
+}
+
+.sf-brand:hover {
+  border-color: rgba(200, 220, 240, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sf-logoMark {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+
+  /* Allowed: small logo mark gradient */
+  background: linear-gradient(135deg, rgba(47, 211, 255, 0.95), rgba(99, 102, 241, 0.65));
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.10) inset;
+}
+
+.sf-brandText {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.05;
+}
+
+.sf-brandName {
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.sf-brandSub {
+  margin-top: 2px;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: rgba(200, 214, 228, 0.76);
+}
+
+.sf-nav-divider {
+  width: 1px;
+  height: 22px;
+  background: rgba(170, 190, 210, 0.14);
+}
+
+/* Scenario pill */
+.sf-scenarioPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 10px 12px;
+  border-radius: 14px;
+
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(170, 190, 210, 0.12);
+  box-shadow:
+    0 10px 22px rgba(0, 0, 0, 0.22),
+    0 1px 0 rgba(255, 255, 255, 0.03) inset;
+
+  color: rgba(236, 244, 252, 0.92);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sf-scenarioPill:hover {
+  border-color: rgba(200, 220, 240, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sf-scenarioDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(52, 211, 153, 0.95); /* emerald for “positive/active” */
+  box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.14);
+}
+
+.sf-scenarioLabel {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(200, 214, 228, 0.70);
+}
+
+.sf-scenarioName {
+  font-size: 13px;
+  font-weight: 650;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sf-scenarioMeta {
+  font-size: 12px;
+  color: rgba(200, 214, 228, 0.62);
+}
+
+.sf-scenarioCaret {
+  display: inline-flex;
+  opacity: 0.75;
+}
+
+/* ---------------- Center: Primary Nav ---------------- */
+
+.sf-nav-center {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  justify-content: center;
+}
+
+.sf-nav-item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 10px 12px;
+  border-radius: 14px;
+
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(170, 190, 210, 0.10);
+  box-shadow:
+    0 10px 22px rgba(0, 0, 0, 0.18),
+    0 1px 0 rgba(255, 255, 255, 0.03) inset;
+
+  color: rgba(200, 214, 228, 0.84);
+  cursor: pointer;
+}
+
+.sf-nav-item:hover {
+  border-color: rgba(200, 220, 240, 0.18);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(236, 244, 252, 0.92);
+}
+
+.sf-nav-icon {
+  display: inline-flex;
+  color: rgba(200, 214, 228, 0.70);
+}
+
+.sf-nav-label {
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* Active state: cyan rail ONLY (no extra border highlight) */
+.sf-nav-rail {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 6px;
+  height: 2px;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.sf-nav-item.isActive {
+  color: rgba(236, 244, 252, 0.96);
+  border-color: rgba(200, 220, 240, 0.18);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.sf-nav-icon.isActive {
+  color: rgba(47, 211, 255, 0.92);
+}
+
+.sf-nav-item.isActive .sf-nav-rail {
+  background: rgba(47, 211, 255, 0.92);
+}
+
+/* ---------------- Right: Actions ---------------- */
+
+.sf-nav-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 320px;
+  justify-content: flex-end;
+}
+
+.sf-actionBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 9px 10px;
+  border-radius: 12px;
+
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(170, 190, 210, 0.10);
+  box-shadow:
+    0 10px 20px rgba(0, 0, 0, 0.18),
+    0 1px 0 rgba(255, 255, 255, 0.03) inset;
+
+  color: rgba(200, 214, 228, 0.86);
+  cursor: pointer;
+}
+
+.sf-actionBtn:hover {
+  border-color: rgba(200, 220, 240, 0.18);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(236, 244, 252, 0.92);
+}
+
+.sf-actionBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.sf-actionIcon {
+  display: inline-flex;
+  color: rgba(47, 211, 255, 0.78);
+}
+
+.sf-actionText {
+  font-size: 11px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+
+.sf-actionBtnPrimary {
+  border-color: rgba(47, 211, 255, 0.24);
+  background: rgba(47, 211, 255, 0.08);
+  color: rgba(236, 244, 252, 0.96);
+}
+
+.sf-actionBtnPrimary .sf-actionIcon {
+  color: rgba(47, 211, 255, 0.92);
+}
+
+/* ---------------- PageHeader ---------------- */
+
+.sf-pageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 22px;
+
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(170, 190, 210, 0.12);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+}
+
+.sf-pageHeader-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sf-pageHeader-title {
+  color: rgba(236, 244, 252, 0.94);
+  font-weight: 750;
+  letter-spacing: 0.02em;
+}
+
+.sf-pageHeader-subtitle {
+  color: rgba(200, 214, 228, 0.70);
+  font-size: 12px;
+}
+
+.sf-pageHeader-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}

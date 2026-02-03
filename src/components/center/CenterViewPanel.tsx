@@ -21,7 +21,6 @@ interface ScenarioData {
 import { RiskTab } from "@/components/Risk";
 import DecidePage from "@/app/decide/page";
 import { ValuationTab } from "@/components/valuation";
-import { ImpactGodMode } from "@/components/impact";
 
 import { useScenario, useScenarioStore } from "@/state/scenarioStore";
 import { onCausal } from "@/ui/causalEvents";
@@ -175,18 +174,42 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
           </div>
         )}
 
+        {/* STRATEGY STUDIO - Scenario builder placeholder (baseline remains locked) */}
+        {view === "strategy" && (
+          <div className="relative h-full w-full overflow-hidden rounded-3xl border border-cyan-500/20 bg-gradient-to-b from-slate-950 via-slate-900 to-black shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08),0_0_60px_rgba(34,211,238,0.08)] flex flex-col">
+            <div className="relative z-10 p-4 border-b border-white/10 flex items-center justify-between">
+              <div>
+                <div className="text-[11px] font-semibold tracking-[0.18em] text-cyan-200/70 uppercase">
+                  Strategy Studio
+                </div>
+                <div className="text-[12px] text-white/60 mt-1">
+                  Scenario Builder (stub) — create Scenario 1/2/3 from levers. Baseline remains locked.
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => props.onSimulateRequest?.()}
+                className="px-3 py-2 rounded-lg border border-cyan-400/30 bg-cyan-500/10 text-cyan-200 text-xs font-mono hover:bg-cyan-500/15"
+              >
+                Run Simulation
+              </button>
+            </div>
+
+            <div className="relative flex-1 w-full" style={{ filter: 'brightness(1.15) saturate(1.2) contrast(1.05)' }}>
+              <ScenarioMountain 
+                scenario={scenario} 
+                dataPoints={dataPoints}
+                activeKpiIndex={hoveredKpiIndex}
+              />
+            </div>
+          </div>
+        )}
+
         {/* COMPARE - God Mode: Full Nature Environment */}
         {view === "compare" && (
           <div className="h-full w-full overflow-hidden rounded-3xl border border-slate-700/40 shadow-[0_8px_32px_rgba(0,0,0,0.6)] bg-[#050b14] relative">
             {/* GodModeTerrain has CompareHybridPanel with all UI integrated */}
             <GodModeTerrain />
-          </div>
-        )}
-
-        {/* IMPACT - Sensitivity analysis */}
-        {view === "impact" && (
-          <div className="h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-linear-to-br from-slate-950/60 to-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
-            <ImpactGodMode />
           </div>
         )}
 
