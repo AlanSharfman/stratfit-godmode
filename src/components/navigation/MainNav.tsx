@@ -53,6 +53,13 @@ interface MainNavProps {
 
 const primaryNav: NavItem[] = [
   {
+    id: 'onboarding',
+    label: 'ONBOARDING',
+    href: '/initialize',
+    icon: <Layers className="w-4 h-4" />,
+    description: 'Initialize baseline truth',
+  },
+  {
     id: 'terrain',
     label: 'TERRAIN',
     href: '/terrain',
@@ -105,7 +112,7 @@ function Logo() {
     <Link to="/" className="flex items-center gap-3 group">
       <div className="relative w-8 h-8">
         {/* Mountain icon with glow */}
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-violet-600 rounded-lg opacity-20 group-hover:opacity-30 transition-opacity" />
+        <div className="absolute inset-0 bg-linear-to-br from-cyan-500 to-violet-600 rounded-lg opacity-20 group-hover:opacity-30 transition-opacity" />
         <div className="absolute inset-0 flex items-center justify-center">
           <Mountain className="w-5 h-5 text-cyan-400" />
         </div>
@@ -123,7 +130,7 @@ function LogoButton({ onClick }: { onClick?: () => void }) {
     <button type="button" onClick={onClick} className="flex items-center gap-3 group">
       <div className="relative w-8 h-8">
         {/* Mountain icon with glow */}
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-violet-600 rounded-lg opacity-20 group-hover:opacity-30 transition-opacity" />
+        <div className="absolute inset-0 bg-linear-to-br from-cyan-500 to-violet-600 rounded-lg opacity-20 group-hover:opacity-30 transition-opacity" />
         <div className="absolute inset-0 flex items-center justify-center">
           <Mountain className="w-5 h-5 text-cyan-400" />
         </div>

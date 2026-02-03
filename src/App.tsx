@@ -19,7 +19,6 @@ import AIPanel from "@/components/terrain/AIPanel";
 import ScenarioSelector from "./components/ScenarioSelector";
 import ActiveScenario, { type ScenarioType } from "@/components/blocks/ActiveScenario";
 import ScenarioBezel from "./components/kpi/ScenarioBezel";
-import OnboardingSequence from "./components/OnboardingSequenceNew";
 // MonteCarloPanel removed - was compressing AI Intelligence panel
 import { useScenarioStore, SCENARIO_COLORS } from "@/state/scenarioStore";
 import type { LeverId } from "@/logic/mountainPeakModel";
@@ -34,6 +33,7 @@ import ScenarioMemoPage from "@/pages/ScenarioMemoPage";
 import ImpactView from "@/components/compound/impact";
 import VariancesView from "@/components/compound/variances/VariancesView";
 import { useDebouncedValue, useThrottledValue } from "@/hooks/useDebouncedValue";
+import InitializeBaselinePage from "./pages/initialize/InitializeBaselinePage";
 import "@/styles/godmode-align-overrides.css";
 import "@/styles/godmode-unified-layout.css";
 import "@/styles/performance-optimizations.css";
@@ -1136,18 +1136,14 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
 
     return boxes;
   }, [immediateLevers, viewMode]);
-  
-  // Onboarding state - ALWAYS SHOW FOR DEMO
-  const [showOnboarding, setShowOnboarding] = useState(true);
 
-  const handleOnboardingComplete = useCallback(() => {
-    setShowOnboarding(false);
-  }, []);
+  // Full-page onboarding (no overlay): render only on explicit nav selection.
+  if (headerViewMode === "onboarding") {
+    return <InitializeBaselinePage onExit={() => setHeaderViewMode("terrain")} />;
+  }
   
   return (
     <div className="app">
-      {/* ONBOARDING SEQUENCE */}
-      {showOnboarding && <OnboardingSequence onComplete={handleOnboardingComplete} />}
       {/* MAIN NAV (5 items) */}
       <MainNav
         activeScenario={{
@@ -1170,6 +1166,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
         onNavigate={(id) => {
           // close overlay if user navigates elsewhere
           if (id !== "simulate") setShowSimulate(false);
+          if (id === "onboarding") return setHeaderViewMode("onboarding");
           if (id === "simulate") return setShowSimulate(true);
           if (id === "decision") return setHeaderViewMode("decision");
           if (id === "valuation") return setHeaderViewMode("valuation");
