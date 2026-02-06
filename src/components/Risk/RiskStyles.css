@@ -1,786 +1,316 @@
-/* src/components/risk/RiskStyles.css */
-/* STRATFIT Risk Intelligence — GOD MODE LAYOUT */
-/* Mission Control: Hero Visualization + Contextual Sidebar */
+/* ═══════════════════════════════════════════════════════════════════════════════
+   STRATFIT — Risk Intelligence (God Mode)
+   Exposure Decomposition · Institutional · Clean
+   ═══════════════════════════════════════════════════════════════════════════════ */
 
-/* ============================================================================
-   ROOT CONTAINER
-   ============================================================================ */
-
-.risk-tab {
+.sf-risk-root {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: linear-gradient(180deg, #030508 0%, #0a1628 100%);
-  overflow: hidden;
+  overflow-y: auto;
+  background: #050a12;
+  color: rgba(255, 255, 255, 0.92);
+  font-family: "Inter", -apple-system, sans-serif;
+  gap: 0;
 }
 
-.risk-tab--godmode {
-  width: 100%;
-}
-
-/* ============================================================================
-   COMMAND STRIP — Top Header Bar
-   ============================================================================ */
-
-.risk-command-strip {
+/* ─── Page Header ────────────────────────────────────────────────────────── */
+.sf-risk-page-header {
   display: flex;
   align-items: center;
-  gap: 24px;
-  padding: 12px 24px;
-  background: rgba(10, 15, 25, 0.95);
-  border-bottom: 1px solid rgba(239, 68, 68, 0.2);
-  backdrop-filter: blur(12px);
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
 }
 
-.command-left {
+.sf-risk-page-header-left {
   display: flex;
   align-items: center;
-  gap: 16px;
-  min-width: 280px;
+  gap: 12px;
 }
 
-.command-badge {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 16px;
-  border: 1px solid;
-  border-radius: 8px;
-  background: rgba(10, 15, 25, 0.8);
-}
-
-.badge-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  animation: pulseDot 2s ease-in-out infinite;
-}
-
-@keyframes pulseDot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(1.15); }
-}
-
-.badge-level {
-  font-size: 12px;
+.sf-risk-page-badge {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   font-weight: 700;
-  letter-spacing: 0.1em;
-  color: inherit;
+  color: rgba(255, 255, 255, 0.45);
+  padding: 3px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
 }
 
-.badge-score {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 14px;
-  font-weight: 600;
-  opacity: 0.8;
-}
-
-.command-title {
+.sf-risk-page-title {
   font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.15em;
-  color: #ef4444;
-  margin: 0;
-}
-
-.command-center {
-  flex: 1;
-  max-width: 500px;
-}
-
-.command-right {
-  display: flex;
-  align-items: center;
-}
-
-/* View Tabs */
-.view-tabs {
-  display: flex;
-  gap: 4px;
-  background: rgba(10, 15, 25, 0.6);
-  padding: 4px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.view-tab {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  background: transparent;
-  border: none;
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.5);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.view-tab:hover {
-  background: rgba(239, 68, 68, 0.1);
+  font-weight: 600;
   color: rgba(255, 255, 255, 0.8);
 }
 
-.view-tab.active {
-  background: rgba(239, 68, 68, 0.15);
+.sf-risk-alerts {
+  display: flex;
+  gap: 10px;
+}
+
+.sf-risk-alert {
+  font-size: 11px;
+  font-weight: 600;
   color: #ef4444;
+  padding: 4px 10px;
+  background: rgba(239, 68, 68, 0.08);
+  border-radius: 4px;
 }
 
-/* ============================================================================
-   THREAT STRIP — Horizontal DEFCON Indicator
-   ============================================================================ */
-
-.threat-strip {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.threat-strip-levels {
-  display: flex;
-  gap: 2px;
-}
-
-.strip-level {
+/* ─── Empty State ────────────────────────────────────────────────────────── */
+.sf-risk-empty {
   flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 4px 8px;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 4px;
-  transition: all 0.2s ease;
+  gap: 12px;
+  padding: 40px;
 }
 
-.strip-level.active {
-  background: color-mix(in srgb, var(--level-color) 15%, transparent);
+.sf-risk-empty-icon {
+  font-size: 36px;
+  color: rgba(255, 255, 255, 0.15);
 }
 
-.strip-level.current {
-  background: color-mix(in srgb, var(--level-color) 25%, transparent);
-  border: 1px solid var(--level-color);
-}
-
-.strip-level .level-label {
-  font-size: 9px;
+.sf-risk-empty-text {
+  font-size: 14px;
   font-weight: 600;
-  letter-spacing: 0.05em;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.5);
 }
 
-.strip-level.active .level-label {
-  color: var(--level-color);
+.sf-risk-empty-sub {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.3);
 }
 
-.strip-level .level-score {
-  font-family: 'JetBrains Mono', monospace;
+/* ─── Risk Pressure Dial ─────────────────────────────────────────────────── */
+.sf-risk-dial {
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.sf-risk-dial-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.sf-risk-dial-title {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.sf-risk-dial-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 11px;
   font-weight: 700;
-  color: var(--level-color);
+  letter-spacing: 0.06em;
+  padding: 4px 10px;
+  border: 1px solid;
+  border-radius: 4px;
 }
 
-.threat-strip-bar {
+.sf-risk-dial-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.sf-risk-dial-track {
   position: relative;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
   overflow: visible;
 }
 
-.strip-bar-fill {
+.sf-risk-dial-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
   height: 100%;
-  border-radius: 2px;
-  transition: width 0.5s ease;
+  border-radius: 6px;
+  transition: width 0.3s ease;
 }
 
-.strip-bar-marker {
+.sf-risk-dial-marker {
   position: absolute;
-  top: -3px;
+  top: -4px;
   width: 4px;
-  height: 10px;
+  height: 20px;
   border-radius: 2px;
-  transform: translateX(-50%);
-  box-shadow: 0 0 8px currentColor;
+  transform: translateX(-2px);
   transition: left 0.3s ease;
 }
 
-/* ============================================================================
-   ALERTS BAR
-   ============================================================================ */
-
-.risk-alerts {
-  display: flex;
-  gap: 12px;
-  padding: 8px 24px;
-  background: rgba(220, 38, 38, 0.08);
-  border-bottom: 1px solid rgba(220, 38, 38, 0.2);
-}
-
-.alert-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  background: rgba(220, 38, 38, 0.1);
-  border-radius: 6px;
-  border-left: 3px solid #dc2626;
-}
-
-.alert-icon {
-  color: #dc2626;
-  font-size: 14px;
-}
-
-.alert-text {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.9);
-}
-
-/* ============================================================================
-   MAIN CONTENT — 2:1 Split Layout
-   ============================================================================ */
-
-.risk-main {
-  flex: 1;
-  display: grid;
-  grid-template-columns: 1fr 340px;
-  gap: 0;
-  overflow: hidden;
-}
-
-/* ============================================================================
-   HERO SECTION — Primary Visualization
-   ============================================================================ */
-
-.risk-hero {
-  display: flex;
-  flex-direction: column;
-  padding: 20px 24px;
-  overflow: hidden;
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.hero-header {
-  display: flex;
-  align-items: baseline;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.hero-title {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  color: #ef4444;
-  margin: 0;
-}
-
-.hero-subtitle {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
-}
-
-.hero-content {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: auto;
-  background: rgba(10, 15, 25, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
-  padding: 16px;
-}
-
-/* Make nested visualizations fill the hero */
-.hero-content .threat-radar {
-  background: transparent;
-  border: none;
-  padding: 0;
-  height: auto;
-  width: 100%;
-}
-
-.hero-content .risk-timeline,
-.hero-content .risk-breakdown {
-  background: transparent;
-  border: none;
-  padding: 0;
-  height: 100%;
-  width: 100%;
-}
-
-/* ============================================================================
-   SIDEBAR — Contextual Information
-   ============================================================================ */
-
-.risk-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 20px;
-  background: rgba(10, 15, 25, 0.6);
-  overflow-y: auto;
-}
-
-/* Quick Stats Grid */
-.sidebar-stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.stat-mini {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 12px 8px;
-  background: rgba(10, 15, 25, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 8px;
-}
-
-.stat-mini .stat-value {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 24px;
-  font-weight: 700;
-}
-
-.stat-mini .stat-label {
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.5);
-  text-transform: uppercase;
-}
-
-.stat-mini.critical .stat-value { color: #ef4444; }
-.stat-mini.controllable .stat-value { color: #10b981; }
-.stat-mini.survival .stat-value { color: #f97316; }
-.stat-mini.worsening .stat-value { color: #fbbf24; }
-
-/* Threats Section */
-.sidebar-threats {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.sidebar-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  color: #ef4444;
-  margin: 0 0 12px 0;
-}
-
-.title-icon {
-  font-size: 12px;
-}
-
-.threats-list {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  overflow-y: auto;
-}
-
-/* Compact Threat Card */
-.threat-card-compact {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  background: rgba(10, 15, 25, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-left: 3px solid var(--threat-color);
-  border-radius: 8px;
-  transition: all 0.2s ease;
-}
-
-.threat-card-compact:hover {
-  background: rgba(10, 15, 25, 0.95);
-  border-color: var(--threat-color);
-}
-
-.threat-rank {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--threat-color);
-  min-width: 20px;
-}
-
-.threat-info {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-
-.threat-name {
-  font-size: 12px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.threat-ctrl {
-  font-size: 8px;
-  color: #10b981;
-}
-
-.threat-metrics {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.threat-score {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.threat-trend {
-  font-size: 12px;
-  font-weight: 600;
-}
-
-/* Insight Box */
-.sidebar-insight {
-  padding: 12px;
-  background: rgba(10, 15, 25, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 8px;
-}
-
-.insight-label {
-  display: block;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.4);
-  margin-bottom: 8px;
-}
-
-.insight-text {
-  font-size: 12px;
-  line-height: 1.5;
-  color: rgba(255, 255, 255, 0.7);
-  margin: 0;
-}
-
-/* ============================================================================
-   LOADING STATE
-   ============================================================================ */
-
-.risk-loading {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(239, 68, 68, 0.2);
-  border-top-color: #ef4444;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* ============================================================================
-   LEGACY STYLES (for sub-components compatibility)
-   ============================================================================ */
-
-/* Risk Header (simplified) */
-.risk-header {
-  display: none; /* Hidden - using command strip instead */
-}
-
-/* Threat Radar */
-.threat-radar {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  width: 100%;
-}
-
-.radar-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 16px;
-}
-
-.radar-icon { font-size: 16px; color: #ef4444; }
-.radar-title { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; color: #ef4444; }
-.radar-subtitle { font-size: 10px; color: rgba(255, 255, 255, 0.5); margin-left: 12px; }
-
-.radar-svg { 
-  max-width: 100%; 
-  max-height: 640px;
-  flex: 0 0 auto;
-}
-
-.radar-polygon { animation: radarPulse 3s ease-in-out infinite; }
-@keyframes radarPulse { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; } }
-
-.radar-legend {
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 16px;
-  flex-wrap: wrap;
-}
-
-.radar-legend .legend-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.radar-legend .legend-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-
-/* Risk Timeline */
-.risk-timeline {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.timeline-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
-}
-
-.timeline-icon { font-size: 16px; color: #ef4444; }
-.timeline-title { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; color: #ef4444; }
-.timeline-subtitle { font-size: 10px; color: rgba(255, 255, 255, 0.5); margin-left: auto; }
-
-.timeline-svg { width: 100%; flex: 1; }
-.risk-line { filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.5)); }
-.current-point { filter: drop-shadow(0 0 8px #22d3ee); }
-
-.timeline-insights {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin-top: 16px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.insight-item { display: flex; flex-direction: column; gap: 2px; }
-.insight-label { font-size: 9px; font-weight: 600; letter-spacing: 0.08em; color: rgba(255, 255, 255, 0.5); }
-.insight-value { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: rgba(255, 255, 255, 0.9); }
-.insight-value.danger { color: #ef4444; }
-
-/* Risk Breakdown */
-.risk-breakdown {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.breakdown-header {
+.sf-risk-dial-scale {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
+  margin-top: 6px;
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.25);
+  font-variant-numeric: tabular-nums;
 }
 
-.breakdown-header .header-left {
+.sf-risk-dial-score {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  align-items: baseline;
+  gap: 3px;
+  margin-top: 10px;
 }
 
-.breakdown-icon { font-size: 16px; color: #ef4444; }
-.breakdown-title { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; color: #ef4444; }
-
-.header-controls { display: flex; gap: 12px; }
-
-.category-filters { display: flex; gap: 4px; }
-
-.filter-btn {
-  padding: 5px 10px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.6);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.filter-btn:hover { background: rgba(255, 255, 255, 0.1); }
-.filter-btn.active { background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); color: #ef4444; }
-
-.breakdown-grid {
-  flex: 1;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 12px;
-  overflow-y: auto;
-}
-
-.risk-card {
-  background: rgba(10, 15, 25, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-left: 3px solid var(--card-color);
-  border-radius: 10px;
-  padding: 14px;
-  transition: all 0.2s ease;
-}
-
-.risk-card:hover { background: rgba(10, 15, 25, 0.8); border-color: var(--card-color); }
-
-.card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.card-icon { font-size: 16px; }
-.card-title { flex: 1; font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, 0.9); }
-.card-score { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; }
-
-.card-bar { height: 4px; background: rgba(255, 255, 255, 0.1); border-radius: 2px; overflow: hidden; margin-bottom: 10px; }
-.card-bar-fill { height: 100%; border-radius: 2px; }
-
-.card-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-
-.level-pill {
-  font-size: 8px;
+.sf-risk-dial-score-num {
+  font-size: 28px;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  padding: 3px 8px;
-  border: 1px solid;
-  border-radius: 10px;
+  font-variant-numeric: tabular-nums;
 }
 
-.trend-indicator { font-size: 10px; }
-.trend-indicator.improving { color: #10b981; }
-.trend-indicator.stable { color: #fbbf24; }
-.trend-indicator.worsening { color: #ef4444; }
-
-.card-description { font-size: 11px; color: rgba(255, 255, 255, 0.6); line-height: 1.4; margin: 0 0 10px 0; }
-
-.card-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
-
-.tag {
-  font-size: 8px;
-  padding: 3px 6px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.6);
+.sf-risk-dial-score-unit {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.3);
 }
 
-.tag.impact-survival { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
-.tag.impact-growth { background: rgba(34, 211, 238, 0.1); color: #22d3ee; }
-.tag.impact-both { background: rgba(251, 191, 36, 0.1); color: #fbbf24; }
-.tag.controllable { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+/* ─── Exposure Heat Map ──────────────────────────────────────────────────── */
+.sf-risk-heatmap {
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
 
-/* Critical Alerts (legacy) */
-.critical-alerts {
-  display: flex;
-  flex-direction: column;
+.sf-risk-heatmap-title {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.35);
+  margin-bottom: 14px;
+}
+
+.sf-risk-heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
-  padding: 0 20px;
 }
 
-.alert-banner {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  background: rgba(10, 15, 25, 0.9);
-  border-left: 4px solid;
-  border-radius: 8px;
-}
-
-.alert-banner.critical { background: rgba(220, 38, 38, 0.1); }
-.alert-banner.warning { background: rgba(249, 115, 22, 0.1); }
-
-/* Empty State */
-.empty-risk-state {
-  flex: 1;
+.sf-heatmap-cell {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 24px;
-  padding: 60px;
+  gap: 6px;
+  padding: 18px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.sf-heatmap-score {
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.sf-heatmap-label {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* ─── Sensitivity Ranking Table ──────────────────────────────────────────── */
+.sf-risk-sensitivity {
+  padding: 20px 24px;
+  flex-shrink: 0;
+}
+
+.sf-risk-sensitivity-title {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.35);
+  margin-bottom: 14px;
+}
+
+.sf-sensitivity-header {
+  display: grid;
+  grid-template-columns: 32px 2fr 60px 80px 48px 1fr;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.sf-sensitivity-row {
+  display: grid;
+  grid-template-columns: 32px 2fr 60px 80px 48px 1fr;
+  gap: 8px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  align-items: center;
+}
+
+.sf-sensitivity-rank {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.3);
   text-align: center;
 }
 
-.empty-visual {
-  position: relative;
-  width: 100px;
-  height: 100px;
+.sf-sensitivity-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 6px;
 }
 
-.pulse-ring {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  border: 2px solid rgba(239, 68, 68, 0.2);
-  border-radius: 50%;
-  animation: pulseRing 3s ease-out infinite;
+.sf-sensitivity-ctrl {
+  font-size: 8px;
+  color: #22d3ee;
 }
 
-.pulse-ring.pulse-2 { animation-delay: 1s; }
-.pulse-ring.pulse-3 { animation-delay: 2s; }
-
-@keyframes pulseRing {
-  0% { transform: scale(0.8); opacity: 1; }
-  100% { transform: scale(1.5); opacity: 0; }
-}
-
-.empty-title { font-size: 18px; font-weight: 600; color: rgba(255, 255, 255, 0.8); margin: 0; }
-.empty-description { font-size: 13px; color: rgba(255, 255, 255, 0.5); max-width: 400px; line-height: 1.6; margin: 0; }
-
-.empty-action {
-  padding: 12px 24px;
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: 10px;
+.sf-sensitivity-score {
   font-size: 13px;
-  font-weight: 600;
-  color: #ef4444;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
 }
 
-.empty-action:hover { background: rgba(239, 68, 68, 0.25); transform: translateY(-2px); }
+.sf-sensitivity-level {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.sf-sensitivity-trend {
+  font-size: 16px;
+  text-align: center;
+}
+
+.sf-sensitivity-impact {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 0.04em;
+}

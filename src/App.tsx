@@ -43,6 +43,10 @@ import { useUIStore } from "@/state/uiStore";
 import { SimulateOverlay } from '@/components/simulate';
 import { SaveSimulationModal, LoadSimulationPanel } from '@/components/simulations';
 import { ComparePage } from '@/components/compare';
+import BaselineRightPanel from '@/components/baseline/BaselineRightPanel';
+import EngineStateStrip from '@/components/engine/EngineStateStrip';
+import SimulationControlModule from '@/components/sim/SimulationControlModule';
+import { useEngineStore } from '@/state/engineStore';
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -540,6 +544,25 @@ export default function App() {
   const [timelineEnabled, setTimelineEnabled] = useState(false);
   const [heatmapEnabled, setHeatmapEnabled] = useState(false);
   
+  // GOD MODE: Engine state + Simulation control (shared Zustand store)
+  const engineStatus = useEngineStore((s) => s.status);
+  const engineMode = useEngineStore((s) => s.mode);
+  const lastSimulatedHash = useEngineStore((s) => s.lastSimulatedHash);
+  const startRun = useEngineStore((s) => s.startRun);
+  const completeRun = useEngineStore((s) => s.completeRun);
+  const failRun = useEngineStore((s) => s.failRun);
+  const setEngineMode = useEngineStore((s) => s.setMode);
+
+  // STEP 10: Dirty detection — RUN only enabled when scenario config changed since last run
+  const scenarioHash = useMemo(
+    () => JSON.stringify({ levers, scenario }),
+    [levers, scenario]
+  );
+  const engineIsDirty = scenarioHash !== lastSimulatedHash;
+
+  // STEP 11: Freeze UI while engine is running
+  const isEngineRunning = engineStatus === "Running";
+  
   // KPI Section - ALWAYS VISIBLE (GOD MODE RULE: KPI line must always be shown)
   // Locked to "visible" - never hide the command bridge telemetry
   const kpiAnimState = "visible" as const;
@@ -813,15 +836,7 @@ export default function App() {
     // buildEngineResult must be deterministic from (levers, scenarioId)
     function buildEngineResultForScenario(sid: ScenarioId) {
       const m = calculateMetrics(throttledLevers, sid);
-      if (sid === (activeScenarioId ?? "base")) {
-        console.log("[IG] engine recompute for active", sid, {
-          demand: throttledLevers.demandStrength,
-          pricing: throttledLevers.pricingPower,
-          momentum: (m as any)?.momentum,
-          riskIndex: (m as any)?.riskIndex,
-        });
-      }
-      console.log("[IG] sid", sid, "momentum", (m as any)?.momentum, "riskIndex", (m as any)?.riskIndex);
+      // Engine recompute for scenario — debug logging removed for production
 
       // --- EVERYTHING BELOW HERE is your existing KPI derivation logic ---
       // Replace references to `metrics` with `m`
@@ -961,15 +976,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
     for (const sid of ALL_SCENARIOS) {
       const engineResult = buildEngineResultForScenario(sid);
       setEngineResult(sid, engineResult);
-      if (sid === (activeScenarioId ?? "base")) {
-        const snap = useScenarioStore.getState().engineResults?.[sid]?.kpis;
-        console.log("[IG] engineResults stored for active", sid, {
-          runway: snap?.runway?.value,
-          arrGrowth: snap?.arrGrowthPct?.value,
-          risk: snap?.riskScore?.value,
-          quality: (snap as any)?.qualityScore?.value,
-        });
-      }
+      // Engine results stored for active scenario — debug logging removed
     }
   }, [throttledLevers, setEngineResult]);
     
@@ -1157,6 +1164,8 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
         activeItemId={
           showSimulate
             ? "simulate"
+            : headerViewMode === "initiate"
+              ? "initiate"
             : headerViewMode === "decision"
               ? "decision"
               : headerViewMode === "valuation"
@@ -1165,16 +1174,20 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
                   ? "compare"
                   : headerViewMode === "impact"
                     ? "impact"
-                  : "terrain"
+                    : headerViewMode === "risk"
+                      ? "risk"
+                    : "terrain"
         }
         onNavigate={(id) => {
           // close overlay if user navigates elsewhere
           if (id !== "simulate") setShowSimulate(false);
           if (id === "simulate") return setShowSimulate(true);
+          if (id === "initiate") return setHeaderViewMode("initiate");
           if (id === "decision") return setHeaderViewMode("decision");
           if (id === "valuation") return setHeaderViewMode("valuation");
           if (id === "compare") return setHeaderViewMode("compare");
           if (id === "impact") return setHeaderViewMode("impact");
+          if (id === "risk") return setHeaderViewMode("risk");
           return setHeaderViewMode("terrain");
         }}
         onSave={() => setShowSaveModal(true)}
@@ -1183,11 +1196,14 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
         onShare={() => console.log("Share")}
       />
 
+      {/* ENGINE STATE STRIP — flush under nav, 4px tall */}
+      <EngineStateStrip status={engineStatus} />
+
       {/* OPTION 1: UNIFIED 3-COLUMN LAYOUT (Compare mode = full-width center only) */}
       <div className={`main-content mode-${headerViewMode}`}>
         
-        {/* LEFT COLUMN: Hidden in Compare, Risk, Valuation, Decision, and Impact modes */}
-        {headerViewMode !== 'compare' && headerViewMode !== 'risk' && headerViewMode !== 'valuation' && headerViewMode !== 'decision' && headerViewMode !== 'impact' && (
+        {/* LEFT COLUMN: Visible only in terrain and simulate modes */}
+        {headerViewMode !== 'compare' && headerViewMode !== 'initiate' && headerViewMode !== 'risk' && headerViewMode !== 'valuation' && headerViewMode !== 'decision' && headerViewMode !== 'impact' && (
           <aside className="left-column">
             <div className="sf-leftStack">
               {/* Active Scenario - New 5-Scenario Selector */}
@@ -1201,8 +1217,100 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
               {/* Spacer (fixed, CSS-controlled) */}
               <div className="sf-leftSpacer" aria-hidden="true" />
 
+              {/* Simulation Control Module — above sliders */}
+              <div style={{ padding: '0 0 8px' }}>
+                <SimulationControlModule
+                  mode={engineMode}
+                  status={engineStatus}
+                  isDirty={engineIsDirty}
+                  onModeChange={setEngineMode}
+                  onRun={() => {
+                    // STEP 12: Real engine call
+                    startRun();
+
+                    // Run engine computation asynchronously (setTimeout 0 for visual feedback)
+                    setTimeout(() => {
+                      try {
+                        // Force recompute all scenarios with current levers
+                        for (const sid of ALL_SCENARIOS) {
+                          const m = calculateMetrics(levers, sid);
+
+                          // Derive KPIs inline (same as the throttled useEffect)
+                          const cashRaw = (m as any)?.cashPosition ?? 0;
+                          const cashValue = Number.isFinite(cashRaw) ? Number(cashRaw) : 0;
+                          const cashValueDollars = cashValue > 0 && cashValue < 1_000_000 ? cashValue * 1_000_000 : cashValue;
+
+                          const arrCurrent = (m.momentum / 10) * 1_000_000;
+                          const growthRate = Math.max(-0.5, Math.min(0.8, (m.momentum - 50) * 0.006));
+                          const arrNext12 = arrCurrent * (1 + growthRate);
+                          const arrGrowth = deriveArrGrowth({ arrCurrent, arrNext12 });
+
+                          const burn = m.burnQuality * 1000;
+                          const marketingSpend = burn * 0.45;
+                          const avgRevenuePerCustomer = 12_000;
+                          const grossMargin = 0.74;
+                          const annualChurn = 0.12;
+                          const runwaySurvivalMonths = burn > 0 ? Math.floor(cashValueDollars / burn) : 999;
+
+                          const arrDeltaValue = arrGrowth.arrDelta ?? 0;
+                          const newCustomers = Math.max(1, arrDeltaValue / avgRevenuePerCustomer);
+                          const cac = marketingSpend / newCustomers;
+                          const ltv = (avgRevenuePerCustomer * grossMargin) / annualChurn;
+                          const cacPaybackMonths = (cac / (avgRevenuePerCustomer * grossMargin)) * 12;
+                          const ltvCac = ltv / cac;
+
+                          let growthRisk = 0;
+                          if (ltvCac < 2) growthRisk += 15;
+                          if (cacPaybackMonths > 24) growthRisk += 15;
+                          if (cacPaybackMonths > 36) growthRisk += 10;
+                          const adjustedRiskIndex = Math.min(100, Math.max(0, m.riskIndex + growthRisk));
+
+                          const kpis = {
+                            runway: { value: runwaySurvivalMonths, display: `${runwaySurvivalMonths} mo` },
+                            cashPosition: { value: cashValueDollars, display: `$${(cashValueDollars / 1_000_000).toFixed(1)}M` },
+                            momentum: { value: m.momentum, display: `$${(m.momentum / 10).toFixed(1)}M` },
+                            arrCurrent: { value: arrCurrent, display: formatUsdCompact(arrCurrent) },
+                            arrNext12: { value: arrNext12, display: formatUsdCompact(arrNext12) },
+                            arrDelta: { value: arrGrowth.arrDelta ?? 0, display: arrGrowth.displayDelta },
+                            arrGrowthPct: { value: arrGrowth.arrGrowthPct ?? 0, display: arrGrowth.displayPct },
+                            burnQuality: { value: m.burnQuality, display: `$${Math.round(m.burnQuality)}K` },
+                            riskIndex: { value: adjustedRiskIndex, display: `${Math.round(adjustedRiskIndex)}/100` },
+                            riskScore: { value: 100 - adjustedRiskIndex, display: `${Math.round(100 - adjustedRiskIndex)}/100` },
+                            earningsPower: { value: m.earningsPower, display: `${Math.round(m.earningsPower)}%` },
+                            enterpriseValue: { value: m.enterpriseValue, display: `$${(m.enterpriseValue / 10).toFixed(1)}M` },
+                            cac: { value: cac, display: `$${Math.round(cac).toLocaleString()}` },
+                            cacPayback: { value: cacPaybackMonths, display: `${Math.round(cacPaybackMonths)} mo` },
+                            ltvCac: { value: ltvCac, display: `${ltvCac.toFixed(1)}x` },
+                          };
+
+                          const qualityScore = getQualityScoreFromKpis(kpis);
+                          (kpis as any).qualityScore = { value: qualityScore, display: `${Math.round(qualityScore * 100)}%` };
+
+                          setEngineResult(sid, { kpis, ai: { summary: "" } });
+                        }
+
+                        // Derive confidence from active scenario quality score
+                        const activeKpis = useScenarioStore.getState().engineResults?.[scenario]?.kpis;
+                        const qs = (activeKpis as any)?.qualityScore?.value ?? 0.85;
+                        const confidencePct = Math.round(qs * 100);
+
+                        completeRun(confidencePct, scenarioHash);
+                      } catch (err) {
+                        console.error("[ENGINE] Run failed:", err);
+                        failRun();
+                      }
+                    }, 50); // 50ms delay for visual "Running" state to paint
+                  }}
+                />
+              </div>
+
               {/* Control Panel - GOD-MODE Bezel (matches Scenario Intelligence) */}
-              <div className="sliders-container" data-tour="sliders">
+              {/* STEP 11: Freeze sliders while engine is running */}
+              <div
+                className="sliders-container"
+                data-tour="sliders"
+                style={isEngineRunning ? { pointerEvents: "none", opacity: 0.45, transition: "opacity 0.18s ease" } : undefined}
+              >
                 <CommandDeckBezel>
                   <ControlDeck boxes={controlBoxes} onChange={handleLeverChange} />
                 </CommandDeckBezel>
@@ -1213,8 +1321,8 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
 
         {/* CENTER COLUMN: KPIs + Mountain OR Scenario Impact OR Variances */}
         <main className="center-column">
-          {/* KPI COMMAND BRIDGE - Hidden on Compare, Risk, Valuation, Decision, and Impact views */}
-          {headerViewMode !== 'compare' && headerViewMode !== 'risk' && headerViewMode !== 'valuation' && headerViewMode !== 'decision' && headerViewMode !== 'impact' && (
+          {/* KPI COMMAND BRIDGE - Hidden on Initiate, Compare, Risk, Valuation, Decision, and Impact views */}
+          {headerViewMode !== 'compare' && headerViewMode !== 'initiate' && headerViewMode !== 'risk' && headerViewMode !== 'valuation' && headerViewMode !== 'decision' && headerViewMode !== 'impact' && (
             <OrbitalKPISection kpiAnimState={kpiAnimState} />
           )}
           
@@ -1225,13 +1333,15 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
             timelineEnabled={timelineEnabled}
             heatmapEnabled={heatmapEnabled}
             onSimulateRequest={() => setShowSimulate(true)}
+            onNavigate={(view) => setHeaderViewMode(view as HeaderViewMode)}
           />
         </main>
 
-        {/* RIGHT COLUMN: AI Intelligence - Hidden in Compare, Risk, Valuation, Decision, and Impact modes */}
-        {headerViewMode !== 'compare' && headerViewMode !== 'risk' && headerViewMode !== 'valuation' && headerViewMode !== 'decision' && headerViewMode !== 'impact' && (
+        {/* RIGHT COLUMN: Baseline Right Panel — replaces old AI card stack */}
+        {/* Hidden in Compare, Initiate, Risk, Valuation, Decision, and Impact modes */}
+        {headerViewMode !== 'compare' && headerViewMode !== 'initiate' && headerViewMode !== 'risk' && headerViewMode !== 'valuation' && headerViewMode !== 'decision' && headerViewMode !== 'impact' && (
         <aside className="right-column" data-tour="intel">
-          <AIPanel levers={levers} scenario={scenario} />
+          <BaselineRightPanel />
         </aside>
         )}
       </div>

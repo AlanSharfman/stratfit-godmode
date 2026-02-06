@@ -1,0 +1,22 @@
+.sf-engine-strip {
+  height: 4px;
+  width: 100%;
+  transition: background-color 0.18s ease;
+}
+
+.sf-engine-strip--idle {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sf-engine-strip--running {
+  background: #22d3ee;
+}
+
+.sf-engine-strip--complete {
+  background: #10b981;
+}
+
+.sf-engine-strip--error {
+  background: #ef4444;
+}
+

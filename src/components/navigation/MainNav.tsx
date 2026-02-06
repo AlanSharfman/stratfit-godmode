@@ -9,6 +9,7 @@ import {
   DollarSign,
   CheckCircle,
   Activity,
+  Compass,
   Save,
   FolderOpen,
   Download,
@@ -16,6 +17,7 @@ import {
   ChevronDown,
   Layers,
   HelpCircle,
+  ShieldAlert,
 } from 'lucide-react'
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -53,8 +55,15 @@ interface MainNavProps {
 
 const primaryNav: NavItem[] = [
   {
+    id: 'initiate',
+    label: 'INITIATE',
+    href: '/initiate',
+    icon: <Compass className="w-4 h-4" />,
+    description: 'Institutional baseline inputs',
+  },
+  {
     id: 'terrain',
-    label: 'TERRAIN',
+    label: 'BASELINE',
     href: '/terrain',
     icon: <Mountain className="w-4 h-4" />,
     description: 'Build & test your strategy',
@@ -79,6 +88,13 @@ const primaryNav: NavItem[] = [
     href: '/impact',
     icon: <Activity className="w-4 h-4" />,
     description: 'Analyze what matters most',
+  },
+  {
+    id: 'risk',
+    label: 'RISK',
+    href: '/risk',
+    icon: <ShieldAlert className="w-4 h-4" />,
+    description: 'Risk intelligence & exposure',
   },
   {
     id: 'valuation',
@@ -436,7 +452,7 @@ export function MainNavCompact({ className = '' }: { className?: string }) {
 
         {/* Center: Current page */}
         <div className="text-sm text-white/60 font-mono">
-          {primaryNav.find(item => pathname.startsWith(item.href))?.label || 'TERRAIN'}
+          {primaryNav.find(item => pathname.startsWith(item.href))?.label || 'BASELINE'}
         </div>
 
         {/* Menu toggle */}

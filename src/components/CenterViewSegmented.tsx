@@ -9,7 +9,7 @@ type Props = {
 };
 
 const tabs: { key: CenterViewId; label: string }[] = [
-  { key: "terrain", label: "TERRAIN" },
+  { key: "terrain", label: "BASELINE" },
   { key: "impact", label: "IMPACT" },
   { key: "compare", label: "COMPARE" },
 ];

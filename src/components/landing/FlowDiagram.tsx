@@ -25,7 +25,7 @@ export const FLOW_STEPS: FlowStep[] = [
   {
     id: 'terrain',
     number: 1,
-    title: 'TERRAIN',
+    title: 'BASELINE',
     subtitle: 'Primary Workspace',
     description: 'Enter your business assumptions. Adjust 12 strategic levers.',
     icon: '🏔️',

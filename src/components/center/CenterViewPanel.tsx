@@ -29,6 +29,7 @@ import { engineResultToMountainForces } from "@/logic/mountainForces";
 import { useSimulationStore } from "@/state/simulationStore";
 import { useSavedSimulationsStore } from "@/state/savedSimulationsStore";
 import { StrategicMetrics } from "@/components/terrain/StrategicMetrics";
+import { InitiatePage } from "@/components/initiate/InitiatePage";
 
 interface CenterViewPanelProps {
   view?: CenterViewId;
@@ -36,6 +37,7 @@ interface CenterViewPanelProps {
   timelineEnabled?: boolean;
   heatmapEnabled?: boolean;
   onSimulateRequest?: () => void;
+  onNavigate?: (view: CenterViewId) => void;
 }
 
 export default function CenterViewPanel(props: CenterViewPanelProps) {
@@ -208,6 +210,13 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
         {view === "valuation" && (
           <div className="h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-linear-to-br from-slate-950/60 to-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
             <ValuationTab />
+          </div>
+        )}
+
+        {/* INITIATE - Institutional baseline input cockpit */}
+        {view === "initiate" && (
+          <div className="h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-linear-to-br from-slate-950/60 to-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
+            <InitiatePage onBaselineLocked={() => props.onNavigate?.("terrain")} />
           </div>
         )}
       </div>

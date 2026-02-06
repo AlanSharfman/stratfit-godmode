@@ -1177,3 +1177,26 @@ aside.right-column,
 .main-content.mode-impact .kpi-section {
   display: none !important;
 }
+
+/* ============================================================================
+   INITIATE VIEW — Full-width layout, hide side panels (institutional input cockpit)
+   ============================================================================ */
+
+.main-content.mode-initiate .left-column,
+.main-content.mode-initiate .right-column {
+  display: none !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  overflow: hidden !important;
+}
+
+.main-content.mode-initiate .center-column {
+  width: 100% !important;
+  max-width: 100% !important;
+  flex: 1 !important;
+}
+
+.main-content.mode-initiate .kpi-section {
+  display: none !important;
+}
