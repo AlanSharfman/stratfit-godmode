@@ -133,7 +133,26 @@ export function StrategyCompare() {
 
               {strategies.map((s, i) => (
                 <th key={s.id ?? i} style={{ textAlign: "left", padding: "10px 10px", fontSize: 12, opacity: 0.9 }}>
-                  {s.name ?? `Strategy ${i + 1}`}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                    <span>{s.name ?? `Strategy ${i + 1}`}</span>
+                    <button
+                      type="button"
+                      onClick={() => deleteStrategy(s.id)}
+                      title="Delete strategy"
+                      aria-label="Delete strategy"
+                      style={{
+                        cursor: "pointer",
+                        border: "1px solid rgba(255,255,255,0.14)",
+                        background: "rgba(255,255,255,0.04)",
+                        color: "rgba(255,255,255,0.7)",
+                        borderRadius: 8,
+                        padding: "2px 8px",
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </th>
               ))}
             </tr>

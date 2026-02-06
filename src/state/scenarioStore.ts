@@ -245,6 +245,7 @@ interface ScenarioState {
   setEngineResult: (scenarioId: string, result: EngineResult) => void;
   setSolverPath: (path: SolverPathPoint[]) => void;
   saveStrategy: (name: string) => void;
+  deleteStrategy: (id: string) => void;
   setCurrentLevers: (levers: LeverSnapshot) => void;
   setActiveLever: (leverId: string | null, intensity: number) => void;
   
@@ -291,6 +292,11 @@ export const useScenarioStore = create<ScenarioState>()(
         
         set((state) => ({
           strategies: [...state.strategies, strategy]
+        }));
+      },
+      deleteStrategy: (id) => {
+        set((state) => ({
+          strategies: state.strategies.filter((s) => s.id !== id),
         }));
       },
       setCurrentLevers: (levers) => set({ currentLevers: levers }),

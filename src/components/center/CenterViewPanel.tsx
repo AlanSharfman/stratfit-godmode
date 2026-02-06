@@ -2,8 +2,8 @@ import React, { useEffect, useState, useMemo } from "react";
 import * as THREE from "three";
 import type { CenterViewId } from "@/types/view";
 import ScenarioMountain from "@/components/mountain/ScenarioMountain";
-import GodModeCompare from "@/components/mountain/GodModeCompare";
 import { GodModeMountain } from "@/components/compare/GodModeMountain";
+import GodModeTerrain from "@/components/compare/GodModeTerrain";
 import { Canvas } from "@react-three/fiber";
 import { EffectComposer, Bloom, Vignette, SMAA } from "@react-three/postprocessing";
 import { Environment } from "@react-three/drei";
@@ -22,6 +22,7 @@ import { RiskTab } from "@/components/Risk";
 import { DecisionTab } from "@/components/Decision";
 import { ValuationTab } from "@/components/valuation";
 import { ImpactGodMode } from "@/components/impact";
+import StrategyStudioPage from "@/pages/StrategyStudioPage";
 
 import { useScenario, useScenarioStore } from "@/state/scenarioStore";
 import { onCausal } from "@/ui/causalEvents";
@@ -141,38 +142,11 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
           </div>
         )}
 
-        {/* COMPARE - God Mode: Gravity = Time Mountain Visualization */}
+        {/* COMPARE - God Mode: Full Nature Environment */}
         {view === "compare" && (
-          <div className="h-full w-full overflow-hidden rounded-3xl border border-slate-700/40 shadow-[0_8px_32px_rgba(0,0,0,0.6)] bg-[#050b14]">
-            <Canvas
-              camera={{ position: [0, 4.2, 11.5], fov: 42 }}
-              gl={{
-                antialias: true,
-                alpha: false,
-                powerPreference: "high-performance",
-              }}
-              dpr={[1, 2]}
-              onCreated={({ gl }) => {
-                gl.toneMappingExposure = 0.95; // Lower exposure for silhouette definition
-              }}
-            >
-              <Environment preset="studio" blur={0.9} />
-              <GodModeMountain 
-                scenarioA={godModeScenarioA}
-                scenarioB={godModeScenarioB}
-                t={0.5}
-              />
-              <EffectComposer disableNormalPass>
-                <Bloom
-                  luminanceThreshold={1.5}
-                  luminanceSmoothing={0.4}
-                  intensity={0.6}
-                  mipmapBlur
-                />
-                <Vignette eskil={false} offset={0.1} darkness={0.8} />
-                <SMAA />
-              </EffectComposer>
-            </Canvas>
+          <div className="h-full w-full overflow-hidden rounded-3xl border border-slate-700/40 shadow-[0_8px_32px_rgba(0,0,0,0.6)] bg-[#050b14] relative">
+            {/* GodModeTerrain has CompareHybridPanel with all UI integrated */}
+            <GodModeTerrain />
           </div>
         )}
 
@@ -201,6 +175,13 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
         {view === "valuation" && (
           <div className="h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-linear-to-br from-slate-950/60 to-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
             <ValuationTab />
+          </div>
+        )}
+
+        {/* STRATEGY - Strategy Studio surface */}
+        {view === "strategy" && (
+          <div className="h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-linear-to-br from-slate-950/60 to-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
+            <StrategyStudioPage />
           </div>
         )}
       </div>

@@ -14,10 +14,10 @@ interface ThreatRadarProps {
 }
 
 export default function ThreatRadar({ data }: ThreatRadarProps) {
-  // SVG dimensions
-  const size = 400;
+  // SVG dimensions — 60% larger for hero display
+  const size = 640;
   const center = size / 2;
-  const maxRadius = 150;
+  const maxRadius = 240;
   const levels = 5;
   
   // Calculate positions for each data point

@@ -1047,20 +1047,133 @@ aside.right-column,
 }
 
 /* ============================================================================
-   COMPARE VIEW — Show Strategic Autopilot in left column
+   COMPARE VIEW — Full-width layout, hide side panels
    ============================================================================ */
 
-.main-content.mode-compare .left-column .sf-leftStack {
-  visibility: visible;
-  opacity: 1;
+/* Hide left and right columns in compare mode */
+.main-content.mode-compare .left-column,
+.main-content.mode-compare .right-column {
+  display: none !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  overflow: hidden !important;
 }
 
-.main-content.mode-compare .left-column {
-  background: transparent !important;
+/* Center column takes full width in compare mode */
+.main-content.mode-compare .center-column {
+  width: 100% !important;
+  max-width: 100% !important;
+  flex: 1 !important;
 }
 
-.main-content.mode-compare .compare-autopilot-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+/* KPI COMMAND BRIDGE must remain visible in compare mode (locked UI rule) */
+.main-content.mode-compare .kpi-section {
+  display: block !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+/* ============================================================================
+   RISK VIEW — Full-width layout, hide side panels, spread risk data
+   ============================================================================ */
+
+/* Hide left and right columns in risk mode */
+.main-content.mode-risk .left-column,
+.main-content.mode-risk .right-column {
+  display: none !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Center column takes full width in risk mode */
+.main-content.mode-risk .center-column {
+  width: 100% !important;
+  max-width: 100% !important;
+  flex: 1 !important;
+}
+
+/* Hide KPI sparkline section in risk mode */
+.main-content.mode-risk .kpi-section {
+  display: none !important;
+}
+
+/* ============================================================================
+   VALUATION VIEW — Full-width layout, hide side panels
+   ============================================================================ */
+
+/* Hide left and right columns in valuation mode */
+.main-content.mode-valuation .left-column,
+.main-content.mode-valuation .right-column {
+  display: none !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Center column takes full width in valuation mode */
+.main-content.mode-valuation .center-column {
+  width: 100% !important;
+  max-width: 100% !important;
+  flex: 1 !important;
+}
+
+/* Hide KPI sparkline section in valuation mode */
+.main-content.mode-valuation .kpi-section {
+  display: none !important;
+}
+
+/* ============================================================================
+   DECISION VIEW — Full-width layout, hide side panels
+   ============================================================================ */
+
+/* Hide left and right columns in decision mode */
+.main-content.mode-decision .left-column,
+.main-content.mode-decision .right-column {
+  display: none !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Center column takes full width in decision mode */
+.main-content.mode-decision .center-column {
+  width: 100% !important;
+  max-width: 100% !important;
+  flex: 1 !important;
+}
+
+/* Hide KPI sparkline section in decision mode */
+.main-content.mode-decision .kpi-section {
+  display: none !important;
+}
+
+/* ============================================================================
+   IMPACT VIEW — Full-width GOD MODE layout
+   ============================================================================ */
+
+/* Hide left and right columns in impact mode */
+.main-content.mode-impact .left-column,
+.main-content.mode-impact .right-column {
+  display: none !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Center column takes full width in impact mode */
+.main-content.mode-impact .center-column {
+  width: 100% !important;
+  max-width: 100% !important;
+  flex: 1 !important;
+}
+
+/* Hide KPI sparkline section in impact mode - content is self-contained */
+.main-content.mode-impact .kpi-section {
+  display: none !important;
 }

@@ -2,6 +2,7 @@
   "extends": "./tsconfig.json",
   "exclude": [
     "src/pitch/**",
-    "src/components/compound/variances2/**"
+    "src/components/compound/variances2/**",
+    "src/pages/*Test*.tsx"
   ]
 }

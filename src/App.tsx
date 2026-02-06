@@ -31,6 +31,8 @@ import HeaderControlDeck from "@/components/layout/HeaderControlDeck";
 import { deriveArrGrowth, formatUsdCompact } from "@/utils/arrGrowth";
 import { getQualityScoreFromKpis, getQualityBandFromKpis } from "@/logic/qualityScore";
 import ScenarioMemoPage from "@/pages/ScenarioMemoPage";
+import CinematicTest from "@/pages/CinematicTest";
+import GodModeTest from "@/pages/GodModeTest";
 import ImpactView from "@/components/compound/impact";
 import VariancesView from "@/components/compound/variances/VariancesView";
 import { useDebouncedValue, useThrottledValue } from "@/hooks/useDebouncedValue";
@@ -41,8 +43,6 @@ import UnifiedHeader, { type ViewMode as HeaderViewMode } from '@/components/lay
 import { useUIStore } from "@/state/uiStore";
 import { SimulateOverlay } from '@/components/simulate';
 import { SaveSimulationModal, LoadSimulationPanel } from '@/components/simulations';
-import { StrategicAutopilotPanel, type ScenarioData } from '@/components/mountain/GodModeCompare';
-import { ComparePage } from '@/components/compare';
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -488,11 +488,15 @@ export default function App() {
     return <ScenarioMemoPage />;
   }
 
-  // Compare route — Production-ready Risk Topography Instrument
-  if (typeof window !== "undefined" && window.location.pathname === "/compare") {
-    return <ComparePage />;
+  // Cinematic mountain test route — visit /cinematic to preview
+  if (typeof window !== "undefined" && window.location.pathname === "/cinematic") {
+    return <CinematicTest />;
   }
 
+  // God Mode holographic mountain — visit /godmode to preview
+  if (typeof window !== "undefined" && window.location.pathname === "/godmode") {
+    return <GodModeTest />;
+  }
 
   // FEATURE FLAG — Scenario Intelligence (Cold Brief) — reversible, UI-only
   // Enable via: localStorage.setItem("ENABLE_SCENARIO_INTELLIGENCE","1"); location.reload();
@@ -1174,49 +1178,26 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
       {/* OPTION 1: UNIFIED 3-COLUMN LAYOUT */}
       <div className={`main-content mode-${headerViewMode}`}>
         
-        {/* LEFT COLUMN: Scenario + Sliders OR Strategic Autopilot (Compare view) */}
+        {/* LEFT COLUMN: Scenario + Sliders */}
         <aside className="left-column">
           <div className="sf-leftStack">
-            {headerViewMode === 'compare' ? (
-              /* COMPARE VIEW: Strategic Autopilot replaces sliders */
-              <div className="compare-autopilot-container p-2">
-                <StrategicAutopilotPanel 
-                  scenarioA={{
-                    arr: engineResults?.base?.kpis?.arrCurrent?.value || 2100000,
-                    survival: engineResults?.base?.kpis?.runway?.value ? Math.min(100, (engineResults.base.kpis.runway.value / 36) * 100) : 78,
-                    runway: engineResults?.base?.kpis?.runway?.value || 16,
-                    score: engineResults?.base?.kpis?.qualityScore ? Math.round((engineResults.base.kpis.qualityScore as any).value * 100) : 72,
-                  }}
-                  scenarioB={{
-                    arr: engineResults?.upside?.kpis?.arrCurrent?.value || 5500000,
-                    survival: engineResults?.upside?.kpis?.runway?.value ? Math.min(100, (engineResults.upside.kpis.runway.value / 36) * 100) : 100,
-                    runway: engineResults?.upside?.kpis?.runway?.value || 36,
-                    score: engineResults?.upside?.kpis?.qualityScore ? Math.round((engineResults.upside.kpis.qualityScore as any).value * 100) : 90,
-                  }}
-                />
-              </div>
-            ) : (
-              /* OTHER VIEWS: Normal sliders */
-              <>
-                {/* Active Scenario - New 5-Scenario Selector */}
-                <div className="scenario-area">
-                  <ActiveScenario 
-                    currentScenario={activeScenarioType}
-                    onScenarioChange={handleScenarioTypeChange}
-                  />
-                </div>
+            {/* Active Scenario - New 5-Scenario Selector */}
+            <div className="scenario-area">
+              <ActiveScenario 
+                currentScenario={activeScenarioType}
+                onScenarioChange={handleScenarioTypeChange}
+              />
+            </div>
 
-                {/* Spacer (fixed, CSS-controlled) */}
-                <div className="sf-leftSpacer" aria-hidden="true" />
+            {/* Spacer (fixed, CSS-controlled) */}
+            <div className="sf-leftSpacer" aria-hidden="true" />
 
-                {/* Control Panel - GOD-MODE Bezel (matches Scenario Intelligence) */}
-                <div className="sliders-container" data-tour="sliders">
-                  <CommandDeckBezel>
-                    <ControlDeck boxes={controlBoxes} onChange={handleLeverChange} />
-                  </CommandDeckBezel>
-                </div>
-              </>
-            )}
+            {/* Control Panel - GOD-MODE Bezel (matches Scenario Intelligence) */}
+            <div className="sliders-container" data-tour="sliders">
+              <CommandDeckBezel>
+                <ControlDeck boxes={controlBoxes} onChange={handleLeverChange} />
+              </CommandDeckBezel>
+            </div>
           </div>
         </aside>
 
