@@ -55,3 +55,6 @@ _quarantine/
 # Local request dumps / dev output
 _request_dump/
 
+# Cursor / local preview worktrees (local only)
+_worktrees/
+
