@@ -49,6 +49,7 @@ import SimulationControlModule from '@/components/sim/SimulationControlModule';
 import { useEngineStore } from '@/state/engineStore';
 import Foundation from "./pages/Foundation";
 import { useFoundationStore } from "./store/foundationStore";
+import { OnboardApp } from "@/onboard";
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -489,6 +490,12 @@ function OrbitalKPISection({ kpiAnimState }: { kpiAnimState: "visible" | "closin
 // ============================================================================
 
 export default function App() {
+  const pathname = window.location.pathname;
+
+  if (pathname.startsWith("/onboard")) {
+    return <OnboardApp />;
+  }
+
   // Simple memo route (no router) — used for Print-to-PDF export.
   if (typeof window !== "undefined" && window.location.pathname.startsWith("/memo/")) {
     return <ScenarioMemoPage />;
