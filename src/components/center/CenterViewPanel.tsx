@@ -32,6 +32,7 @@ import { StrategicMetrics } from "@/components/terrain/StrategicMetrics";
 import { InitiatePage } from "@/components/initiate/InitiatePage";
 import { hasBaseline } from "@/onboard/baseline";
 import { BaselineRequiredModal } from "@/components/terrain/BaselineRequiredModal";
+import { StrategyStudioDraftingV1 } from "@/components/strategy/StrategyStudioDraftingV1";
 
 interface CenterViewPanelProps {
   view?: CenterViewId;
@@ -183,6 +184,11 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
                 activeKpiIndex={hoveredKpiIndex}
               />
             </div>
+          </div>
+        )}
+        {view === "strategy" && (
+          <div className="h-full w-full">
+            <StrategyStudioDraftingV1 />
           </div>
         )}
         {view === "simulate" && (
