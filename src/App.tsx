@@ -541,6 +541,15 @@ export default function App() {
   
   // GOD MODE: Header-controlled view mode (navigation tabs in header)
   const [headerViewMode, setHeaderViewMode] = useState<CenterViewId>("onboard");
+
+  // DEV ONLY: expose current view to console for triage
+  if (import.meta.env.DEV) {
+    (window as any).__STRATFIT_DEBUG__ = {
+      pathname: window.location.pathname,
+      activeView: headerViewMode,
+      navState: { headerViewMode },
+    };
+  }
   
   // GOD MODE: Monte Carlo Simulation Overlay
   const [showSimulate, setShowSimulate] = useState(false);

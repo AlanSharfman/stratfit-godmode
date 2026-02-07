@@ -1,0 +1,21 @@
+.root {
+  height: 100%;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 320px 1fr 420px;
+  gap: 12px;
+}
+
+.col {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.scroll {
+  min-height: 0;
+  overflow: auto;
+}
+
+
