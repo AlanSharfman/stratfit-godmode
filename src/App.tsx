@@ -20,6 +20,7 @@ import ScenarioSelector from "./components/ScenarioSelector";
 import ActiveScenario, { type ScenarioType } from "@/components/blocks/ActiveScenario";
 import ScenarioBezel from "./components/kpi/ScenarioBezel";
 import OnboardingSequence from "./components/OnboardingSequenceNew";
+import { hasBaseline } from "@/onboard/baseline";
 // MonteCarloPanel removed - was compressing AI Intelligence panel
 import { useScenarioStore, SCENARIO_COLORS } from "@/state/scenarioStore";
 import type { LeverId } from "@/logic/mountainPeakModel";
@@ -1162,12 +1163,19 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
     return boxes;
   }, [immediateLevers, viewMode]);
   
-  // Onboarding state - ALWAYS SHOW FOR DEMO
-  const [showOnboarding, setShowOnboarding] = useState(true);
+  // Onboarding overlay:
+  // - show if baseline is missing
+  // - allow explicit entry via Initiate tab (headerViewMode === "onboard")
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(() => !hasBaseline());
 
   const handleOnboardingComplete = useCallback(() => {
     setShowOnboarding(false);
   }, []);
+
+  useEffect(() => {
+    // If baseline is created (e.g., onboarding completes), drop the overlay.
+    if (hasBaseline()) setShowOnboarding(false);
+  }, [headerViewMode]);
 
   // Foundation lock state
   const locked = useFoundationStore((s) => s.locked);
@@ -1175,7 +1183,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
   return (
     <div className="app">
       {/* ONBOARDING SEQUENCE */}
-      {showOnboarding && <OnboardingSequence onComplete={handleOnboardingComplete} />}
+      {(showOnboarding || headerViewMode === "onboard") && <OnboardingSequence onComplete={handleOnboardingComplete} />}
       {/* MAIN NAV (5 items) */}
       <MainNav
         activeScenario={{
@@ -1210,7 +1218,10 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
         onNavigate={(id) => {
           setShowSimulate(false);
 
-          if (id === "onboard") return setHeaderViewMode("onboard");
+          if (id === "onboard") {
+            setShowOnboarding(true);
+            return setHeaderViewMode("onboard");
+          }
           if (id === "terrain") return setHeaderViewMode("terrain");
           if (id === "strategy") return setHeaderViewMode("strategy");
           if (id === "simulate") return setShowSimulate(true);

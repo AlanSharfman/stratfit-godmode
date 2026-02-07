@@ -2,17 +2,9 @@
 // Baseline persistence (truth layer) — localStorage only.
 
 import type { BaselineV1 } from "./types";
+import { safeJsonRead, safeJsonWrite } from "@/utils/safeLocalStorageJson";
 
 export const BASELINE_STORAGE_KEY = "stratfit.baseline.v1";
-
-function safeParse<T>(raw: string | null): T | null {
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw) as T;
-  } catch {
-    return null;
-  }
-}
 
 function isBaselineV1(x: unknown): x is BaselineV1 {
   if (!x || typeof x !== "object") return false;
@@ -21,12 +13,12 @@ function isBaselineV1(x: unknown): x is BaselineV1 {
 
 export function saveBaseline(baseline: BaselineV1): void {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(BASELINE_STORAGE_KEY, JSON.stringify(baseline));
+  safeJsonWrite(BASELINE_STORAGE_KEY, baseline);
 }
 
 export function loadBaseline(): BaselineV1 | null {
   if (typeof window === "undefined") return null;
-  const parsed = safeParse<unknown>(window.localStorage.getItem(BASELINE_STORAGE_KEY));
+  const parsed = safeJsonRead<unknown>(BASELINE_STORAGE_KEY);
   if (!parsed) return null;
   return isBaselineV1(parsed) ? parsed : null;
 }
