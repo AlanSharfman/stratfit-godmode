@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 import { useUIStore } from "@/state/uiStore";
 import { useShallow } from "zustand/react/shallow";
+import styles from "./MainNav.module.css";
 
 function MountainStatusPill() {
   const { mountainMode, mountainRenderer, mountainDprCap, lastReason } = useUIStore(
@@ -100,7 +101,7 @@ function MountainFallbackToast() {
       : "Frame-rate dropped. Switched to SAFE (2.5D) to prevent stutter/overheating.";
 
   return (
-    <div className="fixed bottom-5 right-5 z-[9999] w-[360px] rounded-2xl border border-white/10 bg-black/90 backdrop-blur-xl shadow-[0_18px_70px_rgba(0,0,0,0.55)] overflow-hidden">
+    <div className="fixed bottom-5 right-5 z-9999 w-[360px] rounded-2xl border border-white/10 bg-black/90 backdrop-blur-xl shadow-[0_18px_70px_rgba(0,0,0,0.55)] overflow-hidden">
       <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
         <div className="text-xs font-mono text-white/80">{title}</div>
         <button
@@ -180,78 +181,18 @@ interface MainNavProps {
 // NAV CONFIGURATION
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// Execution Mode: the top nav must present ONLY these 7 tabs in the center.
+// We keep routes/IDs compatible with the rest of the app by using existing IDs
+// (e.g. "initiate" alias is handled by App.tsx).
 const primaryNav: NavItem[] = [
-  {
-    id: 'onboard',
-    label: 'ONBOARD',
-    href: '/onboard',
-    icon: <Compass className="w-4 h-4" />,
-    description: 'Structural baseline inputs',
-  },
-  {
-    id: 'terrain',
-    label: 'BASELINE',
-    href: '/terrain',
-    icon: <Mountain className="w-4 h-4" />,
-    description: 'Baseline reality visualization',
-  },
-  {
-    id: 'strategy',
-    label: 'STRATEGY',
-    href: '/strategy',
-    icon: <Target className="w-4 h-4" />,
-    description: 'Scenario builder & intent declaration',
-  },
-  {
-    id: 'simulate',
-    label: 'SIMULATE',
-    href: '/simulate',
-    icon: <Zap className="w-4 h-4" />,
-    description: 'Monte Carlo execution',
-  },
-  {
-    id: 'stress',
-    label: 'STRESS',
-    href: '/stress',
-    icon: <AlertTriangle className="w-4 h-4" />,
-    description: 'Fragility testing & shock analysis',
-  },
-  {
-    id: 'sensitivity',
-    label: 'SENSITIVITY',
-    href: '/sensitivity',
-    icon: <BarChart3 className="w-4 h-4" />,
-    description: 'Driver ranking & elasticity',
-  },
-  {
-    id: 'compare',
-    label: 'COMPARE',
-    href: '/compare',
-    icon: <GitCompare className="w-4 h-4" />,
-    description: 'Capital allocation view',
-  },
-  {
-    id: 'risk',
-    label: 'RISK',
-    href: '/risk',
-    icon: <Shield className="w-4 h-4" />,
-    description: 'Exposure mapping & decomposition',
-  },
-  {
-    id: 'valuation',
-    label: 'VALUATION',
-    href: '/valuation',
-    icon: <DollarSign className="w-4 h-4" />,
-    description: 'Enterprise value framing',
-  },
-  {
-    id: 'decision',
-    label: 'DECISION',
-    href: '/decision',
-    icon: <CheckCircle className="w-4 h-4" />,
-    description: 'Formal decision output',
-  },
-]
+  { id: "onboard", label: "INITIATE", href: "/onboard", icon: <Compass className="w-4 h-4" />, description: "Baseline inputs" },
+  { id: "terrain", label: "TERRAIN", href: "/terrain", icon: <Mountain className="w-4 h-4" />, description: "Terrain view" },
+  { id: "strategy", label: "STRATEGIC STUDIO", href: "/strategy", icon: <Target className="w-4 h-4" />, description: "Scenario builder" },
+  { id: "compare", label: "COMPARE", href: "/compare", icon: <GitCompare className="w-4 h-4" />, description: "Compare" },
+  { id: "risk", label: "RISK", href: "/risk", icon: <Shield className="w-4 h-4" />, description: "Risk" },
+  { id: "valuation", label: "VALUATION", href: "/valuation", icon: <DollarSign className="w-4 h-4" />, description: "Valuation" },
+  { id: "decision", label: "DECISION", href: "/decision", icon: <CheckCircle className="w-4 h-4" />, description: "Decision" },
+];
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // LOGO
@@ -262,7 +203,7 @@ function Logo() {
     <Link to="/" className="flex items-center gap-3 group">
       <div className="relative w-8 h-8">
         {/* Mountain icon with glow */}
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-violet-600 rounded-lg opacity-20 group-hover:opacity-30 transition-opacity" />
+        <div className="absolute inset-0 bg-linear-to-br from-cyan-500 to-violet-600 rounded-lg opacity-20 group-hover:opacity-30 transition-opacity" />
         <div className="absolute inset-0 flex items-center justify-center">
           <Mountain className="w-5 h-5 text-cyan-400" />
         </div>
@@ -280,7 +221,7 @@ function LogoButton({ onClick }: { onClick?: () => void }) {
     <button type="button" onClick={onClick} className="flex items-center gap-3 group">
       <div className="relative w-8 h-8">
         {/* Mountain icon with glow */}
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-violet-600 rounded-lg opacity-20 group-hover:opacity-30 transition-opacity" />
+        <div className="absolute inset-0 bg-linear-to-br from-cyan-500 to-violet-600 rounded-lg opacity-20 group-hover:opacity-30 transition-opacity" />
         <div className="absolute inset-0 flex items-center justify-center">
           <Mountain className="w-5 h-5 text-cyan-400" />
         </div>
@@ -321,26 +262,10 @@ function PrimaryNavItem({ item, isActive }: { item: NavItem; isActive: boolean }
   return (
     <Link
       to={item.href}
-      className={`relative flex items-center gap-2 px-4 py-2.5 rounded-lg font-mono text-xs tracking-wide transition-all group ${
-        isActive
-          ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-          : 'text-white/50 hover:text-white hover:bg-white/5'
-      }`}
+      className={`${styles.tab} ${isActive ? styles.tabActive : ""}`}
+      aria-current={isActive ? "page" : undefined}
     >
-      <span className={`transition-colors ${isActive ? 'text-cyan-400' : 'text-white/40 group-hover:text-white/70'}`}>
-        {item.icon}
-      </span>
       <span>{item.label}</span>
-      
-      {/* Hover tooltip */}
-      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-1.5 bg-slate-900 border border-white/10 rounded-lg text-[10px] text-white/70 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-        {item.description}
-      </div>
-      
-      {/* Active indicator line */}
-      {isActive && (
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-cyan-400 rounded-full" />
-      )}
     </Link>
   )
 }
@@ -358,26 +283,10 @@ function PrimaryNavButton({
     <button
       type="button"
       onClick={onClick}
-      className={`relative flex items-center gap-2 px-4 py-2.5 rounded-lg font-mono text-xs tracking-wide transition-all group ${
-        isActive
-          ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-          : 'text-white/50 hover:text-white hover:bg-white/5'
-      }`}
+      className={`${styles.tab} ${isActive ? styles.tabActive : ""}`}
+      aria-current={isActive ? "page" : undefined}
     >
-      <span className={`transition-colors ${isActive ? 'text-cyan-400' : 'text-white/40 group-hover:text-white/70'}`}>
-        {item.icon}
-      </span>
       <span>{item.label}</span>
-
-      {/* Hover tooltip */}
-      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-1.5 bg-slate-900 border border-white/10 rounded-lg text-[10px] text-white/70 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-        {item.description}
-      </div>
-
-      {/* Active indicator line */}
-      {isActive && (
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-cyan-400 rounded-full" />
-      )}
     </button>
   )
 }
@@ -386,28 +295,27 @@ function PrimaryNavButton({
 // UTILITY BUTTON
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function UtilityButton({ 
-  icon, 
-  label, 
+function UtilityButton({
+  icon,
+  label,
   onClick,
-  variant = 'default' 
-}: { 
-  icon: React.ReactNode
-  label: string
-  onClick?: () => void
-  variant?: 'default' | 'primary'
+  variant = "default",
+  className = "",
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick?: () => void;
+  variant?: "default" | "primary";
+  className?: string;
 }) {
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-mono transition-all ${
-        variant === 'primary'
-          ? 'bg-violet-500/20 border border-violet-500/30 text-violet-300 hover:bg-violet-500/30'
-          : 'text-white/40 hover:text-white hover:bg-white/5'
-      }`}
+      className={`${variant === "primary" ? styles.shareButton : styles.systemButton} ${className}`}
+      aria-label={label}
     >
-      {icon}
-      <span className="hidden xl:inline">{label}</span>
+      <span aria-hidden="true" className="inline-flex">{icon}</span>
+      <span>{label}</span>
     </button>
   )
 }
@@ -485,10 +393,10 @@ function RouterMainNav({
 
   return (
     <>
-      <header className={`h-16 bg-black/80 backdrop-blur-xl border-b border-white/10 ${className}`}>
-        <div className="h-full px-6 flex items-center justify-between">
+      <header className={`${styles.header} ${className}`}>
+        <div className={styles.inner}>
           {/* Left: Logo + Active Scenario */}
-          <div className="flex items-center gap-6">
+          <div className={styles.left}>
             <Logo />
             
             {activeScenario && (
@@ -502,37 +410,35 @@ function RouterMainNav({
             )}
           </div>
 
-        {/* Center: Primary Navigation */}
-        <nav className="flex items-center gap-1">
-          {primaryNav.map((item) => (
-            <PrimaryNavItem
-              key={item.id}
-              item={item}
-              isActive={activeItem === item.id}
-            />
-          ))}
-        </nav>
+          {/* Center: Primary Navigation (7 pill tabs) */}
+          <div className={styles.center}>
+            <nav className={styles.tabs} aria-label="Primary navigation">
+              {primaryNav.map((item) => (
+                <PrimaryNavItem key={item.id} item={item} isActive={activeItem === item.id} />
+              ))}
+            </nav>
+          </div>
 
-        {/* Right: Utility Actions */}
-        <div className="flex items-center gap-2 relative">
-          {/* Renderer safety control */}
-          <div className="relative" ref={renderMenuRef}>
-            <div className="flex items-center gap-2">
-            <UtilityButton
-              icon={<MonitorPlay className="w-4 h-4" />}
-              label={
-                mountainMode === "auto"
-                  ? "AUTO"
-                  : mountainMode === "safe"
-                    ? "SAFE"
-                    : mountainMode === "locked"
-                      ? "LOCK"
-                      : "3D"
-              }
-              onClick={() => setShowRenderMenu((v) => !v)}
-            />
-            <MountainStatusPill />
-            </div>
+          {/* Right: Utility Actions */}
+          <div className={styles.right}>
+            {/* Renderer safety control (kept; styled as system button) */}
+            <div className="relative" ref={renderMenuRef}>
+              <div className="flex items-center gap-2">
+                <UtilityButton
+                  icon={<MonitorPlay className="w-4 h-4" />}
+                  label={
+                    mountainMode === "auto"
+                      ? "AUTO"
+                      : mountainMode === "safe"
+                        ? "SAFE"
+                        : mountainMode === "locked"
+                          ? "LOCK"
+                          : "3D"
+                  }
+                  onClick={() => setShowRenderMenu((v) => !v)}
+                />
+                <MountainStatusPill />
+              </div>
             {showRenderMenu && (
               <div className="absolute right-0 mt-2 w-56 rounded-xl border border-white/10 bg-black/95 backdrop-blur-xl shadow-[0_12px_40px_rgba(0,0,0,0.55)] z-50 overflow-hidden">
                 <button
@@ -598,34 +504,20 @@ function RouterMainNav({
             )}
           </div>
 
-          <UtilityButton
-            icon={<Save className="w-4 h-4" />}
-            label="SAVE"
-            onClick={onSave}
-          />
-          <UtilityButton
-            icon={<FolderOpen className="w-4 h-4" />}
-            label="LOAD"
-            onClick={onLoad}
-          />
-          <UtilityButton
-            icon={<Download className="w-4 h-4" />}
-            label="EXPORT"
-            onClick={onExport}
-          />
-          <UtilityButton
-            icon={<Share2 className="w-4 h-4" />}
-            label="SHARE"
-            onClick={onShare}
-            variant="primary"
-          />
-          
-          <div className="w-px h-6 bg-white/10 mx-2" />
-          
-          <button className="w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-white hover:bg-white/5 transition-all">
-            <HelpCircle className="w-4 h-4" />
-          </button>
-        </div>
+            {/* SAVE / LOAD / EXPORT grouped */}
+            <div className={styles.utilityGroup} role="group" aria-label="Utility actions">
+              <UtilityButton className={styles.utilityGroupButton} icon={<Save className="w-4 h-4" />} label="SAVE" onClick={onSave} />
+              <UtilityButton className={styles.utilityGroupButton} icon={<FolderOpen className="w-4 h-4" />} label="LOAD" onClick={onLoad} />
+              <UtilityButton className={styles.utilityGroupButton} icon={<Download className="w-4 h-4" />} label="EXPORT" onClick={onExport} />
+            </div>
+
+            {/* Primary SHARE */}
+            <UtilityButton icon={<Share2 className="w-4 h-4" />} label="SHARE" onClick={onShare} variant="primary" />
+
+            <button type="button" className={styles.helpIcon} aria-label="Help">
+              <HelpCircle className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </header>
       <MountainFallbackToast />
@@ -681,10 +573,10 @@ function ControlledMainNav({
 
   return (
     <>
-      <header className={`h-16 bg-black/80 backdrop-blur-xl border-b border-white/10 ${className}`}>
-        <div className="h-full px-6 flex items-center justify-between">
+      <header className={`${styles.header} ${className}`}>
+        <div className={styles.inner}>
           {/* Left: Logo + Active Scenario */}
-          <div className="flex items-center gap-6">
+          <div className={styles.left}>
             <LogoButton onClick={() => onNavigate?.('terrain')} />
 
           {activeScenario && (
@@ -698,38 +590,35 @@ function ControlledMainNav({
           )}
         </div>
 
-        {/* Center: Primary Navigation */}
-        <nav className="flex items-center gap-1">
-          {primaryNav.map((item) => (
-            <PrimaryNavButton
-              key={item.id}
-              item={item}
-              isActive={activeItem === item.id}
-              onClick={() => onNavigate?.(item.id)}
-            />
-          ))}
-        </nav>
+          {/* Center: Primary Navigation (7 pill tabs) */}
+          <div className={styles.center}>
+            <nav className={styles.tabs} aria-label="Primary navigation">
+              {primaryNav.map((item) => (
+                <PrimaryNavButton key={item.id} item={item} isActive={activeItem === item.id} onClick={() => onNavigate?.(item.id)} />
+              ))}
+            </nav>
+          </div>
 
-        {/* Right: Utility Actions */}
-        <div className="flex items-center gap-2 relative">
-          {/* Renderer safety control */}
-          <div className="relative" ref={renderMenuRef}>
-            <div className="flex items-center gap-2">
-            <UtilityButton
-              icon={<MonitorPlay className="w-4 h-4" />}
-              label={
-                mountainMode === "auto"
-                  ? "AUTO"
-                  : mountainMode === "safe"
-                    ? "SAFE"
-                    : mountainMode === "locked"
-                      ? "LOCK"
-                      : "3D"
-              }
-              onClick={() => setShowRenderMenu((v) => !v)}
-            />
-            <MountainStatusPill />
-            </div>
+          {/* Right: Utility Actions */}
+          <div className={styles.right}>
+            {/* Renderer safety control (kept; styled as system button) */}
+            <div className="relative" ref={renderMenuRef}>
+              <div className="flex items-center gap-2">
+                <UtilityButton
+                  icon={<MonitorPlay className="w-4 h-4" />}
+                  label={
+                    mountainMode === "auto"
+                      ? "AUTO"
+                      : mountainMode === "safe"
+                        ? "SAFE"
+                        : mountainMode === "locked"
+                          ? "LOCK"
+                          : "3D"
+                  }
+                  onClick={() => setShowRenderMenu((v) => !v)}
+                />
+                <MountainStatusPill />
+              </div>
             {showRenderMenu && (
               <div className="absolute right-0 mt-2 w-56 rounded-xl border border-white/10 bg-black/95 backdrop-blur-xl shadow-[0_12px_40px_rgba(0,0,0,0.55)] z-50 overflow-hidden">
                 <button
@@ -795,16 +684,20 @@ function ControlledMainNav({
             )}
           </div>
 
-          <UtilityButton icon={<Save className="w-4 h-4" />} label="SAVE" onClick={onSave} />
-          <UtilityButton icon={<FolderOpen className="w-4 h-4" />} label="LOAD" onClick={onLoad} />
-          <UtilityButton icon={<Download className="w-4 h-4" />} label="EXPORT" onClick={onExport} />
-          <UtilityButton
-            icon={<Share2 className="w-4 h-4" />}
-            label="SHARE"
-            onClick={onShare}
-            variant="primary"
-          />
-        </div>
+            {/* SAVE / LOAD / EXPORT grouped */}
+            <div className={styles.utilityGroup} role="group" aria-label="Utility actions">
+              <UtilityButton className={styles.utilityGroupButton} icon={<Save className="w-4 h-4" />} label="SAVE" onClick={onSave} />
+              <UtilityButton className={styles.utilityGroupButton} icon={<FolderOpen className="w-4 h-4" />} label="LOAD" onClick={onLoad} />
+              <UtilityButton className={styles.utilityGroupButton} icon={<Download className="w-4 h-4" />} label="EXPORT" onClick={onExport} />
+            </div>
+
+            {/* Primary SHARE */}
+            <UtilityButton icon={<Share2 className="w-4 h-4" />} label="SHARE" onClick={onShare} variant="primary" />
+
+            <button type="button" className={styles.helpIcon} aria-label="Help">
+              <HelpCircle className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </header>
       <MountainFallbackToast />
