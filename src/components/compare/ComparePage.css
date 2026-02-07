@@ -13,6 +13,130 @@
   font-family: "Inter", -apple-system, sans-serif;
 }
 
+/* ─── PASS 4D: Outcome + Top Deltas Summary ───────────────────────────────── */
+.sf-compare-summary {
+  width: min(1100px, calc(100% - 48px));
+  margin: 14px auto 0;
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 12px;
+  animation: sf-compare-rise-in 220ms ease-out both;
+}
+
+@keyframes sf-compare-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0px);
+  }
+}
+
+.sf-compare-card {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 10px 30px rgba(0, 0, 0, 0.45);
+  padding: 14px 16px;
+}
+
+.sf-compare-card-kicker {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.42);
+  margin-bottom: 8px;
+}
+
+.sf-compare-headline {
+  font-size: 16px;
+  font-weight: 850;
+  line-height: 1.25;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+.sf-compare-delta-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sf-compare-delta-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sf-compare-delta-row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.sf-compare-delta-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.sf-compare-delta-values {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.sf-compare-delta-base {
+  font-size: 12px;
+  font-weight: 650;
+  color: rgba(255, 255, 255, 0.40);
+}
+
+.sf-compare-delta-scn {
+  font-size: 12px;
+  font-weight: 750;
+  color: rgba(224, 247, 255, 0.95);
+}
+
+.sf-compare-delta-delta {
+  font-size: 12px;
+  font-weight: 850;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sf-compare-delta-delta--up {
+  color: rgba(224, 247, 255, 0.95);
+  border-color: rgba(34, 211, 238, 0.24);
+  background: rgba(34, 211, 238, 0.10);
+}
+
+.sf-compare-delta-delta--down {
+  color: rgba(255, 255, 255, 0.88);
+  border-color: rgba(239, 68, 68, 0.22);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.sf-compare-delta-delta--flat {
+  color: rgba(255, 255, 255, 0.60);
+}
+
+@media (max-width: 980px) {
+  .sf-compare-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ─── Header ─────────────────────────────────────────────────────────────── */
 .sf-compare-header {
   display: flex;

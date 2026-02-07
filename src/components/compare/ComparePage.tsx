@@ -10,6 +10,7 @@ import { useScenarioStore, type ScenarioId } from "@/state/scenarioStore";
 import { useEngineStore } from "@/state/engineStore";
 import { getCompareSelection } from "@/compare/selection";
 import { loadScenarioResult } from "@/strategy/scenarioResults";
+import { computeCompareSummary } from "@/compare/summary";
 import "./ComparePage.css";
 
 const BASELINE_ID: ScenarioId = "base";
@@ -80,6 +81,13 @@ const ComparePage: React.FC = () => {
 
   // PASS 4C: read stored per-scenario simulation result (if any)
   const stored = useMemo(() => loadScenarioResult(String(sid)), [sid]);
+  const storedBaseline = useMemo(() => loadScenarioResult(String(BASELINE_ID)), []);
+
+  const summary = useMemo(() => {
+    if (sid === "base") return null;
+    if (!stored) return null;
+    return computeCompareSummary({ baselineResult: storedBaseline, scenarioResult: stored });
+  }, [sid, stored, storedBaseline]);
 
   const baselineForces = useMemo(() => engineResultToMountainForces(bResult), [bResult]);
   const activeForces = useMemo(() => engineResultToMountainForces(aResult), [aResult]);
@@ -160,6 +168,44 @@ const ComparePage: React.FC = () => {
         <div className="mx-auto mt-3 max-w-[1100px] rounded-xl border border-cyan-300/20 bg-cyan-400/8 px-4 py-3 text-[12px] text-cyan-50/90">
           Stored simulation loaded.
         </div>
+      ) : null}
+
+      {/* PASS 4D: Outcome Headline + Top Deltas (stored results only) */}
+      {summary ? (
+        <section className="sf-compare-summary">
+          <div className="sf-compare-card sf-compare-card--headline">
+            <div className="sf-compare-card-kicker">Outcome headline</div>
+            <div className="sf-compare-headline">{summary.headline}</div>
+          </div>
+
+          <div className="sf-compare-card sf-compare-card--deltas">
+            <div className="sf-compare-card-kicker">Top deltas</div>
+            <div className="sf-compare-delta-list">
+              {summary.deltas.slice(0, 5).map((d) => (
+                <div key={d.importanceRank} className="sf-compare-delta-row">
+                  <div className="sf-compare-delta-label">{d.label}</div>
+                  <div className="sf-compare-delta-values">
+                    {d.baseValue ? <span className="sf-compare-delta-base">{d.baseValue}</span> : null}
+                    <span className="sf-compare-delta-scn">{d.scenarioValue ?? "—"}</span>
+                    {d.deltaValue ? (
+                      <span
+                        className={`sf-compare-delta-delta ${
+                          d.direction === "up"
+                            ? "sf-compare-delta-delta--up"
+                            : d.direction === "down"
+                              ? "sf-compare-delta-delta--down"
+                              : "sf-compare-delta-delta--flat"
+                        }`}
+                      >
+                        {d.deltaValue}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
       ) : null}
 
       {/* ═══ MOUNTAIN OVERLAY ═══ */}
