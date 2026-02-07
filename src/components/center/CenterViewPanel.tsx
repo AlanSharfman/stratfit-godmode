@@ -30,6 +30,8 @@ import { useSimulationStore } from "@/state/simulationStore";
 import { useSavedSimulationsStore } from "@/state/savedSimulationsStore";
 import { StrategicMetrics } from "@/components/terrain/StrategicMetrics";
 import { InitiatePage } from "@/components/initiate/InitiatePage";
+import { hasBaseline } from "@/onboard/baseline";
+import { BaselineRequiredModal } from "@/components/terrain/BaselineRequiredModal";
 
 interface CenterViewPanelProps {
   view?: CenterViewId;
@@ -113,6 +115,9 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
   const [bandStyle, setBandStyle] = useState<"solid" | "wash">("solid");
   const [bandColor, setBandColor] = useState("rgba(34,211,238,0.18)");
 
+  // Terrain baseline gate (PASS 3C)
+  const [baselinePresent, setBaselinePresent] = useState<boolean>(() => hasBaseline());
+
   useEffect(() => {
     const off = onCausal((detail) => {
       setBandStyle(detail.bandStyle);
@@ -121,6 +126,20 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
     });
     return off;
   }, []);
+
+  useEffect(() => {
+    // Keep the gate deterministic but responsive (e.g. if baseline is created in another tab).
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "stratfit.baseline.v1") setBaselinePresent(hasBaseline());
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  useEffect(() => {
+    // When switching into Terrain within the SPA, re-check once.
+    if (view === "terrain") setBaselinePresent(hasBaseline());
+  }, [view]);
 
   return (
     <div className="relative flex h-full w-full flex-col rounded-xl bg-black/40 backdrop-blur-sm border border-white/5 overflow-auto">
@@ -133,6 +152,10 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
           <div className="relative h-full w-full overflow-hidden rounded-3xl border border-cyan-500/20 bg-gradient-to-b from-slate-950 via-slate-900 to-black shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08),0_0_60px_rgba(34,211,238,0.08)] flex flex-col">
             {/* Cyan accent border glow */}
             <div className="pointer-events-none absolute inset-0 rounded-3xl shadow-[inset_0_0_0_1px_rgba(34,211,238,0.2),inset_0_0_30px_rgba(34,211,238,0.05)]" />
+
+            {!baselinePresent ? (
+              <BaselineRequiredModal onGoToOnboarding={() => window.location.assign("/onboard")} />
+            ) : null}
 
             {/* Terrain header: 3 strategic metrics */}
             <div className="relative z-10 p-4 border-b border-white/10">
