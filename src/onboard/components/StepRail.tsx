@@ -17,11 +17,13 @@ export function StepRail({
   active,
   data,
   onSelect,
+  attentionSteps,
 }: {
   steps: StepDef[];
   active: OnboardStepId;
   data: OnboardingData;
   onSelect: (id: OnboardStepId) => void;
+  attentionSteps?: OnboardStepId[];
 }) {
   return (
     <aside className="sfOn-rail">
@@ -33,11 +35,12 @@ export function StepRail({
         {steps.map((s) => {
           const done = validateStep(s.id, data);
           const isActive = active === s.id;
+          const needsAttention = !done && !!attentionSteps?.includes(s.id);
           return (
             <button
               key={s.id}
               type="button"
-              className={`sfOn-railItem ${isActive ? "isActive" : ""}`}
+              className={`sfOn-railItem ${isActive ? "isActive" : ""} ${needsAttention ? "needsAttention" : ""}`}
               onClick={() => onSelect(s.id)}
             >
               <div className={`sfOn-railIcon ${done ? "isDone" : ""}`}>

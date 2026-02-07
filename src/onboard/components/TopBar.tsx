@@ -8,13 +8,15 @@ export function TopBar({
   savedPulse,
   allCoreValid,
   onContinue,
-  onInitializeTerrain,
+  onContinueToTerrain,
+  inlineMessage,
 }: {
   activeLabel: string;
   savedPulse: boolean;
   allCoreValid: boolean;
   onContinue: () => void;
-  onInitializeTerrain: () => void;
+  onContinueToTerrain: () => void;
+  inlineMessage?: string | null;
 }) {
   return (
     <div className="sfOn-topbar">
@@ -31,6 +33,8 @@ export function TopBar({
       </div>
 
       <div className="sfOn-topbarRight">
+        {inlineMessage ? <div className="sfOn-inlineMsg">{inlineMessage}</div> : null}
+
         <div className={`sfOn-saved ${savedPulse ? "isOn" : ""}`}>
           <CheckCircle2 className="sfOn-savedIcon" />
           Draft saved
@@ -47,11 +51,10 @@ export function TopBar({
         <button
           type="button"
           className="sfOn-btn sfOn-btn--primary"
-          onClick={onInitializeTerrain}
-          disabled={!allCoreValid}
-          title={allCoreValid ? "Initialize terrain baseline" : "Complete core baseline fields first"}
+          onClick={onContinueToTerrain}
+          title="Validate core baseline, save truth layer, and enter Terrain"
         >
-          Initialize Terrain
+          Continue to Terrain
         </button>
       </div>
     </div>

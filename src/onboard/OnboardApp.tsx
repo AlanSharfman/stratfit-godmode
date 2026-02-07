@@ -3,6 +3,7 @@
 
 import React, { useState } from "react";
 import type { OnboardStepId } from "./validators";
+import { validateStep } from "./validators";
 import { useOnboardDraft } from "./hooks/useOnboardDraft";
 import { useOnboardValidation } from "./hooks/useOnboardValidation";
 
@@ -15,6 +16,8 @@ import { FinancialTab } from "./tabs/FinancialTab";
 import { CapitalTab } from "./tabs/CapitalTab";
 import { OperatingTab } from "./tabs/OperatingTab";
 import { StrategicTab } from "./tabs/StrategicTab";
+import { loadOnboardDraft } from "./storage";
+import { mapOnboardDraftToBaseline, saveBaseline } from "./baseline";
 
 import "./styles/onboard.css";
 
@@ -43,6 +46,8 @@ export function OnboardApp() {
   });
 
   const { allCoreValid } = useOnboardValidation(STEPS, data);
+  const [inlineMsg, setInlineMsg] = useState<string | null>(null);
+  const [attentionSteps, setAttentionSteps] = useState<OnboardStepId[] | undefined>(undefined);
 
   const goNext = () => {
     const idx = STEPS.findIndex((s) => s.id === active);
@@ -50,12 +55,24 @@ export function OnboardApp() {
     setActive(next);
   };
 
-  const onInitializeTerrain = () => {
-    // Pass 1 does not wire terrain mapping. This handler exists for future gate integration.
-    // We intentionally keep it silent and non-routing.
-    if (!allCoreValid) return;
-    // Save immediately so the subsequent gate has the latest snapshot.
+  const onContinueToTerrain = () => {
+    setInlineMsg(null);
+
+    if (!allCoreValid) {
+      const missing = STEPS.filter((s) => !validateStep(s.id, data)).map((s) => s.id);
+      setAttentionSteps(missing);
+      setInlineMsg("Core baseline is incomplete. Complete the highlighted steps, then continue to Terrain.");
+      return;
+    }
+
+    // Persist latest draft snapshot first (debounce-safe)
     flush();
+
+    // Deterministic: load the stored draft snapshot, map to baseline, persist, then redirect.
+    const draft = loadOnboardDraft();
+    const baseline = mapOnboardDraftToBaseline(draft);
+    saveBaseline(baseline);
+    window.location.assign("/?view=terrain");
   };
 
   return (
@@ -66,11 +83,21 @@ export function OnboardApp() {
           savedPulse={savedPulse}
           allCoreValid={allCoreValid}
           onContinue={goNext}
-          onInitializeTerrain={onInitializeTerrain}
+          onContinueToTerrain={onContinueToTerrain}
+          inlineMessage={inlineMsg}
         />
 
         <div className="sfOn-body">
-          <StepRail steps={STEPS} active={active} data={data} onSelect={setActive} />
+          <StepRail
+            steps={STEPS}
+            active={active}
+            data={data}
+            onSelect={(id) => {
+              setActive(id);
+              if (inlineMsg) setInlineMsg(null);
+            }}
+            attentionSteps={attentionSteps}
+          />
 
           <div className="sfOn-center">
             {active === "company" && <CompanyTab data={data} onChange={patch} />}

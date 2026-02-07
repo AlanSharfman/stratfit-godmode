@@ -41,7 +41,9 @@ export function validateFinancial(d: OnboardingData): boolean {
     isNumberish(f.arr) &&
     isNumberish(f.growthRate) &&
     isNumberish(f.grossMargin) &&
+    isNumberish(f.revenueConcentration) &&
     isNumberish(f.monthlyBurn) &&
+    isNumberish(f.payroll) &&
     isNumberish(f.headcount) &&
     isNumberish(f.cashOnHand)
   );
@@ -49,7 +51,13 @@ export function validateFinancial(d: OnboardingData): boolean {
 
 export function validateCapital(d: OnboardingData): boolean {
   const c = d.capitalStructureCore;
-  return isNumberish(c.totalDebt) && isNumberish(c.interestRate) && isNumberish(c.monthlyDebtService);
+  return (
+    isNumberish(c.totalDebt) &&
+    isNumberish(c.interestRate) &&
+    isNumberish(c.monthlyDebtService) &&
+    isNumberish(c.lastRaiseAmount) &&
+    hasText(c.lastRaiseDate)
+  );
 }
 
 export function validateOperating(d: OnboardingData): boolean {
