@@ -2,7 +2,7 @@
 // STRATFIT — Scenario Delta Engine (God Mode)
 // Purpose: Prove STRATFIT is a scenario delta engine, not a dashboard.
 
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { ScenarioMountain } from "@/components/mountain/ScenarioMountain";
 import { engineResultToMountainForces } from "@/logic/mountainForces";
@@ -11,6 +11,7 @@ import { useEngineStore } from "@/state/engineStore";
 import { getCompareSelection } from "@/compare/selection";
 import { loadScenarioResult } from "@/strategy/scenarioResults";
 import { computeCompareSummary } from "@/compare/summary";
+import { useCountUpNumber } from "@/hooks/useCountUpNumber";
 import "./ComparePage.css";
 
 const BASELINE_ID: ScenarioId = "base";
@@ -46,11 +47,26 @@ function scenarioLabel(sid: ScenarioId): string {
   return sid === "base" ? "BASE" : sid === "upside" ? "UPSIDE" : sid === "downside" ? "DOWNSIDE" : "STRESS";
 }
 
+type DeltaSpotlightMetric = "survival" | "runway" | "outcome" | "tail" | "volatility";
+
+function metricFromDeltaKey(key: string): DeltaSpotlightMetric | null {
+  const k = String(key ?? "").toLowerCase();
+  if (!k) return null;
+  if (k.includes("survival")) return "survival";
+  if (k.includes("tail")) return "tail";
+  if (k.includes("runway")) return "runway";
+  if (k.includes("volatility")) return "volatility";
+  if (k.includes("arr") || k.includes("outcome") || k.includes("enterprise")) return "outcome";
+  return null;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const ComparePage: React.FC = () => {
+  const [hoveredDeltaKey, setHoveredDeltaKey] = useState<string | null>(null);
+
   const { activeScenarioId, engineResults, hoveredKpiIndex } = useScenarioStore(
     useShallow((s) => ({
       activeScenarioId: s.activeScenarioId,
@@ -95,6 +111,16 @@ const ComparePage: React.FC = () => {
   const bk = bResult?.kpis;
   const ak = aResult?.kpis;
 
+  const hoveredMetric = useMemo(() => {
+    if (!hoveredDeltaKey) return null;
+    return metricFromDeltaKey(hoveredDeltaKey);
+  }, [hoveredDeltaKey]);
+
+  const spotlightClass = (metric: DeltaSpotlightMetric) => {
+    if (!hoveredMetric) return "";
+    return hoveredMetric === metric ? "sf-compare-spotlight" : "sf-compare-dim";
+  };
+
   // ── Extract raw values ──────────────────────────────────────────────────────
   const rBase = bk?.runway?.value ?? 0;
   const rActive = ak?.runway?.value ?? 0;
@@ -105,19 +131,27 @@ const ComparePage: React.FC = () => {
   const volBase = (bk?.growthStress as any)?.value ?? 0.5;
   const volActive = (ak?.growthStress as any)?.value ?? 0.5;
 
+  // PASS 7B2: count-up animations (UI-only, stable)
+  // Animate the delta telemetry values when scenario changes / results load.
+  const dRunwayMo = rActive - rBase;
+  const dOutcome = (evActive - evBase) / 10;
+  const dTailRisk = riskActive - riskBase;
+  const dVolPct = (volActive - volBase) * 100;
+
+  const dRunwayMoAnim = useCountUpNumber(dRunwayMo, { durationMs: 520, decimals: Math.abs(dRunwayMo) < 10 ? 1 : 0 });
+  const dOutcomeAnim = useCountUpNumber(dOutcome, { durationMs: 520, decimals: 0 });
+  const dTailRiskAnim = useCountUpNumber(dTailRisk, { durationMs: 520, decimals: Math.abs(dTailRisk) < 10 ? 1 : 0 });
+  const dVolPctAnim = useCountUpNumber(dVolPct, { durationMs: 520, decimals: Math.abs(dVolPct) < 10 ? 1 : 0 });
+
   // ── Top 4 deltas ────────────────────────────────────────────────────────────
   const deltas = useMemo(() => {
-    const dSurv = rActive - rBase;
-    const dEv = evActive - evBase;
-    const dRisk = riskActive - riskBase;
-    const dVol = (volActive - volBase) * 100;
     return [
-      { label: "Δ SURVIVAL", value: signed(dSurv, " mo"), tone: tone(dSurv) },
-      { label: "Δ MEDIAN OUTCOME", value: signedMoney(dEv / 10), tone: tone(dEv) },
-      { label: "Δ TAIL RISK", value: signed(dRisk, "", true), tone: tone(dRisk, true) },
-      { label: "Δ VOLATILITY", value: signed(dVol, "%", true), tone: tone(dVol, true) },
+      { label: "Δ SURVIVAL", metric: "survival" as const, value: signed(dRunwayMoAnim, " mo"), tone: tone(dRunwayMo) },
+      { label: "Δ MEDIAN OUTCOME", metric: "outcome" as const, value: signedMoney(dOutcomeAnim), tone: tone(evActive - evBase) },
+      { label: "Δ TAIL RISK", metric: "tail" as const, value: signed(dTailRiskAnim, "", true), tone: tone(dTailRisk, true) },
+      { label: "Δ VOLATILITY", metric: "volatility" as const, value: signed(dVolPctAnim, "%", true), tone: tone(dVolPct, true) },
     ];
-  }, [rBase, rActive, evBase, evActive, riskBase, riskActive, volBase, volActive]);
+  }, [dRunwayMo, dRunwayMoAnim, dOutcomeAnim, dTailRisk, dTailRiskAnim, dVolPct, dVolPctAnim, evActive, evBase]);
 
   // ── Structural breakdown ────────────────────────────────────────────────────
   const rows = useMemo(() => {
@@ -182,7 +216,14 @@ const ComparePage: React.FC = () => {
             <div className="sf-compare-card-kicker">Top deltas</div>
             <div className="sf-compare-delta-list">
               {summary.deltas.slice(0, 5).map((d) => (
-                <div key={d.importanceRank} className="sf-compare-delta-row">
+                <div
+                  key={d.importanceRank}
+                  className={`sf-compare-delta-row sf-compare-delta-row--hoverable ${
+                    hoveredDeltaKey === d.label ? "sf-compare-delta-row--hovered" : ""
+                  }`}
+                  onMouseEnter={() => setHoveredDeltaKey(d.label)}
+                  onMouseLeave={() => setHoveredDeltaKey(null)}
+                >
                   <div className="sf-compare-delta-label">{d.label}</div>
                   <div className="sf-compare-delta-values">
                     {d.baseValue ? <span className="sf-compare-delta-base">{d.baseValue}</span> : null}
@@ -209,7 +250,7 @@ const ComparePage: React.FC = () => {
       ) : null}
 
       {/* ═══ MOUNTAIN OVERLAY ═══ */}
-      <section className="sf-compare-mountains">
+      <section className={`sf-compare-mountains ${hoveredDeltaKey ? "sf-compare-mountains--tint" : ""}`}>
         <div className="sf-compare-mountain-layer sf-compare-mountain-layer--ghost">
           <ScenarioMountain
             scenario={BASELINE_ID}
@@ -237,7 +278,7 @@ const ComparePage: React.FC = () => {
       {/* ═══ 4 DELTA CARDS ═══ */}
       <section className="sf-compare-delta-strip">
         {deltas.map((d) => (
-          <div key={d.label} className={`sf-delta-cell sf-delta-cell--${d.tone}`}>
+          <div key={d.label} className={`sf-delta-cell sf-delta-cell--${d.tone} ${spotlightClass(d.metric)}`}>
             <div className="sf-delta-cell-label">{d.label}</div>
             <div className="sf-delta-cell-value">{d.value}</div>
           </div>
