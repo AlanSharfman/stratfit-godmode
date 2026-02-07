@@ -56,16 +56,39 @@ export default function InitializeBaselinePage({ onExit }: { onExit: () => void 
   const lockedView = Boolean(baselineLocked && baseline);
   const view = lockedView && baseline ? baseline : draft;
 
-  // Lightweight HUD derived metrics (safe + deterministic)
+  // Derived metrics (safe + deterministic)
   const cash = Number(view?.metrics?.cashOnHand ?? 0);
   const burn = Math.max(0, Number(view?.metrics?.monthlyBurn ?? 0));
-  const runwayMonths = burn > 0 ? cash / burn : 0;
+
+  const arr = Math.max(0, Number(view?.metrics?.currentARR ?? 0));
+  const mrr = arr / 12;
+
+  const monthlyGrowth = Math.max(0, Number(view?.metrics?.monthlyGrowthPct ?? 0));
+  const monthlyChurn = Math.max(0, Number(view?.metrics?.monthlyChurnPct ?? 0));
+  const nrr = Math.max(0, Number(view?.metrics?.nrrPct ?? 100));
+
+  const headcount = Math.max(0, Number(view?.operating?.headcount ?? 0));
+  const avgFullyLoadedCostAnnual = Math.max(
+    0,
+    Number(view?.operating?.avgFullyLoadedCostAnnual ?? 0)
+  );
+  const smMonthly = Math.max(0, Number(view?.operating?.smMonthly ?? 0));
+  const rndMonthly = Math.max(0, Number(view?.operating?.rndMonthly ?? 0));
+  const gaMonthly = Math.max(0, Number(view?.operating?.gaMonthly ?? 0));
+
+  const payrollMonthly = (headcount * avgFullyLoadedCostAnnual) / 12;
+  const structuralBurn = payrollMonthly + smMonthly + rndMonthly + gaMonthly;
+  const netBurn = burn + structuralBurn;
+
+  const runwayMonths = netBurn > 0 ? cash / netBurn : 0;
+
   const burnMultiple = (() => {
-    const arr = Math.max(0, Number(view?.metrics?.currentARR ?? 0));
-    const mrr = arr / 12;
-    if (mrr <= 0) return 0;
-    return burn / mrr;
+    const growthAdjustedRevenue = mrr * (1 + monthlyGrowth / 100) * (1 - monthlyChurn / 100);
+    if (growthAdjustedRevenue <= 0) return 0;
+    return netBurn / growthAdjustedRevenue;
   })();
+
+  const survivalProbability = clamp(runwayMonths * 6 + (nrr / 100) * 10 - burnMultiple * 5, 0, 100);
 
   const canLock = useMemo(() => {
     if (lockedView) return true;
@@ -75,7 +98,11 @@ export default function InitializeBaselinePage({ onExit }: { onExit: () => void 
       Number(draft.metrics.cashOnHand ?? 0) > 0 ||
       Number(draft.metrics.monthlyBurn ?? 0) > 0 ||
       Number(draft.metrics.currentARR ?? 0) > 0 ||
-      Number(draft.operating.headcount ?? 0) > 0;
+      Number(draft.operating.headcount ?? 0) > 0 ||
+      Number(draft.operating.avgFullyLoadedCostAnnual ?? 0) > 0 ||
+      Number(draft.operating.smMonthly ?? 0) > 0 ||
+      Number(draft.operating.rndMonthly ?? 0) > 0 ||
+      Number(draft.operating.gaMonthly ?? 0) > 0;
 
     return Boolean(companyName && currency && anySignal);
   }, [draft, lockedView]);
@@ -196,6 +223,14 @@ export default function InitializeBaselinePage({ onExit }: { onExit: () => void 
                 <span className={styles.chipLabel}>Burn Multiple</span>
                 <span className={styles.chipValue}>{burnMultiple > 0 ? burnMultiple.toFixed(2) : "—"}x</span>
               </div>
+              <div className={styles.chip}>
+                <span className={styles.chipLabel}>Net Burn</span>
+                <span className={styles.chipValue}>{netBurn > 0 ? fmt(Math.round(netBurn)) : "—"}</span>
+              </div>
+              <div className={styles.chip}>
+                <span className={styles.chipLabel}>Survival</span>
+                <span className={styles.chipValue}>{survivalProbability > 0 ? `${Math.round(survivalProbability)}%` : "—"}</span>
+              </div>
               <div className={`${styles.chip} ${styles.chipGold}`}>
                 <span className={styles.chipLabel}>Audit Mode</span>
                 <span className={styles.chipValue}>{lockedView ? "ON" : "DRAFT"}</span>
@@ -293,6 +328,48 @@ export default function InitializeBaselinePage({ onExit }: { onExit: () => void 
                     placeholder="e.g. 25"
                   />
                 </Field>
+
+                <Field label="Monthly Growth % (optional)">
+                  <input
+                    className={styles.input}
+                    value={String(view.metrics.monthlyGrowthPct ?? "")}
+                    onChange={(e) =>
+                      setDraft({
+                        metrics: { monthlyGrowthPct: e.target.value === "" ? undefined : clamp(toNumber(e.target.value), 0, 1000) },
+                      })
+                    }
+                    disabled={lockedView}
+                    placeholder="e.g. 8"
+                  />
+                </Field>
+
+                <Field label="Monthly Churn % (optional)">
+                  <input
+                    className={styles.input}
+                    value={String(view.metrics.monthlyChurnPct ?? "")}
+                    onChange={(e) =>
+                      setDraft({
+                        metrics: { monthlyChurnPct: e.target.value === "" ? undefined : clamp(toNumber(e.target.value), 0, 100) },
+                      })
+                    }
+                    disabled={lockedView}
+                    placeholder="e.g. 3"
+                  />
+                </Field>
+
+                <Field label="NRR % (optional)">
+                  <input
+                    className={styles.input}
+                    value={String(view.metrics.nrrPct ?? "")}
+                    onChange={(e) =>
+                      setDraft({
+                        metrics: { nrrPct: e.target.value === "" ? undefined : clamp(toNumber(e.target.value), 0, 300) },
+                      })
+                    }
+                    disabled={lockedView}
+                    placeholder="e.g. 110"
+                  />
+                </Field>
               </div>
             )}
 
@@ -308,9 +385,37 @@ export default function InitializeBaselinePage({ onExit }: { onExit: () => void 
                     placeholder="e.g. 18"
                   />
                 </Field>
-                <Field label="Notes (optional)">
-                  <input className={styles.input} disabled placeholder="(wire later)" />
-                </Field>
+                <MoneyField
+                  label="Avg Fully Loaded Cost (annual)"
+                  currency={view.identity.currency ?? "USD"}
+                  value={Number(view.operating.avgFullyLoadedCostAnnual ?? 0)}
+                  disabled={lockedView}
+                  onChange={(n) => setDraft({ operating: { avgFullyLoadedCostAnnual: n } })}
+                />
+
+                <MoneyField
+                  label="Sales & Marketing Spend (monthly)"
+                  currency={view.identity.currency ?? "USD"}
+                  value={Number(view.operating.smMonthly ?? 0)}
+                  disabled={lockedView}
+                  onChange={(n) => setDraft({ operating: { smMonthly: n } })}
+                />
+
+                <MoneyField
+                  label="R&D Spend (monthly)"
+                  currency={view.identity.currency ?? "USD"}
+                  value={Number(view.operating.rndMonthly ?? 0)}
+                  disabled={lockedView}
+                  onChange={(n) => setDraft({ operating: { rndMonthly: n } })}
+                />
+
+                <MoneyField
+                  label="G&A Spend (monthly)"
+                  currency={view.identity.currency ?? "USD"}
+                  value={Number(view.operating.gaMonthly ?? 0)}
+                  disabled={lockedView}
+                  onChange={(n) => setDraft({ operating: { gaMonthly: n } })}
+                />
               </div>
             )}
 

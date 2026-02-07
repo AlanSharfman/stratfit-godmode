@@ -20,10 +20,17 @@ type BaselineMetrics = {
   monthlyBurn: number;
   currentARR: number;
   arrGrowthPct?: number;
+  monthlyGrowthPct?: number;
+  monthlyChurnPct?: number;
+  nrrPct?: number;
 };
 
 type BaselineOperating = {
   headcount: number;
+  avgFullyLoadedCostAnnual?: number;
+  smMonthly?: number;
+  rndMonthly?: number;
+  gaMonthly?: number;
 };
 
 type BaselineAnswers = Record<string, { kind: string; value: unknown }>;
@@ -78,6 +85,10 @@ const DEFAULT_DRAFT: BaselineDraft = {
   },
   operating: {
     headcount: 0,
+    avgFullyLoadedCostAnnual: 0,
+    smMonthly: 0,
+    rndMonthly: 0,
+    gaMonthly: 0,
   },
   answers: {},
 };
@@ -142,9 +153,37 @@ export const useBaselineStore = create<BaselineState>()(
               d.metrics.arrGrowthPct === undefined
                 ? undefined
                 : clampNum(d.metrics.arrGrowthPct, 0, 1000),
+            monthlyGrowthPct:
+              d.metrics.monthlyGrowthPct === undefined
+                ? undefined
+                : clampNum(d.metrics.monthlyGrowthPct, 0, 1000),
+            monthlyChurnPct:
+              d.metrics.monthlyChurnPct === undefined
+                ? undefined
+                : clampNum(d.metrics.monthlyChurnPct, 0, 1000),
+            nrrPct:
+              d.metrics.nrrPct === undefined
+                ? undefined
+                : clampNum(d.metrics.nrrPct, 0, 1000),
           },
           operating: {
             headcount: clampNum(d.operating.headcount, 0, 1e9),
+            avgFullyLoadedCostAnnual:
+              d.operating.avgFullyLoadedCostAnnual === undefined
+                ? undefined
+                : clampNum(d.operating.avgFullyLoadedCostAnnual, 0, 1e15),
+            smMonthly:
+              d.operating.smMonthly === undefined
+                ? undefined
+                : clampNum(d.operating.smMonthly, 0, 1e15),
+            rndMonthly:
+              d.operating.rndMonthly === undefined
+                ? undefined
+                : clampNum(d.operating.rndMonthly, 0, 1e15),
+            gaMonthly:
+              d.operating.gaMonthly === undefined
+                ? undefined
+                : clampNum(d.operating.gaMonthly, 0, 1e15),
           },
           answers: d.answers ?? {},
         };
