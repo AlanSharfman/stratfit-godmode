@@ -20,7 +20,7 @@
 
 import React, { useMemo, useRef, useLayoutEffect, Suspense, useState, useEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, PerspectiveCamera, Grid, Line as DreiLine } from "@react-three/drei";
+import { OrbitControls, PerspectiveCamera, OrthographicCamera, Grid, Line as DreiLine } from "@react-three/drei";
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
 import { NeuralBackground } from "@/components/visuals/NeuralBackground";
 import * as THREE from "three";
@@ -29,6 +29,7 @@ import { buildPeakModel, LeverId } from "@/logic/mountainPeakModel";
 import { Scenario, ScenarioId, useScenarioStore } from "@/state/scenarioStore";
 import { useUIStore } from "@/state/uiStore";
 import { engineResultToMountainForces } from "@/logic/mountainForces";
+import { ScenarioMountain25DScene } from "@/components/mountain/ScenarioMountain25DScene";
 
 // ============================================================================
 // MODE CONFIG
@@ -898,6 +899,94 @@ export function ScenarioMountain({
   showMilestones = false,
   pathColor,
 }: ScenarioMountainProps) {
+  const { mountainMode, mountainRenderer, mountainDprCap, setMountainDprCap, setMountainFallback } = useUIStore(
+    useShallow((s) => ({
+      mountainMode: s.mountainMode,
+      mountainRenderer: s.mountainRenderer,
+      mountainDprCap: s.mountainDprCap,
+      setMountainDprCap: s.setMountainDprCap,
+      setMountainFallback: s.setMountainFallback,
+    }))
+  );
+
+  const forceSafe = mountainMode === "safe";
+  const isLocked = mountainMode === "locked";
+  const useSafeRenderer = forceSafe || mountainRenderer === "25d";
+  const safeScene = (
+    <ScenarioMountain25DScene
+      scenario={scenario}
+      dataPoints={dataPoints}
+      activeKpiIndex={activeKpiIndex}
+      activeLeverId={activeLeverId}
+      leverIntensity01={leverIntensity01}
+      className={className}
+      timelineEnabled={timelineEnabled}
+      heatmapEnabled={heatmapEnabled}
+      mode={mode}
+      glowIntensity={glowIntensity}
+      showPath={showPath}
+      showMilestones={showMilestones}
+      pathColor={pathColor}
+    />
+  );
+
+  // Track WebGL canvas element so we can attach/remove context listeners safely.
+  const [glCanvasEl, setGlCanvasEl] = useState<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const el = glCanvasEl;
+    if (!el) return;
+    const onLost = (e: Event) => {
+      (e as any)?.preventDefault?.();
+      if (mountainMode === "auto" || mountainMode === "locked") setMountainFallback("context_lost");
+    };
+    el.addEventListener("webglcontextlost", onLost as any, false);
+    return () => el.removeEventListener("webglcontextlost", onLost as any, false);
+  }, [glCanvasEl, mountainMode, setMountainFallback]);
+
+  function PerformanceGuard() {
+    const lowFpsTimeRef = useRef(0);
+    const stepRef = useRef<0 | 1 | 2>(0);
+    const goodFpsTimeRef = useRef(0);
+
+    useFrame((state, delta) => {
+      if (mountainMode !== "auto" && mountainMode !== "locked") return;
+      const dt = Math.min(0.2, Math.max(0.001, delta));
+      const fps = 1 / dt;
+
+      // If FPS stays low, degrade DPR in steps, then fall back to 2.5D.
+      if (fps < 24) lowFpsTimeRef.current += dt;
+      else lowFpsTimeRef.current = Math.max(0, lowFpsTimeRef.current - dt * 0.5);
+
+      if (fps > 48) goodFpsTimeRef.current += dt;
+      else goodFpsTimeRef.current = Math.max(0, goodFpsTimeRef.current - dt * 0.5);
+
+      // Step 1: cap DPR to 1.5 after ~1s sustained low fps
+      if (stepRef.current < 1 && lowFpsTimeRef.current > 1.0) {
+        stepRef.current = 1;
+        if (mountainDprCap > 1.5) setMountainDprCap(1.5);
+      }
+
+      // Step 2: cap DPR to 1.0 after ~2s sustained low fps
+      if (stepRef.current < 2 && lowFpsTimeRef.current > 2.0) {
+        stepRef.current = 2;
+        if (mountainDprCap > 1) setMountainDprCap(1);
+      }
+
+      // Step 3: if still struggling after ~4s, switch to safe renderer
+      if (lowFpsTimeRef.current > 4.0) {
+        setMountainFallback("fps");
+      }
+
+      // Recovery: after ~4s of good FPS, step DPR back up (1 -> 1.5 -> 2)
+      if (goodFpsTimeRef.current > 4.0 && lowFpsTimeRef.current === 0) {
+        if (mountainDprCap < 1.5) setMountainDprCap(1.5);
+        else if (mountainDprCap < 2) setMountainDprCap(2);
+      }
+    });
+
+    return null;
+  }
   const viewMode = useScenarioStore((s) => s.viewMode);
 
   const config = MODE_CONFIGS[mode] ?? MODE_CONFIGS.default;
@@ -965,7 +1054,9 @@ export function ScenarioMountain({
 
   const solverPath = useScenarioStore((s) => s.solverPath);
 
-  return (
+  return useSafeRenderer ? (
+    safeScene
+  ) : (
     <div
       className={`relative w-full h-full overflow-hidden ${className ?? ""}`}
       style={{
@@ -992,19 +1083,29 @@ export function ScenarioMountain({
       />
       
       <Canvas
-        gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
-        dpr={Math.min(window.devicePixelRatio, 2)}
+        gl={{
+          antialias: isLocked ? false : mountainMode !== "auto" ? true : mountainDprCap > 1 ? true : false,
+          alpha: true,
+          powerPreference: mountainMode === "auto" || isLocked ? "low-power" : "high-performance",
+        }}
+        dpr={Math.min(window.devicePixelRatio, mountainDprCap)}
         style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 1, background: "transparent" }}
         fallback={<div style={{ width: "100%", height: "100%", background: "#0d1117" }} />}
         onCreated={({ gl }) => {
-          gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+          gl.setPixelRatio(Math.min(window.devicePixelRatio, mountainDprCap));
+          setGlCanvasEl(gl.domElement);
         }}
       >
         <Suspense fallback={null}>
+        <PerformanceGuard />
         <color attach="background" args={['#0f1a2e']} />
         <fog attach="fog" args={['#0f1a2e', 40, 100]} />
-        
-        <PerspectiveCamera makeDefault position={[0, 6, 32]} fov={38} />
+
+        {isLocked ? (
+          <OrthographicCamera makeDefault position={[0, 6, 32]} zoom={36} />
+        ) : (
+          <PerspectiveCamera makeDefault position={[0, 6, 32]} fov={38} />
+        )}
         <ambientLight intensity={0.25} />
         <directionalLight position={[8, 20, 10]} intensity={0.6} color="#ffffff" />
         {/* Cyan rim light for vibrancy */}
@@ -1062,9 +1163,9 @@ export function ScenarioMountain({
         <OrbitControls 
           enableZoom={mode !== "ghost" ? false : false}
           enablePan={mode !== "ghost" ? false : false}
-          enableRotate={mode !== "ghost"}
-          autoRotate={config.autoRotate}
-          autoRotateSpeed={config.autoRotateSpeed}
+          enableRotate={mode !== "ghost" && !isLocked}
+          autoRotate={isLocked ? false : config.autoRotate}
+          autoRotateSpeed={isLocked ? 0 : config.autoRotateSpeed}
           rotateSpeed={0.4}
           minPolarAngle={Math.PI / 4}
           maxPolarAngle={Math.PI / 2.2}
@@ -1072,8 +1173,10 @@ export function ScenarioMountain({
           maxAzimuthAngle={Math.PI / 5}
         />
 
-        {/* Celebration bloom / glow */}
-        <EffectComposer enabled={config.bloomIntensity > 0 && mode !== "ghost"}>
+        {/* Celebration bloom / glow (auto-disabled when quality is degraded) */}
+        <EffectComposer
+          enabled={!isLocked && mountainDprCap > 1.5 && config.bloomIntensity > 0 && mode !== "ghost"}
+        >
           <Bloom
             intensity={config.bloomIntensity * glowIntensity}
             luminanceThreshold={0.2}

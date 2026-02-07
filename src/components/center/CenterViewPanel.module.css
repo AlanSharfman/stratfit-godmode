@@ -363,3 +363,131 @@
     font-size: 14px;
   }
 }
+
+/* ============================================================================
+   FOUNDATION BANNER - Terrain View (GOD MODE TITANIUM BEZEL)
+   ============================================================================ */
+
+:global(.terrain-foundationBanner) {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px;
+  border-radius: 24px;
+  z-index: 20;
+  
+  /* Layer 1: Chassis */
+  background: #1a1d21;
+  box-shadow:
+    0 0 0 1px #000000,
+    0 4px 16px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+:global(.terrain-foundationBanner)::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 22px;
+  z-index: -1;
+  
+  /* Layer 2: Chrome Rim */
+  background: linear-gradient(180deg, #9CA8B5 0%, #050505 100%);
+  border: 1px solid rgba(140, 180, 220, 0.22);
+  box-shadow:
+    inset 0 1px 0 #FFFFFF,
+    inset 0 -1px 0 #000000;
+}
+
+:global(.terrain-foundationBanner)::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 20px;
+  z-index: -1;
+  
+  /* Layer 3: Dark Steel Well */
+  background: linear-gradient(180deg, #2C3540 0%, #0c1015 100%);
+  box-shadow:
+    0 0 0 2px #000000,
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    inset 0 2px 6px rgba(0, 0, 0, 0.8);
+}
+
+/* Banner content wrapper */
+:global(.terrain-foundationBanner) > * {
+  position: relative;
+  z-index: 1;
+  padding: 8px 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  backdrop-filter: blur(8px);
+}
+
+:global(.terrain-bannerLabel) {
+  color: #00eaff;
+  text-shadow: 0 0 8px rgba(0, 234, 255, 0.4);
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+:global(.terrain-bannerDot) {
+  color: rgba(156, 168, 181, 0.4);
+  font-size: 8px;
+}
+
+:global(.terrain-bannerValue) {
+  color: rgba(156, 168, 181, 0.9);
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+:global(.terrain-bannerSeed) {
+  color: rgba(0, 234, 255, 0.7);
+  font-family: 'Courier New', monospace;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: rgba(0, 234, 255, 0.08);
+  border: 1px solid rgba(0, 234, 255, 0.15);
+}
+
+/* ============================================================================
+   STRUCTURAL RISK INDEX - Below Foundation Banner
+   ============================================================================ */
+
+:global(.terrain-riskIndex) {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 22px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  border-radius: 24px;
+  background: rgba(0, 0, 0, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  z-index: 20;
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+:global(.terrain-riskIndex span) {
+  font-size: 16px;
+  font-weight: 800;
+  color: rgba(0, 234, 255, 0.9);
+  text-shadow: 0 0 8px rgba(0, 234, 255, 0.3);
+}

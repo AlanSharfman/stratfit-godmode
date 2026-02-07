@@ -24,6 +24,8 @@
     "src/pitch/**",
     "src/strategy/**",
     "src/components/compound/variances2/**",
-    "src/components/compound/_variances2_DISABLED/**"
+    "src/components/compound/_variances2_DISABLED/**",
+    "_BACKUPS",
+    "**/_BACKUPS/**"
   ]
 }

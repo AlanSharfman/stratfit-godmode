@@ -162,8 +162,6 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
             </div>
           </div>
         )}
-
-        {/* SIMULATE - Shows during simulation (same mountain + overlay) */}
         {view === "simulate" && (
           <div className="relative h-full w-full overflow-hidden rounded-3xl border border-slate-700/40 bg-black shadow-[0_8px_32px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.03)]">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.4)_60%,rgba(0,0,0,0.85)_100%)]" />
@@ -176,45 +174,35 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
             </div>
           </div>
         )}
-
-        {/* COMPARE - God Mode: Full Nature Environment */}
         {view === "compare" && (
           <div className="h-full w-full overflow-hidden rounded-3xl border border-slate-700/40 shadow-[0_8px_32px_rgba(0,0,0,0.6)] bg-[#050b14] relative">
             {/* GodModeTerrain has CompareHybridPanel with all UI integrated */}
             <GodModeTerrain />
           </div>
         )}
-
-        {/* IMPACT - Sensitivity analysis */}
         {view === "impact" && (
           <div className="h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-linear-to-br from-slate-950/60 to-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
             <ImpactGodMode />
           </div>
         )}
-
-        {/* RISK - Risk breakdown and threat assessment */}
         {view === "risk" && (
           <div className="h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-linear-to-br from-slate-950/60 to-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
             <RiskTab />
           </div>
         )}
-
-        {/* DECIDE - full decision experience */}
         {view === "decision" && (
           <div className="h-full w-full overflow-hidden rounded-3xl border border-slate-700/40 bg-black shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
             <DecidePage />
           </div>
         )}
-
-        {/* VALUATION - Company valuation scenarios */}
         {view === "valuation" && (
           <div className="h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-linear-to-br from-slate-950/60 to-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
             <ValuationTab />
           </div>
         )}
 
-        {/* INITIATE - Institutional baseline input cockpit */}
-        {view === "initiate" && (
+        {/* ONBOARD - Institutional baseline input cockpit */}
+        {view === "onboard" && (
           <div className="h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-linear-to-br from-slate-950/60 to-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
             <InitiatePage onBaselineLocked={() => props.onNavigate?.("terrain")} />
           </div>

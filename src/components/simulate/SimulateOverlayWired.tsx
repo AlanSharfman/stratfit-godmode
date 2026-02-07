@@ -13,9 +13,12 @@ import {
   type LeverState,
   type SimulationConfig,
   type SensitivityFactor,
-  runSingleSimulation 
+  runSingleSimulation,
+  SeededRNG
 } from '@/logic/monteCarloEngine';
 import { generateVerdict, type Verdict } from '@/logic/verdictGenerator';
+import { getBaselineSeedAndElasticity } from '@/logic/engineSeedAndElasticity';
+import { calculateStructuralRiskIndex } from '@/logic/structuralRiskIndex';
 
 // Import sub-components
 import SimulateHeader from './SimulateHeader';
@@ -66,14 +69,20 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
   // Lever store for loading scenarios
   const setLevers = useLeverStore((s) => s.setLevers);
 
-  // Simulation config
-  const config: SimulationConfig = useMemo(() => ({
-    iterations: 10000,
-    timeHorizonMonths: 36,
-    startingCash: 4000000,
-    startingARR: 4800000,
-    monthlyBurn: 47000,
-  }), []);
+  // Simulation config (enhanced with Foundation seed & elasticity)
+  const config: SimulationConfig = useMemo(() => {
+    const { seed, elasticity } = getBaselineSeedAndElasticity();
+    
+    return {
+      iterations: 10000,
+      timeHorizonMonths: 36,
+      startingCash: 4000000,
+      startingARR: 4800000,
+      monthlyBurn: 47000,
+      seed, // Deterministic seed from Foundation structure
+      elasticity: elasticity ?? undefined, // Foundation-derived stochastic params
+    };
+  }, []); // Note: intentionally empty deps - Foundation baseline is structural
 
   // Check if we have a baseline
   const hasBaseline = useMemo(() => {
@@ -106,12 +115,15 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
     const startTime = performance.now();
     const CHUNK_SIZE = 500;
     const allSimulations: any[] = [];
+    const masterSeed = config.seed ?? 12345;
 
     for (let i = 0; i < config.iterations; i += CHUNK_SIZE) {
       const chunkEnd = Math.min(i + CHUNK_SIZE, config.iterations);
       
       for (let j = i; j < chunkEnd; j++) {
-        allSimulations.push(runSingleSimulation(j, levers, config));
+        // Each simulation gets its own RNG seeded deterministically
+        const rng = new SeededRNG(masterSeed + j);
+        allSimulations.push(runSingleSimulation(j, levers, config, rng));
       }
       
       const currentProgress = (allSimulations.length / config.iterations) * 100;
@@ -568,10 +580,14 @@ function processSimulationResults(
     { lever: 'fundingPressure' as keyof LeverState, label: 'Funding Pressure', impact: -0.6, direction: 'negative' },
   ];
 
+  // Calculate Structural Risk Index from Foundation elasticity
+  const structuralRiskIndex = calculateStructuralRiskIndex(config.elasticity ?? null);
+
   return {
     iterations: config.iterations,
     timeHorizonMonths: config.timeHorizonMonths,
     executionTimeMs,
+    structuralRiskIndex,
     survivalRate,
     survivalByMonth,
     medianSurvivalMonths,

@@ -47,6 +47,8 @@ import BaselineRightPanel from '@/components/baseline/BaselineRightPanel';
 import EngineStateStrip from '@/components/engine/EngineStateStrip';
 import SimulationControlModule from '@/components/sim/SimulationControlModule';
 import { useEngineStore } from '@/state/engineStore';
+import Foundation from "./pages/Foundation";
+import { useFoundationStore } from "./store/foundationStore";
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -531,7 +533,7 @@ export default function App() {
   const [innerViewMode, setInnerViewMode] = useState<"terrain" | "impact" | "compare">("terrain");
   
   // GOD MODE: Header-controlled view mode (navigation tabs in header)
-  const [headerViewMode, setHeaderViewMode] = useState<HeaderViewMode>("terrain");
+  const [headerViewMode, setHeaderViewMode] = useState<CenterViewId>("onboard");
   
   // GOD MODE: Monte Carlo Simulation Overlay
   const [showSimulate, setShowSimulate] = useState(false);
@@ -1150,6 +1152,9 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
   const handleOnboardingComplete = useCallback(() => {
     setShowOnboarding(false);
   }, []);
+
+  // Foundation lock state
+  const locked = useFoundationStore((s) => s.locked);
   
   return (
     <div className="app">
@@ -1164,30 +1169,43 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
         activeItemId={
           showSimulate
             ? "simulate"
-            : headerViewMode === "initiate"
-              ? "initiate"
-            : headerViewMode === "decision"
-              ? "decision"
-              : headerViewMode === "valuation"
-                ? "valuation"
-                : headerViewMode === "compare"
-                  ? "compare"
-                  : headerViewMode === "impact"
-                    ? "impact"
-                    : headerViewMode === "risk"
-                      ? "risk"
-                    : "terrain"
+            : headerViewMode === "onboard"
+              ? "onboard"
+              : headerViewMode === "terrain"
+                ? "terrain"
+                : headerViewMode === "strategy"
+                  ? "strategy"
+                  : headerViewMode === "stress"
+                    ? "stress"
+                    : headerViewMode === "sensitivity"
+                      ? "sensitivity"
+                      : headerViewMode === "compare"
+                        ? "compare"
+                        : headerViewMode === "impact"
+                          ? "impact"
+                          : headerViewMode === "risk"
+                            ? "risk"
+                            : headerViewMode === "valuation"
+                              ? "valuation"
+                              : headerViewMode === "decision"
+                                ? "decision"
+                                : "terrain"
         }
         onNavigate={(id) => {
-          // close overlay if user navigates elsewhere
-          if (id !== "simulate") setShowSimulate(false);
+          setShowSimulate(false);
+
+          if (id === "onboard") return setHeaderViewMode("onboard");
+          if (id === "terrain") return setHeaderViewMode("terrain");
+          if (id === "strategy") return setHeaderViewMode("strategy");
           if (id === "simulate") return setShowSimulate(true);
-          if (id === "initiate") return setHeaderViewMode("initiate");
-          if (id === "decision") return setHeaderViewMode("decision");
-          if (id === "valuation") return setHeaderViewMode("valuation");
+          if (id === "initiate") return setHeaderViewMode("onboard"); // legacy alias
+          if (id === "stress") return setHeaderViewMode("stress");
+          if (id === "sensitivity") return setHeaderViewMode("sensitivity");
           if (id === "compare") return setHeaderViewMode("compare");
           if (id === "impact") return setHeaderViewMode("impact");
           if (id === "risk") return setHeaderViewMode("risk");
+          if (id === "valuation") return setHeaderViewMode("valuation");
+          if (id === "decision") return setHeaderViewMode("decision");
           return setHeaderViewMode("terrain");
         }}
         onSave={() => setShowSaveModal(true)}
@@ -1202,8 +1220,13 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
       {/* OPTION 1: UNIFIED 3-COLUMN LAYOUT (Compare mode = full-width center only) */}
       <div className={`main-content mode-${headerViewMode}`}>
         
-        {/* LEFT COLUMN: Visible only in terrain and simulate modes */}
-        {headerViewMode !== 'compare' && headerViewMode !== 'initiate' && headerViewMode !== 'risk' && headerViewMode !== 'valuation' && headerViewMode !== 'decision' && headerViewMode !== 'impact' && (
+        {/* LEFT COLUMN: Visible in most modes except full-width pages */}
+        {headerViewMode !== 'compare' &&
+          headerViewMode !== 'onboard' &&
+          headerViewMode !== 'risk' &&
+          headerViewMode !== 'valuation' &&
+          headerViewMode !== 'decision' &&
+          headerViewMode !== 'impact' && (
           <aside className="left-column">
             <div className="sf-leftStack">
               {/* Active Scenario - New 5-Scenario Selector */}
@@ -1321,29 +1344,39 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
 
         {/* CENTER COLUMN: KPIs + Mountain OR Scenario Impact OR Variances */}
         <main className="center-column">
-          {/* KPI COMMAND BRIDGE - Hidden on Initiate, Compare, Risk, Valuation, Decision, and Impact views */}
-          {headerViewMode !== 'compare' && headerViewMode !== 'initiate' && headerViewMode !== 'risk' && headerViewMode !== 'valuation' && headerViewMode !== 'decision' && headerViewMode !== 'impact' && (
-            <OrbitalKPISection kpiAnimState={kpiAnimState} />
-          )}
-          
-          
+          {/* KPI COMMAND BRIDGE - Hidden on full-width pages */}
+          {headerViewMode !== "compare" &&
+            headerViewMode !== "onboard" &&
+            headerViewMode !== "risk" &&
+            headerViewMode !== "valuation" &&
+            headerViewMode !== "decision" &&
+            headerViewMode !== "impact" && <OrbitalKPISection kpiAnimState={kpiAnimState} />}
+
           {/* View content based on header navigation */}
-          <CenterViewPanel 
-            viewMode={headerViewMode}
-            timelineEnabled={timelineEnabled}
-            heatmapEnabled={heatmapEnabled}
-            onSimulateRequest={() => setShowSimulate(true)}
-            onNavigate={(view) => setHeaderViewMode(view as HeaderViewMode)}
-          />
+          {headerViewMode === "onboard" ? (
+            <Foundation onLockedNavigate={() => setHeaderViewMode("terrain")} />
+          ) : (
+            <CenterViewPanel
+              viewMode={headerViewMode}
+              timelineEnabled={timelineEnabled}
+              heatmapEnabled={heatmapEnabled}
+              onSimulateRequest={() => setShowSimulate(true)}
+              onNavigate={(view) => setHeaderViewMode(view)}
+            />
+          )}
         </main>
 
-        {/* RIGHT COLUMN: Baseline Right Panel — replaces old AI card stack */}
-        {/* Hidden in Compare, Initiate, Risk, Valuation, Decision, and Impact modes */}
-        {headerViewMode !== 'compare' && headerViewMode !== 'initiate' && headerViewMode !== 'risk' && headerViewMode !== 'valuation' && headerViewMode !== 'decision' && headerViewMode !== 'impact' && (
-        <aside className="right-column" data-tour="intel">
-          <BaselineRightPanel />
-        </aside>
-        )}
+        {/* RIGHT COLUMN: Baseline Right Panel — hidden on full-width pages */}
+        {headerViewMode !== "compare" &&
+          headerViewMode !== "onboard" &&
+          headerViewMode !== "risk" &&
+          headerViewMode !== "valuation" &&
+          headerViewMode !== "decision" &&
+          headerViewMode !== "impact" && (
+            <aside className="right-column" data-tour="intel">
+              <BaselineRightPanel />
+            </aside>
+          )}
       </div>
       
       {/* MONTE CARLO SIMULATION OVERLAY */}

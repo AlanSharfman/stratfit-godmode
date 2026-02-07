@@ -2,6 +2,9 @@
 // STRATFIT — Monte Carlo Simulation Engine
 // 10,000 Futures. One Truth.
 
+import { EngineElasticityParams } from "./foundationElasticity";
+import { calculateStructuralRiskIndex } from "./structuralRiskIndex";
+
 export interface LeverState {
   demandStrength: number;
   pricingPower: number;
@@ -20,6 +23,8 @@ export interface SimulationConfig {
   startingCash: number;
   startingARR: number;
   monthlyBurn: number;
+  seed?: number; // Deterministic seed from Foundation structure
+  elasticity?: EngineElasticityParams; // Foundation-derived stochastic parameters
 }
 
 export interface SingleSimulationResult {
@@ -49,6 +54,7 @@ export interface MonteCarloResult {
   iterations: number;
   timeHorizonMonths: number;
   executionTimeMs: number;
+  structuralRiskIndex: number; // Foundation-derived risk score (0-100)
   
   // Survival Analysis
   survivalRate: number;
@@ -127,12 +133,31 @@ export interface SensitivityFactor {
 // RANDOM NUMBER GENERATION
 // ============================================================================
 
-function gaussianRandom(mean: number = 0, stdDev: number = 1): number {
-  // Box-Muller transform for normal distribution
-  const u1 = Math.random();
-  const u2 = Math.random();
-  const z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
-  return z0 * stdDev + mean;
+/**
+ * Seeded RNG using mulberry32 algorithm
+ * Ensures deterministic simulations when Foundation baseline is locked
+ */
+export class SeededRNG {
+  private state: number;
+
+  constructor(seed: number) {
+    this.state = seed;
+  }
+
+  next(): number {
+    let t = (this.state += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+
+  gaussian(mean: number = 0, stdDev: number = 1): number {
+    // Box-Muller transform for normal distribution
+    const u1 = this.next();
+    const u2 = this.next();
+    const z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+    return z0 * stdDev + mean;
+  }
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -146,10 +171,12 @@ function clamp(value: number, min: number, max: number): number {
 export function runSingleSimulation(
   id: number,
   levers: LeverState,
-  config: SimulationConfig
+  config: SimulationConfig,
+  rng: SeededRNG
 ): SingleSimulationResult {
+
   const snapshots: MonthlySnapshot[] = [];
-  
+
   let cash = config.startingCash;
   let arr = config.startingARR;
   let burn = config.monthlyBurn;
@@ -157,61 +184,88 @@ export function runSingleSimulation(
   let survivalMonths = config.timeHorizonMonths;
   let peakARR = arr;
   let lowestCash = cash;
-  
-  // Convert levers to growth/risk factors (0-100 scale to multipliers)
-  const baseGrowthRate = (levers.demandStrength - 50) / 500; // -10% to +10% monthly
-  const pricingMultiplier = 1 + (levers.pricingPower - 50) / 200; // 0.75x to 1.25x
-  const expansionBoost = (levers.expansionVelocity - 50) / 400; // -12.5% to +12.5%
-  
-  const costEfficiency = levers.costDiscipline / 100; // 0 to 1
-  const hiringDrag = levers.hiringIntensity / 150; // 0 to 0.67
-  const operatingCost = levers.operatingDrag / 100; // 0 to 1
-  
-  const marketRisk = levers.marketVolatility / 100; // 0 to 1
-  const execRisk = levers.executionRisk / 100; // 0 to 1
-  const fundingRisk = levers.fundingPressure / 100; // 0 to 1
-  
-  // Volatility based on risk levers
-  const volatility = 0.02 + (marketRisk * 0.08); // 2% to 10% monthly volatility
-  
+
+  const baseGrowthRate = (levers.demandStrength - 50) / 500;
+  const pricingMultiplier = 1 + (levers.pricingPower - 50) / 200;
+  const expansionBoost = (levers.expansionVelocity - 50) / 400;
+  const costEfficiency = levers.costDiscipline / 100;
+  const hiringDrag = levers.hiringIntensity / 150;
+  const operatingCost = levers.operatingDrag / 100;
+  const execRisk = levers.executionRisk / 100;
+  const fundingRisk = levers.fundingPressure / 100;
+
+  const elasticity = config.elasticity;
+
+  const revenueVolatility = elasticity?.revenueVolPct ?? 0.08;
+  const burnVolatility = elasticity?.burnVolPct ?? 0.10;
+  const shockProb = elasticity?.shockProb ?? 0.03;
+  const shockRevenuePct = elasticity?.shockSeverityRevenuePct ?? 0.15;
+  const shockBurnPct = elasticity?.shockSeverityBurnPct ?? 0.12;
+
+  const corrRevenueBurn = elasticity?.corrRevenueBurn ?? -0.35;
+
   for (let month = 1; month <= config.timeHorizonMonths; month++) {
-    // Random shock for this month
-    const shock = gaussianRandom(0, volatility);
-    const executionShock = Math.random() < execRisk * 0.1 ? gaussianRandom(-0.1, 0.05) : 0;
-    
-    // Calculate growth rate for this month
-    let monthlyGrowth = baseGrowthRate + expansionBoost + shock + executionShock;
+
+    // -------- CORRELATED SHOCKS --------
+    // Generate two independent normals
+    const z1 = rng.gaussian(0, 1);
+    const z2 = rng.gaussian(0, 1);
+
+    // Apply correlation manually (Cholesky 2x2 simplified)
+    const revenueShock = z1 * revenueVolatility;
+    const burnShock = (corrRevenueBurn * z1 + Math.sqrt(1 - corrRevenueBurn ** 2) * z2) * burnVolatility;
+
+    const isShockMonth = rng.next() < shockProb;
+
+    let monthlyGrowth =
+      baseGrowthRate +
+      expansionBoost +
+      revenueShock;
+
     monthlyGrowth *= pricingMultiplier;
-    
-    // Apply funding pressure (reduces growth if high)
+
+    if (rng.next() < execRisk * 0.1) {
+      monthlyGrowth += rng.gaussian(-0.08, 0.04);
+    }
+
+    if (isShockMonth) {
+      monthlyGrowth -= shockRevenuePct;
+    }
+
     if (fundingRisk > 0.5 && cash < config.startingCash * 0.3) {
       monthlyGrowth *= (1 - fundingRisk * 0.5);
     }
-    
-    // Update ARR
+
     arr = arr * (1 + monthlyGrowth);
     arr = Math.max(0, arr);
     peakARR = Math.max(peakARR, arr);
-    
-    // Calculate burn (affected by efficiency)
+
     const baseBurn = config.monthlyBurn;
     const hiringSurge = hiringDrag * baseBurn * 0.3;
     const operatingExtra = operatingCost * baseBurn * 0.2;
     const efficiencySavings = costEfficiency * baseBurn * 0.25;
-    
+
     burn = baseBurn + hiringSurge + operatingExtra - efficiencySavings;
-    burn = Math.max(burn * 0.5, burn); // Floor at 50% of base
-    
-    // Update cash
+
+    burn = burn * (1 + burnShock);
+
+    if (isShockMonth) {
+      burn *= (1 + shockBurnPct);
+    }
+
+    burn = Math.max(burn, baseBurn * 0.5);
+
     const monthlyRevenue = arr / 12;
     const netCashFlow = monthlyRevenue - burn;
     cash += netCashFlow;
+
     lowestCash = Math.min(lowestCash, cash);
-    
-    // Calculate runway
-    const runway = burn > monthlyRevenue ? cash / (burn - monthlyRevenue) : 999;
-    
-    // Record snapshot
+
+    const runway =
+      burn > monthlyRevenue
+        ? cash / (burn - monthlyRevenue)
+        : 999;
+
     snapshots.push({
       month,
       arr,
@@ -220,18 +274,17 @@ export function runSingleSimulation(
       runway: Math.min(runway, 120),
       growthRate: monthlyGrowth,
     });
-    
-    // Check survival
+
     if (cash <= 0) {
       didSurvive = false;
       survivalMonths = month;
       break;
     }
   }
-  
+
   const finalSnapshot = snapshots[snapshots.length - 1];
-  const targetARR = config.startingARR * 2; // Target: 2x ARR growth
-  
+  const targetARR = config.startingARR * 2;
+
   return {
     id,
     monthlySnapshots: snapshots,
@@ -355,7 +408,8 @@ function calculateConfidenceBands(
 function calculateSensitivity(
   levers: LeverState,
   config: SimulationConfig,
-  baseResult: number
+  baseResult: number,
+  seed: number
 ): SensitivityFactor[] {
   const leverLabels: Record<keyof LeverState, string> = {
     demandStrength: 'Demand Strength',
@@ -372,9 +426,10 @@ function calculateSensitivity(
   const factors: SensitivityFactor[] = [];
   
   for (const lever of Object.keys(levers) as (keyof LeverState)[]) {
-    // Test +20% change
+    // Test +20% change (use same seed for fair comparison)
     const modifiedLevers = { ...levers, [lever]: clamp(levers[lever] + 20, 0, 100) };
-    const testResult = runSingleSimulation(0, modifiedLevers, config);
+    const rng = new SeededRNG(seed);
+    const testResult = runSingleSimulation(0, modifiedLevers, config, rng);
     
     const impact = (testResult.finalARR - baseResult) / baseResult;
     
@@ -406,11 +461,16 @@ export function runMonteCarloSimulation(
 ): MonteCarloResult {
   const startTime = performance.now();
   
+  // Initialize RNG with Foundation seed (or default)
+  const masterSeed = config.seed ?? 12345;
+  
   // Run all simulations
   const allSimulations: SingleSimulationResult[] = [];
   
   for (let i = 0; i < config.iterations; i++) {
-    allSimulations.push(runSingleSimulation(i, levers, config));
+    // Each simulation gets its own RNG seeded deterministically from master seed
+    const rng = new SeededRNG(masterSeed + i);
+    allSimulations.push(runSingleSimulation(i, levers, config, rng));
   }
   
   // Calculate survival metrics
@@ -450,7 +510,10 @@ export function runMonteCarloSimulation(
   const bestCase = sortedByARR[Math.floor(config.iterations * 0.95)]; // P95
   
   // Calculate sensitivity
-  const sensitivityFactors = calculateSensitivity(levers, config, medianCase.finalARR);
+  const sensitivityFactors = calculateSensitivity(levers, config, medianCase.finalARR, masterSeed);
+  
+  // Calculate Structural Risk Index from Foundation elasticity
+  const structuralRiskIndex = calculateStructuralRiskIndex(config.elasticity ?? null);
   
   const executionTimeMs = performance.now() - startTime;
   
@@ -458,6 +521,7 @@ export function runMonteCarloSimulation(
     iterations: config.iterations,
     timeHorizonMonths: config.timeHorizonMonths,
     executionTimeMs,
+    structuralRiskIndex,
     
     survivalRate,
     survivalByMonth,
@@ -491,7 +555,8 @@ export function processSimulationResults(
   allSimulations: SingleSimulationResult[],
   config: SimulationConfig,
   levers: LeverState,
-  executionTimeMs: number
+  executionTimeMs: number,
+  seed: number = 12345
 ): MonteCarloResult {
   // Calculate survival metrics
   const survivors = allSimulations.filter(s => s.didSurvive);
@@ -530,12 +595,16 @@ export function processSimulationResults(
   const bestCase = sortedByARR[Math.floor(allSimulations.length * 0.95)]; // P95
   
   // Calculate sensitivity
-  const sensitivityFactors = calculateSensitivity(levers, config, medianCase.finalARR);
+  const sensitivityFactors = calculateSensitivity(levers, config, medianCase.finalARR, seed);
+  
+  // Calculate Structural Risk Index from Foundation elasticity
+  const structuralRiskIndex = calculateStructuralRiskIndex(config.elasticity ?? null);
   
   return {
     iterations: allSimulations.length,
     timeHorizonMonths: config.timeHorizonMonths,
     executionTimeMs,
+    structuralRiskIndex,
     
     survivalRate,
     survivalByMonth,
