@@ -9,6 +9,7 @@ import { engineResultToMountainForces } from "@/logic/mountainForces";
 import { useScenarioStore, type ScenarioId } from "@/state/scenarioStore";
 import { useEngineStore } from "@/state/engineStore";
 import { getCompareSelection } from "@/compare/selection";
+import { loadScenarioResult } from "@/strategy/scenarioResults";
 import "./ComparePage.css";
 
 const BASELINE_ID: ScenarioId = "base";
@@ -76,6 +77,9 @@ const ComparePage: React.FC = () => {
   const sid = activeScenarioId || "base";
   const bResult = engineResults?.[BASELINE_ID];
   const aResult = engineResults?.[sid];
+
+  // PASS 4C: read stored per-scenario simulation result (if any)
+  const stored = useMemo(() => loadScenarioResult(String(sid)), [sid]);
 
   const baselineForces = useMemo(() => engineResultToMountainForces(bResult), [bResult]);
   const activeForces = useMemo(() => engineResultToMountainForces(aResult), [aResult]);
@@ -146,6 +150,17 @@ const ComparePage: React.FC = () => {
           </div>
         )}
       </header>
+
+      {/* PASS 4C: Stored results status (telemetry) */}
+      {sid !== "base" && !stored ? (
+        <div className="mx-auto mt-3 max-w-[1100px] rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-[12px] text-white/70">
+          No simulation result yet — run simulation in Strategy Studio.
+        </div>
+      ) : sid !== "base" && stored ? (
+        <div className="mx-auto mt-3 max-w-[1100px] rounded-xl border border-cyan-300/20 bg-cyan-400/8 px-4 py-3 text-[12px] text-cyan-50/90">
+          Stored simulation loaded.
+        </div>
+      ) : null}
 
       {/* ═══ MOUNTAIN OVERLAY ═══ */}
       <section className="sf-compare-mountains">

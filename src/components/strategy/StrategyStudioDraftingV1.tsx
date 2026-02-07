@@ -9,6 +9,9 @@ import {
   setActiveScenarioId,
 } from "@/strategy/scenarioDraft";
 import { setCompareSelection } from "@/compare/selection";
+import { runMonteCarloSimulation, type MonteCarloResult, type SimulationConfig } from "@/logic/monteCarloEngine";
+import { getBaselineSeedAndElasticity } from "@/logic/engineSeedAndElasticity";
+import { saveScenarioResult } from "@/strategy/scenarioResults";
 
 type Timer = ReturnType<typeof setTimeout>;
 
@@ -46,8 +49,10 @@ export function StrategyStudioDraftingV1() {
   const [draft, setDraft] = useState<ScenarioDraftV1 | null>(null);
   const [savedPulse, setSavedPulse] = useState(false);
   const [pinnedPulse, setPinnedPulse] = useState(false);
+  const [simPulse, setSimPulse] = useState(false);
   const pulseTimerRef = useRef<Timer | null>(null);
   const pinnedTimerRef = useRef<Timer | null>(null);
+  const simTimerRef = useRef<Timer | null>(null);
   const saveTimerRef = useRef<Timer | null>(null);
 
   const baselineVersion = useMemo(() => loadBaseline()?.version ?? 1, []);
@@ -110,6 +115,7 @@ export function StrategyStudioDraftingV1() {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
       if (pulseTimerRef.current) clearTimeout(pulseTimerRef.current);
       if (pinnedTimerRef.current) clearTimeout(pinnedTimerRef.current);
+      if (simTimerRef.current) clearTimeout(simTimerRef.current);
     };
   }, []);
 
@@ -133,6 +139,63 @@ export function StrategyStudioDraftingV1() {
     window.setTimeout(() => window.location.assign("/?view=compare"), 120);
   };
 
+  function stripForStorage(r: MonteCarloResult) {
+    // Store a compact result in localStorage (avoid huge `allSimulations` payload).
+    const pickCase = (c: MonteCarloResult["medianCase"]) => ({
+      finalARR: c.finalARR,
+      finalCash: c.finalCash,
+      finalRunway: c.finalRunway,
+      survivalMonths: c.survivalMonths,
+      didSurvive: c.didSurvive,
+      didAchieveTarget: c.didAchieveTarget,
+      peakARR: c.peakARR,
+      lowestCash: c.lowestCash,
+    });
+    return {
+      iterations: r.iterations,
+      timeHorizonMonths: r.timeHorizonMonths,
+      executionTimeMs: r.executionTimeMs,
+      structuralRiskIndex: r.structuralRiskIndex,
+      survivalRate: r.survivalRate,
+      medianSurvivalMonths: r.medianSurvivalMonths,
+      arrPercentiles: r.arrPercentiles,
+      cashPercentiles: r.cashPercentiles,
+      runwayPercentiles: r.runwayPercentiles,
+      arrConfidenceBands: r.arrConfidenceBands,
+      sensitivityFactors: r.sensitivityFactors?.slice(0, 12),
+      bestCase: pickCase(r.bestCase),
+      medianCase: pickCase(r.medianCase),
+      worstCase: pickCase(r.worstCase),
+    };
+  }
+
+  const runSimulation = () => {
+    if (!hasBaseline()) {
+      window.location.assign("/onboard");
+      return;
+    }
+
+    const baseline = loadBaseline();
+    const { seed, elasticity } = getBaselineSeedAndElasticity();
+
+    const cfg: SimulationConfig = {
+      iterations: 10000,
+      timeHorizonMonths: baseline?.posture?.horizonMonths ?? 36,
+      startingCash: baseline?.financial?.cashOnHand ?? 4_000_000,
+      startingARR: baseline?.financial?.arr ?? 4_800_000,
+      monthlyBurn: baseline?.financial?.monthlyBurn ?? 47_000,
+      seed,
+      elasticity: elasticity ?? undefined,
+    };
+
+    const res = runMonteCarloSimulation(draft.levers, cfg);
+    saveScenarioResult(String(activeScenarioId), stripForStorage(res));
+
+    setSimPulse(true);
+    if (simTimerRef.current) clearTimeout(simTimerRef.current);
+    simTimerRef.current = setTimeout(() => setSimPulse(false), 1500);
+  };
+
   return (
     <div className="relative h-full w-full overflow-auto rounded-3xl border border-white/10 bg-linear-to-br from-slate-950/55 to-black/75 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(900px_520px_at_50%_0%,rgba(34,211,238,0.12),transparent_60%)]" />
@@ -152,6 +215,15 @@ export function StrategyStudioDraftingV1() {
           <div className="flex items-center gap-2">
             <button
               type="button"
+              onClick={runSimulation}
+              className="h-[36px] rounded-xl border border-white/12 bg-white/6 px-3 text-[11px] font-extrabold uppercase tracking-[0.08em] text-white/80 transition hover:bg-white/9 active:translate-y-[1px]"
+              title="Run the deterministic Monte Carlo simulation and store results for Compare"
+            >
+              Run Simulation
+            </button>
+
+            <button
+              type="button"
               onClick={pinToCompare}
               className="h-[36px] rounded-xl border border-cyan-300/25 bg-cyan-400/10 px-3 text-[11px] font-extrabold uppercase tracking-[0.08em] text-cyan-100 transition hover:bg-cyan-400/15 active:translate-y-[1px]"
               title="Pin this scenario into Compare (Baseline + Scenario)"
@@ -159,7 +231,19 @@ export function StrategyStudioDraftingV1() {
               Pin to Compare
             </button>
 
-            {pinnedPulse ? (
+            {simPulse ? (
+              <div
+                className="h-[32px] rounded-full border border-cyan-300/30 bg-cyan-400/15 px-3 text-[11px] font-extrabold uppercase tracking-[0.08em] text-cyan-50"
+                style={{
+                  transitionTimingFunction: "ease-out",
+                  transitionDuration: "220ms",
+                  transform: "translateY(0px)",
+                  opacity: 1,
+                }}
+              >
+                Simulation updated
+              </div>
+            ) : pinnedPulse ? (
               <div
                 className="h-[32px] rounded-full border border-cyan-300/30 bg-cyan-400/15 px-3 text-[11px] font-extrabold uppercase tracking-[0.08em] text-cyan-50"
                 style={{
