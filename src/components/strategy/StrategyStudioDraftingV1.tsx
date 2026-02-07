@@ -12,6 +12,7 @@ import { setCompareSelection } from "@/compare/selection";
 import { runMonteCarloSimulation, type MonteCarloResult, type SimulationConfig } from "@/logic/monteCarloEngine";
 import { getBaselineSeedAndElasticity } from "@/logic/engineSeedAndElasticity";
 import { saveScenarioResult } from "@/strategy/scenarioResults";
+import LeverSliderCard from "./LeverSliderCard";
 
 type Timer = ReturnType<typeof setTimeout>;
 
@@ -289,19 +290,7 @@ export function StrategyStudioDraftingV1() {
               ["Funding Pressure", draft.levers.fundingPressure],
             ] as const
           ).map(([label, value]) => (
-            <div
-              key={label}
-              className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
-            >
-              <div className="text-[10px] font-extrabold tracking-[0.14em] text-white/55 uppercase">{label}</div>
-              <div className="mt-2 text-[20px] font-black text-white tabular-nums">{Math.round(value)}</div>
-              <div className="mt-2 h-[6px] w-full overflow-hidden rounded-full bg-white/10">
-                <div
-                  className="h-full rounded-full bg-cyan-300/70"
-                  style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
-                />
-              </div>
-            </div>
+            <LeverSliderCard key={label} title={label} value={value} min={0} max={100} />
           ))}
         </div>
 
