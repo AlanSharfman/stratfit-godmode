@@ -16,7 +16,6 @@ import { FinancialTab } from "./tabs/FinancialTab";
 import { CapitalTab } from "./tabs/CapitalTab";
 import { OperatingTab } from "./tabs/OperatingTab";
 import { StrategicTab } from "./tabs/StrategicTab";
-import { loadOnboardDraft } from "./storage";
 import { mapOnboardDraftToBaseline, saveBaseline } from "./baseline";
 
 import "./styles/onboard.css";
@@ -68,9 +67,8 @@ export function OnboardApp() {
     // Persist latest draft snapshot first (debounce-safe)
     flush();
 
-    // Deterministic: load the stored draft snapshot, map to baseline, persist, then redirect.
-    const draft = loadOnboardDraft();
-    const baseline = mapOnboardDraftToBaseline(draft);
+    // Deterministic: map current in-memory draft snapshot to baseline, persist, then redirect.
+    const baseline = mapOnboardDraftToBaseline(data);
     saveBaseline(baseline);
     window.location.assign("/?view=terrain");
   };
