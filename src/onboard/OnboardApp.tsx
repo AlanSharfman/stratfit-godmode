@@ -1,0 +1,113 @@
+// src/onboard/OnboardApp.tsx
+// Standalone onboarding module (no routing). Can be mounted behind an /onboard pathname gate later.
+
+import React, { useState } from "react";
+import type { OnboardStepId } from "./validators";
+import { useOnboardDraft } from "./hooks/useOnboardDraft";
+import { useOnboardValidation } from "./hooks/useOnboardValidation";
+
+import { TopBar } from "./components/TopBar";
+import { StepRail, type StepDef } from "./components/StepRail";
+import { RightIntelPanel } from "./components/RightIntelPanel";
+
+import { CompanyTab } from "./tabs/CompanyTab";
+import { FinancialTab } from "./tabs/FinancialTab";
+import { CapitalTab } from "./tabs/CapitalTab";
+import { OperatingTab } from "./tabs/OperatingTab";
+import { StrategicTab } from "./tabs/StrategicTab";
+
+import "./styles/onboard.css";
+
+const STEPS: StepDef[] = [
+  { id: "company", label: "Company Profile", subtitle: "Identity and perimeter" },
+  { id: "financial", label: "Financial Baseline", subtitle: "ARR, margin, burn, cash" },
+  { id: "capital", label: "Capital Structure", subtitle: "Debt and raise context" },
+  { id: "operating", label: "Operating Dynamics", subtitle: "Churn, cycle, risk" },
+  { id: "strategic", label: "Strategic Posture", subtitle: "Focus, horizon, constraints" },
+];
+
+function stepLabel(id: OnboardStepId) {
+  return STEPS.find((s) => s.id === id)?.label ?? "Onboarding";
+}
+
+export function OnboardApp() {
+  const [active, setActive] = useState<OnboardStepId>("company");
+  const { data, patch, savedPulse, flush } = useOnboardDraft();
+
+  const [advOpen, setAdvOpen] = useState<Record<OnboardStepId, boolean>>({
+    company: false,
+    financial: false,
+    capital: false,
+    operating: false,
+    strategic: false,
+  });
+
+  const { allCoreValid } = useOnboardValidation(STEPS, data);
+
+  const goNext = () => {
+    const idx = STEPS.findIndex((s) => s.id === active);
+    const next = STEPS[Math.min(STEPS.length - 1, idx + 1)]?.id ?? active;
+    setActive(next);
+  };
+
+  const onInitializeTerrain = () => {
+    // Pass 1 does not wire terrain mapping. This handler exists for future gate integration.
+    // We intentionally keep it silent and non-routing.
+    if (!allCoreValid) return;
+    // Save immediately so the subsequent gate has the latest snapshot.
+    flush();
+  };
+
+  return (
+    <div className="sfOn-root">
+      <div className="sfOn-shell">
+        <TopBar
+          activeLabel={stepLabel(active)}
+          savedPulse={savedPulse}
+          allCoreValid={allCoreValid}
+          onContinue={goNext}
+          onInitializeTerrain={onInitializeTerrain}
+        />
+
+        <div className="sfOn-body">
+          <StepRail steps={STEPS} active={active} data={data} onSelect={setActive} />
+
+          <div className="sfOn-center">
+            {active === "company" && <CompanyTab data={data} onChange={patch} />}
+            {active === "financial" && (
+              <FinancialTab
+                data={data}
+                advancedOpen={advOpen.financial}
+                onToggleAdvanced={() => setAdvOpen((s) => ({ ...s, financial: !s.financial }))}
+                onChange={patch}
+              />
+            )}
+            {active === "capital" && (
+              <CapitalTab
+                data={data}
+                advancedOpen={advOpen.capital}
+                onToggleAdvanced={() => setAdvOpen((s) => ({ ...s, capital: !s.capital }))}
+                onChange={patch}
+              />
+            )}
+            {active === "operating" && (
+              <OperatingTab
+                data={data}
+                advancedOpen={advOpen.operating}
+                onToggleAdvanced={() => setAdvOpen((s) => ({ ...s, operating: !s.operating }))}
+                onChange={patch}
+              />
+            )}
+            {active === "strategic" && <StrategicTab data={data} onChange={patch} />}
+          </div>
+
+          <RightIntelPanel active={active} data={data} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default OnboardApp;
+
+
