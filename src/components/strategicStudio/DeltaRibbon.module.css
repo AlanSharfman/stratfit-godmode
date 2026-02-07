@@ -1,0 +1,56 @@
+.ribbon {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.tile {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 10px 30px rgba(0, 0, 0, 0.45);
+  padding: 12px 14px;
+  transition: box-shadow 220ms ease-out, opacity 220ms ease-out, transform 220ms ease-out;
+}
+
+.tilePulse {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 10px 30px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(34, 211, 238, 0.20),
+    0 18px 70px rgba(34, 211, 238, 0.10);
+}
+
+.kicker {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.value {
+  margin-top: 8px;
+  font-size: 18px;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.92);
+  font-variant-numeric: tabular-nums;
+}
+
+.sub {
+  margin-top: 6px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.hint {
+  margin-top: 8px;
+  grid-column: 1 / -1;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.50);
+}
+
+

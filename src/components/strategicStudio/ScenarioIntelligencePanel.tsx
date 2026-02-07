@@ -92,9 +92,19 @@ export function ScenarioIntelligencePanel(props: { baseline: StudioBaselineModel
       // Ensure baseline stored result exists (improves Compare deltas)
       const baseRes = await runScenarioSimulation({ baseline: baseline.leverConfig, scenario: baseline.leverConfig });
       saveScenarioResult("base", baseRes);
+      try {
+        window.dispatchEvent(new CustomEvent("sf:scenarioResultsUpdated", { detail: { scenarioId: "base" } }));
+      } catch {
+        // ignore
+      }
 
       const res = await runScenarioSimulation({ baseline: baseline.leverConfig, scenario: scenario.leverConfig });
       saveScenarioResult(String(scenario.id), res);
+      try {
+        window.dispatchEvent(new CustomEvent("sf:scenarioResultsUpdated", { detail: { scenarioId: String(scenario.id) } }));
+      } catch {
+        // ignore
+      }
       setRunState("done");
       window.setTimeout(() => setRunState("idle"), 1500);
     } catch (e) {
