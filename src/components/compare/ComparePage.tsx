@@ -2,12 +2,13 @@
 // STRATFIT — Scenario Delta Engine (God Mode)
 // Purpose: Prove STRATFIT is a scenario delta engine, not a dashboard.
 
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { ScenarioMountain } from "@/components/mountain/ScenarioMountain";
 import { engineResultToMountainForces } from "@/logic/mountainForces";
 import { useScenarioStore, type ScenarioId } from "@/state/scenarioStore";
 import { useEngineStore } from "@/state/engineStore";
+import { getCompareSelection } from "@/compare/selection";
 import "./ComparePage.css";
 
 const BASELINE_ID: ScenarioId = "base";
@@ -58,6 +59,19 @@ const ComparePage: React.FC = () => {
 
   const engineStatus = useEngineStore((s) => s.status);
   const confidencePct = useEngineStore((s) => s.confidencePct);
+
+  useEffect(() => {
+    // PASS 4B: apply pinned selection if present (baseline + scenario).
+    const sel = getCompareSelection();
+    const pinned = sel?.scenarioIds?.[0];
+    if (!pinned) return;
+    if (pinned === "base" || pinned === "upside" || pinned === "downside" || pinned === "stress") {
+      // Avoid redundant state churn.
+      if (useScenarioStore.getState().activeScenarioId !== pinned) {
+        useScenarioStore.getState().setScenario(pinned);
+      }
+    }
+  }, []);
 
   const sid = activeScenarioId || "base";
   const bResult = engineResults?.[BASELINE_ID];

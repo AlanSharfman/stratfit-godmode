@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useScenarioStore } from "@/state/scenarioStore";
+import { useScenarioStore, type ScenarioId } from "@/state/scenarioStore";
 import { hasBaseline, loadBaseline } from "@/onboard/baseline";
 import type { ScenarioDraftLeversV1, ScenarioDraftV1 } from "@/strategy/scenarioDraft";
 import {
@@ -8,6 +8,7 @@ import {
   saveScenario,
   setActiveScenarioId,
 } from "@/strategy/scenarioDraft";
+import { setCompareSelection } from "@/compare/selection";
 
 type Timer = ReturnType<typeof setTimeout>;
 
@@ -40,10 +41,13 @@ function toDraftLevers(levers: Record<string, number> | null | undefined): Scena
 
 export function StrategyStudioDraftingV1() {
   const currentLevers = useScenarioStore((s) => s.currentLevers);
+  const activeScenarioId = useScenarioStore((s) => s.activeScenarioId);
 
   const [draft, setDraft] = useState<ScenarioDraftV1 | null>(null);
   const [savedPulse, setSavedPulse] = useState(false);
+  const [pinnedPulse, setPinnedPulse] = useState(false);
   const pulseTimerRef = useRef<Timer | null>(null);
+  const pinnedTimerRef = useRef<Timer | null>(null);
   const saveTimerRef = useRef<Timer | null>(null);
 
   const baselineVersion = useMemo(() => loadBaseline()?.version ?? 1, []);
@@ -105,6 +109,7 @@ export function StrategyStudioDraftingV1() {
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
       if (pulseTimerRef.current) clearTimeout(pulseTimerRef.current);
+      if (pinnedTimerRef.current) clearTimeout(pinnedTimerRef.current);
     };
   }, []);
 
@@ -115,6 +120,18 @@ export function StrategyStudioDraftingV1() {
       </div>
     );
   }
+
+  const pinToCompare = () => {
+    // Persist minimal compare selection (baseline + active scenario id)
+    setCompareSelection({ baseline: true, scenarioIds: [activeScenarioId as unknown as string] });
+
+    setPinnedPulse(true);
+    if (pinnedTimerRef.current) clearTimeout(pinnedTimerRef.current);
+    pinnedTimerRef.current = setTimeout(() => setPinnedPulse(false), 1500);
+
+    // Navigate to Compare (no router; safe fallback)
+    window.setTimeout(() => window.location.assign("/?view=compare"), 120);
+  };
 
   return (
     <div className="relative h-full w-full overflow-auto rounded-3xl border border-white/10 bg-linear-to-br from-slate-950/55 to-black/75 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
@@ -132,20 +149,45 @@ export function StrategyStudioDraftingV1() {
             </div>
           </div>
 
-          <div
-            className={`h-[32px] rounded-full border px-3 text-[11px] font-extrabold uppercase tracking-[0.08em] transition ${
-              savedPulse
-                ? "border-cyan-300/30 bg-cyan-400/15 text-cyan-50"
-                : "border-white/10 bg-white/5 text-white/55"
-            }`}
-            style={{
-              transitionTimingFunction: "ease-out",
-              transitionDuration: "220ms",
-              transform: `translateY(${savedPulse ? 0 : 6}px)`,
-              opacity: savedPulse ? 1 : 0.85,
-            }}
-          >
-            Scenario saved
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={pinToCompare}
+              className="h-[36px] rounded-xl border border-cyan-300/25 bg-cyan-400/10 px-3 text-[11px] font-extrabold uppercase tracking-[0.08em] text-cyan-100 transition hover:bg-cyan-400/15 active:translate-y-[1px]"
+              title="Pin this scenario into Compare (Baseline + Scenario)"
+            >
+              Pin to Compare
+            </button>
+
+            {pinnedPulse ? (
+              <div
+                className="h-[32px] rounded-full border border-cyan-300/30 bg-cyan-400/15 px-3 text-[11px] font-extrabold uppercase tracking-[0.08em] text-cyan-50"
+                style={{
+                  transitionTimingFunction: "ease-out",
+                  transitionDuration: "220ms",
+                  transform: "translateY(0px)",
+                  opacity: 1,
+                }}
+              >
+                Pinned to Compare
+              </div>
+            ) : (
+              <div
+                className={`h-[32px] rounded-full border px-3 text-[11px] font-extrabold uppercase tracking-[0.08em] transition ${
+                  savedPulse
+                    ? "border-cyan-300/30 bg-cyan-400/15 text-cyan-50"
+                    : "border-white/10 bg-white/5 text-white/55"
+                }`}
+                style={{
+                  transitionTimingFunction: "ease-out",
+                  transitionDuration: "220ms",
+                  transform: `translateY(${savedPulse ? 0 : 6}px)`,
+                  opacity: savedPulse ? 1 : 0.85,
+                }}
+              >
+                Scenario saved
+              </div>
+            )}
           </div>
         </div>
 
