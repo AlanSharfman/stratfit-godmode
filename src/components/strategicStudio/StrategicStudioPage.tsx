@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { hasBaseline, loadBaseline } from "@/onboard/baseline";
 import { useStrategicStudioStore } from "@/state/strategicStudioStore";
 import { loadScenarioResult } from "@/strategy/scenarioResults";
+import { computeLeverConfigHash, useSimulationStore } from "@/state/simulationStore";
 import DeltaRibbon from "./DeltaRibbon";
 import ScenarioListPanel from "./ScenarioListPanel";
 import ScenarioControlsPanel from "./ScenarioControlsPanel";
@@ -46,6 +47,22 @@ export function StrategicStudioPage() {
 
   const activeScenario = scenarios[activeScenarioId];
 
+  const {
+    simulationStatus,
+    lastRunAt,
+    seed,
+    runs,
+    runSimulationForScenario,
+    markStale,
+  } = useSimulationStore((s) => ({
+    simulationStatus: s.simulationStatus,
+    lastRunAt: s.lastRunAt,
+    seed: s.seed,
+    runs: s.runs,
+    runSimulationForScenario: s.runSimulationForScenario,
+    markStale: s.markStale,
+  }));
+
   // PASS 7C: ripple on lever changes (UI only; do NOT run simulation)
   useEffect(() => {
     if (!activeScenario) return;
@@ -53,6 +70,17 @@ export function StrategicStudioPage() {
     setPulse(true);
     pulseTimerRef.current = window.setTimeout(() => setPulse(false), 240);
   }, [activeScenario?.updatedAtISO]);
+
+  // PASS 7C+Execution Mode: mark sim stale when inputs change (do NOT auto-run)
+  useEffect(() => {
+    if (!activeScenario) return;
+    try {
+      const scenarioHash = computeLeverConfigHash(activeScenario.leverConfig);
+      markStale({ scenarioId: String(activeScenarioId), scenarioHash });
+    } catch {
+      markStale({ scenarioId: String(activeScenarioId), scenarioHash: String(Date.now()) });
+    }
+  }, [activeScenario?.updatedAtISO, activeScenarioId, markStale]);
 
   // PASS 7C: refresh stored results instantly when Run Simulation writes (same-tab)
   useEffect(() => {
@@ -91,6 +119,40 @@ export function StrategicStudioPage() {
         </div>
       ) : null}
       <div className="relative h-full w-full p-4">
+        <div className={styles.topRow}>
+          <div />
+          <div className={styles.runBlock}>
+            <button
+              type="button"
+              className={styles.runBtn}
+              disabled={simulationStatus === "running"}
+              onClick={() =>
+                runSimulationForScenario({
+                  scenarioId: String(activeScenarioId),
+                  baseline: baseline.leverConfig,
+                  scenario: activeScenario.leverConfig,
+                })
+              }
+            >
+              {simulationStatus === "running" ? "RUNNING..." : "RUN SIMULATION"}
+            </button>
+            <div className={styles.meta}>
+              <div className={styles.metaLine}>
+                Status: <span className={styles.metaStrong}>{simulationStatus.toUpperCase()}</span>
+              </div>
+              <div className={styles.metaLine}>
+                Runs: <span className={styles.metaStrong}>{runs.toLocaleString()}</span> · Seeded:{" "}
+                <span className={styles.metaStrong}>Yes</span> · Seed: <span className={styles.metaStrong}>{seed}</span>
+              </div>
+              <div className={styles.metaLine}>
+                Last Run:{" "}
+                <span className={styles.metaStrong}>
+                  {lastRunAt ? new Date(lastRunAt).toLocaleString() : "Never"}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
         <div className="mb-3">
           <DeltaRibbon storedResult={stored} pulse={pulse} />
         </div>

@@ -26,6 +26,7 @@ import {
 import { useUIStore } from "@/state/uiStore";
 import { useShallow } from "zustand/react/shallow";
 import styles from "./MainNav.module.css";
+import SimStatusChip from "./SimStatusChip";
 
 function MountainStatusPill() {
   const { mountainMode, mountainRenderer, mountainDprCap, lastReason } = useUIStore(
@@ -511,6 +512,8 @@ function RouterMainNav({
               <UtilityButton className={styles.utilityGroupButton} icon={<Download className="w-4 h-4" />} label="EXPORT" onClick={onExport} />
             </div>
 
+            <SimStatusChip />
+
             {/* Primary SHARE */}
             <UtilityButton icon={<Share2 className="w-4 h-4" />} label="SHARE" onClick={onShare} variant="primary" />
 
@@ -690,6 +693,8 @@ function ControlledMainNav({
               <UtilityButton className={styles.utilityGroupButton} icon={<FolderOpen className="w-4 h-4" />} label="LOAD" onClick={onLoad} />
               <UtilityButton className={styles.utilityGroupButton} icon={<Download className="w-4 h-4" />} label="EXPORT" onClick={onExport} />
             </div>
+
+            <SimStatusChip />
 
             {/* Primary SHARE */}
             <UtilityButton icon={<Share2 className="w-4 h-4" />} label="SHARE" onClick={onShare} variant="primary" />

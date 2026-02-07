@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { setCompareSelection } from "@/compare/selection";
-import { saveScenarioResult } from "@/strategy/scenarioResults";
-import { runScenarioSimulation } from "@/logic/runScenarioSimulation";
+import { useSimulationStore } from "@/state/simulationStore";
 import { computeConstraints, computeDerivedMetrics } from "@/strategicStudio/derive";
 import type { StudioBaselineModel, StudioScenarioModel } from "@/strategicStudio/types";
 import { useStrategicStudioStore } from "@/state/strategicStudioStore";
@@ -44,6 +43,7 @@ export function ScenarioIntelligencePanel(props: { baseline: StudioBaselineModel
   const { baseline, scenario } = props;
   const [tab, setTab] = useState<TabId>("summary");
   const [runState, setRunState] = useState<"idle" | "running" | "done">("idle");
+  const runSimulationForScenario = useSimulationStore((s) => s.runSimulationForScenario);
 
   const { saveScenario } = useStrategicStudioStore((s) => ({ saveScenario: s.saveScenario }));
 
@@ -89,22 +89,7 @@ export function ScenarioIntelligencePanel(props: { baseline: StudioBaselineModel
     if (runState === "running") return;
     setRunState("running");
     try {
-      // Ensure baseline stored result exists (improves Compare deltas)
-      const baseRes = await runScenarioSimulation({ baseline: baseline.leverConfig, scenario: baseline.leverConfig });
-      saveScenarioResult("base", baseRes);
-      try {
-        window.dispatchEvent(new CustomEvent("sf:scenarioResultsUpdated", { detail: { scenarioId: "base" } }));
-      } catch {
-        // ignore
-      }
-
-      const res = await runScenarioSimulation({ baseline: baseline.leverConfig, scenario: scenario.leverConfig });
-      saveScenarioResult(String(scenario.id), res);
-      try {
-        window.dispatchEvent(new CustomEvent("sf:scenarioResultsUpdated", { detail: { scenarioId: String(scenario.id) } }));
-      } catch {
-        // ignore
-      }
+      await runSimulationForScenario({ scenarioId: String(scenario.id), baseline: baseline.leverConfig, scenario: scenario.leverConfig });
       setRunState("done");
       window.setTimeout(() => setRunState("idle"), 1500);
     } catch (e) {
@@ -283,7 +268,7 @@ export function ScenarioIntelligencePanel(props: { baseline: StudioBaselineModel
                     {c.severity}
                   </div>
                 </div>
-                <div className="mt-1 text-[12px] leading-[1.5] text-white/65">{c.detail}</div>
+                <div className="mt-1 text-[12px] leading-normal text-white/65">{c.detail}</div>
               </div>
             ))
           ) : (
