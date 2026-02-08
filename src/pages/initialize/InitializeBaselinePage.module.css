@@ -8,11 +8,11 @@
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
 
   /* Initialize Baseline tokens (scoped to this page) */
-  --ib-panel: rgba(255,255,255,0.06);
-  --ib-panel2: rgba(255,255,255,0.08);
-  --ib-border: rgba(255,255,255,0.10);
-  --ib-text: rgba(255,255,255,0.92);
-  --ib-text-muted: rgba(255,255,255,0.70);
+  --ib-panel: rgba(255,255,255,0.07);
+  --ib-panel2: rgba(255,255,255,0.10);
+  --ib-border: rgba(255,255,255,0.12);
+  --ib-text: rgba(255,255,255,0.94);
+  --ib-text-muted: rgba(255,255,255,0.75);
 }
 
 .shell{
