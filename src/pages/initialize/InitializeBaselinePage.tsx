@@ -60,10 +60,10 @@ export default function InitializeBaselinePage({ onExit }: { onExit: () => void 
   const view = lockedView && baseline ? baseline : draft;
 
   // UI toggles (pure UI, not persisted)
-  const [showAdvancedFunding, setShowAdvancedFunding] = useState(true);
-  const [showAdvancedRevenue, setShowAdvancedRevenue] = useState(true);
-  const [showAdvancedCost, setShowAdvancedCost] = useState(true);
-  const [showAdvancedPosture, setShowAdvancedPosture] = useState(true);
+  const [showAdvancedFunding, setShowAdvancedFunding] = useState(false);
+  const [showAdvancedRevenue, setShowAdvancedRevenue] = useState(false);
+  const [showAdvancedCost, setShowAdvancedCost] = useState(false);
+  const [showAdvancedPosture, setShowAdvancedPosture] = useState(false);
 
   // --------- Inputs (safe defaults) ----------
   const cashOnHand = Number(view.metrics.cashOnHand ?? 0);
@@ -255,10 +255,6 @@ export default function InitializeBaselinePage({ onExit }: { onExit: () => void 
                     onChange={(n) => setDraft({ funding: { restrictedCash: n } })}
                   />
 
-                  <Field label="Cash Available (derived)">
-                    <input className={styles.input} value={cashAvailable > 0 ? fmtInt(cashAvailable) : "0"} disabled />
-                  </Field>
-
                   <MoneyField
                     label="Committed Capital"
                     value={Number(view.funding.committedCapital ?? 0)}
@@ -273,9 +269,21 @@ export default function InitializeBaselinePage({ onExit }: { onExit: () => void 
                     onChange={(n) => setDraft({ metrics: { monthlyBurn: n } })}
                   />
 
-                  <Field label="Runway (derived, months)">
-                    <input className={styles.input} value={runwayMonths > 0 ? fmt1(runwayMonths) : "—"} disabled />
-                  </Field>
+                  <SelectField
+                    label="Access to Capital"
+                    value={(view.funding.accessToCapital ?? "Moderate") as AccessToCapital}
+                    disabled={lockedView}
+                    options={ACCESS_TO_CAPITAL}
+                    onChange={(v) => setDraft({ funding: { accessToCapital: v } })}
+                  />
+
+                  <NumberField
+                    label="Fundraising Window (months)"
+                    value={Number(view.funding.fundraisingWindowMonths ?? 6)}
+                    disabled={lockedView}
+                    onChange={(n) => setDraft({ funding: { fundraisingWindowMonths: n } })}
+                    max={120}
+                  />
                 </div>
 
                 {showAdvancedFunding ? (
@@ -294,22 +302,6 @@ export default function InitializeBaselinePage({ onExit }: { onExit: () => void 
                         disabled={lockedView}
                         onChange={(n) => setDraft({ funding: { interestRatePct: n } })}
                         max={100}
-                      />
-
-                      <NumberField
-                        label="Fundraising Window (months)"
-                        value={Number(view.funding.fundraisingWindowMonths ?? 6)}
-                        disabled={lockedView}
-                        onChange={(n) => setDraft({ funding: { fundraisingWindowMonths: n } })}
-                        max={120}
-                      />
-
-                      <SelectField
-                        label="Access to Capital"
-                        value={(view.funding.accessToCapital ?? "Moderate") as AccessToCapital}
-                        disabled={lockedView}
-                        options={ACCESS_TO_CAPITAL}
-                        onChange={(v) => setDraft({ funding: { accessToCapital: v } })}
                       />
 
                       <ToggleField
@@ -344,40 +336,54 @@ export default function InitializeBaselinePage({ onExit }: { onExit: () => void 
                     onChange={(n) => setDraft({ metrics: { currentARR: n } })}
                   />
 
-                  <Field label="MRR (derived)">
-                    <input className={styles.input} value={mrr > 0 ? fmtInt(Math.round(mrr)) : "0"} disabled />
-                  </Field>
-
-                  <PercentField
+                  <SliderField
                     label="Gross Margin %"
-                    value={Number(view.metrics.grossMarginPct ?? 0)}
+                    value={Number(view.metrics.grossMarginPct ?? 75)}
+                    min={10}
+                    max={95}
+                    step={1}
                     disabled={lockedView}
+                    unit="%"
                     onChange={(n) => setDraft({ metrics: { grossMarginPct: n } })}
-                    max={100}
                   />
 
-                  <PercentField
+                  <SliderField
                     label="Monthly Growth %"
                     value={Number(view.metrics.monthlyGrowthPct ?? 0)}
+                    min={0}
+                    max={40}
+                    step={1}
                     disabled={lockedView}
+                    unit="%"
                     onChange={(n) => setDraft({ metrics: { monthlyGrowthPct: n } })}
-                    max={1000}
                   />
 
-                  <PercentField
+                  <SliderField
                     label="Monthly Churn %"
                     value={Number(view.metrics.monthlyChurnPct ?? 0)}
+                    min={0}
+                    max={20}
+                    step={1}
                     disabled={lockedView}
+                    unit="%"
                     onChange={(n) => setDraft({ metrics: { monthlyChurnPct: n } })}
-                    max={100}
+                    left="LOW"
+                    mid="OK"
+                    right="HIGH"
                   />
 
-                  <PercentField
+                  <SliderField
                     label="NRR %"
                     value={Number(view.metrics.nrrPct ?? 100)}
+                    min={60}
+                    max={160}
+                    step={1}
                     disabled={lockedView}
+                    unit="%"
                     onChange={(n) => setDraft({ metrics: { nrrPct: n } })}
-                    max={300}
+                    left="WEAK"
+                    mid="SOLID"
+                    right="ELITE"
                   />
                 </div>
 
@@ -463,14 +469,6 @@ export default function InitializeBaselinePage({ onExit }: { onExit: () => void 
                     disabled={lockedView}
                     onChange={(n) => setDraft({ operating: { gaMonthly: n } })}
                   />
-
-                  <Field label="Payroll (derived monthly)">
-                    <input className={styles.input} value={payrollMonthly > 0 ? fmtInt(Math.round(payrollMonthly)) : "0"} disabled />
-                  </Field>
-
-                  <Field label="Structural Burn (derived)">
-                    <input className={styles.input} value={structuralBurn > 0 ? fmtInt(Math.round(structuralBurn)) : "0"} disabled />
-                  </Field>
                 </div>
 
                 {showAdvancedCost ? (
@@ -527,26 +525,6 @@ export default function InitializeBaselinePage({ onExit }: { onExit: () => void 
                     />
                   </Field>
 
-                  <Field label="Industry">
-                    <input
-                      className={styles.input}
-                      value={view.identity.industry ?? ""}
-                      onChange={(e) => setDraft({ identity: { industry: e.target.value } })}
-                      disabled={lockedView}
-                      placeholder="Industry"
-                    />
-                  </Field>
-
-                  <Field label="Country">
-                    <input
-                      className={styles.input}
-                      value={view.identity.country ?? ""}
-                      onChange={(e) => setDraft({ identity: { country: e.target.value } })}
-                      disabled={lockedView}
-                      placeholder="Country"
-                    />
-                  </Field>
-
                   <Field label="Reporting Currency">
                     <select
                       className={styles.select}
@@ -559,26 +537,60 @@ export default function InitializeBaselinePage({ onExit }: { onExit: () => void 
                       ))}
                     </select>
                   </Field>
+
+                  <SelectField
+                    label="Primary Objective"
+                    value={(view.posture.primaryObjective ?? "Runway") as PrimaryObjective}
+                    disabled={lockedView}
+                    options={PRIMARY_OBJECTIVE}
+                    onChange={(v) => setDraft({ posture: { primaryObjective: v } })}
+                  />
+
+                  <SegmentedField
+                    label="Risk Appetite"
+                    value={(view.posture.riskAppetite ?? "Balanced") as RiskAppetite}
+                    disabled={lockedView}
+                    options={RISK_APPETITE}
+                    onChange={(v) => setDraft({ posture: { riskAppetite: v } })}
+                  />
+
+                  <SliderField
+                    label="Target Growth Band (monthly %)"
+                    value={Number(view.posture.targetGrowthBandPct ?? 8)}
+                    min={0}
+                    max={25}
+                    step={1}
+                    disabled={lockedView}
+                    unit="%"
+                    onChange={(n) => setDraft({ posture: { targetGrowthBandPct: n } })}
+                    left="LOW"
+                    mid="NEUTRAL"
+                    right="HIGH"
+                  />
                 </div>
 
                 {showAdvancedPosture ? (
                   <div className={styles.advancedBlock}>
                     <div className={styles.fieldRow}>
-                      <SelectField
-                        label="Primary Objective"
-                        value={(view.posture.primaryObjective ?? "Runway") as PrimaryObjective}
-                        disabled={lockedView}
-                        options={PRIMARY_OBJECTIVE}
-                        onChange={(v) => setDraft({ posture: { primaryObjective: v } })}
-                      />
+                      <Field label="Industry (optional)">
+                        <input
+                          className={styles.input}
+                          value={view.identity.industry ?? ""}
+                          onChange={(e) => setDraft({ identity: { industry: e.target.value } })}
+                          disabled={lockedView}
+                          placeholder="Industry"
+                        />
+                      </Field>
 
-                      <SelectField
-                        label="Risk Appetite"
-                        value={(view.posture.riskAppetite ?? "Balanced") as RiskAppetite}
-                        disabled={lockedView}
-                        options={RISK_APPETITE}
-                        onChange={(v) => setDraft({ posture: { riskAppetite: v } })}
-                      />
+                      <Field label="Country (optional)">
+                        <input
+                          className={styles.input}
+                          value={view.identity.country ?? ""}
+                          onChange={(e) => setDraft({ identity: { country: e.target.value } })}
+                          disabled={lockedView}
+                          placeholder="Country"
+                        />
+                      </Field>
 
                       <SelectField
                         label="Hiring Velocity"
@@ -602,14 +614,6 @@ export default function InitializeBaselinePage({ onExit }: { onExit: () => void 
                         disabled={lockedView}
                         onChange={(n) => setDraft({ operating: { engineeringVelocityMonths: n } })}
                         max={36}
-                      />
-
-                      <PercentField
-                        label="Target Growth Band (monthly %)"
-                        value={Number(view.posture.targetGrowthBandPct ?? 8)}
-                        disabled={lockedView}
-                        onChange={(n) => setDraft({ posture: { targetGrowthBandPct: n } })}
-                        max={100}
                       />
                     </div>
                   </div>
@@ -781,6 +785,109 @@ function ToggleField({
       >
         {value ? "ON" : "OFF"}
       </button>
+    </div>
+  );
+}
+
+function SegmentedField<T extends string>({
+  label,
+  value,
+  disabled,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  disabled: boolean;
+  options: readonly T[];
+  onChange: (v: T) => void;
+}) {
+  return (
+    <div>
+      <div className={styles.label}>{label}</div>
+      <div className={styles.segmented} aria-disabled={disabled}>
+        {options.map((opt) => {
+          const active = opt === value;
+          return (
+            <button
+              key={opt}
+              type="button"
+              className={`${styles.segmentBtn} ${active ? styles.segmentBtnActive : ""}`}
+              onClick={() => onChange(opt)}
+              disabled={disabled}
+              aria-pressed={active}
+            >
+              {opt}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function SliderField({
+  label,
+  value,
+  min,
+  max,
+  step = 1,
+  disabled,
+  onChange,
+  unit,
+  left = "LOW",
+  mid = "NEUTRAL",
+  right = "HIGH",
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  disabled: boolean;
+  onChange: (n: number) => void;
+  unit?: string;
+  left?: string;
+  mid?: string;
+  right?: string;
+}) {
+  const safeValue = Number.isFinite(value) ? value : 0;
+  const pct = max > min ? ((safeValue - min) / (max - min)) * 100 : 0;
+
+  return (
+    <div>
+      <div className={styles.labelRow}>
+        <div className={styles.label}>{label}</div>
+        <div className={styles.valuePill}>
+          {safeValue}
+          {unit ? <span className={styles.valuePillUnit}>{unit}</span> : null}
+        </div>
+      </div>
+
+      <div className={styles.sliderShell} aria-disabled={disabled}>
+        <div className={styles.sliderTrack}>
+          <div className={styles.sliderTicks} />
+          <div className={styles.sliderFill} style={{ width: `${pct}%` }} />
+          <div className={styles.sliderGlow} />
+        </div>
+
+        <input
+          className={styles.sliderNative}
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={safeValue}
+          onChange={(e) => onChange(clamp(toNumber(e.target.value), min, max))}
+          disabled={disabled}
+        />
+
+        <div className={styles.sliderLegend}>
+          <span>{left}</span>
+          <span>{mid}</span>
+          <span>{right}</span>
+        </div>
+      </div>
     </div>
   );
 }
