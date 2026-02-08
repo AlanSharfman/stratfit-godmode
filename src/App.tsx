@@ -488,6 +488,12 @@ export default function App() {
     return <ScenarioMemoPage />;
   }
 
+  // Initialize Baseline route — canonical baseline truth capture.
+  // We support the pathname directly for determinism, even though the app mainly uses view-state navigation.
+  if (typeof window !== "undefined" && window.location.pathname.startsWith("/initialize")) {
+    return <InitializeBaselinePage onExit={() => window.location.assign("/")} />;
+  }
+
   // Compare route — Production-ready Risk Topography Instrument
   if (typeof window !== "undefined" && window.location.pathname === "/compare") {
     return <ComparePage />;
