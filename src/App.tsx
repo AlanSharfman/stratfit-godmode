@@ -1307,7 +1307,9 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
                   ? "risk"
                   : headerViewMode === "simulate"
                     ? "simulate"
-                    : "terrain"
+                    : headerViewMode === "impact"
+                      ? "impact"
+                      : "terrain"
         }
         onNavigate={(id) => {
           // close overlay if user navigates elsewhere
