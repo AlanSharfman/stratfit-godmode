@@ -3,6 +3,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { emitCompute } from '@/engine/computeTelemetry';
 
 // ============================================================================
 // TYPES
@@ -364,6 +365,9 @@ export const useScenarioStore = create<ScenarioState>()(
       setCompareViewMode: (mode) => set({ compareViewMode: mode }),
       
       calculateDelta: (scenarioA, scenarioB) => {
+        const _t0 = performance.now();
+        emitCompute("compare_delta", "initialize");
+
         const simA = scenarioA.simulation;
         const simB = scenarioB.simulation;
         
@@ -440,7 +444,9 @@ export const useScenarioStore = create<ScenarioState>()(
           });
         }
         
-        return {
+        emitCompute("compare_delta", "derive_metrics");
+
+        const _deltaResult = {
           survivalDelta: (simB.survivalRate - simA.survivalRate) * 100,
           arrDelta: simB.medianARR - simA.medianARR,
           runwayDelta: simB.medianRunway - simA.medianRunway,
@@ -456,6 +462,12 @@ export const useScenarioStore = create<ScenarioState>()(
           leverDeltas,
           monthlyDivergence,
         };
+
+        emitCompute("compare_delta", "complete", {
+          durationMs: performance.now() - _t0,
+        });
+
+        return _deltaResult;
       },
     }),
     {

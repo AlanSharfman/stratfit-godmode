@@ -48,7 +48,9 @@ interface ModeConfig {
   autoRotateSpeed: number;
 }
 
-const MODE_CONFIGS: Record<"default" | "celebration" | "ghost", ModeConfig> = {
+type MountainMode = "default" | "celebration" | "ghost" | "instrument";
+
+const MODE_CONFIGS: Record<MountainMode, ModeConfig> = {
   default: {
     terrainOpacity: 1,
     wireframeOpacity: 1,
@@ -87,6 +89,21 @@ const MODE_CONFIGS: Record<"default" | "celebration" | "ghost", ModeConfig> = {
     bloomIntensity: 0,
     autoRotate: false,
     autoRotateSpeed: 0,
+  },
+  // INSTRUMENT — Compact diagnostic terrain for Initialize page
+  // Mesh + subtle wireframe, slow rotation, soft light, no overlays
+  instrument: {
+    terrainOpacity: 0.7,
+    wireframeOpacity: 0.5,
+    glowMultiplier: 0.15,
+    colorSaturation: 0.6,
+    animationSpeed: 0.2,
+    pulseEnabled: false,
+    hazeOpacity: 0,
+    pathGlow: 0,
+    bloomIntensity: 0,
+    autoRotate: true,
+    autoRotateSpeed: 0.1,
   },
 };
 
@@ -252,7 +269,7 @@ interface TerrainProps {
   leverIntensity01: number;
   scenario: ScenarioId;
   baseColor?: string;
-  mode?: "default" | "celebration" | "ghost";
+  mode?: MountainMode;
   glowIntensity?: number;
   modeConfig?: ModeConfig;
   isDragging?: boolean; // For dynamic brightness
@@ -893,7 +910,7 @@ interface ScenarioMountainProps {
   className?: string;
   timelineEnabled?: boolean;
   heatmapEnabled?: boolean;
-  mode?: 'default' | 'celebration' | 'ghost';
+  mode?: MountainMode;
   glowIntensity?: number;
   showPath?: boolean;
   showMilestones?: boolean;
@@ -981,6 +998,71 @@ export function ScenarioMountain({
   const effectiveRiskLevel = isSeismicActive ? uiRiskLevel : riskLevel;
 
   const solverPath = useScenarioStore((s) => s.solverPath);
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // INSTRUMENT MODE — Compact diagnostic terrain (Initialize page)
+  // No overlays, no haze, no grid, no paths. Mesh + wireframe + slow rotation.
+  // ═══════════════════════════════════════════════════════════════════════
+  if (mode === 'instrument') {
+    return (
+      <div
+        className={`relative w-full h-full overflow-hidden ${className ?? ""}`}
+        style={{ background: "#0a1018", height: "100%", width: "100%" }}
+      >
+        <Canvas
+          gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+          dpr={Math.min(window.devicePixelRatio, 1.5)}
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 1 }}
+          fallback={<div style={{ width: "100%", height: "100%", background: "#0a1018" }} />}
+        >
+          <Suspense fallback={null}>
+            <color attach="background" args={["#0a1018"]} />
+            <fog attach="fog" args={["#0a1018", 25, 70]} />
+
+            {/* Camera raised + pulled back so terrain sits lower in viewport */}
+            <PerspectiveCamera makeDefault position={[0, 16, 28]} fov={36} />
+
+            {/* Soft top light — institutional, no drama */}
+            <ambientLight intensity={0.12} />
+            <directionalLight position={[0, 18, 5]} intensity={0.3} color="#e8f4f8" />
+            <directionalLight position={[-4, 10, -2]} intensity={0.06} color="#22d3ee" />
+
+            {/* Scale Y to 0.45 — flattens the terrain so only peaks & dips are visible,
+                not a towering mountain. Position lowered for correct framing. */}
+            <group scale={[1, 0.45, 1]} position={[0, -3, 0]}>
+              <Terrain
+                dataPoints={resolvedDataPoints}
+                activeKpiIndex={null}
+                activeLeverId={null}
+                leverIntensity01={0}
+                scenario={scenarioId}
+                baseColor={scenarioColor}
+                mode="instrument"
+                glowIntensity={0.3}
+                modeConfig={config}
+                isDragging={false}
+                neuralPulse={false}
+                opacityMultiplier={config.terrainOpacity}
+                wireOpacityMultiplier={config.wireframeOpacity}
+                glowMultiplier={config.glowMultiplier}
+              />
+            </group>
+
+            {/* Slow rotation (0.1 deg/sec), no user interaction */}
+            <OrbitControls
+              enableZoom={false}
+              enablePan={false}
+              enableRotate={false}
+              autoRotate
+              autoRotateSpeed={config.autoRotateSpeed}
+              minPolarAngle={Math.PI / 3.5}
+              maxPolarAngle={Math.PI / 3.5}
+            />
+          </Suspense>
+        </Canvas>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -1119,7 +1201,7 @@ function StrategicPath({
 }: {
   solverPath: { riskIndex: number; enterpriseValue: number; runway: number }[];
   color: string;
-  mode: "default" | "celebration" | "ghost";
+  mode: MountainMode;
   glowIntensity: number;
 }) {
   const config = MODE_CONFIGS[mode] ?? MODE_CONFIGS.default;
@@ -1212,7 +1294,7 @@ function MilestoneOrbs({
   solverPath,
 }: {
   color: string;
-  mode: "default" | "celebration" | "ghost";
+  mode: MountainMode;
   glowIntensity: number;
   solverPath?: { riskIndex: number; enterpriseValue: number; runway: number }[];
 }) {
@@ -1287,7 +1369,7 @@ function MilestoneOrb({
 }: {
   position: THREE.Vector3;
   color: string;
-  mode: "default" | "celebration" | "ghost";
+  mode: MountainMode;
   glowIntensity: number;
   glowMultiplier: number;
 }) {

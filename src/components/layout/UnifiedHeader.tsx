@@ -19,7 +19,7 @@ import { ExportReportButton, ShareButton } from '@/components/common';
 // ===========================================
 // VIEW MODES (moved from ViewModeSelector)
 // ===========================================
-export type ViewMode = "onboarding" | "terrain" | "impact" | "compare" | "simulate" | "risk" | "decision" | "valuation";
+export type ViewMode = "initialize" | "terrain" | "impact" | "compare" | "simulate" | "risk" | "decision" | "valuation";
 
 // ===========================================
 // SCENARIOS (moved from ActiveScenario)
@@ -42,11 +42,10 @@ const SCENARIOS: Scenario[] = [
 // NAV TABS
 // ===========================================
 const NAV_TABS: Array<{ id: ViewMode; label: string; icon: typeof Layers }> = [
-  { id: "onboarding", label: "ONBOARDING", icon: Layers },
-  { id: "terrain", label: "TERRAIN", icon: Layers },
-  { id: "simulate", label: "SIMULATE", icon: Zap },
+  { id: "initialize", label: "SYSTEM CALIBRATION", icon: Layers },
+  { id: "terrain", label: "BASELINE", icon: Layers },
+  { id: "simulate", label: "STRATEGY STUDIO", icon: Zap },
   { id: "compare", label: "COMPARE", icon: SplitSquareHorizontal },
-  { id: "impact", label: "IMPACT", icon: Activity },
   { id: "risk", label: "RISK", icon: AlertTriangle },
   { id: "valuation", label: "VALUATION", icon: TrendingUp },
   { id: "decision", label: "DECISION", icon: Target },
@@ -232,92 +231,86 @@ export default function UnifiedHeader({
           color: #22d3ee;
         }
 
-        /* MAIN NAV TABS — RECTANGULAR PILLS */
+        /* MAIN NAV — CLEAN INSTITUTIONAL UNDERLINE STYLE */
         .uh-nav {
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 0;
           padding: 0;
           background: transparent;
           border: none;
         }
         .uh-nav-tab {
+          position: relative;
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 8px;
-          padding: 10px 18px;
-          min-width: 110px;
+          padding: 0 14px;
+          height: 56px;
           flex-shrink: 0;
           white-space: nowrap;
-          /* Rectangular pill with machined glass */
-          background: rgba(15, 23, 42, 0.6);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 8px;
-          /* Jewel inner glow */
-          box-shadow: 
-            inset 0 1px 0 0 rgba(255, 255, 255, 0.08),
-            inset 0 0 0 1px rgba(0, 240, 255, 0.03);
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: 0.08em;
+          background: transparent;
+          border: none;
+          border-radius: 0;
+          box-shadow: none;
+          font-size: 13px;
+          font-weight: 500;
+          letter-spacing: 0.06em;
           text-transform: uppercase;
           color: rgba(255, 255, 255, 0.5);
           cursor: pointer;
-          transition: all 0.15s ease;
-          white-space: nowrap;
-          backdrop-filter: blur(10px);
+          transition: color 0.15s ease;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
         .uh-nav-tab:hover {
-          color: rgba(255, 255, 255, 0.9);
-          background: rgba(15, 23, 42, 0.8);
-          border-color: rgba(255, 255, 255, 0.15);
-          box-shadow: 
-            inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-            inset 0 0 0 1px rgba(0, 240, 255, 0.05),
-            0 4px 12px rgba(0, 0, 0, 0.3);
+          color: rgba(255, 255, 255, 0.8);
+          background: transparent;
+          border: none;
+          box-shadow: none;
         }
         .uh-nav-tab.active {
           color: #22d3ee;
-          background: rgba(15, 23, 42, 0.9);
-          border-color: rgba(34, 211, 238, 0.3);
-          box-shadow: 
-            inset 0 1px 0 0 rgba(34, 211, 238, 0.15),
-            inset 0 0 0 1px rgba(0, 240, 255, 0.1),
-            0 0 20px rgba(34, 211, 238, 0.15),
-            0 4px 12px rgba(0, 0, 0, 0.4);
+          font-weight: 600;
+          background: transparent;
+          border: none;
+          box-shadow: none;
         }
+        .uh-nav-tab.active::after {
+          content: '';
+          position: absolute;
+          bottom: 0;
+          left: 10px;
+          right: 10px;
+          height: 2px;
+          background: #22d3ee;
+          border-radius: 1px;
+        }
+        /* No special simulate styling — uniform look */
         .uh-nav-tab.simulate {
-          color: #22d3ee;
-          background: rgba(34, 211, 238, 0.08);
-          border: 1px solid rgba(34, 211, 238, 0.25);
-          box-shadow: 
-            inset 0 1px 0 0 rgba(34, 211, 238, 0.1),
-            inset 0 0 0 1px rgba(0, 240, 255, 0.05);
+          color: rgba(255, 255, 255, 0.5);
+          background: transparent;
+          border: none;
+          box-shadow: none;
         }
-        .uh-nav-tab.simulate:hover,
+        .uh-nav-tab.simulate:hover {
+          color: rgba(255, 255, 255, 0.8);
+        }
         .uh-nav-tab.simulate.active {
           color: #22d3ee;
-          background: rgba(34, 211, 238, 0.15);
-          border-color: rgba(34, 211, 238, 0.4);
-          box-shadow: 
-            inset 0 1px 0 0 rgba(34, 211, 238, 0.2),
-            inset 0 0 0 1px rgba(0, 240, 255, 0.1),
-            0 0 25px rgba(34, 211, 238, 0.25),
-            0 4px 16px rgba(0, 0, 0, 0.4);
+          font-weight: 600;
         }
         .uh-nav-tab.simulate .uh-nav-icon {
-          filter: drop-shadow(0 0 4px rgba(34, 211, 238, 0.6));
+          filter: none;
         }
         .uh-nav-icon {
-          width: 14px;
-          height: 14px;
+          display: none; /* Hide icons for clean text-only nav */
         }
         .uh-nav-divider {
           width: 1px;
-          height: 24px;
+          height: 20px;
           background: rgba(255, 255, 255, 0.08);
-          margin: 0 6px;
+          margin: 0 2px;
+          flex-shrink: 0;
         }
 
         /* TERRAIN TOGGLES */
@@ -363,60 +356,51 @@ export default function UnifiedHeader({
           box-shadow: 0 0 6px currentColor;
         }
 
-        /* HEADER ACTIONS */
+        /* HEADER ACTIONS — Ghost institutional */
         .uh-actions {
           display: flex;
           align-items: center;
-          gap: 4px;
-          padding: 4px 6px;
-          background: rgba(0, 0, 0, 0.3);
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          border-radius: 10px;
+          gap: 2px;
+          padding: 0;
+          background: transparent;
+          border: none;
+          border-radius: 0;
         }
         .uh-action-btn {
           display: flex;
           align-items: center;
-          gap: 6px;
-          padding: 8px 12px;
+          gap: 5px;
+          padding: 6px 10px;
           background: transparent;
-          border: none;
-          border-radius: 6px;
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          border-radius: 4px;
           font-size: 11px;
-          font-weight: 600;
-          letter-spacing: 0.04em;
-          color: rgba(255, 255, 255, 0.5);
-          cursor: pointer;
-          transition: all 0.15s ease;
-        }
-        .uh-action-btn:hover {
-          background: rgba(255, 255, 255, 0.06);
-          color: rgba(255, 255, 255, 0.9);
-        }
-        .uh-action-btn svg {
-          color: #22d3ee;
-        }
-        .uh-action-divider {
-          width: 1px;
-          height: 18px;
-          background: rgba(255, 255, 255, 0.08);
-          margin: 0 2px;
-        }
-        .uh-help-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 36px;
-          height: 36px;
-          background: transparent;
-          border: none;
-          border-radius: 50%;
+          font-weight: 500;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
           color: rgba(255, 255, 255, 0.4);
           cursor: pointer;
           transition: all 0.15s ease;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
-        .uh-help-btn:hover {
-          background: rgba(255, 255, 255, 0.06);
-          color: #22d3ee;
+        .uh-action-btn:hover {
+          background: rgba(255, 255, 255, 0.04);
+          color: rgba(255, 255, 255, 0.7);
+          border-color: rgba(255, 255, 255, 0.1);
+        }
+        .uh-action-btn svg {
+          color: rgba(255, 255, 255, 0.35);
+          width: 14px;
+          height: 14px;
+        }
+        .uh-action-btn:hover svg {
+          color: rgba(255, 255, 255, 0.6);
+        }
+        .uh-action-divider {
+          display: none; /* Remove dividers between ghost buttons */
+        }
+        .uh-help-btn {
+          display: none; /* Removed from institutional nav */
         }
       `}</style>
 
@@ -480,24 +464,19 @@ export default function UnifiedHeader({
           )}
         </div>
 
-        {/* MAIN NAVIGATION */}
+        {/* MAIN NAVIGATION — Clean institutional text nav */}
         <nav className="uh-nav">
-          {NAV_TABS.map((tab, i) => {
-            const Icon = tab.icon;
-            const isSimulate = tab.id === 'simulate';
-            return (
-              <React.Fragment key={tab.id}>
-                <button
-                  className={`uh-nav-tab ${activeView === tab.id ? 'active' : ''} ${isSimulate ? 'simulate' : ''}`}
-                  onClick={() => onViewChange(tab.id as ViewMode)}
-                >
-                  <Icon className="uh-nav-icon" />
-                  <span>{tab.label}</span>
-                </button>
-                {i === 1 && <div className="uh-nav-divider" />}
-              </React.Fragment>
-            );
-          })}
+          {NAV_TABS.map((tab, i) => (
+            <React.Fragment key={tab.id}>
+              <button
+                className={`uh-nav-tab ${activeView === tab.id ? 'active' : ''}`}
+                onClick={() => onViewChange(tab.id as ViewMode)}
+              >
+                <span>{tab.label}</span>
+              </button>
+              {i < NAV_TABS.length - 1 && <div className="uh-nav-divider" />}
+            </React.Fragment>
+          ))}
         </nav>
 
         {/* TERRAIN TOGGLES (only show when terrain is active) */}

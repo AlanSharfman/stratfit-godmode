@@ -29,7 +29,7 @@ import { useShallow } from "zustand/react/shallow";
 import { useScenarioStore } from "@/state/scenarioStore";
 import { mapScenarioIntelligence, type ScenarioMetricsSnapshot } from "@/utils/scenarioIntelligenceMapping";
 import { buildScenarioIntelligence, buildScenarioMemo, type ScenarioMemo } from "../memo/buildScenarioMemo";
-import { OnboardApp } from "@/onboard";
+import InitializeBaselinePage from "@/pages/initialize/InitializeBaselinePage";
 
 
 const interFont = `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');`;
@@ -142,12 +142,12 @@ const footerStyle: React.CSSProperties = {
 };
 
 export default function ScenarioMemoPage() {
-  // DEV HARNESS: mount onboarding module without router/nav changes.
+  // DEV HARNESS: mount initialize baseline screen without router/nav changes.
   // Visit: /memo/onboard
   if (import.meta.env.DEV && typeof window !== "undefined") {
     const p = window.location.pathname;
     if (p === "/memo/onboard" || p === "/memo/onboard/") {
-      return <OnboardApp />;
+      return <InitializeBaselinePage />;
     }
   }
 

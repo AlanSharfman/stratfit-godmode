@@ -53,25 +53,25 @@ interface MainNavProps {
 
 const primaryNav: NavItem[] = [
   {
-    id: 'onboarding',
-    label: 'ONBOARDING',
+    id: 'initialize',
+    label: 'SYSTEM CALIBRATION',
     href: '/initialize',
     icon: <Layers className="w-4 h-4" />,
-    description: 'Initialize baseline truth',
+    description: 'Financial baseline calibration',
   },
   {
     id: 'terrain',
-    label: 'TERRAIN',
+    label: 'BASELINE',
     href: '/terrain',
     icon: <Mountain className="w-4 h-4" />,
-    description: 'Build & test your strategy',
+    description: 'Terrain visualization & baseline analysis',
   },
   {
     id: 'simulate',
-    label: 'SIMULATE',
+    label: 'STRATEGY STUDIO',
     href: '/simulate',
     icon: <Zap className="w-4 h-4" />,
-    description: 'Run 10,000 simulations',
+    description: 'Strategy configuration & simulation',
   },
   {
     id: 'compare',
@@ -81,11 +81,11 @@ const primaryNav: NavItem[] = [
     description: 'Compare two futures',
   },
   {
-    id: 'impact',
-    label: 'IMPACT',
-    href: '/impact',
+    id: 'risk',
+    label: 'RISK',
+    href: '/risk',
     icon: <Activity className="w-4 h-4" />,
-    description: 'Analyze what matters most',
+    description: 'Risk assessment & threat analysis',
   },
   {
     id: 'valuation',
@@ -171,26 +171,33 @@ function PrimaryNavItem({ item, isActive }: { item: NavItem; isActive: boolean }
   return (
     <Link
       to={item.href}
-      className={`relative flex items-center gap-2 px-4 py-2.5 rounded-lg font-mono text-xs tracking-wide transition-all group ${
+      className={`relative px-3 py-2.5 transition-all group ${
         isActive
-          ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-          : 'text-white/50 hover:text-white hover:bg-white/5'
+          ? 'text-cyan-400'
+          : 'text-white/50 hover:text-white/80'
       }`}
+      style={{
+        fontSize: '13px',
+        fontWeight: isActive ? 600 : 500,
+        letterSpacing: '0.06em',
+        textTransform: 'uppercase' as const,
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        background: 'transparent',
+        border: 'none',
+        borderRadius: 0,
+      }}
     >
-      <span className={`transition-colors ${isActive ? 'text-cyan-400' : 'text-white/40 group-hover:text-white/70'}`}>
-        {item.icon}
-      </span>
       <span>{item.label}</span>
-      
+
+      {/* Active cyan underline */}
+      {isActive && (
+        <div className="absolute bottom-0 left-2 right-2 h-[2px] bg-cyan-400" style={{ borderRadius: '1px' }} />
+      )}
+
       {/* Hover tooltip */}
       <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-1.5 bg-slate-900 border border-white/10 rounded-lg text-[10px] text-white/70 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
         {item.description}
       </div>
-      
-      {/* Active indicator line */}
-      {isActive && (
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-cyan-400 rounded-full" />
-      )}
     </Link>
   )
 }
@@ -208,26 +215,33 @@ function PrimaryNavButton({
     <button
       type="button"
       onClick={onClick}
-      className={`relative flex items-center gap-2 px-4 py-2.5 rounded-lg font-mono text-xs tracking-wide transition-all group ${
+      className={`relative px-3 py-2.5 transition-all group ${
         isActive
-          ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-          : 'text-white/50 hover:text-white hover:bg-white/5'
+          ? 'text-cyan-400'
+          : 'text-white/50 hover:text-white/80'
       }`}
+      style={{
+        fontSize: '13px',
+        fontWeight: isActive ? 600 : 500,
+        letterSpacing: '0.06em',
+        textTransform: 'uppercase' as const,
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        background: 'transparent',
+        border: 'none',
+        borderRadius: 0,
+      }}
     >
-      <span className={`transition-colors ${isActive ? 'text-cyan-400' : 'text-white/40 group-hover:text-white/70'}`}>
-        {item.icon}
-      </span>
       <span>{item.label}</span>
+
+      {/* Active cyan underline */}
+      {isActive && (
+        <div className="absolute bottom-0 left-2 right-2 h-[2px] bg-cyan-400" style={{ borderRadius: '1px' }} />
+      )}
 
       {/* Hover tooltip */}
       <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-1.5 bg-slate-900 border border-white/10 rounded-lg text-[10px] text-white/70 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
         {item.description}
       </div>
-
-      {/* Active indicator line */}
-      {isActive && (
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-cyan-400 rounded-full" />
-      )}
     </button>
   )
 }
@@ -240,7 +254,6 @@ function UtilityButton({
   icon, 
   label, 
   onClick,
-  variant = 'default' 
 }: { 
   icon: React.ReactNode
   label: string
@@ -250,11 +263,16 @@ function UtilityButton({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-mono transition-all ${
-        variant === 'primary'
-          ? 'bg-violet-500/20 border border-violet-500/30 text-violet-300 hover:bg-violet-500/30'
-          : 'text-white/40 hover:text-white hover:bg-white/5'
-      }`}
+      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-white/40 hover:text-white/70 transition-all"
+      style={{
+        fontSize: '11px',
+        fontWeight: 500,
+        letterSpacing: '0.06em',
+        textTransform: 'uppercase' as const,
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        background: 'transparent',
+        border: '1px solid rgba(255,255,255,0.06)',
+      }}
     >
       {icon}
       <span className="hidden xl:inline">{label}</span>
@@ -276,7 +294,6 @@ export function MainNav(props: MainNavProps) {
 }
 
 function RouterMainNav({
-  activeScenario,
   onSave,
   onLoad,
   onExport,
@@ -285,7 +302,6 @@ function RouterMainNav({
 }: MainNavProps) {
   const location = useLocation()
   const pathname = location.pathname
-  const [showScenarioMenu, setShowScenarioMenu] = useState(false)
 
   // Determine active nav item
   const getActiveItem = () => {
@@ -300,64 +316,46 @@ function RouterMainNav({
   const activeItem = getActiveItem()
 
   return (
-    <header className={`h-16 bg-black/80 backdrop-blur-xl border-b border-white/10 ${className}`}>
-      <div className="h-full px-6 flex items-center justify-between">
-        {/* Left: Logo + Active Scenario */}
-        <div className="flex items-center gap-6">
-          <Logo />
-          
-          {activeScenario && (
-            <>
-              <div className="w-px h-8 bg-white/10" />
-              <ActiveScenarioBadge 
-                scenario={activeScenario} 
-                onClick={() => setShowScenarioMenu(!showScenarioMenu)}
-              />
-            </>
-          )}
-        </div>
+    <header
+      className={className}
+      style={{
+        height: 56,
+        background: 'linear-gradient(180deg, rgba(8, 12, 18, 0.98), rgba(4, 8, 14, 0.96))',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+        backdropFilter: 'blur(20px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 20px',
+        flexShrink: 0,
+      }}
+    >
+      {/* Left: Logo */}
+      <div className="flex items-center gap-6">
+        <Logo />
+      </div>
 
-        {/* Center: Primary Navigation */}
-        <nav className="flex items-center gap-1">
-          {primaryNav.map((item) => (
+      {/* Center: Primary Navigation with separators */}
+      <nav className="flex items-center">
+        {primaryNav.map((item, i) => (
+          <React.Fragment key={item.id}>
             <PrimaryNavItem
-              key={item.id}
               item={item}
               isActive={activeItem === item.id}
             />
-          ))}
-        </nav>
+            {i < primaryNav.length - 1 && (
+              <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.08)', margin: '0 2px', flexShrink: 0 }} />
+            )}
+          </React.Fragment>
+        ))}
+      </nav>
 
-        {/* Right: Utility Actions */}
-        <div className="flex items-center gap-2">
-          <UtilityButton
-            icon={<Save className="w-4 h-4" />}
-            label="SAVE"
-            onClick={onSave}
-          />
-          <UtilityButton
-            icon={<FolderOpen className="w-4 h-4" />}
-            label="LOAD"
-            onClick={onLoad}
-          />
-          <UtilityButton
-            icon={<Download className="w-4 h-4" />}
-            label="EXPORT"
-            onClick={onExport}
-          />
-          <UtilityButton
-            icon={<Share2 className="w-4 h-4" />}
-            label="SHARE"
-            onClick={onShare}
-            variant="primary"
-          />
-          
-          <div className="w-px h-6 bg-white/10 mx-2" />
-          
-          <button className="w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-white hover:bg-white/5 transition-all">
-            <HelpCircle className="w-4 h-4" />
-          </button>
-        </div>
+      {/* Right: Ghost Utility Actions */}
+      <div className="flex items-center gap-1.5">
+        <UtilityButton icon={<Save className="w-3.5 h-3.5" />} label="SAVE" onClick={onSave} />
+        <UtilityButton icon={<FolderOpen className="w-3.5 h-3.5" />} label="LOAD" onClick={onLoad} />
+        <UtilityButton icon={<Download className="w-3.5 h-3.5" />} label="EXPORT" onClick={onExport} />
+        <UtilityButton icon={<Share2 className="w-3.5 h-3.5" />} label="SHARE" onClick={onShare} />
       </div>
     </header>
   )
@@ -373,51 +371,50 @@ function ControlledMainNav({
   onShare,
   className = '',
 }: MainNavProps) {
-  const [showScenarioMenu, setShowScenarioMenu] = useState(false)
   const activeItem = activeItemId || 'terrain'
 
   return (
-    <header className={`h-16 bg-black/80 backdrop-blur-xl border-b border-white/10 ${className}`}>
-      <div className="h-full px-6 flex items-center justify-between">
-        {/* Left: Logo + Active Scenario */}
-        <div className="flex items-center gap-6">
-          <LogoButton onClick={() => onNavigate?.('terrain')} />
+    <header
+      className={className}
+      style={{
+        height: 56,
+        background: 'linear-gradient(180deg, rgba(8, 12, 18, 0.98), rgba(4, 8, 14, 0.96))',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+        backdropFilter: 'blur(20px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 20px',
+        flexShrink: 0,
+      }}
+    >
+      {/* Left: Logo */}
+      <div className="flex items-center gap-6">
+        <LogoButton onClick={() => onNavigate?.('terrain')} />
+      </div>
 
-          {activeScenario && (
-            <>
-              <div className="w-px h-8 bg-white/10" />
-              <ActiveScenarioBadge
-                scenario={activeScenario}
-                onClick={() => setShowScenarioMenu(!showScenarioMenu)}
-              />
-            </>
-          )}
-        </div>
-
-        {/* Center: Primary Navigation */}
-        <nav className="flex items-center gap-1">
-          {primaryNav.map((item) => (
+      {/* Center: Primary Navigation with separators */}
+      <nav className="flex items-center">
+        {primaryNav.map((item, i) => (
+          <React.Fragment key={item.id}>
             <PrimaryNavButton
-              key={item.id}
               item={item}
               isActive={activeItem === item.id}
               onClick={() => onNavigate?.(item.id)}
             />
-          ))}
-        </nav>
+            {i < primaryNav.length - 1 && (
+              <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.08)', margin: '0 2px', flexShrink: 0 }} />
+            )}
+          </React.Fragment>
+        ))}
+      </nav>
 
-        {/* Right: Utility Actions */}
-        <div className="flex items-center gap-2">
-          <UtilityButton icon={<Save className="w-4 h-4" />} label="SAVE" onClick={onSave} />
-          <UtilityButton icon={<FolderOpen className="w-4 h-4" />} label="LOAD" onClick={onLoad} />
-          <UtilityButton icon={<Download className="w-4 h-4" />} label="EXPORT" onClick={onExport} />
-          <UtilityButton
-            icon={<Share2 className="w-4 h-4" />}
-            label="SHARE"
-            onClick={onShare}
-            variant="primary"
-          />
-        </div>
+      {/* Right: Ghost Utility Actions */}
+      <div className="flex items-center gap-1.5">
+        <UtilityButton icon={<Save className="w-3.5 h-3.5" />} label="SAVE" onClick={onSave} />
+        <UtilityButton icon={<FolderOpen className="w-3.5 h-3.5" />} label="LOAD" onClick={onLoad} />
+        <UtilityButton icon={<Download className="w-3.5 h-3.5" />} label="EXPORT" onClick={onExport} />
+        <UtilityButton icon={<Share2 className="w-3.5 h-3.5" />} label="SHARE" onClick={onShare} />
       </div>
     </header>
   )

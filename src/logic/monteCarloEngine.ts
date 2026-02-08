@@ -394,6 +394,8 @@ function calculateSensitivity(
 // MAIN SIMULATION FUNCTION
 // ============================================================================
 
+import { emitCompute } from "@/engine/computeTelemetry";
+
 export function runMonteCarloSimulation(
   levers: LeverState,
   config: SimulationConfig = {
@@ -405,8 +407,14 @@ export function runMonteCarloSimulation(
   }
 ): MonteCarloResult {
   const startTime = performance.now();
-  
+
+  emitCompute("terrain_simulation", "initialize", {
+    methodName: "Monte Carlo",
+    iterations: config.iterations,
+  });
+
   // Run all simulations
+  emitCompute("terrain_simulation", "run_model");
   const allSimulations: SingleSimulationResult[] = [];
   
   for (let i = 0; i < config.iterations; i++) {
@@ -414,6 +422,7 @@ export function runMonteCarloSimulation(
   }
   
   // Calculate survival metrics
+  emitCompute("terrain_simulation", "aggregate");
   const survivors = allSimulations.filter(s => s.didSurvive);
   const survivalRate = survivors.length / config.iterations;
   
@@ -453,6 +462,12 @@ export function runMonteCarloSimulation(
   const sensitivityFactors = calculateSensitivity(levers, config, medianCase.finalARR);
   
   const executionTimeMs = performance.now() - startTime;
+
+  emitCompute("terrain_simulation", "complete", {
+    durationMs: executionTimeMs,
+    iterations: config.iterations,
+    methodName: "Monte Carlo",
+  });
   
   return {
     iterations: config.iterations,

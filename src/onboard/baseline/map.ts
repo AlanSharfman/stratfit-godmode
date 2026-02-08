@@ -36,6 +36,11 @@ export function mapOnboardDraftToBaseline(draft: OnboardingData): BaselineV1 {
       industry: draft.companyProfile.industry,
       businessModel: draft.companyProfile.businessModel,
       primaryMarket: draft.companyProfile.primaryMarket,
+      // Initialize Baseline identity fields — not in onboard draft
+      founderName: "",
+      contactEmail: "",
+      contactPhone: "",
+      jurisdiction: "",
     },
 
     financial: {
@@ -47,6 +52,12 @@ export function mapOnboardDraftToBaseline(draft: OnboardingData): BaselineV1 {
       payroll: num(draft.financialBaselineCore.payroll),
       headcount: num(draft.financialBaselineCore.headcount),
       cashOnHand: num(draft.financialBaselineCore.cashOnHand),
+      // Initialize Baseline canonical fields — not sourced from onboard draft
+      nrrPct: 0,
+      avgFullyLoadedCost: 0,
+      salesMarketingSpend: 0,
+      rdSpend: 0,
+      gaSpend: 0,
     },
 
     capital: {
@@ -55,6 +66,7 @@ export function mapOnboardDraftToBaseline(draft: OnboardingData): BaselineV1 {
       monthlyDebtService: num(draft.capitalStructureCore.monthlyDebtService),
       lastRaiseAmount: num(draft.capitalStructureCore.lastRaiseAmount),
       lastRaiseDateISO: normalizeDateISO(draft.capitalStructureCore.lastRaiseDate),
+      equityRaisedToDate: 0,
     },
 
     operating: {
@@ -64,6 +76,14 @@ export function mapOnboardDraftToBaseline(draft: OnboardingData): BaselineV1 {
       keyPersonDependency: draft.operatingDynamicsCore.keyPersonDependency,
       customerConcentrationRisk: draft.operatingDynamicsCore.customerConcentrationRisk,
       regulatoryExposure: draft.operatingDynamicsCore.regulatoryExposure,
+      activeCustomers: 0,
+    },
+
+    customerEngine: {
+      cac: 0,
+      ltv: 0,
+      paybackPeriodMonths: 0,
+      expansionRatePct: 0,
     },
 
     posture: {
@@ -75,5 +95,3 @@ export function mapOnboardDraftToBaseline(draft: OnboardingData): BaselineV1 {
     },
   };
 }
-
-

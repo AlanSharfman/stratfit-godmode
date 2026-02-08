@@ -4,6 +4,7 @@ import { runDeterministicProjection } from "./modes/deterministicProjection";
 import { runMonteCarlo } from "./modes/monteCarlo";
 import { runStressCase } from "./modes/stress";
 import { computeSensitivity } from "./modes/sensitivity";
+import { emitCompute } from "@/engine/computeTelemetry";
 
 export type EngineMode =
   | "deterministic"
@@ -60,6 +61,11 @@ export class SimulationEngine {
   static run(request: SimulationRequest): SimulationResponse {
     const start = performance.now();
 
+    emitCompute("terrain_simulation", "initialize", {
+      methodName: request.engineMode,
+    });
+    emitCompute("terrain_simulation", "run_model");
+
     let result: SimulationResult;
 
     switch (request.engineMode) {
@@ -87,6 +93,11 @@ export class SimulationEngine {
     }
 
     const end = performance.now();
+
+    emitCompute("terrain_simulation", "complete", {
+      durationMs: end - start,
+      methodName: request.engineMode,
+    });
 
     return {
       result,

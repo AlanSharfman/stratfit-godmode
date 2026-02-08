@@ -7,6 +7,15 @@ import GodModeTerrain from "@/components/compare/GodModeTerrain";
 import { Canvas } from "@react-three/fiber";
 import { EffectComposer, Bloom, Vignette, SMAA } from "@react-three/postprocessing";
 import { Environment } from "@react-three/drei";
+import { TerrainWithFallback } from "@/components/terrain/TerrainFallback2D";
+
+// Terrain Intelligence Layer
+import { TerrainOverlayLayer } from "@/pages/terrain/TerrainOverlays";
+import TerrainOverlayToggles from "@/components/terrain/TerrainOverlayToggles";
+import TerrainIntelligencePanel from "@/components/terrain/TerrainIntelligencePanel";
+import ConsiderationsPanel from "@/components/terrain/ConsiderationsPanel";
+import ModelDisclosure from "@/components/terrain/ModelDisclosure";
+import { terrainOverlaysEnabled, heatmapEnabled as heatmapFlagEnabled } from "@/config/featureFlags";
 
 // ScenarioData interface for mountain visualization
 interface ScenarioData {
@@ -28,7 +37,8 @@ import { onCausal } from "@/ui/causalEvents";
 import { engineResultToMountainForces } from "@/logic/mountainForces";
 import { useSimulationStore } from "@/state/simulationStore";
 import { useSavedSimulationsStore } from "@/state/savedSimulationsStore";
-import { StrategicMetrics } from "@/components/terrain/StrategicMetrics";
+// StrategicMetrics removed — KPI strip deduplicated to single avionics strip in App.tsx
+import { useSystemBaseline } from "@/system/SystemBaselineProvider";
 
 interface CenterViewPanelProps {
   view?: CenterViewId;
@@ -41,6 +51,7 @@ interface CenterViewPanelProps {
 export default function CenterViewPanel(props: CenterViewPanelProps) {
   // Support both `view` and `viewMode` props for compatibility
   const view = props.viewMode ?? props.view ?? "terrain";
+  const { baseline: systemBaseline } = useSystemBaseline();
   const scenario = useScenario();
   const engineResults = useScenarioStore((s) => s.engineResults);
   const hoveredKpiIndex = useScenarioStore((s) => s.hoveredKpiIndex);
@@ -51,29 +62,7 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
     return engineResultToMountainForces(engineResult);
   }, [engineResult]);
 
-  const strategicMetrics = useMemo(() => {
-    const runwayMonthsRaw = engineResult?.kpis?.runway?.value;
-    const runwayMonths = typeof runwayMonthsRaw === "number" && Number.isFinite(runwayMonthsRaw) ? runwayMonthsRaw : 24;
-
-    const growthRaw = (engineResult?.kpis as any)?.arrGrowthPct?.value;
-    let growthRate =
-      typeof growthRaw === "number" && Number.isFinite(growthRaw)
-        ? growthRaw
-        : 0.08; // 8% default (ratio)
-    if (growthRate > 1) growthRate = growthRate / 100; // handle percent-form values
-
-    const survivalRaw =
-      (engineResult?.kpis as any)?.survivalRate?.value ??
-      (engineResult?.kpis as any)?.survival?.value;
-    let survivalProbability =
-      typeof survivalRaw === "number" && Number.isFinite(survivalRaw)
-        ? survivalRaw
-        : 85;
-    if (survivalProbability <= 1) survivalProbability = survivalProbability * 100; // handle 0..1 form
-    survivalProbability = Math.max(0, Math.min(100, Math.round(survivalProbability)));
-
-    return { runwayMonths, growthRate, survivalProbability };
-  }, [engineResult]);
+  // strategicMetrics removed — deduplicated to single avionics strip
 
   // GOD MODE MOUNTAIN: Get simulation data from stores
   const simulationSummary = useSimulationStore((s) => s.summary);
@@ -106,6 +95,29 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
     label: "EXPLORATION"
   }), [simulationSummary, engineResults, scenario]);
 
+  // ── Terrain Intelligence Layer toggles ──────────────────────────────
+  const [intelligenceEnabled, setIntelligenceEnabled] = useState(false);
+  const [riskDensityEnabled, setRiskDensityEnabled] = useState(false);
+
+  // Derive overlay data from engine results (no new simulation runs)
+  const terrainKpis = engineResult?.kpis ?? null;
+  const overlayRiskScore = useMemo(() => terrainKpis?.riskScore?.value ?? 30, [terrainKpis]);
+  const overlayVariance = useMemo(() => {
+    // Derive variance proxy from growthStress (0–1 range)
+    const gs = terrainKpis?.growthStress?.value ?? 0.3;
+    return Math.max(0, Math.min(1, gs));
+  }, [terrainKpis]);
+  const overlayRunway = useMemo(() => terrainKpis?.runway?.value ?? 24, [terrainKpis]);
+  const overlayLtvCac = useMemo(() => terrainKpis?.ltvCac?.value ?? 3, [terrainKpis]);
+  const overlaySurvivalPct = useMemo(() => {
+    // Approximate survival from riskIndex (higher = healthier)
+    const ri = terrainKpis?.riskIndex?.value ?? 70;
+    return Math.max(0, Math.min(100, ri));
+  }, [terrainKpis]);
+
+  // Stable snapshot key for typewriter (only retype when scenario changes)
+  const snapshotKey = useMemo(() => `${scenario}-${overlayRunway}-${overlayRiskScore}`, [scenario, overlayRunway, overlayRiskScore]);
+
   // CAUSAL HIGHLIGHT — Mountain band (Phase 1, UI-only)
   const [bandNonce, setBandNonce] = useState(0);
   const [bandStyle, setBandStyle] = useState<"solid" | "wash">("solid");
@@ -120,6 +132,38 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
     return off;
   }, []);
 
+  // ── Baseline gating: show inline panel if baseline is missing ──────
+  if (!systemBaseline) {
+    return (
+      <div className="relative flex h-full w-full flex-col rounded-xl bg-black/40 backdrop-blur-sm border border-white/5 overflow-auto">
+        <div className="flex flex-1 items-center justify-center p-12">
+          <div className="max-w-md text-center">
+            <div className="mb-6 mx-auto w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-cyan-400">
+                <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                <path d="M2 17l10 5 10-5" />
+                <path d="M2 12l10 5 10-5" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold text-white mb-2 tracking-wide">
+              Baseline Required
+            </h2>
+            <p className="text-sm text-white/40 mb-8 leading-relaxed">
+              Initialize your financial baseline to unlock scenario modeling,
+              simulation, and strategic analysis.
+            </p>
+            <button
+              onClick={() => window.location.assign("/initialize")}
+              className="inline-flex items-center gap-2 px-8 py-3 rounded-full text-xs font-bold tracking-widest uppercase text-white bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 hover:border-cyan-500/50 transition-all duration-150"
+            >
+              Initialize Baseline
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative flex h-full w-full flex-col rounded-xl bg-black/40 backdrop-blur-sm border border-white/5 overflow-auto">
       {/* Center Stage */}
@@ -128,34 +172,79 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
           Do not adjust without design sign-off. */}
       <div className="mountain-stage relative w-full flex-1 p-4" data-tour="mountain">
         {view === "terrain" && (
-          <div className="relative h-full w-full overflow-hidden rounded-3xl border border-cyan-500/20 bg-gradient-to-b from-slate-950 via-slate-900 to-black shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08),0_0_60px_rgba(34,211,238,0.08)] flex flex-col">
-            {/* Cyan accent border glow */}
-            <div className="pointer-events-none absolute inset-0 rounded-3xl shadow-[inset_0_0_0_1px_rgba(34,211,238,0.2),inset_0_0_30px_rgba(34,211,238,0.05)]" />
+          <div className="relative h-full w-full overflow-hidden flex flex-col" style={{
+            borderRadius: '10px',
+            background: 'linear-gradient(180deg, #111827 0%, #0F1C2E 100%)',
+          }}>
+            {/* ═══ 2-COLUMN TERRAIN LAYOUT: Mountain + Intelligence ═══ */}
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 280px",
+              flex: 1,
+              minHeight: 0,
+              overflow: "hidden",
+            }}>
+              {/* ── LEFT: Mountain + Overlays ── */}
+              <div style={{ display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
+                {/* Mountain container with overlays */}
+                <div className="relative flex-1 w-full" style={{ minHeight: 300 }}>
+                  {/* Causal highlight band */}
+                  {bandNonce > 0 ? (
+                    <div
+                      key={bandNonce}
+                      className={`sf-causal-band play ${bandStyle === "wash" ? "wash" : ""}`}
+                      style={{ ["--sf-causal" as string]: bandColor } as React.CSSProperties}
+                    />
+                  ) : null}
 
-            {/* Terrain header: 3 strategic metrics */}
-            <div className="relative z-10 p-4 border-b border-white/10">
-              <StrategicMetrics
-                runwayMonths={strategicMetrics.runwayMonths}
-                growthRate={strategicMetrics.growthRate}
-                survivalProbability={strategicMetrics.survivalProbability}
-              />
-            </div>
-            
-            {/* Causal highlight band (no labels) — only after explicit user action */}
-            {bandNonce > 0 ? (
-              <div
-                key={bandNonce}
-                className={`sf-causal-band play ${bandStyle === "wash" ? "wash" : ""}`}
-                style={{ ["--sf-causal" as string]: bandColor } as React.CSSProperties}
-              />
-            ) : null}
+                  {/* Overlay Toggles (top-right of mountain) */}
+                  {terrainOverlaysEnabled && (
+                    <TerrainOverlayToggles
+                      intelligenceEnabled={intelligenceEnabled}
+                      riskDensityEnabled={riskDensityEnabled}
+                      onToggleIntelligence={() => setIntelligenceEnabled((v) => !v)}
+                      onToggleRiskDensity={() => setRiskDensityEnabled((v) => !v)}
+                    />
+                  )}
 
-            {/* Dark Wireframe Mountain */}
-            <div className="relative flex-1 w-full" style={{ filter: 'brightness(1.15) saturate(1.2) contrast(1.05)' }}>
-              <ScenarioMountain 
-                scenario={scenario} 
-                dataPoints={dataPoints}
-                activeKpiIndex={hoveredKpiIndex}
+                  {/* Terrain Overlays — positioned above canvas */}
+                  {terrainOverlaysEnabled && (intelligenceEnabled || riskDensityEnabled) && (
+                    <TerrainOverlayLayer
+                      intelligenceEnabled={intelligenceEnabled}
+                      heatmapEnabled={riskDensityEnabled && heatmapFlagEnabled}
+                      dataPoints={dataPoints}
+                      riskScore={overlayRiskScore}
+                      variance={overlayVariance}
+                      runway={overlayRunway}
+                      ltvCac={overlayLtvCac}
+                      survivalPct={overlaySurvivalPct}
+                    />
+                  )}
+
+                  {/* Dark Wireframe Mountain — WebGL with SVG fallback */}
+                  <TerrainWithFallback dataPoints={dataPoints}>
+                    <ScenarioMountain 
+                      scenario={scenario} 
+                      dataPoints={dataPoints}
+                      activeKpiIndex={hoveredKpiIndex}
+                    />
+                  </TerrainWithFallback>
+                </div>
+
+                {/* CONSIDERATIONS — exactly 6 lines, typewriter effect */}
+                <ConsiderationsPanel
+                  kpis={terrainKpis}
+                  snapshotKey={snapshotKey}
+                />
+
+                {/* MODEL DISCLOSURE — legal footer */}
+                <ModelDisclosure />
+              </div>
+
+              {/* ── RIGHT: Active Intelligence Panel ── */}
+              <TerrainIntelligencePanel
+                kpis={terrainKpis}
+                intelligenceEnabled={intelligenceEnabled}
               />
             </div>
           </div>

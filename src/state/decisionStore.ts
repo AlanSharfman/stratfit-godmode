@@ -4,6 +4,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { emitCompute } from '@/engine/computeTelemetry';
 
 // ============================================================================
 // TYPES
@@ -158,6 +159,9 @@ export const useDecisionStore = create<DecisionState>()(
       selectedDecisionId: null,
       
       generateDecisions: (levers, simulation, risks) => {
+        const _t0 = performance.now();
+        emitCompute("decision_synthesis", "initialize");
+
         const decisions: Decision[] = [];
         const now = new Date().toISOString();
         
@@ -487,6 +491,8 @@ export const useDecisionStore = create<DecisionState>()(
           });
         }
         
+        emitCompute("decision_synthesis", "derive_metrics");
+
         // Sort by priority
         decisions.sort((a, b) => PRIORITY_WEIGHTS[b.priority] - PRIORITY_WEIGHTS[a.priority]);
         
@@ -514,6 +520,10 @@ export const useDecisionStore = create<DecisionState>()(
           generatedAt: new Date(),
         };
         
+        emitCompute("decision_synthesis", "complete", {
+          durationMs: performance.now() - _t0,
+        });
+
         set({ decisions, snapshot });
         return snapshot;
       },

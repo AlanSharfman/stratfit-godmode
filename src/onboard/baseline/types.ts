@@ -18,6 +18,11 @@ export interface BaselineV1 {
     industry: string;
     businessModel: string;
     primaryMarket: string;
+    // ── Initialize Baseline: identity fields ──
+    founderName: string;
+    contactEmail: string;
+    contactPhone: string;
+    jurisdiction: string;
   };
 
   financial: {
@@ -29,6 +34,12 @@ export interface BaselineV1 {
     payroll: number;
     headcount: number;
     cashOnHand: number;
+    // ── Initialize Baseline canonical additions ──
+    nrrPct: number;
+    avgFullyLoadedCost: number;
+    salesMarketingSpend: number;
+    rdSpend: number;
+    gaSpend: number;
   };
 
   capital: {
@@ -37,6 +48,8 @@ export interface BaselineV1 {
     monthlyDebtService: number;
     lastRaiseAmount: number;
     lastRaiseDateISO: string | null;
+    // ── Initialize Baseline ──
+    equityRaisedToDate: number;
   };
 
   operating: {
@@ -46,6 +59,15 @@ export interface BaselineV1 {
     keyPersonDependency: TriLevel;
     customerConcentrationRisk: TriLevel;
     regulatoryExposure: TriLevel;
+    // ── Initialize Baseline ──
+    activeCustomers: number;
+  };
+
+  customerEngine: {
+    cac: number;
+    ltv: number;
+    paybackPeriodMonths: number;
+    expansionRatePct: number;
   };
 
   posture: {
@@ -56,5 +78,3 @@ export interface BaselineV1 {
     fastestDownside: FastestDownside;
   };
 }
-
-

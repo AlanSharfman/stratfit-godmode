@@ -2,6 +2,7 @@
 // STRATFIT — Risk Intelligence Store
 
 import { create } from 'zustand';
+import { emitCompute } from '@/engine/computeTelemetry';
 
 // ============================================================================
 // TYPES
@@ -106,7 +107,9 @@ export const useRiskStore = create<RiskState>((set, get) => ({
   setViewMode: (mode) => set({ viewMode: mode }),
   
   calculateRisk: (levers, simulation) => {
+    const _t0 = performance.now();
     set({ isCalculating: true });
+    emitCompute("risk_scoring", "initialize");
     
     // Default values if no simulation
     const survivalRate = simulation?.survivalRate ?? 0.5;
@@ -260,6 +263,8 @@ export const useRiskStore = create<RiskState>((set, get) => ({
       ],
     });
     
+    emitCompute("risk_scoring", "derive_metrics");
+
     // Calculate overall risk (weighted average)
     const weights = {
       runway: 0.25,
@@ -333,6 +338,10 @@ export const useRiskStore = create<RiskState>((set, get) => ({
       calculatedAt: new Date(),
     };
     
+    emitCompute("risk_scoring", "complete", {
+      durationMs: performance.now() - _t0,
+    });
+
     set({ riskSnapshot: snapshot, isCalculating: false });
     return snapshot;
   },

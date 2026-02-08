@@ -1,0 +1,545 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   STRATFIT — STRATEGY STUDIO · Institutional God Mode Layout
+   Capital-allocation war room. Not startup SaaS. Not gaming UI.
+   3-zone CSS grid: LEVER STACK | LIVE TERRAIN | INTELLIGENCE PANEL
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── ROOT GRID ────────────────────────────────────────────────────────── */
+.root {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 340px 1fr 360px;
+  height: calc(100vh - 56px);
+  max-height: calc(100vh - 56px);
+  overflow: hidden;
+  background: linear-gradient(180deg, #111827 0%, #0F1C2E 100%);
+  color: #e2eaf4;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LEFT PANEL — LEVER STACK
+   ═══════════════════════════════════════════════════════════════════════════ */
+.leftPanel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-right: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.015);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,224,255,0.15) transparent;
+}
+
+.leftPanel::-webkit-scrollbar { width: 3px; }
+.leftPanel::-webkit-scrollbar-track { background: transparent; }
+.leftPanel::-webkit-scrollbar-thumb { background: rgba(0,224,255,0.2); border-radius: 2px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CENTER PANEL — LIVE TERRAIN + CONTROLS
+   ═══════════════════════════════════════════════════════════════════════════ */
+.centerPanel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RIGHT PANEL — INTELLIGENCE ENGINE
+   ═══════════════════════════════════════════════════════════════════════════ */
+.rightPanel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-left: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.015);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,224,255,0.15) transparent;
+}
+
+.rightPanel::-webkit-scrollbar { width: 3px; }
+.rightPanel::-webkit-scrollbar-track { background: transparent; }
+.rightPanel::-webkit-scrollbar-thumb { background: rgba(0,224,255,0.2); border-radius: 2px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TOP CONTROL BAR
+   ═══════════════════════════════════════════════════════════════════════════ */
+.controlBar {
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  flex-shrink: 0;
+  gap: 20px;
+  background: rgba(255,255,255,0.01);
+}
+
+.controlGroup {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.controlLabel {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
+  margin-right: 8px;
+  white-space: nowrap;
+}
+
+.controlBtn {
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 100ms ease, border-color 100ms ease;
+  white-space: nowrap;
+}
+
+.controlBtn:hover {
+  color: rgba(255,255,255,0.7);
+}
+
+.controlBtnActive {
+  composes: controlBtn;
+  color: rgba(255,255,255,0.95);
+  border-bottom-color: #00E0FF;
+}
+
+.controlSpacer {
+  flex: 1;
+}
+
+.toggleBtn {
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 100ms ease;
+}
+
+.toggleBtn:hover {
+  color: rgba(255,255,255,0.6);
+  border-color: rgba(255,255,255,0.15);
+}
+
+.toggleBtnActive {
+  composes: toggleBtn;
+  color: #00E0FF;
+  border-color: rgba(0,224,255,0.3);
+  background: rgba(0,224,255,0.04);
+}
+
+.controlDivider {
+  width: 1px;
+  height: 20px;
+  background: rgba(255,255,255,0.08);
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOUNTAIN STAGE
+   ═══════════════════════════════════════════════════════════════════════════ */
+.mountainStage {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+  background: #000;
+}
+
+.heatmapOverlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0.12;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TIMELINE SCRUBBER
+   ═══════════════════════════════════════════════════════════════════════════ */
+.timelineBar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 8px 20px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  height: 44px;
+  gap: 12px;
+  background: rgba(255,255,255,0.01);
+}
+
+.timelineLabel {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
+  flex-shrink: 0;
+}
+
+.timelineTrack {
+  flex: 1;
+  position: relative;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.timelineRail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255,255,255,0.12);
+}
+
+.timelineFill {
+  position: absolute;
+  left: 0;
+  height: 1px;
+  background: #00E0FF;
+  transition: width 80ms ease;
+}
+
+.timelineTick {
+  position: absolute;
+  width: 1px;
+  height: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255,255,255,0.12);
+}
+
+.timelineTickLabel {
+  position: absolute;
+  top: calc(50% + 10px);
+  font-size: 9px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.2);
+  transform: translateX(-50%);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+
+.timelineDot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #00E0FF;
+  border: 1px solid rgba(255,255,255,0.4);
+  transform: translate(-50%, -50%);
+  top: 50%;
+  z-index: 2;
+  cursor: grab;
+  transition: box-shadow 100ms ease;
+}
+
+.timelineDot:active {
+  cursor: grabbing;
+}
+
+.timelineMonth {
+  font-size: 12px;
+  font-weight: 600;
+  color: #00E0FF;
+  flex-shrink: 0;
+  min-width: 44px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LEVER STACK — Collapsible Domain Groups
+   ═══════════════════════════════════════════════════════════════════════════ */
+.leverDomain {
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.leverDomainHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 100ms ease;
+}
+
+.leverDomainHeader:hover {
+  background: rgba(255,255,255,0.02);
+}
+
+.leverDomainTitle {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+}
+
+.leverDomainChevron {
+  font-size: 9px;
+  color: rgba(255,255,255,0.2);
+  transition: transform 150ms ease;
+}
+
+.leverDomainChevronOpen {
+  composes: leverDomainChevron;
+  transform: rotate(180deg);
+}
+
+.leverDomainBody {
+  padding: 0 20px 12px;
+}
+
+.leverRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+.leverRow:last-child {
+  border-bottom: none;
+}
+
+.leverMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.leverLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.55);
+  letter-spacing: 0.02em;
+}
+
+.leverValues {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.leverBaseline {
+  color: rgba(255,255,255,0.25);
+  font-weight: 500;
+}
+
+.leverArrow {
+  color: rgba(255,255,255,0.12);
+  font-size: 10px;
+}
+
+.leverCurrent {
+  color: rgba(255,255,255,0.9);
+  font-weight: 600;
+}
+
+.leverDelta {
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 36px;
+  text-align: right;
+}
+
+.leverDeltaPositive { color: #34d399; }
+.leverDeltaNegative { color: #f87171; }
+.leverDeltaZero { color: rgba(255,255,255,0.15); }
+
+/* CUSTOM SLIDER — 1px track, solid cyan fill, 10px handle, no glow */
+.sliderWrap {
+  position: relative;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  touch-action: none;
+}
+
+.sliderTrack {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255,255,255,0.2);
+}
+
+.sliderFill {
+  position: absolute;
+  left: 0;
+  height: 1px;
+  background: #00E0FF;
+}
+
+.sliderHandle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #0F1C2E;
+  border: 1px solid rgba(255,255,255,0.4);
+  transform: translateX(-50%);
+  cursor: grab;
+  transition: border-color 100ms ease;
+  z-index: 1;
+}
+
+.sliderHandle:hover { border-color: #00E0FF; }
+.sliderHandle:active { cursor: grabbing; border-color: #00E0FF; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   INTELLIGENCE PANEL — Structured System Analysis
+   ═══════════════════════════════════════════════════════════════════════════ */
+.intelHeader {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.intelTitle {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+}
+
+.intelSection {
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.intelSectionTitle {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  margin-bottom: 8px;
+}
+
+.intelValue {
+  font-size: 22px;
+  font-weight: 700;
+  color: #00E0FF;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+
+.intelText {
+  font-size: 12px;
+  color: rgba(255,255,255,0.4);
+  line-height: 1.5;
+}
+
+.intelDeltaPositive { color: #34d399; }
+.intelDeltaNegative { color: #f87171; }
+
+/* Budget Variance (Advanced Mode) */
+.budgetSection {
+  padding: 14px 20px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.budgetTitle {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  margin-bottom: 10px;
+}
+
+.budgetRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 0;
+}
+
+.budgetLabel {
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+}
+
+.budgetValue {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+}
+
+/* Exit Readiness */
+.exitScore {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.exitScoreValue {
+  font-size: 36px;
+  font-weight: 800;
+  color: #00E0FF;
+  letter-spacing: -0.02em;
+}
+
+.exitScoreMax {
+  font-size: 16px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.2);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1600px) {
+  .root { grid-template-columns: 300px 1fr 320px; }
+}
+
+@media (max-width: 1400px) {
+  .root { grid-template-columns: 280px 1fr 300px; }
+}
+
+@media (max-width: 1200px) {
+  .root { grid-template-columns: 260px 1fr 260px; }
+}
+
+
+
+
+

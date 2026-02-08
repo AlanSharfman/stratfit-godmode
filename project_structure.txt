@@ -25,7 +25,7 @@ C:.
 |   VARIANCES_PAGE_AUDIT.md
 |   VARIANCE_PAGE_FIXES_APPLIED.md
 |   vite.config.ts
-|   vitest.config.ts
+|d   vitest.config.ts
 |   _audit_vite_errors_after_recovery_01.txt
 |   
 +---.vercel

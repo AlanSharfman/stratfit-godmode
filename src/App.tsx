@@ -34,6 +34,8 @@ import ImpactView from "@/components/compound/impact";
 import VariancesView from "@/components/compound/variances/VariancesView";
 import { useDebouncedValue, useThrottledValue } from "@/hooks/useDebouncedValue";
 import InitializeBaselinePage from "@/pages/initialize/InitializeBaselinePage";
+import StrategyStudioPage from "@/components/strategy-studio/StrategyStudioPage";
+import { useSystemBaseline } from "@/system/SystemBaselineProvider";
 import "@/styles/godmode-align-overrides.css";
 import "@/styles/godmode-unified-layout.css";
 import "@/styles/performance-optimizations.css";
@@ -489,9 +491,20 @@ export default function App() {
   }
 
   // Initialize Baseline route — canonical baseline truth capture.
-  // We support the pathname directly for determinism, even though the app mainly uses view-state navigation.
+  // Renders with MainNav so Initialize feels first-class.
   if (typeof window !== "undefined" && window.location.pathname.startsWith("/initialize")) {
-    return <InitializeBaselinePage onExit={() => window.location.assign("/")} />;
+    return (
+      <div className="app">
+        <MainNav
+          activeItemId="initialize"
+          onNavigate={(id) => {
+            if (id === "initialize") return;
+            window.location.assign("/");
+          }}
+        />
+        <InitializeBaselinePage />
+      </div>
+    );
   }
 
   // Compare route — Production-ready Risk Topography Instrument
@@ -534,6 +547,10 @@ export default function App() {
   
   // GOD MODE: Header-controlled view mode (navigation tabs in header)
   const [headerViewMode, setHeaderViewMode] = useState<HeaderViewMode>("terrain");
+
+  // BASELINE: canonical provider — used for gating other modules
+  const { baseline: systemBaseline } = useSystemBaseline();
+  const hasBaseline = !!systemBaseline;
   
   // GOD MODE: Monte Carlo Simulation Overlay
   const [showSimulate, setShowSimulate] = useState(false);
@@ -1143,9 +1160,98 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
     return boxes;
   }, [immediateLevers, viewMode]);
 
-  // Full-page onboarding (no overlay): render only on explicit nav selection.
-  if (headerViewMode === "onboarding") {
-    return <InitializeBaselinePage onExit={() => setHeaderViewMode("terrain")} />;
+  // Full-page Initialize Baseline: render inline (no redirect, no page reload).
+  // Baseline is always editable — no lock state.
+  if (headerViewMode === "initialize") {
+    return (
+      <div className="app">
+        <MainNav
+          activeScenario={{
+            name: activeScenarioType ?? "New Scenario",
+            lastModified: "Active",
+          }}
+          activeItemId="initialize"
+          onNavigate={(id) => {
+            setHeaderViewMode(
+              id === "initialize" ? "initialize"
+              : id === "simulate" ? (() => { setShowSimulate(true); return "terrain" as HeaderViewMode; })()
+              : id === "decision" ? "decision"
+              : id === "valuation" ? "valuation"
+              : id === "compare" ? "compare"
+              : id === "risk" ? "risk"
+              : id === "impact" ? "impact"
+              : "terrain"
+            );
+            if (id !== "simulate") setShowSimulate(false);
+          }}
+          onSave={() => setShowSaveModal(true)}
+          onLoad={() => setShowLoadPanel(true)}
+          onExport={() => console.log("Export")}
+          onShare={() => console.log("Share")}
+        />
+        <InitializeBaselinePage />
+      </div>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // STRATEGY STUDIO — Institutional God Mode 3-zone layout
+  // Replaces the old 3-column ControlDeck/CenterViewPanel/AIPanel layout
+  // ══════════════════════════════════════════════════════════════════════════
+  if (headerViewMode === "simulate") {
+    return (
+      <div className="app">
+        <MainNav
+          activeScenario={{
+            name: activeScenarioType ?? "New Scenario",
+            lastModified: "Active",
+          }}
+          activeItemId="simulate"
+          onNavigate={(id) => {
+            if (id !== "simulate") setShowSimulate(false);
+            if (id === "initialize") return setHeaderViewMode("initialize");
+            if (id === "simulate") return setHeaderViewMode("simulate");
+            if (id === "decision") return setHeaderViewMode("decision");
+            if (id === "valuation") return setHeaderViewMode("valuation");
+            if (id === "compare") return setHeaderViewMode("compare");
+            if (id === "risk") return setHeaderViewMode("risk");
+            return setHeaderViewMode("terrain");
+          }}
+          onSave={() => setShowSaveModal(true)}
+          onLoad={() => setShowLoadPanel(true)}
+          onExport={() => console.log("Export")}
+          onShare={() => console.log("Share")}
+        />
+        <StrategyStudioPage
+          levers={levers}
+          setLevers={setLevers}
+          scenario={scenario}
+          dataPoints={dataPoints}
+        />
+        {/* Monte Carlo Overlay (still accessible) */}
+        <SimulateOverlay
+          isOpen={showSimulate}
+          onClose={() => setShowSimulate(false)}
+          levers={levers}
+        />
+        <SaveSimulationModal
+          isOpen={showSaveModal}
+          onClose={() => setShowSaveModal(false)}
+          onSaved={(id) => {
+            console.log('Simulation saved:', id);
+            emitCausal({ source: "simulation_saved", bandStyle: "solid", color: "rgba(34, 211, 153, 0.3)" });
+          }}
+        />
+        <LoadSimulationPanel
+          isOpen={showLoadPanel}
+          onClose={() => setShowLoadPanel(false)}
+          onLoad={(simulation) => {
+            console.log('Simulation loaded:', simulation.name);
+            emitCausal({ source: "simulation_loaded", bandStyle: "solid", color: "rgba(34, 211, 238, 0.3)" });
+          }}
+        />
+      </div>
+    );
   }
   
   return (
@@ -1165,18 +1271,21 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
                 ? "valuation"
                 : headerViewMode === "compare"
                   ? "compare"
-                  : headerViewMode === "impact"
-                    ? "impact"
-                  : "terrain"
+                  : headerViewMode === "risk"
+                    ? "risk"
+                    : headerViewMode === "impact"
+                      ? "impact"
+                      : "terrain"
         }
         onNavigate={(id) => {
           // close overlay if user navigates elsewhere
           if (id !== "simulate") setShowSimulate(false);
-          if (id === "onboarding") return setHeaderViewMode("onboarding");
+          if (id === "initialize") return setHeaderViewMode("initialize");
           if (id === "simulate") return setShowSimulate(true);
           if (id === "decision") return setHeaderViewMode("decision");
           if (id === "valuation") return setHeaderViewMode("valuation");
           if (id === "compare") return setHeaderViewMode("compare");
+          if (id === "risk") return setHeaderViewMode("risk");
           if (id === "impact") return setHeaderViewMode("impact");
           return setHeaderViewMode("terrain");
         }}
@@ -1189,54 +1298,72 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
       {/* OPTION 1: UNIFIED 3-COLUMN LAYOUT (Compare mode = full-width center only) */}
       <div className={`main-content mode-${headerViewMode}`}>
         
-        {/* LEFT COLUMN: Hidden in Compare, Risk, Valuation, Decision, and Impact modes */}
-        {headerViewMode !== 'compare' && headerViewMode !== 'risk' && headerViewMode !== 'valuation' && headerViewMode !== 'decision' && headerViewMode !== 'impact' && (
-          <aside className="left-column">
-            <div className="sf-leftStack">
-              {/* Active Scenario - New 5-Scenario Selector */}
-              <div className="scenario-area">
-                <ActiveScenario 
-                  currentScenario={activeScenarioType}
-                  onScenarioChange={handleScenarioTypeChange}
-                />
-              </div>
-
-              {/* Spacer (fixed, CSS-controlled) */}
-              <div className="sf-leftSpacer" aria-hidden="true" />
-
-              {/* Control Panel - GOD-MODE Bezel (matches Scenario Intelligence) */}
-              <div className="sliders-container" data-tour="sliders">
-                <CommandDeckBezel>
-                  <ControlDeck boxes={controlBoxes} onChange={handleLeverChange} />
-                </CommandDeckBezel>
-              </div>
-            </div>
-          </aside>
-        )}
-
         {/* CENTER COLUMN: KPIs + Mountain OR Scenario Impact OR Variances */}
         <main className="center-column">
-          {/* KPI COMMAND BRIDGE - Hidden on Compare, Risk, Valuation, Decision, and Impact views */}
-          {headerViewMode !== 'compare' && headerViewMode !== 'risk' && headerViewMode !== 'valuation' && headerViewMode !== 'decision' && headerViewMode !== 'impact' && (
+          {/* KPI COMMAND BRIDGE — Avionics strip visible on Terrain view */}
+          {headerViewMode === 'terrain' && (
             <OrbitalKPISection kpiAnimState={kpiAnimState} />
           )}
           
           
-          {/* View content based on header navigation */}
-          <CenterViewPanel 
-            viewMode={headerViewMode}
-            timelineEnabled={timelineEnabled}
-            heatmapEnabled={heatmapEnabled}
-            onSimulateRequest={() => setShowSimulate(true)}
-          />
+          {/* BASELINE GATING — inline panel when baseline is missing */}
+          {!hasBaseline ? (
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              minHeight: '400px', padding: '3rem',
+              background: 'linear-gradient(135deg, rgba(15,23,42,0.95), rgba(30,41,59,0.9))',
+              border: '1px solid rgba(100,116,139,0.2)', borderRadius: '1rem',
+              margin: '2rem auto', maxWidth: '520px',
+            }}>
+              <div style={{
+                width: 56, height: 56, borderRadius: '50%', marginBottom: '1.5rem',
+                background: 'linear-gradient(135deg, rgba(99,102,241,0.3), rgba(139,92,246,0.3))',
+                border: '1px solid rgba(139,92,246,0.4)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 24, color: 'rgba(165,143,255,0.9)',
+              }}>◆</div>
+              <h2 style={{
+                fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 600,
+                fontSize: '1.25rem', color: 'rgba(226,232,240,0.95)',
+                marginBottom: '0.75rem', letterSpacing: '-0.01em',
+              }}>Baseline Required</h2>
+              <p style={{
+                fontFamily: "'Inter', system-ui, sans-serif", fontSize: '0.875rem',
+                color: 'rgba(148,163,184,0.85)', textAlign: 'center',
+                lineHeight: 1.6, marginBottom: '2rem', maxWidth: '360px',
+              }}>
+                Initialize your company's financial and operational truth to unlock the STRATFIT platform.
+              </p>
+              <button
+                type="button"
+                onClick={() => setHeaderViewMode("initialize")}
+                style={{
+                  fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 600,
+                  fontSize: '0.8125rem', letterSpacing: '0.06em', textTransform: 'uppercase',
+                  padding: '0.75rem 2rem', borderRadius: '0.5rem', border: 'none',
+                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                  color: '#fff', cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(99,102,241,0.35)',
+                  transition: 'transform 0.15s, box-shadow 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(99,102,241,0.5)'; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(99,102,241,0.35)'; }}
+              >
+                Go to Initialize
+              </button>
+            </div>
+          ) : (
+            /* View content based on header navigation */
+            <CenterViewPanel 
+              viewMode={headerViewMode}
+              timelineEnabled={timelineEnabled}
+              heatmapEnabled={heatmapEnabled}
+              onSimulateRequest={() => setShowSimulate(true)}
+            />
+          )}
         </main>
 
-        {/* RIGHT COLUMN: AI Intelligence - Hidden in Compare, Risk, Valuation, Decision, and Impact modes */}
-        {headerViewMode !== 'compare' && headerViewMode !== 'risk' && headerViewMode !== 'valuation' && headerViewMode !== 'decision' && headerViewMode !== 'impact' && (
-        <aside className="right-column" data-tour="intel">
-          <AIPanel levers={levers} scenario={scenario} />
-        </aside>
-        )}
+        {/* RIGHT COLUMN: AI Intelligence — now handled by StrategyStudioPage when simulate */}
       </div>
       
       {/* MONTE CARLO SIMULATION OVERLAY */}

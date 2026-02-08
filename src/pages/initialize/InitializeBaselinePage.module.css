@@ -1,63 +1,729 @@
-.shell {
+/* ═══════════════════════════════════════════════════════════════════════════
+   STRATFIT — System Calibration · Institutional Blueprint Aesthetic
+   Bloomberg-meets-Palantir · Zero toy aesthetics · Zero gaming neon
+   NO WebGL on this route. Pure CSS + SVG.
+
+   DEPTH SYSTEM:
+     Layer 0  — Blueprint background (gradient + grid + contour SVG)
+     Layer 1  — Jewelled KPI instrument strip (elevated)
+     Layer 2  — Glass-titanium module panel
+     Layer 3  — Static 2.5D terrain preview (SVG wire mesh, right panel)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── ANIMATIONS ───────────────────────────────────────────────────────── */
+@keyframes sfFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes sfPanelIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes sfRecalPulse {
+  0%   { opacity: 0; transform: scaleX(0.3); }
+  35%  { opacity: 1; transform: scaleX(1); }
+  100% { opacity: 0; transform: scaleX(1); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LAYER 0 — Root Atmospheric Canvas · 3-Column Grid
+   ═══════════════════════════════════════════════════════════════════════════ */
+.root {
+  position: relative;
+  display: grid;
+  grid-template-columns: 240px 1fr;
   min-height: 100vh;
-  background: radial-gradient(circle at 50% 20%, #0f1724 0%, #0a0f18 60%, #05080f 100%);
-  color: #e6edf3;
-  padding: 48px 64px;
-  box-sizing: border-box;
+  background: linear-gradient(168deg, #0B1220 0%, #080d18 35%, #070C14 100%);
+  color: #e2eaf4;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
 }
 
-.header {
-  font-size: 28px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
+/* Film grain — extremely subtle */
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.018;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 180px 180px;
+}
+
+/* Vignette — barely perceptible edge darkening */
+.vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 50%, transparent 58%, rgba(0, 0, 0, 0.45) 100%);
+}
+
+/* Radial light focus behind active panel */
+.atmosphericGlow {
+  position: fixed;
+  top: 0;
+  left: 240px;
+  right: 0;
+  height: 320px;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 55%, rgba(34, 211, 238, 0.02) 0%, transparent 65%);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LEFT COMMAND RAIL — Structural Spine · Darkened · Cyan Accent
+   ═══════════════════════════════════════════════════════════════════════════ */
+.rail {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  padding: 36px 16px 28px;
+  background:
+    linear-gradient(180deg, rgba(5, 8, 16, 0.99) 0%, rgba(3, 5, 11, 1) 100%);
+  border-right: 1px solid rgba(34, 211, 238, 0.08);
+  box-shadow: 2px 0 24px rgba(0, 0, 0, 0.5);
+}
+
+/* Vertical cyan accent line — right edge */
+.rail::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent 5%,
+    rgba(34, 211, 238, 0.12) 30%,
+    rgba(34, 211, 238, 0.08) 70%,
+    transparent 95%
+  );
+  pointer-events: none;
+}
+
+/* ─── Logo ─────────────────────────────────────────────────────────────── */
+.logoBlock {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   margin-bottom: 40px;
+  padding: 0 8px;
 }
 
+.logoIcon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, rgba(34, 211, 238, 0.08), rgba(34, 211, 238, 0.03));
+  border: 1px solid rgba(34, 211, 238, 0.12);
+  border-radius: 8px;
+  font-size: 14px;
+  color: #22d3ee;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.logoTitle {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.logoSub {
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.2);
+  margin-top: 2px;
+  text-transform: uppercase;
+}
+
+/* ─── Rail Navigation — Institutional Module Items ─────────────────────── */
+.railNav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.railItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.32);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  border-radius: 4px;
+  border-left: 2px solid transparent;
+  transition: all 120ms ease;
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
+}
+
+.railItem:hover {
+  color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.railItemActive {
+  composes: railItem;
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(34, 211, 238, 0.05);
+  border-left-color: #22d3ee;
+  box-shadow:
+    inset 0 0 16px rgba(34, 211, 238, 0.03),
+    inset 0 1px 0 rgba(34, 211, 238, 0.04);
+}
+
+/* Module index number — institutional, smaller, muted */
+.railNum {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.22);
+  flex-shrink: 0;
+  transition: all 120ms ease;
+  letter-spacing: -0.2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.railItemActive .railNum {
+  background: rgba(34, 211, 238, 0.1);
+  color: rgba(34, 211, 238, 0.85);
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.06);
+}
+
+.railLabel {
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+/* ─── Draft Badge ──────────────────────────────────────────────────────── */
+.draftBadge {
+  margin-top: auto;
+  padding: 14px 12px;
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 1.4px;
+  color: rgba(255, 255, 255, 0.12);
+  text-transform: uppercase;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CENTER CONTENT PANE
+   ═══════════════════════════════════════════════════════════════════════════ */
+.main {
+  position: relative;
+  z-index: 1;
+  padding: 40px 48px 64px;
+  overflow-y: auto;
+  max-height: 100vh;
+  animation: sfFadeIn 400ms ease-out both;
+}
+
+/* ─── Header ───────────────────────────────────────────────────────────── */
+.header {
+  margin-bottom: 24px;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0 0 6px;
+  text-transform: uppercase;
+  position: relative;
+  display: inline-block;
+}
+
+/* Subtle cyan underline — thin, 30% opacity */
+.title::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(34, 211, 238, 0.3);
+}
+
+.subtitle {
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.25);
+  margin: 12px 0 0;
+  letter-spacing: 0.3px;
+  font-weight: 400;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LAYER 1 — KPI Instrument Strip (Top)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.kpiStrip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 14px 10px;
+  margin-bottom: 28px;
+  border-radius: 5px;
+  background:
+    linear-gradient(180deg, rgba(10, 16, 28, 0.9) 0%, rgba(7, 11, 22, 0.94) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow:
+    inset 0 1px 0 rgba(34, 211, 238, 0.06),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.25),
+    0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.kpiCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  padding: 2px 0;
+  position: relative;
+}
+
+.kpiLabel {
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.28);
+  white-space: nowrap;
+}
+
+.kpiValue {
+  font-size: 20px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.kpiSep {
+  width: 1px;
+  height: 30px;
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LAYER 2 — Module Panel (cross-fade container)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.modulePanel {
+  position: relative;
+  animation: sfPanelIn 180ms ease-out both;
+}
+
+/* ─── Glass-Titanium Card — 5px corners, inner bevel, institutional ───── */
+.card {
+  position: relative;
+  padding: 24px 28px 22px;
+  border-radius: 5px;
+  background:
+    linear-gradient(180deg, rgba(12, 17, 28, 0.8) 0%, rgba(8, 12, 22, 0.85) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.25),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.01),
+    0 2px 8px rgba(0, 0, 0, 0.35),
+    0 8px 28px rgba(0, 0, 0, 0.12);
+}
+
+/* Faint top gradient highlight — extremely subtle */
+.card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  border-radius: 5px 5px 0 0;
+  background: linear-gradient(90deg, transparent 10%, rgba(34, 211, 238, 0.08) 50%, transparent 90%);
+  pointer-events: none;
+}
+
+.cardTitle {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0 0 4px;
+  text-transform: uppercase;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* ─── Bloomberg Metric Grid ────────────────────────────────────────────── */
 .metricsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 28px;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
 }
 
-.metricCard {
-  background: rgba(20, 28, 40, 0.65);
-  border: 1px solid rgba(80, 120, 180, 0.15);
-  border-radius: 14px;
-  padding: 24px;
-  backdrop-filter: blur(12px);
-  transition: border 0.2s ease;
+/* ─── Single Metric Row — micro-spacing between label and value ────────── */
+.metricRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+  gap: 16px;
 }
 
-.metricCard:hover {
-  border: 1px solid rgba(0, 200, 255, 0.4);
+.metricRow:nth-child(even) {
+  padding-left: 24px;
+  border-left: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+.metricRow:nth-child(odd) {
+  padding-right: 24px;
+}
+
+.metricRow:nth-last-child(-n+2) {
+  border-bottom: none;
 }
 
 .metricLabel {
-  font-size: 13px;
-  text-transform: uppercase;
-  opacity: 0.6;
-  margin-bottom: 10px;
+  font-size: 12px;
+  font-weight: 450;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.15px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.metricValue {
-  font-size: 22px;
-  font-weight: 600;
+/* ─── Text Input (for string fields) — 4px radius ─────────────────────── */
+.textInputWrap {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+  padding: 0 11px;
+  height: 34px;
+  min-width: 170px;
+  max-width: 220px;
+  transition: border-color 100ms ease, box-shadow 100ms ease;
 }
 
-.toggleRow {
-  margin-top: 40px;
+.textInputWrap:focus-within {
+  border-color: rgba(34, 211, 238, 0.25);
+  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.06);
 }
 
-.toggleButton {
+.textInput {
+  flex: 1;
   background: transparent;
-  border: 1px solid rgba(0, 200, 255, 0.35);
-  padding: 10px 18px;
-  border-radius: 8px;
-  color: #9edfff;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  border: none;
+  outline: none;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 0;
+  font-family: inherit;
+  width: 100%;
+  min-width: 0;
+  letter-spacing: 0.1px;
 }
 
-.toggleButton:hover {
-  background: rgba(0, 200, 255, 0.1);
+.textInput::placeholder {
+  color: rgba(255, 255, 255, 0.12);
+  font-weight: 400;
+}
+
+/* ─── Numeric Input — 4px radius, heavy values ─────────────────────────── */
+.inputWrap {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+  padding: 0 11px;
+  height: 34px;
+  min-width: 140px;
+  max-width: 180px;
+  transition: border-color 100ms ease, box-shadow 100ms ease;
+}
+
+.inputWrap:focus-within {
+  border-color: rgba(34, 211, 238, 0.25);
+  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.06);
+}
+
+.inputAffix {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.numInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 14px;
+  font-weight: 700;
+  padding: 0 3px;
+  font-family: inherit;
+  width: 100%;
+  min-width: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.2px;
+}
+
+.numInput::placeholder {
+  color: rgba(255, 255, 255, 0.1);
+  font-weight: 400;
+  text-align: right;
+}
+
+/* ─── Derived Metrics Row (in-card) ────────────────────────────────────── */
+.derivedRow {
+  display: flex;
+  gap: 32px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.derivedMetric {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.derivedLabel {
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.25);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.derivedValue {
+  font-size: 15px;
+  font-weight: 700;
+  color: #22d3ee;
+  letter-spacing: -0.2px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CTA — Machined Button · 5px radius · No pill
+   ═══════════════════════════════════════════════════════════════════════════ */
+.lockRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 28px;
+}
+
+.lockButton {
+  position: relative;
+  padding: 12px 36px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: 5px;
+  border: 1px solid rgba(34, 211, 238, 0.2);
+  background:
+    linear-gradient(180deg,
+      rgba(34, 211, 238, 0.06) 0%,
+      rgba(34, 211, 238, 0.02) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+    0 1px 4px rgba(0, 0, 0, 0.3);
+  transition: all 100ms ease;
+}
+
+.lockButton:hover {
+  border-color: rgba(34, 211, 238, 0.35);
+  background:
+    linear-gradient(180deg,
+      rgba(34, 211, 238, 0.1) 0%,
+      rgba(34, 211, 238, 0.04) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+    0 2px 8px rgba(0, 0, 0, 0.35);
+  transform: translateY(-1px);
+}
+
+.lockButton:active {
+  transform: translateY(0);
+  transition-duration: 40ms;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LAYER 3 — STATIC TERRAIN PREVIEW · Top-Right · 280×270
+   Titanium-glass · SVG 2.5D wireframe · No WebGL · Institutional
+   ═══════════════════════════════════════════════════════════════════════════ */
+.instrumentContainer {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+.instrumentPanel {
+  position: relative;
+  width: 280px;
+  height: 210px;
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg,
+      rgba(12, 18, 30, 0.92) 0%,
+      rgba(8, 12, 22, 0.96) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+    0 4px 24px rgba(0, 0, 0, 0.4),
+    0 1px 3px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  flex-shrink: 0;
+  pointer-events: auto;
+}
+
+/* Faint top highlight — titanium-glass bevel */
+.instrumentPanel::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  border-radius: 10px 10px 0 0;
+  background: linear-gradient(90deg,
+    transparent 15%,
+    rgba(34, 211, 238, 0.06) 50%,
+    transparent 85%);
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* LIVE BASELINE badge — top-right inside panel */
+.liveBaselineBadge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 6;
+  padding: 3px 8px;
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: rgba(34, 211, 238, 0.6);
+  border: 1px solid rgba(34, 211, 238, 0.12);
+  border-radius: 3px;
+  background: rgba(34, 211, 238, 0.03);
+  pointer-events: none;
+}
+
+/* SVG terrain preview container — fills the panel */
+.instrumentScene {
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Recalculation shimmer bar — 150ms ridge pulse on field update */
+.shimmerBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  z-index: 7;
+  background: linear-gradient(90deg,
+    transparent 10%,
+    rgba(34, 211, 238, 0.5) 50%,
+    transparent 90%
+  );
+  animation: sfRecalPulse 150ms ease-out forwards;
+  pointer-events: none;
+  transform-origin: center;
+}
+
+/* ─── Instrument Strip — RUNWAY · BURN MULTIPLE · INTEREST ─────────── */
+.instrumentStrip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 280px;
+  padding: 10px 8px;
+  margin-top: 6px;
+  border-radius: 8px;
+  background: rgba(8, 12, 22, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  gap: 0;
+  pointer-events: auto;
+}
+
+.instrumentItem {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 0 6px;
+  white-space: nowrap;
+}
+
+.instrumentLabel {
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.instrumentValue {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(34, 211, 238, 0.8);
+  letter-spacing: -0.2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.instrumentSep {
+  color: rgba(255, 255, 255, 0.07);
+  font-size: 8px;
+  padding: 0 1px;
+  user-select: none;
 }
