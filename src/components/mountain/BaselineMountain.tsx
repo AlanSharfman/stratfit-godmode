@@ -1,23 +1,27 @@
 /**
- * BaselineMountain.tsx — God Mode Institutional Cinematic Instrument
- * ═══════════════════════════════════════════════════════════════════════════
+ * BaselineMountain.tsx — Cinematic Institutional Structural Instrument (God Mode v2)
+ * ═══════════════════════════════════════════════════════════════════════════════════
  *
- * Bloomberg-grade / Palantir-grade structural terrain visualization.
- * NOT gaming. NOT playful. Capital truth rendered spatially.
+ * Capital war-room simulation surface.
+ *
+ * EMOTIONAL PROFILE:
+ *   DEFAULT  — Calm. Analytical. Precise.
+ *   STRESSED — Subtle intensification. Controlled pressure visibility. No alarms.
+ *
+ * This is structural truth, not theatre.
  *
  * LAYERS:
- *  1. High-resolution structural mesh (200×200 subdivisions)
- *  2. Institutional contour line system (subtle cyan, equidistant)
- *  3. Probability dispersion atmosphere (variance-reactive)
- *  4. Capital stress zones (survival → color shift)
- *  5. Runway horizon marker (vertical beam at exhaustion index)
- *  6. Surface micro-detailing (noise displacement, metallic material)
- *  7. Camera & lighting (institutional: soft top, rim, ambient, bloom)
- *  8. Grid foundation (faint analytical base)
+ *  1. High-fidelity structural mesh (200×200, precision-machined material)
+ *  2. Institutional contour system (ultra-thin cyan, stress-brightening)
+ *  3. Dispersion atmosphere (variance-reactive, controlled cinematic)
+ *  4. Capital stress illumination (cool→red gradient, subtle underglow)
+ *  5. Runway horizon marker (authoritative, precision beam)
+ *  6. Micro-surface detail (procedural noise, curvature shading)
+ *  7. Lighting architecture (institutional: top cool, rim cyan, bloom)
  *
  * CONSTRAINTS:
- *  - 60fps target
- *  - No heavy shaders / no volumetric raymarching
+ *  - 60fps target maintained
+ *  - No heavy raymarching / no experimental volumetric shaders
  *  - No changes to Monte Carlo engine
  *  - Deterministic data binding preserved
  *  - Canonical ScenarioMountain is NOT modified
@@ -30,7 +34,7 @@ import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
 import * as THREE from "three";
 
 // ============================================================================
-// CONSTANTS — HIGH-RES INSTITUTIONAL TERRAIN
+// CONSTANTS — HIGH-FIDELITY INSTITUTIONAL TERRAIN
 // ============================================================================
 
 const GRID_W = 200;             // 200×200 subdivisions — institutional grade
@@ -48,11 +52,12 @@ const CLIFF_BOOST = 1.15;
 const SOFT_CEILING = 9.0;
 const CEILING_START = 7.0;
 
-// Number of equidistant contour levels
-const CONTOUR_LEVELS = 12;
+// Contour system
+const CONTOUR_LEVELS = 14;
+const CONTOUR_COLOR = "#4fd1ff";  // Ice blue — institutional precision
 
 // ============================================================================
-// DETERMINISTIC NOISE (identical to canonical mountain)
+// DETERMINISTIC NOISE (canonical heightfield math)
 // ============================================================================
 
 function noise2(x: number, z: number): number {
@@ -88,7 +93,7 @@ function applySoftCeiling(h: number): number {
 }
 
 // ============================================================================
-// MASSIF PEAKS (identical to canonical)
+// MASSIF PEAKS (canonical)
 // ============================================================================
 
 interface MassifPeak {
@@ -109,46 +114,65 @@ const MASSIF_PEAKS: MassifPeak[] = [
 ];
 
 // ============================================================================
-// PALETTE — Institutional charcoal + cyan structural highlights
+// LAYER 1 + 4: PALETTE — Deep charcoal base + stress illumination
 // ============================================================================
 
+/**
+ * Computes vertex color for a given normalized height and stress factor.
+ * Default: institutional charcoal → ice blue structural highlights.
+ * Under stress: smooth gradient toward muted deep red in affected regions.
+ */
 function heightColor(h01: number, stressFactor: number): THREE.Color {
   const t = clamp01(h01);
 
-  // Base palette: dark charcoal → slate → ice blue → white peak
-  const sky = new THREE.Color("#071318");
-  const low = new THREE.Color("#1a2a35");
-  const mid = new THREE.Color("#22d3ee").multiplyScalar(0.35);
-  const high = new THREE.Color("#e0f0f5").lerp(new THREE.Color("#22d3ee"), 0.25);
-  const peak = new THREE.Color("#f8fcff");
+  // Institutional palette: deep charcoal → slate → muted cyan → ice peak
+  const abyss = new THREE.Color("#0e1116");
+  const low   = new THREE.Color("#1a2a35");
+  const mid   = new THREE.Color("#22d3ee").multiplyScalar(0.28);
+  const high  = new THREE.Color("#c8e6f0").lerp(new THREE.Color("#4fd1ff"), 0.2);
+  const peak  = new THREE.Color("#e8f4fa");
 
   let c: THREE.Color;
-  if (t < 0.15) c = sky.clone().lerp(low, t / 0.15);
-  else if (t < 0.45) c = low.clone().lerp(mid, (t - 0.15) / 0.3);
-  else if (t < 0.75) c = mid.clone().lerp(high, (t - 0.45) / 0.3);
-  else c = high.clone().lerp(peak, (t - 0.75) / 0.25);
+  if (t < 0.12)      c = abyss.clone().lerp(low, t / 0.12);
+  else if (t < 0.40) c = low.clone().lerp(mid, (t - 0.12) / 0.28);
+  else if (t < 0.72) c = mid.clone().lerp(high, (t - 0.40) / 0.32);
+  else                c = high.clone().lerp(peak, (t - 0.72) / 0.28);
 
-  // LAYER 4: Capital stress zones — tint toward muted red when survival drops
+  // LAYER 4: Capital stress illumination
+  // Smooth transition from cool cyan → muted deep red accent
   if (stressFactor > 0) {
-    const stressColor = new THREE.Color("#8b2252"); // Muted deep red
-    c.lerp(stressColor, stressFactor * 0.35);
+    const stressBase = new THREE.Color("#6b1a3a");   // Muted deep red
+    const stressMid  = new THREE.Color("#8b2252");   // Slightly brighter at mid-height
+    const stressTint = t > 0.4
+      ? stressBase.clone().lerp(stressMid, (t - 0.4) / 0.6)
+      : stressBase;
+    // Smooth gradient blend — internal pressure, not alert graphics
+    c.lerp(stressTint, stressFactor * 0.30);
   }
 
   return c;
 }
 
 // ============================================================================
-// HEIGHTFIELD COMPUTATION (replicates canonical math at 200×200)
+// HEIGHTFIELD COMPUTATION — replays canonical math at 200×200
 // ============================================================================
+
+interface HeightfieldResult {
+  maxHeight: number;
+  heights: Float32Array;
+  colors: Float32Array;
+}
 
 function computeHeightfield(
   dataPoints: number[],
   positions: THREE.BufferAttribute,
-  stressFactor: number
-): { maxHeight: number; heights: Float32Array; colors: Float32Array } {
+  stressFactor: number,
+): HeightfieldResult {
   const count = positions.count;
   const wHalf = MESH_W / 2;
-  const dp = dataPoints?.length === 7 ? dataPoints : [0.5, 0.5, 0.6, 0.4, 0.5, 0.45, 0.35];
+  const dp = dataPoints?.length === 7
+    ? dataPoints
+    : [0.5, 0.5, 0.6, 0.4, 0.5, 0.45, 0.35];
 
   const heights = new Float32Array(count);
   const colors = new Float32Array(count * 3);
@@ -159,6 +183,7 @@ function computeHeightfield(
     const z = positions.getY(i);
     const kpiX = ((x + wHalf) / MESH_W) * 6;
 
+    // KPI ridge driven by data points
     let ridge = 0;
     for (let idx = 0; idx < 7; idx++) {
       const v = clamp01(dp[idx]);
@@ -168,21 +193,26 @@ function computeHeightfield(
 
     let h = ridge * BASE_SCALE;
 
+    // Massif formation
     for (const m of MASSIF_PEAKS) {
       const g = gaussian2(x - m.x, z - m.z, m.sigmaX, m.sigmaZ);
       h += g * m.amplitude * MASSIF_SCALE;
     }
 
+    // Rugged detail
     const rugged = ridgeNoise(x, z);
     h += rugged * (0.3 + h * 0.08);
 
-    // Micro-detailing noise displacement (LAYER 6)
-    const microNoise = noise2(x * 3, z * 3) * 0.08 + noise2(x * 7, z * 7) * 0.03;
-    h += microNoise;
+    // LAYER 6: Micro-surface detail — very small amplitude procedural noise
+    const microA = noise2(x * 3.2, z * 3.2) * 0.06;
+    const microB = noise2(x * 7.5, z * 7.5) * 0.025;
+    // Under stress: micro-detail becomes marginally sharper
+    const microScale = 1.0 + stressFactor * 0.15;
+    h += (microA + microB) * microScale;
 
+    // Island mask + cliff boost
     const dist = Math.sqrt(x * x + z * z * 1.4);
     const mask = Math.max(0, 1 - Math.pow(dist / ISLAND_RADIUS, 2.0));
-
     const n = noise2(x, z) * 0.2;
     const cliff = Math.pow(mask, 0.45) * CLIFF_BOOST;
     let finalH = Math.max(0, (h + n) * mask * cliff);
@@ -192,7 +222,7 @@ function computeHeightfield(
     if (finalH > maxH) maxH = finalH;
   }
 
-  // Compute vertex colors
+  // Vertex colors
   for (let i = 0; i < count; i++) {
     const h01 = clamp01(heights[i] / (maxH * 0.82));
     const c = heightColor(h01, stressFactor);
@@ -205,14 +235,99 @@ function computeHeightfield(
 }
 
 // ============================================================================
-// LAYER 1: HIGH-RES STRUCTURAL MESH
+// LAYER 2: CONTOUR LINE EXTRACTION (marching horizontal rows)
+// ============================================================================
+
+interface ContourLineData {
+  points: Float32Array;
+  stressInfluence: number; // average local stress proximity (0–1)
+}
+
+function extractContours(
+  positions: THREE.BufferAttribute,
+  maxHeight: number,
+  stressFactor: number,
+): ContourLineData[] {
+  if (maxHeight < 0.1) return [];
+
+  const cols = GRID_W + 1;
+  const rows = GRID_D + 1;
+  const step = maxHeight / (CONTOUR_LEVELS + 1);
+  const lines: ContourLineData[] = [];
+
+  for (let level = 1; level <= CONTOUR_LEVELS; level++) {
+    const threshold = step * level;
+    const raw: THREE.Vector3[] = [];
+
+    // Scan horizontal rows for threshold crossings
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols - 1; c++) {
+        const i1 = r * cols + c;
+        const i2 = r * cols + c + 1;
+        const h1 = positions.getZ(i1);
+        const h2 = positions.getZ(i2);
+
+        if ((h1 < threshold && h2 >= threshold) || (h1 >= threshold && h2 < threshold)) {
+          const t = (threshold - h1) / (h2 - h1);
+          const x = lerp(positions.getX(i1), positions.getX(i2), t);
+          const z = lerp(positions.getY(i1), positions.getY(i2), t);
+          raw.push(new THREE.Vector3(x, z, threshold + 0.015));
+        }
+      }
+    }
+
+    // Also scan vertical columns for better contour coverage
+    for (let c = 0; c < cols; c++) {
+      for (let r = 0; r < rows - 1; r++) {
+        const i1 = r * cols + c;
+        const i2 = (r + 1) * cols + c;
+        const h1 = positions.getZ(i1);
+        const h2 = positions.getZ(i2);
+
+        if ((h1 < threshold && h2 >= threshold) || (h1 >= threshold && h2 < threshold)) {
+          const t = (threshold - h1) / (h2 - h1);
+          const x = lerp(positions.getX(i1), positions.getX(i2), t);
+          const z = lerp(positions.getY(i1), positions.getY(i2), t);
+          raw.push(new THREE.Vector3(x, z, threshold + 0.015));
+        }
+      }
+    }
+
+    if (raw.length < 4) continue;
+
+    // Sort by angle from centroid for closed-loop appearance
+    const cx = raw.reduce((s, p) => s + p.x, 0) / raw.length;
+    const cy = raw.reduce((s, p) => s + p.y, 0) / raw.length;
+    raw.sort((a, b) =>
+      Math.atan2(a.y - cy, a.x - cx) - Math.atan2(b.y - cy, b.x - cx)
+    );
+
+    const flat = new Float32Array(raw.length * 3);
+    for (let i = 0; i < raw.length; i++) {
+      flat[i * 3] = raw[i].x;
+      flat[i * 3 + 1] = raw[i].y;
+      flat[i * 3 + 2] = raw[i].z;
+    }
+
+    // Stress influence: higher contours in low-height zones affected more
+    const heightRatio = threshold / maxHeight;
+    const stressInfluence = stressFactor * (1 - heightRatio * 0.5);
+
+    lines.push({ points: flat, stressInfluence });
+  }
+
+  return lines;
+}
+
+// ============================================================================
+// LAYER 1: HIGH-FIDELITY STRUCTURAL MESH + ALL VISUAL LAYERS
 // ============================================================================
 
 interface InstitutionalTerrainProps {
   dataPoints: number[];
-  stressFactor: number;       // 0–1: survival pressure (higher = more red)
-  varianceWidth: number;      // 0–1: probability dispersion width
-  runwayMonths: number;       // Runway in months (for horizon marker position)
+  stressFactor: number;       // 0–1: survival pressure (higher = more stressed)
+  varianceWidth: number;      // 0–1: Monte Carlo dispersion width
+  runwayMonths: number;       // Months of runway remaining
   maxHorizonMonths: number;   // Planning horizon (36)
 }
 
@@ -225,12 +340,12 @@ function InstitutionalTerrain({
 }: InstitutionalTerrainProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const wireRef = useRef<THREE.Mesh>(null);
-  const contourGroupRef = useRef<THREE.Group>(null);
   const dispersionRef = useRef<THREE.Mesh>(null);
-  const runwayRef = useRef<THREE.Mesh>(null);
+  const runwayBeamRef = useRef<THREE.Mesh>(null);
+  const stressGlowRef = useRef<THREE.PointLight>(null);
   const maxHeightRef = useRef(1);
 
-  // LAYER 1: High-res geometry (200×200)
+  // ── LAYER 1: High-res geometry (200×200) ──────────────────────────────
   const geometry = useMemo(() => {
     const geo = new THREE.PlaneGeometry(MESH_W, MESH_D, GRID_W, GRID_D);
     const count = geo.attributes.position.count;
@@ -238,7 +353,7 @@ function InstitutionalTerrain({
     return geo;
   }, []);
 
-  // Compute heightfield and apply to geometry
+  // ── Compute heightfield and apply to geometry ─────────────────────────
   useLayoutEffect(() => {
     if (!meshRef.current) return;
 
@@ -249,12 +364,12 @@ function InstitutionalTerrain({
     const { maxHeight, heights, colors } = computeHeightfield(dataPoints, pos, stressFactor);
     maxHeightRef.current = maxHeight;
 
-    // Apply heights
+    // Apply heights to Z axis
     for (let i = 0; i < pos.count; i++) {
       pos.setZ(i, heights[i]);
     }
 
-    // Apply colors
+    // Apply vertex colors
     col.set(colors);
 
     pos.needsUpdate = true;
@@ -262,176 +377,167 @@ function InstitutionalTerrain({
     geo.computeVertexNormals();
   }, [dataPoints, stressFactor]);
 
-  // LAYER 2: Contour lines (generated from heightfield)
+  // ── LAYER 2: Contour lines ────────────────────────────────────────────
   const contourLines = useMemo(() => {
-    if (!meshRef.current) return [];
-
     const geo = geometry;
     const pos = geo.attributes.position as THREE.BufferAttribute;
-    const maxH = maxHeightRef.current;
-    if (maxH < 0.1) return [];
+    return extractContours(pos, maxHeightRef.current, stressFactor);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataPoints, stressFactor, geometry]);
 
-    const lines: THREE.Vector3[][] = [];
-    const step = maxH / (CONTOUR_LEVELS + 1);
-
-    // March through rows to find contour crossings
-    const cols = GRID_W + 1;
-    const rows = GRID_D + 1;
-
-    for (let level = 1; level <= CONTOUR_LEVELS; level++) {
-      const threshold = step * level;
-      const pts: THREE.Vector3[] = [];
-
-      // Simple marching: scan horizontal rows for threshold crossings
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols - 1; c++) {
-          const i1 = r * cols + c;
-          const i2 = r * cols + c + 1;
-          const h1 = pos.getZ(i1);
-          const h2 = pos.getZ(i2);
-
-          if ((h1 < threshold && h2 >= threshold) || (h1 >= threshold && h2 < threshold)) {
-            const t = (threshold - h1) / (h2 - h1);
-            const x = lerp(pos.getX(i1), pos.getX(i2), t);
-            const z = lerp(pos.getY(i1), pos.getY(i2), t);
-            pts.push(new THREE.Vector3(x, z, threshold + 0.02));
-          }
-        }
-      }
-
-      if (pts.length > 3) {
-        // Sort points by angle from center for closed contour appearance
-        const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
-        const cy = pts.reduce((s, p) => s + p.y, 0) / pts.length;
-        pts.sort((a, b) => Math.atan2(a.y - cy, a.x - cx) - Math.atan2(b.y - cy, b.x - cx));
-        lines.push(pts);
-      }
-    }
-
-    return lines;
-  }, [dataPoints, geometry]);
-
-  // LAYER 5: Runway horizon marker position (maps months → X position)
+  // ── LAYER 5: Runway horizon marker X position ────────────────────────
   const runwayX = useMemo(() => {
     const t = clamp01(runwayMonths / maxHorizonMonths);
     return lerp(-MESH_W / 2, MESH_W / 2, t);
   }, [runwayMonths, maxHorizonMonths]);
 
-  // Breathing animation (subtle, institutional)
-  const breathRef = useRef(0);
+  // ── LAYER 3 + 4: Dispersion and stress underglow animation ───────────
+  const timeRef = useRef(0);
 
   useFrame((_, delta) => {
-    breathRef.current += delta;
-    const t = breathRef.current;
+    timeRef.current += delta;
 
-    // Micro-idle camera movement (barely perceptible)
-    if (meshRef.current) {
-      const breathCycle = Math.sin(t * 0.3) * 0.5 + 0.5;
-      const scale = 1 + breathCycle * 0.008; // 0.8% max scale pulse
-      meshRef.current.scale.setScalar(scale);
-    }
-
-    // Dispersion layer opacity pulsing (subtle)
+    // LAYER 3: Dispersion atmosphere opacity — almost invisible at calm,
+    // slightly denser under stress
     if (dispersionRef.current) {
       const mat = dispersionRef.current.material as THREE.MeshBasicMaterial;
-      const baseOpacity = 0.06 + varianceWidth * 0.12;
-      mat.opacity = baseOpacity + Math.sin(t * 0.5) * 0.015;
+      // Calm: 0.02 base. With variance: up to 0.10. Under stress: +0.04.
+      const baseOpacity = 0.02 + varianceWidth * 0.08 + stressFactor * 0.04;
+      // Barely perceptible idle micro-drift (not animated pulsing)
+      const drift = Math.sin(timeRef.current * 0.3) * 0.005;
+      mat.opacity = clamp01(baseOpacity + drift);
     }
 
-    // Runway marker glow pulse
-    if (runwayRef.current) {
-      const mat = runwayRef.current.material as THREE.MeshBasicMaterial;
-      mat.opacity = 0.4 + Math.sin(t * 1.2) * 0.1;
+    // LAYER 4: Stress underglow — subtle point light in high-risk regions
+    if (stressGlowRef.current) {
+      // Only visible when stress is present; intensity scales smoothly
+      stressGlowRef.current.intensity = stressFactor * 0.6;
     }
+
+    // LAYER 5: Runway beam — static, no animation (authoritative, engineered)
+    // No-op: beam opacity is set once, no per-frame changes
   });
 
   return (
     <group rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} scale={[0.9, 0.9, 0.9]}>
-      {/* LAYER 1: High-res fill mesh — dark charcoal metallic */}
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          LAYER 1: High-fidelity fill mesh — precision-machined material
+          Deep charcoal base, subtle metallic roughness, institutional feel
+          ═══════════════════════════════════════════════════════════════════ */}
       <mesh ref={meshRef} geometry={geometry}>
         <meshStandardMaterial
           vertexColors
           transparent
-          opacity={0.32}
-          roughness={0.15}           // Low roughness — institutional metallic
-          metalness={0.85}           // High metalness — premium finish
+          opacity={0.38}
+          roughness={0.45}              // Matte institutional — not chrome
+          metalness={0.55}              // Subtle metallic without mirror effect
           side={THREE.DoubleSide}
-          emissive={new THREE.Color("#0a3d5c")}
-          emissiveIntensity={0.08}
+          emissive={new THREE.Color("#0a2d45")}
+          emissiveIntensity={0.05}
           depthWrite={false}
           toneMapped={false}
         />
       </mesh>
 
-      {/* LAYER 1b: Wireframe overlay — structural grid visible */}
+      {/* ═══════════════════════════════════════════════════════════════════
+          LAYER 1b: Wireframe overlay — structural grid, precision read
+          ═══════════════════════════════════════════════════════════════════ */}
       <mesh ref={wireRef} geometry={geometry}>
         <meshBasicMaterial
           vertexColors
           wireframe
           transparent
-          opacity={0.65}
+          opacity={0.55}
           toneMapped={false}
         />
       </mesh>
 
-      {/* LAYER 2: Contour lines — equidistant, subtle cyan */}
-      <group ref={contourGroupRef}>
-        {contourLines.map((pts, i) =>
-          pts.length > 2 ? (
-            <line key={`contour-${i}`}>
-              <bufferGeometry>
-                <bufferAttribute
-                  attach="attributes-position"
-                  args={[
-                    new Float32Array(pts.flatMap((p) => [p.x, p.y, p.z])),
-                    3,
-                  ]}
-                />
-              </bufferGeometry>
-              <lineBasicMaterial
-                color="#22d3ee"
-                transparent
-                opacity={0.15 + (i / CONTOUR_LEVELS) * 0.1}
-                linewidth={1}
-              />
-            </line>
-          ) : null
-        )}
-      </group>
+      {/* ═══════════════════════════════════════════════════════════════════
+          LAYER 2: Institutional contour system — ultra-thin ice blue lines
+          Under stress: lines brighten locally in affected regions.
+          Parallax-responsive through camera angle, NOT animated.
+          ═══════════════════════════════════════════════════════════════════ */}
+      {contourLines.map((contour, i) => {
+        // Base opacity: 0.20. Under stress: brighten proportionally.
+        const baseOp = 0.18;
+        const stressBrighten = contour.stressInfluence * 0.12;
+        const opacity = clamp01(baseOp + stressBrighten);
 
-      {/* LAYER 3: Probability dispersion atmosphere */}
-      <mesh ref={dispersionRef} position={[0, 0, maxHeightRef.current * 0.6]}>
-        <planeGeometry args={[MESH_W * 0.8, MESH_D * 0.7]} />
+        return (
+          <line key={`contour-${i}`}>
+            <bufferGeometry>
+              <bufferAttribute
+                attach="attributes-position"
+                args={[contour.points, 3]}
+              />
+            </bufferGeometry>
+            <lineBasicMaterial
+              color={CONTOUR_COLOR}
+              transparent
+              opacity={opacity}
+              linewidth={1}
+            />
+          </line>
+        );
+      })}
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          LAYER 3: Probability dispersion atmosphere
+          Semi-transparent structural variance field above surface.
+          Calm state: almost invisible. Under stress: slightly denser.
+          Indigo (#5b6cff) mixed with cyan — controlled cinematic.
+          ═══════════════════════════════════════════════════════════════════ */}
+      <mesh ref={dispersionRef} position={[0, 0, maxHeightRef.current * 0.55]}>
+        <planeGeometry args={[MESH_W * 0.75, MESH_D * 0.65]} />
         <meshBasicMaterial
-          color="#4338ca"                  // Indigo / ice blue
+          color="#5b6cff"
           transparent
-          opacity={0.06 + varianceWidth * 0.12}
+          opacity={0.02 + varianceWidth * 0.08}
           side={THREE.DoubleSide}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
       </mesh>
 
-      {/* LAYER 5: Runway horizon marker — vertical cyan beam */}
+      {/* ═══════════════════════════════════════════════════════════════════
+          LAYER 4: Capital stress underglow — subtle internal pressure
+          Only visible when survival probability is low.
+          Deep red point light beneath the surface.
+          ═══════════════════════════════════════════════════════════════════ */}
+      <pointLight
+        ref={stressGlowRef}
+        color="#6b1a3a"
+        intensity={0}
+        distance={18}
+        decay={2}
+        position={[0, 0, -1.5]}
+      />
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          LAYER 5: Runway horizon marker — authoritative vertical beam
+          Thin cyan line at capital exhaustion time index.
+          Precision marker. Engineered. No animation.
+          ═══════════════════════════════════════════════════════════════════ */}
       <group position={[runwayX, 0, 0]}>
-        <mesh ref={runwayRef}>
-          <planeGeometry args={[0.08, maxHeightRef.current * 1.5]} />
+        <mesh ref={runwayBeamRef}>
+          <planeGeometry args={[0.06, maxHeightRef.current * 1.4]} />
           <meshBasicMaterial
-            color="#22d3ee"
+            color="#4fd1ff"
             transparent
-            opacity={0.5}
+            opacity={0.45}
             side={THREE.DoubleSide}
             depthWrite={false}
             blending={THREE.AdditiveBlending}
           />
         </mesh>
-        {/* Runway glow point light */}
+        {/* Faint reflection — point light at mid-beam height */}
         <pointLight
-          color="#22d3ee"
-          intensity={0.3}
-          distance={8}
+          color="#4fd1ff"
+          intensity={0.15}
+          distance={6}
           decay={2}
-          position={[0, 0, maxHeightRef.current * 0.5]}
+          position={[0, 0, maxHeightRef.current * 0.35]}
         />
       </group>
     </group>
@@ -439,7 +545,7 @@ function InstitutionalTerrain({
 }
 
 // ============================================================================
-// LAYER 8: GRID FOUNDATION
+// LAYER 8: ANALYTICAL GRID FOUNDATION
 // ============================================================================
 
 function AnalyticalGrid() {
@@ -448,16 +554,42 @@ function AnalyticalGrid() {
       position={[0, -2.5, 0]}
       args={[60, 60]}
       cellSize={1}
-      cellThickness={0.5}
-      cellColor="#1a2332"
+      cellThickness={0.4}
+      cellColor="#141e2d"
       sectionSize={5}
-      sectionThickness={1}
-      sectionColor="#22d3ee"
+      sectionThickness={0.8}
+      sectionColor="#4fd1ff"
       fadeDistance={35}
-      fadeStrength={1.5}
+      fadeStrength={1.8}
       infiniteGrid
     />
   );
+}
+
+// ============================================================================
+// IDLE MICRO-MOTION — barely perceptible, grounded, institutional
+// ============================================================================
+
+function IdleMicroMotion({ children }: { children: React.ReactNode }) {
+  const groupRef = useRef<THREE.Group>(null);
+
+  useFrame((state) => {
+    if (!groupRef.current) return;
+    const t = state.clock.elapsedTime;
+
+    // Very slow idle micro-motion — perceptible only if you stare
+    // No rotation. No cinematic sweep. Confident. Grounded.
+    const breathY = Math.sin(t * 0.25) * 0.04;
+    const breathX = Math.sin(t * 0.18) * 0.01;
+    groupRef.current.position.y = breathY;
+    groupRef.current.position.x = breathX;
+
+    // Micro tilt — barely perceptible depth cue
+    groupRef.current.rotation.x = Math.sin(t * 0.15) * 0.003;
+    groupRef.current.rotation.y = Math.cos(t * 0.12) * 0.002;
+  });
+
+  return <group ref={groupRef}>{children}</group>;
 }
 
 // ============================================================================
@@ -470,7 +602,7 @@ export interface BaselineMountainProps {
   varianceWidth?: number;           // 0–1 (for dispersion atmosphere)
   runwayMonths?: number;            // Months of runway remaining
   maxHorizonMonths?: number;        // Planning horizon (default: 36)
-  showGrid?: boolean;               // Optional grid foundation
+  showGrid?: boolean;               // Optional analytical grid foundation
   className?: string;
 }
 
@@ -483,12 +615,18 @@ export default function BaselineMountain({
   showGrid = true,
   className,
 }: BaselineMountainProps) {
-  // LAYER 4: Capital stress factor (0 = no stress, 1 = maximum)
+
+  // LAYER 4: Stress factor derived from survival probability
+  // 0 = healthy (≥80%), 1 = maximum stress (≤30%)
   const stressFactor = useMemo(() => {
     if (survivalProbability >= 80) return 0;
     if (survivalProbability <= 30) return 1;
     return 1 - (survivalProbability - 30) / 50;
   }, [survivalProbability]);
+
+  // Camera polar angle: ~35° from horizontal = Math.PI / 2 - (35° in rad)
+  // 35° ≈ 0.611 rad → polar angle ≈ Math.PI / 2 - 0.611 ≈ 0.96
+  const polarAngle = Math.PI / 2 - (35 * Math.PI) / 180; // ~0.96 rad
 
   return (
     <div
@@ -522,64 +660,67 @@ export default function BaselineMountain({
         }
       >
         <Suspense fallback={null}>
-          {/* Background color — deep institutional charcoal */}
+          {/* Deep institutional charcoal background */}
           <color attach="background" args={["#0E1116"]} />
-          <fog attach="fog" args={["#0E1116", 35, 80]} />
+          <fog attach="fog" args={["#0E1116", 38, 85]} />
 
-          {/* LAYER 7: Camera — slightly elevated, calm authority */}
-          <PerspectiveCamera makeDefault position={[0, 8, 30]} fov={36} />
+          {/* ═══════════════════════════════════════════════════════════════
+              LAYER 7: Camera — slightly elevated 35° angle, institutional
+              No spinning. No cinematic flyover. Confident. Grounded.
+              ═══════════════════════════════════════════════════════════════ */}
+          <PerspectiveCamera makeDefault position={[0, 10, 28]} fov={34} />
 
-          {/* LAYER 7: Lighting — institutional grade */}
-          {/* Soft top directional (cool tone) */}
-          <directionalLight position={[0, 20, 8]} intensity={0.5} color="#e8f0f6" />
-          {/* Low-intensity cyan rim light */}
-          <directionalLight position={[-8, 12, -5]} intensity={0.12} color="#22d3ee" />
-          {/* Secondary rim (warm neutral) */}
-          <directionalLight position={[10, 15, -3]} intensity={0.06} color="#94a3b8" />
-          {/* Subtle ambient fill */}
-          <ambientLight intensity={0.15} />
-          {/* Subsurface structural glow */}
-          <pointLight position={[0, -4, 0]} intensity={0.4} color="#22d3ee" distance={20} decay={2} />
+          {/* ═══════════════════════════════════════════════════════════════
+              LAYER 7: Lighting architecture — institutional grade
+              ═══════════════════════════════════════════════════════════════ */}
+          {/* Soft top directional — cool white, primary illumination */}
+          <directionalLight position={[0, 22, 8]} intensity={0.45} color="#e4edf4" />
+          {/* Cyan rim light — low intensity structural accent */}
+          <directionalLight position={[-8, 14, -6]} intensity={0.10} color="#4fd1ff" />
+          {/* Secondary fill — subtle, neutral */}
+          <directionalLight position={[10, 16, -4]} intensity={0.05} color="#8898a8" />
+          {/* Low ambient fill — keeps shadows readable without wash */}
+          <ambientLight intensity={0.12} />
 
-          {/* THE TERRAIN — all layers rendered together */}
-          <InstitutionalTerrain
-            dataPoints={dataPoints}
-            stressFactor={stressFactor}
-            varianceWidth={varianceWidth}
-            runwayMonths={runwayMonths}
-            maxHorizonMonths={maxHorizonMonths}
-          />
+          {/* Idle micro-motion wrapper — barely perceptible, no rotation */}
+          <IdleMicroMotion>
+            {/* ALL TERRAIN LAYERS rendered inside this group */}
+            <InstitutionalTerrain
+              dataPoints={dataPoints}
+              stressFactor={stressFactor}
+              varianceWidth={varianceWidth}
+              runwayMonths={runwayMonths}
+              maxHorizonMonths={maxHorizonMonths}
+            />
+          </IdleMicroMotion>
 
-          {/* LAYER 8: Grid foundation (optional) */}
+          {/* Analytical grid foundation (optional) */}
           {showGrid && <AnalyticalGrid />}
 
-          {/* Calm institutional orbit — barely perceptible idle movement */}
+          {/* Camera constraints: locked at ~35°, no rotation, no zoom */}
           <OrbitControls
             enableZoom={false}
             enablePan={false}
-            enableRotate={true}
-            rotateSpeed={0.3}
-            autoRotate
-            autoRotateSpeed={0.08}
-            minPolarAngle={Math.PI / 4}
-            maxPolarAngle={Math.PI / 2.4}
-            minAzimuthAngle={-Math.PI / 6}
-            maxAzimuthAngle={Math.PI / 6}
+            enableRotate={false}
+            minPolarAngle={polarAngle}
+            maxPolarAngle={polarAngle}
           />
 
-          {/* LAYER 7: Controlled bloom — low threshold, institutional */}
+          {/* ═══════════════════════════════════════════════════════════════
+              LAYER 7: Post-processing — controlled bloom, vignette
+              No lens flare. No dramatic shadows.
+              ═══════════════════════════════════════════════════════════════ */}
           <EffectComposer>
             <Bloom
-              intensity={0.25}
-              luminanceThreshold={0.4}
-              luminanceSmoothing={0.9}
+              intensity={0.20}
+              luminanceThreshold={0.45}
+              luminanceSmoothing={0.85}
               mipmapBlur
             />
-            <Vignette offset={0.4} darkness={0.35} />
+            <Vignette offset={0.45} darkness={0.30} />
           </EffectComposer>
         </Suspense>
       </Canvas>
     </div>
   );
 }
-
