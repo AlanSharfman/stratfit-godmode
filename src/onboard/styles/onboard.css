@@ -1,0 +1,607 @@
+/* src/onboard/styles/onboard.css */
+/* STRATFIT Onboarding — Command-centre ↔ boardroom aesthetic */
+
+.sfOn-root {
+  position: relative;
+  min-height: 100vh;
+  color: rgba(255, 255, 255, 0.92);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+.sfOn-root::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(1200px 600px at 50% 10%, rgba(34, 211, 238, 0.14), transparent 55%),
+    radial-gradient(900px 600px at 20% 50%, rgba(59, 130, 246, 0.12), transparent 60%),
+    linear-gradient(180deg, rgba(10, 18, 32, 0.94), rgba(9, 16, 28, 0.96));
+  z-index: 0;
+}
+
+/* Optional mountain image; safe fallback if missing */
+.sfOn-root::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  /* Optional: set at runtime if you have an asset, e.g.
+     document.documentElement.style.setProperty('--sfOn-mountain-bg', "url('/mountain-onboard-bg.webp')");
+  */
+  background-image: var(--sfOn-mountain-bg, none);
+  background-size: cover;
+  background-position: center;
+  opacity: 0.08;
+  mix-blend-mode: screen;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.sfOn-shell {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.sfOn-topbar {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(8, 12, 20, 0.58);
+  backdrop-filter: blur(16px);
+}
+
+.sfOn-topbarLeft {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 360px;
+}
+.sfOn-brandMark {
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+.sfOn-brandSub {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+.sfOn-topbarDivider {
+  width: 1px;
+  height: 26px;
+  background: rgba(255, 255, 255, 0.12);
+}
+.sfOn-activeStepLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+.sfOn-activeStepHint {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.sfOn-topbarRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sfOn-inlineMsg {
+  max-width: 420px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(34, 211, 238, 0.25);
+  background: rgba(34, 211, 238, 0.08);
+  color: rgba(209, 250, 255, 0.92);
+  font-size: 11px;
+  line-height: 1.35;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+.sfOn-saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 220ms ease-out, transform 220ms ease-out;
+}
+.sfOn-saved.isOn {
+  opacity: 1;
+  transform: translateY(0);
+}
+.sfOn-savedIcon {
+  width: 14px;
+  height: 14px;
+  color: rgba(34, 211, 238, 0.9);
+}
+
+.sfOn-ready {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.66);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+.sfOn-ready.isReady {
+  border-color: rgba(34, 211, 238, 0.25);
+  background: rgba(34, 211, 238, 0.08);
+  color: rgba(209, 250, 255, 0.9);
+}
+.sfOn-readyIcon {
+  width: 14px;
+  height: 14px;
+  color: rgba(34, 211, 238, 0.9);
+}
+
+.sfOn-btn {
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.86);
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+.sfOn-btn:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+.sfOn-btn:active {
+  transform: translateY(1px);
+}
+.sfOn-btn--primary {
+  border-color: rgba(34, 211, 238, 0.35);
+  background: linear-gradient(180deg, rgba(34, 211, 238, 0.18), rgba(14, 165, 233, 0.12));
+  color: rgba(209, 250, 255, 0.92);
+}
+.sfOn-btn--primary:hover {
+  background: linear-gradient(180deg, rgba(34, 211, 238, 0.24), rgba(14, 165, 233, 0.16));
+}
+.sfOn-btn--primary:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+.sfOn-btn--ghost {
+  background: rgba(0, 0, 0, 0.0);
+}
+
+.sfOn-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 260px minmax(800px, 920px) 340px;
+  gap: 18px;
+  padding: 18px;
+  align-items: start;
+  justify-content: center;
+}
+
+/* Rail */
+.sfOn-rail {
+  position: sticky;
+  top: 82px;
+  align-self: start;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(8, 12, 20, 0.42);
+  backdrop-filter: blur(16px);
+  overflow: hidden;
+}
+.sfOn-railHeader {
+  padding: 14px 14px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.sfOn-railTitle {
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+.sfOn-railSub {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+  margin-top: 4px;
+}
+.sfOn-railList {
+  display: flex;
+  flex-direction: column;
+}
+.sfOn-railItem {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  gap: 10px;
+  padding: 12px 14px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  color: rgba(255, 255, 255, 0.88);
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  transition: background 160ms ease;
+}
+.sfOn-railItem:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+.sfOn-railItem.isActive {
+  background: rgba(34, 211, 238, 0.10);
+}
+.sfOn-railItem.needsAttention {
+  box-shadow: inset 0 0 0 1px rgba(34, 211, 238, 0.22);
+}
+.sfOn-railIcon svg {
+  width: 18px;
+  height: 18px;
+  color: rgba(255, 255, 255, 0.25);
+}
+.sfOn-railIcon.isDone svg {
+  color: rgba(34, 211, 238, 0.92);
+}
+.sfOn-railLabel {
+  font-size: 12px;
+  font-weight: 800;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+.sfOn-railSubtitle {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.56);
+  margin-top: 2px;
+}
+.sfOn-railStatus {
+  font-size: 10px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  padding: 6px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  color: rgba(255, 255, 255, 0.55);
+}
+.sfOn-railStatus.isDone {
+  border-color: rgba(34, 211, 238, 0.25);
+  background: rgba(34, 211, 238, 0.08);
+  color: rgba(209, 250, 255, 0.92);
+}
+.sfOn-railFooter {
+  padding: 12px 14px 14px;
+}
+.sfOn-railFooterTitle {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.78);
+}
+.sfOn-railFooterText {
+  margin-top: 6px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* Center */
+.sfOn-center {
+  min-height: 480px;
+}
+
+.sfOn-card {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(8, 12, 20, 0.48);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 18px 70px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+.sfOn-card--primary {
+  border-color: rgba(34, 211, 238, 0.18);
+}
+.sfOn-cardHeader {
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.sfOn-cardTitle {
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+.sfOn-cardSubtitle {
+  margin-top: 4px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.58);
+}
+.sfOn-cardBody {
+  padding: 16px;
+}
+
+.sfOn-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sfOn-grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 14px;
+}
+.sfOn-field--span2 {
+  grid-column: 1 / -1;
+}
+.sfOn-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sfOn-labelRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.sfOn-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.78);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+.sfOn-hint {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.sfOn-input {
+  height: 48px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.92);
+  padding: 0 12px;
+  outline: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: border-color 160ms ease, background 160ms ease;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+.sfOn-input:focus {
+  border-color: rgba(34, 211, 238, 0.35);
+  background: rgba(255, 255, 255, 0.06);
+}
+.sfOn-input--num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.sfOn-note {
+  padding: 12px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.60);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* Advanced section */
+.sfOn-advancedToggle {
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(8, 12, 20, 0.38);
+  backdrop-filter: blur(14px);
+  padding: 12px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+.sfOn-advancedToggle:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+.sfOn-advancedToggleTitle {
+  font-size: 12px;
+  font-weight: 900;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+.sfOn-optional {
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.52);
+  margin-left: 6px;
+  letter-spacing: 0.02em;
+}
+.sfOn-advancedToggleSub {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.54);
+  margin-top: 3px;
+}
+.sfOn-advancedChevron {
+  width: 18px;
+  height: 18px;
+  color: rgba(255, 255, 255, 0.55);
+  transition: transform 220ms ease-out;
+}
+.sfOn-advancedChevron.isOpen {
+  transform: rotate(180deg);
+}
+.sfOn-advancedWrap {
+  overflow: hidden;
+  transition: height 220ms ease-out;
+}
+.sfOn-advancedInner {
+  padding-top: 12px;
+}
+.sfOn-advancedMotion {
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 220ms ease-out, transform 220ms ease-out;
+}
+.sfOn-advancedMotion.isOpen {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Intel */
+.sfOn-intel {
+  position: sticky;
+  top: 82px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-self: start;
+}
+.sfOn-intelHeader {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(8, 12, 20, 0.42);
+  backdrop-filter: blur(16px);
+  padding: 14px 14px 12px;
+}
+.sfOn-intelTitle {
+  font-weight: 900;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  font-size: 12px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+.sfOn-intelSub {
+  margin-top: 4px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+}
+.sfOn-intelCard {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(8, 12, 20, 0.44);
+  backdrop-filter: blur(16px);
+  padding: 14px;
+}
+.sfOn-intelCard--thin {
+  padding: 12px;
+}
+.sfOn-intelCardTop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sfOn-intelIcon {
+  width: 18px;
+  height: 18px;
+  color: rgba(34, 211, 238, 0.92);
+}
+.sfOn-intelCardTitle {
+  font-size: 12px;
+  font-weight: 900;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+.sfOn-intelCardSub {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+  margin-top: 2px;
+}
+.sfOn-kpiGrid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.sfOn-kpi {
+  padding: 10px 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+.sfOn-kpiLabel {
+  font-size: 10px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+.sfOn-kpiValue {
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+.sfOn-bullets {
+  margin: 12px 0 0;
+  padding-left: 16px;
+  color: rgba(255, 255, 255, 0.66);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.sfOn-bullets li {
+  margin: 6px 0;
+}
+.sfOn-intelMini {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+.sfOn-intelIconMini {
+  width: 16px;
+  height: 16px;
+  color: rgba(34, 211, 238, 0.86);
+  margin-top: 1px;
+}
+.sfOn-intelMiniTitle {
+  font-size: 11px;
+  font-weight: 900;
+}
+.sfOn-intelMiniSub {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.56);
+  margin-top: 2px;
+}
+
+@media (max-width: 1440px) {
+  .sfOn-body {
+    grid-template-columns: 260px minmax(720px, 860px) 320px;
+  }
+}
+
+@media (max-width: 1220px) {
+  .sfOn-body {
+    grid-template-columns: 260px 1fr;
+  }
+  .sfOn-intel {
+    display: none;
+  }
+}
+
+
