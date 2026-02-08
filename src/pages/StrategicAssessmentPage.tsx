@@ -9,11 +9,17 @@
 import React, { useState, useMemo } from "react";
 import { useSimulationStore } from "@/state/simulationStore";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
-import ScenarioMountain from "@/components/mountain/ScenarioMountain";
+import BaselineMountain from "@/components/mountain/BaselineMountain";
 import { engineResultToMountainForces } from "@/logic/mountainForces";
 import { useScenarioStore } from "@/state/scenarioStore";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import styles from "./StrategicAssessmentPage.module.css";
+
+// ────────────────────────────────────────────────────────────────────────────
+// HELPERS
+// ────────────────────────────────────────────────────────────────────────────
+
+const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 
 // ────────────────────────────────────────────────────────────────────────────
 // TYPES
@@ -106,12 +112,22 @@ const StrategicPosturePanel: React.FC<{
 
 const AssessmentMountainPanel: React.FC<{
   dataPoints: number[];
-}> = ({ dataPoints }) => {
+  survivalProbability: number;
+  varianceWidth: number;
+  runwayMonths: number;
+}> = ({ dataPoints, survivalProbability, varianceWidth, runwayMonths }) => {
   return (
     <div className={styles.mountainPanel}>
       <h3 className={styles.mountainLabel}>STRUCTURAL STATE VISUALIZATION</h3>
       <div className={styles.mountainCanvas}>
-        <ScenarioMountain scenario="base" dataPoints={dataPoints} />
+        <BaselineMountain
+          dataPoints={dataPoints}
+          survivalProbability={survivalProbability}
+          varianceWidth={varianceWidth}
+          runwayMonths={runwayMonths}
+          maxHorizonMonths={36}
+          showGrid
+        />
       </div>
     </div>
   );
@@ -307,6 +323,11 @@ export default function StrategicAssessmentPage() {
   const downsideCompression = ((evP50 - evP10) / Math.max(1, evP50)) * 100;
   const capitalEfficiency = evP50 / Math.max(1, baselineStartingCash / 1000000);
 
+  // Variance width for dispersion atmosphere (0–1 scale)
+  // Derived from EV dispersion ratio: wider spread → more variance
+  const dispersionRatio = evP90 / Math.max(1, evP10);
+  const varianceWidth = clamp01((dispersionRatio - 1) / 10); // Normalize: 1x = 0, 11x+ = 1
+
   // ── Structural Diagnosis (deterministic) ──
   const structuralDrivers: StructuralDriver[] = useMemo(() => {
     const drivers: StructuralDriver[] = [];
@@ -429,7 +450,12 @@ export default function StrategicAssessmentPage() {
         runwayUnderStress={runwayUnderStress}
       />
 
-      <AssessmentMountainPanel dataPoints={dataPoints} />
+      <AssessmentMountainPanel
+        dataPoints={dataPoints}
+        survivalProbability={survivalPct}
+        varianceWidth={varianceWidth}
+        runwayMonths={runwayUnderStress}
+      />
 
       <StructuralDiagnosisPanel drivers={structuralDrivers} />
 
