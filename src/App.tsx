@@ -33,7 +33,7 @@ import ScenarioMemoPage from "@/pages/ScenarioMemoPage";
 import ImpactView from "@/components/compound/impact";
 import VariancesView from "@/components/compound/variances/VariancesView";
 import { useDebouncedValue, useThrottledValue } from "@/hooks/useDebouncedValue";
-import { OnboardApp } from "@/onboard";
+import InitializeBaselinePage from "@/pages/initialize/InitializeBaselinePage";
 import "@/styles/godmode-align-overrides.css";
 import "@/styles/godmode-unified-layout.css";
 import "@/styles/performance-optimizations.css";
@@ -1139,7 +1139,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
 
   // Full-page onboarding (no overlay): render only on explicit nav selection.
   if (headerViewMode === "onboarding") {
-    return <OnboardApp onExitToTerrain={() => setHeaderViewMode("terrain")} />;
+    return <InitializeBaselinePage onExit={() => setHeaderViewMode("terrain")} />;
   }
   
   return (
