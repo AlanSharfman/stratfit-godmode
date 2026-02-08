@@ -418,4 +418,51 @@
   .fieldRow { grid-template-columns: 1fr; }
 }
 
+.cardTitleRow{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.smallGhostBtn{
+  border:1px solid rgba(255,255,255,0.10);
+  background:rgba(255,255,255,0.04);
+  color:rgba(255,255,255,0.78);
+  border-radius:999px;
+  padding:6px 10px;
+  font-size:12px;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  cursor:pointer;
+}
+
+.smallGhostBtn:hover{
+  background:rgba(255,255,255,0.06);
+  color:rgba(255,255,255,0.88);
+}
+
+.advancedBlock{
+  margin-top:12px;
+  padding-top:12px;
+  border-top:1px solid rgba(255,255,255,0.08);
+}
+
+.smallToggleBtn{
+  width:100%;
+  border:1px solid rgba(255,255,255,0.10);
+  background:rgba(255,255,255,0.04);
+  color:rgba(255,255,255,0.78);
+  border-radius:10px;
+  padding:10px 12px;
+  cursor:pointer;
+  font-weight:600;
+}
+
+.smallToggleBtn[aria-pressed="true"]{
+  background:rgba(0,220,255,0.10);
+  border-color:rgba(0,220,255,0.18);
+  color:rgba(255,255,255,0.92);
+}
+
 
