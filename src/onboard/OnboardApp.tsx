@@ -6,7 +6,6 @@ import type { OnboardStepId } from "./validators";
 import { validateStep } from "./validators";
 import { useOnboardDraft } from "./hooks/useOnboardDraft";
 import { useOnboardValidation } from "./hooks/useOnboardValidation";
-import { useBaselineStore } from "@/state/onboardingStore";
 
 import { TopBar } from "./components/TopBar";
 import { StepRail, type StepDef } from "./components/StepRail";
@@ -36,16 +35,13 @@ function stepLabel(id: OnboardStepId) {
 
 type Props = {
   /**
-   * If provided, we’ll call this after locking baseline, instead of hard-reloading the page.
+   * If provided, we'll call this after saving baseline, instead of hard-reloading the page.
    * (The app uses a no-router view state, so this is the cleanest handoff.)
    */
   onExitToTerrain?: () => void;
 };
 
 export function OnboardApp({ onExitToTerrain }: Props) {
-  const baselineLocked = useBaselineStore((s) => s.baselineLocked);
-  const resetBaseline = useBaselineStore((s) => s.resetBaseline);
-
   const [active, setActive] = useState<OnboardStepId>("company");
   const { data, patch, savedPulse, flush } = useOnboardDraft();
 
@@ -70,12 +66,6 @@ export function OnboardApp({ onExitToTerrain }: Props) {
   const onContinueToTerrain = () => {
     setInlineMsg(null);
 
-    if (baselineLocked) {
-      onExitToTerrain?.();
-      if (!onExitToTerrain) window.location.assign("/");
-      return;
-    }
-
     if (!allCoreValid) {
       const missing = STEPS.filter((s) => !validateStep(s.id, data)).map((s) => s.id);
       setAttentionSteps(missing);
@@ -93,54 +83,6 @@ export function OnboardApp({ onExitToTerrain }: Props) {
     onExitToTerrain?.();
     if (!onExitToTerrain) window.location.assign("/");
   };
-
-  if (baselineLocked) {
-    return (
-      <div className="sfOn-root">
-        <div className="sfOn-shell">
-          <div style={{ padding: 18 }}>
-            <div
-              style={{
-                borderRadius: 18,
-                border: "1px solid rgba(255,255,255,0.10)",
-                background: "rgba(8, 12, 20, 0.45)",
-                backdropFilter: "blur(16px)",
-                padding: 16,
-                maxWidth: 980,
-                margin: "0 auto",
-              }}
-            >
-              <div style={{ fontSize: 12, letterSpacing: "0.16em", fontWeight: 900, opacity: 0.85 }}>
-                BASELINE LOCKED
-              </div>
-              <div style={{ marginTop: 8, fontSize: 14, lineHeight: 1.45, opacity: 0.9 }}>
-                Your baseline truth is already locked. You can continue to Terrain, or reset baseline to re-enter onboarding.
-              </div>
-
-              <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
-                <button type="button" className="sfOn-btn sfOn-btn--primary" onClick={onContinueToTerrain}>
-                  Continue to Terrain
-                </button>
-                <button
-                  type="button"
-                  className="sfOn-btn"
-                  onClick={() => {
-                    const ok = window.confirm(
-                      "Reset baseline? This clears the locked baseline truth and returns you to onboarding draft mode."
-                    );
-                    if (!ok) return;
-                    resetBaseline();
-                  }}
-                >
-                  Reset Baseline
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="sfOn-root">
@@ -203,5 +145,3 @@ export function OnboardApp({ onExitToTerrain }: Props) {
 }
 
 export default OnboardApp;
-
-
