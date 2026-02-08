@@ -593,6 +593,39 @@ export default function App() {
       document.documentElement.removeAttribute("data-sf-mode");
     };
   }, [centerView]);
+
+  // Global navigation + simulation trigger (used by empty states across tabs)
+  useEffect(() => {
+    const onNav = (evt: Event) => {
+      const detail = (evt as CustomEvent).detail;
+      const id = String(detail ?? "").trim();
+      if (!id) return;
+
+      if (id === "simulate") {
+        // Simulation is a separate tool (overlay). Opening it also shows real progress.
+        setShowSimulate(true);
+        return;
+      }
+
+      // Allow modules to request navigation by id
+      if (
+        id === "initialize" ||
+        id === "terrain" ||
+        id === "compare" ||
+        id === "risk" ||
+        id === "valuation" ||
+        id === "decision" ||
+        id === "impact" ||
+        id === "simulate"
+      ) {
+        setHeaderViewMode(id as any);
+      }
+    };
+
+    window.addEventListener("stratfit:navigate", onNav as EventListener);
+    return () => window.removeEventListener("stratfit:navigate", onNav as EventListener);
+  }, []);
+
   
   // Handle scenario change from old selector
   const handleScenarioChange = useCallback((newScenario: ScenarioId) => {
@@ -1174,7 +1207,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
           onNavigate={(id) => {
             setHeaderViewMode(
               id === "initialize" ? "initialize"
-              : id === "simulate" ? (() => { setShowSimulate(true); return "terrain" as HeaderViewMode; })()
+              : id === "simulate" ? "simulate"
               : id === "decision" ? "decision"
               : id === "valuation" ? "valuation"
               : id === "compare" ? "compare"
@@ -1182,7 +1215,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
               : id === "impact" ? "impact"
               : "terrain"
             );
-            if (id !== "simulate") setShowSimulate(false);
+            setShowSimulate(false);
           }}
           onSave={() => setShowSaveModal(true)}
           onLoad={() => setShowLoadPanel(true)}
@@ -1208,7 +1241,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
           }}
           activeItemId="simulate"
           onNavigate={(id) => {
-            if (id !== "simulate") setShowSimulate(false);
+            setShowSimulate(false);
             if (id === "initialize") return setHeaderViewMode("initialize");
             if (id === "simulate") return setHeaderViewMode("simulate");
             if (id === "decision") return setHeaderViewMode("decision");
@@ -1227,6 +1260,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
           setLevers={setLevers}
           scenario={scenario}
           dataPoints={dataPoints}
+          onSimulateRequest={() => setShowSimulate(true)}
         />
         {/* Monte Carlo Overlay (still accessible) */}
         <SimulateOverlay
@@ -1263,25 +1297,23 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
           lastModified: "Active",
         }}
         activeItemId={
-          showSimulate
-            ? "simulate"
-            : headerViewMode === "decision"
-              ? "decision"
-              : headerViewMode === "valuation"
-                ? "valuation"
-                : headerViewMode === "compare"
-                  ? "compare"
-                  : headerViewMode === "risk"
-                    ? "risk"
-                    : headerViewMode === "impact"
-                      ? "impact"
-                      : "terrain"
+          headerViewMode === "decision"
+            ? "decision"
+            : headerViewMode === "valuation"
+              ? "valuation"
+              : headerViewMode === "compare"
+                ? "compare"
+                : headerViewMode === "risk"
+                  ? "risk"
+                  : headerViewMode === "simulate"
+                    ? "simulate"
+                    : "terrain"
         }
         onNavigate={(id) => {
           // close overlay if user navigates elsewhere
-          if (id !== "simulate") setShowSimulate(false);
+          setShowSimulate(false);
           if (id === "initialize") return setHeaderViewMode("initialize");
-          if (id === "simulate") return setShowSimulate(true);
+          if (id === "simulate") return setHeaderViewMode("simulate");
           if (id === "decision") return setHeaderViewMode("decision");
           if (id === "valuation") return setHeaderViewMode("valuation");
           if (id === "compare") return setHeaderViewMode("compare");

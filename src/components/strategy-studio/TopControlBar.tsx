@@ -20,6 +20,7 @@ interface TopControlBarProps {
   onBaselineToggle: () => void;
   advancedMode: boolean;
   onAdvancedModeToggle: () => void;
+  onSimulate?: () => void;
 }
 
 const OBJECTIVES: Objective[] = ["SURVIVAL", "GROWTH", "EXIT"];
@@ -34,6 +35,7 @@ export const TopControlBar: React.FC<TopControlBarProps> = memo(({
   onBaselineToggle,
   advancedMode,
   onAdvancedModeToggle,
+  onSimulate,
 }) => {
   return (
     <div className={styles.controlBar}>
@@ -82,6 +84,16 @@ export const TopControlBar: React.FC<TopControlBarProps> = memo(({
 
       {/* Spacer */}
       <div className={styles.controlSpacer} />
+
+      {onSimulate && (
+        <button
+          type="button"
+          className={styles.simulateBtn}
+          onClick={onSimulate}
+        >
+          Simulate
+        </button>
+      )}
 
       {/* Advanced Mode Toggle (right aligned) */}
       <button

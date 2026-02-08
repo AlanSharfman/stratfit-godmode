@@ -154,6 +154,14 @@
   background: rgba(0,224,255,0.04);
 }
 
+
+.simulateBtn {
+  composes: toggleBtnActive;
+  color: rgba(255,255,255,0.95);
+  border-color: rgba(0,224,255,0.45);
+  background: rgba(0,224,255,0.08);
+}
+
 .controlDivider {
   width: 1px;
   height: 20px;

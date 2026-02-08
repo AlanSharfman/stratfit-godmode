@@ -24,6 +24,7 @@ interface StrategyStudioPageProps {
   setLevers: React.Dispatch<React.SetStateAction<LeverState>>;
   scenario: ScenarioId;
   dataPoints: number[];
+  onSimulateRequest?: () => void;
 }
 
 // ── Heatmap color from risk ─────────────────────────────────────────────
@@ -46,6 +47,7 @@ const StrategyStudioPage: React.FC<StrategyStudioPageProps> = memo(({
   setLevers,
   scenario,
   dataPoints,
+  onSimulateRequest,
 }) => {
   // ── Internal state ──────────────────────────────────────────────────
   const [objective, setObjective] = useState<Objective>("GROWTH");
@@ -102,6 +104,7 @@ const StrategyStudioPage: React.FC<StrategyStudioPageProps> = memo(({
           onBaselineToggle={() => setShowBaseline((p) => !p)}
           advancedMode={advancedMode}
           onAdvancedModeToggle={() => setAdvancedMode((p) => !p)}
+          onSimulate={onSimulateRequest}
         />
 
         {/* Mountain Stage */}

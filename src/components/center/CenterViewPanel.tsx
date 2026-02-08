@@ -96,8 +96,14 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
   }), [simulationSummary, engineResults, scenario]);
 
   // ── Terrain Intelligence Layer toggles ──────────────────────────────
-  const [intelligenceEnabled, setIntelligenceEnabled] = useState(false);
-  const [riskDensityEnabled, setRiskDensityEnabled] = useState(false);
+  const [intelligenceEnabled, setIntelligenceEnabled] = useState(true);
+  const [riskDensityEnabled, setRiskDensityEnabled] = useState(!!props.heatmapEnabled);
+
+  // Sync HEATMAP header toggle → risk density overlay (Baseline)
+  useEffect(() => {
+    if (props.heatmapEnabled === undefined) return;
+    setRiskDensityEnabled(!!props.heatmapEnabled);
+  }, [props.heatmapEnabled]);
 
   // Derive overlay data from engine results (no new simulation runs)
   const terrainKpis = engineResult?.kpis ?? null;
@@ -174,7 +180,7 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
         {view === "terrain" && (
           <div className="relative h-full w-full overflow-hidden flex flex-col" style={{
             borderRadius: '10px',
-            background: 'linear-gradient(180deg, #111827 0%, #0F1C2E 100%)',
+            background: 'linear-gradient(180deg, #0E1116 0%, #11161D 100%)',
           }}>
             {/* ═══ 2-COLUMN TERRAIN LAYOUT: Mountain + Intelligence ═══ */}
             <div style={{

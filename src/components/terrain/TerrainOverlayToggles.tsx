@@ -1,6 +1,6 @@
 // src/components/terrain/TerrainOverlayToggles.tsx
 // STRATFIT — Terrain Overlay Toggle Controls
-// INTELLIGENCE · RISK DENSITY
+// INTELLIGENCE · HEATMAP
 // Uppercase, 12–13px, muted white 70%, active cyan underline 2px
 
 import React from "react";
@@ -68,7 +68,7 @@ const TerrainOverlayToggles: React.FC<TerrainOverlayTogglesProps> = ({
         onClick={onToggleRiskDensity}
         style={toggleStyle(riskDensityEnabled)}
       >
-        Risk Density
+        Heatmap
       </button>
     </div>
   );

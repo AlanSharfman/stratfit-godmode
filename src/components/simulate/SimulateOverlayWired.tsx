@@ -8,6 +8,7 @@ import { useSimulationStore } from '@/state/simulationStore';
 import { useSavedSimulationsStore } from '@/state/savedSimulationsStore';
 import { useScenarioStore, type LeverSnapshot } from '@/state/scenarioStore';
 import { useLeverStore } from '@/state/leverStore';
+import { emitCompute } from '@/engine/computeTelemetry';
 import { 
   type MonteCarloResult, 
   type LeverState,
@@ -38,6 +39,8 @@ interface SimulateOverlayProps {
 }
 
 type SimulationPhase = 'idle' | 'running' | 'complete';
+
+const round = (v: number) => Math.round(v);
 
 export default function SimulateOverlayWired({ isOpen, onClose, levers }: SimulateOverlayProps) {
   const [phase, setPhase] = useState<SimulationPhase>('idle');
@@ -102,6 +105,8 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
     setResult(null);
     setVerdict(null);
     storeStartSimulation();
+    emitCompute("terrain_simulation", "initialize", { iterations: config.iterations, methodName: "Monte Carlo", target: "Simulation" });
+    emitCompute("terrain_simulation", "run_model");
 
     const startTime = performance.now();
     const CHUNK_SIZE = 500;
@@ -122,6 +127,7 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
     }
 
     const executionTimeMs = performance.now() - startTime;
+    emitCompute("terrain_simulation", "aggregate");
     const simResult = processSimulationResults(allSimulations, config, executionTimeMs);
     const simVerdict = generateVerdict(simResult);
     
@@ -131,6 +137,8 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
 
     // Store in simulation store - CORRECT: 3 arguments
     setSimulationResult(simResult, simVerdict, leversAsSnapshot);
+
+    emitCompute("terrain_simulation", "complete", { durationMs: round(executionTimeMs), iterations: config.iterations });
 
     setTimeout(() => {
       setPhase('complete');

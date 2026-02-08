@@ -114,36 +114,6 @@ function getScenarioMetrics(scenario: any) {
 export default function DecidePage() {
   const { baseline, savedScenarios } = useScenarioStore()
 
-  const mockScenarios = useMemo(
-    () => [
-      {
-        id: 'conservative',
-        name: 'Conservative Growth',
-        description: 'Steady path with lower risk',
-        color: '#22d3ee',
-        simulation: {
-          survivalRate: 0.92,
-          medianARR: 6_200_000,
-          medianRunway: 36,
-        },
-        inputs: { teamSize: 15 },
-      },
-      {
-        id: 'aggressive',
-        name: 'Aggressive Expansion',
-        description: 'High growth with higher risk',
-        color: '#a855f7',
-        simulation: {
-          survivalRate: 0.71,
-          medianARR: 9_800_000,
-          medianRunway: 18,
-        },
-        inputs: { teamSize: 35 },
-      },
-    ],
-    []
-  )
-
   const scenarioList = useMemo(() => {
     const list = [
       ...(baseline ? [baseline as any] : []),
@@ -157,7 +127,9 @@ export default function DecidePage() {
       seen.add(id)
       return true
     })
-    return real.length >= 2 ? real : mockScenarios
+    // STRATFIT RULE: never fabricate demo scenarios in Decision.
+    // If fewer than 2 real scenarios exist, PendingView will show the empty state.
+    return real
   }, [baseline, savedScenarios])
 
   const scenariosById = useMemo(() => {
