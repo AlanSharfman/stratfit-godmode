@@ -173,6 +173,39 @@ const DEFAULT_DRAFT: BaselineDraft = {
   answers: {},
 };
 
+function normalizeDraft(draft: Partial<BaselineDraft> | undefined | null): BaselineDraft {
+  const d = draft ?? {};
+  return {
+    ...DEFAULT_DRAFT,
+    ...d,
+    identity: { ...DEFAULT_DRAFT.identity, ...(d.identity ?? {}) },
+    funding: { ...DEFAULT_DRAFT.funding, ...(d.funding ?? {}) },
+    metrics: { ...DEFAULT_DRAFT.metrics, ...(d.metrics ?? {}) },
+    cost: { ...DEFAULT_DRAFT.cost, ...(d.cost ?? {}) },
+    operating: { ...DEFAULT_DRAFT.operating, ...(d.operating ?? {}) },
+    posture: { ...DEFAULT_DRAFT.posture, ...(d.posture ?? {}) },
+    answers: d.answers ?? DEFAULT_DRAFT.answers,
+  };
+}
+
+function normalizeBaseline(
+  baseline: Partial<BaselineTruthSnapshot> | BaselineTruthSnapshot | null | undefined
+): BaselineTruthSnapshot | null {
+  if (!baseline) return null;
+  const b: any = baseline;
+  return {
+    version: 1,
+    timestampISO: String(b.timestampISO ?? new Date().toISOString()),
+    identity: { ...(DEFAULT_DRAFT.identity as BaselineIdentity), ...(b.identity ?? {}) },
+    funding: { ...DEFAULT_DRAFT.funding, ...(b.funding ?? {}) },
+    metrics: { ...(DEFAULT_DRAFT.metrics as BaselineMetrics), ...(b.metrics ?? {}) },
+    cost: { ...DEFAULT_DRAFT.cost, ...(b.cost ?? {}) },
+    operating: { ...(DEFAULT_DRAFT.operating as BaselineOperating), ...(b.operating ?? {}) },
+    posture: { ...DEFAULT_DRAFT.posture, ...(b.posture ?? {}) },
+    answers: (b.answers ?? {}) as BaselineAnswers,
+  };
+}
+
 function clampNum(n: unknown, min: number, max: number) {
   const v = typeof n === "number" && Number.isFinite(n) ? n : 0;
   return Math.max(min, Math.min(max, v));
@@ -295,6 +328,18 @@ export const useBaselineStore = create<BaselineState>()(
         baseline: s.baseline,
         draft: s.draft,
       }),
+      // Back-compat: old persisted snapshots may miss new nested objects (funding/cost/posture).
+      // Merge defaults in so the UI never crashes on undefined access after deploy.
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<BaselineState>;
+        return {
+          ...current,
+          ...p,
+          baselineLocked: Boolean(p.baselineLocked),
+          baseline: normalizeBaseline(p.baseline as any),
+          draft: normalizeDraft(p.draft as any),
+        };
+      },
       onRehydrateStorage: () => (state) => {
         state?.markHydrated();
       },
