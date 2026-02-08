@@ -2,7 +2,6 @@ import React, { useMemo, useState } from "react";
 import styles from "./InitializeBaselinePage.module.css";
 import { useShallow } from "zustand/react/shallow";
 import { useBaselineStore, type CurrencyCode } from "@/state/onboardingStore";
-import { CommandDeckBezel } from "@/components/command/CommandDeckBezel";
 
 const CURRENCIES: CurrencyCode[] = [
   "USD","AUD","EUR","GBP","CAD","NZD","SGD","JPY","INR","CHF","SEK","NOK","DKK","ZAR","PLN","CZK","HUF","ILS","AED","BRL","MXN",
@@ -119,43 +118,32 @@ export default function InitializeBaselinePage({ onExit }: { onExit: () => void 
 
   if (!hydrated) {
     return (
-      <div className={styles.page}>
-        <div className={styles.shell}>
-          <div className={styles.card}>
-            <div className={styles.headerTop}>
-              <div className={styles.brand}>
-                <div className={styles.mark} />
-                <div>
-                  <div className={styles.brandTitle}>STRATFIT</div>
-                  <div className={styles.brandSub}>Baseline Initialization</div>
-                </div>
-              </div>
-            </div>
-            <div className={styles.bodyPad}>
-              <div className={styles.h1}>Loading baseline store…</div>
-              <div className={styles.p}>Hydrating persisted truth.</div>
-            </div>
-          </div>
-        </div>
+      <div className={styles.scene}>
+        <div className={styles.terrain} />
+        <div className={styles.vignette} />
       </div>
     );
   }
 
   return (
-    <div className={styles.page}>
-      <div className={styles.shell}>
-        {/* LEFT NAV (minimal status + actions) */}
-        <aside className={styles.sidebar}>
-          <div className={styles.sidebarBrand}>
-            <div className={styles.brandRow}>
-              <div className={styles.logoCube} />
-              <div>
-                <div className={styles.brandTitleBig}>STRATFIT</div>
+    <div className={styles.scene}>
+      <div className={styles.terrain} />
+      <div className={styles.vignette} />
+
+      <div className={styles.wrap}>
+        {/* LEFT RAIL */}
+        <aside className={styles.rail}>
+          <div className={styles.railHeader}>
+            <div className={styles.brand}>
+              <div className={styles.brandMark} />
+              <div className={styles.brandText}>
+                <div className={styles.brandName}>STRATFIT</div>
                 <div className={styles.brandSub}>Baseline Initialization</div>
               </div>
             </div>
           </div>
 
+          {/* keep existing rail content */}
           <div className={styles.sidebarFooter}>
             <div className={styles.draftPill}>{lockedView ? "BASELINE — LOCKED" : "DRAFT — NOT LOCKED"}</div>
             <div className={styles.sidebarActions}>
@@ -171,230 +159,213 @@ export default function InitializeBaselinePage({ onExit }: { onExit: () => void 
           </div>
         </aside>
 
-        {/* RIGHT */}
-        <main className={styles.main}>
-          <CommandDeckBezel>
-            <div className={styles.deck}>
-              <header className={styles.topHeader}>
-                <div>
-                  <div className={styles.kicker}>{title}</div>
-                  <div className={styles.subtitle}>{subtitle}</div>
-                </div>
+        {/* CHASSIS */}
+        <main className={styles.chassis}>
+          <div className={styles.chassisInner}>
+            <div className={styles.header}>
+              <div className={styles.title}>{title}</div>
+              <div className={styles.subtitle}>{subtitle}</div>
 
-                <div className={styles.headerChips}>
-                  <div className={styles.chip}>
-                    <span className={styles.chipLabel}>Runway</span>
-                    <span className={styles.chipValue}>{runwayMonths > 0 ? runwayMonths.toFixed(1) : "—"} mo</span>
-                  </div>
-                  <div className={styles.chip}>
-                    <span className={styles.chipLabel}>Burn Multiple</span>
-                    <span className={styles.chipValue}>{burnMultiple > 0 ? burnMultiple.toFixed(2) : "—"}x</span>
-                  </div>
-                  <div className={styles.chip}>
-                    <span className={styles.chipLabel}>Net Burn</span>
-                    <span className={styles.chipValue}>{netBurn > 0 ? fmt(Math.round(netBurn)) : "—"}</span>
-                  </div>
-                  <div className={styles.chip}>
-                    <span className={styles.chipLabel}>Survival</span>
-                    <span className={styles.chipValue}>{survivalProbability > 0 ? `${Math.round(survivalProbability)}%` : "—"}</span>
-                  </div>
-                  <div className={`${styles.chip} ${styles.chipGold}`}>
-                    <span className={styles.chipLabel}>Audit Mode</span>
-                    <span className={styles.chipValue}>{lockedView ? "ON" : "DRAFT"}</span>
+              <div className={styles.metrics}>
+                <div className={styles.metric}>
+                  <div className={styles.metricLabel}>Runway</div>
+                  <div className={styles.metricValue}>{runwayMonths > 0 ? `${runwayMonths.toFixed(1)} mo` : "—"}</div>
+                </div>
+                <div className={styles.metric}>
+                  <div className={styles.metricLabel}>Burn Multiple</div>
+                  <div className={styles.metricValue}>{burnMultiple > 0 ? `${burnMultiple.toFixed(2)}x` : "—"}</div>
+                </div>
+                <div className={styles.metric}>
+                  <div className={styles.metricLabel}>Net Burn</div>
+                  <div className={styles.metricValue}>{netBurn > 0 ? fmt(Math.round(netBurn)) : "—"}</div>
+                </div>
+                <div className={styles.metric}>
+                  <div className={styles.metricLabel}>Survival</div>
+                  <div className={`${styles.metricValue} ${styles.metricValueCyan}`}>
+                    {survivalProbability > 0 ? `${Math.round(survivalProbability)}%` : "—"}
                   </div>
                 </div>
-              </header>
-
-              <section className={styles.compoundGrid}>
-                {/* Liquidity & Funding */}
-                <div className={styles.compound}>
-                  <div className={styles.compoundTitle}>Liquidity &amp; Funding</div>
-                  <div className={styles.grid2}>
-                    <MoneyField
-                      label="Cash on Hand"
-                      currency={view.identity.currency ?? "USD"}
-                      value={Number(view.metrics.cashOnHand ?? 0)}
-                      disabled={lockedView}
-                      onChange={(n) => setDraft({ metrics: { cashOnHand: n } })}
-                    />
-                    <MoneyField
-                      label="Monthly Net Burn"
-                      currency={view.identity.currency ?? "USD"}
-                      value={Number(view.metrics.monthlyBurn ?? 0)}
-                      disabled={lockedView}
-                      onChange={(n) => setDraft({ metrics: { monthlyBurn: n } })}
-                    />
-                    <Field label="Runway (derived, months)">
-                      <input className={styles.input} value={runwayMonths > 0 ? runwayMonths.toFixed(1) : "—"} disabled />
-                    </Field>
-                    <Field label="Funding Context">
-                      <input className={styles.input} disabled placeholder="(wire next)" />
-                    </Field>
-                  </div>
-                </div>
-
-                {/* Revenue Engine */}
-                <div className={styles.compound}>
-                  <div className={styles.compoundTitle}>Revenue Engine</div>
-                  <div className={styles.grid2}>
-                    <MoneyField
-                      label="Current ARR"
-                      currency={view.identity.currency ?? "USD"}
-                      value={Number(view.metrics.currentARR ?? 0)}
-                      disabled={lockedView}
-                      onChange={(n) => setDraft({ metrics: { currentARR: n } })}
-                    />
-                    <Field label="Monthly Growth %">
-                      <input
-                        className={styles.input}
-                        value={String(view.metrics.monthlyGrowthPct ?? "")}
-                        onChange={(e) =>
-                          setDraft({
-                            metrics: { monthlyGrowthPct: e.target.value === "" ? undefined : clamp(toNumber(e.target.value), 0, 1000) },
-                          })
-                        }
-                        disabled={lockedView}
-                        placeholder="e.g. 8"
-                      />
-                    </Field>
-                    <Field label="Monthly Churn %">
-                      <input
-                        className={styles.input}
-                        value={String(view.metrics.monthlyChurnPct ?? "")}
-                        onChange={(e) =>
-                          setDraft({
-                            metrics: { monthlyChurnPct: e.target.value === "" ? undefined : clamp(toNumber(e.target.value), 0, 100) },
-                          })
-                        }
-                        disabled={lockedView}
-                        placeholder="e.g. 3"
-                      />
-                    </Field>
-                    <Field label="NRR %">
-                      <input
-                        className={styles.input}
-                        value={String(view.metrics.nrrPct ?? "")}
-                        onChange={(e) =>
-                          setDraft({
-                            metrics: { nrrPct: e.target.value === "" ? undefined : clamp(toNumber(e.target.value), 0, 300) },
-                          })
-                        }
-                        disabled={lockedView}
-                        placeholder="e.g. 110"
-                      />
-                    </Field>
-                  </div>
-                </div>
-
-                {/* Execution Velocity */}
-                <div className={styles.compound}>
-                  <div className={styles.compoundTitle}>Execution Velocity</div>
-                  <div className={styles.grid2}>
-                    <Field label="Headcount">
-                      <input
-                        className={styles.input}
-                        value={String(view.operating.headcount ?? 0)}
-                        onChange={(e) => setDraft({ operating: { headcount: clamp(toNumber(e.target.value), 0, 1_000_000) } })}
-                        disabled={lockedView}
-                        placeholder="e.g. 18"
-                      />
-                    </Field>
-                    <MoneyField
-                      label="Avg Fully Loaded Cost (annual)"
-                      currency={view.identity.currency ?? "USD"}
-                      value={Number(view.operating.avgFullyLoadedCostAnnual ?? 0)}
-                      disabled={lockedView}
-                      onChange={(n) => setDraft({ operating: { avgFullyLoadedCostAnnual: n } })}
-                    />
-                    <MoneyField
-                      label="Sales & Marketing (monthly)"
-                      currency={view.identity.currency ?? "USD"}
-                      value={Number(view.operating.smMonthly ?? 0)}
-                      disabled={lockedView}
-                      onChange={(n) => setDraft({ operating: { smMonthly: n } })}
-                    />
-                    <MoneyField
-                      label="R&D (monthly)"
-                      currency={view.identity.currency ?? "USD"}
-                      value={Number(view.operating.rndMonthly ?? 0)}
-                      disabled={lockedView}
-                      onChange={(n) => setDraft({ operating: { rndMonthly: n } })}
-                    />
-                    <MoneyField
-                      label="G&A (monthly)"
-                      currency={view.identity.currency ?? "USD"}
-                      value={Number(view.operating.gaMonthly ?? 0)}
-                      disabled={lockedView}
-                      onChange={(n) => setDraft({ operating: { gaMonthly: n } })}
-                    />
-                  </div>
-                </div>
-
-                {/* Strategic Posture */}
-                <div className={styles.compound}>
-                  <div className={styles.compoundTitle}>Strategic Posture</div>
-                  <div className={styles.grid2}>
-                    <Field label="Company Name" required>
-                      <input
-                        className={styles.input}
-                        value={view.identity.companyName ?? ""}
-                        onChange={(e) => setDraft({ identity: { companyName: e.target.value } })}
-                        disabled={lockedView}
-                        placeholder="Company name"
-                      />
-                    </Field>
-                    <Field label="Industry">
-                      <input
-                        className={styles.input}
-                        value={view.identity.industry ?? ""}
-                        onChange={(e) => setDraft({ identity: { industry: e.target.value } })}
-                        disabled={lockedView}
-                        placeholder="Industry"
-                      />
-                    </Field>
-                    <Field label="Country">
-                      <input
-                        className={styles.input}
-                        value={view.identity.country ?? ""}
-                        onChange={(e) => setDraft({ identity: { country: e.target.value } })}
-                        disabled={lockedView}
-                        placeholder="Country"
-                      />
-                    </Field>
-                    <Field label="Reporting Currency" required>
-                      <select
-                        className={styles.input}
-                        value={view.identity.currency ?? "USD"}
-                        onChange={(e) => setDraft({ identity: { currency: e.target.value as CurrencyCode } })}
-                        disabled={lockedView}
-                      >
-                        {CURRENCIES.map((c) => (
-                          <option key={c} value={c}>{c}</option>
-                        ))}
-                      </select>
-                    </Field>
-                    <Field label="Primary Objective">
-                      <input className={styles.input} disabled placeholder="(wire next)" />
-                    </Field>
-                    <Field label="Risk Appetite">
-                      <input className={styles.input} disabled placeholder="(wire next)" />
-                    </Field>
-                  </div>
-                </div>
-              </section>
-
-              <footer className={styles.footer}>
-                <div className={styles.footerLeft}>
-                  <div className={styles.footerBadge}>{lockedView ? "TRUTH LOCKED · sf.baseline.v1" : "DRAFT · not locked"}</div>
-                </div>
-                <div className={styles.footerRight}>
-                  <button className={styles.primaryBtn} type="button" onClick={onLock} disabled={!canLock}>
-                    {lockedView ? "Continue" : "Lock Baseline & Enter STRATFIT"}
-                  </button>
-                </div>
-              </footer>
+              </div>
             </div>
-          </CommandDeckBezel>
+
+            <div className={styles.grid}>
+              {/* Liquidity & Funding */}
+              <div className={styles.card}>
+                <div className={styles.cardTitle}>Liquidity &amp; Funding</div>
+                <div className={styles.fieldRow}>
+                  <MoneyField
+                    label="Cash on Hand"
+                    value={Number(view.metrics.cashOnHand ?? 0)}
+                    disabled={lockedView}
+                    onChange={(n) => setDraft({ metrics: { cashOnHand: n } })}
+                  />
+                  <MoneyField
+                    label="Monthly Net Burn"
+                    value={Number(view.metrics.monthlyBurn ?? 0)}
+                    disabled={lockedView}
+                    onChange={(n) => setDraft({ metrics: { monthlyBurn: n } })}
+                  />
+                  <Field label="Runway (derived, months)">
+                    <input className={styles.input} value={runwayMonths > 0 ? runwayMonths.toFixed(1) : "—"} disabled />
+                  </Field>
+                  <Field label="Funding Context">
+                    <input className={styles.input} disabled placeholder="(wire next)" />
+                  </Field>
+                </div>
+              </div>
+
+              {/* Revenue Engine */}
+              <div className={styles.card}>
+                <div className={styles.cardTitle}>Revenue Engine</div>
+                <div className={styles.fieldRow}>
+                  <MoneyField
+                    label="Current ARR"
+                    value={Number(view.metrics.currentARR ?? 0)}
+                    disabled={lockedView}
+                    onChange={(n) => setDraft({ metrics: { currentARR: n } })}
+                  />
+                  <Field label="Monthly Growth %">
+                    <input
+                      className={styles.input}
+                      value={String(view.metrics.monthlyGrowthPct ?? "")}
+                      onChange={(e) =>
+                        setDraft({
+                          metrics: { monthlyGrowthPct: e.target.value === "" ? undefined : clamp(toNumber(e.target.value), 0, 1000) },
+                        })
+                      }
+                      disabled={lockedView}
+                      placeholder="e.g. 8"
+                    />
+                  </Field>
+                  <Field label="Monthly Churn %">
+                    <input
+                      className={styles.input}
+                      value={String(view.metrics.monthlyChurnPct ?? "")}
+                      onChange={(e) =>
+                        setDraft({
+                          metrics: { monthlyChurnPct: e.target.value === "" ? undefined : clamp(toNumber(e.target.value), 0, 100) },
+                        })
+                      }
+                      disabled={lockedView}
+                      placeholder="e.g. 3"
+                    />
+                  </Field>
+                  <Field label="NRR %">
+                    <input
+                      className={styles.input}
+                      value={String(view.metrics.nrrPct ?? "")}
+                      onChange={(e) =>
+                        setDraft({
+                          metrics: { nrrPct: e.target.value === "" ? undefined : clamp(toNumber(e.target.value), 0, 300) },
+                        })
+                      }
+                      disabled={lockedView}
+                      placeholder="e.g. 110"
+                    />
+                  </Field>
+                </div>
+              </div>
+
+              {/* Execution Velocity */}
+              <div className={styles.card}>
+                <div className={styles.cardTitle}>Execution Velocity</div>
+                <div className={styles.fieldRow}>
+                  <Field label="Headcount">
+                    <input
+                      className={styles.input}
+                      value={String(view.operating.headcount ?? 0)}
+                      onChange={(e) => setDraft({ operating: { headcount: clamp(toNumber(e.target.value), 0, 1_000_000) } })}
+                      disabled={lockedView}
+                      placeholder="e.g. 18"
+                    />
+                  </Field>
+                  <MoneyField
+                    label="Avg Fully Loaded Cost (annual)"
+                    value={Number(view.operating.avgFullyLoadedCostAnnual ?? 0)}
+                    disabled={lockedView}
+                    onChange={(n) => setDraft({ operating: { avgFullyLoadedCostAnnual: n } })}
+                  />
+                  <MoneyField
+                    label="Sales & Marketing (monthly)"
+                    value={Number(view.operating.smMonthly ?? 0)}
+                    disabled={lockedView}
+                    onChange={(n) => setDraft({ operating: { smMonthly: n } })}
+                  />
+                  <MoneyField
+                    label="R&D (monthly)"
+                    value={Number(view.operating.rndMonthly ?? 0)}
+                    disabled={lockedView}
+                    onChange={(n) => setDraft({ operating: { rndMonthly: n } })}
+                  />
+                  <MoneyField
+                    label="G&A (monthly)"
+                    value={Number(view.operating.gaMonthly ?? 0)}
+                    disabled={lockedView}
+                    onChange={(n) => setDraft({ operating: { gaMonthly: n } })}
+                  />
+                </div>
+              </div>
+
+              {/* Strategic Posture */}
+              <div className={styles.card}>
+                <div className={styles.cardTitle}>Strategic Posture</div>
+                <div className={styles.fieldRow}>
+                  <Field label="Company Name">
+                    <input
+                      className={styles.input}
+                      value={view.identity.companyName ?? ""}
+                      onChange={(e) => setDraft({ identity: { companyName: e.target.value } })}
+                      disabled={lockedView}
+                      placeholder="Company name"
+                    />
+                  </Field>
+                  <Field label="Industry">
+                    <input
+                      className={styles.input}
+                      value={view.identity.industry ?? ""}
+                      onChange={(e) => setDraft({ identity: { industry: e.target.value } })}
+                      disabled={lockedView}
+                      placeholder="Industry"
+                    />
+                  </Field>
+                  <Field label="Country">
+                    <input
+                      className={styles.input}
+                      value={view.identity.country ?? ""}
+                      onChange={(e) => setDraft({ identity: { country: e.target.value } })}
+                      disabled={lockedView}
+                      placeholder="Country"
+                    />
+                  </Field>
+                  <Field label="Reporting Currency">
+                    <select
+                      className={styles.select}
+                      value={view.identity.currency ?? "USD"}
+                      onChange={(e) => setDraft({ identity: { currency: e.target.value as CurrencyCode } })}
+                      disabled={lockedView}
+                    >
+                      {CURRENCIES.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Primary Objective">
+                    <input className={styles.input} disabled placeholder="(wire next)" />
+                  </Field>
+                  <Field label="Risk Appetite">
+                    <input className={styles.input} disabled placeholder="(wire next)" />
+                  </Field>
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.footer}>
+              <div className={styles.badge}>{lockedView ? "Truth — Locked" : "Draft — Not Locked"}</div>
+              <button className={styles.primaryBtn} type="button" onClick={onLock} disabled={!canLock}>
+                {lockedView ? "Continue" : "Lock Baseline & Enter Stratfit"}
+              </button>
+            </div>
+          </div>
         </main>
       </div>
     </div>
@@ -403,19 +374,14 @@ export default function InitializeBaselinePage({ onExit }: { onExit: () => void 
 
 function Field({
   label,
-  required,
   children,
 }: {
   label: string;
-  required?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <div className={styles.field}>
-      <div className={styles.fieldLabel}>
-        <span>{label}</span>
-        {required ? <span className={styles.req}>Required</span> : null}
-      </div>
+    <div>
+      <div className={styles.label}>{label}</div>
       {children}
     </div>
   );
@@ -423,34 +389,26 @@ function Field({
 
 function MoneyField({
   label,
-  currency,
   value,
   disabled,
   onChange,
 }: {
   label: string;
-  currency: string;
   value: number;
   disabled: boolean;
   onChange: (n: number) => void;
 }) {
   return (
-    <div className={styles.field}>
-      <div className={styles.fieldLabel}>
-        <span>{label}</span>
-        <span className={styles.hintRight}>{currency}</span>
-      </div>
-      <div className={styles.moneyRow}>
-        <input
-          className={styles.input}
-          value={String(Math.max(0, Number.isFinite(value) ? value : 0))}
-          onChange={(e) => onChange(clamp(toNumber(e.target.value), 0, 1e15))}
-          disabled={disabled}
-          inputMode="decimal"
-          placeholder="0"
-        />
-        <div className={styles.moneyHint}>{fmt(value)}</div>
-      </div>
+    <div>
+      <div className={styles.label}>{label}</div>
+      <input
+        className={styles.input}
+        value={String(Math.max(0, Number.isFinite(value) ? value : 0))}
+        onChange={(e) => onChange(clamp(toNumber(e.target.value), 0, 1e15))}
+        disabled={disabled}
+        inputMode="decimal"
+        placeholder="0"
+      />
     </div>
   );
 }
