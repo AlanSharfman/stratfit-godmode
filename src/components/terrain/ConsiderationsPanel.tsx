@@ -1,9 +1,9 @@
 // src/components/terrain/ConsiderationsPanel.tsx
-// STRATFIT — Considerations Panel (exactly 6 lines, typewriter effect)
+// STRATFIT — System Diagnostics (collapsible, collapsed by default)
 // Deterministic rule-based generator from engine outputs.
 // No emojis. No "you should". No exclamation. No fluff.
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { useTypewriterLines } from "./useTypewriterLines";
 import { considerationsTypewriterEnabled } from "@/config/featureFlags";
 
@@ -33,10 +33,7 @@ interface ConsiderationsPanelProps {
 function generateConsiderations(kpis: KPIs): string[] {
   const runway = kpis.runway?.value ?? 24;
   const riskScore = kpis.riskScore?.value ?? 30;
-  const momentum = kpis.momentum?.value ?? 50;
   const burn = kpis.burnQuality?.value ?? 50;
-  const cash = kpis.cashPosition?.value ?? 4_000_000;
-  const ev = kpis.enterpriseValue?.value ?? 50;
   const ltvCac = kpis.ltvCac?.value ?? 3;
   const cacPayback = kpis.cacPayback?.value ?? 18;
   const growthStress = kpis.growthStress?.value ?? 0.3;
@@ -105,6 +102,8 @@ const ConsiderationsPanel: React.FC<ConsiderationsPanelProps> = ({
   kpis,
   snapshotKey,
 }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   const lines = useMemo(
     () => generateConsiderations(kpis ?? {}),
     [kpis]
@@ -113,62 +112,101 @@ const ConsiderationsPanel: React.FC<ConsiderationsPanelProps> = ({
   const displayed = useTypewriterLines(lines, snapshotKey, {
     charSpeed: 20,
     lineStagger: 250,
-    enabled: considerationsTypewriterEnabled,
+    enabled: considerationsTypewriterEnabled && isExpanded,
   });
 
   return (
     <div style={{
-      padding: "16px 20px",
       borderTop: "1px solid rgba(255,255,255,0.06)",
     }}>
-      <div style={{
-        fontSize: 10,
-        fontWeight: 700,
-        letterSpacing: "0.1em",
-        textTransform: "uppercase" as const,
-        color: "rgba(255,255,255,0.3)",
-        marginBottom: 12,
-        fontFamily: "'Inter', sans-serif",
-      }}>
-        Considerations
-      </div>
+      {/* Collapsible header — "▾ System Diagnostics (N)" */}
+      <button
+        type="button"
+        onClick={() => setIsExpanded((v) => !v)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          width: "100%",
+          padding: "10px 20px",
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          textAlign: "left",
+        }}
+      >
+        <span
+          style={{
+            fontSize: 10,
+            color: "rgba(255,255,255,0.35)",
+            fontFamily: "'JetBrains Mono', monospace",
+            transition: "transform 150ms ease",
+            transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)",
+            display: "inline-block",
+          }}
+        >
+          ▾
+        </span>
+        <span
+          style={{
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: "0.1em",
+            textTransform: "uppercase" as const,
+            color: "rgba(255,255,255,0.3)",
+            fontFamily: "'Inter', sans-serif",
+          }}
+        >
+          System Diagnostics
+        </span>
+        <span
+          style={{
+            fontSize: 9,
+            fontWeight: 600,
+            color: "rgba(255,255,255,0.2)",
+            fontFamily: "'JetBrains Mono', monospace",
+          }}
+        >
+          ({lines.length})
+        </span>
+      </button>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        {displayed.map((line, i) => (
-          <div
-            key={i}
-            style={{
-              fontSize: 13,
-              lineHeight: 1.5,
-              color: "rgba(255,255,255,0.78)",
-              fontFamily: "'JetBrains Mono', 'IBM Plex Mono', 'SF Mono', monospace",
-              minHeight: 20,
-              display: "flex",
-              alignItems: "flex-start",
-              gap: 8,
-            }}
-          >
-            <span style={{
-              color: "rgba(0,224,255,0.4)",
-              fontSize: 10,
-              fontWeight: 600,
-              fontFamily: "'JetBrains Mono', monospace",
-              minWidth: 16,
-              marginTop: 3,
-            }}>
-              {String(i + 1).padStart(2, "0")}
-            </span>
-            <span>{line}</span>
+      {/* Expandable content */}
+      {isExpanded && (
+        <div style={{ padding: "0 20px 16px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {displayed.map((line, i) => (
+              <div
+                key={i}
+                style={{
+                  fontSize: 13,
+                  lineHeight: 1.5,
+                  color: "rgba(255,255,255,0.78)",
+                  fontFamily: "'JetBrains Mono', 'IBM Plex Mono', 'SF Mono', monospace",
+                  minHeight: 20,
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 8,
+                }}
+              >
+                <span style={{
+                  color: "rgba(0,224,255,0.4)",
+                  fontSize: 10,
+                  fontWeight: 600,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  minWidth: 16,
+                  marginTop: 3,
+                }}>
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <span>{line}</span>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default ConsiderationsPanel;
-
-
-
-
-

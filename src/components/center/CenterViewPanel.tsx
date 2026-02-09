@@ -169,12 +169,13 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
                   />
                 )}
 
-                {/* Dark Wireframe Mountain — WebGL with SVG fallback */}
+                {/* Dark Wireframe Mountain — GOD MODE enabled for baseline terrain */}
                 <TerrainWithFallback dataPoints={dataPoints}>
                   <ScenarioMountain 
                     scenario={scenario} 
                     dataPoints={dataPoints}
                     activeKpiIndex={hoveredKpiIndex}
+                    godMode
                   />
                 </TerrainWithFallback>
               </div>
