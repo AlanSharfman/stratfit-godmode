@@ -1,5 +1,11 @@
 // src/components/AIIntelligenceWithSimulation.tsx
-// STRATFIT — AI Intelligence Panel with Simulation Integration
+// ═══════════════════════════════════════════════════════════════════════════
+// LEGACY — NOT MOUNTED
+// Replaced by src/components/intelligence/SystemCommentaryPanel.tsx
+// which consumes SystemAnalysisSnapshot only.
+// Retained for reference. Do not import in new code.
+// ═══════════════════════════════════════════════════════════════════════════
+// STRATFIT — AI Intelligence Panel with Simulation Integration (LEGACY)
 // Shows real-time insights + Monte Carlo results when available
 
 import React from 'react';
