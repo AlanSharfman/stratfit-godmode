@@ -49,6 +49,7 @@ import { ComparePage } from '@/components/compare';
 import SimulationTelemetryRibbon from '@/components/simulation/SimulationTelemetryRibbon';
 import ProDetailDrawer from '@/components/simulation/ProDetailDrawer';
 import AdminEngineConsole from '@/components/admin/AdminEngineConsole';
+import { useSimulationStore } from '@/state/simulationStore';
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -556,6 +557,10 @@ export default function App() {
     typeof window !== "undefined" &&
     window.localStorage.getItem("ENABLE_SCENARIO_INTELLIGENCE") === "1";
 
+  // ── RECALIBRATION STATE — structural compute signal ──
+  const isSimulatingGlobal = useSimulationStore((s) => s.isSimulating);
+  const simulationStatusGlobal = useSimulationStore((s) => s.simulationStatus);
+
   const [scenario, setScenario] = useState<ScenarioId>("base");
   const [activeScenarioType, setActiveScenarioType] = useState<ScenarioType>("current-trajectory");
   const [levers, setLevers] = useState<LeverState>(INITIAL_LEVERS);
@@ -651,7 +656,6 @@ export default function App() {
         id === "compare" ||
         id === "risk" ||
         id === "valuation" ||
-        id === "decision" ||
         id === "impact" ||
         id === "simulate"
       ) {
@@ -1242,17 +1246,16 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
           }}
           activeItemId="initialize"
           onNavigate={(id) => {
+            if (id === "assessment") return window.location.assign("/assessment");
             setHeaderViewMode(
               id === "initialize" ? "initialize"
               : id === "simulate" ? "simulate"
-              : id === "decision" ? "decision"
               : id === "valuation" ? "valuation"
               : id === "compare" ? "compare"
               : id === "risk" ? "risk"
               : id === "impact" ? "impact"
               : "terrain"
             );
-            if (id === "assessment") window.location.assign("/assessment");
             setShowSimulate(false);
           }}
           onSave={() => setShowSaveModal(true)}
@@ -1282,7 +1285,6 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
             setShowSimulate(false);
             if (id === "initialize") return setHeaderViewMode("initialize");
             if (id === "simulate") return setHeaderViewMode("simulate");
-            if (id === "decision") return setHeaderViewMode("decision");
             if (id === "valuation") return setHeaderViewMode("valuation");
             if (id === "compare") return setHeaderViewMode("compare");
             if (id === "risk") return setHeaderViewMode("risk");
@@ -1329,6 +1331,12 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
         <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 800, width: 380 }}>
           <ProDetailDrawer />
         </div>
+
+        {/* ── RECALIBRATION STAGE ISOLATION ── */}
+        <div className={`recalibration-dim-veil${isSimulatingGlobal ? ' active' : ''}`} />
+        <div className={`recalibration-signal${isSimulatingGlobal ? ' active' : ''}`}>
+          Recalculating structural behaviour…
+        </div>
       </div>
     );
   }
@@ -1342,28 +1350,25 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
           lastModified: "Active",
         }}
         activeItemId={
-          headerViewMode === "decision"
-            ? "decision"
-            : headerViewMode === "valuation"
-              ? "valuation"
-              : headerViewMode === "compare"
-                ? "compare"
-                : headerViewMode === "risk"
-                  ? "risk"
-                  : headerViewMode === "impact"
-                    ? "impact"
-                    : headerViewMode === "assessment"
-                      ? "assessment"
-                      : (headerViewMode as string) === "simulate"
-                        ? "simulate"
-                        : "terrain"
+          headerViewMode === "valuation"
+            ? "valuation"
+            : headerViewMode === "compare"
+              ? "compare"
+              : headerViewMode === "risk"
+                ? "risk"
+                : headerViewMode === "impact"
+                  ? "impact"
+                  : headerViewMode === "assessment"
+                    ? "assessment"
+                    : (headerViewMode as string) === "simulate"
+                      ? "simulate"
+                      : "terrain"
         }
         onNavigate={(id) => {
           // close overlay if user navigates elsewhere
           setShowSimulate(false);
           if (id === "initialize") return setHeaderViewMode("initialize");
           if (id === "simulate") return setHeaderViewMode("simulate");
-          if (id === "decision") return setHeaderViewMode("decision");
           if (id === "valuation") return setHeaderViewMode("valuation");
           if (id === "compare") return setHeaderViewMode("compare");
           if (id === "risk") return setHeaderViewMode("risk");
@@ -1437,7 +1442,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
           ) : (
             /* View content based on header navigation */
             <CenterViewPanel 
-              viewMode={headerViewMode as "terrain" | "impact" | "compare" | "risk" | "decision" | "valuation"}
+              viewMode={headerViewMode as "terrain" | "impact" | "compare" | "risk" | "valuation"}
               timelineEnabled={timelineEnabled}
               heatmapEnabled={heatmapEnabled}
               onSimulateRequest={() => setShowSimulate(true)}
@@ -1487,6 +1492,12 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
       {/* PRO DETAIL DRAWER — gated expandable (pro/enterprise only) */}
       <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 800, width: 380 }}>
         <ProDetailDrawer />
+      </div>
+
+      {/* ── RECALIBRATION STAGE ISOLATION ── */}
+      <div className={`recalibration-dim-veil${isSimulatingGlobal ? ' active' : ''}`} />
+      <div className={`recalibration-signal${isSimulatingGlobal ? ' active' : ''}`}>
+        Recalculating structural behaviour…
       </div>
     </div>
   );

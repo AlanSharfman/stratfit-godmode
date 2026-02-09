@@ -8,7 +8,6 @@ import {
   Layers, SplitSquareHorizontal, Zap,
   Calendar, Grid3X3,
   HelpCircle,
-  Target,
   AlertTriangle,
   Save,
   FolderOpen
@@ -19,7 +18,7 @@ import { ExportReportButton, ShareButton } from '@/components/common';
 // ===========================================
 // VIEW MODES (moved from ViewModeSelector)
 // ===========================================
-export type ViewMode = "initialize" | "terrain" | "impact" | "compare" | "simulate" | "risk" | "decision" | "valuation" | "assessment";
+export type ViewMode = "initialize" | "terrain" | "impact" | "compare" | "simulate" | "risk" | "valuation" | "assessment";
 
 // ===========================================
 // SCENARIOS (moved from ActiveScenario)
@@ -48,7 +47,6 @@ const NAV_TABS: Array<{ id: ViewMode; label: string; icon: typeof Layers }> = [
   { id: "compare", label: "COMPARE", icon: SplitSquareHorizontal },
   { id: "risk", label: "RISK", icon: AlertTriangle },
   { id: "valuation", label: "VALUATION", icon: TrendingUp },
-  { id: "decision", label: "DECISION", icon: Target },
 ];
 
 // ===========================================

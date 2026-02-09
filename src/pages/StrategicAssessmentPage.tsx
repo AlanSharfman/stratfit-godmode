@@ -1,266 +1,277 @@
 // src/pages/StrategicAssessmentPage.tsx
 // ═══════════════════════════════════════════════════════════════════════════
-// STRATFIT — Strategic Intelligence Brief
-// Institutional strategic assessment for Founders, Business Owners, Consultants,
-// Investors, CFOs, and Executives.
-// Deterministic output only. No GPT fluff. No gaming UI.
+// STRATFIT — Strategic Assessment
+// "A structured summary of strengths, vulnerabilities, and where to focus next."
+//
+// Growth mode (default): Founder-first plain language, 3 sections + watchpoint.
+// Advanced mode (toggle): Quantified thresholds, sensitivity ranks, P10/P50/P90.
+// Data: Same simulation + engine results used by Compare/Risk/Valuation.
+// No engine internals exposed. No finance jargon walls.
 // ═══════════════════════════════════════════════════════════════════════════
 
 import React, { useState, useMemo } from "react";
-import { useSimulationStore, useSimulationStatus } from "@/state/simulationStore";
+import { useSimulationStore } from "@/state/simulationStore";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
-import BaselineMountain from "@/components/mountain/BaselineMountain";
-import { engineResultToMountainForces } from "@/logic/mountainForces";
-import { useScenarioStore } from "@/state/scenarioStore";
-import { ChevronDown, ChevronUp } from "lucide-react";
 import styles from "./StrategicAssessmentPage.module.css";
 
 // ────────────────────────────────────────────────────────────────────────────
-// HELPERS
+// ASSESSMENT SUMMARY BUILDER (pure function)
+// Maps existing simulation + engine outputs → structured assessment
 // ────────────────────────────────────────────────────────────────────────────
 
-const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
-
-// ────────────────────────────────────────────────────────────────────────────
-// TYPES
-// ────────────────────────────────────────────────────────────────────────────
-
-interface StructuralDriver {
-  statement: string;
-  type: "strength" | "fragility" | "neutral";
+interface AssessmentItem {
+  headline: string;
+  detail: string;
+  // Advanced-mode expansions
+  threshold?: string;
+  sensitivityRank?: number;
+  percentileRef?: string;
 }
 
-interface LeverageOpportunity {
-  leverName: string;
-  evUplift: number;
-  survivalDelta: number;
-  explanation: string;
+interface AssessmentSummary {
+  strengths: AssessmentItem[];
+  vulnerabilities: AssessmentItem[];
+  priorities: AssessmentItem[];
+  watchpoint: string;
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// STRATEGIC POSTURE PANEL
-// ────────────────────────────────────────────────────────────────────────────
+function buildAssessmentSummary(
+  fullResult: {
+    survivalRate: number;
+    arrPercentiles: { p10: number; p50: number; p90: number };
+    runwayPercentiles: { p10: number; p50: number; p90: number };
+    cashPercentiles: { p10: number; p50: number; p90: number };
+    sensitivityFactors: Array<{ lever: string; label: string; impact: number; direction: 'positive' | 'negative' }>;
+  },
+  baselineMonthlyBurn: number,
+  baselineStartingCash: number,
+): AssessmentSummary {
+  const survivalPct = Math.round(fullResult.survivalRate * 100);
+  const runwayP10 = fullResult.runwayPercentiles.p10;
+  const runwayP50 = fullResult.runwayPercentiles.p50;
+  const arrP10 = fullResult.arrPercentiles.p10;
+  const arrP50 = fullResult.arrPercentiles.p50;
+  const arrP90 = fullResult.arrPercentiles.p90;
+  const sens = fullResult.sensitivityFactors;
 
-const StrategicPosturePanel: React.FC<{
-  survivalPct: number;
-  evP10: number;
-  evP50: number;
-  evP90: number;
-  capitalSensitivity: number;
-  runwayUnderStress: number;
-}> = ({ survivalPct, evP10, evP50, evP90, capitalSensitivity, runwayUnderStress }) => {
-  const failurePct = 100 - survivalPct;
-  const dispersionRatio = evP90 / Math.max(1, evP10);
+  // Sort sensitivity by absolute impact
+  const sortedSens = [...sens].sort((a, b) => Math.abs(b.impact) - Math.abs(a.impact));
+  const topPositive = sortedSens.filter(s => s.impact > 0);
+  const topNegative = sortedSens.filter(s => s.impact < 0);
 
-  return (
-    <div className={styles.posturePanel}>
-      <h2 className={styles.sectionHeader}>STRATEGIC POSTURE</h2>
-      <div className={styles.postureGrid}>
-        <div className={styles.postureMetric}>
-          <div className={styles.postureValue}>{survivalPct}%</div>
-          <div className={styles.postureLabel}>Survival Probability (36 months)</div>
-          <div className={styles.postureExplanation}>
-            In {failurePct}% of modeled futures, capital depletion occurs before 36 months.
-          </div>
-        </div>
+  const burnMultiple = baselineMonthlyBurn > 0
+    ? baselineStartingCash / (baselineMonthlyBurn * 12)
+    : 999;
 
-        <div className={styles.postureMetric}>
-          <div className={styles.postureValue}>
-            ${evP10.toFixed(1)}M – ${evP90.toFixed(1)}M
-          </div>
-          <div className={styles.postureLabel}>Projected Enterprise Value Band (P10 – P90)</div>
-          <div className={styles.postureExplanation}>
-            Value dispersion reflects growth durability and margin resilience.
-          </div>
-        </div>
+  const evMultiplier = 3.5;
+  const evP50 = (arrP50 / 1_000_000) * evMultiplier;
 
-        <div className={styles.postureMetric}>
-          <div className={styles.postureValue}>${evP50.toFixed(1)}M</div>
-          <div className={styles.postureLabel}>Most Probable EV (P50)</div>
-          <div className={styles.postureExplanation}>
-            Median valuation across all simulated scenarios.
-          </div>
-        </div>
+  // ── STRENGTHS ──
+  const strengths: AssessmentItem[] = [];
 
-        <div className={styles.postureMetric}>
-          <div className={styles.postureValue}>{capitalSensitivity.toFixed(1)}x</div>
-          <div className={styles.postureLabel}>Capital Sensitivity Index</div>
-          <div className={styles.postureExplanation}>
-            {capitalSensitivity > 3
-              ? "High capital dependency. Burn efficiency critical."
-              : capitalSensitivity > 2
-              ? "Moderate capital sensitivity. Standard monitoring required."
-              : "Low capital sensitivity. Strong unit economics."}
-          </div>
-        </div>
+  if (survivalPct >= 65) {
+    strengths.push({
+      headline: "Structural survival is strong",
+      detail: `Your business survives in ${survivalPct}% of modeled futures. This gives you time to execute.`,
+      threshold: `Survival ≥ 65% threshold`,
+      sensitivityRank: undefined,
+      percentileRef: `P50 runway: ${runwayP50.toFixed(0)} months`,
+    });
+  }
 
-        <div className={styles.postureMetric}>
-          <div className={styles.postureValue}>{runwayUnderStress.toFixed(1)} mo</div>
-          <div className={styles.postureLabel}>Runway Under Stress</div>
-          <div className={styles.postureExplanation}>
-            P10 runway scenario. Minimum viable planning horizon.
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+  if (topPositive[0]) {
+    const s = topPositive[0];
+    strengths.push({
+      headline: `${s.label} is your strongest lever`,
+      detail: `Improving this lever has the highest positive impact on your outcomes. It's where investment pays off most.`,
+      threshold: `Impact score: ${(Math.abs(s.impact) * 100).toFixed(0)}`,
+      sensitivityRank: 1,
+      percentileRef: `Direction: ${s.direction}`,
+    });
+  }
 
-// ────────────────────────────────────────────────────────────────────────────
-// ASSESSMENT MOUNTAIN PANEL
-// ────────────────────────────────────────────────────────────────────────────
+  if (arrP90 / Math.max(1, arrP50) > 1.5) {
+    strengths.push({
+      headline: "Significant upside optionality exists",
+      detail: `In the best-case scenarios, your revenue reaches significantly higher levels. The spread between your median and best case is wide — there's real upside to capture.`,
+      threshold: `P90/P50 ratio: ${(arrP90 / Math.max(1, arrP50)).toFixed(1)}x`,
+      sensitivityRank: undefined,
+      percentileRef: `P90 ARR: $${(arrP90 / 1_000_000).toFixed(1)}M`,
+    });
+  } else if (burnMultiple > 1.5) {
+    strengths.push({
+      headline: "Capital efficiency is sound",
+      detail: `Your current burn rate relative to cash reserves gives you a comfortable buffer. You're not in a spending emergency.`,
+      threshold: `Burn multiple: ${burnMultiple.toFixed(1)}x`,
+      sensitivityRank: undefined,
+      percentileRef: undefined,
+    });
+  }
 
-const AssessmentMountainPanel: React.FC<{
-  dataPoints: number[];
-  survivalProbability: number;
-  varianceWidth: number;
-  runwayMonths: number;
-}> = ({ dataPoints, survivalProbability, varianceWidth, runwayMonths }) => {
-  const simulationStatus = useSimulationStatus();
-  return (
-    <div className={styles.mountainPanel}>
-      <h3 className={styles.mountainLabel}>STRUCTURAL STATE VISUALIZATION</h3>
-      <div className={styles.mountainCanvas}>
-        <BaselineMountain
-          dataPoints={dataPoints}
-          survivalProbability={survivalProbability}
-          varianceWidth={varianceWidth}
-          runwayMonths={runwayMonths}
-          maxHorizonMonths={36}
-          computeState={simulationStatus}
-          showGrid
-        />
-      </div>
-    </div>
-  );
-};
+  // Ensure at least 3
+  if (strengths.length < 3 && topPositive[1]) {
+    const s = topPositive[1];
+    strengths.push({
+      headline: `${s.label} provides secondary upside`,
+      detail: `This is your second-most impactful positive lever. Worth attention after your primary focus area.`,
+      threshold: `Impact score: ${(Math.abs(s.impact) * 100).toFixed(0)}`,
+      sensitivityRank: 2,
+      percentileRef: undefined,
+    });
+  }
+  while (strengths.length < 3) {
+    strengths.push({
+      headline: "Balanced structural profile",
+      detail: "No dominant fragility detected in this dimension. Maintain current trajectory.",
+      threshold: undefined,
+      sensitivityRank: undefined,
+      percentileRef: undefined,
+    });
+  }
 
-// ────────────────────────────────────────────────────────────────────────────
-// STRUCTURAL DIAGNOSIS PANEL
-// ────────────────────────────────────────────────────────────────────────────
+  // ── VULNERABILITIES ──
+  const vulnerabilities: AssessmentItem[] = [];
 
-const StructuralDiagnosisPanel: React.FC<{
-  drivers: StructuralDriver[];
-}> = ({ drivers }) => {
-  return (
-    <div className={styles.diagnosisPanel}>
-      <h2 className={styles.sectionHeader}>STRUCTURAL DIAGNOSIS</h2>
-      <ul className={styles.diagnosisList}>
-        {drivers.map((d, i) => (
-          <li key={i} className={styles.diagnosisItem} data-type={d.type}>
-            {d.statement}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-};
+  if (survivalPct < 65) {
+    vulnerabilities.push({
+      headline: "Survival probability needs attention",
+      detail: `In ${100 - survivalPct}% of futures, capital runs out before 36 months. This is the most important thing to address.`,
+      threshold: `Survival: ${survivalPct}% (below 65% threshold)`,
+      sensitivityRank: undefined,
+      percentileRef: `P10 runway: ${runwayP10.toFixed(0)} months`,
+    });
+  }
 
-// ────────────────────────────────────────────────────────────────────────────
-// CAPITAL VIEW (COLLAPSIBLE)
-// ────────────────────────────────────────────────────────────────────────────
+  if (topNegative[0]) {
+    const s = topNegative[0];
+    vulnerabilities.push({
+      headline: `${s.label} is your biggest risk factor`,
+      detail: `This is the lever that hurts most when it moves against you. Understanding and managing it should be a priority.`,
+      threshold: `Negative impact: ${(Math.abs(s.impact) * 100).toFixed(0)}`,
+      sensitivityRank: sortedSens.indexOf(s) + 1,
+      percentileRef: undefined,
+    });
+  }
 
-const CapitalViewExpandablePanel: React.FC<{
-  evP10: number;
-  evP50: number;
-  evP90: number;
-  burnToValueRatio: number;
-  downsideCompression: number;
-  capitalEfficiency: number;
-}> = ({ evP10, evP50, evP90, burnToValueRatio, downsideCompression, capitalEfficiency }) => {
-  const [expanded, setExpanded] = useState(false);
+  if (runwayP10 < 12) {
+    vulnerabilities.push({
+      headline: "Worst-case runway is tight",
+      detail: `In a downside scenario, you have less than 12 months of runway. This limits your ability to recover from setbacks.`,
+      threshold: `P10 runway: ${runwayP10.toFixed(0)} months (< 12 mo threshold)`,
+      sensitivityRank: undefined,
+      percentileRef: `P50 runway: ${runwayP50.toFixed(0)} months`,
+    });
+  } else if ((arrP50 - arrP10) / Math.max(1, arrP50) > 0.4) {
+    vulnerabilities.push({
+      headline: "Revenue downside is material",
+      detail: `The gap between your median and worst-case revenue is wide. A bad quarter could significantly change your trajectory.`,
+      threshold: `Downside spread: ${(((arrP50 - arrP10) / Math.max(1, arrP50)) * 100).toFixed(0)}%`,
+      sensitivityRank: undefined,
+      percentileRef: `P10 ARR: $${(arrP10 / 1_000_000).toFixed(1)}M vs P50: $${(arrP50 / 1_000_000).toFixed(1)}M`,
+    });
+  }
 
-  return (
-    <div className={styles.capitalPanel}>
-      <button
-        type="button"
-        className={styles.capitalHeader}
-        onClick={() => setExpanded(!expanded)}
-      >
-        <h2 className={styles.sectionHeader}>CAPITAL VIEW</h2>
-        {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-      </button>
-      {expanded && (
-        <div className={styles.capitalTable}>
-          <div className={styles.capitalRow}>
-            <span className={styles.capitalLabel}>P10 Enterprise Value</span>
-            <span className={styles.capitalValue}>${evP10.toFixed(1)}M</span>
-          </div>
-          <div className={styles.capitalRow}>
-            <span className={styles.capitalLabel}>P50 Enterprise Value</span>
-            <span className={styles.capitalValue}>${evP50.toFixed(1)}M</span>
-          </div>
-          <div className={styles.capitalRow}>
-            <span className={styles.capitalLabel}>P90 Enterprise Value</span>
-            <span className={styles.capitalValue}>${evP90.toFixed(1)}M</span>
-          </div>
-          <div className={styles.capitalRow}>
-            <span className={styles.capitalLabel}>Burn-to-Value Ratio</span>
-            <span className={styles.capitalValue}>{burnToValueRatio.toFixed(2)}x</span>
-          </div>
-          <div className={styles.capitalRow}>
-            <span className={styles.capitalLabel}>Downside Compression Index</span>
-            <span className={styles.capitalValue}>{downsideCompression.toFixed(1)}%</span>
-          </div>
-          <div className={styles.capitalRow}>
-            <span className={styles.capitalLabel}>Capital Efficiency</span>
-            <span className={styles.capitalValue}>{capitalEfficiency.toFixed(1)}x</span>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
+  if (topNegative[1] && vulnerabilities.length < 3) {
+    const s = topNegative[1];
+    vulnerabilities.push({
+      headline: `${s.label} is a secondary risk`,
+      detail: `This compounds your primary risk. Watch it alongside your top vulnerability.`,
+      threshold: `Negative impact: ${(Math.abs(s.impact) * 100).toFixed(0)}`,
+      sensitivityRank: sortedSens.indexOf(s) + 1,
+      percentileRef: undefined,
+    });
+  }
+  while (vulnerabilities.length < 3) {
+    vulnerabilities.push({
+      headline: "No critical fragility detected here",
+      detail: "This dimension is within acceptable bounds. Standard monitoring applies.",
+      threshold: undefined,
+      sensitivityRank: undefined,
+      percentileRef: undefined,
+    });
+  }
 
-// ────────────────────────────────────────────────────────────────────────────
-// STRATEGIC LEVERAGE PANEL
-// ────────────────────────────────────────────────────────────────────────────
+  // ── PRIORITY FOCUS ──
+  const priorities: AssessmentItem[] = [];
 
-const StrategicLeveragePanel: React.FC<{
-  opportunities: LeverageOpportunity[];
-}> = ({ opportunities }) => {
-  return (
-    <div className={styles.leveragePanel}>
-      <h2 className={styles.sectionHeader}>STRATEGIC LEVERAGE</h2>
-      <div className={styles.leverageGrid}>
-        {opportunities.slice(0, 3).map((opp, i) => (
-          <div key={i} className={styles.leverageCard}>
-            <div className={styles.leverageLever}>{opp.leverName}</div>
-            <div className={styles.leverageImpact}>
-              <span className={styles.leverageEV}>+${opp.evUplift.toFixed(1)}M median EV</span>
-              <span className={styles.leverageSurvival}>
-                {opp.survivalDelta >= 0 ? "+" : ""}
-                {opp.survivalDelta.toFixed(0)}% survival probability
-              </span>
-            </div>
-            <div className={styles.leverageExplanation}>{opp.explanation}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
+  // Priority 1: Top positive lever to push
+  if (topPositive[0]) {
+    const s = topPositive[0];
+    priorities.push({
+      headline: `Double down on ${s.label}`,
+      detail: `This is where effort converts most efficiently into better outcomes. Make it the focus of your next quarter.`,
+      threshold: `Impact: +${(Math.abs(s.impact) * 100).toFixed(0)} sensitivity score`,
+      sensitivityRank: 1,
+      percentileRef: `Estimated EV uplift: +$${(Math.abs(s.impact) * evP50 * 0.25).toFixed(1)}M`,
+    });
+  }
 
-// ────────────────────────────────────────────────────────────────────────────
-// INTELLIGENCE SUMMARY STRIP
-// ────────────────────────────────────────────────────────────────────────────
+  // Priority 2: Top negative lever to mitigate
+  if (topNegative[0]) {
+    const s = topNegative[0];
+    priorities.push({
+      headline: `Contain ${s.label}`,
+      detail: `Reducing exposure here protects your downside. Build contingency or hedge before it moves against you.`,
+      threshold: `Risk impact: -${(Math.abs(s.impact) * 100).toFixed(0)} sensitivity score`,
+      sensitivityRank: sortedSens.indexOf(s) + 1,
+      percentileRef: undefined,
+    });
+  }
 
-const IntelligenceSummaryStrip: React.FC<{
-  statements: string[];
-}> = ({ statements }) => {
-  return (
-    <div className={styles.summaryStrip}>
-      <h3 className={styles.summaryHeader}>WHAT THIS MEANS</h3>
-      <ul className={styles.summaryList}>
-        {statements.map((s, i) => (
-          <li key={i} className={styles.summaryItem}>
-            {s}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-};
+  // Priority 3: Capital / runway action
+  if (runwayP10 < 12) {
+    priorities.push({
+      headline: "Extend your minimum runway to 12+ months",
+      detail: "In a downturn, you need at least 12 months to pivot. Cut discretionary spend or start fundraising conversations now.",
+      threshold: `Current P10 runway: ${runwayP10.toFixed(0)} months`,
+      sensitivityRank: undefined,
+      percentileRef: `Cash P10: $${(fullResult.cashPercentiles.p10 / 1_000_000).toFixed(1)}M`,
+    });
+  } else if (survivalPct < 75) {
+    priorities.push({
+      headline: "Improve structural resilience",
+      detail: "Your survival probability has room to improve. Focus on reducing burn or increasing revenue predictability.",
+      threshold: `Target: ≥75% survival`,
+      sensitivityRank: undefined,
+      percentileRef: `Current: ${survivalPct}%`,
+    });
+  } else {
+    priorities.push({
+      headline: "Preserve optionality for expansion",
+      detail: "Your fundamentals are sound. Use this stability to invest in growth levers that capture your P90 upside.",
+      threshold: `Survival: ${survivalPct}%`,
+      sensitivityRank: undefined,
+      percentileRef: `P90 EV: $${(evP50 * (arrP90 / Math.max(1, arrP50))).toFixed(1)}M`,
+    });
+  }
+
+  while (priorities.length < 3) {
+    priorities.push({
+      headline: "Monitor and maintain current trajectory",
+      detail: "No urgent action required. Re-assess after next quarter's data.",
+      threshold: undefined,
+      sensitivityRank: undefined,
+      percentileRef: undefined,
+    });
+  }
+
+  // ── WATCHPOINT ──
+  let watchpoint = "If conditions worsen, ";
+  if (topNegative[0] && runwayP10 < 18) {
+    watchpoint += `${topNegative[0].label} combined with tight runway (${runwayP10.toFixed(0)} months worst-case) could force premature decisions.`;
+  } else if (topNegative[0]) {
+    watchpoint += `deterioration in ${topNegative[0].label} is what breaks the model first.`;
+  } else {
+    watchpoint += `unexpected cost increases or revenue stalls would compress runway below safe thresholds.`;
+  }
+
+  return {
+    strengths: strengths.slice(0, 3),
+    vulnerabilities: vulnerabilities.slice(0, 3),
+    priorities: priorities.slice(0, 3),
+    watchpoint,
+  };
+}
 
 // ────────────────────────────────────────────────────────────────────────────
 // MAIN PAGE
@@ -269,32 +280,39 @@ const IntelligenceSummaryStrip: React.FC<{
 export default function StrategicAssessmentPage() {
   const { fullResult, fullVerdict, summary } = useSimulationStore();
   const { baseline: systemBaseline } = useSystemBaseline();
-  const { engineResults } = useScenarioStore();
+  const [advancedMode, setAdvancedMode] = useState(false);
 
-  // ── Derive mountain data points ──
-  const baselineResult = engineResults?.base ?? null;
-  const dataPoints = useMemo(
-    () => engineResultToMountainForces(baselineResult),
-    [baselineResult]
+  // ── Extract baseline inputs safely (before any conditional return) ──
+  const baselineMonthlyBurn = systemBaseline?.financial?.monthlyBurn ?? 400000;
+  const baselineStartingCash = systemBaseline?.financial?.cashOnHand ?? 4000000;
+
+  // ── Build assessment from real simulation data (hooks must be unconditional) ──
+  const assessment = useMemo(
+    () =>
+      fullResult
+        ? buildAssessmentSummary(fullResult, baselineMonthlyBurn, baselineStartingCash)
+        : null,
+    [fullResult, baselineMonthlyBurn, baselineStartingCash],
   );
 
   // ── Gate: require simulation ──
-  if (!fullResult || !fullVerdict || !summary) {
+  if (!fullResult || !fullVerdict || !summary || !assessment) {
     return (
       <div className={styles.emptyState}>
         <div className={styles.emptyIcon}>
-          <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+          <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
             <path
-              d="M40 5L10 20V40C10 55 22 68 40 75C58 68 70 55 70 40V20L40 5Z"
+              d="M32 4L8 16V32C8 44 18 54.4 32 60C46 54.4 56 44 56 32V16L32 4Z"
               stroke="rgba(34, 211, 238, 0.3)"
-              strokeWidth="2"
-              fill="rgba(34, 211, 238, 0.05)"
+              strokeWidth="1.5"
+              fill="rgba(34, 211, 238, 0.04)"
             />
+            <path d="M24 32L30 38L40 26" stroke="rgba(34, 211, 238, 0.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
         <h2 className={styles.emptyTitle}>Strategic Assessment Unavailable</h2>
         <p className={styles.emptyDescription}>
-          Run a simulation to generate your Strategic Intelligence Brief.
+          Run a simulation first. The assessment needs real outputs to give you useful insight.
         </p>
         <button
           className={styles.emptyAction}
@@ -302,178 +320,134 @@ export default function StrategicAssessmentPage() {
             window.dispatchEvent(new CustomEvent("stratfit:navigate", { detail: "simulate" }))
           }
         >
-          Run Simulation →
+          Go to Strategy Studio →
         </button>
       </div>
     );
   }
 
-  // ── Derive metrics from simulation results ──
   const survivalPct = Math.round(fullResult.survivalRate * 100);
-  const evP10 = (fullResult.arrPercentiles.p10 / 1000000) * 3.5; // Simplified EV = ARR × 3.5x
-  const evP50 = (fullResult.arrPercentiles.p50 / 1000000) * 3.5;
-  const evP90 = (fullResult.arrPercentiles.p90 / 1000000) * 3.5;
-  
-  // Extract baseline inputs safely
-  const baselineMonthlyBurn = systemBaseline?.financial?.monthlyBurn ?? 400000;
-  const baselineStartingCash = systemBaseline?.financial?.cashOnHand ?? 4000000;
-  
-  const capitalSensitivity = (baselineMonthlyBurn * 12) / Math.max(1, evP50 * 1000000);
-  const runwayUnderStress = fullResult.runwayPercentiles.p10;
-
-  const burnToValueRatio = (baselineMonthlyBurn * 12) / Math.max(1, evP50 * 1000000);
-  const downsideCompression = ((evP50 - evP10) / Math.max(1, evP50)) * 100;
-  const capitalEfficiency = evP50 / Math.max(1, baselineStartingCash / 1000000);
-
-  // Variance width for dispersion atmosphere (0–1 scale)
-  // Derived from EV dispersion ratio: wider spread → more variance
-  const dispersionRatio = evP90 / Math.max(1, evP10);
-  const varianceWidth = clamp01((dispersionRatio - 1) / 10); // Normalize: 1x = 0, 11x+ = 1
-
-  // ── Structural Diagnosis (deterministic) ──
-  const structuralDrivers: StructuralDriver[] = useMemo(() => {
-    const drivers: StructuralDriver[] = [];
-    const sens = fullResult.sensitivityFactors;
-
-    // Growth durability
-    const demandImpact = sens.find((s) => s.lever === "demandStrength")?.impact ?? 0;
-    if (Math.abs(demandImpact) > 0.5) {
-      drivers.push({
-        statement:
-          demandImpact > 0
-            ? "Growth durable but capital-dependent."
-            : "Growth fragility detected. Demand sensitivity high.",
-        type: demandImpact > 0 ? "strength" : "fragility",
-      });
-    }
-
-    // Revenue sensitivity
-    const pricingImpact = sens.find((s) => s.lever === "pricingPower")?.impact ?? 0;
-    if (Math.abs(pricingImpact) > 0.4) {
-      drivers.push({
-        statement: "Revenue sensitivity is primary fragility driver.",
-        type: "fragility",
-      });
-    }
-
-    // Margin stability
-    const costImpact = sens.find((s) => s.lever === "costDiscipline")?.impact ?? 0;
-    if (Math.abs(costImpact) > 0.3) {
-      drivers.push({
-        statement:
-          costImpact > 0
-            ? "Margin stability offsets burn pressure."
-            : "Cost rigidity constrains strategic flexibility.",
-        type: costImpact > 0 ? "strength" : "fragility",
-      });
-    }
-
-    // Downside asymmetry
-    if (downsideCompression > 40) {
-      drivers.push({
-        statement: "Downside asymmetry remains material.",
-        type: "fragility",
-      });
-    }
-
-    return drivers.length > 0
-      ? drivers
-      : [{ statement: "Structural profile balanced. No dominant fragility.", type: "neutral" }];
-  }, [fullResult, downsideCompression]);
-
-  // ── Strategic Leverage (top 3 opportunities) ──
-  const leverageOpportunities: LeverageOpportunity[] = useMemo(() => {
-    const sens = fullResult.sensitivityFactors;
-    return sens
-      .filter((s) => s.impact > 0.2)
-      .sort((a, b) => Math.abs(b.impact) - Math.abs(a.impact))
-      .slice(0, 3)
-      .map((s) => ({
-        leverName: s.label,
-        evUplift: Math.abs(s.impact) * evP50 * 0.25, // Simplified delta
-        survivalDelta: Math.abs(s.impact) * 10, // Simplified survival uplift
-        explanation:
-          s.direction === "positive"
-            ? "Strengthening this lever reduces downside dispersion."
-            : "Mitigating this risk improves survival probability.",
-      }));
-  }, [fullResult, evP50]);
-
-  // ── Intelligence Summary ──
-  const intelligenceSummary: string[] = useMemo(() => {
-    const statements: string[] = [];
-
-    // Posture
-    if (survivalPct >= 75) {
-      statements.push("Current structural posture: Stable with manageable risk exposure");
-    } else if (survivalPct >= 50) {
-      statements.push("Current structural posture: Stable but capital-sensitive");
-    } else {
-      statements.push("Current structural posture: Elevated risk. Intervention recommended");
-    }
-
-    // Primary exposure
-    const topRisk = fullResult.sensitivityFactors
-      .filter((s) => s.direction === "negative")
-      .sort((a, b) => Math.abs(b.impact) - Math.abs(a.impact))[0];
-    if (topRisk) {
-      statements.push(`Primary exposure: ${topRisk.label}`);
-    }
-
-    // Capital strategy
-    if (capitalSensitivity > 3) {
-      statements.push("Capital strategy recommended: Efficiency before expansion");
-    } else if (capitalSensitivity > 2) {
-      statements.push("Capital strategy recommended: Balanced growth and efficiency");
-    } else {
-      statements.push("Capital strategy recommended: Growth-optimized deployment");
-    }
-
-    // Risk asymmetry
-    if (downsideCompression > 50) {
-      statements.push("Risk asymmetry: High. Downside protection critical");
-    } else if (downsideCompression > 30) {
-      statements.push("Risk asymmetry: Moderate. Standard risk management applies");
-    } else {
-      statements.push("Risk asymmetry: Low. Upside optionality preserved");
-    }
-
-    return statements;
-  }, [survivalPct, fullResult, capitalSensitivity, downsideCompression]);
+  const runwayP50 = fullResult.runwayPercentiles.p50;
 
   return (
     <div className={styles.root}>
-      <StrategicPosturePanel
-        survivalPct={survivalPct}
-        evP10={evP10}
-        evP50={evP50}
-        evP90={evP90}
-        capitalSensitivity={capitalSensitivity}
-        runwayUnderStress={runwayUnderStress}
-      />
+      {/* ── HEADER ── */}
+      <header className={styles.header}>
+        <div className={styles.headerLeft}>
+          <h1 className={styles.title}>Strategic Assessment</h1>
+          <p className={styles.subtitle}>
+            A structured summary of strengths, vulnerabilities, and where to focus next.
+          </p>
+        </div>
+        <div className={styles.headerRight}>
+          {/* Quick metrics strip */}
+          <div className={styles.headerMetrics}>
+            <div className={styles.headerMetric}>
+              <span className={styles.headerMetricValue}>{survivalPct}%</span>
+              <span className={styles.headerMetricLabel}>Survival</span>
+            </div>
+            <div className={styles.headerMetric}>
+              <span className={styles.headerMetricValue}>{runwayP50.toFixed(0)}mo</span>
+              <span className={styles.headerMetricLabel}>Runway</span>
+            </div>
+          </div>
+          {/* Advanced toggle */}
+          <button
+            className={`${styles.advancedToggle} ${advancedMode ? styles.advancedToggleActive : ""}`}
+            onClick={() => setAdvancedMode(!advancedMode)}
+          >
+            {advancedMode ? "Growth View" : "Advanced"}
+          </button>
+        </div>
+      </header>
 
-      <AssessmentMountainPanel
-        dataPoints={dataPoints}
-        survivalProbability={survivalPct}
-        varianceWidth={varianceWidth}
-        runwayMonths={runwayUnderStress}
-      />
+      {/* ── SECTION 1: STRUCTURAL STRENGTHS ── */}
+      <section className={styles.section}>
+        <h2 className={styles.sectionHeader}>
+          <span className={styles.sectionDot} data-tone="positive" />
+          Structural Strengths
+        </h2>
+        <p className={styles.sectionSubtitle}>What's working for you right now</p>
+        <div className={styles.cardGrid}>
+          {assessment.strengths.map((item, i) => (
+            <div key={i} className={styles.card} data-tone="positive">
+              <h3 className={styles.cardHeadline}>{item.headline}</h3>
+              <p className={styles.cardDetail}>{item.detail}</p>
+              {advancedMode && (item.threshold || item.sensitivityRank || item.percentileRef) && (
+                <div className={styles.advancedExpansion}>
+                  {item.threshold && <span className={styles.advancedTag}>{item.threshold}</span>}
+                  {item.sensitivityRank && (
+                    <span className={styles.advancedTag}>Sensitivity rank #{item.sensitivityRank}</span>
+                  )}
+                  {item.percentileRef && <span className={styles.advancedTag}>{item.percentileRef}</span>}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
 
-      <StructuralDiagnosisPanel drivers={structuralDrivers} />
+      {/* ── SECTION 2: STRUCTURAL VULNERABILITIES ── */}
+      <section className={styles.section}>
+        <h2 className={styles.sectionHeader}>
+          <span className={styles.sectionDot} data-tone="risk" />
+          Structural Vulnerabilities
+        </h2>
+        <p className={styles.sectionSubtitle}>Where you're exposed if things shift</p>
+        <div className={styles.cardGrid}>
+          {assessment.vulnerabilities.map((item, i) => (
+            <div key={i} className={styles.card} data-tone="risk">
+              <h3 className={styles.cardHeadline}>{item.headline}</h3>
+              <p className={styles.cardDetail}>{item.detail}</p>
+              {advancedMode && (item.threshold || item.sensitivityRank || item.percentileRef) && (
+                <div className={styles.advancedExpansion}>
+                  {item.threshold && <span className={styles.advancedTag}>{item.threshold}</span>}
+                  {item.sensitivityRank && (
+                    <span className={styles.advancedTag}>Sensitivity rank #{item.sensitivityRank}</span>
+                  )}
+                  {item.percentileRef && <span className={styles.advancedTag}>{item.percentileRef}</span>}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
 
-      <CapitalViewExpandablePanel
-        evP10={evP10}
-        evP50={evP50}
-        evP90={evP90}
-        burnToValueRatio={burnToValueRatio}
-        downsideCompression={downsideCompression}
-        capitalEfficiency={capitalEfficiency}
-      />
+      {/* ── SECTION 3: PRIORITY FOCUS ── */}
+      <section className={styles.section}>
+        <h2 className={styles.sectionHeader}>
+          <span className={styles.sectionDot} data-tone="action" />
+          Priority Focus
+        </h2>
+        <p className={styles.sectionSubtitle}>Where to direct energy next</p>
+        <div className={styles.cardGrid}>
+          {assessment.priorities.map((item, i) => (
+            <div key={i} className={styles.card} data-tone="action">
+              <div className={styles.priorityBadge}>{i + 1}</div>
+              <h3 className={styles.cardHeadline}>{item.headline}</h3>
+              <p className={styles.cardDetail}>{item.detail}</p>
+              {advancedMode && (item.threshold || item.sensitivityRank || item.percentileRef) && (
+                <div className={styles.advancedExpansion}>
+                  {item.threshold && <span className={styles.advancedTag}>{item.threshold}</span>}
+                  {item.sensitivityRank && (
+                    <span className={styles.advancedTag}>Sensitivity rank #{item.sensitivityRank}</span>
+                  )}
+                  {item.percentileRef && <span className={styles.advancedTag}>{item.percentileRef}</span>}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
 
-      <StrategicLeveragePanel opportunities={leverageOpportunities} />
-
-      <IntelligenceSummaryStrip statements={intelligenceSummary} />
+      {/* ── WATCHPOINT CALLOUT ── */}
+      <div className={styles.watchpoint}>
+        <div className={styles.watchpointIcon}>⚡</div>
+        <div className={styles.watchpointContent}>
+          <h3 className={styles.watchpointLabel}>Watchpoint</h3>
+          <p className={styles.watchpointText}>{assessment.watchpoint}</p>
+        </div>
+      </div>
     </div>
   );
 }
-

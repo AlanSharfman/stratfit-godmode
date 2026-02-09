@@ -1,371 +1,345 @@
-/* src/pages/StrategicAssessmentPage.module.css */
 /* ═══════════════════════════════════════════════════════════════════════════
-   STRATFIT — Strategic Intelligence Brief Styles
-   Institutional. Charcoal background. Cyan default. No gaming UI.
+   STRATFIT — Strategic Assessment
+   Institutional intelligence brief. Capital-grade. Founder-first.
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* ── ROOT ── */
 .root {
-  width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 32px 24px;
   display: flex;
   flex-direction: column;
   gap: 32px;
-  background: linear-gradient(180deg, #0E1116 0%, #11161D 100%);
+  padding: 40px 48px 60px;
+  max-width: 1120px;
+  margin: 0 auto;
   min-height: 100vh;
+  color: rgba(255, 255, 255, 0.88);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-/* ────────────────────────────────────────────────────────────────────────── */
-/* SECTION HEADERS */
-/* ────────────────────────────────────────────────────────────────────────── */
-
-.sectionHeader {
-  font-family: 'Inter', 'Satoshi', system-ui, sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(100, 116, 139, 0.9);
-  margin: 0 0 16px 0;
-}
-
-/* ────────────────────────────────────────────────────────────────────────── */
-/* STRATEGIC POSTURE PANEL */
-/* ────────────────────────────────────────────────────────────────────────── */
-
-.posturePanel {
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
-  padding: 24px;
-}
-
-.postureGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+/* ── HEADER ── */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 24px;
 }
 
-.postureMetric {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.headerLeft {
+  flex: 1;
 }
 
-.postureValue {
-  font-family: 'Inter', system-ui, sans-serif;
-  font-size: 32px;
+.title {
+  font-size: 22px;
   font-weight: 600;
-  color: #22d3ee;
-  line-height: 1.2;
+  color: rgba(255, 255, 255, 0.92);
+  letter-spacing: -0.02em;
+  margin: 0 0 6px;
 }
 
-.postureLabel {
-  font-size: 12px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: rgba(148, 163, 184, 0.8);
-}
-
-.postureExplanation {
-  font-size: 13px;
+.subtitle {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
   line-height: 1.5;
-  color: rgba(148, 163, 184, 0.6);
-  font-style: italic;
 }
 
-/* ────────────────────────────────────────────────────────────────────────── */
-/* ASSESSMENT MOUNTAIN PANEL */
-/* ────────────────────────────────────────────────────────────────────────── */
-
-.mountainPanel {
-  background: rgba(15, 23, 42, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  border-radius: 12px;
-  padding: 24px;
-}
-
-.mountainLabel {
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: rgba(100, 116, 139, 0.8);
-  margin-bottom: 16px;
-}
-
-.mountainCanvas {
-  width: 100%;
-  height: 400px;
-  border-radius: 8px;
-  overflow: hidden;
-  background: rgba(0, 0, 0, 0.3);
-}
-
-/* ────────────────────────────────────────────────────────────────────────── */
-/* STRUCTURAL DIAGNOSIS PANEL */
-/* ────────────────────────────────────────────────────────────────────────── */
-
-.diagnosisPanel {
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
-  padding: 24px;
-}
-
-.diagnosisList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.diagnosisItem {
-  font-size: 15px;
-  line-height: 1.6;
-  color: rgba(226, 232, 240, 0.9);
-  padding-left: 20px;
-  position: relative;
-}
-
-.diagnosisItem::before {
-  content: '•';
-  position: absolute;
-  left: 0;
-  font-size: 18px;
-  line-height: 1.4;
-}
-
-.diagnosisItem[data-type="strength"]::before {
-  color: #10b981;
-}
-
-.diagnosisItem[data-type="fragility"]::before {
-  color: #f87171;
-}
-
-.diagnosisItem[data-type="neutral"]::before {
-  color: #22d3ee;
-}
-
-/* ────────────────────────────────────────────────────────────────────────── */
-/* CAPITAL VIEW (COLLAPSIBLE) */
-/* ────────────────────────────────────────────────────────────────────────── */
-
-.capitalPanel {
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.capitalHeader {
-  width: 100%;
+.headerRight {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 24px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  transition: background 120ms ease;
+  gap: 20px;
+  flex-shrink: 0;
 }
 
-.capitalHeader:hover {
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.capitalHeader .sectionHeader {
-  margin: 0;
-}
-
-.capitalHeader svg {
-  color: rgba(148, 163, 184, 0.6);
-}
-
-.capitalTable {
-  padding: 0 24px 24px 24px;
+.headerMetrics {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.capitalRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 6px;
-}
-
-.capitalLabel {
-  font-size: 13px;
-  color: rgba(148, 163, 184, 0.8);
-  font-weight: 500;
-}
-
-.capitalValue {
-  font-size: 16px;
-  font-weight: 600;
-  color: #22d3ee;
-}
-
-/* ────────────────────────────────────────────────────────────────────────── */
-/* STRATEGIC LEVERAGE PANEL */
-/* ────────────────────────────────────────────────────────────────────────── */
-
-.leveragePanel {
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
-  padding: 24px;
-}
-
-.leverageGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 20px;
 }
 
-.leverageCard {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  border-radius: 8px;
+.headerMetric {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.headerMetricValue {
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.headerMetricLabel {
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ── ADVANCED TOGGLE ── */
+.advancedToggle {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  color: rgba(34, 211, 238, 0.7);
+  background: rgba(34, 211, 238, 0.06);
+  border: 1px solid rgba(34, 211, 238, 0.12);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 180ms ease;
+  white-space: nowrap;
+}
+
+.advancedToggle:hover {
+  background: rgba(34, 211, 238, 0.1);
+  border-color: rgba(34, 211, 238, 0.2);
+  color: rgba(34, 211, 238, 0.9);
+}
+
+.advancedToggleActive {
+  background: rgba(34, 211, 238, 0.1);
+  border-color: rgba(34, 211, 238, 0.25);
+  color: rgba(34, 211, 238, 0.9);
+}
+
+/* ── SECTIONS ── */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.sectionSubtitle {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.4);
+  margin: -10px 0 0;
+  padding-left: 22px;
+}
+
+.sectionDot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.sectionDot[data-tone="positive"] {
+  background: rgba(16, 185, 129, 0.7);
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.25);
+}
+
+.sectionDot[data-tone="risk"] {
+  background: rgba(239, 68, 68, 0.65);
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.2);
+}
+
+.sectionDot[data-tone="action"] {
+  background: rgba(34, 211, 238, 0.7);
+  box-shadow: 0 0 6px rgba(34, 211, 238, 0.25);
+}
+
+/* ── CARD GRID ── */
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .cardGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── CARDS ── */
+.card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
   padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
+  transition: border-color 200ms ease, background 200ms ease;
 }
 
-.leverageLever {
-  font-size: 16px;
+.card:hover {
+  background: rgba(255, 255, 255, 0.035);
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+.card[data-tone="positive"] {
+  border-left: 2px solid rgba(16, 185, 129, 0.25);
+}
+
+.card[data-tone="risk"] {
+  border-left: 2px solid rgba(239, 68, 68, 0.2);
+}
+
+.card[data-tone="action"] {
+  border-left: 2px solid rgba(34, 211, 238, 0.25);
+}
+
+.cardHeadline {
+  font-size: 14px;
   font-weight: 600;
-  color: rgba(226, 232, 240, 0.95);
+  color: rgba(255, 255, 255, 0.88);
+  margin: 0;
+  line-height: 1.4;
 }
 
-.leverageImpact {
+.cardDetail {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.52);
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* ── PRIORITY BADGE ── */
+.priorityBadge {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(34, 211, 238, 0.08);
+  border: 1px solid rgba(34, 211, 238, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(34, 211, 238, 0.8);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── ADVANCED EXPANSION ── */
+.advancedExpansion {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  margin-top: 4px;
+}
+
+.advancedTag {
+  font-size: 11px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: rgba(34, 211, 238, 0.6);
+  background: rgba(34, 211, 238, 0.04);
+  border: 1px solid rgba(34, 211, 238, 0.08);
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+/* ── WATCHPOINT ── */
+.watchpoint {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 20px 24px;
+  background: rgba(239, 68, 68, 0.03);
+  border: 1px solid rgba(239, 68, 68, 0.1);
+  border-radius: 10px;
+  margin-top: 8px;
+}
+
+.watchpointIcon {
+  font-size: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  opacity: 0.7;
+}
+
+.watchpointContent {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.leverageEV {
-  font-size: 18px;
-  font-weight: 700;
-  color: #10b981;
-}
-
-.leverageSurvival {
-  font-size: 14px;
+.watchpointLabel {
+  font-size: 12px;
   font-weight: 600;
-  color: #22d3ee;
-}
-
-.leverageExplanation {
-  font-size: 13px;
-  line-height: 1.5;
-  color: rgba(148, 163, 184, 0.7);
-  font-style: italic;
-}
-
-/* ────────────────────────────────────────────────────────────────────────── */
-/* INTELLIGENCE SUMMARY STRIP */
-/* ────────────────────────────────────────────────────────────────────────── */
-
-.summaryStrip {
-  background: rgba(79, 70, 229, 0.08);
-  border: 1px solid rgba(79, 70, 229, 0.2);
-  border-radius: 12px;
-  padding: 24px;
-}
-
-.summaryHeader {
-  font-size: 13px;
-  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: rgba(165, 180, 252, 0.9);
-  margin: 0 0 16px 0;
-}
-
-.summaryList {
-  list-style: none;
-  padding: 0;
+  letter-spacing: 0.06em;
+  color: rgba(239, 68, 68, 0.7);
   margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
 }
 
-.summaryItem {
+.watchpointText {
   font-size: 14px;
-  line-height: 1.6;
-  color: rgba(226, 232, 240, 0.85);
-  padding-left: 20px;
-  position: relative;
+  color: rgba(255, 255, 255, 0.65);
+  margin: 0;
+  line-height: 1.55;
 }
 
-.summaryItem::before {
-  content: '▸';
-  position: absolute;
-  left: 0;
-  color: rgba(165, 180, 252, 0.6);
-}
-
-/* ────────────────────────────────────────────────────────────────────────── */
-/* EMPTY STATE */
-/* ────────────────────────────────────────────────────────────────────────── */
-
+/* ── EMPTY STATE ── */
 .emptyState {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 60vh;
+  gap: 16px;
+  padding: 60px 40px;
   text-align: center;
-  padding: 48px 24px;
 }
 
 .emptyIcon {
-  margin-bottom: 24px;
-  opacity: 0.6;
+  opacity: 0.5;
+  margin-bottom: 8px;
 }
 
 .emptyTitle {
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 600;
-  color: rgba(226, 232, 240, 0.9);
-  margin: 0 0 12px 0;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
 }
 
 .emptyDescription {
-  font-size: 15px;
-  color: rgba(148, 163, 184, 0.7);
-  margin: 0 0 32px 0;
-  max-width: 480px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.45);
+  margin: 0;
+  max-width: 360px;
+  line-height: 1.5;
 }
 
 .emptyAction {
-  padding: 12px 32px;
-  font-size: 14px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #22d3ee;
-  background: rgba(34, 211, 238, 0.1);
-  border: 1px solid rgba(34, 211, 238, 0.3);
-  border-radius: 8px;
+  margin-top: 12px;
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(34, 211, 238, 0.9);
+  background: rgba(34, 211, 238, 0.08);
+  border: 1px solid rgba(34, 211, 238, 0.15);
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 150ms ease;
+  transition: all 180ms ease;
 }
 
 .emptyAction:hover {
-  background: rgba(34, 211, 238, 0.15);
-  border-color: rgba(34, 211, 238, 0.5);
+  background: rgba(34, 211, 238, 0.14);
+  border-color: rgba(34, 211, 238, 0.3);
 }
-

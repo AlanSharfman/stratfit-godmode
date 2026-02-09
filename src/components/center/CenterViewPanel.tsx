@@ -28,7 +28,6 @@ interface ScenarioData {
 
 // Tab Components
 import { RiskTab } from "@/components/Risk";
-import DecidePage from "@/app/decide/page";
 import { ValuationTab } from "@/components/valuation";
 import { ImpactGodMode } from "@/components/impact";
 
@@ -289,13 +288,6 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
         {view === "risk" && (
           <div className="h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-linear-to-br from-slate-950/60 to-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
             <RiskTab />
-          </div>
-        )}
-
-        {/* DECIDE - full decision experience */}
-        {view === "decision" && (
-          <div className="h-full w-full overflow-hidden rounded-3xl border border-slate-700/40 bg-black shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
-            <DecidePage />
           </div>
         )}
 

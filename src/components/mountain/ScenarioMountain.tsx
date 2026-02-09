@@ -28,6 +28,7 @@ import { useShallow } from "zustand/react/shallow";
 import { buildPeakModel, LeverId } from "@/logic/mountainPeakModel";
 import { Scenario, ScenarioId, useScenarioStore } from "@/state/scenarioStore";
 import { useUIStore } from "@/state/uiStore";
+import { useSimulationStore } from "@/state/simulationStore";
 import { engineResultToMountainForces } from "@/logic/mountainForces";
 
 // ============================================================================
@@ -277,6 +278,7 @@ interface TerrainProps {
   opacityMultiplier?: number; // Mode control
   wireOpacityMultiplier?: number; // Mode control
   glowMultiplier?: number; // Mode control
+  isRecalibrating?: boolean; // Structural recalibration — slows morph for settlement easing
 }
 
 const Terrain: React.FC<TerrainProps> = ({
@@ -294,6 +296,7 @@ const Terrain: React.FC<TerrainProps> = ({
   opacityMultiplier = 1,
   wireOpacityMultiplier = 1,
   glowMultiplier = 1,
+  isRecalibrating = false,
 }) => {
   const groupRef = useRef<THREE.Group>(null);
   const meshFillRef = useRef<THREE.Mesh>(null);
@@ -411,6 +414,8 @@ const Terrain: React.FC<TerrainProps> = ({
   const breathTimeRef = useRef(0);
   const fxTimeRef = useRef(0);
   const normalsAccumRef = useRef(0);
+  // Settlement easing: lambda ramps smoothly between recalibrating (slow) and idle (snappy)
+  const settlementLambdaRef = useRef(10);
   
   useFrame((_, delta) => {
     if (!meshFillRef.current || !meshWireRef.current) return;
@@ -449,7 +454,14 @@ const Terrain: React.FC<TerrainProps> = ({
 
     // Frame-rate independent smoothing (prevents "jitter" when FPS varies).
     const dt = Math.min(0.05, Math.max(0.001, delta)); // cap delta to avoid jumps
-    const lambda = 10; // higher = snappier interpolation
+    // ── SETTLEMENT EASING ──
+    // During recalibration: lambda = 3.5 (slow, gravitational morph)
+    // On completion: lambda eases back to 10 over ~500ms (cubic-bezier feel)
+    // cubic-bezier(0.22, 0.61, 0.36, 1) ≈ ease-out-quart approximation
+    const targetLambda = isRecalibrating ? 3.5 : 10;
+    const lambdaEaseRate = isRecalibrating ? 6 : 2.5; // drops fast, recovers slow
+    settlementLambdaRef.current += (targetLambda - settlementLambdaRef.current) * Math.min(1, dt * lambdaEaseRate);
+    const lambda = settlementLambdaRef.current;
     const alpha = 1 - Math.exp(-lambda * dt);
 
     for (let i = 0; i < count; i++) {
@@ -762,6 +774,58 @@ function GhostTerrain({ isVisible, opacityMultiplier = 1 }: { isVisible: boolean
 }
 
 // ============================================================================
+// RECALIBRATION SCAN LINE — Thin horizontal sweep (structural signal)
+// Passes once across the mountain during recalibration. No glow burst.
+// ============================================================================
+
+function RecalibrationScanLine({ active }: { active: boolean }) {
+  const lineRef = useRef<THREE.Mesh>(null);
+  const progressRef = useRef(0);
+  const wasActiveRef = useRef(false);
+
+  useFrame((_, delta) => {
+    if (!lineRef.current) return;
+
+    // Reset sweep on new activation
+    if (active && !wasActiveRef.current) {
+      progressRef.current = 0;
+    }
+    wasActiveRef.current = active;
+
+    if (active && progressRef.current < 1) {
+      // Single sweep: y = -4 → +7 over ~2.2 seconds
+      progressRef.current = Math.min(1, progressRef.current + delta / 2.2);
+      const y = -4 + progressRef.current * 11;
+      lineRef.current.position.y = y;
+
+      // Fade envelope: soft in, hold, soft out — no abrupt edges
+      const t = progressRef.current;
+      const envelope = t < 0.06 ? t / 0.06
+        : t > 0.90 ? (1 - t) / 0.10
+        : 1;
+      const mat = lineRef.current.material as THREE.MeshBasicMaterial;
+      mat.opacity = envelope * 0.30;
+      lineRef.current.visible = true;
+    } else {
+      lineRef.current.visible = false;
+    }
+  });
+
+  return (
+    <mesh ref={lineRef} visible={false}>
+      <planeGeometry args={[55, 0.05]} />
+      <meshBasicMaterial
+        color="#22d3ee"
+        transparent
+        opacity={0}
+        side={THREE.DoubleSide}
+        depthWrite={false}
+      />
+    </mesh>
+  );
+}
+
+// ============================================================================
 // DIGITAL HORIZON — Infinite Floor Grid + Data Dust (Scenario-Aware)
 // ============================================================================
 
@@ -773,26 +837,39 @@ const SCENARIO_GRID_COLORS: Record<ScenarioId, string> = {
   stress: "#f87171",   // Red
 };
 
-function DigitalHorizon({ scenarioId, glowMultiplier = 1, baseOpacity = 1 }: { scenarioId: ScenarioId; glowMultiplier?: number; baseOpacity?: number }) {
+function DigitalHorizon({ scenarioId, glowMultiplier = 1, baseOpacity = 1, isRecalibrating = false }: { scenarioId: ScenarioId; glowMultiplier?: number; baseOpacity?: number; isRecalibrating?: boolean }) {
   const gridColor = SCENARIO_GRID_COLORS[scenarioId] || SCENARIO_GRID_COLORS.base;
   const lightColor = SCENARIO_PALETTE_COLORS[scenarioId]?.idle || "#22d3ee";
+  const gridGroupRef = useRef<THREE.Group>(null);
+
+  // Grid micro-shift during recalibration — very subtle structural signal
+  useFrame((_, delta) => {
+    if (!gridGroupRef.current) return;
+    const targetX = isRecalibrating ? 0.035 : 0;
+    const targetZ = isRecalibrating ? 0.025 : 0;
+    const ease = Math.min(1, delta * 3);
+    gridGroupRef.current.position.x += (targetX - gridGroupRef.current.position.x) * ease;
+    gridGroupRef.current.position.z += (targetZ - gridGroupRef.current.position.z) * ease;
+  });
   
   return (
     <>
       {/* 1. The Infinite Floor Grid — Color matches scenario */}
-      <Grid 
-      position={[0, -2.5, 0]} 
-        args={[50, 50]}
-        cellSize={1} 
-        cellThickness={0.8} 
-        cellColor="#1e293b"
-        sectionSize={5} 
-        sectionThickness={1.5} 
-        sectionColor={gridColor}  // Dynamic scenario color
-        fadeDistance={40}
-        fadeStrength={1.2}
-        infiniteGrid
-      />
+      <group ref={gridGroupRef}>
+        <Grid 
+        position={[0, -2.5, 0]} 
+          args={[50, 50]}
+          cellSize={1} 
+          cellThickness={0.8} 
+          cellColor="#1e293b"
+          sectionSize={5} 
+          sectionThickness={1.5} 
+          sectionColor={gridColor}  // Dynamic scenario color
+          fadeDistance={40}
+          fadeStrength={1.2}
+          infiniteGrid
+        />
+      </group>
       
       {/* 2. NEURAL CONSTELLATION — Floating nodes that connect when simulating */}
       <NeuralBackground />
@@ -999,6 +1076,10 @@ export function ScenarioMountain({
 
   const solverPath = useScenarioStore((s) => s.solverPath);
 
+  // ── RECALIBRATION STATE — structural signal from simulation engine ──
+  const isSimulating = useSimulationStore((s) => s.isSimulating);
+  const isRecalibrating = isSimulating;
+
   // ═══════════════════════════════════════════════════════════════════════
   // INSTRUMENT MODE — Compact diagnostic terrain (Initialize page)
   // No overlays, no haze, no grid, no paths. Mesh + wireframe + slow rotation.
@@ -1129,10 +1210,14 @@ export function ScenarioMountain({
           opacityMultiplier={terrainOpacityMultiplier}
           wireOpacityMultiplier={wireOpacityMultiplier}
           glowMultiplier={glowMultiplier}
+          isRecalibrating={isRecalibrating}
         />
         </CinematicController>
+
+        {/* Structural recalibration scan line — single sweep during simulation */}
+        <RecalibrationScanLine active={isRecalibrating} />
         
-        <DigitalHorizon scenarioId={scenarioId} glowMultiplier={glowMultiplier} baseOpacity={terrainOpacityMultiplier} />
+        <DigitalHorizon scenarioId={scenarioId} glowMultiplier={glowMultiplier} baseOpacity={terrainOpacityMultiplier} isRecalibrating={isRecalibrating} />
 
         {/* Strategic Path + Milestones overlays */}
         {showPath ? (

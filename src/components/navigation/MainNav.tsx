@@ -7,7 +7,6 @@ import {
   Zap,
   GitCompare,
   DollarSign,
-  CheckCircle,
   Activity,
   FileText,
   Save,
@@ -96,18 +95,11 @@ const primaryNav: NavItem[] = [
     description: 'Calculate your worth',
   },
   {
-    id: 'decision',
-    label: 'DECISION',
-    href: '/decision',
-    icon: <CheckCircle className="w-4 h-4" />,
-    description: 'Make your decision',
-  },
-  {
     id: 'assessment',
-    label: 'ASSESSMENT',
+    label: 'STRATEGIC ASSESSMENT',
     href: '/assessment',
     icon: <FileText className="w-4 h-4" />,
-    description: 'Strategic intelligence brief',
+    description: 'Strengths, vulnerabilities & priority focus',
   },
 ]
 
