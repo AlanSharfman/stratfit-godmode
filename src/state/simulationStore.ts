@@ -3,6 +3,7 @@
 // Persists Monte Carlo results for use across the dashboard
 
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { MonteCarloResult } from '@/logic/monteCarloEngine';
 import type { Verdict } from '@/logic/verdictGenerator';
 
@@ -136,123 +137,153 @@ function generateRunId(): string {
   return `run-${ts}-${rand}`;
 }
 
-export const useSimulationStore = create<SimulationState>((set, get) => ({
-  // Initial state
-  hasSimulated: false,
-  isSimulating: false,
-  lastSimulationTime: null,
-  simulationCount: 0,
-  simulationStatus: "idle" as SimulationStatus,
-  runMeta: null,
-  fullResult: null,
-  fullVerdict: null,
-  summary: null,
-  leverSnapshot: null,
-  
-  // Start simulation (for loading state — legacy compat)
-  startSimulation: () => set({
-    isSimulating: true,
-    simulationStatus: "running",
-  }),
-  
-  // ── Begin a new run (sets status + runMeta) ──
-  beginRun: ({ timeHorizonMonths, paths, seedLocked }) => set({
-    isSimulating: true,
-    simulationStatus: "running",
-    runMeta: {
-      runId: generateRunId(),
-      timeHorizonMonths,
-      paths,
-      seedLocked,
-      startedAt: performance.now(),
-      completedAt: null,
-      durationMs: null,
-      survivalDelta: null,
-      runwayDelta: null,
-      topDriverLabel: null,
-    },
-  }),
-
-  // ── Complete run (populate safe deltas from previous run) ──
-  completeRun: (result, verdict) => {
-    const prev = get();
-    const prevSurvival = prev.fullResult ? Math.round(prev.fullResult.survivalRate * 100) : null;
-    const prevRunway = prev.fullResult ? prev.fullResult.runwayPercentiles.p50 : null;
-    const newSurvival = Math.round(result.survivalRate * 100);
-    const newRunway = result.runwayPercentiles.p50;
-
-    const topDriver = result.sensitivityFactors
-      ?.slice()
-      .sort((a, b) => Math.abs(b.impact) - Math.abs(a.impact))[0]?.label ?? null;
-
-    const now = performance.now();
-    const startedAt = prev.runMeta?.startedAt ?? now;
-
-    set({
+export const useSimulationStore = create<SimulationState>()(
+  persist(
+    (set, get) => ({
+      // Initial state
+      hasSimulated: false,
       isSimulating: false,
-      simulationStatus: "complete",
-      runMeta: {
-        ...(prev.runMeta ?? {
+      lastSimulationTime: null,
+      simulationCount: 0,
+      simulationStatus: "idle" as SimulationStatus,
+      runMeta: null,
+      fullResult: null,
+      fullVerdict: null,
+      summary: null,
+      leverSnapshot: null,
+
+      // Start simulation (for loading state — legacy compat)
+      startSimulation: () => set({
+        isSimulating: true,
+        simulationStatus: "running",
+      }),
+
+      // ── Begin a new run (sets status + runMeta) ──
+      beginRun: ({ timeHorizonMonths, paths, seedLocked }) => set({
+        isSimulating: true,
+        simulationStatus: "running",
+        runMeta: {
           runId: generateRunId(),
-          timeHorizonMonths: result.timeHorizonMonths,
-          paths: result.iterations,
-          seedLocked: true,
-          startedAt,
-        }),
-        completedAt: now,
-        durationMs: Math.round(now - startedAt),
-        survivalDelta: prevSurvival !== null ? newSurvival - prevSurvival : null,
-        runwayDelta: prevRunway !== null ? Math.round((newRunway - prevRunway) * 10) / 10 : null,
-        topDriverLabel: topDriver,
+          timeHorizonMonths,
+          paths,
+          seedLocked,
+          startedAt: performance.now(),
+          completedAt: null,
+          durationMs: null,
+          survivalDelta: null,
+          runwayDelta: null,
+          topDriverLabel: null,
+        },
+      }),
+
+      // ── Complete run (populate safe deltas from previous run) ──
+      completeRun: (result, verdict) => {
+        const prev = get();
+        const prevSurvival = prev.fullResult ? Math.round(prev.fullResult.survivalRate * 100) : null;
+        const prevRunway = prev.fullResult ? prev.fullResult.runwayPercentiles.p50 : null;
+        const newSurvival = Math.round(result.survivalRate * 100);
+        const newRunway = result.runwayPercentiles.p50;
+
+        const topDriver = result.sensitivityFactors
+          ?.slice()
+          .sort((a, b) => Math.abs(b.impact) - Math.abs(a.impact))[0]?.label ?? null;
+
+        const now = performance.now();
+        const startedAt = prev.runMeta?.startedAt ?? now;
+
+        set({
+          isSimulating: false,
+          simulationStatus: "complete",
+          runMeta: {
+            ...(prev.runMeta ?? {
+              runId: generateRunId(),
+              timeHorizonMonths: result.timeHorizonMonths,
+              paths: result.iterations,
+              seedLocked: true,
+              startedAt,
+            }),
+            completedAt: now,
+            durationMs: Math.round(now - startedAt),
+            survivalDelta: prevSurvival !== null ? newSurvival - prevSurvival : null,
+            runwayDelta: prevRunway !== null ? Math.round((newRunway - prevRunway) * 10) / 10 : null,
+            topDriverLabel: topDriver,
+          },
+        });
       },
-    });
-  },
 
-  // ── Mark run as failed ──
-  failRun: (_errorMessage?: string) => set({
-    simulationStatus: "error",
-    isSimulating: false,
-  }),
+      // ── Mark run as failed ──
+      failRun: (_errorMessage?: string) => set({
+        simulationStatus: "error",
+        isSimulating: false,
+      }),
 
-  // Save simulation results
-  setSimulationResult: (result, verdict, levers) => set({
-    hasSimulated: true,
-    isSimulating: false,
-    lastSimulationTime: new Date(),
-    simulationCount: get().simulationCount + 1,
-    fullResult: result,
-    fullVerdict: verdict,
-    summary: createSummary(result, verdict),
-    leverSnapshot: { ...levers },
-  }),
-  
-  // Clear simulation (when user wants fresh start)
-  clearSimulation: () => set({
-    hasSimulated: false,
-    isSimulating: false,
-    lastSimulationTime: null,
-    simulationStatus: "idle",
-    runMeta: null,
-    fullResult: null,
-    fullVerdict: null,
-    summary: null,
-    leverSnapshot: null,
-  }),
-  
-  // Check if current levers match the simulated levers
-  hasResultsForCurrentLevers: (currentLevers) => {
-    const snapshot = get().leverSnapshot;
-    if (!snapshot) return false;
-    
-    // Check if all lever values are the same
-    for (const key of Object.keys(currentLevers)) {
-      if (snapshot[key] !== currentLevers[key]) {
-        return false;
-      }
+      // Save simulation results
+      setSimulationResult: (result, verdict, levers) => set({
+        hasSimulated: true,
+        isSimulating: false,
+        lastSimulationTime: new Date(),
+        simulationCount: get().simulationCount + 1,
+        fullResult: result,
+        fullVerdict: verdict,
+        summary: createSummary(result, verdict),
+        leverSnapshot: { ...levers },
+      }),
+
+      // Clear simulation (when user wants fresh start)
+      clearSimulation: () => set({
+        hasSimulated: false,
+        isSimulating: false,
+        lastSimulationTime: null,
+        simulationStatus: "idle",
+        runMeta: null,
+        fullResult: null,
+        fullVerdict: null,
+        summary: null,
+        leverSnapshot: null,
+      }),
+
+      // Check if current levers match the simulated levers
+      hasResultsForCurrentLevers: (currentLevers) => {
+        const snapshot = get().leverSnapshot;
+        if (!snapshot) return false;
+
+        // Check if all lever values are the same
+        for (const key of Object.keys(currentLevers)) {
+          if (snapshot[key] !== currentLevers[key]) {
+            return false;
+          }
+        }
+        return true;
+      },
+    }),
+    {
+      name: 'stratfit-simulation',
+      version: 1,
+      partialize: (s) => ({
+        hasSimulated: s.hasSimulated,
+        simulationCount: s.simulationCount,
+        simulationStatus: s.simulationStatus,
+        runMeta: s.runMeta,
+        fullResult: s.fullResult,
+        fullVerdict: s.fullVerdict,
+        summary: s.summary,
+        leverSnapshot: s.leverSnapshot,
+        // We intentionally do NOT persist isSimulating or lastSimulationTime.
+      }),
+      merge: (persisted, current) => ({
+        ...current,
+        ...(persisted as Partial<SimulationState>),
+        // Never resurrect a "running" sim after reload.
+        isSimulating: false,
+        lastSimulationTime: null,
+        simulationStatus:
+          (persisted as any)?.simulationStatus === "running"
+            ? "idle"
+            : ((persisted as any)?.simulationStatus ?? current.simulationStatus),
+      }),
     }
-    return true;
-  },
-}));
+  )
+);
 
 // Selector hooks for specific data
 export const useSimulationSummary = () => useSimulationStore((s) => s.summary);
