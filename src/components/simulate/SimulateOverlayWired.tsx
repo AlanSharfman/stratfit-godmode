@@ -54,14 +54,14 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
   const [scenarioName, setScenarioName] = useState('');
 
   // Connect to simulation store
-  const { setSimulationResult, startSimulation: storeStartSimulation, beginRun, completeRun, failRun } = useSimulationStore();
+  const { setSimulationResult, beginRun, completeRun, failRun } = useSimulationStore();
   
   // Connect to saved simulations store
   const saveSimulation = useSavedSimulationsStore((s) => s.saveSimulation);
   const setAsBaseline = useSavedSimulationsStore((s) => s.setAsBaseline);
   const savedSimulations = useSavedSimulationsStore((s) => s.simulations);
   
-  // Connect to scenario store (for COMPARE/RISK/DECISION tabs)
+  // Connect to scenario store (for COMPARE/RISK/ASSESSMENT surfaces)
   const saveAsBaselineToScenario = useScenarioStore((s) => s.saveAsBaseline);
   const saveScenarioToStore = useScenarioStore((s) => s.saveScenario);
   const hasLegacyBaseline = useScenarioStore((s) => s.baseline !== null);
@@ -104,7 +104,6 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
     setIterationCount(0);
     setResult(null);
     setVerdict(null);
-    storeStartSimulation();
     // ── Telemetry: begin run (single source of truth) ──
     beginRun({
       timeHorizonMonths: config.timeHorizonMonths,
@@ -159,7 +158,7 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
       emitCompute("terrain_simulation", "error");
       setPhase('idle');
     }
-  }, [levers, leversAsSnapshot, config, setSimulationResult, storeStartSimulation, beginRun, completeRun, failRun]);
+  }, [levers, leversAsSnapshot, config, setSimulationResult, beginRun, completeRun, failRun]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // SAVE AS BASELINE - SAVES TO BOTH STORES
@@ -201,7 +200,7 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
       setAsBaseline(saved.id);
     }
     
-    // 2. ALSO save to scenarioStore (enables COMPARE/RISK/DECISION tabs)
+    // 2. ALSO save to scenarioStore (enables COMPARE/RISK/ASSESSMENT surfaces)
     saveAsBaselineToScenario(
       `Baseline (${timestamp})`,
       leversAsSnapshot,
@@ -495,7 +494,7 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
               <div className="simulate-baseline-hint">
                 <Star size={16} />
                 <span>
-                  <strong>Tip:</strong> Save as baseline to unlock COMPARE, RISK, and DECISION tabs.
+                  <strong>Tip:</strong> Save as baseline to unlock COMPARE, RISK, and STRATEGIC ASSESSMENT.
                 </span>
               </div>
             )}

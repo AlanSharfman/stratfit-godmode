@@ -557,9 +557,10 @@ export default function App() {
     typeof window !== "undefined" &&
     window.localStorage.getItem("ENABLE_SCENARIO_INTELLIGENCE") === "1";
 
-  // ── RECALIBRATION STATE — structural compute signal ──
-  const isSimulatingGlobal = useSimulationStore((s) => s.isSimulating);
+  // ── RECALIBRATION STATE — structural compute signal (single source of truth) ──
+  // IMPORTANT: We key stage-isolation off simulationStatus to avoid "stuck UI" if isSimulating ever desyncs.
   const simulationStatusGlobal = useSimulationStore((s) => s.simulationStatus);
+  const isSimulatingGlobal = simulationStatusGlobal === "running";
 
   const [scenario, setScenario] = useState<ScenarioId>("base");
   const [activeScenarioType, setActiveScenarioType] = useState<ScenarioType>("current-trajectory");

@@ -152,6 +152,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
   // Start simulation (for loading state — legacy compat)
   startSimulation: () => set({
     isSimulating: true,
+    simulationStatus: "running",
   }),
   
   // ── Begin a new run (sets status + runMeta) ──
@@ -188,6 +189,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
     const startedAt = prev.runMeta?.startedAt ?? now;
 
     set({
+      isSimulating: false,
       simulationStatus: "complete",
       runMeta: {
         ...(prev.runMeta ?? {

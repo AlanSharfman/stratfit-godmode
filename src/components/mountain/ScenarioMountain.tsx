@@ -1076,9 +1076,10 @@ export function ScenarioMountain({
 
   const solverPath = useScenarioStore((s) => s.solverPath);
 
-  // ── RECALIBRATION STATE — structural signal from simulation engine ──
-  const isSimulating = useSimulationStore((s) => s.isSimulating);
-  const isRecalibrating = isSimulating;
+  // ── RECALIBRATION STATE — structural signal from simulation engine (single source of truth) ──
+  // Key off simulationStatus to prevent any accidental "stuck" pointer-events dim if isSimulating desyncs.
+  const simulationStatus = useSimulationStore((s) => s.simulationStatus);
+  const isRecalibrating = simulationStatus === "running";
 
   // ═══════════════════════════════════════════════════════════════════════
   // INSTRUMENT MODE — Compact diagnostic terrain (Initialize page)

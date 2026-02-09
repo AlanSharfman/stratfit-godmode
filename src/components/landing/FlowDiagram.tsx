@@ -1,6 +1,6 @@
 // src/components/landing/FlowDiagram.tsx
 // STRATFIT — Flow Diagram Component
-// 7-screen user journey: TERRAIN → SIMULATE → COMPARE → RISK → VALUATION → DECISION → EXPORT
+// 7-screen user journey: TERRAIN → SIMULATE → COMPARE → RISK → VALUATION → STRATEGIC ASSESSMENT → EXPORT
 // Inspired by Gemini flow diagram style
 
 import React, { useState } from 'react';
@@ -73,14 +73,14 @@ export const FLOW_STEPS: FlowStep[] = [
     features: ['Multiple methods', 'Dilution calculator', 'Market comparables', 'Exit scenarios'],
   },
   {
-    id: 'decision',
+    id: 'assessment',
     number: 6,
-    title: 'DECISION',
-    subtitle: 'AI-Powered Verdict',
-    description: 'Get your strategic path: Growth, Stability, or Survival. With action items.',
-    icon: '🎯',
-    color: '#06b6d4',
-    features: ['Path recommendation', 'Confidence score', 'Top 3 actions', 'Why not other paths'],
+    title: 'STRATEGIC ASSESSMENT',
+    subtitle: 'Structured Brief',
+    description: 'A clear summary of strengths, vulnerabilities, and the next focus. Founder-first language.',
+    icon: '📄',
+    color: '#22d3ee',
+    features: ['3 strengths', '3 vulnerabilities', '3 priorities', 'Watchpoint'],
   },
   {
     id: 'export',

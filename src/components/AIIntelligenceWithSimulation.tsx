@@ -22,7 +22,8 @@ export default function AIIntelligenceWithSimulation({
 }: AIIntelligenceWithSimulationProps) {
   const hasSimulated = useHasSimulated();
   const summary = useSimulationSummary();
-  const isSimulating = useSimulationStore((s) => s.isSimulating);
+  const simulationStatus = useSimulationStore((s) => s.simulationStatus);
+  const isSimulating = simulationStatus === "running";
   const lastTime = useSimulationStore((s) => s.lastSimulationTime);
 
   // Format helpers
