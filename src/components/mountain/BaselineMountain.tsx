@@ -32,6 +32,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera, Grid } from "@react-three/drei";
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
 import * as THREE from "three";
+import type { SimulationStatus } from "@/state/simulationStore";
 
 // ============================================================================
 // CONSTANTS — HIGH-FIDELITY INSTITUTIONAL TERRAIN
@@ -329,6 +330,7 @@ interface InstitutionalTerrainProps {
   varianceWidth: number;      // 0–1: Monte Carlo dispersion width
   runwayMonths: number;       // Months of runway remaining
   maxHorizonMonths: number;   // Planning horizon (36)
+  computeState: SimulationStatus; // Cinematic compute state
 }
 
 function InstitutionalTerrain({
@@ -337,13 +339,18 @@ function InstitutionalTerrain({
   varianceWidth,
   runwayMonths,
   maxHorizonMonths,
+  computeState,
 }: InstitutionalTerrainProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const wireRef = useRef<THREE.Mesh>(null);
   const dispersionRef = useRef<THREE.Mesh>(null);
   const runwayBeamRef = useRef<THREE.Mesh>(null);
   const stressGlowRef = useRef<THREE.PointLight>(null);
+  const scanSweepRef = useRef<THREE.Mesh>(null);
+  const runwayGlowRef = useRef<THREE.PointLight>(null);
   const maxHeightRef = useRef(1);
+  // Easing factor for smooth transitions (0 = idle, 1 = fully active)
+  const computeIntensityRef = useRef(0);
 
   // ── LAYER 1: High-res geometry (200×200) ──────────────────────────────
   const geometry = useMemo(() => {
@@ -391,31 +398,68 @@ function InstitutionalTerrain({
     return lerp(-MESH_W / 2, MESH_W / 2, t);
   }, [runwayMonths, maxHorizonMonths]);
 
-  // ── LAYER 3 + 4: Dispersion and stress underglow animation ───────────
+  // ── LAYER 3 + 4 + Compute State: Animation loop ─────────────────────
   const timeRef = useRef(0);
 
   useFrame((_, delta) => {
     timeRef.current += delta;
+    const t = timeRef.current;
+
+    // ── Compute state intensity easing ──
+    // Smoothly ramp to 1 when running, ease back to 0 on complete/idle
+    const targetIntensity = computeState === "running" ? 1 : 0;
+    const easeSpeed = computeState === "running" ? 2.5 : 1.6; // Faster ramp-up, gentle ease-out
+    computeIntensityRef.current += (targetIntensity - computeIntensityRef.current) * delta * easeSpeed;
+    const ci = computeIntensityRef.current; // 0–1 compute intensity
 
     // LAYER 3: Dispersion atmosphere opacity — almost invisible at calm,
-    // slightly denser under stress
+    // slightly denser under stress. During compute: subtle "breathing"
     if (dispersionRef.current) {
       const mat = dispersionRef.current.material as THREE.MeshBasicMaterial;
-      // Calm: 0.02 base. With variance: up to 0.10. Under stress: +0.04.
       const baseOpacity = 0.02 + varianceWidth * 0.08 + stressFactor * 0.04;
-      // Barely perceptible idle micro-drift (not animated pulsing)
-      const drift = Math.sin(timeRef.current * 0.3) * 0.005;
-      mat.opacity = clamp01(baseOpacity + drift);
+      const drift = Math.sin(t * 0.3) * 0.005;
+      // Compute breathing: gentle modulation during running state
+      const computeBreath = ci * Math.sin(t * 1.2) * 0.03;
+      mat.opacity = clamp01(baseOpacity + drift + computeBreath);
     }
 
-    // LAYER 4: Stress underglow — subtle point light in high-risk regions
+    // LAYER 4: Stress underglow
     if (stressGlowRef.current) {
-      // Only visible when stress is present; intensity scales smoothly
-      stressGlowRef.current.intensity = stressFactor * 0.6;
+      // During running + high stress: slightly more visible
+      const stressBoost = ci * stressFactor * 0.15;
+      stressGlowRef.current.intensity = stressFactor * 0.6 + stressBoost;
     }
 
-    // LAYER 5: Runway beam — static, no animation (authoritative, engineered)
-    // No-op: beam opacity is set once, no per-frame changes
+    // ── CINEMATIC: Scanning sweep plane ──
+    if (scanSweepRef.current) {
+      const mat = scanSweepRef.current.material as THREE.MeshBasicMaterial;
+      if (ci > 0.01) {
+        // Move sweep plane across the terrain surface (left → right, repeating)
+        const sweepCycle = (t * 0.4) % 1; // 0–1 cycle every ~2.5s
+        const sweepX = lerp(-MESH_W / 2, MESH_W / 2, sweepCycle);
+        scanSweepRef.current.position.x = sweepX;
+        mat.opacity = ci * 0.35; // Visible only when computing
+        scanSweepRef.current.visible = true;
+      } else {
+        scanSweepRef.current.visible = false;
+        mat.opacity = 0;
+      }
+    }
+
+    // ── CINEMATIC: Runway marker faint glow boost during compute ──
+    if (runwayGlowRef.current) {
+      // Faint additional glow during simulation running
+      runwayGlowRef.current.intensity = 0.15 + ci * 0.25;
+    }
+
+    // ── CINEMATIC: Contour definition boost during compute ──
+    // Handled via contour opacity multiplier (see contour rendering)
+    // wireframe opacity boost
+    if (wireRef.current) {
+      const mat = wireRef.current.material as THREE.MeshBasicMaterial;
+      // 5-10% boost during running
+      mat.opacity = 0.55 + ci * 0.06;
+    }
   });
 
   return (
@@ -533,6 +577,7 @@ function InstitutionalTerrain({
         </mesh>
         {/* Faint reflection — point light at mid-beam height */}
         <pointLight
+          ref={runwayGlowRef}
           color="#4fd1ff"
           intensity={0.15}
           distance={6}
@@ -540,6 +585,28 @@ function InstitutionalTerrain({
           position={[0, 0, maxHeightRef.current * 0.35]}
         />
       </group>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          CINEMATIC: Scanning sweep plane — thin cyan line moving across
+          surface during simulation running state.
+          Only visible when computeState === "running".
+          Eases out over 600ms when complete.
+          ═══════════════════════════════════════════════════════════════════ */}
+      <mesh
+        ref={scanSweepRef}
+        position={[-MESH_W / 2, 0, maxHeightRef.current * 0.7]}
+        visible={false}
+      >
+        <planeGeometry args={[0.12, MESH_D * 0.9]} />
+        <meshBasicMaterial
+          color="#4fd1ff"
+          transparent
+          opacity={0}
+          side={THREE.DoubleSide}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
     </group>
   );
 }
@@ -603,6 +670,7 @@ export interface BaselineMountainProps {
   runwayMonths?: number;            // Months of runway remaining
   maxHorizonMonths?: number;        // Planning horizon (default: 36)
   showGrid?: boolean;               // Optional analytical grid foundation
+  computeState?: SimulationStatus;  // Cinematic compute state (default: "idle")
   className?: string;
 }
 
@@ -613,6 +681,7 @@ export default function BaselineMountain({
   runwayMonths = 24,
   maxHorizonMonths = 36,
   showGrid = true,
+  computeState = "idle",
   className,
 }: BaselineMountainProps) {
 
@@ -691,6 +760,7 @@ export default function BaselineMountain({
               varianceWidth={varianceWidth}
               runwayMonths={runwayMonths}
               maxHorizonMonths={maxHorizonMonths}
+              computeState={computeState}
             />
           </IdleMicroMotion>
 

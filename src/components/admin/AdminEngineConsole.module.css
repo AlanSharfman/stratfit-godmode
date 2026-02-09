@@ -1,0 +1,222 @@
+/* AdminEngineConsole.module.css
+   ═══════════════════════════════════════════════════════════════════════════
+   Admin-only engine console — full config, integrity checks, raw traces.
+   Institutional charcoal glass. Monospace data. No toy effects.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.console {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  background: linear-gradient(180deg, #0E1116 0%, #11161D 100%);
+  min-height: 100vh;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* ── Gate screen ── */
+
+.gated {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  padding: 48px 24px;
+}
+
+.gatedIcon {
+  font-size: 48px;
+  margin-bottom: 24px;
+  opacity: 0.6;
+}
+
+.gatedTitle {
+  font-size: 22px;
+  font-weight: 600;
+  color: rgba(226, 232, 240, 0.9);
+  margin: 0 0 12px;
+}
+
+.gatedDesc {
+  font-size: 15px;
+  color: rgba(148, 163, 184, 0.7);
+  margin: 0;
+}
+
+/* ── Header ── */
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(226, 232, 240, 0.9);
+  margin: 0;
+}
+
+.badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  border-radius: 4px;
+  padding: 3px 10px;
+}
+
+/* ── Sections ── */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.sectionTitle {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(100, 116, 139, 0.85);
+  margin: 0;
+}
+
+/* ── Key-value grid ── */
+
+.kvGrid {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 8px 16px;
+  align-items: baseline;
+}
+
+.kvLabel {
+  font-size: 12px;
+  color: rgba(148, 163, 184, 0.7);
+  font-weight: 500;
+}
+
+.kvValue {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(226, 232, 240, 0.9);
+}
+
+.kvValueMono {
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  color: rgba(79, 209, 255, 0.8);
+}
+
+/* ── Integrity checks ── */
+
+.checkList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.checkRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+}
+
+.checkStatus {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  width: 48px;
+  text-align: center;
+}
+
+.checkPass {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.checkWarn {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.1);
+}
+
+.checkFail {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
+}
+
+.checkLabel {
+  font-size: 13px;
+  color: rgba(226, 232, 240, 0.85);
+  flex: 1;
+}
+
+.checkDetail {
+  font-size: 11px;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  color: rgba(148, 163, 184, 0.5);
+}
+
+/* ── Raw JSON ── */
+
+.rawToggle {
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(148, 163, 184, 0.7);
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 120ms ease;
+  align-self: flex-start;
+}
+
+.rawToggle:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(226, 232, 240, 0.9);
+}
+
+.rawJson {
+  font-size: 11px;
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  color: rgba(148, 163, 184, 0.7);
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 8px;
+  padding: 16px;
+  overflow-x: auto;
+  max-height: 400px;
+  overflow-y: auto;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+

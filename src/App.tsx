@@ -45,6 +45,9 @@ import { useUIStore } from "@/state/uiStore";
 import { SimulateOverlay } from '@/components/simulate';
 import { SaveSimulationModal, LoadSimulationPanel } from '@/components/simulations';
 import { ComparePage } from '@/components/compare';
+import SimulationTelemetryRibbon from '@/components/simulation/SimulationTelemetryRibbon';
+import ProDetailDrawer from '@/components/simulation/ProDetailDrawer';
+import AdminEngineConsole from '@/components/admin/AdminEngineConsole';
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -510,6 +513,22 @@ export default function App() {
   // Compare route — Production-ready Risk Topography Instrument
   if (typeof window !== "undefined" && window.location.pathname === "/compare") {
     return <ComparePage />;
+  }
+
+  // Admin Engine Console — gated route (requires ENABLE_ADMIN_CONSOLE=1)
+  if (typeof window !== "undefined" && window.location.pathname === "/admin/engine") {
+    return (
+      <div className="app">
+        <MainNav
+          activeItemId="terrain"
+          onNavigate={(id) => {
+            if (id === "initialize") return;
+            window.location.assign("/");
+          }}
+        />
+        <AdminEngineConsole />
+      </div>
+    );
   }
 
 
@@ -1284,6 +1303,8 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
             emitCausal({ source: "simulation_loaded", bandStyle: "solid", color: "rgba(34, 211, 238, 0.3)" });
           }}
         />
+        {/* Telemetry ribbon — visible across all views */}
+        <SimulationTelemetryRibbon />
       </div>
     );
   }
@@ -1305,10 +1326,10 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
                 ? "compare"
                 : headerViewMode === "risk"
                   ? "risk"
-                  : headerViewMode === "simulate"
-                    ? "simulate"
-                    : headerViewMode === "impact"
-                      ? "impact"
+                  : headerViewMode === "impact"
+                    ? "impact"
+                    : (headerViewMode as string) === "simulate"
+                      ? "simulate"
                       : "terrain"
         }
         onNavigate={(id) => {
@@ -1432,6 +1453,14 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
           });
         }}
       />
+
+      {/* SIMULATION TELEMETRY RIBBON — top-right overlay (instrument readout) */}
+      <SimulationTelemetryRibbon />
+
+      {/* PRO DETAIL DRAWER — gated expandable (pro/enterprise only) */}
+      <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 800, width: 380 }}>
+        <ProDetailDrawer />
+      </div>
     </div>
   );
 }

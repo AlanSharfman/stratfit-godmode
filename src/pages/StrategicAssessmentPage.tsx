@@ -7,7 +7,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import React, { useState, useMemo } from "react";
-import { useSimulationStore } from "@/state/simulationStore";
+import { useSimulationStore, useSimulationStatus } from "@/state/simulationStore";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
 import BaselineMountain from "@/components/mountain/BaselineMountain";
 import { engineResultToMountainForces } from "@/logic/mountainForces";
@@ -116,6 +116,7 @@ const AssessmentMountainPanel: React.FC<{
   varianceWidth: number;
   runwayMonths: number;
 }> = ({ dataPoints, survivalProbability, varianceWidth, runwayMonths }) => {
+  const simulationStatus = useSimulationStatus();
   return (
     <div className={styles.mountainPanel}>
       <h3 className={styles.mountainLabel}>STRUCTURAL STATE VISUALIZATION</h3>
@@ -126,6 +127,7 @@ const AssessmentMountainPanel: React.FC<{
           varianceWidth={varianceWidth}
           runwayMonths={runwayMonths}
           maxHorizonMonths={36}
+          computeState={simulationStatus}
           showGrid
         />
       </div>
@@ -266,7 +268,7 @@ const IntelligenceSummaryStrip: React.FC<{
 
 export default function StrategicAssessmentPage() {
   const { fullResult, fullVerdict, summary } = useSimulationStore();
-  const systemBaseline = useSystemBaseline();
+  const { baseline: systemBaseline } = useSystemBaseline();
   const { engineResults } = useScenarioStore();
 
   // ── Derive mountain data points ──
@@ -313,8 +315,8 @@ export default function StrategicAssessmentPage() {
   const evP90 = (fullResult.arrPercentiles.p90 / 1000000) * 3.5;
   
   // Extract baseline inputs safely
-  const baselineMonthlyBurn = systemBaseline?.summary?.monthlyBurn ?? 400000;
-  const baselineStartingCash = systemBaseline?.summary?.startingCash ?? 4000000;
+  const baselineMonthlyBurn = systemBaseline?.financial?.monthlyBurn ?? 400000;
+  const baselineStartingCash = systemBaseline?.financial?.cashOnHand ?? 4000000;
   
   const capitalSensitivity = (baselineMonthlyBurn * 12) / Math.max(1, evP50 * 1000000);
   const runwayUnderStress = fullResult.runwayPercentiles.p10;

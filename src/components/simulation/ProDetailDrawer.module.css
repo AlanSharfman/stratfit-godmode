@@ -1,0 +1,197 @@
+/* ProDetailDrawer.module.css
+   ═══════════════════════════════════════════════════════════════════════════
+   Pro-tier detail drawer — expandable, institutional, clean.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.drawer {
+  background: rgba(14, 17, 22, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 16px;
+  backdrop-filter: blur(8px);
+}
+
+.toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 120ms ease;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.toggle:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.toggleLabel {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.8);
+  flex: 1;
+  text-align: left;
+}
+
+.toggleTier {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #4fd1ff;
+  background: rgba(79, 209, 255, 0.1);
+  border: 1px solid rgba(79, 209, 255, 0.2);
+  border-radius: 4px;
+  padding: 2px 8px;
+}
+
+.toggle svg {
+  color: rgba(148, 163, 184, 0.5);
+}
+
+/* ── Content ── */
+
+.content {
+  padding: 0 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  animation: drawerSlideIn 200ms ease-out;
+}
+
+@keyframes drawerSlideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Sections ── */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sectionTitle {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(100, 116, 139, 0.8);
+  margin: 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* ── Table ── */
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.th, .thNum {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.6);
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.thNum {
+  text-align: right;
+}
+
+.td, .tdNum {
+  font-size: 13px;
+  color: rgba(226, 232, 240, 0.85);
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.tdNum {
+  text-align: right;
+  font-weight: 600;
+  color: #4fd1ff;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Metric rows ── */
+
+.metricRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+}
+
+.metricLabel {
+  font-size: 13px;
+  color: rgba(148, 163, 184, 0.8);
+}
+
+.metricValue {
+  font-size: 14px;
+  font-weight: 600;
+  color: #4fd1ff;
+  font-variant-numeric: tabular-nums;
+}
+
+.metricRisk {
+  color: #f87171;
+}
+
+/* ── Driver list ── */
+
+.driverList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.driverRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+}
+
+.driverRank {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(148, 163, 184, 0.5);
+  width: 24px;
+  flex-shrink: 0;
+}
+
+.driverLabel {
+  font-size: 13px;
+  color: rgba(226, 232, 240, 0.85);
+  flex: 1;
+}
+
+.driverImpact {
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.driverPositive {
+  color: #10b981;
+}
+
+.driverNegative {
+  color: #f87171;
+}
+

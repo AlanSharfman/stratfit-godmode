@@ -6,6 +6,27 @@ import { create } from 'zustand';
 import type { MonteCarloResult } from '@/logic/monteCarloEngine';
 import type { Verdict } from '@/logic/verdictGenerator';
 
+// ════════════════════════════════════════════════════════════════════════════
+// SIMULATION RUN STATUS — Single source of truth
+// ════════════════════════════════════════════════════════════════════════════
+
+export type SimulationStatus = "idle" | "running" | "complete" | "error";
+
+/** User-safe telemetry metadata (no engine internals exposed) */
+export interface RunMeta {
+  runId: string;
+  timeHorizonMonths: number;
+  paths: number;
+  seedLocked: boolean;        // True = seed is deterministic. Do NOT show seed number.
+  startedAt: number | null;   // performance.now() timestamp
+  completedAt: number | null;
+  durationMs: number | null;
+  // Safe delta summaries (populated on completion)
+  survivalDelta: number | null;   // e.g., +3 (percentage points)
+  runwayDelta: number | null;     // e.g., +2 (months)
+  topDriverLabel: string | null;  // e.g., "Demand Strength"
+}
+
 // Simplified results for quick access
 export interface SimulationSummary {
   survivalRate: number;
@@ -43,6 +64,10 @@ interface SimulationState {
   lastSimulationTime: Date | null;
   simulationCount: number;
   
+  // ── Simulation run telemetry ──
+  simulationStatus: SimulationStatus;
+  runMeta: RunMeta | null;
+  
   // Full results (for detailed views)
   fullResult: MonteCarloResult | null;
   fullVerdict: Verdict | null;
@@ -55,6 +80,9 @@ interface SimulationState {
   
   // Actions
   startSimulation: () => void;
+  beginRun: (meta: Pick<RunMeta, 'timeHorizonMonths' | 'paths' | 'seedLocked'>) => void;
+  completeRun: (result: MonteCarloResult, verdict: Verdict) => void;
+  failRun: (errorMessage?: string) => void;
   setSimulationResult: (result: MonteCarloResult, verdict: Verdict, levers: Record<string, number>) => void;
   clearSimulation: () => void;
   
@@ -101,22 +129,89 @@ const createSummary = (result: MonteCarloResult, verdict: Verdict): SimulationSu
   };
 };
 
+/** Generate a short, unique run ID (non-sensitive) */
+function generateRunId(): string {
+  const ts = Date.now().toString(36);
+  const rand = Math.random().toString(36).slice(2, 6);
+  return `run-${ts}-${rand}`;
+}
+
 export const useSimulationStore = create<SimulationState>((set, get) => ({
   // Initial state
   hasSimulated: false,
   isSimulating: false,
   lastSimulationTime: null,
   simulationCount: 0,
+  simulationStatus: "idle" as SimulationStatus,
+  runMeta: null,
   fullResult: null,
   fullVerdict: null,
   summary: null,
   leverSnapshot: null,
   
-  // Start simulation (for loading state)
+  // Start simulation (for loading state — legacy compat)
   startSimulation: () => set({
     isSimulating: true,
   }),
   
+  // ── Begin a new run (sets status + runMeta) ──
+  beginRun: ({ timeHorizonMonths, paths, seedLocked }) => set({
+    isSimulating: true,
+    simulationStatus: "running",
+    runMeta: {
+      runId: generateRunId(),
+      timeHorizonMonths,
+      paths,
+      seedLocked,
+      startedAt: performance.now(),
+      completedAt: null,
+      durationMs: null,
+      survivalDelta: null,
+      runwayDelta: null,
+      topDriverLabel: null,
+    },
+  }),
+
+  // ── Complete run (populate safe deltas from previous run) ──
+  completeRun: (result, verdict) => {
+    const prev = get();
+    const prevSurvival = prev.fullResult ? Math.round(prev.fullResult.survivalRate * 100) : null;
+    const prevRunway = prev.fullResult ? prev.fullResult.runwayPercentiles.p50 : null;
+    const newSurvival = Math.round(result.survivalRate * 100);
+    const newRunway = result.runwayPercentiles.p50;
+
+    const topDriver = result.sensitivityFactors
+      ?.slice()
+      .sort((a, b) => Math.abs(b.impact) - Math.abs(a.impact))[0]?.label ?? null;
+
+    const now = performance.now();
+    const startedAt = prev.runMeta?.startedAt ?? now;
+
+    set({
+      simulationStatus: "complete",
+      runMeta: {
+        ...(prev.runMeta ?? {
+          runId: generateRunId(),
+          timeHorizonMonths: result.timeHorizonMonths,
+          paths: result.iterations,
+          seedLocked: true,
+          startedAt,
+        }),
+        completedAt: now,
+        durationMs: Math.round(now - startedAt),
+        survivalDelta: prevSurvival !== null ? newSurvival - prevSurvival : null,
+        runwayDelta: prevRunway !== null ? Math.round((newRunway - prevRunway) * 10) / 10 : null,
+        topDriverLabel: topDriver,
+      },
+    });
+  },
+
+  // ── Mark run as failed ──
+  failRun: (_errorMessage?: string) => set({
+    simulationStatus: "error",
+    isSimulating: false,
+  }),
+
   // Save simulation results
   setSimulationResult: (result, verdict, levers) => set({
     hasSimulated: true,
@@ -134,6 +229,8 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
     hasSimulated: false,
     isSimulating: false,
     lastSimulationTime: null,
+    simulationStatus: "idle",
+    runMeta: null,
     fullResult: null,
     fullVerdict: null,
     summary: null,
@@ -161,6 +258,8 @@ export const useHasSimulated = () => useSimulationStore((s) => s.hasSimulated);
 export const useIsSimulating = () => useSimulationStore((s) => s.isSimulating);
 export const useSimulationVerdict = () => useSimulationStore((s) => s.fullVerdict);
 export const useSimulationResult = () => useSimulationStore((s) => s.fullResult);
+export const useSimulationStatus = () => useSimulationStore((s) => s.simulationStatus);
+export const useRunMeta = () => useSimulationStore((s) => s.runMeta);
 
 export default useSimulationStore;
 

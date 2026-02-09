@@ -54,7 +54,7 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
   const [scenarioName, setScenarioName] = useState('');
 
   // Connect to simulation store
-  const { setSimulationResult, startSimulation: storeStartSimulation } = useSimulationStore();
+  const { setSimulationResult, startSimulation: storeStartSimulation, beginRun, completeRun, failRun } = useSimulationStore();
   
   // Connect to saved simulations store
   const saveSimulation = useSavedSimulationsStore((s) => s.saveSimulation);
@@ -105,6 +105,12 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
     setResult(null);
     setVerdict(null);
     storeStartSimulation();
+    // ── Telemetry: begin run (single source of truth) ──
+    beginRun({
+      timeHorizonMonths: config.timeHorizonMonths,
+      paths: config.iterations,
+      seedLocked: true,
+    });
     emitCompute("terrain_simulation", "initialize", { iterations: config.iterations, methodName: "Monte Carlo", target: "Simulation" });
     emitCompute("terrain_simulation", "run_model");
 
@@ -138,12 +144,15 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
     // Store in simulation store - CORRECT: 3 arguments
     setSimulationResult(simResult, simVerdict, leversAsSnapshot);
 
+    // ── Telemetry: complete run (populates safe deltas) ──
+    completeRun(simResult, simVerdict);
+
     emitCompute("terrain_simulation", "complete", { durationMs: round(executionTimeMs), iterations: config.iterations });
 
     setTimeout(() => {
       setPhase('complete');
     }, 300);
-  }, [levers, leversAsSnapshot, config, setSimulationResult, storeStartSimulation]);
+  }, [levers, leversAsSnapshot, config, setSimulationResult, storeStartSimulation, beginRun, completeRun]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // SAVE AS BASELINE - SAVES TO BOTH STORES

@@ -1,11 +1,10 @@
 // src/pages/initialize/InitializeBaselinePage.tsx
 // ═══════════════════════════════════════════════════════════════════════════
-// STRATFIT — System Calibration · 11/10 Institutional Refinement
-// 5-Module Left Command Rail · Financial Truth Layer ONLY.
-// Zero strategic controls. Zero scenario sliders. Zero future intent.
-// Data: useSystemBaseline() — single canonical provider.
-// Baseline is ALWAYS editable. No lock state.
-// Bloomberg-meets-Palantir. Not SaaS marketing UI.
+// STRATFIT — System Calibration · God Mode Institutional Rebuild
+// Capital-grade intake instrument · Two-column workflow
+// Left: compact step rail (Company, Financial, Capital, Operations, Customer)
+// Right: compact header + KPI instrument strip + section cards + sticky bar
+// Data: useSystemBaseline() — single canonical provider. Always editable.
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { useState, useCallback, useMemo, useEffect, useRef } from "react"
@@ -103,7 +102,7 @@ function migrateBaseline(stored: BaselineV1): BaselineV1 {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// FORMATTING HELPERS — Bloomberg precision
+// FORMATTING HELPERS
 // ═══════════════════════════════════════════════════════════════════════════
 
 function fmtCurrency(v: number): string {
@@ -121,7 +120,7 @@ function fmtMultiple(v: number): string {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// MODULE DEFINITIONS — Left Command Rail
+// MODULE DEFINITIONS — Step Rail
 // ═══════════════════════════════════════════════════════════════════════════
 
 type ModuleId = "company" | "financial" | "capital" | "operations" | "customer"
@@ -148,15 +147,15 @@ export default function InitializeBaselinePage() {
     storedBaseline ? migrateBaseline(storedBaseline) : createDefaultBaseline()
   )
   const [activeModule, setActiveModule] = useState<ModuleId>("company")
+  const [draftSaved, setDraftSaved] = useState(false)
 
-  // ── Recalculation shimmer — micro-feedback on field update ───────────
+  // ── Recalculation shimmer key ────────────────────────────────────────
   const [shimmerKey, setShimmerKey] = useState(0)
   const isFirstRender = useRef(true)
 
   // ── Sync local → provider on every mutation (auto-save) ──────────────
   useEffect(() => {
     commitBaseline(baseline)
-    // Trigger shimmer on update (skip first render)
     if (isFirstRender.current) {
       isFirstRender.current = false
     } else {
@@ -164,12 +163,36 @@ export default function InitializeBaselinePage() {
     }
   }, [baseline, commitBaseline])
 
-  // ── Derived KPIs — explicit guards, never falsy coercion ─────────────
+  // ── Step navigation ──────────────────────────────────────────────────
+  const currentIdx = MODULES.findIndex((m) => m.id === activeModule)
+  const isFirst = currentIdx === 0
+  const isLast = currentIdx === MODULES.length - 1
+
+  // ── Derived KPIs ─────────────────────────────────────────────────────
   const runway = useMemo((): string => {
     const burn = baseline.financial.monthlyBurn
     const cash = baseline.financial.cashOnHand
     if (burn <= 0) return "—"
     return fmtMonths(cash / burn)
+  }, [baseline.financial])
+
+  const burnMultiple = useMemo((): string => {
+    const burn = baseline.financial.monthlyBurn
+    const arr = baseline.financial.arr
+    if (arr <= 0 || burn <= 0) return "—"
+    return fmtMultiple(burn / (arr / 12))
+  }, [baseline.financial])
+
+  const arrFormatted = useMemo((): string => {
+    const arr = baseline.financial.arr
+    if (arr <= 0) return "—"
+    return fmtCurrency(arr)
+  }, [baseline.financial])
+
+  const grossMargin = useMemo((): string => {
+    const gm = baseline.financial.grossMarginPct
+    if (gm <= 0) return "—"
+    return gm.toFixed(0) + "%"
   }, [baseline.financial])
 
   const interestBurden = useMemo((): string => {
@@ -179,13 +202,6 @@ export default function InitializeBaselinePage() {
     return fmtCurrency((debt * rate) / 100 / 12)
   }, [baseline.capital])
 
-  const burnMultiple = useMemo((): string => {
-    const burn = baseline.financial.monthlyBurn
-    const arr = baseline.financial.arr
-    if (arr <= 0 || burn <= 0) return "—"
-    return fmtMultiple(burn / (arr / 12))
-  }, [baseline.financial])
-
   const revPerEmployee = useMemo((): string => {
     const arr = baseline.financial.arr
     const hc = baseline.financial.headcount
@@ -193,7 +209,7 @@ export default function InitializeBaselinePage() {
     return fmtCurrency(arr / hc)
   }, [baseline.financial])
 
-  // ── Terrain preview data points (derived from baseline for SVG wire mesh) ─
+  // ── Terrain preview data points ──────────────────────────────────────
   const terrainPoints = useMemo(() => {
     const fin = baseline.financial
     const op = baseline.operating
@@ -261,37 +277,78 @@ export default function InitializeBaselinePage() {
     []
   )
 
-  // ── Continue to platform (no lock — always editable) ─────────────────
+  // ── Continue to platform ──────────────────────────────────────────────
   const handleContinue = useCallback(() => {
     commitBaseline(baseline)
     window.location.assign("/")
   }, [baseline, commitBaseline])
 
+  // ── Step actions ──────────────────────────────────────────────────────
+  const handleBack = useCallback(() => {
+    if (isFirst) {
+      window.location.assign("/")
+    } else {
+      setActiveModule(MODULES[currentIdx - 1].id)
+    }
+  }, [isFirst, currentIdx])
+
+  const handleNext = useCallback(() => {
+    if (isLast) {
+      handleContinue()
+    } else {
+      setActiveModule(MODULES[currentIdx + 1].id)
+    }
+  }, [isLast, currentIdx, handleContinue])
+
+  const handleSaveDraft = useCallback(() => {
+    commitBaseline(baseline)
+    setDraftSaved(true)
+    setTimeout(() => setDraftSaved(false), 1500)
+  }, [baseline, commitBaseline])
+
+  // ── Keyboard: Enter triggers Next when not in an input ────────────────
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter") {
+        const active = document.activeElement
+        if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA")) {
+          return // let input handle it (blur commits)
+        }
+        handleNext()
+      }
+    }
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [handleNext])
+
   // ═══════════════════════════════════════════════════════════════════════
-  // RENDER — no early returns. Shell always mounts.
+  // RENDER
   // ═══════════════════════════════════════════════════════════════════════
 
   return (
     <div className={styles.root}>
-      {/* ── Layer 0: Blueprint system background (pure CSS+SVG, no WebGL) ── */}
-      <SystemBlueprintBackground />
+      {/* ── Background (reduced opacity) ─── */}
+      <div className={styles.bgLayer}>
+        <SystemBlueprintBackground />
+      </div>
       <div className={styles.grain} aria-hidden="true" />
       <div className={styles.vignette} aria-hidden="true" />
-      <div className={styles.atmosphericGlow} aria-hidden="true" />
 
-      {/* ── Left Command Rail — Structural Spine ───────────────── */}
+      {/* ── Left Step Rail ─────────────────────────────────────── */}
       <aside className={styles.rail}>
         <div className={styles.logoBlock}>
-          <div className={styles.logoIcon}>&#x25C6;</div>
+          <StratfitLogo />
           <div>
             <div className={styles.logoTitle}>STRATFIT</div>
             <div className={styles.logoSub}>System Calibration</div>
-      </div>
-      </div>
+          </div>
+        </div>
+
+        <div className={styles.sectionDescriptor}>Baseline capture</div>
 
         <nav className={styles.railNav}>
           {MODULES.map((m) => (
-        <button
+            <button
               key={m.id}
               type="button"
               className={
@@ -301,43 +358,58 @@ export default function InitializeBaselinePage() {
             >
               <span className={styles.railNum}>{m.num}</span>
               <span className={styles.railLabel}>{m.label}</span>
-        </button>
+            </button>
           ))}
         </nav>
+
+        {/* Compact terrain preview */}
+        <div className={styles.railPreview}>
+          <StaticTerrainPreview dataPoints={terrainPoints} height={120} />
+        </div>
 
         <div className={styles.draftBadge}>BASELINE&nbsp;&mdash;&nbsp;ALWAYS EDITABLE</div>
       </aside>
 
-      {/* ── Center Content Pane ─────────────────────────────────── */}
+      {/* ── Main Content ──────────────────────────────────────── */}
       <main className={styles.main}>
+        {/* ─── Header ─── */}
         <header className={styles.header}>
-          <h1 className={styles.title}>System Calibration</h1>
-          <p className={styles.subtitle}>
-            Structural truth capture — current financial &amp; operational state
-          </p>
+          <div className={styles.headerLeft}>
+            <h1 className={styles.title}>System Calibration</h1>
+            <p className={styles.subtitle}>
+              Capture baseline inputs used to generate structural intelligence.
+            </p>
+          </div>
+          <span className={styles.progress}>
+            Step {currentIdx + 1} of {MODULES.length}
+          </span>
         </header>
 
-        {/* ═══ KPI Instrument Strip ════════════════════════════════ */}
+        {/* ─── KPI Instrument Strip ─── */}
         <div className={styles.kpiStrip}>
-          <KPICell label="Runway" value={runway} />
-          <div className={styles.kpiSep} />
-          <KPICell label="Burn Multiple" value={burnMultiple} />
-          <div className={styles.kpiSep} />
-          <KPICell label="Interest Burden" value={interestBurden} />
-          <div className={styles.kpiSep} />
-          <KPICell label="Rev / Employee" value={revPerEmployee} />
-      </div>
+          <div className={styles.shimmerBar} key={shimmerKey} />
+          <KPITile label="Runway" value={runway} />
+          <KPITile label="Burn Multiple" value={burnMultiple} />
+          <KPITile label="ARR" value={arrFormatted} />
+          <KPITile label="Gross Margin" value={grossMargin} />
+        </div>
 
-        {/* ═══ Module Panel (cross-fade) ═══════════════════════════ */}
+        {/* ─── Module Panel (section cards) ─── */}
         <div className={styles.modulePanel} key={activeModule}>
           {activeModule === "company" && (
             <div className={styles.card}>
               <h2 className={styles.cardTitle}>Company Identity</h2>
-              <div className={styles.metricsGrid}>
+              <div className={styles.fieldGrid}>
                 <TextField
                   label="Founder Name"
                   value={baseline.company.founderName}
                   onCommit={(v) => setCompanyStr("founderName", v)}
+                />
+                <TextField
+                  label="Company Name"
+                  value={baseline.company.legalName}
+                  helper="Legal entity name"
+                  onCommit={(v) => setCompanyStr("legalName", v)}
                 />
                 <TextField
                   label="Email"
@@ -352,24 +424,22 @@ export default function InitializeBaselinePage() {
                   onCommit={(v) => setCompanyStr("contactPhone", v)}
                 />
                 <TextField
-                  label="Company Name"
-                  value={baseline.company.legalName}
-                  onCommit={(v) => setCompanyStr("legalName", v)}
-                />
-                <TextField
                   label="Industry"
                   value={baseline.company.industry}
+                  helper="Primary industry or vertical"
                   onCommit={(v) => setCompanyStr("industry", v)}
                 />
                 <TextField
                   label="Jurisdiction"
                   value={baseline.company.jurisdiction}
                   placeholder="e.g. Delaware, USA"
+                  helper="Where your company is incorporated"
                   onCommit={(v) => setCompanyStr("jurisdiction", v)}
                 />
                 <TextField
                   label="Business Model"
                   value={baseline.company.businessModel}
+                  helper="e.g. Subscription, Marketplace, Usage-based"
                   onCommit={(v) => setCompanyStr("businessModel", v)}
                 />
               </div>
@@ -379,52 +449,60 @@ export default function InitializeBaselinePage() {
           {activeModule === "financial" && (
             <div className={styles.card}>
               <h2 className={styles.cardTitle}>Financial Baseline</h2>
-              <div className={styles.metricsGrid}>
+              <div className={styles.fieldGrid}>
                 <NumericField
                   label="Cash on Hand"
                   value={baseline.financial.cashOnHand}
                   prefix="$"
+                  helper="Total cash across all accounts"
                   onCommit={(v) => setFin("cashOnHand", v)}
                 />
                 <NumericField
                   label="Monthly Net Burn"
                   value={baseline.financial.monthlyBurn}
                   prefix="$"
+                  helper="Monthly outflow minus revenue"
                   onCommit={(v) => setFin("monthlyBurn", v)}
                 />
                 <NumericField
                   label="Current ARR"
                   value={baseline.financial.arr}
                   prefix="$"
+                  helper="Monthly recurring revenue × 12"
                   onCommit={(v) => setFin("arr", v)}
                 />
                 <NumericField
                   label="Monthly Growth"
                   value={baseline.financial.growthRatePct}
                   suffix="%"
+                  helper="Month-over-month revenue growth"
                   onCommit={(v) => setFin("growthRatePct", v)}
                 />
                 <NumericField
                   label="Monthly Churn"
                   value={baseline.operating.churnPct}
                   suffix="%"
+                  helper="Revenue lost per month"
                   onCommit={(v) => setOp("churnPct", v)}
                 />
                 <NumericField
                   label="Net Revenue Retention"
                   value={baseline.financial.nrrPct}
                   suffix="%"
+                  helper="Including expansion revenue"
                   onCommit={(v) => setFin("nrrPct", v)}
                 />
                 <NumericField
                   label="Headcount"
                   value={baseline.financial.headcount}
+                  helper="Full-time equivalent employees"
                   onCommit={(v) => setFin("headcount", v)}
                 />
                 <NumericField
                   label="Avg Fully Loaded Cost"
                   value={baseline.financial.avgFullyLoadedCost}
                   prefix="$"
+                  helper="Total cost per employee"
                   onCommit={(v) => setFin("avgFullyLoadedCost", v)}
                 />
                 <NumericField
@@ -457,28 +535,31 @@ export default function InitializeBaselinePage() {
           {activeModule === "capital" && (
             <div className={styles.card}>
               <h2 className={styles.cardTitle}>Capital Structure</h2>
-              <div className={styles.metricsGrid}>
+              <div className={styles.fieldGrid}>
                 <NumericField
                   label="Debt Outstanding"
                   value={baseline.capital.totalDebt}
                   prefix="$"
+                  helper="Total outstanding debt"
                   onCommit={(v) => setCap("totalDebt", v)}
                 />
                 <NumericField
                   label="Interest Rate"
                   value={baseline.capital.interestRatePct}
                   suffix="%"
+                  helper="Annual interest rate on debt"
                   onCommit={(v) => setCap("interestRatePct", v)}
                 />
                 <NumericField
                   label="Equity Raised to Date"
                   value={baseline.capital.equityRaisedToDate}
                   prefix="$"
+                  helper="Total equity capital raised"
                   onCommit={(v) => setCap("equityRaisedToDate", v)}
                 />
               </div>
               <div className={styles.derivedRow}>
-                <DerivedKPI label="Monthly Interest Burden" value={interestBurden} />
+                <DerivedKPI label="Monthly Interest" value={interestBurden} />
               </div>
             </div>
           )}
@@ -486,34 +567,39 @@ export default function InitializeBaselinePage() {
           {activeModule === "operations" && (
             <div className={styles.card}>
               <h2 className={styles.cardTitle}>Operations</h2>
-              <div className={styles.metricsGrid}>
+              <div className={styles.fieldGrid}>
                 <NumericField
                   label="Gross Margin"
                   value={baseline.financial.grossMarginPct}
                   suffix="%"
+                  helper="Revenue minus direct costs"
                   onCommit={(v) => setFin("grossMarginPct", v)}
                 />
                 <NumericField
                   label="Sales Cycle Length"
                   value={baseline.operating.salesCycleMonths}
                   suffix=" mo"
+                  helper="Average months to close a deal"
                   onCommit={(v) => setOp("salesCycleMonths", v)}
                 />
                 <NumericField
                   label="Active Customers"
                   value={baseline.operating.activeCustomers}
+                  helper="Current paying customer count"
                   onCommit={(v) => setOp("activeCustomers", v)}
                 />
                 <NumericField
                   label="Avg Deal Size"
                   value={baseline.operating.acv}
                   prefix="$"
+                  helper="Annual contract value per customer"
                   onCommit={(v) => setOp("acv", v)}
                 />
                 <NumericField
                   label="Customer Concentration"
                   value={baseline.financial.revenueConcentrationPct}
                   suffix="%"
+                  helper="Revenue from top 3 customers"
                   onCommit={(v) => setFin("revenueConcentrationPct", v)}
                 />
               </div>
@@ -523,82 +609,70 @@ export default function InitializeBaselinePage() {
           {activeModule === "customer" && (
             <div className={styles.card}>
               <h2 className={styles.cardTitle}>Customer Engine</h2>
-              <div className={styles.metricsGrid}>
+              <div className={styles.fieldGrid}>
                 <NumericField
                   label="CAC"
                   value={baseline.customerEngine.cac}
                   prefix="$"
+                  helper="Cost to acquire one customer"
                   onCommit={(v) => setCe("cac", v)}
                 />
                 <NumericField
                   label="LTV"
                   value={baseline.customerEngine.ltv}
                   prefix="$"
+                  helper="Lifetime revenue per customer"
                   onCommit={(v) => setCe("ltv", v)}
                 />
                 <NumericField
                   label="Payback Period"
                   value={baseline.customerEngine.paybackPeriodMonths}
                   suffix=" mo"
+                  helper="Months to recoup acquisition cost"
                   onCommit={(v) => setCe("paybackPeriodMonths", v)}
                 />
                 <NumericField
                   label="Expansion Rate"
                   value={baseline.customerEngine.expansionRatePct}
                   suffix="%"
+                  helper="Annual expansion revenue"
                   onCommit={(v) => setCe("expansionRatePct", v)}
                 />
               </div>
-        </div>
-      )}
+            </div>
+          )}
         </div>
 
-        {/* ═══ CTA — Machined Button ══════════════════════════════ */}
-        <div className={styles.lockRow}>
+        {/* ─── Sticky Action Bar ─── */}
+        <div className={styles.actionBar}>
+          {draftSaved && (
+            <span className={styles.savedConfirm} key={Date.now()}>
+              Draft saved
+            </span>
+          )}
           <button
             type="button"
-            className={styles.lockButton}
-            onClick={handleContinue}
+            className={styles.btnSecondary}
+            onClick={handleBack}
           >
-            Save &amp; Continue to STRATFIT
+            {isFirst ? "\u2190 Exit" : "\u2190 Back"}
+          </button>
+          <button
+            type="button"
+            className={styles.btnSecondary}
+            onClick={handleSaveDraft}
+          >
+            Save Draft
+          </button>
+          <button
+            type="button"
+            className={styles.btnPrimary}
+            onClick={handleNext}
+          >
+            {isLast ? "Save \u0026 Continue" : "Next \u2192"}
           </button>
         </div>
       </main>
-
-      {/* ── Static Terrain Preview — Top Right (SVG 2.5D, no WebGL) ── */}
-      <aside className={styles.instrumentContainer}>
-        <div className={styles.instrumentPanel}>
-          <span className={styles.liveBaselineBadge}>LIVE BASELINE</span>
-
-          {/* Recalculation shimmer — 150ms pulse on field update */}
-          <div className={styles.shimmerBar} key={shimmerKey} />
-
-          <div className={styles.instrumentScene}>
-            <StaticTerrainPreview
-              dataPoints={terrainPoints}
-              height={210}
-            />
-          </div>
-        </div>
-
-        {/* ═══ Instrument Strip — RUNWAY · BURN MULTIPLE · INTEREST ═══ */}
-        <div className={styles.instrumentStrip}>
-          <div className={styles.instrumentItem}>
-            <span className={styles.instrumentLabel}>RUNWAY</span>
-            <span className={styles.instrumentValue}>{runway}</span>
-          </div>
-          <span className={styles.instrumentSep}>·</span>
-          <div className={styles.instrumentItem}>
-            <span className={styles.instrumentLabel}>BURN MULTIPLE</span>
-            <span className={styles.instrumentValue}>{burnMultiple}</span>
-          </div>
-          <span className={styles.instrumentSep}>·</span>
-          <div className={styles.instrumentItem}>
-            <span className={styles.instrumentLabel}>INTEREST</span>
-            <span className={styles.instrumentValue}>{interestBurden}</span>
-          </div>
-        </div>
-      </aside>
     </div>
   )
 }
@@ -607,47 +681,102 @@ export default function InitializeBaselinePage() {
 // SUB-COMPONENTS (file-private)
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** Jewelled KPI cell — derived metric, read-only. */
-function KPICell({ label, value }: { label: string; value: string }) {
+/** 3D isometric logo — two stacked metallic cubes with cyan glow gap. */
+function StratfitLogo() {
   return (
-    <div className={styles.kpiCell}>
+    <svg
+      className={styles.logoSvg}
+      width="34"
+      height="34"
+      viewBox="0 0 200 200"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        <linearGradient id="sf-topFace" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#444" />
+          <stop offset="100%" stopColor="#222" />
+        </linearGradient>
+        <filter id="sf-glow">
+          <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+          <feMerge>
+            <feMergeNode in="coloredBlur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+      {/* Bottom cube */}
+      <path d="M100 130 L140 110 L140 150 L100 170 Z" fill="#1a1a1a" />
+      <path d="M100 130 L60 110 L60 150 L100 170 Z" fill="#2d2d2d" />
+      {/* Cyan glow gap */}
+      <path
+        d="M100 130 L140 110 L100 90 L60 110 Z"
+        fill="#00ffff"
+        filter="url(#sf-glow)"
+      />
+      {/* Top cube */}
+      <path d="M100 70 L140 50 L140 90 L100 110 Z" fill="#1a1a1a" />
+      <path d="M100 70 L60 50 L60 90 L100 110 Z" fill="#2d2d2d" />
+      <path
+        d="M100 70 L140 50 L100 30 L60 50 Z"
+        fill="url(#sf-topFace)"
+      />
+    </svg>
+  )
+}
+
+/** Compact KPI tile for the instrument strip. */
+function KPITile({
+  label,
+  value,
+  helper,
+}: {
+  label: string
+  value: string
+  helper?: string
+}) {
+  return (
+    <div className={styles.kpiTile}>
       <span className={styles.kpiLabel}>{label}</span>
       <span className={styles.kpiValue}>{value}</span>
+      {helper && <span className={styles.kpiHelper}>{helper}</span>}
     </div>
   )
 }
 
-/** Text field for string values (Company module). */
+/** Premium text field — vertical layout with optional helper. */
 function TextField({
   label,
   value,
   placeholder,
+  helper,
   onCommit,
 }: {
   label: string
   value: string
   placeholder?: string
+  helper?: string
   onCommit: (v: string) => void
 }) {
   return (
-    <div className={styles.metricRow}>
-      <span className={styles.metricLabel}>{label}</span>
-      <div className={styles.textInputWrap}>
-        <input
-          className={styles.textInput}
-          type="text"
-          value={value}
-          placeholder={placeholder ?? "—"}
-          onChange={(e) => onCommit(e.target.value)}
-        />
-      </div>
+    <div className={styles.field}>
+      <label className={styles.fieldLabel}>{label}</label>
+      <input
+        className={styles.fieldTextInput}
+        type="text"
+        value={value}
+        placeholder={placeholder ?? "—"}
+        onChange={(e) => onCommit(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") (e.target as HTMLElement).blur()
+        }}
+      />
+      {helper && <span className={styles.fieldHelper}>{helper}</span>}
     </div>
   )
 }
 
 /**
- * Bloomberg-grade numeric field.
- * Label left, editable value right-aligned.
+ * Premium numeric field — vertical layout.
  * Focus: raw number editing. Blur: formatted + commit.
  */
 function NumericField({
@@ -655,12 +784,14 @@ function NumericField({
   value,
   prefix,
   suffix,
+  helper,
   onCommit,
 }: {
   label: string
   value: number
   prefix?: string
   suffix?: string
+  helper?: string
   onCommit: (v: number) => void
 }) {
   const [editing, setEditing] = useState(false)
@@ -669,12 +800,12 @@ function NumericField({
   const display = editing ? raw : value !== 0 ? value.toLocaleString() : ""
 
   return (
-    <div className={styles.metricRow}>
-      <span className={styles.metricLabel}>{label}</span>
-      <div className={styles.inputWrap}>
-        {prefix ? <span className={styles.inputAffix}>{prefix}</span> : null}
+    <div className={styles.field}>
+      <label className={styles.fieldLabel}>{label}</label>
+      <div className={styles.fieldInputWrap}>
+        {prefix ? <span className={styles.fieldAffix}>{prefix}</span> : null}
         <input
-          className={styles.numInput}
+          className={styles.fieldNumInput}
           type="text"
           inputMode="decimal"
           value={display}
@@ -689,9 +820,13 @@ function NumericField({
             const parsed = parseFloat(raw.replace(/,/g, ""))
             onCommit(Number.isFinite(parsed) ? parsed : 0)
           }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") (e.target as HTMLElement).blur()
+          }}
         />
-        {suffix ? <span className={styles.inputAffix}>{suffix}</span> : null}
+        {suffix ? <span className={styles.fieldAffix}>{suffix}</span> : null}
       </div>
+      {helper && <span className={styles.fieldHelper}>{helper}</span>}
     </div>
   )
 }
@@ -705,5 +840,3 @@ function DerivedKPI({ label, value }: { label: string; value: string }) {
     </div>
   )
 }
-
-// 3D ScenarioMountain removed — replaced by StaticTerrainPreview (SVG 2.5D wire mesh, no WebGL)
