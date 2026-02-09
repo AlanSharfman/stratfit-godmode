@@ -32,10 +32,13 @@ import { getQualityScoreFromKpis, getQualityBandFromKpis } from "@/logic/quality
 import ScenarioMemoPage from "@/pages/ScenarioMemoPage";
 import ImpactView from "@/components/compound/impact";
 import VariancesView from "@/components/compound/variances/VariancesView";
+import { ImpactGodMode } from "@/components/impact";
 import { useDebouncedValue, useThrottledValue } from "@/hooks/useDebouncedValue";
 import InitializeBaselinePage from "@/pages/initialize/InitializeBaselinePage";
 import StrategicAssessmentPage from "@/pages/StrategicAssessmentPage";
 import StrategyStudioPage from "@/components/strategy-studio/StrategyStudioPage";
+import RiskPage from "@/components/Risk/RiskPage";
+import ValuationPage from "@/components/valuation/ValuationPage";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
 import "@/styles/godmode-align-overrides.css";
 import "@/styles/godmode-unified-layout.css";
@@ -514,26 +517,23 @@ export default function App() {
     );
   }
 
-  // Strategic Assessment route — Institutional intelligence brief (post-simulation)
-  if (typeof window !== "undefined" && window.location.pathname === "/assessment") {
+  // Strategic Assessment route removed — now handled via headerViewMode === "assessment" below
+
+  // Compare route — redirect to CompareView via headerViewMode
+  if (typeof window !== "undefined" && window.location.pathname === "/compare") {
     return (
       <div className="app">
         <MainNav
-          activeItemId="assessment"
+          activeItemId="compare"
           onNavigate={(id) => {
-            if (id === "assessment") return;
-            if (id === "initialize") return window.location.assign("/initialize");
             window.location.assign("/");
           }}
         />
-        <StrategicAssessmentPage />
+        <CompareView />
+        <SimulationTelemetryRibbon />
+        <SimulationActivityMonitor />
       </div>
     );
-  }
-
-  // Compare route — Production-ready Risk Topography Instrument
-  if (typeof window !== "undefined" && window.location.pathname === "/compare") {
-    return <ComparePage />;
   }
 
   // Admin Engine Console — gated route (requires ENABLE_ADMIN_CONSOLE=1)
@@ -1249,7 +1249,6 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
           }}
           activeItemId="initialize"
           onNavigate={(id) => {
-            if (id === "assessment") return window.location.assign("/assessment");
             setHeaderViewMode(
               id === "initialize" ? "initialize"
               : id === "simulate" ? "simulate"
@@ -1257,6 +1256,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
               : id === "compare" ? "compare"
               : id === "risk" ? "risk"
               : id === "impact" ? "impact"
+              : id === "assessment" ? "assessment"
               : "terrain"
             );
             setShowSimulate(false);
@@ -1292,7 +1292,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
             if (id === "valuation") return setHeaderViewMode("valuation");
             if (id === "compare") return setHeaderViewMode("compare");
             if (id === "risk") return setHeaderViewMode("risk");
-            if (id === "assessment") return window.location.assign("/assessment");
+            if (id === "assessment") return setHeaderViewMode("assessment");
             return setHeaderViewMode("terrain");
           }}
           onSave={() => setShowSaveModal(true)}
@@ -1301,11 +1301,172 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
           onShare={() => console.log("Share")}
         />
         <CompareView />
+        {/* Telemetry overlays */}
+        <SimulationTelemetryRibbon />
+        <SimulationActivityMonitor />
       </div>
     );
   }
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // RISK 2.0 — Structural Shock Propagation Engine (full-page)
+  // ══════════════════════════════════════════════════════════════════════════
+  if (headerViewMode === "risk") {
+    return (
+      <div className="app">
+        <MainNav
+          activeScenario={{
+            name: activeScenarioType ?? "New Scenario",
+            lastModified: "Active",
+          }}
+          activeItemId="risk"
+          onNavigate={(id) => {
+            setShowSimulate(false);
+            if (id === "initialize") return setHeaderViewMode("initialize");
+            if (id === "simulate") return setHeaderViewMode("simulate");
+            if (id === "valuation") return setHeaderViewMode("valuation");
+            if (id === "compare") return setHeaderViewMode("compare");
+            if (id === "risk") return setHeaderViewMode("risk");
+            if (id === "assessment") return setHeaderViewMode("assessment");
+            if (id === "impact") return setHeaderViewMode("impact");
+            return setHeaderViewMode("terrain");
+          }}
+          onSave={() => setShowSaveModal(true)}
+          onLoad={() => setShowLoadPanel(true)}
+          onExport={() => console.log("Export")}
+          onShare={() => console.log("Share")}
+        />
+        <RiskPage />
+        {/* Telemetry overlays */}
+        <SimulationTelemetryRibbon />
+        <SimulationActivityMonitor />
+        <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 800, width: 380 }}>
+          <ProDetailDrawer />
+        </div>
+      </div>
+    );
+  }
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // VALUATION — Probability-first enterprise valuation (full-page)
+  // ══════════════════════════════════════════════════════════════════════════
+  if (headerViewMode === "valuation") {
+    return (
+      <div className="app">
+        <MainNav
+          activeScenario={{
+            name: activeScenarioType ?? "New Scenario",
+            lastModified: "Active",
+          }}
+          activeItemId="valuation"
+          onNavigate={(id) => {
+            setShowSimulate(false);
+            if (id === "initialize") return setHeaderViewMode("initialize");
+            if (id === "simulate") return setHeaderViewMode("simulate");
+            if (id === "valuation") return setHeaderViewMode("valuation");
+            if (id === "compare") return setHeaderViewMode("compare");
+            if (id === "risk") return setHeaderViewMode("risk");
+            if (id === "assessment") return setHeaderViewMode("assessment");
+            if (id === "impact") return setHeaderViewMode("impact");
+            return setHeaderViewMode("terrain");
+          }}
+          onSave={() => setShowSaveModal(true)}
+          onLoad={() => setShowLoadPanel(true)}
+          onExport={() => console.log("Export")}
+          onShare={() => console.log("Share")}
+        />
+        <ValuationPage />
+        {/* Telemetry overlays */}
+        <SimulationTelemetryRibbon />
+        <SimulationActivityMonitor />
+        <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 800, width: 380 }}>
+          <ProDetailDrawer />
+        </div>
+      </div>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // STRATEGIC ASSESSMENT — Institutional intelligence brief (full-page)
+  // ══════════════════════════════════════════════════════════════════════════
+  if (headerViewMode === "assessment") {
+    return (
+      <div className="app">
+        <MainNav
+          activeScenario={{
+            name: activeScenarioType ?? "New Scenario",
+            lastModified: "Active",
+          }}
+          activeItemId="assessment"
+          onNavigate={(id) => {
+            setShowSimulate(false);
+            if (id === "initialize") return setHeaderViewMode("initialize");
+            if (id === "simulate") return setHeaderViewMode("simulate");
+            if (id === "valuation") return setHeaderViewMode("valuation");
+            if (id === "compare") return setHeaderViewMode("compare");
+            if (id === "risk") return setHeaderViewMode("risk");
+            if (id === "assessment") return setHeaderViewMode("assessment");
+            if (id === "impact") return setHeaderViewMode("impact");
+            return setHeaderViewMode("terrain");
+          }}
+          onSave={() => setShowSaveModal(true)}
+          onLoad={() => setShowLoadPanel(true)}
+          onExport={() => console.log("Export")}
+          onShare={() => console.log("Share")}
+        />
+        <StrategicAssessmentPage />
+        {/* Telemetry overlays */}
+        <SimulationTelemetryRibbon />
+        <SimulationActivityMonitor />
+        <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 800, width: 380 }}>
+          <ProDetailDrawer />
+        </div>
+      </div>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // IMPACT — Sensitivity Analysis (full-page)
+  // ══════════════════════════════════════════════════════════════════════════
+  if (headerViewMode === "impact") {
+    return (
+      <div className="app">
+        <MainNav
+          activeScenario={{
+            name: activeScenarioType ?? "New Scenario",
+            lastModified: "Active",
+          }}
+          activeItemId="impact"
+          onNavigate={(id) => {
+            setShowSimulate(false);
+            if (id === "initialize") return setHeaderViewMode("initialize");
+            if (id === "simulate") return setHeaderViewMode("simulate");
+            if (id === "valuation") return setHeaderViewMode("valuation");
+            if (id === "compare") return setHeaderViewMode("compare");
+            if (id === "risk") return setHeaderViewMode("risk");
+            if (id === "assessment") return setHeaderViewMode("assessment");
+            if (id === "impact") return setHeaderViewMode("impact");
+            return setHeaderViewMode("terrain");
+          }}
+          onSave={() => setShowSaveModal(true)}
+          onLoad={() => setShowLoadPanel(true)}
+          onExport={() => console.log("Export")}
+          onShare={() => console.log("Share")}
+        />
+        <ImpactGodMode />
+        {/* Telemetry overlays */}
+        <SimulationTelemetryRibbon />
+        <SimulationActivityMonitor />
+        <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 800, width: 380 }}>
+          <ProDetailDrawer />
+        </div>
+      </div>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // STRATEGY STUDIO — Institutional God Mode 3-zone layout
+  // ══════════════════════════════════════════════════════════════════════════
   if (headerViewMode === "simulate") {
     return (
       <div className="app">
@@ -1322,7 +1483,8 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
             if (id === "valuation") return setHeaderViewMode("valuation");
             if (id === "compare") return setHeaderViewMode("compare");
             if (id === "risk") return setHeaderViewMode("risk");
-            if (id === "assessment") return window.location.assign("/assessment");
+            if (id === "assessment") return setHeaderViewMode("assessment");
+            if (id === "impact") return setHeaderViewMode("impact");
             return setHeaderViewMode("terrain");
           }}
           onSave={() => setShowSaveModal(true)}
@@ -1376,29 +1538,19 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
     );
   }
   
+  // ══════════════════════════════════════════════════════════════════════════
+  // TERRAIN — Baseline Visualization (default view)
+  // CenterViewPanel only used for terrain — all other views have dedicated routes
+  // ══════════════════════════════════════════════════════════════════════════
   return (
     <div className="app">
-      {/* MAIN NAV (5 items) */}
       <MainNav
         activeScenario={{
           name: activeScenarioType ?? "New Scenario",
           lastModified: "Active",
         }}
-        activeItemId={
-          headerViewMode === "valuation"
-            ? "valuation"
-            : headerViewMode === "risk"
-                ? "risk"
-                : headerViewMode === "impact"
-                  ? "impact"
-                  : headerViewMode === "assessment"
-                    ? "assessment"
-                    : (headerViewMode as string) === "simulate"
-                      ? "simulate"
-                      : "terrain"
-        }
+        activeItemId="terrain"
         onNavigate={(id) => {
-          // close overlay if user navigates elsewhere
           setShowSimulate(false);
           if (id === "initialize") return setHeaderViewMode("initialize");
           if (id === "simulate") return setHeaderViewMode("simulate");
@@ -1406,7 +1558,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
           if (id === "compare") return setHeaderViewMode("compare");
           if (id === "risk") return setHeaderViewMode("risk");
           if (id === "impact") return setHeaderViewMode("impact");
-          if (id === "assessment") return window.location.assign("/assessment");
+          if (id === "assessment") return setHeaderViewMode("assessment");
           return setHeaderViewMode("terrain");
         }}
         onSave={() => setShowSaveModal(true)}
@@ -1415,17 +1567,11 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
         onShare={() => console.log("Share")}
       />
 
-      {/* OPTION 1: UNIFIED 3-COLUMN LAYOUT (Compare mode = full-width center only) */}
-      <div className={`main-content mode-${headerViewMode}`}>
-        
-        {/* CENTER COLUMN: KPIs + Mountain OR Scenario Impact OR Variances */}
+      <div className="main-content mode-terrain">
         <main className="center-column">
           {/* KPI COMMAND BRIDGE — Avionics strip visible on Terrain view */}
-          {headerViewMode === 'terrain' && (
-            <OrbitalKPISection kpiAnimState={kpiAnimState} />
-          )}
-          
-          
+          <OrbitalKPISection kpiAnimState={kpiAnimState} />
+
           {/* BASELINE GATING — inline panel when baseline is missing */}
           {!hasBaseline ? (
             <div style={{
@@ -1473,17 +1619,14 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
               </button>
             </div>
           ) : (
-            /* View content based on header navigation */
+            /* Terrain view — CenterViewPanel handles ONLY terrain now */
             <CenterViewPanel 
-              viewMode={headerViewMode as "terrain" | "impact" | "compare" | "risk" | "valuation"}
+              viewMode="terrain"
               timelineEnabled={timelineEnabled}
               heatmapEnabled={heatmapEnabled}
-              onSimulateRequest={() => setShowSimulate(true)}
             />
           )}
         </main>
-
-        {/* RIGHT COLUMN: AI Intelligence — now handled by StrategyStudioPage when simulate */}
       </div>
       
       {/* MONTE CARLO SIMULATION OVERLAY */}

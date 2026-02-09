@@ -702,4 +702,3 @@ const StrategyStudioPage: React.FC<StrategyStudioPageProps> = memo(({
 
 StrategyStudioPage.displayName = "StrategyStudioPage";
 export default StrategyStudioPage;
-
