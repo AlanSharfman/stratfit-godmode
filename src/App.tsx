@@ -49,6 +49,7 @@ import { ComparePage } from '@/components/compare';
 import SimulationTelemetryRibbon from '@/components/simulation/SimulationTelemetryRibbon';
 import ProDetailDrawer from '@/components/simulation/ProDetailDrawer';
 import AdminEngineConsole from '@/components/admin/AdminEngineConsole';
+import SimulationActivityMonitor from '@/components/system/SimulationActivityMonitor';
 import { useSimulationStore } from '@/state/simulationStore';
 
 // ============================================================================
@@ -1489,6 +1490,9 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
 
       {/* SIMULATION TELEMETRY RIBBON — top-right overlay (instrument readout) */}
       <SimulationTelemetryRibbon />
+
+      {/* SIMULATION ACTIVITY MONITOR — real engine telemetry (top-right, auto-collapse) */}
+      <SimulationActivityMonitor />
 
       {/* PRO DETAIL DRAWER — gated expandable (pro/enterprise only) */}
       <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 800, width: 380 }}>
