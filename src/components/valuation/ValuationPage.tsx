@@ -1,7 +1,7 @@
 // src/components/valuation/ValuationPage.tsx
 // STRATFIT — Valuation Page GOD MODE Orchestrator
-// Board-ready, capital-serious, institutional.
-// No new simulation runs. All metrics derived from existing stores.
+// Probability-first: p50 headline · p25–p75 operating range · p10–p90 stress range
+// Winsorised outliers. Tight, decision-grade display. Board-ready.
 
 import { useState, useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
@@ -21,6 +21,17 @@ import { useSimulationStore } from "@/state/simulationStore";
 import { useLeverStore } from "@/state/leverStore";
 import { useValuationStore } from "@/state/valuationStore";
 
+// Valuation distribution logic
+import {
+  summarizeFromSamples,
+  summarizeFromPercentiles,
+  summarizeFromSingleEV,
+  getSaneBounds,
+  clampMultiple,
+  type ValuationDistributionSummary,
+  type PercentileInput,
+} from "@/logic/valuation/summarizeValuationDistribution";
+
 // ============================================================================
 // HELPER: Format money
 // ============================================================================
@@ -33,7 +44,7 @@ const fmtM = (v: number): string => {
 };
 
 // ============================================================================
-// VALUATION CALCULATION (local, derived from inputs — mirrors existing engine)
+// VALUATION CALCULATION (local, derived from inputs)
 // ============================================================================
 
 interface ValInputs {
@@ -45,7 +56,9 @@ interface ValInputs {
   stage: "pre-seed" | "seed" | "series-a" | "series-b" | "growth";
 }
 
-function calcValuation(inputs: ValInputs, method: ValuationMethodId) {
+function calcMultiple(inputs: ValInputs, method: ValuationMethodId) {
+  const bounds = getSaneBounds(inputs.stage);
+
   // Base multiple from growth
   let baseMultiple = 5;
   if (inputs.growth >= 100) baseMultiple = 15;
@@ -83,19 +96,18 @@ function calcValuation(inputs: ValInputs, method: ValuationMethodId) {
 
   // Method adjustments
   let methodMod = 1;
-  if (method === "dcf") methodMod = 0.92; // DCF tends more conservative
+  if (method === "dcf") methodMod = 0.92;
   else if (method === "revenue-multiple") methodMod = 1.05;
   else if (method === "comparables") methodMod = 0.97;
 
-  const finalMultiple =
+  const rawMultiple =
     baseMultiple * nrrMult * marginMult * r40Mult * (stageMults[inputs.stage] ?? 1) * methodMod;
-  const valuation = inputs.arr * finalMultiple;
+
+  // Clamp to sane bounds
+  const finalMultiple = clampMultiple(rawMultiple, bounds.minARRMultiple, bounds.maxARRMultiple);
 
   return {
     multiple: finalMultiple,
-    valuation,
-    lowValuation: valuation * 0.8,
-    highValuation: valuation * 1.25,
     components: {
       base: baseMultiple,
       nrr: nrrMult,
@@ -111,7 +123,7 @@ function calcValuation(inputs: ValInputs, method: ValuationMethodId) {
 // ============================================================================
 
 export default function ValuationPage() {
-  // ── Local input state (mirrors existing ValuationTab) ──
+  // ── Local input state ──
   const [inputs, setInputs] = useState<ValInputs>({
     arr: 4_000_000,
     growth: 45,
@@ -124,92 +136,111 @@ export default function ValuationPage() {
   const [method, setMethod] = useState<ValuationMethodId>("stratfit");
 
   // ── Store data ──
+  const fullResult = useSimulationStore((s) => s.fullResult);
+  const assessmentPayload = useSimulationStore((s) => s.assessmentPayload);
   const simulation = useSimulationStore((s) => s.summary);
   const hasSimulated = useSimulationStore((s) => s.hasSimulated);
   const levers = useLeverStore(useShallow((s) => s.levers));
   const valStoreSnapshot = useValuationStore((s) => s.snapshot);
-  const currentStage = useValuationStore((s) => s.currentStage);
-  const storeARR = useValuationStore((s) => s.currentARR);
-  const storeGrowthRate = useValuationStore((s) => s.growthRate);
 
-  // ── Derive valuation from local inputs ──
-  const result = useMemo(() => calcValuation(inputs, method), [inputs, method]);
+  // ── Derive multiple from local inputs + method ──
+  const { multiple, components } = useMemo(() => calcMultiple(inputs, method), [inputs, method]);
+
+  // ── Derive EV distribution (best available source) ──
+  const dist: ValuationDistributionSummary = useMemo(() => {
+    // PRIORITY 1: Full Monte Carlo result in memory → real EV samples
+    if (fullResult?.allSimulations && fullResult.allSimulations.length >= 100) {
+      const evSamples = fullResult.allSimulations.map((s) => s.finalARR * multiple);
+      return summarizeFromSamples(evSamples);
+    }
+
+    // PRIORITY 2: Persisted assessment payload (percentiles only) → percentile-based summary
+    if (assessmentPayload?.arrPercentiles) {
+      const arrP = assessmentPayload.arrPercentiles;
+      const evPctls: PercentileInput = {
+        p10: arrP.p10 * multiple,
+        p25: (arrP.p10 + arrP.p50) / 2 * multiple, // approximate p25
+        p50: arrP.p50 * multiple,
+        p75: (arrP.p50 + arrP.p90) / 2 * multiple, // approximate p75
+        p90: arrP.p90 * multiple,
+      };
+      return summarizeFromPercentiles(evPctls);
+    }
+
+    // PRIORITY 3: No simulation data → synthetic from single EV
+    const singleEV = inputs.arr * multiple;
+    // Use tighter uncertainty (0.15) for synthetic — don't pretend we know more than we do
+    return summarizeFromSingleEV(singleEV, 0.20);
+  }, [fullResult, assessmentPayload, inputs.arr, multiple]);
 
   // ── Confidence: derived from data quality score ──
   const confidence = useMemo(() => {
-    let c = 60; // base
+    let c = 55; // base
+    if (dist.isFromRealDistribution) c += 20;
+    else if (assessmentPayload) c += 10;
     if (hasSimulated && simulation) {
-      c += 15; // simulation available
-      if ((simulation.survivalRate ?? 0) > 0.5) c += 10;
+      c += 10;
+      if ((simulation.survivalRate ?? 0) > 0.5) c += 5;
     }
-    if (inputs.nrr >= 110) c += 5;
-    if (inputs.grossMargin >= 70) c += 5;
+    if (inputs.nrr >= 110) c += 3;
+    if (inputs.grossMargin >= 70) c += 3;
     return Math.min(95, c);
-  }, [hasSimulated, simulation, inputs.nrr, inputs.grossMargin]);
+  }, [dist.isFromRealDistribution, assessmentPayload, hasSimulated, simulation, inputs.nrr, inputs.grossMargin]);
 
-  // ── Volatility: derived from range width ──
+  // ── Volatility: derived from operating range width ──
   const volatility = useMemo((): "Low" | "Medium" | "High" => {
-    const spread = (result.highValuation - result.lowValuation) / result.valuation;
+    if (dist.p50 <= 0) return "High";
+    const spread = (dist.p75 - dist.p25) / dist.p50;
     if (spread > 0.5) return "High";
-    if (spread > 0.35) return "Medium";
+    if (spread > 0.25) return "Medium";
     return "Low";
-  }, [result]);
+  }, [dist]);
 
-  // ── Sensitivity drivers: derived from component multipliers ──
+  // ── Sensitivity drivers (same as before, from local calc) ──
   const sensitivityDrivers = useMemo(() => {
-    const base = result.valuation;
-    // Compute marginal impact of each component
+    const baseEV = dist.p50;
+    if (baseEV <= 0) return [];
     const drivers = [
       {
         name: "Revenue Growth",
-        deltaEV: base * (result.components.base >= 9 ? 0.15 : 0.25) * (inputs.growth >= 50 ? 1 : -1),
+        deltaEV: baseEV * (components.base >= 9 ? 0.15 : 0.25) * (inputs.growth >= 50 ? 1 : -1),
         impact: 0.9,
       },
       {
         name: "Net Revenue Retention",
-        deltaEV: base * (result.components.nrr - 1) * 0.8,
-        impact: Math.abs(result.components.nrr - 1) * 4,
+        deltaEV: baseEV * (components.nrr - 1) * 0.8,
+        impact: Math.abs(components.nrr - 1) * 4,
       },
       {
         name: "Gross Margin",
-        deltaEV: base * (result.components.margin - 1) * 0.6,
-        impact: Math.abs(result.components.margin - 1) * 3,
+        deltaEV: baseEV * (components.margin - 1) * 0.6,
+        impact: Math.abs(components.margin - 1) * 3,
       },
       {
         name: "Rule of 40",
-        deltaEV: base * (result.components.rule40 - 1) * 0.5,
-        impact: Math.abs(result.components.rule40 - 1) * 3,
+        deltaEV: baseEV * (components.rule40 - 1) * 0.5,
+        impact: Math.abs(components.rule40 - 1) * 3,
       },
       {
         name: "Stage Premium",
-        deltaEV: base * (result.components.stage - 1) * 0.4,
-        impact: Math.abs(result.components.stage - 1) * 3,
+        deltaEV: baseEV * (components.stage - 1) * 0.4,
+        impact: Math.abs(components.stage - 1) * 3,
       },
     ];
-    // Normalize impact 0–1
     const maxImpact = Math.max(...drivers.map((d) => d.impact), 0.01);
     return drivers.map((d) => ({ ...d, impact: Math.min(1, d.impact / maxImpact) }));
-  }, [result, inputs.growth]);
+  }, [dist.p50, components, inputs.growth]);
 
-  // ── Spider axes: derive from levers + simulation ──
+  // ── Spider axes ──
   const spiderAxes = useMemo(() => {
     const l = levers;
     const growthScore = Math.round(((l.demandStrength ?? 50) + (l.expansionVelocity ?? 50)) / 2);
-    const marginScore = Math.round(
-      ((l.costDiscipline ?? 50) + (100 - (l.operatingDrag ?? 50))) / 2
-    );
+    const marginScore = Math.round(((l.costDiscipline ?? 50) + (100 - (l.operatingDrag ?? 50))) / 2);
     const retentionScore = Math.min(100, Math.round((inputs.nrr / 180) * 100));
-    const capitalScore = Math.round(
-      ((l.costDiscipline ?? 50) + (100 - (l.operatingDrag ?? 50))) / 2
-    );
-    const marketScore = Math.round(
-      ((100 - (l.marketVolatility ?? 50)) + (l.pricingPower ?? 50)) / 2
-    );
-    const riskScore = Math.round(
-      ((100 - (l.executionRisk ?? 50)) + (100 - (l.marketVolatility ?? 50))) / 2
-    );
+    const capitalScore = Math.round(((l.costDiscipline ?? 50) + (100 - (l.operatingDrag ?? 50))) / 2);
+    const marketScore = Math.round(((100 - (l.marketVolatility ?? 50)) + (l.pricingPower ?? 50)) / 2);
+    const riskScore = Math.round(((100 - (l.executionRisk ?? 50)) + (100 - (l.marketVolatility ?? 50))) / 2);
 
-    // Baseline = 50 for all (neutral reference)
     return [
       { label: "Growth", baseline: 50, scenario: growthScore },
       { label: "Margin", baseline: 50, scenario: marginScore },
@@ -220,10 +251,9 @@ export default function ValuationPage() {
     ];
   }, [levers, inputs.nrr]);
 
-  // ── Market position: derive from store comparables ──
+  // ── Market position ──
   const marketMultiples = useMemo(() => {
-    const yourMultiple = result.multiple;
-    // Use store comparables if available, else sensible defaults
+    const yourMultiple = multiple;
     const comps = valStoreSnapshot?.comparables;
     if (comps && comps.length > 0) {
       const sorted = [...comps].sort((a, b) => a.arrMultiple - b.arrMultiple);
@@ -236,7 +266,7 @@ export default function ValuationPage() {
       };
     }
     return { your: yourMultiple, median: 6.9, upper: 9.2 };
-  }, [result.multiple, valStoreSnapshot?.comparables]);
+  }, [multiple, valStoreSnapshot?.comparables]);
 
   // ── Input updater ──
   const update = <K extends keyof ValInputs>(key: K, val: ValInputs[K]) =>
@@ -245,13 +275,12 @@ export default function ValuationPage() {
   return (
     <div className={styles.container}>
       <div className={styles.content}>
-        {/* ═══ LAYER 1: OUTCOME BLOCK ═══ */}
+        {/* ═══ LAYER 1: PROBABILITY-FIRST OUTCOME BLOCK ═══ */}
         <ValuationOutcomeBlock
-          valuation={result.valuation}
-          lowValuation={result.lowValuation}
-          highValuation={result.highValuation}
+          dist={dist}
           confidence={confidence}
           volatility={volatility}
+          multiple={multiple}
         />
 
         {/* ═══ LAYER 2: METHOD SELECTOR ═══ */}
@@ -320,13 +349,18 @@ export default function ValuationPage() {
           upperQuartile={marketMultiples.upper}
         />
 
-        {/* ═══ LAYER 6: ENGINE TRANSPARENCY ═══ */}
+        {/* ═══ LAYER 6: ENGINE TRANSPARENCY + RANGE DISCIPLINE ═══ */}
         <ValuationEngineTransparency
-          iterations={10_000}
-          horizonMonths={36}
+          iterations={fullResult?.iterations ?? 10_000}
+          horizonMonths={fullResult?.timeHorizonMonths ?? 36}
           discountRate={12.0}
           terminalGrowth={3.0}
           seed="deterministic"
+          isFromRealDistribution={dist.isFromRealDistribution}
+          winsorisationApplied={dist.winsorisationApplied}
+          winsorLow={dist.winsorLow}
+          winsorHigh={dist.winsorHigh}
+          displayPercentiles="p10–p90 (stress) · p25–p75 (operating)"
         />
 
         {/* ═══ LAYER 7: LEGAL DISCLOSURE ═══ */}
@@ -365,7 +399,7 @@ function InputField({
       <span
         style={{
           fontSize: 10,
-          color: "rgba(255,255,255,0.4)",
+          color: "rgba(255,255,255,0.5)",
           textTransform: "uppercase",
           letterSpacing: "0.06em",
           whiteSpace: "nowrap",
@@ -378,7 +412,7 @@ function InputField({
         style={{
           background: "none",
           border: "none",
-          color: "rgba(255,255,255,0.4)",
+          color: "rgba(255,255,255,0.5)",
           cursor: "pointer",
           fontSize: 14,
           padding: "2px 4px",
@@ -402,7 +436,7 @@ function InputField({
         style={{
           background: "none",
           border: "none",
-          color: "rgba(255,255,255,0.4)",
+          color: "rgba(255,255,255,0.5)",
           cursor: "pointer",
           fontSize: 14,
           padding: "2px 4px",
@@ -434,7 +468,7 @@ function StageSelect({
       <span
         style={{
           fontSize: 10,
-          color: "rgba(255,255,255,0.4)",
+          color: "rgba(255,255,255,0.5)",
           textTransform: "uppercase",
           letterSpacing: "0.06em",
         }}
@@ -450,7 +484,7 @@ function StageSelect({
             border: value === s.id ? "1px solid rgba(0,224,255,0.3)" : "1px solid transparent",
             borderRadius: 4,
             padding: "3px 8px",
-            color: value === s.id ? "#00E0FF" : "rgba(255,255,255,0.4)",
+            color: value === s.id ? "#00E0FF" : "rgba(255,255,255,0.5)",
             fontSize: 10,
             cursor: "pointer",
             textTransform: "uppercase",
@@ -463,8 +497,3 @@ function StageSelect({
     </div>
   );
 }
-
-
-
-
-

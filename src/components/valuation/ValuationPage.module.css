@@ -1,6 +1,6 @@
 /* src/components/valuation/ValuationPage.module.css */
 /* STRATFIT — Valuation Page GOD MODE (Institutional) */
-/* Board-ready, capital-serious, no purple dominance */
+/* Probability-first · Board-ready · Capital-serious · No purple dominance */
 
 /* ============================================================================
    ROOT CONTAINER
@@ -26,20 +26,20 @@
 }
 
 /* ============================================================================
-   LAYER 1 — OUTCOME BLOCK
+   LAYER 1 — OUTCOME BLOCK (Probability-First)
    ============================================================================ */
 
 .outcomeBlock {
   text-align: center;
   margin-bottom: 40px;
-  padding: 32px 24px;
+  padding: 32px 24px 24px;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 8px;
 }
 
 .outcomeLabel {
-  font-size: 11px;
+  font-size: 10px;
   color: rgba(255, 255, 255, 0.45);
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -59,7 +59,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 28px;
+  gap: 20px;
   margin-top: 16px;
   flex-wrap: wrap;
 }
@@ -72,7 +72,7 @@
 
 .outcomeSubLabel {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.45);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -95,17 +95,165 @@
   background: rgba(255, 255, 255, 0.1);
 }
 
-/* Distribution curve */
+/* ── Stress Range Toggle ── */
+
+.stressToggle {
+  margin-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  padding-top: 12px;
+}
+
+.stressToggleBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 auto;
+  padding: 6px 16px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.stressToggleBtn:hover {
+  color: rgba(255, 255, 255, 0.6);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.stressChevron {
+  font-size: 10px;
+  transition: transform 0.2s;
+}
+
+.stressChevronOpen {
+  transform: rotate(180deg);
+}
+
+.stressContent {
+  margin-top: 12px;
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 6px;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.stressRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.stressRow:last-of-type {
+  border-bottom: none;
+}
+
+.stressLabel {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.stressValue {
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+}
+
+.stressValueMuted {
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.stressNote {
+  margin-top: 10px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.3);
+  line-height: 1.5;
+  text-align: left;
+}
+
+/* ── Distribution Curve ── */
+
 .distributionWrap {
-  margin-top: 24px;
+  margin-top: 20px;
   display: flex;
   justify-content: center;
 }
 
 .distributionSvg {
   width: 100%;
-  max-width: 480px;
+  max-width: 520px;
   height: 100px;
+}
+
+/* ── Probability Panel ── */
+
+.probabilityPanel {
+  margin-top: 20px;
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 6px;
+}
+
+.probabilityTitle {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.probabilityGrid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px 28px;
+}
+
+.probabilityItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.probabilityLabel {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.02em;
+}
+
+.probabilityValue {
+  font-size: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  min-width: 36px;
+  text-align: right;
+}
+
+/* ── Source Badge ── */
+
+.sourceBadge {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.25);
+  letter-spacing: 0.04em;
 }
 
 /* ============================================================================
@@ -125,7 +273,7 @@
 
 .methodLabel {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.45);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   margin-right: 12px;
@@ -185,7 +333,7 @@
 
 .panelTitle {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.45);
   text-transform: uppercase;
   letter-spacing: 0.12em;
   margin-bottom: 16px;
@@ -386,7 +534,7 @@
 }
 
 /* ============================================================================
-   LAYER 6 — ENGINE TRANSPARENCY
+   LAYER 6 — ENGINE TRANSPARENCY + RANGE DISCIPLINE
    ============================================================================ */
 
 .expandableSection {
@@ -413,7 +561,7 @@
 
 .expandableTitle {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.45);
   text-transform: uppercase;
   letter-spacing: 0.12em;
 }
@@ -465,6 +613,48 @@
   color: rgba(255, 255, 255, 0.75);
 }
 
+/* ── Range Discipline ── */
+
+.disciplineContent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.disciplineRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.disciplineRow:last-of-type {
+  border-bottom: none;
+}
+
+.disciplineLabel {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+  margin-right: 16px;
+}
+
+.disciplineValue {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: right;
+}
+
+.disciplineNote {
+  margin-top: 12px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.3);
+  line-height: 1.6;
+}
+
 /* ============================================================================
    LAYER 7 — LEGAL DISCLOSURE
    ============================================================================ */
@@ -494,8 +684,3 @@
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }
-
-
-
-
-
