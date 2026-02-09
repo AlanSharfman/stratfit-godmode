@@ -9,6 +9,7 @@ import {
   DollarSign,
   CheckCircle,
   Activity,
+  FileText,
   Save,
   FolderOpen,
   Download,
@@ -100,6 +101,13 @@ const primaryNav: NavItem[] = [
     href: '/decision',
     icon: <CheckCircle className="w-4 h-4" />,
     description: 'Make your decision',
+  },
+  {
+    id: 'assessment',
+    label: 'ASSESSMENT',
+    href: '/assessment',
+    icon: <FileText className="w-4 h-4" />,
+    description: 'Strategic intelligence brief',
   },
 ]
 

@@ -19,7 +19,7 @@ import { ExportReportButton, ShareButton } from '@/components/common';
 // ===========================================
 // VIEW MODES (moved from ViewModeSelector)
 // ===========================================
-export type ViewMode = "initialize" | "terrain" | "impact" | "compare" | "simulate" | "risk" | "decision" | "valuation";
+export type ViewMode = "initialize" | "terrain" | "impact" | "compare" | "simulate" | "risk" | "decision" | "valuation" | "assessment";
 
 // ===========================================
 // SCENARIOS (moved from ActiveScenario)

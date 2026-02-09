@@ -34,6 +34,7 @@ import ImpactView from "@/components/compound/impact";
 import VariancesView from "@/components/compound/variances/VariancesView";
 import { useDebouncedValue, useThrottledValue } from "@/hooks/useDebouncedValue";
 import InitializeBaselinePage from "@/pages/initialize/InitializeBaselinePage";
+import StrategicAssessmentPage from "@/pages/StrategicAssessmentPage";
 import StrategyStudioPage from "@/components/strategy-studio/StrategyStudioPage";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
 import "@/styles/godmode-align-overrides.css";
@@ -506,6 +507,23 @@ export default function App() {
           }}
         />
         <InitializeBaselinePage />
+      </div>
+    );
+  }
+
+  // Strategic Assessment route — Institutional intelligence brief (post-simulation)
+  if (typeof window !== "undefined" && window.location.pathname === "/assessment") {
+    return (
+      <div className="app">
+        <MainNav
+          activeItemId="assessment"
+          onNavigate={(id) => {
+            if (id === "assessment") return;
+            if (id === "initialize") return window.location.assign("/initialize");
+            window.location.assign("/");
+          }}
+        />
+        <StrategicAssessmentPage />
       </div>
     );
   }
@@ -1234,6 +1252,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
               : id === "impact" ? "impact"
               : "terrain"
             );
+            if (id === "assessment") window.location.assign("/assessment");
             setShowSimulate(false);
           }}
           onSave={() => setShowSaveModal(true)}
@@ -1267,6 +1286,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
             if (id === "valuation") return setHeaderViewMode("valuation");
             if (id === "compare") return setHeaderViewMode("compare");
             if (id === "risk") return setHeaderViewMode("risk");
+            if (id === "assessment") return window.location.assign("/assessment");
             return setHeaderViewMode("terrain");
           }}
           onSave={() => setShowSaveModal(true)}
@@ -1328,9 +1348,11 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
                   ? "risk"
                   : headerViewMode === "impact"
                     ? "impact"
-                    : (headerViewMode as string) === "simulate"
-                      ? "simulate"
-                      : "terrain"
+                    : headerViewMode === "assessment"
+                      ? "assessment"
+                      : (headerViewMode as string) === "simulate"
+                        ? "simulate"
+                        : "terrain"
         }
         onNavigate={(id) => {
           // close overlay if user navigates elsewhere
@@ -1342,6 +1364,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
           if (id === "compare") return setHeaderViewMode("compare");
           if (id === "risk") return setHeaderViewMode("risk");
           if (id === "impact") return setHeaderViewMode("impact");
+          if (id === "assessment") return window.location.assign("/assessment");
           return setHeaderViewMode("terrain");
         }}
         onSave={() => setShowSaveModal(true)}
@@ -1410,7 +1433,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
           ) : (
             /* View content based on header navigation */
             <CenterViewPanel 
-              viewMode={headerViewMode}
+              viewMode={headerViewMode as "terrain" | "impact" | "compare" | "risk" | "decision" | "valuation"}
               timelineEnabled={timelineEnabled}
               heatmapEnabled={heatmapEnabled}
               onSimulateRequest={() => setShowSimulate(true)}
