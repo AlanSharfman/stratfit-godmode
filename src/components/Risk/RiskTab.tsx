@@ -1,7 +1,6 @@
 // src/components/Risk/RiskTab.tsx
 // STRATFIT — Risk Intelligence Tab (God Mode)
-// Now renders the Monte Carlo–derived RiskPanel as primary view.
-// RiskEngine consumes ONLY simulationStore.fullResult — no legacy stores.
+// Renders Monte Carlo–derived RiskPanel. No legacy stores.
 
 import { RiskPanel } from "@/components/risk/RiskPanel";
 
