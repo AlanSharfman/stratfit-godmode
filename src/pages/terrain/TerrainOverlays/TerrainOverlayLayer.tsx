@@ -8,6 +8,8 @@ import HeatmapOverlay from "./HeatmapOverlay";
 import TrajectoryOverlay from "./TrajectoryOverlay";
 import SensitivityNodes from "./SensitivityNodes";
 import ConfidenceBandOverlay from "./ConfidenceBandOverlay";
+import HorizonReferenceLine from "./HorizonReferenceLine";
+import MountainRegionLabels from "./MountainRegionLabels";
 
 interface TerrainOverlayLayerProps {
   /** Master toggle for intelligence overlays */
@@ -54,13 +56,26 @@ const TerrainOverlayLayer: React.FC<TerrainOverlayLayerProps> = ({
         variance={variance}
       />
 
+      {/* Horizon reference line — sustainability threshold */}
+      <HorizonReferenceLine
+        enabled={intelligenceEnabled}
+        survivalPct={survivalPct}
+        runway={runway}
+      />
+
+      {/* Mountain region labels — zone identifiers at bottom */}
+      <MountainRegionLabels
+        enabled={intelligenceEnabled}
+        dataPoints={dataPoints}
+      />
+
       {/* Trajectory path — median expected line */}
       <TrajectoryOverlay
         enabled={intelligenceEnabled}
         dataPoints={dataPoints}
       />
 
-      {/* Sensitivity nodes — interactive hover orbs */}
+      {/* Sensitivity nodes — ALWAYS VISIBLE with labels + hover detail */}
       <SensitivityNodes
         enabled={intelligenceEnabled}
         dataPoints={dataPoints}
@@ -74,8 +89,3 @@ const TerrainOverlayLayer: React.FC<TerrainOverlayLayerProps> = ({
 };
 
 export default TerrainOverlayLayer;
-
-
-
-
-

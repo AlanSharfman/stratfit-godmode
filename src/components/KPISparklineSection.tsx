@@ -1,9 +1,9 @@
 // src/components/KPISparklineSection.tsx
 // STRATFIT — AVIONICS KPI INSTRUMENT STRIP
-// Clean, institutional, flat telemetry — Runway · Momentum · Survival · Resilience
+// Clean, institutional, flat telemetry — Runway · Momentum · Survival · Cash · EV · Revenue
 // No particles, no starships, no dials. Bloomberg-meets-Palantir.
 
-import React, { useMemo } from "react";
+import React from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useScenarioStore } from "@/state/scenarioStore";
 
@@ -35,9 +35,18 @@ export default function KPISparklineSection() {
   const survivalDisplay = `${survivalPct}%`;
 
   const cashRaw = kpis.cashPosition?.value ?? 4200000;
-  const resilienceDisplay = `$${(cashRaw / 1_000_000).toFixed(1)}M`;
+  const cashDisplay = `$${(cashRaw / 1_000_000).toFixed(1)}M`;
 
-  // Secondary: Revenue
+  // Enterprise Value
+  const evRaw = kpis.enterpriseValue?.value ?? 0;
+  const evDisplay = evRaw > 0 ? `$${(evRaw / 1_000_000).toFixed(1)}M` : "—";
+
+  // Burn Quality
+  const burnRaw = kpis.burnQuality?.value ?? 50;
+  const monthlyBurn = burnRaw > 0 ? Math.round(burnRaw * 1000) : 0;
+  const burnDisplay = monthlyBurn > 0 ? `$${(monthlyBurn / 1000).toFixed(0)}K` : `${burnRaw}/100`;
+
+  // Revenue
   const arrCurrent = kpis.arrCurrent?.display ?? "$4.0M";
   const arrNext = kpis.arrNext12?.display ?? "$4.8M";
 
@@ -57,50 +66,33 @@ export default function KPISparklineSection() {
         }}
       >
         {/* RUNWAY */}
-        <KPICell
-          label="RUNWAY"
-          value={runwayDisplay}
-          unit="mo"
-          isFirst
-        />
-
+        <KPICell label="RUNWAY" value={runwayDisplay} unit="mo" isFirst />
         <Separator />
 
         {/* MOMENTUM */}
-        <KPICell
-          label="MOMENTUM"
-          value={momentumDisplay}
-          unit="MoM"
-        />
-
+        <KPICell label="MOMENTUM" value={momentumDisplay} unit="MoM" />
         <Separator />
 
         {/* SURVIVAL */}
-        <KPICell
-          label="SURVIVAL"
-          value={survivalDisplay}
-          unit="prob"
-        />
-
+        <KPICell label="SURVIVAL" value={survivalDisplay} unit="prob" />
         <Separator />
 
-        {/* RESILIENCE */}
-        <KPICell
-          label="RESILIENCE"
-          value={resilienceDisplay}
-          unit="cash"
-        />
-
+        {/* CASH POSITION */}
+        <KPICell label="CASH" value={cashDisplay} unit="pos" />
         <Separator />
 
-        {/* REVENUE (secondary — smaller) */}
+        {/* ENTERPRISE VALUE */}
+        <KPICell label="EV" value={evDisplay} unit="val" />
+        <Separator />
+
+        {/* REVENUE (secondary — compact) */}
         <div
-              style={{
+          style={{
             flex: "0 0 auto",
             display: "flex",
             alignItems: "center",
             gap: 16,
-            padding: "0 20px",
+            padding: "0 16px",
           }}
         >
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
@@ -159,14 +151,14 @@ function KPICell({
         flexDirection: "column",
         alignItems: "flex-start",
         justifyContent: "center",
-        padding: "0 20px",
+        padding: "0 16px",
         height: "100%",
         minWidth: 0,
       }}
     >
       {/* Label */}
       <span
-              style={{
+        style={{
           fontSize: 11,
           fontWeight: 600,
           letterSpacing: "0.12em",
@@ -183,7 +175,7 @@ function KPICell({
       <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
         <span
           style={{
-            fontSize: 28,
+            fontSize: 24,
             fontWeight: 700,
             color: "#22d3ee",
             fontFamily: "'Inter', -apple-system, sans-serif",
@@ -195,7 +187,7 @@ function KPICell({
         </span>
         <span
           style={{
-            fontSize: 11,
+            fontSize: 10,
             fontWeight: 500,
             color: "rgba(255, 255, 255, 0.3)",
             fontFamily: "'Inter', -apple-system, sans-serif",

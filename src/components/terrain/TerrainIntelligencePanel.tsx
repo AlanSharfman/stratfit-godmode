@@ -1,6 +1,7 @@
 // src/components/terrain/TerrainIntelligencePanel.tsx
 // STRATFIT — Active Intelligence Panel (Right) for Terrain
-// Sections: SUMMARY · KEY SIGNALS · SYSTEM COMMENTARY · WHAT THIS VIEW SHOWS
+// Shows ALL 7 mountain metrics + Summary + Key Signals + Commentary
+// Each metric matches a zone on the mountain visualization.
 // Institutional. Calm. No emojis. No hype.
 
 import React, { useMemo } from "react";
@@ -18,6 +19,8 @@ interface KPIs {
   growthStress?: { value: number; display?: string };
   arrGrowthPct?: { value: number; display?: string };
   arrCurrent?: { value: number; display?: string };
+  arrNext12?: { value: number; display?: string };
+  earningsPower?: { value: number; display?: string };
   qualityScore?: { value: number; display?: string };
 }
 
@@ -50,21 +53,29 @@ const insightTextStyle: React.CSSProperties = {
   margin: 0,
 };
 
-const keyNumberStyle: React.CSSProperties = {
-  fontSize: 18,
-  fontWeight: 700,
-  color: "#00E0FF",
-  fontFamily: "'JetBrains Mono', monospace",
-  letterSpacing: "-0.02em",
+const metricRowStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  padding: "4px 0",
 };
 
-const keyLabelStyle: React.CSSProperties = {
+const metricLabelStyle: React.CSSProperties = {
   fontSize: 10,
   fontWeight: 600,
   letterSpacing: "0.08em",
-  textTransform: "uppercase",
-  color: "rgba(255, 255, 255, 0.35)",
-  marginTop: 2,
+  textTransform: "uppercase" as const,
+  color: "rgba(255, 255, 255, 0.4)",
+  fontFamily: "'Inter', sans-serif",
+};
+
+const metricValueStyle: React.CSSProperties = {
+  fontSize: 13,
+  fontWeight: 700,
+  color: "rgba(255, 255, 255, 0.85)",
+  fontFamily: "'JetBrains Mono', monospace",
+  fontVariantNumeric: "tabular-nums",
+  letterSpacing: "-0.01em",
 };
 
 const bulletStyle: React.CSSProperties = {
@@ -77,17 +88,90 @@ const bulletStyle: React.CSSProperties = {
   marginBottom: 4,
 };
 
+function formatCash(v: number): string {
+  if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
+  if (v >= 1_000) return `$${(v / 1_000).toFixed(0)}K`;
+  return `$${v.toFixed(0)}`;
+}
+
+function getStatusColor(value: number, thresholds: { good: number; warn: number; invert?: boolean }): string {
+  const { good, warn, invert } = thresholds;
+  if (invert) {
+    // Lower is better (e.g. risk)
+    if (value <= good) return "rgba(52, 211, 153, 0.85)";
+    if (value <= warn) return "rgba(251, 191, 36, 0.85)";
+    return "rgba(248, 113, 113, 0.85)";
+  }
+  // Higher is better
+  if (value >= good) return "rgba(52, 211, 153, 0.85)";
+  if (value >= warn) return "rgba(251, 191, 36, 0.85)";
+  return "rgba(248, 113, 113, 0.85)";
+}
+
 const TerrainIntelligencePanel: React.FC<TerrainIntelligencePanelProps> = ({
   kpis,
   intelligenceEnabled,
 }) => {
+  // ── Extract all metrics ────────────────────────────────────────────
   const runway = kpis?.runway?.value ?? 24;
   const riskScore = kpis?.riskScore?.value ?? 30;
+  const riskIndex = kpis?.riskIndex?.value ?? 70;
   const burn = kpis?.burnQuality?.value ?? 50;
-  const ev = kpis?.enterpriseValue?.value ?? 50;
+  const cashPosition = kpis?.cashPosition?.value ?? 4_000_000;
+  const ev = kpis?.enterpriseValue?.value ?? 0;
   const ltvCac = kpis?.ltvCac?.value ?? 3;
   const qualityScore = kpis?.qualityScore?.value ?? 0.65;
   const arrGrowth = kpis?.arrGrowthPct?.value ?? 0;
+  const arrCurrent = kpis?.arrCurrent?.value ?? 0;
+  const earningsPower = kpis?.earningsPower?.value ?? 0;
+  const survivalPct = Math.round(Math.max(0, Math.min(100, 100 - riskScore)));
+  const cacPayback = kpis?.cacPayback?.value ?? 18;
+
+  // ── 7 Mountain Metrics (match zone labels on mountain) ────────────
+  const mountainMetrics = useMemo(() => [
+    {
+      label: "Revenue",
+      value: arrCurrent > 0 ? formatCash(arrCurrent) : kpis?.arrCurrent?.display ?? "—",
+      color: getStatusColor(arrGrowth, { good: 20, warn: 5 }),
+      sub: arrGrowth > 0 ? `+${arrGrowth.toFixed(0)}% YoY` : arrGrowth === 0 ? "Flat" : `${arrGrowth.toFixed(0)}% YoY`,
+    },
+    {
+      label: "Margin",
+      value: earningsPower > 0 ? `${earningsPower.toFixed(0)}%` : kpis?.earningsPower?.display ?? "—",
+      color: getStatusColor(earningsPower, { good: 60, warn: 30 }),
+      sub: earningsPower >= 60 ? "Healthy" : earningsPower >= 30 ? "Moderate" : "Compressed",
+    },
+    {
+      label: "Runway",
+      value: `${runway}mo`,
+      color: getStatusColor(runway, { good: 24, warn: 12 }),
+      sub: runway >= 24 ? "Extended" : runway >= 12 ? "Adequate" : "Critical",
+    },
+    {
+      label: "Cash",
+      value: formatCash(cashPosition),
+      color: getStatusColor(cashPosition, { good: 3_000_000, warn: 1_000_000 }),
+      sub: "Position",
+    },
+    {
+      label: "Burn",
+      value: burn > 0 ? `${burn.toFixed(0)}/100` : "—",
+      color: getStatusColor(burn, { good: 60, warn: 35 }),
+      sub: burn >= 60 ? "Disciplined" : burn >= 35 ? "Moderate" : "Aggressive",
+    },
+    {
+      label: "LTV/CAC",
+      value: `${ltvCac.toFixed(1)}x`,
+      color: getStatusColor(ltvCac, { good: 3, warn: 1.5 }),
+      sub: `${Math.round(cacPayback)}mo payback`,
+    },
+    {
+      label: "Risk",
+      value: `${survivalPct}%`,
+      color: getStatusColor(riskScore, { good: 30, warn: 60, invert: true }),
+      sub: riskScore < 30 ? "Low exposure" : riskScore < 60 ? "Moderate" : "Elevated",
+    },
+  ], [arrCurrent, arrGrowth, earningsPower, runway, cashPosition, burn, ltvCac, cacPayback, survivalPct, riskScore, kpis]);
 
   // Summary text
   const summaryText = useMemo(() => {
@@ -121,9 +205,12 @@ const TerrainIntelligencePanel: React.FC<TerrainIntelligencePanelProps> = ({
     } else if (arrGrowth < 0) {
       items.push({ label: "Revenue contraction detected", status: "warning" });
     }
+    if (cashPosition < 1_000_000) {
+      items.push({ label: "Cash position below critical reserve", status: "warning" });
+    }
 
     return items;
-  }, [runway, riskScore, ltvCac, arrGrowth]);
+  }, [runway, riskScore, ltvCac, arrGrowth, cashPosition]);
 
   // Commentary
   const commentary = useMemo(() => {
@@ -153,25 +240,51 @@ const TerrainIntelligencePanel: React.FC<TerrainIntelligencePanelProps> = ({
         display: "flex",
         flexDirection: "column",
         height: "100%",
-        padding: "16px 18px",
+        padding: "14px 16px",
         overflowY: "auto",
         background: "rgba(255, 255, 255, 0.02)",
         borderLeft: "1px solid rgba(255, 255, 255, 0.06)",
       }}
     >
+      {/* ═══ MOUNTAIN METRICS — Matches the 7 zones ═══ */}
+      <div>
+        <div style={sectionHeaderStyle}>Mountain Metrics</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+          {mountainMetrics.map((m) => (
+            <div key={m.label} style={metricRowStyle}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                {/* Color dot matching zone */}
+                <span style={{
+                  width: 5,
+                  height: 5,
+                  borderRadius: "50%",
+                  background: m.color,
+                  flexShrink: 0,
+                }} />
+                <span style={metricLabelStyle}>{m.label}</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+                <span style={metricValueStyle}>{m.value}</span>
+                <span style={{
+                  fontSize: 9,
+                  color: "rgba(255, 255, 255, 0.3)",
+                  fontFamily: "'Inter', sans-serif",
+                  fontWeight: 500,
+                  whiteSpace: "nowrap",
+                }}>
+                  {m.sub}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={sectionDividerStyle} />
+
       {/* SUMMARY */}
       <div>
         <div style={sectionHeaderStyle}>Summary</div>
-        <div style={{ display: "flex", gap: 16, marginBottom: 8 }}>
-          <div>
-            <div style={keyNumberStyle}>{runway}<span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginLeft: 3 }}>mo</span></div>
-            <div style={keyLabelStyle}>Runway</div>
-          </div>
-          <div>
-            <div style={keyNumberStyle}>{Math.round(qualityScore * 100)}<span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginLeft: 2 }}>%</span></div>
-            <div style={keyLabelStyle}>Quality</div>
-          </div>
-        </div>
         <p style={insightTextStyle}>{summaryText}</p>
       </div>
 
@@ -222,19 +335,23 @@ const TerrainIntelligencePanel: React.FC<TerrainIntelligencePanelProps> = ({
             <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
               <div style={bulletStyle}>
                 <span style={{ position: "absolute", left: 0, color: "rgba(0,224,255,0.4)" }}>–</span>
-                Terrain represents the distribution of probabilistic futures.
+                Each peak maps to a metric zone: Revenue → Margin → Runway → Cash → Burn → Efficiency → Risk.
               </div>
               <div style={bulletStyle}>
                 <span style={{ position: "absolute", left: 0, color: "rgba(0,224,255,0.4)" }}>–</span>
-                Height reflects outcome strength; spread reflects uncertainty.
+                Height reflects strength. Taller peaks indicate stronger performance.
               </div>
               <div style={bulletStyle}>
                 <span style={{ position: "absolute", left: 0, color: "rgba(0,224,255,0.4)" }}>–</span>
-                Risk density highlights where downside scenarios cluster.
+                Valleys indicate areas of weakness or structural vulnerability.
               </div>
               <div style={bulletStyle}>
                 <span style={{ position: "absolute", left: 0, color: "rgba(0,224,255,0.4)" }}>–</span>
-                Sensitivity nodes indicate regions of high model sensitivity.
+                The dashed horizon line shows the sustainability threshold.
+              </div>
+              <div style={bulletStyle}>
+                <span style={{ position: "absolute", left: 0, color: "rgba(0,224,255,0.4)" }}>–</span>
+                Confidence band width reflects uncertainty across simulated futures.
               </div>
             </div>
           </div>
@@ -245,8 +362,3 @@ const TerrainIntelligencePanel: React.FC<TerrainIntelligencePanelProps> = ({
 };
 
 export default TerrainIntelligencePanel;
-
-
-
-
-
