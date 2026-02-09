@@ -79,13 +79,15 @@ const BASELINE_DEFAULTS: LeverState = {
   fundingPressure: 20,
 };
 
-// ── Inline Slider ───────────────────────────────────────────────────────
+// ── Inline Slider (Two-Phase: Preview on Drag, Commit on Release) ───────
 
 interface InlineSliderProps {
   value: number;
   min?: number;
   max?: number;
   onChange: (v: number) => void;
+  onDragStart?: () => void;
+  onDragEnd?: (finalValue: number) => void;
 }
 
 const InlineSlider: React.FC<InlineSliderProps> = memo(({
@@ -93,8 +95,11 @@ const InlineSlider: React.FC<InlineSliderProps> = memo(({
   min = 0,
   max = 100,
   onChange,
+  onDragStart,
+  onDragEnd,
 }) => {
   const trackRef = useRef<HTMLDivElement>(null);
+  const lastValueRef = useRef(value);
 
   const resolve = useCallback(
     (clientX: number) => {
@@ -112,18 +117,32 @@ const InlineSlider: React.FC<InlineSliderProps> = memo(({
       const el = trackRef.current;
       if (!el) return;
       el.setPointerCapture(e.pointerId);
-      onChange(resolve(e.clientX));
 
-      const onMove = (ev: PointerEvent) => onChange(resolve(ev.clientX));
+      // Phase 1: Signal drag start
+      onDragStart?.();
+
+      const resolved = resolve(e.clientX);
+      lastValueRef.current = resolved;
+      onChange(resolved);
+
+      const onMove = (ev: PointerEvent) => {
+        const v = resolve(ev.clientX);
+        lastValueRef.current = v;
+        onChange(v);
+      };
       const onUp = (ev: PointerEvent) => {
         el.releasePointerCapture(ev.pointerId);
         el.removeEventListener("pointermove", onMove);
         el.removeEventListener("pointerup", onUp);
+        el.removeEventListener("pointercancel", onUp);
+        // Phase 2: Signal drag end with final value
+        onDragEnd?.(lastValueRef.current);
       };
       el.addEventListener("pointermove", onMove);
       el.addEventListener("pointerup", onUp);
+      el.addEventListener("pointercancel", onUp);
     },
-    [onChange, resolve]
+    [onChange, resolve, onDragStart, onDragEnd]
   );
 
   const pct = ((value - min) / (max - min)) * 100;
@@ -154,10 +173,18 @@ function DeltaBadge({ baseline, current }: { baseline: number; current: number }
 interface LeverStackProps {
   levers: LeverState;
   onLeverChange: (key: keyof LeverState, value: number) => void;
+  onLeverDragStart?: (key: keyof LeverState) => void;
+  onLeverDragEnd?: (key: keyof LeverState, finalValue: number) => void;
   readOnly?: boolean;
 }
 
-export const LeverStack: React.FC<LeverStackProps> = memo(({ levers, onLeverChange, readOnly = false }) => {
+export const LeverStack: React.FC<LeverStackProps> = memo(({
+  levers,
+  onLeverChange,
+  onLeverDragStart,
+  onLeverDragEnd,
+  readOnly = false,
+}) => {
   const [expanded, setExpanded] = useState<Set<string>>(
     () => new Set(DOMAINS.map((d) => d.id))
   );
@@ -206,6 +233,8 @@ export const LeverStack: React.FC<LeverStackProps> = memo(({ levers, onLeverChan
                       <InlineSlider
                         value={current}
                         onChange={(v) => onLeverChange(lever.key, v)}
+                        onDragStart={() => onLeverDragStart?.(lever.key)}
+                        onDragEnd={(v) => onLeverDragEnd?.(lever.key, v)}
                       />
                     </div>
                   );
