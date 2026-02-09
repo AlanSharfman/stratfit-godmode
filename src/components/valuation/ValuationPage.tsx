@@ -212,7 +212,7 @@ export default function ValuationPage() {
     const paramStability = Math.max(0, 1 - leverDeviation * 0.5);
 
     // Cross-method consistency: compare methods
-    const methods: ValuationMethodId[] = ["stratfit", "arr-multiple", "revenue-multiple", "dcf"];
+    const methods: ValuationMethodId[] = ["stratfit", "comparables", "revenue-multiple", "dcf"];
     const evsByMethod = methods.map((m) => inputs.arr * calcMultiple(inputs, m).multiple);
     const evMean = evsByMethod.reduce((a, b) => a + b, 0) / evsByMethod.length;
     const evStd = Math.sqrt(evsByMethod.reduce((a, v) => a + (v - evMean) ** 2, 0) / evsByMethod.length);

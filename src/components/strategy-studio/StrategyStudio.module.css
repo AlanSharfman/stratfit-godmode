@@ -950,6 +950,154 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   MODEL DETAILS — Bottom Row (Collapsible)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.modelDetailsBar {
+  flex-shrink: 0;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.01);
+}
+
+.modelDetailsToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 20px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 100ms ease;
+}
+
+.modelDetailsToggle:hover {
+  background: rgba(255,255,255,0.02);
+}
+
+.modelDetailsToggleLabel {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
+}
+
+.modelDetailsChevron {
+  font-size: 8px;
+  color: rgba(255,255,255,0.15);
+  transition: transform 150ms ease;
+}
+
+.modelDetailsChevronOpen {
+  composes: modelDetailsChevron;
+  transform: rotate(180deg);
+}
+
+.modelDetailsBody {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 6px 20px 10px;
+  flex-wrap: wrap;
+}
+
+.modelDetailsItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.modelDetailsItemLabel {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.2);
+}
+
+.modelDetailsItemValue {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.55);
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.confidenceBand {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+.confidenceVeryLow {
+  composes: confidenceBand;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.15);
+}
+
+.confidenceLow {
+  composes: confidenceBand;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.15);
+}
+
+.confidenceMedium {
+  composes: confidenceBand;
+  color: rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.confidenceHigh {
+  composes: confidenceBand;
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.08);
+  border: 1px solid rgba(52, 211, 153, 0.15);
+}
+
+.confidenceVeryHigh {
+  composes: confidenceBand;
+  color: #22d3ee;
+  background: rgba(34, 211, 238, 0.08);
+  border: 1px solid rgba(34, 211, 238, 0.15);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCENARIO NAME — Editable inline name
+   ═══════════════════════════════════════════════════════════════════════════ */
+.scenarioNameInput {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(255,255,255,0.8);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 4px 8px;
+  font-family: inherit;
+  transition: border-color 120ms ease, background 120ms ease;
+  max-width: 180px;
+}
+
+.scenarioNameInput:hover {
+  border-color: rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.02);
+}
+
+.scenarioNameInput:focus {
+  outline: none;
+  border-color: rgba(0,224,255,0.35);
+  background: rgba(0,224,255,0.03);
+  color: rgba(255,255,255,0.95);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    RESPONSIVE
    ═══════════════════════════════════════════════════════════════════════════ */
 @media (max-width: 1600px) {

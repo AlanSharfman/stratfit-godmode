@@ -239,6 +239,18 @@ const StrategyStudioPage: React.FC<StrategyStudioPageProps> = memo(({
   const [commitNonce, setCommitNonce] = useState(0);
   const autoSimIdRef = useRef(0);
 
+  // ── Scenario names (editable) ──────────────────────────────────────
+  const [scenarioNames, setScenarioNames] = useState<Record<string, string>>({
+    baseline: "Baseline",
+    scenarioA: "Scenario A",
+    scenarioB: "Scenario B",
+  });
+
+  // ── Model Details (collapsible bottom row) ─────────────────────────
+  const [modelDetailsOpen, setModelDetailsOpen] = useState(false);
+  const [lastRunSeed, setLastRunSeed] = useState<number | null>(null);
+  const [lastRunTime, setLastRunTime] = useState<string>("—");
+
   // ── Store selectors ───────────────────────────────────────────────
   const hoveredKpiIndex = useScenarioStore((s) => s.hoveredKpiIndex);
   const baselineSummary = useSimulationStore((s) => s.summary);
@@ -386,6 +398,10 @@ const StrategyStudioPage: React.FC<StrategyStudioPageProps> = memo(({
     [activeTab, previewLevers, scenarioLevers, setLevers],
   );
 
+  const handleScenarioNameChange = useCallback((name: string) => {
+    setScenarioNames((prev) => ({ ...prev, [activeTab]: name }));
+  }, [activeTab]);
+
   const handleHorizonChange = useCallback((h: Horizon) => {
     setHorizon(h);
     setTimelineMonth(h);
@@ -447,9 +463,14 @@ const StrategyStudioPage: React.FC<StrategyStudioPageProps> = memo(({
           ...prev,
           [activeTab]: result,
         }));
-        setSimDurationMs(performance.now() - simStartRef.current);
+        const finalDuration = performance.now() - simStartRef.current;
+        setSimDurationMs(finalDuration);
         setSimIterations(result.iterations);
         setSimJustCompleted(true);
+        setLastRunSeed(thisId); // Use commit nonce as pseudo-seed identifier
+        setLastRunTime(finalDuration < 1000
+          ? `${Math.round(finalDuration)}ms`
+          : `${(finalDuration / 1000).toFixed(2)}s`);
 
         // Auto-clear completion indicator after 4s
         setTimeout(() => {
@@ -511,6 +532,8 @@ const StrategyStudioPage: React.FC<StrategyStudioPageProps> = memo(({
           compareMode={compareMode}
           onCompareModeToggle={() => setCompareMode((p) => !p)}
           onSimulate={onSimulateRequest}
+          scenarioName={scenarioNames[activeTab]}
+          onScenarioNameChange={handleScenarioNameChange}
         />
 
         {/* Mountain Stage */}
@@ -550,6 +573,57 @@ const StrategyStudioPage: React.FC<StrategyStudioPageProps> = memo(({
           currentMonth={timelineMonth}
           onChange={handleTimelineChange}
         />
+
+        {/* Model Details — Collapsible bottom row */}
+        <div className={styles.modelDetailsBar}>
+          <button
+            type="button"
+            className={styles.modelDetailsToggle}
+            onClick={() => setModelDetailsOpen((p) => !p)}
+          >
+            <span className={styles.modelDetailsToggleLabel}>Model Details</span>
+            <span className={modelDetailsOpen ? styles.modelDetailsChevronOpen : styles.modelDetailsChevron}>▾</span>
+          </button>
+
+          {modelDetailsOpen && (
+            <div className={styles.modelDetailsBody}>
+              <div className={styles.modelDetailsItem}>
+                <span className={styles.modelDetailsItemLabel}>Iterations</span>
+                <span className={styles.modelDetailsItemValue}>
+                  {activeAutoSimResult ? activeAutoSimResult.iterations.toLocaleString() : "—"}
+                </span>
+              </div>
+              <div className={styles.modelDetailsItem}>
+                <span className={styles.modelDetailsItemLabel}>Seed</span>
+                <span className={styles.modelDetailsItemValue}>
+                  {lastRunSeed !== null ? lastRunSeed : "—"}
+                </span>
+              </div>
+              <div className={styles.modelDetailsItem}>
+                <span className={styles.modelDetailsItemLabel}>Last Run</span>
+                <span className={styles.modelDetailsItemValue}>{lastRunTime}</span>
+              </div>
+              <div className={styles.modelDetailsItem}>
+                <span className={styles.modelDetailsItemLabel}>Confidence</span>
+                <span className={
+                  !activeAutoSimResult ? styles.confidenceBand
+                    : activeAutoSimResult.iterations >= 5000 ? styles.confidenceVeryHigh
+                    : activeAutoSimResult.iterations >= 2000 ? styles.confidenceHigh
+                    : activeAutoSimResult.iterations >= 1000 ? styles.confidenceMedium
+                    : activeAutoSimResult.iterations >= 500 ? styles.confidenceLow
+                    : styles.confidenceVeryLow
+                }>
+                  {!activeAutoSimResult ? "—"
+                    : activeAutoSimResult.iterations >= 5000 ? "VERY HIGH"
+                    : activeAutoSimResult.iterations >= 2000 ? "HIGH"
+                    : activeAutoSimResult.iterations >= 1000 ? "MEDIUM"
+                    : activeAutoSimResult.iterations >= 500 ? "LOW"
+                    : "VERY LOW"}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
       </main>
 
       {/* ═══ RIGHT: DELTA SUMMARY ════════════════════════════════════ */}
@@ -558,12 +632,8 @@ const StrategyStudioPage: React.FC<StrategyStudioPageProps> = memo(({
           deltas={deltas}
           scenarioLabel={
             compareMode
-              ? "A vs B"
-              : activeTab === "scenarioA"
-                ? "Scenario A"
-                : activeTab === "scenarioB"
-                  ? "Scenario B"
-                  : "Baseline"
+              ? `${scenarioNames.scenarioA} vs ${scenarioNames.scenarioB}`
+              : scenarioNames[activeTab] ?? activeTab
           }
           isAutoSimming={isAutoSimming}
           compareMode={compareMode}

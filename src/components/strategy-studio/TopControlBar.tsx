@@ -22,6 +22,8 @@ interface TopControlBarProps {
   compareMode: boolean;
   onCompareModeToggle: () => void;
   onSimulate?: () => void;
+  scenarioName?: string;
+  onScenarioNameChange?: (name: string) => void;
 }
 
 const TABS: { id: ScenarioTab; label: string }[] = [
@@ -48,9 +50,26 @@ export const TopControlBar: React.FC<TopControlBarProps> = memo(({
   compareMode,
   onCompareModeToggle,
   onSimulate,
+  scenarioName,
+  onScenarioNameChange,
 }) => {
   return (
     <div className={styles.controlBar}>
+      {/* Editable Scenario Name */}
+      {scenarioName !== undefined && onScenarioNameChange && (
+        <>
+          <input
+            type="text"
+            className={styles.scenarioNameInput}
+            value={scenarioName}
+            onChange={(e) => onScenarioNameChange(e.target.value)}
+            placeholder="Scenario name…"
+            spellCheck={false}
+          />
+          <div className={styles.controlDivider} />
+        </>
+      )}
+
       {/* Scenario Tabs */}
       <div className={styles.scenarioTabBar}>
         {TABS.map((tab) => {
