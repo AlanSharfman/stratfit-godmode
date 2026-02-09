@@ -16,6 +16,7 @@ import {
   ChevronDown,
   Layers,
   HelpCircle,
+  Target,
 } from 'lucide-react'
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -100,6 +101,13 @@ const primaryNav: NavItem[] = [
     href: '/assessment',
     icon: <FileText className="w-4 h-4" />,
     description: 'Strengths, vulnerabilities & priority focus',
+  },
+  {
+    id: 'impact',
+    label: 'IMPACT',
+    href: '/impact',
+    icon: <Target className="w-4 h-4" />,
+    description: 'Sensitivity analysis & structural impact',
   },
 ]
 
