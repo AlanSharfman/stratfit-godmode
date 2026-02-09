@@ -136,3 +136,4 @@ export async function generateNarrativeAsync(findings: QuantifiedFinding[]): Pro
   return deterministicNarrative(findings);
 }
 
+

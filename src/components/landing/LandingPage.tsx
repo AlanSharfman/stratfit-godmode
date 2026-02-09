@@ -275,7 +275,7 @@ export default function LandingPage({ onStart, onStartWithPersona }: LandingPage
       <footer className="landing-footer">
         <div className="footer-content">
           <div className="footer-logo">
-            <span className="logo-icon">◆</span>
+            <img src="/logo.svg" alt="STRATFIT Logo" width="24" height="24" style={{ display: 'block' }} />
             <span className="logo-text">STRATFIT</span>
           </div>
           <p className="footer-tagline">Scenario Intelligence for Strategic Decisions</p>

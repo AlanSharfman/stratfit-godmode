@@ -118,3 +118,4 @@ export const LegalDisclosureAccordion: React.FC<LegalDisclosureAccordionProps> =
 
 export default LegalDisclosureAccordion;
 
+

@@ -187,3 +187,4 @@ export const CompactConfidenceGauge: React.FC<CompactConfidenceGaugeProps> = ({ 
 
 export default ConfidenceGauge;
 
+

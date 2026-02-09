@@ -46,6 +46,7 @@ import { useUIStore } from "@/state/uiStore";
 import { SimulateOverlay } from '@/components/simulate';
 import { SaveSimulationModal, LoadSimulationPanel } from '@/components/simulations';
 import { ComparePage } from '@/components/compare';
+import CompareView from '@/components/compare/CompareView';
 import SimulationTelemetryRibbon from '@/components/simulation/SimulationTelemetryRibbon';
 import ProDetailDrawer from '@/components/simulation/ProDetailDrawer';
 import AdminEngineConsole from '@/components/admin/AdminEngineConsole';
@@ -1274,6 +1275,37 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
   // STRATEGY STUDIO — Institutional God Mode 3-zone layout
   // Replaces the old 3-column ControlDeck/CenterViewPanel/AIPanel layout
   // ══════════════════════════════════════════════════════════════════════════
+
+  // COMPARE VIEW - Institutional Compare Architecture
+  if (headerViewMode === "compare") {
+    return (
+      <div className="app">
+        <MainNav
+          activeScenario={{
+            name: activeScenarioType ?? "New Scenario",
+            lastModified: "Active",
+          }}
+          activeItemId="compare"
+          onNavigate={(id) => {
+            if (id === "initialize") return setHeaderViewMode("initialize");
+            if (id === "simulate") return setHeaderViewMode("simulate");
+            if (id === "valuation") return setHeaderViewMode("valuation");
+            if (id === "compare") return setHeaderViewMode("compare");
+            if (id === "risk") return setHeaderViewMode("risk");
+            if (id === "assessment") return window.location.assign("/assessment");
+            return setHeaderViewMode("terrain");
+          }}
+          onSave={() => setShowSaveModal(true)}
+          onLoad={() => setShowLoadPanel(true)}
+          onExport={() => console.log("Export")}
+          onShare={() => console.log("Share")}
+        />
+        <CompareView />
+      </div>
+    );
+  }
+
+
   if (headerViewMode === "simulate") {
     return (
       <div className="app">
@@ -1304,6 +1336,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
           scenario={scenario}
           dataPoints={dataPoints}
           onSimulateRequest={() => setShowSimulate(true)}
+          onRunScenario={() => setHeaderViewMode("compare")}
         />
         {/* Monte Carlo Overlay (still accessible) */}
         <SimulateOverlay
@@ -1354,9 +1387,7 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
         activeItemId={
           headerViewMode === "valuation"
             ? "valuation"
-            : headerViewMode === "compare"
-              ? "compare"
-              : headerViewMode === "risk"
+            : headerViewMode === "risk"
                 ? "risk"
                 : headerViewMode === "impact"
                   ? "impact"

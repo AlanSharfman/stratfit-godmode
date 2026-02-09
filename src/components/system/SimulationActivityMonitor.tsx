@@ -248,3 +248,4 @@ const SimulationActivityMonitor: React.FC = () => {
 SimulationActivityMonitor.displayName = "SimulationActivityMonitor";
 export default SimulationActivityMonitor;
 
+

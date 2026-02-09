@@ -1112,3 +1112,673 @@
   .root { grid-template-columns: 260px 1fr 260px; }
 }
 
+
+
+.ghostSvg {
+  width: 100%;
+  height: 100%;
+}
+
+.ghostPath {
+  animation: ghostPulse 2s ease-in-out infinite;
+}
+
+@keyframes ghostPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+
+/* Ghost PREVIEW badge */
+.ghostBadge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0, 224, 255, 0.85);
+  background: rgba(0, 224, 255, 0.06);
+  border: 1px solid rgba(0, 224, 255, 0.2);
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+}
+
+.ghostBadgeDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #00E0FF;
+  animation: ghostDotPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes ghostDotPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 3px rgba(0,224,255,0.4); }
+  50% { opacity: 0.3; box-shadow: 0 0 0 transparent; }
+}
+
+/* Ghost active border on mountain stage */
+.mountainStagePreview {
+  composes: mountainStage;
+  box-shadow: inset 0 0 0 1px rgba(0, 224, 255, 0.12);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SIMULATION ACTIVITY MONITOR — Commit Phase
+   ═══════════════════════════════════════════════════════════════════════════ */
+.simMonitor {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 240px;
+  padding: 10px 14px;
+  background: rgba(11, 17, 23, 0.92);
+  border: 1px solid rgba(0, 224, 255, 0.15);
+  border-radius: 6px;
+  backdrop-filter: blur(8px);
+  z-index: 20;
+  animation: simMonitorIn 200ms ease-out;
+}
+
+.simMonitorComplete {
+  border-color: rgba(52, 211, 153, 0.25);
+}
+
+@keyframes simMonitorIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.simMonitorHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.simMonitorStatus {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0, 224, 255, 0.85);
+}
+
+.simMonitorComplete .simMonitorStatus {
+  color: rgba(52, 211, 153, 0.85);
+}
+
+.simMonitorDotActive {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #00E0FF;
+  box-shadow: 0 0 4px rgba(0, 224, 255, 0.5);
+  animation: simPulse 1s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.simMonitorDotComplete {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 4px rgba(52, 211, 153, 0.5);
+  flex-shrink: 0;
+}
+
+.simMonitorProgressWrap {
+  height: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 1px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.simMonitorProgress {
+  height: 100%;
+  background: #00E0FF;
+  border-radius: 1px;
+  transition: width 200ms ease;
+  box-shadow: 0 0 6px rgba(0, 224, 255, 0.3);
+}
+
+.simMonitorTelemetry {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.simMonitorRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.simMonitorLabel {
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.25);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.simMonitorValue {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.simMonitorLegal {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.2);
+  line-height: 1.3;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MODEL DETAILS — Bottom Row (Collapsible)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.modelDetailsBar {
+  flex-shrink: 0;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.01);
+}
+
+.modelDetailsToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 20px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 100ms ease;
+}
+
+.modelDetailsToggle:hover {
+  background: rgba(255,255,255,0.02);
+}
+
+.modelDetailsToggleLabel {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
+}
+
+.modelDetailsChevron {
+  font-size: 8px;
+  color: rgba(255,255,255,0.15);
+  transition: transform 150ms ease;
+}
+
+.modelDetailsChevronOpen {
+  composes: modelDetailsChevron;
+  transform: rotate(180deg);
+}
+
+.modelDetailsBody {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 6px 20px 10px;
+  flex-wrap: wrap;
+}
+
+.modelDetailsItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.modelDetailsItemLabel {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.2);
+}
+
+.modelDetailsItemValue {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.55);
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.confidenceBand {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+.confidenceVeryLow {
+  composes: confidenceBand;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.15);
+}
+
+.confidenceLow {
+  composes: confidenceBand;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.15);
+}
+
+.confidenceMedium {
+  composes: confidenceBand;
+  color: rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.confidenceHigh {
+  composes: confidenceBand;
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.08);
+  border: 1px solid rgba(52, 211, 153, 0.15);
+}
+
+.confidenceVeryHigh {
+  composes: confidenceBand;
+  color: #22d3ee;
+  background: rgba(34, 211, 238, 0.08);
+  border: 1px solid rgba(34, 211, 238, 0.15);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCENARIO NAME — Editable inline name
+   ═══════════════════════════════════════════════════════════════════════════ */
+.scenarioNameInput {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(255,255,255,0.8);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 4px 8px;
+  font-family: inherit;
+  transition: border-color 120ms ease, background 120ms ease;
+  max-width: 180px;
+}
+
+.scenarioNameInput:hover {
+  border-color: rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.02);
+}
+
+.scenarioNameInput:focus {
+  outline: none;
+  border-color: rgba(0,224,255,0.35);
+  background: rgba(0,224,255,0.03);
+  color: rgba(255,255,255,0.95);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1600px) {
+  .root { grid-template-columns: 300px 1fr 320px; }
+}
+
+@media (max-width: 1400px) {
+  .root { grid-template-columns: 280px 1fr 300px; }
+}
+
+@media (max-width: 1200px) {
+  .root { grid-template-columns: 260px 1fr 260px; }
+}
+
+
+
+.ghostSvg {
+  width: 100%;
+  height: 100%;
+}
+
+.ghostPath {
+  animation: ghostPulse 2s ease-in-out infinite;
+}
+
+@keyframes ghostPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+
+/* Ghost PREVIEW badge */
+.ghostBadge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0, 224, 255, 0.85);
+  background: rgba(0, 224, 255, 0.06);
+  border: 1px solid rgba(0, 224, 255, 0.2);
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+}
+
+.ghostBadgeDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #00E0FF;
+  animation: ghostDotPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes ghostDotPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 3px rgba(0,224,255,0.4); }
+  50% { opacity: 0.3; box-shadow: 0 0 0 transparent; }
+}
+
+/* Ghost active border on mountain stage */
+.mountainStagePreview {
+  composes: mountainStage;
+  box-shadow: inset 0 0 0 1px rgba(0, 224, 255, 0.12);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SIMULATION ACTIVITY MONITOR — Commit Phase
+   ═══════════════════════════════════════════════════════════════════════════ */
+.simMonitor {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 240px;
+  padding: 10px 14px;
+  background: rgba(11, 17, 23, 0.92);
+  border: 1px solid rgba(0, 224, 255, 0.15);
+  border-radius: 6px;
+  backdrop-filter: blur(8px);
+  z-index: 20;
+  animation: simMonitorIn 200ms ease-out;
+}
+
+.simMonitorComplete {
+  border-color: rgba(52, 211, 153, 0.25);
+}
+
+@keyframes simMonitorIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.simMonitorHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.simMonitorStatus {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0, 224, 255, 0.85);
+}
+
+.simMonitorComplete .simMonitorStatus {
+  color: rgba(52, 211, 153, 0.85);
+}
+
+.simMonitorDotActive {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #00E0FF;
+  box-shadow: 0 0 4px rgba(0, 224, 255, 0.5);
+  animation: simPulse 1s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.simMonitorDotComplete {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 4px rgba(52, 211, 153, 0.5);
+  flex-shrink: 0;
+}
+
+.simMonitorProgressWrap {
+  height: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 1px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.simMonitorProgress {
+  height: 100%;
+  background: #00E0FF;
+  border-radius: 1px;
+  transition: width 200ms ease;
+  box-shadow: 0 0 6px rgba(0, 224, 255, 0.3);
+}
+
+.simMonitorTelemetry {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.simMonitorRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.simMonitorLabel {
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.25);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.simMonitorValue {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.simMonitorLegal {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.2);
+  line-height: 1.3;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MODEL DETAILS — Bottom Row (Collapsible)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.modelDetailsBar {
+  flex-shrink: 0;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.01);
+}
+
+.modelDetailsToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 20px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 100ms ease;
+}
+
+.modelDetailsToggle:hover {
+  background: rgba(255,255,255,0.02);
+}
+
+.modelDetailsToggleLabel {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
+}
+
+.modelDetailsChevron {
+  font-size: 8px;
+  color: rgba(255,255,255,0.15);
+  transition: transform 150ms ease;
+}
+
+.modelDetailsChevronOpen {
+  composes: modelDetailsChevron;
+  transform: rotate(180deg);
+}
+
+.modelDetailsBody {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 6px 20px 10px;
+  flex-wrap: wrap;
+}
+
+.modelDetailsItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.modelDetailsItemLabel {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.2);
+}
+
+.modelDetailsItemValue {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.55);
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.confidenceBand {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+.confidenceVeryLow {
+  composes: confidenceBand;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.15);
+}
+
+.confidenceLow {
+  composes: confidenceBand;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.15);
+}
+
+.confidenceMedium {
+  composes: confidenceBand;
+  color: rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.confidenceHigh {
+  composes: confidenceBand;
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.08);
+  border: 1px solid rgba(52, 211, 153, 0.15);
+}
+
+.confidenceVeryHigh {
+  composes: confidenceBand;
+  color: #22d3ee;
+  background: rgba(34, 211, 238, 0.08);
+  border: 1px solid rgba(34, 211, 238, 0.15);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCENARIO NAME — Editable inline name
+   ═══════════════════════════════════════════════════════════════════════════ */
+.scenarioNameInput {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(255,255,255,0.8);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 4px 8px;
+  font-family: inherit;
+  transition: border-color 120ms ease, background 120ms ease;
+  max-width: 180px;
+}
+
+.scenarioNameInput:hover {
+  border-color: rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.02);
+}
+
+.scenarioNameInput:focus {
+  outline: none;
+  border-color: rgba(0,224,255,0.35);
+  background: rgba(0,224,255,0.03);
+  color: rgba(255,255,255,0.95);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1600px) {
+  .root { grid-template-columns: 300px 1fr 320px; }
+}
+
+@media (max-width: 1400px) {
+  .root { grid-template-columns: 280px 1fr 300px; }
+}
+
+@media (max-width: 1200px) {
+  .root { grid-template-columns: 260px 1fr 260px; }
+}
+

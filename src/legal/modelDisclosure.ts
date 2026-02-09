@@ -21,3 +21,4 @@ export const MODEL_ASSUMPTIONS_BULLETS: string[] = [
   "Simulation settings (iterations, horizon, seed) affect precision and repeatability.",
 ];
 
+

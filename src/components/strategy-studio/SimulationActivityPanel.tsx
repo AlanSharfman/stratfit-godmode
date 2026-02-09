@@ -114,3 +114,4 @@ const SimulationActivityPanel: React.FC<SimulationActivityPanelProps> = memo(({
 SimulationActivityPanel.displayName = "SimulationActivityPanel";
 export default SimulationActivityPanel;
 
+

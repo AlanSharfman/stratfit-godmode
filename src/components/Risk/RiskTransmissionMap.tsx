@@ -188,3 +188,4 @@ export const RiskTransmissionMap: React.FC<RiskTransmissionMapProps> = ({
 
 export default RiskTransmissionMap;
 
+

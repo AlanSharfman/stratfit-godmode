@@ -111,11 +111,7 @@ function Logo() {
   return (
     <Link to="/" className="flex items-center gap-3 group">
       <div className="relative w-8 h-8">
-        {/* Mountain icon with glow */}
-        <div className="absolute inset-0 bg-linear-to-br from-cyan-500 to-violet-600 rounded-lg opacity-20 group-hover:opacity-30 transition-opacity" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Mountain className="w-5 h-5 text-cyan-400" />
-        </div>
+        <img src="/logo.svg" alt="STRATFIT Logo" width="32" height="32" style={{ display: 'block' }} />
       </div>
       <div>
         <div className="text-white font-semibold tracking-wide">STRATFIT</div>
@@ -129,11 +125,7 @@ function LogoButton({ onClick }: { onClick?: () => void }) {
   return (
     <button type="button" onClick={onClick} className="flex items-center gap-3 group">
       <div className="relative w-8 h-8">
-        {/* Mountain icon with glow */}
-        <div className="absolute inset-0 bg-linear-to-br from-cyan-500 to-violet-600 rounded-lg opacity-20 group-hover:opacity-30 transition-opacity" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Mountain className="w-5 h-5 text-cyan-400" />
-        </div>
+        <img src="/logo.svg" alt="STRATFIT Logo" width="32" height="32" style={{ display: 'block' }} />
       </div>
       <div>
         <div className="text-white font-semibold tracking-wide">STRATFIT</div>

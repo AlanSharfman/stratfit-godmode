@@ -43,6 +43,7 @@ import {
   runSingleSimulation,
   processSimulationResults,
 } from "@/logic/monteCarloEngine";
+import { useCompareViewStore } from "@/state/compareViewStore";
 
 // ── Props from App.tsx ──────────────────────────────────────────────────
 
@@ -52,6 +53,8 @@ interface StrategyStudioPageProps {
   scenario: ScenarioId;
   dataPoints: number[];
   onSimulateRequest?: () => void;
+  /** Called after "Run Scenario" pushes data to compareViewStore */
+  onRunScenario?: () => void;
 }
 
 // ── Initial lever defaults ──────────────────────────────────────────────
@@ -178,6 +181,7 @@ const StrategyStudioPage: React.FC<StrategyStudioPageProps> = memo(({
   scenario,
   dataPoints,
   onSimulateRequest,
+  onRunScenario,
 }) => {
   // ── Scenario layer state ──────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<ScenarioTab>("scenarioA");
@@ -411,6 +415,58 @@ const StrategyStudioPage: React.FC<StrategyStudioPageProps> = memo(({
     setTimelineMonth(month);
   }, []);
 
+  // ── Run Scenario → Push to CompareView Store → Navigate ────────────
+  const handleRunScenario = useCallback(() => {
+    const store = useCompareViewStore.getState();
+
+    // Push baseline as Current Structure
+    store.setCurrentStructure({
+      levers: { ...baselineLevers },
+      metrics: baselineMetrics,
+      dataPoints: metricsToDataPoints(baselineMetrics),
+    });
+
+    // Ensure active scenario exists in compare store
+    const currentScenarioLevers = scenarioLevers[activeTab] ?? levers;
+    const currentScenarioMetrics = scenarioMetrics;
+    const currentSimResult = autoSimResults[activeTab] ?? null;
+    const currentDataPoints = committedDataPoints;
+    const scenarioName = scenarioNames[activeTab] ?? activeTab;
+
+    // Check if scenario already exists in compare store
+    const existingScenarios = store.scenarios;
+    const existingMatch = existingScenarios.find((s) => s.name === scenarioName);
+
+    if (existingMatch) {
+      store.updateScenario(existingMatch.id, {
+        levers: { ...currentScenarioLevers },
+        metrics: currentScenarioMetrics,
+        simulationResult: currentSimResult,
+        dataPoints: [...currentDataPoints],
+      });
+      store.setActiveScenarioId(existingMatch.id);
+    } else {
+      const newScenario = store.addScenario({
+        id: "",
+        name: scenarioName,
+        levers: { ...currentScenarioLevers },
+        metrics: currentScenarioMetrics,
+        simulationResult: currentSimResult,
+        dataPoints: [...currentDataPoints],
+      });
+      if (newScenario) {
+        store.setActiveScenarioId(newScenario.id);
+      }
+    }
+
+    store.open();
+    onRunScenario?.();
+  }, [
+    baselineLevers, baselineMetrics, scenarioLevers, activeTab, levers,
+    scenarioMetrics, autoSimResults, committedDataPoints, scenarioNames,
+    onRunScenario,
+  ]);
+
   // ═════════════════════════════════════════════════════════════════════
   // COMMIT SIMULATION — Fires only on commit (debounced)
   // NEVER fires during preview/drag.
@@ -531,7 +587,7 @@ const StrategyStudioPage: React.FC<StrategyStudioPageProps> = memo(({
           onRampTypeChange={setRampType}
           compareMode={compareMode}
           onCompareModeToggle={() => setCompareMode((p) => !p)}
-          onSimulate={onSimulateRequest}
+          onSimulate={handleRunScenario}
           scenarioName={scenarioNames[activeTab]}
           onScenarioNameChange={handleScenarioNameChange}
         />
@@ -646,3 +702,4 @@ const StrategyStudioPage: React.FC<StrategyStudioPageProps> = memo(({
 
 StrategyStudioPage.displayName = "StrategyStudioPage";
 export default StrategyStudioPage;
+

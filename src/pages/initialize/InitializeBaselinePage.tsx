@@ -520,7 +520,7 @@ export default function InitializeBaselinePage() {
       {/* ── Left Step Rail ─────────────────────────────────────── */}
       <aside className={styles.rail}>
         <div className={styles.logoBlock}>
-          <StratfitLogo />
+          <img src="/logo.svg" alt="STRATFIT Logo" width="34" height="34" />
           <div>
             <div className={styles.logoTitle}>STRATFIT</div>
             <div className={styles.logoSub}>System Calibration</div>
