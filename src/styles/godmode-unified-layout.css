@@ -1162,13 +1162,15 @@ aside.right-column,
   position: fixed;
   inset: 0;
   background: rgba(5, 9, 17, 0.35);
-  pointer-events: all;
+  /* IMPORTANT: do NOT block interaction unless active */
+  pointer-events: none;
   z-index: 900;
   opacity: 0;
   transition: opacity 250ms ease;
 }
 .recalibration-dim-veil.active {
   opacity: 1;
+  pointer-events: all;
 }
 
 /* Engine feedback signal — upper-left, minimal, institutional */
