@@ -15,10 +15,17 @@ import ValuationDriverSpider from "./ValuationDriverSpider";
 import ValuationMarketPosition from "./ValuationMarketPosition";
 import ValuationEngineTransparency from "./ValuationEngineTransparency";
 import ValuationDisclosure from "./ValuationDisclosure";
-import { ConfidenceGauge } from "./ConfidenceGauge";
+import { ConfidenceGauge as LegacyConfidenceGauge } from "./ConfidenceGauge";
 import { ModelAssumptionsDisclosure } from "@/components/legal/ModelAssumptionsDisclosure";
 
-// Confidence engine
+// NEW: Grounded confidence + legal
+import { ConfidenceGauge } from "@/components/confidence/ConfidenceGauge";
+import { LegalDisclosureAccordion } from "@/components/legal/LegalDisclosureAccordion";
+import { computeConfidence, type ConfidenceResult } from "@/logic/confidence/modelConfidence";
+import { computeBaselineCompleteness } from "@/logic/confidence/baselineCompleteness";
+import { useSystemBaseline } from "@/system/SystemBaselineProvider";
+
+// Legacy confidence engine (kept for backward compat)
 import { calculateModelConfidence, type ModelConfidenceResult } from "@/logic/confidence/calculateModelConfidence";
 
 // Stores
@@ -147,6 +154,7 @@ export default function ValuationPage() {
   const hasSimulated = useSimulationStore((s) => s.hasSimulated);
   const levers = useLeverStore(useShallow((s) => s.levers));
   const valStoreSnapshot = useValuationStore((s) => s.snapshot);
+  const { baseline } = useSystemBaseline();
 
   // ── Derive multiple from local inputs + method ──
   const { multiple, components } = useMemo(() => calcMultiple(inputs, method), [inputs, method]);
@@ -221,6 +229,25 @@ export default function ValuationPage() {
   }, [dist, inputs, levers]);
 
   const confidence = Math.round(confidenceResult.confidenceScore);
+
+  // ── Grounded confidence (new 5-band system) ──
+  const groundedConfidence: ConfidenceResult = useMemo(() => {
+    const blCompl = computeBaselineCompleteness(baseline);
+    const hasNaN = dist.p50 == null || !isFinite(dist.p50);
+    return computeConfidence({
+      iterations: fullResult?.iterations ?? dist.sampleCount,
+      samplesCount: dist.sampleCount,
+      p10: dist.p10,
+      p25: dist.p25,
+      p50: dist.p50,
+      p75: dist.p75,
+      p90: dist.p90,
+      hasNaN,
+      baselineCompleteness01: blCompl.completeness01,
+      methodCountUsed: method === "stratfit" ? 1 : 1, // single method selection
+      horizonMonths: fullResult?.timeHorizonMonths ?? 36,
+    });
+  }, [dist, fullResult, baseline, method]);
 
   // ── Volatility: derived from operating range width ──
   const volatility = useMemo((): "Low" | "Medium" | "High" => {
@@ -398,16 +425,13 @@ export default function ValuationPage() {
           displayPercentiles="p10–p90 (stress) · p25–p75 (operating)"
         />
 
-        {/* ═══ CONFIDENCE GAUGE ═══ */}
-        <div style={{ margin: "24px 0", display: "flex", justifyContent: "center" }}>
-          <ConfidenceGauge result={confidenceResult} />
+        {/* ═══ GROUNDED CONFIDENCE GAUGE (5-band) ═══ */}
+        <div style={{ margin: "24px 0" }}>
+          <ConfidenceGauge result={groundedConfidence} />
         </div>
 
-        {/* ═══ LAYER 7: LEGAL DISCLOSURE ═══ */}
-        <ValuationDisclosure />
-
-        {/* ═══ MODEL ASSUMPTIONS & LEGAL DISCLOSURE ═══ */}
-        <ModelAssumptionsDisclosure />
+        {/* ═══ LEGAL DISCLOSURE (canonical accordion) ═══ */}
+        <LegalDisclosureAccordion showAssumptions showModelDetails={false} />
       </div>
     </div>
   );
