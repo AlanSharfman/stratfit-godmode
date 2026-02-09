@@ -127,7 +127,7 @@ function Logo() {
       </div>
       <div>
         <div className="text-white font-semibold tracking-wide">STRATFIT</div>
-        <div className="text-[9px] text-white/40 tracking-[0.2em]">SCENARIO INTELLIGENCE</div>
+        <div className="text-[9px] text-white/55 tracking-[0.2em]">SCENARIO INTELLIGENCE</div>
       </div>
     </Link>
   )
@@ -145,7 +145,7 @@ function LogoButton({ onClick }: { onClick?: () => void }) {
       </div>
       <div>
         <div className="text-white font-semibold tracking-wide">STRATFIT</div>
-        <div className="text-[9px] text-white/40 tracking-[0.2em]">SCENARIO INTELLIGENCE</div>
+        <div className="text-[9px] text-white/55 tracking-[0.2em]">SCENARIO INTELLIGENCE</div>
       </div>
     </button>
   )
@@ -164,7 +164,7 @@ function ActiveScenarioBadge({ scenario, onClick }: { scenario: ActiveScenario; 
       <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
       <div className="text-left">
         <div className="text-emerald-400 text-xs font-medium">{scenario.name}</div>
-        <div className="text-[9px] text-white/40">Active Scenario</div>
+        <div className="text-[9px] text-white/55">Active Scenario</div>
       </div>
       <ChevronDown className="w-3 h-3 text-emerald-400/60 group-hover:text-emerald-400 transition-colors" />
     </button>
@@ -182,7 +182,7 @@ function PrimaryNavItem({ item, isActive }: { item: NavItem; isActive: boolean }
       className={`relative px-3 py-2.5 transition-all group ${
         isActive
           ? 'text-cyan-400'
-          : 'text-white/50 hover:text-white/80'
+          : 'text-white/70 hover:text-white/95'
       }`}
       style={{
         fontSize: '13px',
@@ -203,7 +203,7 @@ function PrimaryNavItem({ item, isActive }: { item: NavItem; isActive: boolean }
       )}
 
       {/* Hover tooltip */}
-      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-1.5 bg-slate-900 border border-white/10 rounded-lg text-[10px] text-white/70 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-1.5 bg-slate-900 border border-white/10 rounded-lg text-[10px] text-white/80 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
         {item.description}
       </div>
     </Link>
@@ -226,7 +226,7 @@ function PrimaryNavButton({
       className={`relative px-3 py-2.5 transition-all group ${
         isActive
           ? 'text-cyan-400'
-          : 'text-white/50 hover:text-white/80'
+          : 'text-white/70 hover:text-white/95'
       }`}
       style={{
         fontSize: '13px',
@@ -247,7 +247,7 @@ function PrimaryNavButton({
       )}
 
       {/* Hover tooltip */}
-      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-1.5 bg-slate-900 border border-white/10 rounded-lg text-[10px] text-white/70 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-1.5 bg-slate-900 border border-white/10 rounded-lg text-[10px] text-white/80 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
         {item.description}
       </div>
     </button>
@@ -271,7 +271,7 @@ function UtilityButton({
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-white/40 hover:text-white/70 transition-all"
+      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-white/55 hover:text-white/85 transition-all"
       style={{
         fontSize: '11px',
         fontWeight: 500,
@@ -447,14 +447,14 @@ export function MainNavCompact({ className = '' }: { className?: string }) {
         </Link>
 
         {/* Center: Current page */}
-        <div className="text-sm text-white/60 font-mono">
+        <div className="text-sm text-white/80 font-mono">
           {primaryNav.find(item => pathname.startsWith(item.href))?.label || 'TERRAIN'}
         </div>
 
         {/* Menu toggle */}
         <button
           onClick={() => setMenuOpen(!menuOpen)}
-          className="w-10 h-10 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/5 transition-all"
+          className="w-10 h-10 rounded-lg flex items-center justify-center text-white/65 hover:text-white hover:bg-white/5 transition-all"
         >
           <Layers className="w-5 h-5" />
         </button>
@@ -472,13 +472,13 @@ export function MainNavCompact({ className = '' }: { className?: string }) {
                 className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
                   pathname.startsWith(item.href)
                     ? 'bg-cyan-500/20 text-cyan-300'
-                    : 'text-white/60 hover:bg-white/5'
+                    : 'text-white/75 hover:bg-white/5'
                 }`}
               >
                 {item.icon}
                 <div>
                   <div className="text-sm font-medium">{item.label}</div>
-                  <div className="text-[10px] text-white/40">{item.description}</div>
+                  <div className="text-[10px] text-white/55">{item.description}</div>
                 </div>
               </Link>
             ))}
@@ -530,7 +530,7 @@ export function PageHeader({
               {badge}
             </div>
             {subtitle && (
-              <div className="text-[11px] text-white/40">{subtitle}</div>
+              <div className="text-[11px] text-white/55">{subtitle}</div>
             )}
           </div>
         </div>
@@ -552,7 +552,7 @@ export function PageHeader({
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-mono transition-all ${
                 activeTab === tab.id
                   ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                  : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                  : 'text-white/60 hover:text-white/85 hover:bg-white/5'
               }`}
             >
               {tab.icon}
