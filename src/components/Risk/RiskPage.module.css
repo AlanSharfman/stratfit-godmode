@@ -1,8 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   STRATFIT — RISK PAGE (INSTITUTIONAL GOD MODE)
-   Multi-dimensional fragility system.
-   Background: #111827→#0F1C2E, Accent: #00E0FF, Risk: #FF4D4D
-   No purple. No neon. No bloom.
+   STRATFIT — RISK 2.0: STRUCTURAL SHOCK PROPAGATION ENGINE
+   3-column institutional layout. Deep charcoal. No toy effects.
+   Background: #111827 → #0F1C2E, Accent: #00E0FF, Risk: #ef4444
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .root {
@@ -94,29 +93,12 @@
   line-height: 1;
 }
 
-.trendImproving {
-  color: #00D084;
-}
-
-.trendDeteriorating {
-  color: #FF4D4D;
-}
-
-.trendStable {
-  color: rgba(255, 255, 255, 0.4);
-}
-
-.volLow {
-  color: #00D084;
-}
-
-.volMedium {
-  color: #fbbf24;
-}
-
-.volHigh {
-  color: #FF4D4D;
-}
+.trendImproving { color: #00D084; }
+.trendDeteriorating { color: #FF4D4D; }
+.trendStable { color: rgba(255, 255, 255, 0.4); }
+.volLow { color: #00D084; }
+.volMedium { color: #fbbf24; }
+.volHigh { color: #FF4D4D; }
 
 /* Risk index color by severity */
 .riskMinimal { color: #00E0FF; }
@@ -126,451 +108,392 @@
 .riskHigh { color: #FF4D4D; }
 .riskCritical { color: #dc2626; }
 
-/* ── HORIZON TOGGLE ──────────────────────────────────────────────────── */
-.horizonBar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-  flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.008);
-}
-
-.horizonLabel {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.25);
-  margin-right: 8px;
-}
-
-.horizonBtn {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.4);
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  padding: 4px 10px;
-  cursor: pointer;
-  font-family: 'Inter', sans-serif;
-  transition: color 150ms, border-color 150ms;
-}
-
-.horizonBtn:hover {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.horizonBtnActive {
-  color: rgba(0, 224, 255, 0.85);
-  border-bottom-color: rgba(0, 224, 255, 0.6);
-}
-
-.horizonSep {
-  width: 1px;
-  height: 14px;
-  background: rgba(255, 255, 255, 0.06);
-}
-
-/* View toggle on the right side of horizon bar */
-.viewToggle {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.viewLabel {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.2);
-  margin-right: 6px;
-}
-
-.viewBtn {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.35);
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  padding: 4px 8px;
-  cursor: pointer;
-  font-family: 'Inter', sans-serif;
-  transition: color 150ms, border-color 150ms;
-}
-
-.viewBtnActive {
-  color: rgba(0, 224, 255, 0.8);
-  border-bottom-color: rgba(0, 224, 255, 0.55);
-}
-
-/* ── MAIN CONTENT ────────────────────────────────────────────────────── */
+/* ── 3-COLUMN MAIN LAYOUT ──────────────────────────────────────────── */
 .main {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr 280px;
+  grid-template-columns: 260px 1fr 280px;
   min-height: 0;
   overflow: hidden;
 }
 
-.primary {
+/* ── LEFT COLUMN: Shock Controller + Transmission Map ─────────────── */
+.leftCol {
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  gap: 16px;
+  padding: 16px;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
   overflow-y: auto;
-  overflow-x: hidden;
-  padding: 12px 16px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0, 224, 255, 0.12) transparent;
-}
-
-.sidebar {
-  border-left: 1px solid rgba(255, 255, 255, 0.06);
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  padding: 14px 16px;
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 224, 255, 0.1) transparent;
 }
 
-/* ── RADAR CONTAINER ─────────────────────────────────────────────────── */
-.radarContainer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  min-height: 380px;
-}
-
-.radarSvg {
-  display: block;
-}
-
-.radarLegend {
-  display: flex;
-  gap: 14px;
-  justify-content: center;
-  padding: 6px 0 12px;
-}
-
-.legendItem {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.35);
-}
-
-.legendDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-}
-
-.legendLine {
-  width: 14px;
-  height: 1px;
-  border-top: 1px dashed;
-}
-
-/* ── VELOCITY ARROWS ─────────────────────────────────────────────────── */
-.velocityArrow {
+.sectionTitle {
   font-size: 10px;
   font-weight: 700;
-  line-height: 1;
-}
-
-.velocityUp {
-  color: #FF4D4D;
-}
-
-.velocityDown {
-  color: #00D084;
-}
-
-.velocityStable {
-  color: rgba(255, 255, 255, 0.25);
-}
-
-/* ── CONTROLLABILITY TAG ─────────────────────────────────────────────── */
-.ctrlTag {
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 1px 5px;
-  border-radius: 2px;
-  display: inline-block;
-  line-height: 1.5;
-}
-
-.ctrlControllable {
-  color: rgba(0, 208, 132, 0.6);
-  background: rgba(0, 208, 132, 0.06);
-  border: 1px solid rgba(0, 208, 132, 0.12);
-}
-
-.ctrlPartial {
-  color: rgba(251, 191, 36, 0.6);
-  background: rgba(251, 191, 36, 0.06);
-  border: 1px solid rgba(251, 191, 36, 0.12);
-}
-
-.ctrlExternal {
-  color: rgba(255, 255, 255, 0.35);
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-/* ── SURVIVAL IMPACT PANEL ───────────────────────────────────────────── */
-.survivalPanel {
-  margin-top: 10px;
-  padding: 12px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.015);
-}
-
-.panelTitle {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: rgba(0, 224, 255, 0.45);
-  margin-bottom: 8px;
   padding-bottom: 6px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-}
-
-.impactLine {
-  font-size: 12px;
-  line-height: 1.5;
-  color: rgba(255, 255, 255, 0.5);
   margin-bottom: 4px;
-  padding-left: 12px;
-  position: relative;
 }
 
-.impactLine::before {
-  content: '–';
-  position: absolute;
-  left: 0;
-  color: rgba(0, 224, 255, 0.3);
-}
-
-/* ── INTERACTION MAP ─────────────────────────────────────────────────── */
-.interactionNote {
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.3);
-  text-align: center;
-  padding: 4px 0 8px;
-  letter-spacing: 0.05em;
-}
-
-/* ── DENSITY VIEW ────────────────────────────────────────────────────── */
-.densityContainer {
-  padding: 8px 0;
-}
-
-.densityHeader {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: rgba(0, 224, 255, 0.4);
-  margin-bottom: 8px;
-}
-
-.densityStrip {
-  height: 60px;
-  width: 100%;
-  border-radius: 4px;
-  overflow: hidden;
-  position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.04);
-}
-
-.densityAxis {
+/* ── Shock Controller ─────────────────────────────────────────────── */
+.shockController {
   display: flex;
-  justify-content: space-between;
-  padding-top: 4px;
-}
-
-.densityAxisLabel {
-  font-size: 9px;
-  color: rgba(255, 255, 255, 0.25);
-  font-family: 'JetBrains Mono', monospace;
-}
-
-/* ── RIGHT PANEL ─────────────────────────────────────────────────────── */
-.sideSection {
-  margin-bottom: 16px;
-}
-
-.sideSectionTitle {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: rgba(0, 224, 255, 0.45);
-  margin-bottom: 8px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-/* Summary counts */
-.summaryCounts {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-  margin-bottom: 12px;
-}
-
-.countCard {
-  display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
-  padding: 6px 10px;
-  border-radius: 4px;
+  padding: 16px;
   background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
 }
 
-.countValue {
-  font-size: 18px;
+.sigmaDisplay {
+  font-size: 28px;
   font-weight: 700;
   font-family: 'JetBrains Mono', monospace;
+  text-align: center;
   line-height: 1;
 }
 
-.countLabel {
-  font-size: 9px;
+.sigmaLabel {
+  font-size: 11px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 4px;
+}
+
+.sigmaSliderWrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sigmaTickLabel {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: rgba(255, 255, 255, 0.3);
+  min-width: 12px;
+  text-align: center;
+}
+
+.sigmaSlider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.sigmaSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--thumb-color, #00E0FF);
+  border: 2px solid rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition: box-shadow 200ms;
+}
+
+.sigmaSlider::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 8px rgba(0, 224, 255, 0.4);
+}
+
+.sigmaSlider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--thumb-color, #00E0FF);
+  border: 2px solid rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+
+.sigmaTicks {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.sigmaTickBtn {
+  font-size: 10px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: color 150ms, border-color 150ms, background 150ms;
+}
+
+.sigmaTickBtn:hover {
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.sigmaTickBtnActive {
+  background: rgba(0, 224, 255, 0.08);
+}
+
+.transmissionSection {
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── CENTER COLUMN: Survival Curve ─────────────────────────────────── */
+.centerCol {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 224, 255, 0.1) transparent;
+}
+
+.classificationStrip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 5px;
+}
+
+.classLabel {
+  font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.35);
 }
 
-.countCritical { color: #FF4D4D; }
-.countHigh { color: #f97316; }
-.countModerate { color: #fbbf24; }
-.countLow { color: #00D084; }
-
-/* Structural risk entries */
-.riskEntry {
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-}
-
-.riskEntry:last-child {
-  border-bottom: none;
-}
-
-.riskEntryHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 4px;
-}
-
-.riskEntryName {
-  font-size: 12px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.riskEntryScore {
-  font-size: 14px;
-  font-weight: 700;
-  font-family: 'JetBrains Mono', monospace;
-}
-
-.riskEntryMeta {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.riskEntryMetaItem {
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.35);
-}
-
-.riskEntryMetaValue {
-  font-weight: 600;
-  margin-left: 4px;
-}
-
-/* ── BREAKDOWN VIEW ──────────────────────────────────────────────────── */
-.breakdownGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  padding: 8px 0;
-}
-
-.breakdownCard {
-  padding: 10px 12px;
-  border-radius: 5px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.04);
-}
-
-.breakdownCardHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
-}
-
-.breakdownCardName {
+.classBadge {
   font-size: 11px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.65);
+  font-weight: 700;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  padding: 3px 12px;
+  border-radius: 4px;
 }
 
-.breakdownCardScore {
-  font-size: 16px;
+/* ── RIGHT COLUMN: Risk Index + Commentary + Legal ─────────────────── */
+.rightCol {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 224, 255, 0.1) transparent;
+}
+
+/* ── Risk Index Card ──────────────────────────────────────────────── */
+.riskIndexCard {
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.riskScoreDisplay {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 2px;
+}
+
+.riskScoreValue {
+  font-size: 42px;
   font-weight: 700;
   font-family: 'JetBrains Mono', monospace;
+  line-height: 1;
 }
 
-.breakdownBar {
-  width: 100%;
-  height: 3px;
+.riskScoreMax {
+  font-size: 16px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.riskBandBadge {
+  display: inline-block;
+  text-align: center;
+  padding: 4px 14px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.noShockHint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.3);
+  text-align: center;
+  padding: 16px 0;
+}
+
+/* Component breakdown */
+.componentGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.componentRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.componentLabel {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  min-width: 100px;
+  flex-shrink: 0;
+}
+
+.componentBarWrap {
+  flex: 1;
+  height: 4px;
   background: rgba(255, 255, 255, 0.06);
   border-radius: 2px;
   overflow: hidden;
-  margin: 6px 0;
 }
 
-.breakdownBarFill {
+.componentBar {
   height: 100%;
   border-radius: 2px;
   transition: width 300ms ease;
 }
 
-.breakdownCardMeta {
+.componentValue {
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: rgba(255, 255, 255, 0.5);
+  min-width: 32px;
+  text-align: right;
+}
+
+/* Reasons */
+.reasonsList {
   display: flex;
-  gap: 8px;
-  align-items: center;
+  flex-direction: column;
+  gap: 4px;
   margin-top: 4px;
 }
 
-/* ── EMPTY STATE ─────────────────────────────────────────────────────── */
+.reasonItem {
+  display: flex;
+  gap: 6px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.reasonBullet {
+  color: rgba(0, 224, 255, 0.35);
+  flex-shrink: 0;
+}
+
+.reasonText {
+  flex: 1;
+}
+
+/* ── Commentary Card ──────────────────────────────────────────────── */
+.commentaryCard {
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+}
+
+.commentaryBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.commentaryText {
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+}
+
+.commentaryText strong {
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 600;
+}
+
+/* ── Disclosure ──────────────────────────────────────────────────── */
+.disclosure {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.disclosureHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  user-select: none;
+  transition: background 200ms;
+}
+
+.disclosureHeader:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.disclosureTitle {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.disclosureChevron {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.3);
+  transition: transform 200ms;
+}
+
+.disclosureChevronOpen {
+  transform: rotate(180deg);
+}
+
+.disclosureBody {
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.01);
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.35);
+  line-height: 1.65;
+}
+
+/* ── Empty State ─────────────────────────────────────────────────── */
 .emptyState {
   display: flex;
   flex-direction: column;
@@ -595,20 +518,17 @@
   max-width: 320px;
 }
 
+/* ── Responsive ──────────────────────────────────────────────────── */
 @media (max-width: 1100px) {
   .main {
     grid-template-columns: 1fr;
   }
-  .sidebar {
-    border-left: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+  .leftCol {
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   }
-  .breakdownGrid {
-    grid-template-columns: 1fr;
+  .rightCol {
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
   }
 }
-
-
-
-
-

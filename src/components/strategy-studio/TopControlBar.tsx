@@ -139,6 +139,31 @@ TopControlBar.displayName = "TopControlBar";
 
 
         onClick={onCompareModeToggle}
+      >
+        Compare
+      </button>
+
+      {/* Spacer */}
+      <div className={styles.controlSpacer} />
+
+      {/* Simulate Button */}
+      {onSimulate && (
+        <button
+          type="button"
+          className={styles.simulateBtn}
+          onClick={onSimulate}
+        >
+          Run Simulation
+        </button>
+      )}
+    </div>
+  );
+});
+
+TopControlBar.displayName = "TopControlBar";
+
+
+        onClick={onCompareModeToggle}
   
   TopControlBar.displayName = "TopControlBar";
   );

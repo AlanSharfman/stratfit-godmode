@@ -1,5 +1,5 @@
 // src/state/riskStore.ts
-// STRATFIT — Risk Intelligence Store
+// STRATFIT — Risk Intelligence Store (Risk 2.0)
 
 import { create } from 'zustand';
 import { emitCompute } from '@/engine/computeTelemetry';
@@ -83,6 +83,9 @@ interface RiskState {
   selectedFactor: string | null;
   viewMode: 'radar' | 'timeline' | 'breakdown';
   
+  // ── Risk 2.0: Structural Shock ──
+  shockSigma: number;       // 0–3 shock intensity
+
   // Actions
   calculateRisk: (
     levers: Record<string, number>,
@@ -95,6 +98,7 @@ interface RiskState {
   ) => RiskSnapshot;
   setSelectedFactor: (id: string | null) => void;
   setViewMode: (mode: 'radar' | 'timeline' | 'breakdown') => void;
+  setShockSigma: (sigma: number) => void;
 }
 
 export const useRiskStore = create<RiskState>((set, get) => ({
@@ -102,9 +106,11 @@ export const useRiskStore = create<RiskState>((set, get) => ({
   isCalculating: false,
   selectedFactor: null,
   viewMode: 'radar',
+  shockSigma: 0,
   
   setSelectedFactor: (id) => set({ selectedFactor: id }),
   setViewMode: (mode) => set({ viewMode: mode }),
+  setShockSigma: (sigma) => set({ shockSigma: Math.max(0, Math.min(3, sigma)) }),
   
   calculateRisk: (levers, simulation) => {
     const _t0 = performance.now();
@@ -351,5 +357,6 @@ export const useRiskStore = create<RiskState>((set, get) => ({
 export const useRiskSnapshot = () => useRiskStore((s) => s.riskSnapshot);
 export const useSelectedFactor = () => useRiskStore((s) => s.selectedFactor);
 export const useRiskViewMode = () => useRiskStore((s) => s.viewMode);
+export const useShockSigma = () => useRiskStore((s) => s.shockSigma);
 
 export default useRiskStore;

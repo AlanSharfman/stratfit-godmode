@@ -1,326 +1,461 @@
 // src/components/Risk/RiskPage.tsx
 // ═══════════════════════════════════════════════════════════════════════════
-// STRATFIT — RISK PAGE (INSTITUTIONAL GOD MODE)
-// Multi-dimensional fragility system.
-// Dual-layer radar, horizon filtering, controllability, interaction map,
-// survival linkage, density view, right panel.
-// No new simulation runs. All metrics derived from existing stores.
+// STRATFIT — RISK 2.0: STRUCTURAL SHOCK PROPAGATION ENGINE
+//
+// 3-column layout:
+//   LEFT   — σ shock slider + Transmission Map
+//   CENTER — Survival Curve Comparison (baseline vs shocked)
+//   RIGHT  — Risk Index Card + Commentary + Legal Disclosure
+//
+// Data flow:
+//   simulationStore.fullResult → baseline metrics
+//   riskStore.shockSigma       → computeShockedBatch → shocked metrics
+//   baseline + shocked         → transmissionNodes + riskIndex
+//
+// No fake categories. No static radar. Derived from simulation.
 // ═══════════════════════════════════════════════════════════════════════════
 
-import React, { useEffect, useMemo, useState } from "react";
-import { useRiskStore, type RiskFactor, type RiskSnapshot } from "@/state/riskStore";
+import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { useRiskStore } from "@/state/riskStore";
 import { useLeverStore } from "@/state/leverStore";
 import { useSimulationStore } from "@/state/simulationStore";
+import { useSystemBaseline } from "@/system/SystemBaselineProvider";
 
+import {
+  computeShockedBatch,
+  buildTransmissionNodes,
+  computeRiskIndex,
+  type ShockedBatchResult,
+  type BaselineMetrics,
+  type TransmissionNode,
+  type RiskIndexResult,
+} from "@/logic/risk/computeRiskIndex";
+import type { LeverState, SimulationConfig } from "@/logic/monteCarloEngine";
+
+import RiskTransmissionMap from "./RiskTransmissionMap";
+import SurvivalCurveComparison from "./SurvivalCurveComparison";
 import RiskCommandBar from "./RiskCommandBar";
-import RiskHorizonToggle, { type RiskHorizon, type RiskViewMode } from "./RiskHorizonToggle";
-import RiskRadar from "./RiskRadar";
-import RiskSurvivalImpactPanel from "./RiskSurvivalImpactPanel";
-import RiskDensityView from "./RiskDensityView";
-import RiskRightPanel from "./RiskRightPanel";
 
 import styles from "./RiskPage.module.css";
 
-// ── Default levers for baseline comparison ──────────────────────────
-const DEFAULT_LEVERS: Record<string, number> = {
-  demandStrength: 50,
-  pricingPower: 50,
-  expansionVelocity: 50,
-  costDiscipline: 50,
-  hiringIntensity: 50,
-  operatingDrag: 50,
-  marketVolatility: 50,
-  executionRisk: 50,
-  fundingPressure: 50,
+// ── Sigma labels ─────────────────────────────────────────────────────
+const SIGMA_LABELS: Record<number, string> = {
+  0: "Baseline (σ = 0)",
+  1: "Moderate Stress (σ = 1)",
+  2: "Severe Stress (σ = 2)",
+  3: "Extreme Stress (σ = 3)",
 };
 
-// ── Horizon filter helper ───────────────────────────────────────────
-function getHorizonMonths(horizon: RiskHorizon): [number, number] {
-  switch (horizon) {
-    case "short": return [0, 6];
-    case "mid": return [6, 18];
-    case "long": return [18, 36];
+function getSigmaColor(sigma: number): string {
+  if (sigma <= 0) return "#00E0FF";
+  if (sigma <= 1) return "#fbbf24";
+  if (sigma <= 2) return "#f97316";
+  return "#ef4444";
+}
+
+// ── Risk Index band color ────────────────────────────────────────────
+function getBandColor(band: RiskIndexResult["band"]): string {
+  switch (band) {
+    case "Low": return "#34d399";
+    case "Moderate": return "#00E0FF";
+    case "Elevated": return "#fbbf24";
+    case "Critical": return "#ef4444";
   }
-}
-
-// ── Derive trend from baseline vs scenario ──────────────────────────
-function deriveTrend(
-  baselineScore: number,
-  scenarioScore: number
-): "improving" | "stable" | "deteriorating" {
-  const diff = scenarioScore - baselineScore;
-  if (diff < -5) return "improving";
-  if (diff > 5) return "deteriorating";
-  return "stable";
-}
-
-// ── Derive volatility from factor score variance ────────────────────
-function deriveVolatility(factors: RiskFactor[]): "low" | "medium" | "high" {
-  if (factors.length === 0) return "medium";
-  const scores = factors.map((f) => f.score);
-  const mean = scores.reduce((s, v) => s + v, 0) / scores.length;
-  const variance = scores.reduce((s, v) => s + (v - mean) ** 2, 0) / scores.length;
-  const stdDev = Math.sqrt(variance);
-  if (stdDev < 10) return "low";
-  if (stdDev < 20) return "medium";
-  return "high";
-}
-
-// ── Apply horizon weighting to factors ──────────────────────────────
-const CATEGORY_HORIZON_WEIGHT: Record<string, Record<RiskHorizon, number>> = {
-  runway: { short: 1.3, mid: 1.0, long: 0.7 },
-  market: { short: 0.7, mid: 1.0, long: 1.3 },
-  execution: { short: 0.9, mid: 1.2, long: 1.0 },
-  competition: { short: 0.6, mid: 0.9, long: 1.4 },
-  funding: { short: 1.2, mid: 1.1, long: 0.8 },
-  churn: { short: 0.8, mid: 1.1, long: 1.1 },
-};
-
-function applyHorizonWeight(factors: RiskFactor[], horizon: RiskHorizon): RiskFactor[] {
-  return factors.map((f) => {
-    const weight = CATEGORY_HORIZON_WEIGHT[f.category]?.[horizon] ?? 1.0;
-    return {
-      ...f,
-      score: Math.round(Math.min(100, Math.max(0, f.score * weight))),
-    };
-  });
 }
 
 // ═════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ═════════════════════════════════════════════════════════════════════
+
 const RiskPage: React.FC = () => {
-  const [horizon, setHorizon] = useState<RiskHorizon>("mid");
-  const [viewMode, setViewMode] = useState<RiskViewMode>("radar");
-
-  // ── Store data ──
-  const riskSnapshot = useRiskStore((s) => s.riskSnapshot);
-  const calculateRisk = useRiskStore((s) => s.calculateRisk);
-  const levers = useLeverStore((s) => s.levers);
-  const simulation = useSimulationStore((s) => s.summary);
+  // ── Store reads ──
+  const shockSigma = useRiskStore((s) => s.shockSigma);
+  const setShockSigma = useRiskStore((s) => s.setShockSigma);
+  const fullResult = useSimulationStore((s) => s.fullResult);
   const hasSimulated = useSimulationStore((s) => s.hasSimulated);
+  const summary = useSimulationStore((s) => s.summary);
+  const leversRaw = useLeverStore((s) => s.levers);
+  const { baseline: systemBaseline } = useSystemBaseline();
 
-  // ── Calculate risk on mount / lever change ──
-  useEffect(() => {
-    calculateRisk(
-      levers as Record<string, number>,
-      simulation
-        ? {
-            survivalRate: simulation.survivalRate,
-            medianRunway: simulation.runwayMedian,
-            medianARR: simulation.arrMedian,
-            arrRange: { p10: simulation.arrP10, p90: simulation.arrP90 },
-          }
-        : null
-    );
-  }, [levers, simulation, calculateRisk]);
+  // ── Local state ──
+  const [shockedBatch, setShockedBatch] = useState<ShockedBatchResult | null>(null);
+  const [isComputing, setIsComputing] = useState(false);
+  const [disclosureOpen, setDisclosureOpen] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ── Compute baseline risk for dual-layer radar ──
-  const baselineSnapshot: RiskSnapshot | null = useMemo(() => {
-    // Use default levers as "baseline" for comparison
-    return calculateRisk(
-      DEFAULT_LEVERS,
-      simulation
-        ? {
-            survivalRate: simulation.survivalRate,
-            medianRunway: simulation.runwayMedian,
-            medianARR: simulation.arrMedian,
-          }
-        : null
-    );
-  }, [simulation, calculateRisk]);
+  // ── Derive levers ──
+  const levers: LeverState = useMemo(
+    () => ({
+      demandStrength: leversRaw?.demandStrength ?? 50,
+      pricingPower: leversRaw?.pricingPower ?? 50,
+      expansionVelocity: leversRaw?.expansionVelocity ?? 50,
+      costDiscipline: leversRaw?.costDiscipline ?? 50,
+      hiringIntensity: leversRaw?.hiringIntensity ?? 50,
+      operatingDrag: leversRaw?.operatingDrag ?? 50,
+      marketVolatility: leversRaw?.marketVolatility ?? 50,
+      executionRisk: leversRaw?.executionRisk ?? 50,
+      fundingPressure: leversRaw?.fundingPressure ?? 50,
+    }),
+    [leversRaw]
+  );
 
-  // ── Apply horizon weighting ──
-  const horizonFactors = useMemo(() => {
-    if (!riskSnapshot) return [];
-    return applyHorizonWeight(riskSnapshot.factors, horizon);
-  }, [riskSnapshot, horizon]);
-
-  const horizonBaselineFactors = useMemo(() => {
-    if (!baselineSnapshot) return null;
-    return applyHorizonWeight(baselineSnapshot.factors, horizon);
-  }, [baselineSnapshot, horizon]);
-
-  // ── Horizon-weighted overall score ──
-  const horizonScore = useMemo(() => {
-    if (horizonFactors.length === 0) return 0;
-    const weights: Record<string, number> = {
-      runway: 0.25, market: 0.15, execution: 0.20,
-      competition: 0.10, funding: 0.20, churn: 0.10,
+  // ── Simulation config ──
+  const config: SimulationConfig = useMemo(() => {
+    const fin = systemBaseline?.financial;
+    return {
+      iterations: 200, // mini-batch for shock (fast)
+      timeHorizonMonths: fullResult?.timeHorizonMonths ?? 36,
+      startingCash: fin?.cashOnHand ?? 4_000_000,
+      startingARR: fin?.arr ?? 4_800_000,
+      monthlyBurn: fin?.monthlyBurn ?? 47_000,
     };
-    return Math.round(
-      horizonFactors.reduce((sum, f) => sum + f.score * (weights[f.category] ?? 0.15), 0)
+  }, [fullResult, systemBaseline]);
+
+  // ── Baseline metrics from full MC result ──
+  const baselineMetrics: BaselineMetrics | null = useMemo(() => {
+    if (!fullResult || !summary) return null;
+    // Derive churn rate from simulation paths
+    const allGrowths = fullResult.allSimulations.flatMap((r) =>
+      r.monthlySnapshots.map((s) => s.growthRate)
     );
-  }, [horizonFactors]);
+    const negGrowths = allGrowths.filter((g) => g < 0);
+    const churnRate =
+      negGrowths.length > 0
+        ? Math.abs(negGrowths.reduce((a, b) => a + b, 0) / negGrowths.length) * 100
+        : 0;
 
-  const baselineScore = useMemo(() => {
-    if (!baselineSnapshot) return 0;
-    return baselineSnapshot.overallScore;
-  }, [baselineSnapshot]);
+    return {
+      survivalRate: fullResult.survivalRate,
+      medianARR: fullResult.arrPercentiles.p50,
+      medianRunway: fullResult.runwayPercentiles.p50,
+      medianBurn:
+        fullResult.allSimulations.reduce((sum, s) => {
+          const last = s.monthlySnapshots[s.monthlySnapshots.length - 1];
+          return sum + (last?.burn ?? 0);
+        }, 0) / fullResult.allSimulations.length,
+      churnRate,
+    };
+  }, [fullResult, summary]);
 
-  // ── Derived metrics ──
-  const trend = useMemo(
-    () => deriveTrend(baselineScore, horizonScore),
-    [baselineScore, horizonScore]
+  // ── Compute shocked batch (debounced) ──
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    if (shockSigma === 0 || !baselineMetrics) {
+      setShockedBatch(null);
+      setIsComputing(false);
+      return;
+    }
+
+    setIsComputing(true);
+    debounceRef.current = setTimeout(() => {
+      const batch = computeShockedBatch(levers, config, shockSigma, 200);
+      setShockedBatch(batch);
+      setIsComputing(false);
+    }, 200);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [shockSigma, levers, config, baselineMetrics]);
+
+  // ── Transmission nodes ──
+  const transmissionNodes: TransmissionNode[] = useMemo(() => {
+    if (!baselineMetrics || !shockedBatch) return [];
+    return buildTransmissionNodes(baselineMetrics, shockedBatch);
+  }, [baselineMetrics, shockedBatch]);
+
+  // ── Risk Index ──
+  const riskIndex: RiskIndexResult | null = useMemo(() => {
+    if (!baselineMetrics || !shockedBatch || !fullResult) return null;
+    return computeRiskIndex({
+      baselineSurvival: baselineMetrics.survivalRate,
+      shockedSurvival: shockedBatch.survivalRate,
+      baselineRunway: baselineMetrics.medianRunway,
+      shockedRunway: shockedBatch.medianRunway,
+      arrP25: fullResult.arrPercentiles.p25,
+      arrP50: fullResult.arrPercentiles.p50,
+      arrP75: fullResult.arrPercentiles.p75,
+      leverDebtExposure: levers.fundingPressure,
+    });
+  }, [baselineMetrics, shockedBatch, fullResult, levers.fundingPressure]);
+
+  // ── Derived command bar ──
+  const commandScore = riskIndex ? Math.round(riskIndex.score * 100) : 0;
+  const commandTrend: "improving" | "stable" | "deteriorating" = useMemo(() => {
+    if (!riskIndex) return "stable";
+    if (riskIndex.score < 0.25) return "improving";
+    if (riskIndex.score > 0.6) return "deteriorating";
+    return "stable";
+  }, [riskIndex]);
+
+  // ── Slider handler ──
+  const handleSigmaChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setShockSigma(parseFloat(e.target.value));
+    },
+    [setShockSigma]
   );
-
-  const volatility = useMemo(
-    () => deriveVolatility(horizonFactors),
-    [horizonFactors]
-  );
-
-  // ── Simulation data for survival linkage ──
-  const survivalRate = simulation?.survivalRate ?? 0.5;
-  const medianRunway = simulation?.runwayMedian ?? 18;
-
-  // ── Timeline for density view ──
-  const timeline = riskSnapshot?.timeline ?? [];
-
-  // ── Breakdown cards for BREAKDOWN view ──
-  const getScoreColor = (score: number) => {
-    if (score <= 30) return "#00E0FF";
-    if (score <= 50) return "#fbbf24";
-    if (score <= 70) return "#f97316";
-    return "#FF4D4D";
-  };
 
   // ── Empty state ──
-  if (!hasSimulated || !simulation) {
+  if (!hasSimulated || !fullResult) {
     return (
       <div className={styles.root}>
         <RiskCommandBar score={0} trend="stable" volatility="medium" />
         <div className={styles.emptyState}>
-          <div className={styles.emptyTitle}>Risk Analysis Unavailable</div>
+          <div className={styles.emptyTitle}>Structural Risk Analysis Unavailable</div>
           <div className={styles.emptyText}>
-            Run a simulation in Strategy Studio to generate risk intelligence.
+            Run a simulation in Strategy Studio to unlock the shock propagation engine.
           </div>
         </div>
       </div>
     );
   }
 
-  if (!riskSnapshot) {
-    return (
-      <div className={styles.root}>
-        <RiskCommandBar score={0} trend="stable" volatility="medium" />
-        <div className={styles.emptyState}>
-          <div className={styles.emptyTitle}>Calculating Risk Profile</div>
-          <div className={styles.emptyText}>Analyzing threat vectors...</div>
-        </div>
-      </div>
-    );
-  }
+  const sigmaColor = getSigmaColor(shockSigma);
+  const sigmaLabel = SIGMA_LABELS[Math.round(shockSigma)] ?? `σ = ${shockSigma.toFixed(1)}`;
 
   return (
     <div className={styles.root}>
-      {/* ── PHASE 1: COMMAND BAR ─────────────────────────── */}
+      {/* ── COMMAND BAR ─────────────────────────────────────── */}
       <RiskCommandBar
-        score={horizonScore}
-        trend={trend}
-        volatility={volatility}
+        score={commandScore}
+        trend={commandTrend}
+        volatility={riskIndex && riskIndex.components.varianceDispersion > 0.5 ? "high" : riskIndex && riskIndex.components.varianceDispersion > 0.2 ? "medium" : "low"}
       />
 
-      {/* ── PHASE 2 + 9: HORIZON + VIEW TOGGLE ────────── */}
-      <RiskHorizonToggle
-        horizon={horizon}
-        onHorizonChange={setHorizon}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-      />
-
-      {/* ── MAIN CONTENT ─────────────────────────────────── */}
+      {/* ── MAIN 3-COLUMN LAYOUT ───────────────────────────── */}
       <div className={styles.main}>
-        {/* ── PRIMARY (LEFT) ─────────────────────────────── */}
-        <div className={styles.primary}>
-          {/* RADAR VIEW */}
-          {viewMode === "radar" && (
-            <>
-              <RiskRadar
-                factors={horizonFactors}
-                baselineFactors={horizonBaselineFactors}
+        {/* ═══ LEFT: SHOCK CONTROLLER + TRANSMISSION MAP ═══ */}
+        <div className={styles.leftCol}>
+          {/* Shock σ Slider */}
+          <div className={styles.shockController}>
+            <div className={styles.sectionTitle}>Shock Controller</div>
+            <div className={styles.sigmaDisplay} style={{ color: sigmaColor }}>
+              σ = {shockSigma.toFixed(1)}
+            </div>
+            <div className={styles.sigmaLabel}>{sigmaLabel}</div>
+            <div className={styles.sigmaSliderWrap}>
+              <span className={styles.sigmaTickLabel}>0</span>
+              <input
+                type="range"
+                className={styles.sigmaSlider}
+                min={0}
+                max={3}
+                step={0.1}
+                value={shockSigma}
+                onChange={handleSigmaChange}
+                style={{
+                  "--thumb-color": sigmaColor,
+                } as React.CSSProperties}
               />
-              <RiskSurvivalImpactPanel
-                factors={horizonFactors}
-                survivalRate={survivalRate}
-                medianRunway={medianRunway}
-              />
-            </>
-          )}
+              <span className={styles.sigmaTickLabel}>3</span>
+            </div>
+            <div className={styles.sigmaTicks}>
+              {[0, 1, 2, 3].map((t) => (
+                <button
+                  key={t}
+                  className={`${styles.sigmaTickBtn} ${Math.round(shockSigma) === t ? styles.sigmaTickBtnActive : ""}`}
+                  onClick={() => setShockSigma(t)}
+                  style={Math.round(shockSigma) === t ? { color: sigmaColor, borderColor: sigmaColor } : undefined}
+                >
+                  {t}σ
+                </button>
+              ))}
+            </div>
+          </div>
 
-          {/* DENSITY VIEW */}
-          {viewMode === "density" && (
-            <>
-              <RiskDensityView timeline={timeline} horizon={horizon} />
-              <RiskSurvivalImpactPanel
-                factors={horizonFactors}
-                survivalRate={survivalRate}
-                medianRunway={medianRunway}
-              />
-            </>
-          )}
+          {/* Transmission Map */}
+          <div className={styles.transmissionSection}>
+            <RiskTransmissionMap
+              nodes={transmissionNodes}
+              isComputing={isComputing}
+            />
+          </div>
+        </div>
 
-          {/* BREAKDOWN VIEW */}
-          {viewMode === "breakdown" && (
-            <div className={styles.breakdownGrid}>
-              {horizonFactors
-                .sort((a, b) => b.score - a.score)
-                .map((f) => (
-                  <div key={f.id} className={styles.breakdownCard}>
-                    <div className={styles.breakdownCardHeader}>
-                      <span className={styles.breakdownCardName}>
-                        {f.label.replace(" Risk", "")}
-                      </span>
-                      <span
-                        className={styles.breakdownCardScore}
-                        style={{ color: getScoreColor(f.score) }}
-                      >
-                        {f.score}
-                      </span>
-                    </div>
-                    <div className={styles.breakdownBar}>
-                      <div
-                        className={styles.breakdownBarFill}
-                        style={{
-                          width: `${f.score}%`,
-                          background: getScoreColor(f.score),
-                        }}
-                      />
-                    </div>
-                    <div className={styles.breakdownCardMeta}>
-                      <span
-                        className={styles.riskEntryMetaItem}
-                        style={{
-                          color:
-                            f.trend === "improving"
-                              ? "#00D084"
-                              : f.trend === "worsening"
-                                ? "#FF4D4D"
-                                : "rgba(255,255,255,0.4)",
-                        }}
-                      >
-                        {f.trend === "improving" ? "↓" : f.trend === "worsening" ? "↑" : "→"}{" "}
-                        {f.trend.charAt(0).toUpperCase() + f.trend.slice(1)}
-                      </span>
-                      <span className={styles.riskEntryMetaItem}>
-                        {f.controllable ? "Controllable" : "External"}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+        {/* ═══ CENTER: SURVIVAL DISTRIBUTION ═══ */}
+        <div className={styles.centerCol}>
+          <SurvivalCurveComparison
+            baselineSurvivalByMonth={fullResult.survivalByMonth}
+            shockedSurvivalByMonth={shockedBatch?.survivalByMonth ?? fullResult.survivalByMonth}
+            baselineSurvivalRate={fullResult.survivalRate}
+            shockedSurvivalRate={shockedBatch?.survivalRate ?? fullResult.survivalRate}
+            timeHorizonMonths={fullResult.timeHorizonMonths}
+            isComputing={isComputing}
+          />
+
+          {/* Shocked Classification Badge */}
+          {shockedBatch && (
+            <div className={styles.classificationStrip}>
+              <span className={styles.classLabel}>Shocked Classification</span>
+              <span
+                className={styles.classBadge}
+                style={{
+                  color: shockedBatch.classification === "Critical" ? "#ef4444"
+                    : shockedBatch.classification === "Fragile" ? "#fbbf24"
+                    : shockedBatch.classification === "Stable" ? "#00E0FF"
+                    : "#34d399",
+                  background: shockedBatch.classification === "Critical" ? "rgba(239,68,68,0.1)"
+                    : shockedBatch.classification === "Fragile" ? "rgba(251,191,36,0.1)"
+                    : shockedBatch.classification === "Stable" ? "rgba(0,224,255,0.1)"
+                    : "rgba(52,211,153,0.1)",
+                  border: `1px solid ${
+                    shockedBatch.classification === "Critical" ? "rgba(239,68,68,0.25)"
+                    : shockedBatch.classification === "Fragile" ? "rgba(251,191,36,0.25)"
+                    : shockedBatch.classification === "Stable" ? "rgba(0,224,255,0.25)"
+                    : "rgba(52,211,153,0.25)"
+                  }`,
+                }}
+              >
+                {shockedBatch.classification}
+              </span>
             </div>
           )}
         </div>
 
-        {/* ── PHASE 8: RIGHT PANEL ──────────────────────── */}
-        <RiskRightPanel factors={horizonFactors} />
+        {/* ═══ RIGHT: RISK INDEX + COMMENTARY + LEGAL ═══ */}
+        <div className={styles.rightCol}>
+          {/* Risk Index Card */}
+          {riskIndex && (
+            <div className={styles.riskIndexCard}>
+              <div className={styles.sectionTitle}>Risk Index</div>
+              <div className={styles.riskScoreDisplay}>
+                <span
+                  className={styles.riskScoreValue}
+                  style={{ color: getBandColor(riskIndex.band) }}
+                >
+                  {(riskIndex.score * 100).toFixed(0)}
+                </span>
+                <span className={styles.riskScoreMax}>/100</span>
+              </div>
+              <span
+                className={styles.riskBandBadge}
+                style={{
+                  color: getBandColor(riskIndex.band),
+                  background: `${getBandColor(riskIndex.band)}15`,
+                  border: `1px solid ${getBandColor(riskIndex.band)}30`,
+                }}
+              >
+                {riskIndex.band}
+              </span>
+
+              {/* Component Breakdown */}
+              <div className={styles.componentGrid}>
+                {([
+                  { key: "survivalElasticity", label: "Survival Elasticity" },
+                  { key: "runwayElasticity", label: "Runway Elasticity" },
+                  { key: "varianceDispersion", label: "Variance Dispersion" },
+                  { key: "debtSensitivity", label: "Debt Sensitivity" },
+                ] as const).map(({ key, label }) => {
+                  const val = riskIndex.components[key];
+                  const pct = Math.min(100, val * 100);
+                  const barColor = pct > 50 ? "#ef4444" : pct > 25 ? "#fbbf24" : "#00E0FF";
+                  return (
+                    <div key={key} className={styles.componentRow}>
+                      <span className={styles.componentLabel}>{label}</span>
+                      <div className={styles.componentBarWrap}>
+                        <div
+                          className={styles.componentBar}
+                          style={{ width: `${pct}%`, background: barColor }}
+                        />
+                      </div>
+                      <span className={styles.componentValue}>{pct.toFixed(0)}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Reasons */}
+              <div className={styles.reasonsList}>
+                {riskIndex.reasons.map((r, i) => (
+                  <div key={i} className={styles.reasonItem}>
+                    <span className={styles.reasonBullet}>–</span>
+                    <span className={styles.reasonText}>{r}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* No-shock state */}
+          {!riskIndex && shockSigma === 0 && (
+            <div className={styles.riskIndexCard}>
+              <div className={styles.sectionTitle}>Risk Index</div>
+              <div className={styles.noShockHint}>
+                Set σ &gt; 0 to compute the structural risk index.
+              </div>
+            </div>
+          )}
+
+          {/* Commentary */}
+          <div className={styles.commentaryCard}>
+            <div className={styles.sectionTitle}>Commentary</div>
+            <div className={styles.commentaryBody}>
+              {shockSigma === 0 && (
+                <p className={styles.commentaryText}>
+                  Baseline scenario. No perturbation applied. All metrics
+                  reflect the current simulation configuration.
+                </p>
+              )}
+              {shockSigma > 0 && shockedBatch && riskIndex && (
+                <>
+                  <p className={styles.commentaryText}>
+                    Under {sigmaLabel.toLowerCase()}, survival probability{" "}
+                    {shockedBatch.survivalRate < (baselineMetrics?.survivalRate ?? 0)
+                      ? "declines"
+                      : "remains stable"}{" "}
+                    to{" "}
+                    <strong>{(shockedBatch.survivalRate * 100).toFixed(1)}%</strong>.
+                  </p>
+                  {riskIndex.score > 0.5 && (
+                    <p className={styles.commentaryText} style={{ color: "rgba(239,68,68,0.7)" }}>
+                      Risk exposure exceeds moderate threshold. Review runway
+                      elasticity and capital structure.
+                    </p>
+                  )}
+                  {shockedBatch.classification === "Critical" && (
+                    <p className={styles.commentaryText} style={{ color: "#ef4444" }}>
+                      Critical fragility detected. This stress level would
+                      likely result in business failure without intervention.
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Legal Disclosure */}
+          <div className={styles.disclosure}>
+            <div
+              className={styles.disclosureHeader}
+              onClick={() => setDisclosureOpen((p) => !p)}
+            >
+              <span className={styles.disclosureTitle}>Risk Interpretation Notice</span>
+              <span
+                className={`${styles.disclosureChevron} ${
+                  disclosureOpen ? styles.disclosureChevronOpen : ""
+                }`}
+              >
+                ▼
+              </span>
+            </div>
+            {disclosureOpen && (
+              <div className={styles.disclosureBody}>
+                This risk assessment is probabilistic and model-driven. It
+                reflects scenario assumptions and simulation outputs. Shock
+                propagation metrics are derived from Monte Carlo simulation
+                reruns with perturbed volatility parameters and are subject to
+                input sensitivity. It does not constitute financial advice.
+                Users are responsible for independent verification and
+                professional advice.
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
 export default RiskPage;
-
-
-
-
-
