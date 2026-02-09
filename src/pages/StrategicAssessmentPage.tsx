@@ -278,25 +278,28 @@ function buildAssessmentSummary(
 // ────────────────────────────────────────────────────────────────────────────
 
 export default function StrategicAssessmentPage() {
-  const { fullResult, fullVerdict, summary } = useSimulationStore();
+  const { fullResult, assessmentPayload } = useSimulationStore();
   const { baseline: systemBaseline } = useSystemBaseline();
-  const [advancedMode, setAdvancedMode] = useState(false);
+  // ADVANCED is default — no toggle (institutional brief + quantified expansions always visible)
+  const advancedMode = true;
 
   // ── Extract baseline inputs safely (before any conditional return) ──
   const baselineMonthlyBurn = systemBaseline?.financial?.monthlyBurn ?? 400000;
   const baselineStartingCash = systemBaseline?.financial?.cashOnHand ?? 4000000;
 
   // ── Build assessment from real simulation data (hooks must be unconditional) ──
+  const assessmentSource = fullResult ?? assessmentPayload;
+
   const assessment = useMemo(
     () =>
-      fullResult
-        ? buildAssessmentSummary(fullResult, baselineMonthlyBurn, baselineStartingCash)
+      assessmentSource
+        ? buildAssessmentSummary(assessmentSource, baselineMonthlyBurn, baselineStartingCash)
         : null,
-    [fullResult, baselineMonthlyBurn, baselineStartingCash],
+    [assessmentSource, baselineMonthlyBurn, baselineStartingCash],
   );
 
   // ── Gate: require simulation ──
-  if (!fullResult || !fullVerdict || !summary || !assessment) {
+  if (!assessmentSource || !assessment) {
     return (
       <div className={styles.emptyState}>
         <div className={styles.emptyIcon}>
@@ -326,8 +329,8 @@ export default function StrategicAssessmentPage() {
     );
   }
 
-  const survivalPct = Math.round(fullResult.survivalRate * 100);
-  const runwayP50 = fullResult.runwayPercentiles.p50;
+  const survivalPct = Math.round(assessmentSource.survivalRate * 100);
+  const runwayP50 = assessmentSource.runwayPercentiles.p50;
 
   return (
     <div className={styles.root}>
@@ -351,13 +354,6 @@ export default function StrategicAssessmentPage() {
               <span className={styles.headerMetricLabel}>Runway</span>
             </div>
           </div>
-          {/* Advanced toggle */}
-          <button
-            className={`${styles.advancedToggle} ${advancedMode ? styles.advancedToggleActive : ""}`}
-            onClick={() => setAdvancedMode(!advancedMode)}
-          >
-            {advancedMode ? "Growth View" : "Advanced"}
-          </button>
         </div>
       </header>
 

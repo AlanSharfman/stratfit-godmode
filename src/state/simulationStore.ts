@@ -28,6 +28,23 @@ export interface RunMeta {
   topDriverLabel: string | null;  // e.g., "Demand Strength"
 }
 
+/**
+ * Minimal, assessment-safe payload derived from MonteCarloResult.
+ * This is intentionally small so it can be persisted without freezing the UI.
+ */
+export interface AssessmentPayload {
+  survivalRate: number;
+  arrPercentiles: { p10: number; p50: number; p90: number };
+  runwayPercentiles: { p10: number; p50: number; p90: number };
+  cashPercentiles: { p10: number; p50: number; p90: number };
+  sensitivityFactors: Array<{
+    lever: string;
+    label: string;
+    impact: number;
+    direction: "positive" | "negative";
+  }>;
+}
+
 // Simplified results for quick access
 export interface SimulationSummary {
   survivalRate: number;
@@ -72,6 +89,9 @@ interface SimulationState {
   // Full results (for detailed views)
   fullResult: MonteCarloResult | null;
   fullVerdict: Verdict | null;
+
+  // Minimal persisted payload for Strategic Assessment (survives navigation/reload)
+  assessmentPayload: AssessmentPayload | null;
   
   // Summary (for quick dashboard display)
   summary: SimulationSummary | null;
@@ -149,6 +169,7 @@ export const useSimulationStore = create<SimulationState>()(
       runMeta: null,
       fullResult: null,
       fullVerdict: null,
+      assessmentPayload: null,
       summary: null,
       leverSnapshot: null,
 
@@ -225,6 +246,13 @@ export const useSimulationStore = create<SimulationState>()(
         simulationCount: get().simulationCount + 1,
         fullResult: result,
         fullVerdict: verdict,
+        assessmentPayload: {
+          survivalRate: result.survivalRate,
+          arrPercentiles: result.arrPercentiles,
+          runwayPercentiles: result.runwayPercentiles,
+          cashPercentiles: result.cashPercentiles,
+          sensitivityFactors: result.sensitivityFactors ?? [],
+        },
         summary: createSummary(result, verdict),
         leverSnapshot: { ...levers },
       }),
@@ -238,6 +266,7 @@ export const useSimulationStore = create<SimulationState>()(
         runMeta: null,
         fullResult: null,
         fullVerdict: null,
+        assessmentPayload: null,
         summary: null,
         leverSnapshot: null,
       }),
@@ -264,8 +293,8 @@ export const useSimulationStore = create<SimulationState>()(
         simulationCount: s.simulationCount,
         simulationStatus: s.simulationStatus,
         runMeta: s.runMeta,
-        fullResult: s.fullResult,
-        fullVerdict: s.fullVerdict,
+        // DO NOT persist fullResult/fullVerdict — they can be large and freeze localStorage writes.
+        assessmentPayload: s.assessmentPayload,
         summary: s.summary,
         leverSnapshot: s.leverSnapshot,
         // We intentionally do NOT persist isSimulating or lastSimulationTime.
@@ -276,6 +305,8 @@ export const useSimulationStore = create<SimulationState>()(
         // Never resurrect a "running" sim after reload.
         isSimulating: false,
         lastSimulationTime: null,
+        fullResult: null,
+        fullVerdict: null,
         simulationStatus:
           (persisted as any)?.simulationStatus === "running"
             ? "idle"
