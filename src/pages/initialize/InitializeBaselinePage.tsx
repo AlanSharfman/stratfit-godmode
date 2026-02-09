@@ -11,8 +11,9 @@ import { useState, useCallback, useMemo, useEffect, useRef } from "react"
 import styles from "./InitializeBaselinePage.module.css"
 import { useSystemBaseline } from "@/system/SystemBaselineProvider"
 import { SystemBlueprintBackground } from "@/components/system/SystemBlueprintBackground"
-import { StaticTerrainPreview } from "@/components/system/StaticTerrainPreview"
 import type { BaselineV1 } from "@/onboard/baseline"
+import { TerrainWithFallback } from "@/components/terrain/TerrainFallback2D"
+import { ScenarioMountain } from "@/components/mountain/ScenarioMountain"
 
 // ═══════════════════════════════════════════════════════════════════════════
 // DEFAULTS & MIGRATION
@@ -362,11 +363,6 @@ export default function InitializeBaselinePage() {
           ))}
         </nav>
 
-        {/* Compact terrain preview */}
-        <div className={styles.railPreview}>
-          <StaticTerrainPreview dataPoints={terrainPoints} height={120} />
-        </div>
-
         <div className={styles.draftBadge}>BASELINE&nbsp;&mdash;&nbsp;ALWAYS EDITABLE</div>
       </aside>
 
@@ -380,9 +376,31 @@ export default function InitializeBaselinePage() {
               Capture baseline inputs used to generate structural intelligence.
             </p>
           </div>
-          <span className={styles.progress}>
-            Step {currentIdx + 1} of {MODULES.length}
-          </span>
+          <div className={styles.headerRight}>
+            <span className={styles.progress}>
+              Step {currentIdx + 1} of {MODULES.length}
+            </span>
+
+            {/* Structural Preview — high-def mountain (WebGL w/ 2.5D fallback) */}
+            <div className={styles.mountainCard} aria-label="Structural preview">
+              <div className={styles.mountainCardHeader}>
+                <span className={styles.mountainCardLabel}>Structural preview</span>
+                <span className={styles.mountainCardMeta}>Updates as inputs change</span>
+              </div>
+              <div className={styles.mountainViewport}>
+                <TerrainWithFallback dataPoints={terrainPoints}>
+                  <ScenarioMountain
+                    scenario="base"
+                    dataPoints={terrainPoints}
+                    mode="instrument"
+                    glowIntensity={0.85}
+                    showPath={false}
+                    showMilestones={false}
+                  />
+                </TerrainWithFallback>
+              </div>
+            </div>
+          </div>
         </header>
 
         {/* ─── KPI Instrument Strip ─── */}

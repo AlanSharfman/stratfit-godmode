@@ -34,7 +34,8 @@
   grid-template-columns: 260px 1fr;
   height: 100vh;
   overflow: hidden;
-  background: linear-gradient(168deg, #0B1220 0%, #080d18 35%, #070C14 100%);
+  /* Slightly lighter charcoal so the intake feels less stark */
+  background: linear-gradient(168deg, #0D1626 0%, #0A111F 35%, #080F18 100%);
   color: #e2eaf4;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -80,7 +81,7 @@
   height: 100vh;
   padding: 28px 16px 20px;
   background:
-    linear-gradient(180deg, rgba(5, 8, 16, 0.99) 0%, rgba(3, 5, 11, 1) 100%);
+    linear-gradient(180deg, rgba(7, 10, 18, 0.985) 0%, rgba(4, 6, 12, 1) 100%);
   border-right: 1px solid rgba(255, 255, 255, 0.04);
   box-shadow: 2px 0 20px rgba(0, 0, 0, 0.4);
   overflow-y: auto;
@@ -209,14 +210,7 @@
   letter-spacing: 1px;
 }
 
-/* ─── Rail Terrain Preview ───────────────────────────────────────────── */
-.railPreview {
-  margin-top: auto;
-  padding: 8px 0;
-  border-radius: 8px;
-  overflow: hidden;
-  opacity: 0.6;
-}
+/* NOTE: Rail preview removed — preview is now top-right in the header. */
 
 /* ─── Draft Badge ────────────────────────────────────────────────────── */
 .draftBadge {
@@ -256,6 +250,13 @@
   flex-direction: column;
 }
 
+.headerRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
 .title {
   font-size: 18px;
   font-weight: 600;
@@ -280,6 +281,74 @@
   white-space: nowrap;
   padding-top: 4px;
   font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TOP-RIGHT MOUNTAIN PREVIEW — single, high-def structural instrument
+   ═══════════════════════════════════════════════════════════════════════════ */
+.mountainCard {
+  width: 420px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(12, 18, 30, 0.82) 0%, rgba(8, 12, 22, 0.92) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.mountainCardHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0));
+}
+
+.mountainCardLabel {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(34, 211, 238, 0.8);
+}
+
+.mountainCardMeta {
+  font-size: 10px;
+  letter-spacing: 0.2px;
+  color: rgba(255, 255, 255, 0.42);
+  white-space: nowrap;
+}
+
+.mountainViewport {
+  height: 160px;
+  background: radial-gradient(ellipse at 30% 10%, rgba(34, 211, 238, 0.06), transparent 55%),
+    linear-gradient(180deg, rgba(10, 16, 26, 1) 0%, rgba(7, 10, 18, 1) 100%);
+}
+
+@media (max-width: 1100px) {
+  .mountainCard {
+    width: 360px;
+  }
+  .mountainViewport {
+    height: 150px;
+  }
+}
+
+@media (max-width: 980px) {
+  .header {
+    flex-direction: column;
+    gap: 14px;
+  }
+  .headerRight {
+    align-items: flex-start;
+    width: 100%;
+  }
+  .mountainCard {
+    width: 100%;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -320,7 +389,8 @@
   align-items: center;
   gap: 3px;
   padding: 12px 8px;
-  background: rgba(8, 12, 22, 0.85);
+  /* Slightly lighter tile fill so the strip reads more like an instrument */
+  background: rgba(12, 16, 26, 0.9);
 }
 
 .kpiLabel {
@@ -363,8 +433,8 @@
   padding: 24px 28px 24px;
   border-radius: 6px;
   background:
-    linear-gradient(180deg, rgba(12, 17, 28, 0.75) 0%, rgba(8, 12, 22, 0.82) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+    linear-gradient(180deg, rgba(14, 20, 34, 0.82) 0%, rgba(10, 14, 24, 0.9) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow:
     0 2px 8px rgba(0, 0, 0, 0.25),
     inset 0 1px 0 rgba(255, 255, 255, 0.02);
