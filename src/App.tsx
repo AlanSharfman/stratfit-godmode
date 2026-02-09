@@ -1325,6 +1325,10 @@ This materially ${growthQuality === "strong" ? "strengthens" : growthQuality ===
         />
         {/* Telemetry ribbon — visible across all views */}
         <SimulationTelemetryRibbon />
+        {/* Pro detail drawer — gated (pro/enterprise only) */}
+        <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 800, width: 380 }}>
+          <ProDetailDrawer />
+        </div>
       </div>
     );
   }

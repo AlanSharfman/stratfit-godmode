@@ -10,6 +10,9 @@ export const heatmapEnabled = true;
 export const sensitivityNodesEnabled = true;
 export const considerationsTypewriterEnabled = true;
 
+/** Simulation telemetry ribbon — top-right instrument readout during runs */
+export const simulationTelemetryEnabled = true;
+
 /** Pro detail drawer — visible to pro/enterprise users (or feature flag) */
 export const proDetailDrawerEnabled = true;
 

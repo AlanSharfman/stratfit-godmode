@@ -114,45 +114,52 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
     emitCompute("terrain_simulation", "initialize", { iterations: config.iterations, methodName: "Monte Carlo", target: "Simulation" });
     emitCompute("terrain_simulation", "run_model");
 
-    const startTime = performance.now();
-    const CHUNK_SIZE = 500;
-    const allSimulations: any[] = [];
+    try {
+      const startTime = performance.now();
+      const CHUNK_SIZE = 500;
+      const allSimulations: any[] = [];
 
-    for (let i = 0; i < config.iterations; i += CHUNK_SIZE) {
-      const chunkEnd = Math.min(i + CHUNK_SIZE, config.iterations);
-      
-      for (let j = i; j < chunkEnd; j++) {
-        allSimulations.push(runSingleSimulation(j, levers, config));
+      for (let i = 0; i < config.iterations; i += CHUNK_SIZE) {
+        const chunkEnd = Math.min(i + CHUNK_SIZE, config.iterations);
+        
+        for (let j = i; j < chunkEnd; j++) {
+          allSimulations.push(runSingleSimulation(j, levers, config));
+        }
+        
+        const currentProgress = (allSimulations.length / config.iterations) * 100;
+        setProgress(currentProgress);
+        setIterationCount(allSimulations.length);
+        
+        await new Promise(resolve => setTimeout(resolve, 0));
       }
+
+      const executionTimeMs = performance.now() - startTime;
+      emitCompute("terrain_simulation", "aggregate");
+      const simResult = processSimulationResults(allSimulations, config, executionTimeMs);
+      const simVerdict = generateVerdict(simResult);
       
-      const currentProgress = (allSimulations.length / config.iterations) * 100;
-      setProgress(currentProgress);
-      setIterationCount(allSimulations.length);
-      
-      await new Promise(resolve => setTimeout(resolve, 0));
+      setProgress(100);
+      setResult(simResult);
+      setVerdict(simVerdict);
+
+      // Store in simulation store - CORRECT: 3 arguments
+      setSimulationResult(simResult, simVerdict, leversAsSnapshot);
+
+      // ── Telemetry: complete run (populates safe deltas) ──
+      completeRun(simResult, simVerdict);
+
+      emitCompute("terrain_simulation", "complete", { durationMs: round(executionTimeMs), iterations: config.iterations });
+
+      setTimeout(() => {
+        setPhase('complete');
+      }, 300);
+    } catch (error) {
+      console.error("Simulation failed:", error);
+      failRun((error as Error).message);
+      emitCompute("terrain_simulation", "error");
+      setPhase('idle');
     }
-
-    const executionTimeMs = performance.now() - startTime;
-    emitCompute("terrain_simulation", "aggregate");
-    const simResult = processSimulationResults(allSimulations, config, executionTimeMs);
-    const simVerdict = generateVerdict(simResult);
-    
-    setProgress(100);
-    setResult(simResult);
-    setVerdict(simVerdict);
-
-    // Store in simulation store - CORRECT: 3 arguments
-    setSimulationResult(simResult, simVerdict, leversAsSnapshot);
-
-    // ── Telemetry: complete run (populates safe deltas) ──
-    completeRun(simResult, simVerdict);
-
-    emitCompute("terrain_simulation", "complete", { durationMs: round(executionTimeMs), iterations: config.iterations });
-
-    setTimeout(() => {
-      setPhase('complete');
-    }, 300);
-  }, [levers, leversAsSnapshot, config, setSimulationResult, storeStartSimulation, beginRun, completeRun]);
+  }, [levers, leversAsSnapshot, config, setSimulationResult, storeStartSimulation, beginRun, completeRun, failRun]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // SAVE AS BASELINE - SAVES TO BOTH STORES
