@@ -1,8 +1,8 @@
 // src/components/strategy-studio/LeverStack.tsx
 // ═══════════════════════════════════════════════════════════════════════════
-// STRATFIT — Lever Stack (Collapsible Domain Groups)
-// Revenue Engine · Cost Structure · Capital Structure · Operational Velocity
-// Each lever: Label, Baseline→Scenario, Delta, Slider
+// STRATFIT — Lever Stack 2.0 (Structured Domain Groups)
+// Growth · Pricing · Cost · Capital · Operations
+// Each lever: Label, Baseline→Scenario, Delta Badge, Slider
 // Institutional slider: 1px track, solid #00E0FF fill, 10px handle, no glow
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -25,17 +25,23 @@ interface DomainDef {
 
 const DOMAINS: DomainDef[] = [
   {
-    id: "revenue",
-    title: "Revenue Engine",
+    id: "growth",
+    title: "Growth",
     levers: [
       { key: "demandStrength", label: "Demand Strength" },
-      { key: "pricingPower", label: "Pricing Power" },
       { key: "expansionVelocity", label: "Expansion Velocity" },
     ],
   },
   {
+    id: "pricing",
+    title: "Pricing",
+    levers: [
+      { key: "pricingPower", label: "Pricing Power" },
+    ],
+  },
+  {
     id: "cost",
-    title: "Cost Structure",
+    title: "Cost",
     levers: [
       { key: "costDiscipline", label: "Cost Discipline" },
       { key: "operatingDrag", label: "Operating Drag" },
@@ -43,15 +49,16 @@ const DOMAINS: DomainDef[] = [
   },
   {
     id: "capital",
-    title: "Capital Structure",
+    title: "Capital",
     levers: [
       { key: "marketVolatility", label: "Market Volatility" },
       { key: "executionRisk", label: "Execution Risk" },
+      { key: "fundingPressure", label: "Funding Pressure" },
     ],
   },
   {
-    id: "operational",
-    title: "Operational Velocity",
+    id: "operations",
+    title: "Operations",
     levers: [
       { key: "hiringIntensity", label: "Hiring Intensity" },
     ],
@@ -147,9 +154,10 @@ function DeltaBadge({ baseline, current }: { baseline: number; current: number }
 interface LeverStackProps {
   levers: LeverState;
   onLeverChange: (key: keyof LeverState, value: number) => void;
+  readOnly?: boolean;
 }
 
-export const LeverStack: React.FC<LeverStackProps> = memo(({ levers, onLeverChange }) => {
+export const LeverStack: React.FC<LeverStackProps> = memo(({ levers, onLeverChange, readOnly = false }) => {
   const [expanded, setExpanded] = useState<Set<string>>(
     () => new Set(DOMAINS.map((d) => d.id))
   );
@@ -164,7 +172,7 @@ export const LeverStack: React.FC<LeverStackProps> = memo(({ levers, onLeverChan
   }, []);
 
   return (
-    <>
+    <div className={readOnly ? styles.leverReadOnly : undefined}>
       {DOMAINS.map((domain) => {
         const isOpen = expanded.has(domain.id);
         return (
@@ -207,13 +215,9 @@ export const LeverStack: React.FC<LeverStackProps> = memo(({ levers, onLeverChan
           </div>
         );
       })}
-    </>
+    </div>
   );
 });
 
 LeverStack.displayName = "LeverStack";
-
-
-
-
 

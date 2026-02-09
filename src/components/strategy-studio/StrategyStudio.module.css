@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   STRATFIT — STRATEGY STUDIO · Institutional God Mode Layout
-   Capital-allocation war room. Not startup SaaS. Not gaming UI.
-   3-zone CSS grid: LEVER STACK | LIVE TERRAIN | INTELLIGENCE PANEL
+   STRATFIT — STRATEGY STUDIO 2.0 · Institutional Composition Engine
+   Capital-allocation war room. Scenario layering. Auto-simulation.
+   3-zone CSS grid: LEVER STACK | LIVE TERRAIN | DELTA SUMMARY
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ─── ROOT GRID ────────────────────────────────────────────────────────── */
@@ -38,6 +38,36 @@
 .leftPanel::-webkit-scrollbar-track { background: transparent; }
 .leftPanel::-webkit-scrollbar-thumb { background: rgba(0,224,255,0.2); border-radius: 2px; }
 
+/* ── Lever Panel Header ───────────────────────────────────────────────── */
+.leverPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  flex-shrink: 0;
+}
+
+.leverPanelTitle {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+}
+
+.readOnlyBadge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 3px;
+  padding: 2px 8px;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    CENTER PANEL — LIVE TERRAIN + CONTROLS
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -50,7 +80,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   RIGHT PANEL — INTELLIGENCE ENGINE
+   RIGHT PANEL — DELTA SUMMARY
    ═══════════════════════════════════════════════════════════════════════════ */
 .rightPanel {
   display: flex;
@@ -69,18 +99,73 @@
 .rightPanel::-webkit-scrollbar-thumb { background: rgba(0,224,255,0.2); border-radius: 2px; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   TOP CONTROL BAR
+   TOP CONTROL BAR — Scenario Tabs + Horizon + Ramp + Compare + Simulate
    ═══════════════════════════════════════════════════════════════════════════ */
 .controlBar {
   display: flex;
   align-items: center;
-  padding: 10px 20px;
+  padding: 8px 16px;
   border-bottom: 1px solid rgba(255,255,255,0.08);
   flex-shrink: 0;
-  gap: 20px;
+  gap: 12px;
   background: rgba(255,255,255,0.01);
+  flex-wrap: wrap;
 }
 
+/* ── Scenario Tabs ────────────────────────────────────────────────────── */
+.scenarioTabBar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.scenarioTab {
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  background: transparent;
+  border: none;
+  border-right: 1px solid rgba(255,255,255,0.06);
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 120ms ease, background 120ms ease;
+  white-space: nowrap;
+}
+
+.scenarioTab:last-child {
+  border-right: none;
+}
+
+.scenarioTab:hover {
+  color: rgba(255,255,255,0.65);
+  background: rgba(255,255,255,0.02);
+}
+
+.scenarioTabActive {
+  composes: scenarioTab;
+  color: #00E0FF;
+  background: rgba(0,224,255,0.06);
+}
+
+.scenarioTabBaseline {
+  composes: scenarioTab;
+  color: rgba(255,255,255,0.3);
+  font-style: italic;
+}
+
+.scenarioTabBaselineActive {
+  composes: scenarioTab;
+  color: rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.04);
+}
+
+/* ── Control Groups ───────────────────────────────────────────────────── */
 .controlGroup {
   display: flex;
   align-items: center;
@@ -93,17 +178,17 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: rgba(255,255,255,0.25);
-  margin-right: 8px;
+  margin-right: 6px;
   white-space: nowrap;
 }
 
 .controlBtn {
-  padding: 6px 12px;
-  font-size: 13px;
+  padding: 5px 10px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.45);
+  color: rgba(255,255,255,0.4);
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
@@ -127,6 +212,14 @@
   flex: 1;
 }
 
+.controlDivider {
+  width: 1px;
+  height: 20px;
+  background: rgba(255,255,255,0.08);
+  flex-shrink: 0;
+}
+
+/* ── Toggle / Action Buttons ──────────────────────────────────────────── */
 .toggleBtn {
   padding: 5px 12px;
   font-size: 11px;
@@ -154,19 +247,25 @@
   background: rgba(0,224,255,0.04);
 }
 
-
 .simulateBtn {
-  composes: toggleBtnActive;
+  padding: 6px 16px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: rgba(255,255,255,0.95);
-  border-color: rgba(0,224,255,0.45);
   background: rgba(0,224,255,0.08);
+  border: 1px solid rgba(0,224,255,0.35);
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 120ms ease;
+  white-space: nowrap;
 }
 
-.controlDivider {
-  width: 1px;
-  height: 20px;
-  background: rgba(255,255,255,0.08);
-  flex-shrink: 0;
+.simulateBtn:hover {
+  background: rgba(0,224,255,0.14);
+  border-color: rgba(0,224,255,0.5);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -186,6 +285,28 @@
   pointer-events: none;
   z-index: 5;
   opacity: 0.12;
+}
+
+/* Auto-sim scanning overlay */
+.autoSimOverlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(0, 224, 255, 0.03) 40%,
+    rgba(0, 224, 255, 0.06) 50%,
+    rgba(0, 224, 255, 0.03) 60%,
+    transparent 100%
+  );
+  animation: autoSimScan 1.2s ease-in-out infinite;
+}
+
+@keyframes autoSimScan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -287,7 +408,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   LEVER STACK — Collapsible Domain Groups
+   LEVER STACK — Structured Domain Groups
    ═══════════════════════════════════════════════════════════════════════════ */
 .leverDomain {
   border-bottom: 1px solid rgba(255,255,255,0.06);
@@ -390,6 +511,23 @@
 .leverDeltaNegative { color: #f87171; }
 .leverDeltaZero { color: rgba(255,255,255,0.15); }
 
+/* Read-only mode */
+.leverReadOnly {
+  pointer-events: none;
+}
+
+.leverReadOnly .sliderHandle {
+  opacity: 0.3;
+}
+
+.leverReadOnly .sliderFill {
+  background: rgba(255,255,255,0.15);
+}
+
+.leverReadOnly .leverCurrent {
+  color: rgba(255,255,255,0.45);
+}
+
 /* CUSTOM SLIDER — 1px track, solid cyan fill, 10px handle, no glow */
 .sliderWrap {
   position: relative;
@@ -431,27 +569,34 @@
 .sliderHandle:active { cursor: grabbing; border-color: #00E0FF; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   INTELLIGENCE PANEL — Structured System Analysis
+   DELTA SUMMARY PANEL — Right Side
    ═══════════════════════════════════════════════════════════════════════════ */
-.intelHeader {
+.deltaHeader {
   padding: 16px 20px 12px;
   border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
-.intelTitle {
+.deltaTitle {
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: rgba(255,255,255,0.45);
+  margin-bottom: 4px;
 }
 
-.intelSection {
+.deltaSubtitle {
+  font-size: 11px;
+  color: rgba(255,255,255,0.25);
+  font-weight: 400;
+}
+
+.deltaCard {
   padding: 14px 20px;
   border-bottom: 1px solid rgba(255,255,255,0.04);
 }
 
-.intelSectionTitle {
+.deltaCardTitle {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -460,31 +605,58 @@
   margin-bottom: 8px;
 }
 
-.intelValue {
-  font-size: 22px;
+.deltaCardRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.deltaCardValues {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.deltaCardBaselineValue {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.3);
+}
+
+.deltaCardArrow {
+  font-size: 10px;
+  color: rgba(255,255,255,0.12);
+}
+
+.deltaCardScenarioValue {
+  font-size: 18px;
   font-weight: 700;
   color: #00E0FF;
+}
+
+.deltaCardDelta {
+  font-size: 14px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
-  margin-bottom: 4px;
+  min-width: 56px;
+  text-align: right;
 }
 
-.intelText {
-  font-size: 12px;
-  color: rgba(255,255,255,0.4);
-  line-height: 1.5;
-}
+.deltaPositive { color: #34d399; }
+.deltaNegative { color: #f87171; }
+.deltaZero { color: rgba(255,255,255,0.15); }
 
-.intelDeltaPositive { color: #34d399; }
-.intelDeltaNegative { color: #f87171; }
-
-/* Budget Variance (Advanced Mode) */
-.budgetSection {
+/* ── Sensitivity Strip ──────────────────────────────────────────────────── */
+.sensitivitySection {
   padding: 14px 20px;
-  border-top: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
 }
 
-.budgetTitle {
+.sensitivityTitle {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -493,43 +665,101 @@
   margin-bottom: 10px;
 }
 
-.budgetRow {
+.sensitivityRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 5px 0;
+  padding: 4px 0;
 }
 
-.budgetLabel {
+.sensitivityLabel {
   font-size: 11px;
-  color: rgba(255,255,255,0.35);
+  color: rgba(255,255,255,0.45);
 }
 
-.budgetValue {
-  font-size: 13px;
+.sensitivityImpact {
+  font-size: 12px;
   font-weight: 600;
-  font-variant-numeric: tabular-nums;
   font-family: 'JetBrains Mono', 'SF Mono', monospace;
 }
 
-/* Exit Readiness */
-.exitScore {
+/* ── Simulation Activity Indicator ──────────────────────────────────────── */
+.simActivity {
+  padding: 12px 20px;
   display: flex;
-  align-items: baseline;
-  gap: 6px;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  margin-top: auto;
 }
 
-.exitScoreValue {
-  font-size: 36px;
-  font-weight: 800;
-  color: #00E0FF;
-  letter-spacing: -0.02em;
+.simActivityDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  flex-shrink: 0;
 }
 
-.exitScoreMax {
-  font-size: 16px;
+.simActivityDotActive {
+  composes: simActivityDot;
+  background: #00E0FF;
+  box-shadow: 0 0 4px rgba(0,224,255,0.4);
+  animation: simPulse 1s ease-in-out infinite;
+}
+
+@keyframes simPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.simActivityText {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+}
+
+.simActivityTextActive {
+  composes: simActivityText;
+  color: rgba(0,224,255,0.7);
+}
+
+/* ── Compare Badge ──────────────────────────────────────────────────────── */
+.compareBadge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(0,224,255,0.7);
+  background: rgba(0,224,255,0.06);
+  border: 1px solid rgba(0,224,255,0.15);
+  border-radius: 3px;
+  padding: 2px 6px;
+  margin-left: 6px;
+}
+
+/* ── Percentile Strip (compact band display) ────────────────────────────── */
+.percentileStrip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.percentileTag {
+  font-size: 10px;
   font-weight: 500;
   color: rgba(255,255,255,0.2);
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+}
+
+.percentileValue {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.4);
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -546,8 +776,4 @@
 @media (max-width: 1200px) {
   .root { grid-template-columns: 260px 1fr 260px; }
 }
-
-
-
-
 

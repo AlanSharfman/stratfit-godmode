@@ -1,57 +1,76 @@
 // src/components/strategy-studio/TopControlBar.tsx
 // ═══════════════════════════════════════════════════════════════════════════
-// STRATFIT — Strategy Studio Top Control Bar
-// Objective selector, Horizon selector, Baseline/Scenario toggle, Advanced Mode
+// STRATFIT — Strategy Studio 2.0 Control Bar
+// Scenario tabs, Horizon, Ramp type, Compare toggle, Simulate
 // Institutional. No pills. No glow. Cyan underline active state.
 // ═══════════════════════════════════════════════════════════════════════════
 
 import React, { memo } from "react";
 import styles from "./StrategyStudio.module.css";
 
-export type Objective = "SURVIVAL" | "GROWTH" | "EXIT";
-export type Horizon = 6 | 12 | 18 | 24 | 36;
+export type ScenarioTab = "baseline" | "scenarioA" | "scenarioB";
+export type Horizon = 12 | 24 | 36 | 60;
+export type RampType = "immediate" | "6m" | "12m";
 
 interface TopControlBarProps {
-  objective: Objective;
-  onObjectiveChange: (o: Objective) => void;
+  activeTab: ScenarioTab;
+  onTabChange: (tab: ScenarioTab) => void;
   horizon: Horizon;
   onHorizonChange: (h: Horizon) => void;
-  showBaseline: boolean;
-  onBaselineToggle: () => void;
-  advancedMode: boolean;
-  onAdvancedModeToggle: () => void;
+  rampType: RampType;
+  onRampTypeChange: (r: RampType) => void;
+  compareMode: boolean;
+  onCompareModeToggle: () => void;
   onSimulate?: () => void;
 }
 
-const OBJECTIVES: Objective[] = ["SURVIVAL", "GROWTH", "EXIT"];
-const HORIZONS: Horizon[] = [6, 12, 18, 24, 36];
+const TABS: { id: ScenarioTab; label: string }[] = [
+  { id: "baseline", label: "Baseline" },
+  { id: "scenarioA", label: "Scenario A" },
+  { id: "scenarioB", label: "Scenario B" },
+];
+
+const HORIZONS: Horizon[] = [12, 24, 36, 60];
+
+const RAMP_OPTIONS: { id: RampType; label: string }[] = [
+  { id: "immediate", label: "Imm" },
+  { id: "6m", label: "6mo" },
+  { id: "12m", label: "12mo" },
+];
 
 export const TopControlBar: React.FC<TopControlBarProps> = memo(({
-  objective,
-  onObjectiveChange,
+  activeTab,
+  onTabChange,
   horizon,
   onHorizonChange,
-  showBaseline,
-  onBaselineToggle,
-  advancedMode,
-  onAdvancedModeToggle,
+  rampType,
+  onRampTypeChange,
+  compareMode,
+  onCompareModeToggle,
   onSimulate,
 }) => {
   return (
     <div className={styles.controlBar}>
-      {/* Objective Selector */}
-      <div className={styles.controlGroup}>
-        <span className={styles.controlLabel}>Objective</span>
-        {OBJECTIVES.map((o) => (
-          <button
-            key={o}
-            type="button"
-            className={objective === o ? styles.controlBtnActive : styles.controlBtn}
-            onClick={() => onObjectiveChange(o)}
-          >
-            {o}
-          </button>
-        ))}
+      {/* Scenario Tabs */}
+      <div className={styles.scenarioTabBar}>
+        {TABS.map((tab) => {
+          const isActive = activeTab === tab.id;
+          const isBaseline = tab.id === "baseline";
+          let cls = styles.scenarioTab;
+          if (isActive && isBaseline) cls = styles.scenarioTabBaselineActive;
+          else if (isActive) cls = styles.scenarioTabActive;
+          else if (isBaseline) cls = styles.scenarioTabBaseline;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              className={cls}
+              onClick={() => onTabChange(tab.id)}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
       <div className={styles.controlDivider} />
@@ -73,43 +92,48 @@ export const TopControlBar: React.FC<TopControlBarProps> = memo(({
 
       <div className={styles.controlDivider} />
 
-      {/* Baseline / Scenario Toggle */}
+      {/* Ramp Type Selector */}
+      <div className={styles.controlGroup}>
+        <span className={styles.controlLabel}>Ramp</span>
+        {RAMP_OPTIONS.map((r) => (
+          <button
+            key={r.id}
+            type="button"
+            className={rampType === r.id ? styles.controlBtnActive : styles.controlBtn}
+            onClick={() => onRampTypeChange(r.id)}
+          >
+            {r.label}
+          </button>
+        ))}
+      </div>
+
+      <div className={styles.controlDivider} />
+
+      {/* Compare Toggle */}
       <button
         type="button"
-        className={showBaseline ? styles.toggleBtnActive : styles.toggleBtn}
-        onClick={onBaselineToggle}
+        className={compareMode ? styles.toggleBtnActive : styles.toggleBtn}
+        onClick={onCompareModeToggle}
       >
-        {showBaseline ? "Baseline" : "Scenario"}
+        Compare
       </button>
 
       {/* Spacer */}
       <div className={styles.controlSpacer} />
 
+      {/* Simulate Button */}
       {onSimulate && (
         <button
           type="button"
           className={styles.simulateBtn}
           onClick={onSimulate}
         >
-          Simulate
+          Run Simulation
         </button>
       )}
-
-      {/* Advanced Mode Toggle (right aligned) */}
-      <button
-        type="button"
-        className={advancedMode ? styles.toggleBtnActive : styles.toggleBtn}
-        onClick={onAdvancedModeToggle}
-      >
-        Advanced
-      </button>
     </div>
   );
 });
 
 TopControlBar.displayName = "TopControlBar";
-
-
-
-
 

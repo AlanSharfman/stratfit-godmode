@@ -1,11 +1,11 @@
 // src/components/strategy-studio/TimelineScrubber.tsx
 // ═══════════════════════════════════════════════════════════════════════════
 // STRATFIT — Timeline Scrub Bar
-// Month 0–36 · Tick markers every 6 months · Cyan indicator dot
-// Dragging updates displayed simulation slice without creating new engine instance
+// Dynamic month range (12–60) · Adaptive tick spacing · Cyan indicator dot
+// Dragging updates displayed simulation slice
 // ═══════════════════════════════════════════════════════════════════════════
 
-import React, { useCallback, useRef, memo } from "react";
+import React, { useCallback, useRef, useMemo, memo } from "react";
 import styles from "./StrategyStudio.module.css";
 
 interface TimelineScrubberProps {
@@ -16,8 +16,6 @@ interface TimelineScrubberProps {
   /** Called when user scrubs to a new month */
   onChange: (month: number) => void;
 }
-
-const TICK_INTERVAL = 6;
 
 export const TimelineScrubber: React.FC<TimelineScrubberProps> = memo(({
   maxMonths = 36,
@@ -58,11 +56,17 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = memo(({
     [onChange, resolveMonth]
   );
 
-  // Build tick marks every 6 months
-  const ticks: number[] = [];
-  for (let m = 0; m <= maxMonths; m += TICK_INTERVAL) {
-    ticks.push(m);
-  }
+  // Adaptive tick interval: 6mo for ≤36, 12mo for 60
+  const tickInterval = maxMonths > 36 ? 12 : 6;
+
+  // Build tick marks
+  const ticks: number[] = useMemo(() => {
+    const t: number[] = [];
+    for (let m = 0; m <= maxMonths; m += tickInterval) {
+      t.push(m);
+    }
+    return t;
+  }, [maxMonths, tickInterval]);
 
   return (
     <div className={styles.timelineBar}>
@@ -111,8 +115,4 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = memo(({
 });
 
 TimelineScrubber.displayName = "TimelineScrubber";
-
-
-
-
 
