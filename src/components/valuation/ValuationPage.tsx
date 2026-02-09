@@ -15,6 +15,11 @@ import ValuationDriverSpider from "./ValuationDriverSpider";
 import ValuationMarketPosition from "./ValuationMarketPosition";
 import ValuationEngineTransparency from "./ValuationEngineTransparency";
 import ValuationDisclosure from "./ValuationDisclosure";
+import { ConfidenceGauge } from "./ConfidenceGauge";
+import { ModelAssumptionsDisclosure } from "@/components/legal/ModelAssumptionsDisclosure";
+
+// Confidence engine
+import { calculateModelConfidence, type ModelConfidenceResult } from "@/logic/confidence/calculateModelConfidence";
 
 // Stores
 import { useSimulationStore } from "@/state/simulationStore";
@@ -173,19 +178,49 @@ export default function ValuationPage() {
     return summarizeFromSingleEV(singleEV, 0.20);
   }, [fullResult, assessmentPayload, inputs.arr, multiple]);
 
-  // ── Confidence: derived from data quality score ──
-  const confidence = useMemo(() => {
-    let c = 55; // base
-    if (dist.isFromRealDistribution) c += 20;
-    else if (assessmentPayload) c += 10;
-    if (hasSimulated && simulation) {
-      c += 10;
-      if ((simulation.survivalRate ?? 0) > 0.5) c += 5;
-    }
-    if (inputs.nrr >= 110) c += 3;
-    if (inputs.grossMargin >= 70) c += 3;
-    return Math.min(95, c);
-  }, [dist.isFromRealDistribution, assessmentPayload, hasSimulated, simulation, inputs.nrr, inputs.grossMargin]);
+  // ── Confidence: statistically-derived model confidence ──
+  const confidenceResult: ModelConfidenceResult = useMemo(() => {
+    // Distribution stats
+    const mean = dist.p50;
+    const iqr = dist.p75 - dist.p25;
+    const stdEst = iqr > 0 ? iqr / 1.35 : mean * 0.2;
+
+    // Input completeness: count filled inputs
+    const filledCount = [
+      inputs.arr > 0,
+      inputs.growth > 0,
+      inputs.nrr > 0,
+      inputs.grossMargin > 0,
+      inputs.rule40 !== 0,
+      inputs.stage !== undefined,
+    ].filter(Boolean).length;
+    const inputCompleteness = filledCount / 6;
+
+    // Parameter stability: lower when levers are extreme
+    const leverVals = Object.values(levers).filter((v): v is number => typeof v === "number");
+    const leverDeviation = leverVals.length > 0
+      ? leverVals.reduce((acc, v) => acc + Math.abs(v - 50) / 50, 0) / leverVals.length
+      : 0;
+    const paramStability = Math.max(0, 1 - leverDeviation * 0.5);
+
+    // Cross-method consistency: compare methods
+    const methods: ValuationMethodId[] = ["stratfit", "arr-multiple", "revenue-multiple", "dcf"];
+    const evsByMethod = methods.map((m) => inputs.arr * calcMultiple(inputs, m).multiple);
+    const evMean = evsByMethod.reduce((a, b) => a + b, 0) / evsByMethod.length;
+    const evStd = Math.sqrt(evsByMethod.reduce((a, v) => a + (v - evMean) ** 2, 0) / evsByMethod.length);
+    const methodConsistency = evMean > 0 ? Math.max(0, 1 - evStd / evMean) : 0.5;
+
+    return calculateModelConfidence({
+      sampleSize: dist.sampleCount,
+      distributionStdDev: stdEst,
+      distributionMean: mean,
+      inputCompletenessScore: inputCompleteness,
+      parameterStabilityScore: paramStability,
+      methodConsistencyScore: methodConsistency,
+    });
+  }, [dist, inputs, levers]);
+
+  const confidence = Math.round(confidenceResult.confidenceScore);
 
   // ── Volatility: derived from operating range width ──
   const volatility = useMemo((): "Low" | "Medium" | "High" => {
@@ -363,8 +398,16 @@ export default function ValuationPage() {
           displayPercentiles="p10–p90 (stress) · p25–p75 (operating)"
         />
 
+        {/* ═══ CONFIDENCE GAUGE ═══ */}
+        <div style={{ margin: "24px 0", display: "flex", justifyContent: "center" }}>
+          <ConfidenceGauge result={confidenceResult} />
+        </div>
+
         {/* ═══ LAYER 7: LEGAL DISCLOSURE ═══ */}
         <ValuationDisclosure />
+
+        {/* ═══ MODEL ASSUMPTIONS & LEGAL DISCLOSURE ═══ */}
+        <ModelAssumptionsDisclosure />
       </div>
     </div>
   );

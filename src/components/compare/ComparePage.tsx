@@ -22,6 +22,8 @@ import CompareTable from "./CompareTable";
 import CompareInsights from "./CompareInsights";
 import TimeInstrumentStrip, { type TimeMetric } from "./TimeInstrumentStrip";
 
+import { CompactConfidenceGauge } from "@/components/valuation/ConfidenceGauge";
+import { calculateModelConfidence } from "@/logic/confidence/calculateModelConfidence";
 import styles from "./ComparePage.module.css";
 
 // ────────────────────────────────────────────────────────────────────────
@@ -186,6 +188,21 @@ const ComparePage: React.FC = () => {
     };
   }, [baselineKpis, scenarioAKpis]);
 
+  // ── Confidence gauge (compact) ──
+  const confidenceResult = useMemo(() => {
+    const bKpis = baselineKpis;
+    if (!bKpis) return null;
+    const ev = bKpis.enterpriseValue?.value ?? 50;
+    return calculateModelConfidence({
+      sampleSize: 0,
+      distributionStdDev: ev * 0.25,
+      distributionMean: ev,
+      inputCompletenessScore: bKpis.runway ? 0.8 : 0.5,
+      parameterStabilityScore: 0.75,
+      methodConsistencyScore: 0.7,
+    });
+  }, [baselineKpis]);
+
   // ── 3-way availability ──
   const threeWayDisabled = !scenarioBResult;
   const is3Way = mode === "3way" && !threeWayDisabled;
@@ -263,6 +280,11 @@ const ComparePage: React.FC = () => {
             </>
           )}
         </div>
+
+        {/* Compact confidence gauge */}
+        {confidenceResult && (
+          <CompactConfidenceGauge result={confidenceResult} />
+        )}
       </div>
 
       {/* ── MAIN CONTENT ─────────────────────────────────────── */}

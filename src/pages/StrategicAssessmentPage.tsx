@@ -12,6 +12,9 @@
 import React, { useState, useMemo } from "react";
 import { useSimulationStore } from "@/state/simulationStore";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
+import { ConfidenceGauge } from "@/components/valuation/ConfidenceGauge";
+import { ModelAssumptionsDisclosure } from "@/components/legal/ModelAssumptionsDisclosure";
+import { calculateModelConfidence } from "@/logic/confidence/calculateModelConfidence";
 import styles from "./StrategicAssessmentPage.module.css";
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -298,6 +301,23 @@ export default function StrategicAssessmentPage() {
     [assessmentSource, baselineMonthlyBurn, baselineStartingCash],
   );
 
+  // ── Confidence gauge (derived from real model metrics) ──
+  const confidenceResult = useMemo(() => {
+    if (!assessmentSource) return null;
+    const survRate = assessmentSource.survivalRate;
+    const arrP = assessmentSource.arrPercentiles;
+    const mean = arrP.p50;
+    const stdEst = arrP.p90 > arrP.p10 ? (arrP.p90 - arrP.p10) / 3.29 : mean * 0.2;
+    return calculateModelConfidence({
+      sampleSize: fullResult?.allSimulations?.length ?? 0,
+      distributionStdDev: stdEst,
+      distributionMean: mean,
+      inputCompletenessScore: systemBaseline ? 0.85 : 0.5,
+      parameterStabilityScore: survRate > 0.6 ? 0.85 : 0.6,
+      methodConsistencyScore: 0.75,
+    });
+  }, [assessmentSource, fullResult, systemBaseline]);
+
   // ── Gate: require simulation ──
   if (!assessmentSource || !assessment) {
     return (
@@ -444,6 +464,16 @@ export default function StrategicAssessmentPage() {
           <p className={styles.watchpointText}>{assessment.watchpoint}</p>
         </div>
       </div>
+
+      {/* ── CONFIDENCE GAUGE ── */}
+      {confidenceResult && (
+        <div style={{ display: "flex", justifyContent: "center", marginTop: 8 }}>
+          <ConfidenceGauge result={confidenceResult} />
+        </div>
+      )}
+
+      {/* ── LEGAL DISCLOSURE ── */}
+      <ModelAssumptionsDisclosure />
     </div>
   );
 }
