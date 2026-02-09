@@ -7,16 +7,16 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import React, { useEffect, useState, useMemo } from "react";
+// Note: useState still needed for bandNonce/bandStyle/bandColor; useEffect for causal
 import ScenarioMountain from "@/components/mountain/ScenarioMountain";
 import { TerrainWithFallback } from "@/components/terrain/TerrainFallback2D";
 
 // Terrain Intelligence Layer
-import { TerrainOverlayLayer } from "@/pages/terrain/TerrainOverlays";
-import TerrainOverlayToggles from "@/components/terrain/TerrainOverlayToggles";
+// NOTE: TerrainOverlayLayer (2D SVG) is no longer rendered — replaced by 3D
+// surface-matched annotations inside ScenarioMountain's God Mode Canvas.
 import TerrainIntelligencePanel from "@/components/terrain/TerrainIntelligencePanel";
 import ConsiderationsPanel from "@/components/terrain/ConsiderationsPanel";
 import ModelDisclosure from "@/components/terrain/ModelDisclosure";
-import { terrainOverlaysEnabled, heatmapEnabled as heatmapFlagEnabled } from "@/config/featureFlags";
 
 import { useScenario, useScenarioStore } from "@/state/scenarioStore";
 import { onCausal } from "@/ui/causalEvents";
@@ -43,29 +43,15 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
     return engineResultToMountainForces(engineResult);
   }, [engineResult]);
 
-  // ── Terrain Intelligence Layer toggles ──────────────────────────────
-  const [intelligenceEnabled, setIntelligenceEnabled] = useState(true);
-  const [riskDensityEnabled, setRiskDensityEnabled] = useState(!!props.heatmapEnabled);
+  // ── Terrain Intelligence Layer ──────────────────────────────
+  // In God Mode, 3D annotations inside Canvas replace 2D SVG overlays.
+  // Intelligence panel (right column) still uses this flag.
+  const intelligenceEnabled = true;
 
-  // Sync HEATMAP header toggle → risk density overlay (Baseline)
-  useEffect(() => {
-    if (props.heatmapEnabled === undefined) return;
-    setRiskDensityEnabled(!!props.heatmapEnabled);
-  }, [props.heatmapEnabled]);
-
-  // Derive overlay data from engine results (no new simulation runs)
+  // Derive overlay data from engine results (for intelligence panel + snapshot key)
   const terrainKpis = engineResult?.kpis ?? null;
   const overlayRiskScore = useMemo(() => terrainKpis?.riskScore?.value ?? 30, [terrainKpis]);
-  const overlayVariance = useMemo(() => {
-    const gs = terrainKpis?.growthStress?.value ?? 0.3;
-    return Math.max(0, Math.min(1, gs));
-  }, [terrainKpis]);
   const overlayRunway = useMemo(() => terrainKpis?.runway?.value ?? 24, [terrainKpis]);
-  const overlayLtvCac = useMemo(() => terrainKpis?.ltvCac?.value ?? 3, [terrainKpis]);
-  const overlaySurvivalPct = useMemo(() => {
-    const ri = terrainKpis?.riskIndex?.value ?? 70;
-    return Math.max(0, Math.min(100, ri));
-  }, [terrainKpis]);
 
   // Stable snapshot key for typewriter (only retype when scenario changes)
   const snapshotKey = useMemo(() => `${scenario}-${overlayRunway}-${overlayRiskScore}`, [scenario, overlayRunway, overlayRiskScore]);
@@ -145,29 +131,11 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
                   />
                 ) : null}
 
-                {/* Overlay Toggles (top-right of mountain) */}
-                {terrainOverlaysEnabled && (
-                  <TerrainOverlayToggles
-                    intelligenceEnabled={intelligenceEnabled}
-                    riskDensityEnabled={riskDensityEnabled}
-                    onToggleIntelligence={() => setIntelligenceEnabled((v) => !v)}
-                    onToggleRiskDensity={() => setRiskDensityEnabled((v) => !v)}
-                  />
-                )}
-
-                {/* Terrain Overlays — positioned above canvas */}
-                {terrainOverlaysEnabled && (intelligenceEnabled || riskDensityEnabled) && (
-                  <TerrainOverlayLayer
-                    intelligenceEnabled={intelligenceEnabled}
-                    heatmapEnabled={riskDensityEnabled && heatmapFlagEnabled}
-                    dataPoints={dataPoints}
-                    riskScore={overlayRiskScore}
-                    variance={overlayVariance}
-                    runway={overlayRunway}
-                    ltvCac={overlayLtvCac}
-                    survivalPct={overlaySurvivalPct}
-                  />
-                )}
+                {/* 2D Terrain Overlays + Toggles — DISABLED in God Mode.
+                   Replaced by 3D surface-matched annotations inside the Canvas:
+                   TerrainRidgeLine + TerrainSurfaceAnnotations.
+                   These are correctly positioned ON the mountain surface and move
+                   with the camera, solving the projection mismatch of 2D SVG overlays. */}
 
                 {/* Dark Wireframe Mountain — GOD MODE enabled for baseline terrain */}
                 <TerrainWithFallback dataPoints={dataPoints}>
