@@ -321,7 +321,7 @@ export function DivergenceField({ data, monthIndex, onScrub }: Props) {
         </div>
 
         <div className="px-3 py-2 rounded-xl border border-slate-800/70 bg-black/35 backdrop-blur">
-          <div className="text-[10px] tracking-[0.22em] uppercase text-slate-400">Decision Delta</div>
+          <div className="text-[10px] tracking-[0.22em] uppercase text-slate-400">Divergence Delta</div>
           <div className={clsx("mt-1 font-semibold", stats.delta >= 0 ? "text-emerald-300" : "text-red-300")}>
             {stats.delta >= 0 ? "+" : ""}
             {data.metric === "RUNWAY" ? `${stats.delta.toFixed(0)} mo` : `$${stats.delta.toFixed(1)}M`}

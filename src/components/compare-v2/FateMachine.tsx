@@ -222,11 +222,11 @@ export function FateMachine({
     ctx.arc(centerX, splitY, 6, 0, Math.PI * 2)
     ctx.fill()
 
-    // "THE DECISION" label
+    // "THE ASSESSMENT" label
     ctx.fillStyle = 'rgba(255, 255, 255, 0.6)'
     ctx.font = '10px ui-monospace, monospace'
     ctx.textAlign = 'center'
-    ctx.fillText('THE DECISION', centerX, splitY - 20)
+    ctx.fillText('THE ASSESSMENT', centerX, splitY - 20)
 
     // Draw "NOW" at top
     ctx.fillStyle = 'rgba(255, 255, 255, 0.4)'

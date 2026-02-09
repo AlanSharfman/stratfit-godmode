@@ -47,6 +47,7 @@ const NAV_TABS: Array<{ id: ViewMode; label: string; icon: typeof Layers }> = [
   { id: "compare", label: "COMPARE", icon: SplitSquareHorizontal },
   { id: "risk", label: "RISK", icon: AlertTriangle },
   { id: "valuation", label: "VALUATION", icon: TrendingUp },
+  { id: "assessment", label: "STRATEGIC ASSESSMENT", icon: Layers },
 ];
 
 // ===========================================
