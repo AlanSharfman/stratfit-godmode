@@ -599,6 +599,17 @@ body { overflow-x: hidden; }
   min-height: calc(66vh * 1.07625); /* prevent parent shrink */
 }
 
+/* =========================================================
+   TERRAIN (BASELINE) — Mountain compound size reduction
+   Goal: give KPI/metrics more vertical space on Baseline page.
+   Change: -25% vs the global mountain-stage target.
+   Scoped: ONLY Terrain view (Baseline).
+   ========================================================= */
+.main-content.mode-terrain .mountain-stage{
+  height: calc(66vh * 1.07625 * 0.75);
+  min-height: calc(66vh * 1.07625 * 0.75);
+}
+
 /* KPI Console styles moved from `src/components/KPIConsole.tsx` (no inline <style> blocks) */
 .kpi-command-console {
   width: 100%;

@@ -276,7 +276,8 @@
   position: relative;
   overflow: hidden;
   min-height: 0;
-  background: #000;
+  border-radius: 18px;
+  /* background handled by .sf-mountain-backplate — do NOT override with #000 */
 }
 
 .heatmapOverlay {

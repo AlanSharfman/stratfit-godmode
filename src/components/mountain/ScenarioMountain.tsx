@@ -30,6 +30,7 @@ import { Scenario, ScenarioId, useScenarioStore } from "@/state/scenarioStore";
 import { useUIStore } from "@/state/uiStore";
 import { useSimulationStore } from "@/state/simulationStore";
 import { engineResultToMountainForces } from "@/logic/mountainForces";
+import { setStructuralHeatTint } from "@/logic/mountain/mountainSurfaceMaterial";
 
 // ============================================================================
 // MODE CONFIG
@@ -49,7 +50,7 @@ interface ModeConfig {
   autoRotateSpeed: number;
 }
 
-type MountainMode = "default" | "celebration" | "ghost" | "instrument";
+type MountainMode = "default" | "celebration" | "ghost" | "instrument" | "baseline" | "strategy";
 
 const MODE_CONFIGS: Record<MountainMode, ModeConfig> = {
   default: {
@@ -105,6 +106,34 @@ const MODE_CONFIGS: Record<MountainMode, ModeConfig> = {
     bloomIntensity: 0,
     autoRotate: true,
     autoRotateSpeed: 0.1,
+  },
+  // BASELINE — Deterministic structural view (transparent scene, auto-rotate)
+  baseline: {
+    terrainOpacity: 1,
+    wireframeOpacity: 1,
+    glowMultiplier: 1,
+    colorSaturation: 1,
+    animationSpeed: 1,
+    pulseEnabled: false,
+    hazeOpacity: 1,
+    pathGlow: 1,
+    bloomIntensity: 0,
+    autoRotate: true,
+    autoRotateSpeed: 0.3,
+  },
+  // STRATEGY — Strategy Studio lever-driven terrain (transparent scene, interactive)
+  strategy: {
+    terrainOpacity: 1,
+    wireframeOpacity: 1,
+    glowMultiplier: 1,
+    colorSaturation: 1,
+    animationSpeed: 1,
+    pulseEnabled: false,
+    hazeOpacity: 1,
+    pathGlow: 1,
+    bloomIntensity: 0,
+    autoRotate: true,
+    autoRotateSpeed: 0.3,
   },
 };
 
@@ -294,6 +323,12 @@ interface TerrainProps {
   glowMultiplier?: number; // Mode control
   isRecalibrating?: boolean; // Structural recalibration — slows morph for settlement easing
   godMode?: boolean; // GOD MODE: dense charcoal material, high roughness, low metalness
+  /** Structural Heat normalized 0..1 (1=strong). If undefined, tint is disabled. */
+  structuralHeat01?: number;
+  /** Optional: expose the terrain fill mesh for deterministic sampling. */
+  onMeshReady?: (mesh: THREE.Mesh | null) => void;
+  /** Baseline-only visibility profile (keeps mesh readable on dark photo backgrounds). */
+  baselineHighVisibility?: boolean;
 }
 
 const Terrain: React.FC<TerrainProps> = ({
@@ -313,6 +348,9 @@ const Terrain: React.FC<TerrainProps> = ({
   glowMultiplier = 1,
   isRecalibrating = false,
   godMode = false,
+  structuralHeat01,
+  onMeshReady,
+  baselineHighVisibility = false,
 }) => {
   const groupRef = useRef<THREE.Group>(null);
   const meshFillRef = useRef<THREE.Mesh>(null);
@@ -517,6 +555,11 @@ const Terrain: React.FC<TerrainProps> = ({
 
       // Apply material animation (God Mode: stable glow | Default: celebration pulse)
       const fillMat = meshFillRef.current.material as THREE.MeshStandardMaterial;
+      // Structural Heat (Baseline composition) — subtle deterministic tint via shader hook.
+      // We patch once per material and only update the uniform value on changes.
+      if (structuralHeat01 !== undefined) {
+        setStructuralHeatTint(fillMat, structuralHeat01);
+      }
       if (godMode) {
         fillMat.emissiveIntensity = 0.04 * glowMultiplier;
       } else {
@@ -536,6 +579,11 @@ const Terrain: React.FC<TerrainProps> = ({
       }
   });
 
+  useEffect(() => {
+    onMeshReady?.(meshFillRef.current);
+    return () => onMeshReady?.(null);
+  }, [onMeshReady]);
+
   return (
     <group ref={groupRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} scale={[0.9, 0.9, 0.9]}>
       {/* FILL — God Mode: dense charcoal mass | Default: subtle depth layer */}
@@ -543,12 +591,24 @@ const Terrain: React.FC<TerrainProps> = ({
         <meshStandardMaterial
           vertexColors
           transparent
-          opacity={godMode ? (0.92 * opacityMultiplier) : ((isDragging ? 0.35 : 0.22) * opacityMultiplier)}
-          roughness={godMode ? 0.85 : 0.2}
-          metalness={godMode ? 0.05 : 0.8}
+          opacity={
+            godMode
+              ? (0.92 * opacityMultiplier)
+              : baselineHighVisibility
+                ? ((isDragging ? 0.55 : 0.42) * opacityMultiplier)
+                : ((isDragging ? 0.35 : 0.22) * opacityMultiplier)
+          }
+          roughness={godMode ? 0.85 : baselineHighVisibility ? 0.65 : 0.2}
+          metalness={godMode ? 0.05 : baselineHighVisibility ? 0.25 : 0.8}
           side={THREE.DoubleSide}
           emissive={pal.mid}
-          emissiveIntensity={godMode ? (0.04 * glowMultiplier) : ((isDragging ? 0.2 : 0.1) * glowMultiplier)}
+          emissiveIntensity={
+            godMode
+              ? (0.04 * glowMultiplier)
+              : baselineHighVisibility
+                ? ((isDragging ? 0.22 : 0.14) * glowMultiplier)
+                : ((isDragging ? 0.2 : 0.1) * glowMultiplier)
+          }
           depthWrite={godMode}
           toneMapped={godMode}
         />
@@ -556,8 +616,8 @@ const Terrain: React.FC<TerrainProps> = ({
       {/* WIREFRAME — God Mode: subtle structural lines | Default: luminous teal */}
       <mesh ref={meshWireRef} geometry={geometry}>
         <meshBasicMaterial 
-          vertexColors={godMode ? false : !neuralPulse}
-          color={godMode ? "#1a2e42" : (neuralPulse ? "#00ffff" : undefined)}
+          vertexColors={godMode ? false : baselineHighVisibility ? false : !neuralPulse}
+          color={godMode ? "#1a2e42" : baselineHighVisibility ? "#22d3ee" : (neuralPulse ? "#00ffff" : undefined)}
           wireframe 
           transparent 
           opacity={godMode
@@ -1510,6 +1570,21 @@ function CinematicController({ children, riskLevel = 0 }: CinematicControllerPro
 }
 
 // ============================================================================
+// BASELINE AUTO ROTATE — Institutional crawl (pausable)
+// ============================================================================
+
+function BaselineAutoRotate({ children, paused }: { children: React.ReactNode; paused: boolean }) {
+  const groupRef = useRef<THREE.Group>(null);
+  useFrame((_, delta) => {
+    if (!groupRef.current) return;
+    if (paused) return;
+    // ~0.6°/sec
+    groupRef.current.rotation.y += delta * 0.0105;
+  });
+  return <group ref={groupRef}>{children}</group>;
+}
+
+// ============================================================================
 // MAIN EXPORT
 // ============================================================================
 
@@ -1529,6 +1604,26 @@ interface ScenarioMountainProps {
   pathColor?: string;
   /** GOD MODE — Transforms terrain into spatial Monte Carlo decision engine */
   godMode?: boolean;
+  /** Optional: render additional in-canvas overlays (e.g., Baseline anchors/lines). */
+  overlay?: React.ReactNode;
+  /** Optional: Baseline-only very slow auto rotation (pausable). */
+  baselineAutoRotate?: boolean;
+  baselineAutoRotatePaused?: boolean;
+  /** Baseline-only: allow full 360° user rotation (no azimuth clamp). */
+  baselineAllow360Rotate?: boolean;
+  /** Baseline-only: make container background transparent (lets parent show through). */
+  transparentContainer?: boolean;
+  /** Baseline-only: make scene background/fog transparent (no clear color). */
+  transparentScene?: boolean;
+  /** Optional: access the terrain fill mesh for deterministic sampling (uv -> height). */
+  onTerrainMeshReady?: (mesh: THREE.Mesh | null) => void;
+  /** Baseline-only visibility profile (keeps mesh readable on dark photo backgrounds). */
+  baselineHighVisibility?: boolean;
+  /**
+   * STRUCTURAL HEAT (0–100)
+   * Baseline composition quality. Drives a subtle, deterministic surface tint.
+   */
+  structuralHeatScore?: number;
 }
 
 export function ScenarioMountain({
@@ -1546,10 +1641,20 @@ export function ScenarioMountain({
   showMilestones = false,
   pathColor,
   godMode: godModeProp = false,
+  overlay,
+  baselineAutoRotate = false,
+  baselineAutoRotatePaused = false,
+  baselineAllow360Rotate = false,
+  transparentContainer = false,
+  transparentScene = false,
+  onTerrainMeshReady,
+  baselineHighVisibility = false,
+  structuralHeatScore,
 }: ScenarioMountainProps) {
   const viewMode = useScenarioStore((s) => s.viewMode);
 
   const config = MODE_CONFIGS[mode] ?? MODE_CONFIGS.default;
+  const [isOrbiting, setIsOrbiting] = useState(false);
 
   const scenarioKey = typeof scenario === "string" ? scenario : scenario.id;
   const scenarioColor = typeof scenario === "string" ? undefined : (scenario as any)?.color;
@@ -1563,6 +1668,11 @@ export function ScenarioMountain({
   const terrainOpacityMultiplier = config.terrainOpacity;
   const wireOpacityMultiplier = config.wireframeOpacity;
   const hazeOpacityMultiplier = config.hazeOpacity;
+
+  // Structural heat -> normalized 0..1 (strong=1)
+  const structuralHeat01 = structuralHeatScore !== undefined
+    ? Math.max(0, Math.min(1, structuralHeatScore / 100))
+    : undefined;
   
   // TODO: Implement timeline and heatmap rendering logic
   // - timelineEnabled: Show historical progression overlay
@@ -1666,8 +1776,8 @@ export function ScenarioMountain({
           fallback={<div style={{ width: "100%", height: "100%", background: "#0a1018" }} />}
         >
           <Suspense fallback={null}>
-            <color attach="background" args={["#0a1018"]} />
-            <fog attach="fog" args={["#0a1018", 25, 70]} />
+            {!transparentScene && <color attach="background" args={["#0a1018"]} />}
+            {!transparentScene && <fog attach="fog" args={["#0a1018", 25, 70]} />}
 
             {/* Camera raised + pulled back so terrain sits lower in viewport */}
             <PerspectiveCamera makeDefault position={[0, 16, 28]} fov={36} />
@@ -1695,6 +1805,7 @@ export function ScenarioMountain({
                 opacityMultiplier={config.terrainOpacity}
                 wireOpacityMultiplier={config.wireframeOpacity}
                 glowMultiplier={config.glowMultiplier}
+                structuralHeat01={structuralHeat01}
               />
             </group>
 
@@ -1724,9 +1835,11 @@ export function ScenarioMountain({
     <div
       className={`relative w-full h-full overflow-hidden ${className ?? ""}`}
       style={{
-        background: isGodMode
-          ? "radial-gradient(circle at 50% 55%, #0c1018 0%, #080c12 60%, #050709 100%)"
-          : "radial-gradient(circle at 50% 55%, #1a2744 0%, #0f1a2e 60%, #0a1220 100%)",
+        background: transparentContainer
+          ? "transparent"
+          : isGodMode
+            ? "radial-gradient(circle at 50% 55%, #0c1018 0%, #080c12 60%, #050709 100%)"
+            : "radial-gradient(circle at 50% 55%, #1a2744 0%, #0f1a2e 60%, #0a1220 100%)",
         minHeight: '400px',
         height: '100%',
         width: '100%',
@@ -1734,7 +1847,7 @@ export function ScenarioMountain({
     >
       {/* THE VIGNETTE — Deeper in God Mode */}
       <div 
-        className="absolute inset-0 pointer-events-none z-[2]"
+        className="absolute inset-0 pointer-events-none z-2"
         style={{
           boxShadow: isGodMode
             ? "inset 0 0 120px rgba(5, 7, 9, 0.6)"
@@ -1757,12 +1870,13 @@ export function ScenarioMountain({
         fallback={<div style={{ width: "100%", height: "100%", background: isGodMode ? "#050709" : "#0d1117" }} />}
         onCreated={({ gl }) => {
           gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+          if (transparentScene) gl.setClearColor(0x000000, 0);
         }}
       >
         <Suspense fallback={null}>
-        {/* GOD MODE: deeper background + survival-linked fog */}
-        <color attach="background" args={[isGodMode ? '#080c12' : '#0f1a2e']} />
-        <fog attach="fog" args={[isGodMode ? '#080c12' : '#0f1a2e', godFogNear, godFogFar]} />
+        {/* Scene clear + fog (Baseline can opt into transparentScene for photo-backed stages) */}
+        {!transparentScene && <color attach="background" args={[isGodMode ? '#080c12' : '#0f1a2e']} />}
+        {!transparentScene && <fog attach="fog" args={[isGodMode ? '#080c12' : '#0f1a2e', godFogNear, godFogFar]} />}
         
         {/* GOD MODE: Camera closer, higher, narrower FOV for 70-80% fill */}
         <PerspectiveCamera
@@ -1799,28 +1913,10 @@ export function ScenarioMountain({
         
         <GhostTerrain isVisible={showPath && hasInteracted} opacityMultiplier={config.pathGlow} />
         
-        {/* GOD MODE: Static authoritative pose (no idle animation) | Default: cinematic idle */}
+        {/* GOD MODE: Static authoritative pose (no idle animation) | Default: cinematic idle | Baseline: slow autorotate */}
+        {/* IMPORTANT: overlay is rendered INSIDE the rotation wrapper so orbs/lines rotate with the terrain */}
         {isGodMode ? (
-          <Terrain
-            dataPoints={resolvedDataPoints}
-            activeKpiIndex={activeKpiIndex}
-            activeLeverId={activeLeverId}
-            leverIntensity01={leverIntensity01}
-            scenario={scenarioId}
-            baseColor={pathColor ?? scenarioColor}
-            mode={mode}
-            glowIntensity={glowIntensity}
-            modeConfig={config}
-            isDragging={isDragging}
-            neuralPulse={neuralBootComplete}
-            opacityMultiplier={terrainOpacityMultiplier}
-            wireOpacityMultiplier={wireOpacityMultiplier}
-            glowMultiplier={glowMultiplier}
-            isRecalibrating={isRecalibrating}
-            godMode
-          />
-        ) : (
-          <CinematicController riskLevel={effectiveRiskLevel}>
+          <>
             <Terrain
               dataPoints={resolvedDataPoints}
               activeKpiIndex={activeKpiIndex}
@@ -1837,8 +1933,61 @@ export function ScenarioMountain({
               wireOpacityMultiplier={wireOpacityMultiplier}
               glowMultiplier={glowMultiplier}
               isRecalibrating={isRecalibrating}
+              godMode
+              structuralHeat01={structuralHeat01}
             />
-          </CinematicController>
+            {overlay}
+          </>
+        ) : (
+          baselineAutoRotate ? (
+            <BaselineAutoRotate paused={baselineAutoRotatePaused || isOrbiting}>
+              <Terrain
+                dataPoints={resolvedDataPoints}
+                activeKpiIndex={activeKpiIndex}
+                activeLeverId={activeLeverId}
+                leverIntensity01={leverIntensity01}
+                scenario={scenarioId}
+                baseColor={pathColor ?? scenarioColor}
+                mode={mode}
+                glowIntensity={glowIntensity}
+                modeConfig={config}
+                isDragging={isDragging}
+                neuralPulse={neuralBootComplete}
+                opacityMultiplier={terrainOpacityMultiplier}
+                wireOpacityMultiplier={wireOpacityMultiplier}
+                glowMultiplier={glowMultiplier}
+                isRecalibrating={isRecalibrating}
+                structuralHeat01={structuralHeat01}
+                onMeshReady={onTerrainMeshReady}
+                baselineHighVisibility={baselineHighVisibility}
+              />
+              {overlay}
+            </BaselineAutoRotate>
+          ) : (
+            <CinematicController riskLevel={effectiveRiskLevel}>
+              <Terrain
+                dataPoints={resolvedDataPoints}
+                activeKpiIndex={activeKpiIndex}
+                activeLeverId={activeLeverId}
+                leverIntensity01={leverIntensity01}
+                scenario={scenarioId}
+                baseColor={pathColor ?? scenarioColor}
+                mode={mode}
+                glowIntensity={glowIntensity}
+                modeConfig={config}
+                isDragging={isDragging}
+                neuralPulse={neuralBootComplete}
+                opacityMultiplier={terrainOpacityMultiplier}
+                wireOpacityMultiplier={wireOpacityMultiplier}
+                glowMultiplier={glowMultiplier}
+                isRecalibrating={isRecalibrating}
+                structuralHeat01={structuralHeat01}
+                onMeshReady={onTerrainMeshReady}
+                baselineHighVisibility={baselineHighVisibility}
+              />
+              {overlay}
+            </CinematicController>
+          )
         )}
 
         {/* GOD MODE: Interquartile Confidence Envelope (Section 3) */}
@@ -1912,8 +2061,10 @@ export function ScenarioMountain({
           rotateSpeed={0.4}
           minPolarAngle={isGodMode ? Math.PI / 3.5 : Math.PI / 4}
           maxPolarAngle={Math.PI / 2.2}
-          minAzimuthAngle={-Math.PI / 5}
-          maxAzimuthAngle={Math.PI / 5}
+          minAzimuthAngle={baselineAllow360Rotate ? undefined : -Math.PI / 5}
+          maxAzimuthAngle={baselineAllow360Rotate ? undefined : Math.PI / 5}
+          onStart={() => setIsOrbiting(true)}
+          onEnd={() => setIsOrbiting(false)}
         />
 
         {/* Post-processing — God Mode: subtle bloom for rim glow | Default: celebration */}

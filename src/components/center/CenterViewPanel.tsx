@@ -22,6 +22,11 @@ import { useScenario, useScenarioStore } from "@/state/scenarioStore";
 import { onCausal } from "@/ui/causalEvents";
 import { engineResultToMountainForces } from "@/logic/mountainForces";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
+import { aggregateStructuralHeatScore, buildBaselineModel } from "@/logic/heat/structuralHeatEngine";
+
+function clamp(n: number, lo: number, hi: number) {
+  return Math.max(lo, Math.min(hi, n));
+}
 
 interface CenterViewPanelProps {
   view?: string;
@@ -55,6 +60,15 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
 
   // Stable snapshot key for typewriter (only retype when scenario changes)
   const snapshotKey = useMemo(() => `${scenario}-${overlayRunway}-${overlayRiskScore}`, [scenario, overlayRunway, overlayRiskScore]);
+
+  // STRUCTURAL HEAT — aggregate score (0..100) for mountain surface tinting
+  const structuralHeatScore = useMemo(() => {
+    if (!systemBaseline) return 70;
+    const baseRiskIndex = engineResults?.base?.kpis?.riskIndex?.value;
+    const survivalBaselinePct = clamp(100 - (typeof baseRiskIndex === "number" ? baseRiskIndex : 30), 0, 100);
+    const ctx = buildBaselineModel(systemBaseline, survivalBaselinePct);
+    return aggregateStructuralHeatScore(ctx);
+  }, [engineResults, systemBaseline]);
 
   // CAUSAL HIGHLIGHT — Mountain band (Phase 1, UI-only)
   const [bandNonce, setBandNonce] = useState(0);
@@ -144,6 +158,7 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
                     dataPoints={dataPoints}
                     activeKpiIndex={hoveredKpiIndex}
                     godMode
+                    structuralHeatScore={structuralHeatScore}
                   />
                 </TerrainWithFallback>
               </div>

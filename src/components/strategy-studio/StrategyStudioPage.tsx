@@ -44,6 +44,10 @@ import {
   processSimulationResults,
 } from "@/logic/monteCarloEngine";
 import { useCompareViewStore } from "@/state/compareViewStore";
+import {
+  TerrainAnchorOverlay,
+  STRATEGY_LEVER_CONNECTIONS,
+} from "@/components/mountain/anchorSystem";
 
 // ── Props from App.tsx ──────────────────────────────────────────────────
 
@@ -593,12 +597,26 @@ const StrategyStudioPage: React.FC<StrategyStudioPageProps> = memo(({
         />
 
         {/* Mountain Stage */}
-        <div className={isDragging ? styles.mountainStagePreview : styles.mountainStage}>
+        <div className={`${isDragging ? styles.mountainStagePreview : styles.mountainStage} sf-mountain-backplate`}>
           <TerrainWithFallback dataPoints={dataPoints}>
             <ScenarioMountain
               scenario={scenario}
+              mode="strategy"
               dataPoints={dataPoints}
               activeKpiIndex={hoveredKpiIndex}
+              baselineAutoRotate
+              baselineAutoRotatePaused={isDragging || hoveredKpiIndex !== null}
+              baselineAllow360Rotate
+              baselineHighVisibility
+              transparentContainer
+              transparentScene
+              overlay={
+                <TerrainAnchorOverlay
+                  mode="strategy"
+                  connections={STRATEGY_LEVER_CONNECTIONS}
+                  activeFromId={activeDragLever}
+                />
+              }
             />
           </TerrainWithFallback>
 

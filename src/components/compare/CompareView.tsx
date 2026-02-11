@@ -30,6 +30,7 @@ import { TerrainWithFallback } from "@/components/terrain/TerrainFallback2D";
 import ScenarioStrip from "./ScenarioStrip";
 import MetricsStrip from "./MetricsStrip";
 import CompactTable from "./CompactTable";
+import DeltaIntelligenceTable from "./DeltaIntelligenceTable";
 import CommentaryLine from "./CommentaryLine";
 import styles from "./CompareView.module.css";
 
@@ -128,8 +129,10 @@ const CompareView: React.FC = memo(() => {
 
   // ── Scenario CRUD callbacks ────────────────────────────────────────
   const handleAdd = useCallback(() => {
-    const count = scenarios.length + 1;
-    const name = count === 1 ? "Scenario A" : count === 2 ? "Scenario B" : "Scenario C";
+    const proposed = `Scenario ${String.fromCharCode(64 + (scenarios.length + 1))}`;
+    const input = window.prompt("Name this scenario", proposed);
+    const name = String(input ?? "").trim();
+    if (!name) return;
     const newScenario = addScenario({
       id: "",
       name,
@@ -244,6 +247,16 @@ const CompareView: React.FC = memo(() => {
         activeScenarioId={activeScenarioId}
       />
 
+      {/* ── Delta Table + Intelligence ──────────────────────────────── */}
+      <DeltaIntelligenceTable
+        leftName={leftData.name}
+        rightName={rightData?.name ?? "Scenario"}
+        leftMetrics={leftMetrics}
+        rightMetrics={rightMetrics}
+        leftSim={leftData.simulationResult}
+        rightSim={rightData?.simulationResult ?? null}
+      />
+
       {/* ── Commentary ──────────────────────────────────────────────── */}
       <CommentaryLine
         leftMetrics={leftMetrics}
@@ -259,6 +272,7 @@ const CompareView: React.FC = memo(() => {
 
 CompareView.displayName = "CompareView";
 export default CompareView;
+
 
 
 

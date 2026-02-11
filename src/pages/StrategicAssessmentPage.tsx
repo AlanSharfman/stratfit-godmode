@@ -333,9 +333,9 @@ export default function StrategicAssessmentPage() {
             <path d="M24 32L30 38L40 26" stroke="rgba(34, 211, 238, 0.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
-        <h2 className={styles.emptyTitle}>Strategic Assessment Unavailable</h2>
+        <h2 className={styles.emptyTitle}>Capital Intelligence Unavailable</h2>
         <p className={styles.emptyDescription}>
-          Run a simulation first. The assessment needs real outputs to give you useful insight.
+          Run a simulation first. Capital Intelligence needs real outputs to give you useful insight.
         </p>
         <button
           className={styles.emptyAction}
@@ -357,7 +357,7 @@ export default function StrategicAssessmentPage() {
       {/* ── HEADER ── */}
       <header className={styles.header}>
         <div className={styles.headerLeft}>
-          <h1 className={styles.title}>Strategic Assessment</h1>
+          <h1 className={styles.title}>Capital Intelligence</h1>
           <p className={styles.subtitle}>
             A structured summary of strengths, vulnerabilities, and where to focus next.
           </p>

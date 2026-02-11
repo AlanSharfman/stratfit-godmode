@@ -1,0 +1,31 @@
+.sf-mountain-backplate {
+  position: relative;
+  background:
+    radial-gradient(900px 520px at 50% 18%, rgba(70, 227, 255, 0.06), rgba(0,0,0,0) 60%),
+    linear-gradient(180deg, rgba(5,10,14,0.55), rgba(0,0,0,0.72)),
+    url("/realistic-mountain.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-blend-mode: screen, normal, normal;
+}
+
+.sf-mountain-backplate::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* Readability veil: keeps typography clean without killing the mesh */
+  background:
+    radial-gradient(1000px 600px at 50% 28%, rgba(0,0,0,0.18), rgba(0,0,0,0.0) 45%),
+    radial-gradient(1200px 800px at 50% 70%, rgba(0,0,0,0.22), rgba(0,0,0,0.70));
+  z-index: 0;
+}
+
+/* Ensure Canvas + overlays render above the veil */
+.sf-mountain-backplate > * {
+  position: relative;
+  z-index: 1;
+}
+
+

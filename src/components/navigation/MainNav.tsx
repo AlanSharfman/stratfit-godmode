@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { useLocation, Link } from 'react-router-dom'
 import {
   Mountain,
+  Target,
   Zap,
   GitCompare,
   DollarSign,
@@ -67,6 +68,13 @@ const primaryNav: NavItem[] = [
     description: 'Terrain visualization & baseline analysis',
   },
   {
+    id: 'objective',
+    label: 'OBJECTIVE',
+    href: '/objective',
+    icon: <Target className="w-4 h-4" />,
+    description: 'Declare targets & compute structural requirements',
+  },
+  {
     id: 'simulate',
     label: 'STRATEGY STUDIO',
     href: '/simulate',
@@ -96,7 +104,7 @@ const primaryNav: NavItem[] = [
   },
   {
     id: 'assessment',
-    label: 'STRATEGIC ASSESSMENT',
+    label: 'CAPITAL INTELLIGENCE',
     href: '/assessment',
     icon: <FileText className="w-4 h-4" />,
     description: 'Strengths, vulnerabilities & priority focus',

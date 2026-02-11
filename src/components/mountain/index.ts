@@ -2,5 +2,6 @@
 
 export { default as ScenarioMountain } from './ScenarioMountain';
 export { default as GhostMountain } from './GhostMountain';
-// Note: GodModeMountain and StrategicAutopilotPanel are now in @/components/compare/
+// Note: GodModeMountain quarantined to src/_quarantine/legacy-mountain/
+// Note: BaselineMountainScene, BaselineMountain quarantined to src/_quarantine/legacy-mountain/
 

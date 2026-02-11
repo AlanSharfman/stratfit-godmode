@@ -1,0 +1,15 @@
+:root {
+  /* ─────────────────────────────────────────────────────────────────────
+     STRUCTURAL HEAT TOKENS (Baseline composition quality)
+     Bloomberg-grade subtlety: no rainbow, no orange, no animation.
+     These are used via CSS var tokens only.
+     ───────────────────────────────────────────────────────────────────── */
+
+  --heat-strong: rgba(16, 185, 129, 0.9);      /* emerald */
+  --heat-stable: rgba(56, 189, 248, 0.8);      /* cyan */
+  --heat-watch: rgba(99, 102, 241, 0.75);      /* indigo */
+  --heat-weak: rgba(239, 68, 68, 0.85);        /* red */
+  --heat-critical: rgba(190, 18, 60, 0.95);    /* deep red */
+}
+
+

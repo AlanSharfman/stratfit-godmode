@@ -8,6 +8,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { useState, useCallback, useMemo, useEffect, useRef } from "react"
+import { useNavigate } from "react-router-dom"
 import styles from "./InitializeBaselinePage.module.css"
 import { useSystemBaseline } from "@/system/SystemBaselineProvider"
 import { SystemBlueprintBackground } from "@/components/system/SystemBlueprintBackground"
@@ -307,7 +308,7 @@ function fmtMultiple(v: number): string {
 // MODULE DEFINITIONS — Step Rail
 // ═══════════════════════════════════════════════════════════════════════════
 
-type ModuleId = "company" | "financial" | "capital" | "operations" | "customer"
+type ModuleId = "company" | "financial" | "capital" | "operations" | "customer" | "posture"
 
 const MODULES: { id: ModuleId; num: string; label: string }[] = [
   { id: "company", num: "01", label: "Company" },
@@ -315,6 +316,7 @@ const MODULES: { id: ModuleId; num: string; label: string }[] = [
   { id: "capital", num: "03", label: "Capital" },
   { id: "operations", num: "04", label: "Operations" },
   { id: "customer", num: "05", label: "Customer" },
+  { id: "posture", num: "06", label: "Posture" },
 ]
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -322,6 +324,9 @@ const MODULES: { id: ModuleId; num: string; label: string }[] = [
 // ═══════════════════════════════════════════════════════════════════════════
 
 export default function InitializeBaselinePage() {
+  // ── Router navigation ─────────────────────────────────────────────────
+  const navigate = useNavigate()
+
   // ── Provider: canonical baseline source ───────────────────────────────
   const { baseline: storedBaseline, setBaseline: commitBaseline } =
     useSystemBaseline()
@@ -336,6 +341,13 @@ export default function InitializeBaselinePage() {
   // ── Recalculation shimmer key ────────────────────────────────────────
   const [shimmerKey, setShimmerKey] = useState(0)
   const isFirstRender = useRef(true)
+
+  // ── Sync provider → local state (for external updates) ───────────────
+  useEffect(() => {
+    if (storedBaseline) {
+      setBaseline(migrateBaseline(storedBaseline))
+    }
+  }, [storedBaseline])
 
   // ── Sync local → provider on every mutation (auto-save) ──────────────
   useEffect(() => {
@@ -431,7 +443,7 @@ export default function InitializeBaselinePage() {
   )
 
   const setCap = useCallback(
-    (field: keyof BaselineV1["capital"], value: number) => {
+    (field: keyof BaselineV1["capital"], value: number | string | null) => {
       setBaseline((prev) => ({
         ...prev,
         capital: { ...prev.capital, [field]: value },
@@ -460,20 +472,30 @@ export default function InitializeBaselinePage() {
     []
   )
 
+  const setPosture = useCallback(
+    (field: keyof BaselineV1["posture"], value: any) => {
+      setBaseline((prev) => ({
+        ...prev,
+        posture: { ...prev.posture, [field]: value },
+      }))
+    },
+    []
+  )
+
   // ── Continue to platform ──────────────────────────────────────────────
   const handleContinue = useCallback(() => {
     commitBaseline(baseline)
-    window.location.assign("/")
-  }, [baseline, commitBaseline])
+    navigate("/")
+  }, [baseline, commitBaseline, navigate])
 
   // ── Step actions ──────────────────────────────────────────────────────
   const handleBack = useCallback(() => {
     if (isFirst) {
-      window.location.assign("/")
+      navigate("/")
     } else {
       setActiveModule(MODULES[currentIdx - 1].id)
     }
-  }, [isFirst, currentIdx])
+  }, [isFirst, currentIdx, navigate])
 
   const handleNext = useCallback(() => {
     if (isLast) {
@@ -742,11 +764,31 @@ export default function InitializeBaselinePage() {
                   onCommit={(v) => setCap("interestRatePct", v)}
                 />
                 <NumericField
+                  label="Monthly Debt Service"
+                  value={baseline.capital.monthlyDebtService}
+                  prefix="$"
+                  helper="Monthly debt payment obligation"
+                  onCommit={(v) => setCap("monthlyDebtService", v)}
+                />
+                <NumericField
                   label="Equity Raised to Date"
                   value={baseline.capital.equityRaisedToDate}
                   prefix="$"
                   helper="Total equity capital raised"
                   onCommit={(v) => setCap("equityRaisedToDate", v)}
+                />
+                <NumericField
+                  label="Last Raise Amount"
+                  value={baseline.capital.lastRaiseAmount}
+                  prefix="$"
+                  helper="Most recent funding round amount"
+                  onCommit={(v) => setCap("lastRaiseAmount", v)}
+                />
+                <DateField
+                  label="Last Raise Date"
+                  value={baseline.capital.lastRaiseDateISO}
+                  helper="Date of most recent funding"
+                  onCommit={(v) => setCap("lastRaiseDateISO", v)}
                 />
               </div>
               <div className={styles.derivedRow}>
@@ -832,6 +874,61 @@ export default function InitializeBaselinePage() {
               </div>
             </div>
           )}
+
+          {activeModule === "posture" && (
+            <div className={styles.card}>
+              <h2 className={styles.cardTitle}>Strategic Posture</h2>
+              <div className={styles.fieldGrid}>
+                <SelectField
+                  label="Strategic Focus"
+                  value={baseline.posture.focus}
+                  options={["Growth", "Profitability", "Stabilise"] as const}
+                  helper="Primary strategic objective"
+                  onCommit={(v) => setPosture("focus", v)}
+                />
+                <SelectField
+                  label="Raise Intent"
+                  value={baseline.posture.raiseIntent}
+                  options={["Yes", "No", "Uncertain"] as const}
+                  helper="Plan to raise capital"
+                  onCommit={(v) => setPosture("raiseIntent", v)}
+                />
+                <SelectField
+                  label="Planning Horizon"
+                  value={baseline.posture.horizonMonths}
+                  options={[12, 24, 36] as const}
+                  helper="Strategic planning timeframe (months)"
+                  onCommit={(v) => setPosture("horizonMonths", v)}
+                />
+                <SelectField
+                  label="Primary Constraint"
+                  value={baseline.posture.primaryConstraint}
+                  options={[
+                    "Cash runway",
+                    "Debt servicing",
+                    "Payroll commitments",
+                    "Customer concentration",
+                    "Nothing material"
+                  ] as const}
+                  helper="Most pressing limitation"
+                  onCommit={(v) => setPosture("primaryConstraint", v)}
+                />
+                <SelectField
+                  label="Fastest Downside"
+                  value={baseline.posture.fastestDownside}
+                  options={[
+                    "Revenue volatility",
+                    "Fixed cost rigidity",
+                    "Capital structure",
+                    "Customer churn",
+                    "Regulatory exposure"
+                  ] as const}
+                  helper="Most immediate risk vector"
+                  onCommit={(v) => setPosture("fastestDownside", v)}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ─── Sticky Action Bar ─── */}
@@ -871,49 +968,8 @@ export default function InitializeBaselinePage() {
 // ═══════════════════════════════════════════════════════════════════════════
 // SUB-COMPONENTS (file-private)
 // ═══════════════════════════════════════════════════════════════════════════
-
-/** 3D isometric logo — two stacked metallic cubes with cyan glow gap. */
-function StratfitLogo() {
-  return (
-    <svg
-      className={styles.logoSvg}
-      width="34"
-      height="34"
-      viewBox="0 0 200 200"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <defs>
-        <linearGradient id="sf-topFace" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#444" />
-          <stop offset="100%" stopColor="#222" />
-        </linearGradient>
-        <filter id="sf-glow">
-          <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-          <feMerge>
-            <feMergeNode in="coloredBlur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-      {/* Bottom cube */}
-      <path d="M100 130 L140 110 L140 150 L100 170 Z" fill="#1a1a1a" />
-      <path d="M100 130 L60 110 L60 150 L100 170 Z" fill="#2d2d2d" />
-      {/* Cyan glow gap */}
-      <path
-        d="M100 130 L140 110 L100 90 L60 110 Z"
-        fill="#00ffff"
-        filter="url(#sf-glow)"
-      />
-      {/* Top cube */}
-      <path d="M100 70 L140 50 L140 90 L100 110 Z" fill="#1a1a1a" />
-      <path d="M100 70 L60 50 L60 90 L100 110 Z" fill="#2d2d2d" />
-      <path
-        d="M100 70 L140 50 L100 30 L60 50 Z"
-        fill="url(#sf-topFace)"
-      />
-    </svg>
-  )
-}
+// FIELD COMPONENTS
+// ═══════════════════════════════════════════════════════════════════════════
 
 /** Compact KPI tile for the instrument strip. */
 function KPITile({
@@ -948,19 +1004,94 @@ function TextField({
   helper?: string
   onCommit: (v: string) => void
 }) {
+  const [editing, setEditing] = useState(false)
+  const [raw, setRaw] = useState("")
+
+  const display = editing ? raw : value
+
   return (
     <div className={styles.field}>
       <label className={styles.fieldLabel}>{label}</label>
       <input
         className={styles.fieldTextInput}
         type="text"
-        value={value}
+        value={display}
         placeholder={placeholder ?? "—"}
-        onChange={(e) => onCommit(e.target.value)}
+        onFocus={() => {
+          setEditing(true)
+          setRaw(value)
+        }}
+        onChange={(e) => setRaw(e.target.value)}
+        onBlur={() => {
+          setEditing(false)
+          onCommit(raw)
+        }}
         onKeyDown={(e) => {
           if (e.key === "Enter") (e.target as HTMLElement).blur()
         }}
       />
+      {helper && <span className={styles.fieldHelper}>{helper}</span>}
+    </div>
+  )
+}
+
+/** Date field — vertical layout with optional helper. */
+function DateField({
+  label,
+  value,
+  helper,
+  onCommit,
+}: {
+  label: string
+  value: string | null
+  helper?: string
+  onCommit: (v: string | null) => void
+}) {
+  return (
+    <div className={styles.field}>
+      <label className={styles.fieldLabel}>{label}</label>
+      <input
+        className={styles.fieldTextInput}
+        type="date"
+        value={value ?? ""}
+        onChange={(e) => onCommit(e.target.value || null)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") (e.target as HTMLElement).blur()
+        }}
+      />
+      {helper && <span className={styles.fieldHelper}>{helper}</span>}
+    </div>
+  )
+}
+
+/** Select field — vertical layout with optional helper. */
+function SelectField<T extends string>({
+  label,
+  value,
+  options,
+  helper,
+  onCommit,
+}: {
+  label: string
+  value: T
+  options: readonly T[]
+  helper?: string
+  onCommit: (v: T) => void
+}) {
+  return (
+    <div className={styles.field}>
+      <label className={styles.fieldLabel}>{label}</label>
+      <select
+        className={styles.fieldTextInput}
+        value={value}
+        onChange={(e) => onCommit(e.target.value as T)}
+      >
+        {options.map((opt) => (
+          <option key={opt} value={opt}>
+            {opt}
+          </option>
+        ))}
+      </select>
       {helper && <span className={styles.fieldHelper}>{helper}</span>}
     </div>
   )

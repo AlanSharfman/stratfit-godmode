@@ -12,7 +12,8 @@
   width: 100%;
   background: linear-gradient(180deg, #0e1520 0%, #0b1117 100%);
   color: rgba(255, 255, 255, 0.85);
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
@@ -377,6 +378,72 @@
   color: rgba(248, 113, 113, 0.85) !important;
 }
 
+/* ═══ DELTA TABLE + INTELLIGENCE ═══════════════════════════════════════════ */
+
+.deltaWrap {
+  padding: 10px 20px 6px;
+  flex-shrink: 0;
+}
+
+.deltaTitle {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.22);
+  margin: 4px 0 8px;
+}
+
+.deltaTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.deltaTable th {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.18);
+  text-align: left;
+  padding: 7px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.deltaTable th:nth-child(2),
+.deltaTable th:nth-child(3),
+.deltaTable th:nth-child(4),
+.deltaTable th:nth-child(5) {
+  text-align: right;
+}
+
+.deltaTable td {
+  font-size: 12px;
+  padding: 7px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.55);
+  vertical-align: top;
+}
+
+.deltaMetric {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+.deltaNum {
+  text-align: right;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.deltaIntel {
+  font-size: 11px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.36);
+}
+
 /* ═══ COMMENTARY ══════════════════════════════════════════════════════════ */
 
 .commentaryRow {
@@ -433,6 +500,7 @@
     gap: 16px;
   }
 }
+
 
 
 
