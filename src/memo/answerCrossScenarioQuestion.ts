@@ -174,7 +174,7 @@ export function answerCrossScenarioQuestion({
     if (isDev) {
       bullets.forEach(b => {
         if (/[0-9$%mk]|million|billion|usd|eur|gbp|yen|dollar|euro|pound|percent/i.test(b)) {
-          // eslint-disable-next-line no-console
+           
           console.error("PhraseBank guard: rejected bullet:", b);
         }
       });

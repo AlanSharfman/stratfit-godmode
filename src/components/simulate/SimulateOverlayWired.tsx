@@ -2,7 +2,7 @@
 // STRATFIT — Monte Carlo Simulation Overlay (Wired to Store)
 // FIXED VERSION - Correct types for all stores and components
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { RefreshCw, Save, Check, Star } from 'lucide-react';
 import { useSimulationStore } from '@/state/simulationStore';
 import { useSavedSimulationsStore } from '@/state/savedSimulationsStore';
@@ -12,11 +12,10 @@ import { emitCompute } from '@/engine/computeTelemetry';
 import { 
   type MonteCarloResult, 
   type LeverState,
-  type SimulationConfig,
-  type SensitivityFactor,
-  runSingleSimulation 
+  type SimulationConfig
 } from '@/logic/monteCarloEngine';
-import { generateVerdict, type Verdict } from '@/logic/verdictGenerator';
+import type { Verdict } from '@/logic/verdictGenerator';
+import type { SimulationOutput } from '@/engine/runSimulation';
 
 // Import sub-components
 import SimulateHeader from './SimulateHeader';
@@ -52,6 +51,26 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [scenarioName, setScenarioName] = useState('');
+  
+  const workerRef = useRef<Worker | null>(null);
+  const lastRunLeversSnapshotRef = useRef<LeverSnapshot | null>(null);
+
+  // Guard against rapid re-runs causing stale state writes
+  const runIdRef = useRef(0);
+
+  useEffect(() => {
+    if (workerRef.current) return;
+
+    workerRef.current = new Worker(
+      new URL('../../workers/simulation.worker.ts', import.meta.url),
+      { type: 'module' }
+    );
+
+    return () => {
+      workerRef.current?.terminate();
+      workerRef.current = null;
+    };
+  }, []);
 
   // Connect to simulation store
   const { setSimulationResult, beginRun, completeRun, failRun } = useSimulationStore();
@@ -97,13 +116,93 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
     fundingPressure: levers.fundingPressure,
   }), [levers]);
 
-  // Run simulation with REAL progress updates
-  const runSimulation = useCallback(async () => {
+  const handleWorkerMessage = useCallback(
+    (event: MessageEvent<any>) => {
+      const { runId, result, duration, error } = event.data ?? {};
+      if (runIdRef.current !== runId) return;
+
+      if (error) {
+        console.error('Simulation worker error:', error);
+        failRun(String(error));
+        emitCompute("terrain_simulation", "error");
+        setPhase('idle');
+        setProgress(0);
+        return;
+      }
+
+      const typed = result as SimulationOutput | undefined;
+      if (!typed?.result || !typed?.verdict) {
+        console.error('Worker returned invalid simulation payload:', event.data);
+        failRun('Worker returned invalid simulation payload');
+        emitCompute("terrain_simulation", "error");
+        setPhase('idle');
+        setProgress(0);
+        return;
+      }
+
+      emitCompute("terrain_simulation", "aggregate");
+      setProgress(100);
+      setIterationCount(config.iterations);
+      setResult(typed.result);
+      setVerdict(typed.verdict);
+
+      const snapshotForStore = lastRunLeversSnapshotRef.current ?? leversAsSnapshot;
+      setSimulationResult(typed.result, typed.verdict, snapshotForStore);
+      completeRun(typed.result, typed.verdict);
+
+      emitCompute("terrain_simulation", "complete", {
+        durationMs: typeof duration === 'number' ? round(duration) : undefined,
+        iterations: config.iterations,
+      });
+
+      setTimeout(() => setPhase('complete'), 300);
+    },
+    [
+      completeRun,
+      config.iterations,
+      failRun,
+      leversAsSnapshot,
+      setSimulationResult,
+    ]
+  );
+
+  const handleWorkerError = useCallback(
+    (err: ErrorEvent) => {
+      console.error('Simulation worker error:', err);
+      failRun((err as any)?.message ? String((err as any).message) : 'Worker error');
+      emitCompute("terrain_simulation", "error");
+      setPhase('idle');
+      setProgress(0);
+    },
+    [failRun]
+  );
+
+  useEffect(() => {
+    const worker = workerRef.current;
+    if (!worker) return;
+
+    worker.onmessage = handleWorkerMessage;
+    worker.onerror = handleWorkerError as any;
+
+    return () => {
+      worker.onmessage = null;
+      worker.onerror = null;
+    };
+  }, [handleWorkerError, handleWorkerMessage]);
+
+  // Run simulation off main thread via Web Worker
+  const triggerSimulation = useCallback(() => {
+    if (!workerRef.current) return;
+
+    const thisRunId = ++runIdRef.current;
+    lastRunLeversSnapshotRef.current = leversAsSnapshot;
+
     setPhase('running');
     setProgress(0);
     setIterationCount(0);
     setResult(null);
     setVerdict(null);
+
     // ── Telemetry: begin run (single source of truth) ──
     beginRun({
       timeHorizonMonths: config.timeHorizonMonths,
@@ -113,52 +212,8 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
     emitCompute("terrain_simulation", "initialize", { iterations: config.iterations, methodName: "Monte Carlo", target: "Simulation" });
     emitCompute("terrain_simulation", "run_model");
 
-    try {
-      const startTime = performance.now();
-      const CHUNK_SIZE = 500;
-      const allSimulations: any[] = [];
-
-      for (let i = 0; i < config.iterations; i += CHUNK_SIZE) {
-        const chunkEnd = Math.min(i + CHUNK_SIZE, config.iterations);
-        
-        for (let j = i; j < chunkEnd; j++) {
-          allSimulations.push(runSingleSimulation(j, levers, config));
-        }
-        
-        const currentProgress = (allSimulations.length / config.iterations) * 100;
-        setProgress(currentProgress);
-        setIterationCount(allSimulations.length);
-        
-        await new Promise(resolve => setTimeout(resolve, 0));
-      }
-
-      const executionTimeMs = performance.now() - startTime;
-      emitCompute("terrain_simulation", "aggregate");
-      const simResult = processSimulationResults(allSimulations, config, executionTimeMs);
-      const simVerdict = generateVerdict(simResult);
-      
-      setProgress(100);
-      setResult(simResult);
-      setVerdict(simVerdict);
-
-      // Store in simulation store - CORRECT: 3 arguments
-      setSimulationResult(simResult, simVerdict, leversAsSnapshot);
-
-      // ── Telemetry: complete run (populates safe deltas) ──
-      completeRun(simResult, simVerdict);
-
-      emitCompute("terrain_simulation", "complete", { durationMs: round(executionTimeMs), iterations: config.iterations });
-
-      setTimeout(() => {
-        setPhase('complete');
-      }, 300);
-    } catch (error) {
-      console.error("Simulation failed:", error);
-      failRun((error as Error).message);
-      emitCompute("terrain_simulation", "error");
-      setPhase('idle');
-    }
-  }, [levers, leversAsSnapshot, config, setSimulationResult, beginRun, completeRun, failRun]);
+    workerRef.current.postMessage({ runId: thisRunId, levers, baseline: config });
+  }, [beginRun, config, levers, leversAsSnapshot]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // SAVE AS BASELINE - SAVES TO BOTH STORES
@@ -313,16 +368,16 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
       setLevers(scenario.levers);
     }
     setTimeout(() => {
-      runSimulation();
+      triggerSimulation();
     }, 100);
-  }, [setLevers, runSimulation]);
+  }, [setLevers, triggerSimulation]);
 
   // Auto-run on open
   useEffect(() => {
     if (isOpen && phase === 'idle') {
-      runSimulation();
+      triggerSimulation();
     }
-  }, [isOpen, phase, runSimulation]);
+  }, [isOpen, phase, triggerSimulation]);
 
   // Reset on close
   useEffect(() => {
@@ -341,7 +396,7 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
         <div className="simulate-header-row">
           <SimulateHeader 
             onClose={onClose}
-            onRerun={runSimulation}  // FIXED: Added onRerun prop
+            onRerun={triggerSimulation}  // FIXED: Added onRerun prop
             phase={phase}
             iterations={config.iterations}
             executionTime={result?.executionTimeMs}
@@ -536,151 +591,4 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
       )}
     </div>
   );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// HELPER FUNCTIONS
-// ═══════════════════════════════════════════════════════════════════════════════
-
-function processSimulationResults(
-  allSimulations: any[],
-  config: SimulationConfig,
-  executionTimeMs: number
-): MonteCarloResult {
-  const survivors = allSimulations.filter((s: any) => s.didSurvive);
-  const survivalRate = survivors.length / config.iterations;
-  
-  const survivalByMonth: number[] = [];
-  for (let month = 1; month <= config.timeHorizonMonths; month++) {
-    const survivingAtMonth = allSimulations.filter((s: any) => s.survivalMonths >= month).length;
-    survivalByMonth.push(survivingAtMonth / config.iterations);
-  }
-  
-  const finalARRs = allSimulations.map((s: any) => s.finalARR);
-  const finalCash = allSimulations.map((s: any) => s.finalCash);
-  const finalRunway = allSimulations.map((s: any) => s.finalRunway);
-  const survivalMonths = allSimulations.map((s: any) => s.survivalMonths);
-
-  const arrDistribution = calculateDistributionStats(finalARRs);
-  const arrHistogram = createHistogram(finalARRs, 25);
-  const arrPercentiles = calculatePercentiles(finalARRs);
-  
-  const cashDistribution = calculateDistributionStats(finalCash);
-  const cashPercentiles = calculatePercentiles(finalCash);
-  
-  const runwayDistribution = calculateDistributionStats(finalRunway);
-  const runwayPercentiles = calculatePercentiles(finalRunway);
-  
-  const medianSurvivalMonths = calculatePercentiles(survivalMonths).p50;
-  const arrConfidenceBands = calculateConfidenceBands(allSimulations, config.timeHorizonMonths);
-
-  const sortedByARR = [...allSimulations].sort((a: any, b: any) => a.finalARR - b.finalARR);
-  const worstCase = sortedByARR[Math.floor(config.iterations * 0.05)];
-  const medianCase = sortedByARR[Math.floor(config.iterations * 0.5)];
-  const bestCase = sortedByARR[Math.floor(config.iterations * 0.95)];
-
-  const sensitivityFactors: SensitivityFactor[] = [
-    { lever: 'demandStrength' as keyof LeverState, label: 'Demand Strength', impact: 0.8, direction: 'positive' },
-    { lever: 'pricingPower' as keyof LeverState, label: 'Pricing Power', impact: 0.6, direction: 'positive' },
-    { lever: 'costDiscipline' as keyof LeverState, label: 'Cost Discipline', impact: 0.5, direction: 'positive' },
-    { lever: 'marketVolatility' as keyof LeverState, label: 'Market Volatility', impact: -0.7, direction: 'negative' },
-    { lever: 'executionRisk' as keyof LeverState, label: 'Execution Risk', impact: -0.5, direction: 'negative' },
-    { lever: 'expansionVelocity' as keyof LeverState, label: 'Expansion Velocity', impact: 0.4, direction: 'positive' },
-    { lever: 'hiringIntensity' as keyof LeverState, label: 'Hiring Intensity', impact: -0.3, direction: 'negative' },
-    { lever: 'operatingDrag' as keyof LeverState, label: 'Operating Drag', impact: -0.4, direction: 'negative' },
-    { lever: 'fundingPressure' as keyof LeverState, label: 'Funding Pressure', impact: -0.6, direction: 'negative' },
-  ];
-
-  return {
-    iterations: config.iterations,
-    timeHorizonMonths: config.timeHorizonMonths,
-    executionTimeMs,
-    survivalRate,
-    survivalByMonth,
-    medianSurvivalMonths,
-    arrDistribution,
-    arrHistogram,
-    arrPercentiles,
-    arrConfidenceBands,
-    cashDistribution,
-    cashPercentiles,
-    runwayDistribution,
-    runwayPercentiles,
-    bestCase,
-    worstCase,
-    medianCase,
-    sensitivityFactors,
-    allSimulations,
-  };
-}
-
-function calculateDistributionStats(values: number[]) {
-  const sorted = [...values].sort((a, b) => a - b);
-  const n = sorted.length;
-  const sum = sorted.reduce((a, b) => a + b, 0);
-  const mean = sum / n;
-  const squaredDiffs = sorted.map(v => Math.pow(v - mean, 2));
-  const variance = squaredDiffs.reduce((a, b) => a + b, 0) / n;
-  const stdDev = Math.sqrt(variance);
-  const median = n % 2 === 0 ? (sorted[n/2 - 1] + sorted[n/2]) / 2 : sorted[Math.floor(n/2)];
-  const cubedDiffs = sorted.map(v => Math.pow((v - mean) / (stdDev || 1), 3));
-  const skewness = cubedDiffs.reduce((a, b) => a + b, 0) / n;
-  
-  return { mean, median, stdDev, min: sorted[0], max: sorted[n - 1], skewness };
-}
-
-function calculatePercentiles(values: number[]) {
-  const sorted = [...values].sort((a, b) => a - b);
-  const n = sorted.length;
-  const getPercentile = (p: number) => sorted[Math.min(Math.floor((p / 100) * n), n - 1)];
-  
-  return {
-    p5: getPercentile(5),
-    p10: getPercentile(10),
-    p25: getPercentile(25),
-    p50: getPercentile(50),
-    p75: getPercentile(75),
-    p90: getPercentile(90),
-    p95: getPercentile(95),
-  };
-}
-
-function createHistogram(values: number[], bucketCount: number = 20) {
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = max - min;
-  const bucketSize = range / bucketCount;
-  
-  const buckets = [];
-  for (let i = 0; i < bucketCount; i++) {
-    const bucketMin = min + i * bucketSize;
-    const bucketMax = min + (i + 1) * bucketSize;
-    const count = values.filter(v => v >= bucketMin && v < bucketMax).length;
-    buckets.push({ min: bucketMin, max: bucketMax, count, frequency: count / values.length });
-  }
-  return buckets;
-}
-
-function calculateConfidenceBands(simulations: any[], timeHorizon: number) {
-  const bands = [];
-  for (let month = 1; month <= timeHorizon; month++) {
-    const arrValues = simulations
-      .filter((s: any) => s.monthlySnapshots && s.monthlySnapshots.length >= month)
-      .map((s: any) => s.monthlySnapshots[month - 1].arr);
-    
-    if (arrValues.length === 0) continue;
-    
-    const sorted = arrValues.sort((a: number, b: number) => a - b);
-    const n = sorted.length;
-    
-    bands.push({
-      month,
-      p10: sorted[Math.floor(n * 0.1)],
-      p25: sorted[Math.floor(n * 0.25)],
-      p50: sorted[Math.floor(n * 0.5)],
-      p75: sorted[Math.floor(n * 0.75)],
-      p90: sorted[Math.floor(n * 0.9)],
-    });
-  }
-  return bands;
 }

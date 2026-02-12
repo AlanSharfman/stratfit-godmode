@@ -18,7 +18,7 @@ import { ExportReportButton, ShareButton } from '@/components/common';
 // ===========================================
 // VIEW MODES (moved from ViewModeSelector)
 // ===========================================
-export type ViewMode = "initialize" | "terrain" | "impact" | "compare" | "simulate" | "risk" | "valuation" | "assessment";
+export type ViewMode = "initialize" | "objective" | "terrain" | "impact" | "compare" | "simulate" | "risk" | "valuation" | "assessment";
 
 // ===========================================
 // SCENARIOS (moved from ActiveScenario)
@@ -42,6 +42,7 @@ const SCENARIOS: Scenario[] = [
 // ===========================================
 const NAV_TABS: Array<{ id: ViewMode; label: string; icon: typeof Layers }> = [
   { id: "initialize", label: "SYSTEM CALIBRATION", icon: Layers },
+  { id: "objective", label: "OBJECTIVE", icon: Layers },
   { id: "terrain", label: "BASELINE", icon: Layers },
   { id: "simulate", label: "STRATEGY STUDIO", icon: Zap },
   { id: "compare", label: "COMPARE", icon: SplitSquareHorizontal },

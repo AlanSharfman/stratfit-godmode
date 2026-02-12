@@ -34,6 +34,8 @@ import ScenarioMountain from "@/components/mountain/ScenarioMountain";
 import { TerrainWithFallback } from "@/components/terrain/TerrainFallback2D";
 import { useScenarioStore } from "@/state/scenarioStore";
 import { useSimulationStore } from "@/state/simulationStore";
+import SoftGateOverlay from "@/components/common/SoftGateOverlay";
+import { useSystemBaseline } from "@/system/SystemBaselineProvider";
 import { calculateMetrics } from "@/logic/calculateMetrics";
 import type { LeverState, ScenarioId } from "@/logic/calculateMetrics";
 import {
@@ -187,6 +189,9 @@ const StrategyStudioPage: React.FC<StrategyStudioPageProps> = memo(({
   onSimulateRequest,
   onRunScenario,
 }) => {
+  const { baseline } = useSystemBaseline();
+  const hasBaseline = baseline !== null;
+
   // ── Scenario layer state ──────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<ScenarioTab>("scenarioA");
   const [scenarioLevers, setScenarioLevers] = useState<Record<string, LeverState>>(() => ({
@@ -548,7 +553,7 @@ const StrategyStudioPage: React.FC<StrategyStudioPageProps> = memo(({
     }, COMMIT_DEBOUNCE_MS);
 
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [commitNonce, activeTab, rampType, horizon, baselineLevers]);
 
   // ═════════════════════════════════════════════════════════════════════
@@ -556,7 +561,12 @@ const StrategyStudioPage: React.FC<StrategyStudioPageProps> = memo(({
   // ═════════════════════════════════════════════════════════════════════
 
   return (
-    <div className={styles.root}>
+    <div className={styles.root} style={{ position: "relative" }}>
+      {!hasBaseline && (
+        <SoftGateOverlay message="Complete onboarding before running scenario simulations." />
+      )}
+
+      <div style={{ filter: !hasBaseline ? "blur(4px)" : "none" }}>
       {/* ═══ LEFT: LEVER STACK ═══════════════════════════════════════ */}
       <aside className={styles.leftPanel}>
         <div className={styles.leverPanelHeader}>
@@ -714,6 +724,7 @@ const StrategyStudioPage: React.FC<StrategyStudioPageProps> = memo(({
           autoSimResult={activeAutoSimResult}
         />
       </aside>
+      </div>
     </div>
   );
 });

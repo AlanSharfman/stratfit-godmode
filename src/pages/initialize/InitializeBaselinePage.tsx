@@ -103,7 +103,7 @@ function SignalMountainLine({
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [target])
 
   const w = width
@@ -349,15 +349,16 @@ export default function InitializeBaselinePage() {
     }
   }, [storedBaseline])
 
-  // ── Sync local → provider on every mutation (auto-save) ──────────────
+  // ── Local change feedback (no auto-save) ─────────────────────────────
+  // Persist only when the user explicitly clicks Save Draft / Save & Continue.
+  // This prevents a provider<->local feedback loop (Maximum update depth exceeded).
   useEffect(() => {
-    commitBaseline(baseline)
     if (isFirstRender.current) {
       isFirstRender.current = false
-    } else {
-      setShimmerKey((k) => k + 1)
+      return
     }
-  }, [baseline, commitBaseline])
+    setShimmerKey((k) => k + 1)
+  }, [baseline])
 
   // ── Step navigation ──────────────────────────────────────────────────
   const currentIdx = MODULES.findIndex((m) => m.id === activeModule)
@@ -485,13 +486,13 @@ export default function InitializeBaselinePage() {
   // ── Continue to platform ──────────────────────────────────────────────
   const handleContinue = useCallback(() => {
     commitBaseline(baseline)
-    navigate("/")
+    navigate("/baseline", { replace: true })
   }, [baseline, commitBaseline, navigate])
 
   // ── Step actions ──────────────────────────────────────────────────────
   const handleBack = useCallback(() => {
     if (isFirst) {
-      navigate("/")
+      navigate("/baseline", { replace: true })
     } else {
       setActiveModule(MODULES[currentIdx - 1].id)
     }
@@ -895,10 +896,10 @@ export default function InitializeBaselinePage() {
                 />
                 <SelectField
                   label="Planning Horizon"
-                  value={baseline.posture.horizonMonths}
-                  options={[12, 24, 36] as const}
+                  value={String(baseline.posture.horizonMonths)}
+                  options={["12", "24", "36"] as const}
                   helper="Strategic planning timeframe (months)"
-                  onCommit={(v) => setPosture("horizonMonths", v)}
+                  onCommit={(v) => setPosture("horizonMonths", Number(v))}
                 />
                 <SelectField
                   label="Primary Constraint"

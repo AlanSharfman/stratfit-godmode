@@ -2,8 +2,10 @@
 
 import React, { useState } from 'react'
 import { useLocation, Link } from 'react-router-dom'
+import { NAV_ITEMS, getNavItemByPath, type NavItem as CanonicalNavItem } from '@/navigation/navConfig'
 import {
   Mountain,
+  Sparkles,
   Target,
   Zap,
   GitCompare,
@@ -31,6 +33,11 @@ interface NavItem {
   description: string
 }
 
+type NavItemUiMeta = {
+  icon: React.ReactNode
+  description: string
+}
+
 interface ActiveScenario {
   name: string
   lastModified: string
@@ -52,64 +59,53 @@ interface MainNavProps {
 // NAV CONFIGURATION
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const primaryNav: NavItem[] = [
-  {
-    id: 'initialize',
-    label: 'SYSTEM CALIBRATION',
-    href: '/initialize',
-    icon: <Layers className="w-4 h-4" />,
-    description: 'Financial baseline calibration',
+const NAV_META_BY_ID: Record<string, NavItemUiMeta> = {
+  initiate: {
+    icon: <Sparkles className="w-4 h-4" />,
+    description: 'Initialize baseline inputs',
   },
-  {
-    id: 'terrain',
-    label: 'BASELINE',
-    href: '/terrain',
+  baseline: {
     icon: <Mountain className="w-4 h-4" />,
     description: 'Terrain visualization & baseline analysis',
   },
-  {
-    id: 'objective',
-    label: 'OBJECTIVE',
-    href: '/objective',
+  objective: {
     icon: <Target className="w-4 h-4" />,
     description: 'Declare targets & compute structural requirements',
   },
-  {
-    id: 'simulate',
-    label: 'STRATEGY STUDIO',
-    href: '/simulate',
+  studio: {
     icon: <Zap className="w-4 h-4" />,
     description: 'Strategy configuration & simulation',
   },
-  {
-    id: 'compare',
-    label: 'COMPARE',
-    href: '/compare',
+  compare: {
     icon: <GitCompare className="w-4 h-4" />,
     description: 'Compare two futures',
   },
-  {
-    id: 'risk',
-    label: 'RISK',
-    href: '/risk',
+  risk: {
     icon: <Activity className="w-4 h-4" />,
     description: 'Risk assessment & threat analysis',
   },
-  {
-    id: 'valuation',
-    label: 'VALUATION',
-    href: '/valuation',
+  valuation: {
     icon: <DollarSign className="w-4 h-4" />,
     description: 'Calculate your worth',
   },
-  {
-    id: 'assessment',
-    label: 'CAPITAL INTELLIGENCE',
-    href: '/assessment',
+  capital: {
     icon: <FileText className="w-4 h-4" />,
     description: 'Strengths, vulnerabilities & priority focus',
   },
-]
+}
+
+function toUiNavItem(item: CanonicalNavItem): NavItem {
+  const meta = NAV_META_BY_ID[item.id]
+  return {
+    id: item.id,
+    label: item.label,
+    href: item.path,
+    icon: meta?.icon ?? <HelpCircle className="w-4 h-4" />,
+    description: meta?.description ?? '',
+  }
+}
+
+const primaryNav: NavItem[] = NAV_ITEMS.map(toUiNavItem)
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // LOGO
@@ -117,7 +113,7 @@ const primaryNav: NavItem[] = [
 
 function Logo() {
   return (
-    <Link to="/" className="flex items-center gap-3 group">
+    <Link to="/baseline" className="flex items-center gap-3 group">
       <div className="relative w-8 h-8">
         <img src="/logo.svg" alt="STRATFIT Logo" width="32" height="32" style={{ display: 'block' }} />
       </div>
@@ -303,17 +299,7 @@ function RouterMainNav({
   const location = useLocation()
   const pathname = location.pathname
 
-  // Determine active nav item
-  const getActiveItem = () => {
-    for (const item of primaryNav) {
-      if (pathname.startsWith(item.href)) {
-        return item.id
-      }
-    }
-    return 'terrain' // default
-  }
-
-  const activeItem = getActiveItem()
+  const activeItem = getNavItemByPath(pathname)?.id ?? 'baseline'
 
   return (
     <header
@@ -371,7 +357,7 @@ function ControlledMainNav({
   onShare,
   className = '',
 }: MainNavProps) {
-  const activeItem = activeItemId || 'terrain'
+  const activeItem = activeItemId || 'baseline'
 
   return (
     <header
@@ -390,7 +376,7 @@ function ControlledMainNav({
     >
       {/* Left: Logo */}
       <div className="flex items-center gap-6">
-        <LogoButton onClick={() => onNavigate?.('terrain')} />
+        <LogoButton onClick={() => onNavigate?.('baseline')} />
       </div>
 
       {/* Center: Primary Navigation with separators */}
@@ -429,18 +415,20 @@ export function MainNavCompact({ className = '' }: { className?: string }) {
   const pathname = location.pathname
   const [menuOpen, setMenuOpen] = useState(false)
 
+  const activeItem = getNavItemByPath(pathname)
+
   return (
     <header className={`h-14 bg-black/80 backdrop-blur-xl border-b border-white/10 ${className}`}>
       <div className="h-full px-4 flex items-center justify-between">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2">
+        <Link to="/baseline" className="flex items-center gap-2">
           <Mountain className="w-5 h-5 text-cyan-400" />
           <span className="text-white font-semibold">STRATFIT</span>
         </Link>
 
         {/* Center: Current page */}
         <div className="text-sm text-white/80 font-mono">
-          {primaryNav.find(item => pathname.startsWith(item.href))?.label || 'TERRAIN'}
+          {activeItem?.label || 'BASELINE'}
         </div>
 
         {/* Menu toggle */}
@@ -462,7 +450,7 @@ export function MainNavCompact({ className = '' }: { className?: string }) {
                 to={item.href}
                 onClick={() => setMenuOpen(false)}
                 className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
-                  pathname.startsWith(item.href)
+                  (getNavItemByPath(pathname)?.id ?? 'baseline') === item.id
                     ? 'bg-cyan-500/20 text-cyan-300'
                     : 'text-white/75 hover:bg-white/5'
                 }`}

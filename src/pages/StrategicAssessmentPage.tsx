@@ -10,6 +10,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import React, { useState, useMemo } from "react";
+import { useNavigate } from 'react-router-dom';
 import { useSimulationStore } from "@/state/simulationStore";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
 import { ConfidenceGauge } from "@/components/valuation/ConfidenceGauge";
@@ -281,6 +282,7 @@ function buildAssessmentSummary(
 // ────────────────────────────────────────────────────────────────────────────
 
 export default function StrategicAssessmentPage() {
+  const navigate = useNavigate();
   const { fullResult, assessmentPayload } = useSimulationStore();
   const { baseline: systemBaseline } = useSystemBaseline();
   // ADVANCED is default — no toggle (institutional brief + quantified expansions always visible)
@@ -339,9 +341,7 @@ export default function StrategicAssessmentPage() {
         </p>
         <button
           className={styles.emptyAction}
-          onClick={() =>
-            window.dispatchEvent(new CustomEvent("stratfit:navigate", { detail: "simulate" }))
-          }
+          onClick={() => navigate('/simulate')}
         >
           Go to Strategy Studio →
         </button>

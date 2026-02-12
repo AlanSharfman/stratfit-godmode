@@ -158,7 +158,8 @@ export function FateMachine({
         for (let m = 0; m <= Math.min(currentMonth, months); m++) {
           const pos = getPathPos(m, 'A')
           const variance = (path[m].revenue / medianPathA[m].revenue - 1) * 50
-          m === 0 ? ctx.moveTo(pos.x + variance, pos.y) : ctx.lineTo(pos.x + variance, pos.y)
+          if (m === 0) ctx.moveTo(pos.x + variance, pos.y)
+          else ctx.lineTo(pos.x + variance, pos.y)
         }
         ctx.stroke()
       })
@@ -170,7 +171,8 @@ export function FateMachine({
         for (let m = 0; m <= Math.min(currentMonth, months); m++) {
           const pos = getPathPos(m, 'B')
           const variance = (path[m].revenue / medianPathB[m].revenue - 1) * 50
-          m === 0 ? ctx.moveTo(pos.x + variance, pos.y) : ctx.lineTo(pos.x + variance, pos.y)
+          if (m === 0) ctx.moveTo(pos.x + variance, pos.y)
+          else ctx.lineTo(pos.x + variance, pos.y)
         }
         ctx.stroke()
       })
@@ -189,7 +191,8 @@ export function FateMachine({
       ctx.beginPath()
       for (let m = 0; m <= maxMonth; m++) {
         const pos = getPathPos(m, side)
-        m === 0 ? ctx.moveTo(pos.x, pos.y) : ctx.lineTo(pos.x, pos.y)
+        if (m === 0) ctx.moveTo(pos.x, pos.y)
+        else ctx.lineTo(pos.x, pos.y)
       }
       ctx.stroke()
 
@@ -199,7 +202,8 @@ export function FateMachine({
       ctx.beginPath()
       for (let m = 0; m <= maxMonth; m++) {
         const pos = getPathPos(m, side)
-        m === 0 ? ctx.moveTo(pos.x, pos.y) : ctx.lineTo(pos.x, pos.y)
+        if (m === 0) ctx.moveTo(pos.x, pos.y)
+        else ctx.lineTo(pos.x, pos.y)
       }
       ctx.stroke()
 

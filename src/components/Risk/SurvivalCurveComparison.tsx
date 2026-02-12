@@ -9,7 +9,7 @@
 //   • Delta %
 // ═══════════════════════════════════════════════════════════════════════════
 
-import React, { useMemo } from "react";
+import React from "react";
 import styles from "./SurvivalCurveComparison.module.css";
 
 // ── Props ────────────────────────────────────────────────────────────
@@ -45,31 +45,31 @@ export const SurvivalCurveComparison: React.FC<SurvivalCurveComparisonProps> = (
   const toX = (month: number) => PAD_L + (month / Math.max(timeHorizonMonths - 1, 1)) * plotW;
   const toY = (rate: number) => PAD_T + (1 - rate) * plotH;
 
-  const baselinePath = useMemo(() => {
-    if (baselineSurvivalByMonth.length === 0) return "";
-    return baselineSurvivalByMonth
-      .map((s, i) => `${i === 0 ? "M" : "L"}${toX(i).toFixed(1)},${toY(s).toFixed(1)}`)
-      .join(" ");
-  }, [baselineSurvivalByMonth, timeHorizonMonths]);
+  const baselinePath =
+    baselineSurvivalByMonth.length === 0
+      ? ""
+      : baselineSurvivalByMonth
+          .map((s, i) => `${i === 0 ? "M" : "L"}${toX(i).toFixed(1)},${toY(s).toFixed(1)}`)
+          .join(" ");
 
-  const shockedPath = useMemo(() => {
-    if (shockedSurvivalByMonth.length === 0) return "";
-    return shockedSurvivalByMonth
-      .map((s, i) => `${i === 0 ? "M" : "L"}${toX(i).toFixed(1)},${toY(s).toFixed(1)}`)
-      .join(" ");
-  }, [shockedSurvivalByMonth, timeHorizonMonths]);
+  const shockedPath =
+    shockedSurvivalByMonth.length === 0
+      ? ""
+      : shockedSurvivalByMonth
+          .map((s, i) => `${i === 0 ? "M" : "L"}${toX(i).toFixed(1)},${toY(s).toFixed(1)}`)
+          .join(" ");
 
-  const baselineFill = useMemo(() => {
+  const baselineFill = (() => {
     if (!baselinePath) return "";
     const last = baselineSurvivalByMonth.length - 1;
     return `${baselinePath} L${toX(last).toFixed(1)},${toY(0).toFixed(1)} L${toX(0).toFixed(1)},${toY(0).toFixed(1)} Z`;
-  }, [baselinePath, baselineSurvivalByMonth]);
+  })();
 
-  const shockedFill = useMemo(() => {
+  const shockedFill = (() => {
     if (!shockedPath) return "";
     const last = shockedSurvivalByMonth.length - 1;
     return `${shockedPath} L${toX(last).toFixed(1)},${toY(0).toFixed(1)} L${toX(0).toFixed(1)},${toY(0).toFixed(1)} Z`;
-  }, [shockedPath, shockedSurvivalByMonth]);
+  })();
 
   const deltaPP = (shockedSurvivalRate - baselineSurvivalRate) * 100;
 
@@ -223,6 +223,7 @@ export const SurvivalCurveComparison: React.FC<SurvivalCurveComparisonProps> = (
 };
 
 export default SurvivalCurveComparison;
+
 
 
 

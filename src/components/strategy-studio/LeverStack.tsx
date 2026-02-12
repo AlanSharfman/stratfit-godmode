@@ -100,6 +100,7 @@ const InlineSlider: React.FC<InlineSliderProps> = memo(({
 }) => {
   const trackRef = useRef<HTMLDivElement>(null);
   const lastValueRef = useRef(value);
+  const rafRef = useRef<number | null>(null);
 
   const resolve = useCallback(
     (clientX: number) => {
@@ -127,14 +128,26 @@ const InlineSlider: React.FC<InlineSliderProps> = memo(({
 
       const onMove = (ev: PointerEvent) => {
         const v = resolve(ev.clientX);
-        lastValueRef.current = v;
-        onChange(v);
+        if (v !== lastValueRef.current) {
+          lastValueRef.current = v;
+          // RAF-throttle: only fire onChange once per frame
+          if (rafRef.current) cancelAnimationFrame(rafRef.current);
+          rafRef.current = requestAnimationFrame(() => {
+            onChange(v);
+            rafRef.current = null;
+          });
+        }
       };
       const onUp = (ev: PointerEvent) => {
         el.releasePointerCapture(ev.pointerId);
         el.removeEventListener("pointermove", onMove);
         el.removeEventListener("pointerup", onUp);
         el.removeEventListener("pointercancel", onUp);
+        // Cancel any pending RAF before commit
+        if (rafRef.current) {
+          cancelAnimationFrame(rafRef.current);
+          rafRef.current = null;
+        }
         // Phase 2: Signal drag end with final value
         onDragEnd?.(lastValueRef.current);
       };

@@ -1767,7 +1767,12 @@ export function ScenarioMountain({
     return (
       <div
         className={`relative w-full h-full overflow-hidden ${className ?? ""}`}
-        style={{ background: "#0a1018", height: "100%", width: "100%" }}
+        style={{
+          background: "#0a1018",
+          minHeight: "280px",
+          height: "100%",
+          width: "100%",
+        }}
       >
         <Canvas
           gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
@@ -2219,9 +2224,9 @@ function MilestoneOrbs({
   solverPath?: { riskIndex: number; enterpriseValue: number; runway: number }[];
 }) {
   const config = MODE_CONFIGS[mode] ?? MODE_CONFIGS.default;
-  if (mode === "ghost") return null;
 
   const milestones = useMemo(() => {
+    if (mode === "ghost") return [];
     const sp = solverPath?.length
       ? solverPath
       : [
@@ -2254,7 +2259,9 @@ function MilestoneOrbs({
       const i = Math.max(0, Math.min(pts.length - 1, Math.round(t * (pts.length - 1))));
       return { pos: pts[i], type: typeOrder[idx] };
     });
-  }, [solverPath]);
+  }, [solverPath, mode]);
+
+  if (mode === "ghost") return null;
 
   const typeColors: Record<string, string> = {
     revenue: "#10b981",

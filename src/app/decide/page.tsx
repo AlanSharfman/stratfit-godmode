@@ -234,13 +234,13 @@ function PendingView({ scenarios, onSelect }: PendingViewProps) {
           </div>
           <h1 className="text-3xl text-white font-light mb-4">Need More Scenarios</h1>
           <p className="text-white/50 mb-8 leading-relaxed">
-            Create at least two scenarios in the Terrain tab, run simulations, then return here to make your decision.
+            Create at least two scenarios in the Baseline tab, run simulations, then return here to make your decision.
           </p>
           <a
-            href="/terrain"
+            href="/baseline"
             className="inline-flex items-center gap-2 px-8 py-4 bg-cyan-500/20 border border-cyan-500/30 rounded-xl text-cyan-300 hover:bg-cyan-500/30 transition-colors text-lg"
           >
-            Go to Terrain
+            Go to Baseline
             <ChevronRight className="w-5 h-5" />
           </a>
         </div>

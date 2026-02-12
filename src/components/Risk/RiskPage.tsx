@@ -20,6 +20,7 @@ import { useRiskStore } from "@/state/riskStore";
 import { useLeverStore } from "@/state/leverStore";
 import { useSimulationStore } from "@/state/simulationStore";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
+import SoftGateOverlay from "@/components/common/SoftGateOverlay";
 
 import {
   computeShockedBatch,
@@ -76,6 +77,7 @@ const RiskPage: React.FC = () => {
   const summary = useSimulationStore((s) => s.summary);
   const leversRaw = useLeverStore((s) => s.levers);
   const { baseline: systemBaseline } = useSystemBaseline();
+  const hasBaseline = systemBaseline !== null;
 
   // ── Local state ──
   const [shockedBatch, setShockedBatch] = useState<ShockedBatchResult | null>(null);
@@ -200,12 +202,18 @@ const RiskPage: React.FC = () => {
   // ── Empty state ──
   if (!hasSimulated || !fullResult) {
     return (
-      <div className={styles.root}>
-        <RiskCommandBar score={0} trend="stable" volatility="medium" />
-        <div className={styles.emptyState}>
-          <div className={styles.emptyTitle}>Structural Risk Analysis Unavailable</div>
-          <div className={styles.emptyText}>
-            Run a simulation in Strategy Studio to unlock the shock propagation engine.
+      <div className={styles.root} style={{ position: "relative" }}>
+        {!hasBaseline && (
+          <SoftGateOverlay message="Complete onboarding before running risk analysis." />
+        )}
+
+        <div style={{ filter: !hasBaseline ? "blur(4px)" : "none" }}>
+          <RiskCommandBar score={0} trend="stable" volatility="medium" />
+          <div className={styles.emptyState}>
+            <div className={styles.emptyTitle}>Structural Risk Analysis Unavailable</div>
+            <div className={styles.emptyText}>
+              Run a simulation in Strategy Studio to unlock the shock propagation engine.
+            </div>
           </div>
         </div>
       </div>
@@ -216,7 +224,12 @@ const RiskPage: React.FC = () => {
   const sigmaLabel = SIGMA_LABELS[Math.round(shockSigma)] ?? `σ = ${shockSigma.toFixed(1)}`;
 
   return (
-    <div className={styles.root}>
+    <div className={styles.root} style={{ position: "relative" }}>
+      {!hasBaseline && (
+        <SoftGateOverlay message="Complete onboarding before running risk analysis." />
+      )}
+
+      <div style={{ filter: !hasBaseline ? "blur(4px)" : "none" }}>
       {/* ── COMMAND BAR ─────────────────────────────────────── */}
       <RiskCommandBar
         score={commandScore}
@@ -453,6 +466,7 @@ const RiskPage: React.FC = () => {
             )}
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

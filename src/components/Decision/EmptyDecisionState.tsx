@@ -2,8 +2,10 @@
 // STRATFIT — Empty State for Decision Tab
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function EmptyDecisionState() {
+  const navigate = useNavigate();
   return (
     <div className="empty-decision-state">
       <div className="empty-visual">
@@ -85,7 +87,7 @@ export default function EmptyDecisionState() {
       
       <button 
         className="empty-action"
-        onClick={() => window.dispatchEvent(new CustomEvent('stratfit:navigate', { detail: 'simulate' }))}
+        onClick={() => navigate('/simulate')}
       >
         Go to Simulate →
       </button>

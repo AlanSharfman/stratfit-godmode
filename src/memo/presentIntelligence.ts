@@ -23,7 +23,7 @@ export function presentIntelligence(
     if (/[0-9$%mk]|million|billion|usd|eur|gbp|yen|dollar|euro|pound|percent/i.test(text)) {
       const isDev = (import.meta as any)?.env?.DEV === true;
       if (isDev) {
-        // eslint-disable-next-line no-console
+         
         console.error("PhraseBank guard: rejected bullet:", text);
       }
       return "Signal is directionally clear, but requires validation.";

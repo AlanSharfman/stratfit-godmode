@@ -142,15 +142,6 @@ const footerStyle: React.CSSProperties = {
 };
 
 export default function ScenarioMemoPage() {
-  // DEV HARNESS: mount initialize baseline screen without router/nav changes.
-  // Visit: /memo/onboard
-  if (import.meta.env.DEV && typeof window !== "undefined") {
-    const p = window.location.pathname;
-    if (p === "/memo/onboard" || p === "/memo/onboard/") {
-      return <InitializeBaselinePage />;
-    }
-  }
-
   const { activeScenarioId, engineResults } = useScenarioStore(
     useShallow(s => ({
       activeScenarioId: s.activeScenarioId,
@@ -173,6 +164,15 @@ export default function ScenarioMemoPage() {
       })
     );
   }, [engineResults, activeScenarioId]);
+
+  // DEV HARNESS: mount initialize baseline screen without router/nav changes.
+  // Visit: /memo/onboard
+  if (import.meta.env.DEV && typeof window !== "undefined") {
+    const p = window.location.pathname;
+    if (p === "/memo/onboard" || p === "/memo/onboard/") {
+      return <InitializeBaselinePage />;
+    }
+  }
 
   if (!memo) {
     return <div className="memo-root">No memo available.</div>;

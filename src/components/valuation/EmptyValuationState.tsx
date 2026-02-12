@@ -2,8 +2,10 @@
 // STRATFIT — Empty State for Valuation Tab
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function EmptyValuationState() {
+  const navigate = useNavigate();
   return (
     <div className="empty-valuation-state">
       <div className="empty-visual">
@@ -69,7 +71,7 @@ export default function EmptyValuationState() {
       
       <button 
         className="empty-action"
-        onClick={() => window.dispatchEvent(new CustomEvent('stratfit:navigate', { detail: 'simulate' }))}
+        onClick={() => navigate('/simulate')}
       >
         Go to Simulate →
       </button>

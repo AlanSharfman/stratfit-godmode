@@ -118,7 +118,7 @@ export function useTypewriterLines(
         rafRef.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   return displayed;

@@ -4,6 +4,7 @@
 // Clean topographic wireframe — no 3D dependency.
 
 import React, { useMemo } from "react";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 // ============================================================================
 // WEBGL DETECTION
@@ -236,7 +237,11 @@ export function TerrainWithFallback({
     return <TerrainFallback2D dataPoints={dataPoints} />;
   }
 
-  return <>{children}</>;
+  return (
+    <ErrorBoundary fullScreen={false} fallback={<TerrainFallback2D dataPoints={dataPoints} />}>
+      {children}
+    </ErrorBoundary>
+  );
 }
 
 

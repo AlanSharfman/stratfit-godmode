@@ -101,6 +101,11 @@ export default function AdminEngineConsole() {
 
   const [showRaw, setShowRaw] = useState(false);
 
+  const integrityChecks = useMemo(
+    () => (fullResult ? runIntegrityChecks(fullResult) : []),
+    [fullResult]
+  );
+
   if (!isAdminEnabled()) {
     return (
       <div className={styles.gated}>
@@ -112,11 +117,6 @@ export default function AdminEngineConsole() {
       </div>
     );
   }
-
-  const integrityChecks = useMemo(
-    () => (fullResult ? runIntegrityChecks(fullResult) : []),
-    [fullResult]
-  );
 
   return (
     <div className={styles.console}>

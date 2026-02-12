@@ -24,6 +24,7 @@ import { LegalDisclosureAccordion } from "@/components/legal/LegalDisclosureAcco
 import { computeConfidence, type ConfidenceResult } from "@/logic/confidence/modelConfidence";
 import { computeBaselineCompleteness } from "@/logic/confidence/baselineCompleteness";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
+import SoftGateOverlay from "@/components/common/SoftGateOverlay";
 
 // Legacy confidence engine (kept for backward compat)
 import { calculateModelConfidence, type ModelConfidenceResult } from "@/logic/confidence/calculateModelConfidence";
@@ -155,6 +156,7 @@ export default function ValuationPage() {
   const levers = useLeverStore(useShallow((s) => s.levers));
   const valStoreSnapshot = useValuationStore((s) => s.snapshot);
   const { baseline } = useSystemBaseline();
+  const hasBaseline = baseline !== null;
 
   // ── Derive multiple from local inputs + method ──
   const { multiple, components } = useMemo(() => calcMultiple(inputs, method), [inputs, method]);
@@ -335,8 +337,10 @@ export default function ValuationPage() {
     setInputs((prev) => ({ ...prev, [key]: val }));
 
   return (
-    <div className={styles.container}>
-      <div className={styles.content}>
+    <div className={styles.container} style={{ position: "relative" }}>
+      {!hasBaseline && <SoftGateOverlay />}
+
+      <div className={styles.content} style={{ filter: !hasBaseline ? "blur(4px)" : "none" }}>
         {/* ═══ LAYER 1: PROBABILITY-FIRST OUTCOME BLOCK ═══ */}
         <ValuationOutcomeBlock
           dist={dist}

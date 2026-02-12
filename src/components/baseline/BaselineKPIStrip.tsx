@@ -123,15 +123,13 @@ export default function BaselineKPIStrip() {
     return "Strong ≥ 60%";
   }, [objective?.marginTarget]);
 
-  const burnMicro = useMemo(() => {
-    if (derivedKPIs?.maxBurnAllowed) return `Max allowed: ${fmtUsdK(derivedKPIs.maxBurnAllowed)}/mo`;
-    return `Burn ratio: ${burnRatio.toFixed(2)}x`;
-  }, [derivedKPIs?.maxBurnAllowed, burnRatio]);
+  const burnMicro = derivedKPIs?.maxBurnAllowed
+    ? `Max allowed: ${fmtUsdK(derivedKPIs.maxBurnAllowed)}/mo`
+    : `Burn ratio: ${burnRatio.toFixed(2)}x`;
 
-  const runwayMicro = useMemo(() => {
-    if (derivedKPIs?.minRunwayMonths) return `Min required: ${derivedKPIs.minRunwayMonths}mo`;
-    return `Cash: ${fmtUsdM(cash)}`;
-  }, [derivedKPIs?.minRunwayMonths, cash]);
+  const runwayMicro = derivedKPIs?.minRunwayMonths
+    ? `Min required: ${derivedKPIs.minRunwayMonths}mo`
+    : `Cash: ${fmtUsdM(cash)}`;
 
   const concMicro = useMemo(() => "Weak > 70%", []);
 

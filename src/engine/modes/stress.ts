@@ -12,8 +12,8 @@ export function runStressCase(
   stressType: StressType = "demandShock"
 ): SimulationResult {
 
-  let stressedInputs = { ...inputs };
-  let stressedLevers = { ...levers };
+  const stressedInputs = { ...inputs };
+  const stressedLevers = { ...levers };
 
   switch (stressType) {
     case "demandShock":

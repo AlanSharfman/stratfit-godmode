@@ -175,7 +175,7 @@ export function useSystemAnalysis(
       // Use the snapshot's shock state as default
       setShockResult(analysis.shockState);
     }
-  }, [strategyInputs, baselineInputs, analysis]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [strategyInputs, baselineInputs, analysis]);  
 
   return {
     analysis,

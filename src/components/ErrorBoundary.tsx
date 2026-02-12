@@ -2,6 +2,8 @@ import { Component, ReactNode } from "react";
 
 interface Props {
   children: ReactNode;
+  fallback?: ReactNode;
+  fullScreen?: boolean;
 }
 
 interface State {
@@ -25,6 +27,21 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      if (this.props.fallback) return this.props.fallback;
+
+      if (this.props.fullScreen === false) {
+        return (
+          <div style={{ padding: "1rem" }}>
+            <div style={{ fontWeight: 600, marginBottom: "0.25rem" }}>
+              Something went wrong
+            </div>
+            <div style={{ opacity: 0.8, fontSize: "0.875rem" }}>
+              Try refreshing the page.
+            </div>
+          </div>
+        );
+      }
+
       return (
         <div
           style={{

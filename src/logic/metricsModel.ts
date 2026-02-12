@@ -124,7 +124,7 @@ import type {
       8 * wageDelta;
   
     // Risk increases with burn & opex, decreases with runway & growth
-    let risk =
+    const risk =
       baseline.risk +
       40 * burnDelta +
       25 * opexDelta -
@@ -132,7 +132,7 @@ import type {
       0.8 * runway;
   
     // Value reacts to growth, runway, risk
-    let value =
+    const value =
       baseline.value *
       (1 + 1.5 * growthDelta + 0.3 * runway / 24 - 0.01 * risk) *
       f.value;

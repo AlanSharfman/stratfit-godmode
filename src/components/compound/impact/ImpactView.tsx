@@ -93,17 +93,6 @@ export default function ImpactView() {
     return buildScenarioDeltaLedger({ engineResults, activeScenario: activeScenarioId });
   }, [engineResults, activeScenarioId]);
 
-  if (!hasEngine) {
-    return (
-      <div style={{ padding: 18, color: "rgba(200,235,255,0.7)" }}>
-        <div style={{ fontSize: 14, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase" }}>
-          Impact
-        </div>
-        <div style={{ marginTop: 6, fontSize: 12, opacity: 0.8 }}>Waiting for scenario engine results…</div>
-      </div>
-    );
-  }
-
   const scenarioLabel = String(activeScenarioId || "scenario").toUpperCase();
   const sev = severityLabel(ledger);
 
@@ -158,6 +147,17 @@ export default function ImpactView() {
       })
       .slice(0, 3);
   }, [ledger, runwaySc, riskSc, arrSc]);
+
+  if (!hasEngine) {
+    return (
+      <div style={{ padding: 18, color: "rgba(200,235,255,0.7)" }}>
+        <div style={{ fontSize: 14, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+          Impact
+        </div>
+        <div style={{ marginTop: 6, fontSize: 12, opacity: 0.8 }}>Waiting for scenario engine results…</div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.root}>

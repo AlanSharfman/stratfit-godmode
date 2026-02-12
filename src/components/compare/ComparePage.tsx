@@ -13,7 +13,10 @@ import { useShallow } from "zustand/react/shallow";
 import { useScenarioStore, type ScenarioId } from "@/state/scenarioStore";
 import { engineResultToMountainForces } from "@/logic/mountainForces";
 import ScenarioMountain from "@/components/mountain/ScenarioMountain";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import TerrainFallback2D, { isWebGLSupported } from "@/components/terrain/TerrainFallback2D";
+import SoftGateOverlay from "../common/SoftGateOverlay";
+import { useSystemBaseline } from "@/system/SystemBaselineProvider";
 
 import CompareViewToggle, { type CompareView } from "./CompareViewToggle";
 import CompareModeToggle, { type CompareMode } from "./CompareModeToggle";
@@ -62,6 +65,9 @@ function extractKpis(
 // ComparePage Component
 // ────────────────────────────────────────────────────────────────────────
 const ComparePage: React.FC = () => {
+  const { baseline } = useSystemBaseline();
+  const hasBaseline = baseline !== null;
+
   // ── View state ──
   const [view, setView] = useState<CompareView>("mountains");
   const [mode, setMode] = useState<CompareMode>("2way");
@@ -217,11 +223,16 @@ const ComparePage: React.FC = () => {
       <div className={styles.mountainLabel}>{label}</div>
       <div className={styles.mountainCanvas}>
         {webglSupported ? (
-          <ScenarioMountain
-            scenario={scenarioId}
-            dataPoints={dataPoints}
-            activeKpiIndex={hoveredKpiIndex}
-          />
+          <ErrorBoundary
+            fullScreen={false}
+            fallback={<TerrainFallback2D dataPoints={dataPoints} />}
+          >
+            <ScenarioMountain
+              scenario={scenarioId}
+              dataPoints={dataPoints}
+              activeKpiIndex={hoveredKpiIndex}
+            />
+          </ErrorBoundary>
         ) : (
           <TerrainFallback2D dataPoints={dataPoints} />
         )}
@@ -230,7 +241,10 @@ const ComparePage: React.FC = () => {
   );
 
   return (
-    <div className={styles.root}>
+    <div className={styles.root} style={{ position: "relative" }}>
+      {!hasBaseline && <SoftGateOverlay />}
+
+      <div style={{ filter: !hasBaseline ? "blur(4px)" : "none" }}>
       {/* ── TOP CONTROL BAR ──────────────────────────────────── */}
       <div className={styles.controlBar}>
         <CompareViewToggle active={view} onChange={setView} />
@@ -344,6 +358,7 @@ const ComparePage: React.FC = () => {
             scenarioAKpis={scenarioAKpis}
           />
         )}
+      </div>
       </div>
     </div>
   );
