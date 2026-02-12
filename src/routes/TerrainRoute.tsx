@@ -1,4 +1,5 @@
 import BaselinePage from "@/pages/baseline/BaselinePage";
+import BaselineKPIStrip from "@/components/baseline/BaselineKPIStrip";
 import { SimulateOverlay } from '@/components/simulate';
 import { SaveSimulationModal, LoadSimulationPanel } from '@/components/simulations';
 import SimulationTelemetryRibbon from '@/components/simulation/SimulationTelemetryRibbon';
@@ -34,58 +35,104 @@ export default function TerrainRoute({
   const navigate = useNavigate();
 
   return (
-    <div className="main-content mode-terrain">
-      <main className="center-column">
-        {/* BASELINE GATING — inline panel when baseline is missing */}
-        {!hasBaseline ? (
-          <div style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            minHeight: '400px', padding: '3rem',
-            background: 'linear-gradient(135deg, rgba(15,23,42,0.95), rgba(30,41,59,0.9))',
-            border: '1px solid rgba(100,116,139,0.2)', borderRadius: '1rem',
-            margin: '2rem auto', maxWidth: '520px',
-          }}>
-            <div style={{
-              width: 56, height: 56, borderRadius: '50%', marginBottom: '1.5rem',
-              background: 'linear-gradient(135deg, rgba(99,102,241,0.3), rgba(139,92,246,0.3))',
-              border: '1px solid rgba(139,92,246,0.4)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 24, color: 'rgba(165,143,255,0.9)',
-            }}>◆</div>
-            <h2 style={{
-              fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 600,
-              fontSize: '1.25rem', color: 'rgba(226,232,240,0.95)',
-              marginBottom: '0.75rem', letterSpacing: '-0.01em',
-            }}>Baseline Required</h2>
-            <p style={{
-              fontFamily: "'Inter', system-ui, sans-serif", fontSize: '0.875rem',
-              color: 'rgba(148,163,184,0.85)', textAlign: 'center',
-              lineHeight: 1.6, marginBottom: '2rem', maxWidth: '360px',
-            }}>
-              Initialize your company's financial and operational truth to unlock the STRATFIT platform.
-            </p>
-            <button
-              type="button"
-              onClick={() => navigate("/initialize")}
-              style={{
-                fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 600,
-                fontSize: '0.8125rem', letterSpacing: '0.06em', textTransform: 'uppercase',
-                padding: '0.75rem 2rem', borderRadius: '0.5rem', border: 'none',
-                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                color: '#fff', cursor: 'pointer',
-                boxShadow: '0 4px 14px rgba(99,102,241,0.35)',
-                transition: 'transform 0.15s, box-shadow 0.15s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(99,102,241,0.5)'; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(99,102,241,0.35)'; }}
-            >
-              Go to Initialize
-            </button>
+    <div className="mode-terrain" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+      {/* BASELINE GATING — inline panel when baseline is missing */}
+      {!hasBaseline ? (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: "400px",
+            padding: "3rem",
+            background: "linear-gradient(135deg, rgba(15,23,42,0.95), rgba(30,41,59,0.9))",
+            border: "1px solid rgba(100,116,139,0.2)",
+            borderRadius: "1rem",
+            margin: "2rem auto",
+            maxWidth: "520px",
+          }}
+        >
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: "50%",
+              marginBottom: "1.5rem",
+              background: "linear-gradient(135deg, rgba(99,102,241,0.3), rgba(139,92,246,0.3))",
+              border: "1px solid rgba(139,92,246,0.4)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 24,
+              color: "rgba(165,143,255,0.9)",
+            }}
+          >
+            ◆
           </div>
-        ) : (
+          <h2
+            style={{
+              fontFamily: "'Inter', system-ui, sans-serif",
+              fontWeight: 600,
+              fontSize: "1.25rem",
+              color: "rgba(226,232,240,0.95)",
+              marginBottom: "0.75rem",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            Baseline Required
+          </h2>
+          <p
+            style={{
+              fontFamily: "'Inter', system-ui, sans-serif",
+              fontSize: "0.875rem",
+              color: "rgba(148,163,184,0.85)",
+              textAlign: "center",
+              lineHeight: 1.6,
+              marginBottom: "2rem",
+              maxWidth: "360px",
+            }}
+          >
+            Initialize your company's financial and operational truth to unlock the STRATFIT platform.
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate("/initialize")}
+            style={{
+              fontFamily: "'Inter', system-ui, sans-serif",
+              fontWeight: 600,
+              fontSize: "0.8125rem",
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              padding: "0.75rem 2rem",
+              borderRadius: "0.5rem",
+              border: "none",
+              background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+              color: "#fff",
+              cursor: "pointer",
+              boxShadow: "0 4px 14px rgba(99,102,241,0.35)",
+              transition: "transform 0.15s, box-shadow 0.15s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-1px)";
+              e.currentTarget.style.boxShadow = "0 6px 20px rgba(99,102,241,0.5)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "0 4px 14px rgba(99,102,241,0.35)";
+            }}
+          >
+            Go to Initialize
+          </button>
+        </div>
+      ) : (
+        <>
+          <div style={{ padding: "12px 16px 0", flexShrink: 0 }}>
+            <BaselineKPIStrip />
+          </div>
           <BaselinePage />
-        )}
-      </main>
+        </>
+      )}
       
       {/* MONTE CARLO SIMULATION OVERLAY */}
       <SimulateOverlay 
