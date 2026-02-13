@@ -18,7 +18,7 @@ import StressContours from "@/components/mountain/overlays/StressContours";
 import CapitalThresholdPlane from "@/components/mountain/overlays/CapitalThresholdPlane";
 import ContextRiver from "@/components/mountain/overlays/ContextRiver";
 import ContextTrees from "@/components/mountain/overlays/ContextTrees";
-import TerrainPathBanked from "@/components/mountain/TerrainPathBanked";
+import TerrainPathSystem from "@/components/terrain/TerrainPathSystem";
 import DemoTourDirector from "@/demo/DemoTourDirector";
 import styles from "./BaselinePage.module.css";
 
@@ -394,19 +394,19 @@ export default function BaselinePage() {
                       />
                     )}
 
-                    {/* ── Realistic baseline trajectory (3D tube spline) ── */}
+                    {/* ── Terrain-following ribbon path (surface conforming + segmented dashes) ── */}
                     {baselineTrailPoints.length > 2 && sampleHeightFn && (
-                      <TerrainPathBanked
+                      <TerrainPathSystem
                         getHeightAt={sampleHeightFn}
                         points={baselinePathXZ}
                         swapYZ
-                        halfWidth={0.52}
-                        cutDepth={0.14}
-                        bankHeight={0.10}
-                        lift={0.02}
+                        halfWidth={0.55}
+                        cutDepth={0.10}
+                        bankHeight={0.05}
+                        lift={0.06}
                         autoBank
-                        autoBankStrength={0.85}
-                        maxBankAngleDeg={18}
+                        autoBankStrength={0.75}
+                        maxBankAngleDeg={8}
                         edgeLines
                       />
                     )}

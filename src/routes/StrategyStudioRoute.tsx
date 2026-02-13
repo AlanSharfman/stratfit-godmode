@@ -79,9 +79,7 @@ export default function StrategyStudioRoute({
       </div>
 
       <div className={`recalibration-dim-veil${isSimulatingGlobal ? " active" : ""}`} />
-      <div className={`recalibration-signal${isSimulatingGlobal ? " active" : ""}`}>
-        Recalculating structural behaviour…
-      </div>
+        // ...existing code...
     </>
   );
 }
