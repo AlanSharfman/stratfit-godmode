@@ -1,3 +1,11 @@
+import { Outlet } from "react-router-dom";
+import { MainNav } from "@/components/navigation";
+
 export default function App() {
-  return null;
+  return (
+    <div className="app">
+      <MainNav />
+      <Outlet />
+    </div>
+  );
 }

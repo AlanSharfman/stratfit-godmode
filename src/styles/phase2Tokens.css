@@ -17,3 +17,5 @@
   --sf-glass-fill: linear-gradient(180deg, rgba(14, 20, 28, 0.78), rgba(9, 12, 18, 0.70));
 }
 
+/* Marker styles moved to BaselinePage.module.css (:global) for unified control */
+

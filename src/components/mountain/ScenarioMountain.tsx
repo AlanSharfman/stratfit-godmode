@@ -1489,8 +1489,10 @@ function DigitalHorizon({ scenarioId, glowMultiplier = 1, baseOpacity = 1, isRec
 }
 
 // ============================================================================
-// CINEMATIC CONTROLLER — "Search Pattern" Idle Animation
+// CINEMATIC CONTROLLER — Zoomed-Out Undulation View
 // ============================================================================
+// Video mode: stays at standard camera distance, shows terrain undulation
+// through subtle rotation only (no zoom, no bobbing, no dramatic movement)
 
 interface CinematicControllerProps {
   children: React.ReactNode;
@@ -1517,24 +1519,22 @@ function CinematicController({ children, riskLevel = 0 }: CinematicControllerPro
     const riskShake = riskShakeRef.current;
     
     if (!hasInteracted) {
-      // 2. IDLE MODE: THE "SEARCH PATTERN"
-      // Creates a mesmerizing non-repeating orbit by mixing different frequencies
+      // 2. IDLE MODE: SUBTLE UNDULATION (ZOOMED OUT)
+      // Gentle horizontal rotation to show terrain from different angles
+      // NO bobbing, NO zoom changes, NO dramatic pitch/roll movements
       
-      // Yaw (Left <-> Right): Wide slow sweep with variation
-      const yaw = Math.sin(t * 0.18) * 0.45 + Math.sin(t * 0.07) * 0.15;
+      // Yaw (Left <-> Right): Very gentle horizontal sweep
+      const yaw = Math.sin(t * 0.10) * 0.25 + Math.sin(t * 0.05) * 0.10;
       groupRef.current.rotation.y = yaw;
       
-      // Pitch (Up <-> Down): Slight vertical tilt to show depth
-      const pitch = Math.cos(t * 0.25) * 0.12 + Math.sin(t * 0.11) * 0.05;
-      groupRef.current.rotation.x = pitch;
+      // Pitch: Minimal (maintain consistent viewing angle)
+      groupRef.current.rotation.x = 0;
       
-      // Roll (Tilt): Very subtle banking as it "flies"
-      const roll = Math.sin(t * 0.3) * 0.03;
-      groupRef.current.rotation.z = roll;
+      // Roll: None (keep horizon level)
+      groupRef.current.rotation.z = 0;
       
-      // Bobbing (Floating): Gentle breathing + seismic shake
-      const bobbing = Math.sin(t * 0.4) * 0.12 + Math.cos(t * 0.22) * 0.06;
-      groupRef.current.position.y = bobbing + riskShake;
+      // Position: Only seismic shake (no vertical bobbing)
+      groupRef.current.position.y = riskShake;
       
     } else {
       // 3. ACTIVE MODE: LOCK TO STATION
@@ -1602,7 +1602,20 @@ interface ScenarioMountainProps {
   showPath?: boolean;
   showMilestones?: boolean;
   pathColor?: string;
-  /** GOD MODE — Transforms terrain into spatial Monte Carlo decision engine */
+  /** 
+   * GOD MODE — Transforms terrain into spatial Monte Carlo decision engine
+   * 
+   * When enabled, God Mode:
+   * - Positions camera closer & higher for 70-80% viewport fill
+   * - Adds confidence envelope (IQR spread visualization)
+   * - Shows structural axes (EV ↑, Time →)
+   * - Displays baseline reference line
+   * - Adds ridge line & surface annotations
+   * - Uses darker materials (charcoal) with higher roughness
+   * - Enables subtle auto-rotation with locked zoom
+   * - Adds cyan rim lighting linked to EV metrics
+   * - Shows model credibility footnote
+   */
   godMode?: boolean;
   /** Optional: render additional in-canvas overlays (e.g., Baseline anchors/lines). */
   overlay?: React.ReactNode;
@@ -1611,6 +1624,10 @@ interface ScenarioMountainProps {
   baselineAutoRotatePaused?: boolean;
   /** Baseline-only: allow full 360° user rotation (no azimuth clamp). */
   baselineAllow360Rotate?: boolean;
+  /** Optional: enable/disable user camera controls (OrbitControls). */
+  controlsEnabled?: boolean;
+  /** Optional: override OrbitControls autoRotate (defaults to mode config). */
+  controlsAutoRotate?: boolean;
   /** Baseline-only: make container background transparent (lets parent show through). */
   transparentContainer?: boolean;
   /** Baseline-only: make scene background/fog transparent (no clear color). */
@@ -1645,6 +1662,8 @@ export function ScenarioMountain({
   baselineAutoRotate = false,
   baselineAutoRotatePaused = false,
   baselineAllow360Rotate = false,
+  controlsEnabled = true,
+  controlsAutoRotate,
   transparentContainer = false,
   transparentScene = false,
   onTerrainMeshReady,
@@ -1843,8 +1862,8 @@ export function ScenarioMountain({
         background: transparentContainer
           ? "transparent"
           : isGodMode
-            ? "radial-gradient(circle at 50% 55%, #0c1018 0%, #080c12 60%, #050709 100%)"
-            : "radial-gradient(circle at 50% 55%, #1a2744 0%, #0f1a2e 60%, #0a1220 100%)",
+            ? "radial-gradient(circle at 50% 55%, #0e131d 0%, #0a0f16 60%, #07090d 100%)"
+            : "radial-gradient(circle at 50% 55%, #1e2d4d 0%, #122038 60%, #0d1628 100%)",
         minHeight: '400px',
         height: '100%',
         width: '100%',
@@ -1872,7 +1891,7 @@ export function ScenarioMountain({
         gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
         dpr={Math.min(window.devicePixelRatio, 2)}
         style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 1, background: "transparent" }}
-        fallback={<div style={{ width: "100%", height: "100%", background: isGodMode ? "#050709" : "#0d1117" }} />}
+        fallback={<div style={{ width: "100%", height: "100%", background: isGodMode ? "#07090d" : "#101520" }} />}
         onCreated={({ gl }) => {
           gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
           if (transparentScene) gl.setClearColor(0x000000, 0);
@@ -1880,8 +1899,8 @@ export function ScenarioMountain({
       >
         <Suspense fallback={null}>
         {/* Scene clear + fog (Baseline can opt into transparentScene for photo-backed stages) */}
-        {!transparentScene && <color attach="background" args={[isGodMode ? '#080c12' : '#0f1a2e']} />}
-        {!transparentScene && <fog attach="fog" args={[isGodMode ? '#080c12' : '#0f1a2e', godFogNear, godFogFar]} />}
+        {!transparentScene && <color attach="background" args={[isGodMode ? '#0a0f16' : '#122038']} />}
+        {!transparentScene && <fog attach="fog" args={[isGodMode ? '#0a0f16' : '#122038', godFogNear, godFogFar]} />}
         
         {/* GOD MODE: Camera closer, higher, narrower FOV for 70-80% fill */}
         <PerspectiveCamera
@@ -1918,7 +1937,11 @@ export function ScenarioMountain({
         
         <GhostTerrain isVisible={showPath && hasInteracted} opacityMultiplier={config.pathGlow} />
         
-        {/* GOD MODE: Static authoritative pose (no idle animation) | Default: cinematic idle | Baseline: slow autorotate */}
+        {/* CAMERA CONTROL MODES:
+          * GOD MODE: Static authoritative pose (no idle animation, locked zoom, subtle auto-rotation via OrbitControls)
+          * BASELINE: Slow institutional auto-rotate (~0.6°/sec, pausable when user interacts)
+          * DEFAULT (Video/Cinematic): Zoomed-out view with gentle undulation (subtle horizontal rotation only)
+        */}
         {/* IMPORTANT: overlay is rendered INSIDE the rotation wrapper so orbs/lines rotate with the terrain */}
         {isGodMode ? (
           <>
@@ -2058,10 +2081,11 @@ export function ScenarioMountain({
         
         {/* GOD MODE: Subtle auto-rotation + locked zoom | Default: standard controls */}
         <OrbitControls 
+          enabled={controlsEnabled}
           enableZoom={false}
           enablePan={false}
-          enableRotate={mode !== "ghost"}
-          autoRotate={isGodMode ? true : config.autoRotate}
+          enableRotate={controlsEnabled ? (mode !== "ghost") : false}
+          autoRotate={controlsEnabled ? (controlsAutoRotate ?? (isGodMode ? true : config.autoRotate)) : false}
           autoRotateSpeed={isGodMode ? 0.3 : config.autoRotateSpeed}
           rotateSpeed={0.4}
           minPolarAngle={isGodMode ? Math.PI / 3.5 : Math.PI / 4}
@@ -2166,14 +2190,14 @@ function StrategicPath({
     const pulse = mode === "celebration" ? (0.8 + Math.sin(t * 2) * 0.2) : 1;
     if (lineRef.current) {
       const m = lineRef.current.material as { opacity?: number } | undefined;
-      if (m) m.opacity = (mode === "ghost" ? 0.2 : 0.9) * pulse;
+      if (m) m.opacity = (mode === "ghost" ? 0.2 : 0.95) * pulse;
       // Flow feel in celebration mode (dashed line offset)
       const md = lineRef.current.material as any;
       if (mode === "celebration" && md) md.dashOffset = -t * 0.8;
     }
     if (glowRef.current) {
       const m = glowRef.current.material as { opacity?: number } | undefined;
-      if (m) m.opacity = 0.25 * config.pathGlow * glowIntensity * pulse;
+      if (m) m.opacity = 0.5 * config.pathGlow * glowIntensity * pulse;
       const mg = glowRef.current.material as any;
       if (mode === "celebration" && mg) mg.dashOffset = -t * 0.8;
     }
@@ -2184,25 +2208,27 @@ function StrategicPath({
 
   return (
     <group>
+      {/* Outer glow layer for depth and realism */}
       <DreiLine
         ref={glowRef}
         points={curvePoints}
         color={color}
         transparent
-        opacity={0.25 * config.pathGlow * glowIntensity}
-        lineWidth={3}
+        opacity={0.5 * config.pathGlow * glowIntensity}
+        lineWidth={6}
         dashed={mode === "celebration"}
         dashScale={1}
         dashSize={0.8}
         gapSize={0.6}
       />
+      {/* Core path line - thicker and more solid */}
       <DreiLine
         ref={lineRef}
         points={curvePoints}
         color={color}
         transparent
-        opacity={mode === "ghost" ? 0.2 : 0.9}
-        lineWidth={1.5}
+        opacity={mode === "ghost" ? 0.2 : 0.95}
+        lineWidth={3}
         dashed={mode === "celebration"}
         dashScale={1}
         dashSize={0.8}

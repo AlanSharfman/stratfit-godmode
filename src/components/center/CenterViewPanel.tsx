@@ -119,7 +119,7 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
   return (
     <div className="relative flex h-full w-full flex-col rounded-xl bg-black/40 backdrop-blur-sm border border-white/5 overflow-auto">
       {/* TERRAIN VIEW — Baseline Mountain + Intelligence Panel */}
-      <div className="mountain-stage relative w-full flex-1 p-4" data-tour="mountain">
+      <div className="mountain-stage relative w-full flex-1 p-4">
         <div className="relative h-full w-full overflow-hidden flex flex-col" style={{
           borderRadius: '10px',
           background: 'linear-gradient(180deg, #0E1116 0%, #11161D 100%)',

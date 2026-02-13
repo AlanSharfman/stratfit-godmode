@@ -1,5 +1,6 @@
-import { Route, Routes, Navigate, useNavigate, useOutletContext } from "react-router-dom";
-import AppShell, { type AppOutletContext } from "./AppShell";
+import { Route, Routes, Navigate, useNavigate } from "react-router-dom";
+import App from "./App";
+import { AppStateProvider, useAppState } from "@/providers/AppStateProvider";
 import InitializeRoute from "@/routes/InitializeRoute";
 import ObjectiveRoute from "@/routes/ObjectiveRoute";
 import CompareRoute from "@/routes/CompareRoute";
@@ -26,44 +27,44 @@ import "./index.css";
 import "./styles/phase1LayoutFixes.css";
 
 function BaselineRouteWithState() {
-  const ctx = useOutletContext<AppOutletContext>();
+  const state = useAppState();
   return (
     <TerrainRoute
-      hasBaseline={ctx.hasBaseline}
-      showSimulate={ctx.showSimulate}
-      setShowSimulate={ctx.setShowSimulate}
-      showSaveModal={ctx.showSaveModal}
-      setShowSaveModal={ctx.setShowSaveModal}
-      showLoadPanel={ctx.showLoadPanel}
-      setShowLoadPanel={ctx.setShowLoadPanel}
-      levers={ctx.levers}
-      isSimulatingGlobal={ctx.isSimulatingGlobal}
+      hasBaseline={state.hasBaseline}
+      showSimulate={state.showSimulate}
+      setShowSimulate={state.setShowSimulate}
+      showSaveModal={state.showSaveModal}
+      setShowSaveModal={state.setShowSaveModal}
+      showLoadPanel={state.showLoadPanel}
+      setShowLoadPanel={state.setShowLoadPanel}
+      levers={state.levers}
+      isSimulatingGlobal={state.isSimulatingGlobal}
     />
   );
 }
 
 function StudioRouteWithState() {
-  const ctx = useOutletContext<AppOutletContext>();
+  const state = useAppState();
   const navigate = useNavigate();
   return (
     <StrategyStudioRoute
-      levers={ctx.levers}
-      setLevers={ctx.setLevers}
-      scenario={ctx.scenario}
-      dataPoints={ctx.dataPoints}
-      showSaveModal={ctx.showSaveModal}
-      setShowSaveModal={ctx.setShowSaveModal}
-      showLoadPanel={ctx.showLoadPanel}
-      setShowLoadPanel={ctx.setShowLoadPanel}
-      isSimulatingGlobal={ctx.isSimulatingGlobal}
+      levers={state.levers}
+      setLevers={state.setLevers}
+      scenario={state.scenario}
+      dataPoints={state.dataPoints}
+      showSaveModal={state.showSaveModal}
+      setShowSaveModal={state.setShowSaveModal}
+      showLoadPanel={state.showLoadPanel}
+      setShowLoadPanel={state.setShowLoadPanel}
+      isSimulatingGlobal={state.isSimulatingGlobal}
       onRunScenario={() => navigate("/compare")}
     />
   );
 }
 
 function SimulateRouteWithState() {
-  const ctx = useOutletContext<AppOutletContext>();
-  return <SimulateOverlayRoute levers={ctx.levers} />;
+  const state = useAppState();
+  return <SimulateOverlayRoute levers={state.levers} />;
 }
 
 function AdminEngineRoute() {
@@ -79,37 +80,39 @@ export default function AppRouter() {
   return (
     <ErrorBoundary>
       <SystemBaselineProvider>
-        <Routes>
-          {/* ROOT */}
-          <Route path="/" element={<Navigate to="/initialize" replace />} />
+        <AppStateProvider>
+          <Routes>
+            {/* ROOT */}
+            <Route path="/" element={<Navigate to="/initialize" replace />} />
 
-          {/* Legacy */}
-          <Route path="/terrain" element={<Navigate to="/baseline" replace />} />
-          <Route path="/assessment" element={<Navigate to="/capital" replace />} />
+            {/* Legacy */}
+            <Route path="/terrain" element={<Navigate to="/baseline" replace />} />
+            <Route path="/assessment" element={<Navigate to="/capital" replace />} />
 
-          {/* App shell */}
-          <Route element={<AppShell />}>
-            <Route path="/initialize" element={<InitializeRoute />} />
-            <Route path="/baseline" element={<BaselineRouteWithState />} />
-            <Route path="/objective" element={<ObjectiveRoute />} />
-            <Route path="/studio" element={<StudioRouteWithState />} />
-            <Route path="/compare" element={<CompareRoute />} />
-            <Route path="/risk" element={<RiskRoute />} />
-            <Route path="/valuation" element={<ValuationRoute />} />
-            <Route path="/capital" element={<AssessmentRoute />} />
-            <Route path="/impact" element={<ImpactRoute />} />
-            <Route path="/simulate" element={<SimulateRouteWithState />} />
-          </Route>
+            {/* App shell with nested routes */}
+            <Route element={<App />}>
+              <Route path="/initialize" element={<InitializeRoute />} />
+              <Route path="/baseline" element={<BaselineRouteWithState />} />
+              <Route path="/objective" element={<ObjectiveRoute />} />
+              <Route path="/studio" element={<StudioRouteWithState />} />
+              <Route path="/compare" element={<CompareRoute />} />
+              <Route path="/risk" element={<RiskRoute />} />
+              <Route path="/valuation" element={<ValuationRoute />} />
+              <Route path="/capital" element={<AssessmentRoute />} />
+              <Route path="/impact" element={<ImpactRoute />} />
+              <Route path="/simulate" element={<SimulateRouteWithState />} />
+            </Route>
 
-          {/* Other */}
-          <Route path="/memo/*" element={<ScenarioMemoPage />} />
-          <Route path="/admin/engine" element={<AdminEngineRoute />} />
+            {/* Other */}
+            <Route path="/memo/*" element={<ScenarioMemoPage />} />
+            <Route path="/admin/engine" element={<AdminEngineRoute />} />
 
-          {/* Unknown */}
-          <Route path="*" element={<Navigate to="/baseline" replace />} />
-        </Routes>
+            {/* Unknown */}
+            <Route path="*" element={<Navigate to="/baseline" replace />} />
+          </Routes>
 
-        <ComputationMonitor />
+          <ComputationMonitor />
+        </AppStateProvider>
       </SystemBaselineProvider>
     </ErrorBoundary>
   );
