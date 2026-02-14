@@ -20,7 +20,7 @@
 
 import React, { useMemo, useRef, useLayoutEffect, Suspense, useState, useEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, PerspectiveCamera, Grid, Line as DreiLine, Html } from "@react-three/drei";
+import { OrbitControls, Grid, Line as DreiLine, Html } from "@react-three/drei";
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
 import { NeuralBackground } from "@/components/visuals/NeuralBackground";
 import * as THREE from "three";
@@ -477,7 +477,7 @@ const Terrain: React.FC<TerrainProps> = ({
     if (!targetHeightsRef.current || !currentHeightsRef.current) return;
     if (!targetColorsRef.current || !currentColorsRef.current) return;
 
-    // Celebration effects timing (R3F-safe: Terrain is inside <Canvas>)
+    // Celebration effects timing (R3F-safe: Terrain is inside Canvas)
     fxTimeRef.current += delta * (modeConfig.animationSpeed ?? 1);
     const pulse =
       mode === "celebration" && modeConfig.pulseEnabled
@@ -1778,82 +1778,18 @@ export function ScenarioMountain({
     return { survivalFactor, evFactor, envelopeSpread };
   }, [isGodMode, kpiValues, fullSimResult]);
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // INSTRUMENT MODE — Compact diagnostic terrain (Initialize page)
-  // No overlays, no haze, no grid, no paths. Mesh + wireframe + slow rotation.
-  // ═══════════════════════════════════════════════════════════════════════
-  if (mode === 'instrument') {
-    return (
-      <div
-        className={`relative w-full h-full overflow-hidden ${className ?? ""}`}
-        style={{
-          background: "#0a1018",
-          minHeight: "280px",
-          height: "100%",
-          width: "100%",
-        }}
-      >
-        <Canvas
-          gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
-          dpr={Math.min(window.devicePixelRatio, 1.5)}
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 1 }}
-          fallback={<div style={{ width: "100%", height: "100%", background: "#0a1018" }} />}
-        >
-          <Suspense fallback={null}>
-            {!transparentScene && <color attach="background" args={["#0a1018"]} />}
-            {!transparentScene && <fog attach="fog" args={["#0a1018", 25, 70]} />}
-
-            {/* Camera raised + pulled back so terrain sits lower in viewport */}
-            <PerspectiveCamera makeDefault position={[0, 16, 28]} fov={36} />
-
-            {/* Soft top light — institutional, no drama */}
-            <ambientLight intensity={0.12} />
-            <directionalLight position={[0, 18, 5]} intensity={0.3} color="#e8f4f8" />
-            <directionalLight position={[-4, 10, -2]} intensity={0.06} color="#22d3ee" />
-
-            {/* Scale Y to 0.45 — flattens the terrain so only peaks & dips are visible,
-                not a towering mountain. Position lowered for correct framing. */}
-            <group scale={[1, 0.45, 1]} position={[0, -3, 0]}>
-              <Terrain
-                dataPoints={resolvedDataPoints}
-                activeKpiIndex={null}
-                activeLeverId={null}
-                leverIntensity01={0}
-                scenario={scenarioId}
-                baseColor={scenarioColor}
-                mode="instrument"
-                glowIntensity={0.3}
-                modeConfig={config}
-                isDragging={false}
-                neuralPulse={false}
-                opacityMultiplier={config.terrainOpacity}
-                wireOpacityMultiplier={config.wireframeOpacity}
-                glowMultiplier={config.glowMultiplier}
-                structuralHeat01={structuralHeat01}
-              />
-            </group>
-
-            {/* Slow rotation (0.1 deg/sec), no user interaction */}
-            <OrbitControls
-              enableZoom={false}
-              enablePan={false}
-              enableRotate={false}
-              autoRotate
-              autoRotateSpeed={config.autoRotateSpeed}
-              minPolarAngle={Math.PI / 3.5}
-              maxPolarAngle={Math.PI / 3.5}
-            />
-          </Suspense>
-        </Canvas>
-      </div>
-    );
-  }
+  const instrumentMode = mode === 'instrument';
+  const cameraConfig = useMemo(
+    () => ({
+      position: (isGodMode ? [0, 10, 22] : [0, 6, 32]) as [number, number, number],
+      fov: isGodMode ? 36 : 38,
+    }),
+    [isGodMode]
+  );
 
   // ── GOD MODE: Fog density linked to survival (Section 6 — Metric Linkage) ──
   const godFogNear = isGodMode ? (25 + (1 - godModeMetrics.survivalFactor) * 15) : 40;
   const godFogFar = isGodMode ? (70 - (1 - godModeMetrics.survivalFactor) * 20) : 100;
-  // ── GOD MODE: EV → rim glow intensity (Section 6) ──
-  const godRimIntensity = isGodMode ? (0.12 + godModeMetrics.evFactor * 0.15) : 0.15;
 
   return (
     <div
@@ -1888,12 +1824,12 @@ export function ScenarioMountain({
       />
       
       <Canvas
-        gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
-        dpr={Math.min(window.devicePixelRatio, 2)}
+        camera={cameraConfig}
+        gl={{ antialias: true, alpha: true }}
+        dpr={[1, 1.5]}
         style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 1, background: "transparent" }}
         fallback={<div style={{ width: "100%", height: "100%", background: isGodMode ? "#07090d" : "#101520" }} />}
         onCreated={({ gl }) => {
-          gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
           if (transparentScene) gl.setClearColor(0x000000, 0);
         }}
       >
@@ -1902,40 +1838,58 @@ export function ScenarioMountain({
         {!transparentScene && <color attach="background" args={[isGodMode ? '#0a0f16' : '#122038']} />}
         {!transparentScene && <fog attach="fog" args={[isGodMode ? '#0a0f16' : '#122038', godFogNear, godFogFar]} />}
         
-        {/* GOD MODE: Camera closer, higher, narrower FOV for 70-80% fill */}
-        <PerspectiveCamera
-          makeDefault
-          position={isGodMode ? [0, 10, 22] : [0, 6, 32]}
-          fov={isGodMode ? 36 : 38}
+        <ambientLight intensity={0.45} />
+        <directionalLight
+          position={[6, 10, 6]}
+          intensity={1.05}
+          castShadow
+        />
+        <directionalLight
+          position={[-4, 6, -4]}
+          intensity={0.35}
         />
 
-        {/* LIGHTING — God Mode: dimmer ambient, stronger cyan rim for edge revelation */}
-        <ambientLight intensity={isGodMode ? 0.12 : 0.25} />
-        <directionalLight
-          position={[8, 20, 10]}
-          intensity={isGodMode ? 0.35 : 0.6}
-          color="#ffffff"
-        />
-        {/* Cyan rim light — EV-linked in God Mode (Section 6) */}
-        <directionalLight
-          position={[-10, 15, -5]}
-          intensity={godRimIntensity}
-          color="#22d3ee"
-        />
-        <directionalLight
-          position={[10, 12, -8]}
-          intensity={isGodMode ? 0.08 : 0.06}
-          color={isGodMode ? "#22d3ee" : "#0ea5e9"}
-        />
-        <pointLight
-          position={[0, 8, 0]}
-          intensity={isGodMode ? (0.04 + godModeMetrics.evFactor * 0.06) : 0.08}
-          color="#0ea5e9"
-          distance={30}
-          decay={2}
-        />
-        
-        <GhostTerrain isVisible={showPath && hasInteracted} opacityMultiplier={config.pathGlow} />
+        {instrumentMode ? (
+          <>
+            {/* INSTRUMENT MODE — Compact diagnostic terrain (Initialize page) */}
+            {/* No overlays, no haze, no grid, no paths. Mesh + wireframe + slow rotation. */}
+
+            {/* Scale Y to 0.45 — flattens the terrain so only peaks & dips are visible,
+                not a towering mountain. Position lowered for correct framing. */}
+            <group scale={[1, 0.45, 1]} position={[0, -3, 0]}>
+              <Terrain
+                dataPoints={resolvedDataPoints}
+                activeKpiIndex={null}
+                activeLeverId={null}
+                leverIntensity01={0}
+                scenario={scenarioId}
+                baseColor={scenarioColor}
+                mode="instrument"
+                glowIntensity={0.3}
+                modeConfig={config}
+                isDragging={false}
+                neuralPulse={false}
+                opacityMultiplier={config.terrainOpacity}
+                wireOpacityMultiplier={config.wireframeOpacity}
+                glowMultiplier={config.glowMultiplier}
+                structuralHeat01={structuralHeat01}
+              />
+            </group>
+
+            {/* Slow rotation (0.1 deg/sec), no user interaction */}
+            <OrbitControls
+              enableZoom={false}
+              enablePan={false}
+              enableRotate={false}
+              autoRotate
+              autoRotateSpeed={config.autoRotateSpeed}
+              minPolarAngle={Math.PI / 3.5}
+              maxPolarAngle={Math.PI / 3.5}
+            />
+          </>
+        ) : (
+          <>
+            <GhostTerrain isVisible={showPath && hasInteracted} opacityMultiplier={config.pathGlow} />
         
         {/* CAMERA CONTROL MODES:
           * GOD MODE: Static authoritative pose (no idle animation, locked zoom, subtle auto-rotation via OrbitControls)
@@ -2109,6 +2063,8 @@ export function ScenarioMountain({
             darkness={isGodMode ? 0.5 : (mode === "celebration" ? 0.35 : 0)}
           />
         </EffectComposer>
+          </>
+        )}
         </Suspense>
       </Canvas>
 

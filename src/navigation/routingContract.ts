@@ -1,4 +1,4 @@
-import { NAV_ITEMS } from "@/navigation/navConfig";
+import { NAV_ITEMS, type NavId } from "@/navigation/navConfig";
 
 /**
  * Single canonical set of route paths.
@@ -13,7 +13,7 @@ export const ROUTE_PATHS = {
   risk: "/risk",
   valuation: "/valuation",
   capital: "/capital",
-} as const;
+} as const satisfies Record<NavId, `/${string}`>;
 
 type RouteId = keyof typeof ROUTE_PATHS;
 
@@ -27,8 +27,8 @@ function invariant(cond: any, msg: string): asserts cond {
  */
 export function validateRoutingContract() {
   // 1) ids must match
-  const routeIds = new Set(Object.keys(ROUTE_PATHS));
-  const navIds = new Set(NAV_ITEMS.map((n) => n.id));
+  const routeIds = new Set<RouteId>(Object.keys(ROUTE_PATHS) as RouteId[]);
+  const navIds = new Set<RouteId>(NAV_ITEMS.map((n) => n.id));
 
   for (const id of routeIds) {
     invariant(navIds.has(id), `NAV_ITEMS missing id "${id}"`);
@@ -38,8 +38,8 @@ export function validateRoutingContract() {
   }
 
   // 2) paths must match
-  const pathById = new Map(NAV_ITEMS.map((n) => [n.id, n.path]));
-  for (const [id, path] of Object.entries(ROUTE_PATHS)) {
+  const pathById = new Map<RouteId, string>(NAV_ITEMS.map((n) => [n.id, n.path]));
+  for (const [id, path] of Object.entries(ROUTE_PATHS) as [RouteId, (typeof ROUTE_PATHS)[RouteId]][]) {
     invariant(pathById.get(id) === path, `Path mismatch for "${id}": NAV="${pathById.get(id)}" ROUTE="${path}"`);
   }
 
