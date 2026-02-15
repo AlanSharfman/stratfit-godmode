@@ -31,7 +31,18 @@ export const slmEnabled = true;
 /** Intervention Preview Engine — ghost trajectory on marker hover (Stage 10) */
 export const ipeEnabled = true;
 
+/** Temporal Flow Layer — anisotropic flow along corridor (Stage 11) */
+export const tflEnabled = true;
 
+/** Scenario Divergence Layer — optimistic/defensive ghost corridors (Stage 12) */
+export const sdlEnabled = true;
 
+/** Decision Heat Layer — subsurface thermal intensity along corridor (Stage 13) */
+export const dhlEnabled = true;
 
+/** Structural Resonance Layer — micro tonal resonance from semantic convergence (Stage 14B) */
+export const srlEnabled = true;
+
+/** Semantic Harmonization Layer — global intensity balance (Stage 14A) */
+export const shlEnabled = true;
 

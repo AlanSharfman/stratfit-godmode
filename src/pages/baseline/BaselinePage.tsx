@@ -27,9 +27,17 @@ import RiskPressureField from "@/components/terrain/RiskPressureField";
 import ConfidenceField from "@/components/terrain/ConfidenceField";
 import StrategicLeverageMarkers from "@/components/terrain/StrategicLeverageMarkers";
 import InterventionPreview from "@/components/terrain/InterventionPreview";
+import TemporalFlow from "@/components/terrain/TemporalFlow";
+import ScenarioDivergence from "@/components/terrain/ScenarioDivergence";
+import DecisionHeat from "@/components/terrain/DecisionHeat";
+import StructuralResonance from "@/components/terrain/StructuralResonance";
+import SemanticHarmonizer from "@/components/terrain/SemanticHarmonizer";
 import { generateBaselineRiskCurve } from "@/render/rpf/generateBaselineRisk";
 import { generateBaselineConfidenceCurve } from "@/render/cf/generateBaselineConfidence";
-import { rpfEnabled, cfEnabled, slmEnabled, ipeEnabled } from "@/config/featureFlags";
+import { generateBaselineVelocityCurve } from "@/render/tfl/generateBaselineVelocity";
+import { generateBaselineHeatCurve } from "@/render/dhl/createHeatTexture";
+import { generateBaselineResonanceCurve } from "@/render/srl/createResonanceTexture";
+import { rpfEnabled, cfEnabled, slmEnabled, ipeEnabled, tflEnabled, sdlEnabled, dhlEnabled, srlEnabled, shlEnabled } from "@/config/featureFlags";
 import styles from "./BaselinePage.module.css";
 import { useAnchorRegistry } from "@/spatial/AnchorRegistry";
 
@@ -42,6 +50,10 @@ export default function BaselinePage() {
   const [cfOn, setCfOn] = useState(cfEnabled);
   const [slmOn, setSlmOn] = useState(slmEnabled);
   const [ipeOn, setIpeOn] = useState(ipeEnabled);
+  const [tflOn, setTflOn] = useState(tflEnabled);
+  const [sdlOn, setSdlOn] = useState(sdlEnabled);
+  const [dhlOn, setDhlOn] = useState(dhlEnabled);
+  const [srlOn, setSrlOn] = useState(srlEnabled);
   const [activeMetricId, setActiveMetricId] = useState<MetricId | null>(null);
   const [terrainMesh, setTerrainMesh] = useState<import("three").Mesh | null>(null);
 
@@ -69,6 +81,24 @@ export default function BaselinePage() {
   const baselineConfidenceCurve = useMemo(
     () => generateBaselineConfidenceCurve(baselineRiskCurve),
     [baselineRiskCurve],
+  );
+
+  // ── Deterministic velocity curve for TFL (derived from risk) ──
+  const baselineVelocityCurve = useMemo(
+    () => generateBaselineVelocityCurve(baselineRiskCurve, 256),
+    [baselineRiskCurve],
+  );
+
+  // ── Deterministic heat curve for DHL (derived from risk) ──
+  const baselineHeatCurve = useMemo(
+    () => generateBaselineHeatCurve(baselineRiskCurve, 256),
+    [baselineRiskCurve],
+  );
+
+  // ── Deterministic resonance curve for SRL (derived from risk + heat + confidence) ──
+  const baselineResonanceCurve = useMemo(
+    () => generateBaselineResonanceCurve(baselineRiskCurve, baselineHeatCurve, baselineConfidenceCurve, 256),
+    [baselineRiskCurve, baselineHeatCurve, baselineConfidenceCurve],
   );
 
   // ── Risk points for heatmap + fill overlays ──
@@ -381,6 +411,46 @@ export default function BaselinePage() {
               PREVIEW: {ipeOn ? "ON" : "OFF"}
             </button>
           )}
+          {tflEnabled && (
+            <button
+              type="button"
+              className={`${styles.toggle} ${tflOn ? styles.toggleOn : ""}`}
+              onClick={() => setTflOn((v) => !v)}
+              aria-pressed={tflOn}
+            >
+              FLOW: {tflOn ? "ON" : "OFF"}
+            </button>
+          )}
+          {sdlEnabled && (
+            <button
+              type="button"
+              className={`${styles.toggle} ${sdlOn ? styles.toggleOn : ""}`}
+              onClick={() => setSdlOn((v) => !v)}
+              aria-pressed={sdlOn}
+            >
+              DIVERGE: {sdlOn ? "ON" : "OFF"}
+            </button>
+          )}
+          {dhlEnabled && (
+            <button
+              type="button"
+              className={`${styles.toggle} ${dhlOn ? styles.toggleOn : ""}`}
+              onClick={() => setDhlOn((v) => !v)}
+              aria-pressed={dhlOn}
+            >
+              HEAT: {dhlOn ? "ON" : "OFF"}
+            </button>
+          )}
+          {srlEnabled && (
+            <button
+              type="button"
+              className={`${styles.toggle} ${srlOn ? styles.toggleOn : ""}`}
+              onClick={() => setSrlOn((v) => !v)}
+              aria-pressed={srlOn}
+            >
+              RESONANCE: {srlOn ? "ON" : "OFF"}
+            </button>
+          )}
         </div>
       </div>
 
@@ -396,6 +466,11 @@ export default function BaselinePage() {
               {cfEnabled && <ConfidenceField confidenceValues={baselineConfidenceCurve} enabled={cfOn} />}
               {slmEnabled && <StrategicLeverageMarkers riskValues={baselineRiskCurve} enabled={slmOn} />}
               {ipeEnabled && <InterventionPreview riskValues={baselineRiskCurve} enabled={ipeOn && slmOn} />}
+              {tflEnabled && <TemporalFlow velocityValues={baselineVelocityCurve} enabled={tflOn} />}
+              {sdlEnabled && <ScenarioDivergence riskValues={baselineRiskCurve} enabled={sdlOn} />}
+              {dhlEnabled && <DecisionHeat heatValues={baselineHeatCurve} enabled={dhlOn} />}
+              {srlEnabled && <StructuralResonance resonanceValues={baselineResonanceCurve} enabled={srlOn} />}
+              {shlEnabled && <SemanticHarmonizer />}
             </TerrainStage>
           </TerrainWithFallback>
 
