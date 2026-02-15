@@ -43,6 +43,9 @@ export const dhlEnabled = true;
 /** Structural Resonance Layer — micro tonal resonance from semantic convergence (Stage 14B) */
 export const srlEnabled = true;
 
+/** Structural Topography Mapping — vertex displacement from structural index (STM) */
+export const stmEnabled = true;
+
 /** Semantic Harmonization Layer — global intensity balance (Stage 14A) */
 export const shlEnabled = true;
 

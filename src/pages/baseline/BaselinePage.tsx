@@ -31,13 +31,15 @@ import TemporalFlow from "@/components/terrain/TemporalFlow";
 import ScenarioDivergence from "@/components/terrain/ScenarioDivergence";
 import DecisionHeat from "@/components/terrain/DecisionHeat";
 import StructuralResonance from "@/components/terrain/StructuralResonance";
+import StructuralTopography from "@/components/terrain/StructuralTopography";
 import SemanticHarmonizer from "@/components/terrain/SemanticHarmonizer";
 import { generateBaselineRiskCurve } from "@/render/rpf/generateBaselineRisk";
 import { generateBaselineConfidenceCurve } from "@/render/cf/generateBaselineConfidence";
 import { generateBaselineVelocityCurve } from "@/render/tfl/generateBaselineVelocity";
 import { generateBaselineHeatCurve } from "@/render/dhl/createHeatTexture";
 import { generateBaselineResonanceCurve } from "@/render/srl/createResonanceTexture";
-import { rpfEnabled, cfEnabled, slmEnabled, ipeEnabled, tflEnabled, sdlEnabled, dhlEnabled, srlEnabled, shlEnabled } from "@/config/featureFlags";
+import { generateBaselineStructureCurve } from "@/render/stm/createStructureTexture";
+import { rpfEnabled, cfEnabled, slmEnabled, ipeEnabled, tflEnabled, sdlEnabled, dhlEnabled, srlEnabled, shlEnabled, stmEnabled } from "@/config/featureFlags";
 import styles from "./BaselinePage.module.css";
 import { useAnchorRegistry } from "@/spatial/AnchorRegistry";
 
@@ -54,6 +56,7 @@ export default function BaselinePage() {
   const [sdlOn, setSdlOn] = useState(sdlEnabled);
   const [dhlOn, setDhlOn] = useState(dhlEnabled);
   const [srlOn, setSrlOn] = useState(srlEnabled);
+  const [stmOn, setStmOn] = useState(stmEnabled);
   const [activeMetricId, setActiveMetricId] = useState<MetricId | null>(null);
   const [terrainMesh, setTerrainMesh] = useState<import("three").Mesh | null>(null);
 
@@ -99,6 +102,12 @@ export default function BaselinePage() {
   const baselineResonanceCurve = useMemo(
     () => generateBaselineResonanceCurve(baselineRiskCurve, baselineHeatCurve, baselineConfidenceCurve, 256),
     [baselineRiskCurve, baselineHeatCurve, baselineConfidenceCurve],
+  );
+
+  // ── Deterministic structure curve for STM (derived from confidence + risk) ──
+  const baselineStructureCurve = useMemo(
+    () => generateBaselineStructureCurve(baselineConfidenceCurve, baselineRiskCurve, 256),
+    [baselineConfidenceCurve, baselineRiskCurve],
   );
 
   // ── Risk points for heatmap + fill overlays ──
@@ -451,6 +460,16 @@ export default function BaselinePage() {
               RESONANCE: {srlOn ? "ON" : "OFF"}
             </button>
           )}
+          {stmEnabled && (
+            <button
+              type="button"
+              className={`${styles.toggle} ${stmOn ? styles.toggleOn : ""}`}
+              onClick={() => setStmOn((v) => !v)}
+              aria-pressed={stmOn}
+            >
+              TOPO: {stmOn ? "ON" : "OFF"}
+            </button>
+          )}
         </div>
       </div>
 
@@ -470,6 +489,7 @@ export default function BaselinePage() {
               {sdlEnabled && <ScenarioDivergence riskValues={baselineRiskCurve} enabled={sdlOn} />}
               {dhlEnabled && <DecisionHeat heatValues={baselineHeatCurve} enabled={dhlOn} />}
               {srlEnabled && <StructuralResonance resonanceValues={baselineResonanceCurve} enabled={srlOn} />}
+              {stmEnabled && <StructuralTopography structureValues={baselineStructureCurve} enabled={stmOn} />}
               {shlEnabled && <SemanticHarmonizer />}
             </TerrainStage>
           </TerrainWithFallback>

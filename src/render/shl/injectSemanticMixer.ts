@@ -30,4 +30,5 @@ export const LAYER_UNIFORM_MAP: Record<SemanticLayerKey, string> = {
     divergence: "opacity (SDL material)",
     flow: "uTflIntensity",
     resonance: "uSrlIntensity",
+    topography: "uTopoScale",
 };

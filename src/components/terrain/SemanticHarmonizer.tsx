@@ -6,11 +6,13 @@ import { CF_UNIFORMS_KEY } from "@/render/cf/cfContracts";
 import { TFL_UNIFORMS_KEY } from "@/render/tfl/tflContracts";
 import { DHL_UNIFORMS_KEY } from "@/render/dhl/dhlContracts";
 import { SRL_UNIFORMS_KEY } from "@/render/srl/srlContracts";
+import { STM_UNIFORMS_KEY } from "@/render/stm/stmContracts";
 import type { RpfUniforms } from "@/render/rpf/rpfContracts";
 import type { CfUniforms } from "@/render/cf/cfContracts";
 import type { TflUniforms } from "@/render/tfl/tflContracts";
 import type { DhlUniforms } from "@/render/dhl/dhlContracts";
 import type { SrlUniforms } from "@/render/srl/srlContracts";
+import type { StmUniforms } from "@/render/stm/stmContracts";
 
 /**
  * Base intensity values — what each layer uses before SHL modulation.
@@ -21,6 +23,7 @@ const BASE_CF_INTENSITY = 0.45;
 const BASE_TFL_INTENSITY = 0.18;
 const BASE_DHL_INTENSITY = 0.22;
 const BASE_SRL_INTENSITY = 0.08;
+const BASE_STM_SCALE = 4.0;
 
 /**
  * SemanticHarmonizer — declarative R3F component.
@@ -81,6 +84,12 @@ export default function SemanticHarmonizer() {
         const srl = ud[SRL_UNIFORMS_KEY] as SrlUniforms | undefined;
         if (srl) {
             srl.uSrlIntensity.value = BASE_SRL_INTENSITY * weights.resonance;
+        }
+
+        // STM — topography weight
+        const stm = ud[STM_UNIFORMS_KEY] as StmUniforms | undefined;
+        if (stm) {
+            stm.uTopoScale.value = BASE_STM_SCALE * weights.topography;
         }
 
         // SDL divergence corridors: modulate opacity on ghost meshes

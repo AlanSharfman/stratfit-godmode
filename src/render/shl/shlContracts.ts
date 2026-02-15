@@ -1,5 +1,5 @@
 /** Semantic layer weight keys */
-export type SemanticLayerKey = "risk" | "heat" | "confidence" | "divergence" | "flow" | "resonance";
+export type SemanticLayerKey = "risk" | "heat" | "confidence" | "divergence" | "flow" | "resonance" | "topography";
 
 /** Uniform block for semantic harmonization */
 export interface ShlWeights {
@@ -9,6 +9,7 @@ export interface ShlWeights {
     divergence: number;
     flow: number;
     resonance: number;
+    topography: number;
 }
 
 /** Default semantic weights — all near 1.0 so default appearance is unchanged */
@@ -19,4 +20,5 @@ export const DEFAULT_SHL_WEIGHTS: ShlWeights = {
     divergence: 0.8,
     flow: 0.75,
     resonance: 1.0,
+    topography: 1.0,
 };
