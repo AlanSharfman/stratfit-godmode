@@ -7,12 +7,21 @@ import { buildSpline } from "./buildSpline";
 import { buildPathMesh } from "./buildPathMesh";
 import { createGlowMesh } from "./pathGlow";
 import { createSeed } from "@/terrain/seed";
+import { generateCorridorMask } from "@/terrain/corridorContactPass";
 
 // Divergence scaffold constants (deterministic)
 const DIVERGENCE_T = 0.62; // fixed, deterministic (no randomness)
 const DIVERGENCE_SPREAD = 10; // world units lateral branch hint
 
-export default function P50Path({ scene, scenarioId = "baseline" }: { scene: THREE.Scene; scenarioId?: string }) {
+export default function P50Path({
+    scene,
+    scenarioId = "baseline",
+    onMaskReady
+}: {
+    scene: THREE.Scene;
+    scenarioId?: string;
+    onMaskReady?: (mask: THREE.DataTexture) => void;
+}) {
     const p50Ref = useRef<THREE.Mesh | null>(null);
     const p10Ref = useRef<THREE.Mesh | null>(null);
     const p90Ref = useRef<THREE.Mesh | null>(null);
@@ -122,6 +131,18 @@ export default function P50Path({ scene, scenarioId = "baseline" }: { scene: THR
         });
         const glow = createGlowMesh(p50Curve);
 
+        // Generate corridor contact mask for terrain grounding
+        if (onMaskReady) {
+            const corridorMask = generateCorridorMask(
+                [p10Curve, p50Curve, p90Curve, branchLeft, branchRight],
+                { width: 560, height: 360 },
+                256, // texture resolution
+                [3.2, 5.4, 3.2, 2.0, 2.0], // max widths for each curve
+                3.0 // falloff distance
+            );
+            onMaskReady(corridorMask);
+        }
+
         // Add all paths to scene (branches first so p50 stays dominant)
         scene.add(branchMeshL);
         scene.add(branchMeshR);
@@ -163,7 +184,7 @@ export default function P50Path({ scene, scenarioId = "baseline" }: { scene: THR
                 branchRightRef.current.geometry.dispose();
             }
         };
-    }, [scene, scenarioId]);
+    }, [scene, scenarioId, onMaskReady]);
 
     return null;
 }

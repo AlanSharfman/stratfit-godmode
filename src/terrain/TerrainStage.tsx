@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { buildTerrain } from "./buildTerrain";
 import { createSeed } from "./seed";
 import P50Path from "../paths/P50Path";
+import { applyCorridorContactGrounding } from "./corridorContactPass";
 
 export default function TerrainStage({ children }: { children?: React.ReactNode }) {
     return (
@@ -35,7 +36,9 @@ export default function TerrainStage({ children }: { children?: React.ReactNode 
 
 function Scene({ children }: { children?: React.ReactNode }) {
     const meshRef = useRef<THREE.Mesh>(null);
+    const materialRef = useRef<THREE.MeshStandardMaterial | null>(null);
     const { scene } = useThree();
+    const [corridorMask, setCorridorMask] = useState<THREE.DataTexture | null>(null);
 
     const geometry = useMemo(() => {
         const seed = createSeed("baseline");
@@ -49,6 +52,17 @@ function Scene({ children }: { children?: React.ReactNode }) {
         meshRef.current.frustumCulled = false;
     }, []);
 
+    // Apply corridor contact grounding when mask is ready
+    useEffect(() => {
+        if (!corridorMask || !materialRef.current) return;
+        applyCorridorContactGrounding(materialRef.current, corridorMask, 0.92);
+    }, [corridorMask]);
+
+    // Handle corridor mask callback from P50Path
+    const handleMaskReady = (mask: THREE.DataTexture) => {
+        setCorridorMask(mask);
+    };
+
     return (
         <>
             {/* Lighting */}
@@ -59,6 +73,7 @@ function Scene({ children }: { children?: React.ReactNode }) {
             {/* Terrain Mesh */}
             <mesh ref={meshRef} geometry={geometry}>
                 <meshStandardMaterial
+                    ref={materialRef}
                     color={0x7dd3fc}
                     emissive={0x38bdf8}
                     emissiveIntensity={0.3}
@@ -71,7 +86,7 @@ function Scene({ children }: { children?: React.ReactNode }) {
             </mesh>
 
             {/* P50 Path */}
-            <P50Path scene={scene} scenarioId="baseline" />
+            <P50Path scene={scene} scenarioId="baseline" onMaskReady={handleMaskReady} />
 
             {/* Camera Controls */}
             <OrbitControls
