@@ -1,7 +1,14 @@
 import * as THREE from "three";
 import { varianceAt } from "./variance";
 
-export function buildPathMesh(curve: THREE.CatmullRomCurve3) {
+export interface PathMeshOptions {
+    opacity?: number;
+    widthMin?: number;
+    widthMax?: number;
+}
+
+export function buildPathMesh(curve: THREE.CatmullRomCurve3, options: PathMeshOptions = {}) {
+    const { opacity = 0.85, widthMin = 1, widthMax = 1 } = options;
     const segments = 140;
     const radiusSegments = 8;
 
@@ -19,7 +26,9 @@ export function buildPathMesh(curve: THREE.CatmullRomCurve3) {
     for (let i = 0; i < pos.count; i++) {
         tmp.fromBufferAttribute(pos, i);
         const t = Math.floor(i / (radiusSegments + 1)) / segments;
-        const scale = 1 + varianceAt(t) * 0.8;
+        const varianceScale = varianceAt(t);
+        const baseRadius = widthMin + (widthMax - widthMin) * varianceScale;
+        const scale = baseRadius;
         const dir = tmp.clone().normalize();
         const dist = tmp.length();
         tmp.copy(dir).multiplyScalar(dist * scale);
@@ -31,7 +40,7 @@ export function buildPathMesh(curve: THREE.CatmullRomCurve3) {
     const mat = new THREE.MeshStandardMaterial({
         color: 0xcfe7ff,
         transparent: true,
-        opacity: 0.85,
+        opacity,
         roughness: 0.6,
         metalness: 0.1
     });

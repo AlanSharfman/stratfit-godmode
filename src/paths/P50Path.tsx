@@ -9,7 +9,9 @@ import { createGlowMesh } from "./pathGlow";
 import { createSeed } from "@/terrain/seed";
 
 export default function P50Path({ scene, scenarioId = "baseline" }: { scene: THREE.Scene; scenarioId?: string }) {
-    const meshRef = useRef<THREE.Mesh | null>(null);
+    const p50Ref = useRef<THREE.Mesh | null>(null);
+    const p10Ref = useRef<THREE.Mesh | null>(null);
+    const p90Ref = useRef<THREE.Mesh | null>(null);
     const glowRef = useRef<THREE.Mesh | null>(null);
 
     useEffect(() => {
@@ -19,28 +21,71 @@ export default function P50Path({ scene, scenarioId = "baseline" }: { scene: THR
 
         const nodes = generateP50Nodes();
 
-        const points: THREE.Vector3[] = nodes.map((n) => {
-            const world = normToWorld(n.coord);
-            const X = world.x;
-            const Z = world.y; // projector's "y" becomes ground Z
-            const h = sampleHeight(n.coord.x, n.coord.y, seed);
-            return new THREE.Vector3(X, h + 0.6, Z);
-        });
+        // Derive P10 and P90 node sets by offsetting y coordinate
+        const p10Nodes = nodes.map(n => ({
+            ...n,
+            coord: {
+                x: n.coord.x,
+                y: Math.max(-1, n.coord.y - 0.18),
+                z: n.coord.z
+            }
+        }));
 
-        const spline = buildSpline(points);
-        const mesh = buildPathMesh(spline);
-        const glow = createGlowMesh(spline);
+        const p90Nodes = nodes.map(n => ({
+            ...n,
+            coord: {
+                x: n.coord.x,
+                y: Math.min(1, n.coord.y + 0.18),
+                z: n.coord.z
+            }
+        }));
 
-        scene.add(mesh);
+        // Reusable function to convert nodes to curve with terrain height sampling
+        function nodesToCurve(nodeList: typeof nodes, epsilon: number) {
+            const pts = nodeList.map((n) => {
+                const world = normToWorld(n.coord);
+                const X = world.x;
+                const Z = world.y; // projector's "y" becomes ground Z
+                const h = sampleHeight(n.coord.x, n.coord.y, seed);
+                return new THREE.Vector3(X, h + epsilon, Z);
+            });
+            return buildSpline(pts);
+        }
+
+        // Build 3 curves with terrain-following
+        const p50Curve = nodesToCurve(nodes, 0.65);
+        const p10Curve = nodesToCurve(p10Nodes, 0.55);
+        const p90Curve = nodesToCurve(p90Nodes, 0.55);
+
+        // Build meshes with different visual properties
+        const p50Mesh = buildPathMesh(p50Curve, { opacity: 0.75, widthMin: 2.6, widthMax: 5.4 });
+        const p10Mesh = buildPathMesh(p10Curve, { opacity: 0.35, widthMin: 1.8, widthMax: 3.2 });
+        const p90Mesh = buildPathMesh(p90Curve, { opacity: 0.35, widthMin: 1.8, widthMax: 3.2 });
+        const glow = createGlowMesh(p50Curve);
+
+        // Add all paths to scene
+        scene.add(p10Mesh);
+        scene.add(p50Mesh);
+        scene.add(p90Mesh);
         scene.add(glow);
 
-        meshRef.current = mesh;
+        p10Ref.current = p10Mesh;
+        p50Ref.current = p50Mesh;
+        p90Ref.current = p90Mesh;
         glowRef.current = glow;
 
         return () => {
-            if (meshRef.current) {
-                scene.remove(meshRef.current);
-                meshRef.current.geometry.dispose();
+            if (p10Ref.current) {
+                scene.remove(p10Ref.current);
+                p10Ref.current.geometry.dispose();
+            }
+            if (p50Ref.current) {
+                scene.remove(p50Ref.current);
+                p50Ref.current.geometry.dispose();
+            }
+            if (p90Ref.current) {
+                scene.remove(p90Ref.current);
+                p90Ref.current.geometry.dispose();
             }
             if (glowRef.current) {
                 scene.remove(glowRef.current);
