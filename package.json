@@ -11,6 +11,7 @@
     "test": "vitest run",
     "preview": "vite preview",
     "smoke": "node scripts/smoke.mjs",
+    "smoke:render": "node scripts/smoke-render.mjs",
     "prepare": "husky"
   },
   "dependencies": {
