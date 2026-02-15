@@ -3,6 +3,7 @@ import { useSystemBaseline } from "@/system/SystemBaselineProvider";
 import { calculateMetrics, type LeverState, type ScenarioId as MetricsScenarioId } from "@/logic/calculateMetrics";
 import type { ScenarioId } from "@/components/ScenarioSlidePanel";
 import { useSimulationStore } from "@/state/simulationStore";
+import { MODE } from "@/config/featureFlags";
 
 export type AppState = {
   hasBaseline: boolean;
@@ -48,7 +49,7 @@ function metricsToDataPoints(metrics: ReturnType<typeof calculateMetrics>): numb
 
 export function AppStateProvider({ children }: { children: React.ReactNode }) {
   const { baseline: systemBaseline } = useSystemBaseline();
-  const hasBaseline = !!systemBaseline;
+  const hasBaseline = MODE === "demo" || !!systemBaseline;
 
   const [levers, setLevers] = useState<LeverState>(INITIAL_LEVERS);
   const [scenario] = useState<ScenarioId>("base");
