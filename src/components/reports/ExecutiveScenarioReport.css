@@ -1,0 +1,186 @@
+/* ============================================================================
+   EXECUTIVE SCENARIO REPORT
+   - Institutional quality document styling
+   - Dark glass background with cyan accents
+   - Print-ready structure
+   ============================================================================ */
+
+.exec-report {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 32px;
+  background: rgba(8, 12, 20, 0.95);
+  border: 1px solid rgba(0, 229, 255, 0.15);
+  border-radius: 16px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 0 24px rgba(0, 229, 255, 0.08);
+  color: #e0f4ff;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+/* Header */
+.exec-report__header {
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.exec-report__title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.exec-report__title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.exec-report__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(0, 229, 255, 0.1);
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  border-radius: 8px;
+  color: #00e5ff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.exec-report__action:hover {
+  background: rgba(0, 229, 255, 0.18);
+  border-color: rgba(0, 229, 255, 0.4);
+}
+
+.exec-report__meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.exec-report__timestamp {
+  font-size: 12px;
+  color: rgba(224, 244, 255, 0.6);
+}
+
+.exec-report__scenario-tag {
+  padding: 4px 10px;
+  background: rgba(0, 229, 255, 0.1);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #00e5ff;
+}
+
+/* Content */
+.exec-report__content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Sections */
+.exec-report__section {
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  border-left: 3px solid rgba(0, 229, 255, 0.4);
+}
+
+.exec-report__section--info {
+  border-left-color: rgba(0, 229, 255, 0.4);
+}
+
+.exec-report__section--warning {
+  border-left-color: rgba(251, 191, 36, 0.6);
+  background: rgba(251, 191, 36, 0.03);
+}
+
+.exec-report__section--critical {
+  border-left-color: rgba(239, 68, 68, 0.6);
+  background: rgba(239, 68, 68, 0.03);
+}
+
+.exec-report__section-title {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(0, 229, 255, 0.9);
+}
+
+.exec-report__section--warning .exec-report__section-title {
+  color: rgba(251, 191, 36, 0.9);
+}
+
+.exec-report__section--critical .exec-report__section-title {
+  color: rgba(239, 68, 68, 0.9);
+}
+
+.exec-report__section-body {
+  font-size: 14px;
+  line-height: 1.7;
+  color: rgba(224, 244, 255, 0.85);
+}
+
+.exec-report__section-body p {
+  margin: 0 0 8px 0;
+}
+
+.exec-report__section-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* Footer */
+.exec-report__footer {
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.exec-report__disclaimer {
+  font-size: 11px;
+  color: rgba(224, 244, 255, 0.5);
+  font-style: italic;
+}
+
+/* Print styles */
+@media print {
+  .exec-report {
+    background: white;
+    color: #1a1a1a;
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
+
+  .exec-report__action {
+    display: none;
+  }
+
+  .exec-report__section {
+    background: #f9f9f9;
+    border-color: #ddd;
+  }
+
+  .exec-report__section-title {
+    color: #0066cc;
+  }
+
+  .exec-report__section-body {
+    color: #333;
+  }
+}

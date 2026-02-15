@@ -2437,3 +2437,144 @@ body { overflow-x: hidden; }
   border: none !important;
   box-shadow: none !important;
 }
+
+/* ============================================================================
+   TRAJECTORY NODE STYLES (Business Trajectory Path)
+   - Dark glass background
+   - Soft cyan border
+   - Blur backdrop
+   - Micro shadow
+   ============================================================================ */
+
+.trajectory-node {
+  min-width: 180px;
+  max-width: 240px;
+  padding: 12px 16px;
+  background: rgba(8, 12, 20, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 209, 255, 0.3);
+  border-radius: 10px;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.5),
+    0 0 12px rgba(0, 209, 255, 0.15);
+  color: #e0f4ff;
+  font-family: Inter, system-ui, sans-serif;
+  pointer-events: auto;
+  user-select: none;
+}
+
+.trajectory-node__title {
+  margin: 0 0 6px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #00d1ff;
+  letter-spacing: 0.02em;
+}
+
+.trajectory-node__insight {
+  margin: 0 0 8px 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: rgba(224, 244, 255, 0.85);
+}
+
+.trajectory-node__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: rgba(224, 244, 255, 0.6);
+}
+
+.trajectory-node__impact {
+  font-weight: 500;
+}
+
+.trajectory-node__confidence {
+  background: rgba(0, 209, 255, 0.15);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+  color: #00d1ff;
+}
+
+/* ============================================================================
+   TRAJECTORY HOVER CARD (compact tooltip on node hover)
+   - Institutional styling: dark glass, cyan accents, no orange
+   ============================================================================ */
+
+.trajectory-hover-card {
+  min-width: 160px;
+  max-width: 220px;
+  padding: 10px 14px;
+  background: rgba(8, 12, 20, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  border-radius: 8px;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.5),
+    0 0 10px rgba(0, 229, 255, 0.1);
+  color: #e0f4ff;
+  font-family: Inter, system-ui, sans-serif;
+  pointer-events: none;
+}
+
+.trajectory-hover-card strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #00e5ff;
+}
+
+.trajectory-hover-card p {
+  margin: 0 0 6px 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: rgba(224, 244, 255, 0.85);
+}
+
+.trajectory-hover-card__impact {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(0, 229, 255, 0.8);
+}
+
+/* ============================================================================
+   INSIGHT CARD (legacy Html tooltip - Trajectory Nodes basic)
+   ============================================================================ */
+
+.insight-card {
+  min-width: 180px;
+  max-width: 240px;
+  padding: 12px 16px;
+  background: rgba(8, 12, 20, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  border-radius: 10px;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.5),
+    0 0 12px rgba(0, 229, 255, 0.15);
+  color: #e0f4ff;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.insight-card strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #00e5ff;
+}
+
+.insight-card p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(224, 244, 255, 0.85);
+}

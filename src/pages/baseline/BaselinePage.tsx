@@ -20,6 +20,8 @@ import ContextRiver from "@/components/mountain/overlays/ContextRiver";
 import ContextTrees from "@/components/mountain/overlays/ContextTrees";
 import TerrainPathSystem from "@/components/terrain/TerrainPathSystem";
 import DemoTourDirector from "@/demo/DemoTourDirector";
+import { TrajectoryEngine } from "@/engine/trajectory";
+import { ExecutiveDecisionOverlay, AICommentaryPanel } from "@/components/insights";
 import styles from "./BaselinePage.module.css";
 
 export default function BaselinePage() {
@@ -416,6 +418,9 @@ export default function BaselinePage() {
                       <FinancialTrajectoryFan basePath={baselineTrailPoints} spread={0.4} count={15} />
                     )}
 
+                    {/* ── Business Trajectory Engine (terrain-projected path) ── */}
+                    <TrajectoryEngine />
+
                     {/* ── Stress contours (risk slicing approximation) ── */}
                     {contourLines.length > 0 && (
                       <StressContours contourLines={contourLines} />
@@ -438,6 +443,12 @@ export default function BaselinePage() {
               }
             />
           </TerrainWithFallback>
+
+          {/* Executive Decision Overlay (outside Canvas) */}
+          <ExecutiveDecisionOverlay />
+
+          {/* AI Commentary Panel (outside Canvas) */}
+          <AICommentaryPanel />
         </div>
 
         <div className={styles.rightPanel}>

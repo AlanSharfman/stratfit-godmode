@@ -48,6 +48,28 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-vars": "off",
       "react-refresh/only-export-components": "off",
       "no-empty": "off",
+
+      // ── Path Contract Enforcement ──
+      // Disallow direct imports from path internals; use PathFacade only.
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["**/terrain/path/PathContract", "**/terrain/path/buildPathGeometry"],
+              message:
+                "Path internals are restricted. Use @/terrain/path/PathFacade exports only.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  // Override: Allow internal imports within the path module itself
+  {
+    files: ["src/terrain/path/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": "off",
     },
   },
   {

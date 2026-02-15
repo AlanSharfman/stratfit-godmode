@@ -1,4 +1,15 @@
-// Helper: Extracts a minimal snapshot from engine result for memo
+import React, { useMemo } from "react";
+import { useShallow } from "zustand/react/shallow";
+import { useScenarioStore } from "@/state/scenarioStore";
+import { mapScenarioIntelligence, type ScenarioMetricsSnapshot } from "@/utils/scenarioIntelligenceMapping";
+import { buildScenarioIntelligence, buildScenarioMemo, type ScenarioMemo } from "../memo/buildScenarioMemo";
+import InitializeBaselinePage from "@/pages/initialize/InitializeBaselinePage";
+
+// ---------------------------------------------------------------------------
+// Pure helpers (hoisted outside component)
+// ---------------------------------------------------------------------------
+
+/** Extracts a minimal snapshot from engine result for memo */
 function snapshotFromEngineResult(result: any): ScenarioMetricsSnapshot | null {
   if (!result || !result.kpis) return null;
   return {
@@ -13,7 +24,7 @@ function snapshotFromEngineResult(result: any): ScenarioMetricsSnapshot | null {
   };
 }
 
-// Helper: Maps scenarioId to display name
+/** Maps scenarioId to display name */
 function scenarioNameFromId(id: string): string {
   switch (id) {
     case "base": return "Base Case";
@@ -24,12 +35,12 @@ function scenarioNameFromId(id: string): string {
   }
 }
 
-import React, { useEffect, useMemo } from "react";
-import { useShallow } from "zustand/react/shallow";
-import { useScenarioStore } from "@/state/scenarioStore";
-import { mapScenarioIntelligence, type ScenarioMetricsSnapshot } from "@/utils/scenarioIntelligenceMapping";
-import { buildScenarioIntelligence, buildScenarioMemo, type ScenarioMemo } from "../memo/buildScenarioMemo";
-import InitializeBaselinePage from "@/pages/initialize/InitializeBaselinePage";
+/** Normalise risk severity to a known display label */
+function normalizeSeverity(sev: string): string {
+  const s = String(sev ?? "").toUpperCase();
+  if (["HIGH", "ELEVATED", "MODERATE", "STABLE"].includes(s)) return s;
+  return "MODERATE";
+}
 
 
 const interFont = `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');`;
@@ -178,12 +189,6 @@ export default function ScenarioMemoPage() {
     return <div className="memo-root">No memo available.</div>;
   }
 
-  function normalizeSeverity(sev: string) {
-    const s = String(sev ?? "").toUpperCase();
-    if (["HIGH", "ELEVATED", "MODERATE", "STABLE"].includes(s)) return s;
-    return "MODERATE";
-  }
-
   return (
     <div className="memo-root">
       <style>{memoStyles}</style>
@@ -215,12 +220,15 @@ export default function ScenarioMemoPage() {
       <section style={sectionStyle}>
         <h2>System State</h2>
         <ul>
+          <li style={bulletStyle}><strong>Financial:</strong> {memo.systemState.financial}</li>
+          <li style={bulletStyle}><strong>Operational:</strong> {memo.systemState.operational}</li>
+          <li style={bulletStyle}><strong>Execution:</strong> {memo.systemState.execution}</li>
         </ul>
       </section>
 
       {/* Key Observations */}
       <section style={sectionStyle}>
-        <h2 style={{color:'#2563eb', background:'#e0edff', borderRadius:8, padding:'4px 14px', fontFamily:'inherit'}}>Key Observations</h2>
+        <h2 style={{ color: '#2563eb', background: '#e0edff', borderRadius: 8, padding: '4px 14px', fontFamily: 'inherit' }}>Key Observations</h2>
         <ul>
           {memo.keyObservations.slice(0, 4).map((item, i) => (
             <li key={i} style={bulletStyle}>{item}</li>
@@ -231,10 +239,10 @@ export default function ScenarioMemoPage() {
       {/* Risk Signals */}
       {memo.riskSignals.length ? (
         <section style={sectionStyle}>
-          <h2 style={{color:'#a78bfa', background:'#f3e8ff', borderRadius:8, padding:'4px 14px', fontFamily:'inherit'}}>Risk Signals</h2>
+          <h2 style={{ color: '#a78bfa', background: '#f3e8ff', borderRadius: 8, padding: '4px 14px', fontFamily: 'inherit' }}>Risk Signals</h2>
           {memo.riskSignals.slice(0, 3).map((risk, i) => (
             <div key={i} className="memo-risk-block">
-              <div style={{ fontWeight: 700, fontSize: 13, letterSpacing: 0.06, marginBottom: 8, fontFamily:'inherit' }}>
+              <div style={{ fontWeight: 700, fontSize: 13, letterSpacing: 0.06, marginBottom: 8, fontFamily: 'inherit' }}>
                 {normalizeSeverity(risk.severity)} · {risk.title}
               </div>
               <div style={bodyText}><strong>Driver:</strong> {risk.driver}</div>
@@ -246,7 +254,7 @@ export default function ScenarioMemoPage() {
 
       {/* Leadership Attention Signals */}
       <section style={sectionStyle}>
-        <h2 style={{color:'#22c55e', background:'#e7fbe9', borderRadius:8, padding:'4px 14px', fontFamily:'inherit'}}>Leadership Attention Signals</h2>
+        <h2 style={{ color: '#22c55e', background: '#e7fbe9', borderRadius: 8, padding: '4px 14px', fontFamily: 'inherit' }}>Leadership Attention Signals</h2>
         <ul>
           {memo.leadershipAttention.slice(0, 3).map((item, i) => (
             <li key={i} style={bulletStyle}>{item}</li>
@@ -269,13 +277,13 @@ export default function ScenarioMemoPage() {
       {/* Strategic Questions & Answers (optional) */}
       {memo.strategicQA && memo.strategicQA.length ? (
         <section style={sectionStyle}>
-          <h2 style={{color:'#0ea5e9', background:'#e0f7fa', borderRadius:8, padding:'4px 14px', fontFamily:'inherit'}}>Strategic Q&amp;A</h2>
+          <h2 style={{ color: '#0ea5e9', background: '#e0f7fa', borderRadius: 8, padding: '4px 14px', fontFamily: 'inherit' }}>Strategic Q&amp;A</h2>
           {memo.strategicQA.slice(0, 2).map((qa, i) => (
-            <div key={i} className="memo-qa-block" style={{padding:'18px 18px 14px 18px', border:'2px solid #bae6fd', background:'#f0f9ff', borderRadius:12, marginBottom:18}}>
-              <div style={{ ...bodyText, fontWeight: 700, color:'#0ea5e9', fontSize:15 }}>
+            <div key={i} className="memo-qa-block" style={{ padding: '18px 18px 14px 18px', border: '2px solid #bae6fd', background: '#f0f9ff', borderRadius: 12, marginBottom: 18 }}>
+              <div style={{ ...bodyText, fontWeight: 700, color: '#0ea5e9', fontSize: 15 }}>
                 Q: {qa.question}
               </div>
-              <div style={{ ...bodyText, marginTop: 8, color:'#334155', fontSize:15 }}>
+              <div style={{ ...bodyText, marginTop: 8, color: '#334155', fontSize: 15 }}>
                 A: {qa.answer}
               </div>
             </div>

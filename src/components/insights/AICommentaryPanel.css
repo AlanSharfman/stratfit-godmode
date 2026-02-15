@@ -1,0 +1,86 @@
+/* ============================================================================
+   AI COMMENTARY PANEL
+   - Positioned outside Canvas (standard DOM)
+   - Premium dark glass aesthetic
+   - Severity-based color coding
+   ============================================================================ */
+
+.ai-commentary-panel {
+  position: absolute;
+  left: 20px;
+  top: 80px;
+  width: 340px;
+  padding: 16px;
+  border-radius: 16px;
+
+  background: rgba(6, 12, 18, 0.75);
+  border: 1px solid rgba(34, 211, 238, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+
+  color: #E6F7FF;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+
+  z-index: 100;
+
+  transition: border-color 0.3s ease;
+}
+
+.ai-commentary-panel.ai-commentary-caution {
+  border-color: rgba(250, 204, 21, 0.3);
+}
+
+.ai-commentary-panel.ai-commentary-alert {
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.ai-commentary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.ai-commentary-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  background: rgba(34, 211, 238, 0.12);
+  border: 1px solid rgba(34, 211, 238, 0.2);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #22D3EE;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ai-commentary-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22D3EE;
+  box-shadow: 0 0 8px #22D3EE;
+}
+
+.ai-indicator-caution {
+  background: #FACC15;
+  box-shadow: 0 0 8px #FACC15;
+}
+
+.ai-indicator-alert {
+  background: #F87171;
+  box-shadow: 0 0 8px #F87171;
+  animation: pulse-alert 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-alert {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.ai-commentary-message {
+  margin: 0;
+  color: rgba(230, 247, 255, 0.9);
+}
