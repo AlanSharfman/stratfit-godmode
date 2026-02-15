@@ -6,6 +6,8 @@ import { useSystemBaseline } from "@/system/SystemBaselineProvider";
 import { calculateMetrics, type LeverState, type ScenarioId as MetricsScenarioId } from "@/logic/calculateMetrics";
 import type { ScenarioId } from "@/components/ScenarioSlidePanel";
 import { useSimulationStore } from "@/state/simulationStore";
+import { useSimulationStore as useSimStore } from "@/sim/SimulationStore";
+import { runSimulation } from "@/sim/SimulationEngine";
 
 export type AppOutletContext = {
   hasBaseline: boolean;
@@ -65,6 +67,13 @@ export default function AppShell() {
     return metricsToDataPoints(metrics);
   }, [levers, scenario]);
 
+  const simPhase = useSimStore((s) => s.phase);
+  const simMeta = useSimStore((s) => s.meta);
+
+  const handleRunSimulation = () => {
+    runSimulation({ convergenceThreshold: 0.08 });
+  };
+
   return (
     <div className="app">
       <MainNav />
@@ -85,6 +94,69 @@ export default function AppShell() {
           isSimulatingGlobal,
         } satisfies AppOutletContext}
       />
+
+      {/* Phase 2 Dev Probe: Simulation Lifecycle */}
+      {import.meta.env.DEV && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 20,
+            right: 20,
+            background: "#1a1a1a",
+            color: "#fff",
+            padding: "12px 16px",
+            borderRadius: 8,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+            fontFamily: "monospace",
+            fontSize: 11,
+            zIndex: 9999,
+            minWidth: 240,
+          }}
+        >
+          <div style={{ fontWeight: 700, marginBottom: 8, fontSize: 12 }}>
+            Phase 2: Simulation Lifecycle
+          </div>
+          <div style={{ marginBottom: 6 }}>
+            <strong>Phase:</strong> {simPhase}
+          </div>
+          {simMeta && (
+            <>
+              <div style={{ marginBottom: 4 }}>
+                <strong>Progress:</strong> {((simMeta.progress || 0) * 100).toFixed(0)}%
+              </div>
+              {simMeta.confidenceIntervalWidth !== undefined && (
+                <div style={{ marginBottom: 4 }}>
+                  <strong>CI Width:</strong> {simMeta.confidenceIntervalWidth.toFixed(3)}
+                </div>
+              )}
+              {simMeta.error && (
+                <div style={{ color: "#ff6b6b", marginBottom: 4 }}>
+                  <strong>Error:</strong> {simMeta.error}
+                </div>
+              )}
+            </>
+          )}
+          <button
+            onClick={handleRunSimulation}
+            disabled={simPhase !== "Idle" && simPhase !== "Stable" && simPhase !== "Error"}
+            style={{
+              marginTop: 10,
+              padding: "6px 12px",
+              background: simPhase === "Idle" || simPhase === "Stable" || simPhase === "Error" ? "#3b82f6" : "#666",
+              color: "#fff",
+              border: "none",
+              borderRadius: 4,
+              cursor: simPhase === "Idle" || simPhase === "Stable" || simPhase === "Error" ? "pointer" : "not-allowed",
+              fontFamily: "monospace",
+              fontSize: 11,
+              fontWeight: 700,
+              width: "100%",
+            }}
+          >
+            Run Simulation
+          </button>
+        </div>
+      )}
     </div>
   );
 }
