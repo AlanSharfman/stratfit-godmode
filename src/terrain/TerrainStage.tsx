@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Canvas } from "@react-three/fiber";
+import React, { useEffect, useMemo, useRef } from "react";
+import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { buildTerrain } from "./buildTerrain";
@@ -31,7 +31,7 @@ export default function TerrainStage({ children }: { children?: React.ReactNode 
 
 function Scene({ children }: { children?: React.ReactNode }) {
     const meshRef = useRef<THREE.Mesh>(null);
-    const [scene] = useState(() => new THREE.Scene());
+    const { scene } = useThree();
 
     const geometry = useMemo(() => {
         const seed = createSeed("baseline");
