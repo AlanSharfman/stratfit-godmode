@@ -25,7 +25,7 @@ const BASE_CF_INTENSITY = 0.45;
 const BASE_TFL_INTENSITY = 0.18;
 const BASE_DHL_INTENSITY = 0.22;
 const BASE_SRL_INTENSITY = 0.08;
-const BASE_STM_SCALE = 4.0;
+const BASE_STM_SCALE = 14.0;
 
 /**
  * SemanticHarmonizer — declarative R3F component.

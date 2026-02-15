@@ -8,7 +8,7 @@ import { STM_INJECTED_KEY, STM_UNIFORMS_KEY } from "./stmContracts";
 export function createStmUniforms(structureTexture: THREE.DataTexture | null): StmUniforms {
     return {
         uStructureTex: { value: structureTexture },
-        uTopoScale: { value: 4.0 },       // max displacement in local Z units
+        uTopoScale: { value: 14.0 },      // max displacement in local Z units — dramatic peaks/troughs
         uTopoWidth: { value: 70.0 },      // wide Gaussian falloff from corridor center
         uStmEnabled: { value: 1.0 },
     };

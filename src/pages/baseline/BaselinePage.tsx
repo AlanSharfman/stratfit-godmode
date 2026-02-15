@@ -32,18 +32,14 @@ import ScenarioDivergence from "@/components/terrain/ScenarioDivergence";
 import DecisionHeat from "@/components/terrain/DecisionHeat";
 import StructuralResonance from "@/components/terrain/StructuralResonance";
 import StructuralTopography from "@/components/terrain/StructuralTopography";
-import TerrainMorph from "@/components/terrain/TerrainMorph";
 import SemanticHarmonizer from "@/components/terrain/SemanticHarmonizer";
-import StrategicControls from "@/components/controls/StrategicControls";
 import { generateBaselineRiskCurve } from "@/render/rpf/generateBaselineRisk";
 import { generateBaselineConfidenceCurve } from "@/render/cf/generateBaselineConfidence";
 import { generateBaselineVelocityCurve } from "@/render/tfl/generateBaselineVelocity";
 import { generateBaselineHeatCurve } from "@/render/dhl/createHeatTexture";
 import { generateBaselineResonanceCurve } from "@/render/srl/createResonanceTexture";
 import { generateBaselineStructureCurve } from "@/render/stm/createStructureTexture";
-import { generateMorphTargetCurve } from "@/render/tme/morphController";
-import { useSimulationBridge } from "@/simulation/sil/simulationBridge";
-import { rpfEnabled, cfEnabled, slmEnabled, ipeEnabled, tflEnabled, sdlEnabled, dhlEnabled, srlEnabled, shlEnabled, stmEnabled, tmeEnabled, silEnabled } from "@/config/featureFlags";
+import { rpfEnabled, cfEnabled, slmEnabled, ipeEnabled, tflEnabled, sdlEnabled, dhlEnabled, srlEnabled, shlEnabled, stmEnabled } from "@/config/featureFlags";
 import styles from "./BaselinePage.module.css";
 import { useAnchorRegistry } from "@/spatial/AnchorRegistry";
 
@@ -61,7 +57,6 @@ export default function BaselinePage() {
   const [dhlOn, setDhlOn] = useState(dhlEnabled);
   const [srlOn, setSrlOn] = useState(srlEnabled);
   const [stmOn, setStmOn] = useState(stmEnabled);
-  const [tmeOn, setTmeOn] = useState(tmeEnabled);
   const [activeMetricId, setActiveMetricId] = useState<MetricId | null>(null);
   const [terrainMesh, setTerrainMesh] = useState<import("three").Mesh | null>(null);
 
@@ -114,28 +109,6 @@ export default function BaselinePage() {
     () => generateBaselineStructureCurve(baselineConfidenceCurve, baselineRiskCurve, 256),
     [baselineConfidenceCurve, baselineRiskCurve],
   );
-
-  // ── Simulation bridge state for TME ──
-  const simMorphProgress = useSimulationBridge((s) => s.state.morphProgress);
-  const simRiskMultiplier = useSimulationBridge((s) => s.state.riskMultiplier);
-  const simConfMultiplier = useSimulationBridge((s) => s.state.confidenceMultiplier);
-
-  // ── Morph target curve for TME — reactive to strategic inputs ──
-  // When risk/confidence biases change, the morph target reshapes
-  const morphTargetCurve = useMemo(() => {
-    // Generate modified risk/confidence curves based on sim multipliers
-    const modRisk = new Float32Array(baselineRiskCurve.length);
-    const modConf = new Float32Array(baselineConfidenceCurve.length);
-    for (let i = 0; i < modRisk.length; i++) {
-      modRisk[i] = Math.max(0, Math.min(1, baselineRiskCurve[i] * simRiskMultiplier));
-    }
-    for (let i = 0; i < modConf.length; i++) {
-      modConf[i] = Math.max(0, Math.min(1, baselineConfidenceCurve[i] * simConfMultiplier));
-    }
-    // Generate morph target from modified curves — dramatic influence (0.9)
-    const modStructure = generateBaselineStructureCurve(modConf, modRisk, 256);
-    return generateMorphTargetCurve(modStructure, 0.9, 256);
-  }, [baselineRiskCurve, baselineConfidenceCurve, simRiskMultiplier, simConfMultiplier]);
 
   // ── Risk points for heatmap + fill overlays ──
   const riskPoints = useMemo(
@@ -497,16 +470,6 @@ export default function BaselinePage() {
               TOPO: {stmOn ? "ON" : "OFF"}
             </button>
           )}
-          {tmeEnabled && (
-            <button
-              type="button"
-              className={`${styles.toggle} ${tmeOn ? styles.toggleOn : ""}`}
-              onClick={() => setTmeOn((v) => !v)}
-              aria-pressed={tmeOn}
-            >
-              MORPH: {tmeOn ? "ON" : "OFF"}
-            </button>
-          )}
         </div>
       </div>
 
@@ -527,7 +490,6 @@ export default function BaselinePage() {
               {dhlEnabled && <DecisionHeat heatValues={baselineHeatCurve} enabled={dhlOn} />}
               {srlEnabled && <StructuralResonance resonanceValues={baselineResonanceCurve} enabled={srlOn} />}
               {stmEnabled && <StructuralTopography structureValues={baselineStructureCurve} enabled={stmOn} />}
-              {tmeEnabled && <TerrainMorph structureA={baselineStructureCurve} structureB={morphTargetCurve} morphProgress={simMorphProgress} enabled={tmeOn} />}
               {shlEnabled && <SemanticHarmonizer />}
             </TerrainStage>
           </TerrainWithFallback>
@@ -537,9 +499,6 @@ export default function BaselinePage() {
 
           {/* AI Commentary Panel (outside Canvas) */}
           <AICommentaryPanel />
-
-          {/* Strategic Controls (outside Canvas) */}
-          {silEnabled && <StrategicControls />}
         </div>
 
         <div className={styles.rightPanel}>

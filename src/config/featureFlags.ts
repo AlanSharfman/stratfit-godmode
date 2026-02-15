@@ -47,10 +47,10 @@ export const srlEnabled = true;
 export const stmEnabled = true;
 
 /** Terrain Morph Engine — smooth interpolation between structural states (Stage 15) */
-export const tmeEnabled = true;
+export const tmeEnabled = false;
 
 /** Strategic Interaction Layer — user inputs drive simulation + morph (Stage 16) */
-export const silEnabled = true;
+export const silEnabled = false;
 
 /** Semantic Harmonization Layer — global intensity balance (Stage 14A) */
 export const shlEnabled = true;
