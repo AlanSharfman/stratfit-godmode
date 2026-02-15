@@ -104,6 +104,17 @@ export default function P50Path({
         mesh.geometry = result.geometry;
     }, [points, getHeightAt]);
 
+    // CLEANUP: dispose geometry + material on unmount to prevent accumulation
+    useEffect(() => {
+        return () => {
+            if (!meshRef.current) return;
+            meshRef.current.geometry?.dispose();
+            const m = meshRef.current.material;
+            if (Array.isArray(m)) m.forEach(mm => mm.dispose());
+            else (m as THREE.Material)?.dispose?.();
+        };
+    }, []);
+
     if (!visible) return null;
 
     return <primitive object={meshRef.current} />;

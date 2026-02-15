@@ -19,6 +19,15 @@ export const proDetailDrawerEnabled = true;
 /** Admin engine console — requires localStorage flag ENABLE_ADMIN_CONSOLE=1 */
 export const adminConsoleEnabled = true;
 
+/** Risk Pressure Field — terrain-embedded semantic risk layer (Stage 7) */
+export const rpfEnabled = true;
+
+/** Confidence Field — terrain-embedded confidence aura along P50 (Stage 9) */
+export const cfEnabled = true;
+
+/** Strategic Leverage Markers — instanced icosahedra at leverage peaks (Stage 8) */
+export const slmEnabled = true;
+
 
 
 

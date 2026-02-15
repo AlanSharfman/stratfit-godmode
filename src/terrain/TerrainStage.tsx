@@ -5,8 +5,6 @@ import * as THREE from "three";
 import { buildTerrain } from "./buildTerrain";
 import { createSeed } from "./seed";
 import P50Path from "../paths/P50Path";
-import P10Path from "../paths/P10Path";
-import P90Path from "../paths/P90Path";
 
 export default function TerrainStage({ children }: { children?: React.ReactNode }) {
     return (
@@ -74,7 +72,7 @@ function Scene({ children }: { children?: React.ReactNode }) {
             <directionalLight position={[-100, 50, -50]} intensity={0.3} />
 
             {/* Terrain Mesh */}
-            <mesh ref={meshRef} geometry={geometry} renderOrder={0}>
+            <mesh ref={meshRef} geometry={geometry} renderOrder={0} name="terrain-surface">
                 <meshStandardMaterial
                     ref={materialRef}
                     color={0x7dd3fc}
@@ -88,10 +86,8 @@ function Scene({ children }: { children?: React.ReactNode }) {
                 />
             </mesh>
 
-            {/* Probability Corridor Paths (declarative, stable mesh refs) */}
-            <P10Path scenarioId="baseline" />
+            {/* Probability Corridor Path — P50 only (P10/P90 disabled for baseline stabilization) */}
             <P50Path scenarioId="baseline" />
-            <P90Path scenarioId="baseline" />
 
             {/* Camera Controls */}
             <OrbitControls

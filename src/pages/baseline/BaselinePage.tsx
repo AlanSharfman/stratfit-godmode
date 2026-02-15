@@ -23,6 +23,12 @@ import InterventionShockwave from "@/components/mountain/overlays/InterventionSh
 import DemoTourDirector from "@/demo/DemoTourDirector";
 import { TrajectoryEngine } from "@/engine/trajectory";
 import { ExecutiveDecisionOverlay, AICommentaryPanel } from "@/components/insights";
+import RiskPressureField from "@/components/terrain/RiskPressureField";
+import ConfidenceField from "@/components/terrain/ConfidenceField";
+import StrategicLeverageMarkers from "@/components/terrain/StrategicLeverageMarkers";
+import { generateBaselineRiskCurve } from "@/render/rpf/generateBaselineRisk";
+import { generateBaselineConfidenceCurve } from "@/render/cf/generateBaselineConfidence";
+import { rpfEnabled, cfEnabled, slmEnabled } from "@/config/featureFlags";
 import styles from "./BaselinePage.module.css";
 import { useAnchorRegistry } from "@/spatial/AnchorRegistry";
 
@@ -31,6 +37,9 @@ export default function BaselinePage() {
   const [envelopeOn, setEnvelopeOn] = useState(false);
   const [annotationsOn, setAnnotationsOn] = useState(false);
   const [demoOn, setDemoOn] = useState(false);
+  const [rpfOn, setRpfOn] = useState(rpfEnabled);
+  const [cfOn, setCfOn] = useState(cfEnabled);
+  const [slmOn, setSlmOn] = useState(slmEnabled);
   const [activeMetricId, setActiveMetricId] = useState<MetricId | null>(null);
   const [terrainMesh, setTerrainMesh] = useState<import("three").Mesh | null>(null);
 
@@ -50,6 +59,15 @@ export default function BaselinePage() {
   const setHoverMarker = useMarkerLinkStore((s) => s.setHover);
 
   const connections = useMemo(() => BASELINE_METRIC_CONNECTIONS, []);
+
+  // ── Deterministic baseline risk curve for RPF ──
+  const baselineRiskCurve = useMemo(() => generateBaselineRiskCurve(256), []);
+
+  // ── Deterministic baseline confidence curve for CF (derived from risk) ──
+  const baselineConfidenceCurve = useMemo(
+    () => generateBaselineConfidenceCurve(baselineRiskCurve),
+    [baselineRiskCurve],
+  );
 
   // ── Risk points for heatmap + fill overlays ──
   const riskPoints = useMemo(
@@ -321,6 +339,36 @@ export default function BaselinePage() {
           >
             ANNOTATIONS: {annotationsOn ? "ON" : "OFF"}
           </button>
+          {rpfEnabled && (
+            <button
+              type="button"
+              className={`${styles.toggle} ${rpfOn ? styles.toggleOn : ""}`}
+              onClick={() => setRpfOn((v) => !v)}
+              aria-pressed={rpfOn}
+            >
+              RISK FIELD: {rpfOn ? "ON" : "OFF"}
+            </button>
+          )}
+          {cfEnabled && (
+            <button
+              type="button"
+              className={`${styles.toggle} ${cfOn ? styles.toggleOn : ""}`}
+              onClick={() => setCfOn((v) => !v)}
+              aria-pressed={cfOn}
+            >
+              CONFIDENCE: {cfOn ? "ON" : "OFF"}
+            </button>
+          )}
+          {slmEnabled && (
+            <button
+              type="button"
+              className={`${styles.toggle} ${slmOn ? styles.toggleOn : ""}`}
+              onClick={() => setSlmOn((v) => !v)}
+              aria-pressed={slmOn}
+            >
+              MARKERS: {slmOn ? "ON" : "OFF"}
+            </button>
+          )}
         </div>
       </div>
 
@@ -331,7 +379,11 @@ export default function BaselinePage() {
 
         <div className={`${styles.mountain} sf-mountain-backplate`}>
           <TerrainWithFallback>
-            <TerrainStage />
+            <TerrainStage>
+              {rpfEnabled && <RiskPressureField riskValues={baselineRiskCurve} enabled={rpfOn} />}
+              {cfEnabled && <ConfidenceField confidenceValues={baselineConfidenceCurve} enabled={cfOn} />}
+              {slmEnabled && <StrategicLeverageMarkers riskValues={baselineRiskCurve} enabled={slmOn} />}
+            </TerrainStage>
           </TerrainWithFallback>
 
           {/* Executive Decision Overlay (outside Canvas) */}
