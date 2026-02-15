@@ -60,9 +60,9 @@ function RunwayWidget({
   return (
     <div className="runway-widget">
       <div className="runway-track">
-        <div 
+        <div
           className="runway-fill"
-          style={{ 
+          style={{
             width: `${normalized}%`,
             boxShadow: `0 0 ${glowIntensity}px rgba(0, 212, 255, 0.7), 0 0 ${glowIntensity * 1.5}px rgba(0, 212, 255, 0.4), inset 0 1px 2px rgba(255,255,255,0.3)`
           }}
@@ -209,7 +209,7 @@ function CashWidget({ value, isActive }: { value: number; isActive: boolean }) {
 // ============================================================================
 // 3. MOMENTUM — Metallic Arrow + Animated Chevrons
 // ============================================================================
-function MomentumWidget({ value, isActive }: { value: number; isActive: boolean }) {
+function MomentumWidget({ value, isActive, index = 0 }: { value: number; isActive: boolean; index?: number }) {
   const [tick, setTick] = useState(0);
   useEffect(() => {
     const speed = isActive ? 0.04 : 0.025;
@@ -217,26 +217,29 @@ function MomentumWidget({ value, isActive }: { value: number; isActive: boolean 
     return () => clearInterval(interval);
   }, [isActive]);
 
+  const arrowMetalGradId = `arrowMetalGrad-${index}`;
+  const arrowGlowId = `arrowGlow-${index}`;
+
   return (
     <div className="momentum-widget">
       <svg viewBox="0 0 60 28" width="65" height="30" className="momentum-arrow">
         <defs>
-          <linearGradient id="arrowMetalGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#666"/>
-            <stop offset="30%" stopColor="#ccc"/>
-            <stop offset="50%" stopColor="#fff"/>
-            <stop offset="70%" stopColor="#ccc"/>
-            <stop offset="100%" stopColor="#666"/>
+          <linearGradient id={arrowMetalGradId} x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#666" />
+            <stop offset="30%" stopColor="#ccc" />
+            <stop offset="50%" stopColor="#fff" />
+            <stop offset="70%" stopColor="#ccc" />
+            <stop offset="100%" stopColor="#666" />
           </linearGradient>
-          <filter id="arrowGlow">
-            <feGaussianBlur stdDeviation="1.5" result="blur"/>
-            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          <filter id={arrowGlowId}>
+            <feGaussianBlur stdDeviation="1.5" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
         </defs>
-        <path 
-          d="M2 11 L42 11 L42 5 L58 14 L42 23 L42 17 L2 17 Z" 
-          fill="url(#arrowMetalGrad)" 
-          filter="url(#arrowGlow)"
+        <path
+          d="M2 11 L42 11 L42 5 L58 14 L42 23 L42 17 L2 17 Z"
+          fill={`url(#${arrowMetalGradId})`}
+          filter={`url(#${arrowGlowId})`}
           stroke="rgba(255,255,255,0.3)"
           strokeWidth="0.5"
         />
@@ -278,10 +281,10 @@ function MomentumWidget({ value, isActive }: { value: number; isActive: boolean 
 // ============================================================================
 // 4. BURN — Semi-Circular Gauge with Needle
 // ============================================================================
-function BurnWidget({ value, isActive }: { value: number; isActive: boolean }) {
+function BurnWidget({ value, isActive, index = 0 }: { value: number; isActive: boolean; index?: number }) {
   const normalized = Math.min(100, Math.max(5, value));
   const angle = -90 + (normalized / 100) * 180;
-  
+
   // Color shifts based on value: green → amber → red
   const getColor = () => {
     if (normalized < 40) return { main: '#00ff88', glow: 'rgba(0,255,136,0.5)' };
@@ -290,38 +293,42 @@ function BurnWidget({ value, isActive }: { value: number; isActive: boolean }) {
   };
   const color = getColor();
 
+  const burnArcGradId = `burnArcGrad-${index}`;
+  const burnGlowId = `burnGlow-${index}`;
+  const arrowMetalGradId = `arrowMetalGrad-${index}`;
+
   return (
     <div className="burn-widget">
       <svg viewBox="0 0 100 58" width="90" height="52">
         <defs>
-          <linearGradient id="burnArcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#00ddff"/>
-            <stop offset="40%" stopColor="#00ff88"/>
-            <stop offset="65%" stopColor="#ffcc00"/>
-            <stop offset="100%" stopColor="#ff4444"/>
+          <linearGradient id={burnArcGradId} x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#00ddff" />
+            <stop offset="40%" stopColor="#00ff88" />
+            <stop offset="65%" stopColor="#ffcc00" />
+            <stop offset="100%" stopColor="#ff4444" />
           </linearGradient>
-          <filter id="burnGlow">
-            <feGaussianBlur stdDeviation="2" result="blur"/>
-            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          <filter id={burnGlowId}>
+            <feGaussianBlur stdDeviation="2" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
         </defs>
         {/* Background arc */}
-        <path d="M12 52 A 40 40 0 0 1 88 52" fill="none" stroke="rgba(40,50,60,0.8)" strokeWidth="7" strokeLinecap="round"/>
+        <path d="M12 52 A 40 40 0 0 1 88 52" fill="none" stroke="rgba(40,50,60,0.8)" strokeWidth="7" strokeLinecap="round" />
         {/* Colored arc */}
-        <path d="M12 52 A 40 40 0 0 1 88 52" fill="none" stroke="url(#burnArcGrad)" strokeWidth="7" strokeLinecap="round" filter="url(#burnGlow)"/>
+        <path d="M12 52 A 40 40 0 0 1 88 52" fill="none" stroke={`url(#${burnArcGradId})`} strokeWidth="7" strokeLinecap="round" filter={`url(#${burnGlowId})`} />
         {/* Tick marks */}
         {[0, 45, 90, 135, 180].map((a, i) => (
           <line key={i} x1="50" y1="12" x2="50" y2="16" stroke="rgba(150,170,190,0.5)" strokeWidth="1"
-            transform={`rotate(${a - 90} 50 52)`}/>
+            transform={`rotate(${a - 90} 50 52)`} />
         ))}
         {/* Needle */}
         <g transform={`rotate(${angle} 50 52)`}>
-          <path d="M50 52 L48 20 L50 12 L52 20 Z" fill="url(#arrowMetalGrad)" 
-            stroke="rgba(255,255,255,0.4)" strokeWidth="0.5"/>
+          <path d="M50 52 L48 20 L50 12 L52 20 Z" fill={`url(#${arrowMetalGradId})`}
+            stroke="rgba(255,255,255,0.4)" strokeWidth="0.5" />
         </g>
         {/* Center cap */}
-        <circle cx="50" cy="52" r="8" fill="linear-gradient(180deg, #2a2a3a, #1a1a2a)" stroke="rgba(100,110,120,0.6)" strokeWidth="2"/>
-        <circle cx="50" cy="52" r="4" fill={color.main} style={{ filter: `drop-shadow(0 0 4px ${color.glow})` }}/>
+        <circle cx="50" cy="52" r="8" fill="linear-gradient(180deg, #2a2a3a, #1a1a2a)" stroke="rgba(100,110,120,0.6)" strokeWidth="2" />
+        <circle cx="50" cy="52" r="4" fill={color.main} style={{ filter: `drop-shadow(0 0 4px ${color.glow})` }} />
       </svg>
       <style>{`
         .burn-widget { display: flex; justify-content: center; }
@@ -473,7 +480,7 @@ function ValueWidget({ value, isActive }: { value: number; isActive: boolean }) 
       <div className="value-halo" style={{ transform: `rotate(${-orbit}deg)` }} />
       <div className="value-ring" style={{ transform: `scale(${glowScale})` }}>
         <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#00ddff" strokeWidth="2.5" strokeLinecap="round">
-          <path d="M12 17V7M7 12l5-5 5 5"/>
+          <path d="M12 17V7M7 12l5-5 5 5" />
         </svg>
       </div>
       <style>{`
@@ -517,20 +524,20 @@ function ValueWidget({ value, isActive }: { value: number; isActive: boolean }) 
 // ============================================================================
 // MAIN KPI CARD — Premium Glass Container
 // ============================================================================
-export default function KPICard({ 
-  index, label, value, rawValue, widgetType, 
+export default function KPICard({
+  index, label, value, rawValue, widgetType,
   isActive = false, isAnyActive = false, onSelect, viewMode, highlightColor = "#22d3ee"
 }: KPICardProps) {
-  
+
   // STEALTH PROTOCOL: Subscribe to dragging state
   const isDragging = useUIStore((s) => s.isDragging);
-  
+
   const reduceMotion = isAnyActive && !isActive;
 
   const isCashCard = widgetType === "liquidityReservoir";
   const cardWidth = isCashCard ? 220 : 152;
   const cardHeight = isCashCard ? 185 : 165; // Increased to prevent widget clipping
-  
+
   const colors = WIDGET_COLORS[widgetType] || WIDGET_COLORS.timeCompression;
   const activeColor = isActive ? highlightColor : colors.primary;
 
@@ -547,7 +554,7 @@ export default function KPICard({
             : "#ffffff";
 
   const widgetNode = useMemo(() => {
-    const props = { value: rawValue, isActive };
+    const props = { value: rawValue, isActive, index };
     switch (widgetType) {
       case "timeCompression":
         return <RunwayWidget {...props} reduceMotion={reduceMotion} />;
@@ -566,7 +573,7 @@ export default function KPICard({
       default:
         return <RunwayWidget {...props} reduceMotion={reduceMotion} />;
     }
-  }, [isActive, rawValue, reduceMotion, widgetType]);
+  }, [isActive, rawValue, reduceMotion, widgetType, index]);
 
   // STEALTH PROTOCOL: Compute visual states
   const stealthOpacity = isDragging ? 1 : 0.2;
@@ -581,10 +588,10 @@ export default function KPICard({
       style={{
         width: cardWidth,
         height: cardHeight,
-        transform: isActive 
-          ? 'translateY(-6px) scale(1.03)' 
-          : isAnyActive 
-            ? 'scale(0.98)' 
+        transform: isActive
+          ? 'translateY(-6px) scale(1.03)'
+          : isAnyActive
+            ? 'scale(0.98)'
             : `scale(${stealthScale})`,
         opacity: isAnyActive && !isActive ? 0.7 : stealthOpacity,
         filter: stealthFilter,
@@ -597,21 +604,21 @@ export default function KPICard({
     >
       {/* Metallic outer frame */}
       <div className="card-frame" />
-      
+
       {/* Inner glass surface */}
       <div className={`card-surface ${isCashCard ? "hero-surface" : ""}`}>
         {/* Top highlight */}
         <div className="surface-highlight" />
-        
+
         {/* Content */}
         <div className="card-header">
           <span className="card-label">{label}</span>
           {isCashCard && (
             <svg className="trend-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00ffcc" strokeWidth="3">
-              <path d="M12 19V5M5 12l7-7 7 7"/>
-          </svg>
+              <path d="M12 19V5M5 12l7-7 7 7" />
+            </svg>
           )}
-          </div>
+        </div>
         <span className="card-value" style={{ color: valueColor }}>{value}</span>
         <div className="card-widget">
           {widgetNode}
