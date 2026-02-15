@@ -1,0 +1,56 @@
+.container {
+    position: fixed;
+    top: 12px;
+    right: 16px;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #5aa9ff;
+    opacity: 0.7;
+}
+
+.idle {
+    opacity: 0.5;
+}
+
+.running {
+    animation: pulse 1.4s infinite;
+    background: #5aa9ff;
+}
+
+.processing {
+    animation: pulse 0.7s infinite;
+    background: #a9c8ff;
+}
+
+.stable {
+    background: #6ee7b7;
+    box-shadow: 0 0 6px rgba(110, 231, 183, 0.6);
+}
+
+.error {
+    background: #ef4444;
+    box-shadow: 0 0 6px rgba(239, 68, 68, 0.7);
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 0.6;
+    }
+
+    50% {
+        transform: scale(1.4);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 0.6;
+    }
+}

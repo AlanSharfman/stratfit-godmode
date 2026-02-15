@@ -13,6 +13,7 @@ import GlobalErrorCapture from "@/diagnostics/GlobalErrorCapture";
 import DiagnosticsBootstrap from "@/diagnostics/DiagnosticsBootstrap";
 import DiagnosticsOverlay from "@/diagnostics/DiagnosticsOverlay";
 import { useDiagnosticsStore } from "@/diagnostics/DiagnosticsStore";
+import SimulationStatusBeacon from "@/components/simulation/SimulationStatusBeacon";
 
 export type AppOutletContext = {
   hasBaseline: boolean;
@@ -85,6 +86,7 @@ export default function AppShell() {
       <GlobalErrorCapture />
       <DiagnosticsBootstrap />
       <DiagnosticsOverlay />
+      <SimulationStatusBeacon />
 
       <div className="app">
         <MainNav />
