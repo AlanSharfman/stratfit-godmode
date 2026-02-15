@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import ScenarioMountain from "@/components/mountain/ScenarioMountain";
+import TerrainStage from "@/terrain/TerrainStage";
 import { TerrainWithFallback } from "@/components/terrain/TerrainFallback2D";
 import StructuralMetricsPanel from "@/components/baseline/StructuralMetricsPanel";
 import BaselineIntelligencePanel from "@/components/baseline/BaselineIntelligencePanel";
@@ -330,128 +330,7 @@ export default function BaselinePage() {
 
         <div className={`${styles.mountain} sf-mountain-backplate`}>
           <TerrainWithFallback>
-            <ScenarioMountain
-              scenario="base"
-              mode="baseline"
-              baselineAutoRotate
-              baselineAutoRotatePaused
-              baselineAllow360Rotate
-              baselineHighVisibility
-              transparentContainer
-              transparentScene
-              onTerrainMeshReady={setTerrainMesh}
-              controlsAutoRotate={false}
-              controlsEnabled={!demoOn}
-              overlay={
-                <>
-                  {annotationsOn && (
-                    <>
-                      <TerrainAnchorOverlay
-                        mode="baseline"
-                        connections={connections}
-                        activeFromId={activeMetricId}
-                        terrainMesh={terrainMesh}
-                        heatmapOn={heatmapOn}
-                      />
-                      <MountainMarkers
-                        markers={markers}
-                        terrainMesh={terrainMesh}
-                        selectedId={activeMarkerId}
-                        onHover={setHoverMarker}
-                        onSelect={(id) => {
-                          setHoverMarker(null);
-                          setActiveMarker(activeMarkerId === id ? null : id);
-                        }}
-                      />
-                    </>
-                  )}
-
-                  {/* Geometry-aligned overlays need the same transform as Terrain's internal group */}
-                  <group rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} scale={[0.9, 0.9, 0.9]}>
-
-                    {/* ── Demo Tour Director (camera + overlay) ── */}
-                    {demoOn && (
-                      <DemoTourDirector
-                        enabled={demoOn}
-                        onFinished={() => setDemoOn(false)}
-                      />
-                    )}
-
-                    {/* ── Context (subtle): river + sparse trees ── */}
-                    {riverPoints.length > 1 && (
-                      <ContextRiver points={riverPoints} width={0.62} opacity={0.26} lift={0.10} />
-                    )}
-                    {terrainGeometry && (
-                      <ContextTrees
-                        terrainGeometry={terrainGeometry}
-                        avoidPolyline={baselineTrailPoints}
-                        avoidRadius={1.55}
-                      />
-                    )}
-
-                    {/* ── Probability Envelope Shell (subtle inflated hull) ── */}
-                    {envelopeVisible && terrainGeometry && (
-                      <ProbabilisticEnvelopeShell geometry={terrainGeometry} />
-                    )}
-
-                    {/* ── Risk Heatmap Overlay (toggleable) ── */}
-                    {terrainGeometry && (
-                      <TerrainRiskHeatmapOverlay
-                        geometry={terrainGeometry}
-                        enabled={heatmapOn}
-                        riskPoints={riskPoints}
-                        opacity={0.28}
-                        banding
-                        proof={false}
-                      />
-                    )}
-
-                    {/* ── Terrain-following ribbon path (surface conforming + segmented dashes) ── */}
-                    {baselineTrailPoints.length > 2 && sampleHeightFn && (
-                      <TerrainPathSystem
-                        getHeightAt={sampleHeightFn}
-                        points={baselinePathXZ}
-                        swapYZ
-                        halfWidth={0.55}
-                        cutDepth={0.10}
-                        bankHeight={0.05}
-                        lift={0.06}
-                        autoBank
-                        autoBankStrength={0.75}
-                        maxBankAngleDeg={8}
-                        edgeLines
-                      />
-                    )}
-
-                    {/* ── Probabilistic fan (ghost tubes) ── */}
-                    {envelopeVisible && baselineTrailPoints.length > 2 && (
-                      <FinancialTrajectoryFan basePath={baselineTrailPoints} spread={0.4} count={15} />
-                    )}
-
-                    {/* ── Business Trajectory Engine (terrain-projected path) ── */}
-                    <TrajectoryEngine />
-
-                    {/* ── Stress contours (risk slicing approximation) ── */}
-                    {contourLines.length > 0 && (
-                      <StressContours contourLines={contourLines} />
-                    )}
-                  </group>
-
-                  {/* ── Capital threshold plane (meaningful floor) ── */}
-                  <group position={[0, -2, 0]} scale={[0.9, 0.9, 0.9]}>
-                    <CapitalThresholdPlane />
-                  </group>
-
-                  {/* ── Intervention Shockwave ── */}
-                  <InterventionShockwave
-                    triggerId={shockId}
-                    center={shockCenter}
-                    magnitude={0.65}
-                    duration={2.0}
-                  />
-                </>
-              }
-            />
+            <TerrainStage />
           </TerrainWithFallback>
 
           {/* Executive Decision Overlay (outside Canvas) */}
