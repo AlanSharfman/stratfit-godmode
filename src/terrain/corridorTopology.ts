@@ -7,6 +7,140 @@ export interface TerrainGridMeta {
     worldHeight: number;
 }
 
+// Default terrain grid metadata for shared use
+export const TERRAIN_GRID_META: TerrainGridMeta = {
+    resolution: 120,
+    worldWidth: 560,
+    worldHeight: 360,
+};
+
+/** Height sampler function type */
+export type HeightSampler = (worldX: number, worldZ: number) => number;
+
+/**
+ * Build ribbon geometry from control points using a height sampler.
+ * Terrain-conforming flat ribbon (surface-following).
+ */
+export function buildRibbonGeometry(
+    controlPoints: { x: number; z: number }[],
+    getHeightAt: HeightSampler,
+    options: {
+        samples?: number;
+        halfWidth?: number;
+        widthSegments?: number;
+        lift?: number;
+        tension?: number;
+    } = {}
+): { geometry: THREE.BufferGeometry; leftEdge: THREE.Vector3[]; rightEdge: THREE.Vector3[]; centerline: THREE.Vector3[] } {
+    const {
+        samples = 220,
+        halfWidth = 0.55,
+        widthSegments = 10,
+        lift = 0.06,
+        tension = 0.55,
+    } = options;
+
+    // 1) Build smoothed curve sampling terrain heights
+    const basePts = controlPoints.map((p) => {
+        const y = getHeightAt(p.x, p.z);
+        return new THREE.Vector3(p.x, y, p.z);
+    });
+
+    const curve = new THREE.CatmullRomCurve3(basePts, false, "catmullrom", tension);
+    const centerline = curve.getPoints(samples);
+
+    // 2) Tangents
+    const tangents: THREE.Vector3[] = [];
+    for (let i = 0; i < centerline.length; i++) {
+        const prev = centerline[Math.max(0, i - 1)];
+        const next = centerline[Math.min(centerline.length - 1, i + 1)];
+        tangents.push(next.clone().sub(prev).normalize());
+    }
+
+    // 3) Build ribbon vertices
+    const verts: number[] = [];
+    const norms: number[] = [];
+    const uvs: number[] = [];
+    const idx: number[] = [];
+    const up = new THREE.Vector3(0, 1, 0);
+    const leftEdgePts: THREE.Vector3[] = [];
+    const rightEdgePts: THREE.Vector3[] = [];
+    const wSeg = Math.max(2, widthSegments);
+    const wCount = wSeg + 1;
+
+    for (let i = 0; i < centerline.length; i++) {
+        const c = centerline[i];
+        const tan = tangents[i];
+
+        // Side vector perpendicular to tangent on XZ plane
+        let side = new THREE.Vector3().crossVectors(up, tan).normalize();
+        if (side.lengthSq() < 1e-6) side = new THREE.Vector3(1, 0, 0);
+
+        // Cross-section vertices
+        for (let j = 0; j < wCount; j++) {
+            const u = j / wSeg;
+            const s = u * 2 - 1; // -1..1
+
+            const px = c.x + side.x * (s * halfWidth);
+            const pz = c.z + side.z * (s * halfWidth);
+
+            // Sample terrain at actual vertex position — guarantees surface conformance
+            const terrainY = getHeightAt(px, pz);
+            const py = terrainY + lift;
+
+            verts.push(px, py, pz);
+
+            // Normal: mostly up
+            const n = new THREE.Vector3(0, 1, 0)
+                .add(side.clone().multiplyScalar(s * 0.12))
+                .normalize();
+            norms.push(n.x, n.y, n.z);
+
+            uvs.push(i / (centerline.length - 1), u);
+
+            if (j === 0) leftEdgePts.push(new THREE.Vector3(px, py + 0.01, pz));
+            if (j === wSeg) rightEdgePts.push(new THREE.Vector3(px, py + 0.01, pz));
+        }
+    }
+
+    // 4) Triangle indices
+    const rowCount = centerline.length;
+    for (let i = 0; i < rowCount - 1; i++) {
+        for (let j = 0; j < wSeg; j++) {
+            const a = i * wCount + j;
+            const b = a + 1;
+            const c2 = (i + 1) * wCount + j;
+            const d = c2 + 1;
+            idx.push(a, c2, b);
+            idx.push(b, c2, d);
+        }
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute(verts, 3));
+    geometry.setAttribute("normal", new THREE.Float32BufferAttribute(norms, 3));
+    geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+    geometry.setIndex(idx);
+    geometry.computeBoundingSphere();
+
+    return { geometry, leftEdge: leftEdgePts, rightEdge: rightEdgePts, centerline };
+}
+
+/**
+ * Build edge line geometry from a list of 3D points.
+ */
+export function buildEdgeLineGeometry(pts: THREE.Vector3[]): THREE.BufferGeometry {
+    const arr = new Float32Array(pts.length * 3);
+    for (let i = 0; i < pts.length; i++) {
+        arr[i * 3] = pts[i].x;
+        arr[i * 3 + 1] = pts[i].y;
+        arr[i * 3 + 2] = pts[i].z;
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(arr, 3));
+    return g;
+}
+
 /**
  * Build deterministic corridor topology by snapping path points to terrain grid.
  * Ensures reproducible geometry locked to terrain spatial grid.
