@@ -8,7 +8,6 @@ import { buildPathMesh } from "./buildPathMesh";
 import { createGlowMesh } from "./pathGlow";
 import { createSeed } from "@/terrain/seed";
 import { generateCorridorMask } from "@/terrain/corridorContactPass";
-import { checksumCurve, CorridorGeometryCache } from "@/terrain/corridorTopology";
 
 // Divergence scaffold constants (deterministic)
 const DIVERGENCE_T = 0.62; // fixed, deterministic (no randomness)
@@ -20,9 +19,6 @@ const TERRAIN_GRID_META = {
     worldWidth: 560,
     worldHeight: 360
 };
-
-// Shared geometry cache across component remounts
-const geometryCache = new CorridorGeometryCache();
 
 export default function P50Path({
     scene,
@@ -104,56 +100,46 @@ export default function P50Path({
         const branchLeft = offsetCurve(p50Curve, -1);
         const branchRight = offsetCurve(p50Curve, 1);
 
+        // Create terrain height sampler for world coordinates
+        const createHeightSampler = (seed: number) => (worldX: number, worldZ: number) => {
+            // Convert world coordinates to normalized [0,1]
+            const normX = (worldX + TERRAIN_GRID_META.worldWidth / 2) / TERRAIN_GRID_META.worldWidth;
+            const normZ = (worldZ + TERRAIN_GRID_META.worldHeight / 2) / TERRAIN_GRID_META.worldHeight;
+            return sampleHeight(normX, normZ, seed);
+        };
+
+        const heightSampler = createHeightSampler(seed);
+
         // Build meshes with deterministic grid-snapped topology
-        const p50Mesh = buildPathMesh(p50Curve, {
-            opacity: 0.75,
-            widthMin: 2.6,
-            widthMax: 5.4,
-            depthFadeFar: 560,
-            edgeFeather: 0.20,
-            useGridSnap: true,
-            gridMeta: TERRAIN_GRID_META,
-            seed
+        const p50Mesh = buildPathMesh({
+            curve: p50Curve,
+            sampleHeight: heightSampler,
+            resolution: TERRAIN_GRID_META.resolution,
+            width: 5.4
         });
-        const p10Mesh = buildPathMesh(p10Curve, {
-            opacity: 0.30,
-            widthMin: 1.8,
-            widthMax: 3.2,
-            depthFadeFar: 480,
-            edgeFeather: 0.26,
-            useGridSnap: true,
-            gridMeta: TERRAIN_GRID_META,
-            seed
+        const p10Mesh = buildPathMesh({
+            curve: p10Curve,
+            sampleHeight: heightSampler,
+            resolution: TERRAIN_GRID_META.resolution,
+            width: 3.2
         });
-        const p90Mesh = buildPathMesh(p90Curve, {
-            opacity: 0.30,
-            widthMin: 1.8,
-            widthMax: 3.2,
-            depthFadeFar: 480,
-            edgeFeather: 0.26,
-            useGridSnap: true,
-            gridMeta: TERRAIN_GRID_META,
-            seed
+        const p90Mesh = buildPathMesh({
+            curve: p90Curve,
+            sampleHeight: heightSampler,
+            resolution: TERRAIN_GRID_META.resolution,
+            width: 3.2
         });
-        const branchMeshL = buildPathMesh(branchLeft, {
-            opacity: 0.10,
-            widthMin: 1.2,
-            widthMax: 2.0,
-            depthFadeFar: 420,
-            edgeFeather: 0.30,
-            useGridSnap: true,
-            gridMeta: TERRAIN_GRID_META,
-            seed
+        const branchMeshL = buildPathMesh({
+            curve: branchLeft,
+            sampleHeight: heightSampler,
+            resolution: TERRAIN_GRID_META.resolution,
+            width: 2.0
         });
-        const branchMeshR = buildPathMesh(branchRight, {
-            opacity: 0.10,
-            widthMin: 1.2,
-            widthMax: 2.0,
-            depthFadeFar: 420,
-            edgeFeather: 0.30,
-            useGridSnap: true,
-            gridMeta: TERRAIN_GRID_META,
-            seed
+        const branchMeshR = buildPathMesh({
+            curve: branchRight,
+            sampleHeight: heightSampler,
+            resolution: TERRAIN_GRID_META.resolution,
+            width: 2.0
         });
         const glow = createGlowMesh(p50Curve);
 

@@ -1,0 +1,910 @@
+================ STRATFIT PHASE 6 RAW INPUT DUMP ================
+DATE: 2026-02-15T21:16:42
+
+--- REPO STATE ---
+2efd5d9 phase6.7: deterministic corridor topology with grid-snapped geometry
+
+?? PHASE6_DUMP_RAW.txt
+
+
+--- COMMIT (2efd5d9) FILE LIST ---
+commit 2efd5d90042a4ce58bc70dac0712aeeaa7147ec6
+Author: Alan Sharfman <alan@stratfit.ai>
+Date:   Sun Feb 15 21:03:10 2026 +1100
+
+    phase6.7: deterministic corridor topology with grid-snapped geometry
+
+M	src/paths/P50Path.tsx
+M	src/paths/buildPathMesh.ts
+A	src/terrain/corridorTopology.ts
+
+
+
+================================================================================
+FILE: C:\projects\stratfit-godmode\src\terrain\corridorTopology.ts
+================================================================================
+
+import * as THREE from "three";
+import { sampleHeight } from "@/paths/sampleTerrain";
+
+export interface TerrainGridMeta {
+    resolution: number;
+    worldWidth: number;
+    worldHeight: number;
+}
+
+/**
+ * Build deterministic corridor topology by snapping path points to terrain grid.
+ * Ensures reproducible geometry locked to terrain spatial grid.
+ * 
+ * @param curve - Path curve to sample
+ * @param gridMeta - Terrain grid metadata
+ * @param seed - Terrain seed for height sampling
+ * @param segments - Number of segments to sample along curve
+ * @param radiusSegments - Radial segments for tube
+ * @param widthFn - Function to determine width at parameter t [0,1]
+ */
+export function buildGridSnappedCorridorGeometry(
+    curve: THREE.CatmullRomCurve3,
+    gridMeta: TerrainGridMeta,
+    seed: number,
+    segments = 140,
+    radiusSegments = 8,
+    widthFn: (t: number) => number = () => 1.0
+): THREE.BufferGeometry {
+    const vertices: number[] = [];
+    const indices: number[] = [];
+    const uvs: number[] = [];
+
+    // Sample curve and snap to terrain grid
+    const gridSnappedPoints: THREE.Vector3[] = [];
+
+    for (let i = 0; i <= segments; i++) {
+        const t = i / segments;
+        const point = curve.getPoint(t);
+
+        // Snap to terrain grid indices
+        const normalizedX = (point.x + gridMeta.worldWidth / 2) / gridMeta.worldWidth;
+        const normalizedZ = (point.z + gridMeta.worldHeight / 2) / gridMeta.worldHeight;
+
+        const gridX = Math.round(normalizedX * (gridMeta.resolution - 1));
+        const gridZ = Math.round(normalizedZ * (gridMeta.resolution - 1));
+
+        // Convert back to world coordinates (grid-snapped)
+        const snappedNormalizedX = gridX / (gridMeta.resolution - 1);
+        const snappedNormalizedZ = gridZ / (gridMeta.resolution - 1);
+
+        const snappedWorldX = snappedNormalizedX * gridMeta.worldWidth - gridMeta.worldWidth / 2;
+        const snappedWorldZ = snappedNormalizedZ * gridMeta.worldHeight - gridMeta.worldHeight / 2;
+
+        // Sample terrain height at snapped coordinates
+        const h = sampleHeight(snappedNormalizedX, snappedNormalizedZ, seed);
+
+        // Slight embedding offset to avoid z-fighting
+        const embedOffset = -0.015;
+
+        gridSnappedPoints.push(new THREE.Vector3(snappedWorldX, h + embedOffset, snappedWorldZ));
+    }
+
+    // Build tube geometry from grid-snapped points
+    for (let i = 0; i <= segments; i++) {
+        const t = i / segments;
+        const center = gridSnappedPoints[i];
+        const width = widthFn(t);
+
+        // Calculate tangent for orientation
+        let tangent: THREE.Vector3;
+        if (i === 0) {
+            tangent = gridSnappedPoints[1].clone().sub(center).normalize();
+        } else if (i === segments) {
+            tangent = center.clone().sub(gridSnappedPoints[segments - 1]).normalize();
+        } else {
+            tangent = gridSnappedPoints[i + 1].clone().sub(gridSnappedPoints[i - 1]).normalize();
+        }
+
+        // Calculate binormal and normal for tube cross-section
+        const up = new THREE.Vector3(0, 1, 0);
+        const normal = new THREE.Vector3().crossVectors(tangent, up).normalize();
+        const binormal = new THREE.Vector3().crossVectors(tangent, normal).normalize();
+
+        // Generate radial vertices
+        for (let j = 0; j <= radiusSegments; j++) {
+            const angle = (j / radiusSegments) * Math.PI * 2;
+            const cos = Math.cos(angle);
+            const sin = Math.sin(angle);
+
+            const offset = new THREE.Vector3(
+                normal.x * cos + binormal.x * sin,
+                normal.y * cos + binormal.y * sin,
+                normal.z * cos + binormal.z * sin
+            ).multiplyScalar(width);
+
+            const vertex = center.clone().add(offset);
+            vertices.push(vertex.x, vertex.y, vertex.z);
+
+            // UVs
+            uvs.push(j / radiusSegments, t);
+        }
+    }
+
+    // Generate indices for tube faces
+    for (let i = 0; i < segments; i++) {
+        for (let j = 0; j < radiusSegments; j++) {
+            const a = i * (radiusSegments + 1) + j;
+            const b = a + 1;
+            const c = (i + 1) * (radiusSegments + 1) + j;
+            const d = c + 1;
+
+            indices.push(a, b, d);
+            indices.push(a, d, c);
+        }
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
+    geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals();
+
+    return geometry;
+}
+
+/**
+ * Compute checksum of curve for cache invalidation.
+ * Only recomputes geometry when curve actually changes.
+ */
+export function checksumCurve(curve: THREE.CatmullRomCurve3, segments = 140): number {
+    let hash = 0;
+    for (let i = 0; i <= segments; i++) {
+        const t = i / segments;
+        const p = curve.getPoint(t);
+        hash ^= Math.floor(p.x * 10000) >>> 0;
+        hash ^= Math.floor(p.y * 10000) >>> 0;
+        hash ^= Math.floor(p.z * 10000) >>> 0;
+        hash = (hash >>> 1) | (hash << 31); // Rotate bits for better distribution
+    }
+    return hash >>> 0; // Ensure unsigned
+}
+
+/**
+ * Geometry cache for deterministic corridor topology.
+ * Prevents unnecessary rebuilds when percentile data hasn't changed.
+ */
+export class CorridorGeometryCache {
+    private cache = new Map<number, THREE.BufferGeometry>();
+
+    get(checksum: number): THREE.BufferGeometry | undefined {
+        return this.cache.get(checksum);
+    }
+
+    set(checksum: number, geometry: THREE.BufferGeometry): void {
+        this.cache.set(checksum, geometry);
+    }
+
+    clear(): void {
+        // Dispose all cached geometries
+        this.cache.forEach(geo => geo.dispose());
+        this.cache.clear();
+    }
+
+    size(): number {
+        return this.cache.size;
+    }
+}
+
+
+
+================================================================================
+FILE: C:\projects\stratfit-godmode\src\paths\buildPathMesh.ts
+================================================================================
+
+import * as THREE from "three";
+import { varianceAt } from "./variance";
+import { buildGridSnappedCorridorGeometry, type TerrainGridMeta } from "@/terrain/corridorTopology";
+
+export interface PathMeshOptions {
+    opacity?: number;
+    widthMin?: number;
+    widthMax?: number;
+    depthFadeNear?: number;
+    depthFadeFar?: number;
+    edgeFeather?: number;
+    useGridSnap?: boolean;
+    gridMeta?: TerrainGridMeta;
+    seed?: number;
+}
+
+export function buildPathMesh(curve: THREE.CatmullRomCurve3, options: PathMeshOptions = {}) {
+    const {
+        opacity = 0.85,
+        widthMin = 1,
+        widthMax = 1,
+        depthFadeNear = 140,
+        depthFadeFar = 520,
+        edgeFeather = 0.22,
+        useGridSnap = false,
+        gridMeta,
+        seed
+    } = options;
+    const segments = 140;
+    const radiusSegments = 8;
+
+    let geometry: THREE.BufferGeometry;
+
+    if (useGridSnap && gridMeta && seed !== undefined) {
+        // Use deterministic grid-snapped topology
+        const widthFn = (t: number) => {
+            const varianceScale = varianceAt(t);
+            return widthMin + (widthMax - widthMin) * varianceScale;
+        };
+        geometry = buildGridSnappedCorridorGeometry(curve, gridMeta, seed, segments, radiusSegments, widthFn);
+    } else {
+        // Use standard THREE.TubeGeometry
+        const points: THREE.Vector3[] = [];
+        for (let i = 0; i <= segments; i++) {
+            points.push(curve.getPoint(i / segments));
+        }
+
+        geometry = new THREE.TubeGeometry(curve, segments, 1, radiusSegments, false);
+
+        // scale radius per segment using variance
+        const pos = geometry.attributes.position;
+        const tmp = new THREE.Vector3();
+
+        for (let i = 0; i < pos.count; i++) {
+            tmp.fromBufferAttribute(pos, i);
+            const t = Math.floor(i / (radiusSegments + 1)) / segments;
+            const varianceScale = varianceAt(t);
+            const baseRadius = widthMin + (widthMax - widthMin) * varianceScale;
+            const scale = baseRadius;
+            const dir = tmp.clone().normalize();
+            const dist = tmp.length();
+            tmp.copy(dir).multiplyScalar(dist * scale);
+            pos.setXYZ(i, tmp.x, tmp.y, tmp.z);
+        }
+
+        geometry.computeVertexNormals();
+    }
+
+    const mat = new THREE.MeshStandardMaterial({
+        color: 0xcfe7ff,
+        transparent: true,
+        opacity,
+        roughness: 0.6,
+        metalness: 0.1,
+        depthWrite: false,
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+        polygonOffsetUnits: -1
+    });
+
+    // Shader patch for depth fade and edge feathering
+    mat.onBeforeCompile = (shader) => {
+        shader.uniforms.uFadeNear = { value: depthFadeNear };
+        shader.uniforms.uFadeFar = { value: depthFadeFar };
+        shader.uniforms.uEdgeFeather = { value: edgeFeather };
+
+        // inject varyings
+        shader.vertexShader = shader.vertexShader
+            .replace(
+                `#include <common>`,
+                `#include <common>
+                 varying float vCamDist;
+                 varying vec2 vUv2;`
+            )
+            .replace(
+                `#include <uv_vertex>`,
+                `#include <uv_vertex>
+                 vUv2 = uv;`
+            )
+            .replace(
+                `#include <project_vertex>`,
+                `#include <project_vertex>
+                 vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+                 vCamDist = length(mvPos.xyz);`
+            );
+
+        shader.fragmentShader = shader.fragmentShader
+            .replace(
+                `#include <common>`,
+                `#include <common>
+                 uniform float uFadeNear;
+                 uniform float uFadeFar;
+                 uniform float uEdgeFeather;
+                 varying float vCamDist;
+                 varying vec2 vUv2;`
+            )
+            .replace(
+                `#include <dithering_fragment>`,
+                `
+                // --- depth fade (near=1, far=0)
+                float fade = 1.0 - smoothstep(uFadeNear, uFadeFar, vCamDist);
+
+                // --- edge feather across corridor width (uv.x in [0..1])
+                float edge = smoothstep(0.0, uEdgeFeather, vUv2.x) *
+                             smoothstep(0.0, uEdgeFeather, 1.0 - vUv2.x);
+
+                // apply to alpha
+                gl_FragColor.a *= (fade * edge);
+
+                #include <dithering_fragment>
+                `
+            );
+    };
+
+    const mesh = new THREE.Mesh(geometry, mat);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+
+    return mesh;
+}
+
+
+
+================================================================================
+FILE: C:\projects\stratfit-godmode\src\paths\P50Path.tsx
+================================================================================
+
+import { useEffect, useRef } from "react";
+import * as THREE from "three";
+import { generateP50Nodes } from "./generatePath";
+import { normToWorld } from "@/spatial/SpatialProjector";
+import { sampleHeight } from "./sampleTerrain";
+import { buildSpline } from "./buildSpline";
+import { buildPathMesh } from "./buildPathMesh";
+import { createGlowMesh } from "./pathGlow";
+import { createSeed } from "@/terrain/seed";
+import { generateCorridorMask } from "@/terrain/corridorContactPass";
+import { checksumCurve, CorridorGeometryCache } from "@/terrain/corridorTopology";
+
+// Divergence scaffold constants (deterministic)
+const DIVERGENCE_T = 0.62; // fixed, deterministic (no randomness)
+const DIVERGENCE_SPREAD = 10; // world units lateral branch hint
+
+// Terrain grid metadata for deterministic topology
+const TERRAIN_GRID_META = {
+    resolution: 120,
+    worldWidth: 560,
+    worldHeight: 360
+};
+
+// Shared geometry cache across component remounts
+const geometryCache = new CorridorGeometryCache();
+
+export default function P50Path({
+    scene,
+    scenarioId = "baseline",
+    onMaskReady
+}: {
+    scene: THREE.Scene;
+    scenarioId?: string;
+    onMaskReady?: (mask: THREE.DataTexture) => void;
+}) {
+    const p50Ref = useRef<THREE.Mesh | null>(null);
+    const p10Ref = useRef<THREE.Mesh | null>(null);
+    const p90Ref = useRef<THREE.Mesh | null>(null);
+    const glowRef = useRef<THREE.Mesh | null>(null);
+    const branchLeftRef = useRef<THREE.Mesh | null>(null);
+    const branchRightRef = useRef<THREE.Mesh | null>(null);
+
+    useEffect(() => {
+        if (!scene) return;
+
+        const seed = createSeed(scenarioId);
+
+        const nodes = generateP50Nodes();
+
+        // Derive P10 and P90 node sets by offsetting y coordinate
+        const p10Nodes = nodes.map(n => ({
+            ...n,
+            coord: {
+                x: n.coord.x,
+                y: Math.max(-1, n.coord.y - 0.18),
+                z: n.coord.z
+            }
+        }));
+
+        const p90Nodes = nodes.map(n => ({
+            ...n,
+            coord: {
+                x: n.coord.x,
+                y: Math.min(1, n.coord.y + 0.18),
+                z: n.coord.z
+            }
+        }));
+
+        // Reusable function to convert nodes to curve with terrain height sampling
+        function nodesToCurve(nodeList: typeof nodes, epsilon: number) {
+            const pts = nodeList.map((n) => {
+                const world = normToWorld(n.coord);
+                const X = world.x;
+                const Z = world.y; // projector's "y" becomes ground Z
+                const h = sampleHeight(n.coord.x, n.coord.y, seed);
+                return new THREE.Vector3(X, h + epsilon, Z);
+            });
+            return buildSpline(pts);
+        }
+
+        // Build 3 curves with terrain-following
+        const p50Curve = nodesToCurve(nodes, 0.65);
+        const p10Curve = nodesToCurve(p10Nodes, 0.55);
+        const p90Curve = nodesToCurve(p90Nodes, 0.55);
+
+        // Create divergence scaffold (branch hints)
+        function offsetCurve(curve: THREE.CatmullRomCurve3, side: -1 | 1) {
+            const pts = curve.getPoints(120);
+
+            const out = pts.map((p, idx) => {
+                const t = idx / (pts.length - 1);
+
+                // only push laterally after divergence point
+                const k = t < DIVERGENCE_T ? 0 : (t - DIVERGENCE_T) / (1 - DIVERGENCE_T);
+                const push = k * k * DIVERGENCE_SPREAD * side;
+
+                // lateral push in X (world)
+                return new THREE.Vector3(p.x + push, p.y + 0.15, p.z);
+            });
+
+            return new THREE.CatmullRomCurve3(out);
+        }
+
+        const branchLeft = offsetCurve(p50Curve, -1);
+        const branchRight = offsetCurve(p50Curve, 1);
+
+        // Build meshes with deterministic grid-snapped topology
+        const p50Mesh = buildPathMesh(p50Curve, {
+            opacity: 0.75,
+            widthMin: 2.6,
+            widthMax: 5.4,
+            depthFadeFar: 560,
+            edgeFeather: 0.20,
+            useGridSnap: true,
+            gridMeta: TERRAIN_GRID_META,
+            seed
+        });
+        const p10Mesh = buildPathMesh(p10Curve, {
+            opacity: 0.30,
+            widthMin: 1.8,
+            widthMax: 3.2,
+            depthFadeFar: 480,
+            edgeFeather: 0.26,
+            useGridSnap: true,
+            gridMeta: TERRAIN_GRID_META,
+            seed
+        });
+        const p90Mesh = buildPathMesh(p90Curve, {
+            opacity: 0.30,
+            widthMin: 1.8,
+            widthMax: 3.2,
+            depthFadeFar: 480,
+            edgeFeather: 0.26,
+            useGridSnap: true,
+            gridMeta: TERRAIN_GRID_META,
+            seed
+        });
+        const branchMeshL = buildPathMesh(branchLeft, {
+            opacity: 0.10,
+            widthMin: 1.2,
+            widthMax: 2.0,
+            depthFadeFar: 420,
+            edgeFeather: 0.30,
+            useGridSnap: true,
+            gridMeta: TERRAIN_GRID_META,
+            seed
+        });
+        const branchMeshR = buildPathMesh(branchRight, {
+            opacity: 0.10,
+            widthMin: 1.2,
+            widthMax: 2.0,
+            depthFadeFar: 420,
+            edgeFeather: 0.30,
+            useGridSnap: true,
+            gridMeta: TERRAIN_GRID_META,
+            seed
+        });
+        const glow = createGlowMesh(p50Curve);
+
+        // Generate corridor contact mask for terrain grounding
+        if (onMaskReady) {
+            const corridorMask = generateCorridorMask(
+                [p10Curve, p50Curve, p90Curve, branchLeft, branchRight],
+                { width: 560, height: 360 },
+                256, // texture resolution
+                [3.2, 5.4, 3.2, 2.0, 2.0], // max widths for each curve
+                3.0 // falloff distance
+            );
+            onMaskReady(corridorMask);
+        }
+
+        // Add all paths to scene (branches first so p50 stays dominant)
+        scene.add(branchMeshL);
+        scene.add(branchMeshR);
+        scene.add(p10Mesh);
+        scene.add(p50Mesh);
+        scene.add(p90Mesh);
+        scene.add(glow);
+
+        p10Ref.current = p10Mesh;
+        p50Ref.current = p50Mesh;
+        p90Ref.current = p90Mesh;
+        glowRef.current = glow;
+        branchLeftRef.current = branchMeshL;
+        branchRightRef.current = branchMeshR;
+
+        return () => {
+            if (p10Ref.current) {
+                scene.remove(p10Ref.current);
+                p10Ref.current.geometry.dispose();
+            }
+            if (p50Ref.current) {
+                scene.remove(p50Ref.current);
+                p50Ref.current.geometry.dispose();
+            }
+            if (p90Ref.current) {
+                scene.remove(p90Ref.current);
+                p90Ref.current.geometry.dispose();
+            }
+            if (glowRef.current) {
+                scene.remove(glowRef.current);
+                glowRef.current.geometry.dispose();
+            }
+            if (branchLeftRef.current) {
+                scene.remove(branchLeftRef.current);
+                branchLeftRef.current.geometry.dispose();
+            }
+            if (branchRightRef.current) {
+                scene.remove(branchRightRef.current);
+                branchRightRef.current.geometry.dispose();
+            }
+        };
+    }, [scene, scenarioId, onMaskReady]);
+
+    return null;
+}
+
+
+
+================================================================================
+FILE: C:\projects\stratfit-godmode\src\components\terrain\TerrainPathSystem.tsx
+================================================================================
+
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
+import * as THREE from "three";
+import { createPathSegmentMaterial, type PathSegmentMaterialUniforms } from "./PathSegmentMaterial";
+
+/**
+ * TerrainPathSystem — Unified surface-following ribbon path.
+ *
+ * - Terrain-conforming ribbon (never inside rock)
+ * - Shallow corridor imprint + subtle berms
+ * - Segmented dashes via custom ShaderMaterial
+ * - One-time micro-pulse at reference zones
+ * - Deterministic: geometry built once per input change
+ * - 60fps: no per-frame rebuilds
+ */
+
+type XZ = { x: number; z: number };
+
+type ReferenceZone = {
+  /** World-space anchor position */
+  anchor: { x: number; z: number };
+  /** Tone for pulse color */
+  tone: "up" | "down" | "neutral";
+};
+
+type Props = {
+  /** Height sampler: (worldX, worldZ) => terrainY */
+  getHeightAt: (x: number, z: number) => number;
+  /** Control points (XZ plane) */
+  points: XZ[];
+
+  /** When true, emit vertices as (x, z, y) — Z-up convention */
+  swapYZ?: boolean;
+
+  // Sampling
+  tension?: number;
+  samples?: number;
+
+  // Geometry
+  halfWidth?: number;
+  widthSegments?: number;
+  lift?: number;
+
+  // Cut-in + banking
+  cutDepth?: number;
+  bankHeight?: number;
+  shoulderSoftness?: number;
+  autoBank?: boolean;
+  autoBankStrength?: number;
+  maxBankAngleDeg?: number;
+
+  // Material
+  color?: string;
+  dashColor?: string;
+  opacity?: number;
+  dashLength?: number;
+  gapLength?: number;
+  emissiveStrength?: number;
+
+  // Edge lines
+  edgeLines?: boolean;
+  edgeLineColor?: string;
+  edgeLineOpacity?: number;
+
+  // Reference zone pulse
+  referenceZones?: ReferenceZone[];
+  activeZoneIndex?: number;
+};
+
+/* ── Utility ── */
+function clamp01(x: number) { return Math.max(0, Math.min(1, x)); }
+function smoothstep(e0: number, e1: number, x: number) {
+  const t = clamp01((x - e0) / (e1 - e0));
+  return t * t * (3 - 2 * t);
+}
+function deg2rad(d: number) { return (d * Math.PI) / 180; }
+
+const TONE_COLORS: Record<string, string> = {
+  up: "#2FBF71",      // Emerald
+  down: "#D94B4B",     // Red
+  neutral: "#5FD4FF",  // Cyan
+};
+
+export default function TerrainPathSystem({
+  getHeightAt,
+  points,
+  swapYZ = false,
+  tension = 0.55,
+  samples = 220,
+  halfWidth = 0.55,
+  widthSegments = 10,
+  lift = 0.06,
+  cutDepth = 0.10,
+  bankHeight = 0.05,
+  shoulderSoftness = 0.65,
+  autoBank = true,
+  autoBankStrength = 0.75,
+  maxBankAngleDeg = 8,
+  color = "#5CCEE8",
+  dashColor = "#7FEAFF",
+  opacity = 0.88,
+  dashLength = 1.0,
+  gapLength = 0.7,
+  emissiveStrength = 0.18,
+  edgeLines = true,
+  edgeLineColor = "#B6F6FF",
+  edgeLineOpacity = 0.45,
+  referenceZones,
+  activeZoneIndex,
+}: Props) {
+  const matRef = useRef<THREE.ShaderMaterial | null>(null);
+  const pulseTimerRef = useRef<number>(0);
+
+  /* ── Build geometry (deterministic, once per input change) ── */
+  const { ribbonGeo, leftEdge, rightEdge, curvePoints } = useMemo(() => {
+    const empty = {
+      ribbonGeo: null as THREE.BufferGeometry | null,
+      leftEdge: null as THREE.Vector3[] | null,
+      rightEdge: null as THREE.Vector3[] | null,
+      curvePoints: [] as THREE.Vector3[],
+    };
+    if (!getHeightAt || points.length < 2) return empty;
+
+    // 1) Build smoothed curve sampling terrain heights
+    const basePts = points.map((p) => {
+      const y = getHeightAt(p.x, p.z);
+      return new THREE.Vector3(p.x, y, p.z);
+    });
+
+    const curve = new THREE.CatmullRomCurve3(basePts, false, "catmullrom", tension);
+    const centerline = curve.getPoints(samples);
+
+    // 2) Tangents for banking
+    const tangents: THREE.Vector3[] = [];
+    for (let i = 0; i < centerline.length; i++) {
+      const prev = centerline[Math.max(0, i - 1)];
+      const next = centerline[Math.min(centerline.length - 1, i + 1)];
+      tangents.push(next.clone().sub(prev).normalize());
+    }
+
+    // 3) Build ribbon vertices
+    const verts: number[] = [];
+    const norms: number[] = [];
+    const uvs: number[] = [];
+    const idx: number[] = [];
+    const up = new THREE.Vector3(0, 1, 0);
+    const leftEdgePts: THREE.Vector3[] = [];
+    const rightEdgePts: THREE.Vector3[] = [];
+    const wSeg = Math.max(2, widthSegments);
+    const wCount = wSeg + 1;
+
+    for (let i = 0; i < centerline.length; i++) {
+      const c = centerline[i];
+      const tan = tangents[i];
+
+      // Side vector perpendicular to tangent on XZ plane
+      let side = new THREE.Vector3().crossVectors(up, tan).normalize();
+      if (side.lengthSq() < 1e-6) side = new THREE.Vector3(1, 0, 0);
+
+      // Banking angle from curvature
+      let bankAngle = 0;
+      if (autoBank) {
+        const prevTan = tangents[Math.max(0, i - 1)];
+        const nextTan = tangents[Math.min(tangents.length - 1, i + 1)];
+        const curvature = clamp01(prevTan.distanceTo(nextTan));
+        bankAngle = deg2rad(Math.min(maxBankAngleDeg, curvature * autoBankStrength * maxBankAngleDeg));
+      }
+
+      if (bankAngle !== 0) {
+        const q = new THREE.Quaternion().setFromAxisAngle(tan, bankAngle);
+        side = side.applyQuaternion(q).normalize();
+      }
+
+      // Cross-section vertices
+      for (let j = 0; j < wCount; j++) {
+        const u = j / wSeg;
+        const s = u * 2 - 1; // -1..1
+        const absS = Math.abs(s);
+
+        // Shallow corridor imprint (center depression)
+        const centerDepress = 1 - smoothstep(0.0, 0.55, absS);
+        const cut = -cutDepth * Math.pow(centerDepress, 1.35);
+
+        // Subtle berm at edges
+        const shoulderStart = shoulderSoftness;
+        const shoulder = smoothstep(shoulderStart, 1.0, absS);
+        const bank = bankHeight * Math.pow(shoulder, 1.15);
+
+        const profileY = cut + bank;
+
+        const px = c.x + side.x * (s * halfWidth);
+        const pz = c.z + side.z * (s * halfWidth);
+
+        // CRITICAL: sample terrain at actual vertex position — guarantees surface conformance
+        const terrainY = getHeightAt(px, pz);
+        const py = Math.max(terrainY + lift, terrainY + lift + profileY);
+
+        if (swapYZ) verts.push(px, pz, py);
+        else verts.push(px, py, pz);
+
+        // Normal: mostly up with slight banking tilt
+        const n = new THREE.Vector3(0, 1, 0)
+          .add(side.clone().multiplyScalar(s * 0.12))
+          .normalize();
+        if (swapYZ) norms.push(n.x, n.z, n.y);
+        else norms.push(n.x, n.y, n.z);
+
+        uvs.push(i / (centerline.length - 1), u);
+
+        if (swapYZ) {
+          if (j === 0) leftEdgePts.push(new THREE.Vector3(px, pz, py + 0.01));
+          if (j === wSeg) rightEdgePts.push(new THREE.Vector3(px, pz, py + 0.01));
+        } else {
+          if (j === 0) leftEdgePts.push(new THREE.Vector3(px, py + 0.01, pz));
+          if (j === wSeg) rightEdgePts.push(new THREE.Vector3(px, py + 0.01, pz));
+        }
+      }
+    }
+
+    // 4) Triangle indices
+    const rowCount = centerline.length;
+    for (let i = 0; i < rowCount - 1; i++) {
+      for (let j = 0; j < wSeg; j++) {
+        const a = i * wCount + j;
+        const b = a + 1;
+        const c2 = (i + 1) * wCount + j;
+        const d = c2 + 1;
+        idx.push(a, c2, b);
+        idx.push(b, c2, d);
+      }
+    }
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(verts, 3));
+    geo.setAttribute("normal", new THREE.Float32BufferAttribute(norms, 3));
+    geo.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+    geo.setIndex(idx);
+    geo.computeBoundingSphere();
+
+    return { ribbonGeo: geo, leftEdge: leftEdgePts, rightEdge: rightEdgePts, curvePoints: centerline };
+  }, [getHeightAt, points, tension, samples, halfWidth, widthSegments, lift,
+      cutDepth, bankHeight, shoulderSoftness, autoBank, autoBankStrength, maxBankAngleDeg, swapYZ]);
+
+  /* ── Material (created once, uniforms updated) ── */
+  const material = useMemo(() => {
+    const mat = createPathSegmentMaterial({ color, dashColor, opacity, dashLength, gapLength, emissiveStrength });
+    matRef.current = mat;
+    return mat;
+  }, [color, dashColor, opacity, dashLength, gapLength, emissiveStrength]);
+
+  /* ── Reference zone pulse (one-time micro-breathe) ── */
+  const triggerPulse = useCallback((zoneT: number, tone: string) => {
+    const mat = matRef.current;
+    if (!mat) return;
+    const u = mat.uniforms as unknown as PathSegmentMaterialUniforms;
+    u.uPulseT.value = zoneT;
+    u.uPulseToneColor.value.set(TONE_COLORS[tone] ?? TONE_COLORS.neutral);
+    u.uPulseStrength.value = 1.0;
+
+    // Decay pulse over 800ms
+    const start = performance.now();
+    cancelAnimationFrame(pulseTimerRef.current);
+    const decay = () => {
+      const elapsed = performance.now() - start;
+      const t = Math.min(1, elapsed / 800);
+      u.uPulseStrength.value = Math.max(0.08, 1.0 - t * 0.92); // settle to faint 0.08
+      if (t < 1) pulseTimerRef.current = requestAnimationFrame(decay);
+    };
+    pulseTimerRef.current = requestAnimationFrame(decay);
+  }, []);
+
+  // Find nearest curve t for active zone
+  useEffect(() => {
+    if (activeZoneIndex == null || !referenceZones || !referenceZones[activeZoneIndex]) return;
+    if (curvePoints.length < 2) return;
+
+    const zone = referenceZones[activeZoneIndex];
+    const ax = zone.anchor.x;
+    const az = zone.anchor.z;
+
+    // Find nearest centerline point
+    let bestDist = Infinity;
+    let bestIdx = 0;
+    for (let i = 0; i < curvePoints.length; i++) {
+      const cp = curvePoints[i];
+      const dx = cp.x - ax;
+      const dz = cp.z - az;
+      const d = dx * dx + dz * dz;
+      if (d < bestDist) { bestDist = d; bestIdx = i; }
+    }
+
+    const normalizedT = bestIdx / (curvePoints.length - 1);
+    triggerPulse(normalizedT, zone.tone);
+
+    return () => cancelAnimationFrame(pulseTimerRef.current);
+  }, [activeZoneIndex, referenceZones, curvePoints, triggerPulse]);
+
+  /* ── Edge line geometries ── */
+  const { leftLineGeo, rightLineGeo } = useMemo(() => {
+    if (!leftEdge || !rightEdge) return { leftLineGeo: null, rightLineGeo: null };
+
+    const mkGeo = (pts: THREE.Vector3[]) => {
+      const arr = new Float32Array(pts.length * 3);
+      for (let i = 0; i < pts.length; i++) {
+        arr[i * 3] = pts[i].x;
+        arr[i * 3 + 1] = pts[i].y;
+        arr[i * 3 + 2] = pts[i].z;
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute("position", new THREE.Float32BufferAttribute(arr, 3));
+      return g;
+    };
+
+    return { leftLineGeo: mkGeo(leftEdge), rightLineGeo: mkGeo(rightEdge) };
+  }, [leftEdge, rightEdge]);
+
+  if (!ribbonGeo) return null;
+
+  return (
+    <group>
+      {/* Main ribbon mesh with segmented dash shader */}
+      <mesh geometry={ribbonGeo} material={material} renderOrder={5} />
+
+      {/* Subtle edge lines */}
+      {edgeLines && leftLineGeo && rightLineGeo && (
+        <>
+          <lineSegments geometry={leftLineGeo} renderOrder={6}>
+            <lineBasicMaterial transparent opacity={edgeLineOpacity} color={edgeLineColor} />
+          </lineSegments>
+          <lineSegments geometry={rightLineGeo} renderOrder={6}>
+            <lineBasicMaterial transparent opacity={edgeLineOpacity} color={edgeLineColor} />
+          </lineSegments>
+        </>
+      )}
+    </group>
+  );
+}
+
+
+
+================ END DUMP ================
