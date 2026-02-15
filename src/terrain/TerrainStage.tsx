@@ -11,10 +11,10 @@ export default function TerrainStage({ children }: { children?: React.ReactNode 
         <div style={{ width: "100%", height: "100%", position: "relative" }}>
             <Canvas
                 camera={{
-                    position: [-120, 80, 150],
+                    position: [0, 110, 260],
                     fov: 50,
                     near: 1,
-                    far: 2000,
+                    far: 2500,
                 }}
                 gl={{
                     antialias: true,
@@ -41,7 +41,8 @@ function Scene({ children }: { children?: React.ReactNode }) {
     useEffect(() => {
         if (!meshRef.current) return;
         meshRef.current.rotation.x = -Math.PI / 2;
-        meshRef.current.position.set(-80, 0, 0);
+        meshRef.current.position.set(0, -6, 0);
+        meshRef.current.frustumCulled = false;
     }, []);
 
     return (
@@ -73,7 +74,7 @@ function Scene({ children }: { children?: React.ReactNode }) {
                 minDistance={100}
                 maxDistance={500}
                 maxPolarAngle={Math.PI / 2.2}
-                target={[0, 0, 0]}
+                target={[0, 20, 0]}
             />
 
             {children}
