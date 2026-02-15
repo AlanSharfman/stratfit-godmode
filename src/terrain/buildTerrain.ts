@@ -18,11 +18,13 @@ export function buildTerrain(resolution: number, seed: number) {
 
     const smoothed = smoothHeightMap(heights, size, size, 2);
 
+    const HEIGHT_SCALE = 0.35;
+
     const geo = new THREE.PlaneGeometry(560, 360, size - 1, size - 1);
     const pos = geo.attributes.position;
 
     for (let i = 0; i < pos.count; i++) {
-        pos.setZ(i, smoothed[i] * 60);
+        pos.setZ(i, smoothed[i] * 60 * HEIGHT_SCALE);
     }
 
     geo.computeVertexNormals();
