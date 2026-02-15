@@ -11,7 +11,7 @@ export default function TerrainStage({ children }: { children?: React.ReactNode 
         <div style={{ width: "100%", height: "100%", position: "relative" }}>
             <Canvas
                 camera={{
-                    position: [0, 135, 320],
+                    position: [40, 135, 320],
                     fov: 42,
                     near: 1,
                     far: 3000,
@@ -23,7 +23,7 @@ export default function TerrainStage({ children }: { children?: React.ReactNode 
                 }}
                 style={{ background: "transparent" }}
                 onCreated={({ camera }) => {
-                    camera.lookAt(0, 18, 0);
+                    camera.lookAt(-35, 18, 0);
                     camera.updateProjectionMatrix();
                 }}
             >
@@ -52,7 +52,7 @@ function Scene({ children }: { children?: React.ReactNode }) {
     return (
         <>
             {/* Lighting */}
-            <ambientLight intensity={0.4} />
+            <ambientLight intensity={0.7} />
             <directionalLight position={[100, 100, 50]} intensity={0.8} />
             <directionalLight position={[-100, 50, -50]} intensity={0.3} />
 
@@ -60,9 +60,11 @@ function Scene({ children }: { children?: React.ReactNode }) {
             <mesh ref={meshRef} geometry={geometry}>
                 <meshStandardMaterial
                     color={0x7dd3fc}
+                    emissive={0x38bdf8}
+                    emissiveIntensity={0.3}
                     wireframe
                     transparent
-                    opacity={0.35}
+                    opacity={0.65}
                     roughness={0.8}
                     metalness={0.1}
                 />
