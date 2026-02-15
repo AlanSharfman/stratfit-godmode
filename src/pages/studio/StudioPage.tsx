@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import styles from "./StudioPage.module.css";
 
 import StudioSceneRoot from "@/components/studio/StudioSceneRoot";
@@ -8,8 +8,18 @@ import { TopControlBar } from "@/components/strategy-studio/TopControlBar";
 import { TimelineScrubber } from "@/components/strategy-studio/TimelineScrubber";
 import SimulationActivityPanel from "@/components/strategy-studio/SimulationActivityPanel";
 import { DeltaSummaryPanel } from "@/components/strategy-studio/DeltaSummaryPanel";
+import { useAnchorRegistry } from "@/spatial/AnchorRegistry";
 
 export default function StudioPage() {
+    // Phase 4: Register minimum spatial anchors
+    useEffect(() => {
+        const reg = useAnchorRegistry.getState();
+        reg.upsertAnchor("origin", { x: 0, y: 0, z: 0 }, 1, "Origin");
+        reg.upsertAnchor("timelineStart", { x: 0, y: 0, z: 0.1 }, 1, "Timeline Start");
+        reg.upsertAnchor("timelineEnd", { x: 1, y: 0, z: 0.1 }, 1, "Timeline End");
+        reg.upsertAnchor("p50_mid", { x: 0.5, y: 0, z: 0.4 }, 2, "P50 Mid");
+    }, []);
+
     const [levers, setLevers] = useState<any>(() => {
         return [
             { id: "demandStrength", label: "Demand Strength", value: 60, min: 0, max: 100, group: "growth" },

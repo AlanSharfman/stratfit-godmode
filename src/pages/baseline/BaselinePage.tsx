@@ -23,6 +23,7 @@ import DemoTourDirector from "@/demo/DemoTourDirector";
 import { TrajectoryEngine } from "@/engine/trajectory";
 import { ExecutiveDecisionOverlay, AICommentaryPanel } from "@/components/insights";
 import styles from "./BaselinePage.module.css";
+import { useAnchorRegistry } from "@/spatial/AnchorRegistry";
 
 export default function BaselinePage() {
   const [heatmapOn, setHeatmapOn] = useState(false);
@@ -31,6 +32,15 @@ export default function BaselinePage() {
   const [demoOn, setDemoOn] = useState(false);
   const [activeMetricId, setActiveMetricId] = useState<MetricId | null>(null);
   const [terrainMesh, setTerrainMesh] = useState<import("three").Mesh | null>(null);
+
+  // Phase 4: Register minimum spatial anchors
+  useEffect(() => {
+    const reg = useAnchorRegistry.getState();
+    reg.upsertAnchor("origin", { x: 0, y: 0, z: 0 }, 1, "Origin");
+    reg.upsertAnchor("timelineStart", { x: 0, y: 0, z: 0.1 }, 1, "Timeline Start");
+    reg.upsertAnchor("timelineEnd", { x: 1, y: 0, z: 0.1 }, 1, "Timeline End");
+    reg.upsertAnchor("p50_mid", { x: 0.5, y: 0, z: 0.4 }, 2, "P50 Mid");
+  }, []);
 
   const envelopeVisible = envelopeOn;
 
@@ -71,11 +81,11 @@ export default function BaselinePage() {
 
     const params = (terrainGeometry as any).parameters as
       | {
-          width?: number;
-          height?: number;
-          widthSegments?: number;
-          heightSegments?: number;
-        }
+        width?: number;
+        height?: number;
+        widthSegments?: number;
+        heightSegments?: number;
+      }
       | undefined;
 
     const width = params?.width ?? 50;

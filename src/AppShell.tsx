@@ -14,6 +14,7 @@ import DiagnosticsBootstrap from "@/diagnostics/DiagnosticsBootstrap";
 import DiagnosticsOverlay from "@/diagnostics/DiagnosticsOverlay";
 import { useDiagnosticsStore } from "@/diagnostics/DiagnosticsStore";
 import SimulationStatusBeacon from "@/components/simulation/SimulationStatusBeacon";
+import AnchorDebugOverlay from "@/spatial/AnchorDebugOverlay";
 
 export type AppOutletContext = {
   hasBaseline: boolean;
@@ -87,6 +88,7 @@ export default function AppShell() {
       <DiagnosticsBootstrap />
       <DiagnosticsOverlay />
       <SimulationStatusBeacon />
+      <AnchorDebugOverlay />
 
       <div className="app">
         <MainNav />
