@@ -63,8 +63,8 @@ const VERTEX_TME_DISPLACE = /* glsl */ `
         // Smooth hermite interpolation at corridor edges to prevent popping
         float tmeEdgeFade = smoothstep(0.0, 0.08, tmeT) * smoothstep(1.0, 0.92, tmeT);
 
-        // Vertical displacement: same scale as STM (4.0)
-        float tmeDisplacement = morphed * tmeFalloff * tmeEdgeFade * 4.0;
+        // Vertical displacement: dramatic scale for visible peaks and troughs
+        float tmeDisplacement = morphed * tmeFalloff * tmeEdgeFade * 14.0;
 
         // Override STM displacement — TME takes precedence
         // STM adds its own displacement; TME replaces with morphed version.

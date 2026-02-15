@@ -115,14 +115,27 @@ export default function BaselinePage() {
     [baselineConfidenceCurve, baselineRiskCurve],
   );
 
-  // ── Morph target curve for TME (alternative structural state) ──
-  const morphTargetCurve = useMemo(
-    () => generateMorphTargetCurve(baselineStructureCurve, 0.6, 256),
-    [baselineStructureCurve],
-  );
-
-  // ── Simulation bridge state for TME morph progress ──
+  // ── Simulation bridge state for TME ──
   const simMorphProgress = useSimulationBridge((s) => s.state.morphProgress);
+  const simRiskMultiplier = useSimulationBridge((s) => s.state.riskMultiplier);
+  const simConfMultiplier = useSimulationBridge((s) => s.state.confidenceMultiplier);
+
+  // ── Morph target curve for TME — reactive to strategic inputs ──
+  // When risk/confidence biases change, the morph target reshapes
+  const morphTargetCurve = useMemo(() => {
+    // Generate modified risk/confidence curves based on sim multipliers
+    const modRisk = new Float32Array(baselineRiskCurve.length);
+    const modConf = new Float32Array(baselineConfidenceCurve.length);
+    for (let i = 0; i < modRisk.length; i++) {
+      modRisk[i] = Math.max(0, Math.min(1, baselineRiskCurve[i] * simRiskMultiplier));
+    }
+    for (let i = 0; i < modConf.length; i++) {
+      modConf[i] = Math.max(0, Math.min(1, baselineConfidenceCurve[i] * simConfMultiplier));
+    }
+    // Generate morph target from modified curves — dramatic influence (0.9)
+    const modStructure = generateBaselineStructureCurve(modConf, modRisk, 256);
+    return generateMorphTargetCurve(modStructure, 0.9, 256);
+  }, [baselineRiskCurve, baselineConfidenceCurve, simRiskMultiplier, simConfMultiplier]);
 
   // ── Risk points for heatmap + fill overlays ──
   const riskPoints = useMemo(

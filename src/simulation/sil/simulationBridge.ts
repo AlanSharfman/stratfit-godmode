@@ -23,8 +23,27 @@ import { useStrategicInputStore } from "./strategicInputStore";
  * never directly from inputs.
  */
 export function computeSimulationState(inputs: StrategicInputs): SimulationState {
-    // Morph progress passes through directly
-    const morphProgress = Math.max(0, Math.min(1, inputs.morphProgress));
+    // ── Auto-compute morph progress from ALL inputs ──
+    // Any deviation from baseline drives terrain morphing.
+    // morphProgress slider provides explicit control; other inputs add implicit morphing.
+    const riskDeviation = Math.abs(inputs.riskBias);
+    const confDeviation = Math.abs(inputs.confidenceBias);
+    const growthDeviation = Math.abs(inputs.growthModifier - 1.0);
+    const burnDeviation = Math.abs(inputs.burnModifier - 1.0);
+
+    // Combine all deviations — any input change drives morph
+    const implicitMorph = Math.min(1.0,
+        riskDeviation * 0.8 +
+        confDeviation * 0.8 +
+        growthDeviation * 0.6 +
+        burnDeviation * 0.6
+    );
+
+    // Final morph = max of explicit slider and implicit from other inputs
+    const morphProgress = Math.max(
+        0,
+        Math.min(1, Math.max(inputs.morphProgress, implicitMorph))
+    );
 
     // Risk multiplier: bias maps [-1,1] → [0.3, 1.7]
     // Clamped to avoid extreme values
