@@ -8,10 +8,21 @@ import { buildPathMesh } from "./buildPathMesh";
 import { createGlowMesh } from "./pathGlow";
 import { createSeed } from "@/terrain/seed";
 import { generateCorridorMask } from "@/terrain/corridorContactPass";
+import { checksumCurve, CorridorGeometryCache } from "@/terrain/corridorTopology";
 
 // Divergence scaffold constants (deterministic)
 const DIVERGENCE_T = 0.62; // fixed, deterministic (no randomness)
 const DIVERGENCE_SPREAD = 10; // world units lateral branch hint
+
+// Terrain grid metadata for deterministic topology
+const TERRAIN_GRID_META = {
+    resolution: 120,
+    worldWidth: 560,
+    worldHeight: 360
+};
+
+// Shared geometry cache across component remounts
+const geometryCache = new CorridorGeometryCache();
 
 export default function P50Path({
     scene,
@@ -93,41 +104,56 @@ export default function P50Path({
         const branchLeft = offsetCurve(p50Curve, -1);
         const branchRight = offsetCurve(p50Curve, 1);
 
-        // Build meshes with different visual properties and depth integration
+        // Build meshes with deterministic grid-snapped topology
         const p50Mesh = buildPathMesh(p50Curve, {
             opacity: 0.75,
             widthMin: 2.6,
             widthMax: 5.4,
             depthFadeFar: 560,
-            edgeFeather: 0.20
+            edgeFeather: 0.20,
+            useGridSnap: true,
+            gridMeta: TERRAIN_GRID_META,
+            seed
         });
         const p10Mesh = buildPathMesh(p10Curve, {
             opacity: 0.30,
             widthMin: 1.8,
             widthMax: 3.2,
             depthFadeFar: 480,
-            edgeFeather: 0.26
+            edgeFeather: 0.26,
+            useGridSnap: true,
+            gridMeta: TERRAIN_GRID_META,
+            seed
         });
         const p90Mesh = buildPathMesh(p90Curve, {
             opacity: 0.30,
             widthMin: 1.8,
             widthMax: 3.2,
             depthFadeFar: 480,
-            edgeFeather: 0.26
+            edgeFeather: 0.26,
+            useGridSnap: true,
+            gridMeta: TERRAIN_GRID_META,
+            seed
         });
         const branchMeshL = buildPathMesh(branchLeft, {
             opacity: 0.10,
             widthMin: 1.2,
             widthMax: 2.0,
             depthFadeFar: 420,
-            edgeFeather: 0.30
+            edgeFeather: 0.30,
+            useGridSnap: true,
+            gridMeta: TERRAIN_GRID_META,
+            seed
         });
         const branchMeshR = buildPathMesh(branchRight, {
             opacity: 0.10,
             widthMin: 1.2,
             widthMax: 2.0,
             depthFadeFar: 420,
-            edgeFeather: 0.30
+            edgeFeather: 0.30,
+            useGridSnap: true,
+            gridMeta: TERRAIN_GRID_META,
+            seed
         });
         const glow = createGlowMesh(p50Curve);
 
