@@ -13,6 +13,7 @@ import StrategyStudioRoute from "@/routes/StrategyStudioRoute";
 import SimulateOverlayRoute from "@/routes/SimulateOverlayRoute";
 
 import ScenarioMemoPage from "@/pages/ScenarioMemoPage";
+import StudioPage from "@/pages/studio/StudioPage";
 import AdminEngineConsole from "@/components/admin/AdminEngineConsole";
 import { MainNav } from "@/components/navigation";
 
@@ -44,22 +45,7 @@ function BaselineRouteWithState() {
 }
 
 function StudioRouteWithState() {
-  const state = useAppState();
-  const navigate = useNavigate();
-  return (
-    <StrategyStudioRoute
-      levers={state.levers}
-      setLevers={state.setLevers}
-      scenario={state.scenario}
-      dataPoints={state.dataPoints}
-      showSaveModal={state.showSaveModal}
-      setShowSaveModal={state.setShowSaveModal}
-      showLoadPanel={state.showLoadPanel}
-      setShowLoadPanel={state.setShowLoadPanel}
-      isSimulatingGlobal={state.isSimulatingGlobal}
-      onRunScenario={() => navigate("/compare")}
-    />
-  );
+  return <StudioPage />;
 }
 
 function SimulateRouteWithState() {
