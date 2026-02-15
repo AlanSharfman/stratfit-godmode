@@ -28,6 +28,9 @@ export const cfEnabled = true;
 /** Strategic Leverage Markers — instanced icosahedra at leverage peaks (Stage 8) */
 export const slmEnabled = true;
 
+/** Intervention Preview Engine — ghost trajectory on marker hover (Stage 10) */
+export const ipeEnabled = true;
+
 
 
 

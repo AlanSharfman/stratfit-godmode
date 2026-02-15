@@ -26,9 +26,10 @@ import { ExecutiveDecisionOverlay, AICommentaryPanel } from "@/components/insigh
 import RiskPressureField from "@/components/terrain/RiskPressureField";
 import ConfidenceField from "@/components/terrain/ConfidenceField";
 import StrategicLeverageMarkers from "@/components/terrain/StrategicLeverageMarkers";
+import InterventionPreview from "@/components/terrain/InterventionPreview";
 import { generateBaselineRiskCurve } from "@/render/rpf/generateBaselineRisk";
 import { generateBaselineConfidenceCurve } from "@/render/cf/generateBaselineConfidence";
-import { rpfEnabled, cfEnabled, slmEnabled } from "@/config/featureFlags";
+import { rpfEnabled, cfEnabled, slmEnabled, ipeEnabled } from "@/config/featureFlags";
 import styles from "./BaselinePage.module.css";
 import { useAnchorRegistry } from "@/spatial/AnchorRegistry";
 
@@ -40,6 +41,7 @@ export default function BaselinePage() {
   const [rpfOn, setRpfOn] = useState(rpfEnabled);
   const [cfOn, setCfOn] = useState(cfEnabled);
   const [slmOn, setSlmOn] = useState(slmEnabled);
+  const [ipeOn, setIpeOn] = useState(ipeEnabled);
   const [activeMetricId, setActiveMetricId] = useState<MetricId | null>(null);
   const [terrainMesh, setTerrainMesh] = useState<import("three").Mesh | null>(null);
 
@@ -369,6 +371,16 @@ export default function BaselinePage() {
               MARKERS: {slmOn ? "ON" : "OFF"}
             </button>
           )}
+          {ipeEnabled && (
+            <button
+              type="button"
+              className={`${styles.toggle} ${ipeOn ? styles.toggleOn : ""}`}
+              onClick={() => setIpeOn((v) => !v)}
+              aria-pressed={ipeOn}
+            >
+              PREVIEW: {ipeOn ? "ON" : "OFF"}
+            </button>
+          )}
         </div>
       </div>
 
@@ -383,6 +395,7 @@ export default function BaselinePage() {
               {rpfEnabled && <RiskPressureField riskValues={baselineRiskCurve} enabled={rpfOn} />}
               {cfEnabled && <ConfidenceField confidenceValues={baselineConfidenceCurve} enabled={cfOn} />}
               {slmEnabled && <StrategicLeverageMarkers riskValues={baselineRiskCurve} enabled={slmOn} />}
+              {ipeEnabled && <InterventionPreview riskValues={baselineRiskCurve} enabled={ipeOn && slmOn} />}
             </TerrainStage>
           </TerrainWithFallback>
 

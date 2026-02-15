@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { generateP50Nodes } from "@/paths/generatePath";
 import { nodesToWorldXZ } from "@/paths/P50Path";
 import { createSeed } from "@/terrain/seed";
 import { computeLeverageCurve, pickLeveragePeaks, createMarkerInstances } from "@/render/slm";
 import type { SpinePoint } from "@/render/slm";
+import { useIpeHoverStore } from "@/state/ipeHoverStore";
 
 /**
  * StrategicLeverageMarkers — declarative R3F component.
@@ -37,6 +38,22 @@ export default function StrategicLeverageMarkers({
     enabled?: boolean;
 }) {
     const meshRef = useRef<THREE.InstancedMesh>(null);
+    const setHoveredPeak = useIpeHoverStore((s) => s.setHoveredPeak);
+    const clearHover = useIpeHoverStore((s) => s.clearHover);
+
+    const handlePointerOver = useCallback(
+        (e: THREE.Event) => {
+            const ev = e as unknown as { instanceId?: number };
+            if (ev.instanceId != null) {
+                setHoveredPeak(ev.instanceId);
+            }
+        },
+        [setHoveredPeak],
+    );
+
+    const handlePointerOut = useCallback(() => {
+        clearHover();
+    }, [clearHover]);
 
     // ── Derive spine from P50 corridor (same source as P50Path) ──
     const spine = useMemo<SpinePoint[]>(() => {
@@ -99,6 +116,8 @@ export default function StrategicLeverageMarkers({
             visible={enabled && instances.length > 0}
             frustumCulled={false}
             renderOrder={15}
+            onPointerOver={handlePointerOver}
+            onPointerOut={handlePointerOut}
         >
             <icosahedronGeometry args={[1, 1]} />
             <meshStandardMaterial

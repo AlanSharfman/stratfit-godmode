@@ -34,8 +34,9 @@ export default function TerrainStage({ children }: { children?: React.ReactNode 
 }
 
 function Scene({ children }: { children?: React.ReactNode }) {
-    const meshRef = useRef<THREE.Mesh>(null);
-    const materialRef = useRef<THREE.MeshStandardMaterial | null>(null);
+    const solidRef = useRef<THREE.Mesh>(null);
+    const wireRef = useRef<THREE.Mesh>(null);
+    const solidMatRef = useRef<THREE.MeshStandardMaterial | null>(null);
     const { scene } = useThree();
 
     const geometry = useMemo(() => {
@@ -43,11 +44,14 @@ function Scene({ children }: { children?: React.ReactNode }) {
         return buildTerrain(120, seed);
     }, []);
 
+    // Apply identical transforms to both meshes
     useEffect(() => {
-        if (!meshRef.current) return;
-        meshRef.current.rotation.x = -Math.PI / 2;
-        meshRef.current.position.set(0, -6, 0);
-        meshRef.current.frustumCulled = false;
+        for (const ref of [solidRef, wireRef]) {
+            if (!ref.current) continue;
+            ref.current.rotation.x = -Math.PI / 2;
+            ref.current.position.set(0, -6, 0);
+            ref.current.frustumCulled = false;
+        }
     }, []);
 
     // DEV ASSERTION: count path meshes after mount
@@ -71,18 +75,39 @@ function Scene({ children }: { children?: React.ReactNode }) {
             <directionalLight position={[100, 100, 50]} intensity={0.8} />
             <directionalLight position={[-100, 50, -50]} intensity={0.3} />
 
-            {/* Terrain Mesh */}
-            <mesh ref={meshRef} geometry={geometry} renderOrder={0} name="terrain-surface">
+            {/* Pass 1: Solid surface — receives RPF/CF shader injection */}
+            <mesh ref={solidRef} geometry={geometry} renderOrder={0} name="terrain-surface">
                 <meshStandardMaterial
-                    ref={materialRef}
+                    ref={solidMatRef}
+                    color={0x1a2a3a}
+                    emissive={0x0d1b2a}
+                    emissiveIntensity={0.15}
+                    wireframe={false}
+                    transparent
+                    opacity={0.55}
+                    roughness={0.9}
+                    metalness={0.05}
+                    depthWrite
+                    depthTest
+                    polygonOffset
+                    polygonOffsetFactor={1}
+                    polygonOffsetUnits={1}
+                />
+            </mesh>
+
+            {/* Pass 2: Wireframe overlay — visual grid aesthetic */}
+            <mesh ref={wireRef} geometry={geometry} renderOrder={1}>
+                <meshStandardMaterial
                     color={0x7dd3fc}
                     emissive={0x38bdf8}
                     emissiveIntensity={0.3}
                     wireframe
                     transparent
-                    opacity={0.65}
+                    opacity={0.45}
                     roughness={0.8}
                     metalness={0.1}
+                    depthWrite={false}
+                    depthTest
                 />
             </mesh>
 
