@@ -40,6 +40,7 @@ import { generateBaselineHeatCurve } from "@/render/dhl/createHeatTexture";
 import { generateBaselineResonanceCurve } from "@/render/srl/createResonanceTexture";
 import { generateBaselineStructureCurve } from "@/render/stm/createStructureTexture";
 import { rpfEnabled, cfEnabled, slmEnabled, ipeEnabled, tflEnabled, sdlEnabled, dhlEnabled, srlEnabled, shlEnabled, stmEnabled } from "@/config/featureFlags";
+import { useSystemBaseline } from "@/system/SystemBaselineProvider";
 import styles from "./BaselinePage.module.css";
 import { useAnchorRegistry } from "@/spatial/AnchorRegistry";
 
@@ -77,8 +78,14 @@ export default function BaselinePage() {
 
   const connections = useMemo(() => BASELINE_METRIC_CONNECTIONS, []);
 
-  // ── Deterministic baseline risk curve for RPF ──
-  const baselineRiskCurve = useMemo(() => generateBaselineRiskCurve(256), []);
+  // ── Read actual BaselineV1 from SystemBaselineProvider ──
+  const { baseline: systemBaseline } = useSystemBaseline();
+
+  // ── Deterministic baseline risk curve for RPF (driven by real data) ──
+  const baselineRiskCurve = useMemo(
+    () => generateBaselineRiskCurve(256, systemBaseline),
+    [systemBaseline],
+  );
 
   // ── Deterministic baseline confidence curve for CF (derived from risk) ──
   const baselineConfidenceCurve = useMemo(
