@@ -1,0 +1,873 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   STRATFIT — System Calibration · GOD MODE — Titanium Chrome Charcoal Jewels
+   Capital-grade intake instrument · Two-column workflow
+   Rail (260px) + Content (1fr)
+   Titanium bezels · Chrome highlights · Charcoal depth · Jewel-cut borders
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── ANIMATIONS ───────────────────────────────────────────────────────── */
+@keyframes sfFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes sfPanelIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes sfRecalPulse {
+  0%   { opacity: 0; width: 0; }
+  40%  { opacity: 1; width: 100%; }
+  100% { opacity: 0; width: 100%; }
+}
+@keyframes sfSavedFlash {
+  0%   { opacity: 0; transform: translateY(2px); }
+  30%  { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-2px); }
+}
+@keyframes sfStepGlow {
+  0%   { box-shadow: 0 0 4px rgba(160,185,210,0.12), inset 0 0 4px rgba(160,185,210,0.06); }
+  50%  { box-shadow: 0 0 10px rgba(160,185,210,0.22), inset 0 0 6px rgba(160,185,210,0.10); }
+  100% { box-shadow: 0 0 4px rgba(160,185,210,0.12), inset 0 0 4px rgba(160,185,210,0.06); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ROOT — 2-column grid: rail + content
+   ═══════════════════════════════════════════════════════════════════════════ */
+.root {
+  position: relative;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  flex: 1;
+  overflow: hidden;
+  background: linear-gradient(168deg, #0D1626 0%, #0A111F 35%, #080F18 100%);
+  color: #e2eaf4;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Background layers ────────────────────────────────────────────────── */
+.bgLayer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.012;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 180px 180px;
+}
+
+.vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 50%, transparent 60%, rgba(0, 0, 0, 0.35) 100%);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LEFT STEP RAIL — 260px · Titanium Chrome Panel
+   ═══════════════════════════════════════════════════════════════════════════ */
+.rail {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 28px 16px 20px;
+  background:
+    linear-gradient(180deg,
+      rgba(16, 20, 32, 0.98) 0%,
+      rgba(10, 13, 22, 1) 40%,
+      rgba(6, 8, 14, 1) 100%);
+  /* ── Titanium chrome right border — multi-layer bezel ── */
+  border-right: 1px solid rgba(140, 160, 185, 0.12);
+  box-shadow:
+    2px 0 16px rgba(0, 0, 0, 0.5),
+    1px 0 0 rgba(180, 200, 220, 0.06),
+    inset -1px 0 0 rgba(120, 140, 170, 0.04);
+  overflow-y: auto;
+}
+
+/* ── Titanium vertical accent — right edge with chrome gradient ── */
+.rail::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent 3%,
+    rgba(160, 185, 210, 0.08) 15%,
+    rgba(180, 200, 225, 0.16) 35%,
+    rgba(160, 185, 210, 0.12) 55%,
+    rgba(140, 165, 195, 0.08) 75%,
+    transparent 97%
+  );
+  pointer-events: none;
+}
+
+/* ─── Logo Block ──────────────────────────────────────────────────────── */
+.logoBlock {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 8px;
+  margin-bottom: 8px;
+}
+
+.logoSvg {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+}
+
+.logoTitle {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.logoSub {
+  font-size: 9px;
+  letter-spacing: 0.8px;
+  color: rgba(180, 200, 220, 0.45);
+  margin-top: 2px;
+  text-transform: uppercase;
+}
+
+/* ─── Section Descriptor ─────────────────────────────────────────────── */
+.sectionDescriptor {
+  font-size: 10px;
+  letter-spacing: 0.4px;
+  color: rgba(160, 180, 210, 0.40);
+  padding: 0 8px;
+  margin-bottom: 24px;
+}
+
+/* ─── Rail Navigation — Jewel-cut Step Items ─────────────────────────── */
+.railNav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.railItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(120, 140, 170, 0.06);
+  background: transparent;
+  color: rgba(200, 210, 225, 0.55);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  border-radius: 6px;
+  border-left: 2px solid transparent;
+  transition: all 150ms ease;
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
+}
+
+.railItem:hover {
+  color: rgba(220, 230, 240, 0.82);
+  background: rgba(140, 165, 200, 0.04);
+  border-color: rgba(140, 165, 200, 0.10);
+  border-left-color: rgba(160, 185, 210, 0.25);
+}
+
+.railItemActive {
+  composes: railItem;
+  color: rgba(240, 245, 255, 0.95);
+  background:
+    linear-gradient(135deg,
+      rgba(140, 170, 210, 0.06) 0%,
+      rgba(100, 140, 190, 0.03) 100%);
+  border-color: rgba(160, 185, 215, 0.14);
+  border-left-color: rgba(180, 210, 240, 0.65);
+  box-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(200, 220, 245, 0.04),
+    inset 0 0 12px rgba(140, 170, 210, 0.03);
+}
+
+/* ── Step Number Badges — Chrome Jewel Treatment ── */
+.railNum {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 6px;
+  background:
+    linear-gradient(145deg,
+      rgba(30, 36, 52, 0.9) 0%,
+      rgba(20, 25, 38, 0.95) 100%);
+  border: 1px solid rgba(120, 145, 180, 0.10);
+  color: rgba(160, 180, 210, 0.45);
+  flex-shrink: 0;
+  transition: all 180ms ease;
+  font-variant-numeric: tabular-nums;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(180, 200, 230, 0.04);
+}
+
+.railItemActive .railNum {
+  background:
+    linear-gradient(145deg,
+      rgba(45, 55, 78, 0.8) 0%,
+      rgba(30, 38, 58, 0.9) 100%);
+  border-color: rgba(160, 190, 225, 0.22);
+  color: rgba(200, 220, 245, 0.85);
+  box-shadow:
+    0 1px 6px rgba(140, 170, 210, 0.12),
+    0 0 1px rgba(180, 205, 235, 0.15),
+    inset 0 1px 0 rgba(200, 225, 250, 0.08);
+  animation: sfStepGlow 3s ease-in-out infinite;
+}
+
+.railLabel {
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ─── Draft Badge ────────────────────────────────────────────────────── */
+.draftBadge {
+  margin-top: auto;
+  padding: 12px 8px 0;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 1.4px;
+  color: rgba(160, 180, 210, 0.28);
+  text-transform: uppercase;
+  border-top: 1px solid rgba(120, 145, 180, 0.06);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MAIN CONTENT PANE
+   ═══════════════════════════════════════════════════════════════════════════ */
+.main {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  padding: 32px 48px 0;
+  animation: sfFadeIn 300ms ease-out both;
+}
+
+/* ─── Header ─────────────────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+}
+
+.headerRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.88);
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 12px;
+  color: rgba(180, 200, 220, 0.50);
+  margin: 6px 0 0;
+  letter-spacing: 0.2px;
+  font-weight: 400;
+}
+
+.progress {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.4px;
+  color: rgba(170, 200, 230, 0.70);
+  white-space: nowrap;
+  padding-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TOP-RIGHT MOUNTAIN PREVIEW — Titanium Chrome Bezel Frame
+   ═══════════════════════════════════════════════════════════════════════════ */
+.mountainCard {
+  width: 420px;
+  border-radius: 10px;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg,
+      rgba(18, 24, 40, 0.85) 0%,
+      rgba(10, 14, 26, 0.94) 100%);
+  /* ── Chrome-titanium double border bezel ── */
+  border: 1px solid rgba(150, 175, 210, 0.14);
+  box-shadow:
+    0 0 0 1px rgba(100, 125, 160, 0.06),
+    0 8px 28px rgba(0, 0, 0, 0.4),
+    0 2px 6px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(200, 220, 245, 0.06),
+    inset 0 0 20px rgba(120, 150, 190, 0.02);
+}
+
+.mountainCardHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  /* ── Charcoal divider with chrome highlight ── */
+  border-bottom: 1px solid rgba(150, 175, 210, 0.10);
+  background:
+    linear-gradient(180deg,
+      rgba(30, 38, 56, 0.15) 0%,
+      rgba(0, 0, 0, 0.05) 100%);
+}
+
+.mountainCardLabel {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(170, 200, 230, 0.80);
+}
+
+.mountainCardMeta {
+  font-size: 10px;
+  letter-spacing: 0.2px;
+  color: rgba(160, 180, 210, 0.42);
+  white-space: nowrap;
+}
+
+.mountainViewport {
+  height: 160px;
+  background:
+    radial-gradient(ellipse at 30% 10%, rgba(120, 160, 210, 0.05), transparent 55%),
+    linear-gradient(180deg, rgba(12, 18, 30, 1) 0%, rgba(8, 12, 22, 1) 100%);
+}
+
+/* 1D signal wrapper */
+.signalWrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.signalMeta {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  display: grid;
+  grid-template-columns: auto auto auto auto;
+  gap: 6px 10px;
+  align-items: baseline;
+  padding: 6px 8px;
+  border-radius: 7px;
+  background: rgba(8, 12, 22, 0.55);
+  /* ── Chrome micro-bezel ── */
+  border: 1px solid rgba(150, 175, 210, 0.10);
+  box-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(180, 200, 230, 0.04);
+  backdrop-filter: blur(10px);
+}
+
+.signalMetaLabel {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(160, 180, 210, 0.40);
+}
+
+.signalMetaValue {
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: rgba(170, 200, 235, 0.78);
+}
+
+@media (max-width: 1100px) {
+  .mountainCard {
+    width: 360px;
+  }
+  .mountainViewport {
+    height: 150px;
+  }
+}
+
+@media (max-width: 980px) {
+  .header {
+    flex-direction: column;
+    gap: 14px;
+  }
+  .headerRight {
+    align-items: flex-start;
+    width: 100%;
+  }
+  .mountainCard {
+    width: 100%;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   KPI INSTRUMENT STRIP — Chrome Titanium Bezeled Tiles
+   ═══════════════════════════════════════════════════════════════════════════ */
+.kpiStrip {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  margin-bottom: 24px;
+  border-radius: 8px;
+  overflow: hidden;
+  /* ── Titanium chrome outer bezel ── */
+  background: rgba(120, 145, 180, 0.07);
+  border: 1px solid rgba(150, 175, 210, 0.12);
+  box-shadow:
+    0 0 0 1px rgba(100, 125, 160, 0.04),
+    0 4px 16px rgba(0, 0, 0, 0.25),
+    0 1px 3px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(200, 220, 245, 0.05);
+  flex-shrink: 0;
+}
+
+/* Recalculation shimmer — chrome flash */
+.shimmerBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 1px;
+  z-index: 5;
+  background: linear-gradient(90deg,
+    transparent 10%,
+    rgba(180, 210, 240, 0.50) 50%,
+    transparent 90%
+  );
+  animation: sfRecalPulse 200ms ease-out forwards;
+  pointer-events: none;
+}
+
+.kpiTile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 14px 8px;
+  /* ── Charcoal tile with subtle chrome inner glow ── */
+  background:
+    linear-gradient(180deg,
+      rgba(16, 22, 36, 0.92) 0%,
+      rgba(12, 16, 28, 0.95) 100%);
+  /* Faint inner chrome catchlight */
+  box-shadow: inset 0 1px 0 rgba(180, 200, 230, 0.03);
+}
+
+.kpiLabel {
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: rgba(160, 180, 210, 0.55);
+  white-space: nowrap;
+}
+
+.kpiValue {
+  font-size: 18px;
+  font-weight: 700;
+  color: rgba(230, 240, 255, 0.92);
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.kpiHelper {
+  font-size: 8px;
+  color: rgba(150, 170, 200, 0.36);
+  letter-spacing: 0.3px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MODULE PANEL — Section cards container
+   ═══════════════════════════════════════════════════════════════════════════ */
+.modulePanel {
+  position: relative;
+  animation: sfPanelIn 180ms ease-out both;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ─── Card Container — Charcoal Jewel Case ──────────────────────────── */
+.card {
+  position: relative;
+  padding: 24px 28px 24px;
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg,
+      rgba(18, 24, 40, 0.82) 0%,
+      rgba(12, 16, 28, 0.92) 100%);
+  /* ── Titanium chrome multi-layer border ── */
+  border: 1px solid rgba(140, 170, 210, 0.12);
+  box-shadow:
+    0 0 0 1px rgba(100, 130, 170, 0.04),
+    0 6px 22px rgba(0, 0, 0, 0.30),
+    0 2px 6px rgba(0, 0, 0, 0.20),
+    inset 0 1px 0 rgba(200, 220, 250, 0.05),
+    inset 0 0 24px rgba(120, 150, 190, 0.02);
+}
+
+/* ── Chrome highlight bezel — top edge ── */
+.card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  border-radius: 10px 10px 0 0;
+  background: linear-gradient(90deg,
+    transparent 8%,
+    rgba(160, 190, 225, 0.06) 25%,
+    rgba(180, 210, 240, 0.12) 50%,
+    rgba(160, 190, 225, 0.06) 75%,
+    transparent 92%
+  );
+  pointer-events: none;
+}
+
+/* ── Subtle bottom bezel reflection ── */
+.card::after {
+  content: "";
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  border-radius: 0 0 10px 10px;
+  background: linear-gradient(90deg,
+    transparent 15%,
+    rgba(100, 130, 170, 0.04) 50%,
+    transparent 85%
+  );
+  pointer-events: none;
+}
+
+.cardTitle {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: rgba(200, 215, 235, 0.72);
+  margin: 0 0 4px;
+  text-transform: uppercase;
+  padding-bottom: 16px;
+  /* ── Chrome divider line ── */
+  border-bottom: 1px solid rgba(140, 170, 210, 0.09);
+}
+
+/* ─── 2-Column Field Grid ─────────────────────────────────────────────── */
+.fieldGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 24px;
+  padding-top: 20px;
+}
+
+/* ─── Single Field (vertical stack) ───────────────────────────────────── */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.fieldLabel {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(190, 205, 225, 0.68);
+  letter-spacing: 0.2px;
+}
+
+.fieldHelper {
+  font-size: 10px;
+  color: rgba(150, 170, 200, 0.38);
+  letter-spacing: 0.1px;
+  line-height: 1.3;
+  margin-top: -1px;
+}
+
+/* ─── Text Input — Chrome Inset Bezel ──────────────────────────────── */
+.fieldTextInput {
+  width: 100%;
+  height: 40px;
+  padding: 0 14px;
+  background:
+    linear-gradient(180deg,
+      rgba(6, 10, 20, 0.45) 0%,
+      rgba(10, 14, 26, 0.35) 100%);
+  /* ── Titanium inset border ── */
+  border: 1px solid rgba(120, 150, 190, 0.12);
+  border-radius: 7px;
+  color: rgba(230, 240, 255, 0.95);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+  letter-spacing: 0.1px;
+  box-shadow:
+    inset 0 1px 3px rgba(0, 0, 0, 0.15),
+    0 1px 0 rgba(180, 200, 230, 0.02);
+}
+
+.fieldTextInput:focus {
+  border-color: rgba(160, 195, 235, 0.30);
+  box-shadow:
+    inset 0 1px 3px rgba(0, 0, 0, 0.15),
+    0 0 0 2px rgba(150, 185, 225, 0.06),
+    0 0 8px rgba(140, 175, 215, 0.05);
+  background:
+    linear-gradient(180deg,
+      rgba(10, 16, 30, 0.55) 0%,
+      rgba(14, 20, 36, 0.45) 100%);
+}
+
+.fieldTextInput::placeholder {
+  color: rgba(140, 160, 190, 0.30);
+  font-weight: 400;
+}
+
+/* ─── Numeric Input Wrapper — Chrome Inset Bezel ────────────────────── */
+.fieldInputWrap {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 40px;
+  background:
+    linear-gradient(180deg,
+      rgba(6, 10, 20, 0.45) 0%,
+      rgba(10, 14, 26, 0.35) 100%);
+  /* ── Titanium inset border ── */
+  border: 1px solid rgba(120, 150, 190, 0.12);
+  border-radius: 7px;
+  padding: 0 14px;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+  box-shadow:
+    inset 0 1px 3px rgba(0, 0, 0, 0.15),
+    0 1px 0 rgba(180, 200, 230, 0.02);
+}
+
+.fieldInputWrap:focus-within {
+  border-color: rgba(160, 195, 235, 0.30);
+  box-shadow:
+    inset 0 1px 3px rgba(0, 0, 0, 0.15),
+    0 0 0 2px rgba(150, 185, 225, 0.06),
+    0 0 8px rgba(140, 175, 215, 0.05);
+  background:
+    linear-gradient(180deg,
+      rgba(10, 16, 30, 0.55) 0%,
+      rgba(14, 20, 36, 0.45) 100%);
+}
+
+.fieldAffix {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(160, 180, 210, 0.45);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.fieldNumInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: rgba(230, 240, 255, 0.95);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 0 4px;
+  font-family: inherit;
+  width: 100%;
+  min-width: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.2px;
+}
+
+.fieldNumInput::placeholder {
+  color: rgba(140, 160, 190, 0.28);
+  font-weight: 400;
+  text-align: right;
+}
+
+/* ─── Derived Metrics Row — Chrome Separator ─────────────────────────── */
+.derivedRow {
+  display: flex;
+  gap: 28px;
+  margin-top: 16px;
+  padding-top: 14px;
+  /* ── Subtle titanium divider ── */
+  border-top: 1px solid rgba(140, 170, 210, 0.07);
+}
+
+.derivedMetric {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(120, 150, 190, 0.03);
+  border: 1px solid rgba(130, 160, 200, 0.06);
+}
+
+.derivedLabel {
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(160, 180, 210, 0.45);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.derivedValue {
+  font-size: 15px;
+  font-weight: 700;
+  color: rgba(170, 205, 240, 0.78);
+  letter-spacing: -0.2px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STICKY ACTION BAR — Chrome Titanium Footer Bezel
+   ═══════════════════════════════════════════════════════════════════════════ */
+.actionBar {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 0;
+  margin-top: 28px;
+  /* ── Chrome separator line ── */
+  border-top: 1px solid rgba(150, 175, 210, 0.08);
+  background: linear-gradient(180deg, rgba(11, 18, 32, 0) 0%, rgba(11, 18, 32, 0.96) 30%);
+  flex-shrink: 0;
+}
+
+.savedConfirm {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  color: rgba(120, 210, 180, 0.7);
+  text-transform: uppercase;
+  animation: sfSavedFlash 1500ms ease-out forwards;
+  margin-right: auto;
+}
+
+/* ── Secondary Button — Titanium Outline ── */
+.btnSecondary {
+  padding: 9px 20px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(200, 215, 235, 0.65);
+  background: transparent;
+  border: 1px solid rgba(140, 170, 210, 0.14);
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 150ms ease;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(200, 220, 245, 0.02);
+}
+
+.btnSecondary:hover {
+  color: rgba(220, 230, 245, 0.88);
+  border-color: rgba(160, 190, 225, 0.24);
+  background:
+    linear-gradient(180deg,
+      rgba(140, 170, 210, 0.06) 0%,
+      rgba(120, 150, 190, 0.02) 100%);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(200, 220, 245, 0.04);
+}
+
+/* ── Primary Button — Chrome Jewel CTA ── */
+.btnPrimary {
+  padding: 9px 28px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(240, 248, 255, 0.92);
+  background:
+    linear-gradient(180deg,
+      rgba(140, 180, 230, 0.12) 0%,
+      rgba(120, 160, 210, 0.06) 100%);
+  /* ── Chrome-cut double border ── */
+  border: 1px solid rgba(160, 195, 235, 0.24);
+  border-radius: 7px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 150ms ease;
+  box-shadow:
+    0 0 0 1px rgba(140, 175, 215, 0.04),
+    inset 0 1px 0 rgba(220, 235, 255, 0.06),
+    0 2px 8px rgba(0, 0, 0, 0.25),
+    0 0 12px rgba(140, 175, 215, 0.04);
+}
+
+.btnPrimary:hover {
+  border-color: rgba(170, 205, 240, 0.35);
+  background:
+    linear-gradient(180deg,
+      rgba(150, 190, 240, 0.16) 0%,
+      rgba(130, 170, 220, 0.08) 100%);
+  box-shadow:
+    0 0 0 1px rgba(160, 195, 235, 0.06),
+    inset 0 1px 0 rgba(220, 235, 255, 0.08),
+    0 4px 14px rgba(0, 0, 0, 0.30),
+    0 0 18px rgba(150, 185, 225, 0.06);
+  transform: translateY(-1px);
+}
+
+.btnPrimary:active {
+  transform: translateY(0);
+  transition-duration: 40ms;
+  box-shadow:
+    inset 0 1px 3px rgba(0, 0, 0, 0.15),
+    0 1px 3px rgba(0, 0, 0, 0.15);
+}

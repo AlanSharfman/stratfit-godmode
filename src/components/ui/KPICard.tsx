@@ -1,7 +1,7 @@
 // src/components/ui/KPICard.tsx
 // STRATFIT — Premium KPI Widgets — Bloomberg/Apple-Grade Quality
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { ViewMode } from "@/state/scenarioStore";
 import { useUIStore } from "@/state/uiStore";
 
@@ -546,19 +546,27 @@ export default function KPICard({
             ? "#7c3aed" // Indigo/Violet
             : "#ffffff";
 
-  const Widget = () => {
+  const widgetNode = useMemo(() => {
     const props = { value: rawValue, isActive };
     switch (widgetType) {
-      case "timeCompression": return <RunwayWidget {...props} reduceMotion={reduceMotion} />;
-      case "liquidityReservoir": return <CashWidget {...props} />;
-      case "vectorFlow": return <MomentumWidget {...props} />;
-      case "efficiencyRotor": return <BurnWidget {...props} />;
-      case "stabilityWave": return <RiskWidget {...props} />;
-      case "structuralLift": return <EarningsWidget {...props} />;
-      case "scaleAura": return <ValueWidget {...props} />;
-      default: return <RunwayWidget {...props} reduceMotion={reduceMotion} />;
+      case "timeCompression":
+        return <RunwayWidget {...props} reduceMotion={reduceMotion} />;
+      case "liquidityReservoir":
+        return <CashWidget {...props} />;
+      case "vectorFlow":
+        return <MomentumWidget {...props} />;
+      case "efficiencyRotor":
+        return <BurnWidget {...props} />;
+      case "stabilityWave":
+        return <RiskWidget {...props} />;
+      case "structuralLift":
+        return <EarningsWidget {...props} />;
+      case "scaleAura":
+        return <ValueWidget {...props} />;
+      default:
+        return <RunwayWidget {...props} reduceMotion={reduceMotion} />;
     }
-  };
+  }, [isActive, rawValue, reduceMotion, widgetType]);
 
   // STEALTH PROTOCOL: Compute visual states
   const stealthOpacity = isDragging ? 1 : 0.2;
@@ -606,7 +614,7 @@ export default function KPICard({
           </div>
         <span className="card-value" style={{ color: valueColor }}>{value}</span>
         <div className="card-widget">
-          <Widget />
+          {widgetNode}
         </div>
       </div>
 

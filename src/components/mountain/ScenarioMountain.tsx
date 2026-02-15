@@ -20,7 +20,7 @@
 
 import React, { useMemo, useRef, useLayoutEffect, Suspense, useState, useEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, PerspectiveCamera, Grid, Line as DreiLine } from "@react-three/drei";
+import { OrbitControls, Grid, Line as DreiLine, Html } from "@react-three/drei";
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
 import { NeuralBackground } from "@/components/visuals/NeuralBackground";
 import * as THREE from "three";
@@ -28,7 +28,9 @@ import { useShallow } from "zustand/react/shallow";
 import { buildPeakModel, LeverId } from "@/logic/mountainPeakModel";
 import { Scenario, ScenarioId, useScenarioStore } from "@/state/scenarioStore";
 import { useUIStore } from "@/state/uiStore";
+import { useSimulationStore } from "@/state/simulationStore";
 import { engineResultToMountainForces } from "@/logic/mountainForces";
+import { setStructuralHeatTint } from "@/logic/mountain/mountainSurfaceMaterial";
 
 // ============================================================================
 // MODE CONFIG
@@ -48,7 +50,9 @@ interface ModeConfig {
   autoRotateSpeed: number;
 }
 
-const MODE_CONFIGS: Record<"default" | "celebration" | "ghost", ModeConfig> = {
+type MountainMode = "default" | "celebration" | "ghost" | "instrument" | "baseline" | "strategy";
+
+const MODE_CONFIGS: Record<MountainMode, ModeConfig> = {
   default: {
     terrainOpacity: 1,
     wireframeOpacity: 1,
@@ -87,6 +91,49 @@ const MODE_CONFIGS: Record<"default" | "celebration" | "ghost", ModeConfig> = {
     bloomIntensity: 0,
     autoRotate: false,
     autoRotateSpeed: 0,
+  },
+  // INSTRUMENT — Compact diagnostic terrain for Initialize page
+  // Mesh + subtle wireframe, slow rotation, soft light, no overlays
+  instrument: {
+    terrainOpacity: 0.7,
+    wireframeOpacity: 0.5,
+    glowMultiplier: 0.15,
+    colorSaturation: 0.6,
+    animationSpeed: 0.2,
+    pulseEnabled: false,
+    hazeOpacity: 0,
+    pathGlow: 0,
+    bloomIntensity: 0,
+    autoRotate: true,
+    autoRotateSpeed: 0.1,
+  },
+  // BASELINE — Deterministic structural view (transparent scene, auto-rotate)
+  baseline: {
+    terrainOpacity: 1,
+    wireframeOpacity: 1,
+    glowMultiplier: 1,
+    colorSaturation: 1,
+    animationSpeed: 1,
+    pulseEnabled: false,
+    hazeOpacity: 1,
+    pathGlow: 1,
+    bloomIntensity: 0,
+    autoRotate: true,
+    autoRotateSpeed: 0.3,
+  },
+  // STRATEGY — Strategy Studio lever-driven terrain (transparent scene, interactive)
+  strategy: {
+    terrainOpacity: 1,
+    wireframeOpacity: 1,
+    glowMultiplier: 1,
+    colorSaturation: 1,
+    animationSpeed: 1,
+    pulseEnabled: false,
+    hazeOpacity: 1,
+    pathGlow: 1,
+    bloomIntensity: 0,
+    autoRotate: true,
+    autoRotateSpeed: 0.3,
   },
 };
 
@@ -137,6 +184,17 @@ function gaussian2(dx: number, dz: number, sx: number, sz: number): number {
 
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+// Smooth, deterministic "noise" for subtle camera/scene shake.
+// Avoids per-frame Math.random() jitter (which reads as instability).
+function smoothSeismicNoise(t: number, seed: number) {
+  // Sum of sines at incommensurate-ish frequencies → organic but continuous.
+  const a = Math.sin(t * 7.13 + seed * 1.7);
+  const b = Math.sin(t * 12.77 + seed * 3.1);
+  const c = Math.sin(t * 19.31 + seed * 5.3);
+  // Normalize-ish to [-1, 1]
+  return (a * 0.62 + b * 0.28 + c * 0.10);
+}
 
 function applySoftCeiling(h: number): number {
   if (h <= CEILING_START) return h;
@@ -210,6 +268,20 @@ function heightColor(h01: number, pal: ReturnType<typeof paletteForScenario>, il
 }
 
 // ============================================================================
+// GOD MODE PALETTE — Deep charcoal, dense, institutional
+// ============================================================================
+
+function godModePalette(): ReturnType<typeof paletteForScenario> {
+  return {
+    sky: new THREE.Color("#050709"),
+    low: new THREE.Color("#0a0d10"),
+    mid: new THREE.Color("#0F1114"),    // Primary charcoal per spec
+    high: new THREE.Color("#182028"),   // Slightly lighter for peaks
+    peak: new THREE.Color("#1e2a38"),   // Peak hint of slate-blue
+  };
+}
+
+// ============================================================================
 // MASSIF PEAKS — STABLE
 // ============================================================================
 
@@ -241,7 +313,7 @@ interface TerrainProps {
   leverIntensity01: number;
   scenario: ScenarioId;
   baseColor?: string;
-  mode?: "default" | "celebration" | "ghost";
+  mode?: MountainMode;
   glowIntensity?: number;
   modeConfig?: ModeConfig;
   isDragging?: boolean; // For dynamic brightness
@@ -249,6 +321,14 @@ interface TerrainProps {
   opacityMultiplier?: number; // Mode control
   wireOpacityMultiplier?: number; // Mode control
   glowMultiplier?: number; // Mode control
+  isRecalibrating?: boolean; // Structural recalibration — slows morph for settlement easing
+  godMode?: boolean; // GOD MODE: dense charcoal material, high roughness, low metalness
+  /** Structural Heat normalized 0..1 (1=strong). If undefined, tint is disabled. */
+  structuralHeat01?: number;
+  /** Optional: expose the terrain fill mesh for deterministic sampling. */
+  onMeshReady?: (mesh: THREE.Mesh | null) => void;
+  /** Baseline-only visibility profile (keeps mesh readable on dark photo backgrounds). */
+  baselineHighVisibility?: boolean;
 }
 
 const Terrain: React.FC<TerrainProps> = ({
@@ -266,6 +346,11 @@ const Terrain: React.FC<TerrainProps> = ({
   opacityMultiplier = 1,
   wireOpacityMultiplier = 1,
   glowMultiplier = 1,
+  isRecalibrating = false,
+  godMode = false,
+  structuralHeat01,
+  onMeshReady,
+  baselineHighVisibility = false,
 }) => {
   const groupRef = useRef<THREE.Group>(null);
   const meshFillRef = useRef<THREE.Mesh>(null);
@@ -277,9 +362,10 @@ const Terrain: React.FC<TerrainProps> = ({
   const maxHeightRef = useRef(1);
 
   const pal = useMemo(() => {
+    if (godMode) return godModePalette();
     const sat = modeConfig?.colorSaturation ?? 1;
     return paletteForScenario(scenario, baseColor, sat);
-  }, [scenario, baseColor, modeConfig]);
+  }, [scenario, baseColor, modeConfig, godMode]);
 
   // Build peak model - no caching to ensure immediate response
   const peakModel = buildPeakModel({
@@ -382,13 +468,16 @@ const Terrain: React.FC<TerrainProps> = ({
   // Smooth interpolation + BREATHING ANIMATION
   const breathTimeRef = useRef(0);
   const fxTimeRef = useRef(0);
+  const normalsAccumRef = useRef(0);
+  // Settlement easing: lambda ramps smoothly between recalibrating (slow) and idle (snappy)
+  const settlementLambdaRef = useRef(10);
   
   useFrame((_, delta) => {
     if (!meshFillRef.current || !meshWireRef.current) return;
     if (!targetHeightsRef.current || !currentHeightsRef.current) return;
     if (!targetColorsRef.current || !currentColorsRef.current) return;
 
-    // Celebration effects timing (R3F-safe: Terrain is inside <Canvas>)
+    // Celebration effects timing (R3F-safe: Terrain is inside Canvas)
     fxTimeRef.current += delta * (modeConfig.animationSpeed ?? 1);
     const pulse =
       mode === "celebration" && modeConfig.pulseEnabled
@@ -418,7 +507,17 @@ const Terrain: React.FC<TerrainProps> = ({
     const targetCols = targetColorsRef.current;
     const currentCols = currentColorsRef.current;
 
-    const smoothing = 0.7;
+    // Frame-rate independent smoothing (prevents "jitter" when FPS varies).
+    const dt = Math.min(0.05, Math.max(0.001, delta)); // cap delta to avoid jumps
+    // ── SETTLEMENT EASING ──
+    // During recalibration: lambda = 3.5 (slow, gravitational morph)
+    // On completion: lambda eases back to 10 over ~500ms (cubic-bezier feel)
+    // cubic-bezier(0.22, 0.61, 0.36, 1) ≈ ease-out-quart approximation
+    const targetLambda = isRecalibrating ? 3.5 : 10;
+    const lambdaEaseRate = isRecalibrating ? 6 : 2.5; // drops fast, recovers slow
+    settlementLambdaRef.current += (targetLambda - settlementLambdaRef.current) * Math.min(1, dt * lambdaEaseRate);
+    const lambda = settlementLambdaRef.current;
+    const alpha = 1 - Math.exp(-lambda * dt);
 
     for (let i = 0; i < count; i++) {
       const baseTarget = targets[i];
@@ -429,40 +528,50 @@ const Terrain: React.FC<TerrainProps> = ({
       const breathingTarget = baseTarget + breathOffset;
       
       const diff = breathingTarget - currents[i];
-      if (Math.abs(diff) > 0.0001) {
-        currents[i] += diff * smoothing;
-      } else {
-        currents[i] = breathingTarget;
-      }
+      if (Math.abs(diff) > 0.0001) currents[i] += diff * alpha;
+      else currents[i] = breathingTarget;
       pos.setZ(i, currents[i]);
 
       for (let c = 0; c < 3; c++) {
         const ci = i * 3 + c;
         const colDiff = targetCols[ci] - currentCols[ci];
-        if (Math.abs(colDiff) > 0.0003) {
-          currentCols[ci] += colDiff * smoothing;
-        } else {
-          currentCols[ci] = targetCols[ci];
-        }
+        if (Math.abs(colDiff) > 0.0003) currentCols[ci] += colDiff * alpha;
+        else currentCols[ci] = targetCols[ci];
       }
       col.setXYZ(i, currentCols[i * 3], currentCols[i * 3 + 1], currentCols[i * 3 + 2]);
     }
 
     // Always update for continuous breathing
-      pos.needsUpdate = true;
-      col.needsUpdate = true;
+    pos.needsUpdate = true;
+    col.needsUpdate = true;
+
+    // Normals are expensive; updating them at a lower rate reduces stutter.
+    // (Wireframe uses MeshBasicMaterial so normals are irrelevant there.)
+    normalsAccumRef.current += dt;
+    if (normalsAccumRef.current >= 0.05) { // ~20 Hz
+      normalsAccumRef.current = 0;
       geo.computeVertexNormals();
+    }
 
-      const wireGeo = meshWireRef.current.geometry as THREE.PlaneGeometry;
-      wireGeo.attributes.position.needsUpdate = true;
-      wireGeo.computeVertexNormals();
-
-      // Apply celebration pulse to materials (without rerendering)
+      // Apply material animation (God Mode: stable glow | Default: celebration pulse)
       const fillMat = meshFillRef.current.material as THREE.MeshStandardMaterial;
-      fillMat.emissiveIntensity = (isDragging ? 0.2 : 0.1) * glowMultiplier * pulse;
+      // Structural Heat (Baseline composition) — subtle deterministic tint via shader hook.
+      // We patch once per material and only update the uniform value on changes.
+      if (structuralHeat01 !== undefined) {
+        setStructuralHeatTint(fillMat, structuralHeat01);
+      }
+      if (godMode) {
+        fillMat.emissiveIntensity = 0.04 * glowMultiplier;
+      } else {
+        fillMat.emissiveIntensity = (isDragging ? 0.2 : 0.1) * glowMultiplier * pulse;
+      }
 
       const wireMat = meshWireRef.current.material as THREE.MeshBasicMaterial;
-      wireMat.opacity = (neuralPulse ? 1.0 : isDragging ? 1.0 : 0.85) * wireOpacityMultiplier * pulse;
+      if (godMode) {
+        wireMat.opacity = 0.18 * wireOpacityMultiplier;
+      } else {
+        wireMat.opacity = (neuralPulse ? 1.0 : isDragging ? 1.0 : 0.85) * wireOpacityMultiplier * pulse;
+      }
 
       // Celebration "breathing" scale (1.0 .. ~1.15)
       if (groupRef.current) {
@@ -470,33 +579,51 @@ const Terrain: React.FC<TerrainProps> = ({
       }
   });
 
+  useEffect(() => {
+    onMeshReady?.(meshFillRef.current);
+    return () => onMeshReady?.(null);
+  }, [onMeshReady]);
+
   return (
     <group ref={groupRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} scale={[0.9, 0.9, 0.9]}>
-      {/* FILL — Subtle depth layer, brighter when engaged */}
+      {/* FILL — God Mode: dense charcoal mass | Default: subtle depth layer */}
       <mesh ref={meshFillRef} geometry={geometry}>
         <meshStandardMaterial
           vertexColors
           transparent
-          opacity={(isDragging ? 0.35 : 0.22) * opacityMultiplier}
-          roughness={0.2}
-          metalness={0.8}
+          opacity={
+            godMode
+              ? (0.92 * opacityMultiplier)
+              : baselineHighVisibility
+                ? ((isDragging ? 0.55 : 0.42) * opacityMultiplier)
+                : ((isDragging ? 0.35 : 0.22) * opacityMultiplier)
+          }
+          roughness={godMode ? 0.85 : baselineHighVisibility ? 0.65 : 0.2}
+          metalness={godMode ? 0.05 : baselineHighVisibility ? 0.25 : 0.8}
           side={THREE.DoubleSide}
           emissive={pal.mid}
-          emissiveIntensity={(isDragging ? 0.2 : 0.1) * glowMultiplier}
-          depthWrite={false}
-          toneMapped={false}
+          emissiveIntensity={
+            godMode
+              ? (0.04 * glowMultiplier)
+              : baselineHighVisibility
+                ? ((isDragging ? 0.22 : 0.14) * glowMultiplier)
+                : ((isDragging ? 0.2 : 0.1) * glowMultiplier)
+          }
+          depthWrite={godMode}
+          toneMapped={godMode}
         />
       </mesh>
-      {/* WIREFRAME — Luminous Teal at rest, Electric Cyan when active */}
-      {/* NEURAL BOOT: Bright pulse when neuralPulse is true */}
+      {/* WIREFRAME — God Mode: subtle structural lines | Default: luminous teal */}
       <mesh ref={meshWireRef} geometry={geometry}>
         <meshBasicMaterial 
-          vertexColors={!neuralPulse} // Override colors during pulse
-          color={neuralPulse ? "#00ffff" : undefined}
+          vertexColors={godMode ? false : baselineHighVisibility ? false : !neuralPulse}
+          color={godMode ? "#1a2e42" : baselineHighVisibility ? "#22d3ee" : (neuralPulse ? "#00ffff" : undefined)}
           wireframe 
           transparent 
-          // VISIBILITY BOOST: 0.85 idle, 1.0 active, 1.0 during neural pulse
-          opacity={(neuralPulse ? 1.0 : isDragging ? 1.0 : 0.85) * wireOpacityMultiplier}
+          opacity={godMode
+            ? (0.18 * wireOpacityMultiplier)
+            : ((neuralPulse ? 1.0 : isDragging ? 1.0 : 0.85) * wireOpacityMultiplier)
+          }
           toneMapped={false}
         />
       </mesh>
@@ -733,6 +860,567 @@ function GhostTerrain({ isVisible, opacityMultiplier = 1 }: { isVisible: boolean
 }
 
 // ============================================================================
+// RECALIBRATION SCAN LINE — Thin horizontal sweep (structural signal)
+// Passes once across the mountain during recalibration. No glow burst.
+// ============================================================================
+
+function RecalibrationScanLine({ active }: { active: boolean }) {
+  const lineRef = useRef<THREE.Mesh>(null);
+  const progressRef = useRef(0);
+  const wasActiveRef = useRef(false);
+
+  useFrame((_, delta) => {
+    if (!lineRef.current) return;
+
+    // Reset sweep on new activation
+    if (active && !wasActiveRef.current) {
+      progressRef.current = 0;
+    }
+    wasActiveRef.current = active;
+
+    if (active && progressRef.current < 1) {
+      // Single sweep: y = -4 → +7 over ~2.2 seconds
+      progressRef.current = Math.min(1, progressRef.current + delta / 2.2);
+      const y = -4 + progressRef.current * 11;
+      lineRef.current.position.y = y;
+
+      // Fade envelope: soft in, hold, soft out — no abrupt edges
+      const t = progressRef.current;
+      const envelope = t < 0.06 ? t / 0.06
+        : t > 0.90 ? (1 - t) / 0.10
+        : 1;
+      const mat = lineRef.current.material as THREE.MeshBasicMaterial;
+      mat.opacity = envelope * 0.30;
+      lineRef.current.visible = true;
+    } else {
+      lineRef.current.visible = false;
+    }
+  });
+
+  return (
+    <mesh ref={lineRef} visible={false}>
+      <planeGeometry args={[55, 0.05]} />
+      <meshBasicMaterial
+        color="#22d3ee"
+        transparent
+        opacity={0}
+        side={THREE.DoubleSide}
+        depthWrite={false}
+      />
+    </mesh>
+  );
+}
+
+// ============================================================================
+// GOD MODE: INTERQUARTILE CONFIDENCE ENVELOPE (Section 3)
+// Translucent mesh showing P25-P75 dispersion band around median mountain
+// ============================================================================
+
+function ConfidenceEnvelope({
+  dataPoints,
+  spread,
+  enabled,
+}: {
+  dataPoints: number[];
+  spread: number;
+  enabled: boolean;
+}) {
+  const geometry = useMemo(() => {
+    if (!enabled) return null;
+
+    const geo = new THREE.PlaneGeometry(MESH_W, MESH_D, Math.floor(GRID_W / 2), Math.floor(GRID_D / 2));
+    const pos = geo.attributes.position;
+    const count = pos.count;
+    const wHalf = MESH_W / 2;
+
+    const dp = dataPoints?.length === 7 ? dataPoints : [0.5, 0.5, 0.6, 0.4, 0.5, 0.45, 0.35];
+    // Expand data points by spread factor (upper IQR bound)
+    const expanded = dp.map((v) => clamp01(v * (1 + spread * 0.8)));
+
+    for (let i = 0; i < count; i++) {
+      const x = pos.getX(i);
+      const z = pos.getY(i);
+      const kpiX = ((x + wHalf) / MESH_W) * 6;
+
+      let ridge = 0;
+      for (let idx = 0; idx < 7; idx++) {
+        const v = clamp01(expanded[idx]);
+        const g = gaussian1(kpiX, idx, 0.55); // Slightly wider sigma for envelope
+        ridge += Math.pow(v, RIDGE_SHARPNESS) * g;
+      }
+
+      let h = ridge * BASE_SCALE;
+
+      for (const m of MASSIF_PEAKS) {
+        const g = gaussian2(x - m.x, z - m.z, m.sigmaX * 1.1, m.sigmaZ * 1.1);
+        h += g * m.amplitude * MASSIF_SCALE;
+      }
+
+      const dist = Math.sqrt(x * x + z * z * 1.4);
+      const mask = Math.max(0, 1 - Math.pow(dist / ISLAND_RADIUS, 2.0));
+      const cliff = Math.pow(mask, 0.45) * CLIFF_BOOST;
+      const n = noise2(x, z) * 0.2;
+      let finalH = Math.max(0, (h + n) * mask * cliff);
+      finalH = applySoftCeiling(finalH);
+
+      pos.setZ(i, finalH);
+    }
+
+    geo.computeVertexNormals();
+    return geo;
+  }, [dataPoints, spread, enabled]);
+
+  if (!geometry) return null;
+
+  return (
+    <group rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.97, 0]} scale={[0.902, 0.902, 0.902]}>
+      {/* Upper envelope wireframe — desaturated cyan */}
+      <mesh geometry={geometry}>
+        <meshBasicMaterial
+          color="#3a8fa8"
+          wireframe
+          transparent
+          opacity={0.12}
+          side={THREE.DoubleSide}
+          depthWrite={false}
+          toneMapped={false}
+        />
+      </mesh>
+      {/* Subtle fill for depth perception */}
+      <mesh geometry={geometry}>
+        <meshBasicMaterial
+          color="#2d7a94"
+          transparent
+          opacity={0.04}
+          side={THREE.DoubleSide}
+          depthWrite={false}
+          toneMapped={false}
+        />
+      </mesh>
+    </group>
+  );
+}
+
+// ============================================================================
+// GOD MODE: STRUCTURAL AXES (Section 4)
+// Enterprise Value ↑ (left) + Time Horizon → (ground)
+// Institutional, engraved, low opacity
+// ============================================================================
+
+function StructuralAxes() {
+  return (
+    <group>
+      {/* Vertical axis — left side of terrain */}
+      <DreiLine
+        points={[
+          new THREE.Vector3(-24, -2.5, 0),
+          new THREE.Vector3(-24, 7, 0),
+        ]}
+        color="#334155"
+        lineWidth={0.5}
+        transparent
+        opacity={0.2}
+      />
+      {/* Vertical axis ticks */}
+      {[0, 1.5, 3.0, 4.5, 6.0].map((offset) => (
+        <DreiLine
+          key={offset}
+          points={[
+            new THREE.Vector3(-24, -2.5 + offset, 0),
+            new THREE.Vector3(-23.4, -2.5 + offset, 0),
+          ]}
+          color="#334155"
+          lineWidth={0.4}
+          transparent
+          opacity={0.15}
+        />
+      ))}
+      {/* Label: Enterprise Value ↑ */}
+      <Html position={[-26.5, 2, 0]} center style={{ pointerEvents: "none" }}>
+        <div
+          style={{
+            fontSize: 9,
+            fontWeight: 600,
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            color: "rgba(148, 163, 184, 0.25)",
+            fontFamily: "'Inter', sans-serif",
+            whiteSpace: "nowrap",
+            transform: "rotate(-90deg)",
+            transformOrigin: "center",
+            userSelect: "none",
+          }}
+        >
+          Enterprise Value ↑
+        </div>
+      </Html>
+      {/* Ground plane label: Time Horizon → */}
+      <Html position={[0, -2.7, 14]} center style={{ pointerEvents: "none" }}>
+        <div
+          style={{
+            fontSize: 9,
+            fontWeight: 600,
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            color: "rgba(148, 163, 184, 0.25)",
+            fontFamily: "'Inter', sans-serif",
+            whiteSpace: "nowrap",
+            userSelect: "none",
+          }}
+        >
+          Time Horizon →
+        </div>
+      </Html>
+    </group>
+  );
+}
+
+// ============================================================================
+// GOD MODE: BASELINE REFERENCE LINE (Section 5)
+// Thin horizontal line across terrain representing current state
+// ============================================================================
+
+function BaselineRefLine({ height }: { height: number }) {
+  return (
+    <group>
+      {/* Thin horizontal plane */}
+      <mesh position={[0, height, 0]}>
+        <planeGeometry args={[46, 0.015]} />
+        <meshBasicMaterial
+          color="#22d3ee"
+          transparent
+          opacity={0.12}
+          side={THREE.DoubleSide}
+          depthWrite={false}
+        />
+      </mesh>
+      {/* Subtle glow line */}
+      <mesh position={[0, height, 0]}>
+        <planeGeometry args={[46, 0.06]} />
+        <meshBasicMaterial
+          color="#22d3ee"
+          transparent
+          opacity={0.04}
+          side={THREE.DoubleSide}
+          depthWrite={false}
+        />
+      </mesh>
+      {/* Label */}
+      <Html position={[24.5, height + 0.4, 0]} center style={{ pointerEvents: "none" }}>
+        <div
+          style={{
+            fontSize: 8,
+            fontWeight: 600,
+            letterSpacing: "0.08em",
+            color: "rgba(34, 211, 238, 0.3)",
+            fontFamily: "'Inter', sans-serif",
+            textTransform: "uppercase",
+            whiteSpace: "nowrap",
+            userSelect: "none",
+          }}
+        >
+          Baseline
+        </div>
+      </Html>
+    </group>
+  );
+}
+
+// ============================================================================
+// GOD MODE: TERRAIN SURFACE RIDGE LINE (Mountain Clarity)
+// DreiLine that follows the actual terrain heightfield along the ridge spine.
+// Replaces 2D TrajectoryOverlay which couldn't match the 3D projection.
+// ============================================================================
+
+/**
+ * Compute terrain height at a specific (x, z) position using the SAME algorithm
+ * as the Terrain component's useLayoutEffect. This MUST stay in sync.
+ * Does not include peakModel dynamic peaks (activeKpi / activeLever) — only
+ * the signature backbone + data-driven shape + massif + noise.
+ */
+function computeStaticTerrainHeight(x: number, z: number, dp: number[]): number {
+  const wHalf = MESH_W / 2;
+  const kpiX = ((x + wHalf) / MESH_W) * 6;
+
+  let ridge = 0;
+  for (let idx = 0; idx < 7; idx++) {
+    const v = clamp01(dp[idx]);
+    const g = gaussian1(kpiX, idx, 0.48);
+    ridge += Math.pow(v, RIDGE_SHARPNESS) * g;
+  }
+
+  let h = ridge * BASE_SCALE;
+
+  // Massif backdrop peaks
+  for (const m of MASSIF_PEAKS) {
+    const g = gaussian2(x - m.x, z - m.z, m.sigmaX, m.sigmaZ);
+    h += g * m.amplitude * MASSIF_SCALE;
+  }
+
+  // Signature peakModel backbone (always present, even with no active KPI)
+  const signaturePeaks = [
+    { index: 3.1, amplitude: 0.55, sigma: 2.5 },
+    { index: 2.0, amplitude: 0.38, sigma: 2.0 },
+    { index: 4.3, amplitude: 0.38, sigma: 2.0 },
+    { index: 1.0, amplitude: 0.25, sigma: 1.6 },
+    { index: 5.2, amplitude: 0.25, sigma: 1.6 },
+  ];
+  for (const p of signaturePeaks) {
+    const pidx = clamp01(p.index / 6);
+    const peakX = lerp(-wHalf, wHalf, pidx);
+    h += gaussian2(x - peakX, z + 1.5, 0.8 + p.sigma * 0.8, 0.7 + p.sigma * 0.8) * p.amplitude * PEAK_SCALE;
+  }
+
+  // Ruggedness + noise
+  const rugged = ridgeNoise(x, z);
+  h += rugged * (0.3 + h * 0.08);
+
+  const dist = Math.sqrt(x * x + z * z * 1.4);
+  const mask = Math.max(0, 1 - Math.pow(dist / ISLAND_RADIUS, 2.0));
+  const n = noise2(x, z) * 0.2;
+  const cliff = Math.pow(mask, 0.45) * CLIFF_BOOST;
+  let finalH = Math.max(0, (h + n) * mask * cliff);
+  finalH = applySoftCeiling(finalH);
+
+  return finalH;
+}
+
+// Annotation definitions for the 7 mountain zones
+const KPI_ANNOTATION_DEFS = [
+  { key: "revenue",    label: "REVENUE",  color: "#22d3ee" },
+  { key: "margin",     label: "MARGIN",   color: "#34d399" },
+  { key: "runway",     label: "RUNWAY",   color: "#60a5fa" },
+  { key: "cash",       label: "CASH",     color: "#a78bfa" },
+  { key: "burn",       label: "BURN",     color: "#fbbf24" },
+  { key: "efficiency", label: "LTV/CAC",  color: "#22d3ee" },
+  { key: "risk",       label: "RISK",     color: "#f87171" },
+];
+
+/**
+ * 3D ridge line that traces the actual terrain surface along planeY=-1.5
+ * (where peakModel peaks are centered). Replaces the 2D TrajectoryOverlay.
+ */
+function TerrainRidgeLine({
+  dataPoints,
+  enabled,
+}: {
+  dataPoints: number[];
+  enabled: boolean;
+}) {
+  const points = useMemo(() => {
+    if (!enabled) return [];
+    const dp = dataPoints?.length === 7 ? dataPoints : [0.5, 0.5, 0.6, 0.4, 0.5, 0.45, 0.35];
+    const wHalf = MESH_W / 2;
+    const ridgeZ = -1.5; // planeY where signature peaks center (z + 1.5 = 0)
+    const pts: THREE.Vector3[] = [];
+    const numSamples = 120;
+
+    for (let i = 0; i <= numSamples; i++) {
+      const t = i / numSamples;
+      const x = lerp(-wHalf, wHalf, t);
+      const h = computeStaticTerrainHeight(x, ridgeZ, dp);
+      // Place slightly above surface to avoid z-fighting
+      pts.push(new THREE.Vector3(x, ridgeZ, h + 0.15));
+    }
+
+    return pts;
+  }, [dataPoints, enabled]);
+
+  if (!enabled || !points.length) return null;
+
+  return (
+    <group rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} scale={[0.9, 0.9, 0.9]}>
+      {/* Subtle glow underline */}
+      <DreiLine
+        points={points}
+        color="#00E0FF"
+        lineWidth={2.5}
+        transparent
+        opacity={0.08}
+      />
+      {/* Primary ridge line — thin, precise */}
+      <DreiLine
+        points={points}
+        color="#00E0FF"
+        lineWidth={1}
+        transparent
+        opacity={0.35}
+      />
+    </group>
+  );
+}
+
+// ============================================================================
+// GOD MODE: TERRAIN SURFACE ANNOTATIONS (Mountain Clarity)
+// Permanent 3D-positioned labels at each KPI zone on the mountain surface.
+// Always visible. Explains shape + numbers. Reconciles with right-hand panel.
+// Uses Html from drei to project 3D positions to screen automatically.
+// ============================================================================
+
+function TerrainSurfaceAnnotations({
+  dataPoints,
+  kpiValues,
+  enabled,
+}: {
+  dataPoints: number[];
+  kpiValues: Record<string, { value?: number; label?: string }>;
+  enabled: boolean;
+}) {
+  const annotations = useMemo(() => {
+    if (!enabled) return [];
+    const dp = dataPoints?.length === 7 ? dataPoints : [0.5, 0.5, 0.6, 0.4, 0.5, 0.45, 0.35];
+    const wHalf = MESH_W / 2;
+    const ridgeZ = -1.5;
+
+    const runway = kpiValues?.runway?.value ?? 24;
+    const ltvCac = kpiValues?.ltvCac?.value ?? 3;
+    const riskIndex = kpiValues?.riskIndex?.value ?? 70;
+
+    return KPI_ANNOTATION_DEFS.map((def, idx) => {
+      const x = lerp(-wHalf, wHalf, idx / 6);
+      const h = computeStaticTerrainHeight(x, ridgeZ, dp);
+      const value = dp[idx];
+
+      // Format value + shape description based on metric type
+      let displayValue: string;
+      let description: string;
+
+      switch (def.key) {
+        case "revenue":
+          displayValue = `${Math.round(value * 100)}%`;
+          description = value > 0.6 ? "Strong growth drives upward slope" : "Revenue pressure flattens terrain";
+          break;
+        case "margin":
+          displayValue = `${Math.round(value * 100)}%`;
+          description = value > 0.55 ? "Healthy margins support elevation" : "Margin compression limits peak";
+          break;
+        case "runway":
+          displayValue = `${Math.round(runway)}mo`;
+          description = runway >= 18 ? "Capital buffer maintains ridge height" : "Short runway erodes formation";
+          break;
+        case "cash":
+          displayValue = `${Math.round(value * 100)}%`;
+          description = value > 0.5 ? "Cash reserves sustain mountain mass" : "Low reserves weaken structure";
+          break;
+        case "burn":
+          displayValue = `${Math.round(value * 100)}%`;
+          description = value > 0.5 ? "Disciplined burn maintains form" : "Excessive burn erodes base";
+          break;
+        case "efficiency":
+          displayValue = `${ltvCac.toFixed(1)}x`;
+          description = ltvCac >= 3 ? "Efficient acquisition builds height" : "High CAC suppresses elevation";
+          break;
+        case "risk":
+          displayValue = `${Math.round(riskIndex)}%`;
+          description = riskIndex > 50 ? "Low risk sharpens ridgeline" : "High risk softens peak";
+          break;
+        default:
+          displayValue = `${Math.round(value * 100)}%`;
+          description = "";
+      }
+
+      return { ...def, x, z: ridgeZ, h: h + 0.5, value, displayValue, description };
+    });
+  }, [dataPoints, kpiValues, enabled]);
+
+  if (!enabled || !annotations.length) return null;
+
+  return (
+    <group rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} scale={[0.9, 0.9, 0.9]}>
+      {annotations.map((ann) => (
+        <group key={ann.key} position={[ann.x, ann.z, ann.h]}>
+          {/* Node sphere — on the surface */}
+          <mesh>
+            <sphereGeometry args={[0.12, 16, 16]} />
+            <meshBasicMaterial
+              color={ann.color}
+              transparent
+              opacity={0.6}
+              depthWrite={false}
+            />
+          </mesh>
+          {/* Glow halo */}
+          <mesh>
+            <sphereGeometry args={[0.24, 16, 16]} />
+            <meshBasicMaterial
+              color={ann.color}
+              transparent
+              opacity={0.1}
+              depthWrite={false}
+            />
+          </mesh>
+          {/* Vertical connector down to surface */}
+          <DreiLine
+            points={[
+              new THREE.Vector3(0, 0, 0),
+              new THREE.Vector3(0, 0, -0.5),
+            ]}
+            color={ann.color}
+            lineWidth={0.5}
+            transparent
+            opacity={0.2}
+          />
+          {/* Html label — ALWAYS VISIBLE, projected from 3D */}
+          <Html
+            position={[0, 0, 1.2]}
+            center
+            style={{ pointerEvents: "none", userSelect: "none", whiteSpace: "nowrap" }}
+            distanceFactor={14}
+            occlude={false}
+          >
+            <div style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 1,
+            }}>
+              {/* Metric label */}
+              <span style={{
+                fontSize: 8,
+                fontWeight: 700,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase" as const,
+                color: ann.color,
+                opacity: 0.7,
+                fontFamily: "'Inter', sans-serif",
+                textShadow: "0 1px 6px rgba(0,0,0,0.95), 0 0 3px rgba(0,0,0,0.8)",
+              }}>
+                {ann.label}
+              </span>
+              {/* Value — prominent */}
+              <span style={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: "rgba(255, 255, 255, 0.92)",
+                fontFamily: "'JetBrains Mono', 'SF Mono', monospace",
+                textShadow: "0 1px 8px rgba(0,0,0,0.98), 0 0 4px rgba(0,0,0,0.9)",
+                fontVariantNumeric: "tabular-nums",
+                lineHeight: 1,
+              }}>
+                {ann.displayValue}
+              </span>
+              {/* Description — explains what this zone means */}
+              <span style={{
+                fontSize: 7,
+                fontWeight: 500,
+                color: "rgba(255, 255, 255, 0.4)",
+                fontFamily: "'Inter', sans-serif",
+                textShadow: "0 1px 4px rgba(0,0,0,0.95)",
+                maxWidth: 110,
+                textAlign: "center",
+                lineHeight: 1.3,
+              }}>
+                {ann.description}
+              </span>
+            </div>
+          </Html>
+        </group>
+      ))}
+    </group>
+  );
+}
+
+// ============================================================================
 // DIGITAL HORIZON — Infinite Floor Grid + Data Dust (Scenario-Aware)
 // ============================================================================
 
@@ -744,26 +1432,39 @@ const SCENARIO_GRID_COLORS: Record<ScenarioId, string> = {
   stress: "#f87171",   // Red
 };
 
-function DigitalHorizon({ scenarioId, glowMultiplier = 1, baseOpacity = 1 }: { scenarioId: ScenarioId; glowMultiplier?: number; baseOpacity?: number }) {
+function DigitalHorizon({ scenarioId, glowMultiplier = 1, baseOpacity = 1, isRecalibrating = false }: { scenarioId: ScenarioId; glowMultiplier?: number; baseOpacity?: number; isRecalibrating?: boolean }) {
   const gridColor = SCENARIO_GRID_COLORS[scenarioId] || SCENARIO_GRID_COLORS.base;
   const lightColor = SCENARIO_PALETTE_COLORS[scenarioId]?.idle || "#22d3ee";
+  const gridGroupRef = useRef<THREE.Group>(null);
+
+  // Grid micro-shift during recalibration — very subtle structural signal
+  useFrame((_, delta) => {
+    if (!gridGroupRef.current) return;
+    const targetX = isRecalibrating ? 0.035 : 0;
+    const targetZ = isRecalibrating ? 0.025 : 0;
+    const ease = Math.min(1, delta * 3);
+    gridGroupRef.current.position.x += (targetX - gridGroupRef.current.position.x) * ease;
+    gridGroupRef.current.position.z += (targetZ - gridGroupRef.current.position.z) * ease;
+  });
   
   return (
     <>
       {/* 1. The Infinite Floor Grid — Color matches scenario */}
-      <Grid 
-      position={[0, -2.5, 0]} 
-        args={[50, 50]}
-        cellSize={1} 
-        cellThickness={0.8} 
-        cellColor="#1e293b"
-        sectionSize={5} 
-        sectionThickness={1.5} 
-        sectionColor={gridColor}  // Dynamic scenario color
-        fadeDistance={40}
-        fadeStrength={1.2}
-        infiniteGrid
-      />
+      <group ref={gridGroupRef}>
+        <Grid 
+        position={[0, -2.5, 0]} 
+          args={[50, 50]}
+          cellSize={1} 
+          cellThickness={0.8} 
+          cellColor="#1e293b"
+          sectionSize={5} 
+          sectionThickness={1.5} 
+          sectionColor={gridColor}  // Dynamic scenario color
+          fadeDistance={40}
+          fadeStrength={1.2}
+          infiniteGrid
+        />
+      </group>
       
       {/* 2. NEURAL CONSTELLATION — Floating nodes that connect when simulating */}
       <NeuralBackground />
@@ -788,8 +1489,10 @@ function DigitalHorizon({ scenarioId, glowMultiplier = 1, baseOpacity = 1 }: { s
 }
 
 // ============================================================================
-// CINEMATIC CONTROLLER — "Search Pattern" Idle Animation
+// CINEMATIC CONTROLLER — Zoomed-Out Undulation View
 // ============================================================================
+// Video mode: stays at standard camera distance, shows terrain undulation
+// through subtle rotation only (no zoom, no bobbing, no dramatic movement)
 
 interface CinematicControllerProps {
   children: React.ReactNode;
@@ -799,6 +1502,7 @@ interface CinematicControllerProps {
 function CinematicController({ children, riskLevel = 0 }: CinematicControllerProps) {
   const groupRef = useRef<THREE.Group>(null);
   const hasInteracted = useUIStore((s) => s.hasInteracted);
+  const riskShakeRef = useRef(0);
   
   useFrame((state, delta) => {
     if (!groupRef.current) return;
@@ -806,29 +1510,31 @@ function CinematicController({ children, riskLevel = 0 }: CinematicControllerPro
     const t = state.clock.elapsedTime;
     
     // 1. RISK REACTION (Seismic Shake) — Always active when risk is high
-    const riskShake = riskLevel > 40 
-      ? (Math.random() - 0.5) * 0.015 * (riskLevel / 100) 
-      : 0;
+    const dt = Math.min(0.05, Math.max(0.001, delta));
+    const riskShakeTarget =
+      riskLevel > 40
+        ? smoothSeismicNoise(t, 0.37) * 0.015 * (riskLevel / 100)
+        : 0;
+    riskShakeRef.current = THREE.MathUtils.damp(riskShakeRef.current, riskShakeTarget, 10, dt);
+    const riskShake = riskShakeRef.current;
     
     if (!hasInteracted) {
-      // 2. IDLE MODE: THE "SEARCH PATTERN"
-      // Creates a mesmerizing non-repeating orbit by mixing different frequencies
+      // 2. IDLE MODE: SUBTLE UNDULATION (ZOOMED OUT)
+      // Gentle horizontal rotation to show terrain from different angles
+      // NO bobbing, NO zoom changes, NO dramatic pitch/roll movements
       
-      // Yaw (Left <-> Right): Wide slow sweep with variation
-      const yaw = Math.sin(t * 0.18) * 0.45 + Math.sin(t * 0.07) * 0.15;
+      // Yaw (Left <-> Right): Very gentle horizontal sweep
+      const yaw = Math.sin(t * 0.10) * 0.25 + Math.sin(t * 0.05) * 0.10;
       groupRef.current.rotation.y = yaw;
       
-      // Pitch (Up <-> Down): Slight vertical tilt to show depth
-      const pitch = Math.cos(t * 0.25) * 0.12 + Math.sin(t * 0.11) * 0.05;
-      groupRef.current.rotation.x = pitch;
+      // Pitch: Minimal (maintain consistent viewing angle)
+      groupRef.current.rotation.x = 0;
       
-      // Roll (Tilt): Very subtle banking as it "flies"
-      const roll = Math.sin(t * 0.3) * 0.03;
-      groupRef.current.rotation.z = roll;
+      // Roll: None (keep horizon level)
+      groupRef.current.rotation.z = 0;
       
-      // Bobbing (Floating): Gentle breathing + seismic shake
-      const bobbing = Math.sin(t * 0.4) * 0.12 + Math.cos(t * 0.22) * 0.06;
-      groupRef.current.position.y = bobbing + riskShake;
+      // Position: Only seismic shake (no vertical bobbing)
+      groupRef.current.position.y = riskShake;
       
     } else {
       // 3. ACTIVE MODE: LOCK TO STATION
@@ -864,6 +1570,21 @@ function CinematicController({ children, riskLevel = 0 }: CinematicControllerPro
 }
 
 // ============================================================================
+// BASELINE AUTO ROTATE — Institutional crawl (pausable)
+// ============================================================================
+
+function BaselineAutoRotate({ children, paused }: { children: React.ReactNode; paused: boolean }) {
+  const groupRef = useRef<THREE.Group>(null);
+  useFrame((_, delta) => {
+    if (!groupRef.current) return;
+    if (paused) return;
+    // ~0.6°/sec
+    groupRef.current.rotation.y += delta * 0.0105;
+  });
+  return <group ref={groupRef}>{children}</group>;
+}
+
+// ============================================================================
 // MAIN EXPORT
 // ============================================================================
 
@@ -876,11 +1597,50 @@ interface ScenarioMountainProps {
   className?: string;
   timelineEnabled?: boolean;
   heatmapEnabled?: boolean;
-  mode?: 'default' | 'celebration' | 'ghost';
+  mode?: MountainMode;
   glowIntensity?: number;
   showPath?: boolean;
   showMilestones?: boolean;
   pathColor?: string;
+  /** 
+   * GOD MODE — Transforms terrain into spatial Monte Carlo decision engine
+   * 
+   * When enabled, God Mode:
+   * - Positions camera closer & higher for 70-80% viewport fill
+   * - Adds confidence envelope (IQR spread visualization)
+   * - Shows structural axes (EV ↑, Time →)
+   * - Displays baseline reference line
+   * - Adds ridge line & surface annotations
+   * - Uses darker materials (charcoal) with higher roughness
+   * - Enables subtle auto-rotation with locked zoom
+   * - Adds cyan rim lighting linked to EV metrics
+   * - Shows model credibility footnote
+   */
+  godMode?: boolean;
+  /** Optional: render additional in-canvas overlays (e.g., Baseline anchors/lines). */
+  overlay?: React.ReactNode;
+  /** Optional: Baseline-only very slow auto rotation (pausable). */
+  baselineAutoRotate?: boolean;
+  baselineAutoRotatePaused?: boolean;
+  /** Baseline-only: allow full 360° user rotation (no azimuth clamp). */
+  baselineAllow360Rotate?: boolean;
+  /** Optional: enable/disable user camera controls (OrbitControls). */
+  controlsEnabled?: boolean;
+  /** Optional: override OrbitControls autoRotate (defaults to mode config). */
+  controlsAutoRotate?: boolean;
+  /** Baseline-only: make container background transparent (lets parent show through). */
+  transparentContainer?: boolean;
+  /** Baseline-only: make scene background/fog transparent (no clear color). */
+  transparentScene?: boolean;
+  /** Optional: access the terrain fill mesh for deterministic sampling (uv -> height). */
+  onTerrainMeshReady?: (mesh: THREE.Mesh | null) => void;
+  /** Baseline-only visibility profile (keeps mesh readable on dark photo backgrounds). */
+  baselineHighVisibility?: boolean;
+  /**
+   * STRUCTURAL HEAT (0–100)
+   * Baseline composition quality. Drives a subtle, deterministic surface tint.
+   */
+  structuralHeatScore?: number;
 }
 
 export function ScenarioMountain({
@@ -897,10 +1657,23 @@ export function ScenarioMountain({
   showPath = false,
   showMilestones = false,
   pathColor,
+  godMode: godModeProp = false,
+  overlay,
+  baselineAutoRotate = false,
+  baselineAutoRotatePaused = false,
+  baselineAllow360Rotate = false,
+  controlsEnabled = true,
+  controlsAutoRotate,
+  transparentContainer = false,
+  transparentScene = false,
+  onTerrainMeshReady,
+  baselineHighVisibility = false,
+  structuralHeatScore,
 }: ScenarioMountainProps) {
   const viewMode = useScenarioStore((s) => s.viewMode);
 
   const config = MODE_CONFIGS[mode] ?? MODE_CONFIGS.default;
+  const [isOrbiting, setIsOrbiting] = useState(false);
 
   const scenarioKey = typeof scenario === "string" ? scenario : scenario.id;
   const scenarioColor = typeof scenario === "string" ? undefined : (scenario as any)?.color;
@@ -914,6 +1687,11 @@ export function ScenarioMountain({
   const terrainOpacityMultiplier = config.terrainOpacity;
   const wireOpacityMultiplier = config.wireframeOpacity;
   const hazeOpacityMultiplier = config.hazeOpacity;
+
+  // Structural heat -> normalized 0..1 (strong=1)
+  const structuralHeat01 = structuralHeatScore !== undefined
+    ? Math.max(0, Math.min(1, structuralHeatScore / 100))
+    : undefined;
   
   // TODO: Implement timeline and heatmap rendering logic
   // - timelineEnabled: Show historical progression overlay
@@ -965,21 +1743,75 @@ export function ScenarioMountain({
 
   const solverPath = useScenarioStore((s) => s.solverPath);
 
+  // ── RECALIBRATION STATE — structural signal from simulation engine (single source of truth) ──
+  // Key off simulationStatus to prevent any accidental "stuck" pointer-events dim if isSimulating desyncs.
+  const simulationStatus = useSimulationStore((s) => s.simulationStatus);
+  const isRecalibrating = simulationStatus === "running";
+
+  // ── GOD MODE SIMULATION DATA — for confidence envelope + metric linkage ──
+  const fullSimResult = useSimulationStore((s) => s.fullResult);
+
+  // ── GOD MODE: Resolve flag (only active in 'default' mode) ──
+  const isGodMode = mode === "default" && Boolean(godModeProp);
+
+  // ── GOD MODE: Metric Linkage + Confidence Envelope spread ──
+  const godModeMetrics = useMemo(() => {
+    if (!isGodMode) return { survivalFactor: 0.5, evFactor: 0.5, envelopeSpread: 0.15 };
+
+    const k = kpiValues;
+    // Survival: riskIndex is "health" (higher = safer), map to 0-1
+    const riskIdx = k.riskIndex?.value ?? 50;
+    const survivalFactor = clamp01(riskIdx / 100);
+
+    // Enterprise Value: normalize to 0-1
+    const evRaw = k.enterpriseValue?.value ?? 0;
+    const evFactor = clamp01(evRaw / 10_000_000);
+
+    // IQR spread from simulation results
+    let envelopeSpread = 0.15;
+    if (fullSimResult?.arrPercentiles) {
+      const p50 = Math.max(1, fullSimResult.arrPercentiles.p50);
+      const iqr = (fullSimResult.arrPercentiles.p75 - fullSimResult.arrPercentiles.p25) / p50;
+      envelopeSpread = clamp01(Math.max(0.05, Math.min(0.5, iqr)));
+    }
+
+    return { survivalFactor, evFactor, envelopeSpread };
+  }, [isGodMode, kpiValues, fullSimResult]);
+
+  const instrumentMode = mode === 'instrument';
+  const cameraConfig = useMemo(
+    () => ({
+      position: (isGodMode ? [0, 10, 22] : [0, 6, 32]) as [number, number, number],
+      fov: isGodMode ? 36 : 38,
+    }),
+    [isGodMode]
+  );
+
+  // ── GOD MODE: Fog density linked to survival (Section 6 — Metric Linkage) ──
+  const godFogNear = isGodMode ? (25 + (1 - godModeMetrics.survivalFactor) * 15) : 40;
+  const godFogFar = isGodMode ? (70 - (1 - godModeMetrics.survivalFactor) * 20) : 100;
+
   return (
     <div
       className={`relative w-full h-full overflow-hidden ${className ?? ""}`}
       style={{
-        background: "radial-gradient(circle at 50% 55%, #1a2744 0%, #0f1a2e 60%, #0a1220 100%)",
+        background: transparentContainer
+          ? "transparent"
+          : isGodMode
+            ? "radial-gradient(circle at 50% 55%, #0e131d 0%, #0a0f16 60%, #07090d 100%)"
+            : "radial-gradient(circle at 50% 55%, #1e2d4d 0%, #122038 60%, #0d1628 100%)",
         minHeight: '400px',
         height: '100%',
         width: '100%',
       }}
     >
-      {/* THE VIGNETTE — Subtle shadow frame (reduced intensity) */}
+      {/* THE VIGNETTE — Deeper in God Mode */}
       <div 
-        className="absolute inset-0 pointer-events-none z-[2]"
+        className="absolute inset-0 pointer-events-none z-2"
         style={{
-          boxShadow: "inset 0 0 80px rgba(11, 18, 32, 0.4)",
+          boxShadow: isGodMode
+            ? "inset 0 0 120px rgba(5, 7, 9, 0.6)"
+            : "inset 0 0 80px rgba(11, 18, 32, 0.4)",
         }}
       />
       
@@ -988,52 +1820,194 @@ export function ScenarioMountain({
         viewMode={viewMode}
         scenario={scenarioId}
         isSeismicActive={isSeismicActive}
-        opacityMultiplier={hazeOpacityMultiplier}
+        opacityMultiplier={isGodMode ? hazeOpacityMultiplier * 0.5 : hazeOpacityMultiplier}
       />
       
       <Canvas
-        gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
-        dpr={Math.min(window.devicePixelRatio, 2)}
+        camera={cameraConfig}
+        gl={{ antialias: true, alpha: true }}
+        dpr={[1, 1.5]}
         style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 1, background: "transparent" }}
-        fallback={<div style={{ width: "100%", height: "100%", background: "#0d1117" }} />}
+        fallback={<div style={{ width: "100%", height: "100%", background: isGodMode ? "#07090d" : "#101520" }} />}
         onCreated={({ gl }) => {
-          gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+          if (transparentScene) gl.setClearColor(0x000000, 0);
         }}
       >
         <Suspense fallback={null}>
-        <color attach="background" args={['#0f1a2e']} />
-        <fog attach="fog" args={['#0f1a2e', 40, 100]} />
+        {/* Scene clear + fog (Baseline can opt into transparentScene for photo-backed stages) */}
+        {!transparentScene && <color attach="background" args={[isGodMode ? '#0a0f16' : '#122038']} />}
+        {!transparentScene && <fog attach="fog" args={[isGodMode ? '#0a0f16' : '#122038', godFogNear, godFogFar]} />}
         
-        <PerspectiveCamera makeDefault position={[0, 6, 32]} fov={38} />
-        <ambientLight intensity={0.25} />
-        <directionalLight position={[8, 20, 10]} intensity={0.6} color="#ffffff" />
-        {/* Cyan rim light for vibrancy */}
-        <directionalLight position={[-10, 15, -5]} intensity={0.15} color="#22d3ee" />
-        <directionalLight position={[-6, 12, -8]} intensity={0.06} color="#0ea5e9" />
-        <pointLight position={[0, 8, 0]} intensity={0.08} color="#0ea5e9" distance={30} decay={2} />
-        
-        <GhostTerrain isVisible={showPath && hasInteracted} opacityMultiplier={config.pathGlow} />
-        
-        <CinematicController riskLevel={effectiveRiskLevel}>
-        <Terrain
-          dataPoints={resolvedDataPoints}
-          activeKpiIndex={activeKpiIndex}
-          activeLeverId={activeLeverId}
-          leverIntensity01={leverIntensity01}
-          scenario={scenarioId}
-          baseColor={pathColor ?? scenarioColor}
-          mode={mode}
-          glowIntensity={glowIntensity}
-          modeConfig={config}
-          isDragging={isDragging}
-          neuralPulse={neuralBootComplete}
-          opacityMultiplier={terrainOpacityMultiplier}
-          wireOpacityMultiplier={wireOpacityMultiplier}
-          glowMultiplier={glowMultiplier}
+        <ambientLight intensity={0.45} />
+        <directionalLight
+          position={[6, 10, 6]}
+          intensity={1.05}
+          castShadow
         />
-        </CinematicController>
+        <directionalLight
+          position={[-4, 6, -4]}
+          intensity={0.35}
+        />
+
+        {instrumentMode ? (
+          <>
+            {/* INSTRUMENT MODE — Compact diagnostic terrain (Initialize page) */}
+            {/* No overlays, no haze, no grid, no paths. Mesh + wireframe + slow rotation. */}
+
+            {/* Scale Y to 0.45 — flattens the terrain so only peaks & dips are visible,
+                not a towering mountain. Position lowered for correct framing. */}
+            <group scale={[1, 0.45, 1]} position={[0, -3, 0]}>
+              <Terrain
+                dataPoints={resolvedDataPoints}
+                activeKpiIndex={null}
+                activeLeverId={null}
+                leverIntensity01={0}
+                scenario={scenarioId}
+                baseColor={scenarioColor}
+                mode="instrument"
+                glowIntensity={0.3}
+                modeConfig={config}
+                isDragging={false}
+                neuralPulse={false}
+                opacityMultiplier={config.terrainOpacity}
+                wireOpacityMultiplier={config.wireframeOpacity}
+                glowMultiplier={config.glowMultiplier}
+                structuralHeat01={structuralHeat01}
+              />
+            </group>
+
+            {/* Slow rotation (0.1 deg/sec), no user interaction */}
+            <OrbitControls
+              enableZoom={false}
+              enablePan={false}
+              enableRotate={false}
+              autoRotate
+              autoRotateSpeed={config.autoRotateSpeed}
+              minPolarAngle={Math.PI / 3.5}
+              maxPolarAngle={Math.PI / 3.5}
+            />
+          </>
+        ) : (
+          <>
+            <GhostTerrain isVisible={showPath && hasInteracted} opacityMultiplier={config.pathGlow} />
         
-        <DigitalHorizon scenarioId={scenarioId} glowMultiplier={glowMultiplier} baseOpacity={terrainOpacityMultiplier} />
+        {/* CAMERA CONTROL MODES:
+          * GOD MODE: Static authoritative pose (no idle animation, locked zoom, subtle auto-rotation via OrbitControls)
+          * BASELINE: Slow institutional auto-rotate (~0.6°/sec, pausable when user interacts)
+          * DEFAULT (Video/Cinematic): Zoomed-out view with gentle undulation (subtle horizontal rotation only)
+        */}
+        {/* IMPORTANT: overlay is rendered INSIDE the rotation wrapper so orbs/lines rotate with the terrain */}
+        {isGodMode ? (
+          <>
+            <Terrain
+              dataPoints={resolvedDataPoints}
+              activeKpiIndex={activeKpiIndex}
+              activeLeverId={activeLeverId}
+              leverIntensity01={leverIntensity01}
+              scenario={scenarioId}
+              baseColor={pathColor ?? scenarioColor}
+              mode={mode}
+              glowIntensity={glowIntensity}
+              modeConfig={config}
+              isDragging={isDragging}
+              neuralPulse={neuralBootComplete}
+              opacityMultiplier={terrainOpacityMultiplier}
+              wireOpacityMultiplier={wireOpacityMultiplier}
+              glowMultiplier={glowMultiplier}
+              isRecalibrating={isRecalibrating}
+              godMode
+              structuralHeat01={structuralHeat01}
+            />
+            {overlay}
+          </>
+        ) : (
+          baselineAutoRotate ? (
+            <BaselineAutoRotate paused={baselineAutoRotatePaused || isOrbiting}>
+              <Terrain
+                dataPoints={resolvedDataPoints}
+                activeKpiIndex={activeKpiIndex}
+                activeLeverId={activeLeverId}
+                leverIntensity01={leverIntensity01}
+                scenario={scenarioId}
+                baseColor={pathColor ?? scenarioColor}
+                mode={mode}
+                glowIntensity={glowIntensity}
+                modeConfig={config}
+                isDragging={isDragging}
+                neuralPulse={neuralBootComplete}
+                opacityMultiplier={terrainOpacityMultiplier}
+                wireOpacityMultiplier={wireOpacityMultiplier}
+                glowMultiplier={glowMultiplier}
+                isRecalibrating={isRecalibrating}
+                structuralHeat01={structuralHeat01}
+                onMeshReady={onTerrainMeshReady}
+                baselineHighVisibility={baselineHighVisibility}
+              />
+              {overlay}
+            </BaselineAutoRotate>
+          ) : (
+            <CinematicController riskLevel={effectiveRiskLevel}>
+              <Terrain
+                dataPoints={resolvedDataPoints}
+                activeKpiIndex={activeKpiIndex}
+                activeLeverId={activeLeverId}
+                leverIntensity01={leverIntensity01}
+                scenario={scenarioId}
+                baseColor={pathColor ?? scenarioColor}
+                mode={mode}
+                glowIntensity={glowIntensity}
+                modeConfig={config}
+                isDragging={isDragging}
+                neuralPulse={neuralBootComplete}
+                opacityMultiplier={terrainOpacityMultiplier}
+                wireOpacityMultiplier={wireOpacityMultiplier}
+                glowMultiplier={glowMultiplier}
+                isRecalibrating={isRecalibrating}
+                structuralHeat01={structuralHeat01}
+                onMeshReady={onTerrainMeshReady}
+                baselineHighVisibility={baselineHighVisibility}
+              />
+              {overlay}
+            </CinematicController>
+          )
+        )}
+
+        {/* GOD MODE: Interquartile Confidence Envelope (Section 3) */}
+        {isGodMode && (
+          <ConfidenceEnvelope
+            dataPoints={resolvedDataPoints}
+            spread={godModeMetrics.envelopeSpread}
+            enabled
+          />
+        )}
+
+        {/* GOD MODE: Structural Axes — EV ↑ + Time Horizon → (Section 4) */}
+        {isGodMode && <StructuralAxes />}
+
+        {/* GOD MODE: Baseline Reference Line (Section 5) */}
+        {isGodMode && <BaselineRefLine height={-0.5} />}
+
+        {/* GOD MODE: Ridge Line + Surface Annotations (Mountain Clarity) */}
+        {isGodMode && (
+          <>
+            <TerrainRidgeLine dataPoints={resolvedDataPoints} enabled />
+            <TerrainSurfaceAnnotations
+              dataPoints={resolvedDataPoints}
+              kpiValues={kpiValues}
+              enabled
+            />
+          </>
+        )}
+
+        {/* Structural recalibration scan line — single sweep during simulation */}
+        <RecalibrationScanLine active={isRecalibrating} />
+        
+        <DigitalHorizon
+          scenarioId={scenarioId}
+          glowMultiplier={isGodMode ? glowMultiplier * 0.5 : glowMultiplier}
+          baseOpacity={terrainOpacityMultiplier}
+          isRecalibrating={isRecalibrating}
+        />
 
         {/* Strategic Path + Milestones overlays */}
         {showPath ? (
@@ -1059,31 +2033,61 @@ export function ScenarioMountain({
           />
         ) : null}
         
+        {/* GOD MODE: Subtle auto-rotation + locked zoom | Default: standard controls */}
         <OrbitControls 
-          enableZoom={mode !== "ghost" ? false : false}
-          enablePan={mode !== "ghost" ? false : false}
-          enableRotate={mode !== "ghost"}
-          autoRotate={config.autoRotate}
-          autoRotateSpeed={config.autoRotateSpeed}
+          enabled={controlsEnabled}
+          enableZoom={false}
+          enablePan={false}
+          enableRotate={controlsEnabled ? (mode !== "ghost") : false}
+          autoRotate={controlsEnabled ? (controlsAutoRotate ?? (isGodMode ? true : config.autoRotate)) : false}
+          autoRotateSpeed={isGodMode ? 0.3 : config.autoRotateSpeed}
           rotateSpeed={0.4}
-          minPolarAngle={Math.PI / 4}
+          minPolarAngle={isGodMode ? Math.PI / 3.5 : Math.PI / 4}
           maxPolarAngle={Math.PI / 2.2}
-          minAzimuthAngle={-Math.PI / 5}
-          maxAzimuthAngle={Math.PI / 5}
+          minAzimuthAngle={baselineAllow360Rotate ? undefined : -Math.PI / 5}
+          maxAzimuthAngle={baselineAllow360Rotate ? undefined : Math.PI / 5}
+          onStart={() => setIsOrbiting(true)}
+          onEnd={() => setIsOrbiting(false)}
         />
 
-        {/* Celebration bloom / glow */}
-        <EffectComposer enabled={config.bloomIntensity > 0 && mode !== "ghost"}>
+        {/* Post-processing — God Mode: subtle bloom for rim glow | Default: celebration */}
+        <EffectComposer enabled={isGodMode || (config.bloomIntensity > 0 && mode !== "ghost")}>
           <Bloom
-            intensity={config.bloomIntensity * glowIntensity}
-            luminanceThreshold={0.2}
+            intensity={isGodMode ? 0.3 : config.bloomIntensity * glowIntensity}
+            luminanceThreshold={isGodMode ? 0.4 : 0.2}
             luminanceSmoothing={0.9}
             mipmapBlur
           />
-          <Vignette offset={0.5} darkness={mode === "celebration" ? 0.35 : 0} />
+          <Vignette
+            offset={0.5}
+            darkness={isGodMode ? 0.5 : (mode === "celebration" ? 0.35 : 0)}
+          />
         </EffectComposer>
+          </>
+        )}
         </Suspense>
       </Canvas>
+
+      {/* GOD MODE: Model Credibility Footnote (Section 7) */}
+      {isGodMode && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: 8,
+            right: 12,
+            zIndex: 5,
+            fontSize: 9,
+            fontWeight: 500,
+            color: "rgba(148, 163, 184, 0.4)",
+            fontFamily: "'Inter', sans-serif",
+            letterSpacing: "0.02em",
+            pointerEvents: "none",
+            userSelect: "none",
+          }}
+        >
+          Model: 10,000 Monte Carlo runs | Median shown | IQR displayed
+        </div>
+      )}
     </div>
   );
 }
@@ -1102,7 +2106,7 @@ function StrategicPath({
 }: {
   solverPath: { riskIndex: number; enterpriseValue: number; runway: number }[];
   color: string;
-  mode: "default" | "celebration" | "ghost";
+  mode: MountainMode;
   glowIntensity: number;
 }) {
   const config = MODE_CONFIGS[mode] ?? MODE_CONFIGS.default;
@@ -1142,14 +2146,14 @@ function StrategicPath({
     const pulse = mode === "celebration" ? (0.8 + Math.sin(t * 2) * 0.2) : 1;
     if (lineRef.current) {
       const m = lineRef.current.material as { opacity?: number } | undefined;
-      if (m) m.opacity = (mode === "ghost" ? 0.2 : 0.9) * pulse;
+      if (m) m.opacity = (mode === "ghost" ? 0.2 : 0.95) * pulse;
       // Flow feel in celebration mode (dashed line offset)
       const md = lineRef.current.material as any;
       if (mode === "celebration" && md) md.dashOffset = -t * 0.8;
     }
     if (glowRef.current) {
       const m = glowRef.current.material as { opacity?: number } | undefined;
-      if (m) m.opacity = 0.25 * config.pathGlow * glowIntensity * pulse;
+      if (m) m.opacity = 0.5 * config.pathGlow * glowIntensity * pulse;
       const mg = glowRef.current.material as any;
       if (mode === "celebration" && mg) mg.dashOffset = -t * 0.8;
     }
@@ -1160,25 +2164,27 @@ function StrategicPath({
 
   return (
     <group>
+      {/* Outer glow layer for depth and realism */}
       <DreiLine
         ref={glowRef}
         points={curvePoints}
         color={color}
         transparent
-        opacity={0.25 * config.pathGlow * glowIntensity}
-        lineWidth={3}
+        opacity={0.5 * config.pathGlow * glowIntensity}
+        lineWidth={6}
         dashed={mode === "celebration"}
         dashScale={1}
         dashSize={0.8}
         gapSize={0.6}
       />
+      {/* Core path line - thicker and more solid */}
       <DreiLine
         ref={lineRef}
         points={curvePoints}
         color={color}
         transparent
-        opacity={mode === "ghost" ? 0.2 : 0.9}
-        lineWidth={1.5}
+        opacity={mode === "ghost" ? 0.2 : 0.95}
+        lineWidth={3}
         dashed={mode === "celebration"}
         dashScale={1}
         dashSize={0.8}
@@ -1195,14 +2201,14 @@ function MilestoneOrbs({
   solverPath,
 }: {
   color: string;
-  mode: "default" | "celebration" | "ghost";
+  mode: MountainMode;
   glowIntensity: number;
   solverPath?: { riskIndex: number; enterpriseValue: number; runway: number }[];
 }) {
   const config = MODE_CONFIGS[mode] ?? MODE_CONFIGS.default;
-  if (mode === "ghost") return null;
 
   const milestones = useMemo(() => {
+    if (mode === "ghost") return [];
     const sp = solverPath?.length
       ? solverPath
       : [
@@ -1235,7 +2241,9 @@ function MilestoneOrbs({
       const i = Math.max(0, Math.min(pts.length - 1, Math.round(t * (pts.length - 1))));
       return { pos: pts[i], type: typeOrder[idx] };
     });
-  }, [solverPath]);
+  }, [solverPath, mode]);
+
+  if (mode === "ghost") return null;
 
   const typeColors: Record<string, string> = {
     revenue: "#10b981",
@@ -1270,7 +2278,7 @@ function MilestoneOrb({
 }: {
   position: THREE.Vector3;
   color: string;
-  mode: "default" | "celebration" | "ghost";
+  mode: MountainMode;
   glowIntensity: number;
   glowMultiplier: number;
 }) {

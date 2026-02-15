@@ -1,0 +1,103 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   STRATFIT — Survival Curve Comparison (Institutional)
+   Dual-curve SVG overlay. Cyan baseline, red dashed shock.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0, 224, 255, 0.45);
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.computing {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.25);
+  text-align: center;
+  padding: 12px 0;
+  letter-spacing: 0.04em;
+}
+
+.svg {
+  width: 100%;
+  height: auto;
+  max-height: 260px;
+}
+
+/* ── Metrics strip ──────────────────────────────────────────────────── */
+
+.metricsStrip {
+  display: flex;
+  gap: 12px;
+}
+
+.metric {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+}
+
+.metricLabel {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.metricValue {
+  font-size: 15px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+}
+
+/* ── Legend ──────────────────────────────────────────────────────────── */
+
+.legend {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  padding-top: 4px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.legendSolid {
+  width: 16px;
+  height: 2px;
+  background: #00E0FF;
+  border-radius: 1px;
+}
+
+.legendDashed {
+  width: 16px;
+  height: 0;
+  border-top: 2px dashed #ef4444;
+}
+
+
+
+
+
+
+

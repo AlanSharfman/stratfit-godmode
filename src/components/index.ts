@@ -35,7 +35,6 @@ export {
 // ─────────────────────────────────────────────────────────────────────────────
 // TAB COMPONENTS
 // ─────────────────────────────────────────────────────────────────────────────
-export { DecisionTab } from './Decision';
 export { RiskTab } from './Risk';
 export { ValuationTab } from './valuation';
 export { ImpactGodMode } from './impact';

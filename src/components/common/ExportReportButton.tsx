@@ -7,6 +7,7 @@ import { useLeverStore } from '../../state/leverStore';
 import { useScenarioStore } from '../../state/scenarioStore';
 import { useRiskStore } from '../../state/riskStore';
 import { useValuationStore } from '../../state/valuationStore';
+import { emitCompute } from '@/engine/computeTelemetry';
 
 import './ExportReportButton.css';
 
@@ -328,8 +329,11 @@ export default function ExportReportButton({
   // Export as HTML/Print
   const handleExportHTML = () => {
     setIsExporting(true);
+    const _t0 = performance.now();
+    emitCompute("report_pack_generate", "initialize");
     
     try {
+      emitCompute("report_pack_generate", "render");
       const html = generateReportHTML();
       const blob = new Blob([html], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
@@ -344,8 +348,14 @@ export default function ExportReportButton({
         };
       }
       
+      emitCompute("report_pack_generate", "complete", {
+        durationMs: performance.now() - _t0,
+      });
       onExported?.();
     } catch (err) {
+      emitCompute("report_pack_generate", "error", {
+        note: String(err),
+      });
       console.error('Export failed:', err);
     } finally {
       setIsExporting(false);
@@ -356,8 +366,11 @@ export default function ExportReportButton({
   // Export as downloadable HTML
   const handleDownloadHTML = () => {
     setIsExporting(true);
+    const _t0 = performance.now();
+    emitCompute("report_pack_generate", "initialize");
     
     try {
+      emitCompute("report_pack_generate", "render");
       const html = generateReportHTML();
       const blob = new Blob([html], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
@@ -369,8 +382,14 @@ export default function ExportReportButton({
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       
+      emitCompute("report_pack_generate", "complete", {
+        durationMs: performance.now() - _t0,
+      });
       onExported?.();
     } catch (err) {
+      emitCompute("report_pack_generate", "error", {
+        note: String(err),
+      });
       console.error('Download failed:', err);
     } finally {
       setIsExporting(false);

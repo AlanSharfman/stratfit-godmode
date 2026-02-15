@@ -1,18 +1,12 @@
 import ReactDOM from "react-dom/client";
-import App from "./App";
-import ErrorBoundary from "./components/ErrorBoundary";
-import "./styles/phase2Tokens.css";
-import "./index.css";
-import "./styles/phase1LayoutFixes.css";
+import { BrowserRouter } from "react-router-dom";
+import AppRouter from "./AppRouter";
+import { validateRoutingContract } from "@/navigation/routingContract";
 
-const rootElement = document.getElementById("root");
+validateRoutingContract();
 
-if (!rootElement) {
-  throw new Error("Root element not found");
-}
-
-ReactDOM.createRoot(rootElement).render(
-  <ErrorBoundary>
-    <App />
-  </ErrorBoundary>
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <BrowserRouter>
+    <AppRouter />
+  </BrowserRouter>
 );

@@ -36,10 +36,8 @@ export default function SaveSimulationModal({ isOpen, onClose, onSaved }: SaveSi
   useEffect(() => {
     if (isOpen && inputRef.current) {
       inputRef.current.focus();
-      // Generate default name
-      const date = new Date();
-      const defaultName = `Strategy ${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-      setName(defaultName);
+      // Require an explicit user-provided name (no auto-generated defaults)
+      setName('');
     }
   }, [isOpen]);
   

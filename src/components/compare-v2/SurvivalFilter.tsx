@@ -146,7 +146,8 @@ export function SurvivalFilter({
     ctx.lineCap = 'round'
     ctx.beginPath()
     for (let m = 0; m <= months; m++) {
-      m === 0 ? ctx.moveTo(x(m), y(survivalOverTimeA[m])) : ctx.lineTo(x(m), y(survivalOverTimeA[m]))
+      if (m === 0) ctx.moveTo(x(m), y(survivalOverTimeA[m]))
+      else ctx.lineTo(x(m), y(survivalOverTimeA[m]))
     }
     ctx.stroke()
 
@@ -154,7 +155,8 @@ export function SurvivalFilter({
     ctx.strokeStyle = '#f59e0b'
     ctx.beginPath()
     for (let m = 0; m <= months; m++) {
-      m === 0 ? ctx.moveTo(x(m), y(survivalOverTimeB[m])) : ctx.lineTo(x(m), y(survivalOverTimeB[m]))
+      if (m === 0) ctx.moveTo(x(m), y(survivalOverTimeB[m]))
+      else ctx.lineTo(x(m), y(survivalOverTimeB[m]))
     }
     ctx.stroke()
 

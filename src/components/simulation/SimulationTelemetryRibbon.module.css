@@ -1,0 +1,158 @@
+/* SimulationTelemetryRibbon.module.css
+   ═══════════════════════════════════════════════════════════════════════════
+   Institutional telemetry ribbon — top-right overlay.
+   Charcoal glass. Cyan accents. No toy effects.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.ribbon {
+  position: fixed;
+  top: 64px;
+  right: 24px;
+  z-index: 900;
+  width: 340px;
+  padding: 16px 20px;
+  background: rgba(14, 17, 22, 0.92);
+  border: 1px solid rgba(79, 209, 255, 0.12);
+  border-top: 2px solid rgba(79, 209, 255, 0.35);
+  border-radius: 10px;
+  backdrop-filter: blur(12px);
+  font-family: 'Inter', 'Satoshi', system-ui, sans-serif;
+  pointer-events: none;
+}
+
+.fadeIn {
+  animation: ribbonFadeIn 200ms ease-out forwards;
+}
+
+.fadeOut {
+  animation: ribbonFadeOut 600ms ease-in forwards;
+}
+
+@keyframes ribbonFadeIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ribbonFadeOut {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-6px); }
+}
+
+/* ── Header ── */
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.led {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ledRunning {
+  background: #4fd1ff;
+  box-shadow: 0 0 6px rgba(79, 209, 255, 0.5);
+  animation: ledPulse 1.6s ease-in-out infinite;
+}
+
+.ledComplete {
+  background: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.5);
+}
+
+@keyframes ledPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(226, 232, 240, 0.9);
+}
+
+/* ── Meta line ── */
+
+.metaLine {
+  font-size: 11px;
+  line-height: 1.5;
+  color: rgba(148, 163, 184, 0.65);
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* ── Status lines ── */
+
+.statusLines {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.statusLine {
+  font-size: 12px;
+  line-height: 1.5;
+  transition: color 300ms ease, opacity 300ms ease;
+}
+
+.statusLineActive {
+  color: rgba(79, 209, 255, 0.9);
+  opacity: 1;
+}
+
+.statusLineDone {
+  color: rgba(148, 163, 184, 0.45);
+  opacity: 0.7;
+}
+
+/* ── Completion deltas ── */
+
+.completionDeltas {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.deltaLine {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.deltaLabel {
+  color: rgba(148, 163, 184, 0.7);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 11px;
+}
+
+.deltaValue {
+  font-weight: 600;
+  color: #4fd1ff;
+}
+
+.deltaPositive {
+  color: #10b981;
+}
+
+.deltaNegative {
+  color: #f87171;
+}
+
+
+
+
+
+
+

@@ -82,15 +82,23 @@ export default function MountainEngine({
   growthStress = 0,
 }: MountainEngineProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const isMountedRef = useRef(true);
+  const frameIdRef = useRef<number | null>(null);
   
   // Get solver path from store for visualization
   const solverPath = useScenarioStore((s) => s.solverPath);
 
   useEffect(() => {
+    // ✅ Mark as mounted at the start
+    isMountedRef.current = true;
+    
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { 
+      alpha: false, // No transparency needed - performance boost
+      desynchronized: true // Allow async rendering
+    });
     if (!ctx) return;
 
     const _canvas = canvas as HTMLCanvasElement;
@@ -98,6 +106,12 @@ export default function MountainEngine({
 
     let frameId: number;
     let tick = 0;
+    
+    // ⚡ Performance: Cache dimensions to avoid layout thrashing
+    let cachedWidth = 0;
+    let cachedHeight = 0;
+    let cachedBaseCurve: Array<{ x: number; y: number }> = [];
+    let needsRecalc = true;
 
     function resize() {
       const parent = _canvas.parentElement;
@@ -113,19 +127,26 @@ export default function MountainEngine({
 
       _ctx.setTransform(1, 0, 0, 1, 0, 0);
       _ctx.scale(dpr, dpr);
+      
+      // ⚡ Update cached dimensions
+      cachedWidth = rect.width;
+      cachedHeight = rect.height;
+      needsRecalc = true;
     }
 
     resize();
     window.addEventListener("resize", resize);
 
     function draw() {
-      const parent = _canvas.parentElement;
-      if (!parent) return;
-
-      const width = parent.clientWidth;
-      const height = parent.clientHeight;
+      // ✅ Check if component is still mounted before continuing
+      if (!isMountedRef.current) return;
+      
+      // ⚡ Use cached dimensions instead of reading from DOM
+      const width = cachedWidth;
+      const height = cachedHeight;
+      
       if (!width || !height) {
-        frameId = requestAnimationFrame(draw);
+        frameIdRef.current = requestAnimationFrame(draw);
         return;
       }
 
@@ -151,11 +172,15 @@ export default function MountainEngine({
         _ctx.stroke();
       }
 
-      // ========== GENERATE CURVES ==========
-      const baseHeight = height * 0.65;
-      const baseCurve = generateSplinePoints(dataPoints, width, baseHeight);
-      if (!baseCurve.length) {
-        frameId = requestAnimationFrame(draw);
+      // ⚡ Performance: Only recalculate base curve when dimensions change
+      if (needsRecalc) {
+        const baseHeight = height * 0.65;
+        cachedBaseCurve = generateSplinePoints(dataPoints, width, baseHeight);
+        needsRecalc = false;
+      }
+      
+      if (!cachedBaseCurve.length) {
+        frameIdRef.current = requestAnimationFrame(draw);
         return;
       }
 
@@ -164,19 +189,24 @@ export default function MountainEngine({
       const waveMid = Math.sin(tick * 0.8) * 6;
       const waveFront = Math.sin(tick * 1.2) * 8;
 
-      const curveBack = baseCurve.map((pt, i) => ({
+      // ⚡ Performance: Pre-calculate wave offsets (fewer Math operations)
+      const sinTick04 = Math.sin(tick * 0.4);
+      const sinTick07 = Math.sin(tick * 0.7);
+      const sinTick10 = Math.sin(tick * 1.0);
+
+      const curveBack = cachedBaseCurve.map((pt, i) => ({
         x: pt.x,
-        y: pt.y + 45 + waveBack + Math.sin(tick * 0.4 + i * 0.5) * 3,
+        y: pt.y + 45 + waveBack + sinTick04 * 3,
       }));
 
-      const curveMid = baseCurve.map((pt, i) => ({
+      const curveMid = cachedBaseCurve.map((pt, i) => ({
         x: pt.x,
-        y: pt.y + 22 + waveMid + Math.sin(tick * 0.7 + i * 0.6) * 5,
+        y: pt.y + 22 + waveMid + sinTick07 * 5,
       }));
 
-      const curveFront = baseCurve.map((pt, i) => ({
+      const curveFront = cachedBaseCurve.map((pt, i) => ({
         x: pt.x,
-        y: pt.y + waveFront + Math.sin(tick * 1.0 + i * 0.7) * 6,
+        y: pt.y + waveFront + sinTick10 * 6,
       }));
 
       // ========== GRADIENT FILL UNDER CURVE ==========
@@ -448,13 +478,20 @@ export default function MountainEngine({
       _ctx.lineTo(width, timelineY - 5);
       _ctx.stroke();
 
-      frameId = requestAnimationFrame(draw);
+      // ✅ Only request next frame if still mounted
+      if (isMountedRef.current) {
+        frameIdRef.current = requestAnimationFrame(draw);
+      }
     }
 
-    frameId = requestAnimationFrame(draw);
+    frameIdRef.current = requestAnimationFrame(draw);
 
     return () => {
-      cancelAnimationFrame(frameId);
+      // ✅ Mark as unmounted to stop animation loop
+      isMountedRef.current = false;
+      if (frameIdRef.current !== null) {
+        cancelAnimationFrame(frameIdRef.current);
+      }
       window.removeEventListener("resize", resize);
     };
   }, [dataPoints, activeKPIIndex, scenario, solverPath, growthStress]);

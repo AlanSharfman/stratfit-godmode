@@ -1,0 +1,506 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   STRATFIT — COMPARE VIEW (Institutional Intelligence Engine)
+   
+   Two-mountain comparison. No glow. No drama. No gamification.
+   Charcoal glass + cyan accents. Board-ready.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(180deg, #0e1520 0%, #0b1117 100%);
+  color: rgba(255, 255, 255, 0.85);
+  overflow-x: hidden;
+  overflow-y: auto;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ═══ SCENARIO STRIP ══════════════════════════════════════════════════════ */
+
+.scenarioStrip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.01);
+  flex-shrink: 0;
+}
+
+.scenarioStripLabel {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.2);
+  margin-right: 4px;
+  white-space: nowrap;
+}
+
+.scenarioTab {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.4);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 5px 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 120ms, background 120ms, border-color 120ms;
+  white-space: nowrap;
+}
+
+.scenarioTab:hover {
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.scenarioTabActive {
+  composes: scenarioTab;
+  color: rgba(0, 224, 255, 0.9);
+  background: rgba(0, 224, 255, 0.06);
+  border-color: rgba(0, 224, 255, 0.2);
+}
+
+.scenarioTabCurrent {
+  composes: scenarioTab;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: default;
+  font-style: italic;
+}
+
+.scenarioActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 2px;
+}
+
+.scenarioActionBtn {
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.25);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 3px;
+  padding: 3px 8px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 100ms, border-color 100ms;
+}
+
+.scenarioActionBtn:hover {
+  color: rgba(255, 255, 255, 0.5);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.scenarioActionBtnDanger:hover {
+  color: rgba(248, 113, 113, 0.7);
+  border-color: rgba(248, 113, 113, 0.2);
+}
+
+.scenarioSpacer {
+  flex: 1;
+}
+
+.scenarioAddBtn {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(0, 224, 255, 0.5);
+  background: transparent;
+  border: 1px dashed rgba(0, 224, 255, 0.15);
+  border-radius: 4px;
+  padding: 4px 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 120ms, border-color 120ms, background 120ms;
+}
+
+.scenarioAddBtn:hover {
+  color: rgba(0, 224, 255, 0.8);
+  border-color: rgba(0, 224, 255, 0.3);
+  background: rgba(0, 224, 255, 0.03);
+}
+
+.scenarioAddBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ═══ COMPARISON ROW ══════════════════════════════════════════════════════ */
+
+.comparisonRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  flex-shrink: 0;
+}
+
+.comparisonLabel {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.comparisonSelect {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(0, 224, 255, 0.8);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 120ms;
+}
+
+.comparisonSelect:focus {
+  border-color: rgba(0, 224, 255, 0.3);
+}
+
+.comparisonSelect option {
+  background: #0b1117;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* ═══ DUAL MOUNTAIN STAGE ═════════════════════════════════════════════════ */
+
+.mountainsRow {
+  display: flex;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+  padding: 12px 16px;
+  gap: 0;
+  animation: mountainEnter 400ms ease-out;
+}
+
+@keyframes mountainEnter {
+  from { transform: scale(1.05); opacity: 0.7; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.mountainLeft {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  border-radius: 8px 0 0 8px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-right: none;
+  /* Slightly desaturated — 85-90% tone */
+  filter: saturate(0.88) brightness(0.92);
+}
+
+.mountainRight {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  border-radius: 0 8px 8px 0;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-left: none;
+  /* Full contrast, slightly sharper */
+  filter: saturate(1.05) brightness(1.02);
+}
+
+.mountainGap {
+  width: 14%;
+  max-width: 80px;
+  min-width: 24px;
+  flex-shrink: 0;
+}
+
+.mountainLabel {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+  padding: 10px 14px 0;
+  flex-shrink: 0;
+  z-index: 2;
+}
+
+.mountainCanvas {
+  flex: 1;
+  position: relative;
+  min-height: 240px;
+}
+
+.emptyMountain {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.15);
+  letter-spacing: 0.04em;
+}
+
+/* ═══ METRICS STRIP ═══════════════════════════════════════════════════════ */
+
+.metricsStrip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  padding: 10px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.01);
+  flex-shrink: 0;
+}
+
+.metricItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 100px;
+}
+
+.metricLabel {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.metricValue {
+  font-size: 18px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  transition: color 250ms ease;
+}
+
+.metricDelta {
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  margin-top: 1px;
+}
+
+.metricDeltaPositive {
+  composes: metricDelta;
+  color: rgba(52, 211, 153, 0.85);
+}
+
+.metricDeltaNegative {
+  composes: metricDelta;
+  color: rgba(248, 113, 113, 0.85);
+}
+
+.metricDeltaNeutral {
+  composes: metricDelta;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.metricEmpty {
+  composes: metricValue;
+  color: rgba(255, 255, 255, 0.15);
+}
+
+/* ═══ COMPACT TABLE ═══════════════════════════════════════════════════════ */
+
+.tableWrap {
+  padding: 8px 20px;
+  flex-shrink: 0;
+}
+
+.compactTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.compactTable th {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.2);
+  text-align: left;
+  padding: 6px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.compactTable th:not(:first-child) {
+  text-align: right;
+}
+
+.compactTable td {
+  font-size: 12px;
+  padding: 5px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.compactTable td:first-child {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+.compactTable td:not(:first-child) {
+  text-align: right;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cellPositive {
+  color: rgba(52, 211, 153, 0.85) !important;
+}
+
+.cellNegative {
+  color: rgba(248, 113, 113, 0.85) !important;
+}
+
+/* ═══ DELTA TABLE + INTELLIGENCE ═══════════════════════════════════════════ */
+
+.deltaWrap {
+  padding: 10px 20px 6px;
+  flex-shrink: 0;
+}
+
+.deltaTitle {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.22);
+  margin: 4px 0 8px;
+}
+
+.deltaTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.deltaTable th {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.18);
+  text-align: left;
+  padding: 7px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.deltaTable th:nth-child(2),
+.deltaTable th:nth-child(3),
+.deltaTable th:nth-child(4),
+.deltaTable th:nth-child(5) {
+  text-align: right;
+}
+
+.deltaTable td {
+  font-size: 12px;
+  padding: 7px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.55);
+  vertical-align: top;
+}
+
+.deltaMetric {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+.deltaNum {
+  text-align: right;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.deltaIntel {
+  font-size: 11px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.36);
+}
+
+/* ═══ COMMENTARY ══════════════════════════════════════════════════════════ */
+
+.commentaryRow {
+  padding: 8px 20px 12px;
+  flex-shrink: 0;
+}
+
+.commentaryText {
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.4);
+  font-style: normal;
+  letter-spacing: 0.01em;
+}
+
+.commentaryEmpty {
+  composes: commentaryText;
+  color: rgba(255, 255, 255, 0.15);
+}
+
+/* ═══ RENAME INPUT ════════════════════════════════════════════════════════ */
+
+.renameInput {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(0, 224, 255, 0.3);
+  border-radius: 3px;
+  padding: 3px 8px;
+  font-family: inherit;
+  outline: none;
+  width: 120px;
+}
+
+/* ═══ RESPONSIVE ══════════════════════════════════════════════════════════ */
+
+@media (max-width: 900px) {
+  .mountainsRow {
+    flex-direction: column;
+  }
+  .mountainGap {
+    width: 100%;
+    height: 8px;
+    min-width: unset;
+  }
+  .mountainLeft,
+  .mountainRight {
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+  }
+  .metricsStrip {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+}
+
+
+
+

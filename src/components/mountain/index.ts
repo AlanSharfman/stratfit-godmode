@@ -2,5 +2,10 @@
 
 export { default as ScenarioMountain } from './ScenarioMountain';
 export { default as GhostMountain } from './GhostMountain';
-// Note: GodModeMountain and StrategicAutopilotPanel are now in @/components/compare/
+export { default as TerrainSurface } from './TerrainSurface';
+export type { TerrainSurfaceHandle } from './TerrainSurface';
+// TerrainPathBanked replaced by TerrainPathSystem in src/components/terrain/
+// Note: GodModeMountain quarantined to src/_quarantine/legacy-mountain/
+// Note: BaselineMountainScene, BaselineMountain quarantined to src/_quarantine/legacy-mountain/
+
 

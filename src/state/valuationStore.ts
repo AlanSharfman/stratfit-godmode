@@ -4,6 +4,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { emitCompute } from '@/engine/computeTelemetry';
 
 // ============================================================================
 // TYPES
@@ -289,7 +290,11 @@ export const useValuationStore = create<ValuationState>()(
       viewMode: 'overview',
       
       calculateValuation: (levers, simulation) => {
+        const _t0 = performance.now();
         set({ isCalculating: true });
+        emitCompute("valuation_multiples", "initialize", {
+          methodName: "ARR Multiple",
+        });
         
         const { currentStage, currentARR, currentRevenue, growthRate } = get();
         
@@ -299,6 +304,8 @@ export const useValuationStore = create<ValuationState>()(
           drivers.reduce((sum, d) => sum + d.score * d.weight, 0)
         );
         
+        emitCompute("valuation_multiples", "derive_metrics");
+
         // Calculate multiples
         const impliedMultiples = calculateMultiple(overallScore, currentStage, growthRate);
         
@@ -370,6 +377,11 @@ export const useValuationStore = create<ValuationState>()(
           calculatedAt: new Date(),
         };
         
+        emitCompute("valuation_multiples", "complete", {
+          durationMs: performance.now() - _t0,
+          methodName: "ARR Multiple",
+        });
+
         set({ snapshot, isCalculating: false });
         return snapshot;
       },

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useScenarioStore } from '@/state/scenarioStore'
 import ScenarioMountain from '@/components/mountain/ScenarioMountain'
+import { TerrainWithFallback } from '@/components/terrain/TerrainFallback2D'
 import { 
   CheckCircle, 
   Download, 
@@ -210,26 +211,30 @@ function CommittedView({
         {/* Main chosen scenario mountain */}
         <div className={`absolute inset-0 transition-opacity duration-500 ${showRejected ? 'opacity-50' : 'opacity-100'}`}>
           {chosenScenario && (
-            <ScenarioMountain 
-              scenario={chosenScenario}
-              mode="celebration"
-              glowIntensity={1.5}
-              showPath={true}
-              showMilestones={true}
-            />
+            <TerrainWithFallback>
+              <ScenarioMountain 
+                scenario={chosenScenario}
+                mode="celebration"
+                glowIntensity={1.5}
+                showPath={true}
+                showMilestones={true}
+              />
+            </TerrainWithFallback>
           )}
         </div>
         
         {/* Rejected scenario mountain overlay (faded) */}
         {showRejected && rejectedScenario && (
           <div className="absolute inset-0 opacity-30 pointer-events-none">
-            <ScenarioMountain 
-              scenario={rejectedScenario}
-              mode="ghost"
-              glowIntensity={0.3}
-              showPath={true}
-              showMilestones={false}
-            />
+            <TerrainWithFallback>
+              <ScenarioMountain 
+                scenario={rejectedScenario}
+                mode="ghost"
+                glowIntensity={0.3}
+                showPath={true}
+                showMilestones={false}
+              />
+            </TerrainWithFallback>
           </div>
         )}
         
@@ -462,13 +467,13 @@ function PendingView({ scenarios, onSelect }: PendingViewProps) {
           <AlertTriangle className="w-12 h-12 text-amber-400 mx-auto mb-4" />
           <h1 className="text-2xl text-white font-light mb-4">Need More Scenarios</h1>
           <p className="text-white/50 max-w-md mb-8">
-            Create at least two scenarios in the Terrain tab, then return here to make your decision.
+            Create at least two scenarios in the Baseline tab, then return here to make your decision.
           </p>
           <a 
-            href="/terrain"
+            href="/baseline"
             className="inline-flex items-center gap-2 px-6 py-3 bg-cyan-500/20 border border-cyan-500/30 rounded-xl text-cyan-300 hover:bg-cyan-500/30 transition-colors"
           >
-            Go to Terrain
+            Go to Baseline
             <ChevronRight className="w-4 h-4" />
           </a>
         </div>

@@ -4,6 +4,7 @@ import "./DualMountainInstrument.css";
 import { useShallow } from "zustand/react/shallow";
 
 import ScenarioMountain from "@/components/mountain/ScenarioMountain";
+import { TerrainWithFallback } from "@/components/terrain/TerrainFallback2D";
 import { engineResultToMountainForces } from "@/logic/mountainForces";
 import { type ScenarioId, useScenarioStore } from "@/state/scenarioStore";
 
@@ -35,24 +36,28 @@ export default function DualMountainInstrument() {
       <div className="mountain-card">
         <div className="mountain-title">BASELINE</div>
         <div className="mountain-canvas-bay" data-scenario={BASELINE_SCENARIO_ID}>
-          <ScenarioMountain
-            scenario={BASELINE_SCENARIO_ID}
-            dataPoints={baselineDataPoints}
-            activeKpiIndex={hoveredKpiIndex}
-            className="sf-compare-mountain"
-          />
+          <TerrainWithFallback dataPoints={baselineDataPoints}>
+            <ScenarioMountain
+              scenario={BASELINE_SCENARIO_ID}
+              dataPoints={baselineDataPoints}
+              activeKpiIndex={hoveredKpiIndex}
+              className="sf-compare-mountain"
+            />
+          </TerrainWithFallback>
         </div>
       </div>
 
       <div className="mountain-card">
         <div className="mountain-title">STRATEGY</div>
         <div className="mountain-canvas-bay" data-scenario={activeScenarioId}>
-          <ScenarioMountain
-            scenario={activeScenarioId}
-            dataPoints={activeDataPoints}
-            activeKpiIndex={hoveredKpiIndex}
-            className="sf-compare-mountain"
-          />
+          <TerrainWithFallback dataPoints={activeDataPoints}>
+            <ScenarioMountain
+              scenario={activeScenarioId}
+              dataPoints={activeDataPoints}
+              activeKpiIndex={hoveredKpiIndex}
+              className="sf-compare-mountain"
+            />
+          </TerrainWithFallback>
         </div>
       </div>
     </div>

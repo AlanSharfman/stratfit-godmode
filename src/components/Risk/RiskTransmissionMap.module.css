@@ -1,0 +1,131 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   STRATFIT — Risk Transmission Map (Institutional)
+   Vertical node graph. Deep charcoal. No toy effects.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0, 224, 255, 0.45);
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.computing {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.25);
+  text-align: center;
+  padding: 12px 0;
+  letter-spacing: 0.04em;
+}
+
+.chain {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+/* ── Node card ─────────────────────────────────────────────────────── */
+
+.node {
+  width: 100%;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  transition: border-color 200ms;
+}
+
+.nodeHigh {
+  border-color: rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.03);
+}
+
+.nodeHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.nodeIcon {
+  font-size: 12px;
+  color: rgba(0, 224, 255, 0.5);
+  width: 16px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.nodeLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+  flex: 1;
+}
+
+.nodeDelta {
+  font-size: 12px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  min-width: 48px;
+  text-align: right;
+}
+
+.nodeBody {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nodeMetric {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.metricLabel {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.metricValue {
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.nodeSep {
+  width: 1px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+/* ── Arrow ─────────────────────────────────────────────────────────── */
+
+.arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 0;
+  transition: color 200ms;
+}
+
+
+

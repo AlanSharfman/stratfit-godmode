@@ -2,10 +2,12 @@
 // STRATFIT — Empty State for Risk Tab
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function EmptyRiskState() {
+  const navigate = useNavigate();
   const handleNavigate = (tab: string) => {
-    window.dispatchEvent(new CustomEvent('stratfit:navigate', { detail: tab }));
+    navigate(`/${tab}`);
   };
   
   return (

@@ -49,3 +49,17 @@ node_modules/.vite/
 # local recovery artifacts
 _quarantine/
 
+# TypeScript incremental build info
+*.tsbuildinfo
+
+# Local request dumps / dev output
+_request_dump/
+
+# Cursor / local worktrees & saved snapshots (machine-local, never commit)
+_worktrees/
+_HARD_SAVES/
+
+# local backups
+_broken_mountain_backup/
+**/_broken_mountain_backup/
+*.zip

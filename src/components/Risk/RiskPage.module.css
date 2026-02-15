@@ -1,0 +1,534 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   STRATFIT — RISK 2.0: STRUCTURAL SHOCK PROPAGATION ENGINE
+   3-column institutional layout. Deep charcoal. No toy effects.
+   Background: #111827 → #0F1C2E, Accent: #00E0FF, Risk: #ef4444
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(180deg, #111827 0%, #0F1C2E 100%);
+  color: rgba(255, 255, 255, 0.85);
+  overflow: hidden;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ── COMMAND BAR ─────────────────────────────────────────────────────── */
+.commandBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.commandLeft {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.commandLabel {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.commandScore {
+  font-size: 32px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  line-height: 1;
+}
+
+.commandScoreSuffix {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.25);
+  margin-left: 2px;
+}
+
+.commandRight {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.commandMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.metaLabel {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.metaValue {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.metaArrow {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.trendImproving { color: #00D084; }
+.trendDeteriorating { color: #FF4D4D; }
+.trendStable { color: rgba(255, 255, 255, 0.4); }
+.volLow { color: #00D084; }
+.volMedium { color: #fbbf24; }
+.volHigh { color: #FF4D4D; }
+
+/* Risk index color by severity */
+.riskMinimal { color: #00E0FF; }
+.riskLow { color: #00D084; }
+.riskModerate { color: #fbbf24; }
+.riskElevated { color: #f97316; }
+.riskHigh { color: #FF4D4D; }
+.riskCritical { color: #dc2626; }
+
+/* ── 3-COLUMN MAIN LAYOUT ──────────────────────────────────────────── */
+.main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 260px 1fr 280px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── LEFT COLUMN: Shock Controller + Transmission Map ─────────────── */
+.leftCol {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 224, 255, 0.1) transparent;
+}
+
+.sectionTitle {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0, 224, 255, 0.45);
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  margin-bottom: 4px;
+}
+
+/* ── Shock Controller ─────────────────────────────────────────────── */
+.shockController {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+}
+
+.sigmaDisplay {
+  font-size: 28px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  text-align: center;
+  line-height: 1;
+}
+
+.sigmaLabel {
+  font-size: 11px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 4px;
+}
+
+.sigmaSliderWrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sigmaTickLabel {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: rgba(255, 255, 255, 0.3);
+  min-width: 12px;
+  text-align: center;
+}
+
+.sigmaSlider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.sigmaSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--thumb-color, #00E0FF);
+  border: 2px solid rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition: box-shadow 200ms;
+}
+
+.sigmaSlider::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 8px rgba(0, 224, 255, 0.4);
+}
+
+.sigmaSlider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--thumb-color, #00E0FF);
+  border: 2px solid rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+
+.sigmaTicks {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.sigmaTickBtn {
+  font-size: 10px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: color 150ms, border-color 150ms, background 150ms;
+}
+
+.sigmaTickBtn:hover {
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.sigmaTickBtnActive {
+  background: rgba(0, 224, 255, 0.08);
+}
+
+.transmissionSection {
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── CENTER COLUMN: Survival Curve ─────────────────────────────────── */
+.centerCol {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 224, 255, 0.1) transparent;
+}
+
+.classificationStrip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 5px;
+}
+
+.classLabel {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.classBadge {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 12px;
+  border-radius: 4px;
+}
+
+/* ── RIGHT COLUMN: Risk Index + Commentary + Legal ─────────────────── */
+.rightCol {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 224, 255, 0.1) transparent;
+}
+
+/* ── Risk Index Card ──────────────────────────────────────────────── */
+.riskIndexCard {
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.riskScoreDisplay {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 2px;
+}
+
+.riskScoreValue {
+  font-size: 42px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  line-height: 1;
+}
+
+.riskScoreMax {
+  font-size: 16px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.riskBandBadge {
+  display: inline-block;
+  text-align: center;
+  padding: 4px 14px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.noShockHint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.3);
+  text-align: center;
+  padding: 16px 0;
+}
+
+/* Component breakdown */
+.componentGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.componentRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.componentLabel {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  min-width: 100px;
+  flex-shrink: 0;
+}
+
+.componentBarWrap {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.componentBar {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 300ms ease;
+}
+
+.componentValue {
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: rgba(255, 255, 255, 0.5);
+  min-width: 32px;
+  text-align: right;
+}
+
+/* Reasons */
+.reasonsList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.reasonItem {
+  display: flex;
+  gap: 6px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.reasonBullet {
+  color: rgba(0, 224, 255, 0.35);
+  flex-shrink: 0;
+}
+
+.reasonText {
+  flex: 1;
+}
+
+/* ── Commentary Card ──────────────────────────────────────────────── */
+.commentaryCard {
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+}
+
+.commentaryBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.commentaryText {
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+}
+
+.commentaryText strong {
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 600;
+}
+
+/* ── Disclosure ──────────────────────────────────────────────────── */
+.disclosure {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.disclosureHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  user-select: none;
+  transition: background 200ms;
+}
+
+.disclosureHeader:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.disclosureTitle {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.disclosureChevron {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.3);
+  transition: transform 200ms;
+}
+
+.disclosureChevronOpen {
+  transform: rotate(180deg);
+}
+
+.disclosureBody {
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.01);
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.35);
+  line-height: 1.65;
+}
+
+/* ── Empty State ─────────────────────────────────────────────────── */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.emptyTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.emptyText {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.3);
+  max-width: 320px;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .main {
+    grid-template-columns: 1fr;
+  }
+  .leftCol {
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  .rightCol {
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+  }
+}

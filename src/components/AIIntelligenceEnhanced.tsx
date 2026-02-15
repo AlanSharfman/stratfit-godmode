@@ -1,5 +1,11 @@
 // src/components/AIIntelligenceEnhanced.tsx
-// STRATFIT — GOD-MODE AI COCKPIT
+// ═══════════════════════════════════════════════════════════════════════════
+// LEGACY — NOT MOUNTED
+// Replaced by src/components/intelligence/SystemCommentaryPanel.tsx
+// which consumes SystemAnalysisSnapshot only.
+// Retained for reference. Do not import in new code.
+// ═══════════════════════════════════════════════════════════════════════════
+// STRATFIT — GOD-MODE AI COCKPIT (LEGACY)
 // Signal Widgets, Vitality Gauges, Mini-Risk Map
 // "Stop writing reports. Start building a Cockpit."
 

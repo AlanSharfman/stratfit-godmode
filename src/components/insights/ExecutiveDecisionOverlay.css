@@ -1,0 +1,143 @@
+/* ============================================================================
+   EXECUTIVE DECISION OVERLAY
+   - Positioned outside Canvas (standard DOM)
+   - Premium dark glass aesthetic
+   - Cyan accent system
+   ============================================================================ */
+
+.exec-decision-overlay {
+  position: absolute;
+  left: 20px;
+  bottom: 20px;
+  width: 320px;
+  padding: 16px;
+  border-radius: 16px;
+
+  background: rgba(10, 15, 20, 0.75);
+  border: 1px solid rgba(34, 211, 238, 0.18);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+
+  color: #E6F7FF;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+
+  z-index: 100;
+}
+
+.exec-decision-header {
+  margin-bottom: 12px;
+}
+
+.exec-decision-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  background: rgba(34, 211, 238, 0.15);
+  border: 1px solid rgba(34, 211, 238, 0.25);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #22D3EE;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.exec-decision-metrics {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.exec-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.exec-metric-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(230, 247, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.exec-metric-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #22D3EE;
+}
+
+.exec-decision-text {
+  margin: 0 0 8px 0;
+  color: rgba(230, 247, 255, 0.85);
+}
+
+.exec-decision-text:last-of-type {
+  margin-bottom: 16px;
+}
+
+.exec-decision-text strong {
+  color: #ffffff;
+}
+
+.exec-decision-empty {
+  color: rgba(230, 247, 255, 0.5);
+  font-style: italic;
+}
+
+/* Playback controls */
+.exec-playback {
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.exec-playback-bar {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.exec-playback-progress {
+  height: 100%;
+  background: linear-gradient(90deg, #22D3EE, #06B6D4);
+  border-radius: 2px;
+  transition: width 0.1s linear;
+}
+
+.exec-playback-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.exec-playback-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: rgba(230, 247, 255, 0.8);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.exec-playback-btn:hover {
+  background: rgba(34, 211, 238, 0.15);
+  border-color: rgba(34, 211, 238, 0.3);
+  color: #22D3EE;
+}
+
+.exec-playback-time {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(230, 247, 255, 0.5);
+}

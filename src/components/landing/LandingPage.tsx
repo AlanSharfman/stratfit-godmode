@@ -112,7 +112,7 @@ export default function LandingPage({ onStart, onStartWithPersona }: LandingPage
             <div className="stat-divider" />
             <div className="stat-item">
               <span className="stat-number">1</span>
-              <span className="stat-label">Clear Decision</span>
+              <span className="stat-label">Clear Focus</span>
             </div>
           </div>
           
@@ -230,7 +230,7 @@ export default function LandingPage({ onStart, onStartWithPersona }: LandingPage
           <div className="summary-dot" />
           <div className="summary-item">
             <span className="summary-number">1</span>
-            <span className="summary-label">Clear Decision</span>
+            <span className="summary-label">Clear Focus</span>
           </div>
         </div>
       </section>
@@ -241,7 +241,7 @@ export default function LandingPage({ onStart, onStartWithPersona }: LandingPage
       <ConceptDiagrams />
 
       {/* ═══════════════════════════════════════════════════════════════════════
-          DECISION ENGINE ARCHITECTURE
+          INTELLIGENCE ENGINE ARCHITECTURE
       ═══════════════════════════════════════════════════════════════════════ */}
       <DecisionArchitecture />
 
@@ -275,7 +275,7 @@ export default function LandingPage({ onStart, onStartWithPersona }: LandingPage
       <footer className="landing-footer">
         <div className="footer-content">
           <div className="footer-logo">
-            <span className="logo-icon">◆</span>
+            <img src="/logo.svg" alt="STRATFIT Logo" width="24" height="24" style={{ display: 'block' }} />
             <span className="logo-text">STRATFIT</span>
           </div>
           <p className="footer-tagline">Scenario Intelligence for Strategic Decisions</p>

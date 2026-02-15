@@ -261,7 +261,8 @@ export function DivergenceStage({ baseline, exploration, timeline, setTimeline }
       paths.forEach(path => {
         ctx.beginPath()
         for (let t = 0; t < STEPS; t++) {
-          t === 0 ? ctx.moveTo(x(t), y(path[t])) : ctx.lineTo(x(t), y(path[t]))
+          if (t === 0) ctx.moveTo(x(t), y(path[t]))
+          else ctx.lineTo(x(t), y(path[t]))
         }
         ctx.stroke()
       })
@@ -307,7 +308,8 @@ export function DivergenceStage({ baseline, exploration, timeline, setTimeline }
       ctx.lineCap = 'round'
       ctx.beginPath()
       for (let t = 0; t <= currentT; t++) {
-        t === 0 ? ctx.moveTo(x(t), y(values[t])) : ctx.lineTo(x(t), y(values[t]))
+        if (t === 0) ctx.moveTo(x(t), y(values[t]))
+        else ctx.lineTo(x(t), y(values[t]))
       }
       ctx.stroke()
 
@@ -315,7 +317,8 @@ export function DivergenceStage({ baseline, exploration, timeline, setTimeline }
       ctx.lineWidth = 2.5
       ctx.beginPath()
       for (let t = 0; t <= currentT; t++) {
-        t === 0 ? ctx.moveTo(x(t), y(values[t])) : ctx.lineTo(x(t), y(values[t]))
+        if (t === 0) ctx.moveTo(x(t), y(values[t]))
+        else ctx.lineTo(x(t), y(values[t]))
       }
       ctx.stroke()
     }

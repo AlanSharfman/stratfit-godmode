@@ -1,0 +1,2790 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   STRATFIT — STRATEGY STUDIO 2.0 · Institutional Composition Engine
+   Capital-allocation war room. Scenario layering. Auto-simulation.
+   3-zone CSS grid: LEVER STACK | LIVE TERRAIN | DELTA SUMMARY
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── ROOT GRID ────────────────────────────────────────────────────────── */
+.root {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 340px 1fr 360px;
+  height: calc(100vh - 56px);
+  max-height: calc(100vh - 56px);
+  overflow: hidden;
+  background: linear-gradient(180deg, #111827 0%, #0F1C2E 100%);
+  color: #e2eaf4;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LEFT PANEL — LEVER STACK
+   ═══════════════════════════════════════════════════════════════════════════ */
+.leftPanel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-right: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.015);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,224,255,0.15) transparent;
+}
+
+.leftPanel::-webkit-scrollbar { width: 3px; }
+.leftPanel::-webkit-scrollbar-track { background: transparent; }
+.leftPanel::-webkit-scrollbar-thumb { background: rgba(0,224,255,0.2); border-radius: 2px; }
+
+/* ── Lever Panel Header ───────────────────────────────────────────────── */
+.leverPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  flex-shrink: 0;
+}
+
+.leverPanelTitle {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+}
+
+.readOnlyBadge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 3px;
+  padding: 2px 8px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CENTER PANEL — LIVE TERRAIN + CONTROLS
+   ═══════════════════════════════════════════════════════════════════════════ */
+.centerPanel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RIGHT PANEL — DELTA SUMMARY
+   ═══════════════════════════════════════════════════════════════════════════ */
+.rightPanel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-left: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.015);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,224,255,0.15) transparent;
+}
+
+.rightPanel::-webkit-scrollbar { width: 3px; }
+.rightPanel::-webkit-scrollbar-track { background: transparent; }
+.rightPanel::-webkit-scrollbar-thumb { background: rgba(0,224,255,0.2); border-radius: 2px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TOP CONTROL BAR — Scenario Tabs + Horizon + Ramp + Compare + Simulate
+   ═══════════════════════════════════════════════════════════════════════════ */
+.controlBar {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  flex-shrink: 0;
+  gap: 12px;
+  background: rgba(255,255,255,0.01);
+  flex-wrap: wrap;
+}
+
+/* ── Scenario Tabs ────────────────────────────────────────────────────── */
+.scenarioTabBar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.scenarioTab {
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  background: transparent;
+  border: none;
+  border-right: 1px solid rgba(255,255,255,0.06);
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 120ms ease, background 120ms ease;
+  white-space: nowrap;
+}
+
+.scenarioTab:last-child {
+  border-right: none;
+}
+
+.scenarioTab:hover {
+  color: rgba(255,255,255,0.65);
+  background: rgba(255,255,255,0.02);
+}
+
+.scenarioTabActive {
+  composes: scenarioTab;
+  color: #00E0FF;
+  background: rgba(0,224,255,0.06);
+}
+
+.scenarioTabBaseline {
+  composes: scenarioTab;
+  color: rgba(255,255,255,0.3);
+  font-style: italic;
+}
+
+.scenarioTabBaselineActive {
+  composes: scenarioTab;
+  color: rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.04);
+}
+
+/* ── Control Groups ───────────────────────────────────────────────────── */
+.controlGroup {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.controlLabel {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
+  margin-right: 6px;
+  white-space: nowrap;
+}
+
+.controlBtn {
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 100ms ease, border-color 100ms ease;
+  white-space: nowrap;
+}
+
+.controlBtn:hover {
+  color: rgba(255,255,255,0.7);
+}
+
+.controlBtnActive {
+  composes: controlBtn;
+  color: rgba(255,255,255,0.95);
+  border-bottom-color: #00E0FF;
+}
+
+.controlSpacer {
+  flex: 1;
+}
+
+.controlDivider {
+  width: 1px;
+  height: 20px;
+  background: rgba(255,255,255,0.08);
+  flex-shrink: 0;
+}
+
+/* ── Toggle / Action Buttons ──────────────────────────────────────────── */
+.toggleBtn {
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 100ms ease;
+}
+
+.toggleBtn:hover {
+  color: rgba(255,255,255,0.6);
+  border-color: rgba(255,255,255,0.15);
+}
+
+.toggleBtnActive {
+  composes: toggleBtn;
+  color: #00E0FF;
+  border-color: rgba(0,224,255,0.3);
+  background: rgba(0,224,255,0.04);
+}
+
+.simulateBtn {
+  padding: 6px 16px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.95);
+  background: rgba(0,224,255,0.08);
+  border: 1px solid rgba(0,224,255,0.35);
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 120ms ease;
+  white-space: nowrap;
+}
+
+.simulateBtn:hover {
+  background: rgba(0,224,255,0.14);
+  border-color: rgba(0,224,255,0.5);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOUNTAIN STAGE
+   ═══════════════════════════════════════════════════════════════════════════ */
+.mountainStage {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+  border-radius: 18px;
+  /* background handled by .sf-mountain-backplate — do NOT override with #000 */
+}
+
+.heatmapOverlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0.12;
+}
+
+/* Auto-sim scanning overlay */
+.autoSimOverlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(0, 224, 255, 0.03) 40%,
+    rgba(0, 224, 255, 0.06) 50%,
+    rgba(0, 224, 255, 0.03) 60%,
+    transparent 100%
+  );
+  animation: autoSimScan 1.2s ease-in-out infinite;
+}
+
+@keyframes autoSimScan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TIMELINE SCRUBBER
+   ═══════════════════════════════════════════════════════════════════════════ */
+.timelineBar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 8px 20px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  height: 44px;
+  gap: 12px;
+  background: rgba(255,255,255,0.01);
+}
+
+.timelineLabel {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
+  flex-shrink: 0;
+}
+
+.timelineTrack {
+  flex: 1;
+  position: relative;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.timelineRail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255,255,255,0.12);
+}
+
+.timelineFill {
+  position: absolute;
+  left: 0;
+  height: 1px;
+  background: #00E0FF;
+  transition: width 80ms ease;
+}
+
+.timelineTick {
+  position: absolute;
+  width: 1px;
+  height: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255,255,255,0.12);
+}
+
+.timelineTickLabel {
+  position: absolute;
+  top: calc(50% + 10px);
+  font-size: 9px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.2);
+  transform: translateX(-50%);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+
+.timelineDot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #00E0FF;
+  border: 1px solid rgba(255,255,255,0.4);
+  transform: translate(-50%, -50%);
+  top: 50%;
+  z-index: 2;
+  cursor: grab;
+  transition: box-shadow 100ms ease;
+}
+
+.timelineDot:active {
+  cursor: grabbing;
+}
+
+.timelineMonth {
+  font-size: 12px;
+  font-weight: 600;
+  color: #00E0FF;
+  flex-shrink: 0;
+  min-width: 44px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LEVER STACK — Structured Domain Groups
+   ═══════════════════════════════════════════════════════════════════════════ */
+.leverDomain {
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.leverDomainHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 100ms ease;
+}
+
+.leverDomainHeader:hover {
+  background: rgba(255,255,255,0.02);
+}
+
+.leverDomainTitle {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+}
+
+.leverDomainChevron {
+  font-size: 9px;
+  color: rgba(255,255,255,0.2);
+  transition: transform 150ms ease;
+}
+
+.leverDomainChevronOpen {
+  composes: leverDomainChevron;
+  transform: rotate(180deg);
+}
+
+.leverDomainBody {
+  padding: 0 20px 12px;
+}
+
+.leverRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+.leverRow:last-child {
+  border-bottom: none;
+}
+
+.leverMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.leverLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.55);
+  letter-spacing: 0.02em;
+}
+
+.leverValues {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.leverBaseline {
+  color: rgba(255,255,255,0.25);
+  font-weight: 500;
+}
+
+.leverArrow {
+  color: rgba(255,255,255,0.12);
+  font-size: 10px;
+}
+
+.leverCurrent {
+  color: rgba(255,255,255,0.9);
+  font-weight: 600;
+}
+
+.leverDelta {
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 36px;
+  text-align: right;
+}
+
+.leverDeltaPositive { color: #34d399; }
+.leverDeltaNegative { color: #f87171; }
+.leverDeltaZero { color: rgba(255,255,255,0.15); }
+
+/* Read-only mode */
+.leverReadOnly {
+  pointer-events: none;
+}
+
+.leverReadOnly .sliderHandle {
+  opacity: 0.3;
+}
+
+.leverReadOnly .sliderFill {
+  background: rgba(255,255,255,0.15);
+}
+
+.leverReadOnly .leverCurrent {
+  color: rgba(255,255,255,0.45);
+}
+
+/* CUSTOM SLIDER — 1px track, solid cyan fill, 10px handle, no glow */
+.sliderWrap {
+  position: relative;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  touch-action: none;
+}
+
+.sliderTrack {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255,255,255,0.2);
+}
+
+.sliderFill {
+  position: absolute;
+  left: 0;
+  height: 1px;
+  background: #00E0FF;
+}
+
+.sliderHandle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #0F1C2E;
+  border: 1px solid rgba(255,255,255,0.4);
+  transform: translateX(-50%);
+  cursor: grab;
+  transition: border-color 100ms ease;
+  z-index: 1;
+}
+
+.sliderHandle:hover { border-color: #00E0FF; }
+.sliderHandle:active { cursor: grabbing; border-color: #00E0FF; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DELTA SUMMARY PANEL — Right Side
+   ═══════════════════════════════════════════════════════════════════════════ */
+.deltaHeader {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.deltaTitle {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+  margin-bottom: 4px;
+}
+
+.deltaSubtitle {
+  font-size: 11px;
+  color: rgba(255,255,255,0.25);
+  font-weight: 400;
+}
+
+.deltaCard {
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.deltaCardTitle {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  margin-bottom: 8px;
+}
+
+.deltaCardRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.deltaCardValues {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.deltaCardBaselineValue {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.3);
+}
+
+.deltaCardArrow {
+  font-size: 10px;
+  color: rgba(255,255,255,0.12);
+}
+
+.deltaCardScenarioValue {
+  font-size: 18px;
+  font-weight: 700;
+  color: #00E0FF;
+}
+
+.deltaCardDelta {
+  font-size: 14px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  min-width: 56px;
+  text-align: right;
+}
+
+.deltaPositive { color: #34d399; }
+.deltaNegative { color: #f87171; }
+.deltaZero { color: rgba(255,255,255,0.15); }
+
+/* ── Sensitivity Strip ──────────────────────────────────────────────────── */
+.sensitivitySection {
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.sensitivityTitle {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  margin-bottom: 10px;
+}
+
+.sensitivityRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.sensitivityLabel {
+  font-size: 11px;
+  color: rgba(255,255,255,0.45);
+}
+
+.sensitivityImpact {
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+}
+
+/* ── Simulation Activity Indicator ──────────────────────────────────────── */
+.simActivity {
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  margin-top: auto;
+}
+
+.simActivityDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  flex-shrink: 0;
+}
+
+.simActivityDotActive {
+  composes: simActivityDot;
+  background: #00E0FF;
+  box-shadow: 0 0 4px rgba(0,224,255,0.4);
+  animation: simPulse 1s ease-in-out infinite;
+}
+
+@keyframes simPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.simActivityText {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+}
+
+.simActivityTextActive {
+  composes: simActivityText;
+  color: rgba(0,224,255,0.7);
+}
+
+/* ── Compare Badge ──────────────────────────────────────────────────────── */
+.compareBadge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(0,224,255,0.7);
+  background: rgba(0,224,255,0.06);
+  border: 1px solid rgba(0,224,255,0.15);
+  border-radius: 3px;
+  padding: 2px 6px;
+  margin-left: 6px;
+}
+
+/* ── Percentile Strip (compact band display) ────────────────────────────── */
+.percentileStrip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.percentileTag {
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.2);
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+}
+
+.percentileValue {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.4);
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GHOST RIDGE OVERLAY — Preview Mode (Phase 1)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.ghostOverlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 15;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.ghostOverlay[data-active="true"] {
+  opacity: 1;
+}
+
+.ghostSvg {
+  width: 100%;
+  height: 100%;
+}
+
+.ghostPath {
+  animation: ghostPulse 2s ease-in-out infinite;
+}
+
+@keyframes ghostPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+
+/* Ghost PREVIEW badge */
+.ghostBadge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0, 224, 255, 0.85);
+  background: rgba(0, 224, 255, 0.06);
+  border: 1px solid rgba(0, 224, 255, 0.2);
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+}
+
+.ghostBadgeDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #00E0FF;
+  animation: ghostDotPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes ghostDotPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 3px rgba(0,224,255,0.4); }
+  50% { opacity: 0.3; box-shadow: 0 0 0 transparent; }
+}
+
+/* Ghost active border on mountain stage */
+.mountainStagePreview {
+  composes: mountainStage;
+  box-shadow: inset 0 0 0 1px rgba(0, 224, 255, 0.12);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SIMULATION ACTIVITY MONITOR — Commit Phase
+   ═══════════════════════════════════════════════════════════════════════════ */
+.simMonitor {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 240px;
+  padding: 10px 14px;
+  background: rgba(11, 17, 23, 0.92);
+  border: 1px solid rgba(0, 224, 255, 0.15);
+  border-radius: 6px;
+  backdrop-filter: blur(8px);
+  z-index: 20;
+  animation: simMonitorIn 200ms ease-out;
+}
+
+.simMonitorComplete {
+  border-color: rgba(52, 211, 153, 0.25);
+}
+
+@keyframes simMonitorIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.simMonitorHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.simMonitorStatus {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0, 224, 255, 0.85);
+}
+
+.simMonitorComplete .simMonitorStatus {
+  color: rgba(52, 211, 153, 0.85);
+}
+
+.simMonitorDotActive {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #00E0FF;
+  box-shadow: 0 0 4px rgba(0, 224, 255, 0.5);
+  animation: simPulse 1s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.simMonitorDotComplete {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 4px rgba(52, 211, 153, 0.5);
+  flex-shrink: 0;
+}
+
+.simMonitorProgressWrap {
+  height: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 1px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.simMonitorProgress {
+  height: 100%;
+  background: #00E0FF;
+  border-radius: 1px;
+  transition: width 200ms ease;
+  box-shadow: 0 0 6px rgba(0, 224, 255, 0.3);
+}
+
+.simMonitorTelemetry {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.simMonitorRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.simMonitorLabel {
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.25);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.simMonitorValue {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.simMonitorLegal {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.2);
+  line-height: 1.3;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MODEL DETAILS — Bottom Row (Collapsible)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.modelDetailsBar {
+  flex-shrink: 0;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.01);
+}
+
+.modelDetailsToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 20px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 100ms ease;
+}
+
+.modelDetailsToggle:hover {
+  background: rgba(255,255,255,0.02);
+}
+
+.modelDetailsToggleLabel {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
+}
+
+.modelDetailsChevron {
+  font-size: 8px;
+  color: rgba(255,255,255,0.15);
+  transition: transform 150ms ease;
+}
+
+.modelDetailsChevronOpen {
+  composes: modelDetailsChevron;
+  transform: rotate(180deg);
+}
+
+.modelDetailsBody {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 6px 20px 10px;
+  flex-wrap: wrap;
+}
+
+.modelDetailsItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.modelDetailsItemLabel {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.2);
+}
+
+.modelDetailsItemValue {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.55);
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.confidenceBand {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+.confidenceVeryLow {
+  composes: confidenceBand;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.15);
+}
+
+.confidenceLow {
+  composes: confidenceBand;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.15);
+}
+
+.confidenceMedium {
+  composes: confidenceBand;
+  color: rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.confidenceHigh {
+  composes: confidenceBand;
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.08);
+  border: 1px solid rgba(52, 211, 153, 0.15);
+}
+
+.confidenceVeryHigh {
+  composes: confidenceBand;
+  color: #22d3ee;
+  background: rgba(34, 211, 238, 0.08);
+  border: 1px solid rgba(34, 211, 238, 0.15);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCENARIO NAME — Editable inline name
+   ═══════════════════════════════════════════════════════════════════════════ */
+.scenarioNameInput {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(255,255,255,0.8);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 4px 8px;
+  font-family: inherit;
+  transition: border-color 120ms ease, background 120ms ease;
+  max-width: 180px;
+}
+
+.scenarioNameInput:hover {
+  border-color: rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.02);
+}
+
+.scenarioNameInput:focus {
+  outline: none;
+  border-color: rgba(0,224,255,0.35);
+  background: rgba(0,224,255,0.03);
+  color: rgba(255,255,255,0.95);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1600px) {
+  .root { grid-template-columns: 300px 1fr 320px; }
+}
+
+@media (max-width: 1400px) {
+  .root { grid-template-columns: 280px 1fr 300px; }
+}
+
+@media (max-width: 1200px) {
+  .root { grid-template-columns: 260px 1fr 260px; }
+}
+
+
+
+.ghostSvg {
+  width: 100%;
+  height: 100%;
+}
+
+.ghostPath {
+  animation: ghostPulse 2s ease-in-out infinite;
+}
+
+@keyframes ghostPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+
+/* Ghost PREVIEW badge */
+.ghostBadge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0, 224, 255, 0.85);
+  background: rgba(0, 224, 255, 0.06);
+  border: 1px solid rgba(0, 224, 255, 0.2);
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+}
+
+.ghostBadgeDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #00E0FF;
+  animation: ghostDotPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes ghostDotPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 3px rgba(0,224,255,0.4); }
+  50% { opacity: 0.3; box-shadow: 0 0 0 transparent; }
+}
+
+/* Ghost active border on mountain stage */
+.mountainStagePreview {
+  composes: mountainStage;
+  box-shadow: inset 0 0 0 1px rgba(0, 224, 255, 0.12);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SIMULATION ACTIVITY MONITOR — Commit Phase
+   ═══════════════════════════════════════════════════════════════════════════ */
+.simMonitor {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 240px;
+  padding: 10px 14px;
+  background: rgba(11, 17, 23, 0.92);
+  border: 1px solid rgba(0, 224, 255, 0.15);
+  border-radius: 6px;
+  backdrop-filter: blur(8px);
+  z-index: 20;
+  animation: simMonitorIn 200ms ease-out;
+}
+
+.simMonitorComplete {
+  border-color: rgba(52, 211, 153, 0.25);
+}
+
+@keyframes simMonitorIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.simMonitorHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.simMonitorStatus {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0, 224, 255, 0.85);
+}
+
+.simMonitorComplete .simMonitorStatus {
+  color: rgba(52, 211, 153, 0.85);
+}
+
+.simMonitorDotActive {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #00E0FF;
+  box-shadow: 0 0 4px rgba(0, 224, 255, 0.5);
+  animation: simPulse 1s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.simMonitorDotComplete {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 4px rgba(52, 211, 153, 0.5);
+  flex-shrink: 0;
+}
+
+.simMonitorProgressWrap {
+  height: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 1px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.simMonitorProgress {
+  height: 100%;
+  background: #00E0FF;
+  border-radius: 1px;
+  transition: width 200ms ease;
+  box-shadow: 0 0 6px rgba(0, 224, 255, 0.3);
+}
+
+.simMonitorTelemetry {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.simMonitorRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.simMonitorLabel {
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.25);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.simMonitorValue {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.simMonitorLegal {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.2);
+  line-height: 1.3;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MODEL DETAILS — Bottom Row (Collapsible)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.modelDetailsBar {
+  flex-shrink: 0;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.01);
+}
+
+.modelDetailsToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 20px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 100ms ease;
+}
+
+.modelDetailsToggle:hover {
+  background: rgba(255,255,255,0.02);
+}
+
+.modelDetailsToggleLabel {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
+}
+
+.modelDetailsChevron {
+  font-size: 8px;
+  color: rgba(255,255,255,0.15);
+  transition: transform 150ms ease;
+}
+
+.modelDetailsChevronOpen {
+  composes: modelDetailsChevron;
+  transform: rotate(180deg);
+}
+
+.modelDetailsBody {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 6px 20px 10px;
+  flex-wrap: wrap;
+}
+
+.modelDetailsItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.modelDetailsItemLabel {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.2);
+}
+
+.modelDetailsItemValue {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.55);
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.confidenceBand {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+.confidenceVeryLow {
+  composes: confidenceBand;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.15);
+}
+
+.confidenceLow {
+  composes: confidenceBand;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.15);
+}
+
+.confidenceMedium {
+  composes: confidenceBand;
+  color: rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.confidenceHigh {
+  composes: confidenceBand;
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.08);
+  border: 1px solid rgba(52, 211, 153, 0.15);
+}
+
+.confidenceVeryHigh {
+  composes: confidenceBand;
+  color: #22d3ee;
+  background: rgba(34, 211, 238, 0.08);
+  border: 1px solid rgba(34, 211, 238, 0.15);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCENARIO NAME — Editable inline name
+   ═══════════════════════════════════════════════════════════════════════════ */
+.scenarioNameInput {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(255,255,255,0.8);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 4px 8px;
+  font-family: inherit;
+  transition: border-color 120ms ease, background 120ms ease;
+  max-width: 180px;
+}
+
+.scenarioNameInput:hover {
+  border-color: rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.02);
+}
+
+.scenarioNameInput:focus {
+  outline: none;
+  border-color: rgba(0,224,255,0.35);
+  background: rgba(0,224,255,0.03);
+  color: rgba(255,255,255,0.95);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1600px) {
+  .root { grid-template-columns: 300px 1fr 320px; }
+}
+
+@media (max-width: 1400px) {
+  .root { grid-template-columns: 280px 1fr 300px; }
+}
+
+@media (max-width: 1200px) {
+  .root { grid-template-columns: 260px 1fr 260px; }
+}
+
+
+
+.ghostSvg {
+  width: 100%;
+  height: 100%;
+}
+
+.ghostPath {
+  animation: ghostPulse 2s ease-in-out infinite;
+}
+
+@keyframes ghostPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+
+/* Ghost PREVIEW badge */
+.ghostBadge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0, 224, 255, 0.85);
+  background: rgba(0, 224, 255, 0.06);
+  border: 1px solid rgba(0, 224, 255, 0.2);
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+}
+
+.ghostBadgeDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #00E0FF;
+  animation: ghostDotPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes ghostDotPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 3px rgba(0,224,255,0.4); }
+  50% { opacity: 0.3; box-shadow: 0 0 0 transparent; }
+}
+
+/* Ghost active border on mountain stage */
+.mountainStagePreview {
+  composes: mountainStage;
+  box-shadow: inset 0 0 0 1px rgba(0, 224, 255, 0.12);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SIMULATION ACTIVITY MONITOR — Commit Phase
+   ═══════════════════════════════════════════════════════════════════════════ */
+.simMonitor {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 240px;
+  padding: 10px 14px;
+  background: rgba(11, 17, 23, 0.92);
+  border: 1px solid rgba(0, 224, 255, 0.15);
+  border-radius: 6px;
+  backdrop-filter: blur(8px);
+  z-index: 20;
+  animation: simMonitorIn 200ms ease-out;
+}
+
+.simMonitorComplete {
+  border-color: rgba(52, 211, 153, 0.25);
+}
+
+@keyframes simMonitorIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.simMonitorHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.simMonitorStatus {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0, 224, 255, 0.85);
+}
+
+.simMonitorComplete .simMonitorStatus {
+  color: rgba(52, 211, 153, 0.85);
+}
+
+.simMonitorDotActive {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #00E0FF;
+  box-shadow: 0 0 4px rgba(0, 224, 255, 0.5);
+  animation: simPulse 1s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.simMonitorDotComplete {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 4px rgba(52, 211, 153, 0.5);
+  flex-shrink: 0;
+}
+
+.simMonitorProgressWrap {
+  height: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 1px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.simMonitorProgress {
+  height: 100%;
+  background: #00E0FF;
+  border-radius: 1px;
+  transition: width 200ms ease;
+  box-shadow: 0 0 6px rgba(0, 224, 255, 0.3);
+}
+
+.simMonitorTelemetry {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.simMonitorRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.simMonitorLabel {
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.25);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.simMonitorValue {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.simMonitorLegal {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.2);
+  line-height: 1.3;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MODEL DETAILS — Bottom Row (Collapsible)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.modelDetailsBar {
+  flex-shrink: 0;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.01);
+}
+
+.modelDetailsToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 20px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 100ms ease;
+}
+
+.modelDetailsToggle:hover {
+  background: rgba(255,255,255,0.02);
+}
+
+.modelDetailsToggleLabel {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
+}
+
+.modelDetailsChevron {
+  font-size: 8px;
+  color: rgba(255,255,255,0.15);
+  transition: transform 150ms ease;
+}
+
+.modelDetailsChevronOpen {
+  composes: modelDetailsChevron;
+  transform: rotate(180deg);
+}
+
+.modelDetailsBody {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 6px 20px 10px;
+  flex-wrap: wrap;
+}
+
+.modelDetailsItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.modelDetailsItemLabel {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.2);
+}
+
+.modelDetailsItemValue {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.55);
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.confidenceBand {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+.confidenceVeryLow {
+  composes: confidenceBand;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.15);
+}
+
+.confidenceLow {
+  composes: confidenceBand;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.15);
+}
+
+.confidenceMedium {
+  composes: confidenceBand;
+  color: rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.confidenceHigh {
+  composes: confidenceBand;
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.08);
+  border: 1px solid rgba(52, 211, 153, 0.15);
+}
+
+.confidenceVeryHigh {
+  composes: confidenceBand;
+  color: #22d3ee;
+  background: rgba(34, 211, 238, 0.08);
+  border: 1px solid rgba(34, 211, 238, 0.15);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCENARIO NAME — Editable inline name
+   ═══════════════════════════════════════════════════════════════════════════ */
+.scenarioNameInput {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(255,255,255,0.8);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 4px 8px;
+  font-family: inherit;
+  transition: border-color 120ms ease, background 120ms ease;
+  max-width: 180px;
+}
+
+.scenarioNameInput:hover {
+  border-color: rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.02);
+}
+
+.scenarioNameInput:focus {
+  outline: none;
+  border-color: rgba(0,224,255,0.35);
+  background: rgba(0,224,255,0.03);
+  color: rgba(255,255,255,0.95);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1600px) {
+  .root { grid-template-columns: 300px 1fr 320px; }
+}
+
+@media (max-width: 1400px) {
+  .root { grid-template-columns: 280px 1fr 300px; }
+}
+
+@media (max-width: 1200px) {
+  .root { grid-template-columns: 260px 1fr 260px; }
+}
+
+
+
+.ghostSvg {
+  width: 100%;
+  height: 100%;
+}
+
+.ghostPath {
+  animation: ghostPulse 2s ease-in-out infinite;
+}
+
+@keyframes ghostPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+
+/* Ghost PREVIEW badge */
+.ghostBadge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0, 224, 255, 0.85);
+  background: rgba(0, 224, 255, 0.06);
+  border: 1px solid rgba(0, 224, 255, 0.2);
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+}
+
+.ghostBadgeDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #00E0FF;
+  animation: ghostDotPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes ghostDotPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 3px rgba(0,224,255,0.4); }
+  50% { opacity: 0.3; box-shadow: 0 0 0 transparent; }
+}
+
+/* Ghost active border on mountain stage */
+.mountainStagePreview {
+  composes: mountainStage;
+  box-shadow: inset 0 0 0 1px rgba(0, 224, 255, 0.12);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SIMULATION ACTIVITY MONITOR — Commit Phase
+   ═══════════════════════════════════════════════════════════════════════════ */
+.simMonitor {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 240px;
+  padding: 10px 14px;
+  background: rgba(11, 17, 23, 0.92);
+  border: 1px solid rgba(0, 224, 255, 0.15);
+  border-radius: 6px;
+  backdrop-filter: blur(8px);
+  z-index: 20;
+  animation: simMonitorIn 200ms ease-out;
+}
+
+.simMonitorComplete {
+  border-color: rgba(52, 211, 153, 0.25);
+}
+
+@keyframes simMonitorIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.simMonitorHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.simMonitorStatus {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0, 224, 255, 0.85);
+}
+
+.simMonitorComplete .simMonitorStatus {
+  color: rgba(52, 211, 153, 0.85);
+}
+
+.simMonitorDotActive {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #00E0FF;
+  box-shadow: 0 0 4px rgba(0, 224, 255, 0.5);
+  animation: simPulse 1s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.simMonitorDotComplete {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 4px rgba(52, 211, 153, 0.5);
+  flex-shrink: 0;
+}
+
+.simMonitorProgressWrap {
+  height: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 1px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.simMonitorProgress {
+  height: 100%;
+  background: #00E0FF;
+  border-radius: 1px;
+  transition: width 200ms ease;
+  box-shadow: 0 0 6px rgba(0, 224, 255, 0.3);
+}
+
+.simMonitorTelemetry {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.simMonitorRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.simMonitorLabel {
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.25);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.simMonitorValue {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.simMonitorLegal {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.2);
+  line-height: 1.3;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MODEL DETAILS — Bottom Row (Collapsible)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.modelDetailsBar {
+  flex-shrink: 0;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.01);
+}
+
+.modelDetailsToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 20px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 100ms ease;
+}
+
+.modelDetailsToggle:hover {
+  background: rgba(255,255,255,0.02);
+}
+
+.modelDetailsToggleLabel {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
+}
+
+.modelDetailsChevron {
+  font-size: 8px;
+  color: rgba(255,255,255,0.15);
+  transition: transform 150ms ease;
+}
+
+.modelDetailsChevronOpen {
+  composes: modelDetailsChevron;
+  transform: rotate(180deg);
+}
+
+.modelDetailsBody {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 6px 20px 10px;
+  flex-wrap: wrap;
+}
+
+.modelDetailsItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.modelDetailsItemLabel {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.2);
+}
+
+.modelDetailsItemValue {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.55);
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.confidenceBand {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+.confidenceVeryLow {
+  composes: confidenceBand;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.15);
+}
+
+.confidenceLow {
+  composes: confidenceBand;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.15);
+}
+
+.confidenceMedium {
+  composes: confidenceBand;
+  color: rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.confidenceHigh {
+  composes: confidenceBand;
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.08);
+  border: 1px solid rgba(52, 211, 153, 0.15);
+}
+
+.confidenceVeryHigh {
+  composes: confidenceBand;
+  color: #22d3ee;
+  background: rgba(34, 211, 238, 0.08);
+  border: 1px solid rgba(34, 211, 238, 0.15);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCENARIO NAME — Editable inline name
+   ═══════════════════════════════════════════════════════════════════════════ */
+.scenarioNameInput {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(255,255,255,0.8);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 4px 8px;
+  font-family: inherit;
+  transition: border-color 120ms ease, background 120ms ease;
+  max-width: 180px;
+}
+
+.scenarioNameInput:hover {
+  border-color: rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.02);
+}
+
+.scenarioNameInput:focus {
+  outline: none;
+  border-color: rgba(0,224,255,0.35);
+  background: rgba(0,224,255,0.03);
+  color: rgba(255,255,255,0.95);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1600px) {
+  .root { grid-template-columns: 300px 1fr 320px; }
+}
+
+@media (max-width: 1400px) {
+  .root { grid-template-columns: 280px 1fr 300px; }
+}
+
+@media (max-width: 1200px) {
+  .root { grid-template-columns: 260px 1fr 260px; }
+}
+
+
+
+.ghostSvg {
+  width: 100%;
+  height: 100%;
+}
+
+.ghostPath {
+  animation: ghostPulse 2s ease-in-out infinite;
+}
+
+@keyframes ghostPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+
+/* Ghost PREVIEW badge */
+.ghostBadge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0, 224, 255, 0.85);
+  background: rgba(0, 224, 255, 0.06);
+  border: 1px solid rgba(0, 224, 255, 0.2);
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+}
+
+.ghostBadgeDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #00E0FF;
+  animation: ghostDotPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes ghostDotPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 3px rgba(0,224,255,0.4); }
+  50% { opacity: 0.3; box-shadow: 0 0 0 transparent; }
+}
+
+/* Ghost active border on mountain stage */
+.mountainStagePreview {
+  composes: mountainStage;
+  box-shadow: inset 0 0 0 1px rgba(0, 224, 255, 0.12);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SIMULATION ACTIVITY MONITOR — Commit Phase
+   ═══════════════════════════════════════════════════════════════════════════ */
+.simMonitor {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 240px;
+  padding: 10px 14px;
+  background: rgba(11, 17, 23, 0.92);
+  border: 1px solid rgba(0, 224, 255, 0.15);
+  border-radius: 6px;
+  backdrop-filter: blur(8px);
+  z-index: 20;
+  animation: simMonitorIn 200ms ease-out;
+}
+
+.simMonitorComplete {
+  border-color: rgba(52, 211, 153, 0.25);
+}
+
+@keyframes simMonitorIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.simMonitorHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.simMonitorStatus {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0, 224, 255, 0.85);
+}
+
+.simMonitorComplete .simMonitorStatus {
+  color: rgba(52, 211, 153, 0.85);
+}
+
+.simMonitorDotActive {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #00E0FF;
+  box-shadow: 0 0 4px rgba(0, 224, 255, 0.5);
+  animation: simPulse 1s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.simMonitorDotComplete {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 4px rgba(52, 211, 153, 0.5);
+  flex-shrink: 0;
+}
+
+.simMonitorProgressWrap {
+  height: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 1px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.simMonitorProgress {
+  height: 100%;
+  background: #00E0FF;
+  border-radius: 1px;
+  transition: width 200ms ease;
+  box-shadow: 0 0 6px rgba(0, 224, 255, 0.3);
+}
+
+.simMonitorTelemetry {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.simMonitorRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.simMonitorLabel {
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.25);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.simMonitorValue {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.simMonitorLegal {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.2);
+  line-height: 1.3;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MODEL DETAILS — Bottom Row (Collapsible)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.modelDetailsBar {
+  flex-shrink: 0;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.01);
+}
+
+.modelDetailsToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 20px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 100ms ease;
+}
+
+.modelDetailsToggle:hover {
+  background: rgba(255,255,255,0.02);
+}
+
+.modelDetailsToggleLabel {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
+}
+
+.modelDetailsChevron {
+  font-size: 8px;
+  color: rgba(255,255,255,0.15);
+  transition: transform 150ms ease;
+}
+
+.modelDetailsChevronOpen {
+  composes: modelDetailsChevron;
+  transform: rotate(180deg);
+}
+
+.modelDetailsBody {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 6px 20px 10px;
+  flex-wrap: wrap;
+}
+
+.modelDetailsItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.modelDetailsItemLabel {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.2);
+}
+
+.modelDetailsItemValue {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.55);
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.confidenceBand {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+.confidenceVeryLow {
+  composes: confidenceBand;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.15);
+}
+
+.confidenceLow {
+  composes: confidenceBand;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.15);
+}
+
+.confidenceMedium {
+  composes: confidenceBand;
+  color: rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.confidenceHigh {
+  composes: confidenceBand;
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.08);
+  border: 1px solid rgba(52, 211, 153, 0.15);
+}
+
+.confidenceVeryHigh {
+  composes: confidenceBand;
+  color: #22d3ee;
+  background: rgba(34, 211, 238, 0.08);
+  border: 1px solid rgba(34, 211, 238, 0.15);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCENARIO NAME — Editable inline name
+   ═══════════════════════════════════════════════════════════════════════════ */
+.scenarioNameInput {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(255,255,255,0.8);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 4px 8px;
+  font-family: inherit;
+  transition: border-color 120ms ease, background 120ms ease;
+  max-width: 180px;
+}
+
+.scenarioNameInput:hover {
+  border-color: rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.02);
+}
+
+.scenarioNameInput:focus {
+  outline: none;
+  border-color: rgba(0,224,255,0.35);
+  background: rgba(0,224,255,0.03);
+  color: rgba(255,255,255,0.95);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1600px) {
+  .root { grid-template-columns: 300px 1fr 320px; }
+}
+
+@media (max-width: 1400px) {
+  .root { grid-template-columns: 280px 1fr 300px; }
+}
+
+@media (max-width: 1200px) {
+  .root { grid-template-columns: 260px 1fr 260px; }
+}
+
+
+
+.ghostSvg {
+  width: 100%;
+  height: 100%;
+}
+
+.ghostPath {
+  animation: ghostPulse 2s ease-in-out infinite;
+}
+
+@keyframes ghostPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+
+/* Ghost PREVIEW badge */
+.ghostBadge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0, 224, 255, 0.85);
+  background: rgba(0, 224, 255, 0.06);
+  border: 1px solid rgba(0, 224, 255, 0.2);
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+}
+
+.ghostBadgeDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #00E0FF;
+  animation: ghostDotPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes ghostDotPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 3px rgba(0,224,255,0.4); }
+  50% { opacity: 0.3; box-shadow: 0 0 0 transparent; }
+}
+
+/* Ghost active border on mountain stage */
+.mountainStagePreview {
+  composes: mountainStage;
+  box-shadow: inset 0 0 0 1px rgba(0, 224, 255, 0.12);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SIMULATION ACTIVITY MONITOR — Commit Phase
+   ═══════════════════════════════════════════════════════════════════════════ */
+.simMonitor {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 240px;
+  padding: 10px 14px;
+  background: rgba(11, 17, 23, 0.92);
+  border: 1px solid rgba(0, 224, 255, 0.15);
+  border-radius: 6px;
+  backdrop-filter: blur(8px);
+  z-index: 20;
+  animation: simMonitorIn 200ms ease-out;
+}
+
+.simMonitorComplete {
+  border-color: rgba(52, 211, 153, 0.25);
+}
+
+@keyframes simMonitorIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.simMonitorHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.simMonitorStatus {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0, 224, 255, 0.85);
+}
+
+.simMonitorComplete .simMonitorStatus {
+  color: rgba(52, 211, 153, 0.85);
+}
+
+.simMonitorDotActive {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #00E0FF;
+  box-shadow: 0 0 4px rgba(0, 224, 255, 0.5);
+  animation: simPulse 1s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.simMonitorDotComplete {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 4px rgba(52, 211, 153, 0.5);
+  flex-shrink: 0;
+}
+
+.simMonitorProgressWrap {
+  height: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 1px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.simMonitorProgress {
+  height: 100%;
+  background: #00E0FF;
+  border-radius: 1px;
+  transition: width 200ms ease;
+  box-shadow: 0 0 6px rgba(0, 224, 255, 0.3);
+}
+
+.simMonitorTelemetry {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.simMonitorRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.simMonitorLabel {
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.25);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.simMonitorValue {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.simMonitorLegal {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.2);
+  line-height: 1.3;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MODEL DETAILS — Bottom Row (Collapsible)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.modelDetailsBar {
+  flex-shrink: 0;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.01);
+}
+
+.modelDetailsToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 20px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 100ms ease;
+}
+
+.modelDetailsToggle:hover {
+  background: rgba(255,255,255,0.02);
+}
+
+.modelDetailsToggleLabel {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
+}
+
+.modelDetailsChevron {
+  font-size: 8px;
+  color: rgba(255,255,255,0.15);
+  transition: transform 150ms ease;
+}
+
+.modelDetailsChevronOpen {
+  composes: modelDetailsChevron;
+  transform: rotate(180deg);
+}
+
+.modelDetailsBody {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 6px 20px 10px;
+  flex-wrap: wrap;
+}
+
+.modelDetailsItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.modelDetailsItemLabel {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.2);
+}
+
+.modelDetailsItemValue {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.55);
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.confidenceBand {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+.confidenceVeryLow {
+  composes: confidenceBand;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.15);
+}
+
+.confidenceLow {
+  composes: confidenceBand;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.15);
+}
+
+.confidenceMedium {
+  composes: confidenceBand;
+  color: rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.confidenceHigh {
+  composes: confidenceBand;
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.08);
+  border: 1px solid rgba(52, 211, 153, 0.15);
+}
+
+.confidenceVeryHigh {
+  composes: confidenceBand;
+  color: #22d3ee;
+  background: rgba(34, 211, 238, 0.08);
+  border: 1px solid rgba(34, 211, 238, 0.15);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCENARIO NAME — Editable inline name
+   ═══════════════════════════════════════════════════════════════════════════ */
+.scenarioNameInput {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(255,255,255,0.8);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 4px 8px;
+  font-family: inherit;
+  transition: border-color 120ms ease, background 120ms ease;
+  max-width: 180px;
+}
+
+.scenarioNameInput:hover {
+  border-color: rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.02);
+}
+
+.scenarioNameInput:focus {
+  outline: none;
+  border-color: rgba(0,224,255,0.35);
+  background: rgba(0,224,255,0.03);
+  color: rgba(255,255,255,0.95);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1600px) {
+  .root { grid-template-columns: 300px 1fr 320px; }
+}
+
+@media (max-width: 1400px) {
+  .root { grid-template-columns: 280px 1fr 300px; }
+}
+
+@media (max-width: 1200px) {
+  .root { grid-template-columns: 260px 1fr 260px; }
+}
+

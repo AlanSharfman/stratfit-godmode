@@ -114,36 +114,6 @@ function getScenarioMetrics(scenario: any) {
 export default function DecidePage() {
   const { baseline, savedScenarios } = useScenarioStore()
 
-  const mockScenarios = useMemo(
-    () => [
-      {
-        id: 'conservative',
-        name: 'Conservative Growth',
-        description: 'Steady path with lower risk',
-        color: '#22d3ee',
-        simulation: {
-          survivalRate: 0.92,
-          medianARR: 6_200_000,
-          medianRunway: 36,
-        },
-        inputs: { teamSize: 15 },
-      },
-      {
-        id: 'aggressive',
-        name: 'Aggressive Expansion',
-        description: 'High growth with higher risk',
-        color: '#a855f7',
-        simulation: {
-          survivalRate: 0.71,
-          medianARR: 9_800_000,
-          medianRunway: 18,
-        },
-        inputs: { teamSize: 35 },
-      },
-    ],
-    []
-  )
-
   const scenarioList = useMemo(() => {
     const list = [
       ...(baseline ? [baseline as any] : []),
@@ -157,7 +127,9 @@ export default function DecidePage() {
       seen.add(id)
       return true
     })
-    return real.length >= 2 ? real : mockScenarios
+    // STRATFIT RULE: never fabricate demo scenarios in Decision.
+    // If fewer than 2 real scenarios exist, PendingView will show the empty state.
+    return real
   }, [baseline, savedScenarios])
 
   const scenariosById = useMemo(() => {
@@ -262,13 +234,13 @@ function PendingView({ scenarios, onSelect }: PendingViewProps) {
           </div>
           <h1 className="text-3xl text-white font-light mb-4">Need More Scenarios</h1>
           <p className="text-white/50 mb-8 leading-relaxed">
-            Create at least two scenarios in the Terrain tab, run simulations, then return here to make your decision.
+            Create at least two scenarios in the Baseline tab, run simulations, then return here to make your decision.
           </p>
           <a
-            href="/terrain"
+            href="/baseline"
             className="inline-flex items-center gap-2 px-8 py-4 bg-cyan-500/20 border border-cyan-500/30 rounded-xl text-cyan-300 hover:bg-cyan-500/30 transition-colors text-lg"
           >
-            Go to Terrain
+            Go to Baseline
             <ChevronRight className="w-5 h-5" />
           </a>
         </div>

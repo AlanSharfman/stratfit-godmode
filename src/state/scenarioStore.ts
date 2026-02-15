@@ -3,6 +3,48 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { emitCompute } from '@/engine/computeTelemetry';
+import { deriveKPIs, type DerivedKPIs } from '@/logic/objectiveEngine';
+import { loadBaseline } from '@/onboard/baseline';
+
+type ObjectiveState = {
+  targetARR: number;
+  timeHorizonMonths: number;
+  marginTarget: number;
+  riskPosture: 'conservative' | 'balanced' | 'aggressive';
+  raiseStrategy: 'none' | 'single' | 'multiple';
+  hiringIntent: 'lean' | 'moderate' | 'expansion';
+};
+
+type CurrentMetrics = {
+  currentARR: number;
+  netBurn: number;
+  grossMargin: number;
+  headcount: number;
+  cash: number;
+};
+
+function metricsFromBaselineFallback(prev?: CurrentMetrics): CurrentMetrics {
+  const b = loadBaseline();
+  if (b?.financial) {
+    return {
+      currentARR: b.financial.arr ?? 0,
+      netBurn: b.financial.monthlyBurn ?? 0,
+      grossMargin: (b.financial.grossMarginPct ?? 0) / 100,
+      headcount: b.financial.headcount ?? 1,
+      cash: b.financial.cashOnHand ?? 0,
+    };
+  }
+  return (
+    prev ?? {
+      currentARR: 0,
+      netBurn: 0,
+      grossMargin: 0,
+      headcount: 1,
+      cash: 0,
+    }
+  );
+}
 
 // ============================================================================
 // TYPES
@@ -228,6 +270,11 @@ interface ScenarioState {
   
   // Data points for visualization
   dataPoints: unknown[];
+
+  // Objective system (Terrain → Objective → Strategy)
+  objective: ObjectiveState;
+  derivedKPIs: DerivedKPIs | null;
+  metrics: CurrentMetrics;
   
   // Actions
   saveAsBaseline: (name: string, levers: LeverSnapshot, simulation: SimulationSnapshot) => void;
@@ -247,6 +294,9 @@ interface ScenarioState {
   saveStrategy: (name: string) => void;
   setCurrentLevers: (levers: LeverSnapshot) => void;
   setActiveLever: (leverId: string | null, intensity: number) => void;
+
+  // Objective action
+  setObjective: (objective: ObjectiveState) => void;
   
   // Calculations
   calculateDelta: (scenarioA: Scenario, scenarioB: Scenario) => ScenarioDelta;
@@ -270,6 +320,17 @@ export const useScenarioStore = create<ScenarioState>()(
       engineResults: {},
       solverPath: [],
       dataPoints: [],
+
+      objective: {
+        targetARR: 0,
+        timeHorizonMonths: 24,
+        marginTarget: 0.6,
+        riskPosture: 'balanced',
+        raiseStrategy: 'single',
+        hiringIntent: 'moderate'
+      },
+      derivedKPIs: null,
+      metrics: metricsFromBaselineFallback(),
       
       setHoveredKpiIndex: (index) => set({ hoveredKpiIndex: index }),
       setDataPoints: (points) => set({ dataPoints: points }),
@@ -295,6 +356,26 @@ export const useScenarioStore = create<ScenarioState>()(
       },
       setCurrentLevers: (levers) => set({ currentLevers: levers }),
       setActiveLever: (leverId, intensity) => set({ activeLeverId: leverId, leverIntensity01: intensity }),
+
+      setObjective: (objective) =>
+        set((state) => {
+          // Keep metrics fresh from the canonical baseline truth layer if available.
+          const metrics = metricsFromBaselineFallback(state.metrics);
+          const derivedKPIs = deriveKPIs({
+            ...objective,
+            currentARR: metrics.currentARR,
+            currentBurn: metrics.netBurn,
+            currentGrossMargin: metrics.grossMargin,
+            headcount: metrics.headcount,
+            cashOnHand: metrics.cash
+          });
+
+          return {
+            objective,
+            derivedKPIs,
+            metrics,
+          };
+        }),
       
       saveAsBaseline: (name, levers, simulation) => {
         const scenario: Scenario = {
@@ -364,6 +445,9 @@ export const useScenarioStore = create<ScenarioState>()(
       setCompareViewMode: (mode) => set({ compareViewMode: mode }),
       
       calculateDelta: (scenarioA, scenarioB) => {
+        const _t0 = performance.now();
+        emitCompute("compare_delta", "initialize");
+
         const simA = scenarioA.simulation;
         const simB = scenarioB.simulation;
         
@@ -440,7 +524,9 @@ export const useScenarioStore = create<ScenarioState>()(
           });
         }
         
-        return {
+        emitCompute("compare_delta", "derive_metrics");
+
+        const _deltaResult = {
           survivalDelta: (simB.survivalRate - simA.survivalRate) * 100,
           arrDelta: simB.medianARR - simA.medianARR,
           runwayDelta: simB.medianRunway - simA.medianRunway,
@@ -456,6 +542,12 @@ export const useScenarioStore = create<ScenarioState>()(
           leverDeltas,
           monthlyDivergence,
         };
+
+        emitCompute("compare_delta", "complete", {
+          durationMs: performance.now() - _t0,
+        });
+
+        return _deltaResult;
       },
     }),
     {
@@ -467,6 +559,8 @@ export const useScenarioStore = create<ScenarioState>()(
         savedScenarios: state.savedScenarios,
         strategies: state.strategies,
         compareViewMode: state.compareViewMode,
+        objective: state.objective,
+        derivedKPIs: state.derivedKPIs,
       }),
       merge: (persistedState, currentState) => ({
         ...currentState,

@@ -1,110 +1,74 @@
+// src/components/center/CenterViewPanel.tsx
+// ═══════════════════════════════════════════════════════════════════════════
+// TERRAIN VIEW ONLY
+// All other views (Risk, Valuation, Impact, Compare, Simulate, Assessment)
+// have their own dedicated full-page routes in App.tsx.
+// CenterViewPanel now renders ONLY the baseline terrain visualization.
+// ═══════════════════════════════════════════════════════════════════════════
+
 import React, { useEffect, useState, useMemo } from "react";
-import * as THREE from "three";
-import type { CenterViewId } from "@/types/view";
+// Note: useState still needed for bandNonce/bandStyle/bandColor; useEffect for causal
 import ScenarioMountain from "@/components/mountain/ScenarioMountain";
-import { GodModeMountain } from "@/components/compare/GodModeMountain";
-import GodModeTerrain from "@/components/compare/GodModeTerrain";
-import { Canvas } from "@react-three/fiber";
-import { EffectComposer, Bloom, Vignette, SMAA } from "@react-three/postprocessing";
-import { Environment } from "@react-three/drei";
+import { TerrainWithFallback } from "@/components/terrain/TerrainFallback2D";
 
-// ScenarioData interface for mountain visualization
-interface ScenarioData {
-  score: number;
-  arr: number;
-  survival: number;
-  runway: number;
-  label?: string;
-}
-
-// Tab Components
-import { RiskTab } from "@/components/Risk";
-import DecidePage from "@/app/decide/page";
-import { ValuationTab } from "@/components/valuation";
-import { ImpactGodMode } from "@/components/impact";
+// Terrain Intelligence Layer
+// NOTE: TerrainOverlayLayer (2D SVG) is no longer rendered — replaced by 3D
+// surface-matched annotations inside ScenarioMountain's God Mode Canvas.
+import TerrainIntelligencePanel from "@/components/terrain/TerrainIntelligencePanel";
+import ConsiderationsPanel from "@/components/terrain/ConsiderationsPanel";
+import ModelDisclosure from "@/components/terrain/ModelDisclosure";
 
 import { useScenario, useScenarioStore } from "@/state/scenarioStore";
 import { onCausal } from "@/ui/causalEvents";
 import { engineResultToMountainForces } from "@/logic/mountainForces";
-import { useSimulationStore } from "@/state/simulationStore";
-import { useSavedSimulationsStore } from "@/state/savedSimulationsStore";
-import { StrategicMetrics } from "@/components/terrain/StrategicMetrics";
+import { useSystemBaseline } from "@/system/SystemBaselineProvider";
+import { aggregateStructuralHeatScore, buildBaselineModel } from "@/logic/heat/structuralHeatEngine";
+
+function clamp(n: number, lo: number, hi: number) {
+  return Math.max(lo, Math.min(hi, n));
+}
 
 interface CenterViewPanelProps {
-  view?: CenterViewId;
-  viewMode?: CenterViewId;
+  view?: string;
+  viewMode?: string;
   timelineEnabled?: boolean;
   heatmapEnabled?: boolean;
   onSimulateRequest?: () => void;
 }
 
 export default function CenterViewPanel(props: CenterViewPanelProps) {
-  // Support both `view` and `viewMode` props for compatibility
-  const view = props.viewMode ?? props.view ?? "terrain";
+  const { baseline: systemBaseline } = useSystemBaseline();
   const scenario = useScenario();
   const engineResults = useScenarioStore((s) => s.engineResults);
   const hoveredKpiIndex = useScenarioStore((s) => s.hoveredKpiIndex);
   const engineResult = engineResults?.[scenario];
 
-  // PHASE-IG: Wire engineResults → mountain forces (7-vector for now)
+  // Wire engineResults → mountain forces (7-vector)
   const dataPoints = useMemo(() => {
     return engineResultToMountainForces(engineResult);
   }, [engineResult]);
 
-  const strategicMetrics = useMemo(() => {
-    const runwayMonthsRaw = engineResult?.kpis?.runway?.value;
-    const runwayMonths = typeof runwayMonthsRaw === "number" && Number.isFinite(runwayMonthsRaw) ? runwayMonthsRaw : 24;
+  // ── Terrain Intelligence Layer ──────────────────────────────
+  // In God Mode, 3D annotations inside Canvas replace 2D SVG overlays.
+  // Intelligence panel (right column) still uses this flag.
+  const intelligenceEnabled = true;
 
-    const growthRaw = (engineResult?.kpis as any)?.arrGrowthPct?.value;
-    let growthRate =
-      typeof growthRaw === "number" && Number.isFinite(growthRaw)
-        ? growthRaw
-        : 0.08; // 8% default (ratio)
-    if (growthRate > 1) growthRate = growthRate / 100; // handle percent-form values
+  // Derive overlay data from engine results (for intelligence panel + snapshot key)
+  const terrainKpis = engineResult?.kpis ?? null;
+  const overlayRiskScore = useMemo(() => terrainKpis?.riskScore?.value ?? 30, [terrainKpis]);
+  const overlayRunway = useMemo(() => terrainKpis?.runway?.value ?? 24, [terrainKpis]);
 
-    const survivalRaw =
-      (engineResult?.kpis as any)?.survivalRate?.value ??
-      (engineResult?.kpis as any)?.survival?.value;
-    let survivalProbability =
-      typeof survivalRaw === "number" && Number.isFinite(survivalRaw)
-        ? survivalRaw
-        : 85;
-    if (survivalProbability <= 1) survivalProbability = survivalProbability * 100; // handle 0..1 form
-    survivalProbability = Math.max(0, Math.min(100, Math.round(survivalProbability)));
+  // Stable snapshot key for typewriter (only retype when scenario changes)
+  const snapshotKey = useMemo(() => `${scenario}-${overlayRunway}-${overlayRiskScore}`, [scenario, overlayRunway, overlayRiskScore]);
 
-    return { runwayMonths, growthRate, survivalProbability };
-  }, [engineResult]);
-
-  // GOD MODE MOUNTAIN: Get simulation data from stores
-  const simulationSummary = useSimulationStore((s) => s.summary);
-  const savedBaseline = useSavedSimulationsStore((s) => s.simulations.find((sim) => sim.isBaseline));
-
-  // Build scenario data for GodModeMountain (Gravity = Time visualization)
-  const godModeScenarioA: ScenarioData = useMemo(() => ({
-    score: savedBaseline?.summary.overallScore || 
-           (engineResults?.base?.kpis?.qualityScore ? Math.round((engineResults.base.kpis.qualityScore as any).value * 100) : 72),
-    arr: savedBaseline?.summary.arrMedian || 
-         engineResults?.base?.kpis?.arrCurrent?.value || 2100000,
-    survival: savedBaseline?.summary.survivalRate 
-              ? savedBaseline.summary.survivalRate * 100 
-              : (engineResults?.base?.kpis?.runway?.value ? Math.min(100, (engineResults.base.kpis.runway.value / 36) * 100) : 78),
-    runway: savedBaseline?.summary.runwayMedian || 
-            engineResults?.base?.kpis?.runway?.value || 18,
-    label: "BASELINE"
-  }), [savedBaseline, engineResults]);
-
-  const godModeScenarioB: ScenarioData = useMemo(() => ({
-    score: simulationSummary?.overallScore || 
-           (engineResults?.[scenario]?.kpis?.qualityScore ? Math.round((engineResults[scenario].kpis.qualityScore as any).value * 100) : 65),
-    arr: simulationSummary?.arrMedian || 
-         engineResults?.[scenario]?.kpis?.arrCurrent?.value || 2400000,
-    survival: simulationSummary?.survivalRate 
-              ? simulationSummary.survivalRate * 100 
-              : (engineResults?.[scenario]?.kpis?.runway?.value ? Math.min(100, (engineResults[scenario].kpis.runway.value / 36) * 100) : 68),
-    runway: simulationSummary?.runwayMedian || 
-            engineResults?.[scenario]?.kpis?.runway?.value || 16,
-    label: "EXPLORATION"
-  }), [simulationSummary, engineResults, scenario]);
+  // STRUCTURAL HEAT — aggregate score (0..100) for mountain surface tinting
+  const structuralHeatScore = useMemo(() => {
+    if (!systemBaseline) return 70;
+    const baseRiskIndex = engineResults?.base?.kpis?.riskIndex?.value;
+    const survivalBaselinePct = clamp(100 - (typeof baseRiskIndex === "number" ? baseRiskIndex : 30), 0, 100);
+    const ctx = buildBaselineModel(systemBaseline, survivalBaselinePct);
+    return aggregateStructuralHeatScore(ctx);
+  }, [engineResults, systemBaseline]);
 
   // CAUSAL HIGHLIGHT — Mountain band (Phase 1, UI-only)
   const [bandNonce, setBandNonce] = useState(0);
@@ -120,96 +84,102 @@ export default function CenterViewPanel(props: CenterViewPanelProps) {
     return off;
   }, []);
 
+  // ── Baseline gating: show inline panel if baseline is missing ──────
+  if (!systemBaseline) {
+    return (
+      <div className="relative flex h-full w-full flex-col rounded-xl bg-black/40 backdrop-blur-sm border border-white/5 overflow-auto">
+        <div className="flex flex-1 items-center justify-center p-12">
+          <div className="max-w-md text-center">
+            <div className="mb-6 mx-auto w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-cyan-400">
+                <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                <path d="M2 17l10 5 10-5" />
+                <path d="M2 12l10 5 10-5" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold text-white mb-2 tracking-wide">
+              Baseline Required
+            </h2>
+            <p className="text-sm text-white/40 mb-8 leading-relaxed">
+              Initialize your financial baseline to unlock scenario modeling,
+              simulation, and strategic analysis.
+            </p>
+            <button
+              onClick={() => window.location.assign("/initialize")}
+              className="inline-flex items-center gap-2 px-8 py-3 rounded-full text-xs font-bold tracking-widest uppercase text-white bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 hover:border-cyan-500/50 transition-all duration-150"
+            >
+              Initialize Baseline
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative flex h-full w-full flex-col rounded-xl bg-black/40 backdrop-blur-sm border border-white/5 overflow-auto">
-      {/* Center Stage */}
-      {/* STRATFIT RULE:
-          Mountain dominance locked at ~65% viewport height.
-          Do not adjust without design sign-off. */}
-      <div className="mountain-stage relative w-full flex-1 p-4" data-tour="mountain">
-        {view === "terrain" && (
-          <div className="relative h-full w-full overflow-hidden rounded-3xl border border-cyan-500/20 bg-gradient-to-b from-slate-950 via-slate-900 to-black shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08),0_0_60px_rgba(34,211,238,0.08)] flex flex-col">
-            {/* Cyan accent border glow */}
-            <div className="pointer-events-none absolute inset-0 rounded-3xl shadow-[inset_0_0_0_1px_rgba(34,211,238,0.2),inset_0_0_30px_rgba(34,211,238,0.05)]" />
+      {/* TERRAIN VIEW — Baseline Mountain + Intelligence Panel */}
+      <div className="mountain-stage relative w-full flex-1 p-4">
+        <div className="relative h-full w-full overflow-hidden flex flex-col" style={{
+          borderRadius: '10px',
+          background: 'linear-gradient(180deg, #0E1116 0%, #11161D 100%)',
+        }}>
+          {/* ═══ 2-COLUMN TERRAIN LAYOUT: Mountain + Intelligence ═══ */}
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 280px",
+            flex: 1,
+            minHeight: 0,
+            overflow: "hidden",
+          }}>
+            {/* ── LEFT: Mountain + Overlays ── */}
+            <div style={{ display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
+              {/* Mountain container with overlays */}
+              <div className="relative flex-1 w-full" style={{ minHeight: 300 }}>
+                {/* Causal highlight band */}
+                {bandNonce > 0 ? (
+                  <div
+                    key={bandNonce}
+                    className={`sf-causal-band play ${bandStyle === "wash" ? "wash" : ""}`}
+                    style={{ ["--sf-causal" as string]: bandColor } as React.CSSProperties}
+                  />
+                ) : null}
 
-            {/* Terrain header: 3 strategic metrics */}
-            <div className="relative z-10 p-4 border-b border-white/10">
-              <StrategicMetrics
-                runwayMonths={strategicMetrics.runwayMonths}
-                growthRate={strategicMetrics.growthRate}
-                survivalProbability={strategicMetrics.survivalProbability}
+                {/* 2D Terrain Overlays + Toggles — DISABLED in God Mode.
+                   Replaced by 3D surface-matched annotations inside the Canvas:
+                   TerrainRidgeLine + TerrainSurfaceAnnotations.
+                   These are correctly positioned ON the mountain surface and move
+                   with the camera, solving the projection mismatch of 2D SVG overlays. */}
+
+                {/* Dark Wireframe Mountain — GOD MODE enabled for baseline terrain */}
+                <TerrainWithFallback dataPoints={dataPoints}>
+                  <ScenarioMountain 
+                    scenario={scenario} 
+                    dataPoints={dataPoints}
+                    activeKpiIndex={hoveredKpiIndex}
+                    godMode
+                    structuralHeatScore={structuralHeatScore}
+                  />
+                </TerrainWithFallback>
+              </div>
+
+              {/* CONSIDERATIONS — exactly 6 lines, typewriter effect */}
+              <ConsiderationsPanel
+                kpis={terrainKpis}
+                snapshotKey={snapshotKey}
               />
+
+              {/* MODEL DISCLOSURE — legal footer */}
+              <ModelDisclosure />
             </div>
-            
-            {/* Causal highlight band (no labels) — only after explicit user action */}
-            {bandNonce > 0 ? (
-              <div
-                key={bandNonce}
-                className={`sf-causal-band play ${bandStyle === "wash" ? "wash" : ""}`}
-                style={{ ["--sf-causal" as string]: bandColor } as React.CSSProperties}
-              />
-            ) : null}
 
-            {/* Dark Wireframe Mountain */}
-            <div className="relative flex-1 w-full" style={{ filter: 'brightness(1.15) saturate(1.2) contrast(1.05)' }}>
-              <ScenarioMountain 
-                scenario={scenario} 
-                dataPoints={dataPoints}
-                activeKpiIndex={hoveredKpiIndex}
-              />
-            </div>
+            {/* ── RIGHT: Active Intelligence Panel ── */}
+            <TerrainIntelligencePanel
+              kpis={terrainKpis}
+              intelligenceEnabled={intelligenceEnabled}
+            />
           </div>
-        )}
-
-        {/* SIMULATE - Shows during simulation (same mountain + overlay) */}
-        {view === "simulate" && (
-          <div className="relative h-full w-full overflow-hidden rounded-3xl border border-slate-700/40 bg-black shadow-[0_8px_32px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.03)]">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.4)_60%,rgba(0,0,0,0.85)_100%)]" />
-            <div className="relative h-full w-full">
-              <ScenarioMountain 
-                scenario={scenario} 
-                dataPoints={dataPoints}
-                activeKpiIndex={hoveredKpiIndex}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* COMPARE - God Mode: Full Nature Environment */}
-        {view === "compare" && (
-          <div className="h-full w-full overflow-hidden rounded-3xl border border-slate-700/40 shadow-[0_8px_32px_rgba(0,0,0,0.6)] bg-[#050b14] relative">
-            {/* GodModeTerrain has CompareHybridPanel with all UI integrated */}
-            <GodModeTerrain />
-          </div>
-        )}
-
-        {/* IMPACT - Sensitivity analysis */}
-        {view === "impact" && (
-          <div className="h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-linear-to-br from-slate-950/60 to-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
-            <ImpactGodMode />
-          </div>
-        )}
-
-        {/* RISK - Risk breakdown and threat assessment */}
-        {view === "risk" && (
-          <div className="h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-linear-to-br from-slate-950/60 to-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
-            <RiskTab />
-          </div>
-        )}
-
-        {/* DECIDE - full decision experience */}
-        {view === "decision" && (
-          <div className="h-full w-full overflow-hidden rounded-3xl border border-slate-700/40 bg-black shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
-            <DecidePage />
-          </div>
-        )}
-
-        {/* VALUATION - Company valuation scenarios */}
-        {view === "valuation" && (
-          <div className="h-full w-full overflow-auto rounded-3xl border border-slate-700/40 bg-linear-to-br from-slate-950/60 to-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
-            <ValuationTab />
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

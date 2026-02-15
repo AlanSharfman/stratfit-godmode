@@ -2,13 +2,16 @@
 
 import React, { useState } from 'react'
 import { useLocation, Link } from 'react-router-dom'
+import { NAV_ITEMS, getNavItemByPath, type NavItem as CanonicalNavItem } from '@/navigation/navConfig'
 import {
   Mountain,
+  Sparkles,
+  Target,
   Zap,
   GitCompare,
   DollarSign,
-  CheckCircle,
   Activity,
+  FileText,
   Save,
   FolderOpen,
   Download,
@@ -26,6 +29,11 @@ interface NavItem {
   id: string
   label: string
   href: string
+  icon: React.ReactNode
+  description: string
+}
+
+type NavItemUiMeta = {
   icon: React.ReactNode
   description: string
 }
@@ -51,50 +59,53 @@ interface MainNavProps {
 // NAV CONFIGURATION
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const primaryNav: NavItem[] = [
-  {
-    id: 'terrain',
-    label: 'TERRAIN',
-    href: '/terrain',
+const NAV_META_BY_ID: Record<string, NavItemUiMeta> = {
+  initiate: {
+    icon: <Sparkles className="w-4 h-4" />,
+    description: 'Initialize baseline inputs',
+  },
+  baseline: {
     icon: <Mountain className="w-4 h-4" />,
-    description: 'Build & test your strategy',
+    description: 'Terrain visualization & baseline analysis',
   },
-  {
-    id: 'simulate',
-    label: 'SIMULATE',
-    href: '/simulate',
+  objective: {
+    icon: <Target className="w-4 h-4" />,
+    description: 'Declare targets & compute structural requirements',
+  },
+  studio: {
     icon: <Zap className="w-4 h-4" />,
-    description: 'Run 10,000 simulations',
+    description: 'Strategy configuration & simulation',
   },
-  {
-    id: 'compare',
-    label: 'COMPARE',
-    href: '/compare',
+  compare: {
     icon: <GitCompare className="w-4 h-4" />,
     description: 'Compare two futures',
   },
-  {
-    id: 'impact',
-    label: 'IMPACT',
-    href: '/impact',
+  risk: {
     icon: <Activity className="w-4 h-4" />,
-    description: 'Analyze what matters most',
+    description: 'Risk assessment & threat analysis',
   },
-  {
-    id: 'valuation',
-    label: 'VALUATION',
-    href: '/valuation',
+  valuation: {
     icon: <DollarSign className="w-4 h-4" />,
     description: 'Calculate your worth',
   },
-  {
-    id: 'decision',
-    label: 'DECISION',
-    href: '/decision',
-    icon: <CheckCircle className="w-4 h-4" />,
-    description: 'Make your decision',
+  capital: {
+    icon: <FileText className="w-4 h-4" />,
+    description: 'Strengths, vulnerabilities & priority focus',
   },
-]
+}
+
+function toUiNavItem(item: CanonicalNavItem): NavItem {
+  const meta = NAV_META_BY_ID[item.id]
+  return {
+    id: item.id,
+    label: item.label,
+    href: item.path,
+    icon: meta?.icon ?? <HelpCircle className="w-4 h-4" />,
+    description: meta?.description ?? '',
+  }
+}
+
+const primaryNav: NavItem[] = NAV_ITEMS.map(toUiNavItem)
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // LOGO
@@ -102,17 +113,13 @@ const primaryNav: NavItem[] = [
 
 function Logo() {
   return (
-    <Link to="/" className="flex items-center gap-3 group">
+    <Link to="/baseline" className="flex items-center gap-3 group">
       <div className="relative w-8 h-8">
-        {/* Mountain icon with glow */}
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-violet-600 rounded-lg opacity-20 group-hover:opacity-30 transition-opacity" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Mountain className="w-5 h-5 text-cyan-400" />
-        </div>
+        <img src="/logo.svg" alt="STRATFIT Logo" width="32" height="32" style={{ display: 'block' }} />
       </div>
       <div>
         <div className="text-white font-semibold tracking-wide">STRATFIT</div>
-        <div className="text-[9px] text-white/40 tracking-[0.2em]">SCENARIO INTELLIGENCE</div>
+        <div className="text-[9px] text-white/55 tracking-[0.2em]">SCENARIO INTELLIGENCE</div>
       </div>
     </Link>
   )
@@ -122,15 +129,11 @@ function LogoButton({ onClick }: { onClick?: () => void }) {
   return (
     <button type="button" onClick={onClick} className="flex items-center gap-3 group">
       <div className="relative w-8 h-8">
-        {/* Mountain icon with glow */}
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-violet-600 rounded-lg opacity-20 group-hover:opacity-30 transition-opacity" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Mountain className="w-5 h-5 text-cyan-400" />
-        </div>
+        <img src="/logo.svg" alt="STRATFIT Logo" width="32" height="32" style={{ display: 'block' }} />
       </div>
       <div>
         <div className="text-white font-semibold tracking-wide">STRATFIT</div>
-        <div className="text-[9px] text-white/40 tracking-[0.2em]">SCENARIO INTELLIGENCE</div>
+        <div className="text-[9px] text-white/55 tracking-[0.2em]">SCENARIO INTELLIGENCE</div>
       </div>
     </button>
   )
@@ -149,7 +152,7 @@ function ActiveScenarioBadge({ scenario, onClick }: { scenario: ActiveScenario; 
       <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
       <div className="text-left">
         <div className="text-emerald-400 text-xs font-medium">{scenario.name}</div>
-        <div className="text-[9px] text-white/40">Active Scenario</div>
+        <div className="text-[9px] text-white/55">Active Scenario</div>
       </div>
       <ChevronDown className="w-3 h-3 text-emerald-400/60 group-hover:text-emerald-400 transition-colors" />
     </button>
@@ -164,26 +167,33 @@ function PrimaryNavItem({ item, isActive }: { item: NavItem; isActive: boolean }
   return (
     <Link
       to={item.href}
-      className={`relative flex items-center gap-2 px-4 py-2.5 rounded-lg font-mono text-xs tracking-wide transition-all group ${
+      className={`relative px-3 py-2.5 transition-all group ${
         isActive
-          ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-          : 'text-white/50 hover:text-white hover:bg-white/5'
+          ? 'text-cyan-400'
+          : 'text-white/70 hover:text-white/95'
       }`}
+      style={{
+        fontSize: '13px',
+        fontWeight: isActive ? 600 : 500,
+        letterSpacing: '0.06em',
+        textTransform: 'uppercase' as const,
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        background: 'transparent',
+        border: 'none',
+        borderRadius: 0,
+      }}
     >
-      <span className={`transition-colors ${isActive ? 'text-cyan-400' : 'text-white/40 group-hover:text-white/70'}`}>
-        {item.icon}
-      </span>
       <span>{item.label}</span>
-      
+
+      {/* Active cyan underline */}
+      {isActive && (
+        <div className="absolute bottom-0 left-2 right-2 h-[2px] bg-cyan-400" style={{ borderRadius: '1px' }} />
+      )}
+
       {/* Hover tooltip */}
-      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-1.5 bg-slate-900 border border-white/10 rounded-lg text-[10px] text-white/70 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-1.5 bg-slate-900 border border-white/10 rounded-lg text-[10px] text-white/80 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
         {item.description}
       </div>
-      
-      {/* Active indicator line */}
-      {isActive && (
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-cyan-400 rounded-full" />
-      )}
     </Link>
   )
 }
@@ -201,26 +211,33 @@ function PrimaryNavButton({
     <button
       type="button"
       onClick={onClick}
-      className={`relative flex items-center gap-2 px-4 py-2.5 rounded-lg font-mono text-xs tracking-wide transition-all group ${
+      className={`relative px-3 py-2.5 transition-all group ${
         isActive
-          ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-          : 'text-white/50 hover:text-white hover:bg-white/5'
+          ? 'text-cyan-400'
+          : 'text-white/70 hover:text-white/95'
       }`}
+      style={{
+        fontSize: '13px',
+        fontWeight: isActive ? 600 : 500,
+        letterSpacing: '0.06em',
+        textTransform: 'uppercase' as const,
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        background: 'transparent',
+        border: 'none',
+        borderRadius: 0,
+      }}
     >
-      <span className={`transition-colors ${isActive ? 'text-cyan-400' : 'text-white/40 group-hover:text-white/70'}`}>
-        {item.icon}
-      </span>
       <span>{item.label}</span>
 
+      {/* Active cyan underline */}
+      {isActive && (
+        <div className="absolute bottom-0 left-2 right-2 h-[2px] bg-cyan-400" style={{ borderRadius: '1px' }} />
+      )}
+
       {/* Hover tooltip */}
-      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-1.5 bg-slate-900 border border-white/10 rounded-lg text-[10px] text-white/70 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-1.5 bg-slate-900 border border-white/10 rounded-lg text-[10px] text-white/80 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
         {item.description}
       </div>
-
-      {/* Active indicator line */}
-      {isActive && (
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-cyan-400 rounded-full" />
-      )}
     </button>
   )
 }
@@ -233,7 +250,6 @@ function UtilityButton({
   icon, 
   label, 
   onClick,
-  variant = 'default' 
 }: { 
   icon: React.ReactNode
   label: string
@@ -243,11 +259,16 @@ function UtilityButton({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-mono transition-all ${
-        variant === 'primary'
-          ? 'bg-violet-500/20 border border-violet-500/30 text-violet-300 hover:bg-violet-500/30'
-          : 'text-white/40 hover:text-white hover:bg-white/5'
-      }`}
+      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-white/55 hover:text-white/85 transition-all"
+      style={{
+        fontSize: '11px',
+        fontWeight: 500,
+        letterSpacing: '0.06em',
+        textTransform: 'uppercase' as const,
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        background: 'transparent',
+        border: '1px solid rgba(255,255,255,0.06)',
+      }}
     >
       {icon}
       <span className="hidden xl:inline">{label}</span>
@@ -269,7 +290,6 @@ export function MainNav(props: MainNavProps) {
 }
 
 function RouterMainNav({
-  activeScenario,
   onSave,
   onLoad,
   onExport,
@@ -278,79 +298,50 @@ function RouterMainNav({
 }: MainNavProps) {
   const location = useLocation()
   const pathname = location.pathname
-  const [showScenarioMenu, setShowScenarioMenu] = useState(false)
 
-  // Determine active nav item
-  const getActiveItem = () => {
-    for (const item of primaryNav) {
-      if (pathname.startsWith(item.href)) {
-        return item.id
-      }
-    }
-    return 'terrain' // default
-  }
-
-  const activeItem = getActiveItem()
+  const activeItem = getNavItemByPath(pathname)?.id ?? 'baseline'
 
   return (
-    <header className={`h-16 bg-black/80 backdrop-blur-xl border-b border-white/10 ${className}`}>
-      <div className="h-full px-6 flex items-center justify-between">
-        {/* Left: Logo + Active Scenario */}
-        <div className="flex items-center gap-6">
-          <Logo />
-          
-          {activeScenario && (
-            <>
-              <div className="w-px h-8 bg-white/10" />
-              <ActiveScenarioBadge 
-                scenario={activeScenario} 
-                onClick={() => setShowScenarioMenu(!showScenarioMenu)}
-              />
-            </>
-          )}
-        </div>
+    <header
+      className={className}
+      style={{
+        height: 56,
+        background: 'linear-gradient(180deg, rgba(8, 12, 18, 0.98), rgba(4, 8, 14, 0.96))',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+        backdropFilter: 'blur(20px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 20px',
+        flexShrink: 0,
+      }}
+    >
+      {/* Left: Logo */}
+      <div className="flex items-center gap-6">
+        <Logo />
+      </div>
 
-        {/* Center: Primary Navigation */}
-        <nav className="flex items-center gap-1">
-          {primaryNav.map((item) => (
+      {/* Center: Primary Navigation with separators */}
+      <nav className="flex items-center">
+        {primaryNav.map((item, i) => (
+          <React.Fragment key={item.id}>
             <PrimaryNavItem
-              key={item.id}
               item={item}
               isActive={activeItem === item.id}
             />
-          ))}
-        </nav>
+            {i < primaryNav.length - 1 && (
+              <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.08)', margin: '0 2px', flexShrink: 0 }} />
+            )}
+          </React.Fragment>
+        ))}
+      </nav>
 
-        {/* Right: Utility Actions */}
-        <div className="flex items-center gap-2">
-          <UtilityButton
-            icon={<Save className="w-4 h-4" />}
-            label="SAVE"
-            onClick={onSave}
-          />
-          <UtilityButton
-            icon={<FolderOpen className="w-4 h-4" />}
-            label="LOAD"
-            onClick={onLoad}
-          />
-          <UtilityButton
-            icon={<Download className="w-4 h-4" />}
-            label="EXPORT"
-            onClick={onExport}
-          />
-          <UtilityButton
-            icon={<Share2 className="w-4 h-4" />}
-            label="SHARE"
-            onClick={onShare}
-            variant="primary"
-          />
-          
-          <div className="w-px h-6 bg-white/10 mx-2" />
-          
-          <button className="w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-white hover:bg-white/5 transition-all">
-            <HelpCircle className="w-4 h-4" />
-          </button>
-        </div>
+      {/* Right: Ghost Utility Actions */}
+      <div className="flex items-center gap-1.5">
+        <UtilityButton icon={<Save className="w-3.5 h-3.5" />} label="SAVE" onClick={onSave} />
+        <UtilityButton icon={<FolderOpen className="w-3.5 h-3.5" />} label="LOAD" onClick={onLoad} />
+        <UtilityButton icon={<Download className="w-3.5 h-3.5" />} label="EXPORT" onClick={onExport} />
+        <UtilityButton icon={<Share2 className="w-3.5 h-3.5" />} label="SHARE" onClick={onShare} />
       </div>
     </header>
   )
@@ -366,51 +357,50 @@ function ControlledMainNav({
   onShare,
   className = '',
 }: MainNavProps) {
-  const [showScenarioMenu, setShowScenarioMenu] = useState(false)
-  const activeItem = activeItemId || 'terrain'
+  const activeItem = activeItemId || 'baseline'
 
   return (
-    <header className={`h-16 bg-black/80 backdrop-blur-xl border-b border-white/10 ${className}`}>
-      <div className="h-full px-6 flex items-center justify-between">
-        {/* Left: Logo + Active Scenario */}
-        <div className="flex items-center gap-6">
-          <LogoButton onClick={() => onNavigate?.('terrain')} />
+    <header
+      className={className}
+      style={{
+        height: 56,
+        background: 'linear-gradient(180deg, rgba(8, 12, 18, 0.98), rgba(4, 8, 14, 0.96))',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+        backdropFilter: 'blur(20px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 20px',
+        flexShrink: 0,
+      }}
+    >
+      {/* Left: Logo */}
+      <div className="flex items-center gap-6">
+        <LogoButton onClick={() => onNavigate?.('baseline')} />
+      </div>
 
-          {activeScenario && (
-            <>
-              <div className="w-px h-8 bg-white/10" />
-              <ActiveScenarioBadge
-                scenario={activeScenario}
-                onClick={() => setShowScenarioMenu(!showScenarioMenu)}
-              />
-            </>
-          )}
-        </div>
-
-        {/* Center: Primary Navigation */}
-        <nav className="flex items-center gap-1">
-          {primaryNav.map((item) => (
+      {/* Center: Primary Navigation with separators */}
+      <nav className="flex items-center">
+        {primaryNav.map((item, i) => (
+          <React.Fragment key={item.id}>
             <PrimaryNavButton
-              key={item.id}
               item={item}
               isActive={activeItem === item.id}
               onClick={() => onNavigate?.(item.id)}
             />
-          ))}
-        </nav>
+            {i < primaryNav.length - 1 && (
+              <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.08)', margin: '0 2px', flexShrink: 0 }} />
+            )}
+          </React.Fragment>
+        ))}
+      </nav>
 
-        {/* Right: Utility Actions */}
-        <div className="flex items-center gap-2">
-          <UtilityButton icon={<Save className="w-4 h-4" />} label="SAVE" onClick={onSave} />
-          <UtilityButton icon={<FolderOpen className="w-4 h-4" />} label="LOAD" onClick={onLoad} />
-          <UtilityButton icon={<Download className="w-4 h-4" />} label="EXPORT" onClick={onExport} />
-          <UtilityButton
-            icon={<Share2 className="w-4 h-4" />}
-            label="SHARE"
-            onClick={onShare}
-            variant="primary"
-          />
-        </div>
+      {/* Right: Ghost Utility Actions */}
+      <div className="flex items-center gap-1.5">
+        <UtilityButton icon={<Save className="w-3.5 h-3.5" />} label="SAVE" onClick={onSave} />
+        <UtilityButton icon={<FolderOpen className="w-3.5 h-3.5" />} label="LOAD" onClick={onLoad} />
+        <UtilityButton icon={<Download className="w-3.5 h-3.5" />} label="EXPORT" onClick={onExport} />
+        <UtilityButton icon={<Share2 className="w-3.5 h-3.5" />} label="SHARE" onClick={onShare} />
       </div>
     </header>
   )
@@ -425,24 +415,26 @@ export function MainNavCompact({ className = '' }: { className?: string }) {
   const pathname = location.pathname
   const [menuOpen, setMenuOpen] = useState(false)
 
+  const activeItem = getNavItemByPath(pathname)
+
   return (
     <header className={`h-14 bg-black/80 backdrop-blur-xl border-b border-white/10 ${className}`}>
       <div className="h-full px-4 flex items-center justify-between">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2">
+        <Link to="/baseline" className="flex items-center gap-2">
           <Mountain className="w-5 h-5 text-cyan-400" />
           <span className="text-white font-semibold">STRATFIT</span>
         </Link>
 
         {/* Center: Current page */}
-        <div className="text-sm text-white/60 font-mono">
-          {primaryNav.find(item => pathname.startsWith(item.href))?.label || 'TERRAIN'}
+        <div className="text-sm text-white/80 font-mono">
+          {activeItem?.label || 'BASELINE'}
         </div>
 
         {/* Menu toggle */}
         <button
           onClick={() => setMenuOpen(!menuOpen)}
-          className="w-10 h-10 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/5 transition-all"
+          className="w-10 h-10 rounded-lg flex items-center justify-center text-white/65 hover:text-white hover:bg-white/5 transition-all"
         >
           <Layers className="w-5 h-5" />
         </button>
@@ -458,15 +450,15 @@ export function MainNavCompact({ className = '' }: { className?: string }) {
                 to={item.href}
                 onClick={() => setMenuOpen(false)}
                 className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
-                  pathname.startsWith(item.href)
+                  (getNavItemByPath(pathname)?.id ?? 'baseline') === item.id
                     ? 'bg-cyan-500/20 text-cyan-300'
-                    : 'text-white/60 hover:bg-white/5'
+                    : 'text-white/75 hover:bg-white/5'
                 }`}
               >
                 {item.icon}
                 <div>
                   <div className="text-sm font-medium">{item.label}</div>
-                  <div className="text-[10px] text-white/40">{item.description}</div>
+                  <div className="text-[10px] text-white/55">{item.description}</div>
                 </div>
               </Link>
             ))}
@@ -518,7 +510,7 @@ export function PageHeader({
               {badge}
             </div>
             {subtitle && (
-              <div className="text-[11px] text-white/40">{subtitle}</div>
+              <div className="text-[11px] text-white/55">{subtitle}</div>
             )}
           </div>
         </div>
@@ -540,7 +532,7 @@ export function PageHeader({
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-mono transition-all ${
                 activeTab === tab.id
                   ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                  : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                  : 'text-white/60 hover:text-white/85 hover:bg-white/5'
               }`}
             >
               {tab.icon}

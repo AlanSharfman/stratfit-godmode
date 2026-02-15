@@ -394,6 +394,12 @@ function calculateSensitivity(
 // MAIN SIMULATION FUNCTION
 // ============================================================================
 
+import { emitCompute } from "@/engine/computeTelemetry";
+import { engineActivity } from "@/state/engineActivityStore";
+
+// Throttle interval for activity updates (iterations)
+const ACTIVITY_UPDATE_INTERVAL = 250;
+
 export function runMonteCarloSimulation(
   levers: LeverState,
   config: SimulationConfig = {
@@ -405,82 +411,139 @@ export function runMonteCarloSimulation(
   }
 ): MonteCarloResult {
   const startTime = performance.now();
-  
-  // Run all simulations
-  const allSimulations: SingleSimulationResult[] = [];
-  
-  for (let i = 0; i < config.iterations; i++) {
-    allSimulations.push(runSingleSimulation(i, levers, config));
-  }
-  
-  // Calculate survival metrics
-  const survivors = allSimulations.filter(s => s.didSurvive);
-  const survivalRate = survivors.length / config.iterations;
-  
-  const survivalByMonth: number[] = [];
-  for (let month = 1; month <= config.timeHorizonMonths; month++) {
-    const survivingAtMonth = allSimulations.filter(s => s.survivalMonths >= month).length;
-    survivalByMonth.push(survivingAtMonth / config.iterations);
-  }
-  
-  const survivalMonths = allSimulations.map(s => s.survivalMonths);
-  const medianSurvivalMonths = calculatePercentiles(survivalMonths).p50;
-  
-  // Calculate ARR distributions
-  const finalARRs = allSimulations.map(s => s.finalARR);
-  const arrDistribution = calculateDistributionStats(finalARRs);
-  const arrHistogram = createHistogram(finalARRs, 25);
-  const arrPercentiles = calculatePercentiles(finalARRs);
-  const arrConfidenceBands = calculateConfidenceBands(allSimulations, config.timeHorizonMonths);
-  
-  // Calculate Cash distributions
-  const finalCash = allSimulations.map(s => s.finalCash);
-  const cashDistribution = calculateDistributionStats(finalCash);
-  const cashPercentiles = calculatePercentiles(finalCash);
-  
-  // Calculate Runway distributions
-  const finalRunway = allSimulations.map(s => s.finalRunway);
-  const runwayDistribution = calculateDistributionStats(finalRunway);
-  const runwayPercentiles = calculatePercentiles(finalRunway);
-  
-  // Find best, worst, median cases
-  const sortedByARR = [...allSimulations].sort((a, b) => a.finalARR - b.finalARR);
-  const worstCase = sortedByARR[Math.floor(config.iterations * 0.05)]; // P5
-  const medianCase = sortedByARR[Math.floor(config.iterations * 0.5)]; // P50
-  const bestCase = sortedByARR[Math.floor(config.iterations * 0.95)]; // P95
-  
-  // Calculate sensitivity
-  const sensitivityFactors = calculateSensitivity(levers, config, medianCase.finalARR);
-  
-  const executionTimeMs = performance.now() - startTime;
-  
-  return {
+
+  emitCompute("terrain_simulation", "initialize", {
+    methodName: "Monte Carlo",
     iterations: config.iterations,
-    timeHorizonMonths: config.timeHorizonMonths,
-    executionTimeMs,
+  });
+
+  // ── ENGINE ACTIVITY: start ──
+  engineActivity.start({
+    iterationsTarget: config.iterations,
+    seed: 0, // deterministic
+    modelType: "MonteCarlo",
+  });
+
+  try {
+    // Run all simulations
+    emitCompute("terrain_simulation", "run_model");
+    const allSimulations: SingleSimulationResult[] = [];
     
-    survivalRate,
-    survivalByMonth,
-    medianSurvivalMonths,
+    for (let i = 0; i < config.iterations; i++) {
+      allSimulations.push(runSingleSimulation(i, levers, config));
+
+      // ── ENGINE ACTIVITY: throttled update ──
+      if (i > 0 && i % ACTIVITY_UPDATE_INTERVAL === 0) {
+        engineActivity.update({
+          stage: "SAMPLING",
+          iterationsCompleted: i,
+          message: "Sampling distribution…",
+        });
+      }
+    }
     
-    arrDistribution,
-    arrHistogram,
-    arrPercentiles,
-    arrConfidenceBands,
+    // ── ENGINE ACTIVITY: aggregating ──
+    engineActivity.update({
+      stage: "AGGREGATING",
+      iterationsCompleted: config.iterations,
+      message: "Aggregating percentiles…",
+    });
+
+    // Calculate survival metrics
+    emitCompute("terrain_simulation", "aggregate");
+    const survivors = allSimulations.filter(s => s.didSurvive);
+    const survivalRate = survivors.length / config.iterations;
     
-    cashDistribution,
-    cashPercentiles,
+    const survivalByMonth: number[] = [];
+    for (let month = 1; month <= config.timeHorizonMonths; month++) {
+      const survivingAtMonth = allSimulations.filter(s => s.survivalMonths >= month).length;
+      survivalByMonth.push(survivingAtMonth / config.iterations);
+    }
     
-    runwayDistribution,
-    runwayPercentiles,
+    const survivalMonths = allSimulations.map(s => s.survivalMonths);
+    const medianSurvivalMonths = calculatePercentiles(survivalMonths).p50;
+
+    // ── ENGINE ACTIVITY: converging ──
+    engineActivity.update({
+      stage: "CONVERGING",
+      message: "Calculating survival probability…",
+    });
     
-    bestCase,
-    worstCase,
-    medianCase,
+    // Calculate ARR distributions
+    const finalARRs = allSimulations.map(s => s.finalARR);
+    const arrDistribution = calculateDistributionStats(finalARRs);
+    const arrHistogram = createHistogram(finalARRs, 25);
+    const arrPercentiles = calculatePercentiles(finalARRs);
+    const arrConfidenceBands = calculateConfidenceBands(allSimulations, config.timeHorizonMonths);
     
-    sensitivityFactors,
-    allSimulations,
-  };
+    // Calculate Cash distributions
+    const finalCash = allSimulations.map(s => s.finalCash);
+    const cashDistribution = calculateDistributionStats(finalCash);
+    const cashPercentiles = calculatePercentiles(finalCash);
+    
+    // Calculate Runway distributions
+    const finalRunway = allSimulations.map(s => s.finalRunway);
+    const runwayDistribution = calculateDistributionStats(finalRunway);
+    const runwayPercentiles = calculatePercentiles(finalRunway);
+
+    // ── ENGINE ACTIVITY: finalizing ──
+    engineActivity.update({
+      stage: "FINALIZING",
+      message: "Finalizing output…",
+    });
+    
+    // Find best, worst, median cases
+    const sortedByARR = [...allSimulations].sort((a, b) => a.finalARR - b.finalARR);
+    const worstCase = sortedByARR[Math.floor(config.iterations * 0.05)]; // P5
+    const medianCase = sortedByARR[Math.floor(config.iterations * 0.5)]; // P50
+    const bestCase = sortedByARR[Math.floor(config.iterations * 0.95)]; // P95
+    
+    // Calculate sensitivity
+    const sensitivityFactors = calculateSensitivity(levers, config, medianCase.finalARR);
+    
+    const executionTimeMs = performance.now() - startTime;
+
+    emitCompute("terrain_simulation", "complete", {
+      durationMs: executionTimeMs,
+      iterations: config.iterations,
+      methodName: "Monte Carlo",
+    });
+
+    // ── ENGINE ACTIVITY: complete ──
+    engineActivity.complete();
+    
+    return {
+      iterations: config.iterations,
+      timeHorizonMonths: config.timeHorizonMonths,
+      executionTimeMs,
+      
+      survivalRate,
+      survivalByMonth,
+      medianSurvivalMonths,
+      
+      arrDistribution,
+      arrHistogram,
+      arrPercentiles,
+      arrConfidenceBands,
+      
+      cashDistribution,
+      cashPercentiles,
+      
+      runwayDistribution,
+      runwayPercentiles,
+      
+      bestCase,
+      worstCase,
+      medianCase,
+      
+      sensitivityFactors,
+      allSimulations,
+    };
+  } catch (err: any) {
+    // ── ENGINE ACTIVITY: fail ──
+    engineActivity.fail(err?.message ?? "Unknown simulation error");
+    throw err;
+  }
 }
 
 // ============================================================================

@@ -35,6 +35,7 @@ const PremiumSlider = memo(function PremiumSlider({
   const valueRef = useRef(value);
   const pointerIdRef = useRef<number | null>(null);
   const captureElRef = useRef<HTMLElement | null>(null);
+  const rafRef = useRef<number | null>(null);
   
   const percentage = ((value - min) / (max - min)) * 100;
   const isHighlighted = highlight || highlightColor !== null;
@@ -75,6 +76,13 @@ const PremiumSlider = memo(function PremiumSlider({
   const endDrag = useCallback(() => {
     if (!isDragging.current) return;
     isDragging.current = false;
+    
+    // Cancel any pending RAF throttle
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    
     onEnd?.();
 
     // Micro polish: thumb pulse on release
@@ -132,11 +140,17 @@ const PremiumSlider = memo(function PremiumSlider({
     const newValue = calculateValue(e.clientX);
     const newPct = ((newValue - min) / (max - min)) * 100;
     
+    // Instant visual update (DOM-only, no React render)
     updateVisuals(newPct);
     
     if (newValue !== valueRef.current) {
       valueRef.current = newValue;
-      onChange(newValue);
+      // RAF-throttle: only fire onChange once per frame
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(() => {
+        onChange(newValue);
+        rafRef.current = null;
+      });
     }
   }, [calculateValue, min, max, onChange, updateVisuals]);
 

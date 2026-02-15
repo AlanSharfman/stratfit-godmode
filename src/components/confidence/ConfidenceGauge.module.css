@@ -1,0 +1,203 @@
+/* STRATFIT — Grounded Confidence Gauge (5-band) */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+}
+
+/* ── Label row ── */
+.labelRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.title {
+  font-size: 10px;
+  color: rgba(255,255,255,0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.bandBadge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border: 1px solid;
+  border-radius: 3px;
+}
+.infoBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.03);
+  color: rgba(255,255,255,0.4);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 150ms, color 150ms;
+  margin-left: auto;
+}
+.infoBtn:hover {
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.7);
+}
+
+/* ── 5-segment bar ── */
+.bar {
+  display: flex;
+  gap: 3px;
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.segment {
+  flex: 1;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.06);
+  transition: background 300ms ease, box-shadow 300ms ease;
+}
+.segmentActive {
+  /* color set inline */
+}
+
+/* ── Band tick labels ── */
+.bandLabels {
+  display: flex;
+  justify-content: space-between;
+}
+.bandTick {
+  font-size: 8px;
+  color: rgba(255,255,255,0.25);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: center;
+  flex: 1;
+}
+
+/* ── Tooltip / expanded panel ── */
+.tooltip {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  margin-top: 8px;
+  padding: 14px 16px;
+  background: rgba(8,14,28,0.96);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  backdrop-filter: blur(12px);
+  animation: fadeInTooltip 150ms ease;
+}
+@keyframes fadeInTooltip {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.tooltipTitle {
+  font-size: 10px;
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 10px;
+}
+.reasonsList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.reasonItem {
+  font-size: 11px;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.5;
+  padding-left: 12px;
+  position: relative;
+}
+.reasonItem::before {
+  content: "·";
+  position: absolute;
+  left: 0;
+  color: rgba(255,255,255,0.3);
+}
+
+/* ── Metric bars in tooltip ── */
+.metricsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  padding-top: 10px;
+}
+.metricRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.metricLabel {
+  font-size: 10px;
+  color: rgba(255,255,255,0.4);
+  min-width: 90px;
+}
+.metricBarWrap {
+  flex: 1;
+  height: 3px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.metricBar {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 300ms ease;
+}
+.metricValue {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  min-width: 32px;
+  text-align: right;
+}
+
+/* ── Compact variant ── */
+.compactRoot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.compactBar {
+  display: flex;
+  gap: 2px;
+  height: 4px;
+  width: 60px;
+}
+.compactSegment {
+  flex: 1;
+  border-radius: 1px;
+  background: rgba(255,255,255,0.06);
+  transition: background 300ms ease;
+}
+.compactSegmentActive {
+  /* color set inline */
+}
+.compactLabel {
+  font-size: 9px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+
+

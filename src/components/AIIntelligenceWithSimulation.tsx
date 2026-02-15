@@ -1,5 +1,11 @@
 // src/components/AIIntelligenceWithSimulation.tsx
-// STRATFIT — AI Intelligence Panel with Simulation Integration
+// ═══════════════════════════════════════════════════════════════════════════
+// LEGACY — NOT MOUNTED
+// Replaced by src/components/intelligence/SystemCommentaryPanel.tsx
+// which consumes SystemAnalysisSnapshot only.
+// Retained for reference. Do not import in new code.
+// ═══════════════════════════════════════════════════════════════════════════
+// STRATFIT — AI Intelligence Panel with Simulation Integration (LEGACY)
 // Shows real-time insights + Monte Carlo results when available
 
 import React from 'react';
@@ -22,7 +28,8 @@ export default function AIIntelligenceWithSimulation({
 }: AIIntelligenceWithSimulationProps) {
   const hasSimulated = useHasSimulated();
   const summary = useSimulationSummary();
-  const isSimulating = useSimulationStore((s) => s.isSimulating);
+  const simulationStatus = useSimulationStore((s) => s.simulationStatus);
+  const isSimulating = simulationStatus === "running";
   const lastTime = useSimulationStore((s) => s.lastSimulationTime);
 
   // Format helpers

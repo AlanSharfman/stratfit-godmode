@@ -139,7 +139,7 @@ export function CompareHybridPanel() {
             tone="gold"
           />
           <MetricCard
-            title="DECISION GAP (Δ)"
+            title="DIVERGENCE GAP (Δ)"
             value={fmtMoneyM(delta)}
             sub={`T+${tIndex} months`}
             tone={delta >= 0 ? "emerald" : "red"}

@@ -1,0 +1,628 @@
+/* src/pages/ObjectivePage.module.css */
+/* STRATFIT — Objective: Strategic Targeting Console */
+/* God Mode: charcoal + ice/cyan glow, micro-ticks, premium bezels */
+
+/* ─── Page container ─── */
+.objectivePage {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: 0;
+  gap: 0;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  color: rgba(226, 232, 240, 0.95);
+  overflow-y: auto;
+}
+
+/* ─── Header ─── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid rgba(100, 116, 139, 0.15);
+  flex-shrink: 0;
+}
+
+.headerLeft h1 {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(165, 215, 232, 0.9);
+  margin: 0 0 4px 0;
+}
+
+.headerLeft p {
+  font-size: 0.72rem;
+  color: rgba(148, 163, 184, 0.7);
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+.headerControls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* ─── Segmented control ─── */
+.segmented {
+  display: flex;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(100, 116, 139, 0.2);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.segBtn {
+  padding: 5px 12px;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.6);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+.segBtn:hover {
+  color: rgba(165, 215, 232, 0.8);
+}
+
+.segBtnActive {
+  composes: segBtn;
+  color: rgba(165, 215, 232, 0.95);
+  background: rgba(56, 189, 248, 0.1);
+  box-shadow: inset 0 -2px 0 rgba(56, 189, 248, 0.5);
+}
+
+/* ─── Mode selector ─── */
+.modeLabel {
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.5);
+  margin-right: 6px;
+}
+
+/* ─── Three-panel grid ─── */
+.panelGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  padding: 16px 24px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ─── Glass panel ─── */
+.panel {
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.7), rgba(30, 41, 59, 0.5));
+  border: 1px solid rgba(100, 116, 139, 0.2);
+  border-radius: 10px;
+  padding: 16px;
+  overflow-y: auto;
+  position: relative;
+  backdrop-filter: blur(8px);
+}
+
+.panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(99, 102, 241, 0.04), transparent);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.panelTitle {
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(165, 215, 232, 0.7);
+  margin: 0 0 14px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(100, 116, 139, 0.12);
+}
+
+/* ─── Input group (left panel) ─── */
+.inputGroup {
+  margin-bottom: 14px;
+}
+
+.inputLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.6);
+  margin-bottom: 6px;
+}
+
+.inputValue {
+  font-family: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(56, 189, 248, 0.9);
+}
+
+.inputRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.numInput {
+  width: 90px;
+  padding: 4px 8px;
+  font-family: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: rgba(226, 232, 240, 0.95);
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(100, 116, 139, 0.3);
+  border-radius: 5px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  -moz-appearance: textfield;
+}
+
+.numInput::-webkit-outer-spin-button,
+.numInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.numInput:focus {
+  border-color: rgba(56, 189, 248, 0.5);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.1);
+}
+
+/* ─── Slider ─── */
+.sliderWrap {
+  flex: 1;
+  position: relative;
+  height: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.3), rgba(99, 102, 241, 0.3));
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: rgba(56, 189, 248, 0.9);
+  border: 2px solid rgba(15, 23, 42, 0.8);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+  cursor: pointer;
+  transition: box-shadow 0.15s ease;
+}
+
+.slider::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.6);
+}
+
+.slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: rgba(56, 189, 248, 0.9);
+  border: 2px solid rgba(15, 23, 42, 0.8);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+  cursor: pointer;
+}
+
+/* Micro tick marks (via pseudo-elements on wrapper) */
+.tickBar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.tick {
+  width: 1px;
+  height: 3px;
+  background: rgba(148, 163, 184, 0.2);
+}
+
+/* ─── Requirement card (center panel) ─── */
+.reqCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(100, 116, 139, 0.12);
+  border-radius: 6px;
+  transition: border-color 0.15s ease;
+}
+
+.reqCard:hover {
+  border-color: rgba(56, 189, 248, 0.25);
+}
+
+.reqLabel {
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.7);
+}
+
+.reqValue {
+  font-family: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(56, 189, 248, 0.95);
+}
+
+/* ─── Constraint / intelligence (right panel) ─── */
+.constraintItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(100, 116, 139, 0.08);
+}
+
+.constraintItem:last-child {
+  border-bottom: none;
+}
+
+.severityDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.constraintLabel {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: rgba(226, 232, 240, 0.85);
+  margin-bottom: 2px;
+}
+
+.constraintNote {
+  font-size: 0.55rem;
+  color: rgba(148, 163, 184, 0.6);
+  line-height: 1.4;
+}
+
+.sectionDivider {
+  height: 1px;
+  background: rgba(100, 116, 139, 0.12);
+  margin: 12px 0;
+}
+
+.sectionLabel {
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(99, 102, 241, 0.7);
+  margin-bottom: 8px;
+}
+
+.primaryConstraint {
+  font-size: 0.6rem;
+  color: rgba(226, 232, 240, 0.8);
+  line-height: 1.5;
+  padding: 8px 10px;
+  background: rgba(99, 102, 241, 0.06);
+  border-left: 2px solid rgba(99, 102, 241, 0.4);
+  border-radius: 0 4px 4px 0;
+  margin-bottom: 12px;
+}
+
+.checklistItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 0.55rem;
+  color: rgba(148, 163, 184, 0.75);
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+
+.checkIcon {
+  color: rgba(52, 211, 153, 0.8);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.conflictItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 0.55rem;
+  color: rgba(248, 113, 113, 0.8);
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+
+.flagIcon {
+  color: rgba(248, 113, 113, 0.7);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ─── Bottom KPI strip ─── */
+.bottomStrip {
+  display: flex;
+  gap: 10px;
+  padding: 12px 24px 16px;
+  border-top: 1px solid rgba(100, 116, 139, 0.12);
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+
+.bottomCard {
+  flex: 1;
+  min-width: 120px;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(100, 116, 139, 0.15);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bottomCardLabel {
+  font-size: 0.48rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.5);
+}
+
+.bottomCardValue {
+  font-family: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgba(226, 232, 240, 0.95);
+}
+
+.sparkline {
+  height: 20px;
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.sparkBar {
+  flex: 1;
+  min-width: 2px;
+  background: rgba(56, 189, 248, 0.4);
+  border-radius: 1px 1px 0 0;
+  transition: height 0.2s ease;
+}
+
+.sparkBar:last-child {
+  background: rgba(56, 189, 248, 0.8);
+}
+
+/* ─── Feasibility gauge ─── */
+.feasibilityWrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  margin-bottom: 8px;
+}
+
+.feasibilityBar {
+  flex: 1;
+  height: 4px;
+  background: rgba(30, 41, 59, 0.6);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.feasibilityFill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.feasibilityText {
+  font-family: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  min-width: 32px;
+  text-align: right;
+}
+
+/* ─── Objective Page Grid Layout ─── */
+.objectivePageGrid {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr 1fr;
+  gap: 16px;
+  padding: 16px 24px;
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+.leftColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
+/* Ensure the center column can host an absolutely-positioned ribbon */
+.centerColumn {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
+.rightColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
+/* Subtle trajectory preview ribbon behind the center panel */
+.trajectoryRibbon {
+  position: absolute;
+
+  /* Avoid 'inset' shorthand for compatibility */
+  top: 10px;
+  right: 10px;
+  bottom: 10px;
+  left: 10px;
+
+  pointer-events: none;
+  z-index: 0;
+
+  border-radius: 22px;
+  transform: skewY(-6deg);
+
+  /* Single gradient (safe), with soft glow via shadow */
+  background: linear-gradient(135deg,
+      rgba(34, 211, 238, 0.10),
+      rgba(99, 102, 241, 0.06),
+      rgba(34, 211, 238, 0.04));
+
+  border: 1px solid rgba(34, 211, 238, 0.12);
+
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 18px 40px rgba(0, 0, 0, 0.35);
+}
+
+/* Wrapper so center content sits above the ribbon */
+.centerColumnContent {
+  position: relative;
+  z-index: 1;
+}
+
+.crestSilhouette {
+  display: none;
+  /* Placeholder for future crest silhouette overlay */
+}/* Recovery mode styles */
+.page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 40px;
+  background: #0f172a;
+  color: #cbd5e1;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #22d3ee;
+  margin: 0 0 12px 0;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #94a3b8;
+  max-width: 600px;
+  text-align: center;
+  line-height: 1.6;
+  margin: 0 0 40px 0;
+}
+
+.card {
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(100, 116, 139, 0.3);
+  border-radius: 12px;
+  padding: 24px;
+  min-width: 400px;
+}
+
+.cardTitle {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin-bottom: 16px;
+}
+
+.pills {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.pills span {
+  padding: 6px 16px;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.pillGreen {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.pillCyan {
+  background: rgba(34, 211, 238, 0.2);
+  color: #22d3ee;
+  border: 1px solid rgba(34, 211, 238, 0.4);
+}
+
+.pillAmber {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.4);
+}
+
+.pillRed {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}

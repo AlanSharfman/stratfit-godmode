@@ -158,7 +158,8 @@ export function FateMachine({
         for (let m = 0; m <= Math.min(currentMonth, months); m++) {
           const pos = getPathPos(m, 'A')
           const variance = (path[m].revenue / medianPathA[m].revenue - 1) * 50
-          m === 0 ? ctx.moveTo(pos.x + variance, pos.y) : ctx.lineTo(pos.x + variance, pos.y)
+          if (m === 0) ctx.moveTo(pos.x + variance, pos.y)
+          else ctx.lineTo(pos.x + variance, pos.y)
         }
         ctx.stroke()
       })
@@ -170,7 +171,8 @@ export function FateMachine({
         for (let m = 0; m <= Math.min(currentMonth, months); m++) {
           const pos = getPathPos(m, 'B')
           const variance = (path[m].revenue / medianPathB[m].revenue - 1) * 50
-          m === 0 ? ctx.moveTo(pos.x + variance, pos.y) : ctx.lineTo(pos.x + variance, pos.y)
+          if (m === 0) ctx.moveTo(pos.x + variance, pos.y)
+          else ctx.lineTo(pos.x + variance, pos.y)
         }
         ctx.stroke()
       })
@@ -189,7 +191,8 @@ export function FateMachine({
       ctx.beginPath()
       for (let m = 0; m <= maxMonth; m++) {
         const pos = getPathPos(m, side)
-        m === 0 ? ctx.moveTo(pos.x, pos.y) : ctx.lineTo(pos.x, pos.y)
+        if (m === 0) ctx.moveTo(pos.x, pos.y)
+        else ctx.lineTo(pos.x, pos.y)
       }
       ctx.stroke()
 
@@ -199,7 +202,8 @@ export function FateMachine({
       ctx.beginPath()
       for (let m = 0; m <= maxMonth; m++) {
         const pos = getPathPos(m, side)
-        m === 0 ? ctx.moveTo(pos.x, pos.y) : ctx.lineTo(pos.x, pos.y)
+        if (m === 0) ctx.moveTo(pos.x, pos.y)
+        else ctx.lineTo(pos.x, pos.y)
       }
       ctx.stroke()
 
@@ -222,11 +226,11 @@ export function FateMachine({
     ctx.arc(centerX, splitY, 6, 0, Math.PI * 2)
     ctx.fill()
 
-    // "THE DECISION" label
+    // "THE ASSESSMENT" label
     ctx.fillStyle = 'rgba(255, 255, 255, 0.6)'
     ctx.font = '10px ui-monospace, monospace'
     ctx.textAlign = 'center'
-    ctx.fillText('THE DECISION', centerX, splitY - 20)
+    ctx.fillText('THE ASSESSMENT', centerX, splitY - 20)
 
     // Draw "NOW" at top
     ctx.fillStyle = 'rgba(255, 255, 255, 0.4)'
