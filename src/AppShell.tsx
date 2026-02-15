@@ -12,6 +12,7 @@ import StratfitErrorBoundary from "@/diagnostics/StratfitErrorBoundary";
 import GlobalErrorCapture from "@/diagnostics/GlobalErrorCapture";
 import DiagnosticsBootstrap from "@/diagnostics/DiagnosticsBootstrap";
 import DiagnosticsOverlay from "@/diagnostics/DiagnosticsOverlay";
+import { useDiagnosticsStore } from "@/diagnostics/DiagnosticsStore";
 
 export type AppOutletContext = {
   hasBaseline: boolean;
@@ -73,6 +74,7 @@ export default function AppShell() {
 
   const simPhase = useSimStore((s) => s.phase);
   const simMeta = useSimStore((s) => s.meta);
+  const diagEnabled = useDiagnosticsStore((s) => s.enabled);
 
   const handleRunSimulation = () => {
     runSimulation({ convergenceThreshold: 0.08 });
@@ -104,8 +106,8 @@ export default function AppShell() {
           } satisfies AppOutletContext}
         />
 
-        {/* Phase 2 Dev Probe: Simulation Lifecycle */}
-        {import.meta.env.DEV && (
+        {/* Phase 2 Dev Probe: Simulation Lifecycle - Only shown when diagnostics enabled */}
+        {diagEnabled && (
           <div
             style={{
               position: "fixed",
@@ -118,7 +120,7 @@ export default function AppShell() {
               boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
               fontFamily: "monospace",
               fontSize: 11,
-              zIndex: 9999,
+              zIndex: 9998,
               minWidth: 240,
             }}
           >
