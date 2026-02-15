@@ -24,7 +24,7 @@ export default function P50Path({ scene, scenarioId = "baseline" }: { scene: THR
             const X = world.x;
             const Z = world.y; // projector's "y" becomes ground Z
             const h = sampleHeight(n.coord.x, n.coord.y, seed);
-            return new THREE.Vector3(X, h + 2.5, Z);
+            return new THREE.Vector3(X, h + 0.6, Z);
         });
 
         const spline = buildSpline(points);

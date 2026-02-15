@@ -28,11 +28,17 @@ export function buildPathMesh(curve: THREE.CatmullRomCurve3) {
 
     geometry.computeVertexNormals();
 
-    const mat = new THREE.MeshBasicMaterial({
-        color: 0x7dd3fc,
+    const mat = new THREE.MeshStandardMaterial({
+        color: 0xcfe7ff,
         transparent: true,
-        opacity: 0.55
+        opacity: 0.85,
+        roughness: 0.6,
+        metalness: 0.1
     });
 
-    return new THREE.Mesh(geometry, mat);
+    const mesh = new THREE.Mesh(geometry, mat);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+
+    return mesh;
 }
