@@ -84,12 +84,42 @@ export default function P50Path({ scene, scenarioId = "baseline" }: { scene: THR
         const branchLeft = offsetCurve(p50Curve, -1);
         const branchRight = offsetCurve(p50Curve, 1);
 
-        // Build meshes with different visual properties
-        const p50Mesh = buildPathMesh(p50Curve, { opacity: 0.75, widthMin: 2.6, widthMax: 5.4 });
-        const p10Mesh = buildPathMesh(p10Curve, { opacity: 0.35, widthMin: 1.8, widthMax: 3.2 });
-        const p90Mesh = buildPathMesh(p90Curve, { opacity: 0.35, widthMin: 1.8, widthMax: 3.2 });
-        const branchMeshL = buildPathMesh(branchLeft, { opacity: 0.12, widthMin: 1.2, widthMax: 2.0 });
-        const branchMeshR = buildPathMesh(branchRight, { opacity: 0.12, widthMin: 1.2, widthMax: 2.0 });
+        // Build meshes with different visual properties and depth integration
+        const p50Mesh = buildPathMesh(p50Curve, {
+            opacity: 0.75,
+            widthMin: 2.6,
+            widthMax: 5.4,
+            depthFadeFar: 560,
+            edgeFeather: 0.20
+        });
+        const p10Mesh = buildPathMesh(p10Curve, {
+            opacity: 0.30,
+            widthMin: 1.8,
+            widthMax: 3.2,
+            depthFadeFar: 480,
+            edgeFeather: 0.26
+        });
+        const p90Mesh = buildPathMesh(p90Curve, {
+            opacity: 0.30,
+            widthMin: 1.8,
+            widthMax: 3.2,
+            depthFadeFar: 480,
+            edgeFeather: 0.26
+        });
+        const branchMeshL = buildPathMesh(branchLeft, {
+            opacity: 0.10,
+            widthMin: 1.2,
+            widthMax: 2.0,
+            depthFadeFar: 420,
+            edgeFeather: 0.30
+        });
+        const branchMeshR = buildPathMesh(branchRight, {
+            opacity: 0.10,
+            widthMin: 1.2,
+            widthMax: 2.0,
+            depthFadeFar: 420,
+            edgeFeather: 0.30
+        });
         const glow = createGlowMesh(p50Curve);
 
         // Add all paths to scene (branches first so p50 stays dominant)
