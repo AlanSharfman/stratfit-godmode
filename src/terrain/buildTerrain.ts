@@ -8,15 +8,17 @@ export function buildTerrain(resolution: number, seed: number) {
 
     for (let y = 0; y < size; y++) {
         for (let x = 0; x < size; x++) {
-            const nx = x / size;
-            const ny = y / size;
+            const u = (x / (size - 1)) * 2 - 1;
+            const v = (y / (size - 1)) * 2 - 1;
+            const nx = (u + 1) / 2;
+            const ny = (v + 1) / 2;
             heights.push(terrainHeight(nx, ny, seed));
         }
     }
 
     const smoothed = smoothHeightMap(heights, size, size, 2);
 
-    const geo = new THREE.PlaneGeometry(400, 260, size - 1, size - 1);
+    const geo = new THREE.PlaneGeometry(560, 360, size - 1, size - 1);
     const pos = geo.attributes.position;
 
     for (let i = 0; i < pos.count; i++) {
