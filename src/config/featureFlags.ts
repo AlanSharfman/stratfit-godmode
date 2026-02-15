@@ -46,6 +46,12 @@ export const srlEnabled = true;
 /** Structural Topography Mapping — vertex displacement from structural index (STM) */
 export const stmEnabled = true;
 
+/** Terrain Morph Engine — smooth interpolation between structural states (Stage 15) */
+export const tmeEnabled = true;
+
+/** Strategic Interaction Layer — user inputs drive simulation + morph (Stage 16) */
+export const silEnabled = true;
+
 /** Semantic Harmonization Layer — global intensity balance (Stage 14A) */
 export const shlEnabled = true;
 

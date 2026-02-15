@@ -7,12 +7,14 @@ import { TFL_UNIFORMS_KEY } from "@/render/tfl/tflContracts";
 import { DHL_UNIFORMS_KEY } from "@/render/dhl/dhlContracts";
 import { SRL_UNIFORMS_KEY } from "@/render/srl/srlContracts";
 import { STM_UNIFORMS_KEY } from "@/render/stm/stmContracts";
+import { TME_UNIFORMS_KEY } from "@/render/tme/tmeContracts";
 import type { RpfUniforms } from "@/render/rpf/rpfContracts";
 import type { CfUniforms } from "@/render/cf/cfContracts";
 import type { TflUniforms } from "@/render/tfl/tflContracts";
 import type { DhlUniforms } from "@/render/dhl/dhlContracts";
 import type { SrlUniforms } from "@/render/srl/srlContracts";
 import type { StmUniforms } from "@/render/stm/stmContracts";
+import type { TmeUniforms } from "@/render/tme/tmeContracts";
 
 /**
  * Base intensity values — what each layer uses before SHL modulation.
@@ -90,6 +92,15 @@ export default function SemanticHarmonizer() {
         const stm = ud[STM_UNIFORMS_KEY] as StmUniforms | undefined;
         if (stm) {
             stm.uTopoScale.value = BASE_STM_SCALE * weights.topography;
+        }
+
+        // TME — morph weight (modulates morph progress contribution)
+        const tme = ud[TME_UNIFORMS_KEY] as TmeUniforms | undefined;
+        if (tme) {
+            // Weight scales the effective morph displacement — at weight 0, morph has no effect
+            // We don't modify uMorphProgress itself (that's controlled by SIL),
+            // but we can modulate the TME enabled state
+            tme.uTmeEnabled.value = weights.morph > 0.01 ? 1.0 : 0.0;
         }
 
         // SDL divergence corridors: modulate opacity on ghost meshes

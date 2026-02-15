@@ -32,14 +32,18 @@ import ScenarioDivergence from "@/components/terrain/ScenarioDivergence";
 import DecisionHeat from "@/components/terrain/DecisionHeat";
 import StructuralResonance from "@/components/terrain/StructuralResonance";
 import StructuralTopography from "@/components/terrain/StructuralTopography";
+import TerrainMorph from "@/components/terrain/TerrainMorph";
 import SemanticHarmonizer from "@/components/terrain/SemanticHarmonizer";
+import StrategicControls from "@/components/controls/StrategicControls";
 import { generateBaselineRiskCurve } from "@/render/rpf/generateBaselineRisk";
 import { generateBaselineConfidenceCurve } from "@/render/cf/generateBaselineConfidence";
 import { generateBaselineVelocityCurve } from "@/render/tfl/generateBaselineVelocity";
 import { generateBaselineHeatCurve } from "@/render/dhl/createHeatTexture";
 import { generateBaselineResonanceCurve } from "@/render/srl/createResonanceTexture";
 import { generateBaselineStructureCurve } from "@/render/stm/createStructureTexture";
-import { rpfEnabled, cfEnabled, slmEnabled, ipeEnabled, tflEnabled, sdlEnabled, dhlEnabled, srlEnabled, shlEnabled, stmEnabled } from "@/config/featureFlags";
+import { generateMorphTargetCurve } from "@/render/tme/morphController";
+import { useSimulationBridge } from "@/simulation/sil/simulationBridge";
+import { rpfEnabled, cfEnabled, slmEnabled, ipeEnabled, tflEnabled, sdlEnabled, dhlEnabled, srlEnabled, shlEnabled, stmEnabled, tmeEnabled, silEnabled } from "@/config/featureFlags";
 import styles from "./BaselinePage.module.css";
 import { useAnchorRegistry } from "@/spatial/AnchorRegistry";
 
@@ -57,6 +61,7 @@ export default function BaselinePage() {
   const [dhlOn, setDhlOn] = useState(dhlEnabled);
   const [srlOn, setSrlOn] = useState(srlEnabled);
   const [stmOn, setStmOn] = useState(stmEnabled);
+  const [tmeOn, setTmeOn] = useState(tmeEnabled);
   const [activeMetricId, setActiveMetricId] = useState<MetricId | null>(null);
   const [terrainMesh, setTerrainMesh] = useState<import("three").Mesh | null>(null);
 
@@ -109,6 +114,15 @@ export default function BaselinePage() {
     () => generateBaselineStructureCurve(baselineConfidenceCurve, baselineRiskCurve, 256),
     [baselineConfidenceCurve, baselineRiskCurve],
   );
+
+  // ── Morph target curve for TME (alternative structural state) ──
+  const morphTargetCurve = useMemo(
+    () => generateMorphTargetCurve(baselineStructureCurve, 0.6, 256),
+    [baselineStructureCurve],
+  );
+
+  // ── Simulation bridge state for TME morph progress ──
+  const simMorphProgress = useSimulationBridge((s) => s.state.morphProgress);
 
   // ── Risk points for heatmap + fill overlays ──
   const riskPoints = useMemo(
@@ -470,6 +484,16 @@ export default function BaselinePage() {
               TOPO: {stmOn ? "ON" : "OFF"}
             </button>
           )}
+          {tmeEnabled && (
+            <button
+              type="button"
+              className={`${styles.toggle} ${tmeOn ? styles.toggleOn : ""}`}
+              onClick={() => setTmeOn((v) => !v)}
+              aria-pressed={tmeOn}
+            >
+              MORPH: {tmeOn ? "ON" : "OFF"}
+            </button>
+          )}
         </div>
       </div>
 
@@ -490,6 +514,7 @@ export default function BaselinePage() {
               {dhlEnabled && <DecisionHeat heatValues={baselineHeatCurve} enabled={dhlOn} />}
               {srlEnabled && <StructuralResonance resonanceValues={baselineResonanceCurve} enabled={srlOn} />}
               {stmEnabled && <StructuralTopography structureValues={baselineStructureCurve} enabled={stmOn} />}
+              {tmeEnabled && <TerrainMorph structureA={baselineStructureCurve} structureB={morphTargetCurve} morphProgress={simMorphProgress} enabled={tmeOn} />}
               {shlEnabled && <SemanticHarmonizer />}
             </TerrainStage>
           </TerrainWithFallback>
@@ -499,6 +524,9 @@ export default function BaselinePage() {
 
           {/* AI Commentary Panel (outside Canvas) */}
           <AICommentaryPanel />
+
+          {/* Strategic Controls (outside Canvas) */}
+          {silEnabled && <StrategicControls />}
         </div>
 
         <div className={styles.rightPanel}>

@@ -31,4 +31,5 @@ export const LAYER_UNIFORM_MAP: Record<SemanticLayerKey, string> = {
     flow: "uTflIntensity",
     resonance: "uSrlIntensity",
     topography: "uTopoScale",
+    morph: "uMorphProgress (TME)",
 };
