@@ -1,216 +1,110 @@
-import { useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { generateP50Nodes } from "./generatePath";
 import { normToWorld } from "@/spatial/SpatialProjector";
-import { sampleHeight } from "./sampleTerrain";
-import { buildSpline } from "./buildSpline";
-import { buildPathMesh } from "./buildPathMesh";
-import { createGlowMesh } from "./pathGlow";
 import { createSeed } from "@/terrain/seed";
-import { generateCorridorMask } from "@/terrain/corridorContactPass";
-import { checksumCurve, CorridorGeometryCache } from "@/terrain/corridorTopology";
+import { buildRibbonGeometry, type HeightSampler } from "@/terrain/corridorTopology";
+import { terrainHeight } from "@/terrain/heightModel";
 
-// Divergence scaffold constants (deterministic)
-const DIVERGENCE_T = 0.62; // fixed, deterministic (no randomness)
-const DIVERGENCE_SPREAD = 10; // world units lateral branch hint
+// ── Path material config ──
+const PATH_COLOR = new THREE.Color(0xb8e7ff);
+const PATH_EMISSIVE = new THREE.Color(0x7fdcff);
 
-// Terrain grid metadata for deterministic topology
-const TERRAIN_GRID_META = {
-    resolution: 120,
-    worldWidth: 560,
-    worldHeight: 360
-};
+// ── Terrain geometry constants (must match buildTerrain + TerrainStage) ──
+const TERRAIN_WIDTH = 560;   // PlaneGeometry width
+const TERRAIN_DEPTH = 360;   // PlaneGeometry height
+const HEIGHT_RAW_SCALE = 60;
+const HEIGHT_SCALE = 0.35;   // buildTerrain applies this
+const TERRAIN_Y_OFFSET = -6; // TerrainStage position.y
 
-// Shared geometry cache across component remounts
-const geometryCache = new CorridorGeometryCache();
+/**
+ * Shared helper: generate world-space XZ control points from path nodes.
+ * Returns { points, heightSampler } for use with buildRibbonGeometry.
+ *
+ * COORDINATE SYSTEM:
+ * - Terrain PlaneGeometry(560, 360) rotated -π/2 around X, shifted Y by -6
+ * - World X = planeX = nx * 560 - 280
+ * - World Z = ny * 360 - 180 (after rotation)
+ * - World Y = terrainHeight(nx,ny) * 60 * 0.35 - 6
+ */
+export function nodesToWorldXZ(
+    nodes: ReturnType<typeof generateP50Nodes>,
+    seed: number
+): { points: { x: number; z: number }[]; getHeightAt: HeightSampler } {
+    const points = nodes.map((n) => {
+        const world = normToWorld(n.coord);
+        return { x: world.x, z: world.y }; // projector "y" → ground Z
+    });
 
+    // World-space height sampler matching actual terrain mesh transforms
+    const getHeightAt: HeightSampler = (worldX, worldZ) => {
+        // Convert world coords to terrain normalized [0..1]
+        const nx = (worldX + TERRAIN_WIDTH / 2) / TERRAIN_WIDTH;
+        const nz = (worldZ + TERRAIN_DEPTH / 2) / TERRAIN_DEPTH;
+        // Match exact scale from buildTerrain + TerrainStage offset
+        return terrainHeight(nx, nz, seed) * HEIGHT_RAW_SCALE * HEIGHT_SCALE + TERRAIN_Y_OFFSET;
+    };
+
+    return { points, getHeightAt };
+}
+
+// ─────────────────────────────────────────────
+// P50Path — median corridor (primary, flat ribbon)
+// ─────────────────────────────────────────────
 export default function P50Path({
-    scene,
     scenarioId = "baseline",
-    onMaskReady
+    visible = true,
 }: {
-    scene: THREE.Scene;
     scenarioId?: string;
-    onMaskReady?: (mask: THREE.DataTexture) => void;
+    visible?: boolean;
 }) {
-    const p50Ref = useRef<THREE.Mesh | null>(null);
-    const p10Ref = useRef<THREE.Mesh | null>(null);
-    const p90Ref = useRef<THREE.Mesh | null>(null);
-    const glowRef = useRef<THREE.Mesh | null>(null);
-    const branchLeftRef = useRef<THREE.Mesh | null>(null);
-    const branchRightRef = useRef<THREE.Mesh | null>(null);
+    const meshRef = useRef<THREE.Mesh | null>(null);
 
+    const seed = useMemo(() => createSeed(scenarioId), [scenarioId]);
+    const nodes = useMemo(() => generateP50Nodes(), []);
+    const { points, getHeightAt } = useMemo(() => nodesToWorldXZ(nodes, seed), [nodes, seed]);
+
+    // CREATE MESH ONCE (stable ref survives HMR)
+    if (!meshRef.current) {
+        const geometry = new THREE.BufferGeometry();
+        const material = new THREE.MeshStandardMaterial({
+            color: PATH_COLOR,
+            emissive: PATH_EMISSIVE,
+            emissiveIntensity: 0.6,
+            metalness: 0.2,
+            roughness: 0.35,
+            transparent: true,
+            opacity: 0.85,
+            depthWrite: true,
+            depthTest: true,
+            side: THREE.DoubleSide,
+        });
+        meshRef.current = new THREE.Mesh(geometry, material);
+        meshRef.current.name = "p50-median-path";
+        meshRef.current.userData.pathMesh = true;
+        meshRef.current.renderOrder = 10;
+        meshRef.current.frustumCulled = false;
+    }
+
+    // UPDATE GEOMETRY ONLY (no mesh recreation)
     useEffect(() => {
-        if (!scene) return;
+        if (points.length < 2) return;
+        console.log("[P50Path] Updating ribbon geometry (flat surface-following)");
 
-        const seed = createSeed(scenarioId);
-
-        const nodes = generateP50Nodes();
-
-        // Derive P10 and P90 node sets by offsetting y coordinate
-        const p10Nodes = nodes.map(n => ({
-            ...n,
-            coord: {
-                x: n.coord.x,
-                y: Math.max(-1, n.coord.y - 0.18),
-                z: n.coord.z
-            }
-        }));
-
-        const p90Nodes = nodes.map(n => ({
-            ...n,
-            coord: {
-                x: n.coord.x,
-                y: Math.min(1, n.coord.y + 0.18),
-                z: n.coord.z
-            }
-        }));
-
-        // Reusable function to convert nodes to curve with terrain height sampling
-        function nodesToCurve(nodeList: typeof nodes, epsilon: number) {
-            const pts = nodeList.map((n) => {
-                const world = normToWorld(n.coord);
-                const X = world.x;
-                const Z = world.y; // projector's "y" becomes ground Z
-                const h = sampleHeight(n.coord.x, n.coord.y, seed);
-                return new THREE.Vector3(X, h + epsilon, Z);
-            });
-            return buildSpline(pts);
-        }
-
-        // Build 3 curves with terrain-following
-        const p50Curve = nodesToCurve(nodes, 0.65);
-        const p10Curve = nodesToCurve(p10Nodes, 0.55);
-        const p90Curve = nodesToCurve(p90Nodes, 0.55);
-
-        // Create divergence scaffold (branch hints)
-        function offsetCurve(curve: THREE.CatmullRomCurve3, side: -1 | 1) {
-            const pts = curve.getPoints(120);
-
-            const out = pts.map((p, idx) => {
-                const t = idx / (pts.length - 1);
-
-                // only push laterally after divergence point
-                const k = t < DIVERGENCE_T ? 0 : (t - DIVERGENCE_T) / (1 - DIVERGENCE_T);
-                const push = k * k * DIVERGENCE_SPREAD * side;
-
-                // lateral push in X (world)
-                return new THREE.Vector3(p.x + push, p.y + 0.15, p.z);
-            });
-
-            return new THREE.CatmullRomCurve3(out);
-        }
-
-        const branchLeft = offsetCurve(p50Curve, -1);
-        const branchRight = offsetCurve(p50Curve, 1);
-
-        // Build meshes with deterministic grid-snapped topology
-        const p50Mesh = buildPathMesh(p50Curve, {
-            opacity: 0.75,
-            widthMin: 2.6,
-            widthMax: 5.4,
-            depthFadeFar: 560,
-            edgeFeather: 0.20,
-            useGridSnap: true,
-            gridMeta: TERRAIN_GRID_META,
-            seed
+        const result = buildRibbonGeometry(points, getHeightAt, {
+            samples: 200,
+            halfWidth: 3.0,
+            widthSegments: 6,
+            lift: 0.15,
+            tension: 0.5,
         });
-        const p10Mesh = buildPathMesh(p10Curve, {
-            opacity: 0.30,
-            widthMin: 1.8,
-            widthMax: 3.2,
-            depthFadeFar: 480,
-            edgeFeather: 0.26,
-            useGridSnap: true,
-            gridMeta: TERRAIN_GRID_META,
-            seed
-        });
-        const p90Mesh = buildPathMesh(p90Curve, {
-            opacity: 0.30,
-            widthMin: 1.8,
-            widthMax: 3.2,
-            depthFadeFar: 480,
-            edgeFeather: 0.26,
-            useGridSnap: true,
-            gridMeta: TERRAIN_GRID_META,
-            seed
-        });
-        const branchMeshL = buildPathMesh(branchLeft, {
-            opacity: 0.10,
-            widthMin: 1.2,
-            widthMax: 2.0,
-            depthFadeFar: 420,
-            edgeFeather: 0.30,
-            useGridSnap: true,
-            gridMeta: TERRAIN_GRID_META,
-            seed
-        });
-        const branchMeshR = buildPathMesh(branchRight, {
-            opacity: 0.10,
-            widthMin: 1.2,
-            widthMax: 2.0,
-            depthFadeFar: 420,
-            edgeFeather: 0.30,
-            useGridSnap: true,
-            gridMeta: TERRAIN_GRID_META,
-            seed
-        });
-        const glow = createGlowMesh(p50Curve);
 
-        // Generate corridor contact mask for terrain grounding
-        if (onMaskReady) {
-            const corridorMask = generateCorridorMask(
-                [p10Curve, p50Curve, p90Curve, branchLeft, branchRight],
-                { width: 560, height: 360 },
-                256, // texture resolution
-                [3.2, 5.4, 3.2, 2.0, 2.0], // max widths for each curve
-                3.0 // falloff distance
-            );
-            onMaskReady(corridorMask);
-        }
+        const mesh = meshRef.current!;
+        mesh.geometry.dispose();
+        mesh.geometry = result.geometry;
+    }, [points, getHeightAt]);
 
-        // Add all paths to scene (branches first so p50 stays dominant)
-        scene.add(branchMeshL);
-        scene.add(branchMeshR);
-        scene.add(p10Mesh);
-        scene.add(p50Mesh);
-        scene.add(p90Mesh);
-        scene.add(glow);
+    if (!visible) return null;
 
-        p10Ref.current = p10Mesh;
-        p50Ref.current = p50Mesh;
-        p90Ref.current = p90Mesh;
-        glowRef.current = glow;
-        branchLeftRef.current = branchMeshL;
-        branchRightRef.current = branchMeshR;
-
-        return () => {
-            if (p10Ref.current) {
-                scene.remove(p10Ref.current);
-                p10Ref.current.geometry.dispose();
-            }
-            if (p50Ref.current) {
-                scene.remove(p50Ref.current);
-                p50Ref.current.geometry.dispose();
-            }
-            if (p90Ref.current) {
-                scene.remove(p90Ref.current);
-                p90Ref.current.geometry.dispose();
-            }
-            if (glowRef.current) {
-                scene.remove(glowRef.current);
-                glowRef.current.geometry.dispose();
-            }
-            if (branchLeftRef.current) {
-                scene.remove(branchLeftRef.current);
-                branchLeftRef.current.geometry.dispose();
-            }
-            if (branchRightRef.current) {
-                scene.remove(branchRightRef.current);
-                branchRightRef.current.geometry.dispose();
-            }
-        };
-    }, [scene, scenarioId, onMaskReady]);
-
-    return null;
+    return <primitive object={meshRef.current} />;
 }

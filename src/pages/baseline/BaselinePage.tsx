@@ -12,13 +12,14 @@ import {
 } from "@/components/mountain/anchorSystem";
 import TerrainRiskHeatmapOverlay from "@/components/mountain/overlays/TerrainRiskHeatmapOverlay";
 import InterventionShockwave from "@/components/mountain/overlays/InterventionShockwave";
-import FinancialTrajectoryFan from "@/components/mountain/overlays/FinancialTrajectoryFan";
-import ProbabilisticEnvelopeShell from "@/components/mountain/overlays/ProbabilisticEnvelopeShell";
-import StressContours from "@/components/mountain/overlays/StressContours";
-import CapitalThresholdPlane from "@/components/mountain/overlays/CapitalThresholdPlane";
-import ContextRiver from "@/components/mountain/overlays/ContextRiver";
-import ContextTrees from "@/components/mountain/overlays/ContextTrees";
-import TerrainPathSystem from "@/components/terrain/TerrainPathSystem";
+// DISABLED: Single corridor authority — only P50Path in TerrainStage
+// import FinancialTrajectoryFan from "@/components/mountain/overlays/FinancialTrajectoryFan";
+// import ProbabilisticEnvelopeShell from "@/components/mountain/overlays/ProbabilisticEnvelopeShell";
+// import StressContours from "@/components/mountain/overlays/StressContours";
+// import CapitalThresholdPlane from "@/components/mountain/overlays/CapitalThresholdPlane";
+// import ContextRiver from "@/components/mountain/overlays/ContextRiver";
+// import ContextTrees from "@/components/mountain/overlays/ContextTrees";
+// import TerrainPathSystem from "@/components/terrain/TerrainPathSystem";
 import DemoTourDirector from "@/demo/DemoTourDirector";
 import { TrajectoryEngine } from "@/engine/trajectory";
 import { ExecutiveDecisionOverlay, AICommentaryPanel } from "@/components/insights";

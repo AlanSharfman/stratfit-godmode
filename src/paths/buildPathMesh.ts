@@ -39,102 +39,25 @@ export function buildPathMesh(curve: THREE.CatmullRomCurve3, options: PathMeshOp
         };
         geometry = buildGridSnappedCorridorGeometry(curve, gridMeta, seed, segments, radiusSegments, widthFn);
     } else {
-        // Use standard THREE.TubeGeometry
-        const points: THREE.Vector3[] = [];
-        for (let i = 0; i <= segments; i++) {
-            points.push(curve.getPoint(i / segments));
-        }
-
-        geometry = new THREE.TubeGeometry(curve, segments, 1, radiusSegments, false);
-
-        // scale radius per segment using variance
-        const pos = geometry.attributes.position;
-        const tmp = new THREE.Vector3();
-
-        for (let i = 0; i < pos.count; i++) {
-            tmp.fromBufferAttribute(pos, i);
-            const t = Math.floor(i / (radiusSegments + 1)) / segments;
-            const varianceScale = varianceAt(t);
-            const baseRadius = widthMin + (widthMax - widthMin) * varianceScale;
-            const scale = baseRadius;
-            const dir = tmp.clone().normalize();
-            const dist = tmp.length();
-            tmp.copy(dir).multiplyScalar(dist * scale);
-            pos.setXYZ(i, tmp.x, tmp.y, tmp.z);
-        }
-
-        geometry.computeVertexNormals();
+        // DISABLED: TubeGeometry fallback — using corridor topology only
+        throw new Error("TubeGeometry fallback disabled — using corridor topology only");
     }
 
+    // FIXED: depth authority — corridor renders on top, ignores terrain depth
     const mat = new THREE.MeshStandardMaterial({
-        color: 0xcfe7ff,
-        transparent: true,
-        opacity,
-        roughness: 0.6,
-        metalness: 0.1,
+        color: 0xb8e7ff,
+        emissive: 0x7fdcff,
+        emissiveIntensity: 0.6,
+        metalness: 0.2,
+        roughness: 0.35,
+        transparent: false,
         depthWrite: false,
-        polygonOffset: true,
-        polygonOffsetFactor: -1,
-        polygonOffsetUnits: -1
+        depthTest: false
     });
 
-    // Shader patch for depth fade and edge feathering
-    mat.onBeforeCompile = (shader) => {
-        shader.uniforms.uFadeNear = { value: depthFadeNear };
-        shader.uniforms.uFadeFar = { value: depthFadeFar };
-        shader.uniforms.uEdgeFeather = { value: edgeFeather };
-
-        // inject varyings
-        shader.vertexShader = shader.vertexShader
-            .replace(
-                `#include <common>`,
-                `#include <common>
-                 varying float vCamDist;
-                 varying vec2 vUv2;`
-            )
-            .replace(
-                `#include <uv_vertex>`,
-                `#include <uv_vertex>
-                 vUv2 = uv;`
-            )
-            .replace(
-                `#include <project_vertex>`,
-                `#include <project_vertex>
-                 vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
-                 vCamDist = length(mvPos.xyz);`
-            );
-
-        shader.fragmentShader = shader.fragmentShader
-            .replace(
-                `#include <common>`,
-                `#include <common>
-                 uniform float uFadeNear;
-                 uniform float uFadeFar;
-                 uniform float uEdgeFeather;
-                 varying float vCamDist;
-                 varying vec2 vUv2;`
-            )
-            .replace(
-                `#include <dithering_fragment>`,
-                `
-                // --- depth fade (near=1, far=0)
-                float fade = 1.0 - smoothstep(uFadeNear, uFadeFar, vCamDist);
-
-                // --- edge feather across corridor width (uv.x in [0..1])
-                float edge = smoothstep(0.0, uEdgeFeather, vUv2.x) *
-                             smoothstep(0.0, uEdgeFeather, 1.0 - vUv2.x);
-
-                // apply to alpha
-                gl_FragColor.a *= (fade * edge);
-
-                #include <dithering_fragment>
-                `
-            );
-    };
-
     const mesh = new THREE.Mesh(geometry, mat);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
+    mesh.renderOrder = 1000;
+    mesh.frustumCulled = false;
 
     return mesh;
 }

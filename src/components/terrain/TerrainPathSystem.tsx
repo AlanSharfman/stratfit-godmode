@@ -179,22 +179,5 @@ export default function TerrainPathSystem({
 
   if (!ribbonGeo) return null;
 
-  return (
-    <group>
-      {/* Main ribbon mesh with segmented dash shader */}
-      <mesh geometry={ribbonGeo} material={material} renderOrder={5} />
-
-      {/* Subtle edge lines */}
-      {edgeLines && leftLineGeo && rightLineGeo && (
-        <>
-          <lineSegments geometry={leftLineGeo} renderOrder={6}>
-            <lineBasicMaterial transparent opacity={edgeLineOpacity} color={edgeLineColor} />
-          </lineSegments>
-          <lineSegments geometry={rightLineGeo} renderOrder={6}>
-            <lineBasicMaterial transparent opacity={edgeLineOpacity} color={edgeLineColor} />
-          </lineSegments>
-        </>
-      )}
-    </group>
-  );
+  return null;
 }

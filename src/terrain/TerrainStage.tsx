@@ -5,7 +5,8 @@ import * as THREE from "three";
 import { buildTerrain } from "./buildTerrain";
 import { createSeed } from "./seed";
 import P50Path from "../paths/P50Path";
-import { applyCorridorContactGrounding } from "./corridorContactPass";
+import P10Path from "../paths/P10Path";
+import P90Path from "../paths/P90Path";
 
 export default function TerrainStage({ children }: { children?: React.ReactNode }) {
     return (
@@ -38,7 +39,6 @@ function Scene({ children }: { children?: React.ReactNode }) {
     const meshRef = useRef<THREE.Mesh>(null);
     const materialRef = useRef<THREE.MeshStandardMaterial | null>(null);
     const { scene } = useThree();
-    const [corridorMask, setCorridorMask] = useState<THREE.DataTexture | null>(null);
 
     const geometry = useMemo(() => {
         const seed = createSeed("baseline");
@@ -52,16 +52,19 @@ function Scene({ children }: { children?: React.ReactNode }) {
         meshRef.current.frustumCulled = false;
     }, []);
 
-    // Apply corridor contact grounding when mask is ready
+    // DEV ASSERTION: count path meshes after mount
     useEffect(() => {
-        if (!corridorMask || !materialRef.current) return;
-        applyCorridorContactGrounding(materialRef.current, corridorMask, 0.92);
-    }, [corridorMask]);
-
-    // Handle corridor mask callback from P50Path
-    const handleMaskReady = (mask: THREE.DataTexture) => {
-        setCorridorMask(mask);
-    };
+        setTimeout(() => {
+            let count = 0;
+            scene.traverse((obj) => {
+                if (obj instanceof THREE.Mesh && obj.userData.pathMesh) {
+                    count++;
+                    console.log("[ASSERT] Path mesh:", obj.name);
+                }
+            });
+            console.log("[ASSERT] TOTAL PATH MESHES:", count);
+        }, 1000);
+    }, [scene]);
 
     return (
         <>
@@ -71,7 +74,7 @@ function Scene({ children }: { children?: React.ReactNode }) {
             <directionalLight position={[-100, 50, -50]} intensity={0.3} />
 
             {/* Terrain Mesh */}
-            <mesh ref={meshRef} geometry={geometry}>
+            <mesh ref={meshRef} geometry={geometry} renderOrder={0}>
                 <meshStandardMaterial
                     ref={materialRef}
                     color={0x7dd3fc}
@@ -85,8 +88,10 @@ function Scene({ children }: { children?: React.ReactNode }) {
                 />
             </mesh>
 
-            {/* P50 Path */}
-            <P50Path scene={scene} scenarioId="baseline" onMaskReady={handleMaskReady} />
+            {/* Probability Corridor Paths (declarative, stable mesh refs) */}
+            <P10Path scenarioId="baseline" />
+            <P50Path scenarioId="baseline" />
+            <P90Path scenarioId="baseline" />
 
             {/* Camera Controls */}
             <OrbitControls
