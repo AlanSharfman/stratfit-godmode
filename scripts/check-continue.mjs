@@ -1,3 +1,4 @@
+/* global document */
 import puppeteer from "puppeteer";
 
 /**
@@ -26,7 +27,6 @@ page.on("pageerror", (err) => {
 });
 
 await page.goto(new URL("/initialize", baseUrl).toString(), {
-  // Vite dev server keeps a websocket open; networkidle can hang.
   waitUntil: "domcontentloaded",
   timeout: 90_000,
 });
@@ -37,7 +37,7 @@ const clickedPosture = await page.evaluate(() => {
     (b.textContent || "").includes("Posture")
   );
   if (!btn) return false;
-  (btn).click();
+  btn.click();
   return true;
 });
 if (clickedPosture) {
@@ -68,7 +68,6 @@ await page.evaluate(() => {
   btn?.click();
 });
 
-// Navigation is client-side; wait a moment and check URL.
 await sleep(1500);
 const after = page.url();
 
@@ -85,3 +84,4 @@ await browser.close();
 if (before === after) {
   process.exit(1);
 }
+

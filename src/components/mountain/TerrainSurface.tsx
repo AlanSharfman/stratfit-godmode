@@ -30,7 +30,7 @@ function clamp01(x: number) {
 }
 
 function hash2(ix: number, iz: number, seed: number) {
-  let n = ix * 374761393 + iz * 668265263 + seed * 1442695040888963407;
+  let n = ix * 374761393 + iz * 668265263 + seed * 1.44269504088896e18;
   n = (n ^ (n >> 13)) * 1274126177;
   n = n ^ (n >> 16);
   return (n >>> 0) / 4294967295;

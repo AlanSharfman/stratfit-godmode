@@ -1,3 +1,4 @@
+/* global window */
 import puppeteer from "puppeteer";
 
 /**
@@ -44,13 +45,10 @@ const page = await browser.newPage();
 
 // Install long-task collector on every navigation.
 await page.evaluateOnNewDocument(() => {
-  // eslint-disable-next-line no-undef
   window.__longTasks = [];
   try {
-    // eslint-disable-next-line no-undef
     const obs = new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) {
-        // eslint-disable-next-line no-undef
         window.__longTasks.push({ name: entry.name, duration: entry.duration, startTime: entry.startTime });
       }
     });
@@ -70,7 +68,6 @@ const getHeap = async () => {
 
 const getLongTaskSummary = async () => {
   const tasks = await page.evaluate(() => {
-    // eslint-disable-next-line no-undef
     return Array.isArray(window.__longTasks) ? window.__longTasks : [];
   });
 
@@ -139,7 +136,7 @@ for (const path of routes) {
       });
 
       // Running state shows a loading panel; it may appear quickly.
-      await page.waitForSelector('.simulate-loading', { timeout: 10_000 }).catch(() => {});
+      await page.waitForSelector('.simulate-loading', { timeout: 10_000 }).catch(() => { });
 
       // Wait for completion (rerun button re-appears).
       await page.waitForSelector(rerunSelector, { timeout: completeTimeoutMs }).catch((e) => {
