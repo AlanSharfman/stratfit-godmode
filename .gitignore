@@ -23,6 +23,10 @@ dist-ssr
 *.sln
 *.sw?
 
+# Windows Explorer metadata
+desktop.ini
+Thumbs.db
+
 .vercel
 .env*.local
 
