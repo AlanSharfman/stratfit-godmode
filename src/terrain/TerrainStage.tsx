@@ -6,7 +6,21 @@ import { buildTerrain } from "./buildTerrain";
 import { createSeed } from "./seed";
 import P50Path from "../paths/P50Path";
 
-export default function TerrainStage({ children }: { children?: React.ReactNode }) {
+// Render contract guard — detect multiple Canvas mounts
+if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
+    if ((window as any).__STRATFIT_CANVAS__) {
+        console.warn("[STRATFIT] Multiple Canvas detected — render contract violated");
+    }
+    (window as any).__STRATFIT_CANVAS__ = true;
+}
+
+export default function TerrainStage({
+    children,
+    demoMode = false,
+}: {
+    children?: React.ReactNode;
+    demoMode?: boolean;
+}) {
     return (
         <div style={{ width: "100%", height: "100%", position: "relative" }}>
             <Canvas
@@ -27,13 +41,19 @@ export default function TerrainStage({ children }: { children?: React.ReactNode 
                     camera.updateProjectionMatrix();
                 }}
             >
-                <Scene>{children}</Scene>
+                <Scene demoMode={demoMode}>{children}</Scene>
             </Canvas>
         </div>
     );
 }
 
-function Scene({ children }: { children?: React.ReactNode }) {
+function Scene({
+    children,
+    demoMode = false,
+}: {
+    children?: React.ReactNode;
+    demoMode?: boolean;
+}) {
     const solidRef = useRef<THREE.Mesh>(null);
     const wireRef = useRef<THREE.Mesh>(null);
     const solidMatRef = useRef<THREE.MeshStandardMaterial | null>(null);
@@ -56,9 +76,10 @@ function Scene({ children }: { children?: React.ReactNode }) {
         }
     }, []);
 
-    // DEV ASSERTION: count path meshes after mount
+    // DEV ASSERTION: count path meshes after mount (gated to avoid production spam)
     useEffect(() => {
-        setTimeout(() => {
+        if (!import.meta.env.DEV) return;
+        const timer = setTimeout(() => {
             let count = 0;
             scene.traverse((obj) => {
                 if (obj instanceof THREE.Mesh && obj.userData.pathMesh) {
@@ -68,6 +89,7 @@ function Scene({ children }: { children?: React.ReactNode }) {
             });
             console.log("[ASSERT] TOTAL PATH MESHES:", count);
         }, 1000);
+        return () => clearTimeout(timer);
     }, [scene]);
 
     return (
@@ -116,8 +138,9 @@ function Scene({ children }: { children?: React.ReactNode }) {
             {/* Probability Corridor Path — P50 only (P10/P90 disabled for baseline stabilization) */}
             <P50Path scenarioId="baseline" />
 
-            {/* Camera Controls */}
+            {/* Camera Controls — disabled when demo is active */}
             <OrbitControls
+                enabled={!demoMode}
                 enableDamping
                 dampingFactor={0.05}
                 minDistance={80}

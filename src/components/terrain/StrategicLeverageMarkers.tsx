@@ -1,6 +1,7 @@
-﻿import React, { useCallback, useMemo } from "react";
+﻿import React, { useCallback, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { Html } from "@react-three/drei";
+import { useFrame, useThree } from "@react-three/fiber";
 import { generateP50Nodes } from "@/paths/generatePath";
 import { nodesToWorldXZ } from "@/paths/P50Path";
 import { createSeed } from "@/terrain/seed";
@@ -22,9 +23,19 @@ import type { TrajectoryMarkerType } from "@/types/trajectory";
  * - Readable at cinematic distance
  * - Obvious hover/active
  * - No orange
+ * - Camera-distance scaling
  */
 
+// Debug gate
+const DEBUG_MARKERS =
+    typeof window !== "undefined" &&
+    import.meta.env.DEV &&
+    (window as any).__SF_DEBUG_MARKERS__;
+
 const EPSILON_Y = 0.03;
+const BASE_SCALE = 1.35;
+const MIN_SCALE = 1.0;
+const MAX_SCALE = 2.2;
 
 // Human-readable labels for marker IDs
 const MARKER_LABEL: Record<string, string> = {
@@ -47,6 +58,24 @@ function yawFromTangent(tan: THREE.Vector3) {
     return Math.atan2(tan.x, tan.z);
 }
 
+// ── Bezel Dot (anchor disc under marker) ─────────────────────────────────────
+
+function BezelDot({ color }: { color: THREE.Color }) {
+    return (
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} renderOrder={20}>
+            <circleGeometry args={[0.35, 32]} />
+            <meshBasicMaterial
+                color={color}
+                transparent
+                opacity={0.25}
+                blending={THREE.AdditiveBlending}
+                depthWrite={false}
+                depthTest
+            />
+        </mesh>
+    );
+}
+
 // ── Glyphs ─────────────────────────────────────────────
 
 function Halo({
@@ -58,14 +87,14 @@ function Halo({
     strength: number;
     active: boolean;
 }) {
-    const outer = 0.62 + 0.26 * strength; // bigger
+    const outer = 0.62 + 0.26 * strength;
     return (
         <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={21}>
             <ringGeometry args={[0.22, outer, 64]} />
             <meshBasicMaterial
                 color={color}
                 transparent
-                opacity={active ? 0.78 : 0.48} // stronger
+                opacity={active ? 0.78 : 0.48}
                 blending={THREE.AdditiveBlending}
                 depthWrite={false}
                 depthTest
@@ -163,6 +192,101 @@ function MicroTick({
     );
 }
 
+// ── Single Marker with camera-distance scaling ─────────────────────────────────────
+
+interface MarkerGroupProps {
+    marker: ReturnType<typeof deriveWorldStateMarkers>[number];
+    position: THREE.Vector3;
+    yaw: number;
+    isActive: boolean;
+    isHover: boolean;
+    onOver: (id: string) => void;
+    onOut: () => void;
+    onClick: (id: string) => void;
+}
+
+function MarkerGroup({
+    marker,
+    position,
+    yaw,
+    isActive,
+    isHover,
+    onOver,
+    onOut,
+    onClick,
+}: MarkerGroupProps) {
+    const groupRef = useRef<THREE.Group>(null);
+    const { camera } = useThree();
+
+    const color = TYPE_COLOR[marker.type];
+    const strength = clamp01(marker.strength);
+
+    // Camera-distance scaling (clamped)
+    useFrame(() => {
+        if (!groupRef.current) return;
+        const dist = camera.position.distanceTo(position);
+        const distScale = THREE.MathUtils.clamp(8 / dist, MIN_SCALE, MAX_SCALE);
+        const interactScale = isActive ? 1.2 : isHover ? 1.1 : 1.0;
+        const strengthScale = 1 + 0.25 * strength;
+        const finalScale = BASE_SCALE * distScale * interactScale * strengthScale;
+        groupRef.current.scale.setScalar(finalScale);
+    });
+
+    return (
+        <group
+            ref={groupRef}
+            position={[position.x, position.y, position.z]}
+            rotation={[0, yaw, 0]}
+            renderOrder={20}
+            onPointerOver={(e) => {
+                e.stopPropagation();
+                onOver(marker.id);
+            }}
+            onPointerOut={(e) => {
+                e.stopPropagation();
+                onOut();
+            }}
+            onClick={(e) => {
+                e.stopPropagation();
+                onClick(marker.id);
+            }}
+        >
+            {/* Bezel dot anchor */}
+            <BezelDot color={color} />
+
+            <Halo color={color} strength={strength} active={isActive || isHover} />
+            <MicroTick color={color} kind={marker.type} strength={strength} />
+
+            {/* HTML label pinned below glyph */}
+            <Html
+                position={[0, -0.65, 0]}
+                center
+                distanceFactor={50}
+                style={{ pointerEvents: "none", userSelect: "none" }}
+            >
+                <div
+                    style={{
+                        color: TYPE_HEX[marker.type],
+                        fontSize: 13,
+                        fontWeight: 800,
+                        fontFamily: "'Inter', system-ui, sans-serif",
+                        textShadow:
+                            "0 0 12px rgba(0,0,0,0.95), 0 2px 10px rgba(0,0,0,0.85), 0 4px 16px rgba(0,0,0,0.6)",
+                        whiteSpace: "nowrap",
+                        letterSpacing: "0.10em",
+                        textTransform: "uppercase",
+                        opacity: isActive || isHover ? 1 : 0.9,
+                        transform: `scale(${isActive ? 1.15 : 1})`,
+                        transition: "opacity 0.18s, transform 0.18s",
+                    }}
+                >
+                    {MARKER_LABEL[marker.id] ?? marker.id}
+                </div>
+            </Html>
+        </group>
+    );
+}
+
 // ── Main component ─────────────────────────────────────
 
 export default function StrategicLeverageMarkers({
@@ -189,7 +313,7 @@ export default function StrategicLeverageMarkers({
             samples: 220,
             halfWidth: 0.65,
             widthSegments: 2,
-            lift: 0.10, // keep above terrain relief
+            lift: 0.10,
             tension: 0.55,
         });
         return { centerline, getHeightAt };
@@ -216,7 +340,7 @@ export default function StrategicLeverageMarkers({
         const samples = centerline.length;
         if (samples < 3) return [];
 
-        return worldState.markers.map((m) => {
+        const result = worldState.markers.map((m) => {
             const idx = pickMarkerIndex(m, samples);
             const p = centerline[idx];
 
@@ -235,6 +359,17 @@ export default function StrategicLeverageMarkers({
                 yaw,
             };
         });
+
+        // Debug log once
+        if (DEBUG_MARKERS && result.length > 0) {
+            console.log("[DEBUG_MARKERS] Marker count:", result.length);
+            console.log(
+                "[DEBUG_MARKERS] First 3 positions:",
+                result.slice(0, 3).map((p) => `(${p.position.x.toFixed(1)}, ${p.position.y.toFixed(1)}, ${p.position.z.toFixed(1)})`),
+            );
+        }
+
+        return result;
     }, [centerline, getHeightAt, worldState.markers]);
 
     const onOver = useCallback(
@@ -257,79 +392,19 @@ export default function StrategicLeverageMarkers({
 
     return (
         <group frustumCulled={false} renderOrder={20}>
-            {placements.map(({ marker, position, yaw }) => {
-                const color = TYPE_COLOR[marker.type];
-                const strength = clamp01(marker.strength);
-                const isActive = activeId === marker.id;
-                const isHover = hoverId === marker.id;
-
-                // BIGGER base scale + stronger response (readable at cinematic distance)
-                const scale =
-                    1.55 +
-                    (isActive ? 0.30 : isHover ? 0.18 : 0) +
-                    0.35 * strength;
-
-                return (
-                    <group
-                        key={marker.id}
-                        position={[position.x, position.y, position.z]}
-                        rotation={[0, yaw, 0]}
-                        scale={[scale, scale, scale]}
-                        renderOrder={20}
-                        onPointerOver={(e) => {
-                            e.stopPropagation();
-                            onOver(marker.id);
-                        }}
-                        onPointerOut={(e) => {
-                            e.stopPropagation();
-                            onOut();
-                        }}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onClick(marker.id);
-                        }}
-                    >
-                        <Halo
-                            color={color}
-                            strength={strength}
-                            active={isActive || isHover}
-                        />
-                        <MicroTick
-                            color={color}
-                            kind={marker.type}
-                            strength={strength}
-                        />
-
-                        {/* HTML label pinned below glyph */}
-                        <Html
-                            position={[0, -0.65, 0]}
-                            center
-                            // Bigger label at distance (smaller distanceFactor = larger on screen)
-                            distanceFactor={55}
-                            style={{ pointerEvents: "none", userSelect: "none" }}
-                        >
-                            <div
-                                style={{
-                                    color: TYPE_HEX[marker.type],
-                                    fontSize: 12,
-                                    fontWeight: 750,
-                                    fontFamily: "'Inter', system-ui, sans-serif",
-                                    textShadow:
-                                        "0 0 10px rgba(0,0,0,0.9), 0 2px 8px rgba(0,0,0,0.7)",
-                                    whiteSpace: "nowrap",
-                                    letterSpacing: "0.10em",
-                                    textTransform: "uppercase",
-                                    opacity: isActive || isHover ? 1 : 0.88,
-                                    transform: `scale(${isActive ? 1.12 : 1})`,
-                                    transition: "opacity 0.18s, transform 0.18s",
-                                }}
-                            >
-                                {MARKER_LABEL[marker.id] ?? marker.id}
-                            </div>
-                        </Html>
-                    </group>
-                );
-            })}
+            {placements.map(({ marker, position, yaw }) => (
+                <MarkerGroup
+                    key={marker.id}
+                    marker={marker}
+                    position={position}
+                    yaw={yaw}
+                    isActive={activeId === marker.id}
+                    isHover={hoverId === marker.id}
+                    onOver={onOver}
+                    onOut={onOut}
+                    onClick={onClick}
+                />
+            ))}
         </group>
     );
 }

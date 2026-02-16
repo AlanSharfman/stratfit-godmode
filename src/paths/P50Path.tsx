@@ -4,20 +4,17 @@ import { generateP50Nodes } from "./generatePath";
 import { normToWorld } from "@/spatial/SpatialProjector";
 import { createSeed } from "@/terrain/seed";
 import { buildRibbonGeometry, type HeightSampler } from "@/terrain/corridorTopology";
-import { terrainHeight } from "@/terrain/heightModel";
+import { sampleTerrainHeight } from "@/terrain/buildTerrain";
 import { terrainHeightMode } from "@/config/featureFlags";
 import { getStmEnabled, sampleStmDisplacement } from "@/render/stm/stmRuntime";
+import { TERRAIN_CONSTANTS } from "@/terrain/terrainConstants";
 
 // ── Path material config ──
-const PATH_COLOR = new THREE.Color(0xb8e7ff);
-const PATH_EMISSIVE = new THREE.Color(0x7fdcff);
+const PATH_COLOR = new THREE.Color(0x22d3ee);
+const PATH_EMISSIVE = new THREE.Color(0x22d3ee);
 
-// ── Terrain geometry constants (must match buildTerrain + TerrainStage) ──
-const TERRAIN_WIDTH = 560;
-const TERRAIN_DEPTH = 360;
-const HEIGHT_RAW_SCALE = 60;
-const HEIGHT_SCALE = 0.35;
-const TERRAIN_Y_OFFSET = -6;
+// ── Terrain geometry constants (single source from terrainConstants.ts) ──
+const { width: TERRAIN_WIDTH, depth: TERRAIN_DEPTH } = TERRAIN_CONSTANTS;
 
 /**
  * Shared helper: generate world-space XZ control points from path nodes.
@@ -39,17 +36,9 @@ export function nodesToWorldXZ(
     });
 
     const getHeightAt: HeightSampler = (worldX, worldZ) => {
-        const nx = (worldX + TERRAIN_WIDTH / 2) / TERRAIN_WIDTH;
-        const nz = (worldZ + TERRAIN_DEPTH / 2) / TERRAIN_DEPTH;
-
-        const base =
-            terrainHeightMode === "neutral"
-                ? 0
-                : terrainHeight(nx, nz, seed) * HEIGHT_RAW_SCALE * HEIGHT_SCALE;
-
+        const base = sampleTerrainHeight(worldX, worldZ, seed);
         const stm = getStmEnabled() ? sampleStmDisplacement(worldX, worldZ) : 0;
-
-        return base + stm + TERRAIN_Y_OFFSET;
+        return base + stm;
     };
 
     return { points, getHeightAt };
@@ -74,11 +63,11 @@ export default function P50Path({
         const material = new THREE.MeshStandardMaterial({
             color: PATH_COLOR,
             emissive: PATH_EMISSIVE,
-            emissiveIntensity: 1.25,
-            metalness: 0.35,
-            roughness: 0.22,
+            emissiveIntensity: 1.4,
+            metalness: 0.15,
+            roughness: 0.35,
             transparent: true,
-            opacity: 0.92,
+            opacity: 0.95,
             depthWrite: false,
             depthTest: true,
             side: THREE.DoubleSide,

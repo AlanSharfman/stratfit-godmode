@@ -1,0 +1,95 @@
+/* AppShellLayout — GOD MODE shell */
+.shell {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    background: radial-gradient(1200px 700px at 50% 20%, rgba(80, 140, 160, 0.08), rgba(0, 0, 0, 0)),
+        #070c10;
+    color: rgba(235, 245, 255, 0.92);
+}
+
+.topBar {
+    flex-shrink: 0;
+    height: 74px;
+    display: grid;
+    grid-template-columns: 1fr 1.2fr 1fr;
+    align-items: center;
+    padding: 0 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(5, 10, 14, 0.72);
+    backdrop-filter: blur(10px);
+    z-index: 100;
+}
+
+.body {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 360px 1fr 360px;
+    gap: 14px;
+    padding: 14px;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.leftRail {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(6, 10, 14, 0.62);
+    overflow: hidden;
+    min-height: 0;
+}
+
+.centerStage {
+    position: relative;
+    min-height: 0;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.centerOverlay {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 340px;
+    max-width: 100%;
+    pointer-events: none;
+    z-index: 50;
+}
+
+.centerOverlay>* {
+    pointer-events: auto;
+}
+
+.rightRail {
+    display: flex;
+    flex-direction: column;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(6, 10, 14, 0.62);
+    overflow: hidden;
+    min-height: 0;
+}
+
+/* Responsive: collapse rails on narrow screens */
+@media (max-width: 1280px) {
+    .body {
+        grid-template-columns: 300px 1fr 300px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .body {
+        grid-template-columns: 1fr;
+    }
+
+    .leftRail,
+    .rightRail {
+        display: none;
+    }
+}

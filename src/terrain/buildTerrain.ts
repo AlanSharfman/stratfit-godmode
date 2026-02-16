@@ -2,6 +2,28 @@ import * as THREE from "three";
 import { terrainHeight } from "./heightModel";
 import { smoothHeightMap } from "./smooth";
 import { terrainHeightMode } from "@/config/featureFlags";
+import { TERRAIN_CONSTANTS } from "./terrainConstants";
+
+/**
+ * Sample terrain height at world coordinates.
+ * Single source of truth for all path/marker height queries.
+ */
+export function sampleTerrainHeight(
+    worldX: number,
+    worldZ: number,
+    seed: number,
+    params = TERRAIN_CONSTANTS,
+): number {
+    const nx = (worldX + params.width / 2) / params.width;
+    const nz = (worldZ + params.depth / 2) / params.depth;
+
+    if (terrainHeightMode === "neutral") {
+        return params.yOffset;
+    }
+
+    const raw = terrainHeight(nx, nz, seed);
+    return raw * params.heightScale * params.heightFactor + params.yOffset;
+}
 
 export function buildTerrain(resolution: number, seed: number) {
     const size = resolution;

@@ -1,0 +1,122 @@
+/* DiagnosticsDrawer — Fixed position, offset from right rail */
+.backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 998;
+    background: transparent;
+}
+
+.drawer {
+    position: fixed;
+    top: 80px;
+    right: calc(var(--sf-right-rail, 360px) + 14px);
+    width: 300px;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    z-index: 999;
+    background: rgba(8, 12, 18, 0.92);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(34, 211, 238, 0.18);
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.title {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    color: #e2e8f0;
+    text-transform: uppercase;
+}
+
+.closeBtn {
+    background: none;
+    border: none;
+    color: rgba(226, 232, 240, 0.6);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+}
+
+.closeBtn:hover {
+    color: rgba(226, 232, 240, 0.9);
+}
+
+.group {
+    margin-bottom: 16px;
+}
+
+.groupHeading {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: rgba(34, 211, 238, 0.7);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+.toggleList {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.toggleBtn {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(70, 227, 255, 0.18);
+    background: rgba(0, 0, 0, 0.25);
+    color: rgba(220, 245, 255, 0.9);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.toggleBtn:hover {
+    border-color: rgba(70, 227, 255, 0.35);
+}
+
+.toggleBtnOn {
+    border-color: rgba(70, 227, 255, 0.55);
+    background: rgba(34, 211, 238, 0.08);
+    box-shadow: 0 0 12px rgba(70, 227, 255, 0.12);
+}
+
+.toggleState {
+    font-size: 10px;
+    color: rgba(226, 232, 240, 0.5);
+}
+
+.toggleStateOn {
+    color: rgba(34, 211, 238, 0.9);
+}
+
+/* Scrollbar */
+.drawer::-webkit-scrollbar {
+    width: 6px;
+}
+
+.drawer::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
+
+.drawer::-webkit-scrollbar-thumb {
+    background: rgba(34, 211, 238, 0.25);
+    border-radius: 3px;
+}
