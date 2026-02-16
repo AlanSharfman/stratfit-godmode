@@ -80,6 +80,7 @@ export default function TerrainMorph({
         const stmUniforms = terrainMat.userData[STM_UNIFORMS_KEY] as StmUniforms | undefined;
         if (stmUniforms && enabled) {
             stmUniforms.uStmEnabled.value = 0.0;
+            stmUniforms.uTopoEnabled.value = 0.0;
         }
 
         return () => {
@@ -88,6 +89,7 @@ export default function TerrainMorph({
                 const stm = materialRef.current.userData[STM_UNIFORMS_KEY] as StmUniforms | undefined;
                 if (stm) {
                     stm.uStmEnabled.value = 1.0;
+                    stm.uTopoEnabled.value = 1.0;
                 }
                 removeTmeInjection(materialRef.current);
             }
@@ -109,6 +111,7 @@ export default function TerrainMorph({
             const stm = materialRef.current.userData[STM_UNIFORMS_KEY] as StmUniforms | undefined;
             if (stm) {
                 stm.uStmEnabled.value = enabled ? 0.0 : 1.0;
+                stm.uTopoEnabled.value = enabled ? 0.0 : 1.0;
             }
             materialRef.current.needsUpdate = true;
         }
@@ -123,3 +126,4 @@ export default function TerrainMorph({
 
     return null;
 }
+

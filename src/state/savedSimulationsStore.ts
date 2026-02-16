@@ -44,23 +44,23 @@ interface SavedSimulationsState {
   // Saved simulations (persisted)
   simulations: SavedSimulation[];
   maxSimulations: number;
-  
+
   // Currently selected for comparison
   comparisonA: string | null; // ID
   comparisonB: string | null; // ID
-  
+
   // Actions
   saveSimulation: (simulation: Omit<SavedSimulation, 'id' | 'createdAt'>) => SavedSimulation;
   deleteSimulation: (id: string) => void;
   renameSimulation: (id: string, name: string) => void;
   setAsBaseline: (id: string) => void;
   clearBaseline: () => void;
-  
+
   // Comparison actions
   setComparisonA: (id: string | null) => void;
   setComparisonB: (id: string | null) => void;
   swapComparison: () => void;
-  
+
   // Getters
   getSimulation: (id: string) => SavedSimulation | undefined;
   getBaseline: () => SavedSimulation | undefined;
@@ -82,14 +82,14 @@ export const useSavedSimulationsStore = create<SavedSimulationsState>()(
       maxSimulations: 20,
       comparisonA: null,
       comparisonB: null,
-      
+
       saveSimulation: (simulation) => {
         const newSimulation: SavedSimulation = {
           ...simulation,
           id: generateId(),
           createdAt: new Date().toISOString(),
         };
-        
+
         set((state) => {
           // If at max, remove oldest non-baseline
           let sims = [...state.simulations];
@@ -101,15 +101,15 @@ export const useSavedSimulationsStore = create<SavedSimulationsState>()(
               sims = sims.filter(s => s.id !== oldestNonBaseline.id);
             }
           }
-          
+
           return {
             simulations: [newSimulation, ...sims],
           };
         });
-        
+
         return newSimulation;
       },
-      
+
       deleteSimulation: (id) => {
         set((state) => ({
           simulations: state.simulations.filter(s => s.id !== id),
@@ -117,7 +117,7 @@ export const useSavedSimulationsStore = create<SavedSimulationsState>()(
           comparisonB: state.comparisonB === id ? null : state.comparisonB,
         }));
       },
-      
+
       renameSimulation: (id, name) => {
         set((state) => ({
           simulations: state.simulations.map(s =>
@@ -125,7 +125,7 @@ export const useSavedSimulationsStore = create<SavedSimulationsState>()(
           ),
         }));
       },
-      
+
       setAsBaseline: (id) => {
         set((state) => ({
           simulations: state.simulations.map(s => ({
@@ -134,7 +134,7 @@ export const useSavedSimulationsStore = create<SavedSimulationsState>()(
           })),
         }));
       },
-      
+
       clearBaseline: () => {
         set((state) => ({
           simulations: state.simulations.map(s => ({
@@ -143,31 +143,31 @@ export const useSavedSimulationsStore = create<SavedSimulationsState>()(
           })),
         }));
       },
-      
+
       setComparisonA: (id) => set({ comparisonA: id }),
       setComparisonB: (id) => set({ comparisonB: id }),
-      
+
       swapComparison: () => {
         set((state) => ({
           comparisonA: state.comparisonB,
           comparisonB: state.comparisonA,
         }));
       },
-      
+
       getSimulation: (id) => {
         return get().simulations.find(s => s.id === id);
       },
-      
+
       getBaseline: () => {
         return get().simulations.find(s => s.isBaseline);
       },
-      
+
       getSimulationsByDate: () => {
         return [...get().simulations].sort(
           (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
       },
-      
+
       getSimulationsByScore: () => {
         return [...get().simulations].sort(
           (a, b) => b.summary.overallScore - a.summary.overallScore

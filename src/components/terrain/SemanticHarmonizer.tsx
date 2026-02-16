@@ -8,6 +8,7 @@ import { DHL_UNIFORMS_KEY } from "@/render/dhl/dhlContracts";
 import { SRL_UNIFORMS_KEY } from "@/render/srl/srlContracts";
 import { STM_UNIFORMS_KEY } from "@/render/stm/stmContracts";
 import { TME_UNIFORMS_KEY } from "@/render/tme/tmeContracts";
+import { setStmTopoScale } from "@/render/stm/stmRuntime";
 import type { RpfUniforms } from "@/render/rpf/rpfContracts";
 import type { CfUniforms } from "@/render/cf/cfContracts";
 import type { TflUniforms } from "@/render/tfl/tflContracts";
@@ -25,7 +26,7 @@ const BASE_CF_INTENSITY = 0.45;
 const BASE_TFL_INTENSITY = 0.18;
 const BASE_DHL_INTENSITY = 0.22;
 const BASE_SRL_INTENSITY = 0.08;
-const BASE_STM_SCALE = 14.0;
+const BASE_STM_SCALE = 8.0;
 
 /**
  * SemanticHarmonizer — declarative R3F component.
@@ -92,6 +93,7 @@ export default function SemanticHarmonizer() {
         const stm = ud[STM_UNIFORMS_KEY] as StmUniforms | undefined;
         if (stm) {
             stm.uTopoScale.value = BASE_STM_SCALE * weights.topography;
+            setStmTopoScale(stm.uTopoScale.value);
         }
 
         // TME — morph weight (modulates morph progress contribution)
@@ -119,3 +121,4 @@ export default function SemanticHarmonizer() {
 
     return null;
 }
+

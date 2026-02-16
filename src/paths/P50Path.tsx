@@ -5,6 +5,8 @@ import { normToWorld } from "@/spatial/SpatialProjector";
 import { createSeed } from "@/terrain/seed";
 import { buildRibbonGeometry, type HeightSampler } from "@/terrain/corridorTopology";
 import { terrainHeight } from "@/terrain/heightModel";
+import { terrainHeightMode } from "@/config/featureFlags";
+import { getStmEnabled, sampleStmDisplacement } from "@/render/stm/stmRuntime";
 
 // ── Path material config ──
 const PATH_COLOR = new THREE.Color(0xb8e7ff);
@@ -41,8 +43,17 @@ export function nodesToWorldXZ(
         // Convert world coords to terrain normalized [0..1]
         const nx = (worldX + TERRAIN_WIDTH / 2) / TERRAIN_WIDTH;
         const nz = (worldZ + TERRAIN_DEPTH / 2) / TERRAIN_DEPTH;
-        // Match exact scale from buildTerrain + TerrainStage offset
-        return terrainHeight(nx, nz, seed) * HEIGHT_RAW_SCALE * HEIGHT_SCALE + TERRAIN_Y_OFFSET;
+
+        // Base height field (legacy mesh relief). In neutral mode this is disabled
+        // to keep the mesh stable/flat; STM provides structural relief.
+        const base = terrainHeightMode === "neutral"
+            ? 0
+            : terrainHeight(nx, nz, seed) * HEIGHT_RAW_SCALE * HEIGHT_SCALE;
+
+        // Structural Topography Mapping (STM) displacement — must match vertex shader.
+        const stm = getStmEnabled() ? sampleStmDisplacement(worldX, worldZ) : 0;
+
+        return base + stm + TERRAIN_Y_OFFSET;
     };
 
     return { points, getHeightAt };
@@ -95,7 +106,7 @@ export default function P50Path({
             samples: 200,
             halfWidth: 3.0,
             widthSegments: 6,
-            lift: 0.15,
+            lift: terrainHeightMode === "neutral" ? 0.02 : 0.15,
             tension: 0.5,
         });
 

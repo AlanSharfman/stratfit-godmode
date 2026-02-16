@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import type { TmeUniforms } from "./tmeContracts";
 import { TME_INJECTED_KEY, TME_UNIFORMS_KEY } from "./tmeContracts";
+import { terrainHeightMode } from "@/config/featureFlags";
 
 /**
  * Create the TME uniform block for injection into terrain material.
@@ -14,6 +15,7 @@ export function createTmeUniforms(
         uStructureTexB: { value: texB },
         uMorphProgress: { value: 0.0 },
         uTmeEnabled: { value: 1.0 },
+        uTmeHeightScale: { value: terrainHeightMode === "neutral" ? 0.0 : 14.0 },
     };
 }
 
@@ -26,6 +28,7 @@ uniform sampler2D uStructureTexA;
 uniform sampler2D uStructureTexB;
 uniform float uMorphProgress;
 uniform float uTmeEnabled;
+uniform float uTmeHeightScale;
 #endif
 `;
 
@@ -64,7 +67,10 @@ const VERTEX_TME_DISPLACE = /* glsl */ `
         float tmeEdgeFade = smoothstep(0.0, 0.08, tmeT) * smoothstep(1.0, 0.92, tmeT);
 
         // Vertical displacement: dramatic scale for visible peaks and troughs
-        float tmeDisplacement = morphed * tmeFalloff * tmeEdgeFade * 14.0;
+        // When terrainHeightMode is "neutral", this multiplier is set to 0.0
+        // via the uTmeHeightScale uniform so morph textures still drive semantic
+        // layers but produce no vertex displacement.
+        float tmeDisplacement = morphed * tmeFalloff * tmeEdgeFade * uTmeHeightScale;
 
         // Override STM displacement — TME takes precedence
         // STM adds its own displacement; TME replaces with morphed version.

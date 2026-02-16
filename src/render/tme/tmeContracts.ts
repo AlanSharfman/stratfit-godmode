@@ -15,6 +15,8 @@ export interface TmeUniforms {
     uStructureTexB: THREE.IUniform<THREE.DataTexture | null>;
     uMorphProgress: THREE.IUniform<number>;
     uTmeEnabled: THREE.IUniform<number>;
+    /** Height displacement multiplier — 0 in neutral mode, 14 in active mode */
+    uTmeHeightScale: THREE.IUniform<number>;
 }
 
 /** Marker key stored on material.userData when TME is injected */

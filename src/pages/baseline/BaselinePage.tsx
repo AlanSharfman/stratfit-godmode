@@ -33,6 +33,8 @@ import DecisionHeat from "@/components/terrain/DecisionHeat";
 import StructuralResonance from "@/components/terrain/StructuralResonance";
 import StructuralTopography from "@/components/terrain/StructuralTopography";
 import SemanticHarmonizer from "@/components/terrain/SemanticHarmonizer";
+import MarkerPedestals from "@/components/terrain/MarkerPedestals";
+import BaselineTimelineTicks from "@/components/terrain/core/BaselineTimelineTicks";
 import { generateBaselineRiskCurve } from "@/render/rpf/generateBaselineRisk";
 import { generateBaselineConfidenceCurve } from "@/render/cf/generateBaselineConfidence";
 import { generateBaselineVelocityCurve } from "@/render/tfl/generateBaselineVelocity";
@@ -41,6 +43,7 @@ import { generateBaselineResonanceCurve } from "@/render/srl/createResonanceText
 import { generateBaselineStructureCurve } from "@/render/stm/createStructureTexture";
 import { rpfEnabled, cfEnabled, slmEnabled, ipeEnabled, tflEnabled, sdlEnabled, dhlEnabled, srlEnabled, shlEnabled, stmEnabled } from "@/config/featureFlags";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
+import { setStmStructureCurve, setStmTopoScale, setStmTopoWidth } from "@/render/stm/stmRuntime";
 import styles from "./BaselinePage.module.css";
 import { useAnchorRegistry } from "@/spatial/AnchorRegistry";
 
@@ -83,7 +86,14 @@ export default function BaselinePage() {
 
   // ── Deterministic baseline risk curve for RPF (driven by real data) ──
   const baselineRiskCurve = useMemo(
-    () => generateBaselineRiskCurve(256, systemBaseline),
+    () => {
+      const curve = generateBaselineRiskCurve(256, systemBaseline);
+      const min = Math.min(...curve);
+      const max = Math.max(...curve);
+      console.log("[AUDIT] systemBaseline:", systemBaseline ? "present" : "NULL (demo fallback)");
+      console.log("[AUDIT] riskCurve — min:", min.toFixed(4), "max:", max.toFixed(4), "range:", (max - min).toFixed(4));
+      return curve;
+    },
     [systemBaseline],
   );
 
@@ -113,7 +123,19 @@ export default function BaselinePage() {
 
   // ── Deterministic structure curve for STM (derived from confidence + risk) ──
   const baselineStructureCurve = useMemo(
-    () => generateBaselineStructureCurve(baselineConfidenceCurve, baselineRiskCurve, 256),
+    () => {
+      const curve = generateBaselineStructureCurve(baselineConfidenceCurve, baselineRiskCurve, 256);
+      const min = Math.min(...curve);
+      const max = Math.max(...curve);
+      console.log("[AUDIT] structureCurve — min:", min.toFixed(4), "max:", max.toFixed(4), "range:", (max - min).toFixed(4));
+      console.log("[AUDIT] structureCurve sample [0,64,128,192,255]:", curve[0]?.toFixed(3), curve[64]?.toFixed(3), curve[128]?.toFixed(3), curve[192]?.toFixed(3), curve[255]?.toFixed(3));
+      // EAGERLY set STM runtime curve so P50Path/markers can sample displacement
+      // during their first render (before StructuralTopography useEffect runs).
+      setStmStructureCurve(curve);
+      setStmTopoScale(8.0);
+      setStmTopoWidth(70.0);
+      return curve;
+    },
     [baselineConfidenceCurve, baselineRiskCurve],
   );
 
@@ -498,6 +520,8 @@ export default function BaselinePage() {
               {srlEnabled && <StructuralResonance resonanceValues={baselineResonanceCurve} enabled={srlOn} />}
               {stmEnabled && <StructuralTopography structureValues={baselineStructureCurve} enabled={stmOn} />}
               {shlEnabled && <SemanticHarmonizer />}
+              {slmEnabled && <MarkerPedestals enabled={slmOn} />}
+              <BaselineTimelineTicks />
             </TerrainStage>
           </TerrainWithFallback>
 

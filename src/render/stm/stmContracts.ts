@@ -13,9 +13,12 @@ export interface StmUniforms {
     uStructureTex: THREE.IUniform<THREE.DataTexture | null>;
     uTopoScale: THREE.IUniform<number>;
     uTopoWidth: THREE.IUniform<number>;
+    /** Enable flag requested by Phase 14B (1.0 = enabled). */
+    uTopoEnabled: THREE.IUniform<number>;
     uStmEnabled: THREE.IUniform<number>;
 }
 
 /** Marker key stored on material.userData when STM is injected */
 export const STM_INJECTED_KEY = "__stmInjected" as const;
 export const STM_UNIFORMS_KEY = "__stmUniforms" as const;
+

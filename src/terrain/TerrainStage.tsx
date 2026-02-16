@@ -11,8 +11,8 @@ export default function TerrainStage({ children }: { children?: React.ReactNode 
         <div style={{ width: "100%", height: "100%", position: "relative" }}>
             <Canvas
                 camera={{
-                    position: [40, 135, 320],
-                    fov: 42,
+                    position: [0, 80, 380],
+                    fov: 50,
                     near: 1,
                     far: 3000,
                 }}
@@ -23,7 +23,7 @@ export default function TerrainStage({ children }: { children?: React.ReactNode 
                 }}
                 style={{ background: "transparent" }}
                 onCreated={({ camera }) => {
-                    camera.lookAt(-35, 18, 0);
+                    camera.lookAt(0, 40, 0);
                     camera.updateProjectionMatrix();
                 }}
             >
@@ -118,10 +118,10 @@ function Scene({ children }: { children?: React.ReactNode }) {
             <OrbitControls
                 enableDamping
                 dampingFactor={0.05}
-                minDistance={100}
-                maxDistance={600}
+                minDistance={80}
+                maxDistance={800}
                 maxPolarAngle={Math.PI / 2.2}
-                target={[0, 18, 0]}
+                target={[0, 40, 0]}
             />
 
             {children}

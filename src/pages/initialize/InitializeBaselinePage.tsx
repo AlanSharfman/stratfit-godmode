@@ -13,194 +13,9 @@ import styles from "./InitializeBaselinePage.module.css"
 import { useSystemBaseline } from "@/system/SystemBaselineProvider"
 import { SystemBlueprintBackground } from "@/components/system/SystemBlueprintBackground"
 import type { BaselineV1 } from "@/onboard/baseline"
+import TerrainStage from "@/terrain/TerrainStage"
+import { TerrainWithFallback } from "@/components/terrain/TerrainFallback2D"
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 1D STRUCTURAL SIGNAL (Initialize preview)
-// Simple moving "mountain line" that responds to baseline inputs.
-// No WebGL. No toy glow. Institutional cyan line + subtle fill.
-// ═══════════════════════════════════════════════════════════════════════════
-
-function clamp01(v: number): number {
-  return Math.max(0, Math.min(1, v))
-}
-
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t
-}
-
-function easeOutCubic(t: number): number {
-  return 1 - Math.pow(1 - t, 3)
-}
-
-function buildSignalSeries(points: number[], samples = 64): number[] {
-  const src = points.length > 0 ? points.map(clamp01) : [0.3, 0.5, 0.4, 0.6, 0.35, 0.45, 0.5]
-  const n = src.length
-  const out: number[] = []
-  for (let i = 0; i < samples; i++) {
-    const t = n === 1 ? 0 : (i / (samples - 1)) * (n - 1)
-    const idx = Math.floor(t)
-    const frac = t - idx
-    const a = src[Math.max(0, Math.min(n - 1, idx))] ?? 0.5
-    const b = src[Math.max(0, Math.min(n - 1, idx + 1))] ?? a
-    out.push(lerp(a, b, frac))
-  }
-  return out
-}
-
-function seriesToPath(series: number[], w: number, h: number, pad = 10): string {
-  const innerW = w - pad * 2
-  const innerH = h - pad * 2
-  if (series.length <= 0) return `M ${pad} ${pad + innerH / 2}`
-
-  const xFor = (i: number) => pad + (i / (series.length - 1)) * innerW
-  const yFor = (v01: number) => pad + (1 - clamp01(v01)) * innerH
-
-  // Smooth-ish polyline using quadratic mid-point segments
-  const pts = series.map((v, i) => [xFor(i), yFor(v)] as const)
-  let d = `M ${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`
-  for (let i = 1; i < pts.length; i++) {
-    const [x0, y0] = pts[i - 1]
-    const [x1, y1] = pts[i]
-    const mx = (x0 + x1) / 2
-    const my = (y0 + y1) / 2
-    d += ` Q ${x0.toFixed(1)} ${y0.toFixed(1)} ${mx.toFixed(1)} ${my.toFixed(1)}`
-  }
-  // finish to last point
-  const last = pts[pts.length - 1]
-  d += ` T ${last[0].toFixed(1)} ${last[1].toFixed(1)}`
-  return d
-}
-
-function SignalMountainLine({
-  points,
-  width = 420,
-  height = 120,
-}: {
-  points: number[]
-  width?: number
-  height?: number
-}) {
-  const target = useMemo(() => buildSignalSeries(points, 64), [points])
-  const [display, setDisplay] = useState<number[]>(() => target)
-  const rafRef = useRef<number | null>(null)
-  const startRef = useRef<number[]>(display)
-  const t0Ref = useRef<number>(0)
-
-  useEffect(() => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current)
-    startRef.current = display
-    t0Ref.current = performance.now()
-    const D = 520 // ms
-
-    const tick = () => {
-      const t = clamp01((performance.now() - t0Ref.current) / D)
-      const e = easeOutCubic(t)
-      const next = target.map((v, i) => lerp(startRef.current[i] ?? v, v, e))
-      setDisplay(next)
-      if (t < 1) rafRef.current = requestAnimationFrame(tick)
-    }
-    rafRef.current = requestAnimationFrame(tick)
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current)
-    }
-     
-  }, [target])
-
-  const w = width
-  const h = height
-  const pad = 12
-  const d = useMemo(() => seriesToPath(display, w, h, pad), [display, w, h])
-
-  // Compute a simple "slope/angle" indicator from the last segment
-  const slope = useMemo(() => {
-    if (display.length < 2) return 0
-    const a = display[display.length - 2] ?? 0.5
-    const b = display[display.length - 1] ?? 0.5
-    return b - a
-  }, [display])
-
-  return (
-    <div className={styles.signalWrap}>
-      <svg
-        width="100%"
-        height="100%"
-        viewBox={`0 0 ${w} ${h}`}
-        preserveAspectRatio="none"
-        aria-hidden="true"
-      >
-        <defs>
-          <linearGradient id="sf-signal-fill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="rgba(34,211,238,0.18)" />
-            <stop offset="100%" stopColor="rgba(34,211,238,0.00)" />
-          </linearGradient>
-          <linearGradient id="sf-signal-stroke" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="rgba(103,232,249,0.75)" />
-            <stop offset="60%" stopColor="rgba(34,211,238,0.78)" />
-            <stop offset="100%" stopColor="rgba(34,211,238,0.55)" />
-          </linearGradient>
-        </defs>
-
-        {/* baseline grid */}
-        <g opacity="0.22">
-          {Array.from({ length: 5 }).map((_, i) => {
-            const y = pad + (i / 4) * (h - pad * 2)
-            return (
-              <line
-                key={i}
-                x1={pad}
-                y1={y}
-                x2={w - pad}
-                y2={y}
-                stroke="rgba(255,255,255,0.10)"
-                strokeWidth="1"
-              />
-            )
-          })}
-        </g>
-
-        {/* fill under curve */}
-        <path
-          d={`${d} L ${w - pad} ${h - pad} L ${pad} ${h - pad} Z`}
-          fill="url(#sf-signal-fill)"
-        />
-
-        {/* cyan signal line */}
-        <path
-          d={d}
-          fill="none"
-          stroke="url(#sf-signal-stroke)"
-          strokeWidth="2"
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
-
-        {/* head marker */}
-        <circle
-          cx={w - pad}
-          cy={pad + (1 - clamp01(display[display.length - 1] ?? 0.5)) * (h - pad * 2)}
-          r="3.5"
-          fill="rgba(34,211,238,0.9)"
-          opacity="0.8"
-        />
-      </svg>
-
-      <div className={styles.signalMeta}>
-        <span className={styles.signalMetaLabel}>Angle</span>
-        <span className={styles.signalMetaValue}>
-          {slope >= 0 ? "+" : ""}
-          {(slope * 100).toFixed(0)}
-        </span>
-        <span className={styles.signalMetaLabel}>Drop</span>
-        <span className={styles.signalMetaValue}>
-          {(Math.max(0, (display[0] ?? 0.5) - (display[display.length - 1] ?? 0.5)) * 100).toFixed(0)}
-        </span>
-      </div>
-    </div>
-  )
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// DEFAULTS & MIGRATION
 // ═══════════════════════════════════════════════════════════════════════════
 
 const FINANCIAL_DEFAULTS: BaselineV1["financial"] = {
@@ -406,22 +221,6 @@ export default function InitializeBaselinePage() {
     return fmtCurrency(arr / hc)
   }, [baseline.financial])
 
-  // ── Terrain preview data points ──────────────────────────────────────
-  const terrainPoints = useMemo(() => {
-    const fin = baseline.financial
-    const op = baseline.operating
-    const cap = baseline.capital
-    return [
-      clamp01(fin.arr / 10_000_000),
-      clamp01(fin.growthRatePct / 100),
-      clamp01(fin.grossMarginPct / 100),
-      clamp01(1 - op.churnPct / 20),
-      clamp01(fin.cashOnHand / 5_000_000),
-      clamp01(1 - cap.totalDebt / 5_000_000),
-      clamp01(fin.nrrPct / 150),
-    ]
-  }, [baseline.financial, baseline.operating, baseline.capital])
-
   // ── Field updaters ───────────────────────────────────────────────────
   const setCompanyStr = useCallback(
     (field: keyof BaselineV1["company"], value: string) => {
@@ -586,14 +385,16 @@ export default function InitializeBaselinePage() {
               Step {currentIdx + 1} of {MODULES.length}
             </span>
 
-            {/* Structural Preview — high-def mountain (WebGL w/ 2.5D fallback) */}
+            {/* Structural Preview — REAL 3D mountain terrain (WebGL w/ 2.5D fallback) */}
             <div className={styles.mountainCard} aria-label="Structural preview">
               <div className={styles.mountainCardHeader}>
                 <span className={styles.mountainCardLabel}>Structural preview</span>
-                <span className={styles.mountainCardMeta}>Updates as inputs change</span>
+                <span className={styles.mountainCardMeta}>Live baseline terrain</span>
               </div>
               <div className={styles.mountainViewport}>
-                <SignalMountainLine points={terrainPoints} />
+                <TerrainWithFallback>
+                  <TerrainStage />
+                </TerrainWithFallback>
               </div>
             </div>
           </div>

@@ -1,15 +1,41 @@
 import * as THREE from "three";
 import type { StmUniforms } from "./stmContracts";
 import { STM_INJECTED_KEY, STM_UNIFORMS_KEY } from "./stmContracts";
+import { terrainHeightMode } from "@/config/featureFlags";
+
+let FALLBACK_STRUCTURE_TEX: THREE.DataTexture | null = null;
+
+function getFallbackStructureTexture(): THREE.DataTexture {
+    if (FALLBACK_STRUCTURE_TEX) return FALLBACK_STRUCTURE_TEX;
+    const data = new Uint8Array([0, 0, 0, 255]);
+    const tex = new THREE.DataTexture(data, 1, 1, THREE.RGBAFormat);
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    tex.wrapS = THREE.ClampToEdgeWrapping;
+    tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.needsUpdate = true;
+    FALLBACK_STRUCTURE_TEX = tex;
+    return tex;
+}
 
 /**
  * Create the STM uniform block for injection into terrain material.
+ * When terrainHeightMode is "neutral", uTopoScale is 0 (no vertex displacement)
+ * but the texture + injection chain remain intact so semantic overlays still work.
  */
 export function createStmUniforms(structureTexture: THREE.DataTexture | null): StmUniforms {
     return {
-        uStructureTex: { value: structureTexture },
-        uTopoScale: { value: 14.0 },      // max displacement in local Z units — dramatic peaks/troughs
+        // Phase 14B: texture uniform must never be null.
+        uStructureTex: { value: structureTexture ?? getFallbackStructureTexture() },
+        // Phase 14B: moderate displacement (visible but not extreme).
+        // Original "active" was 14.0; 8.0 gives clear structural relief.
+        // terrainHeightMode gating remains only for the legacy base-height mesh;
+        // STM displacement is controlled via uTopoEnabled/uStmEnabled.
+        uTopoScale: { value: 8.0 },
         uTopoWidth: { value: 70.0 },      // wide Gaussian falloff from corridor center
+        // Phase 14B naming: uTopoEnabled requested by spec.
+        uTopoEnabled: { value: 1.0 },
+        // Back-compat alias: some code still toggles uStmEnabled.
         uStmEnabled: { value: 1.0 },
     };
 }
@@ -22,6 +48,7 @@ const VERTEX_STM_PREAMBLE = /* glsl */ `
 uniform sampler2D uStructureTex;
 uniform float uTopoScale;
 uniform float uTopoWidth;
+uniform float uTopoEnabled;
 uniform float uStmEnabled;
 #endif
 `;
@@ -39,7 +66,7 @@ uniform float uStmEnabled;
 const VERTEX_STM_DISPLACE = /* glsl */ `
 // ── STM: Structural Topography Mapping ──
 {
-    if (uStmEnabled > 0.5) {
+    if ((uTopoEnabled > 0.5) && (uStmEnabled > 0.5)) {
         // Map local X to corridor parameter t [0..1]
         // Corridor spans X: -220 → +220 in local (and world) space
         float stmT = clamp((transformed.x + 220.0) / 440.0, 0.0, 1.0);
@@ -53,8 +80,10 @@ const VERTEX_STM_DISPLACE = /* glsl */ `
         // Sample structure from 1D texture (vertex shader texture fetch)
         float structure = texture2D(uStructureTex, vec2(stmT, 0.5)).r;
 
-        // Smooth hermite interpolation at corridor edges to prevent popping
-        float edgeFade = smoothstep(0.0, 0.08, stmT) * smoothstep(1.0, 0.92, stmT);
+        // Smooth edge fade to prevent popping (stable smoothstep order)
+        float edgeIn = smoothstep(0.0, 0.08, stmT);
+        float edgeOut = 1.0 - smoothstep(0.92, 1.0, stmT);
+        float edgeFade = edgeIn * edgeOut;
 
         // Vertical displacement: positive = terrain rises in structurally strong zones
         float displacement = structure * stmFalloff * edgeFade * uTopoScale;
@@ -86,7 +115,7 @@ export function injectTopography(
     const prevCacheKey = material.customProgramCacheKey?.bind(material);
     material.customProgramCacheKey = () => {
         const base = prevCacheKey ? prevCacheKey() : "";
-        return base + "_stm_v1";
+        return base + "_stm_v2";
     };
 
     material.onBeforeCompile = (shader, renderer) => {
@@ -131,3 +160,4 @@ export function removeStmInjection(material: THREE.MeshStandardMaterial): void {
     material.customProgramCacheKey = () => "";
     material.needsUpdate = true;
 }
+

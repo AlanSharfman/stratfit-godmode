@@ -55,3 +55,11 @@ export const silEnabled = false;
 /** Semantic Harmonization Layer — global intensity balance (Stage 14A) */
 export const shlEnabled = true;
 
+/**
+ * Terrain Height Mode — controls whether terrain vertex displacement is active.
+ * "neutral"  = flat/low-relief terrain, all displacement zeroed (stable baseline)
+ * "active"   = full displacement from heightModel + STM + TME
+ */
+export type TerrainHeightMode = "neutral" | "active";
+export const terrainHeightMode: TerrainHeightMode = "neutral";
+

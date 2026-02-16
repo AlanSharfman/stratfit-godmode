@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { sampleHeight } from "@/paths/sampleTerrain";
+import { terrainHeightMode } from "@/config/featureFlags";
 
 export interface TerrainGridMeta {
     resolution: number;
@@ -36,7 +37,7 @@ export function buildRibbonGeometry(
         samples = 220,
         halfWidth = 0.55,
         widthSegments = 10,
-        lift = 0.06,
+        lift = terrainHeightMode === "neutral" ? 0.02 : 0.06,
         tension = 0.55,
     } = options;
 

@@ -7,7 +7,7 @@ import { create } from 'zustand';
 export type SliderGroup = 'growth' | 'efficiency' | 'risk' | null;
 
 // Oracle Protocol: Lever IDs for contextual intelligence
-export type LeverFocusId = 
+export type LeverFocusId =
   | 'revenueGrowth' | 'pricingAdjustment' | 'marketingSpend'
   | 'operatingExpenses' | 'headcount' | 'cashSensitivity'
   | 'churnSensitivity' | 'fundingInjection'
@@ -24,17 +24,17 @@ interface UIState {
   riskLevel: number;
   // Has the user ever interacted with controls? (Triggers Orbital Drop)
   hasInteracted: boolean;
-  
+
   // ORACLE PROTOCOL: Which lever is currently hovered (for contextual intelligence)
   focusedLever: LeverFocusId;
-  
+
   // VOICE MODE: AI reads out intelligence when hovering sliders
   isVoiceEnabled: boolean;
-  
+
   // NEURAL BOOT: Signals mountain to pulse when KPI boot completes
   neuralBootComplete: boolean;
   bootPhase: 'idle' | 'chassis' | 'resilience' | 'momentum' | 'stability' | 'complete';
-  
+
   // Actions
   setActiveGroup: (group: SliderGroup) => void;
   setDragging: (dragging: boolean) => void;
@@ -44,7 +44,7 @@ interface UIState {
   toggleVoice: () => void;
   setNeuralBootComplete: (complete: boolean) => void;
   setBootPhase: (phase: UIState['bootPhase']) => void;
-  
+
   // Combined action for slider start (clears timer, sets group, sets dragging, marks interaction)
   startSlider: (group: SliderGroup) => void;
   // Combined action for slider end (clears dragging, starts 10s timer)
@@ -61,7 +61,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   isVoiceEnabled: false, // Voice Mode OFF by default
   neuralBootComplete: false,
   bootPhase: 'complete', // GOD MODE: Start complete - widgets always visible immediately
-  
+
   setActiveGroup: (group) => set({ activeGroup: group }),
   setDragging: (dragging) => set({ isDragging: dragging }),
   setRiskLevel: (level) => set({ riskLevel: Math.max(0, Math.min(100, level)) }),
@@ -70,16 +70,16 @@ export const useUIStore = create<UIState>((set, get) => ({
   toggleVoice: () => set((state) => ({ isVoiceEnabled: !state.isVoiceEnabled })),
   setNeuralBootComplete: (complete) => set({ neuralBootComplete: complete }),
   setBootPhase: (phase) => set({ bootPhase: phase }),
-  
+
   // Called when user starts dragging a slider
   startSlider: (group) => {
     const { fadeTimerId } = get();
-    
+
     // Clear any existing fade timer
     if (fadeTimerId !== null) {
       window.clearTimeout(fadeTimerId);
     }
-    
+
     set({
       activeGroup: group,
       isDragging: true,
@@ -87,16 +87,16 @@ export const useUIStore = create<UIState>((set, get) => ({
       hasInteracted: true, // Mark interaction on first slider touch
     });
   },
-  
+
   // Called when user releases the slider
   endSlider: () => {
     set({ isDragging: false });
-    
+
     // Start 10-second timer to clear activeGroup
     const timerId = window.setTimeout(() => {
       set({ activeGroup: null, fadeTimerId: null });
     }, 10000);
-    
+
     set({ fadeTimerId: timerId });
   },
 }));

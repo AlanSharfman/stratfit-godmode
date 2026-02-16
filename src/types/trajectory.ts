@@ -51,3 +51,22 @@ export type TrajectoryInsight = {
   impact: "low" | "medium" | "high";
   confidence: number;
 };
+
+// --- Semantic marker contract (terrain corridor anchors) ---
+
+export type TrajectoryMarkerType =
+  | "risk_inflection"
+  | "runway_threshold"
+  | "leverage_opportunity"
+  | "confidence_shift";
+
+export type TrajectoryMarker = {
+  id: string;
+  type: TrajectoryMarkerType;
+  /** Deterministic placement by corridor parameter [0..1] */
+  t?: number;
+  /** Deterministic placement by corridor sample index */
+  sampleIndex?: number;
+  /** Intensity / importance [0..1] — drives halo size & pedestal strength */
+  strength: number;
+};
