@@ -1,6 +1,6 @@
 // src/app/navigation/routeContract.ts
 // STRATFIT — Canonical Route Contract (Single Source of Truth)
-// Phase 1 Navigation Lock
+// Nav Amendment C Lock
 
 export const STRATFIT_ROUTES = {
     initiate: "/initiate",
@@ -10,6 +10,7 @@ export const STRATFIT_ROUTES = {
     scenarios: "/scenarios",
     risk: "/risk",
     capital: "/capital",
+    valuation: "/valuation",
     strategicAssessment: "/strategic-assessment",
 } as const;
 
