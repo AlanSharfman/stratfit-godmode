@@ -7,141 +7,124 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useEffect,
-  type ReactNode,
-} from "react"
+    createContext,
+    useContext,
+    useState,
+    useCallback,
+    useEffect,
+    type ReactNode,
+} from "react";
 import {
-  loadBaseline,
-  saveBaseline,
-  BASELINE_STORAGE_KEY,
-} from "@/onboard/baseline"
-import type { BaselineV1 } from "@/onboard/baseline"
-import { validateBaseline } from "@/modules/systemBaseline/baselineValidation"
-import { mapBaselineToEngine } from "@/engine/baselineToEngineMapper"
-import { calculateMetrics, type LeverState } from "@/logic/calculateMetrics"
-import { logEngineHealth } from "@/debug/engineHealth"
+    loadBaseline,
+    saveBaseline,
+    BASELINE_STORAGE_KEY,
+} from "@/onboard/baseline";
+import type { BaselineV1 } from "@/onboard/baseline";
+import { applyBaselineToCoreStores } from "@/system/applyBaselineToCore";
+import { runPathEngine } from "@/core/engines/path/pathOrchestrator";
+import { runSimulationAndStore } from "@/core/bootstrap/simulationRunner";
 
 // ── Public contract ─────────────────────────────────────────────────────
 
 export interface SystemBaselineContextValue {
-  /** Current baseline — null if never initialised. */
-  baseline: BaselineV1 | null
+    /** Current baseline — null if never initialised. */
+    baseline: BaselineV1 | null;
 
-  /**
-   * Replace the full baseline. Persists to localStorage and
-   * updates every consumer synchronously within this tab.
-   */
-  setBaseline: (b: BaselineV1) => void
+    /**
+     * Replace the full baseline. Persists to localStorage and
+     * updates every consumer synchronously within this tab.
+     */
+    setBaseline: (b: BaselineV1) => void;
 
-  /** Re-read baseline from localStorage (cross-tab sync, manual refresh). */
-  refreshBaseline: () => void
+    /** Re-read baseline from localStorage (cross-tab sync, manual refresh). */
+    refreshBaseline: () => void;
 
-  /** Remove baseline entirely (dev-only escape hatch). */
-  clearBaseline: () => void
+    /** Remove baseline entirely (dev-only escape hatch). */
+    clearBaseline: () => void;
 }
 
 // ── Context (never exported — only the hook is public) ──────────────────
 
 const SystemBaselineContext =
-  createContext<SystemBaselineContextValue | null>(null)
+    createContext<SystemBaselineContextValue | null>(null);
 
 // ── Provider ────────────────────────────────────────────────────────────
 
 export function SystemBaselineProvider({
-  children,
+    children,
 }: {
-  children: ReactNode
+    children: ReactNode;
 }) {
-  const [baseline, setBaselineState] = useState<BaselineV1 | null>(
-    () => loadBaseline()
-  )
+    const [baseline, setBaselineState] = useState<BaselineV1 | null>(() =>
+        loadBaseline()
+    );
 
-  const setBaseline = useCallback((b: BaselineV1) => {
-    const validation = validateBaseline({
-      arr: b.financial.arr,
-      monthlyBurn: b.financial.monthlyBurn,
-      cashOnHand: b.financial.cashOnHand,
-    })
+    const reRunEnginesFromBaseline = useCallback((b: BaselineV1) => {
+        // Sync Baseline -> canonical engine stores
+        applyBaselineToCoreStores(b);
+        // Deterministic recompute
+        runPathEngine();
+        runSimulationAndStore();
+    }, []);
 
-    if (!validation.valid) {
-      console.warn("Baseline invalid:", validation.reasons)
-      setBaselineState(b)
-      return
-    }
+    const setBaseline = useCallback(
+        (b: BaselineV1) => {
+            saveBaseline(b);
+            setBaselineState(b);
+            reRunEnginesFromBaseline(b);
+        },
+        [reRunEnginesFromBaseline]
+    );
 
-    setBaselineState(b)
-    saveBaseline(b)
+    const refreshBaseline = useCallback(() => {
+        const next = loadBaseline();
+        setBaselineState(next);
+        if (next) reRunEnginesFromBaseline(next);
+    }, [reRunEnginesFromBaseline]);
 
-    // 🔥 Bootstrap engine
-    const engineInputs = mapBaselineToEngine({
-      arr: b.financial.arr,
-      monthlyBurn: b.financial.monthlyBurn,
-      cashOnHand: b.financial.cashOnHand,
-      growthRate: b.financial.growthRatePct,
-    })
+    const clearBaseline = useCallback(() => {
+        if (typeof window !== "undefined") {
+            window.localStorage.removeItem(BASELINE_STORAGE_KEY);
+        }
+        setBaselineState(null);
+    }, []);
 
-    const levers: LeverState = {
-      demandStrength: engineInputs.demandStrength,
-      pricingPower: engineInputs.pricingPower,
-      expansionVelocity: engineInputs.expansionVelocity,
-      costDiscipline: engineInputs.costDiscipline,
-      fundingPressure: engineInputs.fundingPressure,
-      hiringIntensity: 40,
-      operatingDrag: 35,
-      marketVolatility: 30,
-      executionRisk: 25,
-    }
+    // Cross-tab sync: if another tab writes baseline, pick it up.
+    useEffect(() => {
+        const handler = (e: StorageEvent) => {
+            if (e.key === BASELINE_STORAGE_KEY) {
+                const next = loadBaseline();
+                setBaselineState(next);
+                if (next) reRunEnginesFromBaseline(next);
+            }
+        };
+        window.addEventListener("storage", handler);
+        return () => window.removeEventListener("storage", handler);
+    }, [reRunEnginesFromBaseline]);
 
-    const metrics = calculateMetrics(levers, "base")
-      ; (window as any).__STRATFIT_ENGINE__ = metrics
+    // On boot: if baseline exists, ensure engines reflect it (parity)
+    useEffect(() => {
+        const next = loadBaseline();
+        if (next) reRunEnginesFromBaseline(next);
+    }, [reRunEnginesFromBaseline]);
 
-    logEngineHealth()
-  }, [])
-
-  const refreshBaseline = useCallback(() => {
-    setBaselineState(loadBaseline())
-  }, [])
-
-  const clearBaseline = useCallback(() => {
-    if (typeof window !== "undefined") {
-      window.localStorage.removeItem(BASELINE_STORAGE_KEY)
-    }
-    setBaselineState(null)
-  }, [])
-
-  // Cross-tab sync: if another tab writes baseline, pick it up.
-  useEffect(() => {
-    const handler = (e: StorageEvent) => {
-      if (e.key === BASELINE_STORAGE_KEY) {
-        setBaselineState(loadBaseline())
-      }
-    }
-    window.addEventListener("storage", handler)
-    return () => window.removeEventListener("storage", handler)
-  }, [])
-
-  return (
-    <SystemBaselineContext.Provider
-      value={{ baseline, setBaseline, refreshBaseline, clearBaseline }}
-    >
-      {children}
-    </SystemBaselineContext.Provider>
-  )
+    return (
+        <SystemBaselineContext.Provider
+            value={{ baseline, setBaseline, refreshBaseline, clearBaseline }}
+        >
+            {children}
+        </SystemBaselineContext.Provider>
+    );
 }
 
 // ── Hook ────────────────────────────────────────────────────────────────
 
 export function useSystemBaseline(): SystemBaselineContextValue {
-  const ctx = useContext(SystemBaselineContext)
-  if (!ctx) {
-    throw new Error(
-      "useSystemBaseline must be used within <SystemBaselineProvider>"
-    )
-  }
-  return ctx
+    const ctx = useContext(SystemBaselineContext);
+    if (!ctx) {
+        throw new Error(
+            "useSystemBaseline must be used within <SystemBaselineProvider>"
+        );
+    }
+    return ctx;
 }
-

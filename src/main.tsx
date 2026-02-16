@@ -8,7 +8,7 @@ validateRoutingContract();
 bootstrapEngines();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <BrowserRouter>
-    <AppRouter />
-  </BrowserRouter>
+    <BrowserRouter>
+        <AppRouter />
+    </BrowserRouter>
 );

@@ -1,23 +1,14 @@
-// src/app/layout/AppShell.tsx
-// STRATFIT — App Shell with Terrain Root
-// Phase 11 Voice API Lock
-
-import TerrainRoot from "@/terrain/TerrainRoot";
+import type { ReactNode } from "react";
 import MainNav from "@/app/navigation/MainNav";
-import AppRouter from "@/app/router/AppRouter";
-import CinematicToggle from "@/components/cinematic/CinematicToggle";
-import GodModePanel from "@/components/godmode/GodModePanel";
-import VoiceUnlock from "@/components/cinematic/VoiceUnlock";
+import { SystemBaselineProvider } from "@/system/SystemBaselineProvider";
 
-export default function AppShell() {
+export default function AppShell({ children }: { children: ReactNode }) {
     return (
-        <div className="appShell">
-            <TerrainRoot />
-            <MainNav />
-            <CinematicToggle />
-            <VoiceUnlock />
-            <GodModePanel />
-            <AppRouter />
-        </div>
+        <SystemBaselineProvider>
+            <div style={{ minHeight: "100vh" }}>
+                <MainNav />
+                {children}
+            </div>
+        </SystemBaselineProvider>
     );
 }
