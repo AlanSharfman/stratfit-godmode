@@ -5,6 +5,7 @@
 import { NavLink } from "react-router-dom";
 import { PRIMARY_NAV } from "./navConfig";
 import { useActiveRoute } from "./useActiveRoute";
+import "./MainNav.css";
 
 export default function MainNav() {
     const active = useActiveRoute();

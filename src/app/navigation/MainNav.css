@@ -1,0 +1,43 @@
+/* src/app/navigation/MainNav.css */
+/* STRATFIT — Primary Navigation Styles */
+
+.mainNav {
+    position: fixed;
+    left: 16px;
+    top: 12px;
+    z-index: 50;
+    display: flex;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(2, 6, 23, 0.55);
+    border: 1px solid rgba(34, 211, 238, 0.18);
+    backdrop-filter: blur(12px);
+}
+
+.mainNav .navItem {
+    display: inline-flex;
+    align-items: center;
+    height: 30px;
+    padding: 0 10px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    color: rgba(226, 232, 240, 0.86);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    background: rgba(15, 23, 42, 0.35);
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.mainNav .navItem:hover {
+    border-color: rgba(34, 211, 238, 0.28);
+}
+
+.mainNav .navItem.active {
+    color: rgba(226, 232, 240, 0.98);
+    border-color: rgba(34, 211, 238, 0.55);
+    background: rgba(2, 6, 23, 0.65);
+    box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.12) inset;
+}

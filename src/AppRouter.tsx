@@ -1,6 +1,7 @@
 import { Route, Routes, Navigate, useNavigate } from "react-router-dom";
 import App from "./App";
 import { AppStateProvider, useAppState } from "@/providers/AppStateProvider";
+import { STRATFIT_ROUTES } from "@/app/navigation/routeContract";
 import InitializeRoute from "@/routes/InitializeRoute";
 import ObjectiveRoute from "@/routes/ObjectiveRoute";
 import CompareRoute from "@/routes/CompareRoute";
@@ -14,6 +15,8 @@ import SimulateOverlayRoute from "@/routes/SimulateOverlayRoute";
 
 import ScenarioMemoPage from "@/pages/ScenarioMemoPage";
 import StudioPage from "@/pages/studio/StudioPage";
+import ScenariosPage from "@/pages/scenarios/ScenariosPage";
+import StrategicAssessmentPage from "@/pages/StrategicAssessmentPage";
 import AdminEngineConsole from "@/components/admin/AdminEngineConsole";
 import { MainNav } from "@/components/navigation";
 
@@ -68,23 +71,29 @@ export default function AppRouter() {
       <SystemBaselineProvider>
         <AppStateProvider>
           <Routes>
-            {/* ROOT */}
-            <Route path="/" element={<Navigate to="/initialize" replace />} />
+            {/* ROOT - redirect to initiate */}
+            <Route path="/" element={<Navigate to={STRATFIT_ROUTES.initiate} replace />} />
 
-            {/* Legacy */}
-            <Route path="/terrain" element={<Navigate to="/baseline" replace />} />
-            <Route path="/assessment" element={<Navigate to="/capital" replace />} />
+            {/* Legacy redirects - old URLs map to new contract paths */}
+            <Route path="/terrain" element={<Navigate to={STRATFIT_ROUTES.position} replace />} />
+            <Route path="/baseline" element={<Navigate to={STRATFIT_ROUTES.position} replace />} />
+            <Route path="/initialize" element={<Navigate to={STRATFIT_ROUTES.initiate} replace />} />
+            <Route path="/objective" element={<Navigate to={STRATFIT_ROUTES.objectives} replace />} />
+            <Route path="/assessment" element={<Navigate to={STRATFIT_ROUTES.capital} replace />} />
 
-            {/* App shell with nested routes */}
+            {/* App shell with nested routes - CONTRACT PATHS */}
             <Route element={<App />}>
-              <Route path="/initialize" element={<InitializeRoute />} />
-              <Route path="/baseline" element={<BaselineRouteWithState />} />
-              <Route path="/objective" element={<ObjectiveRoute />} />
-              <Route path="/studio" element={<StudioRouteWithState />} />
+              <Route path={STRATFIT_ROUTES.initiate} element={<InitializeRoute />} />
+              <Route path={STRATFIT_ROUTES.objectives} element={<ObjectiveRoute />} />
+              <Route path={STRATFIT_ROUTES.position} element={<BaselineRouteWithState />} />
+              <Route path={STRATFIT_ROUTES.studio} element={<StudioRouteWithState />} />
+              <Route path={STRATFIT_ROUTES.scenarios} element={<ScenariosPage />} />
+              <Route path={STRATFIT_ROUTES.risk} element={<RiskRoute />} />
+              <Route path={STRATFIT_ROUTES.capital} element={<AssessmentRoute />} />
+              <Route path={STRATFIT_ROUTES.valuation} element={<ValuationRoute />} />
+              <Route path={STRATFIT_ROUTES.strategicAssessment} element={<StrategicAssessmentPage />} />
+              {/* Additional utility routes */}
               <Route path="/compare" element={<CompareRoute />} />
-              <Route path="/risk" element={<RiskRoute />} />
-              <Route path="/valuation" element={<ValuationRoute />} />
-              <Route path="/capital" element={<AssessmentRoute />} />
               <Route path="/impact" element={<ImpactRoute />} />
               <Route path="/simulate" element={<SimulateRouteWithState />} />
             </Route>
@@ -93,8 +102,8 @@ export default function AppRouter() {
             <Route path="/memo/*" element={<ScenarioMemoPage />} />
             <Route path="/admin/engine" element={<AdminEngineRoute />} />
 
-            {/* Unknown */}
-            <Route path="*" element={<Navigate to="/baseline" replace />} />
+            {/* Unknown - redirect to position */}
+            <Route path="*" element={<Navigate to={STRATFIT_ROUTES.position} replace />} />
           </Routes>
 
           <ComputationMonitor />
