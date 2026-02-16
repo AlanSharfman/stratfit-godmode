@@ -13,11 +13,8 @@ export interface StmUniforms {
     uStructureTex: THREE.IUniform<THREE.DataTexture | null>;
     uTopoScale: THREE.IUniform<number>;
     uTopoWidth: THREE.IUniform<number>;
-    /** Enable flag requested by Phase 14B (1.0 = enabled). */
     uTopoEnabled: THREE.IUniform<number>;
     uStmEnabled: THREE.IUniform<number>;
-    /** Debug force: 1.0 guarantees visible mountain (proves axis + injection path) */
-    uTopoDebugForce: THREE.IUniform<number>;
 }
 
 /** Marker key stored on material.userData when STM is injected */

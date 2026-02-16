@@ -25,20 +25,11 @@ function getFallbackStructureTexture(): THREE.DataTexture {
  */
 export function createStmUniforms(structureTexture: THREE.DataTexture | null): StmUniforms {
     return {
-        // Phase 14B: texture uniform must never be null.
         uStructureTex: { value: structureTexture ?? getFallbackStructureTexture() },
-        // Phase 14B: moderate displacement (visible but not extreme).
-        // Original "active" was 14.0; 8.0 gives clear structural relief.
-        // terrainHeightMode gating remains only for the legacy base-height mesh;
-        // STM displacement is controlled via uTopoEnabled/uStmEnabled.
         uTopoScale: { value: 8.0 },
-        uTopoWidth: { value: 70.0 },      // wide Gaussian falloff from corridor center
-        // Phase 14B naming: uTopoEnabled requested by spec.
+        uTopoWidth: { value: 70.0 },
         uTopoEnabled: { value: 1.0 },
-        // Back-compat alias: some code still toggles uStmEnabled.
         uStmEnabled: { value: 1.0 },
-        // Debug force: set to 1.0 to guarantee visible mountain (proves axis + injection path)
-        uTopoDebugForce: { value: 0.0 },
     };
 }
 
@@ -52,16 +43,6 @@ uniform float uTopoScale;
 uniform float uTopoWidth;
 uniform float uTopoEnabled;
 uniform float uStmEnabled;
-uniform float uTopoDebugForce;
-
-float saturate(float x) { return clamp(x, 0.0, 1.0); }
-
-// Expands mid-tones (unlike pow(x, >1) which crushes them)
-float contrastExpand(float x) {
-    x = saturate(x);
-    // smoothstep expands mid values and keeps endpoints stable
-    return smoothstep(0.10, 0.90, x);
-}
 #endif
 `;
 
@@ -100,26 +81,16 @@ const VERTEX_STM_DISPLACE = /* glsl */ `
         float edgeOut = 1.0 - smoothstep(0.92, 1.0, stmT);
         float edgeFade = edgeIn * edgeOut;
 
-        // --- STM DISPLACEMENT (VISUAL-TRUTHFUL) ---
-        float dispRaw = structure * stmFalloff * edgeFade;
+        // --- STM DISPLACEMENT (INLINE, GLSL-SAFE) ---
+        float dispRaw = clamp(structure * stmFalloff * edgeFade, 0.0, 1.0);
         
-        // Normalize to [0..1] domain safely (structure is already 0..1 from texture.r)
-        dispRaw = saturate(dispRaw);
+        // Expand mid-tones for readability (pure GLSL built-ins)
+        float disp = smoothstep(0.10, 0.90, dispRaw);
         
-        // Expand mid-tones so relief is visible across the field (avoids "only one hump")
-        float disp = contrastExpand(dispRaw);
+        // Scale and clamp for stability
+        disp = clamp(disp * uTopoScale, 0.0, uTopoScale * 1.25);
         
-        // Scale by uTopoScale (remove 3x amplification - tune at uniform source instead)
-        disp *= uTopoScale;
-        
-        // Safety clamp (prevents exploded triangles if future inputs spike)
-        disp = clamp(disp, 0.0, uTopoScale * 1.25);
-        
-        // Debug force: guarantees a mountain if you set uTopoDebugForce = 1
-        // Useful to prove axis + injection path beyond any doubt
-        disp = mix(disp, uTopoScale * 0.75, saturate(uTopoDebugForce));
-        
-        // Apply displacement along local Z (maps to world-up Y after mesh rotation)
+        // Apply along local Z (plane -PI/2 on X => local Z maps to world up)
         transformed.z += disp;
     }
 }
