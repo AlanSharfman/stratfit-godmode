@@ -1,0 +1,22 @@
+/* src/styles/terrainRoot.css */
+/* STRATFIT — Terrain Root Layout */
+/* Phase 3 Terrain Lock */
+
+.terrainRoot {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+}
+
+.appShell {
+    position: relative;
+    z-index: 1;
+}
+
+.mainNav {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+}

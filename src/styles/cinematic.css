@@ -1,0 +1,32 @@
+/* src/styles/cinematic.css */
+/* STRATFIT — Cinematic Toggle Styles */
+/* Phase 9 Cinematic Camera Lock */
+
+.cinematicToggle {
+    position: fixed;
+    right: 18px;
+    top: 18px;
+    z-index: 20;
+    display: flex;
+    gap: 8px;
+    padding: 8px;
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.55);
+    border: 1px solid rgba(34, 211, 238, 0.25);
+    backdrop-filter: blur(10px);
+}
+
+.cinematicToggle button {
+    padding: 7px 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    background: rgba(2, 6, 23, 0.55);
+    color: #e2e8f0;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.cinematicToggle button.active {
+    border-color: rgba(34, 211, 238, 0.55);
+    box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.25), 0 0 18px rgba(34, 211, 238, 0.18);
+}

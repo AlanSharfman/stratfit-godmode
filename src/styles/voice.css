@@ -1,0 +1,17 @@
+/* src/styles/voice.css */
+/* STRATFIT — Voice Styles */
+/* Phase 11 Voice API Lock */
+
+.voiceUnlock {
+    position: fixed;
+    right: 18px;
+    top: 110px;
+    z-index: 22;
+    padding: 8px 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(34, 211, 238, 0.35);
+    background: rgba(2, 6, 23, 0.55);
+    color: #e2e8f0;
+    font-size: 12px;
+    backdrop-filter: blur(10px);
+}
