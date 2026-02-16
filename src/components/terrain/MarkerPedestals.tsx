@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useRef } from "react";
 import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
+
 import { generateP50Nodes } from "@/paths/generatePath";
 import { nodesToWorldXZ } from "@/paths/P50Path";
 import { createSeed } from "@/terrain/seed";
 import { buildRibbonGeometry } from "@/terrain/corridorTopology";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
+
 import {
     createMplUniforms,
     injectMarkerPedestals,
@@ -13,6 +15,7 @@ import {
     MPL_MAX_MARKERS,
 } from "@/render/mpl";
 import type { MplUniforms } from "@/render/mpl";
+
 import { deriveWorldStateMarkers, pickMarkerIndex, TYPE_RGB } from "./markerStrength";
 
 /**
@@ -25,17 +28,13 @@ import { deriveWorldStateMarkers, pickMarkerIndex, TYPE_RGB } from "./markerStre
  * Non-negotiables:
  * - Shader-based only (no new geometry system)
  * - Max lift 0.06 (subtle emboss)
- * - Derives positions from worldState.markers (baseline truth)
+ * - Derives positions from worldState markers (baseline truth)
  * - No orange anywhere
  */
-
-export default function MarkerPedestals({
-    enabled = true,
-}: {
-    enabled?: boolean;
-}) {
+export default function MarkerPedestals({ enabled = true }: { enabled?: boolean }) {
     const { scene } = useThree();
     const { baseline } = useSystemBaseline();
+
     const uniformsRef = useRef<MplUniforms | null>(null);
     const materialRef = useRef<THREE.MeshStandardMaterial | null>(null);
 
@@ -73,13 +72,22 @@ export default function MarkerPedestals({
             const p = centerline[idx];
             const y = getHeightAt(p.x, p.z);
             const rgb = TYPE_RGB[m.type];
-            return { x: p.x, y, z: p.z, r: rgb[0], g: rgb[1], b: rgb[2], strength: m.strength };
+            return {
+                x: p.x,
+                y,
+                z: p.z,
+                r: rgb[0],
+                g: rgb[1],
+                b: rgb[2],
+                strength: m.strength,
+            };
         });
     }, [centerline, getHeightAt, markers]);
 
     // Inject shader into terrain material (once)
     useEffect(() => {
         let terrainMat: THREE.MeshStandardMaterial | null = null;
+
         scene.traverse((obj) => {
             if (terrainMat) return;
             if (obj instanceof THREE.Mesh && obj.name === "terrain-surface") {
@@ -97,6 +105,7 @@ export default function MarkerPedestals({
 
         const uniforms = createMplUniforms();
         uniforms.uMplEnabled.value = enabled ? 1.0 : 0.0;
+
         uniformsRef.current = uniforms;
         materialRef.current = terrainMat;
 
@@ -109,7 +118,7 @@ export default function MarkerPedestals({
             uniformsRef.current = null;
             materialRef.current = null;
         };
-    }, [scene]);
+    }, [scene]); // do NOT depend on enabled here (handled below)
 
     // Update enable/disable
     useEffect(() => {
@@ -120,11 +129,11 @@ export default function MarkerPedestals({
     // Update marker positions + colors when data changes
     useEffect(() => {
         if (!uniformsRef.current) return;
+
         const u = uniformsRef.current;
         const positions = u.uMplPositions.value;
         const colors = u.uMplColors.value;
 
-        // Zero out all slots
         positions.fill(0);
         colors.fill(0);
 
@@ -134,6 +143,7 @@ export default function MarkerPedestals({
             positions[i * 3] = d.x;
             positions[i * 3 + 1] = d.y;
             positions[i * 3 + 2] = d.z;
+
             colors[i * 4] = d.r;
             colors[i * 4 + 1] = d.g;
             colors[i * 4 + 2] = d.b;

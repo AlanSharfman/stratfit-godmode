@@ -13,11 +13,11 @@ const PATH_COLOR = new THREE.Color(0xb8e7ff);
 const PATH_EMISSIVE = new THREE.Color(0x7fdcff);
 
 // ── Terrain geometry constants (must match buildTerrain + TerrainStage) ──
-const TERRAIN_WIDTH = 560;   // PlaneGeometry width
-const TERRAIN_DEPTH = 360;   // PlaneGeometry height
+const TERRAIN_WIDTH = 560;
+const TERRAIN_DEPTH = 360;
 const HEIGHT_RAW_SCALE = 60;
-const HEIGHT_SCALE = 0.35;   // buildTerrain applies this
-const TERRAIN_Y_OFFSET = -6; // TerrainStage position.y
+const HEIGHT_SCALE = 0.35;
+const TERRAIN_Y_OFFSET = -6;
 
 /**
  * Shared helper: generate world-space XZ control points from path nodes.
@@ -25,32 +25,28 @@ const TERRAIN_Y_OFFSET = -6; // TerrainStage position.y
  *
  * COORDINATE SYSTEM:
  * - Terrain PlaneGeometry(560, 360) rotated -π/2 around X, shifted Y by -6
- * - World X = planeX = nx * 560 - 280
- * - World Z = ny * 360 - 180 (after rotation)
- * - World Y = terrainHeight(nx,ny) * 60 * 0.35 - 6
+ * - World X = planeX
+ * - World Z = planeY (depth axis)
+ * - World Y = height (planeZ after rotation) + offset
  */
 export function nodesToWorldXZ(
     nodes: ReturnType<typeof generateP50Nodes>,
-    seed: number
+    seed: number,
 ): { points: { x: number; z: number }[]; getHeightAt: HeightSampler } {
     const points = nodes.map((n) => {
         const world = normToWorld(n.coord);
         return { x: world.x, z: world.y }; // projector "y" → ground Z
     });
 
-    // World-space height sampler matching actual terrain mesh transforms
     const getHeightAt: HeightSampler = (worldX, worldZ) => {
-        // Convert world coords to terrain normalized [0..1]
         const nx = (worldX + TERRAIN_WIDTH / 2) / TERRAIN_WIDTH;
         const nz = (worldZ + TERRAIN_DEPTH / 2) / TERRAIN_DEPTH;
 
-        // Base height field (legacy mesh relief). In neutral mode this is disabled
-        // to keep the mesh stable/flat; STM provides structural relief.
-        const base = terrainHeightMode === "neutral"
-            ? 0
-            : terrainHeight(nx, nz, seed) * HEIGHT_RAW_SCALE * HEIGHT_SCALE;
+        const base =
+            terrainHeightMode === "neutral"
+                ? 0
+                : terrainHeight(nx, nz, seed) * HEIGHT_RAW_SCALE * HEIGHT_SCALE;
 
-        // Structural Topography Mapping (STM) displacement — must match vertex shader.
         const stm = getStmEnabled() ? sampleStmDisplacement(worldX, worldZ) : 0;
 
         return base + stm + TERRAIN_Y_OFFSET;
@@ -59,9 +55,6 @@ export function nodesToWorldXZ(
     return { points, getHeightAt };
 }
 
-// ─────────────────────────────────────────────
-// P50Path — median corridor (primary, flat ribbon)
-// ─────────────────────────────────────────────
 export default function P50Path({
     scenarioId = "baseline",
     visible = true,
@@ -75,7 +68,7 @@ export default function P50Path({
     const nodes = useMemo(() => generateP50Nodes(), []);
     const { points, getHeightAt } = useMemo(() => nodesToWorldXZ(nodes, seed), [nodes, seed]);
 
-    // CREATE MESH ONCE (stable ref survives HMR)
+    // Create mesh once
     if (!meshRef.current) {
         const geometry = new THREE.BufferGeometry();
         const material = new THREE.MeshStandardMaterial({
@@ -90,14 +83,15 @@ export default function P50Path({
             depthTest: true,
             side: THREE.DoubleSide,
         });
-        meshRef.current = new THREE.Mesh(geometry, material);
-        meshRef.current.name = "p50-median-path";
-        meshRef.current.userData.pathMesh = true;
-        meshRef.current.renderOrder = 10;
-        meshRef.current.frustumCulled = false;
+
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.name = "p50-median-path";
+        mesh.userData.pathMesh = true;
+        mesh.renderOrder = 10;
+        mesh.frustumCulled = false;
+        meshRef.current = mesh;
     }
 
-    // UPDATE GEOMETRY ONLY (no mesh recreation)
     useEffect(() => {
         if (points.length < 2) return;
 
@@ -114,13 +108,13 @@ export default function P50Path({
         mesh.geometry = result.geometry;
     }, [points, getHeightAt]);
 
-    // CLEANUP: dispose geometry + material on unmount to prevent accumulation
     useEffect(() => {
         return () => {
-            if (!meshRef.current) return;
-            meshRef.current.geometry?.dispose();
-            const m = meshRef.current.material;
-            if (Array.isArray(m)) m.forEach(mm => mm.dispose());
+            const mesh = meshRef.current;
+            if (!mesh) return;
+            mesh.geometry?.dispose();
+            const m = mesh.material;
+            if (Array.isArray(m)) m.forEach((mm) => mm.dispose());
             else (m as THREE.Material)?.dispose?.();
         };
     }, []);

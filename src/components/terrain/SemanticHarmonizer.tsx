@@ -1,7 +1,9 @@
 import { useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
+
 import { useSemanticBalance } from "@/render/shl/semanticBalance";
+
 import { RPF_UNIFORMS_KEY } from "@/render/rpf/rpfContracts";
 import { CF_UNIFORMS_KEY } from "@/render/cf/cfContracts";
 import { TFL_UNIFORMS_KEY } from "@/render/tfl/tflContracts";
@@ -9,7 +11,9 @@ import { DHL_UNIFORMS_KEY } from "@/render/dhl/dhlContracts";
 import { SRL_UNIFORMS_KEY } from "@/render/srl/srlContracts";
 import { STM_UNIFORMS_KEY } from "@/render/stm/stmContracts";
 import { TME_UNIFORMS_KEY } from "@/render/tme/tmeContracts";
+
 import { setStmTopoScale } from "@/render/stm/stmRuntime";
+
 import type { RpfUniforms } from "@/render/rpf/rpfContracts";
 import type { CfUniforms } from "@/render/cf/cfContracts";
 import type { TflUniforms } from "@/render/tfl/tflContracts";
@@ -33,33 +37,46 @@ const BASE_STM_SCALE = 8.0;
  * SemanticHarmonizer — declarative R3F component.
  *
  * Reads global semantic balance weights every frame and applies them
- * to each injected shader layer's intensity uniform. This provides a
- * single control surface for visual intensity across all semantic layers.
+ * to each injected shader layer's intensity uniform.
  *
  * No geometry, no shader injection — purely uniform modulation.
  * Returns null — renders nothing.
  */
 export default function SemanticHarmonizer() {
     const { scene } = useThree();
-    const materialRef = useRef<THREE.MeshStandardMaterial | null>(null);
 
-    // Cache terrain material ref once (avoid per-frame scene traversal)
+    const terrainMaterialRef = useRef<THREE.MeshStandardMaterial | null>(null);
+    const sdlMeshesRef = useRef<THREE.Mesh[]>([]);
+
+    // Cache terrain material + SDL meshes once (avoid per-frame traversal)
     useEffect(() => {
-        let found: THREE.MeshStandardMaterial | null = null;
+        let foundMat: THREE.MeshStandardMaterial | null = null;
+        const sdl: THREE.Mesh[] = [];
+
         scene.traverse((obj) => {
-            if (found) return;
-            if (obj instanceof THREE.Mesh && obj.name === "terrain-surface") {
-                if (obj.material instanceof THREE.MeshStandardMaterial) {
-                    found = obj.material;
+            if (obj instanceof THREE.Mesh) {
+                if (!foundMat && obj.name === "terrain-surface") {
+                    if (obj.material instanceof THREE.MeshStandardMaterial) {
+                        foundMat = obj.material;
+                    }
+                }
+                if (obj.name === "sdl-optimistic" || obj.name === "sdl-defensive") {
+                    sdl.push(obj);
                 }
             }
         });
-        materialRef.current = found;
-        return () => { materialRef.current = null; };
+
+        terrainMaterialRef.current = foundMat;
+        sdlMeshesRef.current = sdl;
+
+        return () => {
+            terrainMaterialRef.current = null;
+            sdlMeshesRef.current = [];
+        };
     }, [scene]);
 
     useFrame(() => {
-        const mat = materialRef.current;
+        const mat = terrainMaterialRef.current;
         if (!mat) return;
 
         const weights = useSemanticBalance.getState().weights;
@@ -102,27 +119,21 @@ export default function SemanticHarmonizer() {
             setStmTopoScale(stm.uTopoScale.value);
         }
 
-        // TME — morph weight (modulates morph progress contribution)
+        // TME — morph weight
         const tme = ud[TME_UNIFORMS_KEY] as TmeUniforms | undefined;
         if (tme) {
-            // Weight scales the effective morph displacement — at weight 0, morph has no effect
-            // We don't modify uMorphProgress itself (that's controlled by SIL),
-            // but we can modulate the TME enabled state
             tme.uTmeEnabled.value = weights.morph > 0.01 ? 1.0 : 0.0;
         }
 
-        // SDL divergence corridors: modulate opacity on ghost meshes
-        scene.traverse((obj) => {
-            if (
-                obj instanceof THREE.Mesh &&
-                (obj.name === "sdl-optimistic" || obj.name === "sdl-defensive")
-            ) {
-                const m = obj.material as THREE.MeshStandardMaterial;
-                if (m) {
-                    m.opacity = 0.2 * weights.divergence;
-                }
+        // SDL divergence corridors: modulate opacity on cached meshes (no traversal)
+        const sdlMeshes = sdlMeshesRef.current;
+        if (sdlMeshes.length) {
+            const opacity = 0.2 * weights.divergence;
+            for (const mesh of sdlMeshes) {
+                const m = mesh.material as THREE.MeshStandardMaterial | undefined;
+                if (m) m.opacity = opacity;
             }
-        });
+        }
     });
 
     return null;
