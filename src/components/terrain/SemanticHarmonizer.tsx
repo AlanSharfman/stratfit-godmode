@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { useSemanticBalance } from "@/render/shl/semanticBalance";
@@ -40,11 +41,10 @@ const BASE_STM_SCALE = 8.0;
  */
 export default function SemanticHarmonizer() {
     const { scene } = useThree();
+    const materialRef = useRef<THREE.MeshStandardMaterial | null>(null);
 
-    useFrame(() => {
-        const weights = useSemanticBalance.getState().weights;
-
-        // Find terrain material
+    // Cache terrain material ref once (avoid per-frame scene traversal)
+    useEffect(() => {
         let found: THREE.MeshStandardMaterial | null = null;
         scene.traverse((obj) => {
             if (found) return;
@@ -54,9 +54,15 @@ export default function SemanticHarmonizer() {
                 }
             }
         });
-        if (!found) return;
-        const mat: THREE.MeshStandardMaterial = found;
+        materialRef.current = found;
+        return () => { materialRef.current = null; };
+    }, [scene]);
 
+    useFrame(() => {
+        const mat = materialRef.current;
+        if (!mat) return;
+
+        const weights = useSemanticBalance.getState().weights;
         const ud = mat.userData;
 
         // RPF — risk weight

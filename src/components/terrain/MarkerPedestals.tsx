@@ -13,7 +13,7 @@ import {
     MPL_MAX_MARKERS,
 } from "@/render/mpl";
 import type { MplUniforms } from "@/render/mpl";
-import type { TrajectoryMarker, TrajectoryMarkerType } from "@/types/trajectory";
+import { deriveWorldStateMarkers, pickMarkerIndex, TYPE_RGB } from "./markerStrength";
 
 /**
  * MarkerPedestals — shader-based terrain hotspots around semantic markers.
@@ -28,48 +28,6 @@ import type { TrajectoryMarker, TrajectoryMarkerType } from "@/types/trajectory"
  * - Derives positions from worldState.markers (baseline truth)
  * - No orange anywhere
  */
-
-// Palette discipline (no orange) — matches StrategicLeverageMarkers
-const TYPE_RGB: Record<TrajectoryMarkerType, [number, number, number]> = {
-    risk_inflection: [0.94, 0.27, 0.27],     // #EF4444
-    runway_threshold: [0.94, 0.27, 0.27],     // #EF4444
-    leverage_opportunity: [0.39, 0.40, 0.95], // #6366F1
-    confidence_shift: [0.13, 0.83, 0.93],     // #22D3EE
-};
-
-function clamp01(n: number) {
-    return Math.max(0, Math.min(1, Number.isFinite(n) ? n : 0));
-}
-
-function pickIndex(marker: TrajectoryMarker, sampleCount: number) {
-    if (typeof marker.sampleIndex === "number" && Number.isFinite(marker.sampleIndex)) {
-        return Math.max(0, Math.min(sampleCount - 1, Math.round(marker.sampleIndex)));
-    }
-    const t = clamp01(marker.t ?? 0);
-    return Math.max(0, Math.min(sampleCount - 1, Math.round(t * (sampleCount - 1))));
-}
-
-function deriveWorldStateMarkers(args: {
-    runwayMonths: number;
-    grossMarginPct: number;
-    monthlyBurn: number;
-    arr: number;
-}): TrajectoryMarker[] {
-    const { runwayMonths, grossMarginPct, monthlyBurn, arr } = args;
-    const runwayPressure01 = clamp01((18 - runwayMonths) / 18);
-    const marginStress01 = clamp01((55 - grossMarginPct) / 25);
-    const monthlyArr = Math.max(1, arr / 12);
-    const burnRatio = monthlyBurn / monthlyArr;
-    const burnPressure01 = clamp01((burnRatio - 1) / 2);
-
-    return [
-        { id: "capital-dependency", type: "runway_threshold", t: 0.18, strength: clamp01(0.35 + 0.65 * runwayPressure01) },
-        { id: "burn-acceleration", type: "risk_inflection", t: 0.38, strength: clamp01(0.35 + 0.65 * burnPressure01) },
-        { id: "margin-volatility", type: "confidence_shift", t: 0.52, strength: clamp01(0.25 + 0.75 * marginStress01) },
-        { id: "revenue-concentration", type: "risk_inflection", t: 0.66, strength: 0.6 },
-        { id: "runway-strength", type: "leverage_opportunity", t: 0.82, strength: clamp01(runwayMonths / 24) },
-    ];
-}
 
 export default function MarkerPedestals({
     enabled = true,
@@ -111,7 +69,7 @@ export default function MarkerPedestals({
         if (samples < 3) return [];
 
         return markers.slice(0, MPL_MAX_MARKERS).map((m) => {
-            const idx = pickIndex(m, samples);
+            const idx = pickMarkerIndex(m, samples);
             const p = centerline[idx];
             const y = getHeightAt(p.x, p.z);
             const rgb = TYPE_RGB[m.type];

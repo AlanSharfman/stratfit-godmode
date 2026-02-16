@@ -169,13 +169,7 @@ export default function StructuralTopography({
             return;
         }
 
-        const geo = terrainMesh.geometry as THREE.BufferGeometry;
-
-        devlog("[STM] Applying CPU displacement", {
-            len: structureValues.length,
-            min: Math.min(...structureValues),
-            max: Math.max(...structureValues),
-        });
+        const geo = (terrainMesh as THREE.Mesh).geometry as THREE.BufferGeometry;
 
         const scale = enabled ? TOPO_SCALE : 0;
         const origZ = applyGeometryDisplacement(geo, structureValues, scale);

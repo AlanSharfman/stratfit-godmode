@@ -100,7 +100,6 @@ export default function P50Path({
     // UPDATE GEOMETRY ONLY (no mesh recreation)
     useEffect(() => {
         if (points.length < 2) return;
-        console.log("[P50Path] Updating ribbon geometry (flat surface-following)");
 
         const result = buildRibbonGeometry(points, getHeightAt, {
             samples: 200,

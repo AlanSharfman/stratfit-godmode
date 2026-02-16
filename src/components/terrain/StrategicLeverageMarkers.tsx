@@ -8,7 +8,8 @@ import { buildRibbonGeometry } from "@/terrain/corridorTopology";
 import { useMarkerLinkStore } from "@/state/markerLinkStore";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
 import { useScenarioStore } from "@/state/scenarioStore";
-import type { TrajectoryMarker, TrajectoryMarkerType } from "@/types/trajectory";
+import { clamp01, deriveWorldStateMarkers, pickMarkerIndex, TYPE_HEX } from "./markerStrength";
+import type { TrajectoryMarkerType } from "@/types/trajectory";
 
 /**
  * StrategicLeverageMarkers -- semantic production markers.
@@ -35,13 +36,6 @@ const MARKER_LABEL: Record<string, string> = {
     "runway-strength": "Runway Strength",
 };
 
-const TYPE_HEX: Record<TrajectoryMarkerType, string> = {
-    risk_inflection: "#EF4444",
-    runway_threshold: "#EF4444",
-    leverage_opportunity: "#6366F1",
-    confidence_shift: "#22D3EE",
-};
-
 // Palette discipline (no orange)
 const TYPE_COLOR: Record<TrajectoryMarkerType, THREE.Color> = {
     risk_inflection: new THREE.Color("#EF4444"),
@@ -50,42 +44,8 @@ const TYPE_COLOR: Record<TrajectoryMarkerType, THREE.Color> = {
     confidence_shift: new THREE.Color("#22D3EE"),
 };
 
-function clamp01(n: number) {
-    return Math.max(0, Math.min(1, Number.isFinite(n) ? n : 0));
-}
-
 function yawFromTangent(tan: THREE.Vector3) {
     return Math.atan2(tan.x, tan.z);
-}
-
-function pickIndex(marker: TrajectoryMarker, sampleCount: number) {
-    if (typeof marker.sampleIndex === "number" && Number.isFinite(marker.sampleIndex)) {
-        return Math.max(0, Math.min(sampleCount - 1, Math.round(marker.sampleIndex)));
-    }
-    const t = clamp01(marker.t ?? 0);
-    return Math.max(0, Math.min(sampleCount - 1, Math.round(t * (sampleCount - 1))));
-}
-
-function deriveWorldStateMarkers(args: {
-    runwayMonths: number;
-    grossMarginPct: number;
-    monthlyBurn: number;
-    arr: number;
-}): TrajectoryMarker[] {
-    const { runwayMonths, grossMarginPct, monthlyBurn, arr } = args;
-    const runwayPressure01 = clamp01((18 - runwayMonths) / 18);
-    const marginStress01 = clamp01((55 - grossMarginPct) / 25);
-    const monthlyArr = Math.max(1, arr / 12);
-    const burnRatio = monthlyBurn / monthlyArr;
-    const burnPressure01 = clamp01((burnRatio - 1) / 2);
-
-    return [
-        { id: "capital-dependency", type: "runway_threshold", t: 0.18, strength: clamp01(0.35 + 0.65 * runwayPressure01) },
-        { id: "burn-acceleration", type: "risk_inflection", t: 0.38, strength: clamp01(0.35 + 0.65 * burnPressure01) },
-        { id: "margin-volatility", type: "confidence_shift", t: 0.52, strength: clamp01(0.25 + 0.75 * marginStress01) },
-        { id: "revenue-concentration", type: "risk_inflection", t: 0.66, strength: 0.6 },
-        { id: "runway-strength", type: "leverage_opportunity", t: 0.82, strength: clamp01(runwayMonths / 24) },
-    ];
 }
 
 // -- Glyph sub-components --
@@ -204,7 +164,7 @@ export default function StrategicLeverageMarkers({
         if (samples < 3) return [];
 
         return worldState.markers.map((m) => {
-            const idx = pickIndex(m, samples);
+            const idx = pickMarkerIndex(m, samples);
             const p = centerline[idx];
             const prev = centerline[Math.max(0, idx - 1)];
             const next = centerline[Math.min(samples - 1, idx + 1)];

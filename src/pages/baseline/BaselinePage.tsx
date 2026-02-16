@@ -46,6 +46,11 @@ import { useSystemBaseline } from "@/system/SystemBaselineProvider";
 import { setStmStructureCurve, setStmTopoScale, setStmTopoWidth } from "@/render/stm/stmRuntime";
 import styles from "./BaselinePage.module.css";
 import { useAnchorRegistry } from "@/spatial/AnchorRegistry";
+import PathAnnotations, { type PathAnnotation } from "@/components/terrain/PathAnnotations";
+import ProbabilityBadge from "@/components/probability/ProbabilityBadge";
+import { BASELINE_DEMO_SCRIPT } from "@/core/demo/demoScript";
+import { useDemoController } from "@/core/demo/useDemoController";
+import * as THREE from "three";
 
 export default function BaselinePage() {
   const [heatmapOn, setHeatmapOn] = useState(false);
@@ -86,14 +91,7 @@ export default function BaselinePage() {
 
   // ── Deterministic baseline risk curve for RPF (driven by real data) ──
   const baselineRiskCurve = useMemo(
-    () => {
-      const curve = generateBaselineRiskCurve(256, systemBaseline);
-      const min = Math.min(...curve);
-      const max = Math.max(...curve);
-      console.log("[AUDIT] systemBaseline:", systemBaseline ? "present" : "NULL (demo fallback)");
-      console.log("[AUDIT] riskCurve — min:", min.toFixed(4), "max:", max.toFixed(4), "range:", (max - min).toFixed(4));
-      return curve;
-    },
+    () => generateBaselineRiskCurve(256, systemBaseline),
     [systemBaseline],
   );
 
@@ -123,21 +121,40 @@ export default function BaselinePage() {
 
   // ── Deterministic structure curve for STM (derived from confidence + risk) ──
   const baselineStructureCurve = useMemo(
-    () => {
-      const curve = generateBaselineStructureCurve(baselineConfidenceCurve, baselineRiskCurve, 256);
-      const min = Math.min(...curve);
-      const max = Math.max(...curve);
-      console.log("[AUDIT] structureCurve — min:", min.toFixed(4), "max:", max.toFixed(4), "range:", (max - min).toFixed(4));
-      console.log("[AUDIT] structureCurve sample [0,64,128,192,255]:", curve[0]?.toFixed(3), curve[64]?.toFixed(3), curve[128]?.toFixed(3), curve[192]?.toFixed(3), curve[255]?.toFixed(3));
-      // EAGERLY set STM runtime curve so P50Path/markers can sample displacement
-      // during their first render (before StructuralTopography useEffect runs).
-      setStmStructureCurve(curve);
-      setStmTopoScale(8.0);
-      setStmTopoWidth(70.0);
-      return curve;
-    },
+    () => generateBaselineStructureCurve(baselineConfidenceCurve, baselineRiskCurve, 256),
     [baselineConfidenceCurve, baselineRiskCurve],
   );
+
+  // Eagerly set STM runtime curve so P50Path/markers can sample displacement
+  // during their first render (before StructuralTopography useEffect runs).
+  useEffect(() => {
+    setStmStructureCurve(baselineStructureCurve);
+    setStmTopoScale(8.0);
+    setStmTopoWidth(70.0);
+  }, [baselineStructureCurve]);
+
+  // Demo controller + path annotations
+  const activeDemoStep = useDemoController(BASELINE_DEMO_SCRIPT, demoOn);
+
+  const annotations: PathAnnotation[] = useMemo(() => {
+    return [
+      {
+        id: "runway-compression",
+        position: new THREE.Vector3(0, 0.6, 6),
+        label: "Runway compression begins here",
+      },
+      {
+        id: "margin-volatility",
+        position: new THREE.Vector3(-4, 0.8, 0),
+        label: "Margin volatility dominates outcomes",
+      },
+      {
+        id: "capital-dependency",
+        position: new THREE.Vector3(5, 0.7, -4),
+        label: "Capital dependency peaks here",
+      },
+    ];
+  }, []);
 
   // ── Risk points for heatmap + fill overlays ──
   const riskPoints = useMemo(
@@ -377,6 +394,7 @@ export default function BaselinePage() {
 
         <div className={styles.rightControls}>
           <div className={styles.meta}>10:24 AM&nbsp;&nbsp;|&nbsp;&nbsp;ACME CORP&nbsp;&nbsp;|&nbsp;&nbsp;USD</div>
+          <ProbabilityBadge probability={0.70} />
           <button
             type="button"
             className={`${styles.toggle} ${heatmapOn ? styles.toggleOn : ""}`}
@@ -522,6 +540,7 @@ export default function BaselinePage() {
               {shlEnabled && <SemanticHarmonizer />}
               {slmEnabled && <MarkerPedestals enabled={slmOn} />}
               <BaselineTimelineTicks />
+              <PathAnnotations annotations={annotations} visible={annotationsOn} />
             </TerrainStage>
           </TerrainWithFallback>
 
@@ -530,6 +549,31 @@ export default function BaselinePage() {
 
           {/* AI Commentary Panel (outside Canvas) */}
           <AICommentaryPanel />
+
+          {/* Demo step overlay */}
+          {activeDemoStep && (
+            <div style={{
+              position: "absolute",
+              left: "50%",
+              top: 110,
+              transform: "translateX(-50%)",
+              padding: "8px 12px",
+              borderRadius: 10,
+              border: "1px solid rgba(34,211,238,0.25)",
+              background: "rgba(15,23,42,0.75)",
+              color: "#e2e8f0",
+              fontSize: 12,
+              fontWeight: 600,
+              letterSpacing: "0.02em",
+              backdropFilter: "blur(10px)",
+              pointerEvents: "none",
+              zIndex: 50,
+              maxWidth: 520,
+              textAlign: "center",
+            }}>
+              {activeDemoStep.message}
+            </div>
+          )}
         </div>
 
         <div className={styles.rightPanel}>
