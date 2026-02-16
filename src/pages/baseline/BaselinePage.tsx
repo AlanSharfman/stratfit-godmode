@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import TerrainStage from "@/terrain/TerrainStage";
 import { TerrainWithFallback } from "@/components/terrain/TerrainFallback2D";
 
@@ -46,8 +46,6 @@ import {
   shlEnabled,
   stmEnabled,
 } from "@/config/featureFlags";
-
-import { setStmStructureCurve, setStmTopoScale, setStmTopoWidth } from "@/render/stm/stmRuntime";
 
 import { BASELINE_DEMO_SCRIPT } from "@/core/demo/demoScript";
 import { useDemoController } from "@/core/demo/useDemoController";
@@ -130,24 +128,20 @@ export default function BaselinePage() {
     [baselineConfidenceCurve, baselineRiskCurve],
   );
 
-  // Eagerly set STM runtime so first render samples correctly (no "flat start").
-  useEffect(() => {
-    setStmStructureCurve(baselineStructureCurve);
-    setStmTopoScale(24.0);
-    setStmTopoWidth(70.0);
-  }, [baselineStructureCurve]);
-
-  // Demo controller
   const activeDemoStep = useDemoController(BASELINE_DEMO_SCRIPT, demoOn);
 
-  // Path annotations: keep minimal for now; later anchor to path-param t.
-  const annotations: PathAnnotation[] = useMemo(() => {
-    return [
+  const annotations = useMemo<PathAnnotation[]>(
+    () => [
       { id: "runway", position: new THREE.Vector3(0, 0.65, 6), label: "Runway compression begins" },
-      { id: "margin", position: new THREE.Vector3(-4, 0.85, 0), label: "Margin volatility dominates" },
+      {
+        id: "margin",
+        position: new THREE.Vector3(-4, 0.85, 0),
+        label: "Margin volatility dominates",
+      },
       { id: "capital", position: new THREE.Vector3(5, 0.75, -4), label: "Capital dependency peaks" },
-    ];
-  }, []);
+    ],
+    [],
+  );
 
   if (!baselineRiskCurve || baselineRiskCurve.length === 0) {
     console.warn("Position rendering without engine curve");
@@ -227,7 +221,7 @@ export default function BaselinePage() {
         {/* CENTER — Mountain Backplate */}
         <div className={`${styles.mountain} sf-mountain-backplate`}>
           <TerrainWithFallback>
-            <TerrainStage>
+            <TerrainStage demoMode={demoOn}>
               {rpfEnabled && <RiskPressureField riskValues={baselineRiskCurve} enabled={rpfOn} />}
               {cfEnabled && <ConfidenceField confidenceValues={baselineConfidenceCurve} enabled={cfOn} />}
               {slmEnabled && <StrategicLeverageMarkers riskValues={baselineRiskCurve} enabled={slmOn} />}

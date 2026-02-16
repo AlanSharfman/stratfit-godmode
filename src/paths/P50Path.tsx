@@ -1,20 +1,11 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { generateP50Nodes } from "./generatePath";
 import { normToWorld } from "@/spatial/SpatialProjector";
 import { createSeed } from "@/terrain/seed";
-import { buildRibbonGeometry, type HeightSampler } from "@/terrain/corridorTopology";
 import { sampleTerrainHeight } from "@/terrain/buildTerrain";
-import { terrainHeightMode } from "@/config/featureFlags";
 import { getStmEnabled, sampleStmDisplacement } from "@/render/stm/stmRuntime";
-import { TERRAIN_CONSTANTS } from "@/terrain/terrainConstants";
-
-// ── Path material config ──
-const PATH_COLOR = new THREE.Color(0x22d3ee);
-const PATH_EMISSIVE = new THREE.Color(0x22d3ee);
-
-// ── Terrain geometry constants (single source from terrainConstants.ts) ──
-const { width: TERRAIN_WIDTH, depth: TERRAIN_DEPTH } = TERRAIN_CONSTANTS;
+import type { HeightSampler } from "@/terrain/corridorTopology";
 
 /**
  * Shared helper: generate world-space XZ control points from path nodes.
@@ -51,64 +42,164 @@ export default function P50Path({
     scenarioId?: string;
     visible?: boolean;
 }) {
-    const meshRef = useRef<THREE.Mesh | null>(null);
-
     const seed = useMemo(() => createSeed(scenarioId), [scenarioId]);
     const nodes = useMemo(() => generateP50Nodes(), []);
     const { points, getHeightAt } = useMemo(() => nodesToWorldXZ(nodes, seed), [nodes, seed]);
 
-    // Create mesh once
-    if (!meshRef.current) {
-        const geometry = new THREE.BufferGeometry();
-        const material = new THREE.MeshStandardMaterial({
-            color: PATH_COLOR,
-            emissive: PATH_EMISSIVE,
-            emissiveIntensity: 1.4,
-            metalness: 0.15,
-            roughness: 0.35,
-            transparent: true,
-            opacity: 0.95,
-            depthWrite: false,
-            depthTest: true,
-            side: THREE.DoubleSide,
-        });
+    const curve = useMemo(() => {
+        const pts = points.map((p) => new THREE.Vector3(p.x, 0, p.z));
+        return new THREE.CatmullRomCurve3(pts, false, "catmullrom", 0.5);
+    }, [points]);
 
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.name = "p50-median-path";
-        mesh.userData.pathMesh = true;
-        mesh.renderOrder = 10;
-        mesh.frustumCulled = false;
-        meshRef.current = mesh;
-    }
-
-    useEffect(() => {
-        if (points.length < 2) return;
-
-        const result = buildRibbonGeometry(points, getHeightAt, {
-            samples: 200,
-            halfWidth: 4.5,
-            widthSegments: 8,
-            lift: terrainHeightMode === "neutral" ? 0.12 : 0.22,
-            tension: 0.5,
-        });
-
-        const mesh = meshRef.current!;
-        mesh.geometry.dispose();
-        mesh.geometry = result.geometry;
-    }, [points, getHeightAt]);
+    const geom = useMemo(() => {
+        if (points.length < 2) return null;
+        return makeRibbon(curve, 420, 2.4, getHeightAt);
+    }, [curve, getHeightAt, points.length]);
 
     useEffect(() => {
         return () => {
-            const mesh = meshRef.current;
-            if (!mesh) return;
-            mesh.geometry?.dispose();
-            const m = mesh.material;
-            if (Array.isArray(m)) m.forEach((mm) => mm.dispose());
-            else (m as THREE.Material)?.dispose?.();
+            geom?.dispose?.();
         };
-    }, []);
+    }, [geom]);
 
     if (!visible) return null;
 
-    return <primitive object={meshRef.current} />;
+    if (!geom) return null;
+
+    return (
+        <group name={`path-${scenarioId}`} frustumCulled={false}>
+            {/* Outer glow */}
+            <mesh
+                geometry={geom}
+                renderOrder={50}
+                userData={{ pathMesh: true, id: "p50-ribbon-glow" }}
+                frustumCulled={false}
+            >
+                <meshBasicMaterial
+                    color={0x38bdf8}
+                    transparent
+                    opacity={0.22}
+                    depthTest={false}
+                    depthWrite={false}
+                    side={THREE.DoubleSide}
+                />
+            </mesh>
+
+            {/* Core line */}
+            <mesh
+                geometry={geom}
+                renderOrder={51}
+                userData={{ pathMesh: true, id: "p50-ribbon-core" }}
+                frustumCulled={false}
+            >
+                <meshBasicMaterial
+                    color={0xe2e8f0}
+                    transparent
+                    opacity={0.85}
+                    depthTest={false}
+                    depthWrite={false}
+                    side={THREE.DoubleSide}
+                />
+            </mesh>
+
+            <Markers curve={curve} getHeightAt={getHeightAt} />
+        </group>
+    );
+}
+
+function Markers({
+    curve,
+    getHeightAt,
+}: {
+    curve: THREE.Curve<THREE.Vector3>;
+    getHeightAt: HeightSampler;
+}) {
+    const tVals = [0.15, 0.38, 0.62, 0.86];
+    const pts = tVals.map((t) => curve.getPoint(t));
+    return (
+        <>
+            {pts.map((p, idx) => (
+                <mesh
+                    key={idx}
+                    position={[p.x, getHeightAt(p.x, p.z) + 0.35, p.z]}
+                    renderOrder={60}
+                    userData={{ pathMesh: true, id: `p50-marker-${idx}` }}
+                    frustumCulled={false}
+                >
+                    <sphereGeometry args={[0.55, 18, 18]} />
+                    <meshBasicMaterial
+                        color={0x7dd3fc}
+                        transparent
+                        opacity={0.85}
+                        depthTest={false}
+                        depthWrite={false}
+                    />
+                </mesh>
+            ))}
+        </>
+    );
+}
+
+/**
+ * Ribbon: terrain-follow feel comes from banking + subtle vertical undulation.
+ */
+function makeRibbon(
+    curve: THREE.CatmullRomCurve3,
+    segments: number,
+    width: number,
+    getHeightAt: HeightSampler,
+) {
+    const positions: number[] = [];
+    const uvs: number[] = [];
+    const indices: number[] = [];
+
+    const up = new THREE.Vector3(0, 1, 0);
+    const prevNormal = new THREE.Vector3(1, 0, 0);
+
+    for (let i = 0; i <= segments; i++) {
+        const t = i / segments;
+        const p = curve.getPoint(t);
+
+        // subtle undulation so it isn't a sterile strip
+        const lift = Math.sin(t * Math.PI * 2.0) * 0.35 + Math.sin(t * Math.PI * 6.0) * 0.18;
+        p.y = getHeightAt(p.x, p.z) + 0.25 + lift;
+
+        const tangent = curve.getTangent(t).normalize();
+
+        // Banking: rotate binormal around tangent slightly
+        const bank = Math.sin(t * Math.PI * 2.0) * 0.20;
+        const normal = prevNormal.clone().cross(tangent).cross(tangent).normalize();
+        if (normal.lengthSq() < 1e-6) normal.copy(prevNormal);
+        prevNormal.copy(normal);
+
+        const binormal = new THREE.Vector3().crossVectors(tangent, up).normalize();
+        const banked = binormal.clone().applyAxisAngle(tangent, bank).normalize();
+
+        const left = p.clone().addScaledVector(banked, -width * 0.5);
+        const right = p.clone().addScaledVector(banked, width * 0.5);
+
+        positions.push(left.x, left.y, left.z);
+        positions.push(right.x, right.y, right.z);
+
+        uvs.push(0, t);
+        uvs.push(1, t);
+    }
+
+    for (let i = 0; i < segments; i++) {
+        const a = i * 2;
+        const b = a + 1;
+        const c = a + 2;
+        const d = a + 3;
+
+        indices.push(a, c, b);
+        indices.push(b, c, d);
+    }
+
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    geom.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+    geom.setIndex(indices);
+    geom.computeVertexNormals();
+    geom.computeBoundingSphere();
+    return geom;
 }

@@ -1,6 +1,6 @@
 /**
  * DiagnosticsDrawer — Collapsible panel for debug toggles.
- * Mounts inside center stage overlay (position: absolute).
+ * Hybrid cockpit: presented as Command Centre.
  */
 import React from "react";
 import styles from "./DiagnosticsDrawer.module.css";
@@ -22,27 +22,24 @@ interface Props {
     open: boolean;
     onClose: () => void;
     groups: ToggleGroup[];
+    title?: string;
 }
 
-export default function DiagnosticsDrawer({ open, onClose, groups }: Props) {
+export default function DiagnosticsDrawer({ open, onClose, groups, title = "Command Centre" }: Props) {
     if (!open) return null;
 
     return (
         <>
-            {/* Backdrop */}
             <div className={styles.backdrop} onClick={onClose} />
 
-            {/* Drawer */}
-            <div className={styles.drawer}>
-                {/* Header */}
+            <div className={styles.drawer} role="dialog" aria-label={title}>
                 <div className={styles.header}>
-                    <div className={styles.title}>Diagnostics</div>
-                    <button type="button" className={styles.closeBtn} onClick={onClose}>
+                    <div className={styles.title}>{title}</div>
+                    <button type="button" className={styles.closeBtn} onClick={onClose} aria-label="Close">
                         ×
                     </button>
                 </div>
 
-                {/* Groups */}
                 {groups.map((group) => {
                     const visibleItems = group.items.filter((i) => i.visible !== false);
                     if (visibleItems.length === 0) return null;
@@ -50,7 +47,6 @@ export default function DiagnosticsDrawer({ open, onClose, groups }: Props) {
                     return (
                         <div key={group.heading} className={styles.group}>
                             <div className={styles.groupHeading}>{group.heading}</div>
-
                             <div className={styles.toggleList}>
                                 {visibleItems.map((item) => (
                                     <button
