@@ -23,6 +23,7 @@ import type { BaselineV1 } from "@/onboard/baseline"
 import { validateBaseline } from "@/modules/systemBaseline/baselineValidation"
 import { mapBaselineToEngine } from "@/engine/baselineToEngineMapper"
 import { calculateMetrics, type LeverState } from "@/logic/calculateMetrics"
+import { logEngineHealth } from "@/debug/engineHealth"
 
 // ── Public contract ─────────────────────────────────────────────────────
 
@@ -97,6 +98,8 @@ export function SystemBaselineProvider({
 
     const metrics = calculateMetrics(levers, "base")
       ; (window as any).__STRATFIT_ENGINE__ = metrics
+
+    logEngineHealth()
   }, [])
 
   const refreshBaseline = useCallback(() => {

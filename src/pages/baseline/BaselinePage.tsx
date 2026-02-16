@@ -149,6 +149,10 @@ export default function BaselinePage() {
     ];
   }, []);
 
+  if (!baselineRiskCurve || baselineRiskCurve.length === 0) {
+    console.warn("Position rendering without engine curve");
+  }
+
   return (
     <div className={styles.wrap}>
       {/* Top strip stays as-is in your app shell; this is Baseline inner chrome */}
