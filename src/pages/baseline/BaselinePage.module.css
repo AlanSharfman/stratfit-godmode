@@ -1,82 +1,89 @@
 /* Fast institutional baseline shell (matches provided spec) */
-.wrap{
+.wrap {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: radial-gradient(1200px 700px at 50% 20%, rgba(80,140,160,0.08), rgba(0,0,0,0)) ,
-              #070c10;
-  color: rgba(235,245,255,0.92);
+  background: radial-gradient(1200px 700px at 50% 20%, rgba(80, 140, 160, 0.08), rgba(0, 0, 0, 0)),
+    #070c10;
+  color: rgba(235, 245, 255, 0.92);
   overflow: hidden;
 }
 
-.topbar{
-  height:74px;
-  display:grid;
+.topbar {
+  height: 74px;
+  display: grid;
   grid-template-columns: 1fr 1.2fr 1fr;
-  align-items:center;
+  align-items: center;
   padding: 0 18px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-  background: rgba(5,10,14,0.72);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(5, 10, 14, 0.72);
   backdrop-filter: blur(10px);
 }
 
-.leftBrand{ display:flex; align-items:center; }
-
-.brand{
-  font-weight:700;
-  letter-spacing:0.12em;
-  text-transform:uppercase;
-  font-size:13px;
+.leftBrand {
+  display: flex;
+  align-items: center;
 }
 
-.centerTitle{
-  text-align:center;
-}
-.title{
-  font-size:18px;
-  letter-spacing:0.06em;
-  font-weight:700;
-}
-.subtitle{
-  margin-top:4px;
-  font-size:12px;
-  opacity:0.65;
-  letter-spacing:0.08em;
-  text-transform:uppercase;
+.brand {
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 13px;
 }
 
-.rightControls{
-  display:flex;
-  align-items:center;
-  justify-content:flex-end;
-  gap:12px;
-}
-.meta{
-  font-size:12px;
-  opacity:0.7;
-  letter-spacing:0.08em;
-  text-transform:uppercase;
+.centerTitle {
+  text-align: center;
 }
 
-.toggle{
-  border:1px solid rgba(70,227,255,0.22);
-  background: rgba(0,0,0,0.25);
-  color: rgba(220,245,255,0.9);
+.title {
+  font-size: 18px;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+}
+
+.subtitle {
+  margin-top: 4px;
+  font-size: 12px;
+  opacity: 0.65;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.rightControls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.meta {
+  font-size: 12px;
+  opacity: 0.7;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.toggle {
+  border: 1px solid rgba(70, 227, 255, 0.22);
+  background: rgba(0, 0, 0, 0.25);
+  color: rgba(220, 245, 255, 0.9);
   padding: 8px 10px;
   border-radius: 10px;
-  letter-spacing:0.12em;
-  font-size:11px;
-  text-transform:uppercase;
+  letter-spacing: 0.12em;
+  font-size: 11px;
+  text-transform: uppercase;
   cursor: pointer;
 }
-.toggleOn{
-  border-color: rgba(70,227,255,0.55);
-  box-shadow: 0 0 18px rgba(70,227,255,0.15);
+
+.toggleOn {
+  border-color: rgba(70, 227, 255, 0.55);
+  box-shadow: 0 0 18px rgba(70, 227, 255, 0.15);
 }
 
-.main{
-  flex:1;
-  display:grid;
+.main {
+  flex: 1;
+  display: grid;
   grid-template-columns: 360px 1fr 360px;
   gap: 14px;
   padding: 14px;
@@ -84,10 +91,26 @@
 }
 
 .leftPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   border-radius: 12px;
-  border:1px solid rgba(255,255,255,0.06);
-  background: rgba(6,10,14,0.62);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(6, 10, 14, 0.62);
   overflow: hidden;
+}
+
+.journeyRail {
+  flex: 1;
+  min-height: 220px;
+  border: 1px solid rgba(34, 211, 238, 0.14);
+  background: rgba(8, 12, 18, 0.55);
+  border-radius: 12px;
+  padding: 10px 10px;
+  margin: 0 10px 10px;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.35) inset;
+  backdrop-filter: blur(10px);
+  position: relative;
 }
 
 .leftPanelInner {
@@ -149,17 +172,17 @@
   box-shadow: 0 0 16px rgba(70, 227, 255, 0.14);
 }
 
-.mountain{
-  border:1px solid rgba(255,255,255,0.06);
+.mountain {
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 18px;
-  overflow:hidden;
+  overflow: hidden;
   min-height: 0;
 }
 
 .rightPanel {
   border-radius: 12px;
-  border:1px solid rgba(255,255,255,0.06);
-  background: rgba(6,10,14,0.62);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(6, 10, 14, 0.62);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -299,10 +322,10 @@
   margin-top: 4px;
 }
 
-.bottom{
-  height:74px;
-  border-top: 1px solid rgba(255,255,255,0.06);
-  background: rgba(6,10,14,0.72);
+.bottom {
+  height: 74px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(6, 10, 14, 0.72);
   display: flex;
   align-items: stretch;
 }
@@ -318,7 +341,7 @@
   padding: 10px 12px;
   border-left: 1px solid rgba(255, 255, 255, 0.06);
   text-align: center;
-  background: radial-gradient(600px 80px at 50% 0%, rgba(255,255,255,0.05), transparent 60%);
+  background: radial-gradient(600px 80px at 50% 0%, rgba(255, 255, 255, 0.05), transparent 60%);
 }
 
 .keyItem:first-child {
@@ -342,16 +365,26 @@
 }
 
 @media (max-width: 1180px) {
-  .main{ grid-template-columns: 360px 1fr; grid-template-rows: 1fr auto; }
-  .rightPanel { grid-column: 1 / -1; }
+  .main {
+    grid-template-columns: 360px 1fr;
+    grid-template-rows: 1fr auto;
+  }
+
+  .rightPanel {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 860px) {
-  .main{ grid-template-columns: 1fr; }
+  .main {
+    grid-template-columns: 1fr;
+  }
+
   .leftPanel,
   .rightPanel {
     order: unset;
   }
+
   .keyStrip {
     grid-template-columns: 1fr 1fr;
   }
@@ -361,7 +394,7 @@
 /* Marker ↔ Panel signal linkage (global so it works across modules)          */
 /* ═══════════════════════════════════════════════════════════════════════════ */
 
-:global(.mk-signal){
+:global(.mk-signal) {
   position: relative;
   display: flex;
   align-items: center;
@@ -369,77 +402,93 @@
   padding: 10px 10px;
   margin: 6px 0;
   border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.06);
-  background: linear-gradient(180deg, rgba(10,18,28,0.45), rgba(6,12,20,0.22));
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: linear-gradient(180deg, rgba(10, 18, 28, 0.45), rgba(6, 12, 20, 0.22));
   overflow: hidden;
   transition: transform 160ms ease, opacity 160ms ease, border-color 160ms ease;
 }
 
-:global(.mk-signal-compact){
+:global(.mk-signal-compact) {
   padding: 10px 12px;
 }
 
-:global(.mk-signal:hover){
+:global(.mk-signal:hover) {
   transform: translateY(-1px);
-  border-color: rgba(255,255,255,0.12);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 /* "movement / pattern linkage": animated scan line + shimmer */
-:global(.mk-signal::before){
-  content:"";
-  position:absolute;
-  inset:-40px -30px -40px -30px;
+:global(.mk-signal::before) {
+  content: "";
+  position: absolute;
+  inset: -40px -30px -40px -30px;
   background:
-    radial-gradient(closest-side, rgba(255,255,255,0.06), rgba(0,0,0,0) 65%),
-    linear-gradient(90deg, rgba(255,255,255,0.00), rgba(255,255,255,0.08), rgba(255,255,255,0.00));
+    radial-gradient(closest-side, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0) 65%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.00), rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.00));
   transform: translateX(-35%);
   opacity: 0.0;
   pointer-events: none;
 }
 
-:global(.mk-signal-hover::before){
+:global(.mk-signal-hover::before) {
   opacity: 0.55;
   animation: mkScan 1.25s linear infinite;
 }
 
-:global(.mk-signal-active::before){
+:global(.mk-signal-active::before) {
   opacity: 0.85;
   animation: mkScan 0.95s linear infinite;
 }
 
-@keyframes mkScan{
-  0%{ transform: translateX(-45%); }
-  100%{ transform: translateX(45%); }
+@keyframes mkScan {
+  0% {
+    transform: translateX(-45%);
+  }
+
+  100% {
+    transform: translateX(45%);
+  }
 }
 
 /* tone glow ring — matches no-orange palette */
-:global(.mk-tone-risk){ --mkTone: rgba(255,65,80,0.55); }
-:global(.mk-tone-info){ --mkTone: rgba(0,220,255,0.45); }
-:global(.mk-tone-strength){ --mkTone: rgba(46,255,165,0.40); }
-:global(.mk-tone-strategy){ --mkTone: rgba(120,110,255,0.45); }
-
-:global(.mk-signal-hover){
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 0 24px var(--mkTone);
+:global(.mk-tone-risk) {
+  --mkTone: rgba(255, 65, 80, 0.55);
 }
 
-:global(.mk-signal-active){
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.10), 0 0 34px var(--mkTone);
+:global(.mk-tone-info) {
+  --mkTone: rgba(0, 220, 255, 0.45);
+}
+
+:global(.mk-tone-strength) {
+  --mkTone: rgba(46, 255, 165, 0.40);
+}
+
+:global(.mk-tone-strategy) {
+  --mkTone: rgba(120, 110, 255, 0.45);
+}
+
+:global(.mk-signal-hover) {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 0 24px var(--mkTone);
+}
+
+:global(.mk-signal-active) {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.10), 0 0 34px var(--mkTone);
 }
 
 /* left "tone rail" */
-:global(.mk-signal::after){
-  content:"";
-  position:absolute;
-  left:0;
-  top:10px;
-  bottom:10px;
-  width:2px;
+:global(.mk-signal::after) {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
   background: var(--mkTone);
   opacity: 0.85;
 }
 
 /* list content */
-:global(.mk-signalDot){
+:global(.mk-signalDot) {
   width: 10px;
   height: 10px;
   border-radius: 999px;
@@ -447,41 +496,44 @@
   box-shadow: 0 0 14px var(--mkTone);
   flex: 0 0 auto;
 }
-:global(.mk-signalText){
+
+:global(.mk-signalText) {
   font-size: 12px;
-  color: rgba(205,220,235,0.88);
+  color: rgba(205, 220, 235, 0.88);
   line-height: 1.2;
 }
 
 /* Marker tooltip (from MountainMarkers) */
-:global(.mk-tooltip){
-  display:none;
-  margin-top:10px;
-  padding:10px 12px;
-  border-radius:12px;
-  border:1px solid rgba(255,255,255,0.08);
-  background: linear-gradient(180deg, rgba(7,12,18,0.92), rgba(5,10,16,0.82));
-  box-shadow: 0 18px 46px rgba(0,0,0,0.6);
+:global(.mk-tooltip) {
+  display: none;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(7, 12, 18, 0.92), rgba(5, 10, 16, 0.82));
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.6);
   width: 320px;
 }
-:global(div:hover > .mk-tooltip){
-  display:block;
+
+:global(div:hover > .mk-tooltip) {
+  display: block;
 }
-:global(.mk-tipTitle){
+
+:global(.mk-tipTitle) {
   font-weight: 900;
   font-size: 12px;
   letter-spacing: 0.6px;
   margin-bottom: 8px;
-  color: rgba(255,255,255,0.92);
+  color: rgba(255, 255, 255, 0.92);
 }
-:global(.mk-tipRow){
+
+:global(.mk-tipRow) {
   font-size: 11px;
   line-height: 1.35;
-  color: rgba(200,215,230,0.86);
+  color: rgba(200, 215, 230, 0.86);
   margin-top: 6px;
 }
-:global(.mk-tipRow b){
-  color: rgba(255,255,255,0.92);
+
+:global(.mk-tipRow b) {
+  color: rgba(255, 255, 255, 0.92);
 }
-
-

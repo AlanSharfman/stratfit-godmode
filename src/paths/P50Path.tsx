@@ -74,12 +74,12 @@ export default function P50Path({
         const material = new THREE.MeshStandardMaterial({
             color: PATH_COLOR,
             emissive: PATH_EMISSIVE,
-            emissiveIntensity: 0.6,
-            metalness: 0.2,
-            roughness: 0.35,
+            emissiveIntensity: 1.25,
+            metalness: 0.35,
+            roughness: 0.22,
             transparent: true,
-            opacity: 0.85,
-            depthWrite: true,
+            opacity: 0.92,
+            depthWrite: false,
             depthTest: true,
             side: THREE.DoubleSide,
         });
@@ -97,9 +97,9 @@ export default function P50Path({
 
         const result = buildRibbonGeometry(points, getHeightAt, {
             samples: 200,
-            halfWidth: 3.0,
-            widthSegments: 6,
-            lift: terrainHeightMode === "neutral" ? 0.02 : 0.15,
+            halfWidth: 4.5,
+            widthSegments: 8,
+            lift: terrainHeightMode === "neutral" ? 0.12 : 0.22,
             tension: 0.5,
         });
 

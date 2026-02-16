@@ -8,24 +8,23 @@ import { buildRibbonGeometry } from "@/terrain/corridorTopology";
 import { useMarkerLinkStore } from "@/state/markerLinkStore";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
 import { useScenarioStore } from "@/state/scenarioStore";
-import { clamp01, deriveWorldStateMarkers, pickMarkerIndex, TYPE_HEX } from "./markerStrength";
+import {
+    clamp01,
+    deriveWorldStateMarkers,
+    pickMarkerIndex,
+    TYPE_HEX,
+} from "./markerStrength";
 import type { TrajectoryMarkerType } from "@/types/trajectory";
 
 /**
- * StrategicLeverageMarkers -- semantic production markers.
- *
- * Replaces placeholder amber/orange dots with STRATFIT semantic anchors:
- * - glyph + halo + micro tick per type
- * - color by marker type (no orange anywhere)
- * - hover/click drives existing right-panel linkage (markerLinkStore)
- * - deterministic placement via marker.t on corridor centerline
- * - terrain-anchored: y = terrain height + epsilon (0.02)
- * - depthWrite false + renderOrder to avoid z-fighting
- *
- * Markers derived from canonical baseline truth (worldState.markers).
+ * StrategicLeverageMarkers — semantic production markers (baseline truth).
+ * Goals:
+ * - Readable at cinematic distance
+ * - Obvious hover/active
+ * - No orange
  */
 
-const EPSILON_Y = 0.02;
+const EPSILON_Y = 0.03;
 
 // Human-readable labels for marker IDs
 const MARKER_LABEL: Record<string, string> = {
@@ -48,17 +47,25 @@ function yawFromTangent(tan: THREE.Vector3) {
     return Math.atan2(tan.x, tan.z);
 }
 
-// -- Glyph sub-components --
+// ── Glyphs ─────────────────────────────────────────────
 
-function Halo({ color, strength, active }: { color: THREE.Color; strength: number; active: boolean }) {
-    const outer = 0.48 + 0.18 * strength;
+function Halo({
+    color,
+    strength,
+    active,
+}: {
+    color: THREE.Color;
+    strength: number;
+    active: boolean;
+}) {
+    const outer = 0.62 + 0.26 * strength; // bigger
     return (
         <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={21}>
-            <ringGeometry args={[0.18, outer, 48]} />
+            <ringGeometry args={[0.22, outer, 64]} />
             <meshBasicMaterial
                 color={color}
                 transparent
-                opacity={active ? 0.62 : 0.40}
+                opacity={active ? 0.78 : 0.48} // stronger
                 blending={THREE.AdditiveBlending}
                 depthWrite={false}
                 depthTest
@@ -67,19 +74,39 @@ function Halo({ color, strength, active }: { color: THREE.Color; strength: numbe
     );
 }
 
-function MicroTick({ color, kind, strength }: { color: THREE.Color; kind: TrajectoryMarkerType; strength: number }) {
-    const base = 0.10 + 0.06 * strength;
+function MicroTick({
+    color,
+    kind,
+    strength,
+}: {
+    color: THREE.Color;
+    kind: TrajectoryMarkerType;
+    strength: number;
+}) {
+    const base = 0.14 + 0.08 * strength;
 
     if (kind === "risk_inflection") {
         return (
             <group renderOrder={23}>
-                <mesh position={[0, 0.08, base]} rotation={[-Math.PI / 2, 0, 0]}>
-                    <circleGeometry args={[0.12, 3]} />
-                    <meshBasicMaterial color={color} transparent opacity={0.95} depthWrite={false} depthTest />
+                <mesh position={[0, 0.11, base]} rotation={[-Math.PI / 2, 0, 0]}>
+                    <circleGeometry args={[0.16, 3]} />
+                    <meshBasicMaterial
+                        color={color}
+                        transparent
+                        opacity={0.98}
+                        depthWrite={false}
+                        depthTest
+                    />
                 </mesh>
-                <mesh position={[0, 0.06, base * 1.4]}>
-                    <boxGeometry args={[0.03, 0.08, 0.16]} />
-                    <meshBasicMaterial color={color} transparent opacity={0.9} depthWrite={false} depthTest />
+                <mesh position={[0, 0.085, base * 1.5]}>
+                    <boxGeometry args={[0.04, 0.10, 0.20]} />
+                    <meshBasicMaterial
+                        color={color}
+                        transparent
+                        opacity={0.92}
+                        depthWrite={false}
+                        depthTest
+                    />
                 </mesh>
             </group>
         );
@@ -87,38 +114,56 @@ function MicroTick({ color, kind, strength }: { color: THREE.Color; kind: Trajec
 
     if (kind === "runway_threshold") {
         return (
-            <mesh position={[0, 0.10, base]} renderOrder={23}>
-                <boxGeometry args={[0.04, 0.24, 0.04]} />
-                <meshBasicMaterial color={color} transparent opacity={0.95} depthWrite={false} depthTest />
+            <mesh position={[0, 0.13, base]} renderOrder={23}>
+                <boxGeometry args={[0.05, 0.30, 0.05]} />
+                <meshBasicMaterial
+                    color={color}
+                    transparent
+                    opacity={0.98}
+                    depthWrite={false}
+                    depthTest
+                />
             </mesh>
         );
     }
 
     if (kind === "leverage_opportunity") {
         return (
-            <mesh position={[0, 0.14, 0]} renderOrder={23}>
-                <octahedronGeometry args={[0.13 + 0.05 * strength, 0]} />
+            <mesh position={[0, 0.18, 0]} renderOrder={23}>
+                <octahedronGeometry args={[0.18 + 0.08 * strength, 0]} />
                 <meshStandardMaterial
-                    color={color} emissive={color} emissiveIntensity={1.2}
-                    roughness={0.35} metalness={0.15} transparent opacity={0.92} depthWrite={false}
+                    color={color}
+                    emissive={color}
+                    emissiveIntensity={1.6}
+                    roughness={0.30}
+                    metalness={0.18}
+                    transparent
+                    opacity={0.95}
+                    depthWrite={false}
                 />
             </mesh>
         );
     }
 
-    // confidence_shift -- ring glyph
+    // confidence_shift — ring glyph
     return (
-        <mesh position={[0, 0.12, 0]} renderOrder={23}>
-            <torusGeometry args={[0.12 + 0.06 * strength, 0.022, 10, 32]} />
+        <mesh position={[0, 0.16, 0]} renderOrder={23}>
+            <torusGeometry args={[0.16 + 0.08 * strength, 0.028, 10, 40]} />
             <meshStandardMaterial
-                color={color} emissive={color} emissiveIntensity={1.4}
-                roughness={0.35} metalness={0.1} transparent opacity={0.9} depthWrite={false}
+                color={color}
+                emissive={color}
+                emissiveIntensity={1.8}
+                roughness={0.30}
+                metalness={0.12}
+                transparent
+                opacity={0.94}
+                depthWrite={false}
             />
         </mesh>
     );
 }
 
-// -- Main component --
+// ── Main component ─────────────────────────────────────
 
 export default function StrategicLeverageMarkers({
     riskValues: _riskValues,
@@ -142,9 +187,9 @@ export default function StrategicLeverageMarkers({
         const { points, getHeightAt } = nodesToWorldXZ(nodes, seed);
         const { centerline } = buildRibbonGeometry(points, getHeightAt, {
             samples: 220,
-            halfWidth: 0.55,
+            halfWidth: 0.65,
             widthSegments: 2,
-            lift: 0,
+            lift: 0.10, // keep above terrain relief
             tension: 0.55,
         });
         return { centerline, getHeightAt };
@@ -156,7 +201,15 @@ export default function StrategicLeverageMarkers({
         const monthlyBurn = baseline?.financial.monthlyBurn ?? 0;
         const cash = baseline?.financial.cashOnHand ?? 0;
         const runwayMonths = monthlyBurn > 0 ? cash / monthlyBurn : 999;
-        return { markers: deriveWorldStateMarkers({ runwayMonths, grossMarginPct, monthlyBurn, arr }), baseKpis };
+        return {
+            markers: deriveWorldStateMarkers({
+                runwayMonths,
+                grossMarginPct,
+                monthlyBurn,
+                arr,
+            }),
+            baseKpis,
+        };
     }, [baseline, baseKpis]);
 
     const placements = useMemo(() => {
@@ -166,19 +219,39 @@ export default function StrategicLeverageMarkers({
         return worldState.markers.map((m) => {
             const idx = pickMarkerIndex(m, samples);
             const p = centerline[idx];
+
             const prev = centerline[Math.max(0, idx - 1)];
             const next = centerline[Math.min(samples - 1, idx + 1)];
             const tan = next.clone().sub(prev);
             if (tan.lengthSq() < 1e-6) tan.set(0, 0, 1);
             tan.normalize();
+
             const yaw = yawFromTangent(tan);
-            return { marker: m, position: new THREE.Vector3(p.x, getHeightAt(p.x, p.z) + EPSILON_Y, p.z), yaw };
+            const y = getHeightAt(p.x, p.z) + EPSILON_Y;
+
+            return {
+                marker: m,
+                position: new THREE.Vector3(p.x, y, p.z),
+                yaw,
+            };
         });
     }, [centerline, getHeightAt, worldState.markers]);
 
-    const onOver = useCallback((id: string) => { setHover(id); }, [setHover]);
-    const onOut = useCallback(() => { setHover(null); }, [setHover]);
-    const onClick = useCallback((id: string) => { setActive(activeId === id ? null : id); }, [activeId, setActive]);
+    const onOver = useCallback(
+        (id: string) => {
+            setHover(id);
+        },
+        [setHover],
+    );
+    const onOut = useCallback(() => {
+        setHover(null);
+    }, [setHover]);
+    const onClick = useCallback(
+        (id: string) => {
+            setActive(activeId === id ? null : id);
+        },
+        [activeId, setActive],
+    );
 
     if (!enabled || placements.length === 0) return null;
 
@@ -189,7 +262,12 @@ export default function StrategicLeverageMarkers({
                 const strength = clamp01(marker.strength);
                 const isActive = activeId === marker.id;
                 const isHover = hoverId === marker.id;
-                const scale = 1 + (isActive ? 0.14 : isHover ? 0.08 : 0) + 0.12 * strength;
+
+                // BIGGER base scale + stronger response (readable at cinematic distance)
+                const scale =
+                    1.55 +
+                    (isActive ? 0.30 : isHover ? 0.18 : 0) +
+                    0.35 * strength;
 
                 return (
                     <group
@@ -198,32 +276,54 @@ export default function StrategicLeverageMarkers({
                         rotation={[0, yaw, 0]}
                         scale={[scale, scale, scale]}
                         renderOrder={20}
-                        onPointerOver={(e) => { e.stopPropagation(); onOver(marker.id); }}
-                        onPointerOut={(e) => { e.stopPropagation(); onOut(); }}
-                        onClick={(e) => { e.stopPropagation(); onClick(marker.id); }}
+                        onPointerOver={(e) => {
+                            e.stopPropagation();
+                            onOver(marker.id);
+                        }}
+                        onPointerOut={(e) => {
+                            e.stopPropagation();
+                            onOut();
+                        }}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onClick(marker.id);
+                        }}
                     >
-                        <Halo color={color} strength={strength} active={isActive || isHover} />
-                        <MicroTick color={color} kind={marker.type} strength={strength} />
+                        <Halo
+                            color={color}
+                            strength={strength}
+                            active={isActive || isHover}
+                        />
+                        <MicroTick
+                            color={color}
+                            kind={marker.type}
+                            strength={strength}
+                        />
+
                         {/* HTML label pinned below glyph */}
                         <Html
-                            position={[0, -0.5, 0]}
+                            position={[0, -0.65, 0]}
                             center
-                            distanceFactor={80}
+                            // Bigger label at distance (smaller distanceFactor = larger on screen)
+                            distanceFactor={55}
                             style={{ pointerEvents: "none", userSelect: "none" }}
                         >
-                            <div style={{
-                                color: TYPE_HEX[marker.type],
-                                fontSize: 11,
-                                fontWeight: 600,
-                                fontFamily: "'Inter', system-ui, sans-serif",
-                                textShadow: "0 0 6px rgba(0,0,0,0.8), 0 1px 3px rgba(0,0,0,0.6)",
-                                whiteSpace: "nowrap",
-                                letterSpacing: "0.04em",
-                                textTransform: "uppercase",
-                                opacity: isActive || isHover ? 1 : 0.85,
-                                transform: `scale(${isActive ? 1.1 : 1})`,
-                                transition: "opacity 0.2s, transform 0.2s",
-                            }}>
+                            <div
+                                style={{
+                                    color: TYPE_HEX[marker.type],
+                                    fontSize: 12,
+                                    fontWeight: 750,
+                                    fontFamily: "'Inter', system-ui, sans-serif",
+                                    textShadow:
+                                        "0 0 10px rgba(0,0,0,0.9), 0 2px 8px rgba(0,0,0,0.7)",
+                                    whiteSpace: "nowrap",
+                                    letterSpacing: "0.10em",
+                                    textTransform: "uppercase",
+                                    opacity: isActive || isHover ? 1 : 0.88,
+                                    transform: `scale(${isActive ? 1.12 : 1})`,
+                                    transition: "opacity 0.18s, transform 0.18s",
+                                }}
+                            >
                                 {MARKER_LABEL[marker.id] ?? marker.id}
                             </div>
                         </Html>

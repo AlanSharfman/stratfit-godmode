@@ -50,6 +50,8 @@ function Scene({ children }: { children?: React.ReactNode }) {
             if (!ref.current) continue;
             ref.current.rotation.x = -Math.PI / 2;
             ref.current.position.set(0, -6, 0);
+            // Amplify vertical relief so peaks read at camera distance
+            ref.current.scale.set(1, 2.2, 1);
             ref.current.frustumCulled = false;
         }
     }, []);
