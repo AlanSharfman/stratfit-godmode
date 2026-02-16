@@ -27,10 +27,6 @@ const VERTEX_PREAMBLE = /* glsl */ `
 varying vec3 vRpfWorldPos;
 `;
 
-const VERTEX_WORLDPOS = /* glsl */ `
-vRpfWorldPos = worldPosition.xyz;
-`;
-
 const FRAGMENT_PREAMBLE = /* glsl */ `
 varying vec3 vRpfWorldPos;
 uniform sampler2D uRiskCurveTex;
@@ -103,14 +99,17 @@ export function injectRiskField(
             shader.uniforms[key] = uniform;
         }
 
-        // ── Vertex shader: pass world position ──
+        // ── Vertex shader: declare varying ──
         shader.vertexShader = shader.vertexShader.replace(
             "#include <common>",
             `#include <common>\n${VERTEX_PREAMBLE}`,
         );
+
+        // ── Vertex shader: pass world position AFTER worldpos_vertex ──
+        // CRITICAL FIX: worldPosition is only available AFTER #include <worldpos_vertex>
         shader.vertexShader = shader.vertexShader.replace(
             "#include <worldpos_vertex>",
-            `#include <worldpos_vertex>\n${VERTEX_WORLDPOS}`,
+            `#include <worldpos_vertex>\nvRpfWorldPos = worldPosition.xyz;`,
         );
 
         // ── Fragment shader: declare uniforms + blend ──
