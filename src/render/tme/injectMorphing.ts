@@ -124,10 +124,10 @@ export function injectMorphing(
                 `#include <common>\n${VERTEX_TME_PREAMBLE}`,
             );
 
-            // Inject displacement after begin_vertex (after STM's injection)
+            // CRITICAL FIX: Inject displacement after worldpos_vertex to ensure worldPosition is available
             shader.vertexShader = shader.vertexShader.replace(
-                "#include <begin_vertex>",
-                `#include <begin_vertex>\n${VERTEX_TME_DISPLACE}`,
+                "#include <worldpos_vertex>",
+                `#include <worldpos_vertex>\n${VERTEX_TME_DISPLACE}`,
             );
         }
     };

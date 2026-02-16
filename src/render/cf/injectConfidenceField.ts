@@ -108,9 +108,10 @@ export function injectConfidenceField(
                 "#include <common>",
                 `#include <common>\nvarying vec3 vWorldPos;\n`,
             );
+            // CRITICAL FIX: worldPosition is only available AFTER #include <worldpos_vertex>
             shader.vertexShader = shader.vertexShader.replace(
                 "#include <worldpos_vertex>",
-                `#include <worldpos_vertex>\nvWorldPos = worldPosition.xyz;\n`,
+                `#include <worldpos_vertex>\nvWorldPos = worldPosition.xyz;`,
             );
         }
 

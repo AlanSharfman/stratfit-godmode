@@ -136,10 +136,10 @@ export function injectTopography(
                 `#include <common>\n${VERTEX_STM_PREAMBLE}`,
             );
 
-            // Inject displacement after begin_vertex (which sets `transformed`)
+            // CRITICAL FIX: Inject displacement after worldpos_vertex to ensure worldPosition is available
             shader.vertexShader = shader.vertexShader.replace(
-                "#include <begin_vertex>",
-                `#include <begin_vertex>\n${VERTEX_STM_DISPLACE}`,
+                "#include <worldpos_vertex>",
+                `#include <worldpos_vertex>\n${VERTEX_STM_DISPLACE}`,
             );
         }
     };
