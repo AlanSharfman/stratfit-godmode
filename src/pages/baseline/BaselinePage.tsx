@@ -54,6 +54,11 @@ import { useDemoController } from "@/core/demo/useDemoController";
 
 import { ExecutiveDecisionOverlay, AICommentaryPanel } from "@/components/insights";
 
+import GodModePanel from "@/components/godmode/GodModePanel";
+import CinematicToggle from "@/components/cinematic/CinematicToggle";
+import "@/styles/godmode.css";
+import "@/styles/cinematic.css";
+
 import styles from "./BaselinePage.module.css";
 import * as THREE from "three";
 
@@ -235,6 +240,10 @@ export default function BaselinePage() {
 
           {/* Exec overlay stays over mountain only */}
           <ExecutiveDecisionOverlay />
+
+          {/* God Mode Controls */}
+          <CinematicToggle />
+          <GodModePanel />
 
           {/* Demo step overlay */}
           {activeDemoStep && (
