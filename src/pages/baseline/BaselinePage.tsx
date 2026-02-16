@@ -35,7 +35,6 @@ import StructuralTopography from "@/components/terrain/StructuralTopography";
 import SemanticHarmonizer from "@/components/terrain/SemanticHarmonizer";
 import MarkerPedestals from "@/components/terrain/MarkerPedestals";
 import BaselineTimelineTicks from "@/components/terrain/core/BaselineTimelineTicks";
-import BaselineStoryRail from "@/components/baseline/BaselineStoryRail";
 import { generateBaselineRiskCurve } from "@/render/rpf/generateBaselineRisk";
 import { generateBaselineConfidenceCurve } from "@/render/cf/generateBaselineConfidence";
 import { generateBaselineVelocityCurve } from "@/render/tfl/generateBaselineVelocity";
@@ -467,10 +466,6 @@ export default function BaselinePage() {
       <div className={styles.main}>
         <div className={styles.leftPanel}>
           <StructuralMetricsPanel activeMetricId={activeMetricId} onHover={setActiveMetricId} />
-
-          <div className={styles.journeyRail}>
-            <BaselineStoryRail />
-          </div>
         </div>
 
         <div className={`${styles.mountain} sf-mountain-backplate`}>
