@@ -67,6 +67,9 @@ const VERTEX_STM_DISPLACE = /* glsl */ `
 // ── STM: Structural Topography Mapping ──
 {
     if ((uTopoEnabled > 0.5) && (uStmEnabled > 0.5)) {
+        // Compute world position deterministically from the 'transformed' local vertex
+        vec3 stmWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;
+
         // Map local X to corridor parameter t [0..1]
         // Corridor spans X: -220 → +220 in local (and world) space
         float stmT = clamp((transformed.x + 220.0) / 440.0, 0.0, 1.0);
@@ -85,9 +88,10 @@ const VERTEX_STM_DISPLACE = /* glsl */ `
         float edgeOut = 1.0 - smoothstep(0.92, 1.0, stmT);
         float edgeFade = edgeIn * edgeOut;
 
-        // Vertical displacement: positive = terrain rises in structurally strong zones
+        // Vertical displacement scalar computed from structure texture + falloff
         float displacement = structure * stmFalloff * edgeFade * uTopoScale;
 
+        // Apply displacement along local Z (maps to world-up Y after mesh rotation)
         transformed.z += displacement;
     }
 }
