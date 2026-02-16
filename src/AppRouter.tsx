@@ -1,7 +1,8 @@
-import { Route, Routes, Navigate, useNavigate } from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom";
 import App from "./App";
 import { AppStateProvider, useAppState } from "@/providers/AppStateProvider";
 import { STRATFIT_ROUTES } from "@/app/navigation/routeContract";
+
 import InitializeRoute from "@/routes/InitializeRoute";
 import ObjectiveRoute from "@/routes/ObjectiveRoute";
 import CompareRoute from "@/routes/CompareRoute";
@@ -10,7 +11,6 @@ import ValuationRoute from "@/routes/ValuationRoute";
 import AssessmentRoute from "@/routes/AssessmentRoute";
 import ImpactRoute from "@/routes/ImpactRoute";
 import TerrainRoute from "@/routes/TerrainRoute";
-import StrategyStudioRoute from "@/routes/StrategyStudioRoute";
 import SimulateOverlayRoute from "@/routes/SimulateOverlayRoute";
 
 import ScenarioMemoPage from "@/pages/ScenarioMemoPage";
@@ -18,7 +18,9 @@ import StudioPage from "@/pages/studio/StudioPage";
 import ScenariosPage from "@/pages/scenarios/ScenariosPage";
 import StrategicAssessmentPage from "@/pages/StrategicAssessmentPage";
 import AdminEngineConsole from "@/components/admin/AdminEngineConsole";
-import { MainNav } from "@/components/navigation";
+
+// ✅ CONTRACT NAV ONLY (no legacy nav anywhere)
+import MainNav from "@/app/navigation/MainNav";
 
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { SystemBaselineProvider } from "@/system/SystemBaselineProvider";
@@ -91,7 +93,11 @@ export default function AppRouter() {
               <Route path={STRATFIT_ROUTES.risk} element={<RiskRoute />} />
               <Route path={STRATFIT_ROUTES.capital} element={<AssessmentRoute />} />
               <Route path={STRATFIT_ROUTES.valuation} element={<ValuationRoute />} />
-              <Route path={STRATFIT_ROUTES.strategicAssessment} element={<StrategicAssessmentPage />} />
+              <Route
+                path={STRATFIT_ROUTES.strategicAssessment}
+                element={<StrategicAssessmentPage />}
+              />
+
               {/* Additional utility routes */}
               <Route path="/compare" element={<CompareRoute />} />
               <Route path="/impact" element={<ImpactRoute />} />
@@ -102,8 +108,8 @@ export default function AppRouter() {
             <Route path="/memo/*" element={<ScenarioMemoPage />} />
             <Route path="/admin/engine" element={<AdminEngineRoute />} />
 
-            {/* Unknown - redirect to position */}
-            <Route path="*" element={<Navigate to={STRATFIT_ROUTES.position} replace />} />
+            {/* ✅ Unknown routes MUST NOT collapse to Position */}
+            <Route path="*" element={<Navigate to={STRATFIT_ROUTES.initiate} replace />} />
           </Routes>
 
           <ComputationMonitor />

@@ -2,21 +2,25 @@
 /* STRATFIT — Terrain Root Layout */
 /* Phase 3 Terrain Lock */
 
+/* Terrain canvas host */
 .terrainRoot {
     position: fixed;
     inset: 0;
     z-index: 0;
 }
 
+/* UI shell sits above terrain */
 .appShell {
     position: relative;
     z-index: 1;
 }
 
-.mainNav {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 10;
-}
+/*
+  IMPORTANT:
+  Do NOT style .mainNav here.
+  The contract navigation owns its styling in:
+  src/app/navigation/MainNav.css
+
+  This file previously defined .mainNav and caused a CSS collision
+  that broke nav typography/placement.
+*/
