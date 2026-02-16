@@ -108,10 +108,10 @@ export function injectConfidenceField(
                 "#include <common>",
                 `#include <common>\nvarying vec3 vWorldPos;\n`,
             );
-            // CRITICAL FIX: worldPosition is only available AFTER #include <worldpos_vertex>
+            // CRITICAL FIX: Compute world position from transformed to avoid worldPosition dependency
             shader.vertexShader = shader.vertexShader.replace(
                 "#include <worldpos_vertex>",
-                `#include <worldpos_vertex>\nvWorldPos = worldPosition.xyz;`,
+                `#include <worldpos_vertex>\nvec3 cfWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvWorldPos = cfWorldPos;`,
             );
         }
 

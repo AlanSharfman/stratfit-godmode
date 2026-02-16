@@ -106,10 +106,10 @@ export function injectRiskField(
         );
 
         // ── Vertex shader: pass world position AFTER worldpos_vertex ──
-        // CRITICAL FIX: worldPosition is only available AFTER #include <worldpos_vertex>
+        // CRITICAL FIX: Compute world position from transformed to avoid worldPosition dependency
         shader.vertexShader = shader.vertexShader.replace(
             "#include <worldpos_vertex>",
-            `#include <worldpos_vertex>\nvRpfWorldPos = worldPosition.xyz;`,
+            `#include <worldpos_vertex>\nvec3 rpfWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvRpfWorldPos = rpfWorldPos;`,
         );
 
         // ── Fragment shader: declare uniforms + blend ──
