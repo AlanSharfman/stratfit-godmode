@@ -43,6 +43,11 @@ uniform float uTopoScale;
 uniform float uTopoWidth;
 uniform float uTopoEnabled;
 uniform float uStmEnabled;
+
+// Ridge sharpening — accentuates peaks and deepens valleys
+float sharpen(float h) {
+    return sign(h) * pow(abs(h), 1.4);
+}
 #endif
 `;
 
@@ -86,6 +91,9 @@ const VERTEX_STM_DISPLACE = /* glsl */ `
         
         // Expand mid-tones for readability (pure GLSL built-ins)
         float disp = smoothstep(0.10, 0.90, dispRaw);
+        
+        // Apply ridge sharpening for crisp peaks and valleys
+        disp = sharpen(disp);
         
         // Scale and clamp for stability
         disp = clamp(disp * uTopoScale, 0.0, uTopoScale * 1.25);

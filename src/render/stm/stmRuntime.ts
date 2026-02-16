@@ -21,6 +21,14 @@ function smoothstep(edge0: number, edge1: number, x: number) {
     return t * t * (3 - 2 * t);
 }
 
+/**
+ * Ridge sharpening — accentuates peaks and deepens valleys.
+ * Must match GPU sharpen() in injectTopography.
+ */
+function sharpen(h: number): number {
+    return Math.sign(h) * Math.pow(Math.abs(h), 1.4);
+}
+
 function lerp(a: number, b: number, t: number) {
     return a + (b - a) * t;
 }
@@ -96,5 +104,8 @@ export function sampleStmDisplacement(worldX: number, worldZ: number) {
     const edgeOut = 1.0 - smoothstep(0.92, 1.0, t);
     const edgeFade = edgeIn * edgeOut;
 
-    return structure * falloff * edgeFade * stmTopoScale;
+    // Apply ridge sharpening (must match GPU sharpen())
+    const rawDisp = sharpen(structure * falloff * edgeFade);
+
+    return rawDisp * stmTopoScale;
 }
