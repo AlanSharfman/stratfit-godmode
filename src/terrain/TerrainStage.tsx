@@ -70,9 +70,9 @@ function Scene({ children }: { children?: React.ReactNode }) {
 
     return (
         <>
-            {/* Lighting */}
+            {/* Lighting - low-angle grazing for relief perception */}
             <ambientLight intensity={0.7} />
-            <directionalLight position={[100, 100, 50]} intensity={0.8} />
+            <directionalLight position={[10, 15, 5]} intensity={1.4} />
             <directionalLight position={[-100, 50, -50]} intensity={0.3} />
 
             {/* Pass 1: Solid surface — receives RPF/CF shader injection */}

@@ -37,6 +37,8 @@ export function createStmUniforms(structureTexture: THREE.DataTexture | null): S
         uTopoEnabled: { value: 1.0 },
         // Back-compat alias: some code still toggles uStmEnabled.
         uStmEnabled: { value: 1.0 },
+        // Debug force: set to 1.0 to guarantee visible mountain (proves axis + injection path)
+        uTopoDebugForce: { value: 0.0 },
     };
 }
 
@@ -50,6 +52,16 @@ uniform float uTopoScale;
 uniform float uTopoWidth;
 uniform float uTopoEnabled;
 uniform float uStmEnabled;
+uniform float uTopoDebugForce;
+
+float saturate(float x) { return clamp(x, 0.0, 1.0); }
+
+// Expands mid-tones (unlike pow(x, >1) which crushes them)
+float contrastExpand(float x) {
+    x = saturate(x);
+    // smoothstep expands mid values and keeps endpoints stable
+    return smoothstep(0.10, 0.90, x);
+}
 #endif
 `;
 
@@ -88,11 +100,27 @@ const VERTEX_STM_DISPLACE = /* glsl */ `
         float edgeOut = 1.0 - smoothstep(0.92, 1.0, stmT);
         float edgeFade = edgeIn * edgeOut;
 
-        // Vertical displacement scalar computed from structure texture + falloff
-        float displacement = structure * stmFalloff * edgeFade * uTopoScale;
-
+        // --- STM DISPLACEMENT (VISUAL-TRUTHFUL) ---
+        float dispRaw = structure * stmFalloff * edgeFade;
+        
+        // Normalize to [0..1] domain safely (structure is already 0..1 from texture.r)
+        dispRaw = saturate(dispRaw);
+        
+        // Expand mid-tones so relief is visible across the field (avoids "only one hump")
+        float disp = contrastExpand(dispRaw);
+        
+        // Scale by uTopoScale (remove 3x amplification - tune at uniform source instead)
+        disp *= uTopoScale;
+        
+        // Safety clamp (prevents exploded triangles if future inputs spike)
+        disp = clamp(disp, 0.0, uTopoScale * 1.25);
+        
+        // Debug force: guarantees a mountain if you set uTopoDebugForce = 1
+        // Useful to prove axis + injection path beyond any doubt
+        disp = mix(disp, uTopoScale * 0.75, saturate(uTopoDebugForce));
+        
         // Apply displacement along local Z (maps to world-up Y after mesh rotation)
-        transformed.z += displacement;
+        transformed.z += disp;
     }
 }
 `;
@@ -132,6 +160,9 @@ export function injectTopography(
         for (const [key, uniform] of Object.entries(uniforms)) {
             shader.uniforms[key] = uniform;
         }
+
+        // DIAGNOSTIC: Log uniform value
+        console.log("[STM SHADER] uTopoScale:", shader.uniforms.uTopoScale?.value);
 
         // ── Vertex: declare STM uniforms ──
         if (!shader.vertexShader.includes("STM_UNIFORMS_DECLARED")) {
