@@ -92,10 +92,12 @@ export default function BaselinePage() {
   // ── Read Baseline from SystemBaselineProvider ──
   const { baseline: systemBaseline } = useSystemBaseline();
 
+  const engineResults = (window as any).__STRATFIT_ENGINE__;
+
   // ── Canonical deterministic curves (truth → render) ──
   const baselineRiskCurve = useMemo(
-    () => generateBaselineRiskCurve(256, systemBaseline),
-    [systemBaseline],
+    () => generateBaselineRiskCurve(256, engineResults ?? systemBaseline),
+    [engineResults, systemBaseline],
   );
 
   const baselineConfidenceCurve = useMemo(

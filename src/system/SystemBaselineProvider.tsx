@@ -20,6 +20,9 @@ import {
   BASELINE_STORAGE_KEY,
 } from "@/onboard/baseline"
 import type { BaselineV1 } from "@/onboard/baseline"
+import { validateBaseline } from "@/modules/systemBaseline/baselineValidation"
+import { mapBaselineToEngine } from "@/engine/baselineToEngineMapper"
+import { calculateMetrics, type LeverState } from "@/logic/calculateMetrics"
 
 // ── Public contract ─────────────────────────────────────────────────────
 
@@ -57,8 +60,43 @@ export function SystemBaselineProvider({
   )
 
   const setBaseline = useCallback((b: BaselineV1) => {
-    saveBaseline(b)
+    const validation = validateBaseline({
+      arr: b.financial.arr,
+      monthlyBurn: b.financial.monthlyBurn,
+      cashOnHand: b.financial.cashOnHand,
+    })
+
+    if (!validation.valid) {
+      console.warn("Baseline invalid:", validation.reasons)
+      setBaselineState(b)
+      return
+    }
+
     setBaselineState(b)
+    saveBaseline(b)
+
+    // 🔥 Bootstrap engine
+    const engineInputs = mapBaselineToEngine({
+      arr: b.financial.arr,
+      monthlyBurn: b.financial.monthlyBurn,
+      cashOnHand: b.financial.cashOnHand,
+      growthRate: b.financial.growthRatePct,
+    })
+
+    const levers: LeverState = {
+      demandStrength: engineInputs.demandStrength,
+      pricingPower: engineInputs.pricingPower,
+      expansionVelocity: engineInputs.expansionVelocity,
+      costDiscipline: engineInputs.costDiscipline,
+      fundingPressure: engineInputs.fundingPressure,
+      hiringIntensity: 40,
+      operatingDrag: 35,
+      marketVolatility: 30,
+      executionRisk: 25,
+    }
+
+    const metrics = calculateMetrics(levers, "base")
+      ; (window as any).__STRATFIT_ENGINE__ = metrics
   }, [])
 
   const refreshBaseline = useCallback(() => {

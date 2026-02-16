@@ -153,6 +153,20 @@ export default function InitializeBaselinePage() {
   const [activeModule, setActiveModule] = useState<ModuleId>("company")
   const [draftSaved, setDraftSaved] = useState(false)
 
+  useEffect(() => {
+    const saved = localStorage.getItem("stratfit.init.draft")
+    if (!saved) return
+    try {
+      setBaseline(migrateBaseline(JSON.parse(saved)))
+    } catch {
+      // ignore invalid drafts
+    }
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem("stratfit.init.draft", JSON.stringify(baseline))
+  }, [baseline])
+
   // ── Recalculation shimmer key ────────────────────────────────────────
   const [shimmerKey, setShimmerKey] = useState(0)
   const isFirstRender = useRef(true)

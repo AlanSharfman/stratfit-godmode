@@ -1,9 +1,11 @@
-import React, { createContext, useContext, useMemo, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
 import { calculateMetrics, type LeverState, type ScenarioId as MetricsScenarioId } from "@/logic/calculateMetrics";
 import type { ScenarioId } from "@/components/ScenarioSlidePanel";
 import { useSimulationStore } from "@/state/simulationStore";
 import { MODE } from "@/config/featureFlags";
+import { BASELINE_STORAGE_KEY } from "@/onboard/baseline";
+import { mapBaselineToEngine } from "@/engine/baselineToEngineMapper";
 
 export type AppState = {
   hasBaseline: boolean;
@@ -53,6 +55,32 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
 
   const [levers, setLevers] = useState<LeverState>(INITIAL_LEVERS);
   const [scenario] = useState<ScenarioId>("base");
+
+  useEffect(() => {
+    const baselineRaw = localStorage.getItem(BASELINE_STORAGE_KEY);
+    if (!baselineRaw) return;
+
+    try {
+      const baseline = JSON.parse(baselineRaw);
+      const engineInputs = mapBaselineToEngine({
+        arr: baseline?.financial?.arr,
+        monthlyBurn: baseline?.financial?.monthlyBurn,
+        cashOnHand: baseline?.financial?.cashOnHand,
+        growthRate: baseline?.financial?.growthRatePct,
+      });
+
+      setLevers((prev) => ({
+        ...prev,
+        demandStrength: engineInputs.demandStrength,
+        pricingPower: engineInputs.pricingPower,
+        costDiscipline: engineInputs.costDiscipline,
+        fundingPressure: engineInputs.fundingPressure,
+        expansionVelocity: engineInputs.expansionVelocity,
+      }));
+    } catch {
+      // ignore invalid drafts
+    }
+  }, []);
 
   const [showSimulate, setShowSimulate] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);

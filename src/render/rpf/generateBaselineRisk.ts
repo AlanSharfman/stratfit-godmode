@@ -1,5 +1,15 @@
 import type { BaselineV1 } from "@/onboard/baseline";
 
+type EngineResultsLike = {
+    riskIndex?: number;
+    runway?: number;
+    burnQuality?: number;
+    momentum?: number;
+    earningsPower?: number;
+    cashPosition?: number;
+    enterpriseValue?: number;
+};
+
 // ── Risk signal extraction from BaselineV1 ─────────────────────────────
 
 interface RiskSignal {
@@ -101,6 +111,29 @@ function demoRiskSignals(): RiskSignal[] {
     ];
 }
 
+function isBaselineV1(v: unknown): v is BaselineV1 {
+    return !!v && typeof v === "object" && "financial" in (v as any);
+}
+
+function extractRiskSignalsFromEngine(r: EngineResultsLike): RiskSignal[] {
+    const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+
+    const riskIndex01 = clamp01(((r.riskIndex ?? 50) as number) / 100);
+    const runway01 = clamp01(1 - ((r.runway ?? 18) as number) / 36);
+    const burnQuality01 = clamp01(1 - ((r.burnQuality ?? 50) as number) / 100);
+    const momentum01 = clamp01(((r.momentum ?? 50) as number) / 100);
+    const earnings01 = clamp01(((r.earningsPower ?? 50) as number) / 100);
+    const cash01 = clamp01(((r.cashPosition ?? 3) as number) / 10);
+
+    return [
+        { center: 0.12, amplitude: clamp01(0.35 + 0.45 * (1 - momentum01)), sharpness: 55 },
+        { center: 0.30, amplitude: clamp01(0.35 + 0.55 * runway01), sharpness: 45 },
+        { center: 0.42, amplitude: clamp01(0.25 + 0.55 * burnQuality01), sharpness: 55 },
+        { center: 0.70, amplitude: clamp01(0.25 + 0.55 * riskIndex01), sharpness: 50 },
+        { center: 0.88, amplitude: clamp01(0.25 + 0.45 * (1 - earnings01) + 0.15 * (1 - cash01)), sharpness: 50 },
+    ];
+}
+
 // ── Public API ──────────────────────────────────────────────────────────
 
 /**
@@ -117,9 +150,13 @@ function demoRiskSignals(): RiskSignal[] {
  */
 export function generateBaselineRiskCurve(
     samples: number = 256,
-    baseline?: BaselineV1 | null,
+    baselineOrEngine?: BaselineV1 | EngineResultsLike | null,
 ): Float32Array {
-    const signals = baseline ? extractRiskSignals(baseline) : demoRiskSignals();
+    const signals = !baselineOrEngine
+        ? demoRiskSignals()
+        : isBaselineV1(baselineOrEngine)
+            ? extractRiskSignals(baselineOrEngine)
+            : extractRiskSignalsFromEngine(baselineOrEngine);
     const values = new Float32Array(samples);
 
     for (let i = 0; i < samples; i++) {
