@@ -7,27 +7,73 @@
 
 /* ─── ANIMATIONS ───────────────────────────────────────────────────────── */
 @keyframes sfFadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
+
 @keyframes sfPanelIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
+
 @keyframes sfRecalPulse {
-  0%   { opacity: 0; width: 0; }
-  40%  { opacity: 1; width: 100%; }
-  100% { opacity: 0; width: 100%; }
+  0% {
+    opacity: 0;
+    width: 0;
+  }
+
+  40% {
+    opacity: 1;
+    width: 100%;
+  }
+
+  100% {
+    opacity: 0;
+    width: 100%;
+  }
 }
+
 @keyframes sfSavedFlash {
-  0%   { opacity: 0; transform: translateY(2px); }
-  30%  { opacity: 1; transform: translateY(0); }
-  100% { opacity: 0; transform: translateY(-2px); }
+  0% {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+
+  30% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
 }
+
 @keyframes sfStepGlow {
-  0%   { box-shadow: 0 0 4px rgba(160,185,210,0.12), inset 0 0 4px rgba(160,185,210,0.06); }
-  50%  { box-shadow: 0 0 10px rgba(160,185,210,0.22), inset 0 0 6px rgba(160,185,210,0.10); }
-  100% { box-shadow: 0 0 4px rgba(160,185,210,0.12), inset 0 0 4px rgba(160,185,210,0.06); }
+  0% {
+    box-shadow: 0 0 4px rgba(160, 185, 210, 0.12), inset 0 0 4px rgba(160, 185, 210, 0.06);
+  }
+
+  50% {
+    box-shadow: 0 0 10px rgba(160, 185, 210, 0.22), inset 0 0 6px rgba(160, 185, 210, 0.10);
+  }
+
+  100% {
+    box-shadow: 0 0 4px rgba(160, 185, 210, 0.12), inset 0 0 4px rgba(160, 185, 210, 0.06);
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -106,15 +152,13 @@
   right: 0;
   bottom: 0;
   width: 1px;
-  background: linear-gradient(
-    180deg,
-    transparent 3%,
-    rgba(160, 185, 210, 0.08) 15%,
-    rgba(180, 200, 225, 0.16) 35%,
-    rgba(160, 185, 210, 0.12) 55%,
-    rgba(140, 165, 195, 0.08) 75%,
-    transparent 97%
-  );
+  background: linear-gradient(180deg,
+      transparent 3%,
+      rgba(160, 185, 210, 0.08) 15%,
+      rgba(180, 200, 225, 0.16) 35%,
+      rgba(160, 185, 210, 0.12) 55%,
+      rgba(140, 165, 195, 0.08) 75%,
+      transparent 97%);
   pointer-events: none;
 }
 
@@ -273,6 +317,10 @@
   height: 100%;
   overflow-y: auto;
   padding: 32px 48px 0;
+  /* subtle content pane separation (keeps existing palette) */
+  border-left: 1px solid rgba(140, 160, 185, 0.05);
+  background:
+    linear-gradient(180deg, rgba(8, 12, 22, 0.18) 0%, rgba(8, 12, 22, 0.04) 100%);
   animation: sfFadeIn 300ms ease-out both;
 }
 
@@ -281,7 +329,10 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  /* clearer section bezel */
+  border-bottom: 1px solid rgba(150, 175, 210, 0.08);
   flex-shrink: 0;
 }
 
@@ -426,6 +477,7 @@
   .mountainCard {
     width: 360px;
   }
+
   .mountainViewport {
     height: 150px;
   }
@@ -436,10 +488,12 @@
     flex-direction: column;
     gap: 14px;
   }
+
   .headerRight {
     align-items: flex-start;
     width: 100%;
   }
+
   .mountainCard {
     width: 100%;
   }
@@ -453,7 +507,7 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1px;
-  margin-bottom: 24px;
+  margin-bottom: 22px;
   border-radius: 8px;
   overflow: hidden;
   /* ── Titanium chrome outer bezel ── */
@@ -475,10 +529,9 @@
   height: 1px;
   z-index: 5;
   background: linear-gradient(90deg,
-    transparent 10%,
-    rgba(180, 210, 240, 0.50) 50%,
-    transparent 90%
-  );
+      transparent 10%,
+      rgba(180, 210, 240, 0.50) 50%,
+      transparent 90%);
   animation: sfRecalPulse 200ms ease-out forwards;
   pointer-events: none;
 }
@@ -530,6 +583,7 @@
   animation: sfPanelIn 180ms ease-out both;
   flex: 1;
   min-height: 0;
+  padding-bottom: 16px;
 }
 
 /* ─── Card Container — Charcoal Jewel Case ──────────────────────────── */
@@ -542,9 +596,9 @@
       rgba(18, 24, 40, 0.82) 0%,
       rgba(12, 16, 28, 0.92) 100%);
   /* ── Titanium chrome multi-layer border ── */
-  border: 1px solid rgba(140, 170, 210, 0.12);
+  border: 1px solid rgba(150, 180, 220, 0.16);
   box-shadow:
-    0 0 0 1px rgba(100, 130, 170, 0.04),
+    0 0 0 1px rgba(120, 150, 190, 0.06),
     0 6px 22px rgba(0, 0, 0, 0.30),
     0 2px 6px rgba(0, 0, 0, 0.20),
     inset 0 1px 0 rgba(200, 220, 250, 0.05),
@@ -555,16 +609,17 @@
 .card::before {
   content: "";
   position: absolute;
-  top: 0; left: 0; right: 0;
+  top: 0;
+  left: 0;
+  right: 0;
   height: 1px;
   border-radius: 10px 10px 0 0;
   background: linear-gradient(90deg,
-    transparent 8%,
-    rgba(160, 190, 225, 0.06) 25%,
-    rgba(180, 210, 240, 0.12) 50%,
-    rgba(160, 190, 225, 0.06) 75%,
-    transparent 92%
-  );
+      transparent 8%,
+      rgba(160, 190, 225, 0.06) 25%,
+      rgba(180, 210, 240, 0.12) 50%,
+      rgba(160, 190, 225, 0.06) 75%,
+      transparent 92%);
   pointer-events: none;
 }
 
@@ -572,14 +627,15 @@
 .card::after {
   content: "";
   position: absolute;
-  bottom: 0; left: 0; right: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
   height: 1px;
   border-radius: 0 0 10px 10px;
   background: linear-gradient(90deg,
-    transparent 15%,
-    rgba(100, 130, 170, 0.04) 50%,
-    transparent 85%
-  );
+      transparent 15%,
+      rgba(100, 130, 170, 0.04) 50%,
+      transparent 85%);
   pointer-events: none;
 }
 
@@ -587,12 +643,12 @@
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.12em;
-  color: rgba(200, 215, 235, 0.72);
+  color: rgba(210, 225, 245, 0.78);
   margin: 0 0 4px;
   text-transform: uppercase;
   padding-bottom: 16px;
   /* ── Chrome divider line ── */
-  border-bottom: 1px solid rgba(140, 170, 210, 0.09);
+  border-bottom: 1px solid rgba(150, 180, 220, 0.11);
 }
 
 /* ─── 2-Column Field Grid ─────────────────────────────────────────────── */
@@ -600,7 +656,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px 24px;
-  padding-top: 20px;
+  padding-top: 16px;
 }
 
 /* ─── Single Field (vertical stack) ───────────────────────────────────── */
@@ -608,12 +664,24 @@
   display: flex;
   flex-direction: column;
   gap: 5px;
+  /* per-field bezel to reduce “stark wall of inputs” */
+  padding: 10px 12px 11px;
+  border-radius: 9px;
+  background: rgba(120, 150, 190, 0.02);
+  border: 1px solid rgba(140, 170, 210, 0.06);
+  box-shadow: inset 0 1px 0 rgba(200, 220, 245, 0.02);
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.field:focus-within {
+  border-color: rgba(160, 195, 235, 0.16);
+  background: rgba(120, 150, 190, 0.03);
 }
 
 .fieldLabel {
   font-size: 11px;
   font-weight: 500;
-  color: rgba(190, 205, 225, 0.68);
+  color: rgba(200, 215, 235, 0.74);
   letter-spacing: 0.2px;
 }
 
@@ -632,10 +700,10 @@
   padding: 0 14px;
   background:
     linear-gradient(180deg,
-      rgba(6, 10, 20, 0.45) 0%,
-      rgba(10, 14, 26, 0.35) 100%);
+      rgba(6, 10, 20, 0.52) 0%,
+      rgba(10, 14, 26, 0.40) 100%);
   /* ── Titanium inset border ── */
-  border: 1px solid rgba(120, 150, 190, 0.12);
+  border: 1px solid rgba(130, 160, 200, 0.16);
   border-radius: 7px;
   color: rgba(230, 240, 255, 0.95);
   font-size: 13px;
@@ -647,6 +715,10 @@
   box-shadow:
     inset 0 1px 3px rgba(0, 0, 0, 0.15),
     0 1px 0 rgba(180, 200, 230, 0.02);
+}
+
+.fieldTextInput:hover {
+  border-color: rgba(150, 180, 220, 0.20);
 }
 
 .fieldTextInput:focus {
@@ -674,16 +746,20 @@
   height: 40px;
   background:
     linear-gradient(180deg,
-      rgba(6, 10, 20, 0.45) 0%,
-      rgba(10, 14, 26, 0.35) 100%);
+      rgba(6, 10, 20, 0.52) 0%,
+      rgba(10, 14, 26, 0.40) 100%);
   /* ── Titanium inset border ── */
-  border: 1px solid rgba(120, 150, 190, 0.12);
+  border: 1px solid rgba(130, 160, 200, 0.16);
   border-radius: 7px;
   padding: 0 14px;
   transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
   box-shadow:
     inset 0 1px 3px rgba(0, 0, 0, 0.15),
     0 1px 0 rgba(180, 200, 230, 0.02);
+}
+
+.fieldInputWrap:hover {
+  border-color: rgba(150, 180, 220, 0.20);
 }
 
 .fieldInputWrap:focus-within {
@@ -779,8 +855,9 @@
   padding: 16px 0;
   margin-top: 28px;
   /* ── Chrome separator line ── */
-  border-top: 1px solid rgba(150, 175, 210, 0.08);
+  border-top: 1px solid rgba(150, 175, 210, 0.10);
   background: linear-gradient(180deg, rgba(11, 18, 32, 0) 0%, rgba(11, 18, 32, 0.96) 30%);
+  backdrop-filter: blur(10px);
   flex-shrink: 0;
 }
 

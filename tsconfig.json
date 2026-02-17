@@ -8,43 +8,34 @@
             "DOM.Iterable"
         ],
         "module": "ESNext",
+        "skipLibCheck": true,
         "moduleResolution": "Bundler",
         "resolveJsonModule": true,
         "isolatedModules": true,
-        "noEmit": true,
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
         "jsx": "react-jsx",
-        "strict": true,
-        "skipLibCheck": true,
-        "noUnusedLocals": false,
-        "noUnusedParameters": false,
-        "noFallthroughCasesInSwitch": true,
         "baseUrl": ".",
         "paths": {
             "@/*": [
                 "src/*"
             ]
         },
-        "types": [
-            "vite/client"
-        ]
+        "strict": true,
+        "noEmit": true
     },
     "include": [
-        "src",
-        "vite-env.d.ts"
+        "src"
     ],
     "exclude": [
-        "node_modules",
-        "dist",
-        "_HARD_SAVES/**",
-        "**/*HARD_SAVES*",
-        "**/*LOCK_*",
-        "**/*.lock.*",
-        "**/*.bak.*",
         "src/_quarantine/**",
         "src/onboard/**",
         "src/pitch/**",
         "src/strategy/**",
         "src/components/compound/variances2/**",
-        "src/components/compound/_variances2_DISABLED/**"
+        "src/components/compound/_variances2_DISABLED/**",
+        "node_modules",
+        "dist",
+        "build"
     ]
 }

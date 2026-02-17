@@ -1,7 +1,14 @@
 {
   "extends": "./tsconfig.json",
   "exclude": [
+    "src/_quarantine/**",
+    "src/onboard/**",
     "src/pitch/**",
-    "src/components/compound/variances2/**"
+    "src/strategy/**",
+    "src/components/compound/variances2/**",
+    "src/components/compound/_variances2_DISABLED/**",
+    "node_modules",
+    "dist",
+    "build"
   ]
 }
