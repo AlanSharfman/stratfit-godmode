@@ -56,11 +56,17 @@ export default function P50Path({
         return makeRibbon(curve, 420, 2.4, getHeightAt);
     }, [curve, getHeightAt, points.length]);
 
+    const groundGeom = useMemo(() => {
+        if (points.length < 2) return null;
+        return makeRibbon(curve, 420, 3.2, getHeightAt, -0.08);
+    }, [curve, getHeightAt, points.length]);
+
     useEffect(() => {
         return () => {
             geom?.dispose?.();
+            groundGeom?.dispose?.();
         };
-    }, [geom]);
+    }, [geom, groundGeom]);
 
     if (!visible) return null;
 
@@ -68,6 +74,26 @@ export default function P50Path({
 
     return (
         <group name={`path-${scenarioId}`} frustumCulled={false}>
+            {/* Ground-anchoring shadow band — cuts into terrain */}
+            {groundGeom && (
+                <mesh
+                    geometry={groundGeom}
+                    renderOrder={49}
+                    userData={{ pathMesh: true, id: "p50-ribbon-ground" }}
+                    frustumCulled={false}
+                >
+                    <meshBasicMaterial
+                        color={0x061218}
+                        transparent
+                        opacity={0.35}
+                        depthTest={true}
+                        depthWrite={false}
+                        side={THREE.DoubleSide}
+                        blending={THREE.NormalBlending}
+                    />
+                </mesh>
+            )}
+
             {/* Outer glow */}
             <mesh
                 geometry={geom}
@@ -148,6 +174,7 @@ function makeRibbon(
     segments: number,
     width: number,
     getHeightAt: HeightSampler,
+    liftOffset = 0,
 ) {
     const positions: number[] = [];
     const uvs: number[] = [];
@@ -162,7 +189,7 @@ function makeRibbon(
 
         // subtle undulation so it isn't a sterile strip
         const lift = Math.sin(t * Math.PI * 2.0) * 0.35 + Math.sin(t * Math.PI * 6.0) * 0.18;
-        p.y = getHeightAt(p.x, p.z) + 0.25 + lift;
+        p.y = getHeightAt(p.x, p.z) + 0.25 + lift + liftOffset;
 
         const tangent = curve.getTangent(t).normalize();
 
