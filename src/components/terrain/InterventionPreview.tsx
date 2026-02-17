@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { generateP50Nodes } from "@/paths/generatePath";
-import { nodesToWorldXZ } from "@/paths/p50Terrain";
+import { nodesToWorldXZ } from "@/paths/p50NodesTerrain";
 import { createSeed } from "@/terrain/seed";
 import { computeLeverageCurve, pickLeveragePeaks } from "@/render/slm";
 import type { SpinePoint, LeveragePeak } from "@/render/slm";

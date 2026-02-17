@@ -2,7 +2,7 @@ import React, { useMemo, useEffect } from "react";
 import * as THREE from "three";
 import { Html } from "@react-three/drei";
 import { generateP50Nodes } from "@/paths/generatePath";
-import { nodesToWorldXZ } from "@/paths/p50Terrain";
+import { nodesToWorldXZ } from "@/paths/p50NodesTerrain";
 import { createSeed } from "@/terrain/seed";
 import { buildRibbonGeometry } from "@/terrain/corridorTopology";
 import { devlog, devwarn } from "@/lib/devlog";

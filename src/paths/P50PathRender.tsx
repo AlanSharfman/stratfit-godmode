@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { generateP50Nodes } from "./generatePath";
 import { createSeed } from "@/terrain/seed";
 import { buildRibbonGeometry, type HeightSampler } from "@/terrain/corridorTopology";
-import { nodesToWorldXZ } from "@/paths/p50Terrain";
+import { nodesToWorldXZ } from "@/paths/p50NodesTerrain";
 
 export default function P50Path({
     scenarioId = "baseline",
