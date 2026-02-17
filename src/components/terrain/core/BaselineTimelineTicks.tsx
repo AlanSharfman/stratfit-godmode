@@ -2,7 +2,7 @@ import React, { useMemo, useEffect } from "react";
 import * as THREE from "three";
 import { Html } from "@react-three/drei";
 import { generateP50Nodes } from "@/paths/generatePath";
-import { nodesToWorldXZ } from "@/paths/P50Path";
+import { nodesToWorldXZ } from "@/paths/p50Terrain";
 import { createSeed } from "@/terrain/seed";
 import { buildRibbonGeometry } from "@/terrain/corridorTopology";
 import { devlog, devwarn } from "@/lib/devlog";
@@ -29,7 +29,7 @@ export default function BaselineTimelineTicks({ visible = true }: { visible?: bo
     const seed = useMemo(() => createSeed("baseline"), []);
     const nodes = useMemo(() => generateP50Nodes(), []);
     const pathData = useMemo(() => nodesToWorldXZ(nodes, seed), [nodes, seed]);
-    
+
     const centerline = useMemo(() => {
         const { points, getHeightAt } = pathData;
         const { centerline: cl } = buildRibbonGeometry(points, getHeightAt, {

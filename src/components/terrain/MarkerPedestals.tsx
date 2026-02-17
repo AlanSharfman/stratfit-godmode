@@ -3,7 +3,7 @@ import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
 import { generateP50Nodes } from "@/paths/generatePath";
-import { nodesToWorldXZ } from "@/paths/P50Path";
+import { nodesToWorldXZ } from "@/paths/p50Terrain";
 import { createSeed } from "@/terrain/seed";
 import { buildRibbonGeometry } from "@/terrain/corridorTopology";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";

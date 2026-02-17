@@ -4,7 +4,7 @@ import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { buildTerrain } from "./buildTerrain";
 import { createSeed } from "./seed";
-import P50Path from "../paths/P50Path";
+import P50Path from "../paths/P50PathRender";
 
 export default function TerrainStage({
     children,

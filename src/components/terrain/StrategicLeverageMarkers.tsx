@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { Html } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { generateP50Nodes } from "@/paths/generatePath";
-import { nodesToWorldXZ } from "@/paths/P50Path";
+import { nodesToWorldXZ } from "@/paths/p50Terrain";
 import { createSeed } from "@/terrain/seed";
 import { buildRibbonGeometry } from "@/terrain/corridorTopology";
 import { useMarkerLinkStore } from "@/state/markerLinkStore";
