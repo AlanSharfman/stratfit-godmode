@@ -16,8 +16,8 @@ export default function TerrainSurface() {
     for (const ref of [solidRef, wireRef]) {
       if (!ref.current) continue
       ref.current.rotation.x = -Math.PI / 2
-      ref.current.position.set(0, -10, 0)
-      ref.current.scale.set(1, 3.0, 1)
+      ref.current.position.set(0, 0, 0)
+      ref.current.scale.set(0.1, 0.3, 0.1)
       ref.current.frustumCulled = false
     }
   }, [])
