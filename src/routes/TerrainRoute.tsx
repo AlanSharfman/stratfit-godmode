@@ -1,6 +1,5 @@
 import React from "react";
 import PositionPage from "@/pages/position/PositionPage";
-import DiagnosticsOverlay from "@/components/system/DiagnosticsOverlay";
 import type { LeverState } from "@/logic/calculateMetrics";
 
 export type TerrainRouteProps = {
@@ -20,10 +19,5 @@ export type TerrainRouteProps = {
  * Legacy BaselinePage/ScenarioMountain is forbidden on /position.
  */
 export default function TerrainRoute(_props: TerrainRouteProps) {
-  return (
-    <div style={{ position: "relative", width: "100%", height: "100%" }}>
-      <PositionPage />
-      <DiagnosticsOverlay />
-    </div>
-  );
+  return <PositionPage />;
 }

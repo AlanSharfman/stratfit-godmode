@@ -17,7 +17,7 @@ export default function TimelineAxis({
   points,
   start = [-60, 0.02, 0],
   end = [60, 0.02, 0],
-  color = "#EAFBFF",
+  color = "#3B82F6",
   thicknessPx = 8,
 }: Props) {
   const pts = useMemo(() => {
