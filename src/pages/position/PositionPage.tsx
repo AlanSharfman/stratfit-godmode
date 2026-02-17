@@ -1,6 +1,7 @@
 import React from "react"
 import TerrainStage from "@/terrain/TerrainStage"
-import TerrainPathSystem from "@/paths/TerrainPathSystem"
+import BaselineTimelineTicks from "@/components/terrain/core/BaselineTimelineTicks"
+import TerrainOverlayHost from "@/terrain/TerrainOverlayHost"
 
 export default function PositionPage() {
   return (
@@ -13,8 +14,10 @@ export default function PositionPage() {
       }}
     >
       <TerrainStage>
-        {/* Path + timeline system */}
-        <TerrainPathSystem />
+        {/* Timeline ticks along P50 path */}
+        <BaselineTimelineTicks />
+        {/* God-mode overlay layers */}
+        <TerrainOverlayHost />
       </TerrainStage>
     </div>
   )
