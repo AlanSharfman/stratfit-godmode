@@ -22,8 +22,8 @@ export function ScreenSpaceTubeLine({
   color = "#EAFBFF",
   opacity = 0.94,
   tubularSegments = 256,
-  radiusMin = 0.012,
-  radiusMax = 0.28,
+  radiusMin = 0.02,
+  radiusMax = 0.6,
   renderOrder = 80,
 }: Props) {
   const { camera, gl } = useThree();

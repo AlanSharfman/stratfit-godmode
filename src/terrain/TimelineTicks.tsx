@@ -19,7 +19,7 @@ export default function TimelineTicks({
   rangeX = [-50, 40],
   y = 0.02,
   color = "#EAFBFF",
-  sizePx = 10,
+  sizePx = 12,
 }: Props) {
   const positions = useMemo(() => {
     if (ticks && ticks.length > 0) {
@@ -42,10 +42,11 @@ export default function TimelineTicks({
           key={i}
           position={pos}
           sizePx={sizePx}
+          liftY={0.26}
           color={color}
-          opacity={0.85}
+          opacity={0.92}
           halo={false}
-          renderOrder={85}
+          renderOrder={150}
         />
       ))}
     </group>

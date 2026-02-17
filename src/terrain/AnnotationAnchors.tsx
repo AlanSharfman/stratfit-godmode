@@ -16,7 +16,7 @@ const DEFAULT_ANCHORS: [number, number, number][] = [
 export default function AnnotationAnchors({
   anchors,
   color = "#38bdf8",
-  sizePx = 16,
+  sizePx = 14,
 }: Props) {
   const positions = useMemo(() => {
     const src = anchors && anchors.length > 0 ? anchors : DEFAULT_ANCHORS
@@ -34,10 +34,11 @@ export default function AnnotationAnchors({
           key={i}
           position={pos}
           sizePx={sizePx}
+          liftY={0.26}
           color={color}
-          opacity={0.96}
+          opacity={0.90}
           halo
-          renderOrder={92}
+          renderOrder={155}
         />
       ))}
     </group>

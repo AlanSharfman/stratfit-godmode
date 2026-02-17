@@ -17,7 +17,7 @@ const DEFAULT_NODES: [number, number, number][] = [
 export default function PathNodes({
   nodes,
   color = "#EAFBFF",
-  sizePx = 14,
+  sizePx = 18,
 }: Props) {
   const positions = useMemo(() => {
     const src = nodes && nodes.length > 0 ? nodes : DEFAULT_NODES
@@ -35,10 +35,11 @@ export default function PathNodes({
           key={i}
           position={pos}
           sizePx={sizePx}
+          liftY={0.28}
           color={color}
-          opacity={0.96}
+          opacity={0.98}
           halo
-          renderOrder={90}
+          renderOrder={160}
         />
       ))}
     </group>
