@@ -10,18 +10,19 @@ function CameraRig() {
   const controlsRef = useRef<OrbitControlsImpl | null>(null)
 
   useEffect(() => {
-    // Deterministic camera start pose (prevents "inside mountain")
+    // HERO START SHOT — wide + readable
     const cam = camera as THREE.PerspectiveCamera
     cam.near = 0.1
-    cam.far = 2000
-    cam.fov = 45
-    cam.position.set(0, 18, 55)
-    cam.lookAt(0, 2, 0)
+    cam.far = 4000
+    cam.fov = 42
+
+    // Wide, elevated, slight forward tilt
+    cam.position.set(0, 55, 140)
+    cam.lookAt(0, 6, 0)
     cam.updateProjectionMatrix()
 
-    // Reset OrbitControls target + sync
     if (controlsRef.current) {
-      controlsRef.current.target.set(0, 2, 0)
+      controlsRef.current.target.set(0, 6, 0)
       controlsRef.current.update()
     }
   }, [camera])
@@ -31,13 +32,13 @@ function CameraRig() {
       ref={(r) => {
         controlsRef.current = r
       }}
-      target={[0, 2, 0]}
+      target={[0, 6, 0]}
       enablePan={false}
       enableDamping={true}
       dampingFactor={0.08}
-      minDistance={18}
-      maxDistance={120}
-      maxPolarAngle={Math.PI / 2.05}
+      minDistance={70}   // prevents "macro" starts
+      maxDistance={420}  // prevents losing the scene
+      maxPolarAngle={Math.PI / 2.08}
     />
   )
 }
@@ -50,16 +51,14 @@ export default function TerrainStage({
   return (
     <div style={{ width: "100%", height: "100%", position: "relative" }}>
       <Canvas>
-        {/* Lighting (safe baseline) */}
         <ambientLight intensity={0.6} />
-        <directionalLight position={[20, 40, 20]} intensity={1} />
+        <directionalLight position={[50, 120, 60]} intensity={1} />
 
         <Suspense fallback={null}>
           <SceneStack />
           {children}
         </Suspense>
 
-        {/* Camera/controls locked */}
         <CameraRig />
       </Canvas>
     </div>
