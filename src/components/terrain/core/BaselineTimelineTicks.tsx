@@ -9,9 +9,7 @@ import { devlog, devwarn } from "@/lib/devlog";
 
 const TICKS = [
     { t: 0.00, label: "Now" },
-    { t: 0.125, label: "3m" },
     { t: 0.25, label: "6m" },
-    { t: 0.375, label: "9m" },
     { t: 0.50, label: "12m" },
     { t: 0.75, label: "18m" },
     { t: 1.00, label: "24m" },
@@ -103,16 +101,28 @@ export default function BaselineTimelineTicks({ visible = true }: { visible?: bo
                         />
                     </mesh>
 
-                    <Html position={[0, -1.4, 0]} center distanceFactor={80}>
+                    <Html
+                        position={[0, -1.4, 0]}
+                        center
+                        transform
+                        sprite
+                        occlude={false}
+                        distanceFactor={10}
+                        zIndexRange={[200, 0]}
+                    >
                         <div style={{
-                            color: LABEL_COLOR,
-                            fontSize: 10,
+                            padding: "4px 8px",
+                            borderRadius: 10,
+                            fontSize: 12,
+                            letterSpacing: 0.4,
+                            color: "rgba(234,251,255,0.92)",
+                            background: "rgba(6, 18, 24, 0.55)",
+                            border: "1px solid rgba(34, 211, 238, 0.22)",
+                            boxShadow: "0 0 16px rgba(34, 211, 238, 0.12)",
+                            backdropFilter: "blur(10px)",
+                            whiteSpace: "nowrap",
+                            fontFamily: "'Inter', system-ui, sans-serif",
                             fontWeight: 600,
-                            fontFamily: "'JetBrains Mono', monospace",
-                            textShadow: "0 0 6px rgba(0,0,0,0.9)",
-                            letterSpacing: "0.05em",
-                            textTransform: "uppercase",
-                            opacity: 0.9,
                         }}>
                             {label}
                         </div>

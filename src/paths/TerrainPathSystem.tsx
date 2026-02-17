@@ -18,8 +18,8 @@ export default function TerrainPathSystem() {
           [-120, 0.2, 0],
           [120, 0.2, 0],
         ]}
-        color="#9be7ff"
-        lineWidth={2.5}
+        color="#C0C0C0"
+        lineWidth={5}
         transparent
         opacity={0.95}
         depthTest={false}
