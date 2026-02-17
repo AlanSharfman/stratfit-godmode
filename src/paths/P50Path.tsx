@@ -9,7 +9,7 @@ import type { HeightSampler } from "@/terrain/corridorTopology";
 
 /**
  * Shared helper: generate world-space XZ control points from path nodes.
- * Returns { points, heightSampler } for use with buildRibbonGeometry.
+ * Returns { points, getHeightAt } for use with ribbon builders.
  *
  * COORDINATE SYSTEM:
  * - Terrain PlaneGeometry(560, 360) rotated -π/2 around X, shifted Y by -6
@@ -19,7 +19,7 @@ import type { HeightSampler } from "@/terrain/corridorTopology";
  */
 export function nodesToWorldXZ(
     nodes: ReturnType<typeof generateP50Nodes>,
-    seed: number,
+    seed: number
 ): { points: { x: number; z: number }[]; getHeightAt: HeightSampler } {
     const points = nodes.map((n) => {
         const world = normToWorld(n.coord);
@@ -44,7 +44,10 @@ export default function P50Path({
 }) {
     const seed = useMemo(() => createSeed(scenarioId), [scenarioId]);
     const nodes = useMemo(() => generateP50Nodes(), []);
-    const { points, getHeightAt } = useMemo(() => nodesToWorldXZ(nodes, seed), [nodes, seed]);
+    const { points, getHeightAt } = useMemo(
+        () => nodesToWorldXZ(nodes, seed),
+        [nodes, seed]
+    );
 
     const curve = useMemo(() => {
         const pts = points.map((p) => new THREE.Vector3(p.x, 0, p.z));
@@ -53,7 +56,14 @@ export default function P50Path({
 
     const geom = useMemo(() => {
         if (points.length < 2) return null;
-        return makeRibbon(curve, 420, 2.4, getHeightAt);
+        return makeTerrainTrailRibbon(curve, getHeightAt, {
+            samples: 520, // denser = smoother curvature + better ground adherence
+            halfWidth: 1.2, // width/2 (total ~2.4)
+            clearanceY: 0.08, // keeps it above terrain (no z-fighting)
+            normalEps: 0.6, // finite-diff step in world units
+            smoothWindow: 5, // odd number recommended (Y-only smoothing)
+            maxSlopePerM: 0.55, // clamp vertical change (units per meter)
+        });
     }, [curve, getHeightAt, points.length]);
 
     useEffect(() => {
@@ -63,7 +73,6 @@ export default function P50Path({
     }, [geom]);
 
     if (!visible) return null;
-
     if (!geom) return null;
 
     return (
@@ -76,7 +85,7 @@ export default function P50Path({
                 frustumCulled={false}
             >
                 <meshBasicMaterial
-                    color={0x38bdf8}
+                    color={0x38bdf8} // Cyan/Ice
                     transparent
                     opacity={0.22}
                     depthTest={false}
@@ -140,52 +149,172 @@ function Markers({
     );
 }
 
+type TrailOptions = {
+    samples: number;
+    halfWidth: number;
+    clearanceY: number;
+    normalEps: number;
+    smoothWindow: number;
+    maxSlopePerM: number;
+};
+
 /**
- * Ribbon: terrain-follow feel comes from banking + subtle vertical undulation.
+ * Terrain-realistic ribbon:
+ * - samples curve in world XZ
+ * - projects Y using getHeightAt (terrain + STM)
+ * - clamps slope + smooths Y to remove spikes
+ * - computes banking from terrain normal (finite differences) and tangent
  */
-function makeRibbon(
+function makeTerrainTrailRibbon(
     curve: THREE.CatmullRomCurve3,
-    segments: number,
-    width: number,
     getHeightAt: HeightSampler,
+    opts: TrailOptions
 ) {
     const positions: number[] = [];
     const uvs: number[] = [];
     const indices: number[] = [];
 
-    const up = new THREE.Vector3(0, 1, 0);
-    const prevNormal = new THREE.Vector3(1, 0, 0);
+    const samples = Math.max(64, Math.floor(opts.samples));
+    const halfWidth = opts.halfWidth;
+    const clearanceY = opts.clearanceY;
+    const eps = Math.max(0.15, opts.normalEps);
 
-    for (let i = 0; i <= segments; i++) {
-        const t = i / segments;
+    // 1) Build arc-length-ish samples (deterministic, stable)
+    // We approximate equal distance using a dense pre-sample then remap to cumulative length.
+    const dense = Math.max(samples * 3, 600);
+    const densePts: THREE.Vector3[] = [];
+    for (let i = 0; i <= dense; i++) {
+        const t = i / dense;
+        densePts.push(curve.getPoint(t));
+    }
+
+    const cum: number[] = new Array(densePts.length).fill(0);
+    let total = 0;
+    for (let i = 1; i < densePts.length; i++) {
+        total += densePts[i].distanceTo(densePts[i - 1]);
+        cum[i] = total;
+    }
+    total = Math.max(total, 1e-6);
+
+    function tAtDistance(d: number) {
+        const target = Math.min(Math.max(d, 0), total);
+        // binary search in cum
+        let lo = 0;
+        let hi = cum.length - 1;
+        while (lo + 1 < hi) {
+            const mid = (lo + hi) >> 1;
+            if (cum[mid] < target) lo = mid;
+            else hi = mid;
+        }
+        const d0 = cum[lo];
+        const d1 = cum[hi];
+        const tt = d1 > d0 ? (target - d0) / (d1 - d0) : 0;
+        const t0 = lo / dense;
+        const t1 = hi / dense;
+        return t0 + (t1 - t0) * tt;
+    }
+
+    const center: THREE.Vector3[] = [];
+    const yRaw: number[] = [];
+    for (let i = 0; i <= samples; i++) {
+        const d = (i / samples) * total;
+        const t = tAtDistance(d);
         const p = curve.getPoint(t);
+        // project to ground
+        const y = getHeightAt(p.x, p.z) + clearanceY;
+        center.push(new THREE.Vector3(p.x, y, p.z));
+        yRaw.push(y);
+    }
 
-        // subtle undulation so it isn't a sterile strip
-        const lift = Math.sin(t * Math.PI * 2.0) * 0.35 + Math.sin(t * Math.PI * 6.0) * 0.18;
-        p.y = getHeightAt(p.x, p.z) + 0.25 + lift;
+    // 2) Clamp slope (prevents sharp steps on steep terrain or noisy displacement)
+    const yClamped: number[] = [...yRaw];
+    for (let i = 1; i < yClamped.length; i++) {
+        const dxz = Math.max(
+            1e-6,
+            Math.hypot(center[i].x - center[i - 1].x, center[i].z - center[i - 1].z)
+        );
+        const maxDy = opts.maxSlopePerM * dxz;
+        const dy = yClamped[i] - yClamped[i - 1];
+        if (dy > maxDy) yClamped[i] = yClamped[i - 1] + maxDy;
+        if (dy < -maxDy) yClamped[i] = yClamped[i - 1] - maxDy;
+    }
+    for (let i = yClamped.length - 2; i >= 0; i--) {
+        const dxz = Math.max(
+            1e-6,
+            Math.hypot(center[i + 1].x - center[i].x, center[i + 1].z - center[i].z)
+        );
+        const maxDy = opts.maxSlopePerM * dxz;
+        const dy = yClamped[i] - yClamped[i + 1];
+        if (dy > maxDy) yClamped[i] = yClamped[i + 1] + maxDy;
+        if (dy < -maxDy) yClamped[i] = yClamped[i + 1] - maxDy;
+    }
 
-        const tangent = curve.getTangent(t).normalize();
+    // 3) Smooth Y only (small window, deterministic)
+    const win = Math.max(1, Math.floor(opts.smoothWindow));
+    const halfWin = Math.floor(win / 2);
+    const ySmooth: number[] = new Array(yClamped.length).fill(0);
+    for (let i = 0; i < yClamped.length; i++) {
+        let sum = 0;
+        let wsum = 0;
+        for (let k = -halfWin; k <= halfWin; k++) {
+            const j = Math.min(Math.max(i + k, 0), yClamped.length - 1);
+            // triangular weights
+            const w = 1 + halfWin - Math.abs(k);
+            sum += yClamped[j] * w;
+            wsum += w;
+        }
+        ySmooth[i] = wsum > 0 ? sum / wsum : yClamped[i];
+    }
 
-        // Banking: rotate binormal around tangent slightly
-        const bank = Math.sin(t * Math.PI * 2.0) * 0.20;
-        const normal = prevNormal.clone().cross(tangent).cross(tangent).normalize();
-        if (normal.lengthSq() < 1e-6) normal.copy(prevNormal);
-        prevNormal.copy(normal);
+    for (let i = 0; i < center.length; i++) {
+        center[i].y = ySmooth[i];
+    }
 
-        const binormal = new THREE.Vector3().crossVectors(tangent, up).normalize();
-        const banked = binormal.clone().applyAxisAngle(tangent, bank).normalize();
+    // 4) Build ribbon using terrain normal + tangent
+    const tmpTangent = new THREE.Vector3();
+    const tmpNormal = new THREE.Vector3();
+    const tmpRight = new THREE.Vector3();
 
-        const left = p.clone().addScaledVector(banked, -width * 0.5);
-        const right = p.clone().addScaledVector(banked, width * 0.5);
+    for (let i = 0; i <= samples; i++) {
+        const p = center[i];
+
+        // tangent from neighbors (stable)
+        const pPrev = center[Math.max(i - 1, 0)];
+        const pNext = center[Math.min(i + 1, center.length - 1)];
+        tmpTangent.copy(pNext).sub(pPrev);
+        tmpTangent.y = 0; // tangent in XZ plane for trail direction
+        if (tmpTangent.lengthSq() < 1e-10) tmpTangent.set(1, 0, 0);
+        tmpTangent.normalize();
+
+        // terrain normal via finite differences of height field
+        const hL = getHeightAt(p.x - eps, p.z);
+        const hR = getHeightAt(p.x + eps, p.z);
+        const hD = getHeightAt(p.x, p.z - eps);
+        const hU = getHeightAt(p.x, p.z + eps);
+
+        // dY/dX and dY/dZ
+        const dYdX = (hR - hL) / (2 * eps);
+        const dYdZ = (hU - hD) / (2 * eps);
+
+        // normal ~ (-dY/dX, 1, -dY/dZ)
+        tmpNormal.set(-dYdX, 1, -dYdZ).normalize();
+
+        // right = tangent x normal  (ensures ribbon "banks" with slope)
+        tmpRight.crossVectors(tmpTangent, tmpNormal).normalize();
+        if (tmpRight.lengthSq() < 1e-10) tmpRight.set(0, 0, 1);
+
+        const left = new THREE.Vector3().copy(p).addScaledVector(tmpRight, -halfWidth);
+        const right = new THREE.Vector3().copy(p).addScaledVector(tmpRight, halfWidth);
 
         positions.push(left.x, left.y, left.z);
         positions.push(right.x, right.y, right.z);
 
+        const t = i / samples;
         uvs.push(0, t);
         uvs.push(1, t);
     }
 
-    for (let i = 0; i < segments; i++) {
+    for (let i = 0; i < samples; i++) {
         const a = i * 2;
         const b = a + 1;
         const c = a + 2;
