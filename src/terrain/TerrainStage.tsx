@@ -16,13 +16,13 @@ function CameraRig() {
     cam.far = 4000
     cam.fov = 42
 
-    // Wide, elevated, slight forward tilt
-    cam.position.set(0, 55, 140)
-    cam.lookAt(0, 6, 0)
+    // MODE B DEMO FRAMING — trajectory-first, slight 3/4 angle
+    cam.position.set(-38, 42, 118)
+    cam.lookAt(6, 7, 0)
     cam.updateProjectionMatrix()
 
     if (controlsRef.current) {
-      controlsRef.current.target.set(0, 6, 0)
+      controlsRef.current.target.set(6, 7, 0)
       controlsRef.current.update()
     }
   }, [camera])
@@ -32,13 +32,14 @@ function CameraRig() {
       ref={(r) => {
         controlsRef.current = r
       }}
-      target={[0, 6, 0]}
+      target={[6, 7, 0]}
       enablePan={false}
       enableDamping={true}
       dampingFactor={0.08}
       minDistance={70}   // prevents "macro" starts
       maxDistance={420}  // prevents losing the scene
-      maxPolarAngle={Math.PI / 2.08}
+      minPolarAngle={0.55}
+      maxPolarAngle={1.25}
     />
   )
 }
