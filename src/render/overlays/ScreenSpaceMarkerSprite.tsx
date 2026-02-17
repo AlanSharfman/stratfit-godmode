@@ -5,7 +5,7 @@ import { clamp, worldUnitsPerPixel } from "./screenSpace";
 
 type Props = {
   position: THREE.Vector3;
-  sizePx?: number;          // marker diameter on screen
+  sizePx?: number;
   liftY?: number;
   color?: string;
   opacity?: number;
@@ -23,11 +23,10 @@ function makeCircleTexture(size = 128) {
 
   ctx.clearRect(0, 0, size, size);
 
-  // soft halo + solid core
-  const g = ctx.createRadialGradient(r, r, r * 0.12, r, r, r);
+  const g = ctx.createRadialGradient(r, r, r * 0.10, r, r, r);
   g.addColorStop(0.00, "rgba(255,255,255,1)");
-  g.addColorStop(0.28, "rgba(255,255,255,0.95)");
-  g.addColorStop(0.55, "rgba(255,255,255,0.25)");
+  g.addColorStop(0.22, "rgba(255,255,255,0.98)");
+  g.addColorStop(0.55, "rgba(255,255,255,0.40)");
   g.addColorStop(1.00, "rgba(255,255,255,0.00)");
 
   ctx.fillStyle = g;
@@ -44,12 +43,12 @@ function makeCircleTexture(size = 128) {
 
 export function ScreenSpaceMarkerSprite({
   position,
-  sizePx = 14,              // Mode B default
-  liftY = 0.18,
+  sizePx = 18,
+  liftY = 0.28,
   color = "#EAFBFF",
-  opacity = 0.96,
+  opacity = 0.98,
   halo = true,
-  renderOrder = 90,
+  renderOrder = 200,
 }: Props) {
   const { camera, gl } = useThree();
   const coreRef = useRef<THREE.Sprite>(null);
@@ -63,7 +62,7 @@ export function ScreenSpaceMarkerSprite({
     const dist = camera.position.distanceTo(worldPos);
     const wuPerPx = worldUnitsPerPixel(camera, dist, hPx);
 
-    const sizeWorld = clamp(sizePx * wuPerPx, 0.05, 1.0);
+    const sizeWorld = clamp(sizePx * wuPerPx, 0.06, 1.4);
 
     const core = coreRef.current;
     if (core) {
@@ -74,7 +73,7 @@ export function ScreenSpaceMarkerSprite({
     const h = haloRef.current;
     if (h) {
       h.position.copy(worldPos);
-      const haloWorld = clamp(sizeWorld * 2.25, 0.10, 1.6);
+      const haloWorld = clamp(sizeWorld * 2.6, 0.12, 2.2);
       h.scale.set(haloWorld, haloWorld, 1);
     }
   });
@@ -87,10 +86,11 @@ export function ScreenSpaceMarkerSprite({
             map={tex}
             color={color}
             transparent
-            opacity={0.26}
-            depthWrite={false}
-            depthTest
+            opacity={0.34}
             toneMapped={false}
+            depthWrite={false}
+            depthTest={false}
+            blending={THREE.AdditiveBlending}
           />
         </sprite>
       )}
@@ -100,9 +100,10 @@ export function ScreenSpaceMarkerSprite({
           color={color}
           transparent
           opacity={opacity}
-          depthWrite={false}
-          depthTest
           toneMapped={false}
+          depthWrite={false}
+          depthTest={false}
+          blending={THREE.AdditiveBlending}
         />
       </sprite>
     </group>

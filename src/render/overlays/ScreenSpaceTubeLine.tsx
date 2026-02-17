@@ -5,8 +5,8 @@ import { clamp, worldUnitsPerPixel } from "./screenSpace";
 
 type Props = {
   points: THREE.Vector3[];
-  thicknessPx?: number;     // perceived thickness on screen
-  liftY?: number;           // avoid merge into terrain wireframe
+  thicknessPx?: number;
+  liftY?: number;
   color?: string;
   opacity?: number;
   tubularSegments?: number;
@@ -17,14 +17,14 @@ type Props = {
 
 export function ScreenSpaceTubeLine({
   points,
-  thicknessPx = 5.0,         // Mode B default
-  liftY = 0.14,
+  thicknessPx = 8.0,
+  liftY = 0.22,
   color = "#EAFBFF",
-  opacity = 0.94,
+  opacity = 0.98,
   tubularSegments = 256,
   radiusMin = 0.02,
   radiusMax = 0.6,
-  renderOrder = 80,
+  renderOrder = 180,
 }: Props) {
   const { camera, gl } = useThree();
   const meshRef = useRef<THREE.Mesh>(null);
@@ -35,7 +35,6 @@ export function ScreenSpaceTubeLine({
   }, [points, liftY]);
 
   const geom = useMemo(() => {
-    // base radius used only as a scaling reference (we scale every frame)
     return new THREE.TubeGeometry(curve, tubularSegments, 0.05, 12, false);
   }, [curve, tubularSegments]);
 
@@ -49,7 +48,6 @@ export function ScreenSpaceTubeLine({
     const hPx = gl.domElement?.clientHeight ?? 900;
     const wuPerPx = worldUnitsPerPixel(camera, dist, hPx);
 
-    // radius = (diameterPx * wuPerPx) / 2
     const targetRadius = clamp((thicknessPx * wuPerPx) * 0.5, radiusMin, radiusMax);
 
     const baseRadius = 0.05;
@@ -63,12 +61,10 @@ export function ScreenSpaceTubeLine({
         color={color}
         transparent
         opacity={opacity}
-        depthWrite={false}
-        depthTest
         toneMapped={false}
-        polygonOffset
-        polygonOffsetFactor={-3}
-        polygonOffsetUnits={-3}
+        depthWrite={false}
+        depthTest={false}
+        blending={THREE.AdditiveBlending}
       />
     </mesh>
   );
