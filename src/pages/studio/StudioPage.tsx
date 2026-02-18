@@ -9,6 +9,7 @@ import { TimelineScrubber } from "@/components/strategy-studio/TimelineScrubber"
 import SimulationActivityPanel from "@/components/strategy-studio/SimulationActivityPanel";
 import { DeltaSummaryPanel } from "@/components/strategy-studio/DeltaSummaryPanel";
 import { useAnchorRegistry } from "@/spatial/AnchorRegistry";
+import type { LeverState } from "@/logic/calculateMetrics";
 
 export default function StudioPage() {
     // Phase 4: Register minimum spatial anchors
@@ -20,24 +21,20 @@ export default function StudioPage() {
         reg.upsertAnchor("p50_mid", { x: 0.5, y: 0, z: 0.4 }, 2, "P50 Mid");
     }, []);
 
-    const [levers, setLevers] = useState<any>(() => {
-        return [
-            { id: "demandStrength", label: "Demand Strength", value: 60, min: 0, max: 100, group: "growth" },
-            { id: "expansionVelocity", label: "Expansion Velocity", value: 45, min: 0, max: 100, group: "growth" },
-            { id: "pricingPower", label: "Pricing Power", value: 50, min: 0, max: 100, group: "pricing" },
-            { id: "costDiscipline", label: "Cost Discipline", value: 55, min: 0, max: 100, group: "cost" },
-            { id: "operatingDrag", label: "Operating Drag", value: 35, min: 0, max: 100, group: "cost" },
-            { id: "marketVolatility", label: "Market Volatility", value: 30, min: 0, max: 100, group: "capital" },
-            { id: "executionRisk", label: "Execution Risk", value: 25, min: 0, max: 100, group: "capital" },
-            { id: "fundingPressure", label: "Funding Pressure", value: 20, min: 0, max: 100, group: "capital" },
-            { id: "hiringIntensity", label: "Hiring Intensity", value: 40, min: 0, max: 100, group: "operations" },
-        ];
-    });
+    const [levers, setLevers] = useState<LeverState>(() => ({
+        demandStrength: 60,
+        expansionVelocity: 45,
+        pricingPower: 50,
+        costDiscipline: 55,
+        operatingDrag: 35,
+        marketVolatility: 30,
+        executionRisk: 25,
+        fundingPressure: 20,
+        hiringIntensity: 40,
+    }));
 
-    const onLeverChange = useCallback((leverId: string, nextValue: number) => {
-        setLevers((prev: any[]) =>
-            prev.map((l) => (l?.id === leverId ? { ...l, value: nextValue } : l))
-        );
+    const onLeverChange = useCallback((key: keyof LeverState, value: number) => {
+        setLevers((prev) => ({ ...prev, [key]: value }));
     }, []);
 
     const [activeTab, setActiveTab] = useState<any>("A");
@@ -79,7 +76,6 @@ export default function StudioPage() {
 
     const autoSimResult = useMemo(() => null, []);
 
-    const LeverStackAny = LeverStack as any;
     const TopControlBarAny = TopControlBar as any;
     const TimelineScrubberAny = TimelineScrubber as any;
     const SimulationActivityPanelAny = SimulationActivityPanel as any;
@@ -88,7 +84,7 @@ export default function StudioPage() {
     return (
         <div className={styles.page}>
             <aside className={styles.leftRail}>
-                <LeverStackAny levers={levers} onLeverChange={onLeverChange} />
+                <LeverStack levers={levers} onLeverChange={onLeverChange} />
             </aside>
 
             <main className={styles.centerStage}>
