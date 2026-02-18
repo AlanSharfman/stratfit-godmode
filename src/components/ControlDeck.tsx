@@ -1,12 +1,11 @@
 // src/components/ControlDeck.tsx
-// STRATFIT — GOD-MODE Control Deck
-// NOTE: Slider surface can be swapped between legacy "wells" and restored compound SliderPanel.
-// Reversible via USE_COMPOUND_SLIDER_PANEL toggle below.
+// STRATFIT — God-Mode Control Deck (REFERENCE PANEL RESTORE)
+// Visual target: section cards + clean slider rows + LOW/NEUTRAL/HIGH + right % readout
+// IMPORTANT: Lever pipeline preserved (no engine/sim changes).
 
 import React, { useMemo, useCallback, memo, useRef } from "react";
 import Slider from "./ui/Slider";
 import SliderInfoTooltip from "./ui/SliderInfoTooltip";
-import SliderPanel from "@/components/SliderPanel";
 import { useShallow } from "zustand/react/shallow";
 import { useScenarioStore } from "@/state/scenarioStore";
 import { useUIStore } from "@/state/uiStore";
@@ -14,14 +13,8 @@ import type { LeverId } from "@/logic/mountainPeakModel";
 import { emitCausal } from "@/ui/causalEvents";
 
 // ============================================================================
-// TOGGLE (REVERSIBLE)
-// ============================================================================
-const USE_COMPOUND_SLIDER_PANEL = true;
-
-// ============================================================================
 // TYPES
 // ============================================================================
-
 export interface ControlSliderConfig {
   id: LeverId;
   label: string;
@@ -44,9 +37,8 @@ export interface ControlBoxConfig {
 }
 
 // ============================================================================
-// KPI MAPPING
+// KPI MAPPING (kept)
 // ============================================================================
-
 const KPI_COLORS: Record<number, string> = {
   0: "#00ffcc",
   1: "#ff6b6b",
@@ -68,192 +60,119 @@ const LEVER_TO_KPI: Record<LeverId, number[]> = {
   fundingInjection: [2, 5],
 };
 
-// Derived helper: KPI -> related levers (for highlight)
-const KPI_TO_LEVERS: Record<number, LeverId[]> = (() => {
-  const out: Record<number, LeverId[]> = {};
-  (Object.keys(KPI_COLORS) as unknown as number[]).forEach((k) => (out[k] = []));
-  (Object.keys(LEVER_TO_KPI) as LeverId[]).forEach((leverId) => {
-    for (const kpi of LEVER_TO_KPI[leverId] || []) {
-      if (!out[kpi]) out[kpi] = [];
-      out[kpi].push(leverId);
-    }
-  });
-  return out;
-})();
+// ============================================================================
+// HELPERS
+// ============================================================================
+function clamp(n: number, a: number, b: number) {
+  return Math.max(a, Math.min(b, n));
+}
+
+function norm01(v: number, min: number, max: number) {
+  const span = Math.max(1e-9, max - min);
+  return clamp((v - min) / span, 0, 1);
+}
+
+function asPct(v: number, min: number, max: number) {
+  return Math.round(norm01(v, min, max) * 100);
+}
+
+function formatBoxTitle(title: string) {
+  return String(title || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, " ");
+}
 
 // ============================================================================
-// CORNER BUMPER COMPONENT
+// SLIDER ROW (REFERENCE LOOK)
 // ============================================================================
-
-const CornerBumper = memo(function CornerBumper({ position }: { position: 'tl' | 'tr' | 'bl' | 'br' }) {
-  const posStyles: Record<string, React.CSSProperties> = {
-    tl: { top: 8, left: 8 },
-    tr: { top: 8, right: 8 },
-    bl: { bottom: 8, left: 8 },
-    br: { bottom: 8, right: 8 },
-  };
-  
-  return (
-    <div className="corner-bumper" style={posStyles[position]}>
-      <div className="bumper-outer" />
-      <div className="bumper-inner" />
-    </div>
-  );
-});
-
-// ============================================================================
-// INDIVIDUAL SLIDER WELL (legacy surface)
-// ============================================================================
-
-interface SliderWellProps {
+interface GodSliderRowProps {
   slider: ControlSliderConfig;
-  highlightColor: string | null;
   boxId: string;
+  highlightColor: string | null;
+  isFocused: boolean;
   onStart: (boxId: string) => void;
   onEnd: () => void;
   onChange: (v: number) => void;
   onFocus: () => void;
   onBlur: () => void;
-  isFocused: boolean;
 }
 
-const SliderWell = memo(function SliderWell({
+const GodSliderRow = memo(function GodSliderRow({
   slider,
-  highlightColor,
   boxId,
+  highlightColor,
+  isFocused,
   onStart,
   onEnd,
   onChange,
   onFocus,
   onBlur,
-  isFocused,
-}: SliderWellProps) {
+}: GodSliderRowProps) {
   const [tooltipRect, setTooltipRect] = React.useState<DOMRect | null>(null);
-  const [inputValue, setInputValue] = React.useState(String(slider.value));
-  
-  // Sync input when slider value changes externally
-  React.useEffect(() => {
-    setInputValue(String(slider.value));
-  }, [slider.value]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
-  };
+  const pct = asPct(slider.value, slider.min, slider.max);
 
-  const handleInputBlur = () => {
-    const numVal = parseFloat(inputValue);
-    if (!isNaN(numVal)) {
-      const clamped = Math.max(slider.min, Math.min(slider.max, numVal));
-      onChange(clamped);
-      setInputValue(String(clamped));
-    } else {
-      setInputValue(String(slider.value));
-    }
-  };
-
-  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      (e.target as HTMLInputElement).blur();
-    }
-  };
+  // Subtle accent: KPI-hover color or default cyan
+  const accent = highlightColor ?? "rgba(94,234,212,0.85)";
+  const accentSoft = highlightColor ? `${highlightColor}33` : "rgba(94,234,212,0.18)";
 
   return (
-    <div 
-      className={`slider-well ${isFocused ? 'slider-well-focused' : ''}`}
-      /* REMOVED: onPointerEnter/Leave from whole slider — Oracle only triggers on "i" icon */
-    >
-      <div className="slider-well-inner">
-        <div className="slider-header">
-          <span className={`slider-label ${isFocused ? 'slider-label-focused' : ''}`}>
-            {slider.label}
-            {slider.tooltip && (
-              <span
-                className="info-dot"
-                onMouseEnter={(e) => {
-                  setTooltipRect(e.currentTarget.getBoundingClientRect());
-                  onFocus();  // ORACLE TRIGGER: Only on "i" icon hover
-                }}
-                onMouseLeave={() => {
-                  setTooltipRect(null);
-                  onBlur();   // ORACLE DISMISS: Only on "i" icon leave
-                }}
-              >
-                <span className="info-glyph">i</span>
-              </span>
-            )}
-          </span>
+    <div className={`god-row ${isFocused ? "god-row--focused" : ""}`} style={{ ["--accent" as any]: accent, ["--accentSoft" as any]: accentSoft }}>
+      <div className="god-row__top">
+        <div className="god-row__label">
+          <span className="god-row__labelText">{slider.label}</span>
+
+          {slider.tooltip && (
+            <span
+              className="god-row__info"
+              onMouseEnter={(e) => {
+                setTooltipRect(e.currentTarget.getBoundingClientRect());
+                onFocus(); // Oracle trigger on i icon only
+              }}
+              onMouseLeave={() => {
+                setTooltipRect(null);
+                onBlur();
+              }}
+              aria-label="Info"
+              role="button"
+            >
+              i
+            </span>
+          )}
         </div>
-        
-        {slider.tooltip && (
-          <SliderInfoTooltip anchorRect={tooltipRect}>
-            <div className="tt-title">{slider.label}</div>
-            <div className="tt-desc">{slider.tooltip.description}</div>
-            <div className="tt-impact">{slider.tooltip.impact}</div>
-          </SliderInfoTooltip>
-        )}
-        
-        {/* Slider + Digital Readout Row */}
-        <div className="slider-track-row">
-          <div className="slider-track-container">
-            <Slider
-              value={slider.value}
-              min={slider.min}
-              max={slider.max}
-              step={slider.step}
-              highlightColor={highlightColor}
-              onStart={() => onStart(boxId)}
-              onEnd={onEnd}
-              onChange={onChange}
-            />
-          </div>
-          {/* Tactical Precision: Editable Digital Readout */}
-          <div className="precision-readout">
-            <input
-              type="text"
-              className="precision-input"
-              value={inputValue}
-              onChange={handleInputChange}
-              onBlur={handleInputBlur}
-              onKeyDown={handleInputKeyDown}
-              onFocus={() => onStart(boxId)}
-            />
-            <span className="precision-unit">%</span>
-          </div>
+
+        <div className="god-row__value">
+          <span className="god-row__valueNum">{pct}</span>
+          <span className="god-row__valueUnit">%</span>
         </div>
       </div>
-    </div>
-  );
-});
 
-// ============================================================================
-// BEVELED SECTION FRAME (legacy surface)
-// ============================================================================
+      {slider.tooltip && (
+        <SliderInfoTooltip anchorRect={tooltipRect}>
+          <div className="tt-title">{slider.label}</div>
+          <div className="tt-desc">{slider.tooltip.description}</div>
+          <div className="tt-impact">{slider.tooltip.impact}</div>
+        </SliderInfoTooltip>
+      )}
 
-interface SectionFrameProps {
-  title: string;
-  children: React.ReactNode;
-}
-
-const SectionFrame = memo(function SectionFrame({ title, children }: SectionFrameProps) {
-  return (
-    <div className="section-frame">
-      {/* Corner bumpers */}
-      <CornerBumper position="tl" />
-      <CornerBumper position="tr" />
-      <CornerBumper position="bl" />
-      <CornerBumper position="br" />
-      
-      {/* Header */}
-      <div className="section-header">
-        <span className="section-title">{title}</span>
-        <div className="section-toggle">
-          <div className="toggle-led" />
-        </div>
+      <div className="god-row__track">
+        <Slider
+          value={slider.value}
+          min={slider.min}
+          max={slider.max}
+          step={slider.step}
+          highlightColor={highlightColor}
+          onStart={() => onStart(boxId)}
+          onEnd={onEnd}
+          onChange={onChange}
+        />
       </div>
-      
-      {/* Slider wells container */}
-      <div className="section-content">
-        {children}
+
+      <div className="god-row__scale">
+        <span>LOW</span>
+        <span>NEUTRAL</span>
+        <span>HIGH</span>
       </div>
     </div>
   );
@@ -262,7 +181,6 @@ const SectionFrame = memo(function SectionFrame({ title, children }: SectionFram
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
-
 export function ControlDeck(props: {
   boxes: ControlBoxConfig[];
   onChange: (id: LeverId | "__end__", value: number) => void;
@@ -277,7 +195,7 @@ export function ControlDeck(props: {
       setActiveLever: s.setActiveLever,
     }))
   );
-  
+
   // ORACLE PROTOCOL: Track focused lever for contextual intelligence
   const { focusedLever, setFocusedLever } = useUIStore(
     useShallow((s) => ({
@@ -307,7 +225,7 @@ export function ControlDeck(props: {
       if (!r) return 0;
       const span = Math.max(1e-6, r.max - r.min);
       const dist = Math.abs(v - r.def);
-      return Math.max(0, Math.min(1, dist / span));
+      return clamp(dist / span, 0, 1);
     },
     [rangeMap]
   );
@@ -339,17 +257,15 @@ export function ControlDeck(props: {
     (id: LeverId, value: number, boxId: string) => {
       lastLeverIdRef.current = id;
       const intensity = computeIntensity01(id, value);
+
       if (leverReleaseTimeoutRef.current !== null) {
         window.clearTimeout(leverReleaseTimeoutRef.current);
         leverReleaseTimeoutRef.current = null;
       }
+
       setActiveLever(id, intensity);
-      
-      // HOLOGRAPHIC ACTIVATION: Project specific KPI card
-      // - growth → MOMENTUM card
-      // - efficiency → RESILIENCE card  
-      // - risk → QUALITY card
-      const group = boxId as 'growth' | 'efficiency' | 'risk';
+
+      const group = boxId as "growth" | "efficiency" | "risk";
       useUIStore.getState().startSlider(group);
     },
     [computeIntensity01, setActiveLever]
@@ -362,19 +278,19 @@ export function ControlDeck(props: {
         lastId === "pricingAdjustment"
           ? "pricing"
           : lastId === "operatingExpenses" || lastId === "headcount" || lastId === "cashSensitivity"
-            ? "efficiency"
-            : lastId === "churnSensitivity" || lastId === "fundingInjection"
-              ? "risk"
-              : "growth";
+          ? "efficiency"
+          : lastId === "churnSensitivity" || lastId === "fundingInjection"
+          ? "risk"
+          : "growth";
 
       const color =
         leverType === "growth"
           ? "rgba(34,211,238,0.18)"
           : leverType === "efficiency"
-            ? "rgba(52,211,153,0.18)"
-            : leverType === "pricing"
-              ? "rgba(129,140,248,0.18)"
-              : "rgba(251,113,133,0.16)";
+          ? "rgba(52,211,153,0.18)"
+          : leverType === "pricing"
+          ? "rgba(129,140,248,0.18)"
+          : "rgba(251,113,133,0.16)";
 
       emitCausal({
         source: "slider_release",
@@ -389,17 +305,17 @@ export function ControlDeck(props: {
       leverUpdateFrame.current = null;
     }
     pendingLeverUpdate.current = null;
+
     if (leverReleaseTimeoutRef.current !== null) {
       window.clearTimeout(leverReleaseTimeoutRef.current);
     }
+
     leverReleaseTimeoutRef.current = window.setTimeout(() => {
       setActiveLever(null, 0);
       leverReleaseTimeoutRef.current = null;
     }, 50);
+
     onChange("__end__", 0);
-    
-    // HOLOGRAPHIC ACTIVATION: Start 10-second projection timer
-    // Panel stays lit for 10 seconds after release
     useUIStore.getState().endSlider();
   }, [setActiveLever, onChange]);
 
@@ -424,510 +340,262 @@ export function ControlDeck(props: {
     [hoveredKpiIndex]
   );
 
-  // ========================================================================
-  // SliderPanel adaptor (NEW)
-  // ========================================================================
-  const panelSliders = useMemo(() => {
-    const all = (boxes ?? []).flatMap((b) => b.sliders ?? []);
-    const basicSource = (boxes?.[0]?.sliders ?? all).slice(0, 10);
-    const advancedSource =
-      boxes && boxes.length > 1 ? boxes.slice(1).flatMap((b) => b.sliders ?? []) : all.slice(10);
-
-    const toPanelItem = (s: ControlSliderConfig) => ({
-      id: String(s.id),
-      label: String(s.label ?? s.id),
-      value: Number(s.value ?? 0),
-      min: Number(s.min ?? 0),
-      max: Number(s.max ?? 100),
-      unit: "%",
-      prefix: "",
-      inverse: false,
-      onChange: (v: number) => handleSliderChange(s.id, v),
-    });
-
-    return {
-      basic: basicSource.map(toPanelItem),
-      advanced: advancedSource.map(toPanelItem),
-    };
-  }, [boxes, handleSliderChange]);
-
-  const highlightedSliders = useMemo(() => {
-    const ids = new Set<string>();
-    if (focusedLever) ids.add(String(focusedLever));
-    if (lastLeverIdRef.current) ids.add(String(lastLeverIdRef.current));
-
-    if (hoveredKpiIndex !== null) {
-      const related = KPI_TO_LEVERS[hoveredKpiIndex] || [];
-      related.forEach((leverId) => ids.add(String(leverId)));
-    }
-
-    return Array.from(ids);
-  }, [focusedLever, hoveredKpiIndex]);
-
   return (
-    <div className="control-deck-godmode">
-      <div className="deck-scroll">
-        {USE_COMPOUND_SLIDER_PANEL ? (
-          <SliderPanel sliders={panelSliders} highlightedSliders={highlightedSliders} />
-        ) : (
-          boxes.map((box) => (
-            <SectionFrame key={box.id} title={box.title}>
+    <div className="god-deck">
+      <div className="god-deck__scroll">
+        {boxes.map((box) => (
+          <div key={box.id} className="god-section">
+            <div className="god-section__header">
+              <span className="god-section__title">{formatBoxTitle(box.title)}</span>
+              <span className="god-section__dot" />
+            </div>
+
+            <div className="god-section__body">
               {box.sliders.map((s) => (
-                <SliderWell
+                <GodSliderRow
                   key={s.id}
                   slider={s}
-                  highlightColor={getHighlightColor(s.id)}
                   boxId={box.id}
+                  highlightColor={getHighlightColor(s.id)}
+                  isFocused={focusedLever === s.id}
                   onStart={(boxId) => handleSliderStart(s.id, s.value, boxId)}
                   onEnd={handleSliderEnd}
                   onChange={(v) => handleSliderChange(s.id, v)}
                   onFocus={() => setFocusedLever(s.id as any)}
                   onBlur={() => setFocusedLever(null)}
-                  isFocused={focusedLever === s.id}
                 />
               ))}
-            </SectionFrame>
-          ))
-        )}
+            </div>
+          </div>
+        ))}
       </div>
 
       <style>{`
-        /* ═══════════════════════════════════════════════════════════════
-           CONTROL DECK CONTAINER
-           ═══════════════════════════════════════════════════════════════ */
-        
-        .control-deck-godmode {
+        /* ============================================================
+           OUTER SHELL (matches reference bezel)
+           ============================================================ */
+        .god-deck {
           width: 100%;
-          min-width: 280px;
-          max-width: 100%;
           height: 100%;
           min-height: 0;
           display: flex;
           flex-direction: column;
+          border-radius: 18px;
+          padding: 12px;
+          background: radial-gradient(120% 120% at 10% 0%, rgba(56,189,248,0.08) 0%, rgba(2,6,23,0.98) 55%, rgba(2,6,23,0.98) 100%);
+          border: 1px solid rgba(148,163,184,0.10);
+          box-shadow:
+            0 18px 60px rgba(0,0,0,0.65),
+            inset 0 1px 0 rgba(255,255,255,0.06);
         }
 
-        .deck-scroll {
+        .god-deck__scroll {
           flex: 1;
           min-height: 0;
           overflow-y: auto;
           overflow-x: hidden;
-          padding: 4px;
           display: flex;
           flex-direction: column;
-          gap: 10px;
-        }
-
-        .deck-scroll::-webkit-scrollbar { width: 5px; }
-        .deck-scroll::-webkit-scrollbar-track { background: transparent; }
-        .deck-scroll::-webkit-scrollbar-thumb { 
-          background: rgba(34,211,238,0.2); 
-          border-radius: 3px; 
-        }
-
-        /* ═══════════════════════════════════════════════════════════════
-           SECTION FRAME — Metallic beveled container
-           ═══════════════════════════════════════════════════════════════ */
-        
-        .section-frame {
-          position: relative;
-          border-radius: 10px;
-          padding: 3px;
-          
-          /* Deep titanium shell — "Bezel Strip" design */
-          background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(2, 6, 23, 0.98) 100%);
-          
-          /* Single 1px border — no corner bolts */
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          
-          box-shadow:
-            0 4px 20px rgba(0, 0, 0, 0.5),
-            inset 0 1px 0 rgba(255, 255, 255, 0.04);
-        }
-        
-        /* Remove corner bumpers for cleaner bezel strip look */
-        .section-frame .corner-bumper {
-          display: none;
-        }
-
-        /* ═══════════════════════════════════════════════════════════════
-           CORNER BUMPERS — Like hardware screws
-           ═══════════════════════════════════════════════════════════════ */
-        
-        .corner-bumper {
-          position: absolute;
-          width: 10px;
-          height: 10px;
-          z-index: 5;
-        }
-
-        .bumper-outer {
-          position: absolute;
-          inset: 0;
-          border-radius: 50%;
-          background: linear-gradient(145deg,
-            rgba(80, 100, 130, 0.8) 0%,
-            rgba(50, 65, 85, 0.9) 50%,
-            rgba(35, 45, 60, 0.95) 100%
-          );
-          box-shadow:
-            0 1px 2px rgba(0, 0, 0, 0.4),
-            inset 0 1px 0 rgba(255, 255, 255, 0.2);
-        }
-
-        .bumper-inner {
-          position: absolute;
-          top: 2px;
-          left: 2px;
-          right: 2px;
-          bottom: 2px;
-          border-radius: 50%;
-          background: linear-gradient(145deg,
-            rgba(30, 40, 55, 0.9) 0%,
-            rgba(20, 28, 40, 1) 100%
-          );
-          box-shadow:
-            inset 0 1px 2px rgba(0, 0, 0, 0.5);
-        }
-
-        /* ═══════════════════════════════════════════════════════════════
-           SECTION HEADER
-           ═══════════════════════════════════════════════════════════════ */
-        
-        .section-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 8px 16px 6px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-        }
-
-        .section-title {
-          font-size: 10px;
-          font-weight: 800;
-          letter-spacing: 0.25em;
-          text-transform: uppercase;
-          color: rgba(34, 211, 238, 0.9);
-          text-shadow: 0 0 12px rgba(34, 211, 238, 0.4);
-          font-family: 'JetBrains Mono', 'Fira Code', monospace;
-        }
-
-        .section-toggle {
-          width: 10px;
-          height: 10px;
-          border-radius: 50%;
-          background: rgba(2, 6, 23, 0.9);
-          border: 1px solid rgba(34, 211, 238, 0.3);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .toggle-led {
-          width: 5px;
-          height: 5px;
-          border-radius: 50%;
-          background: #22d3ee;
-          box-shadow:
-            0 0 6px #22d3ee,
-            0 0 12px rgba(34, 211, 238, 0.6);
-          animation: led-pulse 2s ease-in-out infinite;
-        }
-        
-        @keyframes led-pulse {
-          0%, 100% { opacity: 0.8; }
-          50% { opacity: 1; box-shadow: 0 0 10px #22d3ee, 0 0 20px rgba(34, 211, 238, 0.8); }
-        }
-
-        /* ═══════════════════════════════════════════════════════════════
-           SECTION CONTENT — Container for slider wells
-           ═══════════════════════════════════════════════════════════════ */
-        
-        .section-content {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-          padding: 4px 4px 8px;
-        }
-
-        /* ═══════════════════════════════════════════════════════════════
-           SLIDER WELL — Individual recessed slot for each slider
-           ═══════════════════════════════════════════════════════════════ */
-        
-        /* ═══════════════════════════════════════════════════════════════
-           ENERGY CHANNEL — Sleek track-focused slider design
-           ═══════════════════════════════════════════════════════════════ */
-        
-        .slider-well {
-          border-radius: 6px;
+          gap: 12px;
           padding: 2px;
-          
-          /* Minimal outer rim */
-          background: transparent;
-          border-left: 2px solid rgba(34, 211, 238, 0.1);
-          transition: border-color 200ms ease;
-        }
-        
-        .slider-well:hover {
-          border-left-color: rgba(34, 211, 238, 0.4);
         }
 
-        .slider-well-inner {
-          border-radius: 4px;
-          padding: 10px 12px 8px;
-          
-          /* Deep titanium interior */
-          background: linear-gradient(180deg,
-            rgba(2, 6, 23, 0.95) 0%,
-            rgba(8, 12, 24, 0.92) 100%
-          );
-          
-          position: relative;
+        .god-deck__scroll::-webkit-scrollbar { width: 6px; }
+        .god-deck__scroll::-webkit-scrollbar-track { background: transparent; }
+        .god-deck__scroll::-webkit-scrollbar-thumb {
+          background: rgba(94,234,212,0.18);
+          border-radius: 999px;
+        }
+
+        /* ============================================================
+           SECTION CARD
+           ============================================================ */
+        .god-section {
+          border-radius: 14px;
+          background: linear-gradient(180deg, rgba(15,23,42,0.80) 0%, rgba(2,6,23,0.92) 100%);
+          border: 1px solid rgba(94,234,212,0.10);
+          box-shadow:
+            0 10px 30px rgba(0,0,0,0.45),
+            inset 0 1px 0 rgba(255,255,255,0.05);
           overflow: hidden;
         }
-        
-        /* Energy channel glow track */
-        .slider-well-inner::before {
-          content: '';
+
+        .god-section__header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 14px 16px 10px;
+          border-bottom: 1px solid rgba(148,163,184,0.10);
+        }
+
+        .god-section__title {
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0.35em;
+          color: rgba(94,234,212,0.85);
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        }
+
+        .god-section__dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 999px;
+          background: rgba(94,234,212,0.18);
+          border: 1px solid rgba(94,234,212,0.55);
+          box-shadow: 0 0 14px rgba(94,234,212,0.35);
+        }
+
+        .god-section__body {
+          padding: 12px 14px 14px;
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+        }
+
+        /* ============================================================
+           ROW
+           ============================================================ */
+        .god-row {
+          position: relative;
+          border-radius: 12px;
+          padding: 12px 12px 10px;
+          background: linear-gradient(180deg, rgba(2,6,23,0.80) 0%, rgba(2,6,23,0.55) 100%);
+          border: 1px solid rgba(148,163,184,0.08);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+        }
+
+        .god-row::before {
+          content: "";
           position: absolute;
           left: 0;
-          top: 0;
-          bottom: 0;
+          top: 10px;
+          bottom: 10px;
           width: 2px;
-          background: linear-gradient(180deg, 
-            transparent 0%, 
-            rgba(34, 211, 238, 0.3) 50%, 
-            transparent 100%
-          );
-          opacity: 0;
-          transition: opacity 200ms ease;
-        }
-        
-        .slider-well:hover .slider-well-inner::before {
-          opacity: 1;
+          border-radius: 999px;
+          background: var(--accentSoft);
+          opacity: 0.9;
         }
 
-        /* ═══════════════════════════════════════════════════════════════
-           ORACLE PROTOCOL — Focus State (Hover Intelligence)
-           ═══════════════════════════════════════════════════════════════ */
-        
-        .slider-well-focused {
-          background: linear-gradient(180deg,
-            rgba(34, 211, 238, 0.15) 0%,
-            rgba(34, 211, 238, 0.08) 50%,
-            rgba(34, 211, 238, 0.12) 100%
-          );
+        .god-row--focused {
+          border-color: rgba(94,234,212,0.25);
           box-shadow:
-            0 0 15px rgba(34, 211, 238, 0.2),
-            0 0 30px rgba(34, 211, 238, 0.1),
-            inset 0 1px 0 rgba(34, 211, 238, 0.3);
-          animation: oracle-pulse 2s ease-in-out infinite;
-        }
-        
-        .slider-well-focused .slider-well-inner {
-          border: 1px solid rgba(34, 211, 238, 0.3);
-          box-shadow:
-            inset 0 2px 6px rgba(0, 0, 0, 0.6),
-            inset 0 0 20px rgba(34, 211, 238, 0.05);
-        }
-        
-        .slider-label-focused {
-          color: #ffffff !important;
-          text-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
-        }
-        
-        .slider-value-focused {
-          color: #67e8f9 !important;
-          text-shadow: 0 0 12px rgba(34, 211, 238, 0.8);
-        }
-        
-        @keyframes oracle-pulse {
-          0%, 100% { 
-            box-shadow: 0 0 15px rgba(34, 211, 238, 0.2), 0 0 30px rgba(34, 211, 238, 0.1);
-          }
-          50% { 
-            box-shadow: 0 0 20px rgba(34, 211, 238, 0.35), 0 0 40px rgba(34, 211, 238, 0.2);
-          }
+            0 0 0 1px rgba(94,234,212,0.10),
+            0 0 24px rgba(94,234,212,0.10),
+            inset 0 1px 0 rgba(255,255,255,0.05);
         }
 
-        /* ═══════════════════════════════════════════════════════════════
-           SLIDER HEADER & LABELS
-           ═══════════════════════════════════════════════════════════════ */
-        
-        .slider-header {
+        .god-row__top {
           display: flex;
+          align-items: center;
           justify-content: space-between;
-          align-items: center;
-          margin-bottom: 6px;
+          margin-bottom: 8px;
+          gap: 12px;
         }
 
-        .slider-label {
-          font-size: 11px;
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.7);
-          display: flex;
-          align-items: center;
-          gap: 5px;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          /* God Mode: Underscore style for labels */
-          font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
-        }
-
-        .slider-value {
-          font-size: 13px;
-          font-weight: 700;
-          color: #22d3ee;
-          font-variant-numeric: tabular-nums;
-          /* God Mode: Monospace bright cyan with glow */
-          font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
-          text-shadow: 0 0 8px rgba(34, 211, 238, 0.5);
-        }
-
-        /* Info dot — THE ORACLE TRIGGER (hover for AI explanation) */
-        .info-dot {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          width: 16px;
-          height: 16px;
-          border-radius: 50%;
-          cursor: help;  /* Help cursor indicates info */
-          background: rgba(34, 211, 238, 0.08);
-          border: 1px solid rgba(34, 211, 238, 0.3);
-          transition: all 200ms ease;
-          margin-left: 6px;
-          position: relative;
-        }
-
-        .info-dot::after {
-          content: '';
-          position: absolute;
-          inset: -2px;
-          border-radius: 50%;
-          border: 1px solid rgba(34, 211, 238, 0.15);
-          animation: info-pulse 2s ease-in-out infinite;
-        }
-
-        @keyframes info-pulse {
-          0%, 100% { opacity: 0.3; transform: scale(1); }
-          50% { opacity: 0.8; transform: scale(1.15); }
-        }
-
-        .info-dot:hover {
-          border-color: rgba(34, 211, 238, 0.8);
-          background: rgba(34, 211, 238, 0.2);
-          box-shadow: 0 0 12px rgba(34, 211, 238, 0.4);
-          transform: scale(1.1);
-        }
-
-        .info-dot:hover::after {
-          animation: none;
-          opacity: 0;
-        }
-
-        .info-glyph {
-          font-size: 10px;
-          font-weight: 700;
-          font-style: italic;
-          font-family: Georgia, serif;
-          color: rgba(34, 211, 238, 0.7);
-          line-height: 1;
-        }
-
-        .info-dot:hover .info-glyph {
-          color: #22d3ee;
-        }
-
-        /* Tooltips */
-        .tt-title {
-          font-size: 10px;
-          font-weight: 700;
-          color: rgba(34, 211, 238, 0.9);
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          margin-bottom: 5px;
-        }
-
-        .tt-desc {
-          font-size: 11px;
-          color: rgba(255, 255, 255, 0.75);
-          line-height: 1.4;
-          margin-bottom: 6px;
-        }
-
-        .tt-impact {
-          font-size: 10px;
-          color: rgba(148, 163, 184, 0.6);
-          font-style: italic;
-          padding-top: 5px;
-          border-top: 1px solid rgba(255, 255, 255, 0.06);
-        }
-
-        /* ═══════════════════════════════════════════════════════════════
-           SLIDER TRACK ROW — Slider + Precision Input
-           ═══════════════════════════════════════════════════════════════ */
-        
-        .slider-track-row {
+        .god-row__label {
           display: flex;
           align-items: center;
           gap: 10px;
-        }
-
-        .slider-track-container {
-          flex: 1;
           min-width: 0;
         }
 
-        /* ═══════════════════════════════════════════════════════════════
-           PRECISION INPUT — Tactical Digital Readout (Raw Data Style)
-           ═══════════════════════════════════════════════════════════════ */
-        
-        .precision-input {
-          width: 64px;
-          flex-shrink: 0;
-          padding: 4px 0;
-          background: transparent;
-          border: none;
-          border-bottom: 2px solid rgba(0, 217, 255, 0.5);
-          border-radius: 0;
-          color: #ffffff;
-          font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
-          font-size: 18px;
-          font-weight: 700;
-          text-align: right;
-          outline: none;
-          transition: all 150ms ease;
-          text-shadow: 0 0 12px rgba(0, 217, 255, 0.4);
+        .god-row__labelText {
+          font-size: 12px;
+          font-weight: 800;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          color: rgba(226,232,240,0.80);
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
-        .precision-input:hover {
-          border-bottom-color: rgba(0, 217, 255, 0.7);
-          color: #00D9FF;
+        .god-row__info {
+          width: 18px;
+          height: 18px;
+          border-radius: 999px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12px;
+          font-weight: 800;
+          color: rgba(94,234,212,0.85);
+          border: 1px solid rgba(94,234,212,0.35);
+          background: rgba(94,234,212,0.08);
+          cursor: help;
+          box-shadow: 0 0 14px rgba(94,234,212,0.10);
+          user-select: none;
         }
 
-        .precision-input:focus {
-          border-bottom-color: #00D9FF;
-          color: #00D9FF;
-          text-shadow: 0 0 16px rgba(0, 217, 255, 0.6);
+        .god-row__info:hover {
+          border-color: rgba(94,234,212,0.75);
+          box-shadow: 0 0 18px rgba(94,234,212,0.25);
+          transform: translateY(-0.5px);
         }
 
-        .precision-input::selection {
-          background: rgba(0, 217, 255, 0.3);
-        }
-
-        /* Precision readout wrapper */
-        .precision-readout {
+        .god-row__value {
           display: flex;
           align-items: baseline;
           gap: 2px;
-          flex-shrink: 0;
+          min-width: 64px;
+          justify-content: flex-end;
         }
 
-        .precision-unit {
+        .god-row__valueNum {
+          font-size: 22px;
+          font-weight: 900;
+          color: rgba(226,232,240,0.92);
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+          text-shadow: 0 0 20px rgba(94,234,212,0.08);
+        }
+
+        .god-row__valueUnit {
           font-size: 12px;
-          font-weight: 600;
-          color: rgba(255, 255, 255, 0.35);
-          font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+          font-weight: 800;
+          color: rgba(148,163,184,0.65);
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+          transform: translateY(-2px);
+        }
+
+        .god-row__track {
+          padding: 6px 2px 0;
+        }
+
+        .god-row__scale {
+          margin-top: 8px;
+          display: flex;
+          justify-content: space-between;
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.20em;
+          color: rgba(148,163,184,0.55);
+          text-transform: uppercase;
+          padding: 0 2px;
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        }
+
+        /* Tooltip inner styles (keep your existing classes) */
+        .tt-title {
+          font-size: 10px;
+          font-weight: 800;
+          color: rgba(94,234,212,0.90);
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          margin-bottom: 6px;
+        }
+        .tt-desc {
+          font-size: 11px;
+          color: rgba(226,232,240,0.78);
+          line-height: 1.4;
+          margin-bottom: 8px;
+        }
+        .tt-impact {
+          font-size: 10px;
+          color: rgba(148,163,184,0.60);
+          font-style: italic;
+          padding-top: 6px;
+          border-top: 1px solid rgba(148,163,184,0.14);
         }
       `}</style>
     </div>
