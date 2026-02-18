@@ -1,0 +1,15 @@
+stash@{0}: On master: WIP: post-7ec7acc changes
+stash@{1}: On improve/from-working: wip: initiate calibration mess
+stash@{2}: On fix/restore-known-good: wip: before restoring v2/scaffold-router-store
+stash@{3}: On v2/scaffold-router-store: wip: before checkout BASELINE_KNOWN_GOOD_a418bd4
+stash@{4}: On preflight/clean-audit-fixes: WIP before detach b2ab678
+stash@{5}: On restore/pages: safety stash before locating true good commit
+stash@{6}: On restore/pages: STRATFIT safety stash before recovery
+stash@{7}: On platform-plus-today-2026-02-06: wip before switching to restore/pages
+stash@{8}: On restore-platform-2026-02-06: WIP before switching to full platform restore branch
+stash@{9}: On feat/onboarding-fullpage-v1: WIP before restoring full platform (2026-02-06)
+stash@{10}: On feat/onboarding-fullpage-v1: backup before rollback 2026-02-06
+stash@{11}: On rescue/restore-mountain: safety pre-restore 2026-01-31
+stash@{12}: On fix/active-scenario-bezel: WIP before restoring fix/active-scenario-bezel
+stash@{13}: On master: WIP before revive UI restore (App/DashboardLayout/OnboardingFlow)
+stash@{14}: On recovery/restore-golden: WIP: stash before onboarding page2 work

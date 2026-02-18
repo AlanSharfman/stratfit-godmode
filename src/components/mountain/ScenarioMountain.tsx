@@ -693,7 +693,7 @@ const Terrain: React.FC<TerrainProps> = ({
       <mesh ref={meshWireRef} geometry={geometry}>
         <meshBasicMaterial 
           vertexColors={godMode ? false : baselineHighVisibility ? false : !neuralPulse}
-          color={godMode ? "#1a2e42" : baselineHighVisibility ? "#22d3ee" : (neuralPulse ? "#00ffff" : undefined)}
+          color={godMode ? "#1a2e42" : baselineHighVisibility ? (baseColor ?? "#22d3ee") : (neuralPulse ? "#00ffff" : undefined)}
           wireframe 
           transparent 
           opacity={godMode

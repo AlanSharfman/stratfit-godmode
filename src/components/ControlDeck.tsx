@@ -9,14 +9,13 @@ import SliderInfoTooltip from "./ui/SliderInfoTooltip";
 import { useShallow } from "zustand/react/shallow";
 import { useScenarioStore } from "@/state/scenarioStore";
 import { useUIStore } from "@/state/uiStore";
-import type { LeverId } from "@/logic/mountainPeakModel";
 import { emitCausal } from "@/ui/causalEvents";
 
 // ============================================================================
 // TYPES
 // ============================================================================
 export interface ControlSliderConfig {
-  id: LeverId;
+  id: string;
   label: string;
   value: number;
   min: number;
@@ -49,7 +48,7 @@ const KPI_COLORS: Record<number, string> = {
   6: "#00ddff",
 };
 
-const LEVER_TO_KPI: Record<LeverId, number[]> = {
+const LEVER_TO_KPI: Record<string, number[]> = {
   revenueGrowth: [3, 4, 6],
   pricingAdjustment: [0, 3, 4, 6],
   marketingSpend: [3, 6],
@@ -58,6 +57,17 @@ const LEVER_TO_KPI: Record<LeverId, number[]> = {
   cashSensitivity: [0, 1],
   churnSensitivity: [5, 6],
   fundingInjection: [2, 5],
+
+  // Studio LeverState ids
+  demandStrength: [0, 1, 3],
+  pricingPower: [0, 1, 6],
+  expansionVelocity: [0, 3, 4],
+  costDiscipline: [1, 2, 4],
+  operatingDrag: [4, 5, 1],
+  marketVolatility: [6, 2, 0],
+  executionRisk: [6, 1, 4],
+  fundingPressure: [2, 3, 4],
+  hiringIntensity: [4, 5, 2],
 };
 
 // ============================================================================
@@ -183,10 +193,10 @@ const GodSliderRow = memo(function GodSliderRow({
 // ============================================================================
 export function ControlDeck(props: {
   boxes: ControlBoxConfig[];
-  onChange: (id: LeverId | "__end__", value: number) => void;
+  onChange: (id: string | "__end__", value: number) => void;
 }) {
   const leverReleaseTimeoutRef = useRef<number | null>(null);
-  const lastLeverIdRef = useRef<LeverId | null>(null);
+  const lastLeverIdRef = useRef<string | null>(null);
   const { boxes, onChange } = props;
 
   const { hoveredKpiIndex, setActiveLever } = useScenarioStore(
@@ -205,11 +215,11 @@ export function ControlDeck(props: {
   );
 
   const lastLeverUpdate = useRef<number>(0);
-  const pendingLeverUpdate = useRef<{ id: LeverId; intensity: number } | null>(null);
+  const pendingLeverUpdate = useRef<{ id: string; intensity: number } | null>(null);
   const leverUpdateFrame = useRef<number | null>(null);
 
   const rangeMap = useMemo(() => {
-    const m = new Map<LeverId, { min: number; max: number; def: number }>();
+    const m = new Map<string, { min: number; max: number; def: number }>();
     boxes.forEach((b) =>
       b.sliders.forEach((s) => {
         const def = Number.isFinite(s.defaultValue) ? (s.defaultValue as number) : s.value;
@@ -220,7 +230,7 @@ export function ControlDeck(props: {
   }, [boxes]);
 
   const computeIntensity01 = useCallback(
-    (id: LeverId, v: number) => {
+    (id: string, v: number) => {
       const r = rangeMap.get(id);
       if (!r) return 0;
       const span = Math.max(1e-6, r.max - r.min);
@@ -231,7 +241,7 @@ export function ControlDeck(props: {
   );
 
   const throttledSetActiveLever = useCallback(
-    (id: LeverId, intensity: number) => {
+    (id: string, intensity: number) => {
       const now = performance.now();
       if (now - lastLeverUpdate.current > 8) {
         lastLeverUpdate.current = now;
@@ -254,7 +264,7 @@ export function ControlDeck(props: {
   );
 
   const handleSliderStart = useCallback(
-    (id: LeverId, value: number, boxId: string) => {
+    (id: string, value: number, boxId: string) => {
       lastLeverIdRef.current = id;
       const intensity = computeIntensity01(id, value);
 
@@ -275,11 +285,11 @@ export function ControlDeck(props: {
     const lastId = lastLeverIdRef.current;
     if (lastId) {
       const leverType: "growth" | "efficiency" | "risk" | "pricing" =
-        lastId === "pricingAdjustment"
+        lastId === "pricingAdjustment" || lastId === "pricingPower"
           ? "pricing"
-          : lastId === "operatingExpenses" || lastId === "headcount" || lastId === "cashSensitivity"
+          : lastId === "operatingExpenses" || lastId === "headcount" || lastId === "cashSensitivity" || lastId === "costDiscipline" || lastId === "operatingDrag" || lastId === "hiringIntensity"
           ? "efficiency"
-          : lastId === "churnSensitivity" || lastId === "fundingInjection"
+          : lastId === "churnSensitivity" || lastId === "fundingInjection" || lastId === "marketVolatility" || lastId === "executionRisk" || lastId === "fundingPressure"
           ? "risk"
           : "growth";
 
@@ -320,7 +330,7 @@ export function ControlDeck(props: {
   }, [setActiveLever, onChange]);
 
   const handleSliderChange = useCallback(
-    (id: LeverId, v: number) => {
+    (id: string, v: number) => {
       lastLeverIdRef.current = id;
       throttledSetActiveLever(id, computeIntensity01(id, v));
       onChange(id, v);
@@ -329,7 +339,7 @@ export function ControlDeck(props: {
   );
 
   const getHighlightColor = useCallback(
-    (sliderId: LeverId): string | null => {
+    (sliderId: string): string | null => {
       if (hoveredKpiIndex === null) return null;
       const relatedKpis = LEVER_TO_KPI[sliderId] || [];
       if (relatedKpis.includes(hoveredKpiIndex)) {

@@ -34,6 +34,7 @@ export default function PinBeam({ start, end, intensity = 0.55 }: PinBeamProps) 
     });
   }, [intensity]);
 
+  const line = useMemo(() => new THREE.Line(geometry, material), [geometry, material]);
   const lineRef = useRef<THREE.Line>(null);
 
   useFrame((_, dt) => {
@@ -55,5 +56,5 @@ export default function PinBeam({ start, end, intensity = 0.55 }: PinBeamProps) 
     if (lineRef.current) lineRef.current.renderOrder = 1;
   });
 
-  return <line ref={lineRef} geometry={geometry} material={material} />;
+  return <primitive object={line} ref={lineRef} />;
 }
