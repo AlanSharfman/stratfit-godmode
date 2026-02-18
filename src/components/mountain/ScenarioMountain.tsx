@@ -48,6 +48,19 @@ interface ModeConfig {
   bloomIntensity: number;
   autoRotate: boolean;
   autoRotateSpeed: number;
+  // Strategy-mode simulation-space calibration (optional — only set on strategy)
+  visualDepthBoost?: number;
+  pathCutBoost?: number;
+  fogNear?: number;
+  fogFar?: number;
+  fogColor?: string;
+  trajectoryHaloOpacity?: number;
+  trajectoryHaloWidthMult?: number;
+  forwardTargetZ?: number;
+  forwardCamZMult?: number;
+  divergenceOverlay?: boolean;
+  divergenceOpacity?: number;
+  divergenceColor?: string;
 }
 
 type MountainMode = "default" | "celebration" | "ghost" | "instrument" | "baseline" | "strategy";
@@ -134,6 +147,19 @@ const MODE_CONFIGS: Record<MountainMode, ModeConfig> = {
     bloomIntensity: 0,
     autoRotate: true,
     autoRotateSpeed: 0.3,
+    // Simulation-space calibration
+    visualDepthBoost: 1.12,
+    pathCutBoost: 1.12,
+    fogNear: 18,
+    fogFar: 90,
+    fogColor: "#0b1020",
+    trajectoryHaloOpacity: 0.22,
+    trajectoryHaloWidthMult: 1.8,
+    forwardTargetZ: 1.2,
+    forwardCamZMult: 1.08,
+    divergenceOverlay: true,
+    divergenceOpacity: 0.06,
+    divergenceColor: "#312e81",
   },
 };
 
@@ -598,7 +624,7 @@ const Terrain: React.FC<TerrainProps> = ({
                 ? ((isDragging ? 0.55 : 0.42) * opacityMultiplier)
                 : ((isDragging ? 0.35 : 0.22) * opacityMultiplier)
           }
-          roughness={godMode ? 0.85 : baselineHighVisibility ? 0.65 : 0.2}
+          roughness={(godMode ? 0.85 : baselineHighVisibility ? 0.65 : 0.2) * (mode === "strategy" ? 0.92 : 1)}
           metalness={godMode ? 0.05 : baselineHighVisibility ? 0.25 : 0.8}
           side={THREE.DoubleSide}
           emissive={pal.mid}
@@ -1781,10 +1807,14 @@ export function ScenarioMountain({
   const instrumentMode = mode === 'instrument';
   const cameraConfig = useMemo(
     () => ({
-      position: (isGodMode ? [0, 10, 22] : [0, 6, 32]) as [number, number, number],
+      position: (
+        isGodMode
+          ? [0, 10, 22]
+          : [0, 6, 32 * (mode === "strategy" ? (MODE_CONFIGS.strategy.forwardCamZMult ?? 1) : 1)]
+      ) as [number, number, number],
       fov: isGodMode ? 36 : 38,
     }),
-    [isGodMode]
+    [isGodMode, mode]
   );
 
   // ── GOD MODE: Fog density linked to survival (Section 6 — Metric Linkage) ──
@@ -1836,17 +1866,21 @@ export function ScenarioMountain({
         <Suspense fallback={null}>
         {/* Scene clear + fog (Baseline can opt into transparentScene for photo-backed stages) */}
         {!transparentScene && <color attach="background" args={[isGodMode ? '#0a0f16' : '#122038']} />}
-        {!transparentScene && <fog attach="fog" args={[isGodMode ? '#0a0f16' : '#122038', godFogNear, godFogFar]} />}
+        {mode === "strategy" ? (
+          <fog attach="fog" args={[config.fogColor ?? "#0b1020", config.fogNear ?? 18, config.fogFar ?? 90]} />
+        ) : !transparentScene ? (
+          <fog attach="fog" args={[isGodMode ? '#0a0f16' : '#122038', godFogNear, godFogFar]} />
+        ) : null}
         
-        <ambientLight intensity={0.45} />
+        <ambientLight intensity={mode === "strategy" ? 0.50 : 0.45} />
         <directionalLight
           position={[6, 10, 6]}
-          intensity={1.05}
+          intensity={mode === "strategy" ? 1.15 : 1.05}
           castShadow
         />
         <directionalLight
           position={[-4, 6, -4]}
-          intensity={0.35}
+          intensity={mode === "strategy" ? 0.90 : 0.35}
         />
 
         {instrumentMode ? (
@@ -1890,6 +1924,23 @@ export function ScenarioMountain({
         ) : (
           <>
             <GhostTerrain isVisible={showPath && hasInteracted} opacityMultiplier={config.pathGlow} />
+
+            {/* Strategy: faint divergence band overlay */}
+            {mode === "strategy" && config.divergenceOverlay && (
+              <mesh
+                position={[0, 0.02, 0]}
+                rotation={[-Math.PI / 2, 0, 0]}
+                renderOrder={5}
+              >
+                <planeGeometry args={[MESH_W, MESH_D]} />
+                <meshBasicMaterial
+                  color={config.divergenceColor ?? "#312e81"}
+                  transparent
+                  opacity={config.divergenceOpacity ?? 0.06}
+                  depthWrite={false}
+                />
+              </mesh>
+            )}
         
         {/* CAMERA CONTROL MODES:
           * GOD MODE: Static authoritative pose (no idle animation, locked zoom, subtle auto-rotation via OrbitControls)
@@ -2048,6 +2099,7 @@ export function ScenarioMountain({
           maxAzimuthAngle={baselineAllow360Rotate ? undefined : Math.PI / 5}
           onStart={() => setIsOrbiting(true)}
           onEnd={() => setIsOrbiting(false)}
+          {...(mode === "strategy" ? { target: [0, 0, config.forwardTargetZ ?? 0] as [number, number, number] } : {})}
         />
 
         {/* Post-processing — God Mode: subtle bloom for rim glow | Default: celebration */}
@@ -2130,10 +2182,11 @@ function StrategicPath({
 
       const x = (t - 0.5) * 10;                 // left↔right across the scene
       const y = -1.2 + t * 0.8;                 // slightly forward over time
-      const z = 0.3 + runway01 * 2.2 + ev01 * 1.2 - risk01 * 0.8; // lift
+      const cutBoost = config.pathCutBoost ?? 1;
+      const z = (0.3 + runway01 * 2.2 + ev01 * 1.2 - risk01 * 0.8) / cutBoost; // lift (deeper embed in strategy)
       return new THREE.Vector3(x, y, z);
     });
-  }, [solverPath]);
+  }, [solverPath, config]);
 
   const curvePoints = useMemo(() => {
     if (points.length < 2) return points;
@@ -2190,6 +2243,16 @@ function StrategicPath({
         dashSize={0.8}
         gapSize={0.6}
       />
+      {/* Strategy: trajectory halo (wider, semi-transparent glow) */}
+      {mode === "strategy" && (
+        <DreiLine
+          points={curvePoints}
+          color="#7dd3fc"
+          lineWidth={3 * (config.trajectoryHaloWidthMult ?? 1.8)}
+          transparent
+          opacity={config.trajectoryHaloOpacity ?? 0.22}
+        />
+      )}
     </group>
   );
 }
