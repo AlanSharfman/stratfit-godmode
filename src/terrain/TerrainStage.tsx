@@ -112,10 +112,14 @@ function CameraRig() {
       }
     }
 
+    const onBlur = () => animateTo(isHeroRef.current ? HERO : NEUTRAL)
+
     window.addEventListener("keydown", onKeyDown)
+    window.addEventListener("blur", onBlur)
     return () => {
       clearTimeout(timer)
       window.removeEventListener("keydown", onKeyDown)
+      window.removeEventListener("blur", onBlur)
     }
   }, [camera, animateTo])
 
@@ -132,6 +136,8 @@ function CameraRig() {
       maxDistance={420}  // prevents losing the scene
       minPolarAngle={0.62}
       maxPolarAngle={1.18}
+      minAzimuthAngle={-0.9}
+      maxAzimuthAngle={0.9}
     />
   )
 }
