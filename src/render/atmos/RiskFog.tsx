@@ -38,7 +38,7 @@ export default function RiskFog() {
 
   useFrame((_, dt) => {
     // density: value lens light, survival heavier
-    const target = 0.006 + intensity * 0.012; // 0.006..0.018
+    const target = 0.0035 + intensity * 0.0065; // 0.0035..0.010
     fog.density = THREE.MathUtils.damp(fog.density, target, 3.0, dt);
   });
 
@@ -113,7 +113,7 @@ function LowFogSheet({ intensity }: { intensity: number }) {
           float a = (0.06 + 0.14 * n) * edgeFade * (0.35 + 0.85 * uIntensity);
 
           // Keep it institutional (never milky white)
-          a = clamp(a, 0.0, 0.22);
+          a = clamp(a, 0.0, 0.14);
 
           // Slight gradient: edges a touch brighter
           vec3 col = mix(uColor, uEdge, smoothstep(0.2, 0.9, n));

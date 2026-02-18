@@ -25,59 +25,50 @@ export default function TerrainSurface() {
     }
   }, [])
 
-  const surfaceMaterial = useMemo(() => {
-    const mat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color("#0c1722"),
-      roughness: 0.92,
-      metalness: 0.04,
-      emissive: new THREE.Color("#081423"),
-      emissiveIntensity: 0.22,
-      transparent: true,
-      opacity: 0.78,
-    })
-
-    mat.onBeforeCompile = (shader) => {
-      shader.fragmentShader = shader.fragmentShader.replace(
-        "#include <dithering_fragment>",
-        `
-        float depthFactor = clamp(gl_FragCoord.z, 0.0, 1.0);
-        gl_FragColor.rgb += vec3(depthFactor * 0.06);
-        #include <dithering_fragment>
-        `
-      )
-    }
-
-    return mat
-  }, [])
-
-  const latticeMaterial = useMemo(() => {
-    return new THREE.MeshBasicMaterial({
-      color: new THREE.Color("#7dd3fc"),
-      transparent: true,
-      opacity: 0.22,
-      wireframe: true,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-    })
-  }, [])
-
   return (
     <>
       {/* Physical surface */}
       <mesh
         ref={solidRef}
         geometry={geometry}
-        material={surfaceMaterial}
         renderOrder={0}
         name="terrain-surface"
         onClick={(e) => {
           e.stopPropagation()
           clearSelected()
         }}
-      />
+      >
+        <meshStandardMaterial
+          color={0x0c1a28}
+          emissive={0x071423}
+          emissiveIntensity={0.22}
+          transparent
+          opacity={0.74}
+          roughness={0.88}
+          metalness={0.06}
+          depthWrite
+          depthTest
+          polygonOffset
+          polygonOffsetFactor={1}
+          polygonOffsetUnits={1}
+        />
+      </mesh>
 
       {/* Embedded lattice */}
-      <mesh ref={latticeRef} geometry={geometry} material={latticeMaterial} renderOrder={1} />
+      <mesh ref={latticeRef} geometry={geometry} renderOrder={1}>
+        <meshStandardMaterial
+          color={0x93c5fd}
+          emissive={0x38bdf8}
+          emissiveIntensity={0.48}
+          wireframe
+          transparent
+          opacity={0.52}
+          roughness={0.78}
+          metalness={0.1}
+          depthWrite={false}
+          depthTest
+        />
+      </mesh>
     </>
   )
 }

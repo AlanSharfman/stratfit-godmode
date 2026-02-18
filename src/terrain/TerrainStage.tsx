@@ -5,7 +5,7 @@ import type { OrbitControls as OrbitControlsImpl } from "three-stdlib"
 import * as THREE from "three"
 import SceneStack from "./SceneStack"
 import RiskFog from "@/render/atmos/RiskFog"
-import RiskFogPockets from "@/render/atmos/RiskFogPockets"
+// import RiskFogPockets from "@/render/atmos/RiskFogPockets"
 
 const HERO = {
   pos: new THREE.Vector3(-72, 62, 164),
@@ -34,16 +34,16 @@ const READABILITY = {
   fogFar: 980,
 
   // lights: key/fill/rim
-  ambientIntensity: 0.35,
+  ambientIntensity: 0.55,
 
   keyPos: new THREE.Vector3(110, 180, 120),
-  keyIntensity: 1.15,
+  keyIntensity: 1.35,
 
   fillPos: new THREE.Vector3(-120, 90, 160),
-  fillIntensity: 0.45,
+  fillIntensity: 0.70,
 
   rimPos: new THREE.Vector3(-40, 140, -220),
-  rimIntensity: 0.65,
+  rimIntensity: 1.10,
 }
 
 function StageAtmosphere() {
@@ -218,7 +218,7 @@ export default function TerrainStage({ children }: { children?: React.ReactNode 
 
         <Suspense fallback={null}>
           <RiskFog />
-          <RiskFogPockets />
+          {/* <RiskFogPockets /> */}
           <SceneStack />
           {children}
         </Suspense>
