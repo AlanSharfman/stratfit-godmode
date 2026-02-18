@@ -17,6 +17,51 @@ const NEUTRAL = {
 
 const LERP_DURATION_MS = 500
 
+/**
+ * Readability tuning (cinematic / institutional)
+ * - No orange
+ * - Ice-blue / neutral tonal ramp
+ * - Subtle atmospheric depth (fog)
+ */
+const READABILITY = {
+  // background: near-black with slight blue lift
+  bg: new THREE.Color("#060A12"),
+  // fog: dark blue-grey; subtle depth separation
+  fogColor: new THREE.Color("#050812"),
+  fogNear: 140,
+  fogFar: 980,
+
+  // lights: key/fill/rim
+  ambientIntensity: 0.35,
+
+  keyPos: new THREE.Vector3(110, 180, 120),
+  keyIntensity: 1.15,
+
+  fillPos: new THREE.Vector3(-120, 90, 160),
+  fillIntensity: 0.45,
+
+  rimPos: new THREE.Vector3(-40, 140, -220),
+  rimIntensity: 0.65,
+}
+
+function StageAtmosphere() {
+  const { scene } = useThree()
+
+  useEffect(() => {
+    // Background + fog live on the scene
+    scene.background = READABILITY.bg
+    scene.fog = new THREE.Fog(READABILITY.fogColor, READABILITY.fogNear, READABILITY.fogFar)
+
+    return () => {
+      // Cleanup to avoid leakage across routes/canvases
+      scene.fog = null
+      scene.background = null
+    }
+  }, [scene])
+
+  return null
+}
+
 function CameraRig() {
   const { camera } = useThree()
   const controlsRef = useRef<OrbitControlsImpl | null>(null)
@@ -47,11 +92,7 @@ function CameraRig() {
       const l = lerpRef.current
       l.startPos.copy(cam.position)
       l.endPos.copy(preset.pos)
-      l.startTgt.copy(
-        controlsRef.current
-          ? controlsRef.current.target
-          : preset.tgt
-      )
+      l.startTgt.copy(controlsRef.current ? controlsRef.current.target : preset.tgt)
       l.endTgt.copy(preset.tgt)
       l.elapsed = 0
       l.duration = LERP_DURATION_MS
@@ -132,8 +173,8 @@ function CameraRig() {
       enablePan={false}
       enableDamping={true}
       dampingFactor={0.08}
-      minDistance={70}   // prevents "macro" starts
-      maxDistance={420}  // prevents losing the scene
+      minDistance={70} // prevents "macro" starts
+      maxDistance={420} // prevents losing the scene
       minPolarAngle={0.62}
       maxPolarAngle={1.18}
       minAzimuthAngle={-0.9}
@@ -142,16 +183,36 @@ function CameraRig() {
   )
 }
 
-export default function TerrainStage({
-  children,
-}: {
-  children?: React.ReactNode
-}) {
+export default function TerrainStage({ children }: { children?: React.ReactNode }) {
   return (
     <div style={{ width: "100%", height: "100%", position: "relative" }}>
-      <Canvas>
-        <ambientLight intensity={0.6} />
-        <directionalLight position={[50, 120, 60]} intensity={1} />
+      <Canvas
+        // keep tone mapping stable for cinematic contrast
+        gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}
+        dpr={[1, 1.75]}
+      >
+        <StageAtmosphere />
+
+        {/* Ambient base — kept low so key/rim do the shaping */}
+        <ambientLight intensity={READABILITY.ambientIntensity} />
+
+        {/* Key light — cool, high angle */}
+        <directionalLight
+          position={READABILITY.keyPos.toArray()}
+          intensity={READABILITY.keyIntensity}
+        />
+
+        {/* Fill light — soften the shadow side */}
+        <directionalLight
+          position={READABILITY.fillPos.toArray()}
+          intensity={READABILITY.fillIntensity}
+        />
+
+        {/* Rim/back light — separates silhouette from background */}
+        <directionalLight
+          position={READABILITY.rimPos.toArray()}
+          intensity={READABILITY.rimIntensity}
+        />
 
         <Suspense fallback={null}>
           <SceneStack />
