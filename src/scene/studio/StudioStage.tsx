@@ -6,33 +6,31 @@ import StudioOverlays from "./StudioOverlays";
 
 export default function StudioStage() {
   return (
-    <Canvas
-      dpr={[1, 1.75]}
-      gl={{
-        antialias: true,
-        powerPreference: "high-performance",
-      }}
-    >
-      {/* CAMERA AUTHORITY */}
-      <PerspectiveCamera
-        makeDefault
-        position={[0, 6.5, 11]}
-        fov={34}
-        near={0.1}
-        far={200}
-      />
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      <Canvas
+        dpr={[1, 1.75]}
+        gl={{ antialias: true, powerPreference: "high-performance" }}
+      >
+        <PerspectiveCamera
+          makeDefault
+          position={[0, 6.5, 11]}
+          fov={34}
+          near={0.1}
+          far={200}
+        />
 
-      {/* DEPTH DISCIPLINE */}
-      <fog attach="fog" args={["#020617", 18, 65]} />
+        <fog attach="fog" args={["#020617", 18, 65]} />
 
-      {/* LIGHT BALANCE (soft, neutral, non-dramatic) */}
-      <ambientLight intensity={0.45} />
-      <directionalLight position={[8, 12, 6]} intensity={0.55} />
+        <ambientLight intensity={0.45} />
+        <directionalLight position={[8, 12, 6]} intensity={0.55} />
 
-      <Suspense fallback={null}>
-        <TerrainSurface />
-        <StudioOverlays />
-      </Suspense>
-    </Canvas>
+        <Suspense fallback={null}>
+          <TerrainSurface />
+        </Suspense>
+      </Canvas>
+
+      {/* DOM overlay layer (guaranteed visible on page) */}
+      <StudioOverlays />
+    </div>
   );
 }
