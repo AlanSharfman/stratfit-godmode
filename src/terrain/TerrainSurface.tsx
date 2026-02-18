@@ -2,10 +2,13 @@ import React, { useEffect, useMemo, useRef } from "react"
 import * as THREE from "three"
 import { buildTerrain } from "./buildTerrain"
 import { createSeed } from "./seed"
+import { useNarrativeStore } from "@/state/narrativeStore"
 
 export default function TerrainSurface() {
   const solidRef = useRef<THREE.Mesh>(null)
-  const wireRef = useRef<THREE.Mesh>(null)
+  const latticeRef = useRef<THREE.Mesh>(null)
+
+  const clearSelected = useNarrativeStore((s) => s.clearSelected)
 
   const geometry = useMemo(() => {
     const seed = createSeed("baseline")
@@ -13,7 +16,7 @@ export default function TerrainSurface() {
   }, [])
 
   useEffect(() => {
-    for (const ref of [solidRef, wireRef]) {
+    for (const ref of [solidRef, latticeRef]) {
       if (!ref.current) continue
       ref.current.rotation.x = -Math.PI / 2
       ref.current.position.set(0, -10, 0)
@@ -22,39 +25,59 @@ export default function TerrainSurface() {
     }
   }, [])
 
+  const surfaceMaterial = useMemo(() => {
+    const mat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color("#0c1722"),
+      roughness: 0.92,
+      metalness: 0.04,
+      emissive: new THREE.Color("#081423"),
+      emissiveIntensity: 0.22,
+      transparent: true,
+      opacity: 0.78,
+    })
+
+    mat.onBeforeCompile = (shader) => {
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <dithering_fragment>",
+        `
+        float depthFactor = clamp(gl_FragCoord.z, 0.0, 1.0);
+        gl_FragColor.rgb += vec3(depthFactor * 0.06);
+        #include <dithering_fragment>
+        `
+      )
+    }
+
+    return mat
+  }, [])
+
+  const latticeMaterial = useMemo(() => {
+    return new THREE.MeshBasicMaterial({
+      color: new THREE.Color("#7dd3fc"),
+      transparent: true,
+      opacity: 0.22,
+      wireframe: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    })
+  }, [])
+
   return (
     <>
-      <mesh ref={solidRef} geometry={geometry} renderOrder={0} name="terrain-surface">
-        <meshStandardMaterial
-          color={0x0f1d2b}
-          emissive={0x081423}
-          emissiveIntensity={0.16}
-          transparent
-          opacity={0.62}
-          roughness={0.92}
-          metalness={0.05}
-          depthWrite
-          depthTest
-          polygonOffset
-          polygonOffsetFactor={1}
-          polygonOffsetUnits={1}
-        />
-      </mesh>
+      {/* Physical surface */}
+      <mesh
+        ref={solidRef}
+        geometry={geometry}
+        material={surfaceMaterial}
+        renderOrder={0}
+        name="terrain-surface"
+        onClick={(e) => {
+          e.stopPropagation()
+          clearSelected()
+        }}
+      />
 
-      <mesh ref={wireRef} geometry={geometry} renderOrder={1}>
-        <meshStandardMaterial
-          color={0x7dd3fc}
-          emissive={0x38bdf8}
-          emissiveIntensity={0.34}
-          wireframe
-          transparent
-          opacity={0.4}
-          roughness={0.85}
-          metalness={0.12}
-          depthWrite={false}
-          depthTest
-        />
-      </mesh>
+      {/* Embedded lattice */}
+      <mesh ref={latticeRef} geometry={geometry} material={latticeMaterial} renderOrder={1} />
     </>
   )
 }

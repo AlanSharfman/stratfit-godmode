@@ -4,6 +4,8 @@ import { OrbitControls } from "@react-three/drei"
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib"
 import * as THREE from "three"
 import SceneStack from "./SceneStack"
+import RiskFog from "@/render/atmos/RiskFog"
+import RiskFogPockets from "@/render/atmos/RiskFogPockets"
 
 const HERO = {
   pos: new THREE.Vector3(-72, 62, 164),
@@ -215,6 +217,8 @@ export default function TerrainStage({ children }: { children?: React.ReactNode 
         />
 
         <Suspense fallback={null}>
+          <RiskFog />
+          <RiskFogPockets />
           <SceneStack />
           {children}
         </Suspense>

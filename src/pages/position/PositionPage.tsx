@@ -1,5 +1,6 @@
 import React from "react"
 import TerrainStage from "@/terrain/TerrainStage"
+import NarrativeOverlayHost from "@/overlays/NarrativeOverlayHost"
 
 export default function PositionPage() {
   return (
@@ -12,6 +13,7 @@ export default function PositionPage() {
       }}
     >
       <TerrainStage />
+      <NarrativeOverlayHost />
     </div>
   )
 }

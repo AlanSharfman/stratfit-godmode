@@ -1,5 +1,6 @@
 import React from "react"
 import TerrainSurface from "./TerrainSurface"
+import ProbabilityEnvelope from "@/paths/ProbabilityEnvelope"
 import P50Path from "@/paths/P50Path"
 import TimelineAxis from "./TimelineAxis"
 import TimelineTicks from "./TimelineTicks"
@@ -14,6 +15,7 @@ export default function SceneStack() {
       <TerrainSurface />
       <HorizonBand />
 
+      <ProbabilityEnvelope />
       <P50Path />
 
       <TimelineAxis />

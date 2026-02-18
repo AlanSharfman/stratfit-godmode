@@ -3,9 +3,7 @@ import * as THREE from "three"
 import { ScreenSpaceMarkerSprite } from "@/render/overlays/ScreenSpaceMarkerSprite"
 
 type Props = {
-  /** Explicit tick positions as [x,y,z] or Vector3 */
   ticks?: Array<[number, number, number] | THREE.Vector3>
-  /** Shorthand: generate evenly-spaced ticks along X */
   count?: number
   rangeX?: [number, number]
   y?: number
@@ -13,13 +11,24 @@ type Props = {
   sizePx?: number
 }
 
+/**
+ * STRATFIT — Timeline Ticks (Matte / Reference Layer)
+ *
+ * Option C rules:
+ * - ticks are secondary reference
+ * - darker + smaller + lower opacity
+ * - render behind primary path + milestones
+ */
 export default function TimelineTicks({
   ticks,
   count = 10,
   rangeX = [-50, 40],
-  y = 0.02,
-  color = "#EAFBFF",
-  sizePx = 12,
+  // Lower base Y than previous 0.02
+  y = -0.06,
+  // Muted slate (NOT white)
+  color = "#64748b",
+  // Slightly smaller
+  sizePx = 10,
 }: Props) {
   const positions = useMemo(() => {
     if (ticks && ticks.length > 0) {
@@ -42,10 +51,12 @@ export default function TimelineTicks({
           key={i}
           position={pos}
           sizePx={sizePx}
-          liftY={0.26}
+          // Lower than previous 0.26
+          liftY={0.10}
           color={color}
-          opacity={0.92}
-          renderOrder={150}
+          opacity={0.38}
+          // Behind the path/milestones
+          renderOrder={24}
         />
       ))}
     </group>

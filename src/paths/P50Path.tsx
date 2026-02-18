@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo } from "react";
+import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { generateP50Nodes } from "./generatePath";
 import { normToWorld } from "@/spatial/SpatialProjector";
@@ -6,6 +7,198 @@ import { createSeed } from "@/terrain/seed";
 import { sampleTerrainHeight } from "@/terrain/buildTerrain";
 import { getStmEnabled, sampleStmDisplacement } from "@/render/stm/stmRuntime";
 import type { HeightSampler } from "@/terrain/corridorTopology";
+import ValueBeacons from "@/paths/ValueBeacons";
+import StrategicMarkers from "@/terrain/StrategicMarkers";
+import type { StrategicMarker } from "@/terrain/StrategicMarkers";
+
+function FlowFilamentMaterial({
+    speed = 0.18,
+    density = 20.0,
+}: {
+    speed?: number;
+    density?: number;
+}) {
+    const mat = React.useMemo(() => {
+        const m = new THREE.ShaderMaterial({
+            transparent: true,
+            depthTest: false,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending,
+            uniforms: {
+                uTime: { value: 0 },
+                uSpeed: { value: speed },
+                uDensity: { value: density },
+                uCore: { value: new THREE.Color(0x22d3ee) },
+                uHalo: { value: new THREE.Color(0x7dd3fc) },
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                varying vec2 vUv;
+                uniform float uTime;
+                uniform float uSpeed;
+                uniform float uDensity;
+                uniform vec3 uCore;
+                uniform vec3 uHalo;
+
+                // deterministic tiny noise
+                float hash(vec2 p){
+                    p = fract(p*vec2(123.34, 456.21));
+                    p += dot(p, p+45.32);
+                    return fract(p.x*p.y);
+                }
+
+                void main() {
+                    // Along-path coord (0..1)
+                    float t = vUv.y;
+
+                    // Across-width (0..1)
+                    float x = vUv.x;
+
+                    // Centerline profile (brightest at center)
+                    float center = 1.0 - smoothstep(0.28, 0.52, abs(x - 0.5));
+                    // Softer edge rolloff
+                    float edge = smoothstep(0.02, 0.18, x) * (1.0 - smoothstep(0.82, 0.98, x));
+
+                    // Flow phase (scrolls along the path)
+                    float phase = t * uDensity - uTime * uSpeed;
+
+                    // Primary streak band
+                    float f = fract(phase);
+                    float streak = smoothstep(0.52, 0.50, abs(f - 0.5)); // thin band
+
+                    // Secondary streaks (higher freq)
+                    float f2 = fract(phase * 2.7);
+                    float streak2 = smoothstep(0.53, 0.50, abs(f2 - 0.5));
+
+                    // Micro shimmer noise so it doesn’t look like a flat shader
+                    float n = hash(vec2(t * 240.0, x * 90.0 + uTime * 0.04));
+                    float shimmer = smoothstep(0.55, 1.0, n);
+
+                    // Intensity composition
+                    float intensity = (0.55 * streak + 0.35 * streak2) * (0.75 + 0.25 * shimmer);
+                    intensity *= (0.25 + 0.75 * center) * edge;
+
+                    // Color blend: halo at edges, core at center
+                    vec3 col = mix(uHalo, uCore, center);
+
+                    // Alpha (controlled, not gamey)
+                    float alpha = intensity * 0.85;
+
+                    gl_FragColor = vec4(col, alpha);
+                }
+            `,
+        });
+        return m;
+    }, [speed, density]);
+
+    useEffect(() => {
+        mat.uniforms.uSpeed.value = speed;
+        mat.uniforms.uDensity.value = density;
+    }, [mat, speed, density]);
+
+    useFrame((_, delta) => {
+        mat.uniforms.uTime.value += delta;
+    });
+
+    useEffect(() => {
+        return () => {
+            mat.dispose();
+        };
+    }, [mat]);
+
+    return <primitive object={mat} attach="material" />;
+}
+
+function TitaniumRailMaterial() {
+    const mat = React.useMemo(() => {
+        return new THREE.ShaderMaterial({
+            transparent: false,
+            depthTest: true,
+            depthWrite: true,
+            uniforms: {
+                uBase: { value: new THREE.Color("#0b1220") },
+                uSheen: { value: new THREE.Color("#1b2a3a") },
+                uEdge: { value: new THREE.Color("#2dd4ff") },
+                uEdgeStrength: { value: 0.18 },
+                uInsideStrength: { value: 0.14 },
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                varying vec3 vN;
+                varying vec3 vV;
+                varying float vTurn;
+                attribute float turnS;
+
+                void main() {
+                    vUv = uv;
+
+                    // normal in view space
+                    vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+                    vV = normalize(-mvPos.xyz);
+                    vN = normalize(normalMatrix * normal);
+
+                    vTurn = turnS;
+
+                    gl_Position = projectionMatrix * mvPos;
+                }
+            `,
+            fragmentShader: `
+                varying vec2 vUv;
+                varying vec3 vN;
+                varying vec3 vV;
+                varying float vTurn;
+
+                uniform vec3 uBase;
+                uniform vec3 uSheen;
+                uniform vec3 uEdge;
+                uniform float uEdgeStrength;
+                uniform float uInsideStrength;
+
+                void main() {
+                    // Fresnel edge (subtle, not neon)
+                    float ndv = clamp(dot(normalize(vN), normalize(vV)), 0.0, 1.0);
+                    float fres = pow(1.0 - ndv, 2.5);
+
+                    // Inside-turn mask from UV across width:
+                    // If vTurn > 0, right side is inside; if vTurn < 0, left side is inside.
+                    float insideRight = smoothstep(0.52, 1.0, vUv.x);
+                    float insideLeft  = 1.0 - smoothstep(0.0, 0.48, vUv.x);
+                    float insideMask = mix(insideLeft, insideRight, step(0.0, vTurn));
+                    float insideAmt = abs(vTurn) * insideMask;
+
+                    // Base coated-metal shading
+                    vec3 col = uBase;
+
+                    // Gentle sheen band around center
+                    float center = 1.0 - smoothstep(0.28, 0.52, abs(vUv.x - 0.5));
+                    col = mix(col, uSheen, center * 0.35);
+
+                    // Inside-turn highlight (banking cue)
+                    col += uSheen * (insideAmt * uInsideStrength);
+
+                    // Edge cyan (very controlled)
+                    col += uEdge * (fres * uEdgeStrength);
+
+                    gl_FragColor = vec4(col, 1.0);
+                }
+            `,
+        });
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            mat.dispose();
+        };
+    }, [mat]);
+
+    return <primitive object={mat} attach="material" />;
+}
 
 /**
  * Shared helper: generate world-space XZ control points from path nodes.
@@ -51,6 +244,15 @@ export default function P50Path({
         return new THREE.CatmullRomCurve3(pts, false, "catmullrom", 0.5);
     }, [points]);
 
+    const strategicMarkers = useMemo<StrategicMarker[]>(() => {
+        return [
+            { id: "risk-1", kind: "risk", label: "Burn spike", t: 0.28, strength: 0.85 },
+            { id: "liq-1", kind: "liquidity", label: "Runway inflection", t: 0.46, strength: 0.65 },
+            { id: "val-1", kind: "value", label: "Expansion lever", t: 0.64, strength: 0.7 },
+            { id: "str-1", kind: "strategy", label: "Pricing move", t: 0.78, strength: 0.6 },
+        ];
+    }, []);
+
     const geom = useMemo(() => {
         if (points.length < 2) return null;
         return makeRibbon(curve, 420, 2.4, getHeightAt);
@@ -58,7 +260,8 @@ export default function P50Path({
 
     const groundGeom = useMemo(() => {
         if (points.length < 2) return null;
-        return makeRibbon(curve, 420, 3.2, getHeightAt, -0.08);
+        // narrower + slightly closer to terrain
+        return makeRibbon(curve, 420, 2.7, getHeightAt, -0.06);
     }, [curve, getHeightAt, points.length]);
 
     useEffect(() => {
@@ -76,197 +279,93 @@ export default function P50Path({
         <group name={`path-${scenarioId}`} frustumCulled={false}>
             {/* Cut shadow band */}
             {groundGeom && (
-                <mesh
-                    geometry={groundGeom}
-                    renderOrder={48}
-                    frustumCulled={false}
-                >
-                    <meshBasicMaterial
-                        color={0x02060a}
+                <mesh geometry={groundGeom} renderOrder={48} frustumCulled={false}>
+                    <shaderMaterial
                         transparent
-                        opacity={0.45}
-                        depthTest
                         depthWrite={false}
+                        depthTest
                         side={THREE.DoubleSide}
+                        uniforms={{
+                            uBaseAlpha: { value: 0.16 },
+                            uSlopeBoost: { value: 0.18 },
+                            uCurveBoost: { value: 0.14 },
+                            uSoftness: { value: 0.32 },
+                            uColor: { value: new THREE.Color("#02060a") },
+                        }}
+                        vertexShader={`
+                            varying vec2 vUv;
+                            varying float vSlope;
+                            varying float vK;
+                            attribute float slope;
+                            attribute float curveK;
+
+                            void main() {
+                                vUv = uv;
+                                vSlope = slope;
+                                vK = curveK;
+                                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                            }
+                        `}
+                        fragmentShader={`
+                            varying vec2 vUv;
+                            varying float vSlope;
+                            varying float vK;
+
+                            uniform float uBaseAlpha;
+                            uniform float uSlopeBoost;
+                            uniform float uCurveBoost;
+                            uniform float uSoftness;
+                            uniform vec3 uColor;
+
+                            void main() {
+                                // edge fade across ribbon width
+                                float left = smoothstep(0.0, uSoftness, vUv.x);
+                                float right = 1.0 - smoothstep(1.0 - uSoftness, 1.0, vUv.x);
+                                float edgeFade = left * right;
+
+                                // combined weighting
+                                float w = uBaseAlpha + vSlope * uSlopeBoost + vK * uCurveBoost;
+
+                                // extra clamp so it never gets inky
+                                float a = clamp(w, 0.0, 0.42) * edgeFade;
+
+                                gl_FragColor = vec4(uColor, a);
+                            }
+                        `}
                     />
                 </mesh>
             )}
 
             {/* Titanium rail body */}
+            {/* Titanium rail body (banking-aware coated metal) */}
             <mesh geometry={geom} renderOrder={49} frustumCulled={false}>
-                <meshStandardMaterial
-                    color={new THREE.Color("#0b1220")}
-                    metalness={0.85}
-                    roughness={0.32}
-                    emissive={new THREE.Color("#020617")}
-                    emissiveIntensity={0.15}
-                />
+                <TitaniumRailMaterial />
             </mesh>
 
-            {/* Cyan filament */}
+            {/* Cyan filament (flowing current) */}
             <mesh geometry={geom} renderOrder={50} frustumCulled={false}>
-                <meshBasicMaterial
-                    color={0x38bdf8}
-                    transparent
-                    opacity={0.55}
-                    depthTest={false}
-                    depthWrite={false}
-                />
+                <FlowFilamentMaterial speed={0.18} density={20.0} />
             </mesh>
 
-            {/* Soft outer bloom */}
-            <mesh geometry={geom} renderOrder={51} frustumCulled={false}>
+            {/* Outer halo */}
+            <mesh
+                geometry={geom}
+                renderOrder={51}
+                frustumCulled={false}
+                scale={[1.03, 1.0, 1.03]}
+            >
                 <meshBasicMaterial
-                    color={0x38bdf8}
+                    color={0x22d3ee}
                     transparent
-                    opacity={0.18}
+                    opacity={0.12}
                     depthTest={false}
                     depthWrite={false}
                     blending={THREE.AdditiveBlending}
                 />
             </mesh>
 
-            <Milestones curve={curve} getHeightAt={getHeightAt} />
-        </group>
-    );
-}
-
-/**
- * Milestones: path-anchored product primitives.
- * - Disc body (titanium)
- * - Rim ring (ice-blue)
- * - Subtle hover pulse (no gameplay sparkle)
- * - Event-ready for Command Centre / right-panel binding later
- */
-function Milestones({
-    curve,
-    getHeightAt,
-}: {
-    curve: THREE.Curve<THREE.Vector3>;
-    getHeightAt: HeightSampler;
-}) {
-    const milestones = useMemo(
-        () => [
-            { id: "m1", t: 0.15, label: "M1" },
-            { id: "m2", t: 0.38, label: "M2" },
-            { id: "m3", t: 0.62, label: "M3" },
-            { id: "m4", t: 0.86, label: "M4" },
-        ],
-        []
-    );
-
-    const [hoverId, setHoverId] = useState<string | null>(null);
-    const onOver = useCallback((id: string) => setHoverId(id), []);
-    const onOut = useCallback(() => setHoverId(null), []);
-
-    return (
-        <>
-            {milestones.map((m, idx) => {
-                const p = curve.getPoint(m.t);
-                const y = getHeightAt(p.x, p.z) + 0.32;
-                const hovered = hoverId === m.id;
-                return (
-                    <MilestoneDisc
-                        key={m.id}
-                        id={m.id}
-                        index={idx}
-                        position={[p.x, y, p.z]}
-                        hovered={hovered}
-                        onOver={onOver}
-                        onOut={onOut}
-                    />
-                );
-            })}
-        </>
-    );
-}
-
-function MilestoneDisc({
-    id,
-    index,
-    position,
-    hovered,
-    onOver,
-    onOut,
-}: {
-    id: string;
-    index: number;
-    position: [number, number, number];
-    hovered: boolean;
-    onOver: (id: string) => void;
-    onOut: () => void;
-}) {
-    const bodyMat = useMemo(() => {
-        return new THREE.MeshStandardMaterial({
-            color: new THREE.Color("#0b1220"),
-            metalness: 0.85,
-            roughness: 0.35,
-            emissive: new THREE.Color("#000000"),
-            emissiveIntensity: 0.0,
-        });
-    }, []);
-
-    const rimMat = useMemo(() => {
-        return new THREE.MeshBasicMaterial({
-            color: 0x7dd3fc,
-            transparent: true,
-            opacity: 0.55,
-            depthTest: false,
-            depthWrite: false,
-        });
-    }, []);
-
-    useEffect(() => {
-        return () => {
-            bodyMat.dispose();
-            rimMat.dispose();
-        };
-    }, [bodyMat, rimMat]);
-
-    const scale = hovered ? 1.12 : 1.0;
-    const rimOpacity = hovered ? 0.78 : 0.55;
-
-    return (
-        <group
-            position={position}
-            renderOrder={60}
-            userData={{ pathMesh: true, id: `p50-milestone-${id}`, milestone: id, index }}
-            frustumCulled={false}
-            scale={[scale, scale, scale]}
-            onPointerOver={(e) => {
-                e.stopPropagation();
-                onOver(id);
-                document.body.style.cursor = "pointer";
-            }}
-            onPointerOut={(e) => {
-                e.stopPropagation();
-                onOut();
-                document.body.style.cursor = "default";
-            }}
-        >
-            {/* Disc body */}
-            <mesh rotation={[-Math.PI / 2, 0, 0]} frustumCulled={false}>
-                <cylinderGeometry args={[0.62, 0.62, 0.14, 28]} />
-                <primitive object={bodyMat} attach="material" />
-            </mesh>
-
-            {/* Rim ring */}
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.085, 0]} frustumCulled={false}>
-                <ringGeometry args={[0.66, 0.86, 48]} />
-                <meshBasicMaterial
-                    color={0x7dd3fc}
-                    transparent
-                    opacity={rimOpacity}
-                    depthTest={false}
-                    depthWrite={false}
-                />
-            </mesh>
-
-            {/* Inner dot (micro highlight) */}
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.09, 0]} frustumCulled={false}>
-                <circleGeometry args={[0.10, 24]} />
-                <primitive object={rimMat} attach="material" />
-            </mesh>
+            <ValueBeacons curve={curve} getHeightAt={getHeightAt} />
+            <StrategicMarkers markers={strategicMarkers} curve={curve} getHeightAt={getHeightAt} />
         </group>
     );
 }
@@ -284,9 +383,14 @@ function makeRibbon(
     const positions: number[] = [];
     const uvs: number[] = [];
     const indices: number[] = [];
+    const slopes: number[] = [];
+    const curvatures: number[] = [];
+    const turns: number[] = [];
 
     const up = new THREE.Vector3(0, 1, 0);
     const prevNormal = new THREE.Vector3(1, 0, 0);
+    const prevTangent = new THREE.Vector3(1, 0, 0);
+    const prevP = new THREE.Vector3();
 
     for (let i = 0; i <= segments; i++) {
         const t = i / segments;
@@ -297,6 +401,45 @@ function makeRibbon(
         p.y = getHeightAt(p.x, p.z) + 0.25 + lift + liftOffset;
 
         const tangent = curve.getTangent(t).normalize();
+
+        // slope proxy: how much the segment points up/down
+        // 0 = flat, 1 = steep
+        let slope = 0.0;
+        if (i < segments) {
+            const t2 = (i + 1) / segments;
+            const p2 = curve.getPoint(t2);
+            const lift2 =
+                Math.sin(t2 * Math.PI * 2.0) * 0.35 +
+                Math.sin(t2 * Math.PI * 6.0) * 0.18;
+            p2.y = getHeightAt(p2.x, p2.z) + 0.25 + lift2 + liftOffset;
+            const segDir = p2.sub(p).normalize();
+            slope = THREE.MathUtils.clamp(Math.abs(segDir.y) * 3.0, 0, 1);
+        } else if (i > 0) {
+            const segDir = p.clone().sub(prevP).normalize();
+            slope = THREE.MathUtils.clamp(Math.abs(segDir.y) * 3.0, 0, 1);
+        }
+
+        // curvature proxy: how much tangent changes vs previous step
+        // 0 = straight, 1 = sharp turn
+        let k = 0.0;
+        let turnS = 0.0;
+        if (i > 0) {
+            const dot = THREE.MathUtils.clamp(prevTangent.dot(tangent), -1, 1);
+            const angle = Math.acos(dot); // radians, 0..pi
+            k = THREE.MathUtils.clamp(angle / 0.45, 0, 1);
+
+            // signed turn direction (left/right) in horizontal plane
+            const prevH = prevTangent.clone();
+            prevH.y = 0;
+            prevH.normalize();
+            const curH = tangent.clone();
+            curH.y = 0;
+            curH.normalize();
+            const crossY = prevH.x * curH.z - prevH.z * curH.x;
+            const sign = crossY >= 0 ? 1.0 : -1.0;
+            turnS = sign * k;
+        }
+        prevTangent.copy(tangent);
 
         // Banking: rotate binormal around tangent slightly
         const bank = Math.sin(t * Math.PI * 2.0) * 0.20;
@@ -313,8 +456,17 @@ function makeRibbon(
         positions.push(left.x, left.y, left.z);
         positions.push(right.x, right.y, right.z);
 
+        slopes.push(slope);
+        slopes.push(slope);
+        curvatures.push(k);
+        curvatures.push(k);
+        turns.push(turnS);
+        turns.push(turnS);
+
         uvs.push(0, t);
         uvs.push(1, t);
+
+        prevP.copy(p);
     }
 
     for (let i = 0; i < segments; i++) {
@@ -330,6 +482,9 @@ function makeRibbon(
     const geom = new THREE.BufferGeometry();
     geom.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
     geom.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+    geom.setAttribute("slope", new THREE.Float32BufferAttribute(slopes, 1));
+    geom.setAttribute("curveK", new THREE.Float32BufferAttribute(curvatures, 1));
+    geom.setAttribute("turnS", new THREE.Float32BufferAttribute(turns, 1));
     geom.setIndex(indices);
     geom.computeVertexNormals();
     geom.computeBoundingSphere();
