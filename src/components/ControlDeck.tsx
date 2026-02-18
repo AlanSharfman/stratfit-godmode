@@ -1,15 +1,22 @@
 // src/components/ControlDeck.tsx
-// STRATFIT — GOD-MODE Control Deck matching reference exactly
-// Features: Corner bumpers, individual slider wells, metallic frames
+// STRATFIT — GOD-MODE Control Deck
+// NOTE: Slider surface can be swapped between legacy "wells" and restored compound SliderPanel.
+// Reversible via USE_COMPOUND_SLIDER_PANEL toggle below.
 
 import React, { useMemo, useCallback, memo, useRef } from "react";
 import Slider from "./ui/Slider";
 import SliderInfoTooltip from "./ui/SliderInfoTooltip";
+import SliderPanel from "@/components/SliderPanel";
 import { useShallow } from "zustand/react/shallow";
 import { useScenarioStore } from "@/state/scenarioStore";
 import { useUIStore } from "@/state/uiStore";
 import type { LeverId } from "@/logic/mountainPeakModel";
 import { emitCausal } from "@/ui/causalEvents";
+
+// ============================================================================
+// TOGGLE (REVERSIBLE)
+// ============================================================================
+const USE_COMPOUND_SLIDER_PANEL = true;
 
 // ============================================================================
 // TYPES
@@ -61,6 +68,19 @@ const LEVER_TO_KPI: Record<LeverId, number[]> = {
   fundingInjection: [2, 5],
 };
 
+// Derived helper: KPI -> related levers (for highlight)
+const KPI_TO_LEVERS: Record<number, LeverId[]> = (() => {
+  const out: Record<number, LeverId[]> = {};
+  (Object.keys(KPI_COLORS) as unknown as number[]).forEach((k) => (out[k] = []));
+  (Object.keys(LEVER_TO_KPI) as LeverId[]).forEach((leverId) => {
+    for (const kpi of LEVER_TO_KPI[leverId] || []) {
+      if (!out[kpi]) out[kpi] = [];
+      out[kpi].push(leverId);
+    }
+  });
+  return out;
+})();
+
 // ============================================================================
 // CORNER BUMPER COMPONENT
 // ============================================================================
@@ -82,7 +102,7 @@ const CornerBumper = memo(function CornerBumper({ position }: { position: 'tl' |
 });
 
 // ============================================================================
-// INDIVIDUAL SLIDER WELL (each slider gets its own recessed slot)
+// INDIVIDUAL SLIDER WELL (legacy surface)
 // ============================================================================
 
 interface SliderWellProps {
@@ -206,7 +226,7 @@ const SliderWell = memo(function SliderWell({
 });
 
 // ============================================================================
-// BEVELED SECTION FRAME
+// BEVELED SECTION FRAME (legacy surface)
 // ============================================================================
 
 interface SectionFrameProps {
@@ -404,27 +424,71 @@ export function ControlDeck(props: {
     [hoveredKpiIndex]
   );
 
+  // ========================================================================
+  // SliderPanel adaptor (NEW)
+  // ========================================================================
+  const panelSliders = useMemo(() => {
+    const all = (boxes ?? []).flatMap((b) => b.sliders ?? []);
+    const basicSource = (boxes?.[0]?.sliders ?? all).slice(0, 10);
+    const advancedSource =
+      boxes && boxes.length > 1 ? boxes.slice(1).flatMap((b) => b.sliders ?? []) : all.slice(10);
+
+    const toPanelItem = (s: ControlSliderConfig) => ({
+      id: String(s.id),
+      label: String(s.label ?? s.id),
+      value: Number(s.value ?? 0),
+      min: Number(s.min ?? 0),
+      max: Number(s.max ?? 100),
+      unit: "%",
+      prefix: "",
+      inverse: false,
+      onChange: (v: number) => handleSliderChange(s.id, v),
+    });
+
+    return {
+      basic: basicSource.map(toPanelItem),
+      advanced: advancedSource.map(toPanelItem),
+    };
+  }, [boxes, handleSliderChange]);
+
+  const highlightedSliders = useMemo(() => {
+    const ids = new Set<string>();
+    if (focusedLever) ids.add(String(focusedLever));
+    if (lastLeverIdRef.current) ids.add(String(lastLeverIdRef.current));
+
+    if (hoveredKpiIndex !== null) {
+      const related = KPI_TO_LEVERS[hoveredKpiIndex] || [];
+      related.forEach((leverId) => ids.add(String(leverId)));
+    }
+
+    return Array.from(ids);
+  }, [focusedLever, hoveredKpiIndex]);
+
   return (
     <div className="control-deck-godmode">
       <div className="deck-scroll">
-        {boxes.map((box) => (
-          <SectionFrame key={box.id} title={box.title}>
-            {box.sliders.map((s) => (
-              <SliderWell
-                key={s.id}
-                slider={s}
-                highlightColor={getHighlightColor(s.id)}
-                boxId={box.id}
-                onStart={(boxId) => handleSliderStart(s.id, s.value, boxId)}
-                onEnd={handleSliderEnd}
-                onChange={(v) => handleSliderChange(s.id, v)}
-                onFocus={() => setFocusedLever(s.id as any)}
-                onBlur={() => setFocusedLever(null)}
-                isFocused={focusedLever === s.id}
-              />
-            ))}
-          </SectionFrame>
-        ))}
+        {USE_COMPOUND_SLIDER_PANEL ? (
+          <SliderPanel sliders={panelSliders} highlightedSliders={highlightedSliders} />
+        ) : (
+          boxes.map((box) => (
+            <SectionFrame key={box.id} title={box.title}>
+              {box.sliders.map((s) => (
+                <SliderWell
+                  key={s.id}
+                  slider={s}
+                  highlightColor={getHighlightColor(s.id)}
+                  boxId={box.id}
+                  onStart={(boxId) => handleSliderStart(s.id, s.value, boxId)}
+                  onEnd={handleSliderEnd}
+                  onChange={(v) => handleSliderChange(s.id, v)}
+                  onFocus={() => setFocusedLever(s.id as any)}
+                  onBlur={() => setFocusedLever(null)}
+                  isFocused={focusedLever === s.id}
+                />
+              ))}
+            </SectionFrame>
+          ))
+        )}
       </div>
 
       <style>{`
