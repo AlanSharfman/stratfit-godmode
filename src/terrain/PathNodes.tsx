@@ -4,6 +4,8 @@ import { ScreenSpaceMarkerSprite } from "@/render/overlays/ScreenSpaceMarkerSpri
 
 type Props = {
   /** Explicit node positions as [x,y,z] or Vector3 */
+  points?: Array<[number, number, number] | THREE.Vector3>
+  /** @deprecated use points */
   nodes?: Array<[number, number, number] | THREE.Vector3>
   color?: string
   sizePx?: number
@@ -15,33 +17,39 @@ const DEFAULT_NODES: [number, number, number][] = [
 ]
 
 export default function PathNodes({
+  points,
   nodes,
-  color = "#EAFBFF",
-  sizePx = 18,
+  color,
+  sizePx,
 }: Props) {
-  const positions = useMemo(() => {
-    const src = nodes && nodes.length > 0 ? nodes : DEFAULT_NODES
+  const pts = useMemo(() => {
+    const src = points ?? nodes ?? (DEFAULT_NODES.length > 0 ? DEFAULT_NODES : [])
+    if (!src || src.length < 2) return []
     return src.map((p) =>
-      Array.isArray(p) ? new THREE.Vector3(p[0], p[1], p[2]) : p
+      Array.isArray(p) ? new THREE.Vector3(p[0], p[1], p[2]) : p.clone()
     )
-  }, [nodes])
+  }, [points, nodes])
 
-  if (positions.length === 0) return null
+  if (pts.length < 2) return null
+
+  const last = pts.length - 1
 
   return (
     <group>
-      {positions.map((pos, i) => (
-        <ScreenSpaceMarkerSprite
-          key={i}
-          position={pos}
-          sizePx={sizePx}
-          liftY={0.28}
-          color={color}
-          opacity={0.98}
-          halo
-          renderOrder={160}
-        />
-      ))}
+      {pts.map((p, i) => {
+        const variant =
+          i === 0 ? "origin" : i === last ? "current" : "milestone"
+
+        return (
+          <ScreenSpaceMarkerSprite
+            key={i}
+            position={p}
+            variant={variant}
+            {...(color ? { color } : {})}
+            {...(sizePx ? { sizePx } : {})}
+          />
+        )
+      })}
     </group>
   )
 }
