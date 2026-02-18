@@ -6,6 +6,7 @@ import { persist } from 'zustand/middleware';
 import { emitCompute } from '@/engine/computeTelemetry';
 import { deriveKPIs, type DerivedKPIs } from '@/logic/objectiveEngine';
 import { loadBaseline } from '@/onboard/baseline';
+import { safeLocalStoragePersist } from './safePersistStorage';
 
 type ObjectiveState = {
   targetARR: number;
@@ -553,6 +554,7 @@ export const useScenarioStore = create<ScenarioState>()(
     {
       name: 'stratfit-scenarios',
       version: 2, // Bump version to reset cached state with new structure
+      storage: safeLocalStoragePersist(),
       partialize: (state) => ({
         // Only persist these keys - exclude runtime-computed state
         baseline: state.baseline,

@@ -6,6 +6,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { MonteCarloResult } from '@/logic/monteCarloEngine';
 import type { Verdict } from '@/logic/verdictGenerator';
+import { safeLocalStoragePersist } from './safePersistStorage';
 
 // ════════════════════════════════════════════════════════════════════════════
 // SIMULATION RUN STATUS — Single source of truth
@@ -288,6 +289,7 @@ export const useSimulationStore = create<SimulationState>()(
     {
       name: 'stratfit-simulation',
       version: 1,
+      storage: safeLocalStoragePersist(),
       partialize: (s) => ({
         hasSimulated: s.hasSimulated,
         simulationCount: s.simulationCount,

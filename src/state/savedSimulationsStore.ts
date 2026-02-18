@@ -5,6 +5,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { LeverSnapshot, SimulationSnapshot } from './scenarioStore';
+import { safeLocalStoragePersist } from './safePersistStorage';
 
 // ============================================================================
 // TYPES
@@ -177,6 +178,7 @@ export const useSavedSimulationsStore = create<SavedSimulationsState>()(
     {
       name: 'stratfit-saved-simulations',
       version: 1,
+      storage: safeLocalStoragePersist(),
     }
   )
 );

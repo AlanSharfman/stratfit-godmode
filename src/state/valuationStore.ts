@@ -5,6 +5,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { emitCompute } from '@/engine/computeTelemetry';
+import { safeLocalStoragePersist } from './safePersistStorage';
 
 // ============================================================================
 // TYPES
@@ -418,6 +419,7 @@ export const useValuationStore = create<ValuationState>()(
     {
       name: 'stratfit-valuation',
       version: 1,
+      storage: safeLocalStoragePersist(),
       partialize: (state) => ({
         currentStage: state.currentStage,
         currentARR: state.currentARR,

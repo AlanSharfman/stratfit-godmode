@@ -4,6 +4,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { LeverSnapshot } from './scenarioStore';
+import { safeLocalStoragePersist } from './safePersistStorage';
 
 // Default lever values
 const DEFAULT_LEVERS: LeverSnapshot = {
@@ -121,6 +122,7 @@ export const useLeverStore = create<LeverState>()(
     }),
     {
       name: 'stratfit-levers',
+      storage: safeLocalStoragePersist(),
     }
   )
 );

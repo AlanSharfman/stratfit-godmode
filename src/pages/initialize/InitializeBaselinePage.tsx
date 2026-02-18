@@ -153,19 +153,62 @@ export default function InitializeBaselinePage() {
   const [activeModule, setActiveModule] = useState<ModuleId>("company")
   const [draftSaved, setDraftSaved] = useState(false)
 
-  useEffect(() => {
-    const saved = localStorage.getItem("stratfit.init.draft")
-    if (!saved) return
+  // ── Draft persistence (explicit only) ──────────────────────────────────
+  type InitDraft = { savedAt: number; baseline: BaselineV1 }
+  const DRAFT_KEY = "stratfit.init.draft"
+
+  function readDraft(): InitDraft | null {
+    const raw = localStorage.getItem(DRAFT_KEY)
+    if (!raw) return null
     try {
-      setBaseline(migrateBaseline(JSON.parse(saved)))
+      const parsed = JSON.parse(raw) as InitDraft
+      if (!parsed?.baseline) return null
+      return parsed
     } catch {
-      // ignore invalid drafts
+      // If the draft is corrupted (e.g. invalid unicode escape), clear it to
+      // avoid repeated parse failures and let the user proceed.
+      try {
+        localStorage.removeItem(DRAFT_KEY)
+      } catch {
+        // ignore
+      }
+      return null
     }
-  }, [])
+  }
+
+  function writeDraft(b: BaselineV1) {
+    const payload: InitDraft = { savedAt: Date.now(), baseline: b }
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(payload))
+  }
+
+  function clearDraft() {
+    localStorage.removeItem(DRAFT_KEY)
+  }
+
+  // Track whether a draft exists (for UX)
+  const [hasDraft, setHasDraft] = useState(false)
 
   useEffect(() => {
-    localStorage.setItem("stratfit.init.draft", JSON.stringify(baseline))
-  }, [baseline])
+    const d = readDraft()
+    setHasDraft(!!d)
+
+    // IMPORTANT: draft must NOT override canonical baseline by default.
+    // Only hydrate from draft if there is no canonical baseline.
+    if (!storedBaseline && d?.baseline) {
+      setBaseline(migrateBaseline(d.baseline))
+    }
+  }, []) // run once
+
+  const handleResumeDraft = useCallback(() => {
+    const d = readDraft()
+    if (!d?.baseline) return
+    setBaseline(migrateBaseline(d.baseline))
+  }, [])
+
+  const handleDiscardDraft = useCallback(() => {
+    clearDraft()
+    setHasDraft(false)
+  }, [])
 
   // ── Recalculation shimmer key ────────────────────────────────────────
   const [shimmerKey, setShimmerKey] = useState(0)
@@ -296,9 +339,11 @@ export default function InitializeBaselinePage() {
     []
   )
 
-  // ── Continue to platform ──────────────────────────────────────────────
+  // ── Continue to platform (canonical save + clear draft) ────────────────
   const handleContinue = useCallback(() => {
-    commitBaseline(baseline)
+    commitBaseline(baseline) // canonical truth
+    clearDraft() // prevents override on return
+    setHasDraft(false)
     navigate("/baseline", { replace: true })
   }, [baseline, commitBaseline, navigate])
 
@@ -319,8 +364,15 @@ export default function InitializeBaselinePage() {
     }
   }, [isLast, currentIdx, handleContinue])
 
+  // ── Save Draft (draft + canonical, explicit) ───────────────────────────
   const handleSaveDraft = useCallback(() => {
+    // Save draft snapshot (for resume)
+    writeDraft(baseline)
+    setHasDraft(true)
+
+    // ALSO save canonical baseline (so the rest of the app is wired)
     commitBaseline(baseline)
+
     setDraftSaved(true)
     setTimeout(() => setDraftSaved(false), 1500)
   }, [baseline, commitBaseline])
@@ -752,6 +804,17 @@ export default function InitializeBaselinePage() {
           {draftSaved && (
             <span className={styles.savedConfirm} key={Date.now()}>
               Draft saved
+            </span>
+          )}
+          {hasDraft && (
+            <span style={{ marginRight: 12, opacity: 0.8 }}>
+              Draft available •{" "}
+              <button type="button" className={styles.btnSecondary} onClick={handleResumeDraft}>
+                Resume Draft
+              </button>{" "}
+              <button type="button" className={styles.btnSecondary} onClick={handleDiscardDraft}>
+                Discard
+              </button>
             </span>
           )}
           <button

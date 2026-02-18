@@ -5,6 +5,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { emitCompute } from '@/engine/computeTelemetry';
+import { safeLocalStoragePersist } from './safePersistStorage';
 
 // ============================================================================
 // TYPES
@@ -609,6 +610,7 @@ export const useDecisionStore = create<DecisionState>()(
     {
       name: 'stratfit-decisions',
       version: 1,
+      storage: safeLocalStoragePersist(),
       partialize: (state) => ({
         decisions: state.decisions,
         viewMode: state.viewMode,
