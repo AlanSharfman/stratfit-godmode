@@ -1,15 +1,17 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
 type Props = {
   children: React.ReactNode;
-  /** Minimum ms between pulses to avoid spam during rapid updates */
   cooldownMs?: number;
-  /** Optional: disable if needed */
   enabled?: boolean;
 };
 
+function normalizeText(s: string) {
+  return (s || "").replace(/\s+/g, " ").trim();
+}
+
 function hashText(text: string) {
-  // Cheap deterministic hash of visible text
+  // FNV-1a 32-bit
   let h = 2166136261;
   for (let i = 0; i < text.length; i++) {
     h ^= text.charCodeAt(i);
@@ -18,12 +20,22 @@ function hashText(text: string) {
   return h >>> 0;
 }
 
-export default function DeltaEmphasis({ children, cooldownMs = 750, enabled = true }: Props) {
+export default function DeltaEmphasis({ children, cooldownMs = 900, enabled = true }: Props) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const lastHashRef = useRef<number | null>(null);
   const lastPulseAtRef = useRef<number>(0);
 
   const [pulseKey, setPulseKey] = useState(0);
+
+  // stable options
+  const obsOptions = useMemo(
+    () => ({
+      subtree: true,
+      characterData: true,
+      childList: true,
+    }),
+    []
+  );
 
   useEffect(() => {
     if (!enabled) return;
@@ -31,15 +43,15 @@ export default function DeltaEmphasis({ children, cooldownMs = 750, enabled = tr
     const el = hostRef.current;
     if (!el) return;
 
-    // Initial hash
-    const initial = hashText(el.innerText || "");
+    // Initialize hash from normalized text
+    const initial = hashText(normalizeText(el.innerText || ""));
     lastHashRef.current = initial;
 
     const obs = new MutationObserver(() => {
       const now = performance.now();
       if (now - lastPulseAtRef.current < cooldownMs) return;
 
-      const txt = el.innerText || "";
+      const txt = normalizeText(el.innerText || "");
       const h = hashText(txt);
 
       if (lastHashRef.current === null) {
@@ -50,23 +62,18 @@ export default function DeltaEmphasis({ children, cooldownMs = 750, enabled = tr
       if (h !== lastHashRef.current) {
         lastHashRef.current = h;
         lastPulseAtRef.current = now;
-        setPulseKey((k) => k + 1); // triggers CSS animation restart
+        setPulseKey((k) => k + 1);
       }
     });
 
-    obs.observe(el, {
-      subtree: true,
-      characterData: true,
-      childList: true,
-    });
+    obs.observe(el, obsOptions);
 
     return () => obs.disconnect();
-  }, [cooldownMs, enabled]);
+  }, [cooldownMs, enabled, obsOptions]);
 
   return (
     <div
       ref={hostRef}
-      // pulseKey ensures animation replays reliably
       data-delta-pulse-key={pulseKey}
       className={pulseKey > 0 ? "sf-deltaPulse sf-deltaPulse--run" : "sf-deltaPulse"}
     >

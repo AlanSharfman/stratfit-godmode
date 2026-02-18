@@ -67,7 +67,7 @@ export const DeltaSummaryPanel: React.FC<DeltaSummaryPanelProps> = memo(({
     ?.slice(0, 3) ?? [];
 
   return (
-    <DeltaEmphasis>
+    <DeltaEmphasis cooldownMs={900}>
       {/* Header */}
       <div className={styles.deltaHeader}>
         <div className={styles.deltaTitle}>
