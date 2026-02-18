@@ -126,41 +126,148 @@ export default function P50Path({
                 />
             </mesh>
 
-            <Markers curve={curve} getHeightAt={getHeightAt} />
+            <Milestones curve={curve} getHeightAt={getHeightAt} />
         </group>
     );
 }
 
-function Markers({
+/**
+ * Milestones: path-anchored product primitives.
+ * - Disc body (titanium)
+ * - Rim ring (ice-blue)
+ * - Subtle hover pulse (no gameplay sparkle)
+ * - Event-ready for Command Centre / right-panel binding later
+ */
+function Milestones({
     curve,
     getHeightAt,
 }: {
     curve: THREE.Curve<THREE.Vector3>;
     getHeightAt: HeightSampler;
 }) {
-    const tVals = [0.15, 0.38, 0.62, 0.86];
-    const pts = tVals.map((t) => curve.getPoint(t));
+    const milestones = useMemo(
+        () => [
+            { id: "m1", t: 0.15, label: "M1" },
+            { id: "m2", t: 0.38, label: "M2" },
+            { id: "m3", t: 0.62, label: "M3" },
+            { id: "m4", t: 0.86, label: "M4" },
+        ],
+        []
+    );
+
+    const [hoverId, setHoverId] = useState<string | null>(null);
+    const onOver = useCallback((id: string) => setHoverId(id), []);
+    const onOut = useCallback(() => setHoverId(null), []);
+
     return (
         <>
-            {pts.map((p, idx) => (
-                <mesh
-                    key={idx}
-                    position={[p.x, getHeightAt(p.x, p.z) + 0.35, p.z]}
-                    renderOrder={60}
-                    userData={{ pathMesh: true, id: `p50-marker-${idx}` }}
-                    frustumCulled={false}
-                >
-                    <sphereGeometry args={[0.55, 18, 18]} />
-                    <meshBasicMaterial
-                        color={0x7dd3fc}
-                        transparent
-                        opacity={0.85}
-                        depthTest={false}
-                        depthWrite={false}
+            {milestones.map((m, idx) => {
+                const p = curve.getPoint(m.t);
+                const y = getHeightAt(p.x, p.z) + 0.32;
+                const hovered = hoverId === m.id;
+                return (
+                    <MilestoneDisc
+                        key={m.id}
+                        id={m.id}
+                        index={idx}
+                        position={[p.x, y, p.z]}
+                        hovered={hovered}
+                        onOver={onOver}
+                        onOut={onOut}
                     />
-                </mesh>
-            ))}
+                );
+            })}
         </>
+    );
+}
+
+function MilestoneDisc({
+    id,
+    index,
+    position,
+    hovered,
+    onOver,
+    onOut,
+}: {
+    id: string;
+    index: number;
+    position: [number, number, number];
+    hovered: boolean;
+    onOver: (id: string) => void;
+    onOut: () => void;
+}) {
+    const bodyMat = useMemo(() => {
+        return new THREE.MeshStandardMaterial({
+            color: new THREE.Color("#0b1220"),
+            metalness: 0.85,
+            roughness: 0.35,
+            emissive: new THREE.Color("#000000"),
+            emissiveIntensity: 0.0,
+        });
+    }, []);
+
+    const rimMat = useMemo(() => {
+        return new THREE.MeshBasicMaterial({
+            color: 0x7dd3fc,
+            transparent: true,
+            opacity: 0.55,
+            depthTest: false,
+            depthWrite: false,
+        });
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            bodyMat.dispose();
+            rimMat.dispose();
+        };
+    }, [bodyMat, rimMat]);
+
+    const scale = hovered ? 1.12 : 1.0;
+    const rimOpacity = hovered ? 0.78 : 0.55;
+
+    return (
+        <group
+            position={position}
+            renderOrder={60}
+            userData={{ pathMesh: true, id: `p50-milestone-${id}`, milestone: id, index }}
+            frustumCulled={false}
+            scale={[scale, scale, scale]}
+            onPointerOver={(e) => {
+                e.stopPropagation();
+                onOver(id);
+                document.body.style.cursor = "pointer";
+            }}
+            onPointerOut={(e) => {
+                e.stopPropagation();
+                onOut();
+                document.body.style.cursor = "default";
+            }}
+        >
+            {/* Disc body */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} frustumCulled={false}>
+                <cylinderGeometry args={[0.62, 0.62, 0.14, 28]} />
+                <primitive object={bodyMat} attach="material" />
+            </mesh>
+
+            {/* Rim ring */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.085, 0]} frustumCulled={false}>
+                <ringGeometry args={[0.66, 0.86, 48]} />
+                <meshBasicMaterial
+                    color={0x7dd3fc}
+                    transparent
+                    opacity={rimOpacity}
+                    depthTest={false}
+                    depthWrite={false}
+                />
+            </mesh>
+
+            {/* Inner dot (micro highlight) */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.09, 0]} frustumCulled={false}>
+                <circleGeometry args={[0.10, 24]} />
+                <primitive object={rimMat} attach="material" />
+            </mesh>
+        </group>
     );
 }
 
