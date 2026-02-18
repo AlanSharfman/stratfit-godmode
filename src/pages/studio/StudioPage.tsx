@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import styles from "./StudioPage.module.css";
 
 import StudioSceneRoot from "@/components/studio/StudioSceneRoot";
+import StudioStage from "@/scene/studio/StudioStage";
 
 import { LeverStack } from "@/components/strategy-studio/LeverStack";
 import { TopControlBar } from "@/components/strategy-studio/TopControlBar";
@@ -89,7 +90,7 @@ export default function StudioPage() {
 
             <main className={styles.centerStage}>
                 <div className={styles.sceneLayer}>
-                    <StudioSceneRoot />
+                    <StudioStage scene={<StudioSceneRoot />} />
                 </div>
 
                 <div className={styles.hudLayer}>
