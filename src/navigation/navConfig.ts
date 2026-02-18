@@ -18,11 +18,11 @@ export type NavItem = {
 };
 
 export const NAV_ITEMS: NavItem[] = [
-  { id: "initiate", label: "INITIATE", path: "/initialize" },
-  { id: "baseline", label: "BASELINE", path: "/baseline" },
-  { id: "objective", label: "OBJECTIVE", path: "/objective" },
+  { id: "initiate", label: "INITIATE", path: "/initiate" },
+  { id: "baseline", label: "BASELINE", path: "/position" },
+  { id: "objective", label: "OBJECTIVE", path: "/objectives" },
   { id: "studio", label: "STUDIO", path: "/studio" },
-  { id: "compare", label: "COMPARE", path: "/compare" },
+  { id: "compare", label: "COMPARE", path: "/scenarios" },
   { id: "risk", label: "RISK", path: "/risk" },
   { id: "valuation", label: "VALUATION", path: "/valuation" },
   { id: "capital", label: "CAPITAL", path: "/capital" },

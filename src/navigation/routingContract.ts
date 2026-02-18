@@ -1,15 +1,26 @@
+// src/navigation/routingContract.ts
 import { NAV_ITEMS, type NavId } from "@/navigation/navConfig";
 
 /**
- * Single canonical set of route paths.
- * Keep this aligned with NAV_ITEMS.
+ * STRATFIT — Routing Contract
+ * Single canonical set of route paths validated against NAV_ITEMS.
+ *
+ * IMPORTANT:
+ * NAV_ITEMS currently uses legacy ids (baseline/objective/compare).
+ * We keep ids stable (to satisfy NavId) but map them to the LOCKED new paths.
+ *
+ * Alias policy:
+ * - baseline  -> /position
+ * - objective -> /objectives
+ * - compare   -> /scenarios
+ * - initiate  -> /initiate
  */
 export const ROUTE_PATHS = {
-  initiate: "/initialize",
-  baseline: "/baseline",
-  objective: "/objective",
+  initiate: "/initiate",
+  baseline: "/position",
+  objective: "/objectives",
   studio: "/studio",
-  compare: "/compare",
+  compare: "/scenarios",
   risk: "/risk",
   valuation: "/valuation",
   capital: "/capital",
