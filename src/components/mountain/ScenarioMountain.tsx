@@ -173,6 +173,56 @@ const MESH_W = 50;
 const MESH_D = 25;
 const ISLAND_RADIUS = 22;
 
+// ============================================================================
+// CONTINUITY CUES — Reality anchor, origin marker, forward cue (strategy only)
+// ============================================================================
+
+function ContinuityCues(props: {
+  enabled: boolean;
+  origin?: [number, number, number];
+  forward?: [number, number, number];
+}) {
+  const { enabled, origin = [0, 0.12, 0], forward = [0, 0.12, -6] } = props;
+  if (!enabled) return null;
+
+  return (
+    <group renderOrder={20}>
+      {/* Reality Anchor pin */}
+      <group position={[origin[0], origin[1] + 0.18, origin[2]]}>
+        <mesh>
+          <sphereGeometry args={[0.10, 16, 16]} />
+          <meshStandardMaterial color="#67e8f9" emissive="#22d3ee" emissiveIntensity={0.35} />
+        </mesh>
+        {/* small stem */}
+        <mesh position={[0, -0.22, 0]}>
+          <cylinderGeometry args={[0.02, 0.02, 0.35, 10]} />
+          <meshStandardMaterial color="#0ea5e9" emissive="#0ea5e9" emissiveIntensity={0.15} />
+        </mesh>
+      </group>
+
+      {/* Trajectory Origin marker ("You are here") */}
+      <group position={origin}>
+        <mesh>
+          <ringGeometry args={[0.18, 0.28, 32]} />
+          <meshBasicMaterial color="#7dd3fc" transparent opacity={0.5} />
+        </mesh>
+      </group>
+
+      {/* Forward / North cue: faint arrow line */}
+      <group>
+        <mesh position={[(origin[0] + forward[0]) * 0.5, origin[1], (origin[2] + forward[2]) * 0.5]} rotation={[0, 0, 0]}>
+          <cylinderGeometry args={[0.01, 0.01, Math.abs(forward[2] - origin[2]) || 6, 8]} />
+          <meshBasicMaterial color="#60a5fa" transparent opacity={0.25} />
+        </mesh>
+        <mesh position={forward}>
+          <coneGeometry args={[0.08, 0.18, 10]} />
+          <meshBasicMaterial color="#60a5fa" transparent opacity={0.35} />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
 const BASE_SCALE = 4.5;      // Increased: data-driven shape dominates
 const PEAK_SCALE = 3.5;      // Enhanced: taller, more dramatic peaks
 const MASSIF_SCALE = 5.0;    // Enhanced: more variation in backdrop
@@ -2075,6 +2125,39 @@ export function ScenarioMountain({
             glowIntensity={glowIntensity}
           />
         ) : null}
+
+        {/* Continuity cues: reality anchor + origin marker + forward cue (strategy only) */}
+        <ContinuityCues
+          enabled={mode === "strategy"}
+          origin={(() => {
+            const sp = solverPath?.length ? solverPath : [{ riskIndex: 60, enterpriseValue: 1, runway: 12 }];
+            const p = sp[0];
+            const maxR = Math.max(...sp.map(s => s.runway || 0), 1);
+            const minEV = Math.min(...sp.map(s => s.enterpriseValue || 0));
+            const maxEV = Math.max(...sp.map(s => s.enterpriseValue || 0), minEV + 1);
+            const r01 = (p.runway ?? 0) / maxR;
+            const ev01 = ((p.enterpriseValue ?? 0) - minEV) / (maxEV - minEV);
+            const risk01 = Math.max(0, Math.min(1, (p.riskIndex ?? 50) / 100));
+            const x = -0.5 * 10;
+            const y = -1.2;
+            const z = (0.3 + r01 * 2.2 + ev01 * 1.2 - risk01 * 0.8) / (config.pathCutBoost ?? 1);
+            return [x, y, z] as [number, number, number];
+          })()}
+          forward={(() => {
+            const sp = solverPath?.length ? solverPath : [{ riskIndex: 60, enterpriseValue: 1, runway: 12 }];
+            const p = sp[0];
+            const maxR = Math.max(...sp.map(s => s.runway || 0), 1);
+            const minEV = Math.min(...sp.map(s => s.enterpriseValue || 0));
+            const maxEV = Math.max(...sp.map(s => s.enterpriseValue || 0), minEV + 1);
+            const r01 = (p.runway ?? 0) / maxR;
+            const ev01 = ((p.enterpriseValue ?? 0) - minEV) / (maxEV - minEV);
+            const risk01 = Math.max(0, Math.min(1, (p.riskIndex ?? 50) / 100));
+            const x = -0.5 * 10;
+            const y = -1.2;
+            const z = (0.3 + r01 * 2.2 + ev01 * 1.2 - risk01 * 0.8) / (config.pathCutBoost ?? 1);
+            return [x, y, z - 6] as [number, number, number];
+          })()}
+        />
         {showMilestones ? (
           <MilestoneOrbs
             color={pathColor ?? SCENARIO_PALETTE_COLORS[scenarioId]?.active ?? "#22d3ee"}
