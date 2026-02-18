@@ -67,3 +67,6 @@ _HARD_SAVES/
 _broken_mountain_backup/
 **/_broken_mountain_backup/
 *.zip
+
+# local stash artifacts
+stash-backup.txt

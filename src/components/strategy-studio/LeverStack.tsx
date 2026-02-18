@@ -6,9 +6,9 @@
 // Institutional slider: 1px track, solid #00E0FF fill, 10px handle, no glow
 // ═══════════════════════════════════════════════════════════════════════════
 
-import React, { useState, useCallback, useRef, memo } from "react";
-import styles from "./StrategyStudio.module.css";
+import React, { useState, useCallback, memo } from "react";
 import type { LeverState } from "@/logic/calculateMetrics";
+import Slider from "@/components/ui/Slider";
 
 // ── Domain definitions ──────────────────────────────────────────────────
 
@@ -65,122 +65,6 @@ const DOMAINS: DomainDef[] = [
   },
 ];
 
-// ── Default baseline values ─────────────────────────────────────────────
-
-const BASELINE_DEFAULTS: LeverState = {
-  demandStrength: 60,
-  pricingPower: 50,
-  expansionVelocity: 45,
-  costDiscipline: 55,
-  hiringIntensity: 40,
-  operatingDrag: 35,
-  marketVolatility: 30,
-  executionRisk: 25,
-  fundingPressure: 20,
-};
-
-// ── Inline Slider (Two-Phase: Preview on Drag, Commit on Release) ───────
-
-interface InlineSliderProps {
-  value: number;
-  min?: number;
-  max?: number;
-  onChange: (v: number) => void;
-  onDragStart?: () => void;
-  onDragEnd?: (finalValue: number) => void;
-}
-
-const InlineSlider: React.FC<InlineSliderProps> = memo(({
-  value,
-  min = 0,
-  max = 100,
-  onChange,
-  onDragStart,
-  onDragEnd,
-}) => {
-  const trackRef = useRef<HTMLDivElement>(null);
-  const lastValueRef = useRef(value);
-  const rafRef = useRef<number | null>(null);
-
-  const resolve = useCallback(
-    (clientX: number) => {
-      if (!trackRef.current) return value;
-      const rect = trackRef.current.getBoundingClientRect();
-      const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-      return Math.round(min + pct * (max - min));
-    },
-    [min, max, value]
-  );
-
-  const handlePointerDown = useCallback(
-    (e: React.PointerEvent) => {
-      e.preventDefault();
-      const el = trackRef.current;
-      if (!el) return;
-      el.setPointerCapture(e.pointerId);
-
-      // Phase 1: Signal drag start
-      onDragStart?.();
-
-      const resolved = resolve(e.clientX);
-      lastValueRef.current = resolved;
-      onChange(resolved);
-
-      const onMove = (ev: PointerEvent) => {
-        const v = resolve(ev.clientX);
-        if (v !== lastValueRef.current) {
-          lastValueRef.current = v;
-          // RAF-throttle: only fire onChange once per frame
-          if (rafRef.current) cancelAnimationFrame(rafRef.current);
-          rafRef.current = requestAnimationFrame(() => {
-            onChange(v);
-            rafRef.current = null;
-          });
-        }
-      };
-      const onUp = (ev: PointerEvent) => {
-        el.releasePointerCapture(ev.pointerId);
-        el.removeEventListener("pointermove", onMove);
-        el.removeEventListener("pointerup", onUp);
-        el.removeEventListener("pointercancel", onUp);
-        // Cancel any pending RAF before commit
-        if (rafRef.current) {
-          cancelAnimationFrame(rafRef.current);
-          rafRef.current = null;
-        }
-        // Phase 2: Signal drag end with final value
-        onDragEnd?.(lastValueRef.current);
-      };
-      el.addEventListener("pointermove", onMove);
-      el.addEventListener("pointerup", onUp);
-      el.addEventListener("pointercancel", onUp);
-    },
-    [onChange, resolve, onDragStart, onDragEnd]
-  );
-
-  const pct = ((value - min) / (max - min)) * 100;
-
-  return (
-    <div ref={trackRef} className={styles.sliderWrap} onPointerDown={handlePointerDown}>
-      <div className={styles.sliderTrack} />
-      <div className={styles.sliderFill} style={{ width: `${pct}%` }} />
-      <div className={styles.sliderHandle} style={{ left: `${pct}%` }} />
-    </div>
-  );
-});
-
-InlineSlider.displayName = "InlineSlider";
-
-// ── Delta Badge ─────────────────────────────────────────────────────────
-
-function DeltaBadge({ baseline, current }: { baseline: number; current: number }) {
-  const diff = current - baseline;
-  if (diff === 0) return <span className={`${styles.leverDelta} ${styles.leverDeltaZero}`}>—</span>;
-  const sign = diff > 0 ? "+" : "";
-  const cls = diff > 0 ? styles.leverDeltaPositive : styles.leverDeltaNegative;
-  return <span className={`${styles.leverDelta} ${cls}`}>{sign}{diff}</span>;
-}
-
 // ── Main Component ──────────────────────────────────────────────────────
 
 interface LeverStackProps {
@@ -211,52 +95,293 @@ export const LeverStack: React.FC<LeverStackProps> = memo(({
     });
   }, []);
 
-  return (
-    <div className={readOnly ? styles.leverReadOnly : undefined}>
-      {DOMAINS.map((domain) => {
-        const isOpen = expanded.has(domain.id);
-        return (
-          <div key={domain.id} className={styles.leverDomain}>
-            <div
-              className={styles.leverDomainHeader}
-              onClick={() => toggleDomain(domain.id)}
-            >
-              <span className={styles.leverDomainTitle}>{domain.title}</span>
-              <span className={isOpen ? styles.leverDomainChevronOpen : styles.leverDomainChevron}>
-                ▾
-              </span>
-            </div>
+  const domains = DOMAINS;
 
-            {isOpen && (
-              <div className={styles.leverDomainBody}>
-                {domain.levers.map((lever) => {
-                  const baseline = BASELINE_DEFAULTS[lever.key];
-                  const current = levers[lever.key];
-                  return (
-                    <div key={lever.key} className={styles.leverRow}>
-                      <div className={styles.leverMeta}>
-                        <span className={styles.leverLabel}>{lever.label}</span>
-                        <div className={styles.leverValues}>
-                          <span className={styles.leverBaseline}>{baseline}</span>
-                          <span className={styles.leverArrow}>→</span>
-                          <span className={styles.leverCurrent}>{current}</span>
-                          <DeltaBadge baseline={baseline} current={current} />
+  return (
+    <div className={`sf-leverpanel ${readOnly ? "sf-readonly" : ""}`}>
+      <div className="sf-bezel">
+        <div className="sf-bezel-inner">
+          {domains.map((domain) => {
+            const isOpen = expanded.has(domain.id);
+            return (
+              <section key={domain.id} className="sf-section">
+                <header className="sf-section-hdr" onClick={() => toggleDomain(domain.id)}>
+                  <div className="sf-section-title">{domain.title}</div>
+                  <div className="sf-section-hdr-right">
+                    <div className="sf-led" />
+                    <div className={`sf-chev ${isOpen ? "open" : ""}`}>▾</div>
+                  </div>
+                </header>
+
+                {isOpen && (
+                  <div className="sf-section-body">
+                    {domain.levers.map((lever) => {
+                      const v = levers[lever.key] ?? 0;
+                      return (
+                        <div key={String(lever.key)} className="sf-row">
+                          <div className="sf-row-top">
+                            <div className="sf-label">
+                              {lever.label}
+                              <span
+                                className="sf-info"
+                                title="Info (hook up later)"
+                                onMouseEnter={() => onLeverDragStart?.(lever.key)}
+                                onMouseLeave={() => onLeverDragEnd?.(lever.key, v)}
+                              >
+                                i
+                              </span>
+                            </div>
+
+                            <div className="sf-readout">
+                              <span className="sf-readout-val">{Math.round(v)}</span>
+                              <span className="sf-readout-unit">%</span>
+                              <span className="sf-readout-underline" />
+                            </div>
+                          </div>
+
+                          <div className="sf-row-slider">
+                            <Slider
+                              value={v}
+                              min={0}
+                              max={100}
+                              step={1}
+                              onStart={() => onLeverDragStart?.(lever.key)}
+                              onEnd={() => onLeverDragEnd?.(lever.key, v)}
+                              onChange={(nv) => onLeverChange(lever.key, nv)}
+                            />
+                          </div>
                         </div>
-                      </div>
-                      <InlineSlider
-                        value={current}
-                        onChange={(v) => onLeverChange(lever.key, v)}
-                        onDragStart={() => onLeverDragStart?.(lever.key)}
-                        onDragEnd={(v) => onLeverDragEnd?.(lever.key, v)}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        );
-      })}
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+            );
+          })}
+        </div>
+      </div>
+
+      <style>{`
+        /* ═══════════════════════════════════════════════════════════════
+           PANEL BEZEL (matches reference: rounded titanium shell)
+           ═══════════════════════════════════════════════════════════════ */
+
+        .sf-leverpanel {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: stretch;
+          justify-content: stretch;
+          padding: 10px;
+          box-sizing: border-box;
+        }
+
+        .sf-readonly {
+          opacity: 0.9;
+          pointer-events: none;
+          filter: saturate(0.9);
+        }
+
+        .sf-bezel {
+          width: 100%;
+          height: 100%;
+          border-radius: 22px;
+          padding: 10px;
+          background:
+            radial-gradient(120% 80% at 30% 10%, rgba(34,211,238,0.18), transparent 55%),
+            linear-gradient(180deg, rgba(15,23,42,0.95), rgba(2,6,23,0.98));
+          box-shadow:
+            0 18px 50px rgba(0,0,0,0.55),
+            inset 0 1px 0 rgba(255,255,255,0.06);
+          border: 1px solid rgba(255,255,255,0.06);
+          position: relative;
+        }
+
+        .sf-bezel::before {
+          content: "";
+          position: absolute;
+          inset: 6px;
+          border-radius: 18px;
+          border: 1px solid rgba(34,211,238,0.10);
+          pointer-events: none;
+        }
+
+        .sf-bezel-inner {
+          width: 100%;
+          height: 100%;
+          border-radius: 16px;
+          padding: 10px;
+          background:
+            linear-gradient(180deg, rgba(3,10,24,0.86), rgba(2,6,23,0.94));
+          border: 1px solid rgba(255,255,255,0.04);
+          box-shadow: inset 0 8px 30px rgba(0,0,0,0.55);
+          overflow: auto;
+        }
+
+        .sf-bezel-inner::-webkit-scrollbar { width: 6px; }
+        .sf-bezel-inner::-webkit-scrollbar-thumb {
+          background: rgba(34,211,238,0.18);
+          border-radius: 6px;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           SECTIONS (Growth Vector / Operational Engine / Risk Pressure)
+           ═══════════════════════════════════════════════════════════════ */
+
+        .sf-section {
+          border-radius: 14px;
+          margin-bottom: 12px;
+          background:
+            linear-gradient(180deg, rgba(10,22,40,0.55), rgba(2,6,23,0.40));
+          border: 1px solid rgba(255,255,255,0.05);
+          box-shadow:
+            0 10px 30px rgba(0,0,0,0.35),
+            inset 0 1px 0 rgba(255,255,255,0.04);
+          overflow: hidden;
+        }
+
+        .sf-section-hdr {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 14px 14px 10px;
+          cursor: pointer;
+          user-select: none;
+          border-bottom: 1px solid rgba(255,255,255,0.04);
+          background: linear-gradient(180deg, rgba(15,23,42,0.30), transparent);
+        }
+
+        .sf-section-title {
+          font-size: 11px;
+          letter-spacing: 0.28em;
+          text-transform: uppercase;
+          font-weight: 800;
+          color: rgba(34,211,238,0.95);
+          text-shadow: 0 0 14px rgba(34,211,238,0.28);
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        }
+
+        .sf-section-hdr-right {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .sf-led {
+          width: 8px;
+          height: 8px;
+          border-radius: 99px;
+          background: rgba(34,211,238,0.95);
+          box-shadow:
+            0 0 10px rgba(34,211,238,0.55),
+            0 0 24px rgba(34,211,238,0.22);
+          opacity: 0.9;
+        }
+
+        .sf-chev {
+          font-size: 12px;
+          color: rgba(148,163,184,0.7);
+          transform: translateY(-1px);
+          transition: transform 140ms ease, color 140ms ease;
+        }
+        .sf-chev.open { transform: rotate(180deg) translateY(1px); color: rgba(34,211,238,0.7); }
+
+        .sf-section-body {
+          padding: 10px 12px 12px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           ROWS (label + info + slider + % readout)
+           ═══════════════════════════════════════════════════════════════ */
+
+        .sf-row {
+          border-radius: 12px;
+          padding: 10px 10px 12px;
+          background:
+            linear-gradient(180deg, rgba(2,6,23,0.72), rgba(2,6,23,0.46));
+          border: 1px solid rgba(255,255,255,0.04);
+          box-shadow:
+            inset 0 8px 20px rgba(0,0,0,0.35);
+        }
+
+        .sf-row-top {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+          margin-bottom: 8px;
+        }
+
+        .sf-label {
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: rgba(226,232,240,0.78);
+        }
+
+        .sf-info {
+          width: 18px;
+          height: 18px;
+          border-radius: 99px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12px;
+          font-style: italic;
+          font-family: Georgia, serif;
+          color: rgba(34,211,238,0.75);
+          border: 1px solid rgba(34,211,238,0.30);
+          background: rgba(34,211,238,0.08);
+          box-shadow: 0 0 10px rgba(34,211,238,0.12);
+          cursor: help;
+        }
+
+        .sf-readout {
+          display: flex;
+          align-items: baseline;
+          gap: 3px;
+          min-width: 72px;
+          justify-content: flex-end;
+          position: relative;
+        }
+
+        .sf-readout-val {
+          font-size: 22px;
+          font-weight: 800;
+          color: rgba(241,245,249,0.96);
+          text-shadow: 0 0 16px rgba(34,211,238,0.10);
+          font-variant-numeric: tabular-nums;
+        }
+
+        .sf-readout-unit {
+          font-size: 12px;
+          font-weight: 700;
+          color: rgba(148,163,184,0.65);
+          transform: translateY(-2px);
+        }
+
+        .sf-readout-underline {
+          position: absolute;
+          right: 0;
+          bottom: -6px;
+          width: 56px;
+          height: 2px;
+          background: rgba(34,211,238,0.55);
+          box-shadow: 0 0 14px rgba(34,211,238,0.22);
+          border-radius: 2px;
+        }
+
+        .sf-row-slider {
+          padding: 0 2px;
+        }
+      `}</style>
     </div>
   );
 });

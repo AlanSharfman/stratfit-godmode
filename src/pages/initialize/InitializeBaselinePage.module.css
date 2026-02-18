@@ -1,84 +1,39 @@
-/* ═══════════════════════════════════════════════════════════════════════════
-   STRATFIT — System Calibration · GOD MODE — Titanium Chrome Charcoal Jewels
-   Capital-grade intake instrument · Two-column workflow
+/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+   STRATFIT ΓÇö System Calibration ┬╖ GOD MODE ΓÇö Titanium Chrome Bejewelled & Stepped
+   Capital-grade intake instrument ┬╖ Two-column workflow
    Rail (260px) + Content (1fr)
-   Titanium bezels · Chrome highlights · Charcoal depth · Jewel-cut borders
-   ═══════════════════════════════════════════════════════════════════════════ */
+   Titanium bezels ┬╖ Chrome highlights ┬╖ Charcoal depth ┬╖ Jewel-cut borders
+   3-ring stepped shadows ┬╖ Bejewelled cyan/gold/violet accent bars
+   ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */
 
-/* ─── ANIMATIONS ───────────────────────────────────────────────────────── */
+/* ΓöÇΓöÇΓöÇ ANIMATIONS ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 @keyframes sfFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-
 @keyframes sfPanelIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
-
 @keyframes sfRecalPulse {
-  0% {
-    opacity: 0;
-    width: 0;
-  }
-
-  40% {
-    opacity: 1;
-    width: 100%;
-  }
-
-  100% {
-    opacity: 0;
-    width: 100%;
-  }
+  0%   { opacity: 0; width: 0; }
+  40%  { opacity: 1; width: 100%; }
+  100% { opacity: 0; width: 100%; }
 }
-
 @keyframes sfSavedFlash {
-  0% {
-    opacity: 0;
-    transform: translateY(2px);
-  }
-
-  30% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  100% {
-    opacity: 0;
-    transform: translateY(-2px);
-  }
+  0%   { opacity: 0; transform: translateY(2px); }
+  30%  { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-2px); }
 }
-
 @keyframes sfStepGlow {
-  0% {
-    box-shadow: 0 0 4px rgba(160, 185, 210, 0.12), inset 0 0 4px rgba(160, 185, 210, 0.06);
-  }
-
-  50% {
-    box-shadow: 0 0 10px rgba(160, 185, 210, 0.22), inset 0 0 6px rgba(160, 185, 210, 0.10);
-  }
-
-  100% {
-    box-shadow: 0 0 4px rgba(160, 185, 210, 0.12), inset 0 0 4px rgba(160, 185, 210, 0.06);
-  }
+  0%   { box-shadow: 0 0 4px rgba(160,185,210,0.12), inset 0 0 4px rgba(160,185,210,0.06); }
+  50%  { box-shadow: 0 0 10px rgba(160,185,210,0.22), inset 0 0 6px rgba(160,185,210,0.10); }
+  100% { box-shadow: 0 0 4px rgba(160,185,210,0.12), inset 0 0 4px rgba(160,185,210,0.06); }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   ROOT — 2-column grid: rail + content
-   ═══════════════════════════════════════════════════════════════════════════ */
+/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+   ROOT ΓÇö 2-column grid: rail + content
+   ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */
 .root {
   position: relative;
   display: grid;
@@ -92,7 +47,7 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ─── Background layers ────────────────────────────────────────────────── */
+/* ΓöÇΓöÇΓöÇ Background layers ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .bgLayer {
   position: fixed;
   inset: 0;
@@ -120,9 +75,9 @@
   background: radial-gradient(ellipse at 50% 50%, transparent 60%, rgba(0, 0, 0, 0.35) 100%);
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   LEFT STEP RAIL — 260px · Titanium Chrome Panel
-   ═══════════════════════════════════════════════════════════════════════════ */
+/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+   LEFT STEP RAIL ΓÇö 260px ┬╖ Titanium Chrome Panel
+   ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */
 .rail {
   position: relative;
   z-index: 2;
@@ -135,34 +90,44 @@
       rgba(16, 20, 32, 0.98) 0%,
       rgba(10, 13, 22, 1) 40%,
       rgba(6, 8, 14, 1) 100%);
-  /* ── Titanium chrome right border — multi-layer bezel ── */
-  border-right: 1px solid rgba(140, 160, 185, 0.12);
+  /* ΓöÇΓöÇ Titanium chrome stepped right border ΓÇö 3-ring bezel ΓöÇΓöÇ */
+  border-right: 1.5px solid rgba(148, 163, 184, 0.18);
   box-shadow:
+    /* stepped outer rings */
+    2px 0 0 rgba(180, 200, 220, 0.06),
+    4px 0 0 rgba(107, 114, 128, 0.04),
+    6px 0 0 rgba(55, 65, 81, 0.03),
+    /* depth shadow */
     2px 0 16px rgba(0, 0, 0, 0.5),
-    1px 0 0 rgba(180, 200, 220, 0.06),
-    inset -1px 0 0 rgba(120, 140, 170, 0.04);
+    /* chrome inset */
+    inset -1px 0 0 rgba(120, 140, 170, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3);
   overflow-y: auto;
 }
 
-/* ── Titanium vertical accent — right edge with chrome gradient ── */
+/* ΓöÇΓöÇ Titanium vertical accent ΓÇö jewel-cut right edge with chrome-cyan-gold gradient ΓöÇΓöÇ */
 .rail::after {
   content: "";
   position: absolute;
   top: 0;
   right: 0;
   bottom: 0;
-  width: 1px;
-  background: linear-gradient(180deg,
-      transparent 3%,
-      rgba(160, 185, 210, 0.08) 15%,
-      rgba(180, 200, 225, 0.16) 35%,
-      rgba(160, 185, 210, 0.12) 55%,
-      rgba(140, 165, 195, 0.08) 75%,
-      transparent 97%);
+  width: 1.5px;
+  background: linear-gradient(
+    180deg,
+    transparent 3%,
+    rgba(160, 185, 210, 0.08) 10%,
+    rgba(34, 211, 238, 0.18) 30%,
+    rgba(251, 191, 36, 0.12) 50%,
+    rgba(139, 92, 246, 0.10) 70%,
+    rgba(160, 185, 210, 0.08) 90%,
+    transparent 97%
+  );
   pointer-events: none;
 }
 
-/* ─── Logo Block ──────────────────────────────────────────────────────── */
+/* ΓöÇΓöÇΓöÇ Logo Block ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .logoBlock {
   display: flex;
   align-items: center;
@@ -192,7 +157,7 @@
   text-transform: uppercase;
 }
 
-/* ─── Section Descriptor ─────────────────────────────────────────────── */
+/* ΓöÇΓöÇΓöÇ Section Descriptor ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .sectionDescriptor {
   font-size: 10px;
   letter-spacing: 0.4px;
@@ -201,7 +166,7 @@
   margin-bottom: 24px;
 }
 
-/* ─── Rail Navigation — Jewel-cut Step Items ─────────────────────────── */
+/* ΓöÇΓöÇΓöÇ Rail Navigation ΓÇö Jewel-cut Step Items ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .railNav {
   display: flex;
   flex-direction: column;
@@ -240,17 +205,21 @@
   color: rgba(240, 245, 255, 0.95);
   background:
     linear-gradient(135deg,
-      rgba(140, 170, 210, 0.06) 0%,
-      rgba(100, 140, 190, 0.03) 100%);
-  border-color: rgba(160, 185, 215, 0.14);
-  border-left-color: rgba(180, 210, 240, 0.65);
+      rgba(140, 170, 210, 0.08) 0%,
+      rgba(100, 140, 190, 0.04) 100%);
+  border-color: rgba(160, 185, 215, 0.18);
+  border-left-color: rgba(34, 211, 238, 0.65);
   box-shadow:
+    /* stepped rings on active item */
+    0 0 0 1px rgba(34, 211, 238, 0.06),
+    0 0 0 3px rgba(34, 211, 238, 0.03),
     0 1px 4px rgba(0, 0, 0, 0.18),
-    inset 0 1px 0 rgba(200, 220, 245, 0.04),
-    inset 0 0 12px rgba(140, 170, 210, 0.03);
+    inset 0 1px 0 rgba(200, 220, 245, 0.06),
+    inset 0 0 12px rgba(34, 211, 238, 0.04),
+    inset 3px 0 8px rgba(34, 211, 238, 0.04);
 }
 
-/* ── Step Number Badges — Chrome Jewel Treatment ── */
+/* ΓöÇΓöÇ Step Number Badges ΓÇö Chrome Jewel Treatment ΓöÇΓöÇ */
 .railNum {
   display: inline-flex;
   align-items: center;
@@ -294,7 +263,7 @@
   letter-spacing: 1px;
 }
 
-/* ─── Draft Badge ────────────────────────────────────────────────────── */
+/* ΓöÇΓöÇΓöÇ Draft Badge ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .draftBadge {
   margin-top: auto;
   padding: 12px 8px 0;
@@ -306,9 +275,9 @@
   border-top: 1px solid rgba(120, 145, 180, 0.06);
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
+/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
    MAIN CONTENT PANE
-   ═══════════════════════════════════════════════════════════════════════════ */
+   ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */
 .main {
   position: relative;
   z-index: 1;
@@ -317,22 +286,15 @@
   height: 100%;
   overflow-y: auto;
   padding: 32px 48px 0;
-  /* subtle content pane separation (keeps existing palette) */
-  border-left: 1px solid rgba(140, 160, 185, 0.05);
-  background:
-    linear-gradient(180deg, rgba(8, 12, 22, 0.18) 0%, rgba(8, 12, 22, 0.04) 100%);
   animation: sfFadeIn 300ms ease-out both;
 }
 
-/* ─── Header ─────────────────────────────────────────────────────────── */
+/* ΓöÇΓöÇΓöÇ Header ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 16px;
-  padding-bottom: 16px;
-  /* clearer section bezel */
-  border-bottom: 1px solid rgba(150, 175, 210, 0.08);
+  margin-bottom: 20px;
   flex-shrink: 0;
 }
 
@@ -374,9 +336,9 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   TOP-RIGHT MOUNTAIN PREVIEW — Titanium Chrome Bezel Frame
-   ═══════════════════════════════════════════════════════════════════════════ */
+/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+   TOP-RIGHT MOUNTAIN PREVIEW ΓÇö Titanium Chrome Bezel Frame
+   ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */
 .mountainCard {
   width: 420px;
   border-radius: 10px;
@@ -385,14 +347,37 @@
     linear-gradient(180deg,
       rgba(18, 24, 40, 0.85) 0%,
       rgba(10, 14, 26, 0.94) 100%);
-  /* ── Chrome-titanium double border bezel ── */
-  border: 1px solid rgba(150, 175, 210, 0.14);
+  /* ΓöÇΓöÇ Chrome-titanium stepped border bezel ΓöÇΓöÇ */
+  border: 1.5px solid rgba(150, 175, 210, 0.16);
   box-shadow:
-    0 0 0 1px rgba(100, 125, 160, 0.06),
+    /* 3-ring stepped bezel */
+    0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 0 0 3px rgba(107, 114, 128, 0.08),
+    0 0 0 5px rgba(55, 65, 81, 0.05),
+    /* depth */
     0 8px 28px rgba(0, 0, 0, 0.4),
     0 2px 6px rgba(0, 0, 0, 0.25),
-    inset 0 1px 0 rgba(200, 220, 245, 0.06),
+    /* chrome inset */
+    inset 0 1px 0 rgba(200, 220, 245, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.25),
     inset 0 0 20px rgba(120, 150, 190, 0.02);
+}
+
+/* Bejewelled accent bar ΓÇö mountain card top */
+.mountainCard::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 12px; right: 12px;
+  height: 2px;
+  z-index: 3;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(34, 211, 238, 0.45) 25%,
+    rgba(251, 191, 36, 0.30) 50%,
+    rgba(139, 92, 246, 0.25) 75%,
+    transparent 100%);
+  border-radius: 0 0 2px 2px;
+  pointer-events: none;
 }
 
 .mountainCardHeader {
@@ -401,12 +386,13 @@
   justify-content: space-between;
   gap: 12px;
   padding: 10px 12px;
-  /* ── Charcoal divider with chrome highlight ── */
+  /* ΓöÇΓöÇ Charcoal divider with chrome highlight ΓöÇΓöÇ */
   border-bottom: 1px solid rgba(150, 175, 210, 0.10);
   background:
     linear-gradient(180deg,
-      rgba(30, 38, 56, 0.15) 0%,
+      rgba(30, 38, 56, 0.18) 0%,
       rgba(0, 0, 0, 0.05) 100%);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
 }
 
 .mountainCardLabel {
@@ -449,11 +435,13 @@
   padding: 6px 8px;
   border-radius: 7px;
   background: rgba(8, 12, 22, 0.55);
-  /* ── Chrome micro-bezel ── */
-  border: 1px solid rgba(150, 175, 210, 0.10);
+/* ΓöÇΓöÇ Chrome micro-bezel ΓÇö stepped ΓöÇΓöÇ */
+  border: 1.5px solid rgba(150, 175, 210, 0.12);
   box-shadow:
+    0 0 0 1px rgba(107, 114, 128, 0.04),
     0 1px 4px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(180, 200, 230, 0.04);
+    inset 0 1px 0 rgba(180, 200, 230, 0.06),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
   backdrop-filter: blur(10px);
 }
 
@@ -477,7 +465,6 @@
   .mountainCard {
     width: 360px;
   }
-
   .mountainViewport {
     height: 150px;
   }
@@ -488,40 +475,61 @@
     flex-direction: column;
     gap: 14px;
   }
-
   .headerRight {
     align-items: flex-start;
     width: 100%;
   }
-
   .mountainCard {
     width: 100%;
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   KPI INSTRUMENT STRIP — Chrome Titanium Bezeled Tiles
-   ═══════════════════════════════════════════════════════════════════════════ */
+/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+   KPI INSTRUMENT STRIP ΓÇö Chrome Titanium Bezeled Tiles
+   ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */
 .kpiStrip {
   position: relative;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1px;
-  margin-bottom: 22px;
+  margin-bottom: 24px;
   border-radius: 8px;
   overflow: hidden;
-  /* ── Titanium chrome outer bezel ── */
+  /* ΓöÇΓöÇ Titanium chrome stepped outer bezel ΓöÇΓöÇ */
   background: rgba(120, 145, 180, 0.07);
-  border: 1px solid rgba(150, 175, 210, 0.12);
+  border: 1.5px solid rgba(150, 175, 210, 0.14);
   box-shadow:
-    0 0 0 1px rgba(100, 125, 160, 0.04),
+    /* 3-ring stepped bezel */
+    0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 0 0 3px rgba(107, 114, 128, 0.08),
+    0 0 0 5px rgba(55, 65, 81, 0.05),
+    /* depth */
     0 4px 16px rgba(0, 0, 0, 0.25),
     0 1px 3px rgba(0, 0, 0, 0.15),
-    inset 0 1px 0 rgba(200, 220, 245, 0.05);
+    /* chrome inset */
+    inset 0 1px 0 rgba(200, 220, 245, 0.07),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.25);
   flex-shrink: 0;
 }
 
-/* Recalculation shimmer — chrome flash */
+/* Bejewelled accent bar ΓÇö KPI strip top */
+.kpiStrip::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 10px; right: 10px;
+  height: 1.5px;
+  z-index: 5;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(34, 211, 238, 0.35) 30%,
+    rgba(251, 191, 36, 0.22) 50%,
+    rgba(139, 92, 246, 0.18) 70%,
+    transparent 100%);
+  border-radius: 0 0 1px 1px;
+  pointer-events: none;
+}
+
+/* Recalculation shimmer ΓÇö chrome flash */
 .shimmerBar {
   position: absolute;
   top: 0;
@@ -529,9 +537,10 @@
   height: 1px;
   z-index: 5;
   background: linear-gradient(90deg,
-      transparent 10%,
-      rgba(180, 210, 240, 0.50) 50%,
-      transparent 90%);
+    transparent 10%,
+    rgba(180, 210, 240, 0.50) 50%,
+    transparent 90%
+  );
   animation: sfRecalPulse 200ms ease-out forwards;
   pointer-events: none;
 }
@@ -542,13 +551,15 @@
   align-items: center;
   gap: 3px;
   padding: 14px 8px;
-  /* ── Charcoal tile with subtle chrome inner glow ── */
+  /* ΓöÇΓöÇ Charcoal tile with chrome inset glow ΓöÇΓöÇ */
   background:
     linear-gradient(180deg,
       rgba(16, 22, 36, 0.92) 0%,
       rgba(12, 16, 28, 0.95) 100%);
-  /* Faint inner chrome catchlight */
-  box-shadow: inset 0 1px 0 rgba(180, 200, 230, 0.03);
+  /* Chrome-stepped inner glow */
+  box-shadow:
+    inset 0 1px 0 rgba(180, 200, 230, 0.05),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
 }
 
 .kpiLabel {
@@ -575,18 +586,17 @@
   letter-spacing: 0.3px;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   MODULE PANEL — Section cards container
-   ═══════════════════════════════════════════════════════════════════════════ */
+/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+   MODULE PANEL ΓÇö Section cards container
+   ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */
 .modulePanel {
   position: relative;
   animation: sfPanelIn 180ms ease-out both;
   flex: 1;
   min-height: 0;
-  padding-bottom: 16px;
 }
 
-/* ─── Card Container — Charcoal Jewel Case ──────────────────────────── */
+/* ΓöÇΓöÇΓöÇ Card Container ΓÇö Titanium Chrome Bejewelled Jewel Case ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .card {
   position: relative;
   padding: 24px 28px 24px;
@@ -595,93 +605,90 @@
     linear-gradient(180deg,
       rgba(18, 24, 40, 0.82) 0%,
       rgba(12, 16, 28, 0.92) 100%);
-  /* ── Titanium chrome multi-layer border ── */
-  border: 1px solid rgba(150, 180, 220, 0.16);
+  /* ΓöÇΓöÇ Titanium chrome stepped multi-layer border ΓöÇΓöÇ */
+  border: 1.5px solid rgba(148, 163, 184, 0.16);
   box-shadow:
-    0 0 0 1px rgba(120, 150, 190, 0.06),
+    /* 3-ring stepped bezel */
+    0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 0 0 3px rgba(107, 114, 128, 0.08),
+    0 0 0 5px rgba(55, 65, 81, 0.05),
+    /* depth */
     0 6px 22px rgba(0, 0, 0, 0.30),
     0 2px 6px rgba(0, 0, 0, 0.20),
-    inset 0 1px 0 rgba(200, 220, 250, 0.05),
+    /* chrome inset */
+    inset 0 1px 0 rgba(200, 220, 250, 0.07),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.25),
     inset 0 0 24px rgba(120, 150, 190, 0.02);
 }
 
-/* ── Chrome highlight bezel — top edge ── */
+/* ΓöÇΓöÇ Chrome gradient rim overlay ΓÇö jewel-cut edge ΓöÇΓöÇ */
 .card::before {
   content: "";
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  border-radius: 10px 10px 0 0;
-  background: linear-gradient(90deg,
-      transparent 8%,
-      rgba(160, 190, 225, 0.06) 25%,
-      rgba(180, 210, 240, 0.12) 50%,
-      rgba(160, 190, 225, 0.06) 75%,
-      transparent 92%);
+  inset: -1px;
+  border-radius: 11px;
+  padding: 1.5px;
+  background: linear-gradient(160deg,
+    rgba(209, 213, 219, 0.22) 0%,
+    rgba(156, 163, 175, 0.05) 35%,
+    rgba(34, 211, 238, 0.14) 60%,
+    rgba(139, 92, 246, 0.08) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box,
+               linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
   pointer-events: none;
+  z-index: 1;
 }
 
-/* ── Subtle bottom bezel reflection ── */
+/* ΓöÇΓöÇ Bejewelled accent bar ΓÇö jewel-tone top edge ΓöÇΓöÇ */
 .card::after {
   content: "";
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  border-radius: 0 0 10px 10px;
+  top: 0; left: 14px; right: 14px;
+  height: 2px;
+  border-radius: 0 0 2px 2px;
   background: linear-gradient(90deg,
-      transparent 15%,
-      rgba(100, 130, 170, 0.04) 50%,
-      transparent 85%);
+    transparent 0%,
+    rgba(34, 211, 238, 0.45) 20%,
+    rgba(251, 191, 36, 0.30) 50%,
+    rgba(139, 92, 246, 0.25) 80%,
+    transparent 100%);
   pointer-events: none;
+  z-index: 2;
 }
 
 .cardTitle {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.12em;
-  color: rgba(210, 225, 245, 0.78);
+  color: rgba(200, 215, 235, 0.72);
   margin: 0 0 4px;
   text-transform: uppercase;
   padding-bottom: 16px;
-  /* ── Chrome divider line ── */
-  border-bottom: 1px solid rgba(150, 180, 220, 0.11);
+  /* ΓöÇΓöÇ Chrome divider line ΓöÇΓöÇ */
+  border-bottom: 1px solid rgba(140, 170, 210, 0.09);
 }
 
-/* ─── 2-Column Field Grid ─────────────────────────────────────────────── */
+/* ΓöÇΓöÇΓöÇ 2-Column Field Grid ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .fieldGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px 24px;
-  padding-top: 16px;
+  padding-top: 20px;
 }
 
-/* ─── Single Field (vertical stack) ───────────────────────────────────── */
+/* ΓöÇΓöÇΓöÇ Single Field (vertical stack) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .field {
   display: flex;
   flex-direction: column;
   gap: 5px;
-  /* per-field bezel to reduce “stark wall of inputs” */
-  padding: 10px 12px 11px;
-  border-radius: 9px;
-  background: rgba(120, 150, 190, 0.02);
-  border: 1px solid rgba(140, 170, 210, 0.06);
-  box-shadow: inset 0 1px 0 rgba(200, 220, 245, 0.02);
-  transition: border-color 160ms ease, background 160ms ease;
-}
-
-.field:focus-within {
-  border-color: rgba(160, 195, 235, 0.16);
-  background: rgba(120, 150, 190, 0.03);
 }
 
 .fieldLabel {
   font-size: 11px;
   font-weight: 500;
-  color: rgba(200, 215, 235, 0.74);
+  color: rgba(190, 205, 225, 0.68);
   letter-spacing: 0.2px;
 }
 
@@ -693,17 +700,17 @@
   margin-top: -1px;
 }
 
-/* ─── Text Input — Chrome Inset Bezel ──────────────────────────────── */
+/* ΓöÇΓöÇΓöÇ Text Input ΓÇö Chrome Inset Bezel ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .fieldTextInput {
   width: 100%;
   height: 40px;
   padding: 0 14px;
   background:
     linear-gradient(180deg,
-      rgba(6, 10, 20, 0.52) 0%,
-      rgba(10, 14, 26, 0.40) 100%);
-  /* ── Titanium inset border ── */
-  border: 1px solid rgba(130, 160, 200, 0.16);
+      rgba(6, 10, 20, 0.45) 0%,
+      rgba(10, 14, 26, 0.35) 100%);
+  /* ΓöÇΓöÇ Titanium stepped inset border ΓöÇΓöÇ */
+  border: 1.5px solid rgba(148, 163, 184, 0.14);
   border-radius: 7px;
   color: rgba(230, 240, 255, 0.95);
   font-size: 13px;
@@ -713,20 +720,18 @@
   transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
   letter-spacing: 0.1px;
   box-shadow:
-    inset 0 1px 3px rgba(0, 0, 0, 0.15),
-    0 1px 0 rgba(180, 200, 230, 0.02);
-}
-
-.fieldTextInput:hover {
-  border-color: rgba(150, 180, 220, 0.20);
+    inset 0 1px 3px rgba(0, 0, 0, 0.18),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.10),
+    0 1px 0 rgba(180, 200, 230, 0.04),
+    0 0 0 1px rgba(107, 114, 128, 0.04);
 }
 
 .fieldTextInput:focus {
-  border-color: rgba(160, 195, 235, 0.30);
+  border-color: rgba(34, 211, 238, 0.35);
   box-shadow:
     inset 0 1px 3px rgba(0, 0, 0, 0.15),
-    0 0 0 2px rgba(150, 185, 225, 0.06),
-    0 0 8px rgba(140, 175, 215, 0.05);
+    0 0 0 2px rgba(34, 211, 238, 0.08),
+    0 0 8px rgba(34, 211, 238, 0.06);
   background:
     linear-gradient(180deg,
       rgba(10, 16, 30, 0.55) 0%,
@@ -738,7 +743,7 @@
   font-weight: 400;
 }
 
-/* ─── Numeric Input Wrapper — Chrome Inset Bezel ────────────────────── */
+/* ΓöÇΓöÇΓöÇ Numeric Input Wrapper ΓÇö Chrome Inset Bezel ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .fieldInputWrap {
   display: flex;
   align-items: center;
@@ -746,28 +751,26 @@
   height: 40px;
   background:
     linear-gradient(180deg,
-      rgba(6, 10, 20, 0.52) 0%,
-      rgba(10, 14, 26, 0.40) 100%);
-  /* ── Titanium inset border ── */
-  border: 1px solid rgba(130, 160, 200, 0.16);
+      rgba(6, 10, 20, 0.45) 0%,
+      rgba(10, 14, 26, 0.35) 100%);
+  /* ΓöÇΓöÇ Titanium stepped inset border ΓöÇΓöÇ */
+  border: 1.5px solid rgba(148, 163, 184, 0.14);
   border-radius: 7px;
   padding: 0 14px;
   transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
   box-shadow:
-    inset 0 1px 3px rgba(0, 0, 0, 0.15),
-    0 1px 0 rgba(180, 200, 230, 0.02);
-}
-
-.fieldInputWrap:hover {
-  border-color: rgba(150, 180, 220, 0.20);
+    inset 0 1px 3px rgba(0, 0, 0, 0.18),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.10),
+    0 1px 0 rgba(180, 200, 230, 0.04),
+    0 0 0 1px rgba(107, 114, 128, 0.04);
 }
 
 .fieldInputWrap:focus-within {
-  border-color: rgba(160, 195, 235, 0.30);
+  border-color: rgba(34, 211, 238, 0.35);
   box-shadow:
     inset 0 1px 3px rgba(0, 0, 0, 0.15),
-    0 0 0 2px rgba(150, 185, 225, 0.06),
-    0 0 8px rgba(140, 175, 215, 0.05);
+    0 0 0 2px rgba(34, 211, 238, 0.08),
+    0 0 8px rgba(34, 211, 238, 0.06);
   background:
     linear-gradient(180deg,
       rgba(10, 16, 30, 0.55) 0%,
@@ -805,13 +808,13 @@
   text-align: right;
 }
 
-/* ─── Derived Metrics Row — Chrome Separator ─────────────────────────── */
+/* ΓöÇΓöÇΓöÇ Derived Metrics Row ΓÇö Chrome Separator ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .derivedRow {
   display: flex;
   gap: 28px;
   margin-top: 16px;
   padding-top: 14px;
-  /* ── Subtle titanium divider ── */
+  /* ΓöÇΓöÇ Subtle titanium divider ΓöÇΓöÇ */
   border-top: 1px solid rgba(140, 170, 210, 0.07);
 }
 
@@ -841,9 +844,9 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   STICKY ACTION BAR — Chrome Titanium Footer Bezel
-   ═══════════════════════════════════════════════════════════════════════════ */
+/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+   STICKY ACTION BAR ΓÇö Chrome Titanium Footer Bezel
+   ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */
 .actionBar {
   position: sticky;
   bottom: 0;
@@ -854,10 +857,15 @@
   gap: 10px;
   padding: 16px 0;
   margin-top: 28px;
-  /* ── Chrome separator line ── */
-  border-top: 1px solid rgba(150, 175, 210, 0.10);
+  /* ΓöÇΓöÇ Chrome separator line with jewel gradient ΓöÇΓöÇ */
+  border-top: 1.5px solid transparent;
+  border-image: linear-gradient(90deg,
+    transparent 0%,
+    rgba(148, 163, 184, 0.20) 15%,
+    rgba(34, 211, 238, 0.25) 50%,
+    rgba(148, 163, 184, 0.20) 85%,
+    transparent 100%) 1;
   background: linear-gradient(180deg, rgba(11, 18, 32, 0) 0%, rgba(11, 18, 32, 0.96) 30%);
-  backdrop-filter: blur(10px);
   flex-shrink: 0;
 }
 
@@ -871,7 +879,7 @@
   margin-right: auto;
 }
 
-/* ── Secondary Button — Titanium Outline ── */
+/* ΓöÇΓöÇ Secondary Button ΓÇö Titanium Stepped Outline ΓöÇΓöÇ */
 .btnSecondary {
   padding: 9px 20px;
   font-size: 10px;
@@ -880,14 +888,16 @@
   text-transform: uppercase;
   color: rgba(200, 215, 235, 0.65);
   background: transparent;
-  border: 1px solid rgba(140, 170, 210, 0.14);
+  border: 1.5px solid rgba(148, 163, 184, 0.16);
   border-radius: 6px;
   cursor: pointer;
   font-family: inherit;
   transition: all 150ms ease;
   box-shadow:
+    0 0 0 1px rgba(107, 114, 128, 0.04),
     0 1px 3px rgba(0, 0, 0, 0.12),
-    inset 0 1px 0 rgba(200, 220, 245, 0.02);
+    inset 0 1px 0 rgba(200, 220, 245, 0.04),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
 }
 
 .btnSecondary:hover {
@@ -898,11 +908,12 @@
       rgba(140, 170, 210, 0.06) 0%,
       rgba(120, 150, 190, 0.02) 100%);
   box-shadow:
+    0 0 0 1px rgba(148, 163, 184, 0.06),
     0 2px 6px rgba(0, 0, 0, 0.18),
-    inset 0 1px 0 rgba(200, 220, 245, 0.04);
+    inset 0 1px 0 rgba(200, 220, 245, 0.06);
 }
 
-/* ── Primary Button — Chrome Jewel CTA ── */
+/* ΓöÇΓöÇ Primary Button ΓÇö Chrome Bejewelled CTA ΓöÇΓöÇ */
 .btnPrimary {
   padding: 9px 28px;
   font-size: 10px;
@@ -912,32 +923,35 @@
   color: rgba(240, 248, 255, 0.92);
   background:
     linear-gradient(180deg,
-      rgba(140, 180, 230, 0.12) 0%,
-      rgba(120, 160, 210, 0.06) 100%);
-  /* ── Chrome-cut double border ── */
-  border: 1px solid rgba(160, 195, 235, 0.24);
+      rgba(140, 180, 230, 0.14) 0%,
+      rgba(120, 160, 210, 0.07) 100%);
+  /* ΓöÇΓöÇ Chrome stepped + jewel border ΓöÇΓöÇ */
+  border: 1.5px solid rgba(160, 195, 235, 0.28);
   border-radius: 7px;
   cursor: pointer;
   font-family: inherit;
   transition: all 150ms ease;
   box-shadow:
-    0 0 0 1px rgba(140, 175, 215, 0.04),
-    inset 0 1px 0 rgba(220, 235, 255, 0.06),
+    0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 0 0 3px rgba(34, 211, 238, 0.06),
+    inset 0 1px 0 rgba(220, 235, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2),
     0 2px 8px rgba(0, 0, 0, 0.25),
-    0 0 12px rgba(140, 175, 215, 0.04);
+    0 0 12px rgba(34, 211, 238, 0.04);
 }
 
 .btnPrimary:hover {
-  border-color: rgba(170, 205, 240, 0.35);
+  border-color: rgba(34, 211, 238, 0.38);
   background:
     linear-gradient(180deg,
-      rgba(150, 190, 240, 0.16) 0%,
-      rgba(130, 170, 220, 0.08) 100%);
+      rgba(150, 190, 240, 0.18) 0%,
+      rgba(130, 170, 220, 0.10) 100%);
   box-shadow:
-    0 0 0 1px rgba(160, 195, 235, 0.06),
-    inset 0 1px 0 rgba(220, 235, 255, 0.08),
+    0 0 0 1px rgba(34, 211, 238, 0.08),
+    0 0 0 3px rgba(34, 211, 238, 0.04),
+    inset 0 1px 0 rgba(220, 235, 255, 0.10),
     0 4px 14px rgba(0, 0, 0, 0.30),
-    0 0 18px rgba(150, 185, 225, 0.06);
+    0 0 18px rgba(34, 211, 238, 0.08);
   transform: translateY(-1px);
 }
 
@@ -945,6 +959,6 @@
   transform: translateY(0);
   transition-duration: 40ms;
   box-shadow:
-    inset 0 1px 3px rgba(0, 0, 0, 0.15),
+    inset 0 2px 4px rgba(0, 0, 0, 0.2),
     0 1px 3px rgba(0, 0, 0, 0.15);
 }

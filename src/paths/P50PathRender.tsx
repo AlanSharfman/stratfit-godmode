@@ -1,9 +1,9 @@
-import { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { generateP50Nodes } from "./generatePath";
-import { createSeed } from "@/terrain/seed";
-import { buildRibbonGeometry, type HeightSampler } from "@/terrain/corridorTopology";
-import { nodesToWorldXZ } from "@/paths/p50NodesTerrain";
+import { createSeed } from "../terrain/seed";
+import { buildRibbonGeometry, type HeightSampler } from "../terrain/corridorTopology";
+import { nodesToWorldXZ } from "./P50Path";
 
 export default function P50Path({
     scenarioId = "baseline",
@@ -24,9 +24,6 @@ export default function P50Path({
             widthSegments: 10,
             lift: 0.08,
             tension: 0.5,
-            normalEps: 0.6,
-            smoothWindow: 5,
-            maxSlopePerM: 0.55,
         });
     }, [getHeightAt, points]);
 

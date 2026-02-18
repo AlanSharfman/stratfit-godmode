@@ -16,7 +16,12 @@ export default function StudioSceneRoot() {
       }}
     >
       <TerrainWithFallback>
-        <ScenarioMountain scenario={activeScenarioId} mode="strategy" />
+        <ScenarioMountain
+          scenario={activeScenarioId}
+          mode="strategy"
+          pathColor="#60a5fa"
+          baselineHighVisibility
+        />
       </TerrainWithFallback>
     </div>
   );

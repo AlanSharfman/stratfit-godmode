@@ -48,6 +48,19 @@ interface ModeConfig {
   bloomIntensity: number;
   autoRotate: boolean;
   autoRotateSpeed: number;
+  // Strategy-mode simulation-space calibration (optional — only set on strategy)
+  visualDepthBoost?: number;
+  pathCutBoost?: number;
+  fogNear?: number;
+  fogFar?: number;
+  fogColor?: string;
+  trajectoryHaloOpacity?: number;
+  trajectoryHaloWidthMult?: number;
+  forwardTargetZ?: number;
+  forwardCamZMult?: number;
+  divergenceOverlay?: boolean;
+  divergenceOpacity?: number;
+  divergenceColor?: string;
 }
 
 type MountainMode = "default" | "celebration" | "ghost" | "instrument" | "baseline" | "strategy";
@@ -134,6 +147,19 @@ const MODE_CONFIGS: Record<MountainMode, ModeConfig> = {
     bloomIntensity: 0,
     autoRotate: true,
     autoRotateSpeed: 0.3,
+    // Simulation-space calibration
+    visualDepthBoost: 1.12,
+    pathCutBoost: 1.12,
+    fogNear: 18,
+    fogFar: 90,
+    fogColor: "#0b1020",
+    trajectoryHaloOpacity: 0.22,
+    trajectoryHaloWidthMult: 1.8,
+    forwardTargetZ: 1.2,
+    forwardCamZMult: 1.08,
+    divergenceOverlay: true,
+    divergenceOpacity: 0.06,
+    divergenceColor: "#312e81",
   },
 };
 
@@ -146,6 +172,56 @@ const GRID_D = 60;
 const MESH_W = 50;
 const MESH_D = 25;
 const ISLAND_RADIUS = 22;
+
+// ============================================================================
+// CONTINUITY CUES — Reality anchor, origin marker, forward cue (strategy only)
+// ============================================================================
+
+function ContinuityCues(props: {
+  enabled: boolean;
+  origin?: [number, number, number];
+  forward?: [number, number, number];
+}) {
+  const { enabled, origin = [0, 0.12, 0], forward = [0, 0.12, -6] } = props;
+  if (!enabled) return null;
+
+  return (
+    <group renderOrder={20}>
+      {/* Reality Anchor pin */}
+      <group position={[origin[0], origin[1] + 0.18, origin[2]]}>
+        <mesh>
+          <sphereGeometry args={[0.10, 16, 16]} />
+          <meshStandardMaterial color="#67e8f9" emissive="#22d3ee" emissiveIntensity={0.35} />
+        </mesh>
+        {/* small stem */}
+        <mesh position={[0, -0.22, 0]}>
+          <cylinderGeometry args={[0.02, 0.02, 0.35, 10]} />
+          <meshStandardMaterial color="#0ea5e9" emissive="#0ea5e9" emissiveIntensity={0.15} />
+        </mesh>
+      </group>
+
+      {/* Trajectory Origin marker ("You are here") */}
+      <group position={origin}>
+        <mesh>
+          <ringGeometry args={[0.18, 0.28, 32]} />
+          <meshBasicMaterial color="#7dd3fc" transparent opacity={0.5} />
+        </mesh>
+      </group>
+
+      {/* Forward / North cue: faint arrow line */}
+      <group>
+        <mesh position={[(origin[0] + forward[0]) * 0.5, origin[1], (origin[2] + forward[2]) * 0.5]} rotation={[0, 0, 0]}>
+          <cylinderGeometry args={[0.01, 0.01, Math.abs(forward[2] - origin[2]) || 6, 8]} />
+          <meshBasicMaterial color="#60a5fa" transparent opacity={0.25} />
+        </mesh>
+        <mesh position={forward}>
+          <coneGeometry args={[0.08, 0.18, 10]} />
+          <meshBasicMaterial color="#60a5fa" transparent opacity={0.35} />
+        </mesh>
+      </group>
+    </group>
+  );
+}
 
 const BASE_SCALE = 4.5;      // Increased: data-driven shape dominates
 const PEAK_SCALE = 3.5;      // Enhanced: taller, more dramatic peaks
@@ -598,7 +674,7 @@ const Terrain: React.FC<TerrainProps> = ({
                 ? ((isDragging ? 0.55 : 0.42) * opacityMultiplier)
                 : ((isDragging ? 0.35 : 0.22) * opacityMultiplier)
           }
-          roughness={godMode ? 0.85 : baselineHighVisibility ? 0.65 : 0.2}
+          roughness={(godMode ? 0.85 : baselineHighVisibility ? 0.65 : 0.2) * (mode === "strategy" ? 0.92 : 1)}
           metalness={godMode ? 0.05 : baselineHighVisibility ? 0.25 : 0.8}
           side={THREE.DoubleSide}
           emissive={pal.mid}
@@ -617,7 +693,7 @@ const Terrain: React.FC<TerrainProps> = ({
       <mesh ref={meshWireRef} geometry={geometry}>
         <meshBasicMaterial 
           vertexColors={godMode ? false : baselineHighVisibility ? false : !neuralPulse}
-          color={godMode ? "#1a2e42" : baselineHighVisibility ? "#22d3ee" : (neuralPulse ? "#00ffff" : undefined)}
+          color={godMode ? "#1a2e42" : baselineHighVisibility ? (baseColor ?? "#22d3ee") : (neuralPulse ? "#00ffff" : undefined)}
           wireframe 
           transparent 
           opacity={godMode
@@ -1781,10 +1857,14 @@ export function ScenarioMountain({
   const instrumentMode = mode === 'instrument';
   const cameraConfig = useMemo(
     () => ({
-      position: (isGodMode ? [0, 10, 22] : [0, 6, 32]) as [number, number, number],
+      position: (
+        isGodMode
+          ? [0, 10, 22]
+          : [0, 6, 32 * (mode === "strategy" ? (MODE_CONFIGS.strategy.forwardCamZMult ?? 1) : 1)]
+      ) as [number, number, number],
       fov: isGodMode ? 36 : 38,
     }),
-    [isGodMode]
+    [isGodMode, mode]
   );
 
   // ── GOD MODE: Fog density linked to survival (Section 6 — Metric Linkage) ──
@@ -1836,17 +1916,21 @@ export function ScenarioMountain({
         <Suspense fallback={null}>
         {/* Scene clear + fog (Baseline can opt into transparentScene for photo-backed stages) */}
         {!transparentScene && <color attach="background" args={[isGodMode ? '#0a0f16' : '#122038']} />}
-        {!transparentScene && <fog attach="fog" args={[isGodMode ? '#0a0f16' : '#122038', godFogNear, godFogFar]} />}
+        {mode === "strategy" ? (
+          <fog attach="fog" args={[config.fogColor ?? "#0b1020", config.fogNear ?? 18, config.fogFar ?? 90]} />
+        ) : !transparentScene ? (
+          <fog attach="fog" args={[isGodMode ? '#0a0f16' : '#122038', godFogNear, godFogFar]} />
+        ) : null}
         
-        <ambientLight intensity={0.45} />
+        <ambientLight intensity={mode === "strategy" ? 0.50 : 0.45} />
         <directionalLight
           position={[6, 10, 6]}
-          intensity={1.05}
+          intensity={mode === "strategy" ? 1.15 : 1.05}
           castShadow
         />
         <directionalLight
           position={[-4, 6, -4]}
-          intensity={0.35}
+          intensity={mode === "strategy" ? 0.90 : 0.35}
         />
 
         {instrumentMode ? (
@@ -1890,6 +1974,23 @@ export function ScenarioMountain({
         ) : (
           <>
             <GhostTerrain isVisible={showPath && hasInteracted} opacityMultiplier={config.pathGlow} />
+
+            {/* Strategy: faint divergence band overlay */}
+            {mode === "strategy" && config.divergenceOverlay && (
+              <mesh
+                position={[0, 0.02, 0]}
+                rotation={[-Math.PI / 2, 0, 0]}
+                renderOrder={5}
+              >
+                <planeGeometry args={[MESH_W, MESH_D]} />
+                <meshBasicMaterial
+                  color={config.divergenceColor ?? "#312e81"}
+                  transparent
+                  opacity={config.divergenceOpacity ?? 0.06}
+                  depthWrite={false}
+                />
+              </mesh>
+            )}
         
         {/* CAMERA CONTROL MODES:
           * GOD MODE: Static authoritative pose (no idle animation, locked zoom, subtle auto-rotation via OrbitControls)
@@ -2024,6 +2125,39 @@ export function ScenarioMountain({
             glowIntensity={glowIntensity}
           />
         ) : null}
+
+        {/* Continuity cues: reality anchor + origin marker + forward cue (strategy only) */}
+        <ContinuityCues
+          enabled={mode === "strategy"}
+          origin={(() => {
+            const sp = solverPath?.length ? solverPath : [{ riskIndex: 60, enterpriseValue: 1, runway: 12 }];
+            const p = sp[0];
+            const maxR = Math.max(...sp.map(s => s.runway || 0), 1);
+            const minEV = Math.min(...sp.map(s => s.enterpriseValue || 0));
+            const maxEV = Math.max(...sp.map(s => s.enterpriseValue || 0), minEV + 1);
+            const r01 = (p.runway ?? 0) / maxR;
+            const ev01 = ((p.enterpriseValue ?? 0) - minEV) / (maxEV - minEV);
+            const risk01 = Math.max(0, Math.min(1, (p.riskIndex ?? 50) / 100));
+            const x = -0.5 * 10;
+            const y = -1.2;
+            const z = (0.3 + r01 * 2.2 + ev01 * 1.2 - risk01 * 0.8) / (config.pathCutBoost ?? 1);
+            return [x, y, z] as [number, number, number];
+          })()}
+          forward={(() => {
+            const sp = solverPath?.length ? solverPath : [{ riskIndex: 60, enterpriseValue: 1, runway: 12 }];
+            const p = sp[0];
+            const maxR = Math.max(...sp.map(s => s.runway || 0), 1);
+            const minEV = Math.min(...sp.map(s => s.enterpriseValue || 0));
+            const maxEV = Math.max(...sp.map(s => s.enterpriseValue || 0), minEV + 1);
+            const r01 = (p.runway ?? 0) / maxR;
+            const ev01 = ((p.enterpriseValue ?? 0) - minEV) / (maxEV - minEV);
+            const risk01 = Math.max(0, Math.min(1, (p.riskIndex ?? 50) / 100));
+            const x = -0.5 * 10;
+            const y = -1.2;
+            const z = (0.3 + r01 * 2.2 + ev01 * 1.2 - risk01 * 0.8) / (config.pathCutBoost ?? 1);
+            return [x, y, z - 6] as [number, number, number];
+          })()}
+        />
         {showMilestones ? (
           <MilestoneOrbs
             color={pathColor ?? SCENARIO_PALETTE_COLORS[scenarioId]?.active ?? "#22d3ee"}
@@ -2048,6 +2182,7 @@ export function ScenarioMountain({
           maxAzimuthAngle={baselineAllow360Rotate ? undefined : Math.PI / 5}
           onStart={() => setIsOrbiting(true)}
           onEnd={() => setIsOrbiting(false)}
+          {...(mode === "strategy" ? { target: [0, 0, config.forwardTargetZ ?? 0] as [number, number, number] } : {})}
         />
 
         {/* Post-processing — God Mode: subtle bloom for rim glow | Default: celebration */}
@@ -2130,10 +2265,11 @@ function StrategicPath({
 
       const x = (t - 0.5) * 10;                 // left↔right across the scene
       const y = -1.2 + t * 0.8;                 // slightly forward over time
-      const z = 0.3 + runway01 * 2.2 + ev01 * 1.2 - risk01 * 0.8; // lift
+      const cutBoost = config.pathCutBoost ?? 1;
+      const z = (0.3 + runway01 * 2.2 + ev01 * 1.2 - risk01 * 0.8) / cutBoost; // lift (deeper embed in strategy)
       return new THREE.Vector3(x, y, z);
     });
-  }, [solverPath]);
+  }, [solverPath, config]);
 
   const curvePoints = useMemo(() => {
     if (points.length < 2) return points;
@@ -2190,6 +2326,16 @@ function StrategicPath({
         dashSize={0.8}
         gapSize={0.6}
       />
+      {/* Strategy: trajectory halo (wider, semi-transparent glow) */}
+      {mode === "strategy" && (
+        <DreiLine
+          points={curvePoints}
+          color="#7dd3fc"
+          lineWidth={3 * (config.trajectoryHaloWidthMult ?? 1.8)}
+          transparent
+          opacity={config.trajectoryHaloOpacity ?? 0.22}
+        />
+      )}
     </group>
   );
 }

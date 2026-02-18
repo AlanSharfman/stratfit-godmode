@@ -9,6 +9,8 @@
 import React, { memo } from "react";
 import styles from "./StrategyStudio.module.css";
 import type { MonteCarloResult, SensitivityFactor } from "@/logic/monteCarloEngine";
+import DeltaEmphasis from "@/scene/studio/DeltaEmphasis";
+import "@/scene/studio/deltaEmphasis.css";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -65,7 +67,7 @@ export const DeltaSummaryPanel: React.FC<DeltaSummaryPanelProps> = memo(({
     ?.slice(0, 3) ?? [];
 
   return (
-    <>
+    <DeltaEmphasis cooldownMs={900}>
       {/* Header */}
       <div className={styles.deltaHeader}>
         <div className={styles.deltaTitle}>
@@ -199,7 +201,7 @@ export const DeltaSummaryPanel: React.FC<DeltaSummaryPanelProps> = memo(({
               : "Awaiting lever adjustment"}
         </span>
       </div>
-    </>
+    </DeltaEmphasis>
   );
 });
 
