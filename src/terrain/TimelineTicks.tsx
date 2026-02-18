@@ -45,7 +45,6 @@ export default function TimelineTicks({
           liftY={0.26}
           color={color}
           opacity={0.92}
-          halo={false}
           renderOrder={150}
         />
       ))}

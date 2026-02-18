@@ -37,7 +37,6 @@ export default function AnnotationAnchors({
           liftY={0.26}
           color={color}
           opacity={0.90}
-          halo
           renderOrder={155}
         />
       ))}
