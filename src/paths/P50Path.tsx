@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import * as THREE from "three";
 import { generateP50Nodes } from "./generatePath";
 import { normToWorld } from "@/spatial/SpatialProjector";
@@ -74,57 +74,55 @@ export default function P50Path({
 
     return (
         <group name={`path-${scenarioId}`} frustumCulled={false}>
-            {/* Ground-anchoring shadow band ΓÇö cuts into terrain */}
+            {/* Cut shadow band */}
             {groundGeom && (
                 <mesh
                     geometry={groundGeom}
-                    renderOrder={49}
-                    userData={{ pathMesh: true, id: "p50-ribbon-ground" }}
+                    renderOrder={48}
                     frustumCulled={false}
                 >
                     <meshBasicMaterial
-                        color={0x061218}
+                        color={0x02060a}
                         transparent
-                        opacity={0.35}
-                        depthTest={true}
+                        opacity={0.45}
+                        depthTest
                         depthWrite={false}
                         side={THREE.DoubleSide}
-                        blending={THREE.NormalBlending}
                     />
                 </mesh>
             )}
 
-            {/* Outer glow */}
-            <mesh
-                geometry={geom}
-                renderOrder={50}
-                userData={{ pathMesh: true, id: "p50-ribbon-glow" }}
-                frustumCulled={false}
-            >
-                <meshBasicMaterial
-                    color={0x38bdf8}
-                    transparent
-                    opacity={0.22}
-                    depthTest={false}
-                    depthWrite={false}
-                    side={THREE.DoubleSide}
+            {/* Titanium rail body */}
+            <mesh geometry={geom} renderOrder={49} frustumCulled={false}>
+                <meshStandardMaterial
+                    color={new THREE.Color("#0b1220")}
+                    metalness={0.85}
+                    roughness={0.32}
+                    emissive={new THREE.Color("#020617")}
+                    emissiveIntensity={0.15}
                 />
             </mesh>
 
-            {/* Core line */}
-            <mesh
-                geometry={geom}
-                renderOrder={51}
-                userData={{ pathMesh: true, id: "p50-ribbon-core" }}
-                frustumCulled={false}
-            >
+            {/* Cyan filament */}
+            <mesh geometry={geom} renderOrder={50} frustumCulled={false}>
                 <meshBasicMaterial
-                    color={0xe2e8f0}
+                    color={0x38bdf8}
                     transparent
-                    opacity={0.85}
+                    opacity={0.55}
                     depthTest={false}
                     depthWrite={false}
-                    side={THREE.DoubleSide}
+                />
+            </mesh>
+
+            {/* Soft outer bloom */}
+            <mesh geometry={geom} renderOrder={51} frustumCulled={false}>
+                <meshBasicMaterial
+                    color={0x38bdf8}
+                    transparent
+                    opacity={0.18}
+                    depthTest={false}
+                    depthWrite={false}
+                    blending={THREE.AdditiveBlending}
                 />
             </mesh>
 
