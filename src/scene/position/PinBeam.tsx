@@ -29,7 +29,7 @@ export default function PinBeam({ start, end, intensity = 0.55 }: PinBeamProps) 
       transparent: true,
       opacity: intensity,
       depthWrite: false,
-      depthTest: true,
+      depthTest: true, // ✅ terrain can occlude beam
       blending: THREE.AdditiveBlending,
     });
   }, [intensity]);
@@ -39,21 +39,19 @@ export default function PinBeam({ start, end, intensity = 0.55 }: PinBeamProps) 
   useFrame((_, dt) => {
     const d = Math.min(dt, 1 / 30);
 
-    // Distance-based discipline:
-    // Beam is strongest when you're near the endpoint (marker zone),
-    // fades gently as you move away to avoid competing with the trajectory.
+    // Distance-based discipline (beam strongest near endpoint, fades away)
     const dist = camera.position.distanceTo(endPos);
 
     const NEAR = 6.0;
     const FAR = 22.0;
 
     const focus = 1 - smoothstep(NEAR, FAR, dist);
-    const targetOpacity = intensity * (0.35 + 0.65 * focus);
+    const targetOpacity = intensity * (0.30 + 0.70 * focus);
 
     // Smooth opacity changes (no popping)
-    material.opacity = THREE.MathUtils.lerp(material.opacity, targetOpacity, 1 - Math.exp(-8.0 * d));
+    material.opacity = THREE.MathUtils.lerp(material.opacity, targetOpacity, 1 - Math.exp(-10.0 * d));
 
-    // Render order: keep subordinate to markers but above terrain
+    // ✅ Beam stays under markers/labels
     if (lineRef.current) lineRef.current.renderOrder = 1;
   });
 
