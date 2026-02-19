@@ -2,8 +2,8 @@ import React from "react";
 
 /**
  * StrategicMarkers (stub)
- * - Keeps build green while we wire real markers.
- * - Replace with real marker contract later.
+ * Exists to satisfy imports from path/overlay systems.
+ * Replace with real marker layer once marker contract is finalized.
  */
 export default function StrategicMarkers() {
   return null;
