@@ -1,0 +1,345 @@
+/* src/pages/position/PositionOverlays.module.css */
+
+.page {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  background: #0b0f14;
+  overflow: hidden;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Shared optics (local, deterministic)
+   ───────────────────────────────────────────────────────────── */
+.page {
+  --sf-nav-h: 56px;
+
+  --sf-cyan: rgba(70, 210, 255, 1);
+  --sf-cyan-soft: rgba(120, 200, 255, 0.18);
+  --sf-cyan-hair: rgba(120, 200, 255, 0.12);
+
+  --sf-emerald: rgba(40, 255, 190, 1);
+  --sf-indigo: rgba(140, 120, 255, 1);
+  --sf-risk: rgba(255, 78, 128, 1);
+  --sf-watch: rgba(185, 205, 225, 0.85);
+
+  --sf-glass-bg: linear-gradient(180deg, rgba(14, 20, 28, 0.78), rgba(9, 12, 18, 0.70));
+  --sf-glass-border: 1px solid rgba(182, 228, 255, 0.18);
+
+  --sf-shadow: 0 18px 40px rgba(0, 0, 0, 0.38);
+  --sf-radius: 12px;
+
+  --sf-mono: ui-monospace, "JetBrains Mono", monospace;
+  --sf-sans: Inter, system-ui, sans-serif;
+
+  /* Z order (hard lock) */
+  --z-kpi: 300;
+  --z-controls: 310;
+  --z-rail: 280;
+  --z-legend: 260;
+  --z-hint: 350;
+}
+
+.kpiDock {
+  position: absolute;
+  top: var(--sf-nav-h);
+  left: 0;
+  right: 0;
+  padding: 10px 14px 0 14px;
+  z-index: var(--z-kpi);
+  pointer-events: none;
+}
+
+.timeScaleDock {
+  position: absolute;
+  top: calc(var(--sf-nav-h) + 62px);
+  right: 16px;
+  z-index: var(--z-controls);
+  pointer-events: auto;
+}
+
+.rightRail {
+  position: absolute;
+  top: calc(var(--sf-nav-h) + 10px);
+  right: 14px;
+  width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: var(--z-rail);
+  pointer-events: auto;
+}
+
+.legendDock {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  width: 240px;
+  z-index: var(--z-legend);
+  pointer-events: auto;
+}
+
+.noBaselineHint {
+  position: absolute;
+  left: 14px;
+  top: calc(var(--sf-nav-h) + 14px);
+  z-index: var(--z-hint);
+  pointer-events: none;
+
+  font-family: var(--sf-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+
+  color: rgba(185, 205, 225, 0.62);
+  background: rgba(4, 9, 15, 0.62);
+  border: 1px solid rgba(182, 228, 255, 0.12);
+  border-radius: 8px;
+  padding: 8px 10px;
+  backdrop-filter: blur(10px);
+}
+
+.panel {
+  background: var(--sf-glass-bg);
+  border: var(--sf-glass-border);
+  border-radius: var(--sf-radius);
+  box-shadow: var(--sf-shadow);
+  backdrop-filter: blur(10px);
+}
+
+.panelHeader {
+  padding: 12px 12px 10px 12px;
+  border-bottom: 1px solid rgba(182, 228, 255, 0.10);
+}
+
+.panelTitle {
+  font-family: var(--sf-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(182, 228, 255, 0.56);
+}
+
+.panelBody {
+  padding: 12px;
+}
+
+.kpiStrip {
+  pointer-events: auto;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+
+  background: rgba(4, 9, 15, 0.58);
+  border: 1px solid rgba(182, 228, 255, 0.14);
+  border-radius: 10px;
+  padding: 10px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.30);
+}
+
+.kpiCell {
+  border: 1px solid rgba(182, 228, 255, 0.12);
+  border-radius: 10px;
+  padding: 9px 10px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(0,0,0,0));
+}
+
+.kpiLabel {
+  font-family: var(--sf-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(182, 228, 255, 0.52);
+}
+
+.kpiValue {
+  margin-top: 6px;
+  font-family: var(--sf-sans);
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(214, 246, 255, 0.92);
+}
+
+.kpiSub {
+  margin-top: 2px;
+  font-family: var(--sf-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: rgba(185, 205, 225, 0.56);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 99px;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.dotStrong { background: var(--sf-emerald); box-shadow: 0 0 18px rgba(40,255,190,0.18); }
+.dotWatch  { background: var(--sf-watch);  box-shadow: 0 0 18px rgba(185,205,225,0.14); }
+.dotRisk   { background: var(--sf-risk);   box-shadow: 0 0 18px rgba(255,78,128,0.18); }
+
+.stateLabel {
+  font-family: var(--sf-sans);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: rgba(214, 246, 255, 0.96);
+}
+
+.summaryList {
+  margin: 10px 0 0 0;
+  padding-left: 18px;
+  color: rgba(185, 205, 225, 0.78);
+  font-family: var(--sf-sans);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.confRow {
+  margin-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--sf-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(182, 228, 255, 0.55);
+}
+
+.confPill {
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(182, 228, 255, 0.18);
+  background: rgba(182, 228, 255, 0.08);
+  color: rgba(214, 246, 255, 0.88);
+}
+
+.diagStack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.diagCard {
+  border: 1px solid rgba(182, 228, 255, 0.12);
+  border-radius: 10px;
+  padding: 10px 10px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0));
+}
+
+.diagTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.diagTitle {
+  display: flex;
+  align-items: center;
+  font-family: var(--sf-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(182, 228, 255, 0.58);
+}
+
+.diagText {
+  margin-top: 6px;
+  font-family: var(--sf-sans);
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgba(185, 205, 225, 0.76);
+}
+
+.diagMetric {
+  margin-top: 6px;
+  font-family: var(--sf-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: rgba(185, 205, 225, 0.56);
+}
+
+.legendBox {
+  background: rgba(4, 9, 15, 0.62);
+  border: 1px solid rgba(182, 228, 255, 0.12);
+  border-radius: 10px;
+  padding: 10px 10px;
+  backdrop-filter: blur(10px);
+}
+
+.legendTitle {
+  font-family: var(--sf-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(182, 228, 255, 0.56);
+}
+
+.legendItem {
+  margin-top: 8px;
+  font-family: var(--sf-sans);
+  font-size: 12px;
+  line-height: 1.4;
+  color: rgba(185, 205, 225, 0.72);
+}
+
+.legendKey {
+  font-family: var(--sf-mono);
+  font-size: 10px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: rgba(214, 246, 255, 0.86);
+}
+
+.timeControl {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  background: rgba(4, 9, 15, 0.82);
+  border: 1px solid rgba(182, 228, 255, 0.18);
+  border-radius: 8px;
+  padding: 4px 6px;
+  backdrop-filter: blur(8px);
+}
+
+.timeLabel {
+  font-family: var(--sf-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: rgba(182, 228, 255, 0.50);
+  text-transform: uppercase;
+  padding: 0 8px 0 2px;
+  white-space: nowrap;
+}
+
+.timeDivider {
+  width: 1px;
+  height: 14px;
+  background: rgba(182, 228, 255, 0.12);
+  margin-right: 3px;
+}
+
+.timeButton {
+  font-family: var(--sf-mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+  background: transparent;
+  color: rgba(182, 228, 255, 0.40);
+}
+
+.timeButtonActive {
+  border: 1px solid rgba(182, 228, 255, 0.55);
+  background: rgba(182, 228, 255, 0.14);
+  color: rgba(214, 246, 255, 0.94);
+  font-weight: 600;
+}
