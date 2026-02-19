@@ -93,7 +93,8 @@ export enum NavRoute {
 //
 // Baseline        → SystemBaselineProvider   (src/system/)
 // Objectives      → objectiveStore           (src/state/)
-// Simulation      → SimulationStore          (src/sim/)
+// Simulation      → simulationStore          (src/state/simulationStore.ts)
+// SimPhase        → simPhaseStore            (src/state/simPhaseStore.ts)
 // Scenarios       → scenarioStore            (src/state/)
 // Risk            → (derived, no dedicated store)
 // Decisions       → decisionStore            (src/state/)
