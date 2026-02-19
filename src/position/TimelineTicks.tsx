@@ -287,23 +287,20 @@ export default function TimelineTicks({
               style={{ pointerEvents: "none", userSelect: "none" }}
             >
               <div style={{
-                display:       "inline-block",
-                background:    "rgba(6,10,14,0.80)",
-                border:        `1px solid ${
-                  tick.weight === "major"
-                    ? "rgba(210,228,240,0.22)"
-                    : "rgba(160,190,208,0.12)"
-                }`,
-                borderRadius:  "4px",
-                padding:       tick.weight === "major" ? "4px 8px" : "3px 6px",
-                fontFamily:    "ui-monospace,'JetBrains Mono','Consolas',monospace",
-                fontSize:      tick.weight === "major" ? "13px" : "11px",
-                fontWeight:    tick.weight === "major" ? 700 : 400,
-                letterSpacing: "0.07em",
-                color:         tick.weight === "major" ? "#E8F4FF" : "#B0CCDA",
-                whiteSpace:    "nowrap",
-                lineHeight:    "1.1",
-                textTransform: "uppercase" as const,
+                display:         "inline-block",
+                background:      "rgba(8,12,18,0.55)",
+                backdropFilter:  "blur(6px)",
+                border:          "1px solid rgba(0,224,255,0.18)",
+                boxShadow:       "0 4px 14px rgba(0,0,0,0.35), inset 0 0 8px rgba(0,224,255,0.08)",
+                borderRadius:    "6px",
+                padding:         "3px 8px",
+                fontFamily:      "ui-monospace,'JetBrains Mono','Consolas',monospace",
+                fontSize:        "11px",
+                letterSpacing:   "0.06em",
+                color:           "rgba(210,235,255,0.9)",
+                whiteSpace:      "nowrap",
+                lineHeight:      "1.1",
+                textTransform:   "uppercase" as const,
               }}>
                 {tick.label}
               </div>

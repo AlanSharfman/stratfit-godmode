@@ -3,7 +3,8 @@ import styles from "../PositionOverlays.module.css"
 
 export default function TerrainLegend() {
   return (
-    <div className={styles.legendBox}>
+    <div className={styles.legendOuter}>
+    <div className={styles.legendInner}>
       <div className={styles.legendTitle}>Legend</div>
 
       <div className={styles.legendItem}>
@@ -21,6 +22,7 @@ export default function TerrainLegend() {
       <div className={styles.legendItem}>
         <span className={styles.legendKey}>Markers</span> — inflection points anchored to terrain.
       </div>
+    </div>
     </div>
   )
 }

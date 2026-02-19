@@ -343,3 +343,27 @@
   color: rgba(214, 246, 255, 0.94);
   font-weight: 600;
 }
+
+/* ── Legend wrapper ──────────────────────────────────────── */
+.legendOuter {
+  background: linear-gradient(180deg, rgba(10,15,22,0.9), rgba(6,9,14,0.9));
+  border-radius: 10px;
+  padding: 1px;
+  box-shadow: 0 0 0 1px rgba(0,224,255,0.15), 0 8px 30px rgba(0,0,0,0.45);
+}
+
+.legendInner {
+  background: rgba(8,12,18,0.85);
+  border-radius: 9px;
+  padding: 14px 16px;
+  backdrop-filter: blur(6px);
+}
+
+/* ── Overlay z-layer ─────────────────────────────────────── */
+.overlayLayer {
+  position: absolute;
+  top: 110px;
+  right: 24px;
+  z-index: 20;
+  pointer-events: auto;
+}

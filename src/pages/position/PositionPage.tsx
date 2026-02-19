@@ -54,9 +54,11 @@ export default function PositionPage() {
         <TimeScaleControl granularity={granularity} setGranularity={setGranularity} />
       </div>
 
-      <div className={styles.rightRail} aria-label="Position briefing">
-        <PositionBriefingPanel vm={vm} />
-        <DiagnosticsStack vm={vm} />
+      <div className={styles.overlayLayer}>
+        <div className={styles.rightRail} aria-label="Position briefing">
+          <PositionBriefingPanel vm={vm} />
+          <DiagnosticsStack vm={vm} />
+        </div>
       </div>
 
       <div className={styles.legendDock} aria-label="Terrain legend">
