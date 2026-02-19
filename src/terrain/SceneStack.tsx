@@ -1,4 +1,5 @@
 import React from "react"
+import BackgroundTerrainLayers from "./BackgroundTerrainLayers"
 import TerrainSurface from "./TerrainSurface"
 import ProbabilityEnvelope from "@/paths/ProbabilityEnvelope"
 import P50Path from "@/paths/P50Path"
@@ -12,6 +13,7 @@ import HorizonBand from "./HorizonBand"
 export default function SceneStack() {
   return (
     <group>
+      <BackgroundTerrainLayers />
       <TerrainSurface />
       <HorizonBand />
 

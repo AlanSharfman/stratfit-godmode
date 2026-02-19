@@ -5,6 +5,7 @@ import type { OrbitControls as OrbitControlsImpl } from "three-stdlib"
 import * as THREE from "three"
 import SceneStack from "./SceneStack"
 import AtmosphereDome from "@/render/atmos/AtmosphereDome"
+import HorizonGlow from "@/render/atmos/HorizonGlow"
 // import SceneFog from "@/terrain/SceneFog"
 
 const HERO = {
@@ -147,9 +148,17 @@ export default function TerrainStage({ children }: { children?: React.ReactNode 
         <AtmosphereDome
           radius={1200}
           top="#04060a"
-          horizon="#061a26"
+          horizon="#071a26"
           bottom="#020407"
           opacity={1}
+        />
+
+        <HorizonGlow
+          radius={900}
+          heightY={-6}
+          thickness={220}
+          color="#0ea5e9"
+          opacity={0.1}
         />
 
         {/* <SceneFog color="#0a1a24" near={140} far={560} /> */}
