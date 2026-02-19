@@ -1,12 +1,9 @@
 import React, { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
-import { generateP50Nodes } from "./generatePath";
-import { normToWorld } from "@/spatial/SpatialProjector";
-import { createSeed } from "@/terrain/seed";
-import { sampleTerrainHeight } from "@/terrain/buildTerrain";
-import { getStmEnabled, sampleStmDisplacement } from "@/render/stm/stmRuntime";
 import type { HeightSampler } from "@/terrain/corridorTopology";
+import { useTerrainHeight } from "@/terrain/useTerrainHeight";
+import { generateP50Spline } from "./generateP50Spline";
 
 /**
  * Probability Envelope (P10–P90) corridor
@@ -14,24 +11,6 @@ import type { HeightSampler } from "@/terrain/corridorTopology";
  * - soft edge fade, subtle pulse
  * - stays behind the path rail
  */
-
-function nodesToWorldXZ(
-  nodes: ReturnType<typeof generateP50Nodes>,
-  seed: number
-): { points: { x: number; z: number }[]; getHeightAt: HeightSampler } {
-  const points = nodes.map((n) => {
-    const world = normToWorld(n.coord);
-    return { x: world.x, z: world.y };
-  });
-
-  const getHeightAt: HeightSampler = (worldX, worldZ) => {
-    const base = sampleTerrainHeight(worldX, worldZ, seed);
-    const stm = getStmEnabled() ? sampleStmDisplacement(worldX, worldZ) : 0;
-    return base + stm;
-  };
-
-  return { points, getHeightAt };
-}
 
 function makeEnvelopeRibbon(
   curve: THREE.CatmullRomCurve3,
@@ -177,19 +156,16 @@ export default function ProbabilityEnvelope({
   width?: number;
   segments?: number;
 }) {
-  const seed = useMemo(() => createSeed(scenarioId), [scenarioId]);
-  const nodes = useMemo(() => generateP50Nodes(), []);
-  const { points, getHeightAt } = useMemo(() => nodesToWorldXZ(nodes, seed), [nodes, seed]);
+  const heightFn = useTerrainHeight(scenarioId);
+  const getHeightAt: HeightSampler = heightFn;
 
   const curve = useMemo(() => {
-    const pts = points.map((p) => new THREE.Vector3(p.x, 0, p.z));
-    return new THREE.CatmullRomCurve3(pts, false, "catmullrom", 0.5);
-  }, [points]);
+    return generateP50Spline(heightFn);
+  }, [heightFn]);
 
   const geom = useMemo(() => {
-    if (points.length < 2) return null;
     return makeEnvelopeRibbon(curve, segments, width, getHeightAt, 0.16);
-  }, [curve, segments, width, getHeightAt, points.length]);
+  }, [curve, segments, width, getHeightAt]);
 
   useEffect(() => {
     return () => {

@@ -19,7 +19,7 @@ function clamp01(x: number) {
  * - stress is NOT lava: it is desaturation + controlled red tint
  * - strategic overlay is Indigo ghost delta (wireframe)
  */
-export default function TerrainSurface({
+export default function TerrainSurfaceMaterial({
   geometry,
   stress,
   delta,

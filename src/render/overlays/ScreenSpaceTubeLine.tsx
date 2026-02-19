@@ -2,6 +2,7 @@ import React, { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { clamp, worldUnitsPerPixel } from "./screenSpace";
+import { useEffect } from "react";
 
 type Props = {
   points: THREE.Vector3[];
@@ -37,6 +38,12 @@ export function ScreenSpaceTubeLine({
   const geom = useMemo(() => {
     return new THREE.TubeGeometry(curve, tubularSegments, 0.05, 12, false);
   }, [curve, tubularSegments]);
+
+  useEffect(() => {
+    return () => {
+      geom.dispose();
+    };
+  }, [geom]);
 
   useFrame(() => {
     const mesh = meshRef.current;

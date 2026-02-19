@@ -1,50 +1,51 @@
 import React, { useMemo } from "react"
 import * as THREE from "three"
 import { ScreenSpaceMarkerSprite } from "@/render/overlays/ScreenSpaceMarkerSprite"
+import { generateP50Spline } from "@/paths/generateP50Spline"
+import { useTerrainHeight } from "@/terrain/useTerrainHeight"
 
 type Props = {
-  /** Explicit tick positions as [x,y,z] or Vector3 */
-  ticks?: Array<[number, number, number] | THREE.Vector3>
-  /** Shorthand: generate evenly-spaced ticks along X */
+  scenarioId?: string
+  /** number of ticks along the path */
   count?: number
-  rangeX?: [number, number]
-  y?: number
-  color?: string
-  sizePx?: number
 }
 
 export default function TimelineTicks({
-  ticks,
-  count = 10,
-  rangeX = [-50, 40],
-  y = 0.02,
-  color = "#EAFBFF",
-  sizePx = 12,
+  scenarioId = "baseline",
+  count = 16,
 }: Props) {
-  const positions = useMemo(() => {
-    if (ticks && ticks.length > 0) {
-      return ticks.map((p) =>
-        Array.isArray(p) ? new THREE.Vector3(p[0], p[1], p[2]) : p
-      )
-    }
-    const step = (rangeX[1] - rangeX[0]) / Math.max(1, count - 1)
-    return Array.from({ length: count }, (_, i) =>
-      new THREE.Vector3(rangeX[0] + i * step, y, 0)
-    )
-  }, [ticks, count, rangeX, y])
+  const heightFn = useTerrainHeight(scenarioId)
 
-  if (positions.length === 0) return null
+  const ticks = useMemo(() => {
+    const curve = generateP50Spline(heightFn)
+    const denom = Math.max(1, count - 1)
+
+    return Array.from({ length: count }, (_, i) => {
+      const t = i / denom
+      const p = curve.getPoint(t)
+      const y = heightFn(p.x, p.z) + 0.34
+
+      const isYear = i % 4 === 0
+      return {
+        pos: new THREE.Vector3(p.x, y, p.z),
+        sizePx: isYear ? 18 : 11,
+        opacity: isYear ? 0.95 : 0.7,
+      }
+    })
+  }, [heightFn, count])
+
+  if (ticks.length === 0) return null
 
   return (
     <group>
-      {positions.map((pos, i) => (
+      {ticks.map((t, i) => (
         <ScreenSpaceMarkerSprite
           key={i}
-          position={pos}
-          sizePx={sizePx}
-          liftY={0.26}
-          color={color}
-          opacity={0.92}
+          position={t.pos}
+          sizePx={t.sizePx}
+          liftY={0.22}
+          color="#EAFBFF"
+          opacity={t.opacity}
           renderOrder={150}
         />
       ))}

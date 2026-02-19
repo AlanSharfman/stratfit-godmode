@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from "react"
+import React, { useEffect, useMemo, useRef } from "react"
 import * as THREE from "three"
 import { useFrame, useThree } from "@react-three/fiber"
 
@@ -153,6 +153,15 @@ export function ScreenSpaceMarkerSprite({
       }),
     [haloMap, color, cfg.haloOpacity]
   )
+
+  useEffect(() => {
+    return () => {
+      coreMat.dispose()
+      haloMat.dispose()
+      coreMap.dispose()
+      haloMap.dispose()
+    }
+  }, [coreMat, haloMat, coreMap, haloMap])
 
   useFrame(() => {
     const distance = camera.position.distanceTo(pos)

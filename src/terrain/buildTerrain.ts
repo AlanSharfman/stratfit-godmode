@@ -114,7 +114,15 @@ function heightfieldFromModel(
     const u1 = Math.sin(x * 0.07 + model.seed * 0.001) * 1.2;
     const u2 = Math.cos(z * 0.06 - model.seed * 0.001) * 1.0;
     const u3 = Math.sin(x * 0.03 + z * 0.04) * 1.4;
-    let h = (u1 + u2 + u3) * 1.6;
+    const baseNoise = u1 + u2 + u3;
+
+    // Macro lift/valley shaping (low-frequency)
+    const macroNoise =
+        Math.sin(x * 0.012 + model.seed * 0.002) *
+        Math.cos(z * 0.01 - model.seed * 0.002);
+
+    // Terrain weighting (realism boost)
+    let h = baseNoise * 1.2 + macroNoise * 6.0;
 
     // 2) Mountain peaks (Gaussian bumps)
     for (const p of model.peaks) {
@@ -128,7 +136,8 @@ function heightfieldFromModel(
     const vx = x - model.ridgeCenter.x;
     const vz = z - model.ridgeCenter.y;
     const cross = Math.abs(vx * model.ridgeDir.y - vz * model.ridgeDir.x);
-    h += model.ridgeAmp * Math.exp(-(cross * cross) / (model.ridgeWidth * model.ridgeWidth));
+    const ridgeShape = Math.exp(-(cross * cross) / (model.ridgeWidth * model.ridgeWidth));
+    h += model.ridgeAmp * ridgeShape * 3.5;
 
     // 4) Edge falloff so edges don't look like a table
     const edge = smoothstep(
@@ -140,6 +149,8 @@ function heightfieldFromModel(
     h *= lerp(0.35, 1.0, edge);
 
     // 5) Clamp + shape
+    // Optional realism tweak: slightly reduce overall amplitude.
+    h *= 0.85;
     h = Math.max(-2.0, h);
     h = Math.pow(Math.max(0, h), 1.05) + Math.min(0, h);
 

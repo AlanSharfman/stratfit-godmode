@@ -1,6 +1,6 @@
-import React, { useMemo } from "react"
+import React, { useEffect, useMemo, useRef } from "react"
 import * as THREE from "three"
-import { useThree } from "@react-three/fiber"
+import { useFrame, useThree } from "@react-three/fiber"
 
 type Props = {
   x?: number
@@ -22,6 +22,7 @@ export default function HorizonBand({
   renderOrder = 120,
 }: Props) {
   const { camera } = useThree()
+  const groupRef = useRef<THREE.Group>(null)
 
   const mat = useMemo(
     () =>
@@ -36,11 +37,22 @@ export default function HorizonBand({
     [opacity]
   )
 
-  // Always face camera slightly (billboard in yaw only)
-  const yaw = Math.atan2(camera.position.x - x, camera.position.z - z)
+  useEffect(() => {
+    return () => {
+      mat.dispose()
+    }
+  }, [mat])
+
+  // Always face camera (billboard in yaw only) — update each frame
+  useFrame(() => {
+    const g = groupRef.current
+    if (!g) return
+    const yaw = Math.atan2(camera.position.x - x, camera.position.z - z)
+    g.rotation.set(0, yaw, 0)
+  })
 
   return (
-    <group rotation={[0, yaw, 0]}>
+    <group ref={groupRef}>
       <mesh position={[x, y, z]} renderOrder={renderOrder}>
         <planeGeometry args={[width, height]} />
         <primitive object={mat} attach="material" />

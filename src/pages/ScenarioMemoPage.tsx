@@ -3,7 +3,6 @@ import { useShallow } from "zustand/react/shallow";
 import { useScenarioStore } from "@/state/scenarioStore";
 import { mapScenarioIntelligence, type ScenarioMetricsSnapshot } from "@/utils/scenarioIntelligenceMapping";
 import { buildScenarioIntelligence, buildScenarioMemo, type ScenarioMemo } from "../memo/buildScenarioMemo";
-import InitializeBaselinePage from "@/pages/initialize/InitializeBaselinePage";
 
 // ---------------------------------------------------------------------------
 // Pure helpers (hoisted outside component)
@@ -175,15 +174,6 @@ export default function ScenarioMemoPage() {
       })
     );
   }, [engineResults, activeScenarioId]);
-
-  // DEV HARNESS: mount initialize baseline screen without router/nav changes.
-  // Visit: /memo/onboard
-  if (import.meta.env.DEV && typeof window !== "undefined") {
-    const p = window.location.pathname;
-    if (p === "/memo/onboard" || p === "/memo/onboard/") {
-      return <InitializeBaselinePage />;
-    }
-  }
 
   if (!memo) {
     return <div className="memo-root">No memo available.</div>;

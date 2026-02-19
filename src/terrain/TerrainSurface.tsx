@@ -1,33 +1,75 @@
-import React, { useEffect, useMemo, useRef } from "react"
+import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from "react"
 import * as THREE from "three"
-import { buildTerrain } from "./buildTerrain"
+import { buildTerrain, sampleTerrainHeight } from "./buildTerrain"
 import { createSeed } from "./seed"
+import { createTerrainSolidMaterial, createTerrainWireMaterial } from "./terrainMaterials"
 import { useNarrativeStore } from "@/state/narrativeStore"
 
-export default function TerrainSurface() {
+export type TerrainSurfaceHandle = {
+  getHeightAt: (worldX: number, worldZ: number) => number
+  seed: number
+  solidMesh: THREE.Mesh | null
+  latticeMesh: THREE.Mesh | null
+}
+
+const TerrainSurface = forwardRef<TerrainSurfaceHandle, object>(function TerrainSurface(
+  _props,
+  ref
+) {
   const solidRef = useRef<THREE.Mesh>(null)
   const latticeRef = useRef<THREE.Mesh>(null)
 
   const clearSelected = useNarrativeStore((s) => s.clearSelected)
 
+  const seed = useMemo(() => createSeed("baseline"), [])
+
   const geometry = useMemo(() => {
-    const seed = createSeed("baseline")
     return buildTerrain(260, seed)
-  }, [])
+  }, [seed])
+
+  useEffect(() => {
+    return () => {
+      geometry.dispose()
+    }
+  }, [geometry])
+
+  // Height-based AO gradient — deeper valleys darker, peaks lighter + faint teal tint.
+  // onBeforeCompile must be set before first shader compile, so imperative useMemo.
+  const solidMat = useMemo(() => createTerrainSolidMaterial(), [])
+  const wireMat = useMemo(() => createTerrainWireMaterial(), [])
+
+  useEffect(() => {
+    return () => { solidMat.dispose() }
+  }, [solidMat])
+
+  useEffect(() => {
+    return () => { wireMat.dispose() }
+  }, [wireMat])
 
   useEffect(() => {
     for (const ref of [solidRef, latticeRef]) {
       if (!ref.current) continue
       ref.current.rotation.x = -Math.PI / 2
-      ref.current.position.set(0, -10, 0)
-      ref.current.scale.set(1, 3.0, 1)
+      ref.current.position.set(0, -6, 0)
+      ref.current.scale.set(1, 1, 1)
       ref.current.frustumCulled = false
     }
   }, [])
 
+  useImperativeHandle(
+    ref,
+    () => ({
+      seed,
+      solidMesh: solidRef.current,
+      latticeMesh: latticeRef.current,
+      getHeightAt: (worldX: number, worldZ: number) => sampleTerrainHeight(worldX, worldZ, seed),
+    }),
+    [seed]
+  )
+
   return (
     <>
-      {/* Physical surface */}
+      {/* Physical surface — imperative mat for onBeforeCompile height AO */}
       <mesh
         ref={solidRef}
         geometry={geometry}
@@ -38,37 +80,15 @@ export default function TerrainSurface() {
           clearSelected()
         }}
       >
-        <meshStandardMaterial
-          color={0x0f1d2b}
-          emissive={0x081423}
-          emissiveIntensity={0.16}
-          transparent
-          opacity={0.62}
-          roughness={0.92}
-          metalness={0.05}
-          depthWrite
-          depthTest
-          polygonOffset
-          polygonOffsetFactor={1}
-          polygonOffsetUnits={1}
-        />
+        <primitive object={solidMat} attach="material" />
       </mesh>
 
       {/* Embedded lattice */}
       <mesh ref={latticeRef} geometry={geometry} renderOrder={1}>
-        <meshStandardMaterial
-          color={0x7dd3fc}
-          emissive={0x38bdf8}
-          emissiveIntensity={0.34}
-          wireframe
-          transparent
-          opacity={0.4}
-          roughness={0.85}
-          metalness={0.12}
-          depthWrite={false}
-          depthTest
-        />
+        <primitive object={wireMat} attach="material" />
       </mesh>
     </>
   )
-}
+})
+
+export default TerrainSurface

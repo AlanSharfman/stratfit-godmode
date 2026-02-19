@@ -1,29 +1,17 @@
-import React from "react"
-import TerrainSurface from "./TerrainSurface"
-import ProbabilityEnvelope from "@/paths/ProbabilityEnvelope"
-import P50Path from "@/paths/P50Path"
-import TimelineAxis from "./TimelineAxis"
-import TimelineTicks from "./TimelineTicks"
-import StructuralPillars from "./StructuralPillars"
-import AnnotationAnchors from "./AnnotationAnchors"
-import PathNodes from "./PathNodes"
-import HorizonBand from "./HorizonBand"
+import React from "react";
+import type { TerrainSurfaceHandle } from "@/terrain/TerrainSurface";
+import TerrainSurface from "@/terrain/TerrainSurface";
 
-export default function SceneStack() {
+type Props = {
+  terrainRef: React.RefObject<TerrainSurfaceHandle>;
+};
+
+export default function SceneStack({ terrainRef }: Props) {
+  // SAFE MODE: Only the procedural terrain is allowed.
+  // Everything else (path, markers, timeline, HUD, background patches) is disabled.
   return (
     <group>
-      <TerrainSurface />
-      <HorizonBand />
-
-      <ProbabilityEnvelope />
-      <P50Path />
-
-      <TimelineAxis />
-      <TimelineTicks />
-
-      <PathNodes />
-      <StructuralPillars />
-      <AnnotationAnchors />
+      <TerrainSurface ref={terrainRef} />
     </group>
-  )
+  );
 }

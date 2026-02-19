@@ -17,6 +17,7 @@ export default function AppRouter() {
         <AppShell>
             <Routes>
                 <Route path={RouteContract.initialize} element={<InitializeRoute />} />
+                <Route path="/initialize" element={<Navigate to={RouteContract.initialize} replace />} />
                 <Route path={RouteContract.objectives} element={<ObjectiveRoute />} />
                 <Route path={RouteContract.position} element={<TerrainRoute />} />
                 <Route path={RouteContract.studio} element={<StudioRoute />} />

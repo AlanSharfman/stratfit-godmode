@@ -1,10 +1,15 @@
-import React from "react";
+// src/terrain/StrategicMarkers.tsx
+import React from "react"
+import MarkerBeacon from "./MarkerBeacon"
+import { STRATEGIC_MARKERS } from "./strategicMarkerDefs"
 
-/**
- * StrategicMarkers (stub)
- * Exists to satisfy imports from path/overlay systems.
- * Replace with real marker layer once marker contract is finalized.
- */
 export default function StrategicMarkers() {
-  return null;
+  return (
+    <>
+      {STRATEGIC_MARKERS.map((m) => (
+        <MarkerBeacon key={m.id} marker={m} />
+      ))}
+    </>
+  )
 }
+

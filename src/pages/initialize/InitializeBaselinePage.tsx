@@ -344,13 +344,13 @@ export default function InitializeBaselinePage() {
     commitBaseline(baseline) // canonical truth
     clearDraft() // prevents override on return
     setHasDraft(false)
-    navigate("/baseline", { replace: true })
+    navigate("/objectives", { replace: true })
   }, [baseline, commitBaseline, navigate])
 
   // ── Step actions ──────────────────────────────────────────────────────
   const handleBack = useCallback(() => {
     if (isFirst) {
-      navigate("/baseline", { replace: true })
+      navigate("/objectives", { replace: true })
     } else {
       setActiveModule(MODULES[currentIdx - 1].id)
     }

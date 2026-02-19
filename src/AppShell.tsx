@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Outlet } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 
 import { MainNav } from "@/components/navigation";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
@@ -12,6 +13,7 @@ import StratfitErrorBoundary from "@/diagnostics/StratfitErrorBoundary";
 import GlobalErrorCapture from "@/diagnostics/GlobalErrorCapture";
 import DiagnosticsBootstrap from "@/diagnostics/DiagnosticsBootstrap";
 import DiagnosticsOverlay from "@/diagnostics/DiagnosticsOverlay";
+import PositionDiagnosticsOverlay from "@/diagnostics/PositionDiagnosticsOverlay";
 import { useDiagnosticsStore } from "@/diagnostics/DiagnosticsStore";
 import SimulationStatusBeacon from "@/components/simulation/SimulationStatusBeacon";
 import AnchorDebugOverlay from "@/spatial/AnchorDebugOverlay";
@@ -57,6 +59,9 @@ function metricsToDataPoints(metrics: ReturnType<typeof calculateMetrics>): numb
 }
 
 export default function AppShell() {
+    const location = useLocation();
+    const isPositionRoute = location.pathname.startsWith("/position");
+
     const { baseline: systemBaseline } = useSystemBaseline();
     const hasBaseline = !!systemBaseline;
 
@@ -86,7 +91,7 @@ export default function AppShell() {
         <StratfitErrorBoundary>
             <GlobalErrorCapture />
             <DiagnosticsBootstrap />
-            <DiagnosticsOverlay />
+            {isPositionRoute ? <PositionDiagnosticsOverlay /> : <DiagnosticsOverlay />}
             <SimulationStatusBeacon />
             <AnchorDebugOverlay />
 

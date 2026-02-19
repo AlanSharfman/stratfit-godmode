@@ -1,21 +1,9 @@
-import { NAV_ITEMS, type NavId } from "@/navigation/navConfig";
+// src/navigation/routingContract.ts
+// Validates the ACTIVE app routing contract (AppRouter + app/navigation).
+// main.tsx calls validateRoutingContract() at startup.
 
-/**
- * Single canonical set of route paths.
- * Keep this aligned with NAV_ITEMS.
- */
-export const ROUTE_PATHS = {
-  initiate: "/initialize",
-  baseline: "/baseline",
-  objective: "/objective",
-  studio: "/studio",
-  compare: "/compare",
-  risk: "/risk",
-  valuation: "/valuation",
-  capital: "/capital",
-} as const satisfies Record<NavId, `/${string}`>;
-
-type RouteId = keyof typeof ROUTE_PATHS;
+import { NAV_ITEMS } from "@/app/navigation/navConfig";
+import { RouteContract } from "@/app/navigation/routeContract";
 
 function invariant(cond: any, msg: string): asserts cond {
   if (!cond) throw new Error(`[ROUTING_CONTRACT] ${msg}`);
@@ -23,30 +11,27 @@ function invariant(cond: any, msg: string): asserts cond {
 
 /**
  * Call once at startup.
- * Crashes early if nav/route contract drifts.
+ * Validates that every nav item's path is a registered route and that
+ * no two nav items share the same path.
  */
 export function validateRoutingContract() {
-  // 1) ids must match
-  const routeIds = new Set<RouteId>(Object.keys(ROUTE_PATHS) as RouteId[]);
-  const navIds = new Set<RouteId>(NAV_ITEMS.map((n) => n.id));
+  const routePaths = new Set<string>(Object.values(RouteContract));
 
-  for (const id of routeIds) {
-    invariant(navIds.has(id), `NAV_ITEMS missing id "${id}"`);
-  }
-  for (const id of navIds) {
-    invariant(routeIds.has(id), `ROUTE_PATHS missing id "${id}"`);
-  }
-
-  // 2) paths must match
-  const pathById = new Map<RouteId, string>(NAV_ITEMS.map((n) => [n.id, n.path]));
-  for (const [id, path] of Object.entries(ROUTE_PATHS) as [RouteId, (typeof ROUTE_PATHS)[RouteId]][]) {
-    invariant(pathById.get(id) === path, `Path mismatch for "${id}": NAV="${pathById.get(id)}" ROUTE="${path}"`);
+  // Every nav item must point to a real route
+  for (const n of NAV_ITEMS) {
+    invariant(
+      routePaths.has(n.path),
+      `Nav item "${n.key}" points to path "${n.path}" which is not registered in RouteContract`,
+    );
   }
 
-  // 3) no duplicate paths
+  // No duplicate nav paths
   const seen = new Set<string>();
   for (const n of NAV_ITEMS) {
     invariant(!seen.has(n.path), `Duplicate nav path detected: "${n.path}"`);
     seen.add(n.path);
   }
 }
+
+// Re-export for any legacy consumers that used ROUTE_PATHS from here.
+export { RouteContract as ROUTE_PATHS } from "@/app/navigation/routeContract";
