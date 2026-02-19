@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useDiagnosticsStore, diag } from "./DiagnosticsStore";
 import { shouldEnableDiagnostics } from "./diagEnable";
 import { useRenderStore } from "@/render/RenderStore";
-import { useSimulationStore } from "@/sim/SimulationStore";
+import { useSimPhaseStore as useSimulationStore } from "@/state/simPhaseStore";
 
 export default function DiagnosticsBootstrap() {
     const setEnabled = useDiagnosticsStore((s) => s.setEnabled);

@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { useSimulationStore } from "@/sim/SimulationStore";
+import { useSimPhaseStore as useSimulationStore } from "@/state/simPhaseStore";
 import { diag } from "@/diagnostics/DiagnosticsStore";
 import styles from "./SimulationStatusBeacon.module.css";
 

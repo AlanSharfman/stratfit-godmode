@@ -1,4 +1,6 @@
-import { useSimulationStore } from "./SimulationStore";
+// src/diagnostics/simEngine.ts
+// Diagnostic phase-ticker — drives SimulationStatusBeacon for dev visibility.
+import { useSimPhaseStore } from "@/state/simPhaseStore";
 
 type RunArgs = {
     scenarioId?: string;
@@ -10,7 +12,7 @@ function sleep(ms: number) {
 }
 
 export async function runSimulation(args: RunArgs) {
-    const store = useSimulationStore.getState();
+    const store = useSimPhaseStore.getState();
 
     try {
         const runId = store.startRun(args.scenarioId);
@@ -23,7 +25,6 @@ export async function runSimulation(args: RunArgs) {
         }
 
         store.setPhase("ConvergenceCheck");
-        // Deterministic placeholder CI width
         let ciWidth = 0.06;
         store.setConvergence(ciWidth);
 
@@ -38,12 +39,11 @@ export async function runSimulation(args: RunArgs) {
             store.setConvergence(ciWidth);
         }
 
-        // GATED: only after convergence do we update projection
         store.setPhase("ProjectionUpdate");
         await sleep(10);
 
         store.finishRun();
     } catch (e: any) {
-        useSimulationStore.getState().failRun(e?.message || "Simulation failed");
+        useSimPhaseStore.getState().failRun(e?.message || "Simulation failed");
     }
 }

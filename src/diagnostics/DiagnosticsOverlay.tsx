@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useDiagnosticsStore } from "./DiagnosticsStore";
 import { useRenderStore } from "@/render/RenderStore";
-import { useSimulationStore } from "@/sim/SimulationStore";
+import { useSimPhaseStore as useSimulationStore } from "@/state/simPhaseStore";
 
 function fmt(ts: number) {
     const d = new Date(ts);

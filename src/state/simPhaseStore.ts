@@ -1,6 +1,33 @@
+// src/state/simPhaseStore.ts
+// Diagnostic phase-simulation shard — drives SimulationStatusBeacon + DiagnosticsOverlay.
+// Distinct from the canonical simulationStore (Monte Carlo results).
 import { create } from "zustand";
-import type { SimPhase, SimRunMeta, SimulationState } from "./types";
 import { diag } from "@/diagnostics/DiagnosticsStore";
+
+export type SimPhase =
+    | "Idle"
+    | "BaselineComputed"
+    | "ScenarioMutating"
+    | "MonteCarloRunning"
+    | "ConvergenceCheck"
+    | "ProjectionUpdate"
+    | "Stable"
+    | "Error";
+
+export type SimRunMeta = {
+    runId: string;
+    startedAt: number;
+    finishedAt?: number;
+    scenarioId?: string;
+    confidenceIntervalWidth?: number;
+    progress?: number; // 0..1
+    error?: string;
+};
+
+export type SimulationPhaseState = {
+    phase: SimPhase;
+    meta: SimRunMeta | null;
+};
 
 type Actions = {
     setPhase: (phase: SimPhase, meta?: Partial<SimRunMeta>) => void;
@@ -15,7 +42,7 @@ function newRunId() {
     return `run_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 }
 
-export const useSimulationStore = create<SimulationState & Actions>((set, get) => ({
+export const useSimPhaseStore = create<SimulationPhaseState & Actions>((set, get) => ({
     phase: "Idle",
     meta: null,
 
@@ -51,10 +78,10 @@ export const useSimulationStore = create<SimulationState & Actions>((set, get) =
 
     finishRun: () =>
         set((s) => {
-            if (!s.meta) return { phase: "Stable", meta: null };
+            if (!s.meta) return { phase: "Stable" as SimPhase, meta: null };
             const meta = { ...s.meta, finishedAt: Date.now(), progress: 1 };
             diag("info", "sim:run", "finishRun", meta);
-            return { phase: "Stable", meta };
+            return { phase: "Stable" as SimPhase, meta };
         }),
 
     failRun: (error) =>
@@ -63,6 +90,6 @@ export const useSimulationStore = create<SimulationState & Actions>((set, get) =
                 ? { ...s.meta, finishedAt: Date.now(), error }
                 : { runId: newRunId(), startedAt: Date.now(), finishedAt: Date.now(), error };
             diag("error", "sim:run", "failRun", meta);
-            return { phase: "Error", meta };
+            return { phase: "Error" as SimPhase, meta };
         })
 }));
