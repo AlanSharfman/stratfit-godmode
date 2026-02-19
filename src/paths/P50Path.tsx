@@ -240,12 +240,12 @@ export default function P50Path({
 
     const curve = useMemo(() => {
         const pts = points.map((p) => new THREE.Vector3(p.x, 0, p.z));
-        return new THREE.CatmullRomCurve3(pts, false, "catmullrom", 0.25);
+        return new THREE.CatmullRomCurve3(pts, false, "centripetal", 0.35);
     }, [points]);
 
     const smoothCurve = useMemo(() => {
         const resampled = curve.getSpacedPoints(80);
-        return new THREE.CatmullRomCurve3(resampled, false, "catmullrom", 0.25);
+        return new THREE.CatmullRomCurve3(resampled, false, "centripetal", 0.35);
     }, [curve]);
 
     const geom = useMemo(() => {
@@ -274,61 +274,73 @@ export default function P50Path({
         <group name={`path-${scenarioId}`} frustumCulled={false}>
             {/* Cut shadow band */}
             {groundGeom && (
-                <mesh geometry={groundGeom} renderOrder={48} frustumCulled={false}>
-                    <shaderMaterial
-                        transparent
-                        depthWrite={false}
-                        depthTest
-                        side={THREE.DoubleSide}
-                        uniforms={{
-                            uBaseAlpha: { value: 0.16 },
-                            uSlopeBoost: { value: 0.18 },
-                            uCurveBoost: { value: 0.14 },
-                            uSoftness: { value: 0.32 },
-                            uColor: { value: new THREE.Color("#02060a") },
-                        }}
-                        vertexShader={`
-                            varying vec2 vUv;
-                            varying float vSlope;
-                            varying float vK;
-                            attribute float slope;
-                            attribute float curveK;
+                <>
+                    {/* Contact shadow */}
+                    <mesh geometry={groundGeom} renderOrder={46} frustumCulled={false}>
+                        <meshBasicMaterial
+                            color={0x000000}
+                            transparent
+                            opacity={0.25}
+                            depthWrite={false}
+                        />
+                    </mesh>
 
-                            void main() {
-                                vUv = uv;
-                                vSlope = slope;
-                                vK = curveK;
-                                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                            }
-                        `}
-                        fragmentShader={`
-                            varying vec2 vUv;
-                            varying float vSlope;
-                            varying float vK;
+                    <mesh geometry={groundGeom} renderOrder={48} frustumCulled={false}>
+                        <shaderMaterial
+                            transparent
+                            depthWrite={false}
+                            depthTest
+                            side={THREE.DoubleSide}
+                            uniforms={{
+                                uBaseAlpha: { value: 0.16 },
+                                uSlopeBoost: { value: 0.18 },
+                                uCurveBoost: { value: 0.14 },
+                                uSoftness: { value: 0.32 },
+                                uColor: { value: new THREE.Color("#02060a") },
+                            }}
+                            vertexShader={`
+                                varying vec2 vUv;
+                                varying float vSlope;
+                                varying float vK;
+                                attribute float slope;
+                                attribute float curveK;
 
-                            uniform float uBaseAlpha;
-                            uniform float uSlopeBoost;
-                            uniform float uCurveBoost;
-                            uniform float uSoftness;
-                            uniform vec3 uColor;
+                                void main() {
+                                    vUv = uv;
+                                    vSlope = slope;
+                                    vK = curveK;
+                                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                                }
+                            `}
+                            fragmentShader={`
+                                varying vec2 vUv;
+                                varying float vSlope;
+                                varying float vK;
 
-                            void main() {
-                                // edge fade across ribbon width
-                                float left = smoothstep(0.0, uSoftness, vUv.x);
-                                float right = 1.0 - smoothstep(1.0 - uSoftness, 1.0, vUv.x);
-                                float edgeFade = left * right;
+                                uniform float uBaseAlpha;
+                                uniform float uSlopeBoost;
+                                uniform float uCurveBoost;
+                                uniform float uSoftness;
+                                uniform vec3 uColor;
 
-                                // combined weighting
-                                float w = uBaseAlpha + vSlope * uSlopeBoost + vK * uCurveBoost;
+                                void main() {
+                                    // edge fade across ribbon width
+                                    float left = smoothstep(0.0, uSoftness, vUv.x);
+                                    float right = 1.0 - smoothstep(1.0 - uSoftness, 1.0, vUv.x);
+                                    float edgeFade = left * right;
 
-                                // extra clamp so it never gets inky
-                                float a = clamp(w, 0.0, 0.42) * edgeFade;
+                                    // combined weighting
+                                    float w = uBaseAlpha + vSlope * uSlopeBoost + vK * uCurveBoost;
 
-                                gl_FragColor = vec4(uColor, a);
-                            }
-                        `}
-                    />
-                </mesh>
+                                    // extra clamp so it never gets inky
+                                    float a = clamp(w, 0.0, 0.42) * edgeFade;
+
+                                    gl_FragColor = vec4(uColor, a);
+                                }
+                            `}
+                        />
+                    </mesh>
+                </>
             )}
 
             {/* Titanium rail body */}
@@ -355,6 +367,29 @@ export default function P50Path({
                     opacity={0.12}
                     depthTest={false}
                     depthWrite={false}
+                    blending={THREE.AdditiveBlending}
+                />
+            </mesh>
+
+            {/* Probability envelope */}
+            <mesh geometry={geom} renderOrder={45} frustumCulled={false}>
+                <meshBasicMaterial
+                    color={0x38bdf8}
+                    transparent
+                    opacity={0.08}
+                    depthWrite={false}
+                    depthTest={true}
+                />
+            </mesh>
+
+            {/* Ground glow */}
+            <mesh geometry={geom} renderOrder={47} frustumCulled={false}>
+                <meshBasicMaterial
+                    color={0x38bdf8}
+                    transparent
+                    opacity={0.12}
+                    depthWrite={false}
+                    depthTest={false}
                     blending={THREE.AdditiveBlending}
                 />
             </mesh>
@@ -392,7 +427,7 @@ function makeRibbon(
         const p = curve.getPoint(t);
 
         // subtle undulation so it isn't a sterile strip
-        const lift = Math.sin(t * Math.PI * 2.0) * 0.18 + Math.sin(t * Math.PI * 4.0) * 0.08;
+        const lift = Math.sin(t * Math.PI * 2.0) * 0.18 + Math.sin(t * Math.PI * 6.0) * 0.08;
         p.y = getHeightAt(p.x, p.z) + 0.22 + lift + liftOffset;
 
         const tangent = curve.getTangent(t).normalize();
@@ -405,7 +440,7 @@ function makeRibbon(
             const p2 = curve.getPoint(t2);
             const lift2 =
                 Math.sin(t2 * Math.PI * 2.0) * 0.18 +
-                Math.sin(t2 * Math.PI * 4.0) * 0.08;
+                Math.sin(t2 * Math.PI * 6.0) * 0.08;
             p2.y = getHeightAt(p2.x, p2.z) + 0.22 + lift2 + liftOffset;
             const segDir = p2.sub(p).normalize();
             slope = THREE.MathUtils.clamp(Math.abs(segDir.y) * 3.0, 0, 1);
@@ -437,7 +472,7 @@ function makeRibbon(
         prevTangent.copy(tangent);
 
         // Banking: rotate binormal around tangent slightly
-        const bank = Math.sin(t * Math.PI * 2.0) * 0.20;
+        const bank = Math.sin(t * Math.PI * 2.0) * 0.12;
         const normal = prevNormal.clone().cross(tangent).cross(tangent).normalize();
         if (normal.lengthSq() < 1e-6) normal.copy(prevNormal);
         prevNormal.copy(normal);

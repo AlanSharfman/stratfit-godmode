@@ -4,6 +4,8 @@ import { OrbitControls } from "@react-three/drei"
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib"
 import * as THREE from "three"
 import SceneStack from "./SceneStack"
+import AtmosphereDome from "@/render/atmos/AtmosphereDome"
+// import SceneFog from "@/terrain/SceneFog"
 
 const HERO = {
   pos: new THREE.Vector3(-72, 62, 164),
@@ -142,6 +144,15 @@ export default function TerrainStage({ children }: { children?: React.ReactNode 
   return (
     <div style={{ width: "100%", height: "100%", position: "relative" }}>
       <Canvas>
+        <AtmosphereDome
+          radius={1200}
+          top="#04060a"
+          horizon="#061a26"
+          bottom="#020407"
+          opacity={1}
+        />
+
+        {/* <SceneFog color="#0a1a24" near={140} far={560} /> */}
         <ambientLight intensity={0.6} />
         <directionalLight position={[50, 120, 60]} intensity={1} />
 
