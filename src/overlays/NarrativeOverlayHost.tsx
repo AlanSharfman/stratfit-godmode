@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { useNarrativeStore } from "@/state/narrativeStore";
 import { useKPIStore } from "@/state/kpiSelector";
 import { useObjectiveLensStore } from "@/state/objectiveLensStore";
@@ -13,9 +13,36 @@ export default function NarrativeOverlayHost() {
 
   const kpi = useKPIStore((s) => s.primary);
 
-  const lens = useObjectiveLensStore((s) => s.lens);
+  const storeLens = useObjectiveLensStore((s) => s.lens);
   const setLens = useObjectiveLensStore((s) => s.setLens);
-  const ordered = orderKPIs(lens, kpi);
+
+  // Make the overlay respond instantly by decoupling the UI lens from
+  // the global lens store (which may trigger expensive 3D subscribers).
+  const [uiLens, setUiLens] = useState(storeLens);
+  const [, startTransition] = useTransition();
+
+  useEffect(() => {
+    setUiLens(storeLens);
+  }, [storeLens]);
+
+  const commitLens = useCallback(
+    (next: any) => {
+      setUiLens(next);
+      if (next === storeLens) return;
+      // Defer store update so the button highlight + KPI reorder paints first.
+      const schedule =
+        typeof requestAnimationFrame === "function"
+          ? requestAnimationFrame
+          : (cb: FrameRequestCallback) => setTimeout(() => cb(0), 0);
+
+      schedule(() => {
+        startTransition(() => setLens(next));
+      });
+    },
+    [setLens, startTransition, storeLens]
+  );
+
+  const ordered = useMemo(() => orderKPIs(uiLens as any, kpi), [uiLens, kpi]);
 
   const active = selected ?? hovered;
 
@@ -35,8 +62,8 @@ export default function NarrativeOverlayHost() {
         active={active}
         selected={selected}
         kpi={kpi}
-        lens={lens}
-        setLens={setLens}
+        lens={uiLens}
+        setLens={commitLens}
         ordered={ordered}
       />
     </>

@@ -9,5 +9,9 @@ type LensState = {
 
 export const useObjectiveLensStore = create<LensState>((set) => ({
   lens: "value",
-  setLens: (l) => set({ lens: l }),
+  setLens: (l) =>
+    set((s) => {
+      if (s.lens === l) return s;
+      return { lens: l };
+    }),
 }));
