@@ -1,10 +1,19 @@
 // src/pages/initialize/InitializeBaselinePage.tsx
 // ═══════════════════════════════════════════════════════════════════════════
-// STRATFIT — System Calibration · God Mode Institutional Rebuild
-// Capital-grade intake instrument · Two-column workflow
-// Left: compact step rail (Company, Financial, Capital, Operations, Customer)
-// Right: compact header + KPI instrument strip + section cards + sticky bar
-// Data: useSystemBaseline() — single canonical provider. Always editable.
+// STRATFIT — Initiate Page (INPUT LAYER)
+// Navigation Contract: src/contracts/navigationContract.ts
+//
+// ROLE: The ONLY page that writes current-state financial inputs.
+// STORE: SystemBaselineProvider → localStorage "stratfit.baseline.v1"
+// RULES:
+//   - All baseline writes happen here and ONLY here (Rule 4).
+//   - No simulation logic (Rule 3).
+//   - No terrain/path mutation (Rule 2).
+//   - Position + all downstream pages READ from this page's output.
+//
+// Layout: Two-column workflow
+//   Left: compact step rail (Company, Financial, Capital, Operations, Customer)
+//   Right: compact header + KPI instrument strip + section cards + sticky bar
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { useState, useCallback, useMemo, useEffect, useRef } from "react"

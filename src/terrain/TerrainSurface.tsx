@@ -1,9 +1,11 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from "react"
 import * as THREE from "three"
 import { buildTerrain, sampleTerrainHeight } from "./buildTerrain"
-import { createSeed } from "./seed"
+import { baselineReliefScalar, baselineSeedString, createSeed } from "@/terrain/seed"
+import { TERRAIN_CONSTANTS } from "@/terrain/terrainConstants"
 import { createTerrainSolidMaterial, createTerrainWireMaterial } from "./terrainMaterials"
 import { useNarrativeStore } from "@/state/narrativeStore"
+import { useSystemBaseline } from "@/system/SystemBaselineProvider"
 
 export type TerrainSurfaceHandle = {
   getHeightAt: (worldX: number, worldZ: number) => number
@@ -21,11 +23,17 @@ const TerrainSurface = forwardRef<TerrainSurfaceHandle, object>(function Terrain
 
   const clearSelected = useNarrativeStore((s) => s.clearSelected)
 
-  const seed = useMemo(() => createSeed("baseline"), [])
+  const { baseline } = useSystemBaseline()
+
+  const baselineAny = baseline as any
+
+  const seedStr = useMemo(() => baselineSeedString(baselineAny), [baselineAny])
+  const seed = useMemo(() => createSeed(seedStr), [seedStr])
+  const relief = useMemo(() => baselineReliefScalar(baselineAny), [baselineAny])
 
   const geometry = useMemo(() => {
-    return buildTerrain(260, seed)
-  }, [seed])
+    return buildTerrain(260, seed, relief)
+  }, [seed, relief])
 
   useEffect(() => {
     return () => {
@@ -62,9 +70,13 @@ const TerrainSurface = forwardRef<TerrainSurfaceHandle, object>(function Terrain
       seed,
       solidMesh: solidRef.current,
       latticeMesh: latticeRef.current,
-      getHeightAt: (worldX: number, worldZ: number) => sampleTerrainHeight(worldX, worldZ, seed),
+      getHeightAt: (worldX: number, worldZ: number) => {
+        const y = sampleTerrainHeight(worldX, worldZ, seed)
+        const y0 = TERRAIN_CONSTANTS.yOffset
+        return (y - y0) * relief + y0
+      },
     }),
-    [seed]
+    [seed, relief]
   )
 
   return (

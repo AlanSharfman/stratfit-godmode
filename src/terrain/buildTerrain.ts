@@ -24,7 +24,7 @@ export function sampleTerrainHeight(
  * buildTerrain — creates a real mountain-like heightfield (undulations + peaks + ridge).
  * Deterministic for a given seed.
  */
-export function buildTerrain(size: number, seed: number) {
+export function buildTerrain(size: number, seed: number, reliefScalar: number = 1.0) {
     const segments = 220;
     const geo = new THREE.PlaneGeometry(
         TERRAIN_CONSTANTS.width,
@@ -48,7 +48,7 @@ export function buildTerrain(size: number, seed: number) {
         const x = pos.getX(i);
         const z = pos.getY(i); // PlaneGeometry uses X/Y; later rotated in TerrainStage
 
-        const h = heightfieldFromModel(x, z, model, TERRAIN_CONSTANTS);
+        const h = heightfieldFromModel(x, z, model, TERRAIN_CONSTANTS) * reliefScalar;
         pos.setZ(i, h);
     }
 
