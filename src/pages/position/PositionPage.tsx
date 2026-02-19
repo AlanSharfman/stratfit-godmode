@@ -7,6 +7,7 @@ import type { TimeGranularity } from "@/position/TimelineTicks"
 import { useSystemBaseline } from "@/system/SystemBaselineProvider"
 import { useScenarioStore } from "@/state/scenarioStore"
 
+import DiagnosticsDrawer from "@/components/diagnostics/DiagnosticsDrawer"
 import KPIOverlay from "./overlays/KPIOverlay"
 import PositionBriefingPanel from "./overlays/PositionBriefingPanel"
 import DiagnosticsStack from "./overlays/DiagnosticsStack"
@@ -27,6 +28,7 @@ function extractRiskIndex(engineResults: unknown): number | null {
 
 export default function PositionPage() {
   const [granularity, setGranularity] = useState<TimeGranularity>("quarter")
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   const { baseline } = useSystemBaseline()
 
@@ -63,6 +65,23 @@ export default function PositionPage() {
 
       <div className={styles.legendDock} aria-label="Terrain legend">
         <TerrainLegend />
+      </div>
+
+      <div className={styles.commandDock}>
+        <button
+          type="button"
+          className={styles.commandTrigger}
+          onClick={() => setDrawerOpen(true)}
+          aria-label="Open Command Centre"
+        >
+          ⌘
+        </button>
+        <DiagnosticsDrawer
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          groups={[]}
+          title="Command Centre"
+        />
       </div>
 
       {!vm && (

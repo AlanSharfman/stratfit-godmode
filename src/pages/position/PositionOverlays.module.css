@@ -367,3 +367,33 @@
   z-index: 20;
   pointer-events: auto;
 }
+
+/* ── Command Dock ─────────────────────────────────────────── */
+.commandDock {
+  position: absolute;
+  top: 92px;
+  right: 0;
+  z-index: 3000;
+  pointer-events: auto;
+}
+
+.commandTrigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: rgba(8, 12, 18, 0.75);
+  border: 1px solid rgba(0, 224, 255, 0.22);
+  border-radius: 6px 0 0 6px;
+  color: rgba(0, 224, 255, 0.8);
+  font-size: 16px;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.commandTrigger:hover {
+  background: rgba(0, 224, 255, 0.12);
+  border-color: rgba(0, 224, 255, 0.45);
+}
