@@ -19,6 +19,12 @@ import {
 
 import styles from "./PositionOverlays.module.css"
 
+function extractRiskIndex(engineResults: unknown): number | null {
+  const r = engineResults as any
+  const v = r?.base?.kpis?.riskIndex?.value
+  return typeof v === "number" && Number.isFinite(v) ? v : null
+}
+
 export default function PositionPage() {
   const [granularity, setGranularity] = useState<TimeGranularity>("quarter")
 
@@ -32,14 +38,8 @@ export default function PositionPage() {
 
   const vm: PositionViewModel | null = useMemo(() => {
     if (!baseline) return null
-    const riskFromEngine =
-      (engineResults as any)?.base?.kpis?.riskIndex?.value ??
-      (engineResults as any)?.baseline?.kpis?.riskIndex?.value ??
-      null
-
-    return buildPositionViewModel(baseline, {
-      riskIndexFromEngine: typeof riskFromEngine === "number" ? riskFromEngine : null,
-    })
+    const riskIndexFromEngine = extractRiskIndex(engineResults)
+    return buildPositionViewModel(baseline, { riskIndexFromEngine })
   }, [baseline, engineResults])
 
   return (
