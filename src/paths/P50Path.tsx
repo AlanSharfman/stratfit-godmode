@@ -240,19 +240,24 @@ export default function P50Path({
 
     const curve = useMemo(() => {
         const pts = points.map((p) => new THREE.Vector3(p.x, 0, p.z));
-        return new THREE.CatmullRomCurve3(pts, false, "catmullrom", 0.5);
+        return new THREE.CatmullRomCurve3(pts, false, "catmullrom", 0.25);
     }, [points]);
+
+    const smoothCurve = useMemo(() => {
+        const resampled = curve.getSpacedPoints(80);
+        return new THREE.CatmullRomCurve3(resampled, false, "catmullrom", 0.25);
+    }, [curve]);
 
     const geom = useMemo(() => {
         if (points.length < 2) return null;
-        return makeRibbon(curve, 420, 2.4, getHeightAt);
-    }, [curve, getHeightAt, points.length]);
+        return makeRibbon(smoothCurve, 420, 2.4, getHeightAt);
+    }, [smoothCurve, getHeightAt, points.length]);
 
     const groundGeom = useMemo(() => {
         if (points.length < 2) return null;
         // narrower + slightly closer to terrain
-        return makeRibbon(curve, 420, 2.7, getHeightAt, -0.06);
-    }, [curve, getHeightAt, points.length]);
+        return makeRibbon(smoothCurve, 420, 2.7, getHeightAt, -0.06);
+    }, [smoothCurve, getHeightAt, points.length]);
 
     useEffect(() => {
         return () => {
@@ -354,7 +359,7 @@ export default function P50Path({
                 />
             </mesh>
 
-            <ValueBeacons curve={curve} getHeightAt={getHeightAt} />
+            <ValueBeacons curve={smoothCurve} getHeightAt={getHeightAt} />
             <StrategicMarkers />
         </group>
     );
@@ -387,8 +392,8 @@ function makeRibbon(
         const p = curve.getPoint(t);
 
         // subtle undulation so it isn't a sterile strip
-        const lift = Math.sin(t * Math.PI * 2.0) * 0.35 + Math.sin(t * Math.PI * 6.0) * 0.18;
-        p.y = getHeightAt(p.x, p.z) + 0.25 + lift + liftOffset;
+        const lift = Math.sin(t * Math.PI * 2.0) * 0.18 + Math.sin(t * Math.PI * 4.0) * 0.08;
+        p.y = getHeightAt(p.x, p.z) + 0.22 + lift + liftOffset;
 
         const tangent = curve.getTangent(t).normalize();
 
@@ -399,9 +404,9 @@ function makeRibbon(
             const t2 = (i + 1) / segments;
             const p2 = curve.getPoint(t2);
             const lift2 =
-                Math.sin(t2 * Math.PI * 2.0) * 0.35 +
-                Math.sin(t2 * Math.PI * 6.0) * 0.18;
-            p2.y = getHeightAt(p2.x, p2.z) + 0.25 + lift2 + liftOffset;
+                Math.sin(t2 * Math.PI * 2.0) * 0.18 +
+                Math.sin(t2 * Math.PI * 4.0) * 0.08;
+            p2.y = getHeightAt(p2.x, p2.z) + 0.22 + lift2 + liftOffset;
             const segDir = p2.sub(p).normalize();
             slope = THREE.MathUtils.clamp(Math.abs(segDir.y) * 3.0, 0, 1);
         } else if (i > 0) {
