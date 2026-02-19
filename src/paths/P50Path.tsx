@@ -9,7 +9,6 @@ import { getStmEnabled, sampleStmDisplacement } from "@/render/stm/stmRuntime";
 import type { HeightSampler } from "@/terrain/corridorTopology";
 import ValueBeacons from "@/paths/ValueBeacons";
 import StrategicMarkers from "@/terrain/StrategicMarkers";
-import type { StrategicMarker } from "@/terrain/StrategicMarkers";
 
 function FlowFilamentMaterial({
     speed = 0.18,
@@ -244,15 +243,6 @@ export default function P50Path({
         return new THREE.CatmullRomCurve3(pts, false, "catmullrom", 0.5);
     }, [points]);
 
-    const strategicMarkers = useMemo<StrategicMarker[]>(() => {
-        return [
-            { id: "risk-1", kind: "risk", label: "Burn spike", t: 0.28, strength: 0.85 },
-            { id: "liq-1", kind: "liquidity", label: "Runway inflection", t: 0.46, strength: 0.65 },
-            { id: "val-1", kind: "value", label: "Expansion lever", t: 0.64, strength: 0.7 },
-            { id: "str-1", kind: "strategy", label: "Pricing move", t: 0.78, strength: 0.6 },
-        ];
-    }, []);
-
     const geom = useMemo(() => {
         if (points.length < 2) return null;
         return makeRibbon(curve, 420, 2.4, getHeightAt);
@@ -365,7 +355,7 @@ export default function P50Path({
             </mesh>
 
             <ValueBeacons curve={curve} getHeightAt={getHeightAt} />
-            <StrategicMarkers markers={strategicMarkers} curve={curve} getHeightAt={getHeightAt} />
+            <StrategicMarkers />
         </group>
     );
 }

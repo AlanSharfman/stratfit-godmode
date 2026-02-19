@@ -4,8 +4,6 @@ import { OrbitControls } from "@react-three/drei"
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib"
 import * as THREE from "three"
 import SceneStack from "./SceneStack"
-import RiskFog from "@/render/atmos/RiskFog"
-// import RiskFogPockets from "@/render/atmos/RiskFogPockets"
 
 const HERO = {
   pos: new THREE.Vector3(-72, 62, 164),
@@ -18,51 +16,6 @@ const NEUTRAL = {
 }
 
 const LERP_DURATION_MS = 500
-
-/**
- * Readability tuning (cinematic / institutional)
- * - No orange
- * - Ice-blue / neutral tonal ramp
- * - Subtle atmospheric depth (fog)
- */
-const READABILITY = {
-  // background: near-black with slight blue lift
-  bg: new THREE.Color("#060A12"),
-  // fog: dark blue-grey; subtle depth separation
-  fogColor: new THREE.Color("#050812"),
-  fogNear: 140,
-  fogFar: 980,
-
-  // lights: key/fill/rim
-  ambientIntensity: 0.55,
-
-  keyPos: new THREE.Vector3(110, 180, 120),
-  keyIntensity: 1.35,
-
-  fillPos: new THREE.Vector3(-120, 90, 160),
-  fillIntensity: 0.70,
-
-  rimPos: new THREE.Vector3(-40, 140, -220),
-  rimIntensity: 1.10,
-}
-
-function StageAtmosphere() {
-  const { scene } = useThree()
-
-  useEffect(() => {
-    // Background + fog live on the scene
-    scene.background = READABILITY.bg
-    scene.fog = new THREE.Fog(READABILITY.fogColor, READABILITY.fogNear, READABILITY.fogFar)
-
-    return () => {
-      // Cleanup to avoid leakage across routes/canvases
-      scene.fog = null
-      scene.background = null
-    }
-  }, [scene])
-
-  return null
-}
 
 function CameraRig() {
   const { camera } = useThree()
@@ -188,37 +141,11 @@ function CameraRig() {
 export default function TerrainStage({ children }: { children?: React.ReactNode }) {
   return (
     <div style={{ width: "100%", height: "100%", position: "relative" }}>
-      <Canvas
-        // keep tone mapping stable for cinematic contrast
-        gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}
-        dpr={[1, 1.75]}
-      >
-        <StageAtmosphere />
-
-        {/* Ambient base — kept low so key/rim do the shaping */}
-        <ambientLight intensity={READABILITY.ambientIntensity} />
-
-        {/* Key light — cool, high angle */}
-        <directionalLight
-          position={READABILITY.keyPos.toArray()}
-          intensity={READABILITY.keyIntensity}
-        />
-
-        {/* Fill light — soften the shadow side */}
-        <directionalLight
-          position={READABILITY.fillPos.toArray()}
-          intensity={READABILITY.fillIntensity}
-        />
-
-        {/* Rim/back light — separates silhouette from background */}
-        <directionalLight
-          position={READABILITY.rimPos.toArray()}
-          intensity={READABILITY.rimIntensity}
-        />
+      <Canvas>
+        <ambientLight intensity={0.6} />
+        <directionalLight position={[50, 120, 60]} intensity={1} />
 
         <Suspense fallback={null}>
-          <RiskFog />
-          {/* <RiskFogPockets /> */}
           <SceneStack />
           {children}
         </Suspense>
