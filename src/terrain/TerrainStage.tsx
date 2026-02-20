@@ -18,7 +18,7 @@
 import React, { Suspense, useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
-import { EffectComposer, Bloom, DepthOfField } from "@react-three/postprocessing";
+import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import * as THREE from "three";
 import type { TerrainSurfaceHandle } from "@/terrain/TerrainSurface";
 import TerrainSurface from "@/terrain/TerrainSurface";
@@ -115,16 +115,11 @@ export default function TerrainStage({ granularity }: TerrainStageProps) {
         shadow-bias={-0.0001}
       />
 
-      {/* RIM: Cyan backlight behind terrain */}
-      <spotLight
-        position={[0, -50, -800]}
-        target-position={[0, 0, 0]}
-        intensity={800}
-        distance={2000}
-        angle={Math.PI / 3}
-        penumbra={1}
-        color="#00D8FF"
-        castShadow
+      {/* RIM: Stable directional backlight — no cone flicker */}
+      <directionalLight
+        position={[0, 80, -500]}
+        intensity={1.5}
+        color="#0A4060"
       />
 
       <HorizonBand />
@@ -144,7 +139,6 @@ export default function TerrainStage({ granularity }: TerrainStageProps) {
       </Suspense>
 
       <EffectComposer enableNormalPass={false}>
-        <DepthOfField focusDistance={0.02} focalLength={0.15} bokehScale={4} height={480} />
         <Bloom luminanceThreshold={1.2} mipmapBlur intensity={2.0} />
       </EffectComposer>
     </Canvas>
