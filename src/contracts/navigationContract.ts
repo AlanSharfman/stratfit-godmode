@@ -1,25 +1,22 @@
 // src/contracts/navigationContract.ts
 // ═══════════════════════════════════════════════════════════════════════════
-// STRATFIT — Navigation Architecture Contract (LOCKED v1)
-// This file defines the canonical page order, responsibilities, and
-// non-overlap rules for the entire STRATFIT platform.
-//
-// ANY new feature must comply with these rules.
-// Violations will cause data corruption, rendering drift, or UX confusion.
+// STRATFIT — Navigation Architecture Contract (LOCKED v2)
+// Canonical page order + responsibilities
 // ═══════════════════════════════════════════════════════════════════════════
 
-// ── NAV ORDER (locked) ──────────────────────────────────────────────────
+// ── NAV ORDER (locked v2) ───────────────────────────────────────────────
 
 export enum NavRoute {
   Initiate = "/initiate",
-  Objectives = "/objectives",
   Position = "/position",
+  Objectives = "/objectives",
   Studio = "/studio",
   Scenarios = "/scenarios",
   Risk = "/risk",
   Capital = "/capital",
   Valuation = "/valuation",
   Assessment = "/assessment",
+  Roadmap = "/roadmap",
 }
 
 // ── PAGE RESPONSIBILITIES ───────────────────────────────────────────────
@@ -29,18 +26,18 @@ export enum NavRoute {
 //                 Canonical store: SystemBaselineProvider (localStorage).
 //                 Key: "stratfit.baseline.v1"
 //
-// Objectives      INTENT LAYER — targets, constraints, priority mode.
+// Position        REALITY VISUALISATION — terrain, trajectory, liquidity signals.
+//                 Renders baseline only.
+//                 Does NOT accept Objectives input (overlays may come later,
+//                 but must never reshape terrain or path).
+//
+// Objectives      INTENT LAYER — targets, constraints, priority.
+//                 Defines strategic intent after user sees reality.
 //                 Reads Initiate snapshot (read-only).
 //                 Does NOT modify terrain, seed, or relief.
 //                 Does NOT run simulation.
 //
-// Position        REALITY VISUALIZATION — terrain, P50 trajectory,
-//                 markers, timeline, liquidity particles.
-//                 Renders from Initiate snapshot only.
-//                 Does NOT accept Objectives input (overlays may come later,
-//                 but must never reshape terrain or path).
-//
-// Studio          SIMULATION ENGINE — lever-based what-if modeling.
+// Studio          SIMULATION ENGINE — lever-based what-if modelling.
 //                 The ONLY page that runs simulation.
 //                 Reads Initiate + Objectives as inputs.
 //
@@ -52,14 +49,17 @@ export enum NavRoute {
 //                 Reads simulation + baseline data.
 //                 Does NOT mutate baseline or run simulation.
 //
-// Capital         CAPITAL IMPACT — funding, dilution, debt modeling.
+// Capital         CAPITAL IMPACT — funding, dilution, debt modelling.
 //                 Reads baseline + simulation outputs.
 //
-// Valuation       VALUE MODELING — enterprise value, multiples, comps.
+// Valuation       VALUE MODELLING — enterprise value, multiples, comps.
 //                 Reads baseline + simulation outputs.
 //
-// Assessment      NARRATIVE SYNTHESIS — AI-driven strategic summary.
+// Assessment      STRATEGIC SYNTHESIS — AI-driven narrative summary.
 //                 Reads everything, writes nothing.
+//
+// Roadmap         EXECUTION LAYER — actionable plan derived from
+//                 selected scenario. Reads Assessment + Scenarios.
 //
 
 // ── NON-OVERLAP RULES ──────────────────────────────────────────────────
@@ -88,6 +88,9 @@ export enum NavRoute {
 //         They are a visual layer gated by toggle, NOT an Initiate
 //         or Objectives concern.
 //
+// RULE 7  Roadmap reads from Assessment + selected Scenario.
+//         It does NOT run simulation or modify baseline.
+//
 
 // ── CANONICAL STORES ────────────────────────────────────────────────────
 //
@@ -99,6 +102,7 @@ export enum NavRoute {
 // Risk            → (derived, no dedicated store)
 // Decisions       → decisionStore            (src/state/)
 // Diagnostics     → DiagnosticsStore         (src/diagnostics/)
+// RenderFlags     → renderFlagsStore         (src/state/renderFlagsStore.ts)
 //
 
 export default NavRoute;

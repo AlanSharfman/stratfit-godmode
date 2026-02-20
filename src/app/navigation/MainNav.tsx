@@ -5,19 +5,19 @@ import type { RouteKey } from "./routeContract";
 import "./MainNav.css";
 
 /**
- * Visual groups per STRATFIT_NAV_UX_SPEC_v1:
- *   SETUP     → Initiate, Objectives
- *   UNDERSTAND→ Position
- *   EXPLORE   → Studio, Scenarios
- *   ANALYZE   → Risk, Capital, Valuation
- *   DECIDE    → Strategic Assessment
+ * Visual groups per STRATFIT_NAV_UX_SPEC v2:
+ *   SETUP      → Initiate
+ *   UNDERSTAND  → Position, Objectives
+ *   EXPLORE    → Studio, Scenarios
+ *   ANALYZE    → Risk, Capital, Valuation
+ *   DECIDE     → Assessment, Roadmap
  */
 const NAV_GROUPS: RouteKey[][] = [
-    ["initialize", "objectives"],
-    ["position"],
+    ["initialize"],
+    ["position", "objectives"],
     ["studio", "compare"],
     ["risk", "capital", "valuation"],
-    ["assessment"],
+    ["assessment", "roadmap"],
 ];
 
 export default function MainNav() {
