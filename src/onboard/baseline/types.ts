@@ -10,8 +10,20 @@ import type {
   YesNoUncertain,
 } from "../schema";
 
+/** Objectives snapshot — written by /objectives before navigating to /position. */
+export type ObjectivesSnapshot = {
+  horizonMonths: number
+  mode: string
+  lens: string
+  targets: Record<string, number>
+  result?: unknown
+}
+
 export interface BaselineV1 {
   version: 1;
+
+  /** Optional — populated when user completes the Objectives step. */
+  objectives?: ObjectivesSnapshot;
 
   company: {
     legalName: string;

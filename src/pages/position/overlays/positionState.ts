@@ -28,6 +28,8 @@ export interface PositionViewModel {
   confidenceBand: "Low" | "Medium" | "High"
   confidencePct: number
   diagnostics: DiagnosticCardVM[]
+  /** Objectives snapshot from /objectives step (if present). */
+  objectives?: BaselineV1["objectives"]
 }
 
 function clamp(n: number, lo: number, hi: number) { return Math.max(lo, Math.min(hi, n)) }
@@ -191,5 +193,6 @@ export function buildPositionViewModel(
     confidenceBand:  conf.band,
     confidencePct:   conf.pct,
     diagnostics:     buildDiagnostics(baseline, kpis),
+    objectives:      baseline.objectives,
   }
 }
