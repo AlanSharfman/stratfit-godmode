@@ -1,4 +1,3 @@
-import { Line } from "@react-three/drei"
 import * as THREE from "three"
 import React, { useEffect, useMemo, useState } from "react"
 import type { TerrainSurfaceHandle } from "@/terrain/TerrainSurface"
@@ -15,7 +14,7 @@ function lerp(a: number, b: number, t: number) {
 }
 
 export default function P50Path({ terrainRef, hoverOffset = 0.68, rebuildKey }: Props) {
-  const [points, setPoints] = useState<THREE.Vector3[]>([])
+  const [pathCurve, setPathCurve] = useState<THREE.CatmullRomCurve3 | null>(null)
 
   const x0 = useMemo(() => -TERRAIN_CONSTANTS.width * 0.36, [])
   const x1 = useMemo(() => TERRAIN_CONSTANTS.width * 0.36, [])
@@ -24,10 +23,9 @@ export default function P50Path({ terrainRef, hoverOffset = 0.68, rebuildKey }: 
     const terrain = terrainRef.current
     if (!terrain) return
 
-    const next: THREE.Vector3[] = []
+    const pts: THREE.Vector3[] = []
     const count = 240
 
-    // Deterministic meander (no data-dependent noise)
     const amp1 = 22
     const amp2 = 9
     const w1 = Math.PI * 2 * 1.05
@@ -40,21 +38,23 @@ export default function P50Path({ terrainRef, hoverOffset = 0.68, rebuildKey }: 
       const x = lerp(x0, x1, t)
       const z = Math.sin(t * w1 + p1) * amp1 + Math.sin(t * w2 + p2) * amp2
       const y = terrain.getHeightAt(x, z) + hoverOffset
-      next.push(new THREE.Vector3(x, y, z))
+      pts.push(new THREE.Vector3(x, y, z))
     }
 
-    setPoints(next)
+    setPathCurve(new THREE.CatmullRomCurve3(pts, false, "catmullrom", 0.5))
   }, [terrainRef, x0, x1, hoverOffset, rebuildKey])
 
-  if (points.length < 2) return null
+  if (!pathCurve) return null
 
   return (
-    <Line
-      points={points}
-      color="#00E0FF"
-      lineWidth={3}
-      transparent
-      opacity={0.92}
-    />
+    <mesh castShadow>
+      <tubeGeometry args={[pathCurve, 512, 0.45, 8, false]} />
+      <meshStandardMaterial
+        color="#E0FFFF"
+        emissive="#00E0FF"
+        emissiveIntensity={4.5}
+        toneMapped={false}
+      />
+    </mesh>
   )
 }

@@ -3,7 +3,6 @@ import * as THREE from "three"
 import { buildTerrain, sampleTerrainHeight } from "./buildTerrain"
 import { baselineReliefScalar, baselineSeedString, createSeed } from "@/terrain/seed"
 import { TERRAIN_CONSTANTS } from "@/terrain/terrainConstants"
-import { createTerrainSolidMaterial, createTerrainWireMaterial } from "./terrainMaterials"
 import { useNarrativeStore } from "@/state/narrativeStore"
 import { useSystemBaseline } from "@/system/SystemBaselineProvider"
 
@@ -41,19 +40,6 @@ const TerrainSurface = forwardRef<TerrainSurfaceHandle, object>(function Terrain
     }
   }, [geometry])
 
-  // Height-based AO gradient — deeper valleys darker, peaks lighter + faint teal tint.
-  // onBeforeCompile must be set before first shader compile, so imperative useMemo.
-  const solidMat = useMemo(() => createTerrainSolidMaterial(), [])
-  const wireMat = useMemo(() => createTerrainWireMaterial(), [])
-
-  useEffect(() => {
-    return () => { solidMat.dispose() }
-  }, [solidMat])
-
-  useEffect(() => {
-    return () => { wireMat.dispose() }
-  }, [wireMat])
-
   useEffect(() => {
     for (const ref of [solidRef, latticeRef]) {
       if (!ref.current) continue
@@ -81,23 +67,25 @@ const TerrainSurface = forwardRef<TerrainSurfaceHandle, object>(function Terrain
 
   return (
     <>
-      {/* Physical surface — imperative mat for onBeforeCompile height AO */}
+      {/* Shadow-catching solid base */}
       <mesh
         ref={solidRef}
         geometry={geometry}
         renderOrder={0}
         name="terrain-surface"
+        castShadow
+        receiveShadow
         onClick={(e) => {
           e.stopPropagation()
           clearSelected()
         }}
       >
-        <primitive object={solidMat} attach="material" />
+        <meshStandardMaterial color="#010205" roughness={0.9} />
       </mesh>
 
-      {/* Embedded lattice */}
-      <mesh ref={latticeRef} geometry={geometry} renderOrder={1}>
-        <primitive object={wireMat} attach="material" />
+      {/* Azure wireframe lattice — bioluminescent glow */}
+      <mesh ref={latticeRef} geometry={geometry} renderOrder={1} castShadow>
+        <meshStandardMaterial color="#2A82D0" emissive="#1E5A99" emissiveIntensity={0.6} wireframe transparent opacity={0.35} />
       </mesh>
     </>
   )

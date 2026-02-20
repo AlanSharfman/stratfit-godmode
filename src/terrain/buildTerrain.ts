@@ -121,8 +121,17 @@ function heightfieldFromModel(
         Math.sin(x * 0.012 + model.seed * 0.002) *
         Math.cos(z * 0.01 - model.seed * 0.002);
 
+    // FBM ambient mountains (3 octaves — jagged, realistic topography)
+    const noise1 = Math.sin(x * 0.015) * Math.cos(z * 0.015) * 35.0;
+    const noise2 = Math.sin(x * 0.04) * Math.cos(z * 0.04) * 12.0;
+    const noise3 = Math.sin(x * 0.1) * Math.cos(z * 0.1) * 3.0;
+    const ambient = noise1 + noise2 + noise3;
+
+    // Valley mask — smooth center corridor for data path (pow² for wider floor)
+    const mask = Math.min(1.0, Math.pow(Math.abs(x) / 180, 2));
+
     // Terrain weighting (realism boost)
-    let h = baseNoise * 1.2 + macroNoise * 6.0;
+    let h = baseNoise * 1.2 + macroNoise * 6.0 + (ambient * mask);
 
     // 2) Mountain peaks (Gaussian bumps)
     for (const p of model.peaks) {

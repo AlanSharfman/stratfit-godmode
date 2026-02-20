@@ -11,7 +11,6 @@ import { useRenderFlagsStore } from "@/state/renderFlagsStore"
 import { useSemanticBalance, DEFAULT_SHL_WEIGHTS } from "@/render/shl"
 import type { SemanticLayerKey } from "@/render/shl"
 
-import PositionRightRail from "@/components/position/PositionRightRail"
 import CommandCentrePanel from "@/components/diagnostics/CommandCentrePanel"
 import BaselineIntelligencePanel from "@/components/baseline/BaselineIntelligencePanel"
 import KPIOverlay from "./overlays/KPIOverlay"
@@ -106,18 +105,8 @@ export default function PositionPage() {
 
   return (
     <div className={styles.page}>
-      <TerrainStage granularity={granularity} />
-
-      <div className={styles.kpiDock} aria-label="Position KPIs">
-        <KPIOverlay vm={vm} />
-      </div>
-
-      <div className={styles.timeScaleDock} aria-label="Time scale control">
-        <TimeScaleControl granularity={granularity} setGranularity={setGranularity} />
-      </div>
-
-      {/* ── Right Rail (stacked: Diagnostics + Intelligence) ── */}
-      <PositionRightRail>
+      {/* Left panel — glassmorphism HUD */}
+      <div className={styles.leftPanel}>
         {showDiagnostics && (
           <CommandCentrePanel
             groups={diagnosticGroups}
@@ -125,18 +114,37 @@ export default function PositionPage() {
             onClose={() => setShowDiagnostics(false)}
           />
         )}
-        <BaselineIntelligencePanel />
-      </PositionRightRail>
-
-      <div className={styles.legendDock} aria-label="Terrain legend">
-        <TerrainLegend />
       </div>
 
-      {!vm && (
-        <div className={styles.noBaselineHint}>
-          No baseline loaded. Initialise to enable KPIs + diagnostics.
+      {/* Center — titanium bezel + canvas */}
+      <div className={styles.centerColumn}>
+        <div className={styles.canvasBezel}>
+          <TerrainStage granularity={granularity} />
+
+          <div className={styles.kpiDock} aria-label="Position KPIs">
+            <KPIOverlay vm={vm} />
+          </div>
+
+          <div className={styles.timeScaleDock} aria-label="Time scale control">
+            <TimeScaleControl granularity={granularity} setGranularity={setGranularity} />
+          </div>
+
+          <div className={styles.legendDock} aria-label="Terrain legend">
+            <TerrainLegend />
+          </div>
         </div>
-      )}
+
+        {!vm && (
+          <div className={styles.noBaselineHint}>
+            No baseline loaded. Initialise to enable KPIs + diagnostics.
+          </div>
+        )}
+      </div>
+
+      {/* Right panel — glassmorphism HUD */}
+      <div className={styles.rightPanel}>
+        <BaselineIntelligencePanel />
+      </div>
     </div>
   )
 }

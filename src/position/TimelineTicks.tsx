@@ -278,20 +278,23 @@ export default function TimelineTicks({
             opacity={OPACITY_TICK[tick.weight]}
           />
 
-          {/* Tactical radar blip — core sphere + billboard halo ring */}
+          {/* Holographic waypoint — amber sphere + halo + ground light */}
           {tick.showLabel && (
             <group position={[tick.railPt.x, tick.railPt.y, tick.railPt.z]}>
-              {/* Core sphere — emissive amber, blooms */}
+              {/* Core sphere — warm amber, blooms hard */}
               <mesh>
                 <sphereGeometry args={[1.2, 16, 16]} />
-                <meshStandardMaterial color="#FF5722" emissive="#FF5722" emissiveIntensity={4.0} toneMapped={false} />
+                <meshStandardMaterial color="#FFB300" emissive="#FF4500" emissiveIntensity={4.0} toneMapped={false} />
               </mesh>
 
-              {/* Halo ring — always faces camera */}
+              {/* Amber ground-projection light */}
+              <pointLight color="#FF4500" intensity={2} distance={30} position={[0, 2, 0]} />
+
+              {/* Halo ring — faint amber, always faces camera */}
               <Billboard follow lockX={false} lockY={false} lockZ={false}>
                 <mesh>
                   <ringGeometry args={[2.5, 3.5, 32]} />
-                  <meshBasicMaterial color="#FF5722" transparent opacity={0.35} side={THREE.DoubleSide} toneMapped={false} />
+                  <meshBasicMaterial color="#FF7B00" transparent opacity={0.25} side={THREE.DoubleSide} toneMapped={false} />
                 </mesh>
               </Billboard>
 

@@ -1,10 +1,67 @@
 /* src/pages/position/PositionOverlays.module.css */
 
 .page {
+  display: grid;
+  grid-template-columns: 320px 1fr 320px;
+  gap: 16px;
+  height: 100vh;
+  overflow: hidden;
+  background: #010308;
+  padding: 16px;
+}
+
+/* ── Glassmorphism side panels ── */
+.leftPanel,
+.rightPanel {
+  background: rgba(11, 17, 26, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  overflow-y: auto;
+  position: relative;
+}
+
+/* KPI shimmer — animated top-border glow */
+.leftPanel::before,
+.rightPanel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #00E0FF, transparent);
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+  z-index: 1;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Center column ── */
+.centerColumn {
+  position: relative;
+  min-height: 0;
+}
+
+/* ── Titanium bezel ── */
+.canvasBezel {
   position: relative;
   width: 100%;
-  height: 100vh;
-  background: #0b0f14;
+  height: 100%;
+  background-color: #03070A;
+  border-radius: 16px;
+  box-shadow:
+    0 40px 80px rgba(0,0,0,0.9),
+    inset 0 0 0 1px rgba(255,255,255,0.15),
+    inset 0 0 0 4px #5A6B7C,
+    inset 0 0 0 10px #0A1118,
+    inset 0 0 0 11px rgba(0, 224, 255, 0.2),
+    inset 0 30px 60px rgba(0,0,0,0.95);
   overflow: hidden;
 }
 

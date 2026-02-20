@@ -18,6 +18,7 @@
 import React, { Suspense, useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
+import { EffectComposer, Bloom, DepthOfField } from "@react-three/postprocessing";
 import * as THREE from "three";
 import type { TerrainSurfaceHandle } from "@/terrain/TerrainSurface";
 import TerrainSurface from "@/terrain/TerrainSurface";
@@ -66,41 +67,65 @@ export default function TerrainStage({ granularity }: TerrainStageProps) {
 
   return (
     <Canvas
+      shadows
       style={{ position: "absolute", inset: 0, zIndex: 0 }}
       dpr={[1, 2]}
-      camera={{ position: [0, 143, 286], fov: 42, near: 0.1, far: 5000 }}
+      camera={{ position: [0, 320, 550], fov: 40, near: 1, far: 5000 }}
       gl={{ antialias: true, alpha: false }}
       onCreated={({ camera, gl, scene }) => {
-        // Deterministic camera lock (prevents "close-up blob / drift")
-        camera.position.set(0, 143, 286);
-        camera.lookAt(0, 0, 0);
+        camera.position.set(0, 320, 550);
+        camera.lookAt(0, -20, 0);
         camera.updateProjectionMatrix();
 
-        // Deterministic clear + fog baseline
-        gl.setClearColor("#050A10", 1);
-        scene.fog = new THREE.Fog("#050A10", 320, 2200);
+        gl.setClearColor("#02050A", 1);
+        scene.fog = new THREE.Fog("#02050A", 300, 1200);
       }}
     >
-      {/* Constrained orbit — horizontal rotation ±45°, no tilt, no zoom, no pan */}
       <OrbitControls
         makeDefault
         enablePan={false}
         enableZoom={false}
-        minAzimuthAngle={-Math.PI / 4}
-        maxAzimuthAngle={ Math.PI / 4}
-        minPolarAngle={1.107}
-        maxPolarAngle={1.107}
+        minAzimuthAngle={-Math.PI / 5}
+        maxAzimuthAngle={ Math.PI / 5}
+        minPolarAngle={Math.PI / 3.2}
+        maxPolarAngle={Math.PI / 2.8}
         rotateSpeed={0.55}
-        target={[0, 0, 0]}
+        target={[0, -20, 0]}
       />
 
-      {/* Deterministic background + fog (redundant by design; guards against overrides) */}
-      <color attach="background" args={["#050A10"]} />
-      <fog attach="fog" args={["#050A10", 320, 2200]} />
+      <color attach="background" args={["#02050A"]} />
+      <fog attach="fog" args={["#02050A", 300, 1200]} />
 
-      {/* Lights: slightly lifted for marker + tick readability */}
-      <ambientLight intensity={0.70} />
-      <directionalLight position={[120, 180, 120]} intensity={0.90} color="#CFEFFF" />
+      {/* 3-Point Cinematic Lighting Rig */}
+      <ambientLight intensity={0.02} />
+
+      {/* KEY: Harsh raking side-light with deep shadow maps */}
+      <directionalLight
+        position={[-500, 250, 200]}
+        intensity={4.0}
+        color="#E0F2FE"
+        castShadow
+        shadow-mapSize={[4096, 4096]}
+        shadow-camera-left={-600}
+        shadow-camera-right={600}
+        shadow-camera-top={600}
+        shadow-camera-bottom={-600}
+        shadow-camera-near={1}
+        shadow-camera-far={2000}
+        shadow-bias={-0.0001}
+      />
+
+      {/* RIM: Cyan backlight behind terrain */}
+      <spotLight
+        position={[0, -50, -800]}
+        target-position={[0, 0, 0]}
+        intensity={800}
+        distance={2000}
+        angle={Math.PI / 3}
+        penumbra={1}
+        color="#00D8FF"
+        castShadow
+      />
 
       <HorizonBand />
 
@@ -117,6 +142,11 @@ export default function TerrainStage({ granularity }: TerrainStageProps) {
           </>
         )}
       </Suspense>
+
+      <EffectComposer enableNormalPass={false}>
+        <DepthOfField focusDistance={0.02} focalLength={0.15} bokehScale={4} height={480} />
+        <Bloom luminanceThreshold={1.2} mipmapBlur intensity={2.0} />
+      </EffectComposer>
     </Canvas>
   );
 }
