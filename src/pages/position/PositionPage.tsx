@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useShallow } from "zustand/react/shallow"
 
@@ -7,6 +7,9 @@ import type { TimeGranularity } from "@/position/TimelineTicks"
 
 import { useSystemBaseline } from "@/system/SystemBaselineProvider"
 import { useScenarioStore } from "@/state/scenarioStore"
+import { useViewTogglesStore } from "@/state/viewTogglesStore"
+import { useSemanticBalance, DEFAULT_SHL_WEIGHTS } from "@/render/shl"
+import type { SemanticLayerKey } from "@/render/shl"
 
 import DiagnosticsDrawer from "@/components/diagnostics/DiagnosticsDrawer"
 import KPIOverlay from "./overlays/KPIOverlay"
@@ -27,9 +30,21 @@ function extractRiskIndex(engineResults: unknown): number | null {
   return typeof v === "number" && Number.isFinite(v) ? v : null
 }
 
+/** Treat an SHL weight > 0 as "on" */
+function shlIsOn(weight: number): boolean {
+  return weight > 0
+}
+
 export default function PositionPage() {
   const [granularity, setGranularity] = useState<TimeGranularity>("quarter")
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false)
+
+  // Local toggles for narrative items without a dedicated store
+  const [envelopeOn, setEnvelopeOn] = useState(false)
+  const [watchDemoOn, setWatchDemoOn] = useState(false)
+  const [annotationsOn, setAnnotationsOn] = useState(false)
+  const [markersOn, setMarkersOn] = useState(false)
+  const [previewOn, setPreviewOn] = useState(false)
 
   const navigate = useNavigate()
   const { baseline } = useSystemBaseline()
@@ -50,19 +65,49 @@ export default function PositionPage() {
     return buildPositionViewModel(baseline, { riskIndexFromEngine })
   }, [baseline, engineResults])
 
+  // --- SHL weights (semantic highlight layer) ---
+  const shlWeights = useSemanticBalance((s) => s.weights)
+  const setWeight = useSemanticBalance((s) => s.setWeight)
+
+  const toggleShl = useCallback(
+    (key: SemanticLayerKey) => (next: boolean) => {
+      setWeight(key, next ? DEFAULT_SHL_WEIGHTS[key] : 0)
+    },
+    [setWeight],
+  )
+
+  // --- View toggles ---
+  const heatmapEnabled = useViewTogglesStore((s) => s.heatmapEnabled)
+  const toggleHeatmap = useViewTogglesStore((s) => s.toggleHeatmap)
+
+  // ── Diagnostic Groups (original NARRATIVE / FIELDS / TOPOGRAPHY) ──
   const diagnosticGroups = [
     {
-      heading: "Render",
+      heading: "NARRATIVE",
       items: [
-        { id: "showGrid", label: "Show Grid", value: false, onChange: () => {} },
-        { id: "showMarkers", label: "Show Markers", value: false, onChange: () => {} },
+        { id: "heatMap", label: "Heat Map", value: heatmapEnabled, onChange: () => toggleHeatmap() },
+        { id: "envelope", label: "Envelope", value: envelopeOn, onChange: (v: boolean) => setEnvelopeOn(v) },
+        { id: "watchDemo", label: "Watch Demo", value: watchDemoOn, onChange: (v: boolean) => setWatchDemoOn(v) },
+        { id: "annotations", label: "Annotations", value: annotationsOn, onChange: (v: boolean) => setAnnotationsOn(v) },
       ],
     },
     {
-      heading: "Simulation",
+      heading: "FIELDS",
       items: [
-        { id: "freezeSim", label: "Freeze Simulation", value: false, onChange: () => {} },
-        { id: "showPaths", label: "Show Paths", value: false, onChange: () => {} },
+        { id: "riskField", label: "Risk Field", value: shlIsOn(shlWeights.risk), onChange: toggleShl("risk") },
+        { id: "confidence", label: "Confidence", value: shlIsOn(shlWeights.confidence), onChange: toggleShl("confidence") },
+        { id: "markers", label: "Markers", value: markersOn, onChange: (v: boolean) => setMarkersOn(v) },
+        { id: "preview", label: "Preview", value: previewOn, onChange: (v: boolean) => setPreviewOn(v) },
+        { id: "flow", label: "Flow", value: shlIsOn(shlWeights.flow), onChange: toggleShl("flow") },
+        { id: "diverge", label: "Diverge", value: shlIsOn(shlWeights.divergence), onChange: toggleShl("divergence") },
+      ],
+    },
+    {
+      heading: "TOPOGRAPHY",
+      items: [
+        { id: "heat", label: "Heat", value: shlIsOn(shlWeights.heat), onChange: toggleShl("heat") },
+        { id: "resonance", label: "Resonance", value: shlIsOn(shlWeights.resonance), onChange: toggleShl("resonance") },
+        { id: "topo", label: "Topo", value: shlIsOn(shlWeights.topography), onChange: toggleShl("topography") },
       ],
     },
   ]

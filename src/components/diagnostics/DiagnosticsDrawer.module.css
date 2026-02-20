@@ -1,126 +1,198 @@
+/* ── DiagnosticsDrawer / Command Centre ──
+   Legacy-aligned pill-toggle layout
+   Typography: Inter (labels) · JetBrains Mono (state badges)
+   Palette: slate-900 base, cyan-400 accents, amber-400 active glow
+   ────────────────────────────────────────── */
+
+/* ── Backdrop ── */
 .backdrop {
     position: fixed;
     inset: 0;
     z-index: 998;
-    background: transparent;
+    background: rgba(0, 0, 0, 0.24);
 }
 
-/* Hybrid cockpit: anchor this beside the mountain, NOT over the right intelligence rail */
+/* ── Drawer chrome ── */
 .drawer {
     position: fixed;
-    top: 96px;
-    right: calc(var(--sf-right-rail, 360px) + 18px);
-    width: 320px;
-    max-height: calc(100vh - 140px);
+    top: 80px;
+    right: calc(var(--sf-right-rail, 360px) + 20px);
+    width: 300px;
+    max-height: calc(100vh - 120px);
     overflow-y: auto;
     z-index: 999;
 
-    background: rgba(8, 12, 18, 0.92);
-    backdrop-filter: blur(16px);
-    border: 1px solid rgba(34, 211, 238, 0.18);
-    border-radius: 16px;
-    padding: 16px;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: rgba(6, 10, 16, 0.94);
+    backdrop-filter: blur(20px) saturate(1.4);
+    border: 1px solid rgba(34, 211, 238, 0.14);
+    border-radius: 14px;
+    padding: 18px 16px 12px;
 
-    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55);
+    box-shadow:
+        0 0 0 1px rgba(34, 211, 238, 0.06),
+        0 12px 40px rgba(0, 0, 0, 0.6);
 }
 
+/* ── Header row ── */
 .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 14px;
+    margin-bottom: 18px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(34, 211, 238, 0.10);
 }
 
 .title {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 900;
-    letter-spacing: 0.16em;
-    color: rgba(226, 232, 240, 0.95);
+    letter-spacing: 0.22em;
+    color: rgba(226, 232, 240, 0.92);
     text-transform: uppercase;
 }
 
 .closeBtn {
-    background: none;
-    border: none;
-    color: rgba(226, 232, 240, 0.65);
-    font-size: 18px;
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: rgba(226, 232, 240, 0.06);
+    border: 1px solid rgba(226, 232, 240, 0.08);
+    color: rgba(226, 232, 240, 0.55);
+    font-size: 14px;
     cursor: pointer;
-    padding: 4px;
     line-height: 1;
-}
-
-.closeBtn:hover {
-    color: rgba(226, 232, 240, 0.92);
-}
-
-.group {
-    margin-bottom: 16px;
-}
-
-.groupHeading {
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.14em;
-    color: rgba(34, 211, 238, 0.75);
-    text-transform: uppercase;
-    margin-bottom: 8px;
-}
-
-.toggleList {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.toggleBtn {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    padding: 8px 10px;
-    border-radius: 10px;
-    border: 1px solid rgba(70, 227, 255, 0.18);
-    background: rgba(0, 0, 0, 0.22);
-
-    color: rgba(220, 245, 255, 0.92);
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-
-    cursor: pointer;
     transition: all 0.15s ease;
 }
 
+.closeBtn:hover {
+    background: rgba(226, 232, 240, 0.12);
+    color: rgba(226, 232, 240, 0.9);
+}
+
+/* ── Group section ── */
+.group {
+    margin-bottom: 20px;
+}
+
+.group:last-child {
+    margin-bottom: 4px;
+}
+
+.groupHeading {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    color: rgba(34, 211, 238, 0.65);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    padding-left: 2px;
+    position: relative;
+}
+
+/* Subtle left accent bar on group headers */
+.groupHeading::before {
+    content: "";
+    position: absolute;
+    left: -10px;
+    top: 1px;
+    width: 3px;
+    height: 10px;
+    border-radius: 2px;
+    background: rgba(34, 211, 238, 0.35);
+}
+
+/* ── Toggle list — pill grid ── */
+.toggleList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+/* ── Pill toggle button ── */
+.toggleBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    height: 30px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(70, 227, 255, 0.12);
+    background: rgba(15, 20, 30, 0.55);
+
+    color: rgba(200, 220, 235, 0.78);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+
+    cursor: pointer;
+    transition: all 0.18s ease;
+    user-select: none;
+}
+
 .toggleBtn:hover {
-    border-color: rgba(70, 227, 255, 0.36);
+    border-color: rgba(70, 227, 255, 0.30);
+    background: rgba(34, 211, 238, 0.06);
+    color: rgba(220, 240, 255, 0.92);
 }
 
+.toggleBtn:active {
+    transform: scale(0.97);
+}
+
+/* ── Active state — cyan glow ── */
 .toggleBtnOn {
-    border-color: rgba(70, 227, 255, 0.58);
-    background: rgba(34, 211, 238, 0.09);
-    box-shadow: 0 0 14px rgba(70, 227, 255, 0.12);
+    border-color: rgba(34, 211, 238, 0.50);
+    background: rgba(34, 211, 238, 0.10);
+    color: rgba(34, 211, 238, 0.95);
+    box-shadow:
+        0 0 8px rgba(34, 211, 238, 0.14),
+        inset 0 0 12px rgba(34, 211, 238, 0.05);
 }
 
+.toggleBtnOn:hover {
+    border-color: rgba(34, 211, 238, 0.62);
+    background: rgba(34, 211, 238, 0.14);
+}
+
+/* ── State badge (ON / OFF) ── */
 .toggleState {
-    font-size: 10px;
-    color: rgba(226, 232, 240, 0.55);
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 8.5px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: rgba(226, 232, 240, 0.06);
+    color: rgba(226, 232, 240, 0.40);
+    transition: all 0.18s ease;
 }
 
 .toggleStateOn {
+    background: rgba(34, 211, 238, 0.14);
     color: rgba(34, 211, 238, 0.92);
 }
 
+/* ── Scrollbar ── */
 .drawer::-webkit-scrollbar {
-    width: 6px;
+    width: 5px;
 }
 
 .drawer::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 3px;
+    background: transparent;
 }
 
 .drawer::-webkit-scrollbar-thumb {
-    background: rgba(34, 211, 238, 0.25);
+    background: rgba(34, 211, 238, 0.18);
     border-radius: 3px;
+}
+
+.drawer::-webkit-scrollbar-thumb:hover {
+    background: rgba(34, 211, 238, 0.32);
 }
