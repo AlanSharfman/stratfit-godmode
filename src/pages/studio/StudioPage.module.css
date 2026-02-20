@@ -57,10 +57,24 @@
     overflow: hidden;
 }
 
+/* Mountain photo backplate — sits below the 3D canvas */
+.mountainBackplate {
+    position: absolute;
+    inset: 0;
+    background-image: url('/realistic-mountain.jpg');
+    background-size: cover;
+    background-position: center 60%;
+    background-repeat: no-repeat;
+    /* darken so neon terrain reads clearly */
+    filter: brightness(0.35) saturate(0.6);
+    z-index: 0;
+}
+
 /* Scene layer fills stage */
 .sceneLayer {
     position: absolute;
     inset: 0;
+    z-index: 1;
 }
 
 /* HUD overlays */

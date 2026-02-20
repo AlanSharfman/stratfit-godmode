@@ -2,12 +2,14 @@ import React from "react";
 import { TerrainWithFallback } from "@/components/terrain/TerrainFallback2D";
 import ScenarioMountain from "@/components/mountain/ScenarioMountain";
 import { useScenarioStore } from "@/state/scenarioStore";
+import "@/styles/mountainBackplate.css";
 
 export default function StudioSceneRoot() {
   const activeScenarioId = useScenarioStore((s) => s.activeScenarioId);
 
   return (
     <div
+      className="sf-mountain-backplate"
       style={{
         position: "absolute",
         inset: 0,
@@ -19,8 +21,11 @@ export default function StudioSceneRoot() {
         <ScenarioMountain
           scenario={activeScenarioId}
           mode="strategy"
-          pathColor="#60a5fa"
+          pathColor="#22d3ee"
           baselineHighVisibility
+
+          transparentContainer
+          transparentScene
         />
       </TerrainWithFallback>
     </div>

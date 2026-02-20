@@ -116,6 +116,9 @@ export default function StudioPage() {
             {/* CENTER STAGE */}
             <main className={styles.centerStage}>
 
+                {/* Mountain photo background */}
+                <div className={styles.mountainBackplate} />
+
                 <div className={styles.sceneLayer}>
                     <StudioStage scene={<StudioSceneRoot />} />
                 </div>
