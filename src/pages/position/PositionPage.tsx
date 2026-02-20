@@ -46,9 +46,10 @@ export default function PositionPage() {
   const navigate = useNavigate()
   const { baseline } = useSystemBaseline()
 
-  useEffect(() => {
-    if (!baseline) navigate("/initiate", { replace: true })
-  }, [baseline, navigate])
+  // NOTE: redirect guard disabled for dev — re-enable when baseline flow is stable
+  // useEffect(() => {
+  //   if (!baseline) navigate("/initiate", { replace: true })
+  // }, [baseline, navigate])
 
   const { engineResults } = useScenarioStore(
     useShallow((s) => ({

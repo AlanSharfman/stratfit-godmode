@@ -430,17 +430,15 @@
 
 /* ── Rail mode tabs (Briefing / Diagnostics / Command) ── */
 .railTabs {
-  position: sticky;
-  top: 0;
-  z-index: 5;
-
   display: flex;
   gap: 4px;
-  padding: 4px;
+  padding: 6px;
   border-radius: 10px;
+  min-height: 36px;
+  flex-shrink: 0;
 
-  background: rgba(6, 10, 16, 0.82);
-  border: 1px solid rgba(34, 211, 238, 0.10);
+  background: rgba(6, 10, 16, 0.92);
+  border: 1px solid rgba(34, 211, 238, 0.25);
   backdrop-filter: blur(12px);
 }
 
@@ -448,15 +446,15 @@
   flex: 1;
   height: 28px;
   border-radius: 7px;
-  border: 1px solid transparent;
-  background: transparent;
+  border: 1px solid rgba(34, 211, 238, 0.12);
+  background: rgba(15, 20, 30, 0.50);
 
-  font-family: var(--sf-sans);
+  font-family: 'Inter', system-ui, sans-serif;
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.10em;
   text-transform: uppercase;
-  color: rgba(148, 163, 184, 0.60);
+  color: rgba(148, 163, 184, 0.70);
   white-space: nowrap;
 
   cursor: pointer;
@@ -464,13 +462,13 @@
 }
 
 .railTab:hover {
-  background: rgba(34, 211, 238, 0.05);
-  color: rgba(200, 220, 235, 0.80);
+  background: rgba(34, 211, 238, 0.08);
+  color: rgba(200, 220, 235, 0.85);
 }
 
 .railTabActive {
-  background: rgba(34, 211, 238, 0.10);
-  border-color: rgba(34, 211, 238, 0.30);
-  color: rgba(34, 211, 238, 0.92);
-  box-shadow: 0 0 6px rgba(34, 211, 238, 0.10);
+  background: rgba(34, 211, 238, 0.12);
+  border-color: rgba(34, 211, 238, 0.40);
+  color: rgba(34, 211, 238, 0.95);
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.14);
 }

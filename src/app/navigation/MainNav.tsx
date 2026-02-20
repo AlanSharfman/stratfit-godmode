@@ -29,6 +29,10 @@ export default function MainNav() {
 
     return (
         <nav className="mainNav" aria-label="Primary navigation">
+            <div className="navBrand">
+                <img src="/logo.svg" alt="" className="navLogo" />
+                <span className="navBrandName">STRATFIT</span>
+            </div>
             {NAV_GROUPS.map((group, gi) => (
                 <div key={gi} className="navGroup">
                     {group.map((key) => {
