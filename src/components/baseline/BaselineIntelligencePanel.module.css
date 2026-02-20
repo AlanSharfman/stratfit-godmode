@@ -1,0 +1,164 @@
+/* ── BaselineIntelligencePanel ───────────────────────────────────
+   Docked intelligence readout for Position right rail.
+   Typography: Inter (labels) · JetBrains Mono (metrics/badges)
+   Palette: slate-900 base, cyan-400 accents, red/green/purple signals
+   ────────────────────────────────────────────────────────────── */
+
+.rightPanel {
+  border: 1px solid rgba(34, 211, 238, 0.12);
+  border-radius: 12px;
+  background: rgba(6, 10, 16, 0.88);
+  backdrop-filter: blur(14px) saturate(1.2);
+  overflow: hidden;
+  padding: 0;
+}
+
+/* ── Header row ── */
+.panelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid rgba(34, 211, 238, 0.10);
+}
+
+.panelTitle {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.20em;
+  text-transform: uppercase;
+  color: rgba(226, 232, 240, 0.92);
+}
+
+.panelDots {
+  display: flex;
+  gap: 4px;
+}
+
+.panelDots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(148, 163, 184, 0.35);
+}
+
+/* ── Sections ── */
+.panelSection {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(182, 228, 255, 0.06);
+}
+
+.panelSection:last-of-type {
+  border-bottom: none;
+}
+
+.sectionTitle {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(34, 211, 238, 0.65);
+  margin-bottom: 8px;
+}
+
+/* ── Key-value grid (Structural Metrics) ── */
+.kvGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.kvRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(182, 228, 255, 0.05);
+}
+
+.kvRow:last-child {
+  border-bottom: none;
+}
+
+.k {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 12px;
+  color: rgba(185, 205, 225, 0.72);
+}
+
+.v {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(214, 246, 255, 0.90);
+}
+
+/* ── Status row (System Diagnostic) ── */
+.statusRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.statusLabel {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 12px;
+  color: rgba(185, 205, 225, 0.68);
+}
+
+.statusValue {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ── Constraint card ── */
+.constraintLabel {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 11px;
+  color: rgba(185, 205, 225, 0.55);
+  padding: 8px 10px 2px;
+}
+
+.constraintValue {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 12px;
+  color: rgba(214, 246, 255, 0.88);
+  padding: 2px 10px 8px;
+}
+
+/* ── Story text ── */
+.storyText {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 12px;
+  line-height: 1.55;
+  color: rgba(185, 205, 225, 0.76);
+}
+
+/* ── Signal list ── */
+.signalList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ── Panel footer ── */
+.panelFoot {
+  padding: 10px 14px 12px;
+  border-top: 1px solid rgba(182, 228, 255, 0.06);
+}
+
+.footLine {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11px;
+  color: rgba(185, 205, 225, 0.56);
+  line-height: 1.6;
+}

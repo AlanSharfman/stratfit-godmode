@@ -16,7 +16,7 @@
   flex-direction: column;
   gap: 10px;
 
-  z-index: var(--z-rail, 280);
+  z-index: 280;
   pointer-events: auto;
 
   /* Hide scrollbar but keep scrollable */

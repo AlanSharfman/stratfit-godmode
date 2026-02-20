@@ -1,5 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react"
-import { useNavigate } from "react-router-dom"
+import React, { useCallback, useMemo, useState } from "react"
 import { useShallow } from "zustand/react/shallow"
 
 import TerrainStage from "@/terrain/TerrainStage"
@@ -14,20 +13,17 @@ import type { SemanticLayerKey } from "@/render/shl"
 
 import PositionRightRail from "@/components/position/PositionRightRail"
 import CommandCentrePanel from "@/components/diagnostics/CommandCentrePanel"
+import BaselineIntelligencePanel from "@/components/baseline/BaselineIntelligencePanel"
 import KPIOverlay from "./overlays/KPIOverlay"
-import PositionBriefingPanel from "./overlays/PositionBriefingPanel"
-import AIInsightPanel from "./overlays/AIInsightPanel"
-import DiagnosticsStack from "./overlays/DiagnosticsStack"
 import TerrainLegend from "./overlays/TerrainLegend"
 import TimeScaleControl from "./overlays/TimeScaleControl"
 import {
   buildPositionViewModel,
-  type PositionViewModel,
 } from "./overlays/positionState"
 
 import styles from "./PositionOverlays.module.css"
 
-type RailMode = "briefing" | "diagnostics" | "command"
+// Diagnostics panel is togglable via close button
 
 function extractRiskIndex(engineResults: unknown): number | null {
   const r = engineResults as any
@@ -42,15 +38,9 @@ function shlIsOn(weight: number): boolean {
 
 export default function PositionPage() {
   const [granularity, setGranularity] = useState<TimeGranularity>("quarter")
-  const [railMode, setRailMode] = useState<RailMode>("briefing")
+  const [showDiagnostics, setShowDiagnostics] = useState(true)
 
-  const navigate = useNavigate()
   const { baseline } = useSystemBaseline()
-
-  // NOTE: redirect guard disabled for dev — re-enable when baseline flow is stable
-  // useEffect(() => {
-  //   if (!baseline) navigate("/initiate", { replace: true })
-  // }, [baseline, navigate])
 
   const { engineResults } = useScenarioStore(
     useShallow((s) => ({
@@ -58,7 +48,7 @@ export default function PositionPage() {
     })),
   )
 
-  const vm: PositionViewModel | null = useMemo(() => {
+  const vm = useMemo(() => {
     if (!baseline) return null
     const riskIndexFromEngine = extractRiskIndex(engineResults)
     return buildPositionViewModel(baseline, { riskIndexFromEngine })
@@ -126,53 +116,16 @@ export default function PositionPage() {
         <TimeScaleControl granularity={granularity} setGranularity={setGranularity} />
       </div>
 
-      {/* ── Right Rail (docked, mode-switched) ── */}
+      {/* ── Right Rail (stacked: Diagnostics + Intelligence) ── */}
       <PositionRightRail>
-        {/* Mode tab bar */}
-        <div className={styles.railTabs}>
-          <button
-            type="button"
-            className={`${styles.railTab} ${railMode === "briefing" ? styles.railTabActive : ""}`}
-            onClick={() => setRailMode("briefing")}
-            title="Briefing"
-          >
-            ◈ Briefing
-          </button>
-          <button
-            type="button"
-            className={`${styles.railTab} ${railMode === "diagnostics" ? styles.railTabActive : ""}`}
-            onClick={() => setRailMode("diagnostics")}
+        {showDiagnostics && (
+          <CommandCentrePanel
+            groups={diagnosticGroups}
             title="Diagnostics"
-          >
-            ▣ Diagnostics
-          </button>
-          <button
-            type="button"
-            className={`${styles.railTab} ${railMode === "command" ? styles.railTabActive : ""}`}
-            onClick={() => setRailMode("command")}
-            title="Command Centre"
-          >
-            ⌘ Command
-          </button>
-        </div>
-
-        {/* Single panel per mode */}
-        {railMode === "briefing" && (
-          <>
-            <PositionBriefingPanel vm={vm} />
-            <AIInsightPanel
-              fullText={
-                vm
-                  ? `Position holds ${vm.state.toLowerCase()}. Confidence band ${vm.confidenceBand} at ${vm.confidencePct}%. Recommend maintaining current posture while monitoring downside variance channels.`
-                  : "Awaiting baseline initialisation. Once loaded, AI intelligence will stream strategic context, risk signals, and position diagnostics here."
-              }
-            />
-          </>
+            onClose={() => setShowDiagnostics(false)}
+          />
         )}
-        {railMode === "diagnostics" && <DiagnosticsStack vm={vm} />}
-        {railMode === "command" && (
-          <CommandCentrePanel groups={diagnosticGroups} title="Command Centre" />
-        )}
+        <BaselineIntelligencePanel />
       </PositionRightRail>
 
       <div className={styles.legendDock} aria-label="Terrain legend">

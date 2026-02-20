@@ -8,7 +8,7 @@ import {
   buildBaselineModel,
   evaluateStructuralScore,
 } from "@/logic/heat/structuralHeatEngine";
-import styles from "@/pages/baseline/BaselinePage.module.css";
+import styles from "./BaselineIntelligencePanel.module.css";
 
 function clamp(n: number, lo: number, hi: number) {
   return Math.max(lo, Math.min(hi, Number.isFinite(n) ? n : lo));

@@ -22,15 +22,24 @@ interface ToggleGroup {
 interface Props {
   groups: ToggleGroup[];
   title?: string;
+  onClose?: () => void;
 }
 
 export default function CommandCentrePanel({
   groups,
   title = "Command Centre",
+  onClose,
 }: Props) {
   return (
     <div className={styles.wrapper}>
-      <div className={styles.panelTitle}>{title}</div>
+      <div className={styles.panelTitle}>
+        <span>{title}</span>
+        {onClose && (
+          <button type="button" className={styles.closeBtn} onClick={onClose} aria-label="Close">
+            ×
+          </button>
+        )}
+      </div>
       <div className={styles.body}>
         {groups.map((group) => {
           const visibleItems = group.items.filter((i) => i.visible !== false);

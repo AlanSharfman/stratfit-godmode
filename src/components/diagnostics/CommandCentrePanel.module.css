@@ -13,10 +13,11 @@
   overflow: hidden;
 }
 
-/* ── Panel title (no collapse) ── */
+/* ── Panel title (with optional close button) ── */
 .panelTitle {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   width: 100%;
   padding: 10px 14px;
   border-bottom: 1px solid rgba(34, 211, 238, 0.08);
@@ -26,6 +27,26 @@
   letter-spacing: 0.20em;
   text-transform: uppercase;
   color: rgba(226, 232, 240, 0.88);
+}
+
+.closeBtn {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: rgba(226, 232, 240, 0.06);
+  border: 1px solid rgba(226, 232, 240, 0.08);
+  color: rgba(226, 232, 240, 0.55);
+  font-size: 14px;
+  cursor: pointer;
+  line-height: 1;
+  transition: all 0.15s ease;
+}
+
+.closeBtn:hover {
+  background: rgba(226, 232, 240, 0.12);
+  color: rgba(226, 232, 240, 0.9);
 }
 
 /* ── Body ── */
