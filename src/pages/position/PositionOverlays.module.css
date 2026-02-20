@@ -385,7 +385,8 @@
   backdrop-filter: blur(6px);
 }
 
-/* ── Overlay z-layer ─────────────────────────────────────── */
+/* ── Overlay z-layer (DEPRECATED — now using PositionRightRail) ── */
+/*
 .overlayLayer {
   position: absolute;
   top: 110px;
@@ -393,8 +394,10 @@
   z-index: 20;
   pointer-events: auto;
 }
+*/
 
-/* ── Command Dock ─────────────────────────────────────────── */
+/* ── Command Dock (DEPRECATED — now docked in RightRail) ── */
+/*
 .commandDock {
   position: absolute;
   top: 92px;
@@ -423,3 +426,4 @@
   background: rgba(0, 224, 255, 0.12);
   border-color: rgba(0, 224, 255, 0.45);
 }
+*/

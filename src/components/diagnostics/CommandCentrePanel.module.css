@@ -1,0 +1,174 @@
+/* ── CommandCentrePanel ──────────────────────────────────────────
+   Docked, collapsible panel for the Position right rail.
+   No backdrop / no modal overlay.
+   Typography: Inter (labels) · JetBrains Mono (state badges)
+   Palette: slate-900 base, cyan-400 accents
+   ────────────────────────────────────────────────────────────── */
+
+.wrapper {
+  border: 1px solid rgba(34, 211, 238, 0.12);
+  border-radius: 12px;
+  background: rgba(6, 10, 16, 0.88);
+  backdrop-filter: blur(14px) saturate(1.2);
+  overflow: hidden;
+}
+
+/* ── Collapse header ── */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.14s ease;
+}
+
+.header:hover {
+  background: rgba(34, 211, 238, 0.04);
+}
+
+.headerIcon {
+  font-size: 14px;
+  color: rgba(34, 211, 238, 0.75);
+  line-height: 1;
+}
+
+.headerTitle {
+  flex: 1;
+  text-align: left;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.20em;
+  text-transform: uppercase;
+  color: rgba(226, 232, 240, 0.88);
+}
+
+.chevron {
+  font-size: 14px;
+  color: rgba(226, 232, 240, 0.40);
+  transition: transform 0.2s ease;
+  transform: rotate(0deg);
+}
+
+.chevronOpen {
+  transform: rotate(90deg);
+}
+
+/* ── Body ── */
+.body {
+  padding: 4px 14px 14px;
+  border-top: 1px solid rgba(34, 211, 238, 0.08);
+}
+
+/* ── Group section ── */
+.group {
+  margin-bottom: 16px;
+}
+
+.group:last-child {
+  margin-bottom: 2px;
+}
+
+.groupHeading {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  color: rgba(34, 211, 238, 0.60);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  margin-top: 10px;
+  padding-left: 2px;
+  position: relative;
+}
+
+/* Left accent bar on group headers */
+.groupHeading::before {
+  content: "";
+  position: absolute;
+  left: -8px;
+  top: 1px;
+  width: 3px;
+  height: 10px;
+  border-radius: 2px;
+  background: rgba(34, 211, 238, 0.30);
+}
+
+/* ── Toggle list — pill grid ── */
+.toggleList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+/* ── Pill toggle button ── */
+.toggleBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(70, 227, 255, 0.10);
+  background: rgba(15, 20, 30, 0.50);
+
+  color: rgba(200, 220, 235, 0.72);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+
+  cursor: pointer;
+  transition: all 0.16s ease;
+  user-select: none;
+}
+
+.toggleBtn:hover {
+  border-color: rgba(70, 227, 255, 0.28);
+  background: rgba(34, 211, 238, 0.05);
+  color: rgba(220, 240, 255, 0.90);
+}
+
+.toggleBtn:active {
+  transform: scale(0.97);
+}
+
+/* ── Active state — cyan glow ── */
+.toggleBtnOn {
+  border-color: rgba(34, 211, 238, 0.45);
+  background: rgba(34, 211, 238, 0.09);
+  color: rgba(34, 211, 238, 0.92);
+  box-shadow:
+    0 0 6px rgba(34, 211, 238, 0.12),
+    inset 0 0 10px rgba(34, 211, 238, 0.04);
+}
+
+.toggleBtnOn:hover {
+  border-color: rgba(34, 211, 238, 0.58);
+  background: rgba(34, 211, 238, 0.12);
+}
+
+/* ── State badge (ON / OFF) ── */
+.toggleState {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(226, 232, 240, 0.05);
+  color: rgba(226, 232, 240, 0.35);
+  transition: all 0.16s ease;
+}
+
+.toggleStateOn {
+  background: rgba(34, 211, 238, 0.12);
+  color: rgba(34, 211, 238, 0.88);
+}

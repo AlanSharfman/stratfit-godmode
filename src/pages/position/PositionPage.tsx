@@ -8,10 +8,12 @@ import type { TimeGranularity } from "@/position/TimelineTicks"
 import { useSystemBaseline } from "@/system/SystemBaselineProvider"
 import { useScenarioStore } from "@/state/scenarioStore"
 import { useViewTogglesStore } from "@/state/viewTogglesStore"
+import { useRenderFlagsStore } from "@/state/renderFlagsStore"
 import { useSemanticBalance, DEFAULT_SHL_WEIGHTS } from "@/render/shl"
 import type { SemanticLayerKey } from "@/render/shl"
 
-import DiagnosticsDrawer from "@/components/diagnostics/DiagnosticsDrawer"
+import PositionRightRail from "@/components/position/PositionRightRail"
+import CommandCentrePanel from "@/components/diagnostics/CommandCentrePanel"
 import KPIOverlay from "./overlays/KPIOverlay"
 import PositionBriefingPanel from "./overlays/PositionBriefingPanel"
 import DiagnosticsStack from "./overlays/DiagnosticsStack"
@@ -37,14 +39,7 @@ function shlIsOn(weight: number): boolean {
 
 export default function PositionPage() {
   const [granularity, setGranularity] = useState<TimeGranularity>("quarter")
-  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false)
-
-  // Local toggles for narrative items without a dedicated store
-  const [envelopeOn, setEnvelopeOn] = useState(false)
-  const [watchDemoOn, setWatchDemoOn] = useState(false)
-  const [annotationsOn, setAnnotationsOn] = useState(false)
-  const [markersOn, setMarkersOn] = useState(false)
-  const [previewOn, setPreviewOn] = useState(false)
+  const [commandOpen, setCommandOpen] = useState(false)
 
   const navigate = useNavigate()
   const { baseline } = useSystemBaseline()
@@ -65,7 +60,10 @@ export default function PositionPage() {
     return buildPositionViewModel(baseline, { riskIndexFromEngine })
   }, [baseline, engineResults])
 
-  // --- SHL weights (semantic highlight layer) ---
+  // ── Render flags store ──
+  const renderFlags = useRenderFlagsStore()
+
+  // ── SHL weights (semantic highlight layer) ──
   const shlWeights = useSemanticBalance((s) => s.weights)
   const setWeight = useSemanticBalance((s) => s.setWeight)
 
@@ -76,19 +74,19 @@ export default function PositionPage() {
     [setWeight],
   )
 
-  // --- View toggles ---
+  // ── View toggles ──
   const heatmapEnabled = useViewTogglesStore((s) => s.heatmapEnabled)
   const toggleHeatmap = useViewTogglesStore((s) => s.toggleHeatmap)
 
-  // ── Diagnostic Groups (original NARRATIVE / FIELDS / TOPOGRAPHY) ──
+  // ── Diagnostic Groups (NARRATIVE / FIELDS / TOPOGRAPHY) ──
   const diagnosticGroups = [
     {
       heading: "NARRATIVE",
       items: [
         { id: "heatMap", label: "Heat Map", value: heatmapEnabled, onChange: () => toggleHeatmap() },
-        { id: "envelope", label: "Envelope", value: envelopeOn, onChange: (v: boolean) => setEnvelopeOn(v) },
-        { id: "watchDemo", label: "Watch Demo", value: watchDemoOn, onChange: (v: boolean) => setWatchDemoOn(v) },
-        { id: "annotations", label: "Annotations", value: annotationsOn, onChange: (v: boolean) => setAnnotationsOn(v) },
+        { id: "envelope", label: "Envelope", value: renderFlags.showEnvelope, onChange: () => renderFlags.toggle("showEnvelope") },
+        { id: "watchDemo", label: "Watch Demo", value: renderFlags.watchDemo, onChange: () => renderFlags.toggle("watchDemo") },
+        { id: "annotations", label: "Annotations", value: renderFlags.showAnnotations, onChange: () => renderFlags.toggle("showAnnotations") },
       ],
     },
     {
@@ -96,8 +94,8 @@ export default function PositionPage() {
       items: [
         { id: "riskField", label: "Risk Field", value: shlIsOn(shlWeights.risk), onChange: toggleShl("risk") },
         { id: "confidence", label: "Confidence", value: shlIsOn(shlWeights.confidence), onChange: toggleShl("confidence") },
-        { id: "markers", label: "Markers", value: markersOn, onChange: (v: boolean) => setMarkersOn(v) },
-        { id: "preview", label: "Preview", value: previewOn, onChange: (v: boolean) => setPreviewOn(v) },
+        { id: "markers", label: "Markers", value: renderFlags.showMarkers, onChange: () => renderFlags.toggle("showMarkers") },
+        { id: "preview", label: "Preview", value: renderFlags.showPreview, onChange: () => renderFlags.toggle("showPreview") },
         { id: "flow", label: "Flow", value: shlIsOn(shlWeights.flow), onChange: toggleShl("flow") },
         { id: "diverge", label: "Diverge", value: shlIsOn(shlWeights.divergence), onChange: toggleShl("divergence") },
       ],
@@ -124,33 +122,20 @@ export default function PositionPage() {
         <TimeScaleControl granularity={granularity} setGranularity={setGranularity} />
       </div>
 
-      <div className={styles.overlayLayer}>
-        <div className={styles.rightRail} aria-label="Position briefing">
-          <PositionBriefingPanel vm={vm} />
-          <DiagnosticsStack vm={vm} />
-        </div>
-      </div>
-
-      <div className={styles.legendDock} aria-label="Terrain legend">
-        <TerrainLegend />
-      </div>
-
-      {/* Command Centre — always visible in dev */}
-      <div className={styles.commandDock}>
-        <button
-          type="button"
-          className={styles.commandButton}
-          onClick={() => setDiagnosticsOpen(true)}
-          aria-label="Open Command Centre"
-        >
-          ⌘
-        </button>
-        <DiagnosticsDrawer
-          open={diagnosticsOpen}
-          onClose={() => setDiagnosticsOpen(false)}
+      {/* ── Right Rail (docked) ── */}
+      <PositionRightRail>
+        <PositionBriefingPanel vm={vm} />
+        <DiagnosticsStack vm={vm} />
+        <CommandCentrePanel
+          open={commandOpen}
+          onToggle={() => setCommandOpen((p) => !p)}
           groups={diagnosticGroups}
           title="Command Centre"
         />
+      </PositionRightRail>
+
+      <div className={styles.legendDock} aria-label="Terrain legend">
+        <TerrainLegend />
       </div>
 
       {!vm && (
