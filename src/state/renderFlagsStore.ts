@@ -7,6 +7,8 @@ import { create } from "zustand";
 export interface RenderFlags {
   showGrid: boolean;
   showMarkers: boolean;
+  showPaths: boolean;
+  showRiskField: boolean;
   showFlow: boolean;
   showHeat: boolean;
   showTopo: boolean;
@@ -23,8 +25,10 @@ interface RenderFlagsState extends RenderFlags {
 }
 
 const DEFAULTS: RenderFlags = {
-  showGrid: false,
-  showMarkers: false,
+  showGrid: true,
+  showMarkers: true,
+  showPaths: true,
+  showRiskField: true,
   showFlow: false,
   showHeat: false,
   showTopo: false,

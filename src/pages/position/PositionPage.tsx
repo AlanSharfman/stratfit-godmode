@@ -26,6 +26,8 @@ import {
 
 import styles from "./PositionOverlays.module.css"
 
+type RailMode = "briefing" | "diagnostics" | "command"
+
 function extractRiskIndex(engineResults: unknown): number | null {
   const r = engineResults as any
   const v = r?.base?.kpis?.riskIndex?.value
@@ -39,7 +41,7 @@ function shlIsOn(weight: number): boolean {
 
 export default function PositionPage() {
   const [granularity, setGranularity] = useState<TimeGranularity>("quarter")
-  const [commandOpen, setCommandOpen] = useState(false)
+  const [railMode, setRailMode] = useState<RailMode>("briefing")
 
   const navigate = useNavigate()
   const { baseline } = useSystemBaseline()
@@ -122,16 +124,42 @@ export default function PositionPage() {
         <TimeScaleControl granularity={granularity} setGranularity={setGranularity} />
       </div>
 
-      {/* ── Right Rail (docked) ── */}
+      {/* ── Right Rail (docked, mode-switched) ── */}
       <PositionRightRail>
-        <PositionBriefingPanel vm={vm} />
-        <DiagnosticsStack vm={vm} />
-        <CommandCentrePanel
-          open={commandOpen}
-          onToggle={() => setCommandOpen((p) => !p)}
-          groups={diagnosticGroups}
-          title="Command Centre"
-        />
+        {/* Mode tab bar */}
+        <div className={styles.railTabs}>
+          <button
+            type="button"
+            className={`${styles.railTab} ${railMode === "briefing" ? styles.railTabActive : ""}`}
+            onClick={() => setRailMode("briefing")}
+            title="Briefing"
+          >
+            ◈ Briefing
+          </button>
+          <button
+            type="button"
+            className={`${styles.railTab} ${railMode === "diagnostics" ? styles.railTabActive : ""}`}
+            onClick={() => setRailMode("diagnostics")}
+            title="Diagnostics"
+          >
+            ▣ Diagnostics
+          </button>
+          <button
+            type="button"
+            className={`${styles.railTab} ${railMode === "command" ? styles.railTabActive : ""}`}
+            onClick={() => setRailMode("command")}
+            title="Command Centre"
+          >
+            ⌘ Command
+          </button>
+        </div>
+
+        {/* Single panel per mode */}
+        {railMode === "briefing" && <PositionBriefingPanel vm={vm} />}
+        {railMode === "diagnostics" && <DiagnosticsStack vm={vm} />}
+        {railMode === "command" && (
+          <CommandCentrePanel groups={diagnosticGroups} title="Command Centre" />
+        )}
       </PositionRightRail>
 
       <div className={styles.legendDock} aria-label="Terrain legend">
