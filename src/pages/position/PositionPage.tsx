@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useState } from "react"
 import { useShallow } from "zustand/react/shallow"
 
 import TerrainStage from "@/terrain/TerrainStage"
+import SceneStack from "@/terrain/SceneStack"
 import type { TimeGranularity } from "@/position/TimelineTicks"
 
 import { useSystemBaseline } from "@/system/SystemBaselineProvider"
@@ -106,7 +107,9 @@ export default function PositionPage() {
 
   return (
     <div className={styles.page}>
-      <TerrainStage granularity={granularity} />
+      <TerrainStage>
+        <SceneStack granularity={granularity} />
+      </TerrainStage>
 
       <div className={styles.kpiDock} aria-label="Position KPIs">
         <KPIOverlay vm={vm} />
