@@ -22,8 +22,6 @@ import styles from "./InitializeBaselinePage.module.css"
 import { useSystemBaseline } from "@/system/SystemBaselineProvider"
 import { SystemBlueprintBackground } from "@/components/system/SystemBlueprintBackground"
 import type { BaselineV1 } from "@/onboard/baseline"
-import TerrainStage from "@/terrain/TerrainStage"
-import { TerrainWithFallback } from "@/components/terrain/TerrainFallback2D"
 
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -459,19 +457,6 @@ export default function InitializeBaselinePage() {
             <span className={styles.progress}>
               Step {currentIdx + 1} of {MODULES.length}
             </span>
-
-            {/* Structural Preview — REAL 3D mountain terrain (WebGL w/ 2.5D fallback) */}
-            <div className={styles.mountainCard} aria-label="Structural preview">
-              <div className={styles.mountainCardHeader}>
-                <span className={styles.mountainCardLabel}>Structural preview</span>
-                <span className={styles.mountainCardMeta}>Live baseline terrain</span>
-              </div>
-              <div className={styles.mountainViewport}>
-                <TerrainWithFallback>
-                  <TerrainStage />
-                </TerrainWithFallback>
-              </div>
-            </div>
           </div>
         </header>
 
