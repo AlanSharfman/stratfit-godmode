@@ -68,11 +68,11 @@ export default function TerrainStage({ granularity }: TerrainStageProps) {
     <Canvas
       style={{ position: "absolute", inset: 0, zIndex: 0 }}
       dpr={[1, 2]}
-      camera={{ position: [0, 110, 220], fov: 42, near: 0.1, far: 5000 }}
+      camera={{ position: [0, 143, 286], fov: 42, near: 0.1, far: 5000 }}
       gl={{ antialias: true, alpha: false }}
       onCreated={({ camera, gl, scene }) => {
         // Deterministic camera lock (prevents "close-up blob / drift")
-        camera.position.set(0, 110, 220);
+        camera.position.set(0, 143, 286);
         camera.lookAt(0, 0, 0);
         camera.updateProjectionMatrix();
 
