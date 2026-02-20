@@ -29,10 +29,7 @@ function extractRiskIndex(engineResults: unknown): number | null {
 
 export default function PositionPage() {
   const [granularity, setGranularity] = useState<TimeGranularity>("quarter")
-  const [drawerOpen, setDrawerOpen] = useState(false)
-
-  const ENABLE_COMMAND_CENTRE =
-    typeof window !== "undefined" && window.localStorage.getItem("ENABLE_COMMAND_CENTRE") === "1"
+  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false)
 
   const navigate = useNavigate()
   const { baseline } = useSystemBaseline()
@@ -52,6 +49,23 @@ export default function PositionPage() {
     const riskIndexFromEngine = extractRiskIndex(engineResults)
     return buildPositionViewModel(baseline, { riskIndexFromEngine })
   }, [baseline, engineResults])
+
+  const diagnosticGroups = [
+    {
+      heading: "Render",
+      items: [
+        { id: "showGrid", label: "Show Grid", value: false, onChange: () => {} },
+        { id: "showMarkers", label: "Show Markers", value: false, onChange: () => {} },
+      ],
+    },
+    {
+      heading: "Simulation",
+      items: [
+        { id: "freezeSim", label: "Freeze Simulation", value: false, onChange: () => {} },
+        { id: "showPaths", label: "Show Paths", value: false, onChange: () => {} },
+      ],
+    },
+  ]
 
   return (
     <div className={styles.page}>
@@ -76,24 +90,23 @@ export default function PositionPage() {
         <TerrainLegend />
       </div>
 
-      {ENABLE_COMMAND_CENTRE && (
+      {/* Command Centre — always visible in dev */}
       <div className={styles.commandDock}>
         <button
           type="button"
-          className={styles.commandTrigger}
-          onClick={() => setDrawerOpen(true)}
+          className={styles.commandButton}
+          onClick={() => setDiagnosticsOpen(true)}
           aria-label="Open Command Centre"
         >
           ⌘
         </button>
         <DiagnosticsDrawer
-          open={drawerOpen}
-          onClose={() => setDrawerOpen(false)}
-          groups={[]}
+          open={diagnosticsOpen}
+          onClose={() => setDiagnosticsOpen(false)}
+          groups={diagnosticGroups}
           title="Command Centre"
         />
       </div>
-      )}
 
       {!vm && (
         <div className={styles.noBaselineHint}>
