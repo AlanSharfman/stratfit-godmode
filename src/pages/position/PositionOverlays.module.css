@@ -428,12 +428,17 @@
 }
 */
 
-/* ── Rail mode tabs ─────────────────────────────────────────── */
+/* ── Rail mode tabs (Briefing / Diagnostics / Command) ── */
 .railTabs {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+
   display: flex;
   gap: 4px;
   padding: 4px;
   border-radius: 10px;
+
   background: rgba(6, 10, 16, 0.82);
   border: 1px solid rgba(34, 211, 238, 0.10);
   backdrop-filter: blur(12px);
@@ -445,15 +450,17 @@
   border-radius: 7px;
   border: 1px solid transparent;
   background: transparent;
-  font-family: 'Inter', system-ui, sans-serif;
+
+  font-family: var(--sf-sans);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.10em;
   text-transform: uppercase;
   color: rgba(148, 163, 184, 0.60);
+  white-space: nowrap;
+
   cursor: pointer;
   transition: all 0.15s ease;
-  white-space: nowrap;
 }
 
 .railTab:hover {
