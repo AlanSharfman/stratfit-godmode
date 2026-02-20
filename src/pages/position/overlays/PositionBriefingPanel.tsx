@@ -30,6 +30,27 @@ export default function PositionBriefingPanel({ vm }: { vm: PositionViewModel | 
             {vm ? `${vm.confidenceBand} · ${vm.confidencePct}%` : "—"}
           </span>
         </div>
+
+        {vm?.objectives && (
+          <div className={styles.briefingSection}>
+            <div className={styles.briefingTitle}>Objective</div>
+
+            <div className={styles.briefingRow}>
+              <span>Mode:</span>
+              <span>{vm.objectives.mode}</span>
+            </div>
+
+            <div className={styles.briefingRow}>
+              <span>Lens:</span>
+              <span>{vm.objectives.lens}</span>
+            </div>
+
+            <div className={styles.briefingRow}>
+              <span>Horizon:</span>
+              <span>{vm.objectives.horizonMonths} months</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

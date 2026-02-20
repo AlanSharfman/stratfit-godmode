@@ -218,6 +218,32 @@
   color: rgba(214, 246, 255, 0.88);
 }
 
+/* ── Briefing Section (objectives block) ── */
+.briefingSection {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(182, 228, 255, 0.1);
+}
+
+.briefingTitle {
+  font-family: var(--sf-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(52, 211, 153, 0.85);
+  margin-bottom: 6px;
+}
+
+.briefingRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--sf-mono);
+  font-size: 11px;
+  color: rgba(182, 228, 255, 0.7);
+  padding: 2px 0;
+}
+
 .diagStack {
   display: flex;
   flex-direction: column;
