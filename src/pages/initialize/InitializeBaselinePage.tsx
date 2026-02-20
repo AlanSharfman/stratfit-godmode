@@ -353,7 +353,7 @@ export default function InitializeBaselinePage() {
     commitBaseline(baseline) // canonical truth
     clearDraft() // prevents override on return
     setHasDraft(false)
-    navigate("/objectives", { replace: true })
+    navigate("/position", { replace: true })
   }, [baseline, commitBaseline, navigate])
 
   // ── Step actions ──────────────────────────────────────────────────────
