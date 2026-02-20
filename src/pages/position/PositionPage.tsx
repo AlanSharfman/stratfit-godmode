@@ -30,6 +30,9 @@ export default function PositionPage() {
   const [granularity, setGranularity] = useState<TimeGranularity>("quarter")
   const [drawerOpen, setDrawerOpen] = useState(false)
 
+  const ENABLE_COMMAND_CENTRE =
+    typeof window !== "undefined" && window.localStorage.getItem("ENABLE_COMMAND_CENTRE") === "1"
+
   const { baseline } = useSystemBaseline()
 
   const { engineResults } = useScenarioStore(
@@ -67,6 +70,7 @@ export default function PositionPage() {
         <TerrainLegend />
       </div>
 
+      {ENABLE_COMMAND_CENTRE && (
       <div className={styles.commandDock}>
         <button
           type="button"
@@ -83,6 +87,7 @@ export default function PositionPage() {
           title="Command Centre"
         />
       </div>
+      )}
 
       {!vm && (
         <div className={styles.noBaselineHint}>
