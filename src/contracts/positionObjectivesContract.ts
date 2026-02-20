@@ -5,49 +5,20 @@
 // - Position renders from Initiate (no Objectives dependency)
 // - Objectives defines intent/targets/constraints (overlays later; must not reshape terrain)
 
+import type { BaselineV1 } from "@/onboard/baseline/types";
+
+export type { BaselineV1 };
+
 export type ISODateString = string;
 
 export type Vec3 = { x: number; y: number; z: number };
 
 // ─────────────────────────────────────────────────────────────
 // InitiateSnapshot — source of truth inputs (current state)
-// Allow aliases so we can map to existing fields without refactors.
+// Aliased directly to BaselineV1: the canonical typed runtime shape.
 // ─────────────────────────────────────────────────────────────
 
-export interface InitiateSnapshot {
-  companyName: string;
-  currency?: string;
-
-  // canonical
-  startingCash?: number;
-  monthlyNetBurn?: number;
-  runwayMonths?: number;
-  timeHorizonMonths?: number; // default 36 if absent
-  asOfDate?: ISODateString;
-
-  // aliases commonly found in older code
-  cash?: number;
-  cashBalance?: number;
-  starting_cash?: number;
-
-  burn?: number;
-  burnRate?: number;
-  netBurn?: number;
-  monthlyBurn?: number;
-
-  runway?: number;
-  runway_months?: number;
-
-  // optional starters
-  startingARR?: number;
-  startingRevenue?: number;
-  startingEBITDA?: number;
-  debt?: number;
-  creditLimit?: number;
-
-  // freeform extension (kept last so TS intellisense prefers known fields)
-  [k: string]: unknown;
-}
+export type InitiateSnapshot = BaselineV1;
 
 // ─────────────────────────────────────────────────────────────
 // PositionState — derived, read-only presentation layer

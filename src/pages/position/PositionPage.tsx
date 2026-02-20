@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from "react"
+import React, { useEffect, useMemo, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { useShallow } from "zustand/react/shallow"
 
 import TerrainStage from "@/terrain/TerrainStage"
@@ -33,7 +34,12 @@ export default function PositionPage() {
   const ENABLE_COMMAND_CENTRE =
     typeof window !== "undefined" && window.localStorage.getItem("ENABLE_COMMAND_CENTRE") === "1"
 
+  const navigate = useNavigate()
   const { baseline } = useSystemBaseline()
+
+  useEffect(() => {
+    if (!baseline) navigate("/initiate", { replace: true })
+  }, [baseline, navigate])
 
   const { engineResults } = useScenarioStore(
     useShallow((s) => ({
