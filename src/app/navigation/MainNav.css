@@ -1,43 +1,108 @@
-/* src/app/navigation/MainNav.css */
-/* STRATFIT — Primary Navigation Styles */
+/* ── MainNav.css ──────────────────────────────────────────────────────
+   STRATFIT Primary Navigation
+   Contract: STRATFIT_NAV_UX_SPEC_v1
+   Groups:  SETUP → UNDERSTAND → EXPLORE → ANALYZE → DECIDE
+   Typography: Inter (semibold labels, mono-weight hierarchy)
+   Palette: slate-900 base, cyan-400 active accent
+   ──────────────────────────────────────────────────────────────────── */
 
+/* ── Bar chrome ── */
 .mainNav {
     position: fixed;
     left: 16px;
-    top: 12px;
+    top: 14px;
     z-index: 50;
+
     display: flex;
-    gap: 10px;
-    padding: 10px 12px;
+    align-items: center;
+    gap: 0;
+    padding: 6px 8px;
     border-radius: 14px;
-    background: rgba(2, 6, 23, 0.55);
-    border: 1px solid rgba(34, 211, 238, 0.18);
-    backdrop-filter: blur(12px);
+
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: rgba(4, 8, 16, 0.72);
+    border: 1px solid rgba(34, 211, 238, 0.12);
+    backdrop-filter: blur(18px) saturate(1.3);
+
+    box-shadow:
+        0 0 0 1px rgba(34, 211, 238, 0.04),
+        0 6px 28px rgba(0, 0, 0, 0.45);
 }
 
-.mainNav .navItem {
+/* ── Visual group — separated by vertical divider ── */
+.navGroup {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Divider between groups */
+.navGroup + .navGroup {
+    margin-left: 6px;
+    padding-left: 6px;
+    border-left: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+/* ── Nav item pill ── */
+.navItem {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     height: 30px;
-    padding: 0 10px;
-    border-radius: 12px;
-    text-decoration: none;
-    font-size: 12px;
+    padding: 0 12px;
+    border-radius: 8px;
+
+    font-size: 11px;
     font-weight: 600;
-    letter-spacing: 0.2px;
-    color: rgba(226, 232, 240, 0.86);
-    border: 1px solid rgba(148, 163, 184, 0.12);
-    background: rgba(15, 23, 42, 0.35);
-    transition: border-color 0.15s ease, background 0.15s ease;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    text-transform: none;
+
+    color: rgba(226, 232, 240, 0.65);
+    background: transparent;
+    border: 1px solid transparent;
+
+    cursor: pointer;
+    transition: all 0.16s ease;
+    user-select: none;
 }
 
-.mainNav .navItem:hover {
-    border-color: rgba(34, 211, 238, 0.28);
+.navItem:hover {
+    color: rgba(226, 232, 240, 0.88);
+    background: rgba(226, 232, 240, 0.04);
+    border-color: rgba(148, 163, 184, 0.12);
 }
 
-.mainNav .navItem.active {
-    color: rgba(226, 232, 240, 0.98);
-    border-color: rgba(34, 211, 238, 0.55);
-    background: rgba(2, 6, 23, 0.65);
-    box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.12) inset;
+/* ── Active state — accent highlight + glow ── */
+.navItem.active {
+    color: rgba(34, 211, 238, 0.95);
+    font-weight: 700;
+    background: rgba(34, 211, 238, 0.08);
+    border-color: rgba(34, 211, 238, 0.32);
+    box-shadow:
+        0 0 8px rgba(34, 211, 238, 0.10),
+        inset 0 0 10px rgba(34, 211, 238, 0.04);
+}
+
+/* Bottom accent bar on active */
+.navItem.active::after {
+    content: "";
+    position: absolute;
+    bottom: -1px;
+    left: 25%;
+    right: 25%;
+    height: 2px;
+    border-radius: 1px;
+    background: rgba(34, 211, 238, 0.55);
+}
+
+/* Position relative for ::after pseudo */
+.navItem {
+    position: relative;
+}
+
+/* ── Focus visible (keyboard nav) ── */
+.navItem:focus-visible {
+    outline: 2px solid rgba(34, 211, 238, 0.5);
+    outline-offset: 2px;
 }
