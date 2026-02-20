@@ -66,7 +66,7 @@
     background-position: center 60%;
     background-repeat: no-repeat;
     /* darken so neon terrain reads clearly */
-    filter: brightness(0.35) saturate(0.6);
+    filter: brightness(0.55) saturate(0.75);
     z-index: 0;
 }
 
