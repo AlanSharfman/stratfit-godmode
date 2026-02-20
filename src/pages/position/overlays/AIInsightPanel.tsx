@@ -32,9 +32,12 @@ export default function AIInsightPanel({ fullText, className }: AIInsightPanelPr
 
   return (
     <div className={[styles.root, className].filter(Boolean).join(" ")}>
-      <span className={[styles.text, done ? styles.done : ""].filter(Boolean).join(" ")}>
-        {visibleText}
-      </span>
+      <div className={styles.title}>AI Intelligence</div>
+      <div className={styles.body}>
+        <span className={[styles.text, done ? styles.done : ""].filter(Boolean).join(" ")}>
+          {visibleText}
+        </span>
+      </div>
     </div>
   )
 }

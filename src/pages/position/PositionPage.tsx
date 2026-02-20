@@ -16,6 +16,7 @@ import PositionRightRail from "@/components/position/PositionRightRail"
 import CommandCentrePanel from "@/components/diagnostics/CommandCentrePanel"
 import KPIOverlay from "./overlays/KPIOverlay"
 import PositionBriefingPanel from "./overlays/PositionBriefingPanel"
+import AIInsightPanel from "./overlays/AIInsightPanel"
 import DiagnosticsStack from "./overlays/DiagnosticsStack"
 import TerrainLegend from "./overlays/TerrainLegend"
 import TimeScaleControl from "./overlays/TimeScaleControl"
@@ -156,7 +157,18 @@ export default function PositionPage() {
         </div>
 
         {/* Single panel per mode */}
-        {railMode === "briefing" && <PositionBriefingPanel vm={vm} />}
+        {railMode === "briefing" && (
+          <>
+            <PositionBriefingPanel vm={vm} />
+            <AIInsightPanel
+              fullText={
+                vm
+                  ? `Position holds ${vm.state.toLowerCase()}. Confidence band ${vm.confidenceBand} at ${vm.confidencePct}%. Recommend maintaining current posture while monitoring downside variance channels.`
+                  : "Awaiting baseline initialisation. Once loaded, AI intelligence will stream strategic context, risk signals, and position diagnostics here."
+              }
+            />
+          </>
+        )}
         {railMode === "diagnostics" && <DiagnosticsStack vm={vm} />}
         {railMode === "command" && (
           <CommandCentrePanel groups={diagnosticGroups} title="Command Centre" />
