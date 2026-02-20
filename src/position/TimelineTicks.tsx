@@ -5,7 +5,7 @@
 // Tick t-values are chosen by arc length so months are visually even.
 
 import React, { useEffect, useMemo, useState } from "react"
-import { Line, Html } from "@react-three/drei"
+import { Line, Html, Billboard } from "@react-three/drei"
 import * as THREE from "three"
 import type { TerrainSurfaceHandle } from "@/terrain/TerrainSurface"
 import { TERRAIN_CONSTANTS } from "@/terrain/terrainConstants"
@@ -278,33 +278,50 @@ export default function TimelineTicks({
             opacity={OPACITY_TICK[tick.weight]}
           />
 
-          {/* Label plaque — dark glass, readable at default camera */}
+          {/* Tactical radar blip — core sphere + billboard halo ring */}
           {tick.showLabel && (
-            <Html
-              position={[tick.railPt.x, tick.railPt.y + 4.0, tick.railPt.z]}
-              center
-              zIndexRange={[10, 20]}
-              style={{ pointerEvents: "none", userSelect: "none" }}
-            >
-              <div style={{
-                display:         "inline-block",
-                background:      "rgba(8,12,18,0.55)",
-                backdropFilter:  "blur(6px)",
-                border:          "1px solid rgba(0,224,255,0.18)",
-                boxShadow:       "0 4px 14px rgba(0,0,0,0.35), inset 0 0 8px rgba(0,224,255,0.08)",
-                borderRadius:    "6px",
-                padding:         "3px 8px",
-                fontFamily:      "ui-monospace,'JetBrains Mono','Consolas',monospace",
-                fontSize:        "11px",
-                letterSpacing:   "0.06em",
-                color:           "rgba(210,235,255,0.9)",
-                whiteSpace:      "nowrap",
-                lineHeight:      "1.1",
-                textTransform:   "uppercase" as const,
-              }}>
-                {tick.label}
-              </div>
-            </Html>
+            <group position={[tick.railPt.x, tick.railPt.y, tick.railPt.z]}>
+              {/* Core sphere — emissive amber, blooms */}
+              <mesh>
+                <sphereGeometry args={[1.2, 16, 16]} />
+                <meshStandardMaterial color="#FF5722" emissive="#FF5722" emissiveIntensity={4.0} toneMapped={false} />
+              </mesh>
+
+              {/* Halo ring — always faces camera */}
+              <Billboard follow lockX={false} lockY={false} lockZ={false}>
+                <mesh>
+                  <ringGeometry args={[2.5, 3.5, 32]} />
+                  <meshBasicMaterial color="#FF5722" transparent opacity={0.35} side={THREE.DoubleSide} toneMapped={false} />
+                </mesh>
+              </Billboard>
+
+              {/* Label plaque — dark glass, readable at default camera */}
+              <Html
+                position={[0, 5.5, 0]}
+                center
+                zIndexRange={[10, 20]}
+                style={{ pointerEvents: "none", userSelect: "none" }}
+              >
+                <div style={{
+                  display:         "inline-block",
+                  background:      "rgba(8,12,18,0.65)",
+                  backdropFilter:  "blur(6px)",
+                  border:          "1px solid rgba(255,87,34,0.35)",
+                  boxShadow:       "0 4px 14px rgba(0,0,0,0.40), 0 0 12px rgba(255,87,34,0.15)",
+                  borderRadius:    "6px",
+                  padding:         "3px 8px",
+                  fontFamily:      "ui-monospace,'JetBrains Mono','Consolas',monospace",
+                  fontSize:        "11px",
+                  letterSpacing:   "0.06em",
+                  color:           "rgba(255,200,170,0.92)",
+                  whiteSpace:      "nowrap",
+                  lineHeight:      "1.1",
+                  textTransform:   "uppercase" as const,
+                }}>
+                  {tick.label}
+                </div>
+              </Html>
+            </group>
           )}
 
         </React.Fragment>
