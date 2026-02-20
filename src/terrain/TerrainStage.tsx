@@ -28,6 +28,7 @@ import { baselineSeedString } from "@/terrain/seed";
 import MarkerLayer from "@/components/terrain/markers/MarkerLayer";
 import LiquidityFlowLayer from "@/components/terrain/liquidity/LiquidityFlowLayer";
 import HorizonBand from "@/components/position/HorizonBand";
+import { useRenderFlagsStore } from "@/state/renderFlagsStore";
 
 type TerrainStageProps = {
   granularity?: TimeGranularity
@@ -40,8 +41,10 @@ export default function TerrainStage({ granularity }: TerrainStageProps) {
   const rebuildKey = baselineSeedString(baseline as any);
   const horizonMonths = (baseline as any)?.posture?.horizonMonths ?? 36;
 
-  // The R3F reconciler commits TerrainSurface's useImperativeHandle in a
-  // separate cycle from DOM effects. Poll until the ref is populated.
+  // ── Render flags ──
+  const { showMarkers, showFlow, showPaths } = useRenderFlagsStore();
+  // TODO: wire showGrid → TerrainSurface grid prop when available
+  // TODO: wire showRiskField → RiskFieldLayer when implemented
   useEffect(() => {
     if (terrainReady) return;
     let cancelled = false;
@@ -104,10 +107,12 @@ export default function TerrainStage({ granularity }: TerrainStageProps) {
         <TerrainSurface ref={terrainRef} />
         {terrainReady && (
           <>
-            <P50Path terrainRef={terrainRef} rebuildKey={rebuildKey} />
+            {showPaths && (
+              <P50Path terrainRef={terrainRef} rebuildKey={rebuildKey} />
+            )}
             <TimelineTicks terrainRef={terrainRef} granularity={granularity} horizonMonths={horizonMonths} rebuildKey={rebuildKey} />
-            <LiquidityFlowLayer terrainRef={terrainRef} enabled />
-            <MarkerLayer terrainRef={terrainRef} enabled />
+            <LiquidityFlowLayer terrainRef={terrainRef} enabled={showFlow} />
+            <MarkerLayer terrainRef={terrainRef} enabled={showMarkers} />
           </>
         )}
       </Suspense>

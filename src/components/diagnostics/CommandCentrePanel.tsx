@@ -1,7 +1,7 @@
 /**
- * CommandCentrePanel — Docked collapsible panel for the Position right rail.
- * Replaces the modal DiagnosticsDrawer on /position.
- * Renders NARRATIVE / FIELDS / TOPOGRAPHY toggle groups inline.
+ * CommandCentrePanel — Docked panel for Position right rail.
+ * Renders NARRATIVE / FIELDS / TOPOGRAPHY as full-width row toggles.
+ * No collapse — rail-mode switching is handled by PositionPage.
  */
 import React from "react";
 import styles from "./CommandCentrePanel.module.css";
@@ -20,69 +20,46 @@ interface ToggleGroup {
 }
 
 interface Props {
-  open: boolean;
-  onToggle: () => void;
   groups: ToggleGroup[];
   title?: string;
 }
 
 export default function CommandCentrePanel({
-  open,
-  onToggle,
   groups,
   title = "Command Centre",
 }: Props) {
   return (
     <div className={styles.wrapper}>
-      {/* Header — always visible, acts as collapse toggle */}
-      <button
-        type="button"
-        className={styles.header}
-        onClick={onToggle}
-        aria-expanded={open}
-        aria-controls="command-centre-body"
-      >
-        <span className={styles.headerIcon}>⌘</span>
-        <span className={styles.headerTitle}>{title}</span>
-        <span className={`${styles.chevron} ${open ? styles.chevronOpen : ""}`}>
-          ›
-        </span>
-      </button>
+      <div className={styles.panelTitle}>{title}</div>
+      <div className={styles.body}>
+        {groups.map((group) => {
+          const visibleItems = group.items.filter((i) => i.visible !== false);
+          if (visibleItems.length === 0) return null;
 
-      {/* Body — collapsible */}
-      {open && (
-        <div id="command-centre-body" className={styles.body}>
-          {groups.map((group) => {
-            const visibleItems = group.items.filter(
-              (i) => i.visible !== false,
-            );
-            if (visibleItems.length === 0) return null;
-
-            return (
-              <div key={group.heading} className={styles.group}>
-                <div className={styles.groupHeading}>{group.heading}</div>
-                <div className={styles.toggleList}>
-                  {visibleItems.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => item.onChange(!item.value)}
-                      className={`${styles.toggleBtn} ${item.value ? styles.toggleBtnOn : ""}`}
+          return (
+            <div key={group.heading} className={styles.group}>
+              <div className={styles.groupHeading}>{group.heading}</div>
+              <div className={styles.toggleList}>
+                {visibleItems.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => item.onChange(!item.value)}
+                    className={`${styles.toggleRow} ${item.value ? styles.toggleRowOn : ""}`}
+                  >
+                    <span className={styles.rowLabel}>{item.label}</span>
+                    <span
+                      className={`${styles.toggleState} ${item.value ? styles.toggleStateOn : ""}`}
                     >
-                      <span>{item.label}</span>
-                      <span
-                        className={`${styles.toggleState} ${item.value ? styles.toggleStateOn : ""}`}
-                      >
-                        {item.value ? "ON" : "OFF"}
-                      </span>
-                    </button>
-                  ))}
-                </div>
+                      {item.value ? "ON" : "OFF"}
+                    </span>
+                  </button>
+                ))}
               </div>
-            );
-          })}
-        </div>
-      )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
