@@ -55,12 +55,19 @@ const TerrainSurface = forwardRef<TerrainSurfaceHandle, object>(function Terrain
   }, [wireMat])
 
   useEffect(() => {
-    for (const ref of [solidRef, latticeRef]) {
-      if (!ref.current) continue
-      ref.current.rotation.x = -Math.PI / 2
-      ref.current.position.set(0, -6, 0)
-      ref.current.scale.set(1, 1, 1)
-      ref.current.frustumCulled = false
+    // Solid terrain anchored at base Y
+    if (solidRef.current) {
+      solidRef.current.rotation.x = -Math.PI / 2
+      solidRef.current.position.set(0, -6, 0)
+      solidRef.current.scale.set(1, 1, 1)
+      solidRef.current.frustumCulled = false
+    }
+    // Wireframe grid lifted +0.05 — anti-Z-fighting moat
+    if (latticeRef.current) {
+      latticeRef.current.rotation.x = -Math.PI / 2
+      latticeRef.current.position.set(0, -5.95, 0)
+      latticeRef.current.scale.set(1, 1, 1)
+      latticeRef.current.frustumCulled = false
     }
   }, [])
 

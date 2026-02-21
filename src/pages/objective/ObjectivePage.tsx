@@ -70,19 +70,13 @@ export default function ObjectivePage() {
 
         {/* Center: Structural Demands (The Cost of Ambition) */}
         <div className={styles.centerColumn}>
-          <div className={styles.trajectoryRibbon} aria-hidden="true" />
-          <div className={styles.centerColumnContent}>
-            <StructuralDemandPanel />
-          </div>
+          <StructuralDemandPanel />
         </div>
 
         {/* Right: Tension Intelligence (Board-Level Narrative) */}
         <div className={styles.rightColumn}>
           <ObjectiveIntelligencePanel />
         </div>
-
-        {/* Crest silhouette overlay */}
-        <div className={styles.crestSilhouette} />
       </div>
     </div>
   );

@@ -19,7 +19,7 @@ function lerp(a: number, b: number, t: number) {
  * Flows organically over the terrain, hugging contours with gravity and momentum.
  * Two passes: outer glow (wider, softer) + inner core (bright, sharp).
  */
-export default function P50Path({ terrainRef, hoverOffset = 0.85, rebuildKey }: Props) {
+export default function P50Path({ terrainRef, hoverOffset = 0.20, rebuildKey }: Props) {
   const [points, setPoints] = useState<THREE.Vector3[]>([])
 
   const x0 = useMemo(() => -TERRAIN_CONSTANTS.width * 0.36, [])

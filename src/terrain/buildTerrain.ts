@@ -75,19 +75,20 @@ function getSeedModel(seed: number, params: typeof TERRAIN_CONSTANTS): SeedModel
 
     const rand = mulberry32(seed);
 
-    const peaks = Array.from({ length: 5 }).map(() => {
-        const px = lerp(-params.width * 0.28, params.width * 0.28, rand());
-        const pz = lerp(-params.depth * 0.18, params.depth * 0.18, rand());
-        const amp = lerp(9, 22, rand());
-        const spread = lerp(10, 22, rand());
+    // 8 dramatic mountain peaks — taller amplitudes, wider spread
+    const peaks = Array.from({ length: 8 }).map(() => {
+        const px = lerp(-params.width * 0.34, params.width * 0.34, rand());
+        const pz = lerp(-params.depth * 0.22, params.depth * 0.22, rand());
+        const amp = lerp(12, 32, rand());
+        const spread = lerp(14, 28, rand());
         return { px, pz, amp, spread };
     });
 
     const ridgeAngle = lerp(-0.6, 0.6, rand());
     const ridgeDir = new THREE.Vector2(Math.cos(ridgeAngle), Math.sin(ridgeAngle)).normalize();
     const ridgeCenter = new THREE.Vector2(lerp(-8, 8, rand()), lerp(-6, 6, rand()));
-    const ridgeAmp = lerp(5, 10, rand());
-    const ridgeWidth = lerp(10, 18, rand());
+    const ridgeAmp = lerp(6, 12, rand());
+    const ridgeWidth = lerp(12, 22, rand());
 
     const model: SeedModel = { peaks, ridgeDir, ridgeCenter, ridgeAmp, ridgeWidth, seed };
     SEED_MODEL_CACHE.set(seed, model);
@@ -139,6 +140,13 @@ function heightfieldFromModel(
     const ridgeShape = Math.exp(-(cross * cross) / (model.ridgeWidth * model.ridgeWidth));
     h += model.ridgeAmp * ridgeShape * 3.5;
 
+    // 3b) Strategic valley — gentle depression along central trajectory corridor
+    // This creates the natural channel the P50 path flows through
+    const valleyWidth = 40;
+    const valleyDepth = 4.5;
+    const valleyFalloff = Math.exp(-(z * z) / (valleyWidth * valleyWidth));
+    h -= valleyDepth * valleyFalloff * smoothstep(0.0, 1.0, 1.0 - Math.abs(x) / (params.width * 0.42));
+
     // 4) Edge falloff so edges don't look like a table
     const edge = smoothstep(
         0.0,
@@ -149,10 +157,9 @@ function heightfieldFromModel(
     h *= lerp(0.35, 1.0, edge);
 
     // 5) Clamp + shape
-    // Optional realism tweak: slightly reduce overall amplitude.
-    h *= 0.85;
-    h = Math.max(-2.0, h);
-    h = Math.pow(Math.max(0, h), 1.05) + Math.min(0, h);
+    h *= 0.90;
+    h = Math.max(-2.5, h);
+    h = Math.pow(Math.max(0, h), 1.08) + Math.min(0, h);
 
     return h;
 }

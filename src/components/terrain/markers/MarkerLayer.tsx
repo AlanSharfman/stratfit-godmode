@@ -8,15 +8,16 @@ interface Props {
 }
 
 /**
- * MarkerLayer — Strategic dateline inflection point markers.
- * Each marker: crisp bright cyan sphere + soft ethereal azure halo glow.
+ * MarkerLayer — Hazard beacon markers.
+ * Each marker: saturated burnt-orange sphere + volumetric halo glow.
+ * toneMapped={false} for Bloom punch-through.
  */
 export default function MarkerLayer({ terrainRef, enabled = true }: Props) {
   const meshes = useMemo(() => {
     if (!terrainRef?.current) return [];
 
     return positionMarkers.map((m: PositionMarker) => {
-      const y = terrainRef.current!.getHeightAt(m.x, m.z) + 1.8;
+      const y = terrainRef.current!.getHeightAt(m.x, m.z) + 0.25;
       return { ...m, y };
     });
   }, [terrainRef]);
@@ -31,34 +32,36 @@ export default function MarkerLayer({ terrainRef, enabled = true }: Props) {
           <mesh>
             <cylinderGeometry args={[0.06, 0.06, 2.4, 8]} />
             <meshStandardMaterial
-              color="#0a1520"
-              emissive="#0ea5e9"
-              emissiveIntensity={0.25}
+              color="#1a0a00"
+              emissive="#FF7043"
+              emissiveIntensity={0.3}
               transparent
               opacity={0.7}
             />
           </mesh>
 
-          {/* Outer halo glow — ethereal azure sphere */}
+          {/* Outer halo glow — volumetric burnt-orange sphere */}
           <mesh position={[0, 1.2, 0]}>
             <sphereGeometry args={[0.65, 16, 16]} />
             <meshStandardMaterial
-              color="#0284c7"
-              emissive="#22d3ee"
-              emissiveIntensity={0.8}
+              color="#BF360C"
+              emissive="#FF7043"
+              emissiveIntensity={2.0}
+              toneMapped={false}
               transparent
-              opacity={0.15}
+              opacity={0.18}
               depthWrite={false}
             />
           </mesh>
 
-          {/* Inner core sphere — crisp bright cyan */}
+          {/* Inner core sphere — saturated burnt orange */}
           <mesh position={[0, 1.2, 0]}>
             <sphereGeometry args={[0.22, 16, 16]} />
             <meshStandardMaterial
-              color="#22d3ee"
-              emissive="#E0F7FF"
-              emissiveIntensity={1.5}
+              color="#FF7043"
+              emissive="#FFAB91"
+              emissiveIntensity={2.0}
+              toneMapped={false}
             />
           </mesh>
         </group>
