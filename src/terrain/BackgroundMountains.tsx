@@ -110,8 +110,8 @@ export default function BackgroundMountains() {
         zOffset={-200}
         yScale={1.0}
         opacity={0.35}
-        color="#0a1628"
-        emissive="#0c4a6e"
+        color="#081420"
+        emissive="#004466"
         emissiveIntensity={0.15}
         seed={42}
       />
@@ -121,8 +121,8 @@ export default function BackgroundMountains() {
         zOffset={-380}
         yScale={1.4}
         opacity={0.22}
-        color="#081220"
-        emissive="#075985"
+        color="#060f1a"
+        emissive="#003d5c"
         emissiveIntensity={0.10}
         seed={137}
       />
@@ -132,8 +132,8 @@ export default function BackgroundMountains() {
         zOffset={-600}
         yScale={1.8}
         opacity={0.12}
-        color="#060e18"
-        emissive="#0369a1"
+        color="#040c14"
+        emissive="#002B36"
         emissiveIntensity={0.06}
         seed={256}
       />

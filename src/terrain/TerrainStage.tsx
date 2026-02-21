@@ -58,7 +58,7 @@ export default function TerrainStage({ granularity }: TerrainStageProps) {
   return (
     <Canvas
       style={{ position: "absolute", inset: 0, zIndex: 0 }}
-      dpr={[1, 1.5]}
+      dpr={[1.2, 1.5]}
       camera={{
         position: [0, 160, 320],
         fov: 35,
@@ -115,9 +115,9 @@ export default function TerrainStage({ granularity }: TerrainStageProps) {
       {/* Fill light — subtle cool ambient */}
       <ambientLight intensity={0.35} color="#8BB8D0" />
       {/* Rim light — back-right for edge definition */}
-      <directionalLight position={[-100, 80, -200]} intensity={0.5} color="#38bdf8" />
+      <directionalLight position={[-100, 80, -200]} intensity={0.5} color="#0088cc" />
       {/* Accent light — bottom-left subtle fill for depth */}
-      <pointLight position={[-200, -20, 100]} intensity={0.3} color="#0ea5e9" distance={800} decay={2} />
+      <pointLight position={[-200, -20, 100]} intensity={0.3} color="#006494" distance={800} decay={2} />
 
       {/* Background mountain ranges — distant rolling peaks fading into fog */}
       <BackgroundMountains />
