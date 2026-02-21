@@ -158,6 +158,12 @@ function heightfieldFromModel(
     const bgRightDz = z - (-120);
     h += 60 * Math.exp(-(bgRightDx * bgRightDx) / (75 * 75) - (bgRightDz * bgRightDz) / (60 * 60));
 
+    // Path-Ridge Peak — mountain underneath the path's big upward sweep (Q1 2027 area)
+    // The path rides up and over this peak, forming a valley between it and bg-right
+    const prDx = x - 80;
+    const prDz = z - (-35);
+    h += 52 * Math.exp(-(prDx * prDx) / (85 * 85) - (prDz * prDz) / (65 * 65));
+
     // Foreground Ridge — 3 rugged peaks along the bottom edge (closest to camera)
     const fgPeaks: [number, number, number, number, number][] = [
       [-170, 110, 45, 55, 45],   // bottom-left — tall craggy peak
