@@ -9,6 +9,9 @@
     "src/components/compound/_variances2_DISABLED/**",
     "node_modules",
     "dist",
-    "build"
+    "build",
+    ".vercel",
+    ".next",
+    "coverage"
   ]
 }

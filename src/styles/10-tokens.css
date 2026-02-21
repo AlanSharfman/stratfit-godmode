@@ -1,0 +1,31 @@
+:root{
+  --bg0:#07090c;
+  --bg1:#0b0d10;
+  --bg2:#0d1117;
+
+  --text:#ffffff;
+  --muted:rgba(255,255,255,.62);
+  --muted2:rgba(255,255,255,.42);
+
+  --line:rgba(255,255,255,.08);
+  --line2:rgba(255,255,255,.14);
+
+  --glass:rgba(255,255,255,.04);
+  --glass2:rgba(255,255,255,.06);
+
+  /* NO ORANGE — cyan/ice defaults */
+  --accent:#22d3ee;
+  --accent2:#00f2ff;
+
+  --good:#34d399;
+  --risk:#fb7185; /* red only for risk */
+
+  --r-sm:10px;
+  --r-md:14px;
+  --r-lg:18px;
+
+  --shadow-lg:0 18px 60px rgba(0,0,0,.55);
+  --shadow-md:0 10px 30px rgba(0,0,0,.42);
+
+  --glow:0 0 18px rgba(34,211,238,.22), 0 0 46px rgba(0,242,255,.12);
+}

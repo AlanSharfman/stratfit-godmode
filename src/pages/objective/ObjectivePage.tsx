@@ -1,23 +1,88 @@
-import React from "react";
+// src/pages/objective/ObjectivePage.tsx
+// ═══════════════════════════════════════════════════════════════════════════
+// STRATFIT — Objectives Page (INTENT LAYER)
+// Navigation Contract: src/contracts/navigationContract.ts
+//
+// ROLE: Define targets, constraints, and priority mode.
+// READS: Initiate snapshot (read-only via SystemBaselineProvider).
+// WRITES: baseline.objectives (ObjectivesSnapshot) on Save & Continue.
+// ═══════════════════════════════════════════════════════════════════════════
+
+import React, { useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import AmbitionPanel from "./components/AmbitionPanel";
+import StructuralDemandPanel from "./components/StructuralDemandPanel";
+import ObjectiveIntelligencePanel from "./components/ObjectiveIntelligencePanel";
 import styles from "./ObjectivePage.module.css";
+import { useObjectiveStore } from "@/state/objectiveStore";
+import { useObjectiveLensStore } from "@/state/objectiveLensStore";
+import { useSystemBaseline } from "@/system/SystemBaselineProvider";
+import { RouteContract } from "@/app/navigation/routeContract";
+import type { ObjectivesSnapshot } from "@/onboard/baseline/types";
 
 export default function ObjectivePage() {
-  return (
-    <div className={styles.page}>
-      <h1 className={styles.title}>OBJECTIVE (RECOVERY MODE)</h1>
-      <p className={styles.subtitle}>
-        ObjectivePage.tsx was truncated (EOF). This stub restores compilation so we can fix
-        rendering + mountain duplication safely.
-      </p>
+  const navigate = useNavigate();
+  const { baseline, setBaseline } = useSystemBaseline();
 
-      <div className={styles.card}>
-        <div className={styles.cardTitle}>Severity color demo</div>
-        <div className={styles.pills}>
-          <span className={styles.pillGreen}>20</span>
-          <span className={styles.pillCyan}>45</span>
-          <span className={styles.pillAmber}>65</span>
-          <span className={styles.pillRed}>85</span>
+  const { horizonMonths, targets, mode, result } = useObjectiveStore();
+  const { lens } = useObjectiveLensStore();
+
+  const handleSaveAndContinue = useCallback(() => {
+    if (!baseline) return;
+
+    const snapshot: ObjectivesSnapshot = {
+      horizonMonths,
+      mode,
+      lens,
+      targets: { ...targets },
+      result,
+    };
+
+    setBaseline({ ...baseline, objectives: snapshot });
+    navigate(RouteContract.position, { replace: true });
+  }, [baseline, setBaseline, navigate, horizonMonths, mode, lens, targets, result]);
+
+  return (
+    <div className={styles.objectivePage}>
+      {/* Header bar with Save & Continue */}
+      <div className={styles.header}>
+        <div className={styles.headerLeft}>
+          <h1>Strategic Objective</h1>
+          <p>Define targets · Confirm model · Proceed to position</p>
         </div>
+        <div className={styles.headerControls}>
+          <button
+            className={styles.segBtnActive}
+            onClick={handleSaveAndContinue}
+            disabled={!baseline}
+          >
+            SAVE &amp; CONTINUE →
+          </button>
+        </div>
+      </div>
+
+      {/* Three-panel grid */}
+      <div className={styles.objectivePageGrid}>
+        {/* Left: Ambition (Define the Crest) */}
+        <div className={styles.leftColumn}>
+          <AmbitionPanel />
+        </div>
+
+        {/* Center: Structural Demands (The Cost of Ambition) */}
+        <div className={styles.centerColumn}>
+          <div className={styles.trajectoryRibbon} aria-hidden="true" />
+          <div className={styles.centerColumnContent}>
+            <StructuralDemandPanel />
+          </div>
+        </div>
+
+        {/* Right: Tension Intelligence (Board-Level Narrative) */}
+        <div className={styles.rightColumn}>
+          <ObjectiveIntelligencePanel />
+        </div>
+
+        {/* Crest silhouette overlay */}
+        <div className={styles.crestSilhouette} />
       </div>
     </div>
   );

@@ -1,0 +1,278 @@
+/* ============================================================
+   OPTION 1: UNIFIED 3-COLUMN LAYOUT
+   Left: Scenario + Sliders | Center: Tabs + KPIs + Mountain | Right: Intel
+   ============================================================ */
+
+.main-content {
+  flex: 1;
+  display: grid;
+
+  /* GODMODE GRID (left panel reduced by 15%):
+     - Left panel: compact but readable
+     - Centre can breathe
+     - Right panel can shrink so it NEVER falls off screen */
+  grid-template-columns:
+    clamp(290px, 20vw, 408px)
+    minmax(560px, 1fr)
+    clamp(340px, 24vw, 520px);
+
+  gap: 18px;
+  padding: 16px;
+  min-height: 0;
+  overflow: visible;
+}
+
+@media (max-width: 1400px) {
+  .main-content {
+    grid-template-columns:
+      clamp(238px, 19vw, 323px)
+      minmax(480px, 1fr)
+      clamp(280px, 22vw, 400px);
+    gap: 14px;
+    padding: 12px;
+  }
+}
+
+/* LEFT COLUMN: Scenario + Sliders */
+.left-column {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;          /* drops ControlDeck down slightly (~1mm feel) */
+  min-height: 0;
+  min-width: 0; /* IMPORTANT: allow grid children to shrink without forcing overflow */
+  overflow: visible;
+  padding-top: 12px;  /* aligns Active Scenario top bezel with KPI bezel top */
+}
+
+/* CENTER COLUMN: Unified KPI + Mountain */
+.center-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-height: 0;
+  min-width: 0; /* IMPORTANT: allow grid children to shrink without forcing overflow */
+  overflow: visible;
+
+  /* Subtle center shimmer band (prior screenshot aesthetic) */
+  background:
+    radial-gradient(120% 140% at 50% 40%, rgba(120,200,255,0.08), rgba(0,0,0,0) 55%),
+    linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.00)),
+    rgba(6,10,14,0.66);
+  border-radius: 18px;
+  padding: 12px;
+}
+
+/* Mountain panel expands to fill remaining space */
+.center-column > *:last-child {
+  flex: 1;
+  min-height: 0;
+}
+
+/* RIGHT COLUMN: Intelligence Panel */
+/* RIGHT COLUMN: See scroll styles at bottom of file */
+
+/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+   SLIDERS CONTAINER ΓÇö GOD-MODE STEPPED BEZEL (4-layer chassis)
+   Matches KPI and Active Scenario bezels exactly
+   ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */
+.sliders-container {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  border-radius: 18px;
+  padding: 14px;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  /* WELL: Pure black void interior */
+  background: #000000;
+
+  /* GOD-MODE 4-LAYER STEPPED EFFECT */
+  box-shadow:
+    /* ΓòÉΓòÉΓòÉ CHASSIS (outer glow frame) ΓòÉΓòÉΓòÉ */
+    0 0 0 3px #1e252f,                          /* Dark blue-grey base */
+    0 0 0 4px #000000,                          /* Hard black separator */
+    0 0 28px rgba(137, 196, 244, 0.55),         /* Cool blue outer glow */
+
+    /* ΓòÉΓòÉΓòÉ RIM (Step 1 - Chrome) ΓòÉΓòÉΓòÉ */
+    inset 0 0 0 3px #9CA8B5,                    /* Silver rim */
+    inset 0 1px 0 3px #FFFFFF,                  /* Pure white top highlight */
+    inset 0 -1px 0 3px #000000,                 /* Black bottom cut */
+
+    /* ΓòÉΓòÉΓòÉ STEP (Step 2 - Dark Steel) ΓòÉΓòÉΓòÉ */
+    inset 0 0 0 8px #2C3540,                    /* Dark steel grey */
+    inset 0 1px 0 8px rgba(255,255,255,0.35),   /* Top highlight */
+    inset 0 0 0 10px #050505,                   /* Pitch black inner edge */
+
+    /* ΓòÉΓòÉΓòÉ WELL (Inner void depth) ΓòÉΓòÉΓòÉ */
+    inset 0 12px 30px rgba(0,0,0,0.95);         /* Maximum depth shadow */
+
+  /* Outer chassis border */
+  border: 1px solid rgba(60, 90, 130, 0.18);
+}
+
+/* Ensure content stays above shadow layers */
+.sliders-container > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* SCENARIO AREA (in left column) ΓÇö wrapper only, bezel comes from ScenarioBezel */
+.scenario-area {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2000;
+  overflow: visible;
+  min-height: 100px;
+  max-width: 85%; /* Reduced by 15% relative to column */
+  margin-left: auto;
+  margin-right: auto;
+  /* No background/border ΓÇö ScenarioBezel provides the chassis */
+}
+
+/* DEPRECATED: tabs-header moved to top bar */
+
+/* These are structural wrappers ONLY ΓÇö no blur/glass here or it washes out bezels */
+.kpi-section {
+  flex-shrink: 0;
+  overflow: visible;
+  margin-bottom: 16px;
+  border: none;
+  background: transparent;
+  border-radius: 0;
+  backdrop-filter: none;
+  transform: scale(0.85);
+  transform-origin: top center; /* CENTERED origin */
+  display: flex;
+  justify-content: center; /* CENTER the KPIs */
+}
+
+.kpi-section > * {
+  width: 100%;
+}
+
+/* Tour slot must NOT look like a boxed panel ΓÇö black field with white text only */
+.tour-area{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:10px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  border-radius: 0;
+  backdrop-filter: none;
+}
+
+.system-btn{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  height:32px;
+  padding:0 12px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.03);
+  color: rgba(255,255,255,.82);
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.02em;
+  cursor:pointer;
+  transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
+}
+.system-btn:hover{
+  transform: translateY(-1px);
+  border-color: rgba(34,211,238,.25);
+  background: rgba(34,211,238,.06);
+  box-shadow: var(--glow);
+}
+.system-icon{ opacity:.85; }
+
+/* DEPRECATED: Old middle-section (kept for backwards compat) */
+.middle-section{
+  flex:1;
+  min-height:0;
+  display:grid;
+  grid-template-columns:
+    clamp(340px, 24vw, 480px)
+    minmax(560px, 1fr)
+    clamp(340px, 24vw, 520px);
+  gap:18px;
+  padding:12px;
+}
+
+/* DEPRECATED: Old panel styles */
+.left-panel,
+.right-panel{
+  min-height:0;
+  min-width:0; /* IMPORTANT: allow grid children to shrink without forcing overflow */
+  border:1px solid rgba(255,255,255,.06);
+  background: rgba(255,255,255,.02);
+  border-radius: var(--r-lg);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 10px 40px rgba(0,0,0,.35);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* DEPRECATED: Old sliders-container styling moved to main definition */
+
+/* Left column: scenario selector stays visible while sliders scroll */
+.left-scenario{
+  padding: 10px 10px 6px;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: linear-gradient(180deg, rgba(7,9,12,0.92), rgba(7,9,12,0.55));
+  backdrop-filter: blur(10px);
+  display: flex;
+  justify-content: center; /* align active scenario capsule with slider-box centerline */
+}
+
+/* Center panel frame polish (no engine touch) */
+.center-view-panel,
+.center-panel,
+.center{
+  position:relative;
+}
+.center-view-panel::before,
+.center-panel::before,
+.center::before{
+  content:"";
+  position:absolute; inset:0;
+  pointer-events:none;
+  border-radius: var(--r-lg);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.06),
+              inset 0 0 120px rgba(0,0,0,.38);
+}
+.center-view-panel::after,
+.center-panel::after,
+.center::after{
+  content:"";
+  position:absolute; inset:0;
+  pointer-events:none;
+  background: radial-gradient(900px 520px at 50% 38%, transparent 40%, rgba(0,0,0,.55) 78%);
+  opacity:.55;
+}
+
+/* =========================================================
+   MOUNTAIN SIZE ΓÇö FINAL LOCK
+   Target: ~65% of available vertical viewport (never below 60%)
+   ========================================================= */
+.mountain-stage{
+  height: calc(66vh * 1.07625);     /* +5% then +2.5% (visual/layout only) */
+  min-height: calc(66vh * 1.07625); /* prevent parent shrink */
+}
+
+/* =========================================================
+   TERRAIN (BASELINE) ΓÇö Mountain compound size reduction
+   Goal: give KPI/metrics more vertical space on Baseline page.
+   Change: -25% vs the global mountain-stage target.
+   Scoped: ONLY Terrain view (Baseline).
+   ========================================================= */
+.main-content.mode-terrain .mountain-stage{
+  height: calc(66vh * 1.07625 * 0.75);
+  min-height: calc(66vh * 1.07625 * 0.75);
+}
+
+

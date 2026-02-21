@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+/* ----------------------------------------
+   GLOBAL RESET / BASE STYLE OVERRIDES
+----------------------------------------- */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: #0b0d10;
+  color: white;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+/* Note: Transitions applied per-component for precision control */
+
+/* ----------------------------------------
+   SCROLLBAR (hidden for dashboard feel)
+----------------------------------------- */
+::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
+}
+
+/* ----------------------------------------
+   CUSTOM STRATFIT UTILITY CLASSES
+----------------------------------------- */
+
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+}
+
+.card-hover {
+  transition: transform 0.25s cubic-bezier(.2,.8,.2,1);
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0, 255, 255, 0.25);
+}
+
+/* Neon Text Glow */
+.neon-text {
+  color: #00f2ff;
+  text-shadow: 0 0 8px rgba(0, 242, 255, 0.8);
+}
+
+/* Slider thumb style for right-side cinematic sliders */
+.slider-thumb::-webkit-slider-thumb {
+  appearance: none;
+  height: 12px;
+  width: 12px;
+  border-radius: 100%;
+  background: #00f2ff;
+  box-shadow: 0 0 10px #00f2ff;
+}
+@keyframes kpi-glow {
+  0% {
+    box-shadow: 0 0 0 rgba(34, 211, 238, 0.0);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(34, 211, 238, 0.7);
+  }
+  100% {
+    box-shadow: 0 0 0 rgba(34, 211, 238, 0.0);
+  }
+}
+
+.kpi-glow {
+  animation: kpi-glow 2.2s ease-in-out infinite;
+}
+html { scrollbar-gutter: stable; }
+body { overflow-x: hidden; }
+
+/* =========================================================
+   STRATFIT GOD MODE ΓÇö TOKENS + SHELL (UI POLISH 01)
+   (UI ONLY ΓÇö NO ENGINE CHANGES)
+========================================================= */
+
+

@@ -1,0 +1,221 @@
+
+
+/* Shell */
+.app{
+  width:100vw;
+  height:100vh;
+  overflow:hidden;
+  background: radial-gradient(1200px 700px at 55% 15%, rgba(34,211,238,.07), transparent 60%),
+              radial-gradient(900px 600px at 20% 90%, rgba(99,102,241,.06), transparent 60%),
+              var(--bg2);
+  color:var(--text);
+  display:flex;
+  flex-direction:column;
+}
+
+.header{
+  flex-shrink:0;
+  height:52px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 18px;
+  background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+  border-bottom:1px solid rgba(255,255,255,.06);
+  position: relative; /* for centered mode selector */
+}
+
+.header-left{
+  display:flex;
+  align-items:center;
+  gap:18px;
+}
+
+/* SIMULATION MODE SELECTOR ΓÇö centered in header */
+.header-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.header-actions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.header-action-label{
+  font-size:11px;
+  font-weight:700;
+  color:rgba(255,255,255,.40);
+  letter-spacing:.02em;
+}
+
+/* ============================================================
+   HEADER ACTION BUTTONS ΓÇö World-class command bar
+   ============================================================ */
+.header-action-buttons{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  transition: opacity .2s ease;
+}
+
+.header-action-btn{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  height:46px;
+  padding:0 19px;
+  border-radius:12px;
+  border:1px solid rgba(120,180,255,.12);
+  background: linear-gradient(180deg, rgba(20,28,40,0.85), rgba(12,18,26,0.9));
+  color: rgba(255, 255, 255, 0.92);
+  font-size:17px;
+  font-weight:650;
+  letter-spacing: 0.44px;
+  text-shadow: 0 0 8px rgba(255,255,255,0.15);
+  cursor:pointer;
+  transition: 
+    transform .22s cubic-bezier(0.2, 0.9, 0.3, 1),
+    background .2s ease,
+    border-color .2s ease,
+    color .2s ease,
+    box-shadow .25s ease;
+  box-shadow:
+    0 2px 8px rgba(0,0,0,.3),
+    inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+.header-action-btn:hover{
+  transform: translateY(-2px) scale(1.02);
+  background: linear-gradient(180deg, rgba(30,40,55,0.95), rgba(18,26,38,0.95));
+  border-color: rgba(34,211,238,.35);
+  color: #ffffff;
+  text-shadow: 0 0 12px rgba(255,255,255,0.25);
+  box-shadow:
+    0 6px 20px rgba(0,0,0,.4),
+    0 0 16px rgba(34,211,238,.12),
+    inset 0 1px 0 rgba(255,255,255,.1);
+}
+
+.header-action-btn:active{
+  transform: translateY(0) scale(0.98);
+  transition: transform .08s ease;
+}
+
+.header-action-btn:focus-visible{
+  outline:none;
+  box-shadow: 
+    0 0 0 2px rgba(34,211,238,.25),
+    0 4px 12px rgba(0,0,0,.3);
+}
+
+.header-action-icon{
+  width: 19px;
+  height: 19px;
+  opacity:.9;
+  transition: transform .2s ease, opacity .2s ease;
+}
+
+.header-action-btn:hover .header-action-icon{
+  opacity:1;
+  transform: scale(1.1);
+}
+
+/* God-Mode cyan for header action icons (Load/Save/Share) */
+.sys-action-icon {
+  color: rgba(120,220,255,0.95);
+  filter:
+    drop-shadow(0 0 10px rgba(120,220,255,0.20))
+    drop-shadow(0 0 18px rgba(120,220,255,0.14));
+  transition: filter 160ms ease, color 160ms ease;
+}
+
+.sys-action-icon:hover,
+.header-action-btn:hover .sys-action-icon {
+  color: rgba(170, 235, 255, 1);
+  filter:
+    drop-shadow(0 0 8px rgba(120, 210, 255, 0.65))
+    drop-shadow(0 0 18px rgba(120, 210, 255, 0.35));
+}
+
+/* active click feedback */
+.sys-action-icon:active,
+.header-action-btn:active .sys-action-icon {
+  filter:
+    drop-shadow(0 0 10px rgba(120, 210, 255, 0.85))
+    drop-shadow(0 0 24px rgba(120, 210, 255, 0.45));
+}
+
+.header-action-text{
+  display:inline;
+  opacity: 0.95;
+  transition: opacity .2s ease;
+}
+
+.logo{
+  display:flex;
+  align-items:center;
+  gap: 14px;
+  background: transparent;
+  padding: 12px 20px;
+  border-radius: 8px;
+}
+.logo-icon{
+  width: 48px;
+  height: 48px;
+  /* GEM-CUT EFFECT - Sapphire glass / blue crystal embedded in header */
+  filter: drop-shadow(0 0 5px rgba(0, 255, 255, 0.6)) 
+          drop-shadow(0 2px 0px rgba(0, 0, 0, 0.5))
+          brightness(1.2);
+}
+.logo-text{
+  font-size: 28px;
+  font-weight: 900;
+  /* LUXURY SPACING - Swiss watch precision */
+  letter-spacing: 7px;  /* Increased from 6px for confident, spacious feel */
+  /* CHROME BADGE - Mercedes style (WHITE, not cyan) */
+  background: linear-gradient(to bottom, #ffffff 0%, #aebcbf 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  /* Heavy drop shadow for 3D lift */
+  filter: drop-shadow(0px 2px 0px rgba(0, 0, 0, 0.9)) 
+          drop-shadow(0px 1px 0px rgba(255, 255, 255, 0.3));
+}
+
+.system-status{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:11px;
+  letter-spacing:.02em;
+  padding:5px 10px 5px 9px;
+  background: rgba(255,255,255,.02);
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:8px;
+}
+
+.status-label{ color:rgba(255,255,255,.55); font-weight:600; }
+.status-separator{ color:rgba(255,255,255,.22); }
+.status-live{ color:rgba(210,255,232,.85); font-weight:700; }
+.status-dot{
+  width:6px;height:6px;border-radius:999px;
+  background: var(--good);
+  margin-left:4px;
+  box-shadow: 0 0 0 rgba(52,211,153,0);
+  animation: statusPulse 2.8s ease-in-out infinite;
+}
+.system-status.computing .status-dot{ animation: statusPulseFast 1.8s ease-in-out infinite; }
+
+@keyframes statusPulse{
+  0%,100%{ opacity:.65; transform:scale(1); box-shadow:0 0 0 rgba(52,211,153,0); }
+  50%{ opacity:.9; transform:scale(1.15); box-shadow:0 0 22px rgba(52,211,153,.28); }
+}
+@keyframes statusPulseFast{
+  0%,100%{ opacity:.7; transform:scale(1); box-shadow:0 0 0 rgba(34,211,238,0); }
+  50%{ opacity:.95; transform:scale(1.18); box-shadow:0 0 26px rgba(34,211,238,.22); }
+}
+
+
