@@ -88,6 +88,10 @@ export function createTerrainWireMaterial() {
     metalness: 0.18,
     depthWrite: false,
     depthTest: true,
+    // Native GPU Z-fighting fix — renders wireframe slightly closer to camera
+    polygonOffset: true,
+    polygonOffsetFactor: -1,
+    polygonOffsetUnits: -1,
   })
 
   mat.onBeforeCompile = (shader) => {
