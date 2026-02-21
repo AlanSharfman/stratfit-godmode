@@ -1,72 +1,150 @@
 /* src/pages/position/PositionOverlays.module.css */
+/* ═══════════════════════════════════════════════════════════════════
+   STRATFIT — Hyper-Premium 3-Column Position Dashboard
+   Left: AI Intelligence Feed (17.5%)
+   Center: 3D Terrain Viewport (65%)
+   Right: Command Centre + Diagnostics (17.5%)
+   ═══════════════════════════════════════════════════════════════════ */
 
+@reference "tailwindcss";
+
+/* ── Root Layout ── */
 .page {
   position: relative;
   width: 100%;
   height: 100vh;
-  background: #0b0f14;
+  display: grid;
+  grid-template-columns: minmax(220px, 17.5%) 1fr minmax(220px, 17.5%);
+  background: #050A10;
   overflow: hidden;
-}
 
-/* ─────────────────────────────────────────────────────────────
-   Shared optics (local, deterministic)
-   ───────────────────────────────────────────────────────────── */
-.page {
   --sf-nav-h: 56px;
-
-  --sf-cyan: rgba(70, 210, 255, 1);
-  --sf-cyan-soft: rgba(120, 200, 255, 0.18);
-  --sf-cyan-hair: rgba(120, 200, 255, 0.12);
-
-  --sf-emerald: rgba(40, 255, 190, 1);
+  --sf-cyan: rgba(34, 211, 238, 1);
+  --sf-cyan-soft: rgba(34, 211, 238, 0.18);
+  --sf-cyan-hair: rgba(34, 211, 238, 0.10);
+  --sf-emerald: rgba(52, 211, 153, 1);
   --sf-indigo: rgba(140, 120, 255, 1);
   --sf-risk: rgba(255, 78, 128, 1);
   --sf-watch: rgba(185, 205, 225, 0.85);
 
-  --sf-glass-bg: linear-gradient(180deg, rgba(14, 20, 28, 0.78), rgba(9, 12, 18, 0.70));
-  --sf-glass-border: 1px solid rgba(182, 228, 255, 0.18);
+  --sf-glass-bg: linear-gradient(180deg, rgba(8, 14, 22, 0.88), rgba(5, 10, 16, 0.82));
+  --sf-glass-border: 1px solid rgba(34, 211, 238, 0.12);
+  --sf-glass-border-bright: 1px solid rgba(34, 211, 238, 0.22);
 
-  --sf-shadow: 0 18px 40px rgba(0, 0, 0, 0.38);
-  --sf-radius: 12px;
+  --sf-shadow: 0 20px 50px rgba(0, 0, 0, 0.50);
+  --sf-radius: 10px;
 
-  --sf-mono: ui-monospace, "JetBrains Mono", monospace;
+  --sf-mono: ui-monospace, "JetBrains Mono", "Fira Code", monospace;
   --sf-sans: Inter, system-ui, sans-serif;
 
-  /* Z order (hard lock) */
+  /* Z order */
+  --z-panel: 200;
   --z-kpi: 300;
   --z-controls: 310;
-  --z-rail: 280;
-  --z-legend: 260;
   --z-hint: 350;
 }
 
+/* ── Left Panel: AI Intelligence ── */
+.leftPanel {
+  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  height: 100vh;
+  padding-top: var(--sf-nav-h);
+  background: linear-gradient(180deg, rgba(5, 10, 16, 0.96), rgba(3, 7, 12, 0.98));
+  border-right: 1px solid rgba(34, 211, 238, 0.08);
+  z-index: var(--z-panel);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(34, 211, 238, 0.15) transparent;
+}
+
+.leftPanel::-webkit-scrollbar { width: 4px; }
+.leftPanel::-webkit-scrollbar-thumb { background: rgba(34, 211, 238, 0.15); border-radius: 2px; }
+.leftPanel::-webkit-scrollbar-track { background: transparent; }
+
+/* ── Center Viewport ── */
+.centerViewport {
+  grid-column: 2;
+  position: relative;
+  height: 100vh;
+  padding-top: var(--sf-nav-h);
+  overflow: hidden;
+}
+
+/* ── Right Panel: Command Centre + Diagnostics ── */
+.rightPanel {
+  grid-column: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  height: 100vh;
+  padding-top: var(--sf-nav-h);
+  background: linear-gradient(180deg, rgba(5, 10, 16, 0.96), rgba(3, 7, 12, 0.98));
+  border-left: 1px solid rgba(34, 211, 238, 0.08);
+  z-index: var(--z-panel);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(34, 211, 238, 0.15) transparent;
+}
+
+.rightPanel::-webkit-scrollbar { width: 4px; }
+.rightPanel::-webkit-scrollbar-thumb { background: rgba(34, 211, 238, 0.15); border-radius: 2px; }
+.rightPanel::-webkit-scrollbar-track { background: transparent; }
+
+/* ── Panel Sections ── */
+.panelSection {
+  padding: 14px 14px;
+  border-bottom: 1px solid rgba(34, 211, 238, 0.06);
+}
+
+.panelSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.panelSectionTitle {
+  font-family: var(--sf-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(34, 211, 238, 0.65);
+}
+
+.panelSectionBadge {
+  font-family: var(--sf-mono);
+  font-size: 8px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(34, 211, 238, 0.08);
+  border: 1px solid rgba(34, 211, 238, 0.18);
+  color: rgba(34, 211, 238, 0.7);
+}
+
+/* ── Center overlay docks ── */
 .kpiDock {
   position: absolute;
-  top: var(--sf-nav-h);
+  top: 0;
   left: 0;
   right: 0;
-  padding: 10px 14px 0 14px;
+  padding: 10px 16px 0 16px;
   z-index: var(--z-kpi);
   pointer-events: none;
 }
 
 .timeScaleDock {
   position: absolute;
-  top: calc(var(--sf-nav-h) + 62px);
+  top: 62px;
   right: 16px;
   z-index: var(--z-controls);
-  pointer-events: auto;
-}
-
-.rightRail {
-  position: absolute;
-  top: calc(var(--sf-nav-h) + 10px);
-  right: 14px;
-  width: 360px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  z-index: var(--z-rail);
   pointer-events: auto;
 }
 
@@ -74,101 +152,140 @@
   position: absolute;
   left: 14px;
   bottom: 14px;
-  width: 240px;
-  z-index: var(--z-legend);
+  width: 200px;
+  z-index: 260;
   pointer-events: auto;
 }
 
 .noBaselineHint {
   position: absolute;
   left: 14px;
-  top: calc(var(--sf-nav-h) + 14px);
+  top: 14px;
   z-index: var(--z-hint);
   pointer-events: none;
-
   font-family: var(--sf-mono);
   font-size: 10px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-
   color: rgba(185, 205, 225, 0.62);
-  background: rgba(4, 9, 15, 0.62);
-  border: 1px solid rgba(182, 228, 255, 0.12);
+  background: rgba(4, 9, 15, 0.72);
+  border: 1px solid rgba(34, 211, 238, 0.12);
   border-radius: 8px;
   padding: 8px 10px;
   backdrop-filter: blur(10px);
 }
 
-.panel {
-  background: var(--sf-glass-bg);
-  border: var(--sf-glass-border);
-  border-radius: var(--sf-radius);
-  box-shadow: var(--sf-shadow);
-  backdrop-filter: blur(10px);
-}
-
-.panelHeader {
-  padding: 12px 12px 10px 12px;
-  border-bottom: 1px solid rgba(182, 228, 255, 0.10);
-}
-
-.panelTitle {
-  font-family: var(--sf-mono);
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(182, 228, 255, 0.56);
-}
-
-.panelBody {
-  padding: 12px;
-}
-
+/* ── KPI Strip (center viewport overlay) ── */
 .kpiStrip {
   pointer-events: auto;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 8px;
-
-  background: rgba(4, 9, 15, 0.58);
-  border: 1px solid rgba(182, 228, 255, 0.14);
+  background: rgba(4, 9, 15, 0.65);
+  border: 1px solid rgba(34, 211, 238, 0.12);
   border-radius: 10px;
   padding: 10px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.30);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.40);
 }
 
 .kpiCell {
-  border: 1px solid rgba(182, 228, 255, 0.12);
-  border-radius: 10px;
-  padding: 9px 10px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(0,0,0,0));
+  border: 1px solid rgba(34, 211, 238, 0.10);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: linear-gradient(180deg, rgba(34, 211, 238, 0.04), rgba(0,0,0,0));
 }
 
 .kpiLabel {
   font-family: var(--sf-mono);
-  font-size: 10px;
-  letter-spacing: 0.12em;
+  font-size: 9px;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(182, 228, 255, 0.52);
+  color: rgba(34, 211, 238, 0.50);
 }
 
 .kpiValue {
-  margin-top: 6px;
+  margin-top: 5px;
   font-family: var(--sf-sans);
   font-size: 14px;
-  font-weight: 600;
-  color: rgba(214, 246, 255, 0.92);
+  font-weight: 700;
+  color: rgba(224, 247, 255, 0.94);
 }
 
 .kpiSub {
   margin-top: 2px;
   font-family: var(--sf-mono);
-  font-size: 10px;
+  font-size: 9px;
   letter-spacing: 0.08em;
-  color: rgba(185, 205, 225, 0.56);
+  color: rgba(148, 180, 200, 0.55);
 }
 
+/* ── Signal items (left panel) ── */
+.signalItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(34, 211, 238, 0.04);
+}
+
+.signalItem:last-child { border-bottom: none; }
+
+.signalDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 99px;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.signalDotRisk   { background: #ff4e80; box-shadow: 0 0 8px rgba(255,78,128,0.30); }
+.signalDotWatch  { background: #94a3b8; box-shadow: 0 0 8px rgba(148,163,184,0.20); }
+.signalDotStrong { background: #34d399; box-shadow: 0 0 8px rgba(52,211,153,0.30); }
+.signalDotInfo   { background: #38bdf8; box-shadow: 0 0 8px rgba(56,189,248,0.30); }
+
+.signalLabel {
+  font-family: var(--sf-sans);
+  font-size: 11px;
+  line-height: 1.4;
+  color: rgba(185, 205, 225, 0.78);
+}
+
+.signalMeta {
+  font-family: var(--sf-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: rgba(148, 163, 184, 0.50);
+  margin-top: 2px;
+}
+
+/* ── Metric read-outs ── */
+.metricRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(34, 211, 238, 0.04);
+}
+
+.metricRow:last-child { border-bottom: none; }
+
+.metricLabel {
+  font-family: var(--sf-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.55);
+}
+
+.metricValue {
+  font-family: var(--sf-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(224, 247, 255, 0.90);
+}
+
+/* ── State label + dots ── */
 .dot {
   width: 8px;
   height: 8px;
@@ -177,84 +294,52 @@
   margin-right: 8px;
 }
 
-.dotStrong { background: var(--sf-emerald); box-shadow: 0 0 18px rgba(40,255,190,0.18); }
-.dotWatch  { background: var(--sf-watch);  box-shadow: 0 0 18px rgba(185,205,225,0.14); }
-.dotRisk   { background: var(--sf-risk);   box-shadow: 0 0 18px rgba(255,78,128,0.18); }
+.dotStrong { background: var(--sf-emerald); box-shadow: 0 0 18px rgba(52,211,153,0.25); }
+.dotWatch  { background: var(--sf-watch);  box-shadow: 0 0 18px rgba(185,205,225,0.18); }
+.dotRisk   { background: var(--sf-risk);   box-shadow: 0 0 18px rgba(255,78,128,0.25); }
 
 .stateLabel {
   font-family: var(--sf-sans);
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.01em;
-  color: rgba(214, 246, 255, 0.96);
+  color: rgba(224, 247, 255, 0.96);
 }
 
-.summaryList {
-  margin: 10px 0 0 0;
-  padding-left: 18px;
-  color: rgba(185, 205, 225, 0.78);
-  font-family: var(--sf-sans);
-  font-size: 12px;
-  line-height: 1.45;
-}
-
+/* ── Confidence row ── */
 .confRow {
-  margin-top: 10px;
+  margin-top: 8px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-family: var(--sf-mono);
-  font-size: 10px;
+  font-size: 9px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(182, 228, 255, 0.55);
+  color: rgba(34, 211, 238, 0.50);
 }
 
 .confPill {
-  padding: 4px 8px;
+  padding: 3px 7px;
   border-radius: 999px;
-  border: 1px solid rgba(182, 228, 255, 0.18);
-  background: rgba(182, 228, 255, 0.08);
-  color: rgba(214, 246, 255, 0.88);
+  border: 1px solid rgba(34, 211, 238, 0.20);
+  background: rgba(34, 211, 238, 0.08);
+  color: rgba(224, 247, 255, 0.85);
+  font-size: 9px;
 }
 
-/* ── Briefing Section (objectives block) ── */
-.briefingSection {
-  margin-top: 12px;
-  padding-top: 10px;
-  border-top: 1px solid rgba(182, 228, 255, 0.1);
-}
-
-.briefingTitle {
-  font-family: var(--sf-mono);
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(52, 211, 153, 0.85);
-  margin-bottom: 6px;
-}
-
-.briefingRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-family: var(--sf-mono);
-  font-size: 11px;
-  color: rgba(182, 228, 255, 0.7);
-  padding: 2px 0;
-}
-
+/* ── Diagnostics toggles ── */
 .diagStack {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .diagCard {
-  border: 1px solid rgba(182, 228, 255, 0.12);
-  border-radius: 10px;
-  padding: 10px 10px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0));
+  border: 1px solid rgba(34, 211, 238, 0.08);
+  border-radius: 8px;
+  padding: 10px;
+  background: linear-gradient(180deg, rgba(34, 211, 238, 0.03), rgba(0,0,0,0));
 }
 
 .diagTitleRow {
@@ -267,66 +352,104 @@
   display: flex;
   align-items: center;
   font-family: var(--sf-mono);
-  font-size: 10px;
+  font-size: 9px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(182, 228, 255, 0.58);
+  color: rgba(34, 211, 238, 0.55);
 }
 
 .diagText {
-  margin-top: 6px;
+  margin-top: 5px;
   font-family: var(--sf-sans);
-  font-size: 12px;
-  line-height: 1.45;
-  color: rgba(185, 205, 225, 0.76);
+  font-size: 11px;
+  line-height: 1.4;
+  color: rgba(185, 205, 225, 0.72);
 }
 
 .diagMetric {
-  margin-top: 6px;
+  margin-top: 4px;
   font-family: var(--sf-mono);
-  font-size: 10px;
+  font-size: 9px;
   letter-spacing: 0.08em;
-  color: rgba(185, 205, 225, 0.56);
+  color: rgba(148, 163, 184, 0.50);
 }
 
+/* ── Summary list ── */
+.summaryList {
+  margin: 8px 0 0 0;
+  padding-left: 16px;
+  color: rgba(185, 205, 225, 0.72);
+  font-family: var(--sf-sans);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+/* ── Briefing Section ── */
+.briefingSection {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(34, 211, 238, 0.06);
+}
+
+.briefingTitle {
+  font-family: var(--sf-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(52, 211, 153, 0.80);
+  margin-bottom: 6px;
+}
+
+.briefingRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--sf-mono);
+  font-size: 10px;
+  color: rgba(185, 205, 225, 0.65);
+  padding: 2px 0;
+}
+
+/* ── Legend ── */
 .legendBox {
-  background: rgba(4, 9, 15, 0.62);
-  border: 1px solid rgba(182, 228, 255, 0.12);
-  border-radius: 10px;
-  padding: 10px 10px;
+  background: rgba(4, 9, 15, 0.72);
+  border: 1px solid rgba(34, 211, 238, 0.10);
+  border-radius: 8px;
+  padding: 10px;
   backdrop-filter: blur(10px);
 }
 
 .legendTitle {
   font-family: var(--sf-mono);
-  font-size: 10px;
+  font-size: 9px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(182, 228, 255, 0.56);
+  color: rgba(34, 211, 238, 0.50);
 }
 
 .legendItem {
-  margin-top: 8px;
+  margin-top: 6px;
   font-family: var(--sf-sans);
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.4;
-  color: rgba(185, 205, 225, 0.72);
+  color: rgba(185, 205, 225, 0.68);
 }
 
 .legendKey {
   font-family: var(--sf-mono);
-  font-size: 10px;
+  font-size: 9px;
   letter-spacing: 0.10em;
   text-transform: uppercase;
-  color: rgba(214, 246, 255, 0.86);
+  color: rgba(224, 247, 255, 0.82);
 }
 
+/* ── Time Controls ── */
 .timeControl {
   display: flex;
   align-items: center;
   gap: 1px;
-  background: rgba(4, 9, 15, 0.82);
-  border: 1px solid rgba(182, 228, 255, 0.18);
+  background: rgba(4, 9, 15, 0.85);
+  border: 1px solid rgba(34, 211, 238, 0.16);
   border-radius: 8px;
   padding: 4px 6px;
   backdrop-filter: blur(8px);
@@ -334,9 +457,9 @@
 
 .timeLabel {
   font-family: var(--sf-mono);
-  font-size: 10px;
+  font-size: 9px;
   letter-spacing: 0.12em;
-  color: rgba(182, 228, 255, 0.50);
+  color: rgba(34, 211, 238, 0.45);
   text-transform: uppercase;
   padding: 0 8px 0 2px;
   white-space: nowrap;
@@ -345,13 +468,13 @@
 .timeDivider {
   width: 1px;
   height: 14px;
-  background: rgba(182, 228, 255, 0.12);
+  background: rgba(34, 211, 238, 0.10);
   margin-right: 3px;
 }
 
 .timeButton {
   font-family: var(--sf-mono);
-  font-size: 11px;
+  font-size: 10px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   padding: 4px 10px;
@@ -360,115 +483,138 @@
   cursor: pointer;
   transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
   background: transparent;
-  color: rgba(182, 228, 255, 0.40);
+  color: rgba(148, 163, 184, 0.45);
 }
 
 .timeButtonActive {
-  border: 1px solid rgba(182, 228, 255, 0.55);
-  background: rgba(182, 228, 255, 0.14);
-  color: rgba(214, 246, 255, 0.94);
+  border: 1px solid rgba(34, 211, 238, 0.50);
+  background: rgba(34, 211, 238, 0.12);
+  color: rgba(224, 247, 255, 0.94);
   font-weight: 600;
 }
 
-/* ── Legend wrapper ──────────────────────────────────────── */
+/* ── Legend outer wrapper ── */
 .legendOuter {
-  background: linear-gradient(180deg, rgba(10,15,22,0.9), rgba(6,9,14,0.9));
-  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(8,14,22,0.92), rgba(4,8,14,0.92));
+  border-radius: 8px;
   padding: 1px;
-  box-shadow: 0 0 0 1px rgba(0,224,255,0.15), 0 8px 30px rgba(0,0,0,0.45);
+  box-shadow: 0 0 0 1px rgba(34,211,238,0.12), 0 8px 30px rgba(0,0,0,0.50);
 }
 
 .legendInner {
-  background: rgba(8,12,18,0.85);
-  border-radius: 9px;
-  padding: 14px 16px;
+  background: rgba(5,10,16,0.88);
+  border-radius: 7px;
+  padding: 12px 14px;
   backdrop-filter: blur(6px);
 }
 
-/* ── Overlay z-layer (DEPRECATED — now using PositionRightRail) ── */
-/*
-.overlayLayer {
-  position: absolute;
-  top: 110px;
-  right: 24px;
-  z-index: 20;
-  pointer-events: auto;
-}
-*/
-
-/* ── Command Dock (DEPRECATED — now docked in RightRail) ── */
-/*
-.commandDock {
-  position: absolute;
-  top: 92px;
-  right: 0;
-  z-index: 3000;
-  pointer-events: auto;
-}
-
-.commandButton {
+/* ── Toggle switch styling ── */
+.toggleRow {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: rgba(8, 12, 18, 0.75);
-  border: 1px solid rgba(0, 224, 255, 0.22);
-  border-radius: 6px 0 0 6px;
-  color: rgba(0, 224, 255, 0.8);
-  font-size: 16px;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.toggleLabel {
+  font-family: var(--sf-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: rgba(185, 205, 225, 0.65);
+}
+
+.toggleSwitch {
+  width: 28px;
+  height: 14px;
+  border-radius: 7px;
+  background: rgba(34, 211, 238, 0.10);
+  border: 1px solid rgba(34, 211, 238, 0.20);
   cursor: pointer;
-  backdrop-filter: blur(6px);
-  transition: background 120ms ease, border-color 120ms ease;
+  position: relative;
+  transition: background 150ms ease;
 }
 
-.commandButton:hover {
-  background: rgba(0, 224, 255, 0.12);
-  border-color: rgba(0, 224, 255, 0.45);
+.toggleSwitchActive {
+  background: rgba(34, 211, 238, 0.30);
+  border-color: rgba(34, 211, 238, 0.50);
 }
-*/
 
-/* ── Rail mode tabs (Briefing / Diagnostics / Command) ── */
+/* ── Deprecated selectors kept for compat ── */
+.panel {
+  background: var(--sf-glass-bg);
+  border: var(--sf-glass-border);
+  border-radius: var(--sf-radius);
+  box-shadow: var(--sf-shadow);
+  backdrop-filter: blur(10px);
+}
+
+.panelHeader {
+  padding: 12px 12px 10px 12px;
+  border-bottom: 1px solid rgba(34, 211, 238, 0.08);
+}
+
+.panelTitle {
+  font-family: var(--sf-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(34, 211, 238, 0.55);
+}
+
+.panelBody {
+  padding: 12px;
+}
+
+.rightRail {
+  position: absolute;
+  top: calc(var(--sf-nav-h) + 10px);
+  right: 14px;
+  width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 280;
+  pointer-events: auto;
+}
+
+/* ── Rail mode tabs ── */
 .railTabs {
   display: flex;
   gap: 4px;
   padding: 6px;
-  border-radius: 10px;
+  border-radius: 8px;
   min-height: 36px;
   flex-shrink: 0;
-
-  background: rgba(6, 10, 16, 0.92);
-  border: 1px solid rgba(34, 211, 238, 0.25);
+  background: rgba(5, 10, 16, 0.94);
+  border: 1px solid rgba(34, 211, 238, 0.18);
   backdrop-filter: blur(12px);
 }
 
 .railTab {
   flex: 1;
   height: 28px;
-  border-radius: 7px;
-  border: 1px solid rgba(34, 211, 238, 0.12);
-  background: rgba(15, 20, 30, 0.50);
-
-  font-family: 'Inter', system-ui, sans-serif;
+  border-radius: 6px;
+  border: 1px solid rgba(34, 211, 238, 0.08);
+  background: rgba(10, 16, 24, 0.50);
+  font-family: var(--sf-sans);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.10em;
   text-transform: uppercase;
-  color: rgba(148, 163, 184, 0.70);
+  color: rgba(148, 163, 184, 0.60);
   white-space: nowrap;
-
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .railTab:hover {
-  background: rgba(34, 211, 238, 0.08);
-  color: rgba(200, 220, 235, 0.85);
+  background: rgba(34, 211, 238, 0.06);
+  color: rgba(200, 220, 235, 0.80);
 }
 
 .railTabActive {
-  background: rgba(34, 211, 238, 0.12);
-  border-color: rgba(34, 211, 238, 0.40);
-  color: rgba(34, 211, 238, 0.95);
-  box-shadow: 0 0 8px rgba(34, 211, 238, 0.14);
+  background: rgba(34, 211, 238, 0.10);
+  border-color: rgba(34, 211, 238, 0.35);
+  color: rgba(34, 211, 238, 0.92);
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.12);
 }

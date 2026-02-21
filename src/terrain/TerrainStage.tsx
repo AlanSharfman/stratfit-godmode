@@ -1,26 +1,18 @@
 // src/terrain/TerrainStage.tsx
 // ═══════════════════════════════════════════════════════════════════════════
-// STRATFIT — Position Stage (REALITY VISUALIZATION)
-// Navigation Contract: src/contracts/navigationContract.ts
-//
-// ROLE: Single Canvas host for terrain, P50 trajectory, markers, timeline,
-//       and liquidity particles (when enabled).
-// READS: Initiate snapshot ONLY (via SystemBaselineProvider). (Rule 1)
-// RULES:
-//   - No Objectives dependency — terrain shape is Initiate-derived only.
-//   - No simulation logic (Rule 3).
-//   - No baseline writes (Rule 4).
-//   - Water/liquidity particles are a Position layer (Rule 6).
+// STRATFIT — Position Stage (HYPER-PREMIUM TERRAIN VISUALIZATION)
+// Single Canvas host: terrain, trajectory, markers, background mountains,
+// bloom post-processing, cinematic camera, volumetric depth fog.
 // ═══════════════════════════════════════════════════════════════════════════
-// Phase 2/1: camera + far-plane + fog stabilization (deterministic)
-// Phase 2.2: granularity prop wired from PositionPage toggle
 
 import React, { Suspense, useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
+import { OrbitControls, AdaptiveDpr } from "@react-three/drei";
+import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import * as THREE from "three";
 import type { TerrainSurfaceHandle } from "@/terrain/TerrainSurface";
 import TerrainSurface from "@/terrain/TerrainSurface";
+import BackgroundMountains from "@/terrain/BackgroundMountains";
 import P50Path from "@/paths/P50Path";
 import TimelineTicks, { type TimeGranularity } from "@/position/TimelineTicks";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
@@ -43,8 +35,7 @@ export default function TerrainStage({ granularity }: TerrainStageProps) {
 
   // ── Render flags ──
   const { showMarkers, showFlow, showPaths } = useRenderFlagsStore();
-  // TODO: wire showGrid → TerrainSurface grid prop when available
-  // TODO: wire showRiskField → RiskFieldLayer when implemented
+
   useEffect(() => {
     if (terrainReady) return;
     let cancelled = false;
@@ -68,39 +59,68 @@ export default function TerrainStage({ granularity }: TerrainStageProps) {
     <Canvas
       style={{ position: "absolute", inset: 0, zIndex: 0 }}
       dpr={[1, 2]}
-      camera={{ position: [0, 143, 286], fov: 42, near: 0.1, far: 5000 }}
-      gl={{ antialias: true, alpha: false }}
+      camera={{
+        position: [0, 160, 320],
+        fov: 35,
+        near: 0.1,
+        far: 6000,
+      }}
+      gl={{ antialias: true, alpha: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
+      shadows
       onCreated={({ camera, gl, scene }) => {
-        // Deterministic camera lock (prevents "close-up blob / drift")
-        camera.position.set(0, 143, 286);
-        camera.lookAt(0, 0, 0);
+        // Cinematic isometric high-angle — captures entire trajectory sweep
+        camera.position.set(0, 160, 320);
+        camera.lookAt(0, -10, -40);
         camera.updateProjectionMatrix();
 
-        // Deterministic clear + fog baseline
+        // Deep abyss background
         gl.setClearColor("#050A10", 1);
-        scene.fog = new THREE.Fog("#050A10", 320, 2200);
+
+        // Volumetric depth fog — layered for immersion
+        scene.fog = new THREE.FogExp2("#050A10", 0.0012);
       }}
     >
-      {/* Constrained orbit — horizontal rotation ±45°, no tilt, no zoom, no pan */}
+      <AdaptiveDpr pixelated />
+
+      {/* Cinematic constrained orbit */}
       <OrbitControls
         makeDefault
         enablePan={false}
         enableZoom={false}
-        minAzimuthAngle={-Math.PI / 4}
-        maxAzimuthAngle={ Math.PI / 4}
-        minPolarAngle={1.107}
-        maxPolarAngle={1.107}
-        rotateSpeed={0.55}
-        target={[0, 0, 0]}
+        minAzimuthAngle={-Math.PI / 5}
+        maxAzimuthAngle={ Math.PI / 5}
+        minPolarAngle={0.95}
+        maxPolarAngle={1.25}
+        rotateSpeed={0.4}
+        target={[0, -10, -40]}
       />
 
-      {/* Deterministic background + fog (redundant by design; guards against overrides) */}
+      {/* Deep abyss background */}
       <color attach="background" args={["#050A10"]} />
-      <fog attach="fog" args={["#050A10", 320, 2200]} />
 
-      {/* Lights: slightly lifted for marker + tick readability */}
-      <ambientLight intensity={0.70} />
-      <directionalLight position={[120, 180, 120]} intensity={0.90} color="#CFEFFF" />
+      {/* ── Premium Lighting Rig ── */}
+      {/* Key light — cold blue-white from above-right */}
+      <directionalLight
+        position={[150, 220, 100]}
+        intensity={1.2}
+        color="#C8E6FF"
+        castShadow
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-camera-left={-300}
+        shadow-camera-right={300}
+        shadow-camera-top={200}
+        shadow-camera-bottom={-200}
+      />
+      {/* Fill light — subtle cool ambient */}
+      <ambientLight intensity={0.35} color="#8BB8D0" />
+      {/* Rim light — back-right for edge definition */}
+      <directionalLight position={[-100, 80, -200]} intensity={0.5} color="#38bdf8" />
+      {/* Accent light — bottom-left subtle fill for depth */}
+      <pointLight position={[-200, -20, 100]} intensity={0.3} color="#0ea5e9" distance={800} decay={2} />
+
+      {/* Background mountain ranges — distant rolling peaks fading into fog */}
+      <BackgroundMountains />
 
       <HorizonBand />
 
@@ -117,6 +137,16 @@ export default function TerrainStage({ granularity }: TerrainStageProps) {
           </>
         )}
       </Suspense>
+
+      {/* ── Post-processing: bloom for neon glow ── */}
+      <EffectComposer>
+        <Bloom
+          luminanceThreshold={0.6}
+          luminanceSmoothing={0.4}
+          intensity={1.2}
+          mipmapBlur
+        />
+      </EffectComposer>
     </Canvas>
   );
 }

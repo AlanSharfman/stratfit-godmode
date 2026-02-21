@@ -11,9 +11,8 @@ import { useRenderFlagsStore } from "@/state/renderFlagsStore"
 import { useSemanticBalance, DEFAULT_SHL_WEIGHTS } from "@/render/shl"
 import type { SemanticLayerKey } from "@/render/shl"
 
-import PositionRightRail from "@/components/position/PositionRightRail"
-import CommandCentrePanel from "@/components/diagnostics/CommandCentrePanel"
 import BaselineIntelligencePanel from "@/components/baseline/BaselineIntelligencePanel"
+import CommandCentrePanel from "@/components/diagnostics/CommandCentrePanel"
 import KPIOverlay from "./overlays/KPIOverlay"
 import TerrainLegend from "./overlays/TerrainLegend"
 import TimeScaleControl from "./overlays/TimeScaleControl"
@@ -23,19 +22,24 @@ import {
 
 import styles from "./PositionOverlays.module.css"
 
-// Diagnostics panel is togglable via close button
-
 function extractRiskIndex(engineResults: unknown): number | null {
   const r = engineResults as any
   const v = r?.base?.kpis?.riskIndex?.value
   return typeof v === "number" && Number.isFinite(v) ? v : null
 }
 
-/** Treat an SHL weight > 0 as "on" */
 function shlIsOn(weight: number): boolean {
   return weight > 0
 }
 
+/**
+ * PositionPage — Hyper-premium 3-column God Mode dashboard.
+ *
+ * Layout:
+ *   LEFT  (17.5%) — AI Intelligence read-out
+ *   CENTER (65%)  — 3D terrain viewport + KPI overlay
+ *   RIGHT (17.5%) — Command Centre + Diagnostics
+ */
 export default function PositionPage() {
   const [granularity, setGranularity] = useState<TimeGranularity>("quarter")
   const [showDiagnostics, setShowDiagnostics] = useState(true)
@@ -72,7 +76,7 @@ export default function PositionPage() {
   const heatmapEnabled = useViewTogglesStore((s) => s.heatmapEnabled)
   const toggleHeatmap = useViewTogglesStore((s) => s.toggleHeatmap)
 
-  // ── Diagnostic Groups (NARRATIVE / FIELDS / TOPOGRAPHY) ──
+  // ── Diagnostic Groups ──
   const diagnosticGroups = [
     {
       heading: "NARRATIVE",
@@ -106,18 +110,48 @@ export default function PositionPage() {
 
   return (
     <div className={styles.page}>
-      <TerrainStage granularity={granularity} />
-
-      <div className={styles.kpiDock} aria-label="Position KPIs">
-        <KPIOverlay vm={vm} />
+      {/* ════════════════ LEFT PANEL: AI INTELLIGENCE ════════════════ */}
+      <div className={styles.leftPanel}>
+        <div className={styles.panelSection}>
+          <div className={styles.panelSectionHeader}>
+            <span className={styles.panelSectionTitle}>AI Intelligence</span>
+            <span className={styles.panelSectionBadge}>Live</span>
+          </div>
+        </div>
+        <BaselineIntelligencePanel />
       </div>
 
-      <div className={styles.timeScaleDock} aria-label="Time scale control">
-        <TimeScaleControl granularity={granularity} setGranularity={setGranularity} />
+      {/* ════════════════ CENTER: 3D TERRAIN VIEWPORT ════════════════ */}
+      <div className={styles.centerViewport}>
+        <TerrainStage granularity={granularity} />
+
+        <div className={styles.kpiDock} aria-label="Position KPIs">
+          <KPIOverlay vm={vm} />
+        </div>
+
+        <div className={styles.timeScaleDock} aria-label="Time scale control">
+          <TimeScaleControl granularity={granularity} setGranularity={setGranularity} />
+        </div>
+
+        <div className={styles.legendDock} aria-label="Terrain legend">
+          <TerrainLegend />
+        </div>
+
+        {!vm && (
+          <div className={styles.noBaselineHint}>
+            No baseline loaded. Initialise to enable KPIs + diagnostics.
+          </div>
+        )}
       </div>
 
-      {/* ── Right Rail (stacked: Diagnostics + Intelligence) ── */}
-      <PositionRightRail>
+      {/* ════════════════ RIGHT PANEL: COMMAND CENTRE ════════════════ */}
+      <div className={styles.rightPanel}>
+        <div className={styles.panelSection}>
+          <div className={styles.panelSectionHeader}>
+            <span className={styles.panelSectionTitle}>Command Centre</span>
+            <span className={styles.panelSectionBadge}>Active</span>
+          </div>
+        </div>
         {showDiagnostics && (
           <CommandCentrePanel
             groups={diagnosticGroups}
@@ -125,18 +159,7 @@ export default function PositionPage() {
             onClose={() => setShowDiagnostics(false)}
           />
         )}
-        <BaselineIntelligencePanel />
-      </PositionRightRail>
-
-      <div className={styles.legendDock} aria-label="Terrain legend">
-        <TerrainLegend />
       </div>
-
-      {!vm && (
-        <div className={styles.noBaselineHint}>
-          No baseline loaded. Initialise to enable KPIs + diagnostics.
-        </div>
-      )}
     </div>
   )
 }

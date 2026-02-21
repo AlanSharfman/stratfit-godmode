@@ -14,7 +14,12 @@ function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t
 }
 
-export default function P50Path({ terrainRef, hoverOffset = 0.68, rebuildKey }: Props) {
+/**
+ * P50Path — Brilliant glowing icy-white/cyan neon trajectory.
+ * Flows organically over the terrain, hugging contours with gravity and momentum.
+ * Two passes: outer glow (wider, softer) + inner core (bright, sharp).
+ */
+export default function P50Path({ terrainRef, hoverOffset = 0.85, rebuildKey }: Props) {
   const [points, setPoints] = useState<THREE.Vector3[]>([])
 
   const x0 = useMemo(() => -TERRAIN_CONSTANTS.width * 0.36, [])
@@ -25,11 +30,11 @@ export default function P50Path({ terrainRef, hoverOffset = 0.68, rebuildKey }: 
     if (!terrain) return
 
     const next: THREE.Vector3[] = []
-    const count = 240
+    const count = 320 // Higher density for smoother S-curves
 
-    // Deterministic meander (no data-dependent noise)
-    const amp1 = 22
-    const amp2 = 9
+    // Organic meander — wider, more dramatic curves
+    const amp1 = 28
+    const amp2 = 12
     const w1 = Math.PI * 2 * 1.05
     const w2 = Math.PI * 2 * 2.35
     const p1 = 0.75
@@ -49,12 +54,23 @@ export default function P50Path({ terrainRef, hoverOffset = 0.68, rebuildKey }: 
   if (points.length < 2) return null
 
   return (
-    <Line
-      points={points}
-      color="#00E0FF"
-      lineWidth={3}
-      transparent
-      opacity={0.92}
-    />
+    <group>
+      {/* Outer glow pass — wider, softer cyan */}
+      <Line
+        points={points}
+        color="#38bdf8"
+        lineWidth={6}
+        transparent
+        opacity={0.35}
+      />
+      {/* Inner core — bright icy-white/cyan neon */}
+      <Line
+        points={points}
+        color="#E0F7FF"
+        lineWidth={2.5}
+        transparent
+        opacity={0.95}
+      />
+    </group>
   )
 }
