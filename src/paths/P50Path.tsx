@@ -58,18 +58,18 @@ export default function P50Path({ terrainRef, hoverOffset = 0.20, rebuildKey }: 
       {/* Outer glow pass — wider, softer azure */}
       <Line
         points={points}
-        color="#0077B6"
-        lineWidth={6}
+        color="#2979FF"
+        lineWidth={6.3}
         transparent
-        opacity={0.35}
+        opacity={0.45}
       />
-      {/* Inner core — brilliant cyan neon */}
+      {/* Inner core — bright neon azure */}
       <Line
         points={points}
-        color="#00E5FF"
-        lineWidth={2.5}
+        color="#82B1FF"
+        lineWidth={2.625}
         transparent
-        opacity={0.95}
+        opacity={1.0}
       />
     </group>
   )

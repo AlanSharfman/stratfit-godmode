@@ -1,12 +1,12 @@
 import * as THREE from "three"
 
 /**
- * Premium terrain solid material — Midnight Azure abyss.
+ * Premium terrain solid material — Azure abyss.
  *
  * Height-gradient shader:
- *   Valleys  → midnight azure (#002B36)
- *   Slopes   → deep cerulean (#006494)
- *   Peaks    → brilliant cyan (#00E5FF)
+ *   Valleys  → midnight teal (#002B36)
+ *   Slopes   → deep cerulean (#005C94)
+ *   Peaks    → deep sky blue (#00BFFF)
  */
 export function createTerrainSolidMaterial() {
   const mat = new THREE.MeshStandardMaterial({
@@ -44,15 +44,15 @@ vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;`,
       .replace(
         "#include <color_fragment>",
         `#include <color_fragment>
-// ── Azure height gradient: Midnight Azure → Deep Cerulean → Brilliant Cyan ──
+// ── Sovereign Azure gradient: Midnight Teal → Deep Cerulean → Azure #007FFF ──
 float _ht = clamp((vHeight + 4.0) / 36.0, 0.0, 1.0);
 
-// Valley: midnight azure
+// Valley: midnight teal (#002B36)
 vec3 _valleyCol = vec3(0.0, 0.169, 0.212);
-// Slope: deep cerulean
-vec3 _slopeCol = vec3(0.0, 0.392, 0.580);
-// Peak: brilliant cyan
-vec3 _peakCol = vec3(0.0, 0.898, 1.0);
+// Slope: deep cerulean (#005C94)
+vec3 _slopeCol = vec3(0.0, 0.36, 0.58);
+// Peak: azure blue (#007FFF)
+vec3 _peakCol = vec3(0.0, 0.498, 1.0);
 
 // Smooth S-curve interpolation
 float _t1 = smoothstep(0.0, 0.40, _ht);
@@ -74,12 +74,12 @@ diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.0, 0.10, 0.13), _distFade * 0.45
 }
 
 /**
- * Premium wireframe lattice — azure-to-brilliant-cyan glow on height.
+ * Premium wireframe lattice — azure-to-sky-blue glow on height.
  */
 export function createTerrainWireMaterial() {
   const mat = new THREE.MeshStandardMaterial({
-    color: 0x0088cc,
-    emissive: 0x00aadd,
+    color: 0x0077B6,
+    emissive: 0x0088cc,
     emissiveIntensity: 0.60,
     wireframe: true,
     transparent: true,
@@ -110,12 +110,12 @@ export function createTerrainWireMaterial() {
         "#include <color_fragment>",
         `#include <color_fragment>
 float _wh = clamp((vWireHeight + 4.0) / 36.0, 0.0, 1.0);
-// Gradient: midnight azure wire → brilliant cyan on peaks
-vec3 _wireValley = vec3(0.0, 0.169, 0.30);
-vec3 _wirePeak = vec3(0.0, 0.898, 1.0);
+// Gradient: midnight azure wire → azure #007FFF on peaks
+vec3 _wireValley = vec3(0.0, 0.15, 0.30);
+vec3 _wirePeak = vec3(0.0, 0.498, 1.0);
 diffuseColor.rgb = mix(_wireValley, _wirePeak, smoothstep(0.0, 0.8, _wh));
-// Peak glow boost
-diffuseColor.rgb += vec3(0.0, 0.20, 0.25) * smoothstep(0.6, 1.0, _wh);`,
+// Peak glow boost (tamed to reduce sparkle)
+diffuseColor.rgb += vec3(0.0, 0.10, 0.14) * smoothstep(0.65, 1.0, _wh);`,
       )
   }
 

@@ -111,7 +111,7 @@ export default function BackgroundMountains() {
         yScale={1.0}
         opacity={0.35}
         color="#081420"
-        emissive="#004466"
+        emissive="#003D66"
         emissiveIntensity={0.15}
         seed={42}
       />
@@ -122,7 +122,7 @@ export default function BackgroundMountains() {
         yScale={1.4}
         opacity={0.22}
         color="#060f1a"
-        emissive="#003d5c"
+        emissive="#003355"
         emissiveIntensity={0.10}
         seed={137}
       />
@@ -133,7 +133,7 @@ export default function BackgroundMountains() {
         yScale={1.8}
         opacity={0.12}
         color="#040c14"
-        emissive="#002B36"
+        emissive="#002440"
         emissiveIntensity={0.06}
         seed={256}
       />

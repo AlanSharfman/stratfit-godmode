@@ -58,41 +58,41 @@ export default function TerrainStage({ granularity }: TerrainStageProps) {
   return (
     <Canvas
       style={{ position: "absolute", inset: 0, zIndex: 0 }}
-      dpr={[1.2, 1.5]}
+      dpr={[1, 1.5]}
       camera={{
-        position: [0, 160, 320],
-        fov: 35,
+        position: [300, 250, 350],
+        fov: 25,
         near: 0.1,
         far: 6000,
       }}
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance", toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
       shadows
       onCreated={({ camera, gl, scene }) => {
-        // Cinematic isometric high-angle — captures entire trajectory sweep
-        camera.position.set(0, 160, 320);
-        camera.lookAt(0, -10, -40);
+        // Sovereign Overlook — high-altitude God Angle, 45° offset
+        camera.position.set(300, 250, 350);
+        camera.lookAt(0, -10, 0);
         camera.updateProjectionMatrix();
 
         // Deep abyss background
         gl.setClearColor("#050A10", 1);
 
-        // Volumetric depth fog — layered for immersion
-        scene.fog = new THREE.FogExp2("#050A10", 0.0012);
+        // Volumetric depth fog — gentler for wide-angle sovereign view
+        scene.fog = new THREE.FogExp2("#050A10", 0.0008);
       }}
     >
       <AdaptiveDpr pixelated />
 
-      {/* Cinematic constrained orbit */}
+      {/* Sovereign orbit — slow Hero Ease auto-rotation for cinematic breathing */}
       <OrbitControls
         makeDefault
         enablePan={false}
         enableZoom={false}
-        minAzimuthAngle={-Math.PI / 5}
-        maxAzimuthAngle={ Math.PI / 5}
-        minPolarAngle={0.95}
-        maxPolarAngle={1.25}
-        rotateSpeed={0.4}
-        target={[0, -10, -40]}
+        autoRotate
+        autoRotateSpeed={0.08}
+        minPolarAngle={0.85}
+        maxPolarAngle={1.30}
+        rotateSpeed={0.35}
+        target={[0, -10, 0]}
       />
 
       {/* Deep abyss background */}
@@ -115,9 +115,9 @@ export default function TerrainStage({ granularity }: TerrainStageProps) {
       {/* Fill light — subtle cool ambient */}
       <ambientLight intensity={0.35} color="#8BB8D0" />
       {/* Rim light — back-right for edge definition */}
-      <directionalLight position={[-100, 80, -200]} intensity={0.5} color="#0088cc" />
+      <directionalLight position={[-100, 80, -200]} intensity={0.5} color="#0077B6" />
       {/* Accent light — bottom-left subtle fill for depth */}
-      <pointLight position={[-200, -20, 100]} intensity={0.3} color="#006494" distance={800} decay={2} />
+      <pointLight position={[-200, -20, 100]} intensity={0.3} color="#005A8C" distance={800} decay={2} />
 
       {/* Background mountain ranges — distant rolling peaks fading into fog */}
       <BackgroundMountains />
@@ -141,9 +141,9 @@ export default function TerrainStage({ granularity }: TerrainStageProps) {
       {/* ── Post-processing: bloom for neon glow ── */}
       <EffectComposer>
         <Bloom
-          luminanceThreshold={0.5}
+          luminanceThreshold={0.6}
           luminanceSmoothing={0.4}
-          intensity={1.8}
+          intensity={1.5}
           mipmapBlur
         />
       </EffectComposer>

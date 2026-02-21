@@ -17,8 +17,8 @@
   overflow: hidden;
 
   --sf-nav-h: 56px;
-  --sf-panel-w: 17.5%;
-  --sf-panel-min: 220px;
+  --sf-panel-w: 14%;
+  --sf-panel-min: 200px;
   --sf-cyan: rgba(34, 211, 238, 1);
   --sf-cyan-soft: rgba(34, 211, 238, 0.18);
   --sf-cyan-hair: rgba(34, 211, 238, 0.10);
@@ -44,7 +44,7 @@
   --z-hint: 350;
 }
 
-/* ── Left Panel: AI Intelligence (position: fixed) ── */
+/* ── Left Panel: AI Intelligence (position: fixed, half-height glass) ── */
 .leftPanel {
   position: fixed;
   top: 0;
@@ -54,10 +54,15 @@
   display: flex;
   flex-direction: column;
   gap: 0;
-  height: 100vh;
+  height: 55vh;
+  max-height: 55vh;
   padding-top: var(--sf-nav-h);
-  background: linear-gradient(180deg, rgba(5, 10, 16, 0.96), rgba(3, 7, 12, 0.98));
-  border-right: 1px solid rgba(34, 211, 238, 0.08);
+  background: linear-gradient(180deg, rgba(5, 10, 16, 0.78), rgba(3, 7, 12, 0.65));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-right: 1px solid rgba(34, 211, 238, 0.10);
+  border-bottom: 1px solid rgba(34, 211, 238, 0.06);
+  border-radius: 0 0 var(--sf-radius) 0;
   z-index: var(--z-panel);
   overflow-y: auto;
   overflow-x: hidden;
@@ -91,8 +96,10 @@
   gap: 0;
   height: 100vh;
   padding-top: var(--sf-nav-h);
-  background: linear-gradient(180deg, rgba(5, 10, 16, 0.96), rgba(3, 7, 12, 0.98));
-  border-left: 1px solid rgba(34, 211, 238, 0.08);
+  background: linear-gradient(180deg, rgba(5, 10, 16, 0.78), rgba(3, 7, 12, 0.65));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-left: 1px solid rgba(34, 211, 238, 0.10);
   z-index: var(--z-panel);
   overflow-y: auto;
   overflow-x: hidden;
