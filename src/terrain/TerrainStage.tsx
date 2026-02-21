@@ -21,7 +21,7 @@ export default function TerrainStage({ children }: Props) {
         depth: true,
         powerPreference: "high-performance",
       }}
-      camera={{ position: [32, 20, 34], fov: 42, near: 0.1, far: 1200 }}
+      camera={{ position: [28, 16, 26], fov: 44, near: 0.1, far: 1000 }}
       onCreated={({ gl }) => {
         gl.setClearColor(GOD.bg, 1);
       }}

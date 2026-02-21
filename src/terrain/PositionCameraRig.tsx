@@ -2,31 +2,35 @@ import { useThree } from "@react-three/fiber"
 import { useEffect } from "react"
 import * as THREE from "three"
 
+/**
+ * STRATFIT — GOD MODE CAMERA
+ *
+ * Goal:
+ * Long cinematic shot so user sees:
+ * • terrain undulations
+ * • timeline progression
+ * • path as a journey
+ */
+
 export default function PositionCameraRig() {
   const { camera } = useThree()
 
   useEffect(() => {
     const cam = camera as THREE.PerspectiveCamera | THREE.OrthographicCamera
 
-    // Balanced perspective — avoids distortion
+    // Wider lens but still natural
     if ((cam as any).isPerspectiveCamera) {
-      ;(cam as THREE.PerspectiveCamera).fov = 42
+      ;(cam as THREE.PerspectiveCamera).fov = 44
     }
 
-    /**
-     * Cinematic elevated vantage point
-     * Gives terrain curvature + horizon depth
-     */
-    cam.position.set(32, 20, 34)
+    // Pull back + raise
+    cam.position.set(28, 16, 26)
 
-    /**
-     * Look slightly forward in the terrain
-     * Not dead center — creates journey feel
-     */
-    cam.lookAt(4, 3, -2)
+    // Look slightly above terrain origin
+    cam.lookAt(0, 2.5, 0)
 
     cam.near = 0.1
-    cam.far = 1200
+    cam.far = 1000
 
     cam.updateProjectionMatrix()
   }, [camera])
