@@ -94,6 +94,8 @@ const TerrainSurface = forwardRef<TerrainSurfaceHandle, object>(function Terrain
         geometry={geometry}
         renderOrder={0}
         name="terrain-surface"
+        castShadow
+        receiveShadow
         onClick={(e) => {
           e.stopPropagation()
           clearSelected()

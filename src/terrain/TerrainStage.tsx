@@ -119,6 +119,23 @@ export default function TerrainStage({ granularity }: TerrainStageProps) {
       {/* Accent light — bottom-left subtle fill for depth */}
       <pointLight position={[-200, -20, 100]} intensity={0.3} color="#005A8C" distance={800} decay={2} />
 
+      {/* Dramatic shadow light — low-angle sun casting long shadows across the valley */}
+      <directionalLight
+        position={[-250, 80, -100]}
+        intensity={1.0}
+        color="#3366AA"
+        castShadow
+        shadow-mapSize-width={4096}
+        shadow-mapSize-height={4096}
+        shadow-camera-left={-500}
+        shadow-camera-right={500}
+        shadow-camera-top={400}
+        shadow-camera-bottom={-400}
+        shadow-camera-near={1}
+        shadow-camera-far={1500}
+        shadow-bias={-0.0003}
+      />
+
       {/* Background mountain ranges — distant rolling peaks fading into fog */}
       <BackgroundMountains />
 

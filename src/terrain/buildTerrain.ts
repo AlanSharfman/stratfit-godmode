@@ -140,12 +140,35 @@ function heightfieldFromModel(
     const ridgeShape = Math.exp(-(cross * cross) / (model.ridgeWidth * model.ridgeWidth));
     h += model.ridgeAmp * ridgeShape * 3.5;
 
-    // 3b) Strategic valley — gentle depression along central trajectory corridor
+    // 3b) Strategic valley — deep continuous depression along central trajectory corridor
     // This creates the natural channel the P50 path flows through
-    const valleyWidth = 40;
-    const valleyDepth = 4.5;
+    const valleyWidth = 55;
+    const valleyDepth = 14.0;
     const valleyFalloff = Math.exp(-(z * z) / (valleyWidth * valleyWidth));
-    h -= valleyDepth * valleyFalloff * smoothstep(0.0, 1.0, 1.0 - Math.abs(x) / (params.width * 0.42));
+    h -= valleyDepth * valleyFalloff * smoothstep(0.0, 1.0, 1.0 - Math.abs(x) / (params.width * 0.46));
+
+    // 3c) Five dramatic fixed peaks — towering mountains flanking the valley
+    // Background Left Peak: massive wall behind early timeline (Q2/Q3 2026)
+    const bgLeftDx = x - (-140);
+    const bgLeftDz = z - (-110);
+    h += 55 * Math.exp(-(bgLeftDx * bgLeftDx) / (70 * 70) - (bgLeftDz * bgLeftDz) / (55 * 55));
+
+    // Background Right Peak: towering summit behind late timeline (Q2/Q3 2027)
+    const bgRightDx = x - (150);
+    const bgRightDz = z - (-120);
+    h += 60 * Math.exp(-(bgRightDx * bgRightDx) / (75 * 75) - (bgRightDz * bgRightDz) / (60 * 60));
+
+    // Foreground Ridge — 3 rugged peaks along the bottom edge (closest to camera)
+    const fgPeaks: [number, number, number, number, number][] = [
+      [-170, 110, 45, 55, 45],   // bottom-left — tall craggy peak
+      [0,    130, 38, 60, 48],   // bottom-center — wide mesa
+      [180,  105, 48, 55, 42],   // bottom-right — towering promontory
+    ];
+    for (const [px, pz, amp, sx, sz] of fgPeaks) {
+      const fdx = x - px;
+      const fdz = z - pz;
+      h += amp * Math.exp(-(fdx * fdx) / (sx * sx) - (fdz * fdz) / (sz * sz));
+    }
 
     // 4) Edge falloff so edges don't look like a table
     const edge = smoothstep(
