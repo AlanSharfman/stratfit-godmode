@@ -7,7 +7,7 @@
 
 import React, { Suspense, useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, AdaptiveDpr, PerformanceMonitor } from "@react-three/drei";
+import { OrbitControls, AdaptiveDpr } from "@react-three/drei";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import * as THREE from "three";
 import type { TerrainSurfaceHandle } from "@/terrain/TerrainSurface";
@@ -29,7 +29,6 @@ type TerrainStageProps = {
 export default function TerrainStage({ granularity }: TerrainStageProps) {
   const terrainRef = useRef<TerrainSurfaceHandle>(null!);
   const [terrainReady, setTerrainReady] = useState(false);
-  const [dpr, setDpr] = useState(1.5);
   const { baseline } = useSystemBaseline();
   const rebuildKey = baselineSeedString(baseline as any);
   const horizonMonths = (baseline as any)?.posture?.horizonMonths ?? 36;
@@ -59,7 +58,7 @@ export default function TerrainStage({ granularity }: TerrainStageProps) {
   return (
     <Canvas
       style={{ position: "absolute", inset: 0, zIndex: 0 }}
-      dpr={dpr}
+      dpr={[1, 1.5]}
       camera={{
         position: [0, 160, 320],
         fov: 35,
@@ -81,7 +80,6 @@ export default function TerrainStage({ granularity }: TerrainStageProps) {
         scene.fog = new THREE.FogExp2("#050A10", 0.0012);
       }}
     >
-      <PerformanceMonitor onDecline={() => setDpr(0.7)} onIncline={() => setDpr(1.2)} />
       <AdaptiveDpr pixelated />
 
       {/* Cinematic constrained orbit */}
