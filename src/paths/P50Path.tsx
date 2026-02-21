@@ -22,8 +22,8 @@ function lerp(a: number, b: number, t: number) {
 export default function P50Path({ terrainRef, hoverOffset = 0.20, rebuildKey }: Props) {
   const [points, setPoints] = useState<THREE.Vector3[]>([])
 
-  const x0 = useMemo(() => -TERRAIN_CONSTANTS.width * 0.36, [])
-  const x1 = useMemo(() => TERRAIN_CONSTANTS.width * 0.36, [])
+  const x0 = useMemo(() => -TERRAIN_CONSTANTS.width * 0.46, [])
+  const x1 = useMemo(() => TERRAIN_CONSTANTS.width * 0.46, [])
 
   useEffect(() => {
     const terrain = terrainRef.current

@@ -60,24 +60,24 @@ export default function TerrainStage({ granularity }: TerrainStageProps) {
       style={{ position: "absolute", inset: 0, zIndex: 0 }}
       dpr={[1, 1.5]}
       camera={{
-        position: [300, 250, 350],
-        fov: 25,
+        position: [0, 280, 520],
+        fov: 30,
         near: 0.1,
         far: 6000,
       }}
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance", toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
       shadows
       onCreated={({ camera, gl, scene }) => {
-        // Sovereign Overlook — high-altitude God Angle, 45° offset
-        camera.position.set(300, 250, 350);
-        camera.lookAt(0, -10, 0);
+        // Sovereign Overlook — wide-angle cinematic God view
+        camera.position.set(0, 280, 520);
+        camera.lookAt(0, -15, -60);
         camera.updateProjectionMatrix();
 
         // Deep abyss background
         gl.setClearColor("#050A10", 1);
 
-        // Volumetric depth fog — gentler for wide-angle sovereign view
-        scene.fog = new THREE.FogExp2("#050A10", 0.0008);
+        // Volumetric depth fog — gentle for panoramic landscape
+        scene.fog = new THREE.FogExp2("#050A10", 0.0006);
       }}
     >
       <AdaptiveDpr pixelated />
@@ -88,11 +88,11 @@ export default function TerrainStage({ granularity }: TerrainStageProps) {
         enablePan={false}
         enableZoom={false}
         autoRotate
-        autoRotateSpeed={0.08}
-        minPolarAngle={0.85}
-        maxPolarAngle={1.30}
-        rotateSpeed={0.35}
-        target={[0, -10, 0]}
+        autoRotateSpeed={0.06}
+        minPolarAngle={0.80}
+        maxPolarAngle={1.20}
+        rotateSpeed={0.30}
+        target={[0, -15, -60]}
       />
 
       {/* Deep abyss background */}

@@ -84,7 +84,7 @@
   z-index: 0;
 }
 
-/* ── Right Panel: Command Centre + Diagnostics (position: fixed) ── */
+/* ── Right Panel: Command Centre + Diagnostics (position: fixed, ultra-glass) ── */
 .rightPanel {
   position: fixed;
   top: 0;
@@ -96,10 +96,10 @@
   gap: 0;
   height: 100vh;
   padding-top: var(--sf-nav-h);
-  background: linear-gradient(180deg, rgba(5, 10, 16, 0.78), rgba(3, 7, 12, 0.65));
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-left: 1px solid rgba(34, 211, 238, 0.10);
+  background: linear-gradient(180deg, rgba(5, 10, 16, 0.55), rgba(3, 7, 12, 0.42));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-left: 1px solid rgba(34, 211, 238, 0.08);
   z-index: var(--z-panel);
   overflow-y: auto;
   overflow-x: hidden;
@@ -148,10 +148,10 @@
 /* ── Center overlay docks ── */
 .kpiDock {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  padding: 10px 16px 0 16px;
+  top: 4px;
+  left: var(--sf-panel-w);
+  right: var(--sf-panel-w);
+  padding: 6px 10px 0 10px;
   z-index: var(--z-kpi);
   pointer-events: none;
 }
@@ -196,20 +196,21 @@
   pointer-events: auto;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 8px;
-  background: rgba(4, 9, 15, 0.65);
-  border: 1px solid rgba(34, 211, 238, 0.12);
-  border-radius: 10px;
-  padding: 10px;
-  backdrop-filter: blur(12px);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.40);
+  gap: 6px;
+  background: rgba(4, 9, 15, 0.50);
+  border: 1px solid rgba(34, 211, 238, 0.08);
+  border-radius: 8px;
+  padding: 8px;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.30);
 }
 
 .kpiCell {
-  border: 1px solid rgba(34, 211, 238, 0.10);
-  border-radius: 8px;
-  padding: 8px 10px;
-  background: linear-gradient(180deg, rgba(34, 211, 238, 0.04), rgba(0,0,0,0));
+  border: none;
+  border-bottom: 2px solid rgba(34, 211, 238, 0.15);
+  border-radius: 4px;
+  padding: 6px 8px;
+  background: rgba(34, 211, 238, 0.02);
 }
 
 .kpiLabel {
@@ -221,9 +222,9 @@
 }
 
 .kpiValue {
-  margin-top: 5px;
+  margin-top: 3px;
   font-family: var(--sf-sans);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   color: rgba(224, 247, 255, 0.94);
 }
