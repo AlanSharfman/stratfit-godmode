@@ -542,7 +542,208 @@
 .crestSilhouette {
   display: none;
   /* Placeholder for future crest silhouette overlay */
-}/* Recovery mode styles */
+}
+
+/* ─── Ambition Panel ─── */
+.ambitionBlocks {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ambitionBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ambitionLabelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ambitionLabel {
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.7);
+}
+
+.ambitionValue {
+  font-family: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: rgba(56, 189, 248, 0.95);
+}
+
+.ambitionDescriptor {
+  font-size: 0.5rem;
+  color: rgba(148, 163, 184, 0.45);
+  line-height: 1.4;
+}
+
+/* ─── Feasibility Score Hero ─── */
+.feasibilityScoreWrap {
+  text-align: center;
+  padding: 14px 0 18px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(100, 116, 139, 0.12);
+}
+
+.feasibilityScoreLabel {
+  font-size: 0.48rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.5);
+  margin-bottom: 4px;
+}
+
+.feasibilityScoreValue {
+  font-family: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
+  font-size: 2rem;
+  font-weight: 800;
+  color: rgba(56, 189, 248, 0.95);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.feasibilityScoreSub {
+  font-size: 0.55rem;
+  color: rgba(148, 163, 184, 0.6);
+}
+
+/* ─── Demand Bars ─── */
+.demandBars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.demandBar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.demandLabel {
+  font-size: 0.5rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.6);
+}
+
+.demandZone {
+  position: relative;
+  height: 6px;
+  background: rgba(30, 41, 59, 0.6);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.demandZoneLabel {
+  position: absolute;
+  right: 0;
+  top: -14px;
+  font-size: 0.45rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.5);
+}
+
+.greenZone {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, rgba(52, 211, 153, 0.7), rgba(52, 211, 153, 0.4));
+  transition: width 0.3s ease;
+}
+
+.amberZone {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, rgba(251, 191, 36, 0.7), rgba(251, 191, 36, 0.4));
+  transition: width 0.3s ease;
+}
+
+.redZone {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, rgba(248, 113, 113, 0.7), rgba(248, 113, 113, 0.4));
+  transition: width 0.3s ease;
+}
+
+/* ─── Intelligence Panel ─── */
+.intelligenceBlock {
+  margin-bottom: 14px;
+}
+
+.intelligenceLabel {
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(165, 215, 232, 0.6);
+  margin-bottom: 6px;
+}
+
+.intelligenceList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ─── Horizon controls in header ─── */
+.horizonWrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.horizonUnit {
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: rgba(148, 163, 184, 0.5);
+  text-transform: uppercase;
+}
+
+/* ─── Save button ─── */
+.saveBtn {
+  padding: 6px 16px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(15, 23, 42, 0.95);
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.9), rgba(34, 211, 238, 0.85));
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+.saveBtn:hover {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 1), rgba(34, 211, 238, 1));
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+}
+
+.saveBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Recovery mode styles */
 .page {
   display: flex;
   flex-direction: column;
