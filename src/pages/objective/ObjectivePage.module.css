@@ -106,13 +106,14 @@
 .panel {
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.7), rgba(30, 41, 59, 0.5));
-  border: 1px solid rgba(100, 116, 139, 0.2);
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.75), rgba(30, 41, 59, 0.55));
+  border: 1px solid rgba(100, 116, 139, 0.22);
   border-radius: 10px;
-  padding: 16px;
+  padding: 18px;
   overflow-y: auto;
   position: relative;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
 }
 
 .panel::before {
@@ -121,7 +122,7 @@
   inset: 0;
   border-radius: 10px;
   padding: 1px;
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(99, 102, 241, 0.04), transparent);
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.12), rgba(56, 189, 248, 0.06), transparent);
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask-composite: exclude;
   pointer-events: none;
