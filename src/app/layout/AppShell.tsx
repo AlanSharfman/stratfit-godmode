@@ -5,9 +5,11 @@ import { SystemBaselineProvider } from "@/system/SystemBaselineProvider";
 export default function AppShell({ children }: { children: ReactNode }) {
     return (
         <SystemBaselineProvider>
-            <div style={{ minHeight: "100vh" }}>
+            <div className="app">
                 <MainNav />
-                {children}
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+                    {children}
+                </div>
             </div>
         </SystemBaselineProvider>
     );

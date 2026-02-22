@@ -99,9 +99,9 @@ export default function TerrainStage({ granularity }: TerrainStageProps) {
       <fog attach="fog" args={["#0A1628", 400, 2600]} />
 
       {/* Lights: bright ambient + strong directional for clarity */}
-      <ambientLight intensity={1.1} />
-      <directionalLight position={[120, 200, 120]} intensity={1.35} color="#D0F4FF" />
-      <directionalLight position={[-80, 140, -60]} intensity={0.35} color="#67E8F9" />
+      <ambientLight intensity={1.4} />
+      <directionalLight position={[120, 200, 120]} intensity={1.6} color="#E0F7FF" />
+      <directionalLight position={[-80, 140, -60]} intensity={0.5} color="#67E8F9" />
 
       <HorizonBand />
 

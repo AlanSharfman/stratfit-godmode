@@ -2,13 +2,13 @@ import * as THREE from "three"
 
 export function createTerrainSolidMaterial() {
   const mat = new THREE.MeshStandardMaterial({
-    color: 0x112a3e,
-    emissive: new THREE.Color(0x0c2d42),
-    emissiveIntensity: 0.28,
+    color: 0x1a3a52,
+    emissive: new THREE.Color(0x0e3854),
+    emissiveIntensity: 0.45,
     transparent: true,
-    opacity: 0.72,
-    roughness: 0.78,
-    metalness: 0.08,
+    opacity: 0.82,
+    roughness: 0.65,
+    metalness: 0.12,
     depthWrite: true,
     polygonOffset: true,
     polygonOffsetFactor: 1,
@@ -34,10 +34,10 @@ export function createTerrainSolidMaterial() {
       .replace(
         "#include <color_fragment>",
         `#include <color_fragment>
-// Height-based AO: valleys ~0.58x, peaks ~1.38x brightness + azure/cyan tint
+// Height-based AO: valleys ~0.62x, peaks ~1.5x brightness + strong azure tint
 float _hao = clamp((vHeight + 8.0) / 33.0, 0.0, 1.0);
-diffuseColor.rgb *= mix(0.58, 1.38, _hao);
-diffuseColor.rgb += vec3(0.005, 0.025, 0.045) * _hao;`,
+diffuseColor.rgb *= mix(0.62, 1.5, _hao);
+diffuseColor.rgb += vec3(0.01, 0.04, 0.08) * _hao;`,
       )
   }
 
@@ -46,14 +46,14 @@ diffuseColor.rgb += vec3(0.005, 0.025, 0.045) * _hao;`,
 
 export function createTerrainWireMaterial() {
   return new THREE.MeshStandardMaterial({
-    color: 0x67e8f9,
+    color: 0x7dd3fc,
     emissive: 0x22d3ee,
-    emissiveIntensity: 0.52,
+    emissiveIntensity: 0.8,
     wireframe: true,
     transparent: true,
-    opacity: 0.55,
-    roughness: 0.7,
-    metalness: 0.15,
+    opacity: 0.7,
+    roughness: 0.5,
+    metalness: 0.2,
     depthWrite: false,
     depthTest: true,
   })
