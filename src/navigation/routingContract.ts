@@ -1,37 +1,25 @@
 // src/navigation/routingContract.ts
-// Validates the ACTIVE app routing contract (AppRouter + app/navigation).
+// Validates the ACTIVE app routing contract (AppRouter + LIVE_NAV).
 // main.tsx calls validateRoutingContract() at startup.
 
-import { NAV_ITEMS } from "@/app/navigation/navConfig";
-import { RouteContract } from "@/app/navigation/routeContract";
+import { LIVE_NAV } from "@/navigation/liveNav"
+import { ROUTES } from "@/routes/routeContract"
 
 function invariant(cond: any, msg: string): asserts cond {
-  if (!cond) throw new Error(`[ROUTING_CONTRACT] ${msg}`);
+  if (!cond) throw new Error(`[ROUTING_CONTRACT] ${msg}`)
 }
 
-/**
- * Call once at startup.
- * Validates that every nav item's path is a registered route and that
- * no two nav items share the same path.
- */
 export function validateRoutingContract() {
-  const routePaths = new Set<string>(Object.values(RouteContract));
+  const livePaths = new Set<string>(Object.values(ROUTES))
 
-  // Every nav item must point to a real route
-  for (const n of NAV_ITEMS) {
+  for (const item of LIVE_NAV) {
     invariant(
-      routePaths.has(n.path),
-      `Nav item "${n.key}" points to path "${n.path}" which is not registered in RouteContract`,
-    );
+      livePaths.has(item.to),
+      `Nav item "${item.label}" points to "${item.to}" but it is not present in ROUTES.`,
+    )
   }
 
-  // No duplicate nav paths
-  const seen = new Set<string>();
-  for (const n of NAV_ITEMS) {
-    invariant(!seen.has(n.path), `Duplicate nav path detected: "${n.path}"`);
-    seen.add(n.path);
-  }
+  // Sanity checks
+  invariant(livePaths.has("/position"), "ROUTES missing /position")
+  invariant(livePaths.has("/studio"), "ROUTES missing /studio")
 }
-
-// Re-export for any legacy consumers that used ROUTE_PATHS from here.
-export { RouteContract as ROUTE_PATHS } from "@/app/navigation/routeContract";

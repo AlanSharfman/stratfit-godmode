@@ -1,38 +1,59 @@
-import { Routes, Route, Navigate } from "react-router-dom";
-import { ROUTES } from "@/routes/routeContract";
-import AppHeader from "@/components/layout/AppHeader";
-import { SystemBaselineProvider } from "@/system/SystemBaselineProvider";
+import { Routes, Route, Navigate } from "react-router-dom"
+import { ROUTES } from "@/routes/routeContract"
+import AppHeader from "@/components/layout/AppHeader"
+import { SystemBaselineProvider } from "@/system/SystemBaselineProvider"
 
-import TerrainRoute from "@/routes/TerrainRoute";
-import StudioRoute from "@/routes/StudioRoute";
-import CompareRoute from "@/routes/CompareRoute";
-import AssessmentRoute from "@/routes/AssessmentRoute";
-import InitializePage from "@/pages/initialize/InitializePage";
+import TerrainRoute from "@/routes/TerrainRoute"
+import StudioRoute from "@/routes/StudioRoute"
+import CompareRoute from "@/routes/CompareRoute"
+import AssessmentRoute from "@/routes/AssessmentRoute"
+
+// Restore implemented routes
+import InitializeRoute from "@/routes/InitializeRoute"
+import BaselineRoute from "@/routes/BaselineRoute"
+import ObjectiveRoute from "@/routes/ObjectiveRoute"
+import RiskRoute from "@/routes/RiskRoute"
+import ValuationRoute from "@/routes/ValuationRoute"
+import SimulateRoute from "@/routes/SimulateRoute"
+import ImpactRoute from "@/routes/ImpactRoute"
+import StrategyStudioRoute from "@/routes/StrategyStudioRoute"
 
 export default function AppRouter() {
-    return (
-        <SystemBaselineProvider>
-            <div className="app">
-                <AppHeader />
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-                    <Routes>
-                        <Route path="/" element={<Navigate to={ROUTES.POSITION} />} />
+  return (
+    <SystemBaselineProvider>
+      <div className="app">
+        <AppHeader />
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+          <Routes>
+            <Route path="/" element={<Navigate to={ROUTES.POSITION} />} />
 
-                        <Route path="/initialize" element={<InitializePage />} />
+            {/* Initialize aliases */}
+            <Route path={ROUTES.INITIALIZE} element={<InitializeRoute />} />
+            <Route path={ROUTES.INITIATE} element={<Navigate to={ROUTES.INITIALIZE} replace />} />
 
-                        <Route path={ROUTES.POSITION} element={<TerrainRoute />} />
-                        <Route path={ROUTES.STUDIO} element={<StudioRoute />} />
-                        <Route path={ROUTES.COMPARE} element={<CompareRoute />} />
-                        <Route path={ROUTES.ASSESSMENT} element={<AssessmentRoute />} />
-                        <Route
-                            path={ROUTES.ROADMAP}
-                            element={<div className="p-6 text-slate-200">Roadmap</div>}
-                        />
+            {/* Core */}
+            <Route path={ROUTES.POSITION} element={<TerrainRoute />} />
+            <Route path={ROUTES.STUDIO} element={<StudioRoute />} />
+            <Route path={ROUTES.COMPARE} element={<CompareRoute />} />
+            <Route path={ROUTES.ASSESSMENT} element={<AssessmentRoute />} />
+            <Route
+              path={ROUTES.ROADMAP}
+              element={<div className="p-6 text-slate-200">Roadmap</div>}
+            />
 
-                        <Route path="*" element={<Navigate to={ROUTES.POSITION} />} />
-                    </Routes>
-                </div>
-            </div>
-        </SystemBaselineProvider>
-    );
+            {/* Restored modules */}
+            <Route path={ROUTES.BASELINE} element={<BaselineRoute />} />
+            <Route path={ROUTES.OBJECTIVES} element={<ObjectiveRoute />} />
+            <Route path={ROUTES.RISK} element={<RiskRoute />} />
+            <Route path={ROUTES.VALUATION} element={<ValuationRoute />} />
+            <Route path={ROUTES.SIMULATE} element={<div className="p-6 text-slate-200">Simulate</div>} />
+            <Route path={ROUTES.IMPACT} element={<ImpactRoute />} />
+            <Route path={ROUTES.STRATEGY_STUDIO} element={<StrategyStudioRoute />} />
+
+            <Route path="*" element={<Navigate to={ROUTES.POSITION} />} />
+          </Routes>
+        </div>
+      </div>
+    </SystemBaselineProvider>
+  )
 }

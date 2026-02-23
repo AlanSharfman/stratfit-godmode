@@ -1,16 +1,7 @@
 import React from "react"
 import { NavLink } from "react-router-dom"
 import styles from "./AppHeader.module.css"
-
-type NavItem = { to: string; label: string }
-
-const NAV: NavItem[] = [
-  { to: "/position", label: "Position" },
-  { to: "/studio", label: "Studio" },
-  { to: "/compare", label: "Compare" },
-  { to: "/assessment", label: "Assessment" },
-  { to: "/roadmap", label: "Roadmap" },
-]
+import { LIVE_NAV } from "@/navigation/liveNav"
 
 export default function AppHeader() {
   return (
@@ -21,17 +12,16 @@ export default function AppHeader() {
           <div className={styles.sub}>Scenario Intelligence</div>
         </div>
 
-        <nav className={styles.nav} aria-label="Primary">
-          {NAV.map((n) => (
+        <nav className={styles.nav} aria-label="Primary navigation">
+          {LIVE_NAV.map((item) => (
             <NavLink
-              key={n.to}
-              to={n.to}
+              key={item.to}
+              to={item.to}
               className={({ isActive }) =>
-                [styles.link, isActive ? styles.active : ""].filter(Boolean).join(" ")
+                isActive ? `${styles.link} ${styles.active}` : styles.link
               }
-              end
             >
-              {n.label}
+              {item.label}
             </NavLink>
           ))}
         </nav>

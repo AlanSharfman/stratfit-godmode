@@ -20,7 +20,7 @@
 
 .value {
   font-size: 14px;
-  font-weight: 650;
+  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -49,7 +49,7 @@
 }
 
 .signalTitle {
-  font-weight: 650;
+  font-weight: 600;
   font-size: 13px;
 }
 

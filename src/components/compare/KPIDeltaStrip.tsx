@@ -7,11 +7,13 @@ import styles from "./CompareView.module.css"
  */
 
 export interface MetricsShape {
-  arr?: number
-  revenue?: number
-  burn?: number
   runway?: number
-  valuation?: number
+  riskIndex?: number
+  momentum?: number
+  burnQuality?: number
+  enterpriseValue?: number
+  cashPosition?: number
+  earningsPower?: number
   [key: string]: any
 }
 
@@ -22,9 +24,18 @@ interface KPIDeltaStripProps {
   rightName?: string
 }
 
-function format(n?: number) {
-  if (n === undefined || n === null) return "—"
-  return Intl.NumberFormat("en-AU", { maximumFractionDigits: 0 }).format(n)
+function fmtNumber(n?: number, digits: number = 1) {
+  if (n === undefined || n === null || !Number.isFinite(n)) return "—"
+  return Intl.NumberFormat("en-AU", { maximumFractionDigits: digits }).format(n)
+}
+
+function fmtMoneyCompact(n?: number) {
+  if (n === undefined || n === null || !Number.isFinite(n)) return "—"
+  const abs = Math.abs(n)
+  if (abs >= 1_000_000_000) return `$${(n / 1_000_000_000).toFixed(2)}B`
+  if (abs >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`
+  if (abs >= 1_000) return `$${(n / 1_000).toFixed(1)}k`
+  return `$${n.toFixed(0)}`
 }
 
 function delta(a?: number, b?: number) {
@@ -36,15 +47,20 @@ export default function KPIDeltaStrip({
   leftMetrics,
   rightMetrics,
   leftName,
-  rightName
+  rightName,
 }: KPIDeltaStripProps) {
-
-  const rows = [
-    { label: "ARR", a: leftMetrics?.arr, b: rightMetrics?.arr },
-    { label: "Revenue", a: leftMetrics?.revenue, b: rightMetrics?.revenue },
-    { label: "Burn", a: leftMetrics?.burn, b: rightMetrics?.burn },
-    { label: "Runway", a: leftMetrics?.runway, b: rightMetrics?.runway },
-    { label: "Valuation", a: leftMetrics?.valuation, b: rightMetrics?.valuation },
+  const rows: Array<{
+    label: string
+    a?: number
+    b?: number
+    fmt: (n?: number) => string
+  }> = [
+    { label: "Runway (mo)", a: leftMetrics?.runway, b: rightMetrics?.runway, fmt: (n) => fmtNumber(n, 1) },
+    { label: "Risk Index", a: leftMetrics?.riskIndex, b: rightMetrics?.riskIndex, fmt: (n) => fmtNumber(n, 1) },
+    { label: "Momentum", a: leftMetrics?.momentum, b: rightMetrics?.momentum, fmt: (n) => fmtNumber(n, 1) },
+    { label: "Burn Quality", a: leftMetrics?.burnQuality, b: rightMetrics?.burnQuality, fmt: (n) => fmtNumber(n, 1) },
+    { label: "Enterprise Value", a: leftMetrics?.enterpriseValue, b: rightMetrics?.enterpriseValue, fmt: fmtMoneyCompact },
+    { label: "Cash Position", a: leftMetrics?.cashPosition, b: rightMetrics?.cashPosition, fmt: fmtMoneyCompact },
   ]
 
   return (
@@ -62,11 +78,11 @@ export default function KPIDeltaStrip({
         return (
           <div key={r.label} className={styles.kpiDeltaRow}>
             <span className={styles.kpiLabel}>{r.label}</span>
-            <span>{format(r.a)}</span>
+            <span>{r.fmt(r.a)}</span>
             <span className={positive ? styles.deltaPositive : styles.deltaNegative}>
-              {d === null ? "—" : format(d)}
+              {d === null ? "—" : r.fmt(d)}
             </span>
-            <span>{format(r.b)}</span>
+            <span>{r.fmt(r.b)}</span>
           </div>
         )
       })}
