@@ -1,0 +1,109 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: linear-gradient(180deg, rgba(5,9,19,0.92) 0%, rgba(5,9,19,0.74) 60%, rgba(5,9,19,0.35) 100%);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--sf-border-2);
+}
+
+.inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  gap: 16px;
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 220px;
+}
+
+.logo {
+  font-size: var(--sf-h1);
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  color: var(--sf-ice);
+  text-shadow: var(--sf-glow-ice);
+}
+
+.sub {
+  font-size: var(--sf-small);
+  letter-spacing: var(--sf-tracking);
+  color: var(--sf-text-dim);
+  text-transform: uppercase;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 6px 10px;
+  border: 1px solid var(--sf-border-2);
+  background: rgba(8, 16, 32, 0.35);
+  border-radius: 999px;
+}
+
+.link {
+  position: relative;
+  font-size: var(--sf-h2);
+  letter-spacing: 0.06em;
+  color: var(--sf-text-dim);
+  padding: 8px 10px;
+  border-radius: 999px;
+  transition: color 140ms ease, background 140ms ease;
+}
+
+.link:hover {
+  color: var(--sf-text);
+  background: rgba(0, 224, 255, 0.06);
+}
+
+.active {
+  color: var(--sf-ice);
+  text-shadow: var(--sf-glow-ice);
+}
+
+.active::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 4px;
+  height: var(--sf-underline-h);
+  background: linear-gradient(90deg, rgba(0,224,255,0.0) 0%, rgba(0,224,255,0.95) 20%, rgba(168,243,255,0.95) 50%, rgba(0,224,255,0.95) 80%, rgba(0,224,255,0.0) 100%);
+  box-shadow: var(--sf-glow-cyan);
+  border-radius: 999px;
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 220px;
+  justify-content: flex-end;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--sf-border);
+  background: rgba(8, 16, 32, 0.45);
+  color: var(--sf-text-dim);
+  font-size: var(--sf-small);
+  letter-spacing: 0.06em;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--sf-cyan);
+  box-shadow: var(--sf-glow-cyan);
+}
