@@ -38,6 +38,13 @@ switch ($choice) {
 $version = (git describe --tags)
 Write-Host "New version: $version" -ForegroundColor Cyan
 
+# Generate changelog
+Step "Generating changelog"
+./scripts/generate-changelog.ps1 -version $version
+
+git add CHANGELOG.md
+git commit -m "docs: update changelog for $version"
+
 # 4️⃣ Push commit + tag
 Step "Pushing version commit"
 git push
