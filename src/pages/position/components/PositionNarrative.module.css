@@ -1,6 +1,6 @@
 .headerBar {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(7, 1fr);
   gap: 8px;
   padding: 12px;
   background: rgba(0, 0, 0, 0.35);
@@ -10,6 +10,7 @@
 .metric {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .label {
@@ -18,8 +19,11 @@
 }
 
 .value {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 650;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .diagnostics {
@@ -30,26 +34,48 @@
 }
 
 .signal {
-  padding: 8px;
-  border-radius: 8px;
+  padding: 10px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.signalLabel {
-  font-weight: 600;
+.signalTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.signalTitle {
+  font-weight: 650;
   font-size: 13px;
+}
+
+.signalMetric {
+  font-size: 11px;
+  opacity: 0.7;
+  white-space: nowrap;
 }
 
 .signalDesc {
   font-size: 12px;
-  opacity: 0.75;
+  opacity: 0.78;
+  line-height: 1.35;
 }
 
-.signalMeta {
-  font-size: 11px;
-  opacity: 0.45;
-  margin-top: 3px;
-  font-variant-numeric: tabular-nums;
+/* Tone accents */
+.risk {
+  border-color: rgba(255, 60, 90, 0.22);
+}
+
+.watch {
+  border-color: rgba(0, 224, 255, 0.22);
+}
+
+.strong {
+  border-color: rgba(0, 200, 140, 0.22);
 }
 
 .narrativeCard {
@@ -57,15 +83,24 @@
   padding: 12px;
   border-radius: 10px;
   background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .title {
   font-size: 12px;
   opacity: 0.6;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .body {
   font-size: 13px;
-  line-height: 1.4;
+  line-height: 1.45;
+}
+
+.paragraph {
+  margin: 0 0 8px 0;
+}
+
+.paragraph:last-child {
+  margin-bottom: 0;
 }
