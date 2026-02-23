@@ -1,59 +1,75 @@
-import type { MetricsResult } from "@/logic/calculateMetrics";
+import React from "react"
+import styles from "./CompareView.module.css"
+
+/**
+ * God Mode tolerant KPI delta strip
+ * Accepts partial metrics so CompareView never hard-crashes
+ */
+
+export interface MetricsShape {
+  arr?: number
+  revenue?: number
+  burn?: number
+  runway?: number
+  valuation?: number
+  [key: string]: any
+}
 
 interface KPIDeltaStripProps {
-  leftMetrics: MetricsResult | null;
-  rightMetrics: MetricsResult | null;
-  leftName?: string;
-  rightName?: string;
+  leftMetrics: MetricsShape | null | undefined
+  rightMetrics: MetricsShape | null | undefined
+  leftName?: string
+  rightName?: string
 }
 
-function fmtDelta(left: number | undefined, right: number | undefined): { text: string; positive: boolean | null } {
-  const l = left ?? 0;
-  const r = right ?? 0;
-  const d = r - l;
-  if (Math.abs(d) < 0.01) return { text: "—", positive: null };
-  return { text: (d > 0 ? "+" : "") + d.toFixed(1), positive: d > 0 };
+function format(n?: number) {
+  if (n === undefined || n === null) return "—"
+  return Intl.NumberFormat("en-AU", { maximumFractionDigits: 0 }).format(n)
 }
 
-export default function KPIDeltaStrip({ leftMetrics, rightMetrics, leftName, rightName }: KPIDeltaStripProps) {
-  if (!leftMetrics || !rightMetrics) return null;
+function delta(a?: number, b?: number) {
+  if (a === undefined || b === undefined) return null
+  return b - a
+}
 
-  const kpis = [
-    { label: "Momentum", left: leftMetrics.momentum, right: rightMetrics.momentum, higherIsBetter: true },
-    { label: "Earnings Power", left: leftMetrics.earningsPower, right: rightMetrics.earningsPower, higherIsBetter: true },
-    { label: "Runway", left: leftMetrics.runway, right: rightMetrics.runway, higherIsBetter: true },
-    { label: "Enterprise Value", left: leftMetrics.enterpriseValue, right: rightMetrics.enterpriseValue, higherIsBetter: true },
-    { label: "Risk Index", left: leftMetrics.riskIndex, right: rightMetrics.riskIndex, higherIsBetter: false },
-  ];
+export default function KPIDeltaStrip({
+  leftMetrics,
+  rightMetrics,
+  leftName,
+  rightName
+}: KPIDeltaStripProps) {
+
+  const rows = [
+    { label: "ARR", a: leftMetrics?.arr, b: rightMetrics?.arr },
+    { label: "Revenue", a: leftMetrics?.revenue, b: rightMetrics?.revenue },
+    { label: "Burn", a: leftMetrics?.burn, b: rightMetrics?.burn },
+    { label: "Runway", a: leftMetrics?.runway, b: rightMetrics?.runway },
+    { label: "Valuation", a: leftMetrics?.valuation, b: rightMetrics?.valuation },
+  ]
 
   return (
-    <div style={{
-      display: "flex",
-      alignItems: "center",
-      gap: 0,
-      padding: "10px 24px",
-      borderTop: "1px solid rgba(0,229,255,0.12)",
-      borderBottom: "1px solid rgba(0,229,255,0.12)",
-      background: "rgba(0,229,255,0.03)",
-      fontSize: 11,
-      letterSpacing: "0.08em",
-    }}>
-      {leftName && rightName && (
-        <span style={{ color: "rgba(255,255,255,0.4)", marginRight: 20, fontSize: 10, textTransform: "uppercase" }}>
-          {leftName} → {rightName}
-        </span>
-      )}
-      {kpis.map(({ label, left, right, higherIsBetter }) => {
-        const { text, positive } = fmtDelta(left, right);
-        const isGood = positive === null ? null : (higherIsBetter ? positive : !positive);
-        const color = isGood === null ? "rgba(255,255,255,0.4)" : isGood ? "#00FFC2" : "#FF4D6D";
+    <div className={styles.kpiDeltaStrip}>
+      <div className={styles.kpiDeltaHeader}>
+        <span>{leftName ?? "Left"}</span>
+        <span>Δ</span>
+        <span>{rightName ?? "Right"}</span>
+      </div>
+
+      {rows.map((r) => {
+        const d = delta(r.a, r.b)
+        const positive = d !== null && d > 0
+
         return (
-          <div key={label} style={{ marginRight: 28, display: "flex", flexDirection: "column", gap: 2 }}>
-            <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.1em" }}>{label}</span>
-            <span style={{ color, fontWeight: 600, fontSize: 13 }}>{text}</span>
+          <div key={r.label} className={styles.kpiDeltaRow}>
+            <span className={styles.kpiLabel}>{r.label}</span>
+            <span>{format(r.a)}</span>
+            <span className={positive ? styles.deltaPositive : styles.deltaNegative}>
+              {d === null ? "—" : format(d)}
+            </span>
+            <span>{format(r.b)}</span>
           </div>
-        );
+        )
       })}
     </div>
-  );
+  )
 }
