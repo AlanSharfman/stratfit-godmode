@@ -1,39 +1,84 @@
-Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
-Write-Host "STRATFIT PREFLIGHT CHECK" -ForegroundColor Cyan
-Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+Write-Host ""
+Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
+Write-Host "STRATFIT ENGINEERING PREFLIGHT" -ForegroundColor Cyan
+Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
 
-Write-Host "`n1️⃣ Checking git status..." -ForegroundColor Yellow
+# helper
+function Step($msg) {
+    Write-Host ""
+    Write-Host "🔹 $msg" -ForegroundColor Yellow
+}
+
+# 1️⃣ Git Status
+Step "Checking git status"
 git status
 
-Write-Host "`n2️⃣ Checking unstaged changes..." -ForegroundColor Yellow
+# 2️⃣ Diffs
+Step "Checking unstaged changes"
 git diff
 
-Write-Host "`n3️⃣ Checking staged changes..." -ForegroundColor Yellow
+Step "Checking staged changes"
 git diff --staged
 
-Write-Host "`n4️⃣ Fetching latest remote..." -ForegroundColor Yellow
+# 3️⃣ Remote Sync
+Step "Fetching latest remote"
 git fetch
 
-Write-Host "`n5️⃣ Branch tracking info..." -ForegroundColor Yellow
+Step "Branch tracking"
 git branch -vv
 
-Write-Host "`n6️⃣ TypeScript check..." -ForegroundColor Yellow
+# 4️⃣ TypeScript
+Step "TypeScript validation"
 npx tsc --noEmit
 if ($LASTEXITCODE -ne 0) {
     Write-Host "❌ TypeScript errors detected" -ForegroundColor Red
     exit 1
 }
 
-Write-Host "`n7️⃣ Running build..." -ForegroundColor Yellow
+# 5️⃣ Lint (only if script exists)
+if (Test-Path package.json) {
+    $pkg = Get-Content package.json | ConvertFrom-Json
+    if ($pkg.scripts.lint) {
+        Step "Running linter"
+        npm run lint
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "❌ Lint errors detected" -ForegroundColor Red
+            exit 1
+        }
+    }
+}
+
+# 6️⃣ Tests (optional)
+if (Test-Path package.json) {
+    if ($pkg.scripts.test) {
+        Step "Running tests"
+        npm test
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "❌ Tests failed" -ForegroundColor Red
+            exit 1
+        }
+    }
+}
+
+# 7️⃣ Build timing
+Step "Running production build"
+$start = Get-Date
 npm run build
 if ($LASTEXITCODE -ne 0) {
     Write-Host "❌ Build failed" -ForegroundColor Red
     exit 1
 }
+$end = Get-Date
+$duration = $end - $start
+Write-Host "Build time: $($duration.TotalSeconds) seconds" -ForegroundColor Cyan
 
-Write-Host "`n8️⃣ Latest commit..." -ForegroundColor Yellow
-git log -1 --oneline
+# 8️⃣ Commit hygiene
+Step "Checking latest commit message"
+$commitMsg = git log -1 --pretty=%B
+Write-Host "Latest commit: $commitMsg"
 
-Write-Host "`n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Green
+# 9️⃣ Final
+Write-Host ""
+Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Green
 Write-Host "✅ PREFLIGHT PASSED — SAFE TO PUSH" -ForegroundColor Green
-Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Green
