@@ -7,6 +7,7 @@ import TerrainRoute from "@/routes/TerrainRoute";
 import StudioRoute from "@/routes/StudioRoute";
 import CompareRoute from "@/routes/CompareRoute";
 import AssessmentRoute from "@/routes/AssessmentRoute";
+import InitializePage from "@/pages/initialize/InitializePage";
 
 export default function AppRouter() {
     return (
@@ -16,6 +17,8 @@ export default function AppRouter() {
                 <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
                     <Routes>
                         <Route path="/" element={<Navigate to={ROUTES.POSITION} />} />
+
+                        <Route path="/initialize" element={<InitializePage />} />
 
                         <Route path={ROUTES.POSITION} element={<TerrainRoute />} />
                         <Route path={ROUTES.STUDIO} element={<StudioRoute />} />
