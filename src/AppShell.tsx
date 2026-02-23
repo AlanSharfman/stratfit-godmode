@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Outlet } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 
-import { MainNav } from "@/components/navigation";
+import GodModeNav from "@/components/nav/GodModeNav";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
 import { calculateMetrics, type LeverState, type ScenarioId as MetricsScenarioId } from "@/logic/calculateMetrics";
 import type { ScenarioId } from "@/components/ScenarioSlidePanel";
@@ -96,7 +96,7 @@ export default function AppShell() {
             <AnchorDebugOverlay />
 
             <div className="app">
-                <MainNav />
+                <GodModeNav />
 
                 <Outlet
                     context={{
