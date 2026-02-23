@@ -29,9 +29,7 @@ import { TerrainWithFallback } from "@/components/terrain/TerrainFallback2D";
 
 import ScenarioStrip from "./ScenarioStrip";
 import MetricsStrip from "./MetricsStrip";
-import CompactTable from "./CompactTable";
 import DeltaIntelligenceTable from "./DeltaIntelligenceTable";
-import CommentaryLine from "./CommentaryLine";
 import KPIDeltaStrip from "./KPIDeltaStrip";
 import styles from "./CompareView.module.css";
 
@@ -168,60 +166,58 @@ const CompareView: React.FC = memo(() => {
 
   return (
     <div className={styles.root}>
-      {/* ── Scenario Toggle Strip ───────────────────────────────────── */}
-      <ScenarioStrip
-        currentStructureName={currentStructure.name}
-        scenarios={scenarios}
-        activeId={activeScenarioId}
-        onSelect={setActiveScenarioId}
-        onDuplicate={handleDuplicate}
-        onRename={handleRename}
-        onDelete={handleDelete}
-        onAdd={handleAdd}
-        maxScenarios={3}
-      />
 
-      {/* ── Comparison Dropdown ──────────────────────────────────────── */}
-      <div className={styles.comparisonRow}>
-        <label className={styles.comparisonLabel}>Compare to</label>
-        <select
-          className={styles.comparisonSelect}
-          value={compareToId}
-          onChange={(e) => setCompareToId(e.target.value)}
-        >
-          {compareOptions.map((o) => (
-            <option key={o.id} value={o.id}>{o.name}</option>
-          ))}
-        </select>
+      {/* Controls */}
+      <div className={styles.controls}>
+        <ScenarioStrip
+          currentStructureName={currentStructure.name}
+          scenarios={scenarios}
+          activeId={activeScenarioId}
+          onSelect={setActiveScenarioId}
+          onDuplicate={handleDuplicate}
+          onRename={handleRename}
+          onDelete={handleDelete}
+          onAdd={handleAdd}
+          maxScenarios={3}
+        />
+
+        <div className={styles.comparisonRow}>
+          <label className={styles.comparisonLabel}>Compare to</label>
+          <select
+            className={styles.comparisonSelect}
+            value={compareToId}
+            onChange={(e) => setCompareToId(e.target.value)}
+          >
+            {compareOptions.map((o) => (
+              <option key={o.id} value={o.id}>{o.name}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      {/* ── KPI Delta Strip ─────────────────────────────────────────── */}
-      <KPIDeltaStrip
-        leftMetrics={leftMetrics}
-        rightMetrics={rightMetrics}
-        leftName={leftData.name}
-        rightName={rightData?.name}
-      />
+      {/* KPI Delta */}
+      <div className={styles.kpiWrap}>
+        <KPIDeltaStrip
+          leftMetrics={leftMetrics}
+          rightMetrics={rightMetrics}
+          leftName={leftData.name}
+          rightName={rightData?.name}
+        />
+      </div>
 
-      {/* ── Dual Mountains ──────────────────────────────────────────── */}
+      {/* Mountains */}
       <div className={styles.mountainsRow}>
-        {/* LEFT: Compare Target (default = Current Structure) — desaturated */}
         <div className={styles.mountainLeft}>
           <div className={styles.mountainLabel}>{leftData.name.toUpperCase()}</div>
           <div className={styles.mountainCanvas}>
             <TerrainWithFallback dataPoints={leftDataPoints}>
-              <ScenarioMountain
-                scenario="base"
-                dataPoints={leftDataPoints}
-              />
+              <ScenarioMountain scenario="base" dataPoints={leftDataPoints} />
             </TerrainWithFallback>
           </div>
         </div>
 
-        {/* GAP: 12-18% spacing, no vertical divider, shared horizon */}
         <div className={styles.mountainGap} />
 
-        {/* RIGHT: Active Scenario — full contrast */}
         <div className={styles.mountainRight}>
           <div className={styles.mountainLabel}>
             {rightData ? rightData.name.toUpperCase() : "—"}
@@ -229,10 +225,7 @@ const CompareView: React.FC = memo(() => {
           <div className={styles.mountainCanvas}>
             {rightData ? (
               <TerrainWithFallback dataPoints={rightDataPoints}>
-                <ScenarioMountain
-                  scenario="upside"
-                  dataPoints={rightDataPoints}
-                />
+                <ScenarioMountain scenario="upside" dataPoints={rightDataPoints} />
               </TerrainWithFallback>
             ) : (
               <div className={styles.emptyMountain}>No scenario selected</div>
@@ -241,40 +234,28 @@ const CompareView: React.FC = memo(() => {
         </div>
       </div>
 
-      {/* ── Metrics Strip ───────────────────────────────────────────── */}
-      <MetricsStrip
-        leftMetrics={leftMetrics}
-        rightMetrics={rightMetrics}
-        leftSim={leftData.simulationResult}
-        rightSim={rightData?.simulationResult ?? null}
-      />
+      {/* Metrics */}
+      <div className={styles.metricsWrap}>
+        <MetricsStrip
+          leftMetrics={leftMetrics}
+          rightMetrics={rightMetrics}
+          leftSim={leftData.simulationResult}
+          rightSim={rightData?.simulationResult ?? null}
+        />
+      </div>
 
-      {/* ── Compact Table ───────────────────────────────────────────── */}
-      <CompactTable
-        currentStructure={currentStructure}
-        scenarios={scenarios}
-        activeScenarioId={activeScenarioId}
-      />
+      {/* Delta Intelligence */}
+      <div className={styles.deltaWrap}>
+        <DeltaIntelligenceTable
+          leftMetrics={leftMetrics}
+          rightMetrics={rightMetrics}
+          leftName={leftData.name}
+          rightName={rightData?.name ?? "Scenario"}
+          leftSim={leftData.simulationResult}
+          rightSim={rightData?.simulationResult ?? null}
+        />
+      </div>
 
-      {/* ── Delta Table + Intelligence ──────────────────────────────── */}
-      <DeltaIntelligenceTable
-        leftName={leftData.name}
-        rightName={rightData?.name ?? "Scenario"}
-        leftMetrics={leftMetrics}
-        rightMetrics={rightMetrics}
-        leftSim={leftData.simulationResult}
-        rightSim={rightData?.simulationResult ?? null}
-      />
-
-      {/* ── Commentary ──────────────────────────────────────────────── */}
-      <CommentaryLine
-        leftMetrics={leftMetrics}
-        rightMetrics={rightMetrics}
-        leftSim={leftData.simulationResult}
-        rightSim={rightData?.simulationResult ?? null}
-        leftName={leftData.name}
-        rightName={rightData?.name ?? "Scenario"}
-      />
     </div>
   );
 });
