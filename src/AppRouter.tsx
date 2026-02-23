@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ROUTES } from "@/routes/routeContract";
-import MainNav from "@/components/navigation/MainNav";
+import AppHeader from "@/components/layout/AppHeader";
 import { SystemBaselineProvider } from "@/system/SystemBaselineProvider";
 
 import TerrainRoute from "@/routes/TerrainRoute";
@@ -13,7 +13,7 @@ export default function AppRouter() {
     return (
         <SystemBaselineProvider>
             <div className="app">
-                <MainNav />
+                <AppHeader />
                 <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
                     <Routes>
                         <Route path="/" element={<Navigate to={ROUTES.POSITION} />} />
