@@ -8,6 +8,7 @@ import type { TimeGranularity } from "@/position/TimelineTicks"
 import { useSystemBaseline } from "@/system/SystemBaselineProvider"
 import { useScenarioStore } from "@/state/scenarioStore"
 import { useBaselineStore } from "@/state/baselineStore"
+import { useScenarioOverridesStore } from "@/state/scenarioOverridesStore"
 import { useViewTogglesStore } from "@/state/viewTogglesStore"
 import { useRenderFlagsStore } from "@/state/renderFlagsStore"
 import { useSemanticBalance, DEFAULT_SHL_WEIGHTS } from "@/render/shl"
@@ -45,9 +46,23 @@ export default function PositionPage() {
   const { baseline } = useSystemBaseline()
 
   const baselineInputs = useBaselineStore((s) => s.baselineInputs)
+
+  const { overrideScenarios, activeOverrideScenarioId } = useScenarioOverridesStore(
+    useShallow((s) => ({
+      overrideScenarios: s.scenarios,
+      activeOverrideScenarioId: s.activeScenarioId,
+    })),
+  )
+
+  const effectiveInputs = useMemo(() => {
+    if (!baselineInputs) return null
+    const active = overrideScenarios.find((s) => s.id === activeOverrideScenarioId)
+    return active ? ({ ...baselineInputs, ...active.overrides } as const) : baselineInputs
+  }, [baselineInputs, overrideScenarios, activeOverrideScenarioId])
+
   const terrainMetrics = useMemo(
-    () => (baselineInputs ? deriveTerrainMetrics(baselineInputs) : undefined),
-    [baselineInputs],
+    () => (effectiveInputs ? deriveTerrainMetrics(effectiveInputs) : undefined),
+    [effectiveInputs],
   )
 
   const { engineResults } = useScenarioStore(
