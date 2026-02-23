@@ -1,84 +1,86 @@
 Write-Host ""
 Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
-Write-Host "STRATFIT ENGINEERING PREFLIGHT" -ForegroundColor Cyan
-Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
+Write-Host "STRATFIT CI PREFLIGHT + PUSH GATE" -ForegroundColor Cyan
+Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-# helper
+function Fail($msg) {
+    Write-Host "❌ $msg" -ForegroundColor Red
+    exit 1
+}
+
 function Step($msg) {
     Write-Host ""
     Write-Host "🔹 $msg" -ForegroundColor Yellow
 }
 
-# 1️⃣ Git Status
+# 1️⃣ Git status
 Step "Checking git status"
 git status
+if ($LASTEXITCODE -ne 0) { Fail "Git status failed" }
 
-# 2️⃣ Diffs
-Step "Checking unstaged changes"
-git diff
+# Ensure clean working tree
+$changes = git status --porcelain
+if ($changes) { Fail "Working tree not clean — commit or stash changes" }
 
-Step "Checking staged changes"
-git diff --staged
+# 2️⃣ Branch check
+Step "Checking branch"
+$branch = git rev-parse --abbrev-ref HEAD
+Write-Host "Current branch: $branch"
 
-# 3️⃣ Remote Sync
-Step "Fetching latest remote"
+if ($branch -eq "main") {
+    Write-Host "⚠️ You are pushing to MAIN" -ForegroundColor Yellow
+}
+
+# 3️⃣ Fetch remote
+Step "Fetching remote"
 git fetch
-
-Step "Branch tracking"
-git branch -vv
 
 # 4️⃣ TypeScript
 Step "TypeScript validation"
 npx tsc --noEmit
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ TypeScript errors detected" -ForegroundColor Red
-    exit 1
-}
+if ($LASTEXITCODE -ne 0) { Fail "TypeScript errors detected" }
 
-# 5️⃣ Lint (only if script exists)
+# 5️⃣ Lint (optional)
 if (Test-Path package.json) {
     $pkg = Get-Content package.json | ConvertFrom-Json
     if ($pkg.scripts.lint) {
         Step "Running linter"
         npm run lint
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "❌ Lint errors detected" -ForegroundColor Red
-            exit 1
-        }
+        if ($LASTEXITCODE -ne 0) { Fail "Lint failed" }
     }
 }
 
 # 6️⃣ Tests (optional)
-if (Test-Path package.json) {
-    if ($pkg.scripts.test) {
-        Step "Running tests"
-        npm test
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "❌ Tests failed" -ForegroundColor Red
-            exit 1
-        }
-    }
+if ($pkg.scripts.test) {
+    Step "Running tests"
+    npm test
+    if ($LASTEXITCODE -ne 0) { Fail "Tests failed" }
 }
 
-# 7️⃣ Build timing
-Step "Running production build"
+# 7️⃣ Build
+Step "Production build"
 $start = Get-Date
 npm run build
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ Build failed" -ForegroundColor Red
-    exit 1
-}
+if ($LASTEXITCODE -ne 0) { Fail "Build failed" }
 $end = Get-Date
-$duration = $end - $start
-Write-Host "Build time: $($duration.TotalSeconds) seconds" -ForegroundColor Cyan
+Write-Host "Build time: $((($end - $start).TotalSeconds))s" -ForegroundColor Cyan
 
-# 8️⃣ Commit hygiene
-Step "Checking latest commit message"
-$commitMsg = git log -1 --pretty=%B
-Write-Host "Latest commit: $commitMsg"
+# 8️⃣ Commit check
+Step "Latest commit"
+git log -1 --oneline
 
-# 9️⃣ Final
+# 9️⃣ Confirm push
+Write-Host ""
+$confirm = Read-Host "Push to origin/$branch ? (y/n)"
+if ($confirm -ne "y") {
+    Fail "Push cancelled"
+}
+
+# 🔟 Push
+Step "Pushing to remote"
+git push
+
 Write-Host ""
 Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Green
-Write-Host "✅ PREFLIGHT PASSED — SAFE TO PUSH" -ForegroundColor Green
-Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Green
+Write-Host "🚀 PUSH SUCCESSFUL — ALL CHECKS PASSED" -ForegroundColor Green
+Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
