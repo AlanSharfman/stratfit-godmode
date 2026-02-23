@@ -1,0 +1,68 @@
+:root {
+  /* ─────────────────────────────────────────────
+     BASE / ATMOSPHERE (NAVY)
+     ───────────────────────────────────────────── */
+  --navy-950: #030814;     /* deepest */
+  --navy-900: #050A14;     /* primary background */
+  --navy-850: #061024;     /* gradient stop / horizon */
+  --navy-800: #071A33;     /* subtle lift */
+
+  --bg-primary: var(--navy-900);
+  --bg-horizon: var(--navy-850);
+
+  /* Optional background gradient (use in large shells) */
+  --bg-gradient: radial-gradient(
+    1200px 600px at 50% 10%,
+    rgba(0,229,255,0.08),
+    rgba(5,10,20,0.0) 55%,
+    rgba(3,8,20,1) 100%
+  );
+
+  /* ─────────────────────────────────────────────
+     SURFACES
+     ───────────────────────────────────────────── */
+  --surface-1: rgba(10,18,32,0.72);  /* main panel */
+  --surface-2: rgba(14,26,46,0.72);  /* raised panel */
+  --surface-3: rgba(8,14,26,0.85);   /* deep drawer */
+
+  /* ─────────────────────────────────────────────
+     TEXT
+     ───────────────────────────────────────────── */
+  --text-primary: #EAF8FF;
+  --text-secondary: rgba(255,255,255,0.68);
+  --text-muted: rgba(255,255,255,0.46);
+
+  /* ─────────────────────────────────────────────
+     BRAND / ACCENTS (NO ORANGE)
+     ───────────────────────────────────────────── */
+  --accent-cyan: #00E5FF;   /* primary */
+  --accent-ice:  #9BE7FF;   /* soft cyan */
+  --accent-emerald: #00FFC2;/* positive */
+  --accent-indigo: #6E7BFF; /* strategic */
+
+  /* Risk */
+  --accent-risk: #FF4D6D;
+
+  /* Optional attention token (use rarely; NOT UI-orange) */
+  --accent-warn: #FFD166;
+
+  /* ─────────────────────────────────────────────
+     LINES / DIVIDERS
+     ───────────────────────────────────────────── */
+  --border-soft: rgba(255,255,255,0.08);
+  --border-faint: rgba(255,255,255,0.05);
+  --divider-cyan: rgba(0,229,255,0.22);
+
+  /* ─────────────────────────────────────────────
+     GLOW / SHADOWS
+     ───────────────────────────────────────────── */
+  --glow-cyan: 0 0 10px rgba(0,229,255,0.6);
+  --glow-cyan-soft: 0 0 18px rgba(0,229,255,0.28);
+  --shadow-panel: 0 16px 40px rgba(0,0,0,0.55);
+
+  /* ─────────────────────────────────────────────
+     RADIUS / SPACING (optional tokens)
+     ───────────────────────────────────────────── */
+  --r-md: 12px;
+  --r-lg: 16px;
+}

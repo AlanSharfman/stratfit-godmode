@@ -32,6 +32,7 @@ import MetricsStrip from "./MetricsStrip";
 import CompactTable from "./CompactTable";
 import DeltaIntelligenceTable from "./DeltaIntelligenceTable";
 import CommentaryLine from "./CommentaryLine";
+import KPIDeltaStrip from "./KPIDeltaStrip";
 import styles from "./CompareView.module.css";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -193,6 +194,14 @@ const CompareView: React.FC = memo(() => {
           ))}
         </select>
       </div>
+
+      {/* ── KPI Delta Strip ─────────────────────────────────────────── */}
+      <KPIDeltaStrip
+        leftMetrics={leftMetrics}
+        rightMetrics={rightMetrics}
+        leftName={leftData.name}
+        rightName={rightData?.name}
+      />
 
       {/* ── Dual Mountains ──────────────────────────────────────────── */}
       <div className={styles.mountainsRow}>
