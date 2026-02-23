@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { terrainHeightMode } from "@/config/featureFlags";
 import { TERRAIN_CONSTANTS } from "./terrainConstants";
+import type { TerrainMetrics } from "./terrainFromBaseline";
 
 /**
  * Sample terrain height at world coordinates.
@@ -11,12 +12,13 @@ export function sampleTerrainHeight(
     worldZ: number,
     seed: number,
     params = TERRAIN_CONSTANTS,
+    metrics?: TerrainMetrics,
 ): number {
     if (terrainHeightMode === "neutral") {
         return params.yOffset;
     }
 
-    const heightRel = heightfieldAtWorld(worldX, worldZ, seed, params);
+    const heightRel = heightfieldAtWorld(worldX, worldZ, seed, params, metrics);
     return heightRel + params.yOffset;
 }
 
@@ -49,6 +51,45 @@ export function buildTerrain(size: number, seed: number, reliefScalar: number = 
         const z = pos.getY(i); // PlaneGeometry uses X/Y; later rotated in TerrainStage
 
         const h = heightfieldFromModel(x, z, model, TERRAIN_CONSTANTS) * reliefScalar;
+        pos.setZ(i, h);
+    }
+
+    geo.computeVertexNormals();
+    geo.computeBoundingSphere();
+    return geo;
+}
+
+/** Backward-compatible overload: allow optional metrics without changing all call sites. */
+export function buildTerrainWithMetrics(
+    size: number,
+    seed: number,
+    reliefScalar: number = 1.0,
+    metrics?: TerrainMetrics,
+) {
+    const segments = 220;
+    const geo = new THREE.PlaneGeometry(
+        TERRAIN_CONSTANTS.width,
+        TERRAIN_CONSTANTS.depth,
+        segments,
+        segments,
+    );
+
+    if (terrainHeightMode === "neutral") {
+        geo.computeVertexNormals();
+        geo.computeBoundingSphere();
+        return geo;
+    }
+
+    const pos = geo.attributes.position as THREE.BufferAttribute;
+
+    // Seed model is cached; avoid re-deriving peaks/ridge per vertex.
+    const model = getSeedModel(seed, TERRAIN_CONSTANTS);
+
+    for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i);
+        const z = pos.getY(i); // PlaneGeometry uses X/Y; later rotated in TerrainStage
+
+        const h = heightfieldFromModel(x, z, model, TERRAIN_CONSTANTS, metrics) * reliefScalar;
         pos.setZ(i, h);
     }
 
@@ -99,9 +140,10 @@ function heightfieldAtWorld(
     worldZ: number,
     seed: number,
     params: typeof TERRAIN_CONSTANTS,
+    metrics?: TerrainMetrics,
 ): number {
     const model = getSeedModel(seed, params);
-    return heightfieldFromModel(worldX, worldZ, model, params);
+    return heightfieldFromModel(worldX, worldZ, model, params, metrics);
 }
 
 function heightfieldFromModel(
@@ -109,7 +151,11 @@ function heightfieldFromModel(
     z: number,
     model: SeedModel,
     params: typeof TERRAIN_CONSTANTS,
+    metrics?: TerrainMetrics,
 ): number {
+    const elevationScale = clampRange(metrics?.elevationScale ?? 1, 0.35, 3.0);
+    const roughness = clampRange(metrics?.roughness ?? 1, 0.25, 3.0);
+
     // 1) Broad undulation (cheap pseudo-noise)
     const u1 = Math.sin(x * 0.07 + model.seed * 0.001) * 1.2;
     const u2 = Math.cos(z * 0.06 - model.seed * 0.001) * 1.0;
@@ -122,14 +168,15 @@ function heightfieldFromModel(
         Math.cos(z * 0.01 - model.seed * 0.002);
 
     // Terrain weighting (realism boost)
-    let h = baseNoise * 1.2 + macroNoise * 6.0;
+    // Inject baseline-driven multipliers without changing determinism.
+    let h = baseNoise * 1.2 * roughness + macroNoise * 6.0 * elevationScale;
 
     // 2) Mountain peaks (Gaussian bumps)
     for (const p of model.peaks) {
         const dx = x - p.px;
         const dz = z - p.pz;
         const d2 = (dx * dx + dz * dz) / (p.spread * p.spread);
-        h += p.amp * Math.exp(-d2);
+        h += p.amp * elevationScale * Math.exp(-d2);
     }
 
     // 3) Main ridge (distance-to-line falloff)
@@ -137,7 +184,7 @@ function heightfieldFromModel(
     const vz = z - model.ridgeCenter.y;
     const cross = Math.abs(vx * model.ridgeDir.y - vz * model.ridgeDir.x);
     const ridgeShape = Math.exp(-(cross * cross) / (model.ridgeWidth * model.ridgeWidth));
-    h += model.ridgeAmp * ridgeShape * 3.5;
+    h += model.ridgeAmp * elevationScale * ridgeShape * 3.5;
 
     // 4) Edge falloff so edges don't look like a table
     const edge = smoothstep(
@@ -168,6 +215,10 @@ function smoothstep(edge0: number, edge1: number, x: number) {
 
 function clamp01(x: number) {
     return Math.max(0, Math.min(1, x));
+}
+
+function clampRange(x: number, min: number, max: number) {
+    return Math.max(min, Math.min(max, x));
 }
 
 function mulberry32(a: number) {

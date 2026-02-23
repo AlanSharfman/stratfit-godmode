@@ -1,11 +1,12 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from "react"
 import * as THREE from "three"
-import { buildTerrain, sampleTerrainHeight } from "./buildTerrain"
+import { buildTerrainWithMetrics, sampleTerrainHeight } from "./buildTerrain"
 import { baselineReliefScalar, baselineSeedString, createSeed } from "@/terrain/seed"
 import { TERRAIN_CONSTANTS } from "@/terrain/terrainConstants"
 import { createTerrainSolidMaterial, createTerrainWireMaterial } from "./terrainMaterials"
 import { useNarrativeStore } from "@/state/narrativeStore"
 import { useSystemBaseline } from "@/system/SystemBaselineProvider"
+import type { TerrainMetrics } from "@/terrain/terrainFromBaseline"
 
 export type TerrainSurfaceHandle = {
   getHeightAt: (worldX: number, worldZ: number) => number
@@ -14,8 +15,12 @@ export type TerrainSurfaceHandle = {
   latticeMesh: THREE.Mesh | null
 }
 
-const TerrainSurface = forwardRef<TerrainSurfaceHandle, object>(function TerrainSurface(
-  _props,
+type Props = {
+  terrainMetrics?: TerrainMetrics
+}
+
+const TerrainSurface = forwardRef<TerrainSurfaceHandle, Props>(function TerrainSurface(
+  { terrainMetrics },
   ref
 ) {
   const solidRef = useRef<THREE.Mesh>(null)
@@ -32,8 +37,8 @@ const TerrainSurface = forwardRef<TerrainSurfaceHandle, object>(function Terrain
   const relief = useMemo(() => baselineReliefScalar(baselineAny), [baselineAny])
 
   const geometry = useMemo(() => {
-    return buildTerrain(260, seed, relief)
-  }, [seed, relief])
+    return buildTerrainWithMetrics(260, seed, relief, terrainMetrics)
+  }, [seed, relief, terrainMetrics])
 
   useEffect(() => {
     return () => {
@@ -71,12 +76,12 @@ const TerrainSurface = forwardRef<TerrainSurfaceHandle, object>(function Terrain
       solidMesh: solidRef.current,
       latticeMesh: latticeRef.current,
       getHeightAt: (worldX: number, worldZ: number) => {
-        const y = sampleTerrainHeight(worldX, worldZ, seed)
+        const y = sampleTerrainHeight(worldX, worldZ, seed, TERRAIN_CONSTANTS, terrainMetrics)
         const y0 = TERRAIN_CONSTANTS.yOffset
         return (y - y0) * relief + y0
       },
     }),
-    [seed, relief]
+    [seed, relief, terrainMetrics]
   )
 
   return (

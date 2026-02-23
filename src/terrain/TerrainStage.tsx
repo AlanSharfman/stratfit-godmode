@@ -29,12 +29,14 @@ import MarkerLayer from "@/components/terrain/markers/MarkerLayer";
 import LiquidityFlowLayer from "@/components/terrain/liquidity/LiquidityFlowLayer";
 import HorizonBand from "@/components/position/HorizonBand";
 import { useRenderFlagsStore } from "@/state/renderFlagsStore";
+import type { TerrainMetrics } from "@/terrain/terrainFromBaseline";
 
 type TerrainStageProps = {
   granularity?: TimeGranularity
+  terrainMetrics?: TerrainMetrics
 }
 
-export default function TerrainStage({ granularity }: TerrainStageProps) {
+export default function TerrainStage({ granularity, terrainMetrics }: TerrainStageProps) {
   const terrainRef = useRef<TerrainSurfaceHandle>(null!);
   const [terrainReady, setTerrainReady] = useState(false);
   const { baseline } = useSystemBaseline();
@@ -105,7 +107,7 @@ export default function TerrainStage({ granularity }: TerrainStageProps) {
       <HorizonBand />
 
       <Suspense fallback={null}>
-        <TerrainSurface ref={terrainRef} />
+        <TerrainSurface ref={terrainRef} terrainMetrics={terrainMetrics} />
         {terrainReady && (
           <>
             {showPaths && (

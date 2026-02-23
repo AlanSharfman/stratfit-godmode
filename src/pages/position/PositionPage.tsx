@@ -2,10 +2,12 @@ import React, { useCallback, useMemo, useState } from "react"
 import { useShallow } from "zustand/react/shallow"
 
 import TerrainStage from "@/terrain/TerrainStage"
+import { deriveTerrainMetrics } from "@/terrain/terrainFromBaseline"
 import type { TimeGranularity } from "@/position/TimelineTicks"
 
 import { useSystemBaseline } from "@/system/SystemBaselineProvider"
 import { useScenarioStore } from "@/state/scenarioStore"
+import { useBaselineStore } from "@/state/baselineStore"
 import { useViewTogglesStore } from "@/state/viewTogglesStore"
 import { useRenderFlagsStore } from "@/state/renderFlagsStore"
 import { useSemanticBalance, DEFAULT_SHL_WEIGHTS } from "@/render/shl"
@@ -41,6 +43,12 @@ export default function PositionPage() {
   const [showDiagnostics, setShowDiagnostics] = useState(true)
 
   const { baseline } = useSystemBaseline()
+
+  const baselineInputs = useBaselineStore((s) => s.baselineInputs)
+  const terrainMetrics = useMemo(
+    () => (baselineInputs ? deriveTerrainMetrics(baselineInputs) : undefined),
+    [baselineInputs],
+  )
 
   const { engineResults } = useScenarioStore(
     useShallow((s) => ({
@@ -106,7 +114,7 @@ export default function PositionPage() {
 
   return (
     <div className={styles.page}>
-      <TerrainStage granularity={granularity} />
+      <TerrainStage granularity={granularity} terrainMetrics={terrainMetrics} />
 
       <div className={styles.kpiDock} aria-label="Position KPIs">
         <KPIOverlay vm={vm} />
