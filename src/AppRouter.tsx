@@ -1,33 +1,35 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import AppShell from "@/app/layout/AppShell";
-import { RouteContract } from "@/app/navigation/routeContract";
+import { ROUTES } from "@/routes/routeContract";
+import MainNav from "@/components/navigation/MainNav";
+import { SystemBaselineProvider } from "@/system/SystemBaselineProvider";
 
-import InitializeRoute from "@/routes/InitializeRoute";
-import ObjectiveRoute from "@/routes/ObjectiveRoute";
 import TerrainRoute from "@/routes/TerrainRoute";
 import StudioRoute from "@/routes/StudioRoute";
 import CompareRoute from "@/routes/CompareRoute";
-import RiskRoute from "@/routes/RiskRoute";
-import ImpactRoute from "@/routes/ImpactRoute";
-import ValuationRoute from "@/routes/ValuationRoute";
 import AssessmentRoute from "@/routes/AssessmentRoute";
 
 export default function AppRouter() {
     return (
-        <AppShell>
-            <Routes>
-                <Route path={RouteContract.initialize} element={<InitializeRoute />} />
-                <Route path="/initialize" element={<Navigate to={RouteContract.initialize} replace />} />
-                <Route path={RouteContract.objectives} element={<ObjectiveRoute />} />
-                <Route path={RouteContract.position} element={<TerrainRoute />} />
-                <Route path={RouteContract.studio} element={<StudioRoute />} />
-                <Route path={RouteContract.compare} element={<CompareRoute />} />
-                <Route path={RouteContract.risk} element={<RiskRoute />} />
-                <Route path={RouteContract.capital} element={<ImpactRoute />} />
-                <Route path={RouteContract.valuation} element={<ValuationRoute />} />
-                <Route path={RouteContract.assessment} element={<AssessmentRoute />} />
-                <Route path="*" element={<Navigate to={RouteContract.initialize} replace />} />
-            </Routes>
-        </AppShell>
+        <SystemBaselineProvider>
+            <div className="app">
+                <MainNav />
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+                    <Routes>
+                        <Route path="/" element={<Navigate to={ROUTES.POSITION} />} />
+
+                        <Route path={ROUTES.POSITION} element={<TerrainRoute />} />
+                        <Route path={ROUTES.STUDIO} element={<StudioRoute />} />
+                        <Route path={ROUTES.COMPARE} element={<CompareRoute />} />
+                        <Route path={ROUTES.ASSESSMENT} element={<AssessmentRoute />} />
+                        <Route
+                            path={ROUTES.ROADMAP}
+                            element={<div className="p-6 text-slate-200">Roadmap</div>}
+                        />
+
+                        <Route path="*" element={<Navigate to={ROUTES.POSITION} />} />
+                    </Routes>
+                </div>
+            </div>
+        </SystemBaselineProvider>
     );
 }
