@@ -45,6 +45,13 @@
   opacity: 0.75;
 }
 
+.signalMeta {
+  font-size: 11px;
+  opacity: 0.45;
+  margin-top: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
 .narrativeCard {
   margin-top: 10px;
   padding: 12px;

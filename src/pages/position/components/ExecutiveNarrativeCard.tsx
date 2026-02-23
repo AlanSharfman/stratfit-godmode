@@ -1,20 +1,21 @@
 import React, { useMemo } from "react"
+import type { PositionViewModel } from "../overlays/positionState"
 import styles from "./PositionNarrative.module.css"
 
 type Props = {
-  vm: any | null
+  vm: PositionViewModel | null
 }
 
 export default function ExecutiveNarrativeCard({ vm }: Props) {
   const text = useMemo(() => {
     if (!vm) return ""
-
-    const runway = vm.runwayMonths?.toFixed(1)
-    const risk = vm.riskIndex?.toFixed(1)
-
-    return `The business currently has approximately ${runway} months of runway with a risk index of ${risk}. ` +
-      `Primary pressure is driven by ${vm.primaryDriver ?? "operating dynamics"}, with current trajectory indicating ` +
-      `${vm.outlook ?? "stable forward positioning"}.`
+    const { kpis, state, bullets } = vm
+    const runway = Number.isFinite(kpis.runwayMonths) && kpis.runwayMonths < 999
+      ? `${kpis.runwayMonths.toFixed(1)} months`
+      : "an extended horizon"
+    const risk = kpis.riskIndex.toFixed(1)
+    const lead = `The business is in a ${state} position with ${runway} of runway and a risk index of ${risk}.`
+    return [lead, ...bullets].join(" ")
   }, [vm])
 
   if (!vm) return null
