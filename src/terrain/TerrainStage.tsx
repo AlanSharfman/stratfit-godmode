@@ -76,9 +76,9 @@ export default function TerrainStage({ granularity }: TerrainStageProps) {
         camera.lookAt(0, 0, 0);
         camera.updateProjectionMatrix();
 
-        // Deterministic clear + fog baseline — brighter base
-        gl.setClearColor("#0A1628", 1);
-        scene.fog = new THREE.Fog("#0A1628", 400, 2600);
+        // Deterministic clear + fog baseline
+        gl.setClearColor("#050A10", 1);
+        scene.fog = new THREE.Fog("#050A10", 320, 2200);
       }}
     >
       {/* Constrained orbit — horizontal rotation ±45°, no tilt, no zoom, no pan */}
@@ -95,13 +95,12 @@ export default function TerrainStage({ granularity }: TerrainStageProps) {
       />
 
       {/* Deterministic background + fog (redundant by design; guards against overrides) */}
-      <color attach="background" args={["#0A1628"]} />
-      <fog attach="fog" args={["#0A1628", 400, 2600]} />
+      <color attach="background" args={["#050A10"]} />
+      <fog attach="fog" args={["#050A10", 320, 2200]} />
 
-      {/* Lights: bright ambient + strong directional for clarity */}
-      <ambientLight intensity={1.4} />
-      <directionalLight position={[120, 200, 120]} intensity={1.6} color="#E0F7FF" />
-      <directionalLight position={[-80, 140, -60]} intensity={0.5} color="#67E8F9" />
+      {/* Lights: slightly lifted for marker + tick readability */}
+      <ambientLight intensity={0.70} />
+      <directionalLight position={[120, 180, 120]} intensity={0.90} color="#CFEFFF" />
 
       <HorizonBand />
 

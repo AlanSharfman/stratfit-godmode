@@ -25,7 +25,8 @@
         "noEmit": true
     },
     "include": [
-        "src"
+        "src",
+        "vite-env.d.ts"
     ],
     "exclude": [
         "src/_quarantine/**",
