@@ -1,0 +1,64 @@
+.headerBar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 10px;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+}
+
+.label {
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.value {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.diagnostics {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.signal {
+  padding: 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.signalLabel {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.signalDesc {
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.narrativeCard {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.title {
+  font-size: 12px;
+  opacity: 0.6;
+  margin-bottom: 6px;
+}
+
+.body {
+  font-size: 13px;
+  line-height: 1.4;
+}

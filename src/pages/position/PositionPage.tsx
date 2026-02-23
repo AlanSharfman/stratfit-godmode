@@ -18,6 +18,9 @@ import PositionRightRail from "@/components/position/PositionRightRail"
 import CommandCentrePanel from "@/components/diagnostics/CommandCentrePanel"
 import BaselineIntelligencePanel from "@/components/baseline/BaselineIntelligencePanel"
 import KPIOverlay from "./overlays/KPIOverlay"
+import PositionHeaderBar from "./components/PositionHeaderBar"
+import DiagnosticsSummary from "./components/DiagnosticsSummary"
+import ExecutiveNarrativeCard from "./components/ExecutiveNarrativeCard"
 import TerrainLegend from "./overlays/TerrainLegend"
 import TimeScaleControl from "./overlays/TimeScaleControl"
 import {
@@ -141,6 +144,10 @@ export default function PositionPage() {
 
       {/* ── Right Rail (stacked: Diagnostics + Intelligence) ── */}
       <PositionRightRail>
+        <PositionHeaderBar vm={vm} />
+        <DiagnosticsSummary vm={vm} />
+        <ExecutiveNarrativeCard vm={vm} />
+
         {showDiagnostics && (
           <CommandCentrePanel
             groups={diagnosticGroups}
@@ -148,6 +155,7 @@ export default function PositionPage() {
             onClose={() => setShowDiagnostics(false)}
           />
         )}
+
         <BaselineIntelligencePanel />
       </PositionRightRail>
 
