@@ -4,6 +4,9 @@ import { useSimulationStore } from "@/state/simulationStore";
 import SimulationBriefPanel from "@/components/simulation/SimulationBriefPanel";
 import SimulationProgressTicker from "@/components/simulation/SimulationProgressTicker";
 import ScenarioDiffInspectorPanel from "@/components/scenario/ScenarioDiffInspectorPanel";
+import LavaLegendBadge from "@/components/terrain/LavaLegendBadge";
+import DivergencePanelAdapter from "@/components/compare/DivergencePanelAdapter";
+import { useLavaIntensity } from "@/logic/lava/useLavaIntensity";
 
 export default function CompassPage() {
   const [prompt, setPrompt] = useState("");
@@ -18,6 +21,7 @@ export default function CompassPage() {
   const isDone = useMemo(() => status === "completed", [status]);
   const isFailed = useMemo(() => status === "failed", [status]);
   const isCancelled = useMemo(() => status === "cancelled", [status]);
+  const lava = useLavaIntensity();
 
   // User action → dispatch only. No useEffect.
   function handleRun() {
@@ -82,6 +86,8 @@ export default function CompassPage() {
       <SimulationProgressTicker />
       <SimulationBriefPanel />
       <ScenarioDiffInspectorPanel />
+      <DivergencePanelAdapter />
+      <LavaLegendBadge intensity01={lava?.overall ?? 0} />
 
       {isDone && (
         <div className={styles.results}>
