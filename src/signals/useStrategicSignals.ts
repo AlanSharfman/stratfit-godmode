@@ -1,59 +1,59 @@
 import { useMemo } from "react";
 import { useScenarioStore } from "@/state/scenarioStore";
-import { useSimulationSelectors } from "@/core/selectors/useSimulationSelectors";
+import { useCanonicalSimulationPrimitives } from "@/state/selectors/canonicalSimulationSelectors";
 import { generateStrategicSignals, type SignalInputs } from "./generateStrategicSignals";
 
 /**
- * IMPORTANT:
- * - Primitive selectors only
- * - Read-only
- * - No effects
+ * Canonical read-only signal selector.
+ * Uses canonical selector layer (useCanonicalSimulationPrimitives) instead of
+ * direct store access — field renames only need updating in one place.
  *
- * useSimulationSelectors returns a plain object (not a selector-style hook).
- * Fields: survivalProbability, confidenceIndex, volatility, runwayMonths, baseValue.
+ * Baseline deltas: scenarioStore.baseline.simulation (SimulationSnapshot).
+ *   survivalRate, medianRunway — no valuation field (valuationDelta = 0).
  *
- * Baseline deltas are derived from scenarioStore.baseline.simulation where available.
- * SimulationSnapshot fields: survivalRate, medianRunway.
- * No direct valuation field in SimulationSnapshot — valuationDelta defaults to 0.
+ * No effects. No store writes.
  */
 export function useStrategicSignals() {
   const baseline = useScenarioStore((s) => s.baseline);
 
-  // canonical primitives — useSimulationSelectors is a plain object hook
   const {
-    survivalProbability,
-    runwayMonths,
-    baseValue,
+    survival,
+    runway,
+    valuation,
     volatility,
-    confidenceIndex,
-  } = useSimulationSelectors();
+    confidence,
+    volatilityDelta,
+    confidenceDelta,
+  } = useCanonicalSimulationPrimitives();
 
   const signals = useMemo(() => {
     const inputs: SignalInputs = {
-      survival: survivalProbability,
-      runwayMonths,
-      valuation: baseValue,
+      survival,
+      runwayMonths: runway,
+      valuation,
       volatility,
-      confidence: confidenceIndex,
+      confidence,
 
       // baseline deltas — fall back to 0 when no baseline simulation exists
-      survivalDelta: survivalProbability - (baseline?.simulation?.survivalRate ?? 0),
-      runwayDeltaMonths: runwayMonths - (baseline?.simulation?.medianRunway ?? 0),
+      survivalDelta: survival - (baseline?.simulation?.survivalRate ?? 0),
+      runwayDeltaMonths: runway - (baseline?.simulation?.medianRunway ?? 0),
       // SimulationSnapshot has no direct valuation — delta is 0 until enriched
       valuationDelta: 0,
 
-      volatilityDelta: 0,
-      confidenceDelta: 0,
+      volatilityDelta,
+      confidenceDelta,
     };
 
     return generateStrategicSignals(inputs);
   }, [
     baseline,
-    survivalProbability,
-    runwayMonths,
-    baseValue,
+    survival,
+    runway,
+    valuation,
     volatility,
-    confidenceIndex,
+    confidence,
+    volatilityDelta,
+    confidenceDelta,
   ]);
 
   return signals;

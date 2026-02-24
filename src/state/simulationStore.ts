@@ -208,6 +208,19 @@ function generateRunId(): string {
   return `run-${ts}-${rand}`
 }
 
+function resetEngineToIdle(message?: string) {
+  // HARD RESET to avoid stale iterations/stage after cancel/clear
+  engineActivity.reset()
+  engineActivity.update({
+    isRunning: false,
+    stage: "IDLE",
+    message: message ?? "Ready.",
+    error: undefined,
+    iterationsTarget: 0,
+    iterationsCompleted: 0,
+  })
+}
+
 export const useSimulationStore = create<SimulationState>()(
   persist(
     (set, get) => ({
@@ -230,7 +243,8 @@ export const useSimulationStore = create<SimulationState>()(
 
       activeRun: null,
 
-      clearSimulation: () =>
+      clearSimulation: () => {
+        resetEngineToIdle("Cleared.")
         set({
           hasSimulated: false,
           isSimulating: false,
@@ -244,17 +258,14 @@ export const useSimulationStore = create<SimulationState>()(
           summary: null,
           leverSnapshot: null,
           activeRun: null,
-        }),
+        })
+      },
 
       cancelSimulation: () => {
         const controller = get().abortController
         if (controller) controller.abort()
 
-        engineActivity.update({
-          isRunning: false,
-          stage: "IDLE",
-          message: "Simulation cancelled.",
-        })
+        resetEngineToIdle("Simulation cancelled.")
 
         set({
           abortController: null,
@@ -264,27 +275,36 @@ export const useSimulationStore = create<SimulationState>()(
       },
 
       // ── Legacy lifecycle shims (worker-based SimulateOverlayWired) ──
-      startSimulation: () => set({ isSimulating: true, simulationStatus: "running" }),
+      startSimulation: () => {
+        engineActivity.start({ iterationsTarget: 0, modelType: "MonteCarlo" })
+        engineActivity.update({ stage: "SAMPLING", message: "Running simulation…" })
+        set({ isSimulating: true, simulationStatus: "running" })
+      },
 
-      beginRun: ({ timeHorizonMonths, paths, seedLocked }) => set({
-        isSimulating: true,
-        simulationStatus: "running",
-        runMeta: {
-          runId: generateRunId(),
-          timeHorizonMonths,
-          paths,
-          seedLocked,
-          startedAt: performance.now(),
-          completedAt: null,
-          durationMs: null,
-          survivalDelta: null,
-          runwayDelta: null,
-          topDriverLabel: null,
-          inputsHash: null,
-        },
-      }),
+      beginRun: ({ timeHorizonMonths, paths, seedLocked }) => {
+        engineActivity.start({ iterationsTarget: paths, modelType: "MonteCarlo" })
+        engineActivity.update({ stage: "SAMPLING", message: "Running simulation…" })
+        set({
+          isSimulating: true,
+          simulationStatus: "running",
+          runMeta: {
+            runId: generateRunId(),
+            timeHorizonMonths,
+            paths,
+            seedLocked,
+            startedAt: performance.now(),
+            completedAt: null,
+            durationMs: null,
+            survivalDelta: null,
+            runwayDelta: null,
+            topDriverLabel: null,
+            inputsHash: null,
+          },
+        })
+      },
 
       completeRun: (result, verdict) => {
+        engineActivity.complete()
         const prev = get()
         const now = performance.now()
         const startedAt = prev.runMeta?.startedAt ?? now
@@ -315,7 +335,11 @@ export const useSimulationStore = create<SimulationState>()(
         })
       },
 
-      failRun: (_errorMessage?: string) => set({ simulationStatus: "failed", isSimulating: false }),
+      failRun: (errorMessage?: string) => {
+        const msg = errorMessage ?? "Simulation failed"
+        engineActivity.fail(msg)
+        set({ simulationStatus: "failed", isSimulating: false })
+      },
 
       setSimulationResult: (result, verdict, levers) => set({
         hasSimulated: true,
