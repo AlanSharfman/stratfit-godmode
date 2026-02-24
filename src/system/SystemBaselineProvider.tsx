@@ -9,6 +9,7 @@
 import {
     createContext,
     useContext,
+    useRef,
     useState,
     useCallback,
     useEffect,
@@ -102,10 +103,16 @@ export function SystemBaselineProvider({
         return () => window.removeEventListener("storage", handler);
     }, [reRunEnginesFromBaseline]);
 
-    // On boot: if baseline exists, ensure engines reflect it (parity)
+    // On boot: if baseline exists, ensure engines reflect it (parity).
+    // hasBootRunRef guards against re-fire if this provider ever remounts.
+    // Pattern: user action → dispatch → store update → UI reads only.
+    const hasBootRunRef = useRef(false);
     useEffect(() => {
-        const next = loadBaseline();
-        if (next) reRunEnginesFromBaseline(next);
+        if (!hasBootRunRef.current) {
+            hasBootRunRef.current = true;
+            const next = loadBaseline();
+            if (next) reRunEnginesFromBaseline(next);
+        }
     }, [reRunEnginesFromBaseline]);
 
     return (
