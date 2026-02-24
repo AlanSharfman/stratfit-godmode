@@ -18,6 +18,7 @@ import SimulateRoute from "@/routes/SimulateRoute"
 import ImpactRoute from "@/routes/ImpactRoute"
 import StrategyStudioRoute from "@/routes/StrategyStudioRoute"
 import CompassPage from "@/pages/compass/CompassPage"
+import SimulationPresenceLayer from "@/components/system/SimulationPresenceLayer"
 
 export default function AppRouter() {
   return (
@@ -55,6 +56,9 @@ export default function AppRouter() {
             <Route path="*" element={<Navigate to={ROUTES.POSITION} />} />
           </Routes>
         </div>
+
+        {/* GLOBAL: simulation presence on every page */}
+        <SimulationPresenceLayer />
       </div>
     </SystemBaselineProvider>
   )

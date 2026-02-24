@@ -1,27 +1,22 @@
 /**
  * SimulationTelemetryRibbon.tsx
  * ════════════════════════════════════════════════════════════════════════════
- * A user-safe telemetry ribbon that appears during simulation runs.
+ * User-safe telemetry ribbon during simulation runs.
  *
- * Shows:
- *   - "SIMULATION RUNNING" label with safe metadata
- *   - Sequential hardcoded status lines (not AI-generated)
- *   - On completion: "RUN COMPLETE" with safe deltas (survival, runway, top driver)
+ * Now supports BOTH:
+ *  - simulationStore (beginRun/completeRun)
+ *  - engineActivityStore (canonical real engine activity)
  *
- * Position: Fixed top-right overlay above the right panel.
- * Institutional styling. No toy effects. No engine internals.
- * ════════════════════════════════════════════════════════════════════════════
+ * This guarantees the ribbon shows for any real run.
+ * ════════════════════════════════════════════════════════════════════════
  */
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useSimulationStore } from "@/state/simulationStore";
-import type { SimulationStatus, RunMeta } from "@/state/simulationStore";
+import { useEngineActivityStore } from "@/state/engineActivityStore";
 import styles from "./SimulationTelemetryRibbon.module.css";
 
-// ────────────────────────────────────────────────────────────────────────────
-// HARDCODED STATUS SEQUENCE (deterministic, not AI-generated)
-// ────────────────────────────────────────────────────────────────────────────
-
+// Deterministic status sequence (not AI-generated)
 const STATUS_LINES = [
   "Sampling futures…",
   "Projecting cash horizon…",
@@ -31,33 +26,57 @@ const STATUS_LINES = [
   "Finalizing intelligence brief…",
 ] as const;
 
-const LINE_INTERVAL_MS = 1800; // Time between each status line appearing
-const COMPLETE_VISIBLE_MS = 2000; // How long "RUN COMPLETE" stays visible
-const FADE_OUT_MS = 600; // Ease-out duration
+const LINE_INTERVAL_MS = 1800;
+const COMPLETE_VISIBLE_MS = 2000;
+const FADE_OUT_MS = 600;
 
-// ────────────────────────────────────────────────────────────────────────────
-// COMPONENT
-// ────────────────────────────────────────────────────────────────────────────
+type Phase = "idle" | "running" | "complete" | "fading";
 
 export default function SimulationTelemetryRibbon() {
-  const simulationStatus = useSimulationStore((s) => s.simulationStatus);
-  const runMeta = useSimulationStore((s) => s.runMeta);
+  // ── Store inputs ──
+  const simStatus = useSimulationStore((s) => s.simulationStatus);
+  const simMeta = useSimulationStore((s) => s.runMeta);
+
+  const engine = useEngineActivityStore((s) => ({
+    isRunning: s.isRunning,
+    stage: s.stage,
+    iterationsTarget: s.iterationsTarget,
+    durationMs: s.durationMs,
+  }));
+
+  // ── Derived "active" state ──
+  const isRunning = simStatus === "running" || engine.isRunning;
+  const isComplete =
+    simStatus === "complete" ||
+    (!engine.isRunning && engine.stage === "COMPLETE");
 
   const [visibleLines, setVisibleLines] = useState<number>(0);
   const [isVisible, setIsVisible] = useState(false);
-  const [phase, setPhase] = useState<"idle" | "running" | "complete" | "fading">("idle");
+  const [phase, setPhase] = useState<Phase>("idle");
   const lineTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ── React to simulation status changes ──
+  // Safe meta line (prefer simMeta if present; fallback to engineActivity)
+  const metaLine = useMemo(() => {
+    if (simMeta && isRunning) {
+      return `Seed locked · ${simMeta.paths.toLocaleString()} paths · ${simMeta.timeHorizonMonths} mo · Updating survival + value bands…`;
+    }
+    if (engine.isRunning) {
+      const paths = engine.iterationsTarget > 0 ? engine.iterationsTarget.toLocaleString() : "—";
+      return `Seed locked · ${paths} paths · Updating survival + value bands…`;
+    }
+    return null;
+  }, [simMeta, engine.isRunning, engine.iterationsTarget, isRunning]);
+
+  // React to run start/stop
   useEffect(() => {
-    if (simulationStatus === "running") {
+    if (isRunning) {
       setIsVisible(true);
       setPhase("running");
       setVisibleLines(0);
 
-      // Sequentially reveal status lines
       let lineIdx = 0;
+      if (lineTimerRef.current) clearInterval(lineTimerRef.current);
       lineTimerRef.current = setInterval(() => {
         lineIdx++;
         if (lineIdx >= STATUS_LINES.length) {
@@ -68,13 +87,12 @@ export default function SimulationTelemetryRibbon() {
       }, LINE_INTERVAL_MS);
     }
 
-    if (simulationStatus === "complete") {
-      // Stop line timer
+    if (!isRunning && isComplete) {
       if (lineTimerRef.current) clearInterval(lineTimerRef.current);
-      setVisibleLines(STATUS_LINES.length); // Show all lines briefly
+      setVisibleLines(STATUS_LINES.length);
       setPhase("complete");
 
-      // Hold "RUN COMPLETE" then fade
+      if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
       fadeTimerRef.current = setTimeout(() => {
         setPhase("fading");
         setTimeout(() => {
@@ -85,21 +103,11 @@ export default function SimulationTelemetryRibbon() {
       }, COMPLETE_VISIBLE_MS);
     }
 
-    if (simulationStatus === "idle" || simulationStatus === "error") {
-      if (lineTimerRef.current) clearInterval(lineTimerRef.current);
-      if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
-      // Don't immediately hide on error — let it show briefly
-      if (simulationStatus === "idle") {
-        setIsVisible(false);
-        setPhase("idle");
-      }
-    }
-
     return () => {
       if (lineTimerRef.current) clearInterval(lineTimerRef.current);
       if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
     };
-  }, [simulationStatus]);
+  }, [isRunning, isComplete]);
 
   if (!isVisible) return null;
 
@@ -109,7 +117,6 @@ export default function SimulationTelemetryRibbon() {
       role="status"
       aria-live="polite"
     >
-      {/* ── LED + Title ── */}
       <div className={styles.header}>
         <span
           className={`${styles.led} ${
@@ -121,15 +128,10 @@ export default function SimulationTelemetryRibbon() {
         </span>
       </div>
 
-      {/* ── Meta line (safe telemetry only) ── */}
-      {runMeta && phase === "running" && (
-        <div className={styles.metaLine}>
-          Seed locked · {runMeta.paths.toLocaleString()} paths · {runMeta.timeHorizonMonths} mo
-          · Updating survival + value bands…
-        </div>
+      {metaLine && phase === "running" && (
+        <div className={styles.metaLine}>{metaLine}</div>
       )}
 
-      {/* ── Status lines (sequential reveal) ── */}
       {phase === "running" && (
         <div className={styles.statusLines}>
           {STATUS_LINES.slice(0, visibleLines + 1).map((line, i) => (
@@ -145,45 +147,45 @@ export default function SimulationTelemetryRibbon() {
         </div>
       )}
 
-      {/* ── Completion deltas (safe) ── */}
-      {phase === "complete" && runMeta && (
+      {/* Completion deltas only if simMeta exists */}
+      {phase === "complete" && simMeta && (
         <div className={styles.completionDeltas}>
-          {runMeta.durationMs !== null && (
+          {simMeta.durationMs !== null && (
             <div className={styles.deltaLine}>
               <span className={styles.deltaLabel}>Duration</span>
-              <span className={styles.deltaValue}>{(runMeta.durationMs / 1000).toFixed(1)}s</span>
+              <span className={styles.deltaValue}>{(simMeta.durationMs / 1000).toFixed(1)}s</span>
             </div>
           )}
-          {runMeta.survivalDelta !== null && (
+          {simMeta.survivalDelta !== null && (
             <div className={styles.deltaLine}>
               <span className={styles.deltaLabel}>Survival</span>
               <span
                 className={`${styles.deltaValue} ${
-                  runMeta.survivalDelta >= 0 ? styles.deltaPositive : styles.deltaNegative
+                  simMeta.survivalDelta >= 0 ? styles.deltaPositive : styles.deltaNegative
                 }`}
               >
-                {runMeta.survivalDelta >= 0 ? "+" : ""}
-                {runMeta.survivalDelta}%
+                {simMeta.survivalDelta >= 0 ? "+" : ""}
+                {simMeta.survivalDelta}%
               </span>
             </div>
           )}
-          {runMeta.runwayDelta !== null && (
+          {simMeta.runwayDelta !== null && (
             <div className={styles.deltaLine}>
               <span className={styles.deltaLabel}>Runway</span>
               <span
                 className={`${styles.deltaValue} ${
-                  runMeta.runwayDelta >= 0 ? styles.deltaPositive : styles.deltaNegative
+                  simMeta.runwayDelta >= 0 ? styles.deltaPositive : styles.deltaNegative
                 }`}
               >
-                {runMeta.runwayDelta >= 0 ? "+" : ""}
-                {runMeta.runwayDelta} mo
+                {simMeta.runwayDelta >= 0 ? "+" : ""}
+                {simMeta.runwayDelta} mo
               </span>
             </div>
           )}
-          {runMeta.topDriverLabel && (
+          {simMeta.topDriverLabel && (
             <div className={styles.deltaLine}>
               <span className={styles.deltaLabel}>Top driver</span>
-              <span className={styles.deltaValue}>{runMeta.topDriverLabel}</span>
+              <span className={styles.deltaValue}>{simMeta.topDriverLabel}</span>
             </div>
           )}
         </div>
@@ -191,6 +193,3 @@ export default function SimulationTelemetryRibbon() {
     </div>
   );
 }
-
-
-
