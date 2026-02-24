@@ -1,3 +1,4 @@
+// LEGACY FILE — NOT IN ACTIVE PATH
 /**
  * AppShellLayout — GOD MODE top-level layout shell.
  * Provides left rail, center stage, right rail structure.

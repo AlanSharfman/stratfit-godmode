@@ -1,3 +1,4 @@
+// LEGACY FILE — NOT IN ACTIVE PATH
 import { useNavigate } from "react-router-dom";
 import { NAV_ITEMS } from "./navConfig";
 import { useActiveRoute } from "./useActiveRoute";

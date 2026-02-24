@@ -1,3 +1,4 @@
+// LEGACY FILE — NOT IN ACTIVE PATH
 import { BaselineInputs } from "@/pages/initialize/initialize.types";
 
 export interface SimulationResult {

@@ -1,3 +1,4 @@
+// LEGACY FILE — NOT IN ACTIVE PATH
 import React, { useMemo, useState } from "react";
 import { Outlet } from "react-router-dom";
 import { useLocation } from "react-router-dom";

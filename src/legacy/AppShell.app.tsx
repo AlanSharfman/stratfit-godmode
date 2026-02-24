@@ -1,3 +1,4 @@
+// LEGACY FILE — NOT IN ACTIVE PATH
 import type { ReactNode } from "react";
 import MainNav from "@/app/navigation/MainNav";
 import { SystemBaselineProvider } from "@/system/SystemBaselineProvider";
