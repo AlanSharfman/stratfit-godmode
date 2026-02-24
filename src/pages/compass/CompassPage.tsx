@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import styles from "./CompassPage.module.css";
 import { useSimulationStore } from "@/state/simulationStore";
 import SimulationBriefPanel from "@/components/simulation/SimulationBriefPanel";
+import SimulationProgressTicker from "@/components/simulation/SimulationProgressTicker";
 import ScenarioDiffInspectorPanel from "@/components/scenario/ScenarioDiffInspectorPanel";
 
 export default function CompassPage() {
@@ -78,6 +79,7 @@ export default function CompassPage() {
       </div>
 
       {/* RESULTS — read-only from store */}
+      <SimulationProgressTicker />
       <SimulationBriefPanel />
       <ScenarioDiffInspectorPanel />
 
