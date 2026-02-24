@@ -15,6 +15,7 @@ import {
     useEffect,
     type ReactNode,
 } from "react";
+import { useRenderSentinel } from "@/dev/useRenderSentinel";
 import {
     loadBaseline,
     saveBaseline,
@@ -56,6 +57,7 @@ export function SystemBaselineProvider({
 }: {
     children: ReactNode;
 }) {
+    useRenderSentinel("SystemBaselineProvider");
     const [baseline, setBaselineState] = useState<BaselineV1 | null>(() =>
         loadBaseline()
     );

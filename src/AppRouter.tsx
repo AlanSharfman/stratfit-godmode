@@ -3,6 +3,7 @@ import { ROUTES } from "@/routes/routeContract"
 import AppHeader from "@/components/layout/AppHeader"
 import { SystemBaselineProvider } from "@/system/SystemBaselineProvider"
 import StratfitErrorBoundary from "@/system/StratfitErrorBoundary"
+import { useRenderSentinel } from "@/dev/useRenderSentinel"
 
 import TerrainRoute from "@/routes/TerrainRoute"
 import StudioRoute from "@/routes/StudioRoute"
@@ -22,6 +23,7 @@ import CompassPage from "@/pages/compass/CompassPage"
 import SimulationPresenceLayer from "@/components/system/SimulationPresenceLayer"
 
 export default function AppRouter() {
+  useRenderSentinel("AppRouter");
   return (
     <SystemBaselineProvider>
       <StratfitErrorBoundary>

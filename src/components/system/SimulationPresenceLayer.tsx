@@ -2,8 +2,10 @@ import React from "react";
 import SimulationActivityMonitor from "@/components/system/SimulationActivityMonitor";
 import SimulationTelemetryRibbon from "@/components/simulation/SimulationTelemetryRibbon";
 import { useSimulationStore } from "@/state/simulationStore";
+import { useRenderSentinel } from "@/dev/useRenderSentinel";
 
 export default function SimulationPresenceLayer() {
+  useRenderSentinel("SimulationPresenceLayer");
   // Read-only: UI reacts to store state, never triggers simulation.
   const status = useSimulationStore((s) => s.simulationStatus);
   const run = useSimulationStore((s) => s.activeRun);

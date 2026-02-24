@@ -14,6 +14,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useSimulationStore } from "@/state/simulationStore";
 import { useEngineActivityStore } from "@/state/engineActivityStore";
+import { useRenderSentinel } from "@/dev/useRenderSentinel";
 import styles from "./SimulationTelemetryRibbon.module.css";
 
 // Deterministic status sequence (not AI-generated)
@@ -33,22 +34,21 @@ const FADE_OUT_MS = 600;
 type Phase = "idle" | "running" | "complete" | "fading";
 
 export default function SimulationTelemetryRibbon() {
-  // ── Store inputs ──
+  useRenderSentinel("SimulationTelemetryRibbon");
+  // ── Store inputs — primitive selectors only (object selectors cause render loops) ──
   const simStatus = useSimulationStore((s) => s.simulationStatus);
   const simMeta = useSimulationStore((s) => s.runMeta);
 
-  const engine = useEngineActivityStore((s) => ({
-    isRunning: s.isRunning,
-    stage: s.stage,
-    iterationsTarget: s.iterationsTarget,
-    durationMs: s.durationMs,
-  }));
+  const engineIsRunning = useEngineActivityStore((s) => s.isRunning);
+  const engineStage = useEngineActivityStore((s) => s.stage);
+  const engineIterationsTarget = useEngineActivityStore((s) => s.iterationsTarget);
+  const engineDurationMs = useEngineActivityStore((s) => s.durationMs);
 
   // ── Derived "active" state ──
-  const isRunning = simStatus === "running" || engine.isRunning;
+  const isRunning = simStatus === "running" || engineIsRunning;
   const isComplete =
     simStatus === "complete" ||
-    (!engine.isRunning && engine.stage === "COMPLETE");
+    (!engineIsRunning && engineStage === "COMPLETE");
 
   const [visibleLines, setVisibleLines] = useState<number>(0);
   const [isVisible, setIsVisible] = useState(false);
@@ -61,12 +61,12 @@ export default function SimulationTelemetryRibbon() {
     if (simMeta && isRunning) {
       return `Seed locked · ${simMeta.paths.toLocaleString()} paths · ${simMeta.timeHorizonMonths} mo · Updating survival + value bands…`;
     }
-    if (engine.isRunning) {
-      const paths = engine.iterationsTarget > 0 ? engine.iterationsTarget.toLocaleString() : "—";
+    if (engineIsRunning) {
+      const paths = engineIterationsTarget > 0 ? engineIterationsTarget.toLocaleString() : "—";
       return `Seed locked · ${paths} paths · Updating survival + value bands…`;
     }
     return null;
-  }, [simMeta, engine.isRunning, engine.iterationsTarget, isRunning]);
+  }, [simMeta, engineIsRunning, engineIterationsTarget, isRunning]);
 
   // React to run start/stop
   useEffect(() => {

@@ -10,6 +10,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useEngineActivityStore, type EngineStage } from "@/state/engineActivityStore";
 import styles from "./SimulationActivityMonitor.module.css";
+import { useRenderSentinel } from "@/dev/useRenderSentinel";
 
 // ────────────────────────────────────────────────────────────────────────────
 // STAGE LABELS (real, factual, institutional)
@@ -50,17 +51,18 @@ const AUTO_COLLAPSE_MS = 4000;
 // ────────────────────────────────────────────────────────────────────────────
 
 const SimulationActivityMonitor: React.FC = () => {
-  const {
-    isRunning,
-    stage,
-    iterationsTarget,
-    iterationsCompleted,
-    durationMs,
-    seed,
-    modelType,
-    message,
-    error,
-  } = useEngineActivityStore();
+  useRenderSentinel("SimulationActivityMonitor");
+  // Primitive selectors only — bare useEngineActivityStore() subscribes to the
+  // entire store and re-renders on every write, including unrelated ones.
+  const isRunning = useEngineActivityStore((s) => s.isRunning);
+  const stage = useEngineActivityStore((s) => s.stage);
+  const iterationsTarget = useEngineActivityStore((s) => s.iterationsTarget);
+  const iterationsCompleted = useEngineActivityStore((s) => s.iterationsCompleted);
+  const durationMs = useEngineActivityStore((s) => s.durationMs);
+  const seed = useEngineActivityStore((s) => s.seed);
+  const modelType = useEngineActivityStore((s) => s.modelType);
+  const message = useEngineActivityStore((s) => s.message);
+  const error = useEngineActivityStore((s) => s.error);
 
   const [expanded, setExpanded] = useState(false);
   const [visible, setVisible] = useState(false);
