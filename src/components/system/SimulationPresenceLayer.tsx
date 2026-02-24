@@ -1,10 +1,15 @@
 import React from "react";
 import SimulationActivityMonitor from "@/components/system/SimulationActivityMonitor";
 import SimulationTelemetryRibbon from "@/components/simulation/SimulationTelemetryRibbon";
-import { useEngineActivityStore } from "@/state/engineActivityStore";
+import { useSimulationStore } from "@/state/simulationStore";
 
 export default function SimulationPresenceLayer() {
-  const { isRunning, stage, message } = useEngineActivityStore();
+  // Read-only: UI reacts to store state, never triggers simulation.
+  const status = useSimulationStore((s) => s.simulationStatus);
+  const run = useSimulationStore((s) => s.activeRun);
+
+  const isRunning = status === "running";
+  const stage = run ? `${run.horizonMonths}mo · ${run.iterations.toLocaleString()} paths` : "";
 
   // Always mount monitor/ribbon (they self-hide when idle),
   // plus a minimal ticker only while running.
@@ -36,9 +41,9 @@ export default function SimulationPresenceLayer() {
           }}
           aria-label="Simulation ticker"
         >
-          <div style={{ opacity: 0.75 }}>ENGINE · {stage}</div>
+          <div style={{ opacity: 0.75 }}>ENGINE · RUNNING</div>
           <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-            {message ?? "Running…"}
+            {stage || "Running…"}
           </div>
         </div>
       )}

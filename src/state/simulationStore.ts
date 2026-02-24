@@ -7,6 +7,24 @@ import { persist } from 'zustand/middleware';
 import type { MonteCarloResult } from '@/logic/monteCarloEngine';
 import type { Verdict } from '@/logic/verdictGenerator';
 import { safeLocalStoragePersist } from './safePersistStorage';
+import { runSimulationAndStore } from '@/core/bootstrap/simulationRunner';
+
+// ════════════════════════════════════════════════════════════════════════════
+// SIMULATION RUN — contract shape consumed by UI (read-only)
+// ════════════════════════════════════════════════════════════════════════════
+
+export interface SimulationRun {
+  id: string;
+  timestamp: number;
+  horizonMonths: number;
+  iterations: number;
+  results: {
+    runway?: { p50: number; p90: number };
+    probability?: number;  // 0–100
+    suggestion?: string;
+    drivers?: Array<{ name: string; impact: number }>;
+  };
+}
 
 // ════════════════════════════════════════════════════════════════════════════
 // SIMULATION RUN STATUS — Single source of truth
@@ -100,6 +118,9 @@ interface SimulationState {
   // Lever snapshot (what levers were used for this simulation)
   leverSnapshot: Record<string, number> | null;
   
+  // Active run (canonical read surface for UI)
+  activeRun: SimulationRun | null;
+
   // Actions
   startSimulation: () => void;
   beginRun: (meta: Pick<RunMeta, 'timeHorizonMonths' | 'paths' | 'seedLocked'>) => void;
@@ -107,7 +128,18 @@ interface SimulationState {
   failRun: (errorMessage?: string) => void;
   setSimulationResult: (result: MonteCarloResult, verdict: Verdict, levers: Record<string, number>) => void;
   clearSimulation: () => void;
-  
+
+  /**
+   * PRIMARY DISPATCH — call from user action handlers only.
+   * Pattern: user action → runSimulation() → store update → UI reads
+   * NEVER call inside useEffect.
+   */
+  runSimulation: (payload: {
+    inputs?: Record<string, unknown>;
+    horizonMonths?: number;
+    iterations?: number;
+  }) => Promise<void>;
+
   // Helpers
   hasResultsForCurrentLevers: (currentLevers: Record<string, number>) => boolean;
 }
@@ -173,6 +205,7 @@ export const useSimulationStore = create<SimulationState>()(
       assessmentPayload: null,
       summary: null,
       leverSnapshot: null,
+      activeRun: null,
 
       // Start simulation (for loading state — legacy compat)
       startSimulation: () => set({
@@ -271,6 +304,47 @@ export const useSimulationStore = create<SimulationState>()(
         summary: null,
         leverSnapshot: null,
       }),
+
+      // PRIMARY DISPATCH — user action → store update → UI reads only
+      runSimulation: async ({ horizonMonths = 24, iterations = 20000 } = {}) => {
+        set({ simulationStatus: "running", isSimulating: true });
+
+        // Yield to React so the "running" state renders before heavy compute.
+        await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+        try {
+          const output = runSimulationAndStore();
+
+          const run: SimulationRun = {
+            id: output.runId,
+            timestamp: output.meta.createdAt,
+            horizonMonths,
+            iterations,
+            results: {
+              runway: {
+                p50: output.liquidity.runwayMonths,
+                p90: output.liquidity.runwayMonths,
+              },
+              probability: Math.round(output.simulation.survivalProbability * 100),
+              suggestion: output.commentary.bullets[0] ?? undefined,
+            },
+          };
+
+          set({
+            activeRun: run,
+            simulationStatus: "complete",
+            isSimulating: false,
+            hasSimulated: true,
+            simulationCount: get().simulationCount + 1,
+            lastSimulationTime: new Date(),
+          });
+        } catch (err: unknown) {
+          set({
+            simulationStatus: "error",
+            isSimulating: false,
+          });
+        }
+      },
 
       // Check if current levers match the simulated levers
       hasResultsForCurrentLevers: (currentLevers) => {

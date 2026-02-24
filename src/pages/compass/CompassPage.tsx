@@ -1,28 +1,19 @@
 import React, { useState } from "react";
 import styles from "./CompassPage.module.css";
-
-import { useEngineActivityStore } from "@/state/engineActivityStore";
+import { useSimulationStore } from "@/state/simulationStore";
+import SimulationBriefPanel from "@/components/simulation/SimulationBriefPanel";
 
 export default function CompassPage() {
   const [prompt, setPrompt] = useState("");
-  const [hasRun, setHasRun] = useState(false);
 
-  const engine = useEngineActivityStore();
+  // Read dispatch once; never read reactive state to trigger a run.
+  const runSimulation = useSimulationStore((s) => s.runSimulation);
+  const status = useSimulationStore((s) => s.simulationStatus);
 
-  function runSimulation() {
+  // User action → dispatch only. No useEffect.
+  function handleRun() {
     if (!prompt.trim()) return;
-
-    // Trigger engine activity (demo-safe)
-    engine.start({ iterationsTarget: 500 });
-
-    setTimeout(() => {
-      engine.update({ stage: "SAMPLING", message: "Running scenario…" });
-    }, 600);
-
-    setTimeout(() => {
-      engine.complete();
-      setHasRun(true);
-    }, 2600);
+    runSimulation({ horizonMonths: 24 });
   }
 
   function applyExample(text: string) {
@@ -58,24 +49,20 @@ export default function CompassPage() {
           ))}
         </div>
 
-        <button className={styles.runButton} onClick={runSimulation}>
-          Run Simulation
+        <button
+          className={styles.runButton}
+          onClick={handleRun}
+          disabled={status === "running"}
+        >
+          {status === "running" ? "Running…" : "Run Simulation"}
         </button>
       </div>
 
-      {/* RESULTS */}
-      {hasRun && (
-        <div className={styles.results}>
-          <div className={styles.narrative}>
-            <div className={styles.cardTitle}>Strategic Insight</div>
-            <p>
-              Based on the simulated trajectory, liquidity pressure increases
-              within the next 9–12 months. Capital planning or cost discipline
-              will materially improve survival probability.
-            </p>
-            <div className={styles.badge}>WATCH</div>
-          </div>
+      {/* RESULTS — read-only from store */}
+      <SimulationBriefPanel />
 
+      {status === "complete" && (
+        <div className={styles.results}>
           <div className={styles.terrainPreview}>
             <div className={styles.previewLabel}>Terrain Reaction</div>
             <div className={styles.previewBox}>
