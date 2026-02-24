@@ -1,3 +1,14 @@
+// Flat array used by validateRoutingContract — must include every path in LIVE_NAV.
+export const ROUTE_CONTRACT = [
+  "/position",
+  "/compass",
+  "/studio",
+  "/compare",
+  "/assessment",
+  "/roadmap",
+  "/initialize",
+] as const
+
 export const ROUTES = {
   // Core tabs
   POSITION: "/position",

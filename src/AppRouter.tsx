@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom"
 import { ROUTES } from "@/routes/routeContract"
 import AppHeader from "@/components/layout/AppHeader"
 import { SystemBaselineProvider } from "@/system/SystemBaselineProvider"
+import StratfitErrorBoundary from "@/system/StratfitErrorBoundary"
 
 import TerrainRoute from "@/routes/TerrainRoute"
 import StudioRoute from "@/routes/StudioRoute"
@@ -23,10 +24,12 @@ import SimulationPresenceLayer from "@/components/system/SimulationPresenceLayer
 export default function AppRouter() {
   return (
     <SystemBaselineProvider>
-      <div className="app">
-        <AppHeader />
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-          <Routes>
+      <StratfitErrorBoundary>
+        <div className="app">
+          <AppHeader />
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+            <StratfitErrorBoundary>
+              <Routes>
             <Route path="/" element={<Navigate to={ROUTES.POSITION} />} />
 
             {/* Initialize aliases */}
@@ -53,13 +56,17 @@ export default function AppRouter() {
             <Route path={ROUTES.IMPACT} element={<ImpactRoute />} />
             <Route path={ROUTES.STRATEGY_STUDIO} element={<StrategyStudioRoute />} />
 
-            <Route path="*" element={<Navigate to={ROUTES.POSITION} />} />
-          </Routes>
-        </div>
+              <Route path="*" element={<Navigate to={ROUTES.POSITION} />} />
+            </Routes>
+            </StratfitErrorBoundary>
+          </div>
 
-        {/* GLOBAL: simulation presence on every page */}
-        <SimulationPresenceLayer />
-      </div>
+          {/* GLOBAL: simulation presence on every page */}
+          <StratfitErrorBoundary>
+            <SimulationPresenceLayer />
+          </StratfitErrorBoundary>
+        </div>
+      </StratfitErrorBoundary>
     </SystemBaselineProvider>
   )
 }

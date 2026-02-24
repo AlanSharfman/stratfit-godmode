@@ -1,7 +1,7 @@
 import React from "react"
 import { NavLink } from "react-router-dom"
 import styles from "./AppHeader.module.css"
-import { LIVE_NAV } from "@/navigation/liveNav"
+import { LIVE_NAV } from "@/nav/liveNav"
 
 export default function AppHeader() {
   return (
@@ -15,8 +15,8 @@ export default function AppHeader() {
         <nav className={styles.nav} aria-label="Primary navigation">
           {LIVE_NAV.map((item) => (
             <NavLink
-              key={item.to}
-              to={item.to}
+              key={item.path}
+              to={item.path}
               className={({ isActive }) =>
                 isActive ? `${styles.link} ${styles.active}` : styles.link
               }
