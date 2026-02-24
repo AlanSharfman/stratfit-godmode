@@ -1,0 +1,129 @@
+.ticker {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(2, 6, 23, 0.72); /* near-slate */
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  width: 100%;
+  max-width: 980px;
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 280px;
+}
+
+.badge {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 224, 255, 0.28);
+  color: rgba(210, 250, 255, 0.92);
+  background: rgba(0, 224, 255, 0.06);
+  white-space: nowrap;
+}
+
+.msg {
+  font-size: 13px;
+  color: rgba(255,255,255,0.78);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mid {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.metrics {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.kv {
+  display: inline-flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.k {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+}
+
+.v {
+  font-size: 13px;
+  color: rgba(255,255,255,0.86);
+}
+
+.bar {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.10);
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 999px;
+  background: rgba(0, 224, 255, 0.85);
+  box-shadow: 0 0 20px rgba(0, 224, 255, 0.28);
+}
+
+.right {
+  width: 64px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.pct {
+  font-size: 14px;
+  color: rgba(255,255,255,0.9);
+}
+
+/* Status tones */
+
+.running .badge {
+  border-color: rgba(0, 224, 255, 0.36);
+  background: rgba(0, 224, 255, 0.08);
+}
+
+.complete .badge {
+  border-color: rgba(16, 185, 129, 0.35); /* emerald */
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.complete .barFill {
+  background: rgba(16, 185, 129, 0.85);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.25);
+}
+
+.error .badge {
+  border-color: rgba(239, 68, 68, 0.40);
+  background: rgba(239, 68, 68, 0.10);
+}
+
+.error .barFill {
+  background: rgba(239, 68, 68, 0.85);
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.25);
+}
+
+.idle .badge {
+  border-color: rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.04);
+}

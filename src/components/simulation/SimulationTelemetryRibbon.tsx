@@ -16,6 +16,7 @@ import { useSimulationStore } from "@/state/simulationStore";
 import { useEngineActivityStore } from "@/state/engineActivityStore";
 import { useRenderSentinel } from "@/dev/useRenderSentinel";
 import styles from "./SimulationTelemetryRibbon.module.css";
+import EngineProgressTicker from "@/components/simulation/EngineProgressTicker";
 
 // Deterministic status sequence (not AI-generated)
 const STATUS_LINES = [
@@ -146,6 +147,8 @@ export default function SimulationTelemetryRibbon() {
           ))}
         </div>
       )}
+
+      <EngineProgressTicker />
 
       {/* Completion deltas only if simMeta exists */}
       {phase === "complete" && simMeta && (
