@@ -1,8 +1,13 @@
 import React, { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { useFrame } from "@react-three/fiber";
+import { useGodModeStore } from "@/core/store/useGodModeStore";
+import { useEngineActivityStore } from "@/state/engineActivityStore";
+// Using getTerrainHeight (wraps sampleTerrainHeight with BASELINE_SEED + STM)
+import { getTerrainHeight } from "@/terrain/terrainHeightSampler";
 
 /**
- * STRATFIT — Lava Divergence Layer (V2)
+ * STRATFIT — Lava Divergence Layer (V3)
  * Terrain-conforming emissive "melt skin" driven by divergence pressure.
  *
  * Determinism:
@@ -13,63 +18,60 @@ import * as THREE from "three";
  * - Coarse grid mesh (default 90x90). Adjust if needed.
  *
  * Safety:
- * - Presentational only. No store reads. No store writes.
- *
- * REQUIRED:
- * - Replace the sampler import below to match your codebase.
+ * - Presentational only. No store writes.
+ * - Respects GodMode showPressure toggle.
  */
-
-// ─────────────────────────────────────────────────────────────────────────────
-// TODO: SET THIS IMPORT TO YOUR TERRAIN HEIGHT SAMPLER
-// Examples you already use elsewhere:
-//   import { sampleTerrainHeight } from "@/terrain/buildTerrain";
-//   import { getHeightAt } from "@/terrain/buildTerrain";
-// ─────────────────────────────────────────────────────────────────────────────
-// Using getTerrainHeight (wraps sampleTerrainHeight with BASELINE_SEED + STM)
-import { getTerrainHeight } from "@/terrain/terrainHeightSampler";
 
 function clamp01(x: number) {
   return Math.max(0, Math.min(1, x));
 }
 
+function stagePulseAmp(stage: string) {
+  switch (stage) {
+    case "SAMPLING":     return 0.55;
+    case "AGGREGATING":  return 0.40;
+    case "CONVERGING":   return 0.45;
+    default:             return 0.0;
+  }
+}
+
 export default function LavaDivergenceLayer(props: {
   intensity: number; // 0..1
-  // spatial config
-  size?: number;       // world units (plane width/height)
-  segments?: number;   // grid resolution
-  yOffset?: number;    // height offset above terrain
+  size?: number;
+  segments?: number;
+  yOffset?: number;
 }) {
+  const enabled = useGodModeStore((s) => s.enabled && s.showPressure);
+  const engineIsRunning = useEngineActivityStore((s) => s.isRunning);
+  const engineStage = useEngineActivityStore((s) => s.stage);
+
   const intensity = clamp01(props.intensity);
-  const size = props.size ?? 140;
+  const size = props.size ?? 160;
   const segments = props.segments ?? 90;
   const yOffset = props.yOffset ?? 0.08;
 
   const meshRef = useRef<THREE.Mesh>(null);
   const geomRef = useRef<THREE.PlaneGeometry | null>(null);
 
-  const material = useMemo(() => {
-    // Deterministic material mapping from intensity only.
-    // Keep conservative so it reads "pressure" not "arcade lava".
-    return new THREE.MeshStandardMaterial({
+  const mat = useMemo(() => {
+    const m = new THREE.MeshStandardMaterial({
       color: new THREE.Color(0.70, 0.05, 0.03),
       emissive: new THREE.Color(1.0, 0.12, 0.03),
-      emissiveIntensity: 0.20 + intensity * 1.85,
+      emissiveIntensity: 0.25,
       transparent: true,
-      opacity: 0.015 + intensity * 0.26,
-      roughness: 0.50,
+      opacity: 0.02,
+      roughness: 0.55,
       metalness: 0.0,
       depthWrite: false,
     });
-  }, [intensity]);
+    return m;
+  }, []);
 
-  // Build the geometry once (mount), then set vertex heights from terrain.
-  // NOTE: we do NOT rebuild per render; we mutate vertex buffer once in effect.
+  // Build conforming geometry once (or when size/segments/yOffset changes).
   useEffect(() => {
     const mesh = meshRef.current;
     if (!mesh) return;
 
-    // Create a plane centered at origin, rotated flat on XZ.
-    // We will sample height at each vertex world (x,z).
     const geom = new THREE.PlaneGeometry(size, size, segments, segments);
     geom.rotateX(-Math.PI / 2);
 
@@ -78,36 +80,46 @@ export default function LavaDivergenceLayer(props: {
 
     for (let i = 0; i < pos.count; i++) {
       v.fromBufferAttribute(pos, i);
-
-      // v.x and v.z are in world-space for this mesh (centered at 0,0).
-      // Sample terrain height deterministically.
       const h = getTerrainHeight(v.x, v.z);
-
-      // Lift the lava slightly above terrain to avoid z-fighting.
       pos.setY(i, h + yOffset);
     }
 
     pos.needsUpdate = true;
     geom.computeVertexNormals();
 
-    // Attach geometry
     mesh.geometry.dispose?.();
     mesh.geometry = geom;
     geomRef.current = geom;
 
     return () => {
-      // Cleanup
       if (geomRef.current) {
         geomRef.current.dispose();
         geomRef.current = null;
       }
     };
-    // size/segments/yOffset define geometry; change => rebuild.
   }, [size, segments, yOffset]);
 
-  return (
-    <mesh ref={meshRef} material={material} frustumCulled={false}>
-      {/* geometry injected in useEffect */}
-    </mesh>
-  );
+  // Drive material from intensity + engine pulse (no store writes)
+  useFrame(({ clock }) => {
+    if (!enabled) return;
+
+    const baseOpacity = 0.01 + intensity * 0.28;
+    const baseEmissive = 0.18 + intensity * 1.95;
+
+    let pulse = 0;
+    if (engineIsRunning) {
+      const amp = stagePulseAmp(engineStage);
+      const t = clock.getElapsedTime();
+      const wave = (Math.sin(t * 4.2) + 1) * 0.5; // 0..1
+      pulse = amp * 0.35 * wave;
+    }
+
+    mat.opacity = clamp01(baseOpacity + pulse * 0.06);
+    mat.emissiveIntensity = clamp01(baseEmissive + pulse * 0.55);
+  });
+
+  if (!enabled) return null;
+  if (intensity <= 0.001) return null;
+
+  return <mesh ref={meshRef} material={mat} frustumCulled={false} />;
 }
