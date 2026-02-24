@@ -1,16 +1,25 @@
-import React from "react"
-import styles from "./SimulationBriefPanel.module.css"
-import { useSimulationStore } from "@/state/simulationStore"
-import { buildDriverAnalysis } from "@/simulation/buildDriverAnalysis"
+import React, { useMemo } from "react";
+import styles from "./SimulationBriefPanel.module.css";
+import { useSimulationStore } from "@/state/simulationStore";
+import { buildDriverAnalysis } from "@/simulation/buildDriverAnalysis";
 
 export default function SimulationBriefPanel() {
-  const run = useSimulationStore((s) => s.activeRun)
-  const status = useSimulationStore((s) => s.simulationStatus)
+  const run = useSimulationStore((s) => s.activeRun);
+  const status = useSimulationStore((s) => s.simulationStatus);
 
-  if (!run || status !== "completed") return null
+  // Drivers may not exist yet — do not fabricate.
+  // useMemo must be called unconditionally (before any early return).
+  const drivers = useMemo(() => {
+    const results = run?.results;
+    const hasDrivers = Array.isArray(results?.drivers) && results!.drivers!.length > 0;
+    if (!hasDrivers) return [];
+    return buildDriverAnalysis(results);
+  }, [run]);
 
-  const { results, horizonMonths, iterations } = run
-  const drivers = buildDriverAnalysis(results)
+  // ✅ Store SimulationStatus uses "completed" (not "complete")
+  if (!run || status !== "completed") return null;
+
+  const { results, horizonMonths, iterations } = run;
 
   return (
     <div className={styles.panel}>
@@ -24,8 +33,8 @@ export default function SimulationBriefPanel() {
       <div className={styles.section}>
         <div className={styles.sectionTitle}>Outcome</div>
         <div className={styles.metricRow}>
-          <Metric label="Runway P50" value={results?.runway?.p50} />
-          <Metric label="Runway P90" value={results?.runway?.p90} />
+          <Metric label="Runway P50" value={results?.runway?.p50} suffix="mo" />
+          <Metric label="Runway P90" value={results?.runway?.p90} suffix="mo" />
           <Metric label="Probability ≥ Target" value={results?.probability} suffix="%" />
         </div>
       </div>
@@ -49,24 +58,29 @@ export default function SimulationBriefPanel() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 function Metric({
   label,
   value,
-  suffix = "mo",
+  suffix,
 }: {
-  label: string
-  value?: number
-  suffix?: string
+  label: string;
+  value?: number;
+  suffix: string;
 }) {
   return (
     <div className={styles.metric}>
       <div className={styles.metricLabel}>{label}</div>
       <div className={styles.metricValue}>
-        {value != null ? `${value} ${suffix}` : "—"}
+        {value != null ? `${formatValue(value)} ${suffix}` : "—"}
       </div>
     </div>
-  )
+  );
+}
+
+function formatValue(v: number) {
+  if (Number.isInteger(v)) return v.toString();
+  return (Math.round(v * 10) / 10).toString();
 }
