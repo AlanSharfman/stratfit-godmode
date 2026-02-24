@@ -3,7 +3,7 @@ import styles from "./CompassPage.module.css";
 import { useSimulationStore } from "@/state/simulationStore";
 import SimulationBriefPanel from "@/components/simulation/SimulationBriefPanel";
 import NarrativeExplanationBlock from "@/components/simulation/NarrativeExplanationBlock";
-import SimulationProgressTicker from "@/components/simulation/SimulationProgressTicker";
+import EngineProgressTicker from "@/components/simulation/EngineProgressTicker";
 import ScenarioDiffInspectorPanel from "@/components/scenario/ScenarioDiffInspectorPanel";
 import LavaLegendBadge from "@/components/terrain/LavaLegendBadge";
 import DivergencePanelAdapter from "@/components/compare/DivergencePanelAdapter";
@@ -84,7 +84,7 @@ export default function CompassPage() {
       </div>
 
       {/* RESULTS — read-only from store */}
-      <SimulationProgressTicker />
+      <EngineProgressTicker />
       <SimulationBriefPanel />
       <NarrativeExplanationBlock />
       <ScenarioDiffInspectorPanel />
