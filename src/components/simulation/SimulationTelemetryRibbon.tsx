@@ -45,9 +45,9 @@ export default function SimulationTelemetryRibbon() {
   const engineDurationMs = useEngineActivityStore((s) => s.durationMs);
 
   // ── Derived "active" state ──
-  const isRunning = simStatus === "running" || engineIsRunning;
+  const isRunning = simStatus === "running" || simStatus === "queued" || engineIsRunning;
   const isComplete =
-    simStatus === "complete" ||
+    simStatus === "completed" ||
     (!engineIsRunning && engineStage === "COMPLETE");
 
   const [visibleLines, setVisibleLines] = useState<number>(0);

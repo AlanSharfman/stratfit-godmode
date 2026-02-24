@@ -7,7 +7,7 @@ export default function SimulationBriefPanel() {
   const run = useSimulationStore((s) => s.activeRun)
   const status = useSimulationStore((s) => s.simulationStatus)
 
-  if (!run || status !== "complete") return null
+  if (!run || status !== "completed") return null
 
   const { results, horizonMonths, iterations } = run
   const drivers = buildDriverAnalysis(results)

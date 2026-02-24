@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import styles from "./CompassPage.module.css";
 import { useSimulationStore } from "@/state/simulationStore";
 import SimulationBriefPanel from "@/components/simulation/SimulationBriefPanel";
@@ -6,14 +6,25 @@ import SimulationBriefPanel from "@/components/simulation/SimulationBriefPanel";
 export default function CompassPage() {
   const [prompt, setPrompt] = useState("");
 
-  // Read dispatch once; never read reactive state to trigger a run.
+  // Primitive selectors only (no object selectors).
   const runSimulation = useSimulationStore((s) => s.runSimulation);
+  const cancelSimulation = useSimulationStore((s) => s.cancelSimulation);
   const status = useSimulationStore((s) => s.simulationStatus);
+
+  // Derived UI flags (memoized; no store writes).
+  const isBusy = useMemo(() => status === "queued" || status === "running", [status]);
+  const isDone = useMemo(() => status === "completed", [status]);
+  const isFailed = useMemo(() => status === "failed", [status]);
+  const isCancelled = useMemo(() => status === "cancelled", [status]);
 
   // User action → dispatch only. No useEffect.
   function handleRun() {
     if (!prompt.trim()) return;
-    runSimulation({ horizonMonths: 24 });
+    runSimulation({ horizonMonths: 24, iterations: 20000, inputs: { prompt } });
+  }
+
+  function handleCancel() {
+    cancelSimulation();
   }
 
   function applyExample(text: string) {
@@ -25,9 +36,7 @@ export default function CompassPage() {
       {/* HERO */}
       <div className={styles.heroPanel}>
         <h1 className={styles.title}>Where should we explore?</h1>
-        <p className={styles.subtitle}>
-          Ask a strategic question or describe a scenario.
-        </p>
+        <p className={styles.subtitle}>Ask a strategic question or describe a scenario.</p>
 
         <textarea
           className={styles.input}
@@ -49,28 +58,36 @@ export default function CompassPage() {
           ))}
         </div>
 
-        <button
-          className={styles.runButton}
-          onClick={handleRun}
-          disabled={status === "running"}
-        >
-          {status === "running" ? "Running…" : "Run Simulation"}
-        </button>
+        <div className={styles.actions}>
+          <button className={styles.runButton} onClick={handleRun} disabled={isBusy || !prompt.trim()}>
+            {isBusy ? "Running…" : "Run Simulation"}
+          </button>
+
+          {/* God Mode credibility: cancellation is mandatory */}
+          {(status === "queued" || status === "running") && (
+            <button className={styles.cancelButton} onClick={handleCancel}>
+              Cancel
+            </button>
+          )}
+        </div>
+
+        {/* Lightweight status feedback */}
+        {isFailed && <div className={styles.statusError}>Simulation failed. Try again.</div>}
+        {isCancelled && <div className={styles.statusInfo}>Cancelled.</div>}
       </div>
 
       {/* RESULTS — read-only from store */}
       <SimulationBriefPanel />
 
-      {status === "complete" && (
+      {isDone && (
         <div className={styles.results}>
           <div className={styles.terrainPreview}>
             <div className={styles.previewLabel}>Terrain Reaction</div>
-            <div className={styles.previewBox}>
-              Terrain preview placeholder
-            </div>
+            <div className={styles.previewBox}>Terrain preview placeholder</div>
           </div>
         </div>
       )}
     </div>
   );
 }
+
