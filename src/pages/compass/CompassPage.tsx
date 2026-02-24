@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import styles from "./CompassPage.module.css";
 import { useSimulationStore } from "@/state/simulationStore";
 import SimulationBriefPanel from "@/components/simulation/SimulationBriefPanel";
+import NarrativeExplanationBlock from "@/components/simulation/NarrativeExplanationBlock";
 import SimulationProgressTicker from "@/components/simulation/SimulationProgressTicker";
 import ScenarioDiffInspectorPanel from "@/components/scenario/ScenarioDiffInspectorPanel";
 import LavaLegendBadge from "@/components/terrain/LavaLegendBadge";
@@ -85,6 +86,7 @@ export default function CompassPage() {
       {/* RESULTS — read-only from store */}
       <SimulationProgressTicker />
       <SimulationBriefPanel />
+      <NarrativeExplanationBlock />
       <ScenarioDiffInspectorPanel />
       <DivergencePanelAdapter />
       <LavaLegendBadge intensity01={lava?.overall ?? 0} />
