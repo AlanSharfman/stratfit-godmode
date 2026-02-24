@@ -9,9 +9,12 @@ import LavaLegendBadge from "@/components/terrain/LavaLegendBadge";
 import DivergencePanelAdapter from "@/components/compare/DivergencePanelAdapter";
 import { useLavaIntensity } from "@/logic/lava/useLavaIntensity";
 
-// NEW — Strategic Signal Layer
+// Strategic Signal Layer
 import StrategicSignalPanel from "@/components/signals/StrategicSignalPanel";
 import StrategicSignalTickerRow from "@/components/signals/StrategicSignalTickerRow";
+
+// NEW — signal-driven lava overlay intensity (read-only)
+import { useSignalDrivenLavaIntensity } from "@/logic/lava/useSignalDrivenLavaIntensity";
 
 export default function CompassPage() {
   const [prompt, setPrompt] = useState("");
@@ -26,7 +29,18 @@ export default function CompassPage() {
   const isDone = useMemo(() => status === "completed", [status]);
   const isFailed = useMemo(() => status === "failed", [status]);
   const isCancelled = useMemo(() => status === "cancelled", [status]);
+
+  // existing lava pipeline (kept)
   const lava = useLavaIntensity();
+
+  // NEW: signal-driven overlay intensity
+  const signalLava01 = useSignalDrivenLavaIntensity();
+
+  // Blend: take the max of canonical lava and signal-stress intensity (no store writes)
+  const blendedLava01 = useMemo(() => {
+    const base = lava?.overall ?? 0;
+    return Math.max(0, Math.min(1, Math.max(base, signalLava01)));
+  }, [lava?.overall, signalLava01]);
 
   // User action → dispatch only. No useEffect.
   function handleRun() {
@@ -97,7 +111,8 @@ export default function CompassPage() {
       <ScenarioDiffInspectorPanel />
       <StrategicSignalPanel />
       <DivergencePanelAdapter />
-      <LavaLegendBadge intensity01={lava?.overall ?? 0} />
+      {/* LAVA LEGEND now reflects blended intensity (base lava OR signal stress) */}
+      <LavaLegendBadge intensity01={blendedLava01} />
 
       {isDone && (
         <div className={styles.results}>
