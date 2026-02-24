@@ -178,12 +178,12 @@ export function DivergenceField({ data, monthIndex, onScrub }: Props) {
       "rgba(34,211,238,0.55)"
     );
 
-    // Exploration band (gold — avoid "orange")
+    // Exploration band (emerald — scenario uplift / strengthening)
     drawBand(
       data.exploration.p5,
       data.exploration.p95,
-      "rgba(234,179,8,0.10)",
-      "rgba(234,179,8,0.55)"
+      "rgba(52,211,153,0.10)",
+      "rgba(52,211,153,0.55)"
     );
 
     // median lines
@@ -207,7 +207,7 @@ export function DivergenceField({ data, monthIndex, onScrub }: Props) {
     };
 
     drawLine(data.baseline.p50, "rgba(34,211,238,0.95)", "rgba(34,211,238,0.65)", 2.2);
-    drawLine(data.exploration.p50, "rgba(234,179,8,0.95)", "rgba(234,179,8,0.65)", 2.2);
+    drawLine(data.exploration.p50, "rgba(52,211,153,0.95)", "rgba(52,211,153,0.65)", 2.2);
 
     // delta ribbon (gap fill between medians) — this is the "value at stake"
     ctx.save();

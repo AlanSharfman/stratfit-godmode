@@ -91,7 +91,7 @@ thead th{
 .thCommentary, .tdCommentary{ min-width: 200px; }
 
 .tdMetric{
-  font-weight: 650;
+  font-weight: 600;
   color: rgba(230, 245, 255, 0.78);
 }
 

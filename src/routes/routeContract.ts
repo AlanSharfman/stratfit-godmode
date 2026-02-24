@@ -1,6 +1,7 @@
 export const ROUTES = {
   // Core tabs
   POSITION: "/position",
+  COMPASS: "/compass",
   STUDIO: "/studio",
   COMPARE: "/compare",
   ASSESSMENT: "/assessment",

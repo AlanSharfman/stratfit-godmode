@@ -1,15 +1,17 @@
 export type LiveNavItem = { to: string; label: string }
 
 export const LIVE_NAV: LiveNavItem[] = [
-  { to: "/position", label: "Position" },
-  { to: "/studio", label: "Studio" },
-  { to: "/compare", label: "Compare" },
+  { to: "/position",   label: "Position" },
+  { to: "/compass",    label: "Compass" },    // hero tab — strategic intent entry
+  { to: "/studio",     label: "Studio" },
+  { to: "/compare",    label: "Compare" },
   { to: "/assessment", label: "Assessment" },
+  { to: "/roadmap",    label: "Roadmap" },
 
-  // restored high-value modules (keep compact)
-  { to: "/valuation", label: "Valuation" },
-  { to: "/risk", label: "Risk" },
+  // high-value modules
+  { to: "/valuation",  label: "Valuation" },
+  { to: "/risk",       label: "Risk" },
 
-  // optional but useful for demos / onboarding
+  // onboarding / objectives
   { to: "/objectives", label: "Objectives" },
 ]

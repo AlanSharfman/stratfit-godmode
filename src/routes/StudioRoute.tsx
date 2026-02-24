@@ -1,1 +1,1 @@
-export { default } from "@/pages/studio/StudioPage";
+export { default } from "@/routes/StrategyStudioRoute";

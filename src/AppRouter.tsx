@@ -17,6 +17,7 @@ import ValuationRoute from "@/routes/ValuationRoute"
 import SimulateRoute from "@/routes/SimulateRoute"
 import ImpactRoute from "@/routes/ImpactRoute"
 import StrategyStudioRoute from "@/routes/StrategyStudioRoute"
+import CompassPage from "@/pages/compass/CompassPage"
 
 export default function AppRouter() {
   return (
@@ -33,6 +34,7 @@ export default function AppRouter() {
 
             {/* Core */}
             <Route path={ROUTES.POSITION} element={<TerrainRoute />} />
+            <Route path={ROUTES.COMPASS} element={<CompassPage />} />
             <Route path={ROUTES.STUDIO} element={<StudioRoute />} />
             <Route path={ROUTES.COMPARE} element={<CompareRoute />} />
             <Route path={ROUTES.ASSESSMENT} element={<AssessmentRoute />} />

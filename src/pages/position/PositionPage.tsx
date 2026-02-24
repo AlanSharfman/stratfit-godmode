@@ -68,11 +68,7 @@ export default function PositionPage() {
     [effectiveInputs],
   )
 
-  const { engineResults } = useScenarioStore(
-    useShallow((s) => ({
-      engineResults: (s as any).engineResults,
-    })),
-  )
+  const engineResults = useScenarioStore((s) => s.engineResults)
 
   const vm = useMemo(() => {
     if (!baseline) return null

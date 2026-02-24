@@ -20,6 +20,8 @@ export interface DiagnosticCardVM {
   metricLine: string
 }
 
+export type RiskSource = "engine" | "heuristic"
+
 export interface PositionViewModel {
   kpis: PositionKpis
   state: PositionState
@@ -28,6 +30,8 @@ export interface PositionViewModel {
   confidenceBand: "Low" | "Medium" | "High"
   confidencePct: number
   diagnostics: DiagnosticCardVM[]
+  /** Source of the riskIndex: 'engine' = real Monte Carlo, 'heuristic' = runway-derived fallback */
+  riskSource: RiskSource
   /** Objectives snapshot from /objectives step (if present). */
   objectives?: BaselineV1["objectives"]
 }
@@ -192,6 +196,7 @@ export function buildPositionViewModel(
     bullets:         bulletsForState(baseline, kpis),
     confidenceBand:  conf.band,
     confidencePct:   conf.pct,
+    riskSource:      (typeof opts?.riskIndexFromEngine === "number" ? "engine" : "heuristic") as RiskSource,
     diagnostics:     buildDiagnostics(baseline, kpis),
     objectives:      baseline.objectives,
   }

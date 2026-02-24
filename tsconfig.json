@@ -28,6 +28,7 @@
         "src"
     ],
     "exclude": [
+        "src/legacy/**",
         "src/_quarantine/**",
         "src/onboard/**",
         "src/pitch/**",

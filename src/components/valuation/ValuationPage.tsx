@@ -19,7 +19,7 @@ import { ConfidenceGauge as LegacyConfidenceGauge } from "./ConfidenceGauge";
 import { ModelAssumptionsDisclosure } from "@/components/legal/ModelAssumptionsDisclosure";
 
 // NEW: Grounded confidence + legal
-import { ConfidenceGauge } from "@/components/confidence/ConfidenceGauge";
+import { ConfidenceGauge } from "@/components/confidence/LegacyConfidenceGauge";
 import { LegalDisclosureAccordion } from "@/components/legal/LegalDisclosureAccordion";
 import { computeConfidence, type ConfidenceResult } from "@/logic/confidence/modelConfidence";
 import { computeBaselineCompleteness } from "@/logic/confidence/baselineCompleteness";
