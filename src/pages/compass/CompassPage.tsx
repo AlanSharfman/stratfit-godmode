@@ -9,6 +9,10 @@ import LavaLegendBadge from "@/components/terrain/LavaLegendBadge";
 import DivergencePanelAdapter from "@/components/compare/DivergencePanelAdapter";
 import { useLavaIntensity } from "@/logic/lava/useLavaIntensity";
 
+// NEW — Strategic Signal Layer
+import StrategicSignalPanel from "@/components/signals/StrategicSignalPanel";
+import StrategicSignalTickerRow from "@/components/signals/StrategicSignalTickerRow";
+
 export default function CompassPage() {
   const [prompt, setPrompt] = useState("");
 
@@ -70,7 +74,6 @@ export default function CompassPage() {
             {isBusy ? "Running…" : "Run Simulation"}
           </button>
 
-          {/* God Mode credibility: cancellation is mandatory */}
           {(status === "queued" || status === "running") && (
             <button className={styles.cancelButton} onClick={handleCancel}>
               Cancel
@@ -78,16 +81,21 @@ export default function CompassPage() {
           )}
         </div>
 
-        {/* Lightweight status feedback */}
         {isFailed && <div className={styles.statusError}>Simulation failed. Try again.</div>}
         {isCancelled && <div className={styles.statusInfo}>Cancelled.</div>}
       </div>
 
-      {/* RESULTS — read-only from store */}
+      {/* ENGINE TELEMETRY */}
       <EngineProgressTicker />
+      <StrategicSignalTickerRow />
+
+      {/* CORE OUTPUTS */}
       <SimulationBriefPanel />
       <NarrativeExplanationBlock />
+
+      {/* COMPARISON & SIGNAL INTELLIGENCE */}
       <ScenarioDiffInspectorPanel />
+      <StrategicSignalPanel />
       <DivergencePanelAdapter />
       <LavaLegendBadge intensity01={lava?.overall ?? 0} />
 
