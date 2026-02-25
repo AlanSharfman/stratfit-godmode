@@ -70,7 +70,7 @@ export default function CommandConsoleBar({ modeLabel = "Decision Console", onSu
           onKeyDown={(e) => {
             if (e.key === "Enter") submit();
           }}
-          placeholder="Ask a strategic decision…"
+          placeholder=""
           disabled={disabled || isLoading}
         />
 

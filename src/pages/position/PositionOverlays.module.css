@@ -359,11 +359,11 @@
 }
 
 .kpiFeedCell .widget {
-  width: 38px;
-  min-height: 20px;
-  flex: 0 0 38px;
+  width: 56px;
+  min-height: 28px;
+  flex: 0 0 56px;
   margin: 0;
-  opacity: 0.75;
+  opacity: 0.85;
 }
 
 /* ── KPI strip — original horizontal layout ── */
