@@ -1,10 +1,8 @@
 /**
- * BaselineTimelineTicks
- * Previously a zero-byte file causing silent import failures.
- * Deterministic no-op until a concrete implementation is provided.
+ * Canonical BaselineTimelineTicks proxy.
+ * Real implementation lives in:
+ *   src/components/terrain/core/BaselineTimelineTicks.tsx
+ *
+ * This file must never be a stub — terrain modules may import from "@/terrain".
  */
-import React from "react"
-
-export default function BaselineTimelineTicks() {
-  return null
-}
+export { default } from "@/components/terrain/core/BaselineTimelineTicks";

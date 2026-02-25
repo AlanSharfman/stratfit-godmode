@@ -22,8 +22,10 @@ import * as THREE from "three";
 import type { TerrainSurfaceHandle } from "@/terrain/TerrainSurface";
 import TerrainSurface from "@/terrain/TerrainSurface";
 import P50Path from "@/paths/P50Path";
-import TimelineTicks, { type TimeGranularity } from "@/terrain/TimelineTicks";
+
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
+import BaselineTimelineTicks from "@/terrain/BaselineTimelineTicks";
+import type { TimeGranularity } from "@/terrain/TimelineTicks";
 import { baselineSeedString } from "@/terrain/seed";
 import MarkerLayer from "@/components/terrain/markers/MarkerLayer";
 import LiquidityFlowLayer from "@/components/terrain/liquidity/LiquidityFlowLayer";
@@ -42,7 +44,6 @@ export default function TerrainStage({ granularity, terrainMetrics }: TerrainSta
   const [terrainReady, setTerrainReady] = useState(false);
   const { baseline } = useSystemBaseline();
   const rebuildKey = baselineSeedString(baseline as any);
-  const horizonMonths = (baseline as any)?.posture?.horizonMonths ?? 36;
 
   // ── Render flags ──
   const { showMarkers, showFlow, showPaths, watchDemo } = useRenderFlagsStore();
@@ -120,7 +121,8 @@ export default function TerrainStage({ granularity, terrainMetrics }: TerrainSta
             {showPaths && (
               <P50Path terrainRef={terrainRef} rebuildKey={rebuildKey} />
             )}
-            <TimelineTicks terrainRef={terrainRef} granularity={granularity} horizonMonths={horizonMonths} rebuildKey={rebuildKey} />
+            {/* Canonical ticks (BaselineTimelineTicks) */}
+            <BaselineTimelineTicks visible />
             <LiquidityFlowLayer terrainRef={terrainRef} enabled={showFlow} />
             <MarkerLayer terrainRef={terrainRef} enabled={showMarkers} />
           </>
