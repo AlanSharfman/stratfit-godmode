@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { useShallow } from "zustand/react/shallow"
 
 import TerrainStage from "@/terrain/TerrainStage"
@@ -22,6 +23,8 @@ import {
   classifyQuestion,
   QuestionCategory,
 } from "@/domain/question/questionClassifier"
+import { buildQuestionContext } from "@/domain/question/questionContext"
+import { buildScenarioADraft } from "@/domain/scenario/scenarioDraft"
 import KPIOverlay from "./overlays/KPIOverlay"
 import PositionHeaderBar from "./components/PositionHeaderBar"
 import DiagnosticsSummary from "./components/DiagnosticsSummary"
@@ -48,15 +51,24 @@ function shlIsOn(weight: number): boolean {
 }
 
 export default function PositionPage() {
+  const navigate = useNavigate()
   const [granularity, setGranularity] = useState<TimeGranularity>("quarter")
   const [showDiagnostics, setShowDiagnostics] = useState(true)
 
   const handleQuestionSubmit = useCallback((question: string) => {
     const category: QuestionCategory = classifyQuestion(question)
+    const qc = buildQuestionContext(question, category)
+    const scenarioDraft = buildScenarioADraft(qc)
+
     console.log("[Question Submitted]", question)
     console.log("[Classification Result]", category)
-    // STEP 12 will create QuestionContext + route to Studio
-  }, [])
+    console.log("[QuestionContext Built]", qc)
+    console.log("[ScenarioDraft Built]", scenarioDraft)
+
+    navigate("/studio", {
+      state: { questionContext: qc, scenarioDraft },
+    })
+  }, [navigate])
 
   const { baseline } = useSystemBaseline()
 
