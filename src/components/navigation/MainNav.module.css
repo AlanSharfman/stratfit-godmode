@@ -21,13 +21,9 @@
 .brand {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   text-decoration: none;
   padding: 10px 6px;
-}
-
-.logoIcon {
-  filter: drop-shadow(0 0 8px rgba(0, 255, 255, 0.4));
 }
 
 .brandText {
