@@ -59,7 +59,6 @@ export default function SimulateRoute({
         isOpen={showSaveModal}
         onClose={() => setShowSaveModal(false)}
         onSaved={(id) => {
-          console.log('Simulation saved:', id);
           emitCausal({ source: "simulation_saved", bandStyle: "solid", color: "rgba(34, 211, 153, 0.3)" });
         }}
       />
@@ -68,7 +67,6 @@ export default function SimulateRoute({
         isOpen={showLoadPanel}
         onClose={() => setShowLoadPanel(false)}
         onLoad={(simulation) => {
-          console.log('Simulation loaded:', simulation.name);
           emitCausal({ source: "simulation_loaded", bandStyle: "solid", color: "rgba(34, 211, 238, 0.3)" });
         }}
       />

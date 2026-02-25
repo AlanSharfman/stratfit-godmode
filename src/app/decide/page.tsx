@@ -178,11 +178,11 @@ export default function DecidePage() {
   }
 
   const handleExport = () => {
-    console.log('Exporting decision to PDF...')
+    // TODO: implement PDF export
   }
 
   const handleShare = () => {
-    console.log('Copying share link...')
+    // TODO: implement share link
   }
 
   return (
