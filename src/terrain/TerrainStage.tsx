@@ -37,9 +37,11 @@ import DemoTourDirector from "@/demo/DemoTourDirector";
 type TerrainStageProps = {
   granularity?: TimeGranularity
   terrainMetrics?: TerrainMetrics
+  /** When true, no OrbitControls are mounted — camera is fully programmatic. */
+  lockCamera?: boolean
 }
 
-export default function TerrainStage({ granularity, terrainMetrics }: TerrainStageProps) {
+export default function TerrainStage({ granularity, terrainMetrics, lockCamera = false }: TerrainStageProps) {
   const terrainRef = useRef<TerrainSurfaceHandle>(null!);
   const [terrainReady, setTerrainReady] = useState(false);
   const { baseline } = useSystemBaseline();
@@ -83,8 +85,8 @@ export default function TerrainStage({ granularity, terrainMetrics }: TerrainSta
         scene.fog = new THREE.Fog("#050A10", 380, 2200);
       }}
     >
-      {/* Orbit controls ONLY when not watching demo */}
-      {!watchDemo && (
+      {/* Orbit controls — disabled on Position (lockCamera), active only in demo mode */}
+      {!lockCamera && !watchDemo && (
         <OrbitControls
           makeDefault
           enablePan={false}

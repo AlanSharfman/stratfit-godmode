@@ -180,7 +180,7 @@ export default function PositionPage() {
 
       {/* ═══ LAYER 1: Fixed full-bleed terrain canvas ═══ */}
       <div className={styles.canvasLayer}>
-        <TerrainStage granularity={granularity} terrainMetrics={terrainMetrics} />
+        <TerrainStage granularity={granularity} terrainMetrics={terrainMetrics} lockCamera />
         <div className={styles.canvasVignette} aria-hidden="true" />
         {rippleKey > 0 && (
           <div key={rippleKey} className={styles.terrainRipple} aria-hidden="true" />
