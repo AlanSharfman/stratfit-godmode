@@ -1,10 +1,11 @@
 .headerBar {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 4px 12px;
-  padding: 10px 12px;
+  gap: 3px 10px;
+  padding: 8px 10px;
   background: rgba(0, 0, 0, 0.35);
   border-radius: 10px;
+  flex-shrink: 0;
 }
 
 .metric {
@@ -38,15 +39,21 @@
 .diagnostics {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 10px;
+  gap: 5px;
+  margin-top: 6px;
+  flex-shrink: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .signal {
-  padding: 10px;
+  padding: 7px;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .signalTop {
@@ -88,11 +95,14 @@
 }
 
 .narrativeCard {
-  margin-top: 10px;
-  padding: 12px;
+  margin-top: 6px;
+  padding: 10px;
   border-radius: 10px;
   background: rgba(0, 0, 0, 0.45);
   border: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .title {

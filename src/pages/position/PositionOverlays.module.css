@@ -69,14 +69,13 @@
   grid-column: 1;
   grid-row: 1;
   position: relative;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 8px;
+  overflow: hidden;
+  padding: 6px;
   z-index: var(--z-rail);
   pointer-events: auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   background: linear-gradient(180deg, rgba(6, 9, 14, 0.95), rgba(3, 5, 8, 0.98));
   border-right: 1px solid rgba(80, 110, 150, 0.12);
 
@@ -84,9 +83,6 @@
   box-shadow:
     inset 2px 0 8px rgba(0, 0, 0, 0.5),
     inset 0 4px 12px rgba(0, 0, 0, 0.3);
-
-  scrollbar-width: thin;
-  scrollbar-color: rgba(34, 211, 238, 0.18) transparent;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -195,14 +191,13 @@
   grid-column: 3;
   grid-row: 1;
   position: relative;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 8px;
+  overflow: hidden;
+  padding: 6px;
   z-index: var(--z-rail);
   pointer-events: auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   background: linear-gradient(180deg, rgba(6, 9, 14, 0.95), rgba(3, 5, 8, 0.98));
   border-left: 1px solid rgba(80, 110, 150, 0.12);
 
@@ -210,9 +205,6 @@
   box-shadow:
     inset -2px 0 8px rgba(0, 0, 0, 0.5),
     inset 0 4px 12px rgba(0, 0, 0, 0.3);
-
-  scrollbar-width: thin;
-  scrollbar-color: rgba(34, 211, 238, 0.18) transparent;
 }
 
 .legendDock {

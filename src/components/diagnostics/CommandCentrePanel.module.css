@@ -11,6 +11,8 @@
   background: rgba(6, 10, 16, 0.88);
   backdrop-filter: blur(14px) saturate(1.2);
   overflow: hidden;
+  flex-shrink: 1;
+  min-height: 0;
 }
 
 /* ── Panel title (with optional close button) ── */

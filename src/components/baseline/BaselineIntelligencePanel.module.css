@@ -11,6 +11,8 @@
   backdrop-filter: blur(14px) saturate(1.2);
   overflow: hidden;
   padding: 0;
+  flex-shrink: 1;
+  min-height: 0;
 }
 
 /* ── Header row ── */

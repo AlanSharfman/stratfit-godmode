@@ -195,8 +195,6 @@ export default function PositionPage() {
         <DiagnosticsSummary vm={vm} />
         <ExecutiveNarrativeCard vm={vm} />
 
-        <div style={{ height: 24 }} />
-
         {showDiagnostics && (
           <CommandCentrePanel
             groups={diagnosticGroups}
