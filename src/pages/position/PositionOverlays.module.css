@@ -44,7 +44,7 @@
   position: absolute;
   top: var(--sf-nav-h);
   left: 0;
-  right: 0;
+  right: 310px; /* clear the right rail */
   padding: 6px 10px 0 10px;
   z-index: var(--z-kpi);
   pointer-events: none;
@@ -60,7 +60,7 @@
 
 .rightRail {
   position: absolute;
-  top: calc(var(--sf-nav-h) + 86px);
+  top: calc(var(--sf-nav-h) + 8px);
   right: 10px;
   width: 295px;
   display: flex;
@@ -128,7 +128,7 @@
   pointer-events: auto;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 6px;
+  gap: 5px;
 
   background: linear-gradient(
     180deg,
@@ -136,19 +136,19 @@
     rgba(4, 8, 14, 0.82)
   );
   border: 1px solid rgba(120, 180, 240, 0.22);
-  border-radius: 10px;
-  padding: 6px;
+  border-radius: 8px;
+  padding: 4px;
   backdrop-filter: blur(16px);
   box-shadow:
-    0 12px 36px rgba(0, 0, 0, 0.40),
+    0 8px 24px rgba(0, 0, 0, 0.35),
     0 0 1px rgba(140, 200, 255, 0.25),
     inset 0 1px 0 rgba(255, 255, 255, 0.07);
 }
 
 .kpiCell {
   position: relative;
-  padding: 8px 10px 6px;
-  border-radius: 8px;
+  padding: 5px 8px 4px;
+  border-radius: 6px;
   overflow: hidden;
 
   /* ── Precision machined titanium bezel ── */
@@ -236,8 +236,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 6px 0 3px;
-  min-height: 32px;
+  margin: 3px 0 1px;
+  min-height: 20px;
   position: relative;
 }
 
@@ -254,12 +254,12 @@
 .burnBars {
   display: flex;
   align-items: flex-end;
-  gap: 3px;
-  height: 24px;
+  gap: 2px;
+  height: 18px;
 }
 
 .burnBar {
-  width: 6px;
+  width: 4px;
   border-radius: 2px 2px 0 0;
   background: linear-gradient(180deg, #fb923c 0%, #ef4444 40%, #dc2626 80%, #991b1b 100%);
   box-shadow: 0 0 8px rgba(251, 146, 60, 0.45), 0 0 3px rgba(239, 68, 68, 0.30);
@@ -283,9 +283,9 @@
 }
 
 .kpiValue {
-  margin-top: 3px;
+  margin-top: 2px;
   font-family: var(--sf-sans);
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
   color: rgba(220, 248, 255, 0.95);
   text-shadow: 0 0 12px rgba(100, 200, 255, 0.15);
