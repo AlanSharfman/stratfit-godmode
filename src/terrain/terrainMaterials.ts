@@ -2,13 +2,13 @@ import * as THREE from "three"
 
 export function createTerrainSolidMaterial() {
   const mat = new THREE.MeshStandardMaterial({
-    color: 0x0f1d2b,
-    emissive: new THREE.Color(0x081423),
-    emissiveIntensity: 0.38,
-    transparent: true,
-    opacity: 0.82,
-    roughness: 0.88,
-    metalness: 0.08,
+    color: 0x1a3a5c,
+    emissive: new THREE.Color(0x0c2844),
+    emissiveIntensity: 0.65,
+    transparent: false,
+    opacity: 1.0,
+    roughness: 0.72,
+    metalness: 0.15,
     depthWrite: true,
     polygonOffset: true,
     polygonOffsetFactor: 1,
@@ -36,8 +36,8 @@ export function createTerrainSolidMaterial() {
         `#include <color_fragment>
 // Height-based AO: valleys ~0.52x, peaks ~1.28x brightness + subtle teal
 float _hao = clamp((vHeight + 8.0) / 33.0, 0.0, 1.0);
-diffuseColor.rgb *= mix(0.72, 1.72, _hao);
-diffuseColor.rgb += vec3(-0.006, 0.012, 0.026) * _hao;`,
+diffuseColor.rgb *= mix(0.82, 1.85, _hao);
+diffuseColor.rgb += vec3(-0.004, 0.018, 0.038) * _hao;`,
       )
   }
 
