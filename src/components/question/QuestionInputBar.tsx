@@ -26,7 +26,7 @@ export default function QuestionInputBar({ onSubmit }: Props) {
     <div className={styles.wrapper}>
       <input
         className={styles.input}
-        placeholder="Ask a financial decision question…"
+        placeholder="Ask a strategic decision…"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={onKeyDown}

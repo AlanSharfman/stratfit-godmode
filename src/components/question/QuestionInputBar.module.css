@@ -1,15 +1,17 @@
 .wrapper {
   display: flex;
+  align-items: center;
   gap: 10px;
-  padding: 14px 18px;
-  border-radius: 16px;
-  background: rgba(15, 20, 30, 0.6);
-  border: 1px solid rgba(120, 180, 255, 0.18);
+  min-height: 56px;
+  padding: 0 18px;
+  border-radius: 14px;
+  background: rgba(15, 20, 30, 0.65);
+  border: 1px solid rgba(120, 180, 255, 0.16);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   box-shadow:
-    0 0 0 1px rgba(0, 255, 255, 0.15),
-    0 4px 24px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(0, 255, 255, 0.12),
+    0 8px 32px rgba(0, 0, 0, 0.55),
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
@@ -20,11 +22,12 @@
   outline: none;
   color: rgba(220, 240, 255, 0.95);
   font-size: 15px;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
 }
 
 .input::placeholder {
-  color: rgba(160, 190, 225, 0.38);
+  color: rgba(160, 190, 225, 0.45);
+  font-size: 15px;
 }
 
 .button {
