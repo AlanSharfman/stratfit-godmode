@@ -72,12 +72,12 @@ export default function TerrainStage({ granularity, terrainMetrics, lockCamera =
     <Canvas
       style={{ position: "absolute", inset: 0, zIndex: 0 }}
       dpr={[1, 2]}
-      camera={{ position: [0, 165, 380], fov: 47, near: 0.1, far: 5000 }}
+      camera={{ position: [0, 155, 460], fov: 46, near: 0.1, far: 5000 }}
       gl={{ antialias: true, alpha: false }}
       onCreated={({ camera, gl, scene }) => {
         // Wide cinematic composition — ridge in upper third, foreground visible
-        camera.position.set(0, 165, 380);
-        camera.lookAt(0, 14, 0);
+        camera.position.set(0, 155, 460);
+        camera.lookAt(0, 18, 0);
         camera.updateProjectionMatrix();
 
         // Deterministic clear + fog baseline

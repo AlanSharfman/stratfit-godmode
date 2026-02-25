@@ -215,11 +215,6 @@ export default function PositionPage() {
             </div>
           </Link>
 
-          {/* Telemetry feed — KPI cards in left col */}
-          <div className={styles.kpiFeedDock} aria-label="Position KPIs">
-            <KPIOverlay vm={vm} feed />
-          </div>
-
           <div className={styles.legendDock} aria-label="Terrain legend">
             <TerrainLegend />
           </div>
@@ -227,11 +222,20 @@ export default function PositionPage() {
 
         {/* ── CENTRE COLUMN — transparent, question bar ── */}
         <div className={styles.centreCol}>
+          {/* Top KPI HUD strip */}
+          <div className={styles.kpiDock} aria-label="KPI HUD">
+            <KPIOverlay vm={vm} />
+          </div>
+
           {/* Top nav row */}
           <nav className={styles.pageNav} aria-label="Primary navigation">
             <NavLink to={ROUTES.POSITION} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Position</NavLink>
             <NavLink to={ROUTES.STUDIO}   className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Studio</NavLink>
             <NavLink to={ROUTES.COMPARE}  className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Compare</NavLink>
+            <NavLink to={ROUTES.INSIGHTS} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Insights</NavLink>
+            <NavLink to={ROUTES.RISK} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Risk</NavLink>
+            <NavLink to={ROUTES.VALUATION} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Valuation</NavLink>
+            <NavLink to={ROUTES.COMING_FEATURES} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Coming Features</NavLink>
             <NavLink to={ROUTES.ASSESSMENT} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Assessment</NavLink>
           </nav>
 
