@@ -27,7 +27,7 @@ function fmtPct(n: number): string {
 function ArrWidget() {
   return (
     <div className={styles.widget}>
-      <svg width="36" height="16" viewBox="0 0 44 22" fill="none">
+      <svg width="72" height="32" viewBox="0 0 44 22" fill="none">
         <defs>
           <linearGradient id="arrGrad" x1="0" y1="11" x2="44" y2="11" gradientUnits="userSpaceOnUse">
             <stop offset="0%" stopColor="#34d399" stopOpacity="0.1"/>
@@ -59,7 +59,7 @@ function ArrWidget() {
 function RunwayWidget() {
   return (
     <div className={styles.widget}>
-      <svg width="28" height="28" viewBox="0 0 28 28">
+      <svg width="44" height="44" viewBox="0 0 28 28">
         <circle cx="14" cy="14" r="11" fill="none" stroke="rgba(34,211,238,0.15)" strokeWidth="2"/>
         <circle cx="14" cy="14" r="11" fill="none" stroke="#22d3ee" strokeWidth="2"
           strokeDasharray="69.1" strokeDashoffset="17" strokeLinecap="round"
@@ -100,7 +100,7 @@ function BurnWidget() {
 function EbitdaWidget() {
   return (
     <div className={styles.widget}>
-      <svg width="36" height="14" viewBox="0 0 44 18" fill="none">
+      <svg width="72" height="28" viewBox="0 0 44 18" fill="none">
         <path d="M0 14 Q6 6 11 9 T22 7 T33 10 T44 5" stroke="rgba(124,58,237,0.7)" strokeWidth="1.5" fill="none" strokeLinecap="round">
           <animate attributeName="d"
             values="M0 14 Q6 6 11 9 T22 7 T33 10 T44 5;M0 12 Q6 8 11 7 T22 9 T33 6 T44 8;M0 14 Q6 6 11 9 T22 7 T33 10 T44 5"
@@ -120,7 +120,7 @@ function EbitdaWidget() {
 function RiskWidget() {
   return (
     <div className={styles.widget}>
-      <svg width="22" height="22" viewBox="0 0 28 28">
+      <svg width="44" height="44" viewBox="0 0 28 28">
         {/* Concentric risk rings */}
         <circle cx="14" cy="14" r="12" fill="none" stroke="rgba(239,68,68,0.1)" strokeWidth="1"/>
         <circle cx="14" cy="14" r="8" fill="none" stroke="rgba(239,68,68,0.15)" strokeWidth="1"/>

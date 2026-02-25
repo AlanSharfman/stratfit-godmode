@@ -44,8 +44,8 @@
   position: absolute;
   top: var(--sf-nav-h);
   left: 0;
-  right: 310px; /* clear the right rail */
-  padding: 6px 10px 0 10px;
+  right: 0;
+  padding: 8px 12px 0 12px;
   z-index: var(--z-kpi);
   pointer-events: none;
 }
@@ -60,7 +60,7 @@
 
 .rightRail {
   position: absolute;
-  top: calc(var(--sf-nav-h) + 8px);
+  top: calc(var(--sf-nav-h) + 230px);
   right: 10px;
   width: 295px;
   display: flex;
@@ -127,9 +127,9 @@
 .kpiStrip {
   pointer-events: auto;
   display: grid;
-  grid-template-columns: repeat(5, 100px);
+  grid-template-columns: repeat(5, 200px);
   justify-content: center;
-  gap: 5px;
+  gap: 10px;
 
   background: linear-gradient(
     180deg,
@@ -137,8 +137,8 @@
     rgba(4, 8, 14, 0.82)
   );
   border: 1px solid rgba(120, 180, 240, 0.22);
-  border-radius: 8px;
-  padding: 4px;
+  border-radius: 10px;
+  padding: 8px;
   backdrop-filter: blur(16px);
   box-shadow:
     0 8px 24px rgba(0, 0, 0, 0.35),
@@ -148,8 +148,8 @@
 
 .kpiCell {
   position: relative;
-  padding: 6px 6px 4px;
-  border-radius: 6px;
+  padding: 12px 10px 8px;
+  border-radius: 8px;
   overflow: hidden;
   aspect-ratio: 1;
 
@@ -238,8 +238,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 2px 0 1px;
-  min-height: 18px;
+  margin: 8px 0 4px;
+  min-height: 40px;
   position: relative;
 }
 
@@ -256,12 +256,12 @@
 .burnBars {
   display: flex;
   align-items: flex-end;
-  gap: 2px;
-  height: 18px;
+  gap: 4px;
+  height: 36px;
 }
 
 .burnBar {
-  width: 4px;
+  width: 8px;
   border-radius: 2px 2px 0 0;
   background: linear-gradient(180deg, #fb923c 0%, #ef4444 40%, #dc2626 80%, #991b1b 100%);
   box-shadow: 0 0 8px rgba(251, 146, 60, 0.45), 0 0 3px rgba(239, 68, 68, 0.30);
@@ -277,7 +277,7 @@
 
 .kpiLabel {
   font-family: var(--sf-mono);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: rgba(140, 190, 240, 0.65);
@@ -285,9 +285,9 @@
 }
 
 .kpiValue {
-  margin-top: 1px;
+  margin-top: 4px;
   font-family: var(--sf-sans);
-  font-size: 12px;
+  font-size: 20px;
   font-weight: 700;
   color: rgba(220, 248, 255, 0.95);
   text-shadow: 0 0 12px rgba(100, 200, 255, 0.15);
@@ -295,9 +295,9 @@
 }
 
 .kpiSub {
-  margin-top: 0;
+  margin-top: 2px;
   font-family: var(--sf-mono);
-  font-size: 8px;
+  font-size: 9px;
   letter-spacing: 0.06em;
   color: rgba(185, 205, 225, 0.50);
   white-space: nowrap;
