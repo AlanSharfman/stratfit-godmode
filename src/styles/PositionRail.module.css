@@ -5,23 +5,23 @@
 
 .rail {
   position: absolute;
-  top: calc(var(--sf-nav-h, 56px) + 10px);
-  right: 14px;
-  width: 340px;
-  max-height: calc(100vh - var(--sf-nav-h, 56px) - 20px);
+  top: calc(var(--sf-nav-h, 56px) + 86px);
+  right: 10px;
+  width: 295px;
+  max-height: calc(100vh - var(--sf-nav-h, 56px) - 96px);
   overflow-y: auto;
   overflow-x: hidden;
 
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 
   z-index: 280;
   pointer-events: auto;
 
-  /* Hide scrollbar but keep scrollable */
+  /* Refined scrollbar */
   scrollbar-width: thin;
-  scrollbar-color: rgba(34, 211, 238, 0.15) transparent;
+  scrollbar-color: rgba(34, 211, 238, 0.18) transparent;
 }
 
 .rail::-webkit-scrollbar {

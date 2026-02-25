@@ -17,6 +17,7 @@ import type { SemanticLayerKey } from "@/render/shl"
 import PositionRightRail from "@/components/position/PositionRightRail"
 import CommandCentrePanel from "@/components/diagnostics/CommandCentrePanel"
 import BaselineIntelligencePanel from "@/components/baseline/BaselineIntelligencePanel"
+import QuestionInputBar from "@/components/question/QuestionInputBar"
 import KPIOverlay from "./overlays/KPIOverlay"
 import PositionHeaderBar from "./components/PositionHeaderBar"
 import DiagnosticsSummary from "./components/DiagnosticsSummary"
@@ -45,6 +46,12 @@ function shlIsOn(weight: number): boolean {
 export default function PositionPage() {
   const [granularity, setGranularity] = useState<TimeGranularity>("quarter")
   const [showDiagnostics, setShowDiagnostics] = useState(true)
+
+  const handleQuestionSubmit = useCallback((question: string) => {
+    console.log("[Question Submitted]", question)
+    // STEP 11 will replace this with classification call
+    // STEP 12 will route to Studio with QuestionContext
+  }, [])
 
   const { baseline } = useSystemBaseline()
 
@@ -154,6 +161,10 @@ export default function PositionPage() {
 
         <BaselineIntelligencePanel />
       </PositionRightRail>
+
+      <div className={styles.questionBar}>
+        <QuestionInputBar onSubmit={handleQuestionSubmit} />
+      </div>
 
       <div className={styles.legendDock} aria-label="Terrain legend">
         <TerrainLegend />

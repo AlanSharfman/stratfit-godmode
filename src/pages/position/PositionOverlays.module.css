@@ -45,27 +45,27 @@
   top: var(--sf-nav-h);
   left: 0;
   right: 0;
-  padding: 10px 14px 0 14px;
+  padding: 6px 10px 0 10px;
   z-index: var(--z-kpi);
   pointer-events: none;
 }
 
 .timeScaleDock {
   position: absolute;
-  top: calc(var(--sf-nav-h) + 62px);
-  right: 16px;
+  top: calc(var(--sf-nav-h) + 6px);
+  right: 10px;
   z-index: var(--z-controls);
   pointer-events: auto;
 }
 
 .rightRail {
   position: absolute;
-  top: calc(var(--sf-nav-h) + 10px);
-  right: 14px;
-  width: 360px;
+  top: calc(var(--sf-nav-h) + 86px);
+  right: 10px;
+  width: 295px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   z-index: var(--z-rail);
   pointer-events: auto;
 }
@@ -128,126 +128,172 @@
   pointer-events: auto;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 10px;
+  gap: 6px;
 
   background: linear-gradient(
     180deg,
-    rgba(18, 24, 34, 0.82),
-    rgba(6, 10, 16, 0.75)
+    rgba(12, 18, 28, 0.88),
+    rgba(4, 8, 14, 0.82)
   );
-  border: 1px solid rgba(192, 210, 230, 0.18);
-  border-radius: 14px;
-  padding: 12px;
-  backdrop-filter: blur(14px);
+  border: 1px solid rgba(120, 180, 240, 0.22);
+  border-radius: 10px;
+  padding: 6px;
+  backdrop-filter: blur(16px);
   box-shadow:
-    0 18px 44px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    0 12px 36px rgba(0, 0, 0, 0.40),
+    0 0 1px rgba(140, 200, 255, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
 }
 
 .kpiCell {
   position: relative;
-  padding: 11px 12px;
-  border-radius: 10px;
+  padding: 8px 10px 6px;
+  border-radius: 8px;
+  overflow: hidden;
 
-  /* ── Stepped titanium bezel ── */
-  /* Outer ring: bright chrome highlight on top, dark shadow on bottom */
-  border: 1px solid transparent;
+  /* ── Precision machined titanium bezel ── */
+  border: 1.5px solid transparent;
   background:
     linear-gradient(
-      180deg,
-      rgba(22, 28, 40, 0.92),
-      rgba(10, 14, 22, 0.88)
+      175deg,
+      rgba(18, 24, 38, 0.95),
+      rgba(8, 12, 20, 0.92)
     ) padding-box,
     linear-gradient(
-      160deg,
-      rgba(200, 215, 235, 0.45) 0%,
-      rgba(160, 185, 215, 0.30) 25%,
-      rgba(100, 130, 170, 0.18) 50%,
-      rgba(60, 80, 110, 0.12) 75%,
-      rgba(180, 200, 225, 0.28) 100%
+      155deg,
+      rgba(220, 235, 255, 0.55) 0%,
+      rgba(180, 210, 240, 0.40) 15%,
+      rgba(80, 120, 180, 0.18) 40%,
+      rgba(40, 60, 100, 0.10) 60%,
+      rgba(140, 180, 220, 0.30) 80%,
+      rgba(200, 225, 250, 0.50) 100%
     ) border-box;
 
-  /* Inner step: inset chrome bevel */
+  /* Multi-layer inset bevel — machined step illusion */
   box-shadow:
-    inset 0 1px 0 rgba(220, 235, 255, 0.14),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.25),
-    inset 1px 0 0 rgba(180, 200, 230, 0.08),
-    inset -1px 0 0 rgba(180, 200, 230, 0.08),
-    /* Outer glow step */
-    0 1px 3px rgba(0, 0, 0, 0.30),
-    0 0 8px rgba(140, 180, 220, 0.06);
+    /* Inner top chrome highlight */
+    inset 0 1px 0 rgba(230, 245, 255, 0.22),
+    /* Inner bottom shadow */
+    inset 0 -1px 0 rgba(0, 0, 0, 0.35),
+    /* Left/right subtle highlights */
+    inset 1px 0 0 rgba(180, 210, 240, 0.12),
+    inset -1px 0 0 rgba(180, 210, 240, 0.12),
+    /* Mid-layer bevel step */
+    inset 0 2px 4px rgba(0, 0, 0, 0.20),
+    /* Outer chrome ring glow */
+    0 1px 2px rgba(0, 0, 0, 0.40),
+    0 0 12px rgba(100, 170, 240, 0.08),
+    0 0 1px rgba(180, 220, 255, 0.20);
 }
 
-/* Subtle top-edge highlight to simulate machined step */
+/* ── Specular highlight — machined edge glint ── */
 .kpiCell::before {
   content: "";
   position: absolute;
-  top: 1px;
-  left: 8px;
-  right: 8px;
+  top: 0;
+  left: 6px;
+  right: 6px;
   height: 1px;
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(210, 225, 245, 0.22) 30%,
-    rgba(230, 240, 255, 0.30) 50%,
-    rgba(210, 225, 245, 0.22) 70%,
+    rgba(220, 238, 255, 0.35) 20%,
+    rgba(240, 250, 255, 0.50) 50%,
+    rgba(220, 238, 255, 0.35) 80%,
     transparent 100%
   );
-  border-radius: 1px;
   pointer-events: none;
 }
 
+/* ── Animated bezel shimmer sweep ── */
+.kpiCell::after {
+  content: "";
+  position: absolute;
+  top: 0; left: -100%; right: 0; bottom: 0;
+  width: 200%;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(180, 220, 255, 0.06) 45%,
+    rgba(220, 240, 255, 0.12) 50%,
+    rgba(180, 220, 255, 0.06) 55%,
+    transparent 60%
+  );
+  animation: bezelShimmer 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes bezelShimmer {
+  0% { transform: translateX(-30%); }
+  100% { transform: translateX(60%); }
+}
+
 /* ═══════════════════════════════════════════════════════════════
-   GODMODE MINI-WIDGETS — Animated KPI indicators
+   GODMODE CINEMATIC WIDGETS — Animated KPI instruments
    ═══════════════════════════════════════════════════════════════ */
 
 .widget {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 4px 0 2px;
-  min-height: 22px;
+  margin: 6px 0 3px;
+  min-height: 32px;
+  position: relative;
+}
+
+/* Soft glow halo behind each widget */
+.widget::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(100, 200, 255, 0.06) 0%, transparent 70%);
+  pointer-events: none;
 }
 
 .burnBars {
   display: flex;
   align-items: flex-end;
   gap: 3px;
-  height: 20px;
+  height: 24px;
 }
 
 .burnBar {
-  width: 5px;
+  width: 6px;
   border-radius: 2px 2px 0 0;
-  background: linear-gradient(180deg, #ef4444 0%, #dc2626 60%, #991b1b 100%);
-  box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);
-  animation: burnPulse 1.4s ease-in-out infinite alternate;
+  background: linear-gradient(180deg, #fb923c 0%, #ef4444 40%, #dc2626 80%, #991b1b 100%);
+  box-shadow: 0 0 8px rgba(251, 146, 60, 0.45), 0 0 3px rgba(239, 68, 68, 0.30);
+  animation: burnPulse 1.2s ease-in-out infinite alternate;
+  transform-origin: bottom;
 }
 
 @keyframes burnPulse {
-  0% { opacity: 0.55; transform: scaleY(0.85); }
-  100% { opacity: 1; transform: scaleY(1.15); }
+  0% { opacity: 0.5; transform: scaleY(0.75); }
+  50% { opacity: 0.85; }
+  100% { opacity: 1; transform: scaleY(1.2); }
 }
 
 .kpiLabel {
   font-family: var(--sf-mono);
-  font-size: 10px;
-  letter-spacing: 0.12em;
+  font-size: 9px;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(182, 228, 255, 0.52);
+  color: rgba(140, 190, 240, 0.65);
+  text-shadow: 0 0 8px rgba(100, 180, 255, 0.12);
 }
 
 .kpiValue {
-  margin-top: 6px;
+  margin-top: 3px;
   font-family: var(--sf-sans);
-  font-size: 14px;
-  font-weight: 600;
-  color: rgba(214, 246, 255, 0.92);
+  font-size: 15px;
+  font-weight: 700;
+  color: rgba(220, 248, 255, 0.95);
+  text-shadow: 0 0 12px rgba(100, 200, 255, 0.15);
+  letter-spacing: -0.01em;
 }
 
 .kpiSub {
-  margin-top: 2px;
+  margin-top: 1px;
   font-family: var(--sf-mono);
   font-size: 10px;
   letter-spacing: 0.08em;
@@ -549,6 +595,17 @@
 .railTab:hover {
   background: rgba(34, 211, 238, 0.08);
   color: rgba(200, 220, 235, 0.85);
+}
+
+/* ── Question Input Bar dock ── */
+.questionBar {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 520px;
+  z-index: var(--z-controls);
+  pointer-events: auto;
 }
 
 .railTabActive {
