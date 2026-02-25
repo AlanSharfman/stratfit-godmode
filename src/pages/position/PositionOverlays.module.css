@@ -73,7 +73,7 @@
   position: relative;
   z-index: 10;
   display: grid;
-  grid-template-columns: 260px 1fr 300px;
+  grid-template-columns: 280px 1fr 320px;
   height: 100vh;
   pointer-events: none;
   padding-top: 24px; /* clear the premium header line */
@@ -174,20 +174,21 @@
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 8px;
+  padding: 0;
   pointer-events: auto;
   display: flex;
   flex-direction: column;
   gap: 0;
   background: linear-gradient(
     180deg,
-    rgba(8, 13, 22, 0.62) 0%,
-    rgba(6, 10, 18, 0.54) 60%,
-    rgba(4, 7, 14, 0.48) 100%
+    rgba(8, 13, 22, 0.68) 0%,
+    rgba(6, 10, 18, 0.58) 60%,
+    rgba(4, 7, 14, 0.52) 100%
   );
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: inset -1px 0 0 rgba(34, 211, 238, 0.06), 1px 0 18px rgba(0, 0, 0, 0.35);
 }
 
 /* ── Centre column — transparent, lets canvas show through ── */
@@ -216,10 +217,16 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  background: rgba(10, 15, 25, 0.4);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  background: linear-gradient(
+    180deg,
+    rgba(8, 13, 22, 0.68) 0%,
+    rgba(6, 10, 18, 0.58) 60%,
+    rgba(4, 7, 14, 0.52) 100%
+  );
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: inset 1px 0 0 rgba(34, 211, 238, 0.06), -1px 0 18px rgba(0, 0, 0, 0.35);
 }
 
 .legendDock {
@@ -278,7 +285,7 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  padding: 0 12px;
+  padding: 0 14px;
   flex-shrink: 1;
   min-height: 0;
   overflow: hidden;
@@ -306,19 +313,20 @@
 }
 
 .kpiFeedCell .kpiLabel {
-  font-size: 0.7rem;
-  color: #94a3b8;
-  letter-spacing: 0.12em;
+  font-size: 10px;
+  font-family: ui-monospace, "JetBrains Mono", monospace;
+  color: rgba(148, 163, 184, 0.75);
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  min-width: 60px;
+  min-width: 64px;
 }
 
 .kpiFeedCell .kpiValue {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   color: #ffffff;
-  letter-spacing: 0.04em;
-  text-shadow: none;
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 12px rgba(34, 211, 238, 0.18);
   flex: 1;
   text-align: right;
 }

@@ -57,12 +57,12 @@ const TerrainSurface = forwardRef<TerrainSurfaceHandle, Props>(function TerrainS
   useEffect(() => () => wireMat.dispose(), [wireMat])
 
   useEffect(() => {
-    // Deterministic transform setup
+    // Deterministic transform setup — scale XZ wide so edges bleed past viewport
     for (const r of [solidRef, latticeRef]) {
       if (!r.current) continue
       r.current.rotation.x = -Math.PI / 2
       r.current.position.set(0, -6, 0)
-      r.current.scale.set(1, 1, 1)
+      r.current.scale.set(2.6, 1, 2.6)
       r.current.frustumCulled = false
     }
   }, [])

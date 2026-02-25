@@ -28,7 +28,6 @@ import { buildQuestionContext } from "@/domain/question/questionContext"
 import { buildScenarioADraft } from "@/domain/scenario/scenarioDraft"
 import { studioSessionStore } from "@/state/studioSessionStore"
 import KPIOverlay from "./overlays/KPIOverlay"
-import PositionHeaderBar from "./components/PositionHeaderBar"
 import DiagnosticsSummary from "./components/DiagnosticsSummary"
 import ExecutiveNarrativeCard from "./components/ExecutiveNarrativeCard"
 import TerrainLegend from "./overlays/TerrainLegend"
@@ -205,8 +204,6 @@ export default function PositionPage() {
               <div className={styles.logoSub}>SCENARIO INTELLIGENCE</div>
             </div>
           </Link>
-
-          <PositionHeaderBar vm={vm} />
 
           {/* Telemetry feed — KPI cards in left col */}
           <div className={styles.kpiFeedDock} aria-label="Position KPIs">
