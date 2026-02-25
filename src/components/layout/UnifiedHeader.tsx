@@ -407,7 +407,7 @@ export default function UnifiedHeader({
       <header className="unified-header">
         {/* LOGO */}
         <div className="uh-logo">
-          <img src="/logo.svg" alt="STRATFIT Logo" width="36" height="36" style={{ display: 'block' }} />
+          <img src="/logo.svg" alt="STRATFIT Logo" width="72" height="72" style={{ display: 'block' }} />
           <span className="uh-logo-text">STRATFIT</span>
           <div className="uh-status">
             <span>System Status</span>

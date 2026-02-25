@@ -9,8 +9,8 @@ function MainNav() {
         <img
           src="/logo.svg"
           alt="STRATFIT"
-          width={32}
-          height={32}
+          width={64}
+          height={64}
         />
         <div className={styles.brandText}>
           <div className={styles.brandName}>STRATFIT</div>
