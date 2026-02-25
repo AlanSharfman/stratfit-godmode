@@ -18,6 +18,10 @@ import PositionRightRail from "@/components/position/PositionRightRail"
 import CommandCentrePanel from "@/components/diagnostics/CommandCentrePanel"
 import BaselineIntelligencePanel from "@/components/baseline/BaselineIntelligencePanel"
 import QuestionInputBar from "@/components/question/QuestionInputBar"
+import {
+  classifyQuestion,
+  QuestionCategory,
+} from "@/domain/question/questionClassifier"
 import KPIOverlay from "./overlays/KPIOverlay"
 import PositionHeaderBar from "./components/PositionHeaderBar"
 import DiagnosticsSummary from "./components/DiagnosticsSummary"
@@ -48,9 +52,10 @@ export default function PositionPage() {
   const [showDiagnostics, setShowDiagnostics] = useState(true)
 
   const handleQuestionSubmit = useCallback((question: string) => {
+    const category: QuestionCategory = classifyQuestion(question)
     console.log("[Question Submitted]", question)
-    // STEP 11 will replace this with classification call
-    // STEP 12 will route to Studio with QuestionContext
+    console.log("[Classification Result]", category)
+    // STEP 12 will create QuestionContext + route to Studio
   }, [])
 
   const { baseline } = useSystemBaseline()
