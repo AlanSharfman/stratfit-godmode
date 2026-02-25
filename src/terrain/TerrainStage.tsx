@@ -121,8 +121,8 @@ export default function TerrainStage({ granularity, terrainMetrics }: TerrainSta
             {showPaths && (
               <P50Path terrainRef={terrainRef} rebuildKey={rebuildKey} />
             )}
-            {/* Canonical ticks (BaselineTimelineTicks) */}
-            <BaselineTimelineTicks visible />
+            {/* Canonical ticks (BaselineTimelineTicks) — terrainRef for surface-aligned Y */}
+            <BaselineTimelineTicks visible terrainRef={terrainRef} />
             <LiquidityFlowLayer terrainRef={terrainRef} enabled={showFlow} />
             <MarkerLayer terrainRef={terrainRef} enabled={showMarkers} />
           </>

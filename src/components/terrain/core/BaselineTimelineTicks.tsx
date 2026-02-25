@@ -6,6 +6,7 @@ import { nodesToWorldXZ } from "@/paths/p50NodesTerrain";
 import { createSeed } from "@/terrain/seed";
 import { buildRibbonGeometry } from "@/terrain/corridorTopology";
 import { devlog, devwarn } from "@/lib/devlog";
+import type { TerrainSurfaceHandle } from "@/terrain/TerrainSurface";
 
 const TICKS = [
     { t: 0.00, label: "Now" },
@@ -17,13 +18,23 @@ const TICKS = [
 
 const TICK_COLOR = new THREE.Color(0x67e8f9);
 const TICK_EMISSIVE = new THREE.Color(0x0891b2);
-const LABEL_COLOR = "#67e8f9";
 
 function clamp(n: number, lo: number, hi: number) {
     return Math.max(lo, Math.min(hi, n));
 }
 
-export default function BaselineTimelineTicks({ visible = true }: { visible?: boolean }) {
+type Props = {
+    visible?: boolean;
+    terrainRef?: React.RefObject<TerrainSurfaceHandle | null>;
+};
+
+/**
+ * BaselineTimelineTicks (CANONICAL)
+ * - If terrainRef is provided, ticks use terrainRef.getHeightAt for Y alignment
+ *   (ensures ticks sit exactly on the rendered surface).
+ * - Falls back to independent ribbon sampler if terrainRef unavailable.
+ */
+export default function BaselineTimelineTicks({ visible = true, terrainRef }: Props) {
     const seed = useMemo(() => createSeed("baseline"), []);
     const nodes = useMemo(() => generateP50Nodes(), []);
     const pathData = useMemo(() => nodesToWorldXZ(nodes, seed), [nodes, seed]);
@@ -40,6 +51,9 @@ export default function BaselineTimelineTicks({ visible = true }: { visible?: bo
         return cl;
     }, [pathData]);
 
+    // Resolve height sampler: prefer terrainRef (canonical surface truth), fall back to ribbon
+    const terrainGetHeight = terrainRef?.current?.getHeightAt ?? null;
+
     const tickPositions = useMemo(() => {
         if (centerline.length < 3) {
             devwarn("BaselineTimelineTicks: centerline invalid");
@@ -52,6 +66,11 @@ export default function BaselineTimelineTicks({ visible = true }: { visible?: bo
             const idx = clamp(Math.round(t * (count - 1)), 0, count - 1);
             const p = centerline[idx];
 
+            // If terrainRef sampler available, re-sample Y from the actual surface
+            const y = terrainGetHeight
+                ? terrainGetHeight(p.x, p.z) + 0.2
+                : p.y + 0.2;
+
             const prev = centerline[Math.max(0, idx - 1)];
             const next = centerline[Math.min(count - 1, idx + 1)];
             const tan = next.clone().sub(prev).normalize();
@@ -61,10 +80,10 @@ export default function BaselineTimelineTicks({ visible = true }: { visible?: bo
 
             return {
                 label,
-                position: new THREE.Vector3(p.x + offset.x, p.y + 0.2, p.z + offset.z),
+                position: new THREE.Vector3(p.x + offset.x, y, p.z + offset.z),
             };
         });
-    }, [centerline]);
+    }, [centerline, terrainGetHeight]);
 
     useEffect(() => {
         if (!visible || tickPositions.length === 0) return;
