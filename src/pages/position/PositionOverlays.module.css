@@ -128,21 +128,74 @@
   pointer-events: auto;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 8px;
+  gap: 10px;
 
-  background: rgba(4, 9, 15, 0.58);
-  border: 1px solid rgba(182, 228, 255, 0.14);
-  border-radius: 10px;
-  padding: 10px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.30);
+  background: linear-gradient(
+    180deg,
+    rgba(18, 24, 34, 0.82),
+    rgba(6, 10, 16, 0.75)
+  );
+  border: 1px solid rgba(192, 210, 230, 0.18);
+  border-radius: 14px;
+  padding: 12px;
+  backdrop-filter: blur(14px);
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .kpiCell {
-  border: 1px solid rgba(182, 228, 255, 0.12);
+  position: relative;
+  padding: 11px 12px;
   border-radius: 10px;
-  padding: 9px 10px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(0,0,0,0));
+
+  /* ── Stepped titanium bezel ── */
+  /* Outer ring: bright chrome highlight on top, dark shadow on bottom */
+  border: 1px solid transparent;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(22, 28, 40, 0.92),
+      rgba(10, 14, 22, 0.88)
+    ) padding-box,
+    linear-gradient(
+      160deg,
+      rgba(200, 215, 235, 0.45) 0%,
+      rgba(160, 185, 215, 0.30) 25%,
+      rgba(100, 130, 170, 0.18) 50%,
+      rgba(60, 80, 110, 0.12) 75%,
+      rgba(180, 200, 225, 0.28) 100%
+    ) border-box;
+
+  /* Inner step: inset chrome bevel */
+  box-shadow:
+    inset 0 1px 0 rgba(220, 235, 255, 0.14),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.25),
+    inset 1px 0 0 rgba(180, 200, 230, 0.08),
+    inset -1px 0 0 rgba(180, 200, 230, 0.08),
+    /* Outer glow step */
+    0 1px 3px rgba(0, 0, 0, 0.30),
+    0 0 8px rgba(140, 180, 220, 0.06);
+}
+
+/* Subtle top-edge highlight to simulate machined step */
+.kpiCell::before {
+  content: "";
+  position: absolute;
+  top: 1px;
+  left: 8px;
+  right: 8px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(210, 225, 245, 0.22) 30%,
+    rgba(230, 240, 255, 0.30) 50%,
+    rgba(210, 225, 245, 0.22) 70%,
+    transparent 100%
+  );
+  border-radius: 1px;
+  pointer-events: none;
 }
 
 .kpiLabel {
