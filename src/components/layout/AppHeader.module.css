@@ -33,7 +33,7 @@
 .sub {
   font-size: var(--sf-small);
   letter-spacing: var(--sf-tracking);
-  color: var(--sf-text-dim);
+  color: rgba(255, 255, 255, 0.85);
   text-transform: uppercase;
 }
 
