@@ -61,20 +61,87 @@
   pointer-events: none;
 }
 
-/* ── KPI strip — inside terrain viewport ── */
-.kpiDock {
+/* ── Embedded logo lockup (left col top) ── */
+.logoLockup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  padding: 14px 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  flex-shrink: 0;
+}
+
+.logoName {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  color: #ffffff;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.logoSub {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  color: #94a3b8;
+  text-transform: uppercase;
+  margin-top: 3px;
+}
+
+/* ── Embedded page nav (centre col top) ── */
+.pageNav {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 18px 20px 12px;
+  pointer-events: auto;
+  flex-shrink: 0;
+}
+
+.pageNavItem {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: rgba(148, 163, 184, 0.75);
+  transition: color 0.2s ease;
+  position: relative;
+  padding-bottom: 4px;
+}
+
+.pageNavItem:hover {
+  color: rgba(220, 240, 255, 0.95);
+}
+
+.pageNavActive {
+  color: rgba(34, 211, 238, 0.95);
+}
+
+.pageNavActive::after {
+  content: "";
   position: absolute;
-  top: 6px;
+  bottom: 0;
   left: 0;
   right: 0;
+  height: 1px;
+  background: rgba(34, 211, 238, 0.6);
+}
+
+/* ── KPI strip — flex child after nav in centreCol ── */
+.kpiDock {
   padding: 4px 12px 0 12px;
   z-index: var(--z-kpi);
   pointer-events: none;
+  flex-shrink: 0;
 }
 
 .timeScaleDock {
   position: absolute;
-  top: 6px;
+  top: 54px;
   right: 10px;
   z-index: var(--z-controls);
   pointer-events: auto;
@@ -108,6 +175,8 @@
   min-height: 0;
   background: transparent;
   pointer-events: none;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ── Right column — frosted glass sidebar ── */
