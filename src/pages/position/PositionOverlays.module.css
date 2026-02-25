@@ -54,18 +54,12 @@
 /* Bottom vignette — kills dead void at screen bottom */
 .canvasVignette {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 35%;
-  background: linear-gradient(
-    to top,
-    rgba(5, 8, 15, 1) 0%,
-    rgba(5, 8, 15, 0.8) 10%,
-    transparent 25%
-  );
+  inset: 0;
   pointer-events: none;
   z-index: 1;
+  background:
+    linear-gradient(to bottom, rgba(5, 8, 15, 0.55) 0%, transparent 18%),
+    linear-gradient(to top, rgba(5, 8, 15, 1) 0%, rgba(5, 8, 15, 0.75) 8%, transparent 22%);
 }
 
 /* ── Layer 2: 3-column foreground UI grid ── */
@@ -181,14 +175,26 @@
   gap: 0;
   background: linear-gradient(
     180deg,
-    rgba(8, 13, 22, 0.68) 0%,
-    rgba(6, 10, 18, 0.58) 60%,
-    rgba(4, 7, 14, 0.52) 100%
+    rgba(6, 10, 18, 0.72) 0%,
+    rgba(5, 8, 15, 0.60) 50%,
+    rgba(4, 6, 12, 0.50) 100%
   );
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: inset -1px 0 0 rgba(34, 211, 238, 0.06), 1px 0 18px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border-right: none;
+}
+
+/* Inner edge fade — right side of left rail blends into terrain */
+.leftCol::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 32px;
+  height: 100%;
+  background: linear-gradient(to right, transparent, rgba(4, 6, 12, 0.45));
+  pointer-events: none;
+  z-index: 1;
 }
 
 /* ── Centre column — transparent, lets canvas show through ── */
@@ -212,27 +218,42 @@
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 8px;
+  padding: 6px 8px;
   pointer-events: auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   background: linear-gradient(
     180deg,
-    rgba(8, 13, 22, 0.68) 0%,
-    rgba(6, 10, 18, 0.58) 60%,
-    rgba(4, 7, 14, 0.52) 100%
+    rgba(6, 10, 18, 0.72) 0%,
+    rgba(5, 8, 15, 0.60) 50%,
+    rgba(4, 6, 12, 0.50) 100%
   );
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-left: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: inset 1px 0 0 rgba(34, 211, 238, 0.06), -1px 0 18px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border-left: none;
+}
+
+/* Inner edge fade — left side of right rail blends into terrain */
+.rightCol::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 32px;
+  height: 100%;
+  background: linear-gradient(to left, transparent, rgba(4, 6, 12, 0.45));
+  pointer-events: none;
+  z-index: 1;
 }
 
 .legendDock {
   margin-top: auto;
   z-index: var(--z-legend);
   pointer-events: auto;
+  opacity: 0.55;
+  padding: 8px 14px 12px;
+  font-size: 0.85em;
 }
 
 .noBaselineHint {
@@ -303,9 +324,9 @@
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 10px 0 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .kpiFeedCell:last-child {
@@ -336,10 +357,11 @@
 }
 
 .kpiFeedCell .widget {
-  width: 44px;
-  min-height: 22px;
-  flex: 0 0 44px;
+  width: 38px;
+  min-height: 20px;
+  flex: 0 0 38px;
   margin: 0;
+  opacity: 0.75;
 }
 
 /* ── KPI strip — original horizontal layout ── */
@@ -833,7 +855,7 @@
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: calc(28px + env(safe-area-inset-bottom));
+  bottom: calc(22px + env(safe-area-inset-bottom));
   width: min(720px, calc(100vw - 32px));
   z-index: 9999;
   pointer-events: auto;
