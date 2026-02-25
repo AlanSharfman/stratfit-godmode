@@ -18,7 +18,6 @@
 import React, { Suspense, useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Html, OrbitControls } from "@react-three/drei";
-import * as THREE from "three";
 import type { TerrainSurfaceHandle } from "@/terrain/TerrainSurface";
 import TerrainSurface from "@/terrain/TerrainSurface";
 import P50Path from "@/paths/P50Path";
@@ -33,6 +32,12 @@ import HorizonBand from "@/terrain/HorizonBand";
 import { useRenderFlagsStore } from "@/state/renderFlagsStore";
 import type { TerrainMetrics } from "@/terrain/terrainFromBaseline";
 import DemoTourDirector from "@/demo/DemoTourDirector";
+
+function readCssVar(varName: string, fallback: string): string {
+  if (typeof window === "undefined") return fallback;
+  const v = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+  return v || fallback;
+}
 
 type TerrainStageProps = {
   granularity?: TimeGranularity
@@ -53,6 +58,11 @@ export default function TerrainStage({ granularity, terrainMetrics, lockCamera =
   const [terrainReady, setTerrainReady] = useState(false);
   const { baseline } = useSystemBaseline();
   const rebuildKey = baselineSeedString(baseline as any);
+
+  const [fogColor, setFogColor] = useState("#050A10");
+  useEffect(() => {
+    setFogColor(readCssVar("--navy-950", "#050A10"));
+  }, []);
 
   const [hoveredSignalKey, setHoveredSignalKey] = useState<string | null>(null)
 
@@ -82,16 +92,15 @@ export default function TerrainStage({ granularity, terrainMetrics, lockCamera =
       style={{ position: "absolute", inset: 0, zIndex: 0 }}
       dpr={[1, 2]}
       camera={{ position: [0, 155, 460], fov: 46, near: 0.1, far: 5000 }}
-      gl={{ antialias: true, alpha: false }}
-      onCreated={({ camera, gl, scene }) => {
+      gl={{ antialias: true, alpha: true }}
+      onCreated={({ camera, gl }) => {
         // Wide cinematic composition — ridge in upper third, foreground visible
         camera.position.set(0, 155, 460);
         camera.lookAt(0, 18, 0);
         camera.updateProjectionMatrix();
 
-        // Deterministic clear + fog baseline
-        gl.setClearColor("#050A10", 1);
-        scene.fog = new THREE.Fog("#050A10", 380, 2200);
+        // Transparent clear — Position page supplies charcoal gradient behind Canvas.
+        gl.setClearColor(fogColor, 0);
       }}
     >
       {/* Orbit controls — disabled on Position (lockCamera), active only in demo mode */}
@@ -116,9 +125,8 @@ export default function TerrainStage({ granularity, terrainMetrics, lockCamera =
         <DemoTourDirector enabled terrainRef={terrainRef} />
       )}
 
-      {/* Deterministic background + fog (redundant by design; guards against overrides) */}
-      <color attach="background" args={["#050A10"]} />
-      <fog attach="fog" args={["#050A10", 320, 2200]} />
+      {/* Fog stays deterministic; background comes from DOM gradient behind the canvas. */}
+      <fog attach="fog" args={[fogColor, 320, 2200]} />
 
       {/* Lights: slightly lifted for marker + tick readability */}
       <ambientLight intensity={1.10} />
