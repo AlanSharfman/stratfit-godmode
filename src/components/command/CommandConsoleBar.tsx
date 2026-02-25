@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import styles from "./CommandConsoleBar.module.css";
 import { useTypewriterHint } from "./useTypewriterHint";
 
@@ -51,8 +52,10 @@ export default function CommandConsoleBar({ modeLabel = "Decision Console", onSu
     }
   }, [disabled, fireTerrainRipple, isLoading, onSubmit, showToast, value]);
 
-  return (
-    <div className={styles.wrap}>
+  const content = (
+    <>
+      <div className={styles.vignetteLayer} aria-hidden="true" />
+      <div className={styles.wrap}>
       <div className={styles.shell}>
         {value.length === 0 && (
           <div className={styles.hintRow} aria-hidden="true">
@@ -82,6 +85,9 @@ export default function CommandConsoleBar({ modeLabel = "Decision Console", onSu
       </div>
 
       <div className={`${styles.toast} ${toast ? styles.toastShow : ""}`}>{toast ?? ""}</div>
-    </div>
+      </div>
+    </>
   );
+
+  return createPortal(content, document.body);
 }
