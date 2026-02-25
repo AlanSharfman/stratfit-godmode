@@ -51,14 +51,32 @@
   pointer-events: none;
 }
 
+/* Bottom vignette — kills dead void at screen bottom */
+.canvasVignette {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 35%;
+  background: linear-gradient(
+    to top,
+    rgba(5, 8, 15, 1) 0%,
+    rgba(5, 8, 15, 0.8) 10%,
+    transparent 25%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
 /* ── Layer 2: 3-column foreground UI grid ── */
 .uiLayer {
   position: relative;
   z-index: 10;
   display: grid;
-  grid-template-columns: 280px 1fr 320px;
+  grid-template-columns: 260px 1fr 300px;
   height: 100vh;
   pointer-events: none;
+  padding-top: 24px; /* clear the premium header line */
 }
 
 /* ── Embedded logo lockup (left col top) ── */
@@ -160,10 +178,15 @@
   pointer-events: auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  background: rgba(10, 15, 25, 0.4);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  gap: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(8, 13, 22, 0.62) 0%,
+    rgba(6, 10, 18, 0.54) 60%,
+    rgba(4, 7, 14, 0.48) 100%
+  );
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   border-right: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -802,8 +825,8 @@
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: calc(24px + env(safe-area-inset-bottom));
-  width: min(680px, calc(100vw - 32px));
+  bottom: calc(28px + env(safe-area-inset-bottom));
+  width: min(720px, calc(100vw - 32px));
   z-index: 9999;
   pointer-events: auto;
 }
@@ -832,4 +855,87 @@
   border-color: rgba(34, 211, 238, 0.40);
   color: rgba(34, 211, 238, 0.95);
   box-shadow: 0 0 8px rgba(34, 211, 238, 0.14);
+}
+
+/* ── Premium header line ── */
+.headerLine {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 24px;
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 20px;
+  background: rgba(4, 7, 14, 0.82);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px);
+  pointer-events: none;
+
+  font-family: ui-monospace, "JetBrains Mono", monospace;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.65);
+}
+
+.headerSep {
+  color: rgba(255, 255, 255, 0.15);
+}
+
+/* ── Right col accordion sections ── */
+.accordionSection {
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.accordionSection[open] > .accordionSummary {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.accordionSummary {
+  list-style: none;
+  cursor: pointer;
+  padding: 9px 12px;
+  font-family: ui-monospace, "JetBrains Mono", monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.6);
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+  transition: color 0.15s ease;
+}
+
+.accordionSummary:hover {
+  color: rgba(200, 220, 240, 0.85);
+}
+
+.accordionSummary::-webkit-details-marker {
+  display: none;
+}
+
+.accordionSummary::before {
+  content: "›";
+  display: inline-block;
+  font-size: 12px;
+  line-height: 1;
+  transition: transform 0.2s ease;
+  color: rgba(34, 211, 238, 0.5);
+}
+
+.accordionSection[open] > .accordionSummary::before {
+  transform: rotate(90deg);
 }

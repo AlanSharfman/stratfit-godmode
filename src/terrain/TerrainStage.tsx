@@ -70,12 +70,12 @@ export default function TerrainStage({ granularity, terrainMetrics }: TerrainSta
     <Canvas
       style={{ position: "absolute", inset: 0, zIndex: 0 }}
       dpr={[1, 2]}
-      camera={{ position: [0, 143, 286], fov: 68, near: 0.1, far: 5000 }}
+      camera={{ position: [0, 110, 220], fov: 62, near: 0.1, far: 5000 }}
       gl={{ antialias: true, alpha: false }}
       onCreated={({ camera, gl, scene }) => {
-        // Deterministic camera lock (prevents "close-up blob / drift")
-        camera.position.set(0, 143, 286);
-        camera.lookAt(0, -60, 0);
+        // Deterministic camera lock — upper-third rule of thirds composition
+        camera.position.set(0, 110, 220);
+        camera.lookAt(0, -38, 0);
         camera.updateProjectionMatrix();
 
         // Deterministic clear + fog baseline
@@ -94,7 +94,7 @@ export default function TerrainStage({ granularity, terrainMetrics }: TerrainSta
           minPolarAngle={1.107}
           maxPolarAngle={1.107}
           rotateSpeed={0.55}
-          target={[0, -60, 0]}
+          target={[0, -38, 0]}
         />
       )}
 

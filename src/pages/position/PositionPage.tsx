@@ -33,6 +33,7 @@ import DiagnosticsSummary from "./components/DiagnosticsSummary"
 import ExecutiveNarrativeCard from "./components/ExecutiveNarrativeCard"
 import TerrainLegend from "./overlays/TerrainLegend"
 import TimeScaleControl from "./overlays/TimeScaleControl"
+import IntelligenceStrip from "@/components/position/IntelligenceStrip"
 import {
   buildPositionViewModel,
 } from "./overlays/positionState"
@@ -160,9 +161,21 @@ export default function PositionPage() {
 
   return (
     <div className={styles.page}>
+      {/* ═══ Premium header line — spans full width above everything ═══ */}
+      <div className={styles.headerLine} aria-hidden="true">
+        <span>POSITION: FRAGILE</span>
+        <span className={styles.headerSep}>|</span>
+        <span>Confidence: High</span>
+        <span className={styles.headerSep}>|</span>
+        <span>Updated: {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+        <span className={styles.headerSep}>|</span>
+        <span>Data: Manual / Xero</span>
+      </div>
+
       {/* ═══ LAYER 1: Fixed full-bleed terrain canvas ═══ */}
       <div className={styles.canvasLayer}>
         <TerrainStage granularity={granularity} terrainMetrics={terrainMetrics} />
+        <div className={styles.canvasVignette} aria-hidden="true" />
       </div>
 
       {/* ═══ LAYER 2: 3-column frosted-glass UI ═══ */}
@@ -215,6 +228,8 @@ export default function PositionPage() {
             <NavLink to={ROUTES.ASSESSMENT} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Assessment</NavLink>
           </nav>
 
+          <IntelligenceStrip />
+
           <div className={styles.timeScaleDock} aria-label="Time scale control">
             <TimeScaleControl granularity={granularity} setGranularity={setGranularity} />
           </div>
@@ -235,15 +250,21 @@ export default function PositionPage() {
           <DiagnosticsSummary vm={vm} />
           <ExecutiveNarrativeCard vm={vm} />
 
-          {showDiagnostics && (
-            <CommandCentrePanel
-              groups={diagnosticGroups}
-              title="Diagnostics"
-              onClose={() => setShowDiagnostics(false)}
-            />
-          )}
+          <details className={styles.accordionSection} open={false}>
+            <summary className={styles.accordionSummary}>Diagnostics</summary>
+            {showDiagnostics && (
+              <CommandCentrePanel
+                groups={diagnosticGroups}
+                title="Diagnostics"
+                onClose={() => setShowDiagnostics(false)}
+              />
+            )}
+          </details>
 
-          <BaselineIntelligencePanel />
+          <details className={styles.accordionSection} open={false}>
+            <summary className={styles.accordionSummary}>Baseline Intelligence</summary>
+            <BaselineIntelligencePanel />
+          </details>
         </div>
       </div>
     </div>
