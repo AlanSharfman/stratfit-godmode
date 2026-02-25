@@ -6,11 +6,6 @@
   height: 100vh;
   background: #0b0f14;
   overflow: hidden;
-
-  /* 3-column layout */
-  display: grid;
-  grid-template-columns: 15% 70% 15%;
-  grid-template-rows: 1fr;
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -45,6 +40,27 @@
   --z-hint: 350;
 }
 
+/* ── Layer 1: Infinite full-bleed canvas background ── */
+.canvasLayer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ── Layer 2: 3-column foreground UI grid ── */
+.uiLayer {
+  position: relative;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: 280px 1fr 320px;
+  height: 100vh;
+  pointer-events: none;
+}
+
 /* ── KPI strip — inside terrain viewport ── */
 .kpiDock {
   position: absolute;
@@ -64,60 +80,53 @@
   pointer-events: auto;
 }
 
-/* ── Left column — recessed dark well ── */
+/* ── Left column — frosted glass sidebar ── */
 .leftCol {
   grid-column: 1;
   grid-row: 1;
   position: relative;
-  overflow: hidden;
-  padding: 6px;
-  z-index: var(--z-rail);
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px;
   pointer-events: auto;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  background: linear-gradient(180deg, rgba(6, 9, 14, 0.95), rgba(3, 5, 8, 0.98));
-  border-right: 1px solid rgba(80, 110, 150, 0.12);
-
-  /* Inset shadow — feels sunken next to raised terrain */
-  box-shadow:
-    inset 2px 0 8px rgba(0, 0, 0, 0.5),
-    inset 0 4px 12px rgba(0, 0, 0, 0.3);
+  gap: 8px;
+  background: rgba(10, 15, 25, 0.4);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   TERRAIN CENTRE COLUMN — Raised titanium / chrome bezel
-   Precision-machined viewport housing for the 3-D terrain
-   ═══════════════════════════════════════════════════════════════ */
+/* ── Centre column — transparent, lets canvas show through ── */
 .centreCol {
   grid-column: 2;
   grid-row: 1;
   position: relative;
   overflow: hidden;
   min-height: 0;
-  z-index: 1;
-  background: #0b0f14;
+  background: transparent;
+  pointer-events: none;
 }
 
-/* ── Right column — recessed dark well ── */
+/* ── Right column — frosted glass sidebar ── */
 .rightCol {
   grid-column: 3;
   grid-row: 1;
   position: relative;
-  overflow: hidden;
-  padding: 6px;
-  z-index: var(--z-rail);
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px;
   pointer-events: auto;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  background: linear-gradient(180deg, rgba(6, 9, 14, 0.95), rgba(3, 5, 8, 0.98));
-  border-left: 1px solid rgba(80, 110, 150, 0.12);
-
-  /* Inset shadow — sunken next to raised terrain */
-  box-shadow:
-    inset -2px 0 8px rgba(0, 0, 0, 0.5),
-    inset 0 4px 12px rgba(0, 0, 0, 0.3);
+  gap: 8px;
+  background: rgba(10, 15, 25, 0.4);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .legendDock {

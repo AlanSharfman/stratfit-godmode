@@ -158,52 +158,58 @@ export default function PositionPage() {
 
   return (
     <div className={styles.page}>
-      {/* ═══ LEFT COLUMN ═══ */}
-      <div className={styles.leftCol}>
-        <PositionHeaderBar vm={vm} />
-
-        <div className={styles.legendDock} aria-label="Terrain legend">
-          <TerrainLegend />
-        </div>
-      </div>
-
-      {/* ═══ CENTRE COLUMN — Terrain viewport ═══ */}
-      <div className={styles.centreCol}>
+      {/* ═══ LAYER 1: Fixed full-bleed terrain canvas ═══ */}
+      <div className={styles.canvasLayer}>
         <TerrainStage granularity={granularity} terrainMetrics={terrainMetrics} />
-
-        <div className={styles.kpiDock} aria-label="Position KPIs">
-          <KPIOverlay vm={vm} />
-        </div>
-
-        <div className={styles.timeScaleDock} aria-label="Time scale control">
-          <TimeScaleControl granularity={granularity} setGranularity={setGranularity} />
-        </div>
-
-        <div className={styles.questionBar}>
-          <QuestionInputBar onSubmit={handleQuestionSubmit} />
-        </div>
-
-        {!vm && (
-          <div className={styles.noBaselineHint}>
-            No baseline loaded. Initialise to enable KPIs + diagnostics.
-          </div>
-        )}
       </div>
 
-      {/* ═══ RIGHT COLUMN ═══ */}
-      <div className={styles.rightCol}>
-        <DiagnosticsSummary vm={vm} />
-        <ExecutiveNarrativeCard vm={vm} />
+      {/* ═══ LAYER 2: 3-column frosted-glass UI ═══ */}
+      <div className={styles.uiLayer}>
+        {/* ── LEFT COLUMN ── */}
+        <div className={styles.leftCol}>
+          <PositionHeaderBar vm={vm} />
 
-        {showDiagnostics && (
-          <CommandCentrePanel
-            groups={diagnosticGroups}
-            title="Diagnostics"
-            onClose={() => setShowDiagnostics(false)}
-          />
-        )}
+          <div className={styles.legendDock} aria-label="Terrain legend">
+            <TerrainLegend />
+          </div>
+        </div>
 
-        <BaselineIntelligencePanel />
+        {/* ── CENTRE COLUMN — transparent, KPI HUD + question bar ── */}
+        <div className={styles.centreCol}>
+          <div className={styles.kpiDock} aria-label="Position KPIs">
+            <KPIOverlay vm={vm} />
+          </div>
+
+          <div className={styles.timeScaleDock} aria-label="Time scale control">
+            <TimeScaleControl granularity={granularity} setGranularity={setGranularity} />
+          </div>
+
+          <div className={styles.questionBar}>
+            <QuestionInputBar onSubmit={handleQuestionSubmit} />
+          </div>
+
+          {!vm && (
+            <div className={styles.noBaselineHint}>
+              No baseline loaded. Initialise to enable KPIs + diagnostics.
+            </div>
+          )}
+        </div>
+
+        {/* ── RIGHT COLUMN ── */}
+        <div className={styles.rightCol}>
+          <DiagnosticsSummary vm={vm} />
+          <ExecutiveNarrativeCard vm={vm} />
+
+          {showDiagnostics && (
+            <CommandCentrePanel
+              groups={diagnosticGroups}
+              title="Diagnostics"
+              onClose={() => setShowDiagnostics(false)}
+            />
+          )}
+
+          <BaselineIntelligencePanel />
+        </div>
       </div>
     </div>
   )
