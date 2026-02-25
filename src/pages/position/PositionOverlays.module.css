@@ -250,7 +250,68 @@
   padding: 12px;
 }
 
-.kpiStrip {
+/* ── KPI Telemetry feed (left col vertical layout) ── */
+.kpiFeedDock {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0 12px;
+  flex-shrink: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.kpiFeed {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+}
+
+.kpiFeedCell {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.kpiFeedCell:last-child {
+  border-bottom: none;
+}
+
+.kpiFeedCell .kpiLabel {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  min-width: 60px;
+}
+
+.kpiFeedCell .kpiValue {
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: 0.04em;
+  text-shadow: none;
+  flex: 1;
+  text-align: right;
+}
+
+.kpiFeedCell .kpiSub {
+  display: none;
+}
+
+.kpiFeedCell .widget {
+  width: 44px;
+  min-height: 22px;
+  flex: 0 0 44px;
+  margin: 0;
+}
+
+/* ── KPI strip — original horizontal layout ── */
   pointer-events: auto;
   display: grid;
   grid-template-columns: repeat(5, 200px);

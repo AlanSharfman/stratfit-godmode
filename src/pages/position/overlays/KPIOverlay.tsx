@@ -150,17 +150,19 @@ function RiskWidget() {
   )
 }
 
-export default function KPIOverlay({ vm }: { vm: PositionViewModel | null }) {
+export default function KPIOverlay({ vm, feed }: { vm: PositionViewModel | null; feed?: boolean }) {
   const k = vm?.kpis
+  const cellClass = feed ? styles.kpiFeedCell : styles.kpiCell
+  const stripClass = feed ? styles.kpiFeed : styles.kpiStrip
   return (
-    <div className={styles.kpiStrip}>
-      <div className={styles.kpiCell}>
+    <div className={stripClass}>
+      <div className={cellClass}>
         <div className={styles.kpiLabel}>ARR</div>
         <div className={styles.kpiValue}>{k ? `$${fmtMoney(k.arr)}` : "$0"}</div>
         <ArrWidget />
         <div className={styles.kpiSub}>Annual recurring</div>
       </div>
-      <div className={styles.kpiCell}>
+      <div className={cellClass}>
         <div className={styles.kpiLabel}>Runway</div>
         <div className={styles.kpiValue}>
           {k ? (Number.isFinite(k.runwayMonths) ? `${k.runwayMonths.toFixed(1)}m` : "—") : "999.0m"}
@@ -168,19 +170,19 @@ export default function KPIOverlay({ vm }: { vm: PositionViewModel | null }) {
         <RunwayWidget />
         <div className={styles.kpiSub}>Months at burn</div>
       </div>
-      <div className={styles.kpiCell}>
+      <div className={cellClass}>
         <div className={styles.kpiLabel}>Burn</div>
         <div className={styles.kpiValue}>{k ? `$${fmtMoney(k.burnMonthly)}` : "$0"}</div>
         <BurnWidget />
         <div className={styles.kpiSub}>Monthly</div>
       </div>
-      <div className={styles.kpiCell}>
+      <div className={cellClass}>
         <div className={styles.kpiLabel}>EBITDA</div>
         <div className={styles.kpiValue}>{k ? `$${fmtMoney(k.ebitdaMonthly)}` : "$0"}</div>
         <EbitdaWidget />
         <div className={styles.kpiSub}>Monthly approx</div>
       </div>
-      <div className={styles.kpiCell}>
+      <div className={cellClass}>
         <div className={styles.kpiLabel}>Risk Index</div>
         <div className={styles.kpiValue}>{k ? fmtPct(k.riskIndex) : "85%"}</div>
         <RiskWidget />

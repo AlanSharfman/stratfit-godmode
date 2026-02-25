@@ -195,12 +195,17 @@ export default function PositionPage() {
 
           <PositionHeaderBar vm={vm} />
 
+          {/* Telemetry feed — KPI cards in left col */}
+          <div className={styles.kpiFeedDock} aria-label="Position KPIs">
+            <KPIOverlay vm={vm} feed />
+          </div>
+
           <div className={styles.legendDock} aria-label="Terrain legend">
             <TerrainLegend />
           </div>
         </div>
 
-        {/* ── CENTRE COLUMN — transparent, KPI HUD + question bar ── */}
+        {/* ── CENTRE COLUMN — transparent, question bar ── */}
         <div className={styles.centreCol}>
           {/* Top nav row */}
           <nav className={styles.pageNav} aria-label="Primary navigation">
@@ -209,9 +214,6 @@ export default function PositionPage() {
             <NavLink to={ROUTES.COMPARE}  className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Compare</NavLink>
             <NavLink to={ROUTES.ASSESSMENT} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Assessment</NavLink>
           </nav>
-          <div className={styles.kpiDock} aria-label="Position KPIs">
-            <KPIOverlay vm={vm} />
-          </div>
 
           <div className={styles.timeScaleDock} aria-label="Time scale control">
             <TimeScaleControl granularity={granularity} setGranularity={setGranularity} />

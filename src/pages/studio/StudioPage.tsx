@@ -20,7 +20,8 @@ export default function StudioPage() {
   const [rt, setRt] = useState(studioSessionStore.get());
 
   useEffect(() => {
-    return studioSessionStore.subscribe(setRt);
+    const unsub = studioSessionStore.subscribe(setRt);
+    return () => { unsub(); };
   }, []);
 
   useEffect(() => {
