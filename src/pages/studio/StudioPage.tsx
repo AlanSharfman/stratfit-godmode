@@ -4,10 +4,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import type { QuestionContext } from "@/domain/question/questionContext";
 import type { ScenarioDraft } from "@/domain/scenario/scenarioDraft";
 import {
-  getStudioRuntime,
-  setStudioRuntime,
+  studioSessionStore,
   type StudioRuntime,
-} from "@/domain/studio/studioRuntime";
+} from "@/state/studioSessionStore";
 import ScenarioBuilder from "./ScenarioBuilder";
 
 type NavState = {
@@ -21,36 +20,37 @@ export default function StudioPage() {
 
   const navState = (location.state || {}) as NavState;
 
-  const [rt, setRt] = useState<StudioRuntime | null>(() => getStudioRuntime());
+  const [rt, setRt] = useState<StudioRuntime | null>(() =>
+    studioSessionStore.get()
+  );
 
-  // Ensure hydration from navState happens only once per mount.
+  // Subscribe once for deterministic updates
+  useEffect(() => {
+    return studioSessionStore.subscribe((next) => setRt(next));
+  }, []);
+
+  // Hydrate once from navState only if store is empty.
   const didHydrate = useRef(false);
 
   useEffect(() => {
     if (didHydrate.current) return;
     didHydrate.current = true;
 
+    const existing = studioSessionStore.get();
+    if (existing) {
+      // Store already has runtime — nothing to do.
+      return;
+    }
+
     const qc = navState.questionContext;
     const sd = navState.scenarioDraft;
 
-    // Primary path: hydrate from navigation state (Position → Studio).
     if (qc && sd) {
-      const next: StudioRuntime = { questionContext: qc, scenarioDraft: sd };
-      setStudioRuntime(next);
-      setRt(next);
-      console.log("[Studio Hydrated From NavState]", next);
+      studioSessionStore.seed({ questionContext: qc, scenarioDraft: sd });
+      console.log("[Studio Hydrated From NavState -> Store Seeded]");
       return;
     }
 
-    // Secondary path: restore from session (already attempted in initial state)
-    const restored = getStudioRuntime();
-    if (restored) {
-      setRt(restored);
-      console.log("[Studio Restored From Session]", restored);
-      return;
-    }
-
-    // Hard guard: Studio must not be accessible without context.
     console.warn("[Studio Missing Context] Redirecting to Position.");
     navigate("/position");
   }, [navState.questionContext, navState.scenarioDraft, navigate]);
@@ -71,21 +71,30 @@ export default function StudioPage() {
             padding: 12,
           }}
         >
-          <div style={{ fontSize: 11, opacity: 0.6, marginBottom: 6, fontFamily: "monospace", letterSpacing: "0.1em", textTransform: "uppercase" as const }}>
-            Studio Runtime (Session Persistent)
+          <div style={{ fontSize: 12, opacity: 0.9, marginBottom: 6 }}>
+            Studio Runtime (STEP 14 Canonical Store)
           </div>
-          <div style={{ fontSize: 14, marginBottom: 4, color: "#d6f8ff" }}>
-            <strong>Q:</strong> {rt.questionContext.question}
+
+          <div style={{ fontSize: 14, marginBottom: 6 }}>
+            <strong>Question:</strong> {rt.questionContext.question}
           </div>
-          <div style={{ fontSize: 13, marginBottom: 4, color: "rgba(140,190,240,0.85)" }}>
+
+          <div style={{ fontSize: 14, marginBottom: 6 }}>
             <strong>Category:</strong> {rt.questionContext.category}
           </div>
-          <div style={{ fontSize: 13, color: "rgba(185,205,225,0.7)" }}>
-            <strong>Scenario:</strong> {rt.scenarioDraft.name} ({rt.scenarioDraft.id})
+
+          <div style={{ fontSize: 14 }}>
+            <strong>Scenario:</strong> {rt.scenarioDraft.name}
           </div>
         </div>
       )}
+
       <ScenarioBuilder />
+
+      <div style={{ opacity: 0.85, fontSize: 13, padding: "12px 16px" }}>
+        Next: wire ScenarioDraft into Studio engine inputs + Scenario B creation
+        for Compare activation.
+      </div>
     </div>
   );
 }

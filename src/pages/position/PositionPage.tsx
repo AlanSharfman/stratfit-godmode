@@ -24,6 +24,7 @@ import {
 } from "@/domain/question/questionClassifier"
 import { buildQuestionContext } from "@/domain/question/questionContext"
 import { buildScenarioADraft } from "@/domain/scenario/scenarioDraft"
+import { studioSessionStore } from "@/state/studioSessionStore"
 import KPIOverlay from "./overlays/KPIOverlay"
 import PositionHeaderBar from "./components/PositionHeaderBar"
 import DiagnosticsSummary from "./components/DiagnosticsSummary"
@@ -59,11 +60,17 @@ export default function PositionPage() {
     const qc = buildQuestionContext(question, category)
     const scenarioDraft = buildScenarioADraft(qc)
 
+    // STEP 14: Seed canonical store BEFORE navigation (deterministic runtime)
+    studioSessionStore.seed({
+      questionContext: qc,
+      scenarioDraft,
+    })
+
     console.log("[Question Submitted]", question)
     console.log("[Classification Result]", category)
-    console.log("[QuestionContext Built]", qc)
-    console.log("[ScenarioDraft Built]", scenarioDraft)
+    console.log("[Store Seeded] studioSessionStore")
 
+    // Keep navState as fallback only
     navigate("/studio", {
       state: { questionContext: qc, scenarioDraft },
     })
