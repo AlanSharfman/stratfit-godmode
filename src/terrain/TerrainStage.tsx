@@ -70,17 +70,17 @@ export default function TerrainStage({ granularity, terrainMetrics }: TerrainSta
     <Canvas
       style={{ position: "absolute", inset: 0, zIndex: 0 }}
       dpr={[1, 2]}
-      camera={{ position: [0, 88, 170], fov: 64, near: 0.1, far: 5000 }}
+      camera={{ position: [0, 160, 340], fov: 52, near: 0.1, far: 5000 }}
       gl={{ antialias: true, alpha: false }}
       onCreated={({ camera, gl, scene }) => {
-        // Deterministic camera — hero ridge upper-third, immersive landscape
-        camera.position.set(0, 88, 170);
-        camera.lookAt(0, 32, 0);
+        // Wide cinematic composition — ridge in upper third, foreground visible
+        camera.position.set(0, 160, 340);
+        camera.lookAt(0, 10, 0);
         camera.updateProjectionMatrix();
 
         // Deterministic clear + fog baseline
         gl.setClearColor("#050A10", 1);
-        scene.fog = new THREE.Fog("#050A10", 320, 2200);
+        scene.fog = new THREE.Fog("#050A10", 400, 2400);
       }}
     >
       {/* Orbit controls ONLY when not watching demo */}
@@ -94,7 +94,9 @@ export default function TerrainStage({ granularity, terrainMetrics }: TerrainSta
           minPolarAngle={1.107}
           maxPolarAngle={1.107}
           rotateSpeed={0.55}
-          target={[0, 32, 0]}
+          minDistance={180}
+          maxDistance={600}
+          target={[0, 10, 0]}
         />
       )}
 
