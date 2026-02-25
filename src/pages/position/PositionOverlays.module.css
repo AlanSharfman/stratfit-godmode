@@ -129,7 +129,7 @@
   display: grid;
   grid-template-columns: repeat(5, 200px);
   justify-content: center;
-  gap: 20px;
+  gap: 40px;
 
   background: linear-gradient(
     180deg,
@@ -154,7 +154,7 @@
   aspect-ratio: 1;
 
   /* ── Precision machined titanium bezel ── */
-  border: 1.5px solid transparent;
+  border: 3px solid transparent;
   background:
     linear-gradient(
       175deg,
@@ -163,29 +163,31 @@
     ) padding-box,
     linear-gradient(
       155deg,
-      rgba(220, 235, 255, 0.55) 0%,
-      rgba(180, 210, 240, 0.40) 15%,
-      rgba(80, 120, 180, 0.18) 40%,
-      rgba(40, 60, 100, 0.10) 60%,
-      rgba(140, 180, 220, 0.30) 80%,
-      rgba(200, 225, 250, 0.50) 100%
+      rgba(230, 242, 255, 0.65) 0%,
+      rgba(200, 225, 250, 0.50) 12%,
+      rgba(120, 160, 210, 0.35) 30%,
+      rgba(60, 90, 140, 0.18) 50%,
+      rgba(120, 160, 210, 0.35) 70%,
+      rgba(200, 225, 250, 0.50) 88%,
+      rgba(230, 242, 255, 0.65) 100%
     ) border-box;
 
-  /* Multi-layer inset bevel — machined step illusion */
+  /* Multi-layer inset bevel — heavy machined step */
   box-shadow:
     /* Inner top chrome highlight */
-    inset 0 1px 0 rgba(230, 245, 255, 0.22),
+    inset 0 2px 0 rgba(230, 245, 255, 0.30),
     /* Inner bottom shadow */
-    inset 0 -1px 0 rgba(0, 0, 0, 0.35),
-    /* Left/right subtle highlights */
-    inset 1px 0 0 rgba(180, 210, 240, 0.12),
-    inset -1px 0 0 rgba(180, 210, 240, 0.12),
-    /* Mid-layer bevel step */
-    inset 0 2px 4px rgba(0, 0, 0, 0.20),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.45),
+    /* Left/right chrome edges */
+    inset 2px 0 0 rgba(200, 220, 245, 0.18),
+    inset -2px 0 0 rgba(200, 220, 245, 0.18),
+    /* Deep bevel step */
+    inset 0 3px 6px rgba(0, 0, 0, 0.28),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.15),
     /* Outer chrome ring glow */
-    0 1px 2px rgba(0, 0, 0, 0.40),
-    0 0 12px rgba(100, 170, 240, 0.08),
-    0 0 1px rgba(180, 220, 255, 0.20);
+    0 2px 4px rgba(0, 0, 0, 0.50),
+    0 0 16px rgba(100, 170, 240, 0.12),
+    0 0 2px rgba(200, 230, 255, 0.30);
 }
 
 /* ── Specular highlight — machined edge glint ── */
