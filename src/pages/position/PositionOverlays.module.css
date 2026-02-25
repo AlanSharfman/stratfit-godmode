@@ -6,6 +6,11 @@
   height: 100vh;
   background: #0b0f14;
   overflow: hidden;
+
+  /* 3-column layout */
+  display: grid;
+  grid-template-columns: 15% 70% 15%;
+  grid-template-rows: 1fr;
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -40,9 +45,10 @@
   --z-hint: 350;
 }
 
+/* ── KPI strip — inside terrain viewport ── */
 .kpiDock {
   position: absolute;
-  top: var(--sf-nav-h);
+  top: 6px;
   left: 0;
   right: 0;
   padding: 4px 12px 0 12px;
@@ -52,39 +58,165 @@
 
 .timeScaleDock {
   position: absolute;
-  top: calc(var(--sf-nav-h) + 6px);
+  top: 6px;
   right: 10px;
   z-index: var(--z-controls);
   pointer-events: auto;
 }
 
-.rightRail {
-  position: absolute;
-  top: calc(var(--sf-nav-h) + 150px);
-  right: 10px;
-  width: 295px;
+/* ── Left column — recessed dark well ── */
+.leftCol {
+  grid-column: 1;
+  grid-row: 1;
+  position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px;
+  z-index: var(--z-rail);
+  pointer-events: auto;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  z-index: var(--z-rail);
-  pointer-events: auto;
+  background: linear-gradient(180deg, rgba(6, 9, 14, 0.95), rgba(3, 5, 8, 0.98));
+  border-right: 1px solid rgba(80, 110, 150, 0.12);
+
+  /* Inset shadow — feels sunken next to raised terrain */
+  box-shadow:
+    inset 2px 0 8px rgba(0, 0, 0, 0.5),
+    inset 0 4px 12px rgba(0, 0, 0, 0.3);
+
+  scrollbar-width: thin;
+  scrollbar-color: rgba(34, 211, 238, 0.18) transparent;
 }
 
-/* ── PositionHeaderBar dock — left side ── */
-.headerBarDock {
+/* ═══════════════════════════════════════════════════════════════
+   TERRAIN CENTRE COLUMN — Raised titanium / chrome bezel
+   Precision-machined viewport housing for the 3-D terrain
+   ═══════════════════════════════════════════════════════════════ */
+.centreCol {
+  grid-column: 2;
+  grid-row: 1;
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+  z-index: 1;
+
+  /* ── Heavy raised bezel border ── */
+  border: 5px solid transparent;
+  background:
+    /* Inner fill — the terrain shows through */
+    linear-gradient(
+      180deg,
+      rgba(8, 12, 20, 1),
+      rgba(4, 6, 12, 1)
+    ) padding-box,
+    /* Outer bezel — polished titanium gradient */
+    linear-gradient(
+      155deg,
+      rgba(240, 248, 255, 0.80) 0%,
+      rgba(210, 230, 250, 0.65) 8%,
+      rgba(160, 195, 235, 0.50) 18%,
+      rgba(100, 140, 190, 0.30) 35%,
+      rgba(60, 85, 130, 0.20) 50%,
+      rgba(100, 140, 190, 0.30) 65%,
+      rgba(160, 195, 235, 0.50) 82%,
+      rgba(210, 230, 250, 0.65) 92%,
+      rgba(240, 248, 255, 0.80) 100%
+    ) border-box;
+
+  border-radius: 14px;
+
+  /* ── Massive elevation shadow stack ── */
+  box-shadow:
+    /* Primary lift shadow — deep and wide */
+    0 12px 40px rgba(0, 0, 0, 0.60),
+    0 6px 16px rgba(0, 0, 0, 0.45),
+    /* Chrome ring glow — outer edge light catch */
+    0 0 2px rgba(200, 225, 250, 0.50),
+    0 0 20px rgba(120, 180, 240, 0.10),
+    /* Inner top chrome highlight — machined bevel */
+    inset 0 3px 0 rgba(240, 250, 255, 0.25),
+    /* Inner bottom shadow — undercut */
+    inset 0 -3px 0 rgba(0, 0, 0, 0.40),
+    /* Inner side chrome */
+    inset 3px 0 0 rgba(200, 220, 245, 0.15),
+    inset -3px 0 0 rgba(200, 220, 245, 0.15),
+    /* Deep inner bevel step */
+    inset 0 4px 8px rgba(0, 0, 0, 0.25),
+    inset 0 -4px 8px rgba(0, 0, 0, 0.12);
+}
+
+/* Specular highlight — top chrome edge glint */
+.centreCol::before {
+  content: "";
   position: absolute;
-  top: calc(var(--sf-nav-h) + 150px);
-  left: 10px;
-  width: 295px;
+  top: 0;
+  left: 16px;
+  right: 16px;
+  height: 1px;
+  z-index: 10;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(220, 238, 255, 0.40) 15%,
+    rgba(245, 252, 255, 0.60) 50%,
+    rgba(220, 238, 255, 0.40) 85%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+/* Slow shimmer sweep across the bezel */
+.centreCol::after {
+  content: "";
+  position: absolute;
+  top: 0; left: -100%; right: 0; bottom: 0;
+  width: 200%;
+  z-index: 10;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(200, 230, 255, 0.04) 45%,
+    rgba(230, 245, 255, 0.08) 50%,
+    rgba(200, 230, 255, 0.04) 55%,
+    transparent 60%
+  );
+  animation: terrainBezelShimmer 8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes terrainBezelShimmer {
+  0% { transform: translateX(-30%); }
+  100% { transform: translateX(60%); }
+}
+
+/* ── Right column — recessed dark well ── */
+.rightCol {
+  grid-column: 3;
+  grid-row: 1;
+  position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px;
   z-index: var(--z-rail);
   pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: linear-gradient(180deg, rgba(6, 9, 14, 0.95), rgba(3, 5, 8, 0.98));
+  border-left: 1px solid rgba(80, 110, 150, 0.12);
+
+  /* Inset shadow — sunken next to raised terrain */
+  box-shadow:
+    inset -2px 0 8px rgba(0, 0, 0, 0.5),
+    inset 0 4px 12px rgba(0, 0, 0, 0.3);
+
+  scrollbar-width: thin;
+  scrollbar-color: rgba(34, 211, 238, 0.18) transparent;
 }
 
 .legendDock {
-  position: absolute;
-  left: 14px;
-  bottom: 14px;
-  width: 240px;
+  margin-top: auto;
   z-index: var(--z-legend);
   pointer-events: auto;
 }
@@ -619,12 +751,13 @@
 }
 
 /* ── Question Input Bar dock ── */
+/* ── Question bar — bottom of centre column ── */
 .questionBar {
   position: absolute;
   bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
-  width: 520px;
+  width: min(520px, 90%);
   z-index: var(--z-controls);
   pointer-events: auto;
 }

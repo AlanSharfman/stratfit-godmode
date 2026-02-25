@@ -15,7 +15,6 @@ import { useRenderFlagsStore } from "@/state/renderFlagsStore"
 import { useSemanticBalance, DEFAULT_SHL_WEIGHTS } from "@/render/shl"
 import type { SemanticLayerKey } from "@/render/shl"
 
-import PositionRightRail from "@/components/position/PositionRightRail"
 import CommandCentrePanel from "@/components/diagnostics/CommandCentrePanel"
 import BaselineIntelligencePanel from "@/components/baseline/BaselineIntelligencePanel"
 import QuestionInputBar from "@/components/question/QuestionInputBar"
@@ -152,27 +151,44 @@ export default function PositionPage() {
 
   return (
     <div className={styles.page}>
-      <TerrainStage granularity={granularity} terrainMetrics={terrainMetrics} />
-
-      <div className={styles.kpiDock} aria-label="Position KPIs">
-        <KPIOverlay vm={vm} />
-      </div>
-
-      <div className={styles.timeScaleDock} aria-label="Time scale control">
-        <TimeScaleControl granularity={granularity} setGranularity={setGranularity} />
-      </div>
-
-      {/* ── Header Bar — left side ── */}
-      <div className={styles.headerBarDock} aria-label="Position header">
+      {/* ═══ LEFT COLUMN ═══ */}
+      <div className={styles.leftCol}>
         <PositionHeaderBar vm={vm} />
+
+        <div className={styles.legendDock} aria-label="Terrain legend">
+          <TerrainLegend />
+        </div>
       </div>
 
-      {/* ── Right Rail (stacked: Diagnostics + Intelligence) ── */}
-      <PositionRightRail>
+      {/* ═══ CENTRE COLUMN — Terrain viewport ═══ */}
+      <div className={styles.centreCol}>
+        <TerrainStage granularity={granularity} terrainMetrics={terrainMetrics} />
+
+        <div className={styles.kpiDock} aria-label="Position KPIs">
+          <KPIOverlay vm={vm} />
+        </div>
+
+        <div className={styles.timeScaleDock} aria-label="Time scale control">
+          <TimeScaleControl granularity={granularity} setGranularity={setGranularity} />
+        </div>
+
+        <div className={styles.questionBar}>
+          <QuestionInputBar onSubmit={handleQuestionSubmit} />
+        </div>
+
+        {!vm && (
+          <div className={styles.noBaselineHint}>
+            No baseline loaded. Initialise to enable KPIs + diagnostics.
+          </div>
+        )}
+      </div>
+
+      {/* ═══ RIGHT COLUMN ═══ */}
+      <div className={styles.rightCol}>
         <DiagnosticsSummary vm={vm} />
         <ExecutiveNarrativeCard vm={vm} />
 
-        <div style={{ height: 16 }} />
+        <div style={{ height: 24 }} />
 
         {showDiagnostics && (
           <CommandCentrePanel
@@ -183,21 +199,7 @@ export default function PositionPage() {
         )}
 
         <BaselineIntelligencePanel />
-      </PositionRightRail>
-
-      <div className={styles.questionBar}>
-        <QuestionInputBar onSubmit={handleQuestionSubmit} />
       </div>
-
-      <div className={styles.legendDock} aria-label="Terrain legend">
-        <TerrainLegend />
-      </div>
-
-      {!vm && (
-        <div className={styles.noBaselineHint}>
-          No baseline loaded. Initialise to enable KPIs + diagnostics.
-        </div>
-      )}
     </div>
   )
 }
