@@ -63,7 +63,8 @@
 
   color: var(--text-secondary);
   text-decoration: none;
-  padding-bottom: 8px;
+  padding: 6px 0 8px;
+  transform: translateY(-2px);
 
   transition: color 0.2s ease;
 }
@@ -75,9 +76,8 @@
   top: 50%;
   transform: translateY(-50%);
   width: 1px;
-  height: 14px;
-  background: var(--border-soft);
-  opacity: 0.5;
+  height: 16px;
+  background: rgba(148, 163, 184, 0.35);
 }
 
 .navItem:hover {
