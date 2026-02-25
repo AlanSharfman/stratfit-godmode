@@ -312,6 +312,7 @@
 }
 
 /* ── KPI strip — original horizontal layout ── */
+.kpiStrip {
   pointer-events: auto;
   display: grid;
   grid-template-columns: repeat(5, 200px);
