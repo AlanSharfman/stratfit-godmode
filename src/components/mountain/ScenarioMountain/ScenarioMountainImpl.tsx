@@ -19,11 +19,12 @@
 // STRATFIT — Stable Mountain with Atmospheric Haze
 
 import React, { useMemo, useRef, useLayoutEffect, Suspense, useState, useEffect } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Grid, Line as DreiLine, Html } from "@react-three/drei";
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
 import { NeuralBackground } from "@/components/visuals/NeuralBackground";
 import * as THREE from "three";
+import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { useShallow } from "zustand/react/shallow";
 import { buildPeakModel, LeverId } from "@/logic/mountainPeakModel";
 import { Scenario, ScenarioId, useScenarioStore } from "@/state/scenarioStore";
@@ -1407,6 +1408,37 @@ function BaselineAutoRotate({ children, paused }: { children: React.ReactNode; p
   return <group ref={groupRef}>{children}</group>;
 }
 
+function CameraResetEffect({
+  resetKey,
+  controlsRef,
+  cameraPosition,
+  target,
+}: {
+  resetKey?: number;
+  controlsRef: React.RefObject<OrbitControlsImpl | null>;
+  cameraPosition: [number, number, number];
+  target: [number, number, number];
+}) {
+  const { camera } = useThree();
+
+  useLayoutEffect(() => {
+    if (resetKey === undefined) return;
+
+    camera.position.set(cameraPosition[0], cameraPosition[1], cameraPosition[2]);
+    camera.updateProjectionMatrix();
+
+    const controls = controlsRef.current;
+    if (controls) {
+      controls.target.set(target[0], target[1], target[2]);
+      controls.update();
+    } else {
+      camera.lookAt(target[0], target[1], target[2]);
+    }
+  }, [camera, cameraPosition, controlsRef, resetKey, target]);
+
+  return null;
+}
+
 // ============================================================================
 // MAIN EXPORT
 // ============================================================================
@@ -1451,6 +1483,8 @@ export interface ScenarioMountainProps {
   controlsEnabled?: boolean;
   /** Optional: override OrbitControls autoRotate (defaults to mode config). */
   controlsAutoRotate?: boolean;
+  /** Optional: force camera + controls to reset to defaults when changed. */
+  resetViewKey?: number;
   /** Baseline-only: make container background transparent (lets parent show through). */
   transparentContainer?: boolean;
   /** Baseline-only: make scene background/fog transparent (no clear color). */
@@ -1487,6 +1521,7 @@ export function ScenarioMountainImpl({
   baselineAllow360Rotate = false,
   controlsEnabled = true,
   controlsAutoRotate,
+  resetViewKey,
   transparentContainer = false,
   transparentScene = false,
   onTerrainMeshReady,
@@ -1577,6 +1612,9 @@ export function ScenarioMountainImpl({
   // ── GOD MODE: Resolve flag (only active in 'default' mode) ──
   const isGodMode = mode === "default" && Boolean(godModeProp);
 
+  // OrbitControls ref (used for deterministic Reset View)
+  const controlsRef = useRef<OrbitControlsImpl | null>(null);
+
   // ── GOD MODE: Metric Linkage + Confidence Envelope spread ──
   const godModeMetrics = useMemo(() => {
     if (!isGodMode) return { survivalFactor: 0.5, evFactor: 0.5, envelopeSpread: 0.15 };
@@ -1613,6 +1651,28 @@ export function ScenarioMountainImpl({
     }),
     [isGodMode, mode]
   );
+
+  const orbitTarget = useMemo(
+    () => (mode === "strategy"
+      ? ([0, 0, (config.forwardTargetZ ?? 0)] as [number, number, number])
+      : ([0, 0, 0] as [number, number, number])
+    ),
+    [config.forwardTargetZ, mode]
+  );
+
+  const allowStrategyZoom = mode === "strategy" && !isGodMode;
+  const strategyDistance = useMemo(() => {
+    if (!allowStrategyZoom) return null;
+    const [cx, cy, cz] = cameraConfig.position;
+    const [tx, ty, tz] = orbitTarget;
+    const dx = cx - tx;
+    const dy = cy - ty;
+    const dz = cz - tz;
+    return Math.sqrt(dx * dx + dy * dy + dz * dz);
+  }, [allowStrategyZoom, cameraConfig.position, orbitTarget]);
+
+  const strategyMinDistance = strategyDistance ? strategyDistance * 0.85 : undefined;
+  const strategyMaxDistance = strategyDistance ? strategyDistance * 1.75 : undefined;
 
   // ── GOD MODE: Fog density linked to survival (Section 6 — Metric Linkage) ──
   const godFogNear = isGodMode ? (25 + (1 - godModeMetrics.survivalFactor) * 15) : 40;
@@ -1913,23 +1973,34 @@ export function ScenarioMountainImpl({
             solverPath={solverPath}
           />
         ) : null}
+
+        <CameraResetEffect
+          resetKey={resetViewKey}
+          controlsRef={controlsRef}
+          cameraPosition={cameraConfig.position}
+          target={orbitTarget}
+        />
         
         {/* GOD MODE: Subtle auto-rotation + locked zoom | Default: standard controls */}
         <OrbitControls 
+          ref={controlsRef}
           enabled={controlsEnabled}
-          enableZoom={false}
+          enableZoom={allowStrategyZoom && controlsEnabled}
+          {...(allowStrategyZoom && strategyMinDistance !== undefined && strategyMaxDistance !== undefined
+            ? { minDistance: strategyMinDistance, maxDistance: strategyMaxDistance, zoomSpeed: 0.9 }
+            : {})}
           enablePan={false}
           enableRotate={controlsEnabled ? (mode !== "ghost") : false}
           autoRotate={controlsEnabled ? (controlsAutoRotate ?? (isGodMode ? true : config.autoRotate)) : false}
           autoRotateSpeed={isGodMode ? 0.3 : config.autoRotateSpeed}
-          rotateSpeed={0.4}
+          rotateSpeed={mode === "strategy" ? 0.7 : 0.4}
           minPolarAngle={isGodMode ? Math.PI / 3.5 : Math.PI / 4}
           maxPolarAngle={Math.PI / 2.2}
           minAzimuthAngle={baselineAllow360Rotate ? undefined : -Math.PI / 5}
           maxAzimuthAngle={baselineAllow360Rotate ? undefined : Math.PI / 5}
           onStart={() => setIsOrbiting(true)}
           onEnd={() => setIsOrbiting(false)}
-          {...(mode === "strategy" ? { target: [0, 0, config.forwardTargetZ ?? 0] as [number, number, number] } : {})}
+          {...(mode === "strategy" ? { target: orbitTarget } : {})}
         />
 
         {/* Post-processing — God Mode: subtle bloom for rim glow | Default: celebration */}

@@ -59,12 +59,13 @@
 
 .navItem {
   position: relative;
-  font-size: 13px;
+  font-size: calc(13px * 1.1);
   letter-spacing: 1.6px;
   text-transform: uppercase;
   font-weight: 500;
 
-  color: var(--text-secondary);
+  color: var(--text-primary);
+  opacity: 0.82;
   text-decoration: none;
   padding: 6px 0 8px;
   transform: translateY(-2px);
@@ -85,10 +86,12 @@
 
 .navItem:hover {
   color: var(--text-primary);
+  opacity: 1;
 }
 
 .navItem.active {
   color: var(--text-primary);
+  opacity: 1;
 }
 
 /* Neon underline */

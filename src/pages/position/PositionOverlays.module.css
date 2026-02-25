@@ -6,12 +6,10 @@
   height: 100vh;
   background: #0b0f14;
   overflow: hidden;
-}
 
-/* ─────────────────────────────────────────────────────────────
-   Shared optics (local, deterministic)
-   ───────────────────────────────────────────────────────────── */
-.page {
+  /* ─────────────────────────────────────────────────────────────
+     Shared optics (local, deterministic)
+     ───────────────────────────────────────────────────────────── */
   --sf-nav-h: 56px;
 
   --sf-cyan: rgba(70, 210, 255, 1);
@@ -204,7 +202,6 @@
   grid-column: 2;
   grid-row: 1;
   position: relative;
-  overflow: hidden;
   min-height: 0;
   background: transparent;
   pointer-events: none;

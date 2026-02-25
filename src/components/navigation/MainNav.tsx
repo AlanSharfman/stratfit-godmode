@@ -48,6 +48,30 @@ function MainNav() {
           Compare
         </NavLink>
         <NavLink
+          to={ROUTES.INSIGHTS}
+          className={({ isActive }) => `${styles.navItem}${isActive ? " " + styles.active : ""}`}
+        >
+          Insights
+        </NavLink>
+        <NavLink
+          to={ROUTES.RISK}
+          className={({ isActive }) => `${styles.navItem}${isActive ? " " + styles.active : ""}`}
+        >
+          Risk
+        </NavLink>
+        <NavLink
+          to={ROUTES.VALUATION}
+          className={({ isActive }) => `${styles.navItem}${isActive ? " " + styles.active : ""}`}
+        >
+          Valuation
+        </NavLink>
+        <NavLink
+          to={ROUTES.COMING_FEATURES}
+          className={({ isActive }) => `${styles.navItem}${isActive ? " " + styles.active : ""}`}
+        >
+          Coming Features
+        </NavLink>
+        <NavLink
           to={ROUTES.ASSESSMENT}
           className={({ isActive }) => `${styles.navItem}${isActive ? " " + styles.active : ""}`}
         >

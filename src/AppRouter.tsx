@@ -4,9 +4,11 @@ import App from "@/App"
 import PositionPage from "@/pages/position/PositionPage"
 import ObjectivePage from "@/pages/objective/ObjectivePage"
 import ComparePage from "@/pages/compare/ComparePage"
+import InsightsPage from "@/pages/insights/InsightsPage"
 import RiskPage from "@/components/Risk/RiskPage"
 import BaselinePage from "@/pages/baseline/BaselinePage"
 import ValuationPage from "@/pages/valuation/ValuationPage"
+import ComingFeaturesPage from "@/pages/coming-features/ComingFeaturesPage"
 import AssessmentPage from "@/pages/StrategicAssessmentPage"
 import InitializeBaselinePage from "@/pages/initialize/InitializeBaselinePage"
 
@@ -24,9 +26,11 @@ export default function AppRouter() {
         <Route path="/studio" element={<StudioRoute />} />
         <Route path="/strategy-studio" element={<StrategyStudioRoute />} />
         <Route path="/compare" element={<ComparePage />} />
+        <Route path="/insights" element={<InsightsPage />} />
         <Route path="/risk" element={<RiskPage />} />
         <Route path="/baseline" element={<BaselinePage />} />
         <Route path="/valuation" element={<ValuationPage />} />
+        <Route path="/coming-features" element={<ComingFeaturesPage />} />
         <Route path="/assessment" element={<AssessmentPage />} />
         <Route path="/initiate" element={<InitializeBaselinePage />} />
 
