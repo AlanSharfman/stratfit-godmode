@@ -11,6 +11,7 @@ function MainNav() {
           alt="STRATFIT"
           width={64}
           height={64}
+          className={styles.logoIcon}
         />
         <div className={styles.brandText}>
           <div className={styles.brandName}>STRATFIT</div>

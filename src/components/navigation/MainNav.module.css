@@ -21,8 +21,13 @@
 .brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   text-decoration: none;
+  padding: 10px 6px;
+}
+
+.logoIcon {
+  filter: drop-shadow(0 0 8px rgba(0, 255, 255, 0.4));
 }
 
 .brandText {
@@ -30,19 +35,21 @@
 }
 
 .brandName {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 1.4px;
-  color: var(--accent-cyan);
+  color: #ffffff;
   text-transform: uppercase;
 }
 
 .brandSub {
-  font-size: 9px;
-  letter-spacing: 3px;
-  color: rgba(255, 255, 255, 0.85);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  color: #94a3b8;
   text-transform: uppercase;
-  margin-top: 2px;
+  margin-top: 3px;
 }
 
 .nav {
