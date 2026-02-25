@@ -41,13 +41,12 @@ export default function CompareRiskPair() {
   const activeScenarioId = useScenarioStore((s) => s.activeScenarioId)
   const savedScenarios = useScenarioStore((s) => s.savedScenarios ?? [])
 
+  const status = useSimulationStore((s: any) => s.simulationStatus ?? null)
+
   const activeScenario = useMemo(() => {
     if (!activeScenarioId || activeScenarioId === "base") return null
     return savedScenarios.find((x) => String(x.id) === String(activeScenarioId)) ?? null
   }, [activeScenarioId, savedScenarios])
-
-  const status = useSimulationStore((s: any) => s.simulationStatus ?? null)
-  if (status && status !== "completed") return null
 
   const showB = activeScenarioId !== "base"
 
@@ -60,6 +59,8 @@ export default function CompareRiskPair() {
     () => scenarioToRiskModifiers(activeScenario),
     [activeScenario]
   )
+
+  if (status && status !== "completed") return null
 
   return (
     <>

@@ -41,14 +41,13 @@ export default function ComparePathPair() {
   const activeScenarioId = useScenarioStore((s) => s.activeScenarioId)
   const savedScenarios = useScenarioStore((s) => s.savedScenarios ?? [])
 
+  // Only show when simulation has completed
+  const status = useSimulationStore((s: any) => s.simulationStatus ?? null)
+
   const activeScenario = useMemo(() => {
     if (!activeScenarioId || activeScenarioId === "base") return null
     return savedScenarios.find((x) => String(x.id) === String(activeScenarioId)) ?? null
   }, [activeScenarioId, savedScenarios])
-
-  // Only show when simulation has completed
-  const status = useSimulationStore((s: any) => s.simulationStatus ?? null)
-  if (status && status !== "completed") return null
 
   const showB = activeScenarioId !== "base"
 
@@ -61,6 +60,8 @@ export default function ComparePathPair() {
     () => scenarioToPathModifiers(activeScenario),
     [activeScenario]
   )
+
+  if (status && status !== "completed") return null
 
   return (
     <>

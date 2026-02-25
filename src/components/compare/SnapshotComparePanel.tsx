@@ -62,8 +62,7 @@ function buildSnapshotFromRun(run: RunLike, scenarioId: string): Snapshot | null
 export default function SnapshotComparePanel() {
   const activeScenarioId = useScenarioStore((s) => s.activeScenarioId ?? null)
 
-  // Compare needs a scenario selected to compare against baseline.
-  if (!activeScenarioId || activeScenarioId === "base") return null
+  const showPanel = Boolean(activeScenarioId && activeScenarioId !== "base")
 
   const status = useSimulationStore((s: any) => s.simulationStatus ?? null)
   const activeRun = useSimulationStore((s: any) => (s.activeRun ?? null) as RunLike | null)
@@ -72,10 +71,14 @@ export default function SnapshotComparePanel() {
   const runSource = runsByScenarioId ?? runs
 
   const [baselineSnap, setBaselineSnap] = useState<Snapshot | null>(() => loadSnapshot("baseline"))
-  const scenarioSnap = useMemo(() => loadSnapshot(String(activeScenarioId)), [activeScenarioId])
+  const scenarioSnap = useMemo(() => {
+    if (!activeScenarioId || activeScenarioId === "base") return null
+    return loadSnapshot(String(activeScenarioId))
+  }, [activeScenarioId])
 
   // Ensure baseline snapshot exists — derive from completed baseline run once.
   useEffect(() => {
+    if (!showPanel) return
     if (baselineSnap) return
     if (status !== "completed") return
 
@@ -89,22 +92,25 @@ export default function SnapshotComparePanel() {
     setBaselineSnap(snap)
   }, [baselineSnap, status, activeRun, runSource])
 
+  const primaryDelta = useMemo(() => {
+    if (!baselineSnap || !scenarioSnap) return { added: [], removed: [] }
+    return listDelta(baselineSnap.primary, scenarioSnap.primary)
+  }, [baselineSnap, scenarioSnap])
+
+  const headwindsDelta = useMemo(() => {
+    if (!baselineSnap || !scenarioSnap) return { added: [], removed: [] }
+    return listDelta(baselineSnap.headwinds, scenarioSnap.headwinds)
+  }, [baselineSnap, scenarioSnap])
+
+  const oppDelta = useMemo(() => {
+    if (!baselineSnap || !scenarioSnap) return { added: [], removed: [] }
+    return listDelta(baselineSnap.opportunities, scenarioSnap.opportunities)
+  }, [baselineSnap, scenarioSnap])
+
+  // Compare needs a scenario selected to compare against baseline.
+  if (!showPanel) return null
+
   if (!scenarioSnap || !baselineSnap) return null
-
-  const primaryDelta = useMemo(
-    () => listDelta(baselineSnap.primary, scenarioSnap.primary),
-    [baselineSnap.primary, scenarioSnap.primary]
-  )
-
-  const headwindsDelta = useMemo(
-    () => listDelta(baselineSnap.headwinds, scenarioSnap.headwinds),
-    [baselineSnap.headwinds, scenarioSnap.headwinds]
-  )
-
-  const oppDelta = useMemo(
-    () => listDelta(baselineSnap.opportunities, scenarioSnap.opportunities),
-    [baselineSnap.opportunities, scenarioSnap.opportunities]
-  )
 
   return (
     <div style={{ position: "absolute", left: 16, right: 16, bottom: 16, pointerEvents: "none", zIndex: 40 }}>

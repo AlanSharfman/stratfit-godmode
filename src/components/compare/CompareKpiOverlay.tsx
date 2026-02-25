@@ -92,8 +92,13 @@ export default function CompareKpiOverlay() {
     [activeScenarioId, activeRun, runSource]
   )
 
+  const showOverlay = Boolean(activeScenarioId && activeScenarioId !== "base")
+
+  const baselineResults = status === "completed" ? baselineRun?.results ?? null : null
+  const scenarioResults = status === "completed" ? scenarioRun?.results ?? null : null
+
   const baselineKpis: CanonicalKpis = useMemo(() => {
-    if (status !== "completed" || !baselineRun?.results) {
+    if (!baselineResults) {
       return {
         survivalProb: null,
         runwayMonths: null,
@@ -103,11 +108,11 @@ export default function CompareKpiOverlay() {
         evP90: null,
       }
     }
-    return selectKpisFromResults(baselineRun.results)
-  }, [status, baselineRun?.results])
+    return selectKpisFromResults(baselineResults)
+  }, [baselineResults])
 
   const scenarioKpis: CanonicalKpis = useMemo(() => {
-    if (status !== "completed" || !scenarioRun?.results) {
+    if (!scenarioResults) {
       return {
         survivalProb: null,
         runwayMonths: null,
@@ -117,11 +122,8 @@ export default function CompareKpiOverlay() {
         evP90: null,
       }
     }
-    return selectKpisFromResults(scenarioRun.results)
-  }, [status, scenarioRun?.results])
-
-  // Hide overlay when in base/baseline state (no meaningful compare)
-  if (!activeScenarioId || activeScenarioId === "base") return null
+    return selectKpisFromResults(scenarioResults)
+  }, [scenarioResults])
 
   const rows = useMemo(() => {
     const a = baselineKpis
@@ -170,6 +172,9 @@ export default function CompareKpiOverlay() {
       },
     ]
   }, [baselineKpis, scenarioKpis])
+
+  // Hide overlay when in base/baseline state (no meaningful compare)
+  if (!showOverlay) return null
 
   return (
     <div style={{ position: "absolute", top: 72, right: 16, width: 380, zIndex: 60 }}>
