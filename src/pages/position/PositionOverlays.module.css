@@ -45,7 +45,7 @@
   top: var(--sf-nav-h);
   left: 0;
   right: 0;
-  padding: 8px 12px 0 12px;
+  padding: 4px 12px 0 12px;
   z-index: var(--z-kpi);
   pointer-events: none;
 }
@@ -60,12 +60,22 @@
 
 .rightRail {
   position: absolute;
-  top: calc(var(--sf-nav-h) + 130px);
-  left: 10px;
+  top: calc(var(--sf-nav-h) + 150px);
+  right: 10px;
   width: 295px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  z-index: var(--z-rail);
+  pointer-events: auto;
+}
+
+/* ── PositionHeaderBar dock — left side ── */
+.headerBarDock {
+  position: absolute;
+  top: calc(var(--sf-nav-h) + 150px);
+  left: 10px;
+  width: 295px;
   z-index: var(--z-rail);
   pointer-events: auto;
 }
@@ -138,7 +148,7 @@
   );
   border: 1px solid rgba(120, 180, 240, 0.22);
   border-radius: 10px;
-  padding: 8px;
+  padding: 4px;
   backdrop-filter: blur(16px);
   box-shadow:
     0 8px 24px rgba(0, 0, 0, 0.35),
@@ -151,7 +161,10 @@
   padding: 10px 10px 6px;
   border-radius: 8px;
   overflow: hidden;
-  height: 100px;
+  height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 
   /* ── Precision machined titanium bezel ── */
   border: 3px solid transparent;
@@ -240,8 +253,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 8px 0 4px;
-  min-height: 40px;
+  margin: 4px 0 2px;
+  min-height: 32px;
+  flex: 1;
   position: relative;
 }
 
@@ -258,12 +272,12 @@
 .burnBars {
   display: flex;
   align-items: flex-end;
-  gap: 4px;
-  height: 36px;
+  gap: 3px;
+  height: 28px;
 }
 
 .burnBar {
-  width: 8px;
+  width: 6px;
   border-radius: 2px 2px 0 0;
   background: linear-gradient(180deg, #fb923c 0%, #ef4444 40%, #dc2626 80%, #991b1b 100%);
   box-shadow: 0 0 8px rgba(251, 146, 60, 0.45), 0 0 3px rgba(239, 68, 68, 0.30);

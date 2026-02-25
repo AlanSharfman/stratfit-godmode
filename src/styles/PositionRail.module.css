@@ -5,10 +5,10 @@
 
 .rail {
   position: absolute;
-  top: calc(var(--sf-nav-h, 56px) + 130px);
-  left: 10px;
+  top: calc(var(--sf-nav-h, 56px) + 150px);
+  right: 10px;
   width: 295px;
-  max-height: calc(100vh - var(--sf-nav-h, 56px) - 140px);
+  max-height: calc(100vh - var(--sf-nav-h, 56px) - 160px);
   overflow-y: auto;
   overflow-x: hidden;
 

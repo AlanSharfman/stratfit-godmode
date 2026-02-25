@@ -162,11 +162,17 @@ export default function PositionPage() {
         <TimeScaleControl granularity={granularity} setGranularity={setGranularity} />
       </div>
 
+      {/* ── Header Bar — left side ── */}
+      <div className={styles.headerBarDock} aria-label="Position header">
+        <PositionHeaderBar vm={vm} />
+      </div>
+
       {/* ── Right Rail (stacked: Diagnostics + Intelligence) ── */}
       <PositionRightRail>
-        <PositionHeaderBar vm={vm} />
         <DiagnosticsSummary vm={vm} />
         <ExecutiveNarrativeCard vm={vm} />
+
+        <div style={{ height: 16 }} />
 
         {showDiagnostics && (
           <CommandCentrePanel
