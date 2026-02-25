@@ -63,7 +63,7 @@ export default function PositionPage() {
     // STEP 14: Seed canonical store BEFORE navigation (deterministic runtime)
     studioSessionStore.seed({
       questionContext: qc,
-      scenarioDraft,
+      scenarioA: scenarioDraft,
     })
 
     console.log("[Question Submitted]", question)

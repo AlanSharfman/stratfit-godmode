@@ -3,10 +3,10 @@ import type { ScenarioDraft } from "@/domain/scenario/scenarioDraft";
 
 export type StudioRuntime = {
   questionContext: QuestionContext;
-  scenarioDraft: ScenarioDraft;
+  scenarios: ScenarioDraft[];
 };
 
-const SESSION_KEY = "sf.studio.runtime.v1";
+const SESSION_KEY = "sf.studio.runtime.v2";
 
 type Listener = (rt: StudioRuntime | null) => void;
 
@@ -24,28 +24,14 @@ function persist(rt: StudioRuntime | null) {
       return;
     }
     sessionStorage.setItem(SESSION_KEY, JSON.stringify(rt));
-  } catch {
-    // ignore storage failures
-  }
+  } catch {}
 }
 
 function restoreFromSession(): StudioRuntime | null {
   try {
     const raw = sessionStorage.getItem(SESSION_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as StudioRuntime;
-
-    // Minimal deterministic shape validation
-    if (
-      !parsed?.questionContext?.id ||
-      !parsed?.questionContext?.question ||
-      !parsed?.scenarioDraft?.id ||
-      !parsed?.scenarioDraft?.name
-    ) {
-      return null;
-    }
-
-    return parsed;
+    return JSON.parse(raw);
   } catch {
     return null;
   }
@@ -54,25 +40,41 @@ function restoreFromSession(): StudioRuntime | null {
 export const studioSessionStore = {
   get(): StudioRuntime | null {
     if (runtime) return runtime;
-    const restored = restoreFromSession();
-    runtime = restored;
+    runtime = restoreFromSession();
     return runtime;
   },
 
-  seed(next: StudioRuntime) {
-    runtime = next;
-    persist(next);
+  seed(initial: { questionContext: QuestionContext; scenarioA: ScenarioDraft }) {
+    runtime = {
+      questionContext: initial.questionContext,
+      scenarios: [initial.scenarioA],
+    };
+    persist(runtime);
     notify();
+  },
+
+  addScenario(s: ScenarioDraft) {
+    if (!runtime) return;
+    runtime = {
+      ...runtime,
+      scenarios: [...runtime.scenarios, s],
+    };
+    persist(runtime);
+    notify();
+  },
+
+  isCompareReady(): boolean {
+    return !!runtime && runtime.scenarios.length > 1;
+  },
+
+  subscribe(listener: Listener) {
+    listeners.add(listener);
+    return () => listeners.delete(listener);
   },
 
   clear() {
     runtime = null;
     persist(null);
     notify();
-  },
-
-  subscribe(listener: Listener) {
-    listeners.add(listener);
-    return () => listeners.delete(listener);
   },
 };
