@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate, Link, NavLink } from "react-router-dom"
 import { useShallow } from "zustand/react/shallow"
 
@@ -19,7 +19,7 @@ import type { SemanticLayerKey } from "@/render/shl"
 
 import CommandCentrePanel from "@/components/diagnostics/CommandCentrePanel"
 import BaselineIntelligencePanel from "@/components/baseline/BaselineIntelligencePanel"
-import QuestionInputBar from "@/components/question/QuestionInputBar"
+import CommandConsoleBar from "@/components/command/CommandConsoleBar"
 import {
   classifyQuestion,
   QuestionCategory,
@@ -56,6 +56,13 @@ export default function PositionPage() {
   const navigate = useNavigate()
   const [granularity, setGranularity] = useState<TimeGranularity>("quarter")
   const [showDiagnostics, setShowDiagnostics] = useState(true)
+  const [rippleKey, setRippleKey] = useState(0)
+
+  useEffect(() => {
+    function onRipple() { setRippleKey((k) => k + 1) }
+    window.addEventListener("sf:terrain-ripple", onRipple)
+    return () => window.removeEventListener("sf:terrain-ripple", onRipple)
+  }, [])
 
   const handleQuestionSubmit = useCallback((question: string) => {
     const category: QuestionCategory = classifyQuestion(question)
@@ -175,6 +182,9 @@ export default function PositionPage() {
       <div className={styles.canvasLayer}>
         <TerrainStage granularity={granularity} terrainMetrics={terrainMetrics} />
         <div className={styles.canvasVignette} aria-hidden="true" />
+        {rippleKey > 0 && (
+          <div key={rippleKey} className={styles.terrainRipple} aria-hidden="true" />
+        )}
       </div>
 
       {/* ═══ LAYER 2: 3-column frosted-glass UI ═══ */}
@@ -231,9 +241,10 @@ export default function PositionPage() {
             <TimeScaleControl granularity={granularity} setGranularity={setGranularity} />
           </div>
 
-          <div className={styles.questionBar}>
-            <QuestionInputBar onSubmit={handleQuestionSubmit} />
-          </div>
+          <CommandConsoleBar
+            modeLabel="Decision Console"
+            onSubmit={async (question) => { await handleQuestionSubmit(question) }}
+          />
 
           {!vm && (
             <div className={styles.noBaselineHint}>

@@ -1,5 +1,15 @@
 import React, { useState, KeyboardEvent } from "react";
 import styles from "./QuestionInputBar.module.css";
+import { useTypewriterHint } from "@/components/command/useTypewriterHint";
+
+const HINTS = [
+  "How much runway remains if burn increases 20%?",
+  "What's the minimum ARR to hit profitability?",
+  "What is our biggest execution risk this quarter?",
+  "Should we extend runway or accelerate growth?",
+  "What does healthy EBITDA look like at our stage?",
+  "Ask a strategic decision…",
+];
 
 interface Props {
   onSubmit: (question: string) => void;
@@ -7,6 +17,7 @@ interface Props {
 
 export default function QuestionInputBar({ onSubmit }: Props) {
   const [value, setValue] = useState("");
+  const hint = useTypewriterHint({ phrases: HINTS });
 
   function handleSubmit() {
     const trimmed = value.trim();

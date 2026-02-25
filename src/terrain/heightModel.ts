@@ -22,11 +22,12 @@ export function terrainHeight(x: number, y: number, seed: number) {
     const primary = noise2D(x * 1.1, y * 1.1, seed) * 1.0;
 
     // ── Primary peaks (Gaussian bumps at fixed positions) ──
-    const peak1 = Math.exp(-((x - 0.28) ** 2 + (y - 0.22) ** 2) * 3.5) * 1.0;
-    const peak2 = Math.exp(-((x - 0.72) ** 2 + (y - 0.35) ** 2) * 2.8) * 0.85;
-    const peak3 = Math.exp(-((x - 0.50) ** 2 + (y - 0.65) ** 2) * 4.0) * 0.70;
-    const peak4 = Math.exp(-((x - 0.15) ** 2 + (y - 0.55) ** 2) * 5.0) * 0.55;
-    const peak5 = Math.exp(-((x - 0.82) ** 2 + (y - 0.70) ** 2) * 4.5) * 0.60;
+    // Peak amplitudes reduced — no isolated cone. Multiple moderate ridgelines.
+    const peak1 = Math.exp(-((x - 0.28) ** 2 + (y - 0.22) ** 2) * 2.2) * 0.62;
+    const peak2 = Math.exp(-((x - 0.72) ** 2 + (y - 0.35) ** 2) * 2.0) * 0.55;
+    const peak3 = Math.exp(-((x - 0.50) ** 2 + (y - 0.65) ** 2) * 2.8) * 0.48;
+    const peak4 = Math.exp(-((x - 0.15) ** 2 + (y - 0.55) ** 2) * 3.2) * 0.40;
+    const peak5 = Math.exp(-((x - 0.82) ** 2 + (y - 0.70) ** 2) * 3.0) * 0.44;
 
     // ── Valleys / troughs (negative contributions) ──
     const valley1 = -Math.exp(-((x - 0.45) ** 2 + (y - 0.40) ** 2) * 6.0) * 0.35;
@@ -38,6 +39,9 @@ export function terrainHeight(x: number, y: number, seed: number) {
     // ── Secondary ridges (scale 3.8 - medium detail) ──
     const secondary = noise2D(x * 3.8, y * 3.8, seed) * 0.5;
 
+    // ── Tertiary long-wavelength undulation — prevents isolated cone ──
+    const undulation = noise2D(x * 0.8, y * 0.8, seed + 7) * 0.38;
+
     // ── Micro relief (scale 14.0 - fine surface detail) ──
     const micro = noise2D(x * 14.0, y * 14.0, seed) * 0.15;
 
@@ -47,8 +51,9 @@ export function terrainHeight(x: number, y: number, seed: number) {
 
     // Combine all layers
     const base = peak1 + peak2 + peak3 + peak4 + peak5 + valley1 + valley2 + spine;
-    const h = primary + base + secondary + micro + n2 + n3;
+    const h = primary + base + secondary + undulation + micro + n2 + n3;
 
     // Apply ridge sharpening for crisp peaks and deeper valleys
-    return sharpen(h);
+    // Soften sharpening exponent — 1.4 → 1.15 so ridges read as landscape not spikes
+    return Math.sign(h) * Math.pow(Math.abs(h), 1.15);
 }

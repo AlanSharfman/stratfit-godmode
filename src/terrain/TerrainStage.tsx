@@ -70,12 +70,12 @@ export default function TerrainStage({ granularity, terrainMetrics }: TerrainSta
     <Canvas
       style={{ position: "absolute", inset: 0, zIndex: 0 }}
       dpr={[1, 2]}
-      camera={{ position: [0, 140, 310], fov: 52, near: 0.1, far: 5000 }}
+      camera={{ position: [0, 165, 380], fov: 47, near: 0.1, far: 5000 }}
       gl={{ antialias: true, alpha: false }}
       onCreated={({ camera, gl, scene }) => {
         // Wide cinematic composition — ridge in upper third, foreground visible
-        camera.position.set(0, 140, 310);
-        camera.lookAt(0, 22, 0);
+        camera.position.set(0, 165, 380);
+        camera.lookAt(0, 14, 0);
         camera.updateProjectionMatrix();
 
         // Deterministic clear + fog baseline
@@ -94,9 +94,9 @@ export default function TerrainStage({ granularity, terrainMetrics }: TerrainSta
           minPolarAngle={1.107}
           maxPolarAngle={1.107}
           rotateSpeed={0.55}
-          minDistance={180}
-          maxDistance={600}
-          target={[0, 22, 0]}
+          minDistance={220}
+          maxDistance={700}
+          target={[0, 14, 0]}
         />
       )}
 
