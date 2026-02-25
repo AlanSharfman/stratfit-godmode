@@ -1,22 +1,13 @@
 .wrapper {
   display: flex;
-  gap: 8px;
-  padding: 14px 18px;
-  background: linear-gradient(
-    180deg,
-    rgba(14, 22, 36, 0.82),
-    rgba(8, 14, 24, 0.78)
-  );
-  border: 1px solid rgba(34, 211, 238, 0.18);
+  gap: 10px;
+  padding: 12px 16px;
   border-radius: 14px;
-  backdrop-filter: blur(18px);
-
-  /* Cyan rim glow + grounding shadow */
+  background: rgba(8, 12, 18, 0.55);
+  border: 1px solid rgba(120, 180, 255, 0.22);
+  backdrop-filter: blur(10px);
   box-shadow:
-    0 0 18px rgba(34, 211, 238, 0.08),
-    0 0 1px rgba(34, 211, 238, 0.25),
-    0 8px 24px rgba(0, 0, 0, 0.50),
-    0 2px 6px rgba(0, 0, 0, 0.35),
+    0 10px 30px rgba(0, 0, 0, 0.45),
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
@@ -25,7 +16,7 @@
   background: transparent;
   border: none;
   outline: none;
-  color: #d7e6ff;
+  color: rgba(220, 240, 255, 0.95);
   font-size: 14px;
 }
 
@@ -34,11 +25,11 @@
 }
 
 .button {
-  padding: 6px 14px;
-  border-radius: 8px;
-  border: 1px solid rgba(120, 180, 255, 0.35);
-  background: rgba(60, 120, 200, 0.25);
-  color: #cfe6ff;
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(120, 180, 255, 0.32);
+  background: rgba(40, 110, 200, 0.22);
+  color: rgba(220, 240, 255, 0.95);
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;

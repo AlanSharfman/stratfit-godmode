@@ -743,14 +743,14 @@
 }
 
 /* ── Question Input Bar dock ── */
-/* ── Glass command surface — bottom of centre column ── */
+/* ── Glass command surface — fixed to viewport ── */
 .questionBar {
-  position: absolute;
-  bottom: 24px;
+  position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  width: min(650px, 92%);
-  z-index: var(--z-controls);
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  width: min(680px, calc(100vw - 32px));
+  z-index: 9999;
   pointer-events: auto;
 }
 
