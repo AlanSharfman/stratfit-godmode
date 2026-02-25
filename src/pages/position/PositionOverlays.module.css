@@ -751,15 +751,34 @@
 }
 
 /* ── Question Input Bar dock ── */
-/* ── Question bar — bottom of centre column ── */
+/* ── Glass command surface — bottom of centre column ── */
 .questionBar {
   position: absolute;
   bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
-  width: min(520px, 90%);
+  width: min(650px, 92%);
   z-index: var(--z-controls);
   pointer-events: auto;
+}
+
+/* Terrain-anchoring radial glow behind the bar */
+.questionBar::before {
+  content: "";
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 110%;
+  height: 80px;
+  background: radial-gradient(
+    ellipse 60% 80% at 50% 100%,
+    rgba(34, 211, 238, 0.08) 0%,
+    rgba(34, 211, 238, 0.03) 40%,
+    transparent 80%
+  );
+  pointer-events: none;
+  z-index: -1;
 }
 
 .railTabActive {
