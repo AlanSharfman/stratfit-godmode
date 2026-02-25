@@ -198,6 +198,38 @@
   pointer-events: none;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   GODMODE MINI-WIDGETS — Animated KPI indicators
+   ═══════════════════════════════════════════════════════════════ */
+
+.widget {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 4px 0 2px;
+  min-height: 22px;
+}
+
+.burnBars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 20px;
+}
+
+.burnBar {
+  width: 5px;
+  border-radius: 2px 2px 0 0;
+  background: linear-gradient(180deg, #ef4444 0%, #dc2626 60%, #991b1b 100%);
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);
+  animation: burnPulse 1.4s ease-in-out infinite alternate;
+}
+
+@keyframes burnPulse {
+  0% { opacity: 0.55; transform: scaleY(0.85); }
+  100% { opacity: 1; transform: scaleY(1.15); }
+}
+
 .kpiLabel {
   font-family: var(--sf-mono);
   font-size: 10px;
