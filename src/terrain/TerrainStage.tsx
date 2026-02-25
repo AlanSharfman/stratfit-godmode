@@ -75,7 +75,7 @@ export default function TerrainStage({ granularity, terrainMetrics }: TerrainSta
       onCreated={({ camera, gl, scene }) => {
         // Deterministic camera lock (prevents "close-up blob / drift")
         camera.position.set(0, 143, 286);
-        camera.lookAt(0, 0, 0);
+        camera.lookAt(0, -70, 0);
         camera.updateProjectionMatrix();
 
         // Deterministic clear + fog baseline
@@ -94,7 +94,7 @@ export default function TerrainStage({ granularity, terrainMetrics }: TerrainSta
           minPolarAngle={1.107}
           maxPolarAngle={1.107}
           rotateSpeed={0.55}
-          target={[0, 0, 0]}
+          target={[0, -70, 0]}
         />
       )}
 
