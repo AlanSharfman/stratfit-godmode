@@ -18,6 +18,11 @@ export type DemoStop = {
   camPos: { x: number; y: number; z: number };
   camLookAt: { x: number; y: number; z: number };
 
+  // Optional cinematic overrides (safe defaults if omitted)
+  fov?: number; // degrees
+  zoomInFovDelta?: number; // e.g. 4 means zoom from fov -> fov-4 during hold
+  spotlightRadiusPx?: number; // UI spotlight size hint
+
   title: string;
   headline: string;
   subline: string;

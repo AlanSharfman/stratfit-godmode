@@ -1,1 +1,5 @@
-export { default } from "@/routes/StrategyStudioRoute";
+import StudioPage from "@/pages/studio/StudioPage"
+
+export default function StudioRoute() {
+  return <StudioPage />
+}

@@ -1,129 +1,131 @@
 // src/hooks/useVoiceInterface.ts
 // STRATFIT — Voice Mode Interface
-// "Her" Algorithm — Upbeat, Female, Natural voice synthesis
-// Uses Web Speech API with instant interrupt for responsive feedback
+// NASA Documentary Profile — clear, crisp, awe-inspiring female voice
+// Anti-jitter: Chrome speechSynthesis keepAlive + guarded cancellation
 
 import { useEffect, useRef } from 'react';
 import { useUIStore } from '../state/uiStore';
 
+/**
+ * Voice priority — NASA documentary female.
+ * Google UK English Female is the gold standard on Chrome.
+ * Samantha / Karen are the best macOS options.
+ * Microsoft Aria is the best Windows neural voice.
+ */
+function pickVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
+  const priority = [
+    "Google UK English Female",   // Chrome — best clarity, natural female
+    "Microsoft Aria Online (Natural) - English (United States)", // Edge neural
+    "Microsoft Aria",
+    "Samantha",                   // macOS — warm, authoritative
+    "Karen",                      // macOS Australian — crisp and clean
+    "Moira",                      // macOS Irish — rich tone
+    "Tessa",                      // macOS South African — clear diction
+    "Microsoft Zira Desktop",
+    "Microsoft Zira",
+    "Google US English",
+  ];
+  for (const name of priority) {
+    const v = voices.find((v) => v.name === name);
+    if (v) return v;
+  }
+  // Any voice with "female" in name
+  const femaleGuess = voices.find((v) => /female/i.test(v.name));
+  if (femaleGuess) return femaleGuess;
+  // Any English voice that isn't a known male
+  return voices.find((v) =>
+    v.lang.startsWith('en') &&
+    !['david', 'daniel', 'mark', 'alex', 'fred', 'george', 'thomas'].some((m) =>
+      v.name.toLowerCase().includes(m)
+    )
+  ) ?? null;
+}
+
+// Chrome bug: speechSynthesis silently pauses after ~15 seconds.
+// Fix: nudge it every 10s while speaking.
+let _keepAliveTimer: ReturnType<typeof setInterval> | null = null;
+
+function startKeepAlive() {
+  if (_keepAliveTimer) return;
+  _keepAliveTimer = setInterval(() => {
+    if (!window.speechSynthesis.speaking) {
+      stopKeepAlive();
+      return;
+    }
+    window.speechSynthesis.pause();
+    window.speechSynthesis.resume();
+  }, 10_000);
+}
+
+function stopKeepAlive() {
+  if (_keepAliveTimer) {
+    clearInterval(_keepAliveTimer);
+    _keepAliveTimer = null;
+  }
+}
+
 export const useVoiceInterface = (textToSpeak: string | null) => {
   const isVoiceEnabled = useUIStore((s) => s.isVoiceEnabled);
   const lastSpokenRef = useRef<string | null>(null);
-  
+
   useEffect(() => {
-    // Skip if speech synthesis not available
-    if (typeof window === 'undefined' || !window.speechSynthesis) {
-      return;
-    }
-    
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+
     const synth = window.speechSynthesis;
-    
-    // If no text or voice disabled, cancel any ongoing speech
+
     if (!textToSpeak || !isVoiceEnabled) {
       synth.cancel();
+      stopKeepAlive();
       lastSpokenRef.current = null;
       return;
     }
-    
-    // Don't repeat the same text
-    if (textToSpeak === lastSpokenRef.current) {
-      return;
-    }
-    
-    // 1. CANCEL previous speech immediately (The "Interrupt" Protocol)
-    synth.cancel();
-    
-    // Small delay to ensure cancel completes
-    const speakTimeout = setTimeout(() => {
-      // 2. CONFIGURE the voice
-      const utterance = new SpeechSynthesisUtterance(textToSpeak);
-      
-      // TUNING FOR "UPBEAT FEMALE" — The "Her" Profile
-      utterance.rate = 1.1;   // Brisk and energetic (Standard is 1.0)
-      utterance.pitch = 1.05; // Slightly higher/brighter (Standard is 1.0)
-      utterance.volume = 1.0; // Full volume for clarity
-      
-      // 3. VOICE SELECTION (The "Her" Algorithm)
-      // Prioritize specific high-quality female voices
-      const voices = synth.getVoices();
-      
-      const preferredVoice = voices.find(v => 
-        // Chrome's "Google US English" — Neural/AI voice, naturally female-sounding
-        v.name === 'Google US English' || 
-        // Windows high-quality female
-        v.name.includes('Microsoft Zira') || 
-        // Mac default female (excellent quality)
-        v.name.includes('Samantha') || 
-        // iOS/Mac high quality female
-        v.name.includes('Victoria') ||
-        // UK female voice
-        v.name.includes('Google UK English Female') ||
-        // Another Mac option
-        v.name.includes('Karen') ||
-        // General fallback — any voice with "female" in the name
-        v.name.toLowerCase().includes('female')
-      );
 
-      if (preferredVoice) {
-        utterance.voice = preferredVoice;
-      } else {
-        // Secondary fallback: Try to find any English voice that's not "Male"
-        const englishFemale = voices.find(v => 
-          v.lang.startsWith('en') && 
-          !v.name.toLowerCase().includes('male') &&
-          !v.name.toLowerCase().includes('david') &&
-          !v.name.toLowerCase().includes('daniel')
-        );
-        if (englishFemale) {
-          utterance.voice = englishFemale;
-        }
-      }
-      
-      // 4. SPEAK
+    if (textToSpeak === lastSpokenRef.current) return;
+
+    synth.cancel();
+    stopKeepAlive();
+
+    // 80ms buffer — ensures cancel() flushes before new utterance queues
+    const timer = setTimeout(() => {
+      const voices = synth.getVoices();
+      const utterance = new SpeechSynthesisUtterance(textToSpeak);
+
+      // ── NASA Documentary Female Profile ──────────────────────────────────
+      // Slow, deliberate, measured — like narrating the cosmos
+      utterance.rate   = 0.88;  // Unhurried, authoritative pacing
+      utterance.pitch  = 0.96;  // Slightly below neutral — gravitas, not squeaky
+      utterance.volume = 1.0;
+
+      const chosen = pickVoice(voices);
+      if (chosen) utterance.voice = chosen;
+
+      utterance.onstart = () => startKeepAlive();
+      utterance.onend   = () => stopKeepAlive();
+      utterance.onerror = () => stopKeepAlive();
+
       synth.speak(utterance);
       lastSpokenRef.current = textToSpeak;
-    }, 50);
-    
-    // Cleanup on unmount or change
-    return () => {
-      clearTimeout(speakTimeout);
-      // Note: We don't cancel here to avoid cutting off mid-sentence
-      // The cancel() at the start of the effect handles interrupts
-    };
+    }, 80);
+
+    return () => clearTimeout(timer);
   }, [textToSpeak, isVoiceEnabled]);
 };
 
 // Hook to preload voices (call once on app init)
 export const usePreloadVoices = () => {
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) {
-      return;
-    }
-    
-    // Voices may load async, trigger the load
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+
     const loadVoices = () => {
-      const voices = window.speechSynthesis.getVoices();
-      if (voices.length > 0) {
-        // Log available voices for debugging
-        console.log('🎙️ Available voices:', voices.map(v => `${v.name} (${v.lang})`).join(', '));
-      }
+      window.speechSynthesis.getVoices();
     };
-    
     loadVoices();
-    
-    // Some browsers need this event
     window.speechSynthesis.onvoiceschanged = loadVoices;
-    
-    return () => {
-      window.speechSynthesis.onvoiceschanged = null;
-    };
+    return () => { window.speechSynthesis.onvoiceschanged = null; };
   }, []);
 };
 
-// Utility to get all available voices (for debugging or future voice selector)
 export const getAvailableVoices = (): SpeechSynthesisVoice[] => {
-  if (typeof window === 'undefined' || !window.speechSynthesis) {
-    return [];
-  }
+  if (typeof window === 'undefined' || !window.speechSynthesis) return [];
   return window.speechSynthesis.getVoices();
 };

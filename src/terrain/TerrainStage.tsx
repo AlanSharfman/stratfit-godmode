@@ -22,14 +22,15 @@ import * as THREE from "three";
 import type { TerrainSurfaceHandle } from "@/terrain/TerrainSurface";
 import TerrainSurface from "@/terrain/TerrainSurface";
 import P50Path from "@/paths/P50Path";
-import TimelineTicks, { type TimeGranularity } from "@/position/TimelineTicks";
+import TimelineTicks, { type TimeGranularity } from "@/terrain/TimelineTicks";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
 import { baselineSeedString } from "@/terrain/seed";
 import MarkerLayer from "@/components/terrain/markers/MarkerLayer";
 import LiquidityFlowLayer from "@/components/terrain/liquidity/LiquidityFlowLayer";
-import HorizonBand from "@/components/position/HorizonBand";
+import HorizonBand from "@/terrain/HorizonBand";
 import { useRenderFlagsStore } from "@/state/renderFlagsStore";
 import type { TerrainMetrics } from "@/terrain/terrainFromBaseline";
+import DemoTourDirector from "@/demo/DemoTourDirector";
 
 type TerrainStageProps = {
   granularity?: TimeGranularity
@@ -44,9 +45,7 @@ export default function TerrainStage({ granularity, terrainMetrics }: TerrainSta
   const horizonMonths = (baseline as any)?.posture?.horizonMonths ?? 36;
 
   // ── Render flags ──
-  const { showMarkers, showFlow, showPaths } = useRenderFlagsStore();
-  // TODO: wire showGrid → TerrainSurface grid prop when available
-  // TODO: wire showRiskField → RiskFieldLayer when implemented
+  const { showMarkers, showFlow, showPaths, watchDemo } = useRenderFlagsStore();
   useEffect(() => {
     if (terrainReady) return;
     let cancelled = false;
@@ -83,26 +82,34 @@ export default function TerrainStage({ granularity, terrainMetrics }: TerrainSta
         scene.fog = new THREE.Fog("#050A10", 320, 2200);
       }}
     >
-      {/* Constrained orbit — horizontal rotation ±45°, no tilt, no zoom, no pan */}
-      <OrbitControls
-        makeDefault
-        enablePan={false}
-        enableZoom={false}
-        minAzimuthAngle={-Math.PI / 4}
-        maxAzimuthAngle={ Math.PI / 4}
-        minPolarAngle={1.107}
-        maxPolarAngle={1.107}
-        rotateSpeed={0.55}
-        target={[0, 0, 0]}
-      />
+      {/* Orbit controls ONLY when not watching demo */}
+      {!watchDemo && (
+        <OrbitControls
+          makeDefault
+          enablePan={false}
+          enableZoom={false}
+          minAzimuthAngle={-Math.PI / 4}
+          maxAzimuthAngle={Math.PI / 4}
+          minPolarAngle={1.107}
+          maxPolarAngle={1.107}
+          rotateSpeed={0.55}
+          target={[0, 0, 0]}
+        />
+      )}
+
+      {/* Demo Tour Director (camera + overlay) mounts INSIDE Canvas */}
+      {watchDemo && terrainReady && (
+        <DemoTourDirector enabled terrainRef={terrainRef} />
+      )}
 
       {/* Deterministic background + fog (redundant by design; guards against overrides) */}
       <color attach="background" args={["#050A10"]} />
       <fog attach="fog" args={["#050A10", 320, 2200]} />
 
       {/* Lights: slightly lifted for marker + tick readability */}
-      <ambientLight intensity={0.70} />
-      <directionalLight position={[120, 180, 120]} intensity={0.90} color="#CFEFFF" />
+      <ambientLight intensity={1.10} />
+      <directionalLight position={[120, 180, 120]} intensity={1.60} color="#CFEFFF" />
+      <directionalLight position={[-80, 120, -60]} intensity={0.55} color="#5ee7ff" />
 
       <HorizonBand />
 

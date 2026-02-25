@@ -39,6 +39,12 @@ export const silEnabled = false;
 export const shlEnabled = true;
 
 /**
+ * Engine debug panel flag
+ * Disabled in live runtime to prevent debug surface exposure.
+ */
+export const engineDebugPanelEnabled = MODE === "demo" && adminConsoleEnabled;
+
+/**
  * Debug flags (all safe)
  */
 export const DEBUG_SHOW_TERRAIN_BOUNDS = false;

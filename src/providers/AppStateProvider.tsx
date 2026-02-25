@@ -3,6 +3,7 @@ import { useSystemBaseline } from "@/system/SystemBaselineProvider";
 import { calculateMetrics, type LeverState, type ScenarioId as MetricsScenarioId } from "@/logic/calculateMetrics";
 import type { ScenarioId } from "@/components/ScenarioSlidePanel";
 import { useSimulationStore } from "@/state/simulationStore";
+import { useCanonicalOutputStore } from "@/core/store/useCanonicalOutputStore";
 import { MODE } from "@/config/featureFlags";
 import { BASELINE_STORAGE_KEY } from "@/onboard/baseline";
 import { mapBaselineToEngine } from "@/engine/baselineToEngineMapper";
@@ -87,11 +88,26 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   const [showLoadPanel, setShowLoadPanel] = useState(false);
 
   const isSimulatingGlobal = useSimulationStore((s) => s.simulationStatus === "running" || s.isSimulating);
+  const canonicalOutput = useCanonicalOutputStore((s) => s.output);
 
   const dataPoints = useMemo(() => {
+    const clamp01 = (n: number) => Math.max(0, Math.min(1, Number.isFinite(n) ? n : 0));
+    // Prefer canonical engine output (truth source — Phase 4 contract)
+    if (canonicalOutput) {
+      return [
+        clamp01(canonicalOutput.simulation.survivalProbability),
+        clamp01(canonicalOutput.simulation.confidenceIndex),
+        clamp01((canonicalOutput.liquidity.runwayMonths ?? 0) / 36),
+        clamp01(canonicalOutput.simulation.confidenceIndex),
+        clamp01(1 - (canonicalOutput.simulation.volatility ?? 0)),
+        clamp01((canonicalOutput.valuation.baseValue ?? 0) / 10_000_000),
+        clamp01(1 - (canonicalOutput.simulation.volatility ?? 0)),
+      ];
+    }
+    // Fallback: lever-based estimate only before first simulation run
     const metrics = calculateMetrics(levers, scenario as unknown as MetricsScenarioId);
     return metricsToDataPoints(metrics);
-  }, [levers, scenario]);
+  }, [canonicalOutput, levers, scenario]);
 
   const value: AppState = {
     hasBaseline,

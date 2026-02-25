@@ -3,7 +3,7 @@ import { useShallow } from "zustand/react/shallow"
 
 import TerrainStage from "@/terrain/TerrainStage"
 import { deriveTerrainMetrics } from "@/terrain/terrainFromBaseline"
-import type { TimeGranularity } from "@/position/TimelineTicks"
+import type { TimeGranularity } from "@/terrain/TimelineTicks"
 
 import { useSystemBaseline } from "@/system/SystemBaselineProvider"
 import { useScenarioStore } from "@/state/scenarioStore"

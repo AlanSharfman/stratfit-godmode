@@ -1,5 +1,5 @@
 import React from "react"
-import type { TimeGranularity } from "@/position/TimelineTicks"
+import type { TimeGranularity } from "@/terrain/TimelineTicks"
 import styles from "../PositionOverlays.module.css"
 
 const GRANULARITY_OPTIONS: { value: TimeGranularity; label: string }[] = [

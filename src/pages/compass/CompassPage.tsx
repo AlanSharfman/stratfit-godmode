@@ -15,6 +15,7 @@ import StrategicSignalTickerRow from "@/components/signals/StrategicSignalTicker
 
 // NEW — signal-driven lava overlay intensity (read-only)
 import { useSignalDrivenLavaIntensity } from "@/logic/lava/useSignalDrivenLavaIntensity";
+import DemoOverlay from "@/components/demo/DemoOverlay";
 
 export default function CompassPage() {
   const [prompt, setPrompt] = useState("");
@@ -58,6 +59,7 @@ export default function CompassPage() {
 
   return (
     <div className={styles.page}>
+      <DemoOverlay />
       {/* HERO */}
       <div className={styles.heroPanel}>
         <h1 className={styles.title}>Where should we explore?</h1>

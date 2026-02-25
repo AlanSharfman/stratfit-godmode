@@ -13,7 +13,10 @@ type Props = {
   terrainRef: React.RefObject<TerrainSurfaceHandle>
   horizonMonths?: number
   rebuildKey?: string
+  granularity?: TimeGranularity
 }
+
+export type TimeGranularity = "month" | "quarter" | "year"
 
 function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t
@@ -48,20 +51,19 @@ function samplePathPoint(
   return new THREE.Vector3(x, y, z)
 }
 
-function buildTickLabels(horizonMonths: number): { t: number; label: string }[] {
+function buildTickLabels(horizonMonths: number, granularity: TimeGranularity = "quarter"): { t: number; label: string }[] {
   const ticks: { t: number; label: string }[] = []
 
   // "Now" at start
   ticks.push({ t: 0.02, label: "Now" })
 
-  // Quarterly ticks (every 3 months), skip month 0
-  const quarters = Math.floor(horizonMonths / 3)
-  for (let q = 1; q <= quarters; q++) {
-    const month = q * 3
+  const interval = granularity === "month" ? 1 : granularity === "year" ? 12 : 3
+  const steps = Math.floor(horizonMonths / interval)
+  for (let s = 1; s <= steps; s++) {
+    const month = s * interval
     const t = month / horizonMonths
-    if (t > 0.98) continue // don't crowd the end
-
-    const label = month <= 12 ? `${month}mo` : `${month}mo`
+    if (t > 0.98) continue
+    const label = month < 12 ? `${month}mo` : `${month / 12}yr`
     ticks.push({ t, label })
   }
 
@@ -88,13 +90,13 @@ const TICK_LINE_STYLE: React.CSSProperties = {
   margin: "0 auto 3px",
 }
 
-export default function TimelineTicks({ terrainRef, horizonMonths = 36, rebuildKey }: Props) {
+export default function TimelineTicks({ terrainRef, horizonMonths = 36, rebuildKey, granularity = "quarter" }: Props) {
   const [ticks, setTicks] = useState<Tick[]>([])
 
   const x0 = useMemo(() => -TERRAIN_CONSTANTS.width * 0.36, [])
   const x1 = useMemo(() => TERRAIN_CONSTANTS.width * 0.36, [])
 
-  const tickDefs = useMemo(() => buildTickLabels(horizonMonths), [horizonMonths])
+  const tickDefs = useMemo(() => buildTickLabels(horizonMonths, granularity), [horizonMonths, granularity])
 
   useEffect(() => {
     const terrain = terrainRef.current
