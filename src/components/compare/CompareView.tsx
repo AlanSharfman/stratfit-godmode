@@ -28,6 +28,10 @@ import ScenarioMountain from "@/components/mountain/ScenarioMountain";
 import { TerrainWithFallback } from "@/components/terrain/TerrainFallback2D";
 
 import ScenarioStrip from "./ScenarioStrip";
+import CompareScenarioStrip from "./CompareScenarioStrip";
+import CompareKpiOverlay from "./CompareKpiOverlay";
+import SnapshotComparePanel from "./SnapshotComparePanel";
+import { useCompareScenarioOverride } from "./useCompareScenarioOverride";
 import MetricsStrip from "./MetricsStrip";
 import DeltaIntelligenceTable from "./DeltaIntelligenceTable";
 import KPIDeltaStrip from "./KPIDeltaStrip";
@@ -56,6 +60,8 @@ const DEFAULT_DATA_POINTS = [0.5, 0.5, 0.6, 0.4, 0.5, 0.45, 0.35];
 // ═══════════════════════════════════════════════════════════════════════════
 
 const CompareView: React.FC = memo(() => {
+  // STEP 25: Compare-local override + restore on exit
+  useCompareScenarioOverride();
   // ── Store selectors ────────────────────────────────────────────────
   const {
     currentStructure,
@@ -256,6 +262,14 @@ const CompareView: React.FC = memo(() => {
         />
       </div>
 
+      {/* STEP 24: Compare-local scenario selection + persistence */}
+      <CompareScenarioStrip />
+
+      {/* STEP 28: KPI overlay (Baseline vs Scenario + deltas) */}
+      <CompareKpiOverlay />
+
+      {/* STEP 21: snapshot-driven narrative + deltas overlay */}
+      <SnapshotComparePanel />
     </div>
   );
 });

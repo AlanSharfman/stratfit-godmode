@@ -5,6 +5,7 @@
 
 import React, { useMemo, useRef, useEffect } from "react";
 import styles from "./ComparePage.module.css";
+import { kpiVal, kpiText } from "./compareKpi";
 
 export type TimeMetric = "off" | "cash" | "arr" | "survival";
 

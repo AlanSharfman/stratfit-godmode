@@ -28,11 +28,11 @@ import TimeInstrumentStrip, { type TimeMetric } from "./TimeInstrumentStrip";
 import { CompactConfidenceGauge } from "@/components/valuation/ConfidenceGauge";
 import { calculateModelConfidence } from "@/logic/confidence/calculateModelConfidence";
 import styles from "./ComparePage.module.css";
+import { extractKpis, BASELINE_ID } from "./compareKpi";
 
 // ────────────────────────────────────────────────────────────────────────
 // Scenario IDs
 // ────────────────────────────────────────────────────────────────────────
-const BASELINE_ID: ScenarioId = "base";
 const SCENARIO_A_ID: ScenarioId = "upside";
 const SCENARIO_B_ID: ScenarioId = "downside";
 
@@ -46,20 +46,6 @@ const SCENARIO_OPTIONS: { id: ScenarioId; label: string }[] = [
 // WebGL detection (cached)
 // ────────────────────────────────────────────────────────────────────────
 const webglSupported = isWebGLSupported();
-
-// ────────────────────────────────────────────────────────────────────────
-// Helper: extract KPI set from engine result
-// ────────────────────────────────────────────────────────────────────────
-type KPISet = Record<string, { value: number }>;
-
-function extractKpis(
-  engineResults: Record<string, { kpis: Record<string, { value: number }> }>,
-  scenarioId: string
-): KPISet | null {
-  const result = engineResults[scenarioId];
-  if (!result?.kpis) return null;
-  return result.kpis;
-}
 
 // ────────────────────────────────────────────────────────────────────────
 // ComparePage Component
@@ -104,17 +90,17 @@ const ComparePage: React.FC = () => {
   );
 
   const baselineKpis = useMemo(
-    () => extractKpis(engineResults as Record<string, { kpis: Record<string, { value: number }> }>, BASELINE_ID),
+    () => extractKpis(engineResults, BASELINE_ID),
     [engineResults]
   );
 
   const scenarioAKpis = useMemo(
-    () => extractKpis(engineResults as Record<string, { kpis: Record<string, { value: number }> }>, scenarioAId),
+    () => extractKpis(engineResults, scenarioAId),
     [engineResults, scenarioAId]
   );
 
   const scenarioBKpis = useMemo(
-    () => extractKpis(engineResults as Record<string, { kpis: Record<string, { value: number }> }>, scenarioBId),
+    () => extractKpis(engineResults, scenarioBId),
     [engineResults, scenarioBId]
   );
 

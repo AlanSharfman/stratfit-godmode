@@ -57,13 +57,6 @@ export default function CommandConsoleBar({ modeLabel = "Decision Console", onSu
       <div className={styles.vignetteLayer} aria-hidden="true" />
       <div className={styles.wrap}>
       <div className={styles.shell}>
-        {value.length === 0 && (
-          <div className={styles.hintRow} aria-hidden="true">
-            <span className={styles.hintSys}>SYS</span>
-            <span className={styles.hintText}>{hint}</span>
-          </div>
-        )}
-
         <div className={styles.modePill}>{modeLabel}</div>
 
         <input
@@ -83,6 +76,13 @@ export default function CommandConsoleBar({ modeLabel = "Decision Console", onSu
 
         <div className={`${styles.progress} ${isLoading ? styles.progressActive : ""}`} />
       </div>
+
+      {value.length === 0 && (
+        <div className={styles.exampleRow} aria-hidden="true">
+          <div className={styles.exampleLabel}>EXAMPLE</div>
+          <div className={styles.exampleText}>{hint}</div>
+        </div>
+      )}
 
       <div className={`${styles.toast} ${toast ? styles.toastShow : ""}`}>{toast ?? ""}</div>
       </div>

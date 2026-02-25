@@ -55,7 +55,6 @@ function shlIsOn(weight: number): boolean {
 export default function PositionPage() {
   const navigate = useNavigate()
   const [granularity, setGranularity] = useState<TimeGranularity>("quarter")
-  const [showDiagnostics, setShowDiagnostics] = useState(true)
   const [rippleKey, setRippleKey] = useState(0)
 
   useEffect(() => {
@@ -114,6 +113,21 @@ export default function PositionPage() {
     const riskIndexFromEngine = extractRiskIndex(engineResults)
     return buildPositionViewModel(baseline, { riskIndexFromEngine })
   }, [baseline, engineResults])
+
+  const terrainSignals = useMemo(() => {
+    const byKey = new Map((vm?.diagnostics ?? []).map((d) => [d.key, d]))
+    const order = ["capitalEfficiency", "growthQuality", "liquidity", "costPressure"] as const
+    return order
+      .map((k) => byKey.get(k))
+      .filter(Boolean)
+      .map((d) => ({
+        key: d!.key,
+        label: d!.title,
+        tone: d!.tone,
+        detail: d!.text,
+        metricLine: d!.metricLine,
+      }))
+  }, [vm])
 
   // ── Render flags store ──
   const renderFlags = useRenderFlagsStore()
@@ -180,8 +194,14 @@ export default function PositionPage() {
 
       {/* ═══ LAYER 1: Fixed full-bleed terrain canvas ═══ */}
       <div className={styles.canvasLayer}>
-        <TerrainStage granularity={granularity} terrainMetrics={terrainMetrics} lockCamera />
+        <TerrainStage
+          granularity={granularity}
+          terrainMetrics={terrainMetrics}
+          lockCamera
+          signals={terrainSignals}
+        />
         <div className={styles.canvasVignette} aria-hidden="true" />
+        <div className={styles.terrainBezel} aria-hidden="true" />
         {rippleKey > 0 && (
           <div key={rippleKey} className={styles.terrainRipple} aria-hidden="true" />
         )}
@@ -215,6 +235,10 @@ export default function PositionPage() {
             </div>
           </Link>
 
+          <div className={styles.execSummaryDock} aria-label="Executive summary">
+            <ExecutiveNarrativeCard vm={vm} />
+          </div>
+
           <div className={styles.legendDock} aria-label="Terrain legend">
             <TerrainLegend />
           </div>
@@ -222,11 +246,6 @@ export default function PositionPage() {
 
         {/* ── CENTRE COLUMN — transparent, question bar ── */}
         <div className={styles.centreCol}>
-          {/* Top KPI HUD strip */}
-          <div className={styles.kpiDock} aria-label="KPI HUD">
-            <KPIOverlay vm={vm} />
-          </div>
-
           {/* Top nav row */}
           <nav className={styles.pageNav} aria-label="Primary navigation">
             <NavLink to={ROUTES.INITIATE} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Initiate</NavLink>
@@ -238,6 +257,11 @@ export default function PositionPage() {
             <NavLink to={ROUTES.ASSESSMENT} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Assessment</NavLink>
             <NavLink to={ROUTES.COMING_FEATURES} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Coming Features</NavLink>
           </nav>
+
+          {/* KPI HUD strip — must sit below the nav row */}
+          <div className={styles.kpiDock} aria-label="KPI HUD">
+            <KPIOverlay vm={vm} />
+          </div>
 
           <IntelligenceStrip />
 
@@ -259,24 +283,13 @@ export default function PositionPage() {
 
         {/* ── RIGHT COLUMN ── */}
         <div className={styles.rightCol}>
-          <DiagnosticsSummary vm={vm} />
-          <ExecutiveNarrativeCard vm={vm} />
+          <div className={styles.commandCentreDock} aria-label="Command Centre">
+            <CommandCentrePanel groups={diagnosticGroups} title="Command Centre" />
+          </div>
 
-          <details className={styles.accordionSection} open={false}>
-            <summary className={styles.accordionSummary}>Diagnostics</summary>
-            {showDiagnostics && (
-              <CommandCentrePanel
-                groups={diagnosticGroups}
-                title="Diagnostics"
-                onClose={() => setShowDiagnostics(false)}
-              />
-            )}
-          </details>
-
-          <details className={styles.accordionSection} open={false}>
-            <summary className={styles.accordionSummary}>Baseline Intelligence</summary>
+          <div className={styles.baselineIntelDock} aria-label="Baseline Intelligence">
             <BaselineIntelligencePanel />
-          </details>
+          </div>
         </div>
       </div>
     </div>

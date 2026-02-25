@@ -7,6 +7,7 @@
 
 import React from "react";
 import styles from "./ComparePage.module.css";
+import { kpiVal, kpiText } from "./compareKpi";
 
 interface KPISet {
   runway?: { value: number };

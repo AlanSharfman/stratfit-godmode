@@ -17,7 +17,7 @@
 
 import React, { Suspense, useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
+import { Html, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import type { TerrainSurfaceHandle } from "@/terrain/TerrainSurface";
 import TerrainSurface from "@/terrain/TerrainSurface";
@@ -39,13 +39,22 @@ type TerrainStageProps = {
   terrainMetrics?: TerrainMetrics
   /** When true, no OrbitControls are mounted — camera is fully programmatic. */
   lockCamera?: boolean
+  signals?: Array<{
+    key: string
+    label: string
+    tone: "strong" | "watch" | "risk"
+    detail: string
+    metricLine: string
+  }>
 }
 
-export default function TerrainStage({ granularity, terrainMetrics, lockCamera = false }: TerrainStageProps) {
+export default function TerrainStage({ granularity, terrainMetrics, lockCamera = false, signals }: TerrainStageProps) {
   const terrainRef = useRef<TerrainSurfaceHandle>(null!);
   const [terrainReady, setTerrainReady] = useState(false);
   const { baseline } = useSystemBaseline();
   const rebuildKey = baselineSeedString(baseline as any);
+
+  const [hoveredSignalKey, setHoveredSignalKey] = useState<string | null>(null)
 
   // ── Render flags ──
   const { showMarkers, showFlow, showPaths, watchDemo } = useRenderFlagsStore();
@@ -129,6 +138,112 @@ export default function TerrainStage({ granularity, terrainMetrics, lockCamera =
             <BaselineTimelineTicks visible terrainRef={terrainRef} />
             <LiquidityFlowLayer terrainRef={terrainRef} enabled={showFlow} />
             <MarkerLayer terrainRef={terrainRef} enabled={showMarkers} />
+
+            {/* Position: On-terrain diagnostic labels (hover to reveal detail) */}
+            {signals && signals.length > 0 && (
+              <group name="position-terrain-signals" frustumCulled={false} renderOrder={90}>
+                {signals.map((s, idx) => {
+                  const offsets: Array<[number, number]> = [
+                    [-85, -55],
+                    [-18, -35],
+                    [52, -25],
+                    [92, -48],
+                  ]
+                  const [x, z] = offsets[idx] ?? [0, -35]
+                  const y = terrainRef.current?.getHeightAt(x, z) ?? 0
+
+                  const dotColor =
+                    s.tone === "strong"
+                      ? "rgba(40,255,190,1)"
+                      : s.tone === "watch"
+                        ? "rgba(250,204,21,1)"
+                        : "rgba(255,78,128,1)"
+
+                  const isHover = hoveredSignalKey === s.key
+                  return (
+                    <group key={s.key} position={[x, y + 2.4, z]}>
+                      <mesh renderOrder={91}>
+                        <sphereGeometry args={[0.35, 16, 16]} />
+                        <meshStandardMaterial
+                          color="#22d3ee"
+                          emissive="#22d3ee"
+                          emissiveIntensity={0.25}
+                          transparent
+                          opacity={0.75}
+                          depthWrite={false}
+                        />
+                      </mesh>
+
+                      <Html distanceFactor={85} center style={{ pointerEvents: "auto" }}>
+                        <div
+                          onMouseEnter={() => setHoveredSignalKey(s.key)}
+                          onMouseLeave={() => setHoveredSignalKey((k) => (k === s.key ? null : k))}
+                          style={{
+                            fontFamily: "ui-monospace, JetBrains Mono, monospace",
+                            color: "rgba(226,232,240,0.96)",
+                            background: "rgba(10,14,20,0.72)",
+                            border: "1px solid rgba(34,211,238,0.24)",
+                            borderRadius: 10,
+                            padding: "8px 10px",
+                            boxShadow: "0 10px 26px rgba(0,0,0,0.48)",
+                            backdropFilter: "blur(10px)",
+                            WebkitBackdropFilter: "blur(10px)",
+                            whiteSpace: "nowrap",
+                            cursor: "default",
+                            minWidth: 180,
+                          }}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span
+                              style={{
+                                width: 8,
+                                height: 8,
+                                borderRadius: 999,
+                                background: dotColor,
+                                boxShadow: `0 0 14px ${dotColor.replace(",1)", ",0.22)")}`,
+                                flex: "0 0 auto",
+                              }}
+                            />
+                            <span style={{ fontSize: 11, letterSpacing: "0.10em", textTransform: "uppercase" }}>
+                              {s.label}
+                            </span>
+                          </div>
+
+                          <div style={{ marginTop: 4, fontSize: 11, color: "rgba(148,163,184,0.82)" }}>
+                            {s.metricLine}
+                          </div>
+
+                          {isHover && (
+                            <div
+                              style={{
+                                marginTop: 8,
+                                fontSize: 12,
+                                color: "rgba(241,245,249,0.92)",
+                                maxWidth: 360,
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                borderTop: "1px solid rgba(255,255,255,0.06)",
+                                paddingTop: 6,
+                                animation: "sfType 900ms steps(36,end) 1",
+                              }}
+                            >
+                              {s.detail}
+                            </div>
+                          )}
+
+                          <style>{`
+                            @keyframes sfType {
+                              from { max-width: 0; opacity: 0.35; }
+                              to { max-width: 360px; opacity: 1; }
+                            }
+                          `}</style>
+                        </div>
+                      </Html>
+                    </group>
+                  )
+                })}
+              </group>
+            )}
           </>
         )}
       </Suspense>
