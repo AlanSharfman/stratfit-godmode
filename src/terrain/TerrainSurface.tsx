@@ -1,12 +1,14 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from "react"
 import * as THREE from "three"
-import { buildTerrainWithMetrics, sampleTerrainHeight } from "./buildTerrain"
+import { useSystemBaseline } from "@/system/SystemBaselineProvider"
+import { useNarrativeStore } from "@/state/narrativeStore"
+import { useRenderFlagsStore } from "@/state/renderFlagsStore"
+
+import type { TerrainMetrics } from "@/terrain/terrainFromBaseline"
 import { baselineReliefScalar, baselineSeedString, createSeed } from "@/terrain/seed"
 import { TERRAIN_CONSTANTS } from "@/terrain/terrainConstants"
-import { createTerrainSolidMaterial, createTerrainWireMaterial } from "./terrainMaterials"
-import { useNarrativeStore } from "@/state/narrativeStore"
-import { useSystemBaseline } from "@/system/SystemBaselineProvider"
-import type { TerrainMetrics } from "@/terrain/terrainFromBaseline"
+import { buildTerrainWithMetrics, sampleTerrainHeight } from "@/terrain/buildTerrain"
+import { createTerrainSolidMaterial, createTerrainWireMaterial } from "@/terrain/terrainMaterials"
 
 export type TerrainSurfaceHandle = {
   getHeightAt: (worldX: number, worldZ: number) => number
@@ -27,8 +29,10 @@ const TerrainSurface = forwardRef<TerrainSurfaceHandle, Props>(function TerrainS
   const latticeRef = useRef<THREE.Mesh>(null)
 
   const clearSelected = useNarrativeStore((s) => s.clearSelected)
-
   const { baseline } = useSystemBaseline()
+
+  // ✅ Existing flag; no new state introduced
+  const showGrid = useRenderFlagsStore((s) => s.showGrid)
 
   const baselineAny = baseline as any
 
@@ -46,26 +50,20 @@ const TerrainSurface = forwardRef<TerrainSurfaceHandle, Props>(function TerrainS
     }
   }, [geometry])
 
-  // Height-based AO gradient — deeper valleys darker, peaks lighter + faint teal tint.
-  // onBeforeCompile must be set before first shader compile, so imperative useMemo.
   const solidMat = useMemo(() => createTerrainSolidMaterial(), [])
   const wireMat = useMemo(() => createTerrainWireMaterial(), [])
 
-  useEffect(() => {
-    return () => { solidMat.dispose() }
-  }, [solidMat])
+  useEffect(() => () => solidMat.dispose(), [solidMat])
+  useEffect(() => () => wireMat.dispose(), [wireMat])
 
   useEffect(() => {
-    return () => { wireMat.dispose() }
-  }, [wireMat])
-
-  useEffect(() => {
-    for (const ref of [solidRef, latticeRef]) {
-      if (!ref.current) continue
-      ref.current.rotation.x = -Math.PI / 2
-      ref.current.position.set(0, -6, 0)
-      ref.current.scale.set(1, 1, 1)
-      ref.current.frustumCulled = false
+    // Deterministic transform setup
+    for (const r of [solidRef, latticeRef]) {
+      if (!r.current) continue
+      r.current.rotation.x = -Math.PI / 2
+      r.current.position.set(0, -6, 0)
+      r.current.scale.set(1, 1, 1)
+      r.current.frustumCulled = false
     }
   }, [])
 
@@ -100,10 +98,12 @@ const TerrainSurface = forwardRef<TerrainSurfaceHandle, Props>(function TerrainS
         <primitive object={solidMat} attach="material" />
       </mesh>
 
-      {/* Embedded lattice */}
-      <mesh ref={latticeRef} geometry={geometry} renderOrder={1}>
-        <primitive object={wireMat} attach="material" />
-      </mesh>
+      {/* Wire/lattice overlay — ONLY when showGrid is enabled */}
+      {showGrid && (
+        <mesh ref={latticeRef} geometry={geometry} renderOrder={1} name="terrain-lattice">
+          <primitive object={wireMat} attach="material" />
+        </mesh>
+      )}
     </>
   )
 })
