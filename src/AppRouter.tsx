@@ -3,7 +3,7 @@ import App from "@/App"
 
 import PositionPage from "@/pages/position/PositionPage"
 import ObjectivePage from "@/pages/objective/ObjectivePage"
-import ComparePage from "@/components/compare/ComparePage"
+import ComparePage from "@/pages/compare/ComparePage"
 import RiskPage from "@/components/Risk/RiskPage"
 import BaselinePage from "@/pages/baseline/BaselinePage"
 import ValuationPage from "@/pages/valuation/ValuationPage"

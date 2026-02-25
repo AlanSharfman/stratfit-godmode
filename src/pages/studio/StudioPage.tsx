@@ -43,41 +43,50 @@ export default function StudioPage() {
 
   return (
     <div style={{ padding: 16 }}>
-      <h3>Studio Runtime</h3>
+      <div style={{ marginBottom: 10 }}>
+        <strong>STUDIO</strong> — Scenario Builder
+      </div>
 
-      <div>
+      <div style={{ fontSize: 13, opacity: 0.85, marginBottom: 10 }}>
         <strong>Question:</strong> {rt.questionContext.question}
       </div>
 
-      <div>
-        <strong>Scenarios:</strong> {rt.scenarios.length}
+      <div style={{ fontSize: 13, opacity: 0.85, marginBottom: 10 }}>
+        <strong>Scenarios:</strong> {rt.scenarios.length} &nbsp;|&nbsp;
+        <strong>Compare Ready:</strong> {compareReady ? "YES" : "NO"}
       </div>
 
-      <div>
-        <strong>Compare Ready:</strong>{" "}
-        {compareReady ? "YES" : "NO"}
-      </div>
-
-      {!compareReady && (
+      <div style={{ display: "flex", gap: 10 }}>
         <button
-          onClick={() =>
-            studioSessionStore.addScenario(createScenarioB(rt.scenarios[0]))
-          }
+          onClick={() => studioSessionStore.addScenario(createScenarioB(rt.scenarios[0]))}
           style={{
-            marginTop: 12,
-            padding: "8px 16px",
-            borderRadius: 8,
-            border: "1px solid rgba(120,180,255,0.35)",
-            background: "rgba(60,120,200,0.25)",
-            color: "#cfe6ff",
+            padding: "8px 12px",
+            borderRadius: 10,
+            border: "1px solid rgba(120,180,255,0.25)",
+            background: "rgba(12,18,28,0.65)",
+            color: "white",
             cursor: "pointer",
-            fontSize: 13,
-            fontWeight: 600,
           }}
         >
           Create Scenario B
         </button>
-      )}
+
+        <button
+          disabled={!compareReady}
+          onClick={() => navigate("/compare")}
+          style={{
+            padding: "8px 12px",
+            borderRadius: 10,
+            border: "1px solid rgba(120,180,255,0.25)",
+            background: compareReady ? "rgba(12,18,28,0.65)" : "rgba(12,18,28,0.35)",
+            color: "white",
+            cursor: compareReady ? "pointer" : "not-allowed",
+            opacity: compareReady ? 1 : 0.6,
+          }}
+        >
+          Open Compare
+        </button>
+      </div>
     </div>
   );
 }
