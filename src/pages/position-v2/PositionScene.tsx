@@ -3,7 +3,6 @@ import styles from "./PositionScene.module.css";
 import TerrainStage from "@/terrain/TerrainStage";
 import { useRenderFlagsStore } from "@/state/renderFlagsStore";
 import CinematicLighting from "./rigs/CinematicLighting";
-import HorizonAtmosphere from "./rigs/HorizonAtmosphere";
 import SkyAtmosphere from "./rigs/SkyAtmosphere";
 
 export default function PositionScene() {
@@ -16,9 +15,8 @@ export default function PositionScene() {
   return (
     <div className={styles.canvasWrapper}>
       <div className={styles.stageMount}>
-        <TerrainStage>
+        <TerrainStage lockCamera>
           <SkyAtmosphere />
-          <HorizonAtmosphere />
           <CinematicLighting />
         </TerrainStage>
       </div>

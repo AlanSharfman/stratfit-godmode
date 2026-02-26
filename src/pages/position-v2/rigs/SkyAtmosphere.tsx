@@ -9,7 +9,7 @@ import { Sky } from "@react-three/drei";
 export default function SkyAtmosphere() {
   return (
     <Sky
-      distance={450000}
+      distance={4500}
       sunPosition={[0.35, 0.12, -0.65]}
       inclination={0.62}
       azimuth={0.26}
