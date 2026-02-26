@@ -69,6 +69,12 @@
   color: rgba(200,220,240,0.7);
 }
 
+.railDivider {
+  height: 1px;
+  background: rgba(255,255,255,0.08);
+  margin: 4px 0;
+}
+
 .metricRow {
   display: flex;
   justify-content: space-between;
@@ -136,7 +142,13 @@
   background: rgba(255,255,255,0.12);
 }
 
-/* DEMO PILL */
+.commandButton[disabled],
+.commandButton[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.demoPill {
 .demoPill {
   position: absolute;
   top: 14px;
@@ -181,7 +193,6 @@
   border: 1px solid rgba(0, 190, 255, 0.22);
 }
 
-/* SPOTLIGHT OVERLAY */
 .spotlight {
   position: absolute;
   inset: 0;
