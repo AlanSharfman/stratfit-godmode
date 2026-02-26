@@ -2,6 +2,7 @@
 // STRATFIT — Valuation Page (First-Class, Probability Bands)
 // Nav Amendment C Lock
 
+import PageShell from "@/layout/PageShell"
 import { useSimulationSelectors } from "@/core/selectors/useSimulationSelectors";
 import CommentaryPanel from "@/components/commentary/CommentaryPanel";
 import KpiStrip from "@/components/kpi/KpiStrip";
@@ -22,36 +23,34 @@ export default function ValuationPage() {
     const high = s.valuationHigh[i] ?? 0;
 
     return (
-        <div className="pageOverlay">
-            <h1>Valuation</h1>
-
+        <PageShell title="Valuation" subtitle="Probability-weighted enterprise value across modelled futures.">
             <KpiStrip />
 
-            <div className="panel">
-                <div className="row">
-                    <div className="k">Probability Band (Month 12)</div>
-                    <div className="v">
-                        {fmtM(low)} — {fmtM(mid)} — {fmtM(high)}
-                    </div>
-                </div>
-
-                <div className="row">
-                    <div className="k">Survival Probability</div>
-                    <div className="v">{(s.survivalProbability * 100).toFixed(0)}%</div>
-                </div>
-
-                <div className="row">
-                    <div className="k">Decision Confidence</div>
-                    <div className="v">{(s.confidenceIndex * 100).toFixed(0)}%</div>
-                </div>
-
-                <div className="row">
-                    <div className="k">Volatility</div>
-                    <div className="v">{(s.volatility * 100).toFixed(0)}%</div>
-                </div>
+            <div style={{
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                borderRadius: 10,
+                padding: "16px 20px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 12,
+            }}>
+                <Row label="Probability Band (Month 12)" value={`${fmtM(low)} — ${fmtM(mid)} — ${fmtM(high)}`} />
+                <Row label="Survival Probability" value={`${(s.survivalProbability * 100).toFixed(0)}%`} />
+                <Row label="Decision Confidence" value={`${(s.confidenceIndex * 100).toFixed(0)}%`} />
+                <Row label="Volatility" value={`${(s.volatility * 100).toFixed(0)}%`} />
             </div>
 
             <CommentaryPanel />
+        </PageShell>
+    );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+    return (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+            <span style={{ fontSize: 13, color: "rgba(255,255,255,0.55)" }}>{label}</span>
+            <span style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.88)", fontVariantNumeric: "tabular-nums" }}>{value}</span>
         </div>
     );
 }

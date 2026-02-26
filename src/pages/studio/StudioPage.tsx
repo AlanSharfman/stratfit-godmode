@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
+import PageShell from "@/layout/PageShell";
 import type { QuestionContext } from "@/domain/question/questionContext";
 import type { ScenarioDraft } from "@/domain/scenario/scenarioDraft";
 
@@ -43,16 +44,12 @@ export default function StudioPage() {
   const compareReady = studioSessionStore.isCompareReady();
 
   return (
-    <div style={{ padding: 16 }}>
-      <div style={{ marginBottom: 10 }}>
-        <strong>STUDIO</strong> — Scenario Builder
-      </div>
-
-      <div style={{ fontSize: 13, opacity: 0.85, marginBottom: 10 }}>
+    <PageShell title="Studio" subtitle="Scenario Builder">
+      <div style={{ fontSize: 13, color: "rgba(255,255,255,0.78)", marginBottom: 10 }}>
         <strong>Question:</strong> {rt.questionContext.question}
       </div>
 
-      <div style={{ fontSize: 13, opacity: 0.85, marginBottom: 10 }}>
+      <div style={{ fontSize: 13, color: "rgba(255,255,255,0.78)", marginBottom: 10 }}>
         <strong>Scenarios:</strong> {rt.scenarios.length} &nbsp;|&nbsp;
         <strong>Compare Ready:</strong> {compareReady ? "YES" : "NO"}
       </div>
@@ -61,12 +58,14 @@ export default function StudioPage() {
         <button
           onClick={() => studioSessionStore.addScenario(createScenarioB(rt.scenarios[0]))}
           style={{
-            padding: "8px 12px",
-            borderRadius: 10,
-            border: "1px solid rgba(120,180,255,0.25)",
-            background: "rgba(12,18,28,0.65)",
-            color: "white",
+            padding: "8px 16px",
+            borderRadius: 6,
+            border: "1px solid rgba(34,211,238,0.15)",
+            background: "rgba(34,211,238,0.06)",
+            color: "rgba(34,211,238,0.8)",
             cursor: "pointer",
+            fontSize: 13,
+            fontWeight: 500,
           }}
         >
           Create Scenario B
@@ -76,18 +75,20 @@ export default function StudioPage() {
           disabled={!compareReady}
           onClick={() => navigate("/compare")}
           style={{
-            padding: "8px 12px",
-            borderRadius: 10,
-            border: "1px solid rgba(120,180,255,0.25)",
-            background: compareReady ? "rgba(12,18,28,0.65)" : "rgba(12,18,28,0.35)",
-            color: "white",
+            padding: "8px 16px",
+            borderRadius: 6,
+            border: "1px solid rgba(34,211,238,0.15)",
+            background: compareReady ? "rgba(34,211,238,0.06)" : "rgba(34,211,238,0.02)",
+            color: "rgba(34,211,238,0.8)",
             cursor: compareReady ? "pointer" : "not-allowed",
-            opacity: compareReady ? 1 : 0.6,
+            opacity: compareReady ? 1 : 0.5,
+            fontSize: 13,
+            fontWeight: 500,
           }}
         >
           Open Compare
         </button>
       </div>
-    </div>
+    </PageShell>
   );
 }

@@ -2,8 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react"
 import type { DiagnosticCardVM, PositionViewModel } from "../overlays/positionState"
 import styles from "./PositionNarrative.module.css"
 
-/* ── Typewriter hook ─────────────────────────────────────────── */
-function useTypewriter(text: string, speed = 18): string {
+/* ── Typewriter hook — slower, line-by-line feel ──────────── */
+function useTypewriter(text: string, speed = 32): string {
   const [displayed, setDisplayed] = useState("")
   const prevRef = useRef(text)
 
@@ -107,9 +107,9 @@ export default function ExecutiveNarrativeCard({ vm }: Props) {
   )
 }
 
-/* ── Single paragraph with typewriter ── */
+/* ── Single paragraph with typewriter — slower pace ── */
 function TypewriterParagraph({ text, className }: { text: string; className?: string }) {
-  const typed = useTypewriter(text, 14)
+  const typed = useTypewriter(text, 28)
   return (
     <p className={className}>
       {typed}

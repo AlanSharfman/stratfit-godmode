@@ -258,10 +258,6 @@ export default function PositionPage() {
               </button>
             )}
           </div>
-
-          <div className={styles.legendDock} aria-label="Terrain legend">
-            <TerrainLegend />
-          </div>
         </div>
 
         {/* ── CENTRE COLUMN — transparent, question bar ── */}
@@ -282,8 +278,6 @@ export default function PositionPage() {
           <div className={styles.kpiDock} aria-label="KPI HUD">
             <KPIOverlay vm={vm} />
           </div>
-
-          <IntelligenceStrip />
 
           <div className={styles.timeScaleDock} aria-label="Time scale control">
             <TimeScaleControl granularity={granularity} setGranularity={setGranularity} />
