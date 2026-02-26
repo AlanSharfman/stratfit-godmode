@@ -9,6 +9,10 @@ import CameraCompositionRig from "@/pages/position-v2/rigs/CameraCompositionRig"
 import TerrainBreathRig from "@/pages/position-v2/rigs/TerrainBreathRig"
 import SkyAtmosphere from "@/pages/position-v2/rigs/SkyAtmosphere"
 import VolumetricHorizon from "@/pages/position-v2/rigs/VolumetricHorizon"
+import TerrainTuningPanel from "@/terrain/v2/TerrainTuningPanel"
+import { DEFAULT_TUNING } from "@/terrain/v2/TerrainSurfaceV2"
+import type { TerrainTuningParams } from "@/terrain/v2/TerrainSurfaceV2"
+import type { TerrainMetrics } from "@/terrain/terrainFromBaseline"
 import { deriveTerrainMetrics } from "@/terrain/terrainFromBaseline"
 import type { TimeGranularity } from "@/terrain/TimelineTicks"
 
@@ -57,6 +61,7 @@ export default function PositionPage() {
   const [granularity, setGranularity] = useState<TimeGranularity>("quarter")
   const [rippleKey, setRippleKey] = useState(0)
   const [commandCentreOpen, setCommandCentreOpen] = useState(true)
+  const [terrainTuning, setTerrainTuning] = useState<TerrainTuningParams>({ ...DEFAULT_TUNING })
 
   useEffect(() => {
     function onRipple() { setRippleKey((k) => k + 1) }
@@ -265,7 +270,23 @@ export default function PositionPage() {
             <TerrainStage
               lockCamera
               pathsEnabled={false}
-              terrainMetrics={terrainMetrics}
+              terrainMetrics={{
+                ...(terrainMetrics ?? {
+                  elevationScale: 1,
+                  roughness: 1,
+                  liquidityDepth: 1,
+                  growthSlope: 0,
+                  volatility: 0,
+                }),
+                // Live tuning overrides
+                ridgeIntensity: terrainTuning.ridgeIntensity,
+                valleyDepth: terrainTuning.valleyDepth,
+                peakSoftness: terrainTuning.peakSoftness,
+                noiseFrequency: terrainTuning.noiseFrequency,
+                microDetailStrength: terrainTuning.microDetailStrength,
+                elevationScale: terrainTuning.elevationScale * (terrainMetrics?.elevationScale ?? 1),
+                roughness: terrainTuning.terrainRoughness * 2 * (terrainMetrics?.roughness ?? 1),
+              } satisfies TerrainMetrics}
               granularity={granularity}
               signals={terrainSignals}
             >
@@ -274,6 +295,7 @@ export default function PositionPage() {
               <SkyAtmosphere />
               <VolumetricHorizon />
             </TerrainStage>
+            <TerrainTuningPanel params={terrainTuning} onChange={setTerrainTuning} />
             <div className={styles.canvasVignette} aria-hidden="true" />
             <div className={styles.terrainBezel} aria-hidden="true" />
             {rippleKey > 0 && (

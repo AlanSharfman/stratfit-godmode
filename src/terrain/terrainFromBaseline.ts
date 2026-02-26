@@ -6,6 +6,12 @@ export interface TerrainMetrics {
   liquidityDepth: number;
   growthSlope: number;
   volatility: number;
+  /** Visual tuning overrides (optional — panel-driven) */
+  ridgeIntensity?: number;       // 0–1
+  valleyDepth?: number;          // 0–1
+  peakSoftness?: number;         // 0–1
+  noiseFrequency?: number;       // 0–3
+  microDetailStrength?: number;  // 0–1
 }
 
 export function deriveTerrainMetrics(inputs: BaselineInputs): TerrainMetrics {

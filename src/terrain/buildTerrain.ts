@@ -156,35 +156,53 @@ function heightfieldFromModel(
     const elevationScale = clampRange(metrics?.elevationScale ?? 1, 0.35, 3.0);
     const roughness = clampRange(metrics?.roughness ?? 1, 0.25, 3.0);
 
-    // 1) Broad undulation (cheap pseudo-noise)
-    const u1 = Math.sin(x * 0.07 + model.seed * 0.001) * 1.2;
-    const u2 = Math.cos(z * 0.06 - model.seed * 0.001) * 1.0;
-    const u3 = Math.sin(x * 0.03 + z * 0.04) * 1.4;
+    // ── Tuning panel overrides (default to neutral when absent) ──
+    const ridgeIntensity = clampRange(metrics?.ridgeIntensity ?? 0.5, 0, 1);
+    const valleyDepth = clampRange(metrics?.valleyDepth ?? 0.45, 0, 1);
+    const peakSoftness = clampRange(metrics?.peakSoftness ?? 0.6, 0, 1);
+    const noiseFreq = clampRange(metrics?.noiseFrequency ?? 1.0, 0.01, 3);
+    const microDetail = clampRange(metrics?.microDetailStrength ?? 0.3, 0, 1);
+
+    // 1) Broad undulation (cheap pseudo-noise) — frequency-scaled
+    const u1 = Math.sin(x * 0.07 * noiseFreq + model.seed * 0.001) * 1.2;
+    const u2 = Math.cos(z * 0.06 * noiseFreq - model.seed * 0.001) * 1.0;
+    const u3 = Math.sin(x * 0.03 * noiseFreq + z * 0.04 * noiseFreq) * 1.4;
     const baseNoise = u1 + u2 + u3;
 
     // Macro lift/valley shaping (low-frequency)
     const macroNoise =
-        Math.sin(x * 0.012 + model.seed * 0.002) *
-        Math.cos(z * 0.01 - model.seed * 0.002);
+        Math.sin(x * 0.012 * noiseFreq + model.seed * 0.002) *
+        Math.cos(z * 0.01 * noiseFreq - model.seed * 0.002);
 
-    // Terrain weighting (realism boost)
-    // Inject baseline-driven multipliers without changing determinism.
-    let h = baseNoise * 1.2 * roughness + macroNoise * 6.0 * elevationScale;
+    // Valley amplification — negative macro regions are deepened
+    const macroShaped = macroNoise < 0
+        ? macroNoise * (1 + valleyDepth * 2)
+        : macroNoise;
 
-    // 2) Mountain peaks (Gaussian bumps)
+    let h = baseNoise * 1.2 * roughness + macroShaped * 6.0 * elevationScale;
+
+    // 2) Mountain peaks (Gaussian bumps) — softened by peakSoftness
     for (const p of model.peaks) {
         const dx = x - p.px;
         const dz = z - p.pz;
         const d2 = (dx * dx + dz * dz) / (p.spread * p.spread);
-        h += p.amp * elevationScale * Math.exp(-d2);
+        const peakH = p.amp * elevationScale * Math.exp(-d2);
+        // Peak softness: power-compress the gaussian contribution
+        h += peakH * lerp(1.0, 0.55, peakSoftness);
     }
 
-    // 3) Main ridge (distance-to-line falloff)
+    // 3) Main ridge (distance-to-line falloff) — scaled by ridgeIntensity
     const vx = x - model.ridgeCenter.x;
     const vz = z - model.ridgeCenter.y;
     const cross = Math.abs(vx * model.ridgeDir.y - vz * model.ridgeDir.x);
     const ridgeShape = Math.exp(-(cross * cross) / (model.ridgeWidth * model.ridgeWidth));
-    h += model.ridgeAmp * elevationScale * ridgeShape * 3.5;
+    h += model.ridgeAmp * elevationScale * ridgeShape * 3.5 * (ridgeIntensity * 2);
+
+    // 3b) Micro terrain detail — high-frequency, low-amplitude
+    const microNoise =
+        Math.sin(x * 0.18 * noiseFreq + 97.1) * 0.8 +
+        Math.cos(z * 0.22 * noiseFreq + 113.5) * 0.6;
+    h += microNoise * microDetail * 2.5;
 
     // 4) Edge falloff so edges don't look like a table
     const edge = smoothstep(
@@ -196,10 +214,11 @@ function heightfieldFromModel(
     h *= lerp(0.35, 1.0, edge);
 
     // 5) Clamp + shape
-    // Optional realism tweak: slightly reduce overall amplitude.
     h *= 0.85;
     h = Math.max(-2.0, h);
-    h = Math.pow(Math.max(0, h), 1.05) + Math.min(0, h);
+    // Peak softness also smooths the final power curve
+    const powExp = lerp(1.15, 1.0, peakSoftness);
+    h = Math.pow(Math.max(0, h), powExp) + Math.min(0, h);
 
     return h;
 }
