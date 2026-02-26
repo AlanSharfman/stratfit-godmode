@@ -1,8 +1,6 @@
-import React, { Suspense } from "react";
+import React from "react";
 import styles from "./PositionScene.module.css";
 import TerrainStage from "@/terrain/TerrainStage";
-import CinematicLighting from "./rigs/CinematicLighting";
-import HorizonAtmosphere from "./rigs/HorizonAtmosphere";
 
 export default function PositionScene() {
   return (
@@ -10,16 +8,13 @@ export default function PositionScene() {
       {/* TerrainStage owns the Canvas */}
       <div className={styles.stageMount}>
         <TerrainStage />
-
-        {/* Inject cinematic rigs INSIDE stage mount overlay layer */}
-        <div className={styles.rigLayer}>
-          <CinematicLighting />
-          <HorizonAtmosphere />
-        </div>
       </div>
 
-      {/* UI FX overlay */}
+      {/* Cinematic overlays (DOM/CSS only — safe) */}
+      <div className={styles.vignette} />
+      <div className={styles.atmosHaze} />
       <div className={styles.horizonGlow} />
+      <div className={styles.topFade} />
     </div>
   );
 }
