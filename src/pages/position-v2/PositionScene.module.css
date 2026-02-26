@@ -9,7 +9,6 @@
   height: 100vh;
   overflow: hidden;
 
-  /* Deep institutional void */
   background:
     radial-gradient(1200px 700px at 50% 22%, rgba(80, 180, 220, 0.08), rgba(0, 0, 0, 0) 58%),
     radial-gradient(1000px 620px at 18% 18%, rgba(99, 102, 241, 0.06), rgba(0, 0, 0, 0) 54%),
@@ -26,18 +25,17 @@
   border-radius: 28px;
   overflow: hidden;
 
-  /* Titanium body */
   background:
-    linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 22%, rgba(0,0,0,0.18) 100%),
-    radial-gradient(900px 520px at 50% 10%, rgba(120,220,255,0.10), rgba(0,0,0,0) 62%),
+    linear-gradient(180deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.03) 22%, rgba(0,0,0,0.22) 100%),
+    radial-gradient(900px 520px at 50% 10%, rgba(120,220,255,0.12), rgba(0,0,0,0) 62%),
     linear-gradient(180deg, #0a0f16 0%, #070a10 100%);
 
-  border: 1px solid rgba(140, 200, 255, 0.10);
+  border: 1px solid rgba(140, 200, 255, 0.12);
 
   box-shadow:
     0 18px 60px rgba(0, 0, 0, 0.62),
-    0 2px 0 rgba(255, 255, 255, 0.06) inset,
-    0 -1px 0 rgba(0, 0, 0, 0.55) inset;
+    0 2px 0 rgba(255, 255, 255, 0.07) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.58) inset;
 }
 
 .bezelInner {
@@ -46,42 +44,68 @@
   border-radius: 20px;
   overflow: hidden;
 
-  /* Inner glass / OLED cavity */
   background:
-    radial-gradient(900px 520px at 50% 20%, rgba(120,220,255,0.05), rgba(0,0,0,0) 60%),
-    linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.62) 100%);
+    radial-gradient(900px 520px at 50% 20%, rgba(120,220,255,0.06), rgba(0,0,0,0) 60%),
+    linear-gradient(180deg, rgba(0,0,0,0.34) 0%, rgba(0,0,0,0.66) 100%);
 
-  border: 1px solid rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.07);
 
   box-shadow:
-    0 0 0 1px rgba(0,0,0,0.65) inset,
-    0 18px 50px rgba(0,0,0,0.45) inset;
+    0 0 0 1px rgba(0,0,0,0.70) inset,
+    0 18px 50px rgba(0,0,0,0.48) inset;
 }
 
-/* Chrome edge shimmer (non-interactive) */
+/* Micro specular sweep (jewel edge glint) */
+.bezelSpecularSweep {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: 28px;
+  z-index: 78;
+
+  background:
+    linear-gradient(
+      115deg,
+      rgba(255,255,255,0) 0%,
+      rgba(255,255,255,0) 38%,
+      rgba(200,245,255,0.10) 46%,
+      rgba(255,255,255,0.16) 50%,
+      rgba(200,245,255,0.08) 54%,
+      rgba(255,255,255,0) 62%,
+      rgba(255,255,255,0) 100%
+    );
+
+  opacity: 0.45;
+  mix-blend-mode: screen;
+  filter: blur(0.6px);
+}
+
+/* Chrome edge shimmer */
 .bezelChrome {
   position: absolute;
   inset: 0;
   pointer-events: none;
   border-radius: 28px;
   z-index: 80;
+
   background:
     linear-gradient(90deg,
       rgba(255,255,255,0) 0%,
-      rgba(140,220,255,0.08) 12%,
+      rgba(140,220,255,0.09) 12%,
       rgba(255,255,255,0.06) 22%,
       rgba(255,255,255,0) 36%,
       rgba(99,102,241,0.06) 52%,
-      rgba(255,255,255,0.04) 64%,
+      rgba(255,255,255,0.05) 64%,
       rgba(255,255,255,0) 78%,
-      rgba(120,220,255,0.08) 92%,
+      rgba(120,220,255,0.10) 92%,
       rgba(255,255,255,0) 100%);
-  opacity: 0.55;
+
+  opacity: 0.60;
   mix-blend-mode: screen;
-  filter: blur(0.2px);
+  filter: blur(0.25px);
 }
 
-/* Corner highlights + inner cyan trace */
+/* Corner highlights + inner cyan lift */
 .bezelHighlights {
   position: absolute;
   inset: 0;
@@ -90,14 +114,44 @@
   z-index: 82;
 
   background:
-    radial-gradient(180px 180px at 6% 10%, rgba(120,220,255,0.22), rgba(0,0,0,0) 60%),
+    radial-gradient(180px 180px at 6% 10%, rgba(120,220,255,0.24), rgba(0,0,0,0) 60%),
     radial-gradient(160px 160px at 94% 12%, rgba(255,255,255,0.16), rgba(0,0,0,0) 58%),
-    radial-gradient(180px 180px at 8% 90%, rgba(99,102,241,0.12), rgba(0,0,0,0) 62%),
-    radial-gradient(200px 200px at 92% 90%, rgba(120,220,255,0.14), rgba(0,0,0,0) 60%),
-    /* inner trace line */
-    linear-gradient(180deg, rgba(34,211,238,0.10), rgba(34,211,238,0) 22%);
+    radial-gradient(180px 180px at 8% 90%, rgba(99,102,241,0.13), rgba(0,0,0,0) 62%),
+    radial-gradient(200px 200px at 92% 90%, rgba(120,220,255,0.15), rgba(0,0,0,0) 60%),
+    linear-gradient(180deg, rgba(34,211,238,0.12), rgba(34,211,238,0) 22%);
 
-  opacity: 0.75;
+  opacity: 0.78;
+}
+
+/* Inner cyan trace (thin "OLED seam") */
+.innerTrace {
+  position: absolute;
+  inset: 10px;
+  border-radius: 20px;
+  pointer-events: none;
+  z-index: 86;
+
+  box-shadow:
+    0 0 0 1px rgba(34,211,238,0.10) inset,
+    0 0 22px rgba(34,211,238,0.08);
+  opacity: 0.85;
+}
+
+/* Vignette to "seat" the scene */
+.vignette {
+  position: absolute;
+  inset: 10px;
+  border-radius: 20px;
+  pointer-events: none;
+  z-index: 70;
+
+  background:
+    radial-gradient(120% 95% at 50% 40%,
+      rgba(0,0,0,0) 0%,
+      rgba(0,0,0,0.08) 52%,
+      rgba(0,0,0,0.22) 76%,
+      rgba(0,0,0,0.38) 100%);
+  opacity: 0.95;
 }
 
 /* Film grain / sensor noise */
@@ -109,6 +163,7 @@
   z-index: 90;
   opacity: 0.07;
   mix-blend-mode: overlay;
+
   background-image:
     repeating-linear-gradient(
       0deg,
@@ -117,8 +172,61 @@
       rgba(0,0,0,0) 2px,
       rgba(0,0,0,0) 4px
     );
-  filter: blur(0.4px);
+  filter: blur(0.45px);
 }
+
+/* ─────────────────────────────────────────────
+   FASTENERS (CORNER HARDWARE)
+   ───────────────────────────────────────────── */
+
+.fasteners {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 88;
+}
+
+.fastener {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+
+  background:
+    radial-gradient(circle at 35% 35%, rgba(255,255,255,0.22), rgba(255,255,255,0) 48%),
+    radial-gradient(circle at 60% 70%, rgba(34,211,238,0.14), rgba(0,0,0,0) 58%),
+    radial-gradient(circle at 50% 55%, rgba(0,0,0,0.35), rgba(0,0,0,0.90) 72%);
+
+  border: 1px solid rgba(180, 225, 255, 0.10);
+
+  box-shadow:
+    0 6px 14px rgba(0,0,0,0.55),
+    0 1px 0 rgba(255,255,255,0.10) inset,
+    0 -1px 0 rgba(0,0,0,0.50) inset,
+    0 0 18px rgba(34,211,238,0.06);
+
+  opacity: 0.85;
+}
+
+/* tiny "slot" line */
+.fastener::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 10px;
+  height: 2px;
+  transform: translate(-50%, -50%) rotate(-14deg);
+  border-radius: 999px;
+  background: rgba(235, 248, 255, 0.16);
+  box-shadow: 0 0 10px rgba(34,211,238,0.08);
+  opacity: 0.75;
+}
+
+.tl { left: 18px; top: 18px; }
+.tr { right: 18px; top: 18px; }
+.bl { left: 18px; bottom: 18px; }
+.br { right: 18px; bottom: 18px; }
 
 /* ─────────────────────────────────────────────
    SCENE AREA
@@ -131,7 +239,6 @@
   height: 100%;
 }
 
-/* PositionScene mounts inside inner cavity */
 .canvasWrapper {
   position: absolute;
   inset: 0;
@@ -140,7 +247,6 @@
   overflow: hidden;
 }
 
-/* Sized parent so TerrainStage's internal Canvas can fill */
 .stageMount {
   position: absolute;
   inset: 0;
@@ -155,9 +261,7 @@
 }
 
 /* ─────────────────────────────────────────────
-   SAFE AERIAL PERSPECTIVE (SCREEN-SPACE)
-   - Adds distance haze without touching scene.fog
-   - Cyan/Ice bias (no orange)
+   SAFE ATMOSPHERE OVERLAYS (SCREEN-SPACE)
    ───────────────────────────────────────────── */
 
 .aerialHaze {
@@ -166,7 +270,6 @@
   pointer-events: none;
   z-index: 22;
 
-  /* Layered gradients: subtle lift near horizon, gentle top veil */
   background:
     radial-gradient(
       ellipse at 50% 44%,
@@ -186,7 +289,6 @@
   opacity: 0.95;
 }
 
-/* Concentrated bloom just above the horizon line */
 .horizonBloom {
   position: absolute;
   left: 50%;
@@ -208,7 +310,6 @@
   opacity: 0.65;
 }
 
-/* Existing glow (kept) */
 .horizonGlow {
   position: absolute;
   left: 50%;
@@ -218,11 +319,13 @@
   transform: translateX(-50%);
   pointer-events: none;
   z-index: 30;
+
   background: radial-gradient(
     ellipse at center,
     rgba(120, 220, 255, 0.22) 0%,
     rgba(0, 255, 255, 0.10) 36%,
     rgba(0, 0, 0, 0) 72%
   );
+
   filter: blur(26px);
 }
