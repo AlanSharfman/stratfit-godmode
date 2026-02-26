@@ -20,8 +20,8 @@ export default function TerrainStageV2({
       dpr={[1, 2]}
       gl={{ antialias: true, powerPreference: "high-performance" }}
       onCreated={({ scene }) => {
-        scene.background = new THREE.Color("#0b1322")
-        scene.fog = new THREE.FogExp2("#0b1322", 0.018)
+        scene.background = new THREE.Color("#05070d")
+        scene.fog = new THREE.Fog("#05070d", 200, 900)
       }}
       camera={{ fov: 36 }}
     >
