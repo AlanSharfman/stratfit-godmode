@@ -10,9 +10,15 @@
   overflow: hidden;
 
   background:
-    radial-gradient(1200px 700px at 50% 22%, rgba(80, 180, 220, 0.08), rgba(0, 0, 0, 0) 58%),
-    radial-gradient(1000px 620px at 18% 18%, rgba(99, 102, 241, 0.06), rgba(0, 0, 0, 0) 54%),
-    linear-gradient(180deg, #05070a 0%, #05070a 55%, #040609 100%);
+    radial-gradient(1400px 820px at 50% 14%, rgba(200,245,255,0.10), rgba(0,0,0,0) 60%),
+    radial-gradient(1200px 760px at 20% 18%, rgba(99,102,241,0.06), rgba(0,0,0,0) 58%),
+    linear-gradient(180deg,
+      #05070a 0%,
+      #070b12 14%,
+      #0b1320 28%,
+      #0a101a 44%,
+      #070b12 62%,
+      #040609 100%);
 }
 
 /* ─────────────────────────────────────────────
@@ -497,7 +503,7 @@
     );
 
   filter: blur(6px);
-  opacity: 0.95;
+  opacity: 0.78;
 }
 
 .horizonBloom {
@@ -518,7 +524,7 @@
   );
 
   filter: blur(22px);
-  opacity: 0.65;
+  opacity: 0.52;
 }
 
 .horizonGlow {
@@ -539,4 +545,5 @@
   );
 
   filter: blur(26px);
+  opacity: 0.58;
 }
