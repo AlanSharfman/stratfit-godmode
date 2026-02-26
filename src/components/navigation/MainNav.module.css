@@ -73,6 +73,10 @@
   transition: color 0.2s ease;
 }
 
+.separated {
+  margin-left: 28px;
+}
+
 .navItem + .navItem::before {
   content: "";
   position: absolute;
