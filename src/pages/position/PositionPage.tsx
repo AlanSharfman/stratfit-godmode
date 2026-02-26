@@ -234,8 +234,6 @@ export default function PositionPage() {
           <div className={styles.kpiRailDock} aria-label="KPI Intelligence">
             <KPIOverlay vm={vm} layout="rail" />
           </div>
-
-          </div>
         </div>
 
         {/* ══════════════════════════════════════════════════
