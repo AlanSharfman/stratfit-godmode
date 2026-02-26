@@ -7,7 +7,7 @@ export default function PositionScene() {
   return (
     <div className={styles.canvasWrapper}>
       <div className={styles.stageMount}>
-        <TerrainStage lockCamera>
+        <TerrainStage lockCamera pathsEnabled={false}>
           <SkyAtmosphere />
         </TerrainStage>
       </div>

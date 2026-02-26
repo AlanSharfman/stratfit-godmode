@@ -5,15 +5,16 @@
 //
 // ROLE: Single Canvas host for terrain, P50 trajectory, markers, timeline,
 //       and liquidity particles (when enabled).
-// READS: Initiate snapshot ONLY (via SystemBaselineProvider). (Rule 1)
-// RULES:
+//
+// GOD MODE EXTENSION POINT:
+//   Supports safe in-canvas injection via {children}.
+//
+// RULES (UNCHANGED):
 //   - No Objectives dependency — terrain shape is Initiate-derived only.
-//   - No simulation logic (Rule 3).
-//   - No baseline writes (Rule 4).
-//   - Water/liquidity particles are a Position layer (Rule 6).
+//   - No simulation logic.
+//   - No baseline writes.
+//   - Water/liquidity particles are a Position layer.
 // ═══════════════════════════════════════════════════════════════════════════
-// Phase 2/1: camera + far-plane + fog stabilization (deterministic)
-// Phase 2.2: granularity prop wired from PositionPage toggle
 
 import React, { Suspense, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
@@ -45,6 +46,11 @@ type TerrainStageProps = {
   terrainMetrics?: TerrainMetrics
   /** When true, no OrbitControls are mounted — camera is fully programmatic. */
   lockCamera?: boolean
+  /**
+   * Optional per-mount override for path visibility.
+   * If undefined, uses renderFlagsStore.showPaths (default behaviour).
+   */
+  pathsEnabled?: boolean
   signals?: Array<{
     key: string
     label: string
@@ -55,7 +61,14 @@ type TerrainStageProps = {
   children?: ReactNode
 }
 
-export default function TerrainStage({ granularity, terrainMetrics, lockCamera = false, signals, children }: TerrainStageProps) {
+export default function TerrainStage({
+  granularity,
+  terrainMetrics,
+  lockCamera = false,
+  pathsEnabled,
+  signals,
+  children,
+}: TerrainStageProps) {
   const terrainRef = useRef<TerrainSurfaceHandle>(null!);
   const [terrainReady, setTerrainReady] = useState(false);
   const { baseline } = useSystemBaseline();
@@ -71,6 +84,8 @@ export default function TerrainStage({ granularity, terrainMetrics, lockCamera =
 
   // ── Render flags ──
   const { showMarkers, showFlow, showPaths, watchDemo } = useRenderFlagsStore();
+  const pathsOn = typeof pathsEnabled === "boolean" ? pathsEnabled : showPaths;
+
   useEffect(() => {
     if (terrainReady) return;
     let cancelled = false;
@@ -142,7 +157,7 @@ export default function TerrainStage({ granularity, terrainMetrics, lockCamera =
         <TerrainSurface ref={terrainRef} terrainMetrics={terrainMetrics} />
         {terrainReady && (
           <>
-            {showPaths && (
+            {pathsOn && (
               <P50Path terrainRef={terrainRef} rebuildKey={rebuildKey} />
             )}
             {/* Canonical ticks (BaselineTimelineTicks) — terrainRef for surface-aligned Y */}
