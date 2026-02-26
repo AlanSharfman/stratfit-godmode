@@ -1,6 +1,7 @@
 export const UI_NAV_CONTRACT_VERSION = "v1" as const
 
 export const UI_NAV_ITEMS = [
+  { key: "initiate", label: "INITIATE", href: "/initiate" },
   { key: "position", label: "POSITION", href: "/position" },
   { key: "studio", label: "STUDIO", href: "/studio" },
   { key: "compare", label: "COMPARE", href: "/compare" },

@@ -10,6 +10,9 @@ export interface PositionKpis {
   runwayMonths: number
   ebitdaMonthly: number
   riskIndex: number
+  cashOnHand: number
+  revenueMonthly: number
+  survivalScore: number
 }
 
 export interface DiagnosticCardVM {
@@ -188,7 +191,11 @@ export function buildPositionViewModel(
     : riskFromRunway(runway)
   const completeness = computeBaselineCompleteness(baseline)
   const conf = confidenceFromCompleteness01(completeness.completeness01)
-  const kpis: PositionKpis = { arr, burnMonthly: burn, runwayMonths: runway, ebitdaMonthly: ebitda, riskIndex }
+  const cash = safeNum(baseline.financial.cashOnHand, 0)
+  const revenueMonthly = arr / 12
+  // survivalScore: 0-100, blend of runway health + risk
+  const survivalScore = clamp(Math.round((riskIndex * 0.6) + (Math.min(runway, 24) / 24) * 40), 0, 100)
+  const kpis: PositionKpis = { arr, burnMonthly: burn, runwayMonths: runway, ebitdaMonthly: ebitda, riskIndex, cashOnHand: cash, revenueMonthly, survivalScore }
   return {
     kpis,
     state:           stateFromRunwayAndGrowth(runway, growthPct),

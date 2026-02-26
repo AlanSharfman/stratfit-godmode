@@ -13,6 +13,8 @@ import { DEFAULT_TUNING } from "./TerrainSurfaceV2"
 type Props = {
   params: TerrainTuningParams
   onChange: (params: TerrainTuningParams) => void
+  /** When true, renders inline (no toggle button, no absolute positioning) */
+  inline?: boolean
 }
 
 // ─── Slider Definitions ────────────────────────────────────────────────────
@@ -81,7 +83,7 @@ const SLIDER_CSS = `
 
 // ─── Component ─────────────────────────────────────────────────────────────
 
-export default function TerrainTuningPanel({ params, onChange }: Props) {
+export default function TerrainTuningPanel({ params, onChange, inline }: Props) {
   const [open, setOpen] = useState(false)
 
   const update = useCallback(
@@ -95,6 +97,128 @@ export default function TerrainTuningPanel({ params, onChange }: Props) {
     onChange({ ...DEFAULT_TUNING })
   }, [onChange])
 
+  // ── Shared slider list ───────────────────────────────────────────────────
+  const sliderList = (
+    <>
+      {SLIDERS.map(({ key, label, min, max, step }) => (
+        <div key={key} style={{ marginBottom: 11 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "baseline",
+              marginBottom: 4,
+            }}
+          >
+            <span
+              style={{
+                fontSize: 10,
+                color: "rgba(180, 210, 255, 0.68)",
+                fontWeight: 500,
+                letterSpacing: "0.02em",
+              }}
+            >
+              {label}
+            </span>
+            <span
+              style={{
+                fontSize: 10,
+                color: "rgba(107, 184, 255, 0.45)",
+                fontFamily:
+                  "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+                fontWeight: 400,
+                minWidth: 36,
+                textAlign: "right",
+              }}
+            >
+              {params[key].toFixed(2)}
+            </span>
+          </div>
+          <input
+            className="sf-tuning-slider"
+            type="range"
+            min={min}
+            max={max}
+            step={step}
+            value={params[key]}
+            onChange={(e) => update(key, parseFloat(e.target.value))}
+          />
+        </div>
+      ))}
+
+      {/* Reset button */}
+      <button
+        onClick={reset}
+        style={{
+          marginTop: 6,
+          width: "100%",
+          padding: "7px 0",
+          fontSize: 10,
+          fontWeight: 600,
+          textTransform: "uppercase",
+          letterSpacing: "0.06em",
+          color: "rgba(120, 180, 255, 0.55)",
+          background: "rgba(100, 180, 255, 0.05)",
+          border: "1px solid rgba(100, 180, 255, 0.08)",
+          borderRadius: 6,
+          cursor: "pointer",
+          outline: "none",
+          transition: "background 0.2s, color 0.2s",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "rgba(100, 180, 255, 0.10)"
+          e.currentTarget.style.color = "rgba(140, 200, 255, 0.75)"
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "rgba(100, 180, 255, 0.05)"
+          e.currentTarget.style.color = "rgba(120, 180, 255, 0.55)"
+        }}
+      >
+        Reset Defaults
+      </button>
+    </>
+  )
+
+  // ── Inline mode (renders directly in parent flow) ──────────────────────
+  if (inline) {
+    return (
+      <div
+        style={{
+          width: "100%",
+          padding: "14px 12px 12px",
+          borderRadius: 12,
+          background: "rgba(8, 14, 28, 0.84)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          border: "1px solid rgba(100, 180, 255, 0.10)",
+          boxShadow:
+            "0 8px 32px rgba(0,0,0,0.55), inset 0 1px 0 rgba(140,200,255,0.04)",
+          fontFamily:
+            "'Inter', 'SF Pro Display', 'Segoe UI', system-ui, sans-serif",
+          userSelect: "none",
+          boxSizing: "border-box",
+        }}
+      >
+        <style>{SLIDER_CSS}</style>
+        {/* Header */}
+        <div
+          style={{
+            fontSize: 10,
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.1em",
+            color: "rgba(120, 180, 255, 0.55)",
+            marginBottom: 14,
+          }}
+        >
+          Terrain Tuning
+        </div>
+        {sliderList}
+      </div>
+    )
+  }
+
+  // ── Overlay mode (absolute-positioned toggle + dropdown) ───────────────
   return (
     <>
       {/* Inject slider thumb CSS once */}
@@ -181,84 +305,7 @@ export default function TerrainTuningPanel({ params, onChange }: Props) {
           >
             Terrain Tuning
           </div>
-
-          {/* Sliders */}
-          {SLIDERS.map(({ key, label, min, max, step }) => (
-            <div key={key} style={{ marginBottom: 11 }}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "baseline",
-                  marginBottom: 4,
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: 10,
-                    color: "rgba(180, 210, 255, 0.68)",
-                    fontWeight: 500,
-                    letterSpacing: "0.02em",
-                  }}
-                >
-                  {label}
-                </span>
-                <span
-                  style={{
-                    fontSize: 10,
-                    color: "rgba(107, 184, 255, 0.45)",
-                    fontFamily:
-                      "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
-                    fontWeight: 400,
-                    minWidth: 36,
-                    textAlign: "right",
-                  }}
-                >
-                  {params[key].toFixed(2)}
-                </span>
-              </div>
-              <input
-                className="sf-tuning-slider"
-                type="range"
-                min={min}
-                max={max}
-                step={step}
-                value={params[key]}
-                onChange={(e) => update(key, parseFloat(e.target.value))}
-              />
-            </div>
-          ))}
-
-          {/* Reset button */}
-          <button
-            onClick={reset}
-            style={{
-              marginTop: 6,
-              width: "100%",
-              padding: "7px 0",
-              fontSize: 10,
-              fontWeight: 600,
-              textTransform: "uppercase",
-              letterSpacing: "0.06em",
-              color: "rgba(120, 180, 255, 0.55)",
-              background: "rgba(100, 180, 255, 0.05)",
-              border: "1px solid rgba(100, 180, 255, 0.08)",
-              borderRadius: 6,
-              cursor: "pointer",
-              outline: "none",
-              transition: "background 0.2s, color 0.2s",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(100, 180, 255, 0.10)"
-              e.currentTarget.style.color = "rgba(140, 200, 255, 0.75)"
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "rgba(100, 180, 255, 0.05)"
-              e.currentTarget.style.color = "rgba(120, 180, 255, 0.55)"
-            }}
-          >
-            Reset Defaults
-          </button>
+          {sliderList}
         </div>
       )}
     </>

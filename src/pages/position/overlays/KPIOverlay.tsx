@@ -200,6 +200,81 @@ function EbitdaWidget() {
   )
 }
 
+/** Cash — vault / stack icon with subtle pulse */
+function CashWidget() {
+  return (
+    <div className={styles.widget}>
+      <svg width="44" height="44" viewBox="0 0 28 28" fill="none">
+        {/* Stack of coins */}
+        <ellipse cx="14" cy="20" rx="10" ry="3" fill="rgba(52,211,153,0.12)" stroke="rgba(52,211,153,0.35)" strokeWidth="1">
+          <animate attributeName="opacity" values="0.8;0.5;0.8" dur="2.5s" repeatCount="indefinite"/>
+        </ellipse>
+        <ellipse cx="14" cy="16" rx="10" ry="3" fill="rgba(52,211,153,0.10)" stroke="rgba(52,211,153,0.3)" strokeWidth="1"/>
+        <ellipse cx="14" cy="12" rx="10" ry="3" fill="rgba(52,211,153,0.08)" stroke="rgba(52,211,153,0.25)" strokeWidth="1"/>
+        <ellipse cx="14" cy="8" rx="10" ry="3" fill="rgba(52,211,153,0.06)" stroke="rgba(52,211,153,0.2)" strokeWidth="1"/>
+        {/* $ symbol */}
+        <text x="14" y="17" textAnchor="middle" fontSize="9" fontWeight="700" fill="rgba(52,211,153,0.7)" fontFamily="Inter, sans-serif">
+          $
+          <animate attributeName="opacity" values="0.7;0.4;0.7" dur="3s" repeatCount="indefinite"/>
+        </text>
+      </svg>
+    </div>
+  )
+}
+
+/** Revenue — rising bar chart with glow */
+function RevenueWidget() {
+  const bars = [0.35, 0.5, 0.45, 0.7, 0.65, 0.85, 1.0]
+  return (
+    <div className={styles.widget}>
+      <svg width="72" height="28" viewBox="0 0 56 22" fill="none">
+        {bars.map((h, i) => (
+          <rect
+            key={i}
+            x={i * 8 + 1}
+            y={22 - h * 20}
+            width="5"
+            height={h * 20}
+            rx="1.5"
+            fill={`rgba(96, 165, 250, ${0.3 + h * 0.55})`}
+          >
+            <animate attributeName="height" values={`${h * 20};${h * 20 + 2};${h * 20}`} dur={`${2 + i * 0.3}s`} repeatCount="indefinite"/>
+            <animate attributeName="y" values={`${22 - h * 20};${20 - h * 20};${22 - h * 20}`} dur={`${2 + i * 0.3}s`} repeatCount="indefinite"/>
+          </rect>
+        ))}
+        {/* Trend line */}
+        <line x1="3" y1="18" x2="53" y2="4" stroke="rgba(96,165,250,0.4)" strokeWidth="1" strokeDasharray="2,2"/>
+      </svg>
+    </div>
+  )
+}
+
+/** Momentum — rising arrow / rocket with trail */
+function MomentumWidget() {
+  return (
+    <div className={styles.widget}>
+      <svg width="44" height="44" viewBox="0 0 28 28" fill="none">
+        {/* Upward arrow body */}
+        <path d="M14 4 L19 12 L16 12 L16 24 L12 24 L12 12 L9 12 Z" fill="rgba(168,85,247,0.15)" stroke="rgba(168,85,247,0.5)" strokeWidth="0.8" strokeLinejoin="round">
+          <animateTransform attributeName="transform" type="translate" values="0,0;0,-1.5;0,0" dur="1.8s" repeatCount="indefinite"/>
+        </path>
+        {/* Thrust glow trail */}
+        <ellipse cx="14" cy="25" rx="3" ry="1.5" fill="rgba(168,85,247,0.25)">
+          <animate attributeName="ry" values="1.5;3;1.5" dur="1.8s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.3;0.1;0.3" dur="1.8s" repeatCount="indefinite"/>
+        </ellipse>
+        {/* Speed lines */}
+        <line x1="8" y1="16" x2="8" y2="22" stroke="rgba(168,85,247,0.3)" strokeWidth="0.8" strokeLinecap="round">
+          <animate attributeName="opacity" values="0.3;0;0.3" dur="1.2s" repeatCount="indefinite"/>
+        </line>
+        <line x1="20" y1="14" x2="20" y2="20" stroke="rgba(168,85,247,0.3)" strokeWidth="0.8" strokeLinecap="round">
+          <animate attributeName="opacity" values="0;0.3;0" dur="1.2s" repeatCount="indefinite"/>
+        </line>
+      </svg>
+    </div>
+  )
+}
+
 /** Risk — breathing radar dial with sweep */
 function RiskWidget() {
   return (
@@ -234,17 +309,18 @@ function RiskWidget() {
   )
 }
 
-export default function KPIOverlay({ vm, feed }: { vm: PositionViewModel | null; feed?: boolean }) {
+export default function KPIOverlay({ vm, feed, layout }: { vm: PositionViewModel | null; feed?: boolean; layout?: "strip" | "rail" }) {
   const k = vm?.kpis
-  const cellClass = feed ? styles.kpiFeedCell : styles.kpiCell
-  const stripClass = feed ? styles.kpiFeed : styles.kpiStrip
+  const isRail = layout === "rail"
+  const cellClass = isRail ? styles.kpiRailCell : feed ? styles.kpiFeedCell : styles.kpiCell
+  const stripClass = isRail ? styles.kpiRail : feed ? styles.kpiFeed : styles.kpiStrip
   return (
     <div className={stripClass}>
       <div className={cellClass}>
-        <div className={styles.kpiLabel}>ARR</div>
-        <div className={styles.kpiValue}>{k ? `$${fmtMoney(k.arr)}` : "$0"}</div>
-        <ArrWidget />
-        <div className={styles.kpiSub}>Annual recurring</div>
+        <div className={styles.kpiLabel}>Cash</div>
+        <div className={styles.kpiValue}>{k ? `$${fmtMoney(k.cashOnHand)}` : "$0"}</div>
+        <CashWidget />
+        <div className={styles.kpiSub}>On hand</div>
       </div>
       <div className={cellClass}>
         <div className={styles.kpiLabel}>Runway</div>
@@ -261,13 +337,25 @@ export default function KPIOverlay({ vm, feed }: { vm: PositionViewModel | null;
         <div className={styles.kpiSub}>Monthly</div>
       </div>
       <div className={cellClass}>
-        <div className={styles.kpiLabel}>EBITDA</div>
-        <div className={styles.kpiValue}>{k ? `$${fmtMoney(k.ebitdaMonthly)}` : "$0"}</div>
-        <EbitdaWidget />
-        <div className={styles.kpiSub}>Monthly approx</div>
+        <div className={styles.kpiLabel}>Revenue</div>
+        <div className={styles.kpiValue}>{k ? `$${fmtMoney(k.revenueMonthly)}` : "$0"}</div>
+        <RevenueWidget />
+        <div className={styles.kpiSub}>Monthly</div>
       </div>
       <div className={cellClass}>
-        <div className={styles.kpiLabel}>Risk Index</div>
+        <div className={styles.kpiLabel}>ARR</div>
+        <div className={styles.kpiValue}>{k ? `$${fmtMoney(k.arr)}` : "$0"}</div>
+        <ArrWidget />
+        <div className={styles.kpiSub}>Annual recurring</div>
+      </div>
+      <div className={cellClass}>
+        <div className={styles.kpiLabel}>Momentum</div>
+        <div className={styles.kpiValue}>{k ? fmtPct(k.survivalScore) : "—"}</div>
+        <MomentumWidget />
+        <div className={styles.kpiSub}>Growth velocity</div>
+      </div>
+      <div className={cellClass}>
+        <div className={styles.kpiLabel}>Risk Score</div>
         <div className={styles.kpiValue}>{k ? fmtPct(k.riskIndex) : "85%"}</div>
         <RiskWidget />
         <div className={styles.kpiSub}>Health / survival</div>

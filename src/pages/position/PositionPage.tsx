@@ -187,12 +187,21 @@ export default function PositionPage() {
 
   return (
     <div className={styles.page}>
-      {/* ═══ LAYER 1: Void black backdrop ═══ */}
+      {/* ═══ LAYER 1: Deep navy canvas backdrop ═══ */}
       <div className={styles.canvasLayer} />
 
-      {/* ═══ LAYER 2: 3-column frosted-glass UI ═══ */}
+      {/* ═══ ATMOSPHERE LAYERS — tunable depth/haze/spotlight ═══ */}
+      <div className={styles.atmoSky} aria-hidden="true" />
+      <div className={styles.atmoHaze} aria-hidden="true" />
+      <div className={styles.atmoVignette} aria-hidden="true" />
+      <div className={styles.atmoSpotlight} aria-hidden="true" />
+
+      {/* ═══ LAYER 2: God Mode 3-column instrument grid ═══ */}
       <div className={styles.uiLayer}>
-        {/* ── LEFT COLUMN ── */}
+
+        {/* ══════════════════════════════════════════════════
+            LEFT RAIL — Intelligence Panel (KPIs + Briefing)
+            ══════════════════════════════════════════════════ */}
         <div className={styles.leftCol}>
           {/* Logo lockup */}
           <Link to={ROUTES.POSITION} className={styles.logoLockup}>
@@ -218,57 +227,39 @@ export default function PositionPage() {
             </div>
           </Link>
 
+          {/* KPI instruments — vertical stacked telemetry */}
+          <div className={styles.kpiRailDock} aria-label="KPI Intelligence">
+            <KPIOverlay vm={vm} layout="rail" />
+          </div>
+
+          {/* Executive narrative summary */}
           <div className={styles.execSummaryDock} aria-label="Executive summary">
             <ExecutiveNarrativeCard vm={vm} />
           </div>
-
-          <div className={styles.commandCentreDock} aria-label="Command Centre">
-            {commandCentreOpen ? (
-              <CommandCentrePanel
-                groups={diagnosticGroups}
-                title="Command Centre"
-                onClose={() => setCommandCentreOpen(false)}
-              />
-            ) : (
-              <button
-                type="button"
-                className={styles.collapseToggle}
-                onClick={() => setCommandCentreOpen(true)}
-              >
-                <span>Command Centre</span>
-                <span className={styles.chevron}>▸</span>
-              </button>
-            )}
-          </div>
         </div>
 
-        {/* ── CENTRE COLUMN — transparent, question bar ── */}
+        {/* ══════════════════════════════════════════════════
+            CENTER — Terrain Canvas (dominant, immersive)
+            ══════════════════════════════════════════════════ */}
         <div className={styles.centreCol}>
           {/* Top nav row */}
           <nav className={styles.pageNav} aria-label="Primary navigation">
             <NavLink to={ROUTES.INITIATE} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Initiate</NavLink>
             <NavLink to={ROUTES.POSITION} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Position</NavLink>
+            <NavLink to={ROUTES.STUDIO} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Studio</NavLink>
             <NavLink to={ROUTES.COMPARE} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Compare</NavLink>
+            <NavLink to={ROUTES.INSIGHTS} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Insights</NavLink>
             <NavLink to={ROUTES.RISK} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Risk</NavLink>
             <NavLink to={ROUTES.VALUATION} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Valuation</NavLink>
-            <NavLink to={ROUTES.INSIGHTS} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Insights</NavLink>
             <NavLink to={ROUTES.ASSESSMENT} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Assessment</NavLink>
-            <NavLink to={ROUTES.COMING_FEATURES} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Coming Features</NavLink>
+            <NavLink to={ROUTES.ROADMAP} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Roadmap</NavLink>
+            <NavLink to={ROUTES.COMING_FEATURES} className={({ isActive }) => `${styles.pageNavItem} ${styles.pageNavSeparated}${isActive ? " " + styles.pageNavActive : ""}`}>Coming Features</NavLink>
           </nav>
 
-          {/* KPI HUD strip — must sit below the nav row */}
-          <div className={styles.kpiDock} aria-label="KPI HUD">
-            <KPIOverlay vm={vm} />
-          </div>
-
-          <div className={styles.timeScaleDock} aria-label="Time scale control">
-            <TimeScaleControl granularity={granularity} setGranularity={setGranularity} />
-          </div>
-
-          {/* V2 terrain mesh — bounded in centre column */}
+          {/* Terrain canvas — fills available space */}
           <div className={styles.terrainViewport} aria-label="Position terrain">
             <TerrainStage
-              lockCamera
+              lockCamera={false}
               pathsEnabled={false}
               terrainMetrics={{
                 ...(terrainMetrics ?? {
@@ -291,27 +282,43 @@ export default function PositionPage() {
               signals={terrainSignals}
             >
               <CameraCompositionRig />
-              <TerrainBreathRig />
               <SkyAtmosphere />
               <VolumetricHorizon />
             </TerrainStage>
-            <TerrainTuningPanel params={terrainTuning} onChange={setTerrainTuning} />
             <div className={styles.canvasVignette} aria-hidden="true" />
-            <div className={styles.terrainBezel} aria-hidden="true" />
             {rippleKey > 0 && (
               <div key={rippleKey} className={styles.terrainRipple} aria-hidden="true" />
             )}
+            {/* Terrain tuning gear — overlay inside viewport */}
+            <TerrainTuningPanel params={terrainTuning} onChange={setTerrainTuning} />
           </div>
-
-          {!vm && (
-            <div className={styles.noBaselineHint}>
-              No baseline loaded. Initialise to enable KPIs + diagnostics.
-            </div>
-          )}
         </div>
 
-        {/* ── RIGHT COLUMN ── */}
+        {/* ══════════════════════════════════════════════════
+            RIGHT RAIL — Controls (Tuning, Toggles, Diagnostics)
+            ══════════════════════════════════════════════════ */}
         <div className={styles.rightCol}>
+          {/* Command Centre — overlay toggles + diagnostics */}
+          <div className={styles.commandCentreDock} aria-label="Command Centre">
+            {commandCentreOpen ? (
+              <CommandCentrePanel
+                groups={diagnosticGroups}
+                title="Command Centre"
+                onClose={() => setCommandCentreOpen(false)}
+              />
+            ) : (
+              <button
+                type="button"
+                className={styles.collapseToggle}
+                onClick={() => setCommandCentreOpen(true)}
+              >
+                <span>Command Centre</span>
+                <span className={styles.chevron}>&#9656;</span>
+              </button>
+            )}
+          </div>
+
+          {/* Baseline intelligence */}
           <div className={styles.baselineIntelDock} aria-label="Baseline Intelligence">
             <BaselineIntelligencePanel />
           </div>

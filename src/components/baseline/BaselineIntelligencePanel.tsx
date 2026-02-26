@@ -1,4 +1,4 @@
-import React, { memo, useMemo } from "react";
+import React, { memo, useEffect, useMemo, useRef, useState } from "react";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
 import { useScenarioStore } from "@/state/scenarioStore";
 import { useMarkerLinkStore } from "@/state/markerLinkStore";
@@ -18,7 +18,36 @@ function fmtUsdM(n: number) {
   if (!Number.isFinite(n)) return "—";
   return `$${(n / 1_000_000).toFixed(1)}M`;
 }
+/* \u2500\u2500 Typewriter hook \u2500 types text char-by-char with medium pace \u2500\u2500 */
+function useTypewriter(text: string, speed = 30): string {
+  const [displayed, setDisplayed] = useState(text)
+  const prevRef = useRef(text)
 
+  useEffect(() => {
+    if (text === prevRef.current && displayed === text) return
+    prevRef.current = text
+    let i = 0
+    setDisplayed("")
+    const id = setInterval(() => {
+      i++
+      setDisplayed(text.slice(0, i))
+      if (i >= text.length) clearInterval(id)
+    }, speed)
+    return () => clearInterval(id)
+  }, [text, speed])
+
+  return displayed || text
+}
+
+function TypewriterText({ text, className }: { text: string; className?: string }) {
+  const typed = useTypewriter(text, 30)
+  return (
+    <div className={className}>
+      {typed}
+      {typed.length < text.length && <span className={styles.twCursor}>\u258E</span>}
+    </div>
+  )
+}
 type Tone = "risk" | "info" | "strength" | "strategy";
 
 const SIGNAL_MARKERS: Array<{ id: string; label: string; tone: Tone }> = [
@@ -101,17 +130,6 @@ const BaselineIntelligencePanel: React.FC = memo(() => {
       </div>
 
       <div className={styles.panelSection}>
-        <div className={styles.sectionTitle}>STRUCTURAL METRICS</div>
-        <div className={styles.kvGrid}>
-          <div className={styles.kvRow}><div className={styles.k}>Revenue</div><div className={styles.v}>{fmtUsdM(revenue)}</div></div>
-          <div className={styles.kvRow}><div className={styles.k}>Margin</div><div className={styles.v}>{margin.toFixed(0)}%</div></div>
-          <div className={styles.kvRow}><div className={styles.k}>Runway</div><div className={styles.v}>{Math.round(runway)} months</div></div>
-          <div className={styles.kvRow}><div className={styles.k}>Burn Ratio</div><div className={styles.v}>{ctx ? ctx.derived.burnRatio.toFixed(1) : "—"}x</div></div>
-          <div className={styles.kvRow}><div className={styles.k}>Risk Index</div><div className={styles.v}>{Math.round(survivalBaselinePct)}%</div></div>
-        </div>
-      </div>
-
-      <div className={styles.panelSection}>
         <div className={styles.sectionTitle}>SYSTEM DIAGNOSTIC</div>
 
         <div className={styles.statusRow}>
@@ -143,11 +161,12 @@ const BaselineIntelligencePanel: React.FC = memo(() => {
 
       <div className={styles.panelSection}>
         <div className={styles.sectionTitle}>STRUCTURAL STORY</div>
-        <div className={styles.storyText}>
-          {runway < 12
+        <TypewriterText
+          className={styles.storyText}
+          text={runway < 12
             ? "Liquidity headroom is narrowing. Burn intensity is compressing optionality faster than revenue scale can absorb."
             : "Runway is supported by current capital base. Composition quality depends on margin stability and burn proportionality."}
-        </div>
+        />
       </div>
 
       <div className={styles.panelSection}>
@@ -183,9 +202,10 @@ const BaselineIntelligencePanel: React.FC = memo(() => {
 
       <div className={styles.panelSection}>
         <div className={styles.sectionTitle}>TERRAIN INTERPRETATION</div>
-        <div className={styles.storyText}>
-          Each peak maps to Revenue → Margin → Runway → Burn → Efficiency. Valleys indicate structural fragility. Confidence width reflects certainty.
-        </div>
+        <TypewriterText
+          className={styles.storyText}
+          text="Each peak maps to Revenue \u2192 Margin \u2192 Runway \u2192 Burn \u2192 Efficiency. Valleys indicate structural fragility. Confidence width reflects certainty."
+        />
       </div>
 
       <div className={styles.panelFoot}>

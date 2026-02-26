@@ -129,10 +129,10 @@ export default function TerrainStage({
           makeDefault
           enablePan={false}
           enableZoom={false}
-          minAzimuthAngle={-Math.PI / 4}
-          maxAzimuthAngle={Math.PI / 4}
-          minPolarAngle={1.107}
-          maxPolarAngle={1.107}
+          minAzimuthAngle={-0.349}
+          maxAzimuthAngle={0.349}
+          minPolarAngle={0.758}
+          maxPolarAngle={1.456}
           rotateSpeed={0.55}
           minDistance={220}
           maxDistance={700}
