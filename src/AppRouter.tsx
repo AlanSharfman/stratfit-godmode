@@ -11,6 +11,7 @@ import ValuationPage from "@/pages/valuation/ValuationPage"
 import ComingFeaturesPage from "@/pages/coming-features/ComingFeaturesPage"
 import AssessmentPage from "@/pages/StrategicAssessmentPage"
 import InitializeBaselinePage from "@/pages/initialize/InitializeBaselinePage"
+import PositionPageV2 from "@/pages/position-v2/PositionPageV2"
 
 import StudioRoute from "@/routes/StudioRoute"
 import StrategyStudioRoute from "@/routes/StrategyStudioRoute"
@@ -22,6 +23,7 @@ export default function AppRouter() {
         <Route index element={<Navigate to="/position" replace />} />
 
         <Route path="/position" element={<PositionPage />} />
+        <Route path="/position-v2" element={<PositionPageV2 />} />
         <Route path="/objectives" element={<ObjectivePage />} />
         <Route path="/studio" element={<StudioRoute />} />
         <Route path="/strategy-studio" element={<StrategyStudioRoute />} />

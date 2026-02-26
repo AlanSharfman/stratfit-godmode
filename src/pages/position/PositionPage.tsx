@@ -4,7 +4,7 @@ import { useShallow } from "zustand/react/shallow"
 
 import { ROUTES } from "@/routes/routeContract"
 
-import TerrainStage from "@/terrain/TerrainStage"
+import TerrainStageV2 from "@/terrain/v2/TerrainStageV2"
 import { deriveTerrainMetrics } from "@/terrain/terrainFromBaseline"
 import type { TimeGranularity } from "@/terrain/TimelineTicks"
 
@@ -195,7 +195,7 @@ export default function PositionPage() {
 
       {/* ═══ LAYER 1: Fixed full-bleed terrain canvas ═══ */}
       <div className={styles.canvasLayer}>
-        <TerrainStage
+        <TerrainStageV2
           granularity={granularity}
           terrainMetrics={terrainMetrics}
           lockCamera
