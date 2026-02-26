@@ -144,7 +144,7 @@ export default function TerrainStage({
       )}
 
       {/* Fog stays deterministic; background comes from DOM gradient behind the canvas. */}
-      <fog attach="fog" args={[fogColor, 420, 2800]} />
+      <fog attach="fog" args={[fogColor, 420, 2400]} />
 
       {/* Lights: lifted for brighter terrain readability */}
       <ambientLight intensity={1.55} />
