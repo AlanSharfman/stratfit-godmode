@@ -38,12 +38,22 @@
 
   /* Atmosphere tuning variables */
   --atmo-top: rgba(6, 12, 18, 1);
-  --atmo-mid: rgba(10, 22, 32, 1);
-  --atmo-horizon: rgba(180, 220, 235, 0.35);
-  --atmo-strength: 0.85;
-  --haze-strength: 0.55;
-  --vignette-strength: 0.45;
-  --spotlight-strength: 0.25;
+  --atmo-mid: rgba(10, 18, 26, 1);
+  --atmo-horizon: rgba(170, 210, 225, 0.20);
+  --atmo-strength: 0.92;
+  --haze-deep: 0.22;
+  --haze-horizon: 0.38;
+  --vignette-strength: 0.42;
+  --vignette-top-boost: 0.22;
+  --spotlight-strength: 0.18;
+  --spot-x: 52%;
+  --spot-y: 56%;
+  --spot-radius: 62%;
+
+  /* God Mode 10/10 — motion / grain knobs */
+  --idle-strength: 1;
+  --grain-strength: 0.032;
+  --focal-strength: 1;
 
   /* Z order (hard lock) */
   --z-kpi: 300;
@@ -65,7 +75,7 @@
   background: #0B1620;
 }
 
-/* ── Atmosphere Layer A: Sky Gradient ── */
+/* ── Atmosphere Layer A: Sky Gradient — moody top → soft horizon ── */
 .atmoSky {
   position: fixed;
   inset: 0;
@@ -75,35 +85,48 @@
   background: linear-gradient(
     180deg,
     var(--atmo-top) 0%,
-    var(--atmo-mid) 40%,
+    var(--atmo-mid) 48%,
     var(--atmo-horizon) 78%,
-    rgba(6, 12, 18, 0.9) 100%
+    rgba(0, 0, 0, 0) 100%
   );
 }
 
-/* ── Atmosphere Layer B: Horizon Haze ── */
-.atmoHaze {
+/* ── Atmosphere Layer B1: Deep Distance Haze — wide subtle air ── */
+.atmoHazeDeep {
   position: fixed;
   inset: 0;
   z-index: 2;
   pointer-events: none;
-  opacity: var(--haze-strength);
+  opacity: var(--haze-deep);
+  filter: blur(0.2px);
   background:
     radial-gradient(
-      ellipse 120% 35% at 50% 65%,
-      rgba(140, 200, 230, 0.12) 0%,
-      transparent 70%
-    ),
-    linear-gradient(
-      180deg,
-      transparent 55%,
-      rgba(100, 180, 220, 0.08) 72%,
-      rgba(60, 140, 190, 0.04) 85%,
-      transparent 100%
+      120% 85% at 50% 72%,
+      rgba(210, 235, 245, 0.10) 0%,
+      rgba(190, 220, 235, 0.06) 35%,
+      transparent 72%
     );
 }
 
-/* ── Atmosphere Layer C: Vignette ── */
+/* ── Atmosphere Layer B2: Horizon Haze — tight air perspective ── */
+.atmoHazeHorizon {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: var(--haze-horizon);
+  filter: blur(0.4px);
+  background: linear-gradient(
+    180deg,
+    rgba(190, 220, 235, 0) 0%,
+    rgba(190, 220, 235, 0.10) 48%,
+    rgba(190, 220, 235, 0.16) 64%,
+    rgba(190, 220, 235, 0.08) 76%,
+    transparent 100%
+  );
+}
+
+/* ── Atmosphere Layer C: Vignette — cinematic tension + top-corner boost ── */
 .atmoVignette {
   position: fixed;
   inset: 0;
@@ -112,25 +135,32 @@
   opacity: var(--vignette-strength);
   background:
     radial-gradient(
-      ellipse 75% 70% at 50% 50%,
-      transparent 40%,
-      rgba(0, 0, 0, 0.55) 100%
+      140% 120% at 50% 50%,
+      transparent 45%,
+      rgba(0, 0, 0, 0.22) 70%,
+      rgba(0, 0, 0, 0.40) 100%
+    ),
+    radial-gradient(
+      120% 80% at 50% 0%,
+      rgba(0, 0, 0, var(--vignette-top-boost)) 0%,
+      transparent 55%
     );
 }
 
-/* ── Atmosphere Layer D: Focal Spotlight ── */
+/* ── Atmosphere Layer D: Peak Spotlight — subtle focal gravity ── */
 .atmoSpotlight {
   position: fixed;
   inset: 0;
   z-index: 4;
   pointer-events: none;
   opacity: var(--spotlight-strength);
+  mix-blend-mode: soft-light;
   background:
     radial-gradient(
-      ellipse 40% 30% at 48% 52%,
-      rgba(56, 189, 248, 0.08) 0%,
-      rgba(34, 211, 238, 0.04) 30%,
-      transparent 70%
+      var(--spot-radius) var(--spot-radius) at var(--spot-x) var(--spot-y),
+      rgba(255, 255, 255, 0.10) 0%,
+      rgba(210, 235, 245, 0.08) 22%,
+      transparent 62%
     );
 }
 
@@ -160,6 +190,34 @@
     inset 0 1px 0 rgba(255,255,255,0.18);
   background:
     linear-gradient(180deg, rgba(14,20,30,0.00), rgba(14,20,30,0.04));
+}
+
+/* ── Film grain — barely visible atmospheric noise ── */
+.filmGrain {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: var(--grain-strength);
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 128px 128px;
+  animation: grainDrift 4s steps(8) infinite;
+}
+
+@keyframes grainDrift {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(-2px, 1px); }
+  50%  { transform: translate(1px, -1px); }
+  75%  { transform: translate(-1px, 2px); }
+  100% { transform: translate(0, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filmGrain {
+    animation: none;
+  }
 }
 
 /* Internal vignette — subtle depth framing, instrument feel */

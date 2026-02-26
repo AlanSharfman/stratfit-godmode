@@ -37,6 +37,7 @@ import { studioSessionStore } from "@/state/studioSessionStore"
 import KPIOverlay from "./overlays/KPIOverlay"
 import ExecutiveNarrativeCard from "./components/ExecutiveNarrativeCard"
 import TimeScaleControl from "./overlays/TimeScaleControl"
+import IdleMotionLayer from "./IdleMotionLayer"
 import {
   buildPositionViewModel,
 } from "./overlays/positionState"
@@ -62,6 +63,7 @@ export default function PositionPage() {
   const [rippleKey, setRippleKey] = useState(0)
   const [commandCentreOpen, setCommandCentreOpen] = useState(true)
   const [terrainTuning, setTerrainTuning] = useState<TerrainTuningParams>({ ...DEFAULT_TUNING })
+  const viewportRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     function onRipple() { setRippleKey((k) => k + 1) }
@@ -190,11 +192,12 @@ export default function PositionPage() {
       {/* ═══ LAYER 1: Deep navy canvas backdrop ═══ */}
       <div className={styles.canvasLayer} />
 
-      {/* ═══ ATMOSPHERE LAYERS — tunable depth/haze/spotlight ═══ */}
+      {/* ═══ ATMOSPHERE LAYERS — 2-layer haze + peak spotlight + refined vignette ═══ */}
       <div className={styles.atmoSky} aria-hidden="true" />
-      <div className={styles.atmoHaze} aria-hidden="true" />
-      <div className={styles.atmoVignette} aria-hidden="true" />
+      <div className={styles.atmoHazeDeep} aria-hidden="true" />
+      <div className={styles.atmoHazeHorizon} aria-hidden="true" />
       <div className={styles.atmoSpotlight} aria-hidden="true" />
+      <div className={styles.atmoVignette} aria-hidden="true" />
 
       {/* ═══ LAYER 2: God Mode 3-column instrument grid ═══ */}
       <div className={styles.uiLayer}>
@@ -257,7 +260,7 @@ export default function PositionPage() {
           </nav>
 
           {/* Terrain canvas — fills available space */}
-          <div className={styles.terrainViewport} aria-label="Position terrain">
+          <div ref={viewportRef} className={styles.terrainViewport} aria-label="Position terrain">
             <TerrainStage
               lockCamera={false}
               pathsEnabled={false}
@@ -286,6 +289,8 @@ export default function PositionPage() {
               <VolumetricHorizon />
             </TerrainStage>
             <div className={styles.canvasVignette} aria-hidden="true" />
+            <IdleMotionLayer viewportRef={viewportRef} />
+            <div className={styles.filmGrain} aria-hidden="true" />
             {rippleKey > 0 && (
               <div key={rippleKey} className={styles.terrainRipple} aria-hidden="true" />
             )}

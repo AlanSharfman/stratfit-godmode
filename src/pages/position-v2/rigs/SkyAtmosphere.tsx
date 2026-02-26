@@ -11,13 +11,13 @@ export default function SkyAtmosphere() {
   return (
     <Sky
       distance={4500}
-      sunPosition={[0.35, 0.12, -0.65]}
-      turbidity={8.5}
-      rayleigh={1.05}
-      mieCoefficient={0.012}
-      mieDirectionalG={0.92}
-      inclination={0.62}
-      azimuth={0.26}
+      sunPosition={[0, -0.15, -1]}
+      turbidity={20}
+      rayleigh={0.1}
+      mieCoefficient={0.005}
+      mieDirectionalG={0.7}
+      inclination={0}
+      azimuth={0.25}
     />
   );
 }
