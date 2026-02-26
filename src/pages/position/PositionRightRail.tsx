@@ -1,7 +1,14 @@
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useMemo, useState } from "react"
 import styles from "./PositionScene.module.css"
 import { useRenderFlagsStore } from "@/state/renderFlagsStore"
 import { exportCanvasSnapshot } from "./exportCanvasSnapshot"
+
+type DemoStop = {
+  label: string
+  phase: string
+  cue: string
+  actions?: Array<() => void>
+}
 
 export default function PositionRightRail({
   getCanvasEl,
@@ -13,13 +20,17 @@ export default function PositionRightRail({
   const showFlow = useRenderFlagsStore((s) => s.showFlow)
   const showGrid = useRenderFlagsStore((s) => s.showGrid)
   const toggle = useRenderFlagsStore((s) => s.toggle)
+  const set = useRenderFlagsStore((s) => s.set)
 
   const [demoActive, setDemoActive] = useState(false)
+  const [isRunning, setIsRunning] = useState(false)
 
   useEffect(() => {
     const onStart = () => setDemoActive(true)
-    const onStop = () => setDemoActive(false)
-
+    const onStop = () => {
+      setDemoActive(false)
+      setIsRunning(false)
+    }
     window.addEventListener("sf.demo.start", onStart)
     window.addEventListener("sf.demo.stop", onStop)
     return () => {
@@ -28,16 +39,55 @@ export default function PositionRightRail({
     }
   }, [])
 
-  const startDemoTour = () => {
-    window.dispatchEvent(
-      new CustomEvent("sf.demo.start", { detail: { route: "position" } })
-    )
-    window.dispatchEvent(
-      new CustomEvent("sf.demo.spotlight", { detail: { on: true, label: "Baseline" } })
-    )
-    window.dispatchEvent(new CustomEvent("sf.demo.phase", { detail: { phase: "Position" } }))
+  const stops: DemoStop[] = useMemo(
+    () => [
+      {
+        label: "Baseline",
+        phase: "Position",
+        cue: "position.baseline",
+        actions: [
+          () => set("showMarkers", true),
+          () => set("showFlow", false),
+          () => set("showGrid", false),
+          () => set("showPaths", false),
+        ],
+      },
+      {
+        label: "Cash",
+        phase: "Position",
+        cue: "position.cash",
+        actions: [() => set("showMarkers", true)],
+      },
+      {
+        label: "Runway",
+        phase: "Position",
+        cue: "position.runway",
+        actions: [() => set("showMarkers", true)],
+      },
+      {
+        label: "Risk",
+        phase: "Position",
+        cue: "position.risk",
+        actions: [() => set("showFlow", true)],
+      },
+      {
+        label: "Paths ON",
+        phase: "Position",
+        cue: "position.paths_on",
+        actions: [() => set("showPaths", true)],
+      },
+      {
+        label: "End",
+        phase: "Position",
+        cue: "position.end",
+        actions: [() => {}],
+      },
+    ],
+    [set]
+  )
 
-    // REQUEST (guarded) — will fire once per tour
+  const startDemoTour = () => {
+    window.dispatchEvent(new CustomEvent("sf.demo.start", { detail: { route: "position" } }))
     window.dispatchEvent(
       new CustomEvent("sf.demo.narrate.request", { detail: { cue: "position.entry" } })
     )
@@ -56,6 +106,30 @@ export default function PositionRightRail({
     exportCanvasSnapshot(getCanvasEl())
   }
 
+  const runSequence = async () => {
+    setIsRunning(true)
+    startDemoTour()
+
+    const api = (window as any).SF_DEMO
+    if (!api?.stopAt) {
+      console.warn("[STRATFIT] SF_DEMO bridge missing. PASS (I) required.")
+      setIsRunning(false)
+      return
+    }
+
+    // deterministic pacing: hook uses 5s hold. We pace at 5.4s to avoid overlap.
+    const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+    for (const s of stops) {
+      if (s.actions) s.actions.forEach((fn) => fn())
+      api.stopAt({ label: s.label, phase: s.phase, cue: s.cue })
+      await wait(5400)
+    }
+
+    stopDemoTour()
+    setIsRunning(false)
+  }
+
   return (
     <aside className={styles.rightRail}>
       <div className={styles.railSection}>
@@ -64,8 +138,6 @@ export default function PositionRightRail({
         <Toggle label="Markers" checked={showMarkers} onChange={() => toggle("showMarkers")} />
         <Toggle label="Flow" checked={showFlow} onChange={() => toggle("showFlow")} />
         <Toggle label="Ticks" checked={showGrid} onChange={() => toggle("showGrid")} />
-
-        {/* Paths control retained (requested OFF by default, but store flag exists) */}
         <Toggle label="Paths" checked={showPaths} onChange={() => toggle("showPaths")} />
 
         {!demoActive ? (
@@ -80,6 +152,17 @@ export default function PositionRightRail({
 
         <button className={styles.commandButton} onClick={exportSnapshot}>
           Export Snapshot
+        </button>
+
+        <div className={styles.railDivider} />
+
+        <button
+          className={styles.commandButton}
+          onClick={runSequence}
+          disabled={isRunning}
+          aria-disabled={isRunning}
+        >
+          {isRunning ? "Running Demo Sequence…" : "Run Demo Sequence"}
         </button>
       </div>
     </aside>
