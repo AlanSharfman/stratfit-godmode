@@ -1,11 +1,11 @@
 import { Link, NavLink } from "react-router-dom"
-import { ROUTES } from "@/routes/routeContract"
+import { UI_NAV_ITEMS } from "@/navigation/uiNavContract"
 import styles from "./MainNav.module.css"
 
 function MainNav() {
   return (
     <header className={styles.header}>
-      <Link to={ROUTES.POSITION} className={styles.brand}>
+      <Link to={UI_NAV_ITEMS[0].href} className={styles.brand}>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="36" height="36" style={{ display: "block" }} aria-hidden="true">
           <defs>
             <linearGradient id="topGlow" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -29,60 +29,17 @@ function MainNav() {
       </Link>
 
       <nav className={styles.nav}>
-        <NavLink
-          to={ROUTES.POSITION}
-          className={({ isActive }) => `${styles.navItem}${isActive ? " " + styles.active : ""}`}
-        >
-          Position
-        </NavLink>
-        <NavLink
-          to={ROUTES.STUDIO}
-          className={({ isActive }) => `${styles.navItem}${isActive ? " " + styles.active : ""}`}
-        >
-          Studio
-        </NavLink>
-        <NavLink
-          to={ROUTES.COMPARE}
-          className={({ isActive }) => `${styles.navItem}${isActive ? " " + styles.active : ""}`}
-        >
-          Compare
-        </NavLink>
-        <NavLink
-          to={ROUTES.INSIGHTS}
-          className={({ isActive }) => `${styles.navItem}${isActive ? " " + styles.active : ""}`}
-        >
-          Insights
-        </NavLink>
-        <NavLink
-          to={ROUTES.RISK}
-          className={({ isActive }) => `${styles.navItem}${isActive ? " " + styles.active : ""}`}
-        >
-          Risk
-        </NavLink>
-        <NavLink
-          to={ROUTES.VALUATION}
-          className={({ isActive }) => `${styles.navItem}${isActive ? " " + styles.active : ""}`}
-        >
-          Valuation
-        </NavLink>
-        <NavLink
-          to={ROUTES.COMING_FEATURES}
-          className={({ isActive }) => `${styles.navItem}${isActive ? " " + styles.active : ""}`}
-        >
-          Coming Features
-        </NavLink>
-        <NavLink
-          to={ROUTES.ASSESSMENT}
-          className={({ isActive }) => `${styles.navItem}${isActive ? " " + styles.active : ""}`}
-        >
-          Assessment
-        </NavLink>
-        <NavLink
-          to={ROUTES.ROADMAP}
-          className={({ isActive }) => `${styles.navItem}${isActive ? " " + styles.active : ""}`}
-        >
-          Roadmap
-        </NavLink>
+        {UI_NAV_ITEMS.map((item) => (
+          <NavLink
+            key={item.key}
+            to={item.href}
+            className={({ isActive }) =>
+              `${styles.navItem}${isActive ? " " + styles.active : ""}`
+            }
+          >
+            {item.label}
+          </NavLink>
+        ))}
       </nav>
     </header>
   )

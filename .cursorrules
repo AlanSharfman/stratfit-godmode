@@ -1,0 +1,23 @@
+# STRATFIT — CURSOR RULES (UI + NAV CONTRACT)
+# This is a deterministic engineering repo. No drift.
+
+You are working in STRATFIT.
+This repo has LOCKED UI/NAV contracts.
+
+ABSOLUTE RULES:
+- DO NOT change navigation labels, order, routes, or add/remove menu items.
+- DO NOT change header typography, sizing, spacing, or layout.
+- DO NOT "clean up" styles, rename nav items, refactor routing, or reformat nav config.
+- DO NOT introduce new design systems, new global stores, or new routing frameworks.
+
+ALLOWABLE CHANGES:
+- You may ONLY change nav/menu items if the user explicitly says: "UNLOCK NAV CONTRACT".
+- Otherwise, any request that would modify nav must be refused and redirected to use the contract extension mechanism.
+
+REQUIRED BEHAVIOR:
+- Use src/navigation/uiNavContract.ts as the ONLY source of truth for nav items.
+- Ensure assertUiNavContract() is executed at runtime once (app boot).
+- Ensure tests in src/navigation/__tests__/uiNavContract.test.ts pass before finishing.
+
+OUTPUT RULE:
+- When modifying code, provide FULL FILE replacements.
