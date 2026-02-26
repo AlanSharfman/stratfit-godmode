@@ -7,7 +7,7 @@ import StratfitErrorBoundary from "@/system/StratfitErrorBoundary";
 
 export default function App() {
   const location = useLocation();
-  const isGodMode = location.pathname === "/position";
+  const isGodMode = location.pathname === "/position" || location.pathname === "/position-v2";
 
   return (
     <SystemBaselineProvider>
