@@ -8,12 +8,15 @@ export default function PositionScene() {
     <div className={styles.canvasWrapper}>
       <div className={styles.stageMount}>
         <TerrainStage lockCamera>
-          {/* SAFE SKY: in-canvas, no fog mutation, no camera authority */}
           <SkyAtmosphere />
         </TerrainStage>
       </div>
 
-      {/* Optional DOM glow overlay */}
+      {/* Aerial perspective (screen-space, safe) */}
+      <div className={styles.aerialHaze} />
+      <div className={styles.horizonBloom} />
+
+      {/* Optional existing glow */}
       <div className={styles.horizonGlow} />
     </div>
   );

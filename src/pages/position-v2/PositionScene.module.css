@@ -34,6 +34,61 @@
   display: block;
 }
 
+/* ─────────────────────────────────────────────
+   SAFE AERIAL PERSPECTIVE (SCREEN-SPACE)
+   - Adds distance haze without touching scene.fog
+   - Cyan/Ice bias (no orange)
+   ───────────────────────────────────────────── */
+
+.aerialHaze {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 22;
+
+  /* Layered gradients: subtle lift near horizon, gentle top veil */
+  background:
+    radial-gradient(
+      ellipse at 50% 44%,
+      rgba(120, 220, 255, 0.10) 0%,
+      rgba(120, 220, 255, 0.06) 22%,
+      rgba(0, 0, 0, 0) 58%
+    ),
+    linear-gradient(
+      to top,
+      rgba(6, 12, 18, 0.00) 0%,
+      rgba(6, 12, 18, 0.08) 18%,
+      rgba(6, 12, 18, 0.22) 44%,
+      rgba(6, 12, 18, 0.36) 100%
+    );
+
+  filter: blur(6px);
+  opacity: 0.95;
+}
+
+/* Concentrated bloom just above the horizon line */
+.horizonBloom {
+  position: absolute;
+  left: 50%;
+  top: 22%;
+  width: 160%;
+  height: 52%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 24;
+
+  background: radial-gradient(
+    ellipse at 50% 60%,
+    rgba(120, 220, 255, 0.16) 0%,
+    rgba(0, 255, 255, 0.08) 28%,
+    rgba(0, 0, 0, 0) 68%
+  );
+
+  filter: blur(22px);
+  opacity: 0.65;
+}
+
+/* Existing glow (kept) */
 .horizonGlow {
   position: absolute;
   left: 50%;
