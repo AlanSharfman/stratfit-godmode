@@ -16,6 +16,7 @@
 // Phase 2.2: granularity prop wired from PositionPage toggle
 
 import React, { Suspense, useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Html, OrbitControls } from "@react-three/drei";
 import type { TerrainSurfaceHandle } from "@/terrain/TerrainSurface";
@@ -51,9 +52,10 @@ type TerrainStageProps = {
     detail: string
     metricLine: string
   }>
+  children?: ReactNode
 }
 
-export default function TerrainStage({ granularity, terrainMetrics, lockCamera = false, signals }: TerrainStageProps) {
+export default function TerrainStage({ granularity, terrainMetrics, lockCamera = false, signals, children }: TerrainStageProps) {
   const terrainRef = useRef<TerrainSurfaceHandle>(null!);
   const [terrainReady, setTerrainReady] = useState(false);
   const { baseline } = useSystemBaseline();
@@ -256,6 +258,8 @@ export default function TerrainStage({ granularity, terrainMetrics, lockCamera =
           </>
         )}
       </Suspense>
+
+      {children}
     </Canvas>
   );
 }
