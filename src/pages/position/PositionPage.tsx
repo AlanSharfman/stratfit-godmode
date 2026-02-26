@@ -56,6 +56,7 @@ export default function PositionPage() {
   const navigate = useNavigate()
   const [granularity, setGranularity] = useState<TimeGranularity>("quarter")
   const [rippleKey, setRippleKey] = useState(0)
+  const [commandCentreOpen, setCommandCentreOpen] = useState(true)
 
   useEffect(() => {
     function onRipple() { setRippleKey((k) => k + 1) }
@@ -239,6 +240,25 @@ export default function PositionPage() {
             <ExecutiveNarrativeCard vm={vm} />
           </div>
 
+          <div className={styles.commandCentreDock} aria-label="Command Centre">
+            {commandCentreOpen ? (
+              <CommandCentrePanel
+                groups={diagnosticGroups}
+                title="Command Centre"
+                onClose={() => setCommandCentreOpen(false)}
+              />
+            ) : (
+              <button
+                type="button"
+                className={styles.collapseToggle}
+                onClick={() => setCommandCentreOpen(true)}
+              >
+                <span>Command Centre</span>
+                <span className={styles.chevron}>▸</span>
+              </button>
+            )}
+          </div>
+
           <div className={styles.legendDock} aria-label="Terrain legend">
             <TerrainLegend />
           </div>
@@ -283,10 +303,6 @@ export default function PositionPage() {
 
         {/* ── RIGHT COLUMN ── */}
         <div className={styles.rightCol}>
-          <div className={styles.commandCentreDock} aria-label="Command Centre">
-            <CommandCentrePanel groups={diagnosticGroups} title="Command Centre" />
-          </div>
-
           <div className={styles.baselineIntelDock} aria-label="Baseline Intelligence">
             <BaselineIntelligencePanel />
           </div>

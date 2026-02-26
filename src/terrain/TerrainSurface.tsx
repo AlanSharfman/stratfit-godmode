@@ -62,7 +62,7 @@ const TerrainSurface = forwardRef<TerrainSurfaceHandle, Props>(function TerrainS
       if (!r.current) continue
       r.current.rotation.x = -Math.PI / 2
       r.current.position.set(0, -6, 0)
-      r.current.scale.set(2.6, 1, 2.6)
+      r.current.scale.set(3.0, 2.8, 2.6)
       r.current.frustumCulled = false
     }
   }, [])

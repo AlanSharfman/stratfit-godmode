@@ -127,12 +127,12 @@ export default function TerrainStage({ granularity, terrainMetrics, lockCamera =
       )}
 
       {/* Fog stays deterministic; background comes from DOM gradient behind the canvas. */}
-      <fog attach="fog" args={[fogColor, 320, 2200]} />
+      <fog attach="fog" args={[fogColor, 420, 2800]} />
 
-      {/* Lights: slightly lifted for marker + tick readability */}
-      <ambientLight intensity={1.10} />
-      <directionalLight position={[120, 180, 120]} intensity={1.60} color="#CFEFFF" />
-      <directionalLight position={[-80, 120, -60]} intensity={0.55} color="#5ee7ff" />
+      {/* Lights: lifted for brighter terrain readability */}
+      <ambientLight intensity={1.55} />
+      <directionalLight position={[120, 180, 120]} intensity={2.10} color="#DFFAFF" />
+      <directionalLight position={[-80, 120, -60]} intensity={0.85} color="#6ef0ff" />
 
       <HorizonBand />
 
