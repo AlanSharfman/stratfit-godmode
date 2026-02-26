@@ -23,9 +23,22 @@ export function initStudioScene(container: HTMLDivElement) {
     });
 
     renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
 
     container.appendChild(renderer.domElement);
+
+    // WebGL context loss / restore safety net
+    const canvas = renderer.domElement;
+    const onLost = (e: Event) => {
+        e.preventDefault();
+        console.warn("[WebGL] context lost");
+    };
+    const onRestored = () => {
+        console.warn("[WebGL] context restored");
+        window.location.reload();
+    };
+    canvas.addEventListener("webglcontextlost", onLost, false);
+    canvas.addEventListener("webglcontextrestored", onRestored, false);
 
     const light = new THREE.DirectionalLight(0xffffff, 1);
     light.position.set(3, 5, 2);
@@ -55,6 +68,8 @@ export function initStudioScene(container: HTMLDivElement) {
 
     return () => {
         window.removeEventListener("resize", handleResize);
+        canvas.removeEventListener("webglcontextlost", onLost);
+        canvas.removeEventListener("webglcontextrestored", onRestored);
     };
 }
 
@@ -63,6 +78,9 @@ export function disposeStudioScene(dispose?: () => void) {
     animationId = null;
 
     if (renderer) {
+        // Deep scene cleanup is handled by caller if needed;
+        // force GPU resource release
+        renderer.renderLists?.dispose?.();
         renderer.dispose();
         renderer.forceContextLoss();
         renderer.domElement.remove();

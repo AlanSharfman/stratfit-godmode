@@ -235,9 +235,6 @@ export default function PositionPage() {
             <KPIOverlay vm={vm} layout="rail" />
           </div>
 
-          {/* Executive narrative summary */}
-          <div className={styles.execSummaryDock} aria-label="Executive summary">
-            <ExecutiveNarrativeCard vm={vm} />
           </div>
         </div>
 
