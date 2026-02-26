@@ -15,18 +15,20 @@ export default function PositionPageV2() {
         </div>
 
         <div className={styles.bezelInner}>
-          {/* ✅ MICRO STEP (optical recess) */}
+          {/* Micro step (optical recess) */}
           <div className={styles.innerStep} aria-hidden="true" />
 
+          {/* Scene */}
           <div className={styles.sceneRoot}>
             <PositionScene />
           </div>
 
-          {/* ✅ GLASS SHEEN (OLED / refraction feel) */}
+          {/* Glass stack (OLED + sub-pixel ripple) */}
           <div className={styles.glassSheen} aria-hidden="true" />
+          <div className={styles.glassRipple} aria-hidden="true" />
         </div>
 
-        {/* ✅ UI RAILS (institutional, low clutter) */}
+        {/* UI rails */}
         <div className={styles.uiTopRail} aria-hidden="true">
           <div className={styles.uiTopLeft}>
             <div className={styles.brandGlyph} />
