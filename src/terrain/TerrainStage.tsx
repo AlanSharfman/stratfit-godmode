@@ -112,10 +112,12 @@ export default function TerrainStage({
       camera={{ position: [0, 155, 460], fov: 46, near: 0.1, far: 5000 }}
       gl={{ antialias: true, alpha: true }}
       onCreated={({ camera, gl }) => {
-        // Wide cinematic composition — ridge in upper third, foreground visible
-        camera.position.set(0, 155, 460);
-        camera.lookAt(0, 18, 0);
-        camera.updateProjectionMatrix();
+        // Only set defaults when not locked — locked pages inject a CameraCompositionRig.
+        if (!lockCamera) {
+          camera.position.set(0, 155, 460);
+          camera.lookAt(0, 18, 0);
+          camera.updateProjectionMatrix();
+        }
 
         // Transparent clear — Position page supplies charcoal gradient behind Canvas.
         gl.setClearColor(fogColor, 0);

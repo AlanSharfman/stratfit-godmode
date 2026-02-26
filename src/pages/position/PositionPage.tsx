@@ -4,7 +4,11 @@ import { useShallow } from "zustand/react/shallow"
 
 import { ROUTES } from "@/routes/routeContract"
 
-import TerrainStageV2 from "@/terrain/v2/TerrainStageV2"
+import TerrainStage from "@/terrain/TerrainStage"
+import CameraCompositionRig from "@/pages/position-v2/rigs/CameraCompositionRig"
+import TerrainBreathRig from "@/pages/position-v2/rigs/TerrainBreathRig"
+import SkyAtmosphere from "@/pages/position-v2/rigs/SkyAtmosphere"
+import VolumetricHorizon from "@/pages/position-v2/rigs/VolumetricHorizon"
 import { deriveTerrainMetrics } from "@/terrain/terrainFromBaseline"
 import type { TimeGranularity } from "@/terrain/TimelineTicks"
 
@@ -19,7 +23,6 @@ import type { SemanticLayerKey } from "@/render/shl"
 
 import CommandCentrePanel from "@/components/diagnostics/CommandCentrePanel"
 import BaselineIntelligencePanel from "@/components/baseline/BaselineIntelligencePanel"
-import CommandConsoleBar from "@/components/command/CommandConsoleBar"
 import {
   classifyQuestion,
   QuestionCategory,
@@ -28,11 +31,8 @@ import { buildQuestionContext } from "@/domain/question/questionContext"
 import { buildScenarioADraft } from "@/domain/scenario/scenarioDraft"
 import { studioSessionStore } from "@/state/studioSessionStore"
 import KPIOverlay from "./overlays/KPIOverlay"
-import DiagnosticsSummary from "./components/DiagnosticsSummary"
 import ExecutiveNarrativeCard from "./components/ExecutiveNarrativeCard"
-import TerrainLegend from "./overlays/TerrainLegend"
 import TimeScaleControl from "./overlays/TimeScaleControl"
-import IntelligenceStrip from "@/components/position/IntelligenceStrip"
 import {
   buildPositionViewModel,
 } from "./overlays/positionState"
@@ -182,31 +182,8 @@ export default function PositionPage() {
 
   return (
     <div className={styles.page}>
-      {/* ═══ Premium header line — spans full width above everything ═══ */}
-      <div className={styles.headerLine} aria-hidden="true">
-        <span>POSITION: FRAGILE</span>
-        <span className={styles.headerSep}>|</span>
-        <span>Confidence: High</span>
-        <span className={styles.headerSep}>|</span>
-        <span>Updated: {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-        <span className={styles.headerSep}>|</span>
-        <span>Data: Manual / Xero</span>
-      </div>
-
-      {/* ═══ LAYER 1: Fixed full-bleed terrain canvas ═══ */}
-      <div className={styles.canvasLayer}>
-        <TerrainStageV2
-          granularity={granularity}
-          terrainMetrics={terrainMetrics}
-          lockCamera
-          signals={terrainSignals}
-        />
-        <div className={styles.canvasVignette} aria-hidden="true" />
-        <div className={styles.terrainBezel} aria-hidden="true" />
-        {rippleKey > 0 && (
-          <div key={rippleKey} className={styles.terrainRipple} aria-hidden="true" />
-        )}
-      </div>
+      {/* ═══ LAYER 1: Void black backdrop ═══ */}
+      <div className={styles.canvasLayer} />
 
       {/* ═══ LAYER 2: 3-column frosted-glass UI ═══ */}
       <div className={styles.uiLayer}>
@@ -283,10 +260,26 @@ export default function PositionPage() {
             <TimeScaleControl granularity={granularity} setGranularity={setGranularity} />
           </div>
 
-          <CommandConsoleBar
-            modeLabel="Decision Console"
-            onSubmit={async (question) => { await handleQuestionSubmit(question) }}
-          />
+          {/* V2 terrain mesh — bounded in centre column */}
+          <div className={styles.terrainViewport} aria-label="Position terrain">
+            <TerrainStage
+              lockCamera
+              pathsEnabled={false}
+              terrainMetrics={terrainMetrics}
+              granularity={granularity}
+              signals={terrainSignals}
+            >
+              <CameraCompositionRig />
+              <TerrainBreathRig />
+              <SkyAtmosphere />
+              <VolumetricHorizon />
+            </TerrainStage>
+            <div className={styles.canvasVignette} aria-hidden="true" />
+            <div className={styles.terrainBezel} aria-hidden="true" />
+            {rippleKey > 0 && (
+              <div key={rippleKey} className={styles.terrainRipple} aria-hidden="true" />
+            )}
+          </div>
 
           {!vm && (
             <div className={styles.noBaselineHint}>
