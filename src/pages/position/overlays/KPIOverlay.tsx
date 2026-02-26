@@ -24,51 +24,41 @@ function fmtPct(n: number): string {
    ═══════════════════════════════════════════════════════════════ */
 
 /** ARR — interactive God Mode instrument (parallax + hover detail). */
-function ArrWidget({ arr }: { arr: number }) {
+function ArrWidget() {
   const uid = useId()
   const ids = useMemo(
     () => ({
       line: `${uid}-arrLine`,
       fill: `${uid}-arrFill`,
       glow: `${uid}-arrGlow`,
+      scanGlow: `${uid}-arrScan`,
     }),
     [uid],
   )
 
-  const [hover, setHover] = useState(false)
   const [parallax, setParallax] = useState({ x: 0, y: 0 })
 
   // Deterministic sparkline data points (x,y) in a 72×28 viewport
   const pts = "4,22 10,18 16,19 22,14 28,16 34,10 40,12 46,7 52,9 58,5 64,7 70,3"
-  const exact = Number.isFinite(arr) ? `$${Math.round(arr).toLocaleString()}` : "—"
-  const mrr = Number.isFinite(arr) ? arr / 12 : NaN
-  const mrrDisplay = Number.isFinite(mrr) ? `$${fmtMoney(mrr)}` : "—"
 
   return (
     <div
       className={`${styles.widget} ${styles.arrWidget}`}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => {
-        setHover(false)
-        setParallax({ x: 0, y: 0 })
-      }}
+      onMouseLeave={() => setParallax({ x: 0, y: 0 })}
       onMouseMove={(e) => {
         const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect()
         const nx = ((e.clientX - rect.left) / Math.max(1, rect.width) - 0.5) * 2
         const ny = ((e.clientY - rect.top) / Math.max(1, rect.height) - 0.5) * 2
         setParallax({ x: nx, y: ny })
       }}
-      style={{
-        // Use existing token; "currentColor" drives the SVG gradients.
-        color: "var(--color-emerald-400)",
-      }}
+      style={{ color: "var(--color-emerald-400)" }}
       role="img"
       aria-label="ARR instrument"
     >
       <div
         className={styles.arrInstrument}
         style={{
-          transform: `translate3d(${parallax.x * 3}px, ${parallax.y * 2}px, 0) rotateX(${parallax.y * -3}deg) rotateY(${parallax.x * 4}deg)`,
+          transform: `translate3d(${parallax.x * 4}px, ${parallax.y * 3}px, 0) rotateX(${parallax.y * -4}deg) rotateY(${parallax.x * 5}deg) scale(${1 + Math.abs(parallax.x * 0.03)})`,
         }}
       >
         <svg width="100%" height="100%" viewBox="0 0 72 28" preserveAspectRatio="xMidYMid meet" fill="none" overflow="visible">
@@ -79,23 +69,38 @@ function ArrWidget({ arr }: { arr: number }) {
               <stop offset="100%" stopColor="currentColor" stopOpacity="1" />
             </linearGradient>
             <linearGradient id={ids.fill} x1="0" y1="0" x2="0" y2="28" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="currentColor" stopOpacity="0.18" />
+              <stop offset="0%" stopColor="currentColor" stopOpacity="0.22" />
               <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
             </linearGradient>
             <filter id={ids.glow} x="-20%" y="-60%" width="140%" height="220%">
-              <feGaussianBlur stdDeviation="1.4" result="blur" />
+              <feGaussianBlur stdDeviation="1.6" result="blur" />
               <feMerge>
                 <feMergeNode in="blur" />
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
             </filter>
+            {/* Vertical scan-line filter */}
+            <linearGradient id={ids.scanGlow} x1="0" y1="0" x2="72" y2="0" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="currentColor" stopOpacity="0" />
+              <stop offset="48%" stopColor="currentColor" stopOpacity="0" />
+              <stop offset="50%" stopColor="currentColor" stopOpacity="0.35" />
+              <stop offset="52%" stopColor="currentColor" stopOpacity="0" />
+              <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+            </linearGradient>
           </defs>
+
+          {/* Animated scan line sweeping left-to-right continuously */}
+          <rect x="0" y="0" width="72" height="28" fill={`url(#${ids.scanGlow})`} opacity="0.6">
+            <animateTransform attributeName="transform" type="translate" values="-72,0;72,0" dur="2.8s" repeatCount="indefinite" />
+          </rect>
 
           {/* Fill area under sparkline */}
           <polygon
             points={`4,22 10,18 16,19 22,14 28,16 34,10 40,12 46,7 52,9 58,5 64,7 70,3 70,28 4,28`}
             fill={`url(#${ids.fill})`}
-          />
+          >
+            <animate attributeName="opacity" values="0.5;1;0.5" dur="3s" repeatCount="indefinite" />
+          </polygon>
 
           {/* Sparkline — stroke-dasharray draw-on animation */}
           <polyline
@@ -114,29 +119,22 @@ function ArrWidget({ arr }: { arr: number }) {
           {/* Live head — pulsing dot at latest point */}
           <circle cx="70" cy="3" r="2.2" fill="currentColor" opacity="0">
             <animate attributeName="opacity" values="0;1" dur="0.2s" begin="0.9s" fill="freeze" />
-            <animate attributeName="opacity" values="1;0.45;1" dur="1.6s" begin="1.1s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="1;0.35;1" dur="1.4s" begin="1.1s" repeatCount="indefinite" />
           </circle>
+          {/* Outer breathing glow ring */}
           <circle cx="70" cy="3" r="4.6" fill="currentColor" opacity="0">
-            <animate attributeName="opacity" values="0;0.12" dur="0.2s" begin="0.9s" fill="freeze" />
-            <animate attributeName="r" values="4.6;7.2;4.6" dur="1.6s" begin="1.1s" repeatCount="indefinite" />
-            <animate attributeName="opacity" values="0.12;0;0.12" dur="1.6s" begin="1.1s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0;0.15" dur="0.2s" begin="0.9s" fill="freeze" />
+            <animate attributeName="r" values="4.6;8;4.6" dur="1.4s" begin="1.1s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0.15;0;0.15" dur="1.4s" begin="1.1s" repeatCount="indefinite" />
+          </circle>
+
+          {/* Travelling particle along the sparkline path */}
+          <circle r="1.2" fill="currentColor" opacity="0.7">
+            <animateMotion dur="3s" repeatCount="indefinite" path="M4,22 L10,18 L16,19 L22,14 L28,16 L34,10 L40,12 L46,7 L52,9 L58,5 L64,7 L70,3" />
+            <animate attributeName="opacity" values="0;0.8;0.8;0" dur="3s" repeatCount="indefinite" />
           </circle>
         </svg>
       </div>
-
-      {hover && (
-        <div className={styles.arrTooltip} role="status" aria-live="polite">
-          <div className={styles.arrTooltipTitle}>ARR</div>
-          <div className={styles.arrTooltipRow}>
-            <span className={styles.arrTooltipKey}>MRR</span>
-            <span className={styles.arrTooltipVal}>{mrrDisplay}</span>
-          </div>
-          <div className={styles.arrTooltipRow}>
-            <span className={styles.arrTooltipKey}>Exact</span>
-            <span className={styles.arrTooltipVal}>{exact}</span>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
@@ -245,7 +243,7 @@ export default function KPIOverlay({ vm, feed }: { vm: PositionViewModel | null;
       <div className={cellClass}>
         <div className={styles.kpiLabel}>ARR</div>
         <div className={styles.kpiValue}>{k ? `$${fmtMoney(k.arr)}` : "$0"}</div>
-        <ArrWidget arr={k?.arr ?? NaN} />
+        <ArrWidget />
         <div className={styles.kpiSub}>Annual recurring</div>
       </div>
       <div className={cellClass}>
