@@ -25,7 +25,9 @@ export default function PositionScene() {
     <div className={styles.sceneRoot}>
       <PositionLeftRail />
 
-      <div className={styles.canvasWrap}>
+      <div
+        className={`${styles.canvasWrap} ${holdActive ? styles.holdParallax : ""}`}
+      >
         <Canvas
           gl={{ preserveDrawingBuffer: true }}
           onCreated={({ gl }) => {
@@ -35,6 +37,9 @@ export default function PositionScene() {
           <TerrainStage />
         </Canvas>
 
+        {/* PASS M: institutional depth overlays (CSS only) */}
+        <div className={styles.scanlines} />
+        <div className={styles.noiseFilm} />
         <div className={styles.canvasVignette} />
 
         {tourActive && (
