@@ -8,14 +8,11 @@ export default function PositionRightRail({
 }: {
   getCanvasEl: () => HTMLCanvasElement | null
 }) {
-  const {
-    showMarkers,
-    showPaths,
-    showTicks,
-    toggleMarkers,
-    togglePaths,
-    toggleTicks,
-  } = useRenderFlagsStore()
+  const showMarkers = useRenderFlagsStore((s) => s.showMarkers)
+  const showPaths = useRenderFlagsStore((s) => s.showPaths)
+  const showFlow = useRenderFlagsStore((s) => s.showFlow)
+  const showGrid = useRenderFlagsStore((s) => s.showGrid)
+  const toggle = useRenderFlagsStore((s) => s.toggle)
 
   const [demoActive, setDemoActive] = useState(false)
 
@@ -64,9 +61,12 @@ export default function PositionRightRail({
       <div className={styles.railSection}>
         <div className={styles.railTitle}>Command</div>
 
-        <Toggle label="Markers" checked={showMarkers} onChange={toggleMarkers} />
-        <Toggle label="Paths" checked={showPaths} onChange={togglePaths} />
-        <Toggle label="Ticks" checked={showTicks} onChange={toggleTicks} />
+        <Toggle label="Markers" checked={showMarkers} onChange={() => toggle("showMarkers")} />
+        <Toggle label="Flow" checked={showFlow} onChange={() => toggle("showFlow")} />
+        <Toggle label="Ticks" checked={showGrid} onChange={() => toggle("showGrid")} />
+
+        {/* Paths control retained (requested OFF by default, but store flag exists) */}
+        <Toggle label="Paths" checked={showPaths} onChange={() => toggle("showPaths")} />
 
         {!demoActive ? (
           <button className={styles.commandButton} onClick={startDemoTour}>

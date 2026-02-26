@@ -2,16 +2,17 @@ import React, { useRef } from "react"
 import styles from "./PositionScene.module.css"
 import { Canvas } from "@react-three/fiber"
 import TerrainStage from "@/terrain/TerrainStage"
-import LockCamera from "@/terrain/LockCamera"
 import PositionLeftRail from "./PositionLeftRail"
 import PositionRightRail from "./PositionRightRail"
 import useRenderWatchdog from "./useRenderWatchdog"
 import useOverlayPersistence from "./useOverlayPersistence"
 import useDemoTourHooks from "./useDemoTourHooks"
+import useDemoScriptBridge from "./useDemoScriptBridge"
 
 export default function PositionScene() {
   useRenderWatchdog()
   useOverlayPersistence()
+  useDemoScriptBridge()
 
   const { tourActive, phase, spotlightOn, spotlightLabel, holdActive } =
     useDemoTourHooks()
@@ -29,7 +30,6 @@ export default function PositionScene() {
             canvasRef.current = gl.domElement
           }}
         >
-          <LockCamera />
           <TerrainStage />
         </Canvas>
 
