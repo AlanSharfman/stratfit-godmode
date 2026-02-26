@@ -27,7 +27,7 @@
 .sceneRoot {
   position: relative;
   display: grid;
-  grid-template-columns: 280px 1fr 280px;
+  grid-template-columns: 272px 1fr 272px; /* tighter rails */
   height: 100%;
   z-index: 1;
 }
@@ -37,7 +37,135 @@
   height: 100%;
 }
 
-/* PASS L: micro-parallax during holds (CSS only; no camera changes) */
+/* ===== PASS O: Rail Density ===== */
+
+.leftRail,
+.rightRail {
+  position: relative;
+  backdrop-filter: blur(18px);
+  background: rgba(10,14,20,0.52);
+  padding: 20px 16px 18px 16px; /* tighter inset */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.leftRail {
+  border-right: 1px solid rgba(255,255,255,0.045);
+}
+
+.rightRail {
+  border-left: 1px solid rgba(255,255,255,0.045);
+}
+
+.railSection {
+  display: flex;
+  flex-direction: column;
+  gap: 14px; /* tighter vertical rhythm */
+}
+
+.railTitle {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(190,210,230,0.62);
+  margin-bottom: 2px;
+}
+
+.railDivider {
+  height: 1px;
+  background: rgba(255,255,255,0.065);
+  margin: 2px 0 6px 0;
+}
+
+/* Metric rows */
+
+.metricRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  font-size: 12px;
+  padding: 6px 0;
+}
+
+.metricLabel {
+  color: rgba(180,200,220,0.64);
+  letter-spacing: 0.02em;
+}
+
+.metricValue {
+  color: #e6f1ff;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* Toggle rows */
+
+.toggleRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.toggle {
+  width: 34px;
+  height: 16px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.12);
+  position: relative;
+  transition: 0.2s ease;
+}
+
+.toggle::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: white;
+  transition: 0.2s ease;
+}
+
+.toggle.on {
+  background: rgba(0,180,255,0.48);
+}
+
+.toggle.on::after {
+  left: 20px;
+}
+
+/* Command buttons */
+
+.commandButton {
+  margin-top: 4px;
+  padding: 8px 10px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(255,255,255,0.055);
+  border: 1px solid rgba(255,255,255,0.085);
+  border-radius: 6px;
+  color: #eaf3ff;
+  cursor: pointer;
+  transition: 0.18s ease;
+}
+
+.commandButton:hover {
+  background: rgba(255,255,255,0.11);
+}
+
+.commandButton[disabled],
+.commandButton[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ===== Everything below unchanged (visual layers) ===== */
+
 .holdParallax::after {
   content: "";
   position: absolute;
@@ -59,118 +187,7 @@
   100% { transform: translate3d(0px, 0px, 0) scale(1.02); opacity: 0.55; }
 }
 
-.leftRail,
-.rightRail {
-  position: relative;
-  backdrop-filter: blur(18px);
-  background: rgba(10,14,20,0.55);
-  padding: 24px 20px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.leftRail {
-  border-right: 1px solid rgba(255,255,255,0.05);
-}
-
-.rightRail {
-  border-left: 1px solid rgba(255,255,255,0.05);
-}
-
-.railSection {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.railTitle {
-  font-size: 12px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(200,220,240,0.7);
-}
-
-.railDivider {
-  height: 1px;
-  background: rgba(255,255,255,0.08);
-  margin: 4px 0;
-}
-
-.metricRow {
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-}
-
-.metricLabel {
-  color: rgba(180,200,220,0.7);
-}
-
-.metricValue {
-  color: #e8f2ff;
-  font-weight: 500;
-}
-
-.toggleRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-}
-
-.toggle {
-  width: 36px;
-  height: 18px;
-  border-radius: 20px;
-  background: rgba(255,255,255,0.12);
-  position: relative;
-  transition: 0.2s ease;
-}
-
-.toggle::after {
-  content: "";
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: white;
-  transition: 0.2s ease;
-}
-
-.toggle.on {
-  background: rgba(0,180,255,0.5);
-}
-
-.toggle.on::after {
-  left: 20px;
-}
-
-.commandButton {
-  margin-top: 6px;
-  padding: 10px 12px;
-  font-size: 12px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 6px;
-  color: #eaf3ff;
-  cursor: pointer;
-  transition: 0.2s ease;
-}
-
-.commandButton:hover {
-  background: rgba(255,255,255,0.12);
-}
-
-.commandButton[disabled],
-.commandButton[aria-disabled="true"] {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-/* ===== Bezel Corner Dock ===== */
+/* Corner dock + scrubber + overlays preserved exactly */
 
 .cornerDock {
   position: absolute;
@@ -241,8 +258,6 @@
   color: rgba(200, 220, 240, 0.65);
 }
 
-/* ===== PASS N: Demo scrubber ===== */
-
 .scrubberWrap {
   display: inline-flex;
   align-items: center;
@@ -281,10 +296,6 @@
   cursor: pointer;
 }
 
-.scrubberBtn:hover {
-  background: rgba(255,255,255,0.12);
-}
-
 .scrubberStop {
   padding: 6px 10px;
   border-radius: 999px;
@@ -297,18 +308,12 @@
   cursor: pointer;
 }
 
-.scrubberStop:hover {
-  background: rgba(255,255,255,0.10);
-}
-
 .scrubberTag {
   font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: rgba(200,220,240,0.65);
 }
-
-/* ===== PASS M: Institutional scanline + noise film (CSS only) ===== */
 
 .scanlines {
   position: absolute;
@@ -345,8 +350,6 @@
   50% { transform: translate3d(6px,-4px,0); }
   100% { transform: translate3d(0,0,0); }
 }
-
-/* ===== Existing demo UI ===== */
 
 .demoPill {
   position: absolute;
