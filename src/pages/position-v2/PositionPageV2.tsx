@@ -58,6 +58,7 @@ export default function PositionPageV2() {
         <div className={styles.bezelSpecularSweep} />
         <div className={styles.bezelChrome} />
         <div className={styles.bezelHighlights} />
+        <div className={styles.bezelEdgeSpecular} />
         <div className={styles.bezelNoise} />
         <div className={styles.innerTrace} />
         <div className={styles.vignette} />
