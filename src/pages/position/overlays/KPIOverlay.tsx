@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useId, useMemo, useState } from "react"
 import styles from "../PositionOverlays.module.css"
 import type { PositionViewModel } from "./positionState"
 
@@ -23,69 +23,120 @@ function fmtPct(n: number): string {
    Sourced from prior KPICard.tsx widget patterns (globe, bars, dial, arrow, ring)
    ═══════════════════════════════════════════════════════════════ */
 
-/** ARR — premium glowing sparkline with fill gradient and live head dot */
-function ArrWidget() {
+/** ARR — interactive God Mode instrument (parallax + hover detail). */
+function ArrWidget({ arr }: { arr: number }) {
+  const uid = useId()
+  const ids = useMemo(
+    () => ({
+      line: `${uid}-arrLine`,
+      fill: `${uid}-arrFill`,
+      glow: `${uid}-arrGlow`,
+    }),
+    [uid],
+  )
+
+  const [hover, setHover] = useState(false)
+  const [parallax, setParallax] = useState({ x: 0, y: 0 })
+
   // Deterministic sparkline data points (x,y) in a 72×28 viewport
   const pts = "4,22 10,18 16,19 22,14 28,16 34,10 40,12 46,7 52,9 58,5 64,7 70,3"
+  const exact = Number.isFinite(arr) ? `$${Math.round(arr).toLocaleString()}` : "—"
+  const mrr = Number.isFinite(arr) ? arr / 12 : NaN
+  const mrrDisplay = Number.isFinite(mrr) ? `$${fmtMoney(mrr)}` : "—"
+
   return (
-    <div className={styles.widget}>
-      <svg width="100%" height="100%" viewBox="0 0 72 28" preserveAspectRatio="xMidYMid meet" fill="none" overflow="visible">
-        <defs>
-          <linearGradient id="arrLine" x1="0" y1="0" x2="72" y2="0" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#34d399" stopOpacity="0.25"/>
-            <stop offset="55%" stopColor="#34d399" stopOpacity="0.80"/>
-            <stop offset="100%" stopColor="#6ee7b7" stopOpacity="1"/>
-          </linearGradient>
-          <linearGradient id="arrFill" x1="0" y1="0" x2="0" y2="28" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#34d399" stopOpacity="0.22"/>
-            <stop offset="100%" stopColor="#34d399" stopOpacity="0"/>
-          </linearGradient>
-          <filter id="arrGlow" x="-20%" y="-60%" width="140%" height="220%">
-            <feGaussianBlur stdDeviation="1.4" result="blur"/>
-            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-          </filter>
-        </defs>
-        {/* Fill area under sparkline */}
-        <polygon
-          points={`4,22 10,18 16,19 22,14 28,16 34,10 40,12 46,7 52,9 58,5 64,7 70,3 70,28 4,28`}
-          fill="url(#arrFill)"
-        />
-        {/* Sparkline — stroke-dasharray draw-on animation */}
-        <polyline
-          points={pts}
-          stroke="url(#arrLine)"
-          strokeWidth="1.6"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          filter="url(#arrGlow)"
-          strokeDasharray="120"
-          strokeDashoffset="120"
-        >
-          <animate attributeName="stroke-dashoffset" from="120" to="0" dur="1.4s" fill="freeze" begin="0s"/>
-        </polyline>
-        {/* Live head — pulsing dot at latest point */}
-        <circle cx="70" cy="3" r="2.2" fill="#6ee7b7" opacity="0">
-          <animate attributeName="opacity" values="0;1" dur="0.2s" begin="1.3s" fill="freeze"/>
-          <animate attributeName="opacity" values="1;0.4;1" dur="1.6s" begin="1.5s" repeatCount="indefinite"/>
-        </circle>
-        {/* Outer glow ring on head */}
-        <circle cx="70" cy="3" r="4.5" fill="#34d399" opacity="0">
-          <animate attributeName="opacity" values="0;0.18" dur="0.2s" begin="1.3s" fill="freeze"/>
-          <animate attributeName="r" values="4.5;7;4.5" dur="1.6s" begin="1.5s" repeatCount="indefinite"/>
-          <animate attributeName="opacity" values="0.18;0;0.18" dur="1.6s" begin="1.5s" repeatCount="indefinite"/>
-        </circle>
-        {/* Upward trend arrow at head */}
-        <polyline
-          points="64,8 70,3 76,5"
-          stroke="#6ee7b7"
-          strokeWidth="1.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          opacity="0"
-        >
-          <animate attributeName="opacity" values="0;0.75" dur="0.3s" begin="1.4s" fill="freeze"/>
-        </polyline>
-      </svg>
+    <div
+      className={`${styles.widget} ${styles.arrWidget}`}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => {
+        setHover(false)
+        setParallax({ x: 0, y: 0 })
+      }}
+      onMouseMove={(e) => {
+        const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect()
+        const nx = ((e.clientX - rect.left) / Math.max(1, rect.width) - 0.5) * 2
+        const ny = ((e.clientY - rect.top) / Math.max(1, rect.height) - 0.5) * 2
+        setParallax({ x: nx, y: ny })
+      }}
+      style={{
+        // Use existing token; "currentColor" drives the SVG gradients.
+        color: "var(--color-emerald-400)",
+      }}
+      role="img"
+      aria-label="ARR instrument"
+    >
+      <div
+        className={styles.arrInstrument}
+        style={{
+          transform: `translate3d(${parallax.x * 3}px, ${parallax.y * 2}px, 0) rotateX(${parallax.y * -3}deg) rotateY(${parallax.x * 4}deg)`,
+        }}
+      >
+        <svg width="100%" height="100%" viewBox="0 0 72 28" preserveAspectRatio="xMidYMid meet" fill="none" overflow="visible">
+          <defs>
+            <linearGradient id={ids.line} x1="0" y1="0" x2="72" y2="0" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="currentColor" stopOpacity="0.20" />
+              <stop offset="55%" stopColor="currentColor" stopOpacity="0.78" />
+              <stop offset="100%" stopColor="currentColor" stopOpacity="1" />
+            </linearGradient>
+            <linearGradient id={ids.fill} x1="0" y1="0" x2="0" y2="28" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="currentColor" stopOpacity="0.18" />
+              <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+            </linearGradient>
+            <filter id={ids.glow} x="-20%" y="-60%" width="140%" height="220%">
+              <feGaussianBlur stdDeviation="1.4" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          {/* Fill area under sparkline */}
+          <polygon
+            points={`4,22 10,18 16,19 22,14 28,16 34,10 40,12 46,7 52,9 58,5 64,7 70,3 70,28 4,28`}
+            fill={`url(#${ids.fill})`}
+          />
+
+          {/* Sparkline — stroke-dasharray draw-on animation */}
+          <polyline
+            points={pts}
+            stroke={`url(#${ids.line})`}
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            filter={`url(#${ids.glow})`}
+            strokeDasharray="120"
+            strokeDashoffset="120"
+          >
+            <animate attributeName="stroke-dashoffset" from="120" to="0" dur="1.1s" fill="freeze" begin="0s" />
+          </polyline>
+
+          {/* Live head — pulsing dot at latest point */}
+          <circle cx="70" cy="3" r="2.2" fill="currentColor" opacity="0">
+            <animate attributeName="opacity" values="0;1" dur="0.2s" begin="0.9s" fill="freeze" />
+            <animate attributeName="opacity" values="1;0.45;1" dur="1.6s" begin="1.1s" repeatCount="indefinite" />
+          </circle>
+          <circle cx="70" cy="3" r="4.6" fill="currentColor" opacity="0">
+            <animate attributeName="opacity" values="0;0.12" dur="0.2s" begin="0.9s" fill="freeze" />
+            <animate attributeName="r" values="4.6;7.2;4.6" dur="1.6s" begin="1.1s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0.12;0;0.12" dur="1.6s" begin="1.1s" repeatCount="indefinite" />
+          </circle>
+        </svg>
+      </div>
+
+      {hover && (
+        <div className={styles.arrTooltip} role="status" aria-live="polite">
+          <div className={styles.arrTooltipTitle}>ARR</div>
+          <div className={styles.arrTooltipRow}>
+            <span className={styles.arrTooltipKey}>MRR</span>
+            <span className={styles.arrTooltipVal}>{mrrDisplay}</span>
+          </div>
+          <div className={styles.arrTooltipRow}>
+            <span className={styles.arrTooltipKey}>Exact</span>
+            <span className={styles.arrTooltipVal}>{exact}</span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -194,7 +245,7 @@ export default function KPIOverlay({ vm, feed }: { vm: PositionViewModel | null;
       <div className={cellClass}>
         <div className={styles.kpiLabel}>ARR</div>
         <div className={styles.kpiValue}>{k ? `$${fmtMoney(k.arr)}` : "$0"}</div>
-        <ArrWidget />
+        <ArrWidget arr={k?.arr ?? NaN} />
         <div className={styles.kpiSub}>Annual recurring</div>
       </div>
       <div className={cellClass}>

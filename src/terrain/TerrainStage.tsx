@@ -61,7 +61,8 @@ export default function TerrainStage({ granularity, terrainMetrics, lockCamera =
 
   const [fogColor, setFogColor] = useState("#050A10");
   useEffect(() => {
-    setFogColor(readCssVar("--navy-950", "#050A10"));
+    // Use the global "charcoal" void token when available.
+    setFogColor(readCssVar("--color-bg-void", readCssVar("--navy-950", "#050A10")));
   }, []);
 
   const [hoveredSignalKey, setHoveredSignalKey] = useState<string | null>(null)
