@@ -55,7 +55,48 @@
     0 18px 50px rgba(0,0,0,0.48) inset;
 }
 
-/* Micro specular sweep (jewel edge glint) */
+/* ✅ MICRO STEP (single inner recess) */
+.innerStep {
+  position: absolute;
+  inset: 8px;
+  border-radius: 18px;
+  pointer-events: none;
+  z-index: 74;
+  box-shadow:
+    inset 0 2px 7px rgba(0,0,0,0.62),
+    inset 0 -1px 0 rgba(255,255,255,0.06),
+    inset 0 0 0 1px rgba(0,0,0,0.52);
+  opacity: 0.95;
+}
+
+/* ✅ GLASS SHEEN (subtle refraction / OLED) */
+.glassSheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 76;
+
+  background:
+    radial-gradient(900px 520px at 50% 0%,
+      rgba(255,255,255,0.10) 0%,
+      rgba(255,255,255,0.04) 26%,
+      rgba(0,0,0,0) 60%),
+    linear-gradient(115deg,
+      rgba(255,255,255,0) 0%,
+      rgba(120,220,255,0.08) 18%,
+      rgba(255,255,255,0.12) 28%,
+      rgba(255,255,255,0) 46%,
+      rgba(99,102,241,0.06) 62%,
+      rgba(255,255,255,0) 78%,
+      rgba(120,220,255,0.06) 92%,
+      rgba(255,255,255,0) 100%);
+
+  mix-blend-mode: screen;
+  filter: blur(0.7px);
+  opacity: 0.45;
+}
+
+/* Specular sweep */
 .bezelSpecularSweep {
   position: absolute;
   inset: 0;
@@ -227,6 +268,139 @@
 .tr { right: 18px; top: 18px; }
 .bl { left: 18px; bottom: 18px; }
 .br { right: 18px; bottom: 18px; }
+
+/* ─────────────────────────────────────────────
+   UI RAILS (institutional, minimal)
+   ───────────────────────────────────────────── */
+
+.uiTopRail {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  top: 18px;
+  height: 46px;
+  z-index: 96;
+  pointer-events: none;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  background: linear-gradient(180deg, rgba(0,0,0,0.40), rgba(0,0,0,0));
+  border-radius: 14px;
+}
+
+.uiTopLeft, .uiTopRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+}
+
+.brandGlyph {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(34,211,238,0.95);
+  box-shadow: 0 0 16px rgba(34,211,238,0.25);
+  opacity: 0.95;
+}
+
+.brandText {
+  font-family: ui-monospace, JetBrains Mono, monospace;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  color: rgba(241,245,249,0.92);
+  text-transform: uppercase;
+}
+
+.brandSep {
+  width: 1px;
+  height: 16px;
+  background: rgba(255,255,255,0.08);
+}
+
+.modeText {
+  font-family: ui-monospace, JetBrains Mono, monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: rgba(148,163,184,0.86);
+  text-transform: uppercase;
+}
+
+.microPill {
+  font-family: ui-monospace, JetBrains Mono, monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: rgba(226,232,240,0.90);
+  border: 1px solid rgba(34,211,238,0.18);
+  background: rgba(10,14,20,0.35);
+  padding: 6px 10px;
+  border-radius: 999px;
+  box-shadow: 0 10px 26px rgba(0,0,0,0.35);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.microPillAlt {
+  composes: microPill;
+  border-color: rgba(99,102,241,0.16);
+}
+
+.uiLeftRail, .uiRightRail {
+  position: absolute;
+  top: 78px;
+  bottom: 24px;
+  width: 220px;
+  z-index: 95;
+  pointer-events: none;
+
+  background: linear-gradient(180deg, rgba(10,14,20,0.38), rgba(10,14,20,0.14));
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 18px;
+
+  box-shadow:
+    0 18px 50px rgba(0,0,0,0.36),
+    0 0 0 1px rgba(0,0,0,0.55) inset;
+
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+
+  padding: 14px 14px;
+  opacity: 0.90;
+}
+
+.uiLeftRail { left: 18px; }
+.uiRightRail { right: 18px; }
+
+.railTitle {
+  font-family: ui-monospace, JetBrains Mono, monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(226,232,240,0.92);
+}
+
+.railSub {
+  margin-top: 6px;
+  font-family: ui-monospace, JetBrains Mono, monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: rgba(148,163,184,0.84);
+}
+
+.railDivider {
+  margin-top: 12px;
+  height: 1px;
+  background: rgba(255,255,255,0.06);
+}
+
+.railHint {
+  margin-top: 12px;
+  font-family: ui-monospace, JetBrains Mono, monospace;
+  font-size: 11px;
+  color: rgba(148,163,184,0.72);
+}
 
 /* ─────────────────────────────────────────────
    SCENE AREA
