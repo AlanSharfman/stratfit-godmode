@@ -10,6 +10,8 @@ type DemoStop = {
   actions?: Array<() => void>
 }
 
+const DEMO_STEP_MS = 5200 // PASS R: tighter cadence (matches 5s hold + buffer)
+
 export default function PositionRightRail({
   getCanvasEl,
 }: {
@@ -52,36 +54,11 @@ export default function PositionRightRail({
           () => set("showPaths", false),
         ],
       },
-      {
-        label: "Cash",
-        phase: "Position",
-        cue: "position.cash",
-        actions: [() => set("showMarkers", true)],
-      },
-      {
-        label: "Runway",
-        phase: "Position",
-        cue: "position.runway",
-        actions: [() => set("showMarkers", true)],
-      },
-      {
-        label: "Risk",
-        phase: "Position",
-        cue: "position.risk",
-        actions: [() => set("showFlow", true)],
-      },
-      {
-        label: "Paths ON",
-        phase: "Position",
-        cue: "position.paths_on",
-        actions: [() => set("showPaths", true)],
-      },
-      {
-        label: "End",
-        phase: "Position",
-        cue: "position.end",
-        actions: [() => {}],
-      },
+      { label: "Cash", phase: "Position", cue: "position.cash", actions: [() => set("showMarkers", true)] },
+      { label: "Runway", phase: "Position", cue: "position.runway", actions: [() => set("showMarkers", true)] },
+      { label: "Risk", phase: "Position", cue: "position.risk", actions: [() => set("showFlow", true)] },
+      { label: "Paths ON", phase: "Position", cue: "position.paths_on", actions: [() => set("showPaths", true)] },
+      { label: "End", phase: "Position", cue: "position.end" },
     ],
     [set]
   )
@@ -117,13 +94,12 @@ export default function PositionRightRail({
       return
     }
 
-    // deterministic pacing: hook uses 5s hold. We pace at 5.4s to avoid overlap.
     const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
     for (const s of stops) {
       if (s.actions) s.actions.forEach((fn) => fn())
       api.stopAt({ label: s.label, phase: s.phase, cue: s.cue })
-      await wait(5400)
+      await wait(DEMO_STEP_MS)
     }
 
     stopDemoTour()
