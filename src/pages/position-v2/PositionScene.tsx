@@ -1,41 +1,30 @@
-import React from "react"
-import styles from "./PositionScene.module.css"
+import React from "react";
+import { Canvas } from "@react-three/fiber";
+import { Suspense } from "react";
+import styles from "./PositionScene.module.css";
+import TerrainStage from "@/terrain/TerrainStage";
 
-// Existing engine renderer (DO NOT MODIFY)
-import TerrainStage from "@/terrain/TerrainStage"
-import type { TimeGranularity } from "@/terrain/TimelineTicks"
-
-type Props = {
-  granularity?: TimeGranularity
-  terrainMetrics?: any
-  terrainSignals?: any
-}
-
-export default function PositionScene({
-  granularity = "quarter",
-  terrainMetrics,
-  terrainSignals
-}: Props) {
+export default function PositionScene() {
   return (
-    <div className={styles.sceneRoot}>
-      {/* Horizon Gradient */}
-      <div className={styles.horizonGlow} aria-hidden="true" />
+    <div className={styles.canvasWrapper}>
+      <Canvas
+        className={styles.canvas}
+        dpr={[1, 2]}
+        camera={{ position: [0, 18, 38], fov: 42 }}
+        gl={{ antialias: true }}
+      >
+        <color attach="background" args={["#05070a"]} />
+        <fog attach="fog" args={["#05070a", 40, 160]} />
 
-      {/* Terrain Container */}
-      <div className={styles.terrainFrame}>
-        <TerrainStage
-          granularity={granularity}
-          terrainMetrics={terrainMetrics}
-          signals={terrainSignals}
-          lockCamera
-        />
-      </div>
+        <ambientLight intensity={0.55} />
+        <directionalLight position={[30, 40, 20]} intensity={1.2} />
 
-      {/* Atmospheric Fog */}
-      <div className={styles.atmosFog} aria-hidden="true" />
+        <Suspense fallback={null}>
+          <TerrainStage />
+        </Suspense>
+      </Canvas>
 
-      {/* Cinematic Vignette */}
-      <div className={styles.vignette} aria-hidden="true" />
+      <div className={styles.horizonGlow} />
     </div>
-  )
+  );
 }

@@ -1,54 +1,45 @@
-.sceneRoot {
-  position: absolute;
+.pageRoot {
+  position: fixed;
   inset: 0;
+  width: 100vw;
+  height: 100vh;
   overflow: hidden;
-  background: radial-gradient(
-    circle at 50% 120%,
-    rgba(0, 180, 255, 0.12),
-    rgba(0, 0, 0, 0.95) 60%
-  );
+  background: #05070a;
 }
 
-/* Terrain container — this controls scale feel */
-.terrainFrame {
+.sceneRoot {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.canvasWrapper {
   position: absolute;
   inset: 0;
-  transform: scale(1.05);
+  width: 100%;
+  height: 100%;
 }
 
-/* Soft horizon light */
+.canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
 .horizonGlow {
   position: absolute;
-  bottom: -20%;
   left: 50%;
-  transform: translateX(-50%);
+  bottom: 0;
   width: 140%;
-  height: 60%;
+  height: 40%;
+  transform: translateX(-50%);
+  pointer-events: none;
   background: radial-gradient(
     ellipse at center,
-    rgba(0, 200, 255, 0.25),
+    rgba(0, 255, 255, 0.18) 0%,
+    rgba(0, 255, 255, 0.08) 35%,
     rgba(0, 0, 0, 0) 70%
   );
-  pointer-events: none;
-}
-
-/* Atmosphere layer */
-.atmosFog {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 0.6),
-    rgba(0, 0, 0, 0.1) 40%,
-    rgba(0, 0, 0, 0.6)
-  );
-  pointer-events: none;
-}
-
-/* Cinematic edges */
-.vignette {
-  position: absolute;
-  inset: 0;
-  box-shadow: inset 0 0 220px rgba(0, 0, 0, 0.9);
-  pointer-events: none;
+  filter: blur(28px);
+  z-index: 2;
 }
