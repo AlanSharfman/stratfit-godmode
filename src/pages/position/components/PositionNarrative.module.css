@@ -96,7 +96,7 @@
 
 .narrativeCard {
   margin-top: 6px;
-  padding: 10px;
+  padding: 12px 14px;
   border-radius: 10px;
   background: rgba(0, 0, 0, 0.45);
   border: 1px solid rgba(255, 255, 255, 0.06);
@@ -106,14 +106,20 @@
 }
 
 .title {
-  font-size: 12px;
-  opacity: 0.6;
-  margin-bottom: 8px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(34, 211, 238, 0.65);
+  margin-bottom: 10px;
 }
 
 .body {
-  font-size: 13px;
-  line-height: 1.45;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: rgba(210, 225, 240, 0.88);
 }
 
 .paragraph {
@@ -122,4 +128,20 @@
 
 .paragraph:last-child {
   margin-bottom: 0;
+}
+
+/* ── Typewriter cursor ── */
+.cursor {
+  display: inline-block;
+  color: rgba(34, 211, 238, 0.80);
+  animation: cursorBlink 0.72s steps(2) infinite;
+  margin-left: 1px;
+  font-size: 13px;
+  line-height: 1;
+  vertical-align: text-bottom;
+}
+
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }

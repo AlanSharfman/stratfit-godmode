@@ -24,7 +24,7 @@ type Tone = "risk" | "info" | "strength" | "strategy";
 const SIGNAL_MARKERS: Array<{ id: string; label: string; tone: Tone }> = [
   { id: "burn-acceleration", label: "Burn acceleration relative to ARR scale", tone: "risk" },
   { id: "margin-volatility", label: "Margin volatility sensitivity", tone: "risk" },
-  { id: "capital-dependency", label: "Capital dependency within 9–12 months", tone: "info" },
+  { id: "capital-dependency", label: "Capital dependency within 9\u201312 months", tone: "info" },
   { id: "revenue-concentration", label: "Revenue concentration risk", tone: "strategy" },
   { id: "runway-strength", label: "Runway buffer integrity", tone: "strength" },
 ];

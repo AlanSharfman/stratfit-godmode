@@ -27,8 +27,8 @@
 .panelTitle {
   font-family: 'Inter', system-ui, sans-serif;
   font-size: 10px;
-  font-weight: 900;
-  letter-spacing: 0.20em;
+  font-weight: 800;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: rgba(226, 232, 240, 0.92);
 }
@@ -56,10 +56,10 @@
 }
 
 .sectionTitle {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.16em;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: rgba(34, 211, 238, 0.65);
   margin-bottom: 8px;
@@ -87,7 +87,7 @@
 .k {
   font-family: 'Inter', system-ui, sans-serif;
   font-size: 12px;
-  color: rgba(185, 205, 225, 0.72);
+  color: rgba(200, 215, 230, 0.78);
 }
 
 .v {
@@ -138,8 +138,8 @@
 .storyText {
   font-family: 'Inter', system-ui, sans-serif;
   font-size: 12px;
-  line-height: 1.55;
-  color: rgba(185, 205, 225, 0.76);
+  line-height: 1.6;
+  color: rgba(200, 215, 230, 0.82);
 }
 
 /* ── Signal list ── */
