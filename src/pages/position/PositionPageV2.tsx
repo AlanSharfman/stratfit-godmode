@@ -7,29 +7,25 @@ export default function PositionPageV2() {
     <div className={styles.pageRoot}>
       <div className={styles.skyGradient} />
 
-      {/* Bezel-corner dock (top-left / top-right) */}
-      <div className={styles.cornerDock}>
-        <div className={styles.cornerTL}>
-          <div className={styles.pillGroup}>
-            <span className={styles.pillDot} />
-            <span className={styles.pillText}>STRATFIT</span>
-          </div>
-          <div className={styles.pillGroupMuted}>
-            <span className={styles.pillTextMuted}>POSITION</span>
-          </div>
+      {/* GOD MODE bezel shell — jewelled frame wrapping entire compound */}
+      <div className={styles.bezelOuter}>
+        <div className={styles.bezelInner}>
+          <PositionScene />
+
+          {/* Glass overlay layers (pointer-events: none) */}
+          <div className={styles.innerStep} />
+          <div className={styles.glassSheen} />
+          <div className={styles.glassRipple} />
         </div>
 
-        <div className={styles.cornerTR}>
-          <div className={styles.pillGroupMuted}>
-            <span className={styles.pillTextMuted}>LIVE</span>
-          </div>
-          <div className={styles.pillGroup}>
-            <span className={styles.pillText}>V2</span>
-          </div>
-        </div>
+        {/* Bezel jewel / chrome / glow layers */}
+        <div className={styles.bezelSpecularSweep} />
+        <div className={styles.bezelChrome} />
+        <div className={styles.bezelHighlights} />
+        <div className={styles.bezelEdgeSpecular} />
+        <div className={styles.innerTrace} />
+        <div className={styles.vignette} />
       </div>
-
-      <PositionScene />
     </div>
   )
 }
