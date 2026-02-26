@@ -4,6 +4,7 @@ import TerrainStage from "@/terrain/TerrainStage";
 import { useRenderFlagsStore } from "@/state/renderFlagsStore";
 import CinematicLighting from "./rigs/CinematicLighting";
 import HorizonAtmosphere from "./rigs/HorizonAtmosphere";
+import SkyAtmosphere from "./rigs/SkyAtmosphere";
 
 export default function PositionScene() {
   // Disable the cyan P50 path on this cinematic view
@@ -16,12 +17,13 @@ export default function PositionScene() {
     <div className={styles.canvasWrapper}>
       <div className={styles.stageMount}>
         <TerrainStage>
-          <CinematicLighting />
+          <SkyAtmosphere />
           <HorizonAtmosphere />
+          <CinematicLighting />
         </TerrainStage>
       </div>
 
-      {/* Optional DOM glow overlay (keep) */}
+      {/* Optional DOM glow overlay (kept) */}
       <div className={styles.horizonGlow} />
     </div>
   );
