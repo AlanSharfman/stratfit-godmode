@@ -2,6 +2,8 @@ import React, { useEffect } from "react";
 import styles from "./PositionScene.module.css";
 import TerrainStage from "@/terrain/TerrainStage";
 import { useRenderFlagsStore } from "@/state/renderFlagsStore";
+import CinematicLighting from "./rigs/CinematicLighting";
+import HorizonAtmosphere from "./rigs/HorizonAtmosphere";
 
 export default function PositionScene() {
   // Disable the cyan P50 path on this cinematic view
@@ -12,16 +14,15 @@ export default function PositionScene() {
 
   return (
     <div className={styles.canvasWrapper}>
-      {/* TerrainStage owns the Canvas */}
       <div className={styles.stageMount}>
-        <TerrainStage />
+        <TerrainStage>
+          <CinematicLighting />
+          <HorizonAtmosphere />
+        </TerrainStage>
       </div>
 
-      {/* Cinematic overlays (DOM/CSS only — safe) */}
-      <div className={styles.vignette} />
-      <div className={styles.atmosHaze} />
+      {/* Optional DOM glow overlay (keep) */}
       <div className={styles.horizonGlow} />
-      <div className={styles.topFade} />
     </div>
   );
 }
