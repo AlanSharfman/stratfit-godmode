@@ -8,11 +8,13 @@ import useRenderWatchdog from "./useRenderWatchdog"
 import useOverlayPersistence from "./useOverlayPersistence"
 import useDemoTourHooks from "./useDemoTourHooks"
 import useDemoScriptBridge from "./useDemoScriptBridge"
+import useNarrationListener from "./useNarrationListener"
 
 export default function PositionScene() {
   useRenderWatchdog()
   useOverlayPersistence()
   useDemoScriptBridge()
+  useNarrationListener()
 
   const { tourActive, phase, spotlightOn, spotlightLabel, holdActive } =
     useDemoTourHooks()
