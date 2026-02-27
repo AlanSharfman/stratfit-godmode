@@ -1,14 +1,14 @@
 import React, { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
-import { useBaselineStore } from "@/state/baselineStore"
+import { useCanonicalBaseline } from "@/state/useCanonicalBaseline"
 import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore"
 import { runDecisionPipeline } from "@/core/decision/runDecisionPipeline"
 
 export default function DecisionPage() {
   const navigate = useNavigate()
 
-  const baseline = useBaselineStore((s) => s.baseline)
+  const baseline = useCanonicalBaseline()
 
   const createScenario = usePhase1ScenarioStore((s) => s.createScenario)
   const setActiveScenarioId = usePhase1ScenarioStore((s) => s.setActiveScenarioId)
@@ -20,6 +20,15 @@ export default function DecisionPage() {
   const canRun = useMemo(() => {
     return !!baseline && decisionText.trim().length > 3 && !isCreating
   }, [baseline, decisionText, isCreating])
+
+  if (!baseline) {
+    return (
+      <div style={{ padding: 24 }}>
+        <h2>Baseline missing</h2>
+        <p>Please return to Initiate and save baseline.</p>
+      </div>
+    )
+  }
 
   async function handleRun() {
     setError(null)
