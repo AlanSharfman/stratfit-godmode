@@ -7,7 +7,7 @@ import { BASELINE_STORAGE_KEY } from "@/onboard/baseline"
  * TEMP legacy-compatible input shape used by older pages/components.
  * Keep this until we finish Phase 1 migrations.
  */
-export type RiskProfile = "low" | "medium" | "high" | "unknown"
+export type RiskSeverity = "low" | "medium" | "high" | "unknown"
 
 export type BaselineInputs = {
   // Canonical Phase 1 fields (8)
@@ -24,7 +24,7 @@ export type BaselineInputs = {
   runwayMonths?: number
   burnRate?: number
   lastUpdated?: number
-  riskProfile?: RiskProfile
+  riskProfile?: RiskSeverity
 }
 
 export type BaselineState = {
@@ -53,7 +53,7 @@ export function computeRunwayMonths(cash: number, monthlyBurn: number) {
   return c / b
 }
 
-export function deriveRiskProfile(runwayMonths: number): RiskProfile {
+export function deriveRiskProfile(runwayMonths: number): RiskSeverity {
   if (!Number.isFinite(runwayMonths)) return "unknown"
   if (runwayMonths >= 18) return "low"
   if (runwayMonths >= 9) return "medium"

@@ -61,7 +61,7 @@ export interface PositionMarker {
   severity?: 1 | 2 | 3 | 4 | 5;
 }
 
-export interface PositionState {
+export interface PositionSceneState {
   seedKey: string; // derived from InitiateSnapshot (deterministic)
   reliefScalar: number; // 0.6..1.6 derived from InitiateSnapshot proxy
   terrainExtent: TerrainExtent;

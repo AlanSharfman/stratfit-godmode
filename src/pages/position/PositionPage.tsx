@@ -10,6 +10,7 @@ import TerrainBreathRig from "@/pages/position-v2/rigs/TerrainBreathRig"
 import SkyAtmosphere from "@/pages/position-v2/rigs/SkyAtmosphere"
 import VolumetricHorizon from "@/pages/position-v2/rigs/VolumetricHorizon"
 import TerrainTuningPanel from "@/terrain/v2/TerrainTuningPanel"
+import TerrainNavWidget from "@/terrain/TerrainNavWidget"
 import { DEFAULT_TUNING } from "@/terrain/v2/TerrainSurfaceV2"
 import type { TerrainTuningParams } from "@/terrain/v2/TerrainSurfaceV2"
 import type { TerrainMetrics } from "@/terrain/terrainFromBaseline"
@@ -313,6 +314,8 @@ export default function PositionPage() {
             )}
             {/* Terrain tuning gear — overlay inside viewport */}
             <TerrainTuningPanel params={terrainTuning} onChange={setTerrainTuning} />
+            {/* Terrain navigation D-pad — bottom-right of viewport */}
+            <TerrainNavWidget />
           </div>
         </div>
 

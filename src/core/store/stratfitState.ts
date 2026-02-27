@@ -16,13 +16,13 @@ export interface ValuationState {
 }
 
 // Simplified three-field summary used only within this store island
-export interface SimulationSummary {
+export interface StratfitSimSummary {
     survivalProbability: number;
     confidenceIndex: number;
     volatility: number;
 }
 
-export interface PositionState {
+export interface PositionMetrics {
     arr: number;
     growthRate: number;
     grossMargin: number;
@@ -30,8 +30,8 @@ export interface PositionState {
 }
 
 export interface StratfitState {
-    position: PositionState;
+    position: PositionMetrics;
     liquidity: LiquidityState;
     valuation: ValuationState;
-    simulation: SimulationSummary;
+    simulation: StratfitSimSummary;
 }

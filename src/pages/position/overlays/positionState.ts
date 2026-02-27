@@ -2,7 +2,7 @@ import type { BaselineV1 } from "@/onboard/baseline"
 import { computeBaselineCompleteness } from "@/logic/confidence/baselineCompleteness"
 
 export type StatusTone = "strong" | "watch" | "risk"
-export type PositionState = "Stable" | "Growth" | "Pressured" | "Fragile"
+export type PositionHealthStatus = "Stable" | "Growth" | "Pressured" | "Fragile"
 
 export interface PositionKpis {
   arr: number
@@ -27,7 +27,7 @@ export type RiskSource = "engine" | "heuristic"
 
 export interface PositionViewModel {
   kpis: PositionKpis
-  state: PositionState
+  state: PositionHealthStatus
   stateTone: StatusTone
   bullets: string[]
   confidenceBand: "Low" | "Medium" | "High"
@@ -84,7 +84,7 @@ function toneFromRiskIndex(riskIndex: number): StatusTone {
   return "risk"
 }
 
-function stateFromRunwayAndGrowth(runway: number, growthPct: number): PositionState {
+function stateFromRunwayAndGrowth(runway: number, growthPct: number): PositionHealthStatus {
   if (runway < 6)  return "Fragile"
   if (runway < 12) return "Pressured"
   if (growthPct >= 25) return "Growth"

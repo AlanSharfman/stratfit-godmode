@@ -1,4 +1,4 @@
-export type RiskProfile = "conservative" | "balanced" | "aggressive";
+export type RiskTolerance = "conservative" | "balanced" | "aggressive";
 
 export interface InitializeFormInputs {
   revenue: number;
@@ -16,5 +16,5 @@ export interface InitializeFormInputs {
   costDiscipline: number;
 
   timeHorizonMonths: number;
-  riskProfile: RiskProfile;
+  riskProfile: RiskTolerance;
 }
