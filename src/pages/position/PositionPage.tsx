@@ -110,7 +110,7 @@ export default function PositionPage() {
   }, [baselineInputs, overrideScenarios, activeOverrideScenarioId])
 
   const terrainMetrics = useMemo(
-    () => (effectiveInputs ? deriveTerrainMetrics(effectiveInputs) : undefined),
+    () => (effectiveInputs ? deriveTerrainMetrics(effectiveInputs as any) : undefined),
     [effectiveInputs],
   )
 

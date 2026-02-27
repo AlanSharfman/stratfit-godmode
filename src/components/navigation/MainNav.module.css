@@ -37,13 +37,14 @@
   letter-spacing: 1.4px;
   color: #ffffff;
   text-transform: uppercase;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.15);
 }
 
 .brandSub {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-size: 0.65rem;
   letter-spacing: 0.2em;
-  color: #94a3b8;
+  color: rgba(210, 225, 240, 0.92);
   text-transform: uppercase;
   margin-top: 3px;
 }
@@ -64,13 +65,13 @@
   text-transform: uppercase;
   font-weight: 500;
 
-  color: var(--text-primary);
-  opacity: 0.82;
+  color: #ffffff;
+  opacity: 0.92;
   text-decoration: none;
   padding: 6px 0 8px;
   transform: translateY(-2px);
 
-  transition: color 0.2s ease;
+  transition: color 0.2s ease, opacity 0.2s ease;
 }
 
 .separated {
@@ -89,12 +90,12 @@
 }
 
 .navItem:hover {
-  color: var(--text-primary);
+  color: #ffffff;
   opacity: 1;
 }
 
 .navItem.active {
-  color: var(--text-primary);
+  color: #ffffff;
   opacity: 1;
 }
 
