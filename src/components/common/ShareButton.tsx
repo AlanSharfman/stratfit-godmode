@@ -99,7 +99,7 @@ export default function ShareButton({
         });
         onShared?.();
       } catch (err) {
-        // User cancelled or error
+        console.warn("[ShareButton] share cancelled or failed", err);
       }
     } else {
       setShowModal(true);

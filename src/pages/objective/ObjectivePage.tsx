@@ -18,7 +18,7 @@ import { useObjectiveStore } from "@/state/objectiveStore";
 import { useObjectiveLensStore } from "@/state/objectiveLensStore";
 import type { ObjectiveLens } from "@/state/objectiveLensStore";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
-import { RouteContract } from "@/app/navigation/routeContract";
+import { ROUTES } from "@/routes/routeContract";
 import type { ObjectivesSnapshot } from "@/onboard/baseline/types";
 import type { ObjectiveMode } from "@/logic/objectiveEngine";
 
@@ -44,7 +44,7 @@ export default function ObjectivePage() {
     };
 
     setBaseline({ ...baseline, objectives: snapshot });
-    navigate(RouteContract.position, { replace: true });
+    navigate(ROUTES.POSITION, { replace: true });
   }, [baseline, setBaseline, navigate, horizonMonths, mode, lens, targets, result]);
 
   return (

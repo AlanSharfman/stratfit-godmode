@@ -77,7 +77,7 @@ function useTelegramTick(enabled: boolean) {
 
     const ctx = ctxRef.current!;
     // Some browsers require resume() after user gesture; we attempt, no harm if already running.
-    void ctx.resume().catch(() => {});
+    void ctx.resume().catch((e) => console.warn("[BriefingPanel] AudioContext resume failed", e));
 
     const o = ctx.createOscillator();
     const g = ctx.createGain();
