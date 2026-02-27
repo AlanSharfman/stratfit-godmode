@@ -42,71 +42,74 @@
 
 /* ── 3D Spinning Cube ── */
 .cubeScene {
-  width: 20px;
-  height: 20px;
-  perspective: 120px;
+  width: 16px;
+  height: 16px;
+  perspective: 38px;
   flex-shrink: 0;
+  margin-right: 6px;
+  margin-left: -2px;
 }
 
 .cube {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   position: relative;
   transform-style: preserve-3d;
-  transform: rotateX(-25deg) rotateY(-30deg);
-  animation: cubeSpin 4s linear infinite;
+  transform: rotateX(-22deg) rotateY(-30deg);
+  animation: cubeSpin 0.7s linear infinite;
 }
 
 .cubeFace {
   position: absolute;
-  width: 20px;
-  height: 20px;
-  border: 1.5px solid rgba(0, 255, 255, 0.7);
+  width: 16px;
+  height: 16px;
+  border: 1.2px solid rgba(34, 211, 238, 0.65);
   box-sizing: border-box;
+  backface-visibility: visible;
 }
 
 /* Front */
 .cubeFront {
-  background: rgba(6, 22, 38, 0.9);
-  transform: translateZ(10px);
+  background: rgba(10, 28, 48, 0.65);
+  transform: translateZ(8px);
 }
 
 /* Back */
 .cubeBack {
-  background: rgba(6, 22, 38, 0.85);
-  transform: rotateY(180deg) translateZ(10px);
+  background: rgba(10, 28, 48, 0.45);
+  transform: rotateY(180deg) translateZ(8px);
 }
 
 /* Right */
 .cubeRight {
-  background: rgba(13, 44, 76, 0.85);
-  transform: rotateY(90deg) translateZ(10px);
+  background: rgba(14, 40, 68, 0.55);
+  transform: rotateY(90deg) translateZ(8px);
 }
 
 /* Left */
 .cubeLeft {
-  background: rgba(13, 44, 76, 0.9);
-  transform: rotateY(-90deg) translateZ(10px);
+  background: rgba(14, 40, 68, 0.6);
+  transform: rotateY(-90deg) translateZ(8px);
 }
 
-/* Top — bright cyan neon */
+/* Top — teal neon matching sectionTitle rgba(34,211,238,0.65) */
 .cubeTop {
-  background: linear-gradient(135deg, #00ffff 0%, #0099ff 100%);
-  border-color: rgba(0, 255, 255, 0.9);
-  box-shadow: 0 0 8px rgba(0, 255, 204, 0.6), inset 0 0 6px rgba(0, 255, 255, 0.3);
-  transform: rotateX(90deg) translateZ(10px);
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.45) 0%, rgba(34, 180, 220, 0.3) 100%);
+  border-color: rgba(34, 211, 238, 0.65);
+  box-shadow: 0 0 5px rgba(34, 211, 238, 0.35), inset 0 0 3px rgba(34, 211, 238, 0.15);
+  transform: rotateX(90deg) translateZ(8px);
 }
 
 /* Bottom */
 .cubeBottom {
-  background: rgba(4, 10, 18, 0.95);
-  border-color: rgba(0, 255, 255, 0.3);
-  transform: rotateX(-90deg) translateZ(10px);
+  background: rgba(4, 10, 18, 0.8);
+  border-color: rgba(34, 211, 238, 0.25);
+  transform: rotateX(-90deg) translateZ(8px);
 }
 
 @keyframes cubeSpin {
-  0%   { transform: rotateX(-25deg) rotateY(-30deg); }
-  100% { transform: rotateX(-25deg) rotateY(330deg); }
+  0%   { transform: rotateX(-22deg) rotateY(-30deg); }
+  100% { transform: rotateX(-22deg) rotateY(330deg); }
 }
 
 /* ── Sections ── */
