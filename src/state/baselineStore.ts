@@ -4,78 +4,60 @@ import type { Baseline } from "@/types/baseline"
 import { BASELINE_STORAGE_KEY } from "@/types/baseline"
 
 /**
- * Phase 1 canonical source-of-truth:
- * - baseline (Baseline contract)
- *
- * Legacy compatibility surface (do NOT remove yet):
- * - baselineInputs
- * - setBaselineInputs(...)
- *
- * Some existing pages (PositionLeftRail / PositionPage / InitializeForm) still reference
- * legacy fields like runwayMonths, revenue, burnRate, riskProfile.
- * We keep those as aliases in BaselineInputs to keep tsc green while Phase 1 flow is wired.
+ * TEMP legacy-compatible input shape used by older pages/components.
+ * Keep this until we finish Phase 1 migrations.
  */
+export type RiskProfile = "low" | "medium" | "high" | "unknown"
 
 export type BaselineInputs = {
-  // canonical-ish inputs
+  // Canonical Phase 1 fields (8)
   cash: number
-  monthlyRevenue: number
   monthlyBurn: number
-  arr: number
-  growthRate: number
-  grossMargin: number
-
-  // legacy aliases expected by older consumers
-  runwayMonths: number
   revenue: number
-  burnRate: number
-  riskProfile: string
+  grossMargin: number
+  growthRate: number
+  churnRate: number
+  headcount: number
+  arpa: number
+
+  // TEMP legacy aliases (shim)
+  runwayMonths?: number
+  burnRate?: number
+  lastUpdated?: number
+  riskProfile?: RiskProfile
 }
 
-type BaselineState = {
-  // NEW canonical
+export type BaselineState = {
   baseline: Baseline | null
   isHydrated: boolean
-  setBaseline: (
-    input: Omit<Baseline, "runwayMonths" | "lastUpdated"> &
-      Partial<Pick<Baseline, "runwayMonths" | "lastUpdated">>
-  ) => void
+
+  // Phase 1 canonical API
+  setBaseline: (inputs: BaselineInputs) => void
   clearBaseline: () => void
   hydrate: () => void
 
-  // LEGACY shim surface
+  // TEMP legacy shim API (remove later)
   baselineInputs: BaselineInputs
   setBaselineInputs: (inputs: Partial<BaselineInputs>) => void
 }
 
-function safeParseBaseline(raw: string | null): Baseline | null {
-  if (!raw) return null
-  try {
-    const v = JSON.parse(raw) as Partial<Baseline>
-    if (
-      typeof v.cash !== "number" ||
-      typeof v.monthlyRevenue !== "number" ||
-      typeof v.monthlyBurn !== "number" ||
-      typeof v.arr !== "number" ||
-      typeof v.growthRate !== "number" ||
-      typeof v.grossMargin !== "number" ||
-      typeof v.runwayMonths !== "number" ||
-      typeof v.lastUpdated !== "number"
-    ) {
-      return null
-    }
-    return v as Baseline
-  } catch {
-    return null
-  }
+const clampNumber = (v: unknown) => {
+  const n = typeof v === "number" ? v : Number(v)
+  return Number.isFinite(n) ? n : 0
 }
 
-function computeRunwayMonths(cash: number, monthlyBurn: number): number {
-  if (!Number.isFinite(cash) || !Number.isFinite(monthlyBurn)) return 0
-  if (monthlyBurn <= 0) return 999
-  const runway = cash / monthlyBurn
-  if (!Number.isFinite(runway) || runway < 0) return 0
-  return Math.round(runway * 10) / 10
+export function computeRunwayMonths(cash: number, monthlyBurn: number) {
+  const c = clampNumber(cash)
+  const b = clampNumber(monthlyBurn)
+  if (b <= 0) return Infinity
+  return c / b
+}
+
+export function deriveRiskProfile(runwayMonths: number): RiskProfile {
+  if (!Number.isFinite(runwayMonths)) return "unknown"
+  if (runwayMonths >= 18) return "low"
+  if (runwayMonths >= 9) return "medium"
+  return "high"
 }
 
 function persistBaseline(baseline: Baseline | null) {
@@ -86,88 +68,106 @@ function persistBaseline(baseline: Baseline | null) {
     }
     localStorage.setItem(BASELINE_STORAGE_KEY, JSON.stringify(baseline))
   } catch {
-    // ignore storage failures
+    // ignore storage errors (private mode, quota, etc.)
   }
 }
 
-const DEFAULT_INPUTS: BaselineInputs = {
+function safeParseBaseline(raw: string | null): Baseline | null {
+  if (!raw) return null
+  try {
+    const obj = JSON.parse(raw) as Partial<Baseline>
+    // Validate 8 numeric fields exist (Phase 1 contract)
+    const required: (keyof Baseline)[] = [
+      "cash",
+      "monthlyBurn",
+      "revenue",
+      "grossMargin",
+      "growthRate",
+      "churnRate",
+      "headcount",
+      "arpa",
+    ]
+    for (const k of required) {
+      const v = (obj as any)[k]
+      if (typeof v !== "number" || !Number.isFinite(v)) return null
+    }
+    return obj as Baseline
+  } catch {
+    return null
+  }
+}
+
+export const DEFAULT_INPUTS: BaselineInputs = {
   cash: 0,
-  monthlyRevenue: 0,
   monthlyBurn: 0,
-  arr: 0,
-  growthRate: 0,
-  grossMargin: 0,
-
-  runwayMonths: 0,
   revenue: 0,
-  burnRate: 0,
+  grossMargin: 0,
+  growthRate: 0,
+  churnRate: 0,
+  headcount: 0,
+  arpa: 0,
   riskProfile: "unknown",
+  runwayMonths: 0,
+  burnRate: 0,
+  lastUpdated: Date.now(),
 }
 
-function deriveRiskProfile(runwayMonths: number): string {
-  if (!Number.isFinite(runwayMonths)) return "unknown"
-  if (runwayMonths >= 18) return "low"
-  if (runwayMonths >= 9) return "medium"
-  return "high"
-}
-
-function baselineToInputs(b: Baseline | null): BaselineInputs {
-  if (!b) return { ...DEFAULT_INPUTS }
-
-  const runwayMonths = Number.isFinite(b.runwayMonths) ? b.runwayMonths : computeRunwayMonths(b.cash, b.monthlyBurn)
-  const revenue = b.monthlyRevenue
-  const burnRate = b.monthlyBurn
-
+function inputsToBaseline(inputs: BaselineInputs): Baseline {
   return {
-    cash: b.cash,
-    monthlyRevenue: b.monthlyRevenue,
-    monthlyBurn: b.monthlyBurn,
-    arr: b.arr,
-    growthRate: b.growthRate,
-    grossMargin: b.grossMargin,
+    cash: clampNumber(inputs.cash),
+    monthlyBurn: clampNumber(inputs.monthlyBurn),
+    revenue: clampNumber(inputs.revenue),
+    grossMargin: clampNumber(inputs.grossMargin),
+    growthRate: clampNumber(inputs.growthRate),
+    churnRate: clampNumber(inputs.churnRate),
+    headcount: clampNumber(inputs.headcount),
+    arpa: clampNumber(inputs.arpa),
+  }
+}
 
-    runwayMonths,
-    revenue,
-    burnRate,
+function baselineToInputs(baseline: Baseline | null): BaselineInputs {
+  if (!baseline) return { ...DEFAULT_INPUTS }
+  const runwayMonths = computeRunwayMonths(baseline.cash, baseline.monthlyBurn)
+  return {
+    ...baseline,
+    burnRate: baseline.monthlyBurn,
+    runwayMonths: Number.isFinite(runwayMonths) ? runwayMonths : 0,
     riskProfile: deriveRiskProfile(runwayMonths),
+    lastUpdated: Date.now(),
   }
 }
 
 export const useBaselineStore = create<BaselineState>((set, get) => ({
-  // NEW canonical
   baseline: null,
   isHydrated: false,
 
-  setBaseline: (input) => {
-    const runwayMonths =
-      typeof input.runwayMonths === "number"
-        ? input.runwayMonths
-        : computeRunwayMonths(input.cash, input.monthlyBurn)
+  // Legacy shim values (until we migrate all callers)
+  baselineInputs: { ...DEFAULT_INPUTS },
 
-    const lastUpdated =
-      typeof input.lastUpdated === "number" ? input.lastUpdated : Date.now()
+  setBaseline: (inputs) => {
+    const baseline = inputsToBaseline(inputs)
 
-    const baseline: Baseline = {
-      cash: input.cash,
-      monthlyRevenue: input.monthlyRevenue,
-      monthlyBurn: input.monthlyBurn,
-      arr: input.arr,
-      growthRate: input.growthRate,
-      grossMargin: input.grossMargin,
-      runwayMonths,
-      lastUpdated,
-    }
+    // Compute legacy shim values
+    const nextInputs = baselineToInputs(baseline)
 
     set({
       baseline,
-      baselineInputs: baselineToInputs(baseline), // keep legacy in sync
+      baselineInputs: nextInputs,
+
+      // CRITICAL: if the user is setting baseline now, we are effectively hydrated.
+      isHydrated: true,
     })
 
     persistBaseline(baseline)
   },
 
   clearBaseline: () => {
-    set({ baseline: null, baselineInputs: { ...DEFAULT_INPUTS } })
+    set({
+      baseline: null,
+      baselineInputs: { ...DEFAULT_INPUTS },
+      // Keep hydrated true so UI doesn't hang on "Loading..."
+      isHydrated: true,
+    })
     persistBaseline(null)
   },
 
@@ -181,51 +181,25 @@ export const useBaselineStore = create<BaselineState>((set, get) => ({
     })()
 
     const baseline = safeParseBaseline(raw)
-
     set({
       baseline,
       baselineInputs: baselineToInputs(baseline),
+      // CRITICAL: always flip this, even if there is no baseline
       isHydrated: true,
     })
   },
 
-  // LEGACY shim surface
-  baselineInputs: { ...DEFAULT_INPUTS },
-
-  setBaselineInputs: (inputs) => {
-    // Merge into legacy view first
+  setBaselineInputs: (partial) => {
     const prev = get().baselineInputs
-    const merged: BaselineInputs = { ...prev, ...inputs }
+    const merged: BaselineInputs = { ...prev, ...partial }
 
-    // Normalize legacy aliases into canonical fields
-    const normalizedMonthlyRevenue =
-      typeof inputs.monthlyRevenue === "number"
-        ? inputs.monthlyRevenue
-        : typeof inputs.revenue === "number"
-          ? inputs.revenue
-          : merged.monthlyRevenue
+    // Normalize aliases -> canonical
+    if (typeof merged.burnRate === "number" && !Number.isFinite(merged.monthlyBurn)) {
+      merged.monthlyBurn = merged.burnRate
+    }
+    if (typeof merged.monthlyBurn !== "number") merged.monthlyBurn = clampNumber(merged.burnRate)
 
-    const normalizedMonthlyBurn =
-      typeof inputs.monthlyBurn === "number"
-        ? inputs.monthlyBurn
-        : typeof inputs.burnRate === "number"
-          ? inputs.burnRate
-          : merged.monthlyBurn
-
-    const normalizedRunwayMonths =
-      typeof inputs.runwayMonths === "number"
-        ? inputs.runwayMonths
-        : computeRunwayMonths(merged.cash, normalizedMonthlyBurn)
-
-    get().setBaseline({
-      cash: merged.cash,
-      monthlyRevenue: normalizedMonthlyRevenue,
-      monthlyBurn: normalizedMonthlyBurn,
-      arr: merged.arr,
-      growthRate: merged.growthRate,
-      grossMargin: merged.grossMargin,
-      runwayMonths: normalizedRunwayMonths,
-      // lastUpdated computed in setBaseline unless provided
-    })
+    // Drive canonical setter (single source of truth)
+    get().setBaseline(merged)
   },
 }))

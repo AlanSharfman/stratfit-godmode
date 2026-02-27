@@ -1,23 +1,19 @@
 export type Baseline = {
   cash: number
-  monthlyRevenue: number
   monthlyBurn: number
-  arr: number
-  growthRate: number
+  revenue: number
   grossMargin: number
-  runwayMonths: number
-  lastUpdated: number
+  growthRate: number
+  churnRate: number
+  headcount: number
+  arpa: number
 }
 
 export const BASELINE_STORAGE_KEY = "stratfit:baseline:v1"
 
 /**
- * LEGACY COMPATIBILITY SHIM
- * Some older baseline UI modules still import MetricId.
- * Phase 1 does not migrate/delete those modules yet — we keep this to keep tsc green.
- *
- * NOTE: This is intentionally permissive; we will remove it in a later cleanup phase
- * after BaselinePage/StructuralMetricsPanel are either deleted or migrated.
+ * Temporary compatibility shim.
+ * Some legacy components still import MetricId.
+ * This will be removed in Phase 2.
  */
 export type MetricId = string
-

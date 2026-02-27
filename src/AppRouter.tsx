@@ -11,6 +11,7 @@ import ValuationPage from "@/pages/valuation/ValuationPage"
 import ComingFeaturesPage from "@/pages/coming-features/ComingFeaturesPage"
 import AssessmentPage from "@/pages/StrategicAssessmentPage"
 import InitializeBaselinePage from "@/pages/initialize/InitializeBaselinePage"
+import DecisionPage from "@/pages/decision/DecisionPage"
 import PositionPageV2 from "@/pages/position-v2/PositionPageV2"
 
 import StudioRoute from "@/routes/StudioRoute"
@@ -20,7 +21,7 @@ export default function AppRouter() {
   return (
     <Routes>
       <Route path="/" element={<App />}>
-        <Route index element={<Navigate to="/position" replace />} />
+        <Route index element={<Navigate to="/initiate" replace />} />
 
         <Route path="/position" element={<PositionPage />} />
         <Route path="/position-v2" element={<PositionPageV2 />} />
@@ -35,6 +36,7 @@ export default function AppRouter() {
         <Route path="/coming-features" element={<ComingFeaturesPage />} />
         <Route path="/assessment" element={<AssessmentPage />} />
         <Route path="/initiate" element={<InitializeBaselinePage />} />
+        <Route path="/decision" element={<DecisionPage />} />
 
         {/* Removed stub routes:
             /roadmap

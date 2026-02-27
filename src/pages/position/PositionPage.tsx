@@ -19,6 +19,7 @@ import type { TimeGranularity } from "@/terrain/TimelineTicks"
 import { useSystemBaseline } from "@/system/SystemBaselineProvider"
 import { useScenarioStore } from "@/state/scenarioStore"
 import { useBaselineStore } from "@/state/baselineStore"
+import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore"
 import { useScenarioOverridesStore } from "@/state/scenarioOverridesStore"
 import { useViewTogglesStore } from "@/state/viewTogglesStore"
 import { useRenderFlagsStore } from "@/state/renderFlagsStore"
@@ -93,6 +94,19 @@ export default function PositionPage() {
   }, [navigate])
 
   const { baseline } = useSystemBaseline()
+
+  const hydrateScenarios = usePhase1ScenarioStore((s) => s.hydrate)
+  const scenarioStoreHydrated = usePhase1ScenarioStore((s) => s.isHydrated)
+  const activeScenarioId = usePhase1ScenarioStore((s) => s.activeScenarioId)
+  const scenarios = usePhase1ScenarioStore((s) => s.scenarios)
+
+  useEffect(() => {
+    hydrateScenarios()
+  }, [hydrateScenarios])
+
+  useEffect(() => {
+    if (scenarioStoreHydrated && !activeScenarioId) navigate("/decision")
+  }, [scenarioStoreHydrated, activeScenarioId, navigate])
 
   const baselineInputs = useBaselineStore((s) => s.baselineInputs)
 
@@ -186,6 +200,14 @@ export default function PositionPage() {
       ],
     },
   ]
+
+  if (!scenarioStoreHydrated) return <div style={{ padding: 24 }}>Loading scenario store…</div>
+
+  const activeScenario = scenarios.find((s) => s.id === activeScenarioId)
+
+  if (!activeScenarioId || !activeScenario) {
+    return <div style={{ padding: 24 }}>No active scenario — redirecting…</div>
+  }
 
   return (
     <div className={styles.page}>
