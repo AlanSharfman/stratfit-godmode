@@ -130,7 +130,7 @@ export default function TerrainStage({
           maxAzimuthAngle={0.349}
           minPolarAngle={0.758}
           maxPolarAngle={1.456}
-          rotateSpeed={0.55}
+          rotateSpeed={0.3}
           minDistance={220}
           maxDistance={700}
           target={[0, 14, 0]}
