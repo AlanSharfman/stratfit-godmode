@@ -1,124 +1,140 @@
-import React, { useState } from "react"
+import React, { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
+
+import { useBaselineStore } from "@/state/baselineStore"
 import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore"
 import { runDecisionPipeline } from "@/core/decision/runDecisionPipeline"
-import { useBaselineStore } from "@/state/baselineStore"
 
 export default function DecisionPage() {
   const navigate = useNavigate()
 
+  const baseline = useBaselineStore((s) => s.baseline)
+
   const createScenario = usePhase1ScenarioStore((s) => s.createScenario)
   const setActiveScenarioId = usePhase1ScenarioStore((s) => s.setActiveScenarioId)
-  const baseline = useBaselineStore((s) => s.baseline)
 
   const [decisionText, setDecisionText] = useState("")
   const [isCreating, setIsCreating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  async function handleContinue() {
-    if (!decisionText.trim()) return
+  const canRun = useMemo(() => {
+    return !!baseline && decisionText.trim().length > 3 && !isCreating
+  }, [baseline, decisionText, isCreating])
+
+  async function handleRun() {
+    setError(null)
+
+    const text = decisionText.trim()
+    if (!text) return
+
     if (!baseline) {
-      console.warn("[DecisionPipeline] baseline missing")
+      setError("Baseline missing — go back to Initiate and save baseline first.")
+      console.warn("[DecisionPage] baseline missing")
       return
     }
 
     setIsCreating(true)
+    try {
+      const { intent } = await runDecisionPipeline(text, baseline)
+      console.log("[DecisionPipeline] intent", intent)
 
-    const { intent } = await runDecisionPipeline(decisionText, baseline)
+      const scenarioId = createScenario({
+        decision: text,
+        intent,
+        createdAt: Date.now(),
+      })
 
-    console.log("[DecisionPipeline] intent", intent)
-
-    const scenarioId = await createScenario({
-      decision: decisionText,
-      intent,
-      createdAt: Date.now(),
-    })
-
-    setActiveScenarioId(scenarioId)
-    navigate("/position")
+      setActiveScenarioId(scenarioId)
+      navigate("/position")
+    } catch (e) {
+      console.error("[DecisionPage] run failed", e)
+      setError("Failed to run decision pipeline. Check console for details.")
+    } finally {
+      // CRITICAL: never leave UI stuck disabled
+      setIsCreating(false)
+    }
   }
 
   return (
-    <div
-      style={{
-        height: "100%",
-        display: "flex",
-        justifyContent: "center",
-      }}
-    >
-      <div style={{ width: 900, paddingTop: 80 }}>
-
-        {/* HEADER */}
-        <div style={{ marginBottom: 40 }}>
-          <h1 style={{ fontSize: 36, fontWeight: 600 }}>
-            Simulate a Strategic Decision
-          </h1>
-
-          <p style={{ opacity: 0.65, marginTop: 10, lineHeight: 1.6 }}>
-            STRATFIT will model the financial and risk impact of your decision
-            across thousands of possible futures.
-          </p>
+    <div style={{ padding: 24, maxWidth: 1100, margin: "0 auto" }}>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16 }}>
+        <h1 style={{ margin: 0, fontSize: 28 }}>Decision Workspace</h1>
+        <div style={{ opacity: 0.8, fontSize: 12 }}>
+          Baseline: {baseline ? "Loaded" : "Missing"}
         </div>
+      </div>
 
-        {/* DECISION INPUT */}
+      <p style={{ marginTop: 8, opacity: 0.8 }}>
+        Enter the decision you want STRATFIT to simulate.
+      </p>
+
+      {error ? (
         <div
           style={{
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            borderRadius: 12,
-            padding: 20,
+            marginTop: 12,
+            padding: 12,
+            borderRadius: 10,
+            background: "rgba(255, 0, 0, 0.08)",
+            border: "1px solid rgba(255, 0, 0, 0.25)",
           }}
         >
-          <textarea
-            value={decisionText}
-            onChange={(e) => setDecisionText(e.target.value)}
-            placeholder="Example: Should we hire 10 enterprise sales reps in Q3?"
-            style={{
-              width: "100%",
-              height: 140,
-              background: "transparent",
-              border: "none",
-              outline: "none",
-              color: "white",
-              fontSize: 18,
-              lineHeight: 1.6,
-              resize: "none",
-            }}
-          />
+          {error}
         </div>
+      ) : null}
 
-        {/* GUIDANCE */}
-        <div style={{ marginTop: 30, opacity: 0.7, fontSize: 14 }}>
-          Good decision prompts include:
-          <ul style={{ marginTop: 10, lineHeight: 1.6 }}>
-            <li>Timing (when)</li>
-            <li>Scale (how big)</li>
-            <li>Objective (why)</li>
-          </ul>
-        </div>
+      <div style={{ marginTop: 14 }}>
+        <textarea
+          value={decisionText}
+          onChange={(e) => setDecisionText(e.target.value)}
+          placeholder="e.g. Should we expand into the US market?"
+          rows={6}
+          // NEVER disable typing; only disable the run button
+          disabled={false}
+          style={{
+            width: "100%",
+            padding: 14,
+            borderRadius: 12,
+            border: "1px solid rgba(255,255,255,0.18)",
+            background: "rgba(0,0,0,0.25)",
+            color: "white",
+            outline: "none",
+            resize: "vertical",
+            fontSize: 16,
+            lineHeight: 1.4,
+          }}
+        />
+      </div>
 
-        {/* CTA */}
-        <div style={{ marginTop: 40 }}>
-          <button
-            onClick={handleContinue}
-            disabled={isCreating || !decisionText.trim()}
-            style={{
-              padding: "14px 26px",
-              fontSize: 16,
-              fontWeight: 600,
-              borderRadius: 8,
-              background:
-                decisionText.trim()
-                  ? "linear-gradient(135deg,#00C2FF,#5B8CFF)"
-                  : "#444",
-              color: "white",
-              border: "none",
-              cursor: decisionText.trim() ? "pointer" : "not-allowed",
-            }}
-          >
-            {isCreating ? "Running simulation…" : "Run Simulation →"}
-          </button>
-        </div>
+      <div style={{ marginTop: 12, display: "flex", gap: 12 }}>
+        <button
+          onClick={handleRun}
+          disabled={!canRun}
+          style={{
+            padding: "10px 14px",
+            borderRadius: 10,
+            border: "1px solid rgba(255,255,255,0.18)",
+            background: canRun ? "rgba(255,255,255,0.10)" : "rgba(255,255,255,0.04)",
+            color: "white",
+            cursor: canRun ? "pointer" : "not-allowed",
+          }}
+        >
+          {isCreating ? "Running…" : "Run Simulation →"}
+        </button>
 
+        <button
+          onClick={() => navigate("/initiate")}
+          style={{
+            padding: "10px 14px",
+            borderRadius: 10,
+            border: "1px solid rgba(255,255,255,0.18)",
+            background: "transparent",
+            color: "white",
+            cursor: "pointer",
+            opacity: 0.9,
+          }}
+        >
+          Back to Initiate
+        </button>
       </div>
     </div>
   )
