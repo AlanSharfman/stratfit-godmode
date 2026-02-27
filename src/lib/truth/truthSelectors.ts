@@ -2,7 +2,8 @@
 // STRATFIT Truth Selectors — single canonical source for deltas, risk, quality.
 // No UI layer may compute these independently.
 
-export type ScenarioId = "base" | "upside" | "downside" | "stress";
+import type { ScenarioId } from "@/domain/scenario";
+export type { ScenarioId };
 
 type KPIValue = { value: number; display?: string };
 type KPIMap = Record<string, KPIValue>;

@@ -4,7 +4,7 @@ import ProDetailDrawer from '@/components/simulation/ProDetailDrawer';
 import { SimulateOverlay } from '@/components/simulate';
 import { SaveSimulationModal, LoadSimulationPanel } from '@/components/simulations';
 import { emitCausal } from "@/ui/causalEvents";
-import { ScenarioId } from "@/components/ScenarioSlidePanel";
+import type { ScenarioId } from "@/domain/scenario";
 import { LeverState } from "@/logic/calculateMetrics";
 import React from "react";
 

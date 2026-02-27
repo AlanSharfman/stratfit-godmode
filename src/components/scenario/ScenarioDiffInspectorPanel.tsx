@@ -22,7 +22,7 @@ export default function ScenarioDiffInspectorPanel() {
     if (!nonBaseline.length) return null;
     // Most recently updated first
     return nonBaseline.reduce((latest, x) =>
-      new Date(x.updatedAt) > new Date(latest.updatedAt) ? x : latest
+      new Date(x.updatedAt ?? 0) > new Date(latest.updatedAt ?? 0) ? x : latest
     );
   }, [savedScenarios]);
 

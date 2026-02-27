@@ -108,16 +108,26 @@ export interface SimulationSnapshot {
   executionTimeMs: number;
 }
 
-export interface Scenario {
-  id: string;
-  name: string;
-  description?: string;
-  levers: LeverSnapshot;
-  simulation: SimulationSnapshot | null;
-  createdAt: Date;
-  updatedAt: Date;
-  isBaseline: boolean;
+// Canonical domain base
+import type { Scenario as DomainScenario, ScenarioId } from "@/domain/scenario";
+
+export type StoreScenario = DomainScenario & {
+  // mega-store specific fields
+  isBaseline?: boolean
+
+  // legacy + studio
+  levers?: LeverSnapshot
+
+  // simulation payload used by overlays/terrain
+  simulation?: SimulationSnapshot | null
+
+  // if you previously used Date, keep it locally if needed:
+  createdAtDate?: Date
 }
+
+// Re-export for downstream consumers
+export type { ScenarioId };
+export type Scenario = StoreScenario;
 
 export interface ScenarioDelta {
   // Absolute deltas
@@ -171,9 +181,8 @@ const LEVER_LABELS: Record<string, string> = {
 };
 
 // Scenario IDs and Colors
-export type ScenarioId = 'base' | 'upside' | 'downside' | 'stress';
 
-export const SCENARIO_COLORS: Record<ScenarioId, { primary: string; secondary: string; glow: string }> = {
+export const SCENARIO_COLORS: Record<string, { primary: string; secondary: string; glow: string }> = {
   base: {
     primary: '#22d3ee',
     secondary: '#0891b2',
@@ -384,8 +393,8 @@ export const useScenarioStore = create<ScenarioState>()(
           name,
           levers: { ...levers },
           simulation: { ...simulation, simulatedAt: new Date() },
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
           isBaseline: true,
         };
         
@@ -403,8 +412,8 @@ export const useScenarioStore = create<ScenarioState>()(
           name,
           levers: { ...levers },
           simulation: { ...simulation, simulatedAt: new Date() },
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
           isBaseline: false,
         };
         
@@ -435,10 +444,10 @@ export const useScenarioStore = create<ScenarioState>()(
       
       renameScenario: (id, name) => {
         const scenarios = get().savedScenarios.map(s =>
-          s.id === id ? { ...s, name, updatedAt: new Date() } : s
+          s.id === id ? { ...s, name, updatedAt: Date.now() } : s
         );
         const baseline = get().baseline?.id === id
-          ? { ...get().baseline!, name, updatedAt: new Date() }
+          ? { ...get().baseline!, name, updatedAt: Date.now() }
           : get().baseline;
         set({ savedScenarios: scenarios, baseline });
       },
@@ -487,10 +496,10 @@ export const useScenarioStore = create<ScenarioState>()(
         if (divergenceScore >= 85) divergenceLabel = 'Fundamentally Different';
         
         // Lever deltas
-        const leverDeltas = Object.keys(scenarioA.levers).map(key => {
+        const leverDeltas = Object.keys(scenarioA.levers ?? {}).map(key => {
           const k = key as keyof LeverSnapshot;
-          const valueA = scenarioA.levers[k];
-          const valueB = scenarioB.levers[k];
+          const valueA = scenarioA.levers?.[k] ?? 0;
+          const valueB = scenarioB.levers?.[k] ?? 0;
           const delta = valueB - valueA;
           const impactWeight = LEVER_IMPACT_WEIGHTS[key] || 0.5;
           const impactOnDivergence = Math.abs(delta) * impactWeight / 100;

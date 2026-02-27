@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
 import { calculateMetrics, type LeverState, type ScenarioId as MetricsScenarioId } from "@/logic/calculateMetrics";
-import type { ScenarioId } from "@/components/ScenarioSlidePanel";
+import type { ScenarioId } from "@/domain/scenario";
 import { useSimulationStore } from "@/state/simulationStore";
 import { useCanonicalOutputStore } from "@/core/store/useCanonicalOutputStore";
 import { MODE } from "@/config/featureFlags";

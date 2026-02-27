@@ -1,23 +1,14 @@
-import { Outlet, useLocation } from "react-router-dom";
-import MainNav from "@/components/navigation/MainNav";
-import EngineDebugPanel from "@/debug/EngineDebugPanel";
-import { engineDebugPanelEnabled } from "@/config/featureFlags";
-import { SystemBaselineProvider } from "@/system/SystemBaselineProvider";
-import StratfitErrorBoundary from "@/system/StratfitErrorBoundary";
+import React from "react"
+import { BrowserRouter } from "react-router-dom"
+import AppRouter from "@/AppRouter"
+import { SystemBaselineProvider } from "@/system/SystemBaselineProvider"
 
 export default function App() {
-  const location = useLocation();
-  const isGodMode = location.pathname === "/position" || location.pathname === "/position-v2";
-
   return (
     <SystemBaselineProvider>
-      <StratfitErrorBoundary>
-        <div className="app">
-          {!isGodMode && <MainNav />}
-          <Outlet />
-          {engineDebugPanelEnabled && <EngineDebugPanel />}
-        </div>
-      </StratfitErrorBoundary>
+      <BrowserRouter>
+        <AppRouter />
+      </BrowserRouter>
     </SystemBaselineProvider>
-  );
+  )
 }

@@ -5,8 +5,7 @@
 
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-
-export type ScenarioId = "base" | "upside" | "downside" | "stress";
+import type { ScenarioId } from "@/domain/scenario";
 
 interface ScenarioOption {
   id: ScenarioId;

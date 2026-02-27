@@ -1,48 +1,18 @@
+import React from "react"
 import { Routes, Route, Navigate } from "react-router-dom"
-import App from "@/App"
 
-import PositionPage from "@/pages/position/PositionPage"
-import ObjectivePage from "@/pages/objective/ObjectivePage"
-import ComparePage from "@/components/compare/ComparePage"
-import InsightsPage from "@/pages/insights/InsightsPage"
-import RiskPage from "@/components/Risk/RiskPage"
-import BaselinePage from "@/pages/baseline/BaselinePage"
-import ValuationPage from "@/pages/valuation/ValuationPage"
-import ComingFeaturesPage from "@/pages/coming-features/ComingFeaturesPage"
-import AssessmentPage from "@/pages/StrategicAssessmentPage"
 import InitializeBaselinePage from "@/pages/initialize/InitializeBaselinePage"
 import DecisionPage from "@/pages/decision/DecisionPage"
-import PositionPageV2 from "@/pages/position-v2/PositionPageV2"
-
-import StudioRoute from "@/routes/StudioRoute"
-import StrategyStudioRoute from "@/routes/StrategyStudioRoute"
+import PositionRoute from "@/pages/position/PositionRoute"
 
 export default function AppRouter() {
   return (
     <Routes>
-      <Route path="/" element={<App />}>
-        <Route index element={<Navigate to="/initiate" replace />} />
-
-        <Route path="/position" element={<PositionPage />} />
-        <Route path="/position-v2" element={<PositionPageV2 />} />
-        <Route path="/objectives" element={<ObjectivePage />} />
-        <Route path="/studio" element={<StudioRoute />} />
-        <Route path="/strategy-studio" element={<StrategyStudioRoute />} />
-        <Route path="/compare" element={<ComparePage />} />
-        <Route path="/insights" element={<InsightsPage />} />
-        <Route path="/risk" element={<RiskPage />} />
-        <Route path="/baseline" element={<BaselinePage />} />
-        <Route path="/valuation" element={<ValuationPage />} />
-        <Route path="/coming-features" element={<ComingFeaturesPage />} />
-        <Route path="/assessment" element={<AssessmentPage />} />
-        <Route path="/initiate" element={<InitializeBaselinePage />} />
-        <Route path="/decision" element={<DecisionPage />} />
-
-        {/* Removed stub routes:
-            /roadmap
-            /simulate
-           These will be reintroduced only when real pages exist */}
-      </Route>
+      <Route path="/" element={<Navigate to="/initiate" replace />} />
+      <Route path="/initiate" element={<InitializeBaselinePage />} />
+      <Route path="/decision" element={<DecisionPage />} />
+      <Route path="/position" element={<PositionRoute />} />
+      <Route path="*" element={<Navigate to="/initiate" replace />} />
     </Routes>
   )
 }

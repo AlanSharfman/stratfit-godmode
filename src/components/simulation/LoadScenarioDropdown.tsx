@@ -45,7 +45,7 @@ export default function LoadScenarioDropdown({
   // Load scenario - apply levers
   const handleLoad = (scenario: Scenario) => {
     // Apply the saved lever values
-    Object.entries(scenario.levers).forEach(([key, value]) => {
+    Object.entries(scenario.levers ?? {}).forEach(([key, value]) => {
       setLevers({ [key]: value });
     });
     
@@ -72,7 +72,7 @@ export default function LoadScenarioDropdown({
   };
   
   // Format date
-  const formatDate = (date: Date) => {
+  const formatDate = (date: number | Date) => {
     const d = new Date(date);
     return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };

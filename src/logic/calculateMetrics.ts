@@ -23,7 +23,8 @@ export interface MetricsResult {
   enterpriseValue: number;
 }
 
-export type ScenarioId = "base" | "upside" | "downside" | "stress";
+import type { ScenarioId } from "@/domain/scenario";
+export type { ScenarioId };
 
 export function calculateMetrics(levers: LeverState, scenario: ScenarioId): MetricsResult {
   const mult = scenario === "upside" ? 1.15 : scenario === "downside" ? 0.85 : scenario === "stress" ? 0.70 : 1;

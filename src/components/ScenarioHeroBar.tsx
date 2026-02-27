@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 // TYPES
 // ============================================================================
 
-export type ScenarioId = "base" | "upside" | "downside" | "stress";
+import type { ScenarioId } from "@/domain/scenario";
 
 interface ScenarioOption {
   id: ScenarioId;

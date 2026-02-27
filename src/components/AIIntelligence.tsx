@@ -4,7 +4,7 @@
 
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ScenarioId } from "./ScenarioSlidePanel";
+import type { ScenarioId } from "@/domain/scenario";
 import { useShallow } from "zustand/react/shallow";
 import { useScenarioStore, ViewMode } from "@/state/scenarioStore";
 import StrategicQuestions from "./StrategicQuestions";

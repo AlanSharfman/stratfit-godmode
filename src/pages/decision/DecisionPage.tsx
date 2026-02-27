@@ -1,28 +1,39 @@
 import React, { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore"
+import { runDecisionPipeline } from "@/core/decision/runDecisionPipeline"
+import { useBaselineStore } from "@/state/baselineStore"
 
 export default function DecisionPage() {
   const navigate = useNavigate()
 
   const createScenario = usePhase1ScenarioStore((s) => s.createScenario)
   const setActiveScenarioId = usePhase1ScenarioStore((s) => s.setActiveScenarioId)
+  const baseline = useBaselineStore((s) => s.baseline)
 
   const [decisionText, setDecisionText] = useState("")
   const [isCreating, setIsCreating] = useState(false)
 
   async function handleContinue() {
     if (!decisionText.trim()) return
+    if (!baseline) {
+      console.warn("[DecisionPipeline] baseline missing")
+      return
+    }
 
     setIsCreating(true)
 
+    const { intent } = await runDecisionPipeline(decisionText, baseline)
+
+    console.log("[DecisionPipeline] intent", intent)
+
     const scenarioId = await createScenario({
       decision: decisionText,
+      intent,
       createdAt: Date.now(),
     })
 
     setActiveScenarioId(scenarioId)
-
     navigate("/position")
   }
 

@@ -1,7 +1,8 @@
 // src/config/dashboardConfig.ts
+import type { ScenarioId } from "@/domain/scenario";
+export type { ScenarioId };
 
 // ---- Core IDs ----
-export type ScenarioId = "base" | "upside" | "downside" | "stress";
 
 export type MetricId =
   | "runway"
