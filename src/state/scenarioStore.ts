@@ -592,12 +592,4 @@ export const useScenarioStore = create<ScenarioState>()(
 // Type exports
 export type ViewMode = 'terrain' | 'data';
 
-// Selectors
-export const useBaseline = () => useScenarioStore((s) => s.baseline);
-export const useSavedScenarios = () => useScenarioStore((s) => s.savedScenarios);
-export const useCompareViewMode = () => useScenarioStore((s) => s.compareViewMode);
-export const useScenario = () => useScenarioStore((s) => s.activeScenarioId);
-export const useStrategies = () => useScenarioStore((s) => s.strategies);
-export const useEngineResults = () => useScenarioStore((s) => s.engineResults);
-
 export default useScenarioStore;

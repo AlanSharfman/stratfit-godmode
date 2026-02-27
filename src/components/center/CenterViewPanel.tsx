@@ -18,7 +18,7 @@ import TerrainIntelligencePanel from "@/components/terrain/TerrainIntelligencePa
 import ConsiderationsPanel from "@/components/terrain/ConsiderationsPanel";
 import ModelDisclosure from "@/components/terrain/ModelDisclosure";
 
-import { useScenario, useScenarioStore } from "@/state/scenarioStore";
+import { useScenarioStore } from "@/state/scenarioStore";
 import { onCausal } from "@/ui/causalEvents";
 import { engineResultToMountainForces } from "@/logic/mountainForces";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
@@ -38,7 +38,7 @@ interface CenterViewPanelProps {
 
 export default function CenterViewPanel(props: CenterViewPanelProps) {
   const { baseline: systemBaseline } = useSystemBaseline();
-  const scenario = useScenario();
+  const scenario = useScenarioStore((s) => s.activeScenarioId);
   const engineResults = useScenarioStore((s) => s.engineResults);
   const hoveredKpiIndex = useScenarioStore((s) => s.hoveredKpiIndex);
   const engineResult = engineResults?.[scenario];

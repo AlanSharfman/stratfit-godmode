@@ -73,7 +73,7 @@ export default function StudioPage() {
 
         <button
           disabled={!compareReady}
-          onClick={() => navigate("/compare")}
+          onClick={() => navigate("/position")}
           style={{
             padding: "8px 16px",
             borderRadius: 6,

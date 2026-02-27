@@ -36,7 +36,7 @@ export default function SoftGateOverlay({
         <h2 style={{ marginBottom: "16px" }}>Baseline Required</h2>
         <p style={{ opacity: 0.8, marginBottom: "24px" }}>{message}</p>
         <button
-          onClick={() => navigate("/initialize")}
+          onClick={() => navigate("/initiate")}
           style={{
             padding: "10px 20px",
             borderRadius: "8px",

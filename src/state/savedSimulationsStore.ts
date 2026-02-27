@@ -187,9 +187,5 @@ export const useSavedSimulationsStore = create<SavedSimulationsState>()(
 // SELECTORS
 // ============================================================================
 
-export const useSavedSimulations = () => useSavedSimulationsStore((s) => s.simulations);
-export const useBaseline = () => useSavedSimulationsStore((s) => s.simulations.find(sim => sim.isBaseline));
-export const useComparisonIds = () => useSavedSimulationsStore((s) => ({ a: s.comparisonA, b: s.comparisonB }));
-
 export default useSavedSimulationsStore;
 
