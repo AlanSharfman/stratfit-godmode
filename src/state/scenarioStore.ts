@@ -130,7 +130,8 @@ export type StoreScenario = DomainScenario & {
 
 // Re-export for downstream consumers
 export type { ScenarioId };
-export type Scenario = StoreScenario;
+// Local alias (not exported — use StoreScenario when importing externally)
+type Scenario = StoreScenario;
 
 export interface ScenarioDelta {
   // Absolute deltas
@@ -247,7 +248,14 @@ export interface EngineResult {
   kpis: Record<string, KPIValue>;
   ai?: { summary: string };
   timeline?: { month: number; valuation: number; arr: number; runway: number; cash: number; risk: number; totalFunding: number }[];
+  // allow future expansion (cashflow, risk, valuation layers)
+  cashflow?: unknown;
+  valuation?: unknown;
+  risk?: unknown;
 }
+
+/** Map of scenarioId → EngineResult — canonical type for engine results */
+export type EngineResults = Record<string, EngineResult>;
 
 // Solver path point type
 export interface SolverPathPoint {

@@ -2,7 +2,7 @@
 // STRATFIT — Load Scenario Dropdown
 
 import React, { useState, useRef, useEffect } from 'react';
-import { useScenarioStore, type Scenario } from '../../state/scenarioStore';
+import { useScenarioStore, type StoreScenario as Scenario } from '../../state/scenarioStore';
 import { useLeverStore } from '../../state/leverStore';
 
 import './LoadScenarioDropdown.css';

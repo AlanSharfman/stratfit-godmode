@@ -20,7 +20,7 @@
 import React, { useMemo, useEffect, useRef } from "react";
 import type { SystemAnalysisSnapshot, SystemAnalysisResult } from "@/logic/system/SystemAnalysisEngine";
 import { extractQuantifiedFindings } from "@/logic/intelligence/extractQuantifiedFindings";
-import { generateNarrative, type NarrativeBlock } from "@/logic/intelligence/generateNarrative";
+import { generateIntelligenceNarrative as generateNarrative, type NarrativeBlock } from "@/logic/intelligence/generateNarrative";
 import styles from "./SystemCommentaryPanel.module.css";
 
 // ────────────────────────────────────────────────────────────────────────────

@@ -15,7 +15,8 @@ export interface ValuationState {
     probabilityBandHigh: number;
 }
 
-export interface SimulationSnapshot {
+// Simplified three-field summary used only within this store island
+export interface SimulationSummary {
     survivalProbability: number;
     confidenceIndex: number;
     volatility: number;
@@ -32,5 +33,5 @@ export interface StratfitState {
     position: PositionState;
     liquidity: LiquidityState;
     valuation: ValuationState;
-    simulation: SimulationSnapshot;
+    simulation: SimulationSummary;
 }

@@ -8,13 +8,13 @@
 // No stores. No side effects. Deterministic.
 // ═══════════════════════════════════════════════════════════════════════════
 
-import type { KPIValue, EngineResult } from "@/state/scenarioStore"
+import type { KPIValue, EngineResult, EngineResults } from "@/state/scenarioStore"
 import { formatKPIValue } from "@/logic/kpiTaxonomy"
 
 // ── Public types ──────────────────────────────────────────────────────────
 
 /** Engine results map: scenarioId → EngineResult */
-export type EngineResults = Record<string, EngineResult>
+export type { EngineResults }
 
 /** KPI map: key → KPIValue */
 export type KPIMap = Record<string, KPIValue>

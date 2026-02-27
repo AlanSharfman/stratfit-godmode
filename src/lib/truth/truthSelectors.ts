@@ -3,20 +3,10 @@
 // No UI layer may compute these independently.
 
 import type { ScenarioId } from "@/domain/scenario";
-export type { ScenarioId };
+import type { EngineResult, EngineResults, KPIValue } from "@/state/scenarioStore";
+export type { ScenarioId, EngineResult, EngineResults };
 
-type KPIValue = { value: number; display?: string };
 type KPIMap = Record<string, KPIValue>;
-
-export type EngineResult = {
-  kpis: KPIMap;
-  // allow future expansion without breaking imports
-  cashflow?: unknown;
-  valuation?: unknown;
-  risk?: unknown;
-};
-
-export type EngineResults = Record<ScenarioId, EngineResult>;
 
 // -----------------------------
 // helpers

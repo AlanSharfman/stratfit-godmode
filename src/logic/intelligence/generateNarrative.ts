@@ -98,7 +98,7 @@ STRICT RULES:
 6. Return valid JSON matching the NarrativeBlock[] schema.`;
 
   // ── FALLBACK: deterministic until OpenAI is wired ──
-  console.info("[generateNarrative] OpenAI integration pending. Using deterministic narrative.");
+  console.info("[generateIntelligenceNarrative] OpenAI integration pending. Using deterministic narrative.");
   return deterministicNarrative(findings);
 }
 
@@ -106,7 +106,7 @@ STRICT RULES:
 // MAIN EXPORT
 // ============================================================================
 
-export function generateNarrative(findings: QuantifiedFinding[]): NarrativeOutput {
+export function generateIntelligenceNarrative(findings: QuantifiedFinding[]): NarrativeOutput {
   if (findings.length === 0) {
     return { source: "deterministic", blocks: [] };
   }
@@ -124,7 +124,7 @@ export function generateNarrative(findings: QuantifiedFinding[]): NarrativeOutpu
  * Async version for when OpenAI is enabled.
  * Components can call this and handle the promise.
  */
-export async function generateNarrativeAsync(findings: QuantifiedFinding[]): Promise<NarrativeOutput> {
+export async function generateIntelligenceNarrativeAsync(findings: QuantifiedFinding[]): Promise<NarrativeOutput> {
   if (findings.length === 0) {
     return { source: "deterministic", blocks: [] };
   }

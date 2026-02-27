@@ -27,7 +27,7 @@ import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { useShallow } from "zustand/react/shallow";
 import { buildPeakModel, LeverId } from "@/logic/mountainPeakModel";
-import { Scenario, ScenarioId, useScenarioStore } from "@/state/scenarioStore";
+import { StoreScenario as Scenario, ScenarioId, useScenarioStore } from "@/state/scenarioStore";
 import { useUIStore } from "@/state/uiStore";
 import { useSimulationStore } from "@/state/simulationStore";
 import { engineResultToMountainForces } from "@/logic/mountainForces";
