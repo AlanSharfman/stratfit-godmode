@@ -1,10 +1,10 @@
 import { useMemo } from "react"
-import { EngineResults } from "@/types/engine"
+import { SingleEngineResult } from "@/types/engine"
 import { getScenarioKpis } from "@/logic/kpis/kpiSelectors"
 import { selectDivergence } from "@/logic/divergence/selectDivergence"
 
 export function useScenarioSelection(
-  engineResults: Record<string, EngineResults>,
+  engineResults: Record<string, SingleEngineResult>,
   baselineId: string,
   scenarioId: string
 ) {

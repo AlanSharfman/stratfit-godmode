@@ -1,4 +1,4 @@
-import { EngineResults, DivergenceResult, ScenarioKpis } from "@/types/engine"
+import { SingleEngineResult, DivergenceResult, ScenarioKpis } from "@/types/engine"
 
 /**
  * Compute a lightweight divergence between two ScenarioKpis snapshots.
@@ -18,7 +18,7 @@ function computeKpiDivergence(
 }
 
 export function selectDivergence(
-  engineResults: Record<string, EngineResults>,
+  engineResults: Record<string, SingleEngineResult>,
   baselineId: string,
   scenarioId: string
 ): DivergenceResult | null {

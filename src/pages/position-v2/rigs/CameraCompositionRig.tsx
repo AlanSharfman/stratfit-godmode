@@ -4,7 +4,8 @@ import { useThree } from "@react-three/fiber";
 /**
  * CameraCompositionRig
  * - One-shot deterministic camera placement.
- * - Does NOT animate, does NOT fight controls (lockCamera is true).
+ * - Uses the SAME target as OrbitControls (0, 14, 0) to avoid fighting.
+ * - Does NOT animate, does NOT fight controls.
  * - Safe: runs once and exits.
  */
 export default function CameraCompositionRig() {
@@ -19,8 +20,9 @@ export default function CameraCompositionRig() {
     // - ridge sits upper third
     // - a touch more foreground depth
     // - slightly flatter pitch for institutional "survey" feel
+    // NOTE: lookAt target MUST match OrbitControls target (0, 14, 0)
     camera.position.set(0, 150, 500);
-    camera.lookAt(0, 16, 0);
+    camera.lookAt(0, 14, 0);
     camera.updateProjectionMatrix();
   }, [camera]);
 

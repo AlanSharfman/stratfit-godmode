@@ -1,8 +1,8 @@
 import { useMemo } from "react"
-import { EngineResults, ScenarioKpis } from "@/types/engine"
+import { SingleEngineResult, ScenarioKpis } from "@/types/engine"
 
 export function getScenarioKpis(
-  engineResults: Record<string, EngineResults>,
+  engineResults: Record<string, SingleEngineResult>,
   scenarioId: string
 ): ScenarioKpis | null {
   const result = engineResults?.[scenarioId]
@@ -11,14 +11,14 @@ export function getScenarioKpis(
 }
 
 export function getBaselineKpis(
-  engineResults: Record<string, EngineResults>,
+  engineResults: Record<string, SingleEngineResult>,
   baselineId: string
 ): ScenarioKpis | null {
   return getScenarioKpis(engineResults, baselineId)
 }
 
 export function useScenarioKpis(
-  engineResults: Record<string, EngineResults>,
+  engineResults: Record<string, SingleEngineResult>,
   scenarioId: string
 ) {
   return useMemo(() => {

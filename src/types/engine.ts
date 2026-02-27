@@ -23,7 +23,7 @@ export interface DivergenceResult {
 }
 
 /** Shape of a single engine result (mirrors scenarioStore.EngineResult) */
-export interface EngineResults {
+export interface SingleEngineResult {
   kpis: ScenarioKpis
   ai?: { summary: string }
   timeline?: Array<{

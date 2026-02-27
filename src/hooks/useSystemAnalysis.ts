@@ -25,7 +25,7 @@ import {
   recomputeShock,
   type SystemAnalysisResult,
   type SystemAnalysisSnapshot,
-  type BaselineInputs as AnalysisBaselineInputs,
+  type AnalysisBaselineInputs,
   type StrategyInputs,
 } from "@/logic/system/SystemAnalysisEngine";
 
@@ -105,7 +105,7 @@ export function useSystemAnalysis(
   const shockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Derive explicit inputs ──
-  const baselineInputs: BaselineInputs | null = useMemo(() => {
+  const baselineInputs: AnalysisBaselineInputs | null = useMemo(() => {
     if (!baseline?.financial) return null;
     return {
       arr: baseline.financial.arr ?? 0,

@@ -16,10 +16,11 @@
 //   - Water/liquidity particles are a Position layer.
 // ═══════════════════════════════════════════════════════════════════════════
 
-import React, { Suspense, useEffect, useRef, useState } from "react";
+import React, { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
+import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import type { TerrainSurfaceHandle } from "@/terrain/TerrainSurface";
 import TerrainSurface from "@/terrain/TerrainSurface";
 import P50Path from "@/paths/P50Path";
@@ -33,6 +34,10 @@ import HorizonBand from "@/terrain/HorizonBand";
 import { useRenderFlagsStore } from "@/state/renderFlagsStore";
 import type { TerrainMetrics } from "@/terrain/terrainFromBaseline";
 import DemoTourDirector from "@/demo/DemoTourDirector";
+import { useTerrainControls } from "@/terrain/useTerrainControls";
+
+// Canonical camera target — must be consistent across all camera setups
+const TERRAIN_LOOK_AT: [number, number, number] = [0, 14, 0];
 
 function readCssVar(varName: string, fallback: string): string {
   if (typeof window === "undefined") return fallback;
@@ -69,9 +74,17 @@ export default function TerrainStage({
   children,
 }: TerrainStageProps) {
   const terrainRef = useRef<TerrainSurfaceHandle>(null!);
+  const controlsRef = useRef<OrbitControlsImpl>(null);
   const [terrainReady, setTerrainReady] = useState(false);
   const { baseline } = useSystemBaseline();
   const rebuildKey = baselineSeedString(baseline as any);
+  const setControls = useTerrainControls((s) => s.setControls);
+
+  // Register / unregister OrbitControls in the terrain controls store
+  const onControlsRef = useCallback((instance: OrbitControlsImpl | null) => {
+    (controlsRef as React.MutableRefObject<OrbitControlsImpl | null>).current = instance;
+    setControls(instance);
+  }, [setControls]);
 
   const [fogColor, setFogColor] = useState("#050A10");
   useEffect(() => {
@@ -112,7 +125,7 @@ export default function TerrainStage({
         // Only set defaults when not locked — locked pages inject a CameraCompositionRig.
         if (!lockCamera) {
           camera.position.set(0, 155, 460);
-          camera.lookAt(0, 18, 0);
+          camera.lookAt(...TERRAIN_LOOK_AT);
           camera.updateProjectionMatrix();
         }
 
@@ -123,15 +136,19 @@ export default function TerrainStage({
       {/* Orbit controls — disabled on Position (lockCamera), active only in demo mode */}
       {!lockCamera && !watchDemo && (
         <OrbitControls
+          ref={onControlsRef}
           makeDefault
+          enableRotate
           enablePan={false}
           enableZoom={false}
+          enableDamping
+          dampingFactor={0.12}
           minPolarAngle={0.758}
           maxPolarAngle={1.456}
           rotateSpeed={0.8}
           minDistance={220}
           maxDistance={700}
-          target={[0, 14, 0]}
+          target={TERRAIN_LOOK_AT}
         />
       )}
 

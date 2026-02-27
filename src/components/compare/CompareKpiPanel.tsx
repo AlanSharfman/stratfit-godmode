@@ -1,10 +1,10 @@
 import React from "react"
 import { useScenarioSelection } from "@/hooks/useScenarioSelection"
 import { formatKpis } from "@/logic/kpis/kpiTaxonomy"
-import type { EngineResults } from "@/types/engine"
+import type { SingleEngineResult } from "@/types/engine"
 
 type Props = {
-  engineResults: Record<string, EngineResults>
+  engineResults: Record<string, SingleEngineResult>
   baselineId: string
   scenarioId: string
 }

@@ -460,7 +460,7 @@ export default function UnifiedHeader({
             <React.Fragment key={tab.id}>
               <button
                 className={`uh-nav-tab ${activeView === tab.id ? 'active' : ''}`}
-                onClick={() => onViewChange(tab.id as ViewMode)}
+                onClick={() => onViewChange(tab.id as NavViewMode)}
               >
                 <span>{tab.label}</span>
               </button>
