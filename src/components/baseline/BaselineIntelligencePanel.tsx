@@ -123,6 +123,7 @@ const BaselineIntelligencePanel: React.FC = memo(() => {
   return (
     <aside className={styles.rightPanel}>
       <div className={styles.panelHeader}>
+        <div className={styles.panelTitle}>BASELINE INTELLIGENCE</div>
         <div className={styles.cubeScene} aria-hidden="true">
           <div className={styles.cube}>
             <div className={`${styles.cubeFace} ${styles.cubeFront}`} />
@@ -133,7 +134,6 @@ const BaselineIntelligencePanel: React.FC = memo(() => {
             <div className={`${styles.cubeFace} ${styles.cubeBottom}`} />
           </div>
         </div>
-        <div className={styles.panelTitle}>BASELINE INTELLIGENCE</div>
       </div>
 
       <div className={styles.panelSection}>
