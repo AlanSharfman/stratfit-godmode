@@ -65,6 +65,8 @@ export interface LeverSnapshot {
   [key: string]: number;
 }
 
+export type OverallRating = 'CRITICAL' | 'CAUTION' | 'STABLE' | 'STRONG' | 'EXCEPTIONAL';
+
 export interface SimulationSnapshot {
   // Core metrics
   survivalRate: number;
@@ -85,7 +87,7 @@ export interface SimulationSnapshot {
   
   // Score
   overallScore: number;
-  overallRating: 'CRITICAL' | 'CAUTION' | 'STABLE' | 'STRONG' | 'EXCEPTIONAL';
+  overallRating: OverallRating;
   
   // Time series (for Timeline)
   monthlyARR: number[];
@@ -100,6 +102,7 @@ export interface SimulationSnapshot {
     lever: string;
     label: string;
     impact: number;
+    direction?: "positive" | "negative";
   }[];
   
   // Meta

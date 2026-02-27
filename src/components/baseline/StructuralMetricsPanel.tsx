@@ -1,11 +1,10 @@
 import React, { memo, useMemo } from "react";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
 import { useScenarioStore } from "@/state/scenarioStore";
-import type { MetricId } from "@/types/baseline";
 import styles from "@/pages/baseline/BaselinePage.module.css";
 
 type Row = {
-  id: MetricId;
+  id: string;
   label: string;
   value: number; // 0..100
 };
@@ -15,8 +14,8 @@ function clamp(n: number, lo: number, hi: number) {
 }
 
 const StructuralMetricsPanel: React.FC<{
-  activeMetricId?: MetricId | null;
-  onHover: (id: MetricId | null) => void;
+  activeMetricId?: string | null;
+  onHover: (id: string | null) => void;
 }> = memo(({ activeMetricId, onHover }) => {
   const { baseline } = useSystemBaseline();
   const engineKpis = useScenarioStore((s) => s.engineResults?.base?.kpis ?? null);

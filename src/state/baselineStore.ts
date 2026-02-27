@@ -1,7 +1,7 @@
 // src/state/baselineStore.ts
 import { create } from "zustand"
 import type { Baseline } from "@/types/baseline"
-import { BASELINE_STORAGE_KEY } from "@/types/baseline"
+import { BASELINE_STORAGE_KEY } from "@/onboard/baseline"
 
 /**
  * TEMP legacy-compatible input shape used by older pages/components.

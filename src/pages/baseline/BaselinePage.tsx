@@ -8,7 +8,6 @@ import BaselineIntelligencePanel from "@/components/baseline/BaselineIntelligenc
 import BaselineKeyStrip from "@/components/baseline/BaselineKeyStrip";
 import MountainMarkers, { type MountainMarker } from "@/components/terrain/MountainMarkers";
 import { useMarkerLinkStore } from "@/state/markerLinkStore";
-import type { MetricId } from "@/types/baseline";
 import {
     TerrainAnchorOverlay,
     BASELINE_METRIC_CONNECTIONS,
@@ -16,7 +15,7 @@ import {
 import styles from "./BaselinePage.module.css";
 
 export default function BaselinePage() {
-    const [activeMetricId, setActiveMetricId] = useState<MetricId | null>(null);
+    const [activeMetricId, setActiveMetricId] = useState<string | null>(null);
     const [terrainMesh, setTerrainMesh] = useState<Mesh | null>(null);
 
     const activeId = useMarkerLinkStore((s) => s.activeId);

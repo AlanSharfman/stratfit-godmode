@@ -1,7 +1,7 @@
 import React, { memo, useMemo } from "react";
 import styles from "./ScenarioImpactPanel.module.css";
 
-export type MetricId =
+type MetricId =
   | "revenue"
   | "arr"
   | "valuation"

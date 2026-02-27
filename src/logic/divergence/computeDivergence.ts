@@ -2,27 +2,8 @@
 // Baseline vs Scenario deltas from SimulationSnapshot.
 // Pure + deterministic. No store access.
 
-export type OverallRating = "CRITICAL" | "CAUTION" | "STABLE" | "STRONG";
-
-export interface SimulationSnapshot {
-  survivalRate: number; // 0–1
-  medianARR: number;
-  medianRunway: number;
-  medianCash: number;
-
-  arrP10: number; arrP50: number; arrP90: number;
-  runwayP10: number; runwayP50: number; runwayP90: number;
-  cashP10: number; cashP50: number; cashP90: number;
-
-  overallScore: number;
-  overallRating: OverallRating;
-
-  leverSensitivity: { lever: string; label: string; impact: number; direction: "positive" | "negative" }[];
-
-  simulatedAt: Date;
-  iterations: number;
-  executionTimeMs: number;
-}
+import type { SimulationSnapshot, OverallRating } from "@/state/scenarioStore";
+export type { SimulationSnapshot, OverallRating };
 
 export type Divergence = {
   // headline signals

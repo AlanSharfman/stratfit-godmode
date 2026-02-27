@@ -2,33 +2,8 @@
 // Produces executive commentary strictly from SimulationSnapshot.
 // No AI. No fabrication. Same inputs → same output.
 
-export type OverallRating = "CRITICAL" | "CAUTION" | "STABLE" | "STRONG";
-
-export interface SimulationSnapshot {
-  survivalRate: number; // 0–1
-  medianARR: number;
-  medianRunway: number;
-  medianCash: number;
-
-  arrP10: number; arrP50: number; arrP90: number;
-  runwayP10: number; runwayP50: number; runwayP90: number;
-  cashP10: number; cashP50: number; cashP90: number;
-
-  overallScore: number;
-  overallRating: OverallRating;
-
-  monthlyARR: number[];
-  monthlyRunway: number[];
-  monthlySurvival: number[];
-
-  arrBands: { month: number; p10: number; p50: number; p90: number }[];
-
-  leverSensitivity: { lever: string; label: string; impact: number; direction: "positive" | "negative" }[];
-
-  simulatedAt: Date;
-  iterations: number;
-  executionTimeMs: number;
-}
+import type { SimulationSnapshot, OverallRating } from "@/state/scenarioStore";
+export type { SimulationSnapshot, OverallRating };
 
 type Narrative = {
   headline: string;
