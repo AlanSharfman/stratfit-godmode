@@ -124,8 +124,22 @@ const BaselineIntelligencePanel: React.FC = memo(() => {
     <aside className={styles.rightPanel}>
       <div className={styles.panelHeader}>
         <div className={styles.panelTitle}>BASELINE INTELLIGENCE</div>
-        <div className={styles.panelDots}>
-          <span /><span /><span />
+        <div className={styles.panelSpinner} aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 110" width="22" height="22" overflow="hidden">
+            <defs>
+              <linearGradient id="biTopGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#00FFFF" />
+                <stop offset="100%" stopColor="#0077FF" />
+              </linearGradient>
+              <filter id="biNeonAura" x="-40%" y="-40%" width="180%" height="180%">
+                <feDropShadow dx="0" dy="0" stdDeviation="5" floodColor="#00FFCC" floodOpacity="0.7" />
+              </filter>
+            </defs>
+            <polygon points="15,35 50,55 50,95 15,75" fill="#0D2C4C" stroke="#1A4A7C" strokeWidth="1" />
+            <polygon points="50,55 85,35 85,75 50,95" fill="#061626" stroke="#0D2C4C" strokeWidth="1" />
+            <polygon points="50,15 85,35 50,55 15,35" fill="url(#biTopGlow)" filter="url(#biNeonAura)" />
+            <polyline points="15,35 50,55 85,35" fill="none" stroke="#FFFFFF" strokeWidth="1.5" strokeOpacity="0.9" />
+          </svg>
         </div>
       </div>
 

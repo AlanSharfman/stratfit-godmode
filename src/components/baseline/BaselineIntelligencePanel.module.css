@@ -40,36 +40,20 @@
   color: rgba(226, 232, 240, 0.92);
 }
 
-.panelDots {
+.panelSpinner {
   display: flex;
   align-items: center;
+  justify-content: center;
+  animation: logoSpin 3s linear infinite;
 }
 
-.panelDots span {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: #0c4a4e;
-  display: inline-block;
-  margin: 0 4px;
-  animation: cometPulse 1.2s infinite ease-in-out;
+.panelSpinner svg {
+  filter: drop-shadow(0 0 4px rgba(0, 255, 204, 0.35));
 }
 
-.panelDots span:nth-child(1) { animation-delay: 0s; }
-.panelDots span:nth-child(2) { animation-delay: 0.15s; }
-.panelDots span:nth-child(3) { animation-delay: 0.3s; }
-
-@keyframes cometPulse {
-  0%, 100% {
-    background-color: #0c4a4e;
-    box-shadow: none;
-    transform: scale(0.8);
-  }
-  30% {
-    background-color: #ffffff;
-    box-shadow: 0 0 6px #00ffcc, 0 0 12px #00ffcc;
-    transform: scale(1.2);
-  }
+@keyframes logoSpin {
+  0%   { transform: rotateY(0deg); }
+  100% { transform: rotateY(360deg); }
 }
 
 /* ── Sections ── */
