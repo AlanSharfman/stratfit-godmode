@@ -1,6 +1,6 @@
 export type RiskProfile = "conservative" | "balanced" | "aggressive";
 
-export interface BaselineInputs {
+export interface InitializeFormInputs {
   revenue: number;
   growthRate: number;
   grossMargin: number;

@@ -1993,11 +1993,11 @@ export function ScenarioMountainImpl({
           enableRotate={controlsEnabled ? (mode !== "ghost") : false}
           autoRotate={controlsEnabled ? (controlsAutoRotate ?? (isGodMode ? true : config.autoRotate)) : false}
           autoRotateSpeed={isGodMode ? 0.3 : config.autoRotateSpeed}
-          rotateSpeed={0.3}
+          rotateSpeed={0.8}
           minPolarAngle={isGodMode ? Math.PI / 3.5 : Math.PI / 4}
           maxPolarAngle={Math.PI / 2.2}
-          minAzimuthAngle={baselineAllow360Rotate ? undefined : -Math.PI / 5}
-          maxAzimuthAngle={baselineAllow360Rotate ? undefined : Math.PI / 5}
+          minAzimuthAngle={undefined}
+          maxAzimuthAngle={undefined}
           onStart={() => setIsOrbiting(true)}
           onEnd={() => setIsOrbiting(false)}
           {...(mode === "strategy" ? { target: orbitTarget } : {})}

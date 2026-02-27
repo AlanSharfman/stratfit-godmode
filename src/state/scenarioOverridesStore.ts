@@ -1,10 +1,10 @@
 import { create } from "zustand";
-import { BaselineInputs } from "@/pages/initialize/initialize.types";
+import { InitializeFormInputs } from "@/pages/initialize/initialize.types";
 
 export interface OverrideScenario {
   id: string;
   name: string;
-  overrides: Partial<BaselineInputs>;
+  overrides: Partial<InitializeFormInputs>;
 }
 
 interface ScenarioOverridesStore {

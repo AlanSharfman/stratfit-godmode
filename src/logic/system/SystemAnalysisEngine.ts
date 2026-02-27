@@ -107,7 +107,7 @@ export type SystemAnalysisResult = SystemAnalysisSnapshot | SystemAnalysisNotCom
 // INPUTS
 // ============================================================================
 
-export interface BaselineInputs {
+export interface AnalysisBaselineInputs {
   arr: number;
   monthlyBurn: number;
   cashOnHand: number;
@@ -130,7 +130,7 @@ export interface MethodConfig {
 
 export interface RunSystemAnalysisInput {
   monteCarloResult: MonteCarloResult | null;
-  baselineInputs: BaselineInputs | null;
+  baselineInputs: AnalysisBaselineInputs | null;
   strategyInputs: StrategyInputs | null;
   valuationDistribution: ValuationDistributionSummary | null;
   methodConfig?: MethodConfig;
@@ -279,7 +279,7 @@ export function runSystemAnalysis(input: RunSystemAnalysisInput): SystemAnalysis
 
 export interface RecomputeShockInput {
   levers: LeverState;
-  baselineInputs: BaselineInputs;
+  baselineInputs: AnalysisBaselineInputs;
   horizonMonths: number;
   shockIntensityPct: number;
   runs?: number;

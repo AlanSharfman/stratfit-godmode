@@ -25,7 +25,7 @@ import {
   recomputeShock,
   type SystemAnalysisResult,
   type SystemAnalysisSnapshot,
-  type BaselineInputs,
+  type BaselineInputs as AnalysisBaselineInputs,
   type StrategyInputs,
 } from "@/logic/system/SystemAnalysisEngine";
 

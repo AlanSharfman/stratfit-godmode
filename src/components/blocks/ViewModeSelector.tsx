@@ -3,17 +3,17 @@ import React from "react";
 import { Layers, Activity, SplitSquareHorizontal } from "lucide-react";
 import styles from "./ViewModeSelector.module.css";
 
-export type ViewMode = "terrain" | "impact" | "compare";
+export type SectionViewMode = "terrain" | "impact" | "compare";
 
 interface ViewModeSelectorProps {
-  activeMode: ViewMode;
-  onChange: (m: ViewMode) => void;
+  activeMode: SectionViewMode;
+  onChange: (m: SectionViewMode) => void;
   className?: string;
   /** Optional right-side slot (for Timeline/Heatmap toggles) */
   rightSlot?: React.ReactNode;
 }
 
-const MODES: Array<{ id: ViewMode; label: string; icon: typeof Layers }> = [
+const MODES: Array<{ id: SectionViewMode; label: string; icon: typeof Layers }> = [
   { id: "terrain", label: "Terrain", icon: Layers },
   { id: "compare", label: "Compare", icon: SplitSquareHorizontal },
   { id: "impact", label: "Trade offs", icon: Activity },

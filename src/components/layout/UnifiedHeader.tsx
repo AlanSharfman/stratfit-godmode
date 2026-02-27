@@ -18,7 +18,7 @@ import { ExportReportButton, ShareButton } from '@/components/common';
 // ===========================================
 // VIEW MODES (moved from ViewModeSelector)
 // ===========================================
-export type ViewMode = "initialize" | "objective" | "terrain" | "impact" | "compare" | "simulate" | "risk" | "valuation" | "assessment";
+export type NavViewMode = "initialize" | "objective" | "terrain" | "impact" | "compare" | "simulate" | "risk" | "valuation" | "assessment";
 
 // ===========================================
 // SCENARIOS (moved from ActiveScenario)
@@ -40,7 +40,7 @@ const SCENARIOS: Scenario[] = [
 // ===========================================
 // NAV TABS
 // ===========================================
-const NAV_TABS: Array<{ id: ViewMode; label: string; icon: typeof Layers }> = [
+const NAV_TABS: Array<{ id: NavViewMode; label: string; icon: typeof Layers }> = [
   { id: "initialize", label: "SYSTEM CALIBRATION", icon: Layers },
   { id: "objective", label: "OBJECTIVE", icon: Layers },
   { id: "terrain", label: "BASELINE", icon: Layers },
@@ -59,8 +59,8 @@ interface UnifiedHeaderProps {
   currentScenario: ScenarioType;
   onScenarioChange: (scenario: ScenarioType) => void;
   // View Mode
-  activeView: ViewMode;
-  onViewChange: (view: ViewMode) => void;
+  activeView: NavViewMode;
+  onViewChange: (view: NavViewMode) => void;
   // Toggles
   timelineEnabled: boolean;
   heatmapEnabled: boolean;

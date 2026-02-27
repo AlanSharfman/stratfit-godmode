@@ -1,4 +1,4 @@
-import { BaselineInputs } from "@/pages/initialize/initialize.types";
+import { InitializeFormInputs } from "@/pages/initialize/initialize.types";
 
 export interface TerrainMetrics {
   elevationScale: number;
@@ -14,7 +14,7 @@ export interface TerrainMetrics {
   microDetailStrength?: number;  // 0–1
 }
 
-export function deriveTerrainMetrics(inputs: BaselineInputs): TerrainMetrics {
+export function deriveTerrainMetrics(inputs: InitializeFormInputs): TerrainMetrics {
   const growthFactor = inputs.growthRate / 100;
   const marginFactor = inputs.grossMargin / 100;
   const burnPressure = inputs.burnRate / (inputs.revenue || 1);
