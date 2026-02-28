@@ -15,7 +15,6 @@ export interface RenderFlags {
   showEnvelope: boolean;
   showAnnotations: boolean;
   showPreview: boolean;
-  watchDemo: boolean;
 }
 
 interface RenderFlagsState extends RenderFlags {
@@ -35,7 +34,6 @@ const DEFAULTS: RenderFlags = {
   showEnvelope: false,
   showAnnotations: false,
   showPreview: false,
-  watchDemo: false,
 };
 
 export const useRenderFlagsStore = create<RenderFlagsState>((set, get) => ({

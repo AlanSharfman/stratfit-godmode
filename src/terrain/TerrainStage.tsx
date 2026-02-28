@@ -33,7 +33,6 @@ import LiquidityFlowLayer from "@/components/terrain/liquidity/LiquidityFlowLaye
 import HorizonBand from "@/terrain/HorizonBand";
 import { useRenderFlagsStore } from "@/state/renderFlagsStore";
 import type { TerrainMetrics } from "@/terrain/terrainFromBaseline";
-import DemoTourDirector from "@/demo/DemoTourDirector";
 import { useTerrainControls } from "@/terrain/useTerrainControls";
 
 // Canonical camera target — must be consistent across all camera setups
@@ -93,7 +92,7 @@ export default function TerrainStage({
   }, []);
 
   // ── Render flags ──
-  const { showMarkers, showFlow, showPaths, watchDemo } = useRenderFlagsStore();
+  const { showMarkers, showFlow, showPaths } = useRenderFlagsStore();
   const pathsOn = typeof pathsEnabled === "boolean" ? pathsEnabled : showPaths;
 
   useEffect(() => {
@@ -133,8 +132,8 @@ export default function TerrainStage({
         gl.setClearColor(fogColor, 0);
       }}
     >
-      {/* Orbit controls — disabled on Position (lockCamera), active only in demo mode */}
-      {!lockCamera && !watchDemo && (
+      {/* Orbit controls — only active when lockCamera is false (non-Position pages) */}
+      {!lockCamera && (
         <OrbitControls
           ref={onControlsRef}
           makeDefault
@@ -150,11 +149,6 @@ export default function TerrainStage({
           maxDistance={700}
           target={TERRAIN_LOOK_AT}
         />
-      )}
-
-      {/* Demo Tour Director (camera + overlay) mounts INSIDE Canvas */}
-      {watchDemo && terrainReady && (
-        <DemoTourDirector enabled terrainRef={terrainRef} />
       )}
 
       {/* Fog stays deterministic; background comes from DOM gradient behind the canvas. */}

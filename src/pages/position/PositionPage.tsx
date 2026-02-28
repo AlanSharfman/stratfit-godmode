@@ -248,7 +248,6 @@ export default function PositionPage() {
       items: [
         { id: "heatMap", label: "Heat Map", value: heatmapEnabled, onChange: () => toggleHeatmap() },
         { id: "envelope", label: "Envelope", value: renderFlags.showEnvelope, onChange: () => renderFlags.toggle("showEnvelope") },
-        { id: "watchDemo", label: "Watch Demo", value: renderFlags.watchDemo, onChange: () => renderFlags.toggle("watchDemo") },
         { id: "annotations", label: "Annotations", value: renderFlags.showAnnotations, onChange: () => renderFlags.toggle("showAnnotations") },
       ],
     },
@@ -390,7 +389,7 @@ export default function PositionPage() {
           {/* Terrain canvas — fills available space */}
           <div ref={viewportRef} className={styles.terrainViewport} aria-label="Position terrain">
             <TerrainStage
-              lockCamera={false}
+              lockCamera={true}
               pathsEnabled={false}
               terrainMetrics={{
                 ...(terrainMetrics ?? {
