@@ -212,7 +212,7 @@ export default function TerrainNavWidget() {
         gap: 3,
         padding: "10px 8px 8px",
         borderRadius: 12,
-        background: "rgba(6, 10, 16, 0.88)",
+        background: "#0F1720",
         backdropFilter: "blur(14px) saturate(1.2)",
         WebkitBackdropFilter: "blur(14px) saturate(1.2)",
         border: "1px solid rgba(200, 215, 230, 0.35)",
