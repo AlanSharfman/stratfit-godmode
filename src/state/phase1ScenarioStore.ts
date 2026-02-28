@@ -1,6 +1,11 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import { useBaselineStore } from "@/state/baselineStore"
+import { buildScenarioIdentity, type ScenarioIdentity } from "@/domain/scenarioIdentity"
+import { logDecisionFlow } from "@/dev/decisionFlowLog"
+import { selectKpis } from "@/selectors/kpiSelectors"
+import { selectRiskScore } from "@/selectors/riskSelectors"
+import { selectTerrainMetrics } from "@/selectors/terrainSelectors"
 
 export type SimulationStatus = "draft" | "running" | "complete" | "error"
 
@@ -44,6 +49,8 @@ export type Phase1Scenario = {
   intent?: unknown
   status: SimulationStatus
   simulationResults?: SimulationResults
+  /** Decision identity — populated on creation */
+  identity?: ScenarioIdentity
 }
 
 export type CreateScenarioInput = {
@@ -132,17 +139,37 @@ export const usePhase1ScenarioStore = create<Phase1ScenarioState>()(
 
       createScenario: (input) => {
         const id = newId()
+        const baselineId = useBaselineStore.getState().baseline
+          ? `bl_${Date.now()}`
+          : "no-baseline"
+
+        const identity = buildScenarioIdentity(
+          id,
+          input.decision,
+          baselineId,
+          input.createdAt,
+        )
+
         const scenario: Phase1Scenario = {
           id,
-          createdAt: input.createdAt ?? Date.now(),
+          createdAt: identity.createdAt,
           decision: input.decision,
           intent: input.intent,
           status: "draft",
+          identity,
         }
 
         set((s) => ({
           scenarios: [scenario, ...s.scenarios],
         }))
+
+        // DEV: log decision → scenarioInputs linkage
+        logDecisionFlow("createScenario", {
+          scenarioId: id,
+          decision: input.decision,
+          identity,
+          baselineId,
+        })
 
         return id
       },
@@ -204,6 +231,23 @@ export const usePhase1ScenarioStore = create<Phase1ScenarioState>()(
                 : sc
             ),
           }))
+          // DEV: log decision → scenarioInputs → engineResults linkage
+          logDecisionFlow("simulationComplete", {
+            scenarioId,
+            decision: scenario.decision,
+            identity: scenario.identity,
+            engineResults: { kpis, terrain },
+          })
+
+          // DEV: selector proof — prove selectors return correct data
+          if (import.meta.env.DEV) {
+            console.group("[phase1ScenarioStore] Selector proof")
+            console.log("ENGINE RESULTS", { kpis, terrain })
+            console.log("SELECTED KPIS", selectKpis(kpis))
+            console.log("TERRAIN METRICS", selectTerrainMetrics({ completedAt: Date.now(), horizonMonths: 24, summary: "", kpis, terrain }))
+            console.log("RISK SCORE", selectRiskScore(kpis))
+            console.groupEnd()
+          }
         }, 1400)
       },
 

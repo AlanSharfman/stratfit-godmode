@@ -162,9 +162,9 @@ const btnHover: Partial<React.CSSProperties> = {
 };
 
 const btnActive: Partial<React.CSSProperties> = {
-  background: "rgba(74, 222, 128, 0.18)",
-  color: "#4ade80",
-  borderColor: "rgba(74, 222, 128, 0.50)",
+  background: "rgba(34, 211, 238, 0.18)",
+  color: "#22d3ee",
+  borderColor: "rgba(34, 211, 238, 0.50)",
 };
 
 // ── Component ──
@@ -243,13 +243,14 @@ export default function TerrainNavWidget() {
         background: "#0C1824",
         backdropFilter: "blur(14px) saturate(1.2)",
         WebkitBackdropFilter: "blur(14px) saturate(1.2)",
-        border: "1px solid rgba(255, 255, 255, 0.08)",
+        border: "1px solid rgba(200, 215, 230, 0.35)",
         boxShadow: [
-          "0 0 0 1px rgba(255, 255, 255, 0.06)",
+          "0 0 0 1px rgba(255, 255, 255, 0.18)",
           "0 0 0 3px rgba(6, 10, 16, 0.80)",
-          "0 0 0 4px rgba(255, 255, 255, 0.04)",
-          "inset 0 1px 0 rgba(255, 255, 255, 0.06)",
-          "0 2px 12px rgba(0, 0, 0, 0.30)",
+          "0 0 0 4px rgba(200, 215, 230, 0.30)",
+          "inset 0 1px 0 rgba(255, 255, 255, 0.12)",
+          "0 2px 12px rgba(200, 215, 230, 0.08)",
+          "0 0 24px rgba(200, 215, 230, 0.04)",
         ].join(", "),
         userSelect: "none",
         pointerEvents: "auto",

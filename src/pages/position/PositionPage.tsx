@@ -27,7 +27,7 @@ import { useSemanticBalance, DEFAULT_SHL_WEIGHTS } from "@/render/shl"
 import type { SemanticLayerKey } from "@/render/shl"
 
 import CommandCentrePanel from "@/components/diagnostics/CommandCentrePanel"
-import BaselineIntelligencePanel from "@/components/baseline/BaselineIntelligencePanel"
+import AIInsightPanel from "@/components/insight/AIInsightPanel"
 import SimulationContextHUD from "@/components/position/SimulationContextHUD"
 import {
   classifyQuestion,
@@ -37,9 +37,15 @@ import { buildQuestionContext } from "@/domain/question/questionContext"
 import { buildScenarioADraft } from "@/domain/scenario/scenarioDraft"
 import { studioSessionStore } from "@/state/studioSessionStore"
 import KPIHealthRail from "@/components/kpi/KPIHealthRail"
+import ScenarioContextPanel from "@/components/scenario/ScenarioContextPanel"
+import { selectKpis } from "@/selectors/kpiSelectors"
+import { selectTerrainMetrics } from "@/selectors/terrainSelectors"
+import { selectRiskScore } from "@/selectors/riskSelectors"
 import ExecutiveNarrativeCard from "./components/ExecutiveNarrativeCard"
 import TimeScaleControl from "./overlays/TimeScaleControl"
 import IdleMotionLayer from "./IdleMotionLayer"
+import HorizonPulse from "@/components/terrain/overlays/HorizonPulse"
+import { useReducedMotion } from "@/hooks/useReducedMotion"
 import {
   buildPositionViewModel,
 } from "./overlays/positionState"
@@ -60,6 +66,7 @@ export default function PositionPage() {
   const [commandCentreOpen, setCommandCentreOpen] = useState(true)
   const [terrainTuning, setTerrainTuning] = useState<TerrainTuningParams>({ ...DEFAULT_TUNING })
   const viewportRef = useRef<HTMLDivElement>(null)
+  const reducedMotion = useReducedMotion()
 
   useEffect(() => {
     function onRipple() { setRippleKey((k) => k + 1) }
@@ -185,16 +192,26 @@ export default function PositionPage() {
     return effectiveInputs ? deriveTerrainMetrics(effectiveInputs as any) : undefined
   }, [activeScenarioId, activeScenario?.status, activeScenario?.simulationResults?.terrain, effectiveInputs])
 
-  // DEV: log terrain source once per scenario transition
+  // DEV: log terrain source + selector proof once per scenario transition
   useEffect(() => {
     if (import.meta.env.DEV) {
-      console.log(
-        "TERRAIN SOURCE:",
+      const simResults = activeScenario?.simulationResults ?? null
+      const terrainData = selectTerrainMetrics(simResults)
+      const simKpis = selectKpis(simResults?.kpis ?? null)
+      const risk = selectRiskScore(simResults?.kpis ?? null)
+
+      console.group("[PositionPage] Selector pipeline")
+      console.log("TERRAIN SOURCE:",
         scenarioTerrainRef.current?.scenarioId === activeScenarioId ? "SCENARIO" : "BASELINE",
         activeScenarioId ? `(scenario ${activeScenarioId.slice(0, 8)})` : "(no scenario)",
       )
+      console.log("TERRAIN METRICS (selector):", terrainData)
+      console.log("SELECTED KPIS:", simKpis)
+      console.log("RISK SCORE (selector):", risk)
+      console.log("TERRAIN METRICS (resolved):", terrainMetrics)
+      console.groupEnd()
     }
-  }, [activeScenarioId, activeScenario?.status])
+  }, [activeScenarioId, activeScenario?.status, activeScenario?.simulationResults, terrainMetrics])
 
   // V1 baseline from context — only used for legacy left-rail KPI overlay.
   // Will be replaced by Phase1 scenario KPI data in a future phase.
@@ -537,6 +554,11 @@ export default function PositionPage() {
               insightText={vm?.bullets?.[0] ?? ""}
               runKey={activeScenario?.simulationResults?.completedAt ?? null}
             />
+            {/* ── Horizon Pulse — simulation completion flash ── */}
+            <HorizonPulse
+              triggerKey={activeScenario?.simulationResults?.completedAt ?? null}
+              disabled={reducedMotion}
+            />
           </div>
         </div>
 
@@ -566,7 +588,8 @@ export default function PositionPage() {
 
           {/* AI Intelligence */}
           <div className={styles.baselineIntelDock} aria-label="AI Intelligence">
-            <BaselineIntelligencePanel />
+            <ScenarioContextPanel />
+            <AIInsightPanel />
           </div>
         </div>
       </div>

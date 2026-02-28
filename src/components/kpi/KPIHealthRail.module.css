@@ -104,12 +104,11 @@
   color: rgba(34, 211, 238, 0.78);
 }
 
-/* Per-section label tinting */
+/* Per-section label tinting — palette: emerald, blue, indigo, gold, cyan (no orange) */
 .labelCapital    { color: rgba(52, 211, 153, 0.85); }   /* emerald */
 .labelPerf       { color: rgba(96, 165, 250, 0.85); }   /* blue */
-.labelEfficiency { color: rgba(251, 146, 60, 0.85); }   /* amber */
+.labelEfficiency { color: rgba(129, 140, 248, 0.85); }  /* indigo */
 .labelValuation  { color: rgba(250, 204, 21, 0.85); }   /* gold */
-.labelMomentum   { color: rgba(167, 139, 250, 0.85); }  /* violet */
 .labelRisk       { color: rgba(34, 211, 238, 0.85); }   /* cyan */
 
 /* Value */
@@ -117,12 +116,15 @@
   font-family: 'Inter', system-ui, sans-serif;
   font-size: 18px;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
   color: rgba(230, 248, 255, 0.96);
   white-space: nowrap;
   text-align: center;
   width: 100%;
   line-height: 1.2;
   letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ── Sub-label ── */
@@ -133,6 +135,13 @@
   text-align: center;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
 }
 
 /* ── Widget area ── */
@@ -236,16 +245,20 @@
   border-color: rgba(250, 204, 21, 0.18);
 }
 
-/* Hero value */
+/* Hero value — matches .value with tabular-nums + overflow guard */
 .heroValue {
   font-family: 'Inter', system-ui, sans-serif;
   font-size: 18px;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
   color: rgba(230, 248, 255, 0.98);
   white-space: nowrap;
   text-align: center;
+  width: 100%;
   line-height: 1.15;
   letter-spacing: -0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
   position: relative;
   z-index: 1;
 }
@@ -282,16 +295,7 @@
   border: 1px solid rgba(248, 113, 113, 0.20);
 }
 
-/* ── Hero risk widget (larger radar) ── */
-.heroWidget {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 2px 0 1px;
-  max-height: 20px;
-  position: relative;
-  z-index: 1;
-}
+/* .heroWidget removed — hero cards now use .widget */
 
 /* ══════════════════════════════════════════════════════════════════
    WIDGET ANIMATIONS (burn bars, etc)

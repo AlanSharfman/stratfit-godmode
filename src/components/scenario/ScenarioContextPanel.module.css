@@ -1,0 +1,155 @@
+/* ── ScenarioContextPanel ──────────────────────────────────────
+   God Mode scenario identity + decision context display.
+   Palette: deep navy, cyan accents, glass bezel.
+   ────────────────────────────────────────────────────────────── */
+
+.wrapper {
+  border: 1px solid rgba(200, 215, 230, 0.25);
+  border-radius: 10px;
+  background: rgba(6, 10, 16, 0.90);
+  backdrop-filter: blur(14px) saturate(1.2);
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.10),
+    0 0 0 3px rgba(6, 10, 16, 0.80),
+    0 0 0 4px rgba(200, 215, 230, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 2px 12px rgba(0, 0, 0, 0.30);
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(34, 211, 238, 0.08);
+}
+
+.headerTitle {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(226, 232, 240, 0.85);
+}
+
+/* ── Status badge ── */
+.statusBadge {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.statusDraft {
+  color: rgba(148, 180, 214, 0.75);
+  background: rgba(148, 180, 214, 0.08);
+  border: 1px solid rgba(148, 180, 214, 0.15);
+}
+
+.statusRunning {
+  color: #22d3ee;
+  background: rgba(34, 211, 238, 0.10);
+  border: 1px solid rgba(34, 211, 238, 0.25);
+  animation: statusPulse 1.5s ease-in-out infinite;
+}
+
+.statusComplete {
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.10);
+  border: 1px solid rgba(52, 211, 153, 0.20);
+}
+
+.statusError {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.10);
+  border: 1px solid rgba(248, 113, 113, 0.20);
+}
+
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* ── Body ── */
+.body {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── Decision question ── */
+.decisionLabel {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(34, 211, 238, 0.60);
+  margin-bottom: 3px;
+}
+
+.decisionText {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(226, 232, 240, 0.92);
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+}
+
+/* ── Assumptions ── */
+.assumptionsLabel {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(34, 211, 238, 0.50);
+  margin-bottom: 2px;
+}
+
+.assumptionsList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.assumptionItem {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 9px;
+  color: rgba(148, 180, 214, 0.78);
+  line-height: 1.4;
+  padding-left: 10px;
+  position: relative;
+}
+
+.assumptionItem::before {
+  content: "▸";
+  position: absolute;
+  left: 0;
+  color: rgba(34, 211, 238, 0.35);
+  font-size: 8px;
+}
+
+/* ── Empty state ── */
+.emptyState {
+  padding: 16px 12px;
+  text-align: center;
+}
+
+.emptyText {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 10px;
+  color: rgba(148, 180, 214, 0.45);
+  letter-spacing: 0.04em;
+}

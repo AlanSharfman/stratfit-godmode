@@ -5,3 +5,10 @@
 @import "./styles/30-layout.css";
 @import "./styles/40-utilities.css";
 
+/* ── Global cinematic keyframes ── */
+@keyframes horizonPulseAnim {
+  0%   { opacity: 0; transform: scale(0.95); }
+  35%  { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.05); }
+}
+

@@ -195,29 +195,7 @@ function BurnWidget() {
   );
 }
 
-function MomentumWidget() {
-  return (
-    <div className={styles.widget}>
-      <svg width="44" height="44" viewBox="0 0 28 28" fill="none">
-        <path d="M14 4 L19 12 L16 12 L16 24 L12 24 L12 12 L9 12 Z" fill="rgba(168,85,247,0.15)" stroke="rgba(168,85,247,0.5)" strokeWidth="0.8" strokeLinejoin="round">
-          <animateTransform attributeName="transform" type="translate" values="0,0;0,-1.5;0,0" dur="1.8s" repeatCount="indefinite" />
-        </path>
-        <ellipse cx="14" cy="25" rx="3" ry="1.5" fill="rgba(168,85,247,0.25)">
-          <animate attributeName="ry" values="1.5;3;1.5" dur="1.8s" repeatCount="indefinite" />
-          <animate attributeName="opacity" values="0.3;0.1;0.3" dur="1.8s" repeatCount="indefinite" />
-        </ellipse>
-        <line x1="8" y1="16" x2="8" y2="22" stroke="rgba(168,85,247,0.3)" strokeWidth="0.8" strokeLinecap="round">
-          <animate attributeName="opacity" values="0.3;0;0.3" dur="1.2s" repeatCount="indefinite" />
-        </line>
-        <line x1="20" y1="14" x2="20" y2="20" stroke="rgba(168,85,247,0.3)" strokeWidth="0.8" strokeLinecap="round">
-          <animate attributeName="opacity" values="0;0.3;0" dur="1.2s" repeatCount="indefinite" />
-        </line>
-      </svg>
-    </div>
-  );
-}
-
-/** Valuation Hero Widget — ascending diamond / value gauge */
+/** Valuation Widget — ascending diamond / value gauge */
 function ValuationWidget() {
   return (
     <div className={styles.widget}>
@@ -248,18 +226,18 @@ function ValuationWidget() {
   );
 }
 
-/** Gross Margin mini widget — simple percentage donut */
+/** Gross Margin mini widget — percentage donut (indigo) */
 function GrossMarginWidget() {
   return (
     <div className={styles.widget}>
       <svg width="44" height="44" viewBox="0 0 28 28" fill="none">
-        <circle cx="14" cy="14" r="10" fill="none" stroke="rgba(251,146,60,0.12)" strokeWidth="2" />
-        <circle cx="14" cy="14" r="10" fill="none" stroke="rgba(251,146,60,0.45)" strokeWidth="2"
+        <circle cx="14" cy="14" r="10" fill="none" stroke="rgba(129,140,248,0.12)" strokeWidth="2" />
+        <circle cx="14" cy="14" r="10" fill="none" stroke="rgba(129,140,248,0.45)" strokeWidth="2"
           strokeDasharray="62.8" strokeDashoffset="31.4" strokeLinecap="round"
           transform="rotate(-90 14 14)">
           <animate attributeName="strokeDashoffset" values="31.4;25;31.4" dur="4s" repeatCount="indefinite" />
         </circle>
-        <text x="14" y="17" textAnchor="middle" fontSize="8" fontWeight="700" fill="rgba(251,146,60,0.6)" fontFamily="Inter, sans-serif">%</text>
+        <text x="14" y="17" textAnchor="middle" fontSize="8" fontWeight="700" fill="rgba(129,140,248,0.6)" fontFamily="Inter, sans-serif">%</text>
       </svg>
     </div>
   );
@@ -405,26 +383,26 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis }) => {
         </div>
       </section>
 
-      {/* ── 4. VALUATION (HERO) ── */}
+      {/* ── 4. VALUATION ── */}
       <section className={styles.section}>
         <h3 className={styles.sectionHeader}>Valuation</h3>
         <div className={styles.cardStack}>
-          <div className={styles.heroCard} data-tone="valuation">
-            <div className={`${styles.label} ${styles.labelValuation}`}>Est. Enterprise Value</div>
-            <div className={styles.heroValue}>$ —</div>
+          <div className={styles.card}>
+            <div className={`${styles.label} ${styles.labelValuation}`}>Valuation</div>
+            <div className={styles.value}>$ —</div>
             <ValuationWidget />
             <div className={styles.sub}>DCF baseline • confidence low</div>
           </div>
         </div>
       </section>
 
-      {/* ── 5. RISK & SURVIVAL (HERO) ── */}
+      {/* ── 5. RISK & SURVIVAL ── */}
       <section className={styles.section}>
         <h3 className={styles.sectionHeader}>Risk &amp; Survival</h3>
         <div className={styles.cardStack}>
-          <div className={styles.heroCard} data-tone={riskTone}>
-            <div className={`${styles.label} ${styles.labelRisk}`}>Risk Index</div>
-            <div className={styles.heroValue}>{k ? k.riskIndex.toFixed(0) : "85"}</div>
+          <div className={styles.card}>
+            <div className={`${styles.label} ${styles.labelRisk}`}>Risk Score</div>
+            <div className={styles.value}>{k ? k.riskIndex.toFixed(0) : "85"}</div>
             <HeroRiskWidget tone={riskTone} />
             <span className={styles.riskTag} data-tone={riskTone}>
               {riskToneLabel(riskTone)} • liquidity pressure
