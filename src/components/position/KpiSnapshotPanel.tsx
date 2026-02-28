@@ -1,5 +1,6 @@
 import React from "react"
-import type { BaselineV1 } from "@/onboard/baseline"
+import type { Baseline } from "@/types/baseline"
+import type { SimulationKpis } from "@/state/phase1ScenarioStore"
 
 const DASH = "\u2014"
 
@@ -16,7 +17,8 @@ function pct(n: number | null | undefined): string {
 }
 
 interface Props {
-  baseline: BaselineV1 | null | undefined
+  baseline: Baseline | null | undefined
+  simulationKpis?: SimulationKpis | null
 }
 
 const PANEL: React.CSSProperties = {
@@ -49,18 +51,17 @@ const GRID: React.CSSProperties = {
 const LABEL: React.CSSProperties = { opacity: 0.5 }
 const VALUE: React.CSSProperties = { textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 600 }
 
-export default function KpiSnapshotPanel({ baseline }: Props) {
-  const fin = baseline?.financial
-  const op = baseline?.operating
-
-  const cash = fin?.cashOnHand ?? null
-  const burn = fin?.monthlyBurn ?? null
-  const arr = fin?.arr ?? null
-  const grossMargin = fin?.grossMarginPct != null ? fin.grossMarginPct / 100 : null
-  const growth = fin?.growthRatePct != null ? fin.growthRatePct / 100 : null
-  const churn = op?.churnPct != null ? op.churnPct / 100 : null
-  const headcount = fin?.headcount ?? null
-  const runway = cash != null && burn != null && burn > 0 ? Math.round(cash / burn) : null
+export default function KpiSnapshotPanel({ baseline, simulationKpis }: Props) {
+  // Prefer simulation KPIs when available, fall back to baseline
+  const k = simulationKpis
+  const cash = k?.cash ?? baseline?.cash ?? null
+  const burn = k?.monthlyBurn ?? baseline?.monthlyBurn ?? null
+  const revenue = k?.revenue ?? baseline?.revenue ?? null
+  const grossMargin = k?.grossMargin ?? baseline?.grossMargin ?? null
+  const growth = k?.growthRate ?? baseline?.growthRate ?? null
+  const churn = k?.churnRate ?? baseline?.churnRate ?? null
+  const headcount = k?.headcount ?? baseline?.headcount ?? null
+  const runway = k?.runway ?? (cash != null && burn != null && burn > 0 ? Math.round(cash / burn) : null)
 
   return (
     <div style={PANEL} aria-label="KPI Snapshot">
@@ -69,8 +70,8 @@ export default function KpiSnapshotPanel({ baseline }: Props) {
         <span style={LABEL}>Cash</span>
         <span style={VALUE}>{fmt(cash)}</span>
 
-        <span style={LABEL}>ARR</span>
-        <span style={VALUE}>{fmt(arr)}</span>
+        <span style={LABEL}>Revenue</span>
+        <span style={VALUE}>{fmt(revenue)}</span>
 
         <span style={LABEL}>Burn</span>
         <span style={VALUE}>{fmt(burn, "/mo")}</span>

@@ -30,12 +30,14 @@ const STATUS_COLORS: Record<SimulationStatus, string> = {
   draft: "#94a3b8",
   running: "#fbbf24",
   complete: "#22c55e",
+  error: "#ef4444",
 }
 
 const STATUS_LABELS: Record<SimulationStatus, string> = {
   draft: "Draft",
   running: "Running\u2026",
   complete: "Complete",
+  error: "Error",
 }
 
 export default function SimulationStatusPanel({ scenario, onRunSimulation }: Props) {
@@ -59,8 +61,9 @@ export default function SimulationStatusPanel({ scenario, onRunSimulation }: Pro
         {status === "draft" && "Awaiting simulation run"}
         {status === "running" && "Simulation in progress\u2026"}
         {status === "complete" && "Results available"}
+        {status === "error" && "Baseline required \u2014 go to Initiate"}
       </div>
-      {status === "draft" && onRunSimulation && (
+      {(status === "draft" || status === "error") && onRunSimulation && (
         <button
           type="button"
           onClick={onRunSimulation}

@@ -1,6 +1,6 @@
 import React from "react"
 import type { Phase1Scenario } from "@/state/phase1ScenarioStore"
-import type { BaselineV1 } from "@/onboard/baseline"
+import type { Baseline } from "@/types/baseline"
 import styles from "./ScenarioBriefPanel.module.css"
 
 const DASH = "\u2014" // em-dash fallback
@@ -14,7 +14,7 @@ function fmt(n: number | null | undefined): string {
 
 interface Props {
   scenario: Phase1Scenario
-  baseline: BaselineV1 | null | undefined
+  baseline: Baseline | null | undefined
 }
 
 export default function ScenarioBriefPanel({ scenario, baseline }: Props) {
@@ -34,8 +34,8 @@ export default function ScenarioBriefPanel({ scenario, baseline }: Props) {
         ? String((scenario.intent as any).label)
         : null
 
-  const cash = baseline?.financial?.cashOnHand ?? null
-  const burn = baseline?.financial?.monthlyBurn ?? null
+  const cash = baseline?.cash ?? null
+  const burn = baseline?.monthlyBurn ?? null
   const runway =
     cash != null && burn != null && burn > 0
       ? Math.round(cash / burn)

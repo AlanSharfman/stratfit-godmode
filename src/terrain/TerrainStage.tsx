@@ -174,8 +174,10 @@ export default function TerrainStage({
             {pathsOn && (
               <P50Path terrainRef={terrainRef} rebuildKey={rebuildKey} />
             )}
-            {/* Canonical ticks (BaselineTimelineTicks) — terrainRef for surface-aligned Y */}
-            <BaselineTimelineTicks visible terrainRef={terrainRef} />
+            {/* Canonical ticks (BaselineTimelineTicks) — only when paths are enabled */}
+            {pathsOn && (
+              <BaselineTimelineTicks visible terrainRef={terrainRef} />
+            )}
             <LiquidityFlowLayer terrainRef={terrainRef} enabled={showFlow} />
           </>
         )}

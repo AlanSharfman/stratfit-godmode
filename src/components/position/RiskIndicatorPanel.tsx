@@ -1,33 +1,31 @@
 import React from "react"
-import type { BaselineV1 } from "@/onboard/baseline"
-
-const DASH = "\u2014"
+import type { Baseline } from "@/types/baseline"
 
 type RiskLevel = "Low" | "Medium" | "High" | "Critical"
 
-function deriveRisk(baseline: BaselineV1 | null | undefined): { level: RiskLevel; color: string; factors: string[] } {
+function deriveRisk(baseline: Baseline | null | undefined): { level: RiskLevel; color: string; factors: string[] } {
   if (!baseline) return { level: "Medium", color: "#fbbf24", factors: ["Baseline not loaded"] }
 
   const factors: string[] = []
   let score = 0
 
-  const fin = baseline.financial
-  const op = baseline.operating
-
   // Runway check
-  const runway = fin?.monthlyBurn > 0 ? fin.cashOnHand / fin.monthlyBurn : null
+  const runway = baseline.monthlyBurn > 0 ? baseline.cash / baseline.monthlyBurn : null
   if (runway != null && runway < 6) { score += 3; factors.push(`Runway < 6mo (${Math.round(runway)}mo)`) }
   else if (runway != null && runway < 12) { score += 1; factors.push(`Runway < 12mo (${Math.round(runway)}mo)`) }
 
-  // Churn check
-  if (op?.churnPct != null && op.churnPct > 8) { score += 2; factors.push(`High churn (${op.churnPct}%)`) }
-  else if (op?.churnPct != null && op.churnPct > 4) { score += 1; factors.push(`Elevated churn (${op.churnPct}%)`) }
+  // Churn check (flat baseline stores decimal)
+  const churnPct = baseline.churnRate * 100
+  if (churnPct > 8) { score += 2; factors.push(`High churn (${churnPct.toFixed(1)}%)`) }
+  else if (churnPct > 4) { score += 1; factors.push(`Elevated churn (${churnPct.toFixed(1)}%)`) }
 
   // Growth check
-  if (fin?.growthRatePct != null && fin.growthRatePct < 0) { score += 2; factors.push("Negative growth") }
+  const growthPct = baseline.growthRate * 100
+  if (growthPct < 0) { score += 2; factors.push("Negative growth") }
 
   // Margin check
-  if (fin?.grossMarginPct != null && fin.grossMarginPct < 40) { score += 1; factors.push(`Low margin (${fin.grossMarginPct}%)`) }
+  const marginPct = baseline.grossMargin * 100
+  if (marginPct < 40) { score += 1; factors.push(`Low margin (${marginPct.toFixed(1)}%)`) }
 
   if (factors.length === 0) factors.push("No elevated risk factors")
 
@@ -38,7 +36,7 @@ function deriveRisk(baseline: BaselineV1 | null | undefined): { level: RiskLevel
 }
 
 interface Props {
-  baseline: BaselineV1 | null | undefined
+  baseline: Baseline | null | undefined
 }
 
 const PANEL: React.CSSProperties = {
