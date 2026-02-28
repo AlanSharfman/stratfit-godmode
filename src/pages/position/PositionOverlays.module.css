@@ -37,12 +37,12 @@
   --sf-sans: Inter, system-ui, sans-serif;
 
   /* Atmosphere tuning variables */
-  --atmo-top: rgba(6, 12, 18, 1);
-  --atmo-mid: rgba(10, 18, 26, 1);
+  --atmo-top: rgba(4, 10, 18, 1);
+  --atmo-mid: rgba(14, 24, 34, 1);
   --atmo-horizon: rgba(170, 210, 225, 0.20);
   --atmo-strength: 0.92;
-  --haze-deep: 0.22;
-  --haze-horizon: 0.38;
+  --haze-deep: 0.26;
+  --haze-horizon: 0.42;
   --vignette-strength: 0.42;
   --vignette-top-boost: 0.22;
   --spotlight-strength: 0.18;
@@ -601,7 +601,7 @@
 
 .commandCentreDock {
   padding: 10px 8px 10px;
-  margin-top: 38px;
+  margin-top: 8px;
   pointer-events: auto;
 }
 

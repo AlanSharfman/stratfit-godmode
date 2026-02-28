@@ -28,6 +28,7 @@ import type { SemanticLayerKey } from "@/render/shl"
 
 import CommandCentrePanel from "@/components/diagnostics/CommandCentrePanel"
 import BaselineIntelligencePanel from "@/components/baseline/BaselineIntelligencePanel"
+import SimulationContextHUD from "@/components/position/SimulationContextHUD"
 import {
   classifyQuestion,
   QuestionCategory,
@@ -39,10 +40,6 @@ import KPIOverlay from "./overlays/KPIOverlay"
 import ExecutiveNarrativeCard from "./components/ExecutiveNarrativeCard"
 import TimeScaleControl from "./overlays/TimeScaleControl"
 import IdleMotionLayer from "./IdleMotionLayer"
-import ScenarioBriefPanel from "@/components/position/ScenarioBriefPanel"
-import KpiSnapshotPanel from "@/components/position/KpiSnapshotPanel"
-import RiskIndicatorPanel from "@/components/position/RiskIndicatorPanel"
-import SimulationStatusPanel from "@/components/position/SimulationStatusPanel"
 import {
   buildPositionViewModel,
 } from "./overlays/positionState"
@@ -532,6 +529,15 @@ export default function PositionPage() {
             <TerrainTuningPanel params={terrainTuning} onChange={setTerrainTuning} />
             {/* Terrain navigation D-pad — bottom-right of viewport */}
             <TerrainNavWidget />
+            {/* ── HUD: Simulation context overlay (top-right of terrain) ── */}
+            <SimulationContextHUD
+              riskTone={vm?.stateTone ?? "watch"}
+              riskLabel={vm?.state ?? "Assessing"}
+              simulationStatus={activeScenario?.status ?? "draft"}
+              completedAt={activeScenario?.simulationResults?.completedAt ?? null}
+              insightText={vm?.bullets?.[0] ?? ""}
+              runKey={activeScenario?.simulationResults?.completedAt ?? null}
+            />
           </div>
         </div>
 
@@ -539,28 +545,7 @@ export default function PositionPage() {
             RIGHT RAIL — Controls (Tuning, Toggles, Diagnostics)
             ══════════════════════════════════════════════════ */}
         <div className={styles.rightCol}>
-          {/* ── Scenario Brief ── */}
-          {activeScenario && (
-            <ScenarioBriefPanel scenario={activeScenario} baseline={baseline} />
-          )}
-
-          {/* ── KPI Snapshot ── */}
-          <KpiSnapshotPanel
-            baseline={baseline}
-            simulationKpis={activeScenario?.simulationResults?.kpis}
-          />
-
-          {/* ── Risk Indicator ── */}
-          <RiskIndicatorPanel baseline={baseline} />
-
-          {/* ── Simulation Status ── */}
-          <SimulationStatusPanel
-            scenario={activeScenario}
-            onRunSimulation={activeScenario ? () => runSimulation(activeScenario.id) : undefined}
-            onGoToInitiate={() => navigate("/initiate")}
-          />
-
-          {/* Command Centre — overlay toggles + diagnostics */}
+          {/* Command Centre — above fold */}
           <div className={styles.commandCentreDock} aria-label="Command Centre">
             {commandCentreOpen ? (
               <CommandCentrePanel
@@ -580,8 +565,8 @@ export default function PositionPage() {
             )}
           </div>
 
-          {/* Baseline intelligence */}
-          <div className={styles.baselineIntelDock} aria-label="Baseline Intelligence">
+          {/* AI Intelligence */}
+          <div className={styles.baselineIntelDock} aria-label="AI Intelligence">
             <BaselineIntelligencePanel />
           </div>
         </div>
