@@ -32,6 +32,7 @@ const TEXTAREA: React.CSSProperties = {
   fontSize: 16,
   lineHeight: 1.5,
   minHeight: 140,
+  transition: "border-color 0.15s, box-shadow 0.15s",
 }
 
 const BTN: React.CSSProperties = {
@@ -113,6 +114,13 @@ export default function DecisionPage() {
   return (
     <div style={PAGE}>
       <div style={CARD}>
+        {/* Breadcrumb */}
+        <nav style={{ marginBottom: 16, fontSize: 11, opacity: 0.4, letterSpacing: "0.06em" }}>
+          <span style={{ cursor: "pointer", color: "rgba(255,255,255,0.6)" }} onClick={() => navigate("/initiate")}>INITIATE</span>
+          <span style={{ margin: "0 6px" }}>/</span>
+          <span style={{ color: "#22d3ee" }}>DECISION</span>
+        </nav>
+
         {/* Header */}
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16, marginBottom: 6 }}>
           <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700, color: "#fff" }}>
@@ -126,6 +134,24 @@ export default function DecisionPage() {
         <p style={{ margin: "8px 0 20px", opacity: 0.6, fontSize: 14 }}>
           Describe the decision you want STRATFIT to simulate over 24 months.
         </p>
+
+        {/* Baseline summary chips */}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+          {[
+            { label: "Cash", value: baseline.cash >= 1_000_000 ? `$${(baseline.cash / 1_000_000).toFixed(1)}M` : `$${(baseline.cash / 1_000).toFixed(0)}K` },
+            { label: "Burn", value: `$${(baseline.monthlyBurn / 1_000).toFixed(0)}K/mo` },
+            { label: "Runway", value: baseline.monthlyBurn > 0 ? `${Math.round(baseline.cash / baseline.monthlyBurn)}mo` : "—" },
+            { label: "Growth", value: `${(baseline.growthRate * 100).toFixed(1)}%` },
+          ].map((chip) => (
+            <span key={chip.label} style={{
+              padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600,
+              background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+              color: "rgba(255,255,255,0.6)",
+            }}>
+              {chip.label}: {chip.value}
+            </span>
+          ))}
+        </div>
 
         {/* Error */}
         {error && (
@@ -141,11 +167,20 @@ export default function DecisionPage() {
         {/* Textarea — NEVER disabled */}
         <textarea
           value={decisionText}
-          onChange={(e) => setDecisionText(e.target.value)}
+          onChange={(e) => setDecisionText(e.target.value.slice(0, 500))}
           placeholder="e.g. Should we expand into the US market?"
+          maxLength={500}
           disabled={false}
-          style={TEXTAREA}
+          style={{
+            ...TEXTAREA,
+            borderColor: decisionText.length >= 500 ? "rgba(251,191,36,0.5)" : undefined,
+          }}
         />
+
+        {/* Character count */}
+        <div style={{ textAlign: "right", fontSize: 11, marginTop: 4, color: decisionText.length >= 500 ? "#fbbf24" : "rgba(255,255,255,0.35)" }}>
+          {decisionText.length}/500
+        </div>
 
         {/* Actions */}
         <div style={{ marginTop: 14, display: "flex", gap: 12 }}>

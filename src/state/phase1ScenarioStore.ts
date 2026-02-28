@@ -1,6 +1,8 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 
+export type SimulationStatus = "draft" | "running" | "complete"
+
 export type Phase1Scenario = {
   id: string
   createdAt: number
@@ -10,6 +12,10 @@ export type Phase1Scenario = {
 
   // Pipeline enrichment (LLM later)
   intent?: unknown
+
+  // Simulation lifecycle
+  status: SimulationStatus
+  simulationResults?: unknown
 
   // room for future:
   // baselineSnapshot?: unknown
@@ -33,6 +39,9 @@ type Phase1ScenarioState = {
 
   // NEW canonical API (DecisionPage will use this)
   createScenario: (input: CreateScenarioInput) => string
+
+  // Simulation lifecycle
+  runSimulation: (scenarioId: string) => void
 
   // OPTIONAL legacy compat: allow adding a fully formed scenario
   addScenario: (scenario: Phase1Scenario) => void
@@ -64,6 +73,7 @@ export const usePhase1ScenarioStore = create<Phase1ScenarioState>()(
           createdAt: input.createdAt ?? Date.now(),
           decision: input.decision,
           intent: input.intent,
+          status: "draft",
         }
 
         set((s) => ({
@@ -71,6 +81,34 @@ export const usePhase1ScenarioStore = create<Phase1ScenarioState>()(
         }))
 
         return id
+      },
+
+      runSimulation: (scenarioId) => {
+        // Set status → running
+        set((s) => ({
+          scenarios: s.scenarios.map((sc) =>
+            sc.id === scenarioId ? { ...sc, status: "running" as const } : sc
+          ),
+        }))
+
+        // Mock simulation: 1.5s delay → complete with stub results
+        setTimeout(() => {
+          set((s) => ({
+            scenarios: s.scenarios.map((sc) =>
+              sc.id === scenarioId
+                ? {
+                    ...sc,
+                    status: "complete" as const,
+                    simulationResults: {
+                      completedAt: Date.now(),
+                      horizonMonths: 24,
+                      summary: "Simulation complete (stub)",
+                    },
+                  }
+                : sc
+            ),
+          }))
+        }, 1500)
       },
 
       addScenario: (scenario) => {

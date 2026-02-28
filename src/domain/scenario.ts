@@ -10,4 +10,15 @@ export type Scenario = {
   // Canonical timestamps are numbers (ms since epoch)
   createdAt: number
   updatedAt?: number
+
+  // Forecast data contract — populated after simulation
+  forecast?: ForecastModel
+}
+
+/** Time-series forecast output from simulation engine */
+export type ForecastModel = {
+  horizonMonths: number
+  revenueSeries: number[]
+  cashSeries: number[]
+  burnSeries: number[]
 }

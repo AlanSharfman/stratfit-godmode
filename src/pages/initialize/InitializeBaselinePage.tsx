@@ -110,6 +110,7 @@ const INPUT: React.CSSProperties = {
   width: "100%", padding: "10px 12px", borderRadius: 8,
   border: "1px solid rgba(255,255,255,0.12)",
   background: "rgba(0,0,0,0.3)", color: "#fff", fontSize: 14, outline: "none",
+  transition: "border-color 0.15s, box-shadow 0.15s",
 }
 
 const SELECT: React.CSSProperties = { ...INPUT, cursor: "pointer" }
@@ -193,9 +194,23 @@ export default function InitializeBaselinePage() {
     </label>
   )
 
+  /* Derived live preview */
+  const liveRunway = useMemo(() => {
+    const cash = toNum(form.cashBalance)
+    const burn = toNum(form.monthlyBurn)
+    return burn > 0 ? Math.round(cash / burn) : null
+  }, [form.cashBalance, form.monthlyBurn])
+
   return (
     <div style={PAGE}>
       <div style={CARD}>
+        {/* Breadcrumb */}
+        <nav style={{ marginBottom: 16, fontSize: 11, opacity: 0.4, letterSpacing: "0.06em" }}>
+          <span style={{ color: "#22d3ee" }}>INITIATE</span>
+          <span style={{ margin: "0 6px" }}>/</span>
+          <span>BASELINE SETUP</span>
+        </nav>
+
         {/* Header */}
         <div style={{ marginBottom: 24 }}>
           <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700, color: "#fff" }}>
@@ -272,6 +287,21 @@ export default function InitializeBaselinePage() {
             {field("headcount", "Headcount", { placeholder: "e.g. 12", type: "number", min: "1" })}
           </div>
         </div>
+
+        {/* Live Runway Preview */}
+        {liveRunway !== null && (
+          <div style={{
+            marginBottom: 20, padding: "12px 16px", borderRadius: 10,
+            background: liveRunway < 6 ? "rgba(248,113,113,0.08)" : liveRunway < 12 ? "rgba(251,191,36,0.08)" : "rgba(34,211,238,0.06)",
+            border: `1px solid ${liveRunway < 6 ? "rgba(248,113,113,0.25)" : liveRunway < 12 ? "rgba(251,191,36,0.2)" : "rgba(34,211,238,0.15)"}`,
+            display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13,
+          }}>
+            <span style={{ opacity: 0.7 }}>Estimated Runway</span>
+            <span style={{ fontWeight: 700, fontSize: 16, color: liveRunway < 6 ? "#f87171" : liveRunway < 12 ? "#fbbf24" : "#22d3ee" }}>
+              {liveRunway} months
+            </span>
+          </div>
+        )}
 
         {/* Section 4 — Risk Environment */}
         <div style={SECTION}>

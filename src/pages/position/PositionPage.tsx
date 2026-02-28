@@ -40,6 +40,9 @@ import ExecutiveNarrativeCard from "./components/ExecutiveNarrativeCard"
 import TimeScaleControl from "./overlays/TimeScaleControl"
 import IdleMotionLayer from "./IdleMotionLayer"
 import ScenarioBriefPanel from "@/components/position/ScenarioBriefPanel"
+import KpiSnapshotPanel from "@/components/position/KpiSnapshotPanel"
+import RiskIndicatorPanel from "@/components/position/RiskIndicatorPanel"
+import SimulationStatusPanel from "@/components/position/SimulationStatusPanel"
 import {
   buildPositionViewModel,
 } from "./overlays/positionState"
@@ -100,6 +103,7 @@ export default function PositionPage() {
   const scenarioStoreHydrated = usePhase1ScenarioStore((s) => s.isHydrated)
   const activeScenarioId = usePhase1ScenarioStore((s) => s.activeScenarioId)
   const scenarios = usePhase1ScenarioStore((s) => s.scenarios)
+  const runSimulation = usePhase1ScenarioStore((s) => s.runSimulation)
 
   useEffect(() => {
     hydrateScenarios()
@@ -265,15 +269,9 @@ export default function PositionPage() {
           {/* Top nav row */}
           <nav className={styles.pageNav} aria-label="Primary navigation">
             <NavLink to={ROUTES.INITIATE} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Initiate</NavLink>
+            <NavLink to="/decision" className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Decision</NavLink>
             <NavLink to={ROUTES.POSITION} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Position</NavLink>
-            <NavLink to={ROUTES.STUDIO} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Studio</NavLink>
-            <NavLink to={ROUTES.COMPARE} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Compare</NavLink>
-            <NavLink to={ROUTES.INSIGHTS} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Insights</NavLink>
-            <NavLink to={ROUTES.RISK} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Risk</NavLink>
-            <NavLink to={ROUTES.VALUATION} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Valuation</NavLink>
-            <NavLink to={ROUTES.ASSESSMENT} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Assessment</NavLink>
-            <NavLink to={ROUTES.ROADMAP} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Roadmap</NavLink>
-            <NavLink to={ROUTES.COMING_FEATURES} className={({ isActive }) => `${styles.pageNavItem} ${styles.pageNavSeparated}${isActive ? " " + styles.pageNavActive : ""}`}>Coming Features</NavLink>
+            <span className={styles.pageNavItem} style={{ opacity: 0.25, cursor: "default", pointerEvents: "none", marginLeft: "auto" }}>More coming soon</span>
           </nav>
 
           {/* Terrain canvas — fills available space */}
@@ -325,6 +323,18 @@ export default function PositionPage() {
           {activeScenario && (
             <ScenarioBriefPanel scenario={activeScenario} baseline={baseline} />
           )}
+
+          {/* ── KPI Snapshot ── */}
+          <KpiSnapshotPanel baseline={baseline} />
+
+          {/* ── Risk Indicator ── */}
+          <RiskIndicatorPanel baseline={baseline} />
+
+          {/* ── Simulation Status ── */}
+          <SimulationStatusPanel
+            scenario={activeScenario}
+            onRunSimulation={activeScenario ? () => runSimulation(activeScenario.id) : undefined}
+          />
 
           {/* Command Centre — overlay toggles + diagnostics */}
           <div className={styles.commandCentreDock} aria-label="Command Centre">
