@@ -280,10 +280,10 @@ export default function PositionPage() {
     }
   }, [videoActive])
 
-  // ── Diagnostic Groups (LIVE DEMO / FIELDS / TOPOGRAPHY) ──
+  // ── Diagnostic Groups (DEMO MODE / SCENARIO LAYERS / ANALYSIS / TERRAIN) ──
   const diagnosticGroups = [
     {
-      heading: "LIVE DEMO",
+      heading: "DEMO MODE",
       items: [
         {
           id: "liveVideo",
@@ -295,21 +295,28 @@ export default function PositionPage() {
       ],
     },
     {
-      heading: "FIELDS",
+      heading: "SCENARIO LAYERS",
       items: [
-        { id: "riskField", label: "Risk Field", value: shlIsOn(shlWeights.risk), onChange: toggleShl("risk") },
-        { id: "confidence", label: "Confidence", value: shlIsOn(shlWeights.confidence), onChange: toggleShl("confidence") },
         { id: "markers", label: "Markers", value: renderFlags.showMarkers, onChange: () => renderFlags.toggle("showMarkers") },
-        { id: "preview", label: "Preview", value: renderFlags.showPreview, onChange: () => renderFlags.toggle("showPreview") },
         { id: "flow", label: "Flow", value: shlIsOn(shlWeights.flow), onChange: toggleShl("flow") },
         { id: "diverge", label: "Diverge", value: shlIsOn(shlWeights.divergence), onChange: toggleShl("divergence") },
         { id: "envelope", label: "Envelope", value: renderFlags.showEnvelope, onChange: () => renderFlags.toggle("showEnvelope") },
-        { id: "annotations", label: "Annotations", value: renderFlags.showAnnotations, onChange: () => renderFlags.toggle("showAnnotations") },
-        { id: "heatMap", label: "Heat Map", value: heatmapEnabled, onChange: () => toggleHeatmap() },
       ],
     },
     {
-      heading: "TOPOGRAPHY",
+      heading: "ANALYSIS",
+      collapsed: true,
+      items: [
+        { id: "riskField", label: "Risk Field", value: shlIsOn(shlWeights.risk), onChange: toggleShl("risk") },
+        { id: "confidence", label: "Confidence", value: shlIsOn(shlWeights.confidence), onChange: toggleShl("confidence") },
+        { id: "heatMap", label: "Heat Map", value: heatmapEnabled, onChange: () => toggleHeatmap() },
+        { id: "annotations", label: "Annotations", value: renderFlags.showAnnotations, onChange: () => renderFlags.toggle("showAnnotations") },
+        { id: "preview", label: "Preview", value: renderFlags.showPreview, onChange: () => renderFlags.toggle("showPreview") },
+      ],
+    },
+    {
+      heading: "TERRAIN",
+      collapsed: true,
       items: [
         { id: "heat", label: "Heat", value: shlIsOn(shlWeights.heat), onChange: toggleShl("heat") },
         { id: "resonance", label: "Resonance", value: shlIsOn(shlWeights.resonance), onChange: toggleShl("resonance") },
