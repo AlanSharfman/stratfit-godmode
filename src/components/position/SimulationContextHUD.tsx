@@ -77,9 +77,11 @@ export default function SimulationContextHUD({
           style={{ background: TONE_COLOR[riskTone], boxShadow: `0 0 6px ${TONE_COLOR[riskTone]}` }}
         />
         <span className={styles.rowLabel}>{riskLabel}</span>
-        <span className={styles.rowTone} style={{ color: TONE_COLOR[riskTone] }}>
-          {TONE_LABEL[riskTone]}
-        </span>
+        {riskLabel !== "Assessing" && (
+          <span className={styles.rowTone} style={{ color: TONE_COLOR[riskTone] }}>
+            {TONE_LABEL[riskTone]}
+          </span>
+        )}
       </div>
 
       {/* Row 2: Simulation Status */}

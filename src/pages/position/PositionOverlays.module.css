@@ -37,15 +37,15 @@
   --sf-sans: Inter, system-ui, sans-serif;
 
   /* Atmosphere tuning variables */
-  --atmo-top: rgba(4, 10, 18, 1);
-  --atmo-mid: rgba(14, 24, 34, 1);
+  --atmo-top: rgba(3, 8, 16, 1);
+  --atmo-mid: rgba(16, 28, 40, 1);
   --atmo-horizon: rgba(170, 210, 225, 0.20);
-  --atmo-strength: 0.92;
-  --haze-deep: 0.26;
-  --haze-horizon: 0.42;
-  --vignette-strength: 0.42;
-  --vignette-top-boost: 0.22;
-  --spotlight-strength: 0.18;
+  --atmo-strength: 0.93;
+  --haze-deep: 0.28;
+  --haze-horizon: 0.44;
+  --vignette-strength: 0.40;
+  --vignette-top-boost: 0.20;
+  --spotlight-strength: 0.16;
   --spot-x: 52%;
   --spot-y: 56%;
   --spot-radius: 62%;
@@ -75,7 +75,7 @@
   background: #0B1620;
 }
 
-/* ── Atmosphere Layer A: Sky Gradient — moody top → soft horizon ── */
+/* ── Atmosphere Layer A: Sky Gradient — moody top → soft horizon (exponential falloff) ── */
 .atmoSky {
   position: fixed;
   inset: 0;
@@ -85,43 +85,48 @@
   background: linear-gradient(
     180deg,
     var(--atmo-top) 0%,
-    var(--atmo-mid) 48%,
+    rgba(6, 14, 24, 1) 22%,
+    var(--atmo-mid) 45%,
+    rgba(22, 36, 50, 0.65) 62%,
     var(--atmo-horizon) 78%,
     rgba(0, 0, 0, 0) 100%
   );
 }
 
-/* ── Atmosphere Layer B1: Deep Distance Haze — wide subtle air ── */
+/* ── Atmosphere Layer B1: Deep Distance Haze — 3-zone depth gradient ── */
 .atmoHazeDeep {
   position: fixed;
   inset: 0;
   z-index: 2;
   pointer-events: none;
   opacity: var(--haze-deep);
-  filter: blur(0.2px);
+  filter: blur(0.3px);
   background:
     radial-gradient(
-      120% 85% at 50% 72%,
-      rgba(210, 235, 245, 0.10) 0%,
-      rgba(190, 220, 235, 0.06) 35%,
-      transparent 72%
+      130% 90% at 50% 70%,
+      rgba(210, 235, 245, 0.12) 0%,
+      rgba(195, 225, 240, 0.08) 30%,
+      rgba(180, 215, 235, 0.04) 55%,
+      transparent 75%
     );
 }
 
-/* ── Atmosphere Layer B2: Horizon Haze — tight air perspective ── */
+/* ── Atmosphere Layer B2: Horizon Haze — exponential air perspective + rim separation ── */
 .atmoHazeHorizon {
   position: fixed;
   inset: 0;
   z-index: 2;
   pointer-events: none;
   opacity: var(--haze-horizon);
-  filter: blur(0.4px);
+  filter: blur(0.5px);
   background: linear-gradient(
     180deg,
-    rgba(190, 220, 235, 0) 0%,
-    rgba(190, 220, 235, 0.10) 48%,
-    rgba(190, 220, 235, 0.16) 64%,
-    rgba(190, 220, 235, 0.08) 76%,
+    rgba(185, 218, 235, 0) 0%,
+    rgba(185, 218, 235, 0.04) 35%,
+    rgba(185, 218, 235, 0.12) 52%,
+    rgba(185, 218, 235, 0.18) 65%,
+    rgba(190, 222, 238, 0.14) 74%,
+    rgba(195, 228, 242, 0.06) 84%,
     transparent 100%
   );
 }

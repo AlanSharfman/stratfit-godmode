@@ -43,39 +43,44 @@ const SLIDER_CSS = `
   appearance: none;
   width: 100%;
   height: 4px;
-  background: rgba(100, 180, 255, 0.12);
+  background: rgba(34, 211, 238, 0.14);
   border-radius: 2px;
   outline: none;
   cursor: pointer;
   margin: 0;
+  transition: background 0.2s;
+}
+.sf-tuning-slider:focus {
+  background: rgba(34, 211, 238, 0.22);
 }
 .sf-tuning-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  background: rgba(107, 184, 255, 0.85);
-  border: 1px solid rgba(140, 200, 255, 0.4);
+  background: rgba(34, 211, 238, 0.90);
+  border: 1px solid rgba(103, 232, 249, 0.5);
   cursor: pointer;
-  box-shadow: 0 0 6px rgba(100, 180, 255, 0.3);
-  transition: background 0.15s;
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.4);
+  transition: background 0.15s, box-shadow 0.15s;
 }
 .sf-tuning-slider::-webkit-slider-thumb:hover {
-  background: rgba(140, 210, 255, 0.95);
+  background: rgba(103, 232, 249, 0.95);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.55);
 }
 .sf-tuning-slider::-moz-range-thumb {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  background: rgba(107, 184, 255, 0.85);
-  border: 1px solid rgba(140, 200, 255, 0.4);
+  background: rgba(34, 211, 238, 0.90);
+  border: 1px solid rgba(103, 232, 249, 0.5);
   cursor: pointer;
-  box-shadow: 0 0 6px rgba(100, 180, 255, 0.3);
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.4);
 }
 .sf-tuning-slider::-moz-range-track {
   height: 4px;
-  background: rgba(100, 180, 255, 0.12);
+  background: rgba(34, 211, 238, 0.14);
   border-radius: 2px;
   border: none;
 }
@@ -113,7 +118,7 @@ export default function TerrainTuningPanel({ params, onChange, inline }: Props) 
             <span
               style={{
                 fontSize: 10,
-                color: "rgba(180, 210, 255, 0.68)",
+                color: "rgba(195, 225, 255, 0.78)",
                 fontWeight: 500,
                 letterSpacing: "0.02em",
               }}
@@ -123,7 +128,7 @@ export default function TerrainTuningPanel({ params, onChange, inline }: Props) 
             <span
               style={{
                 fontSize: 10,
-                color: "rgba(107, 184, 255, 0.45)",
+                color: "rgba(34, 211, 238, 0.55)",
                 fontFamily:
                   "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
                 fontWeight: 400,
@@ -207,11 +212,23 @@ export default function TerrainTuningPanel({ params, onChange, inline }: Props) 
             fontWeight: 700,
             textTransform: "uppercase",
             letterSpacing: "0.1em",
-            color: "rgba(120, 180, 255, 0.55)",
+            color: "rgba(34, 211, 238, 0.60)",
+            marginBottom: 4,
+          }}
+        >
+          Visual Terrain Controls
+        </div>
+        <div
+          style={{
+            fontSize: 9,
+            fontWeight: 400,
+            fontStyle: "italic",
+            letterSpacing: "0.01em",
+            color: "rgba(148, 163, 184, 0.50)",
             marginBottom: 14,
           }}
         >
-          Terrain Tuning
+          Render-only — does not affect simulation outcomes
         </div>
         {sliderList}
       </div>
@@ -231,7 +248,7 @@ export default function TerrainTuningPanel({ params, onChange, inline }: Props) 
         style={{
           position: "absolute",
           top: 16,
-          right: 16,
+          left: 16,
           zIndex: 100,
           width: 36,
           height: 36,
@@ -276,7 +293,7 @@ export default function TerrainTuningPanel({ params, onChange, inline }: Props) 
           style={{
             position: "absolute",
             top: 60,
-            right: 16,
+            left: 16,
             zIndex: 99,
             width: 252,
             padding: "16px 14px 14px",
@@ -299,11 +316,23 @@ export default function TerrainTuningPanel({ params, onChange, inline }: Props) 
               fontWeight: 700,
               textTransform: "uppercase",
               letterSpacing: "0.1em",
-              color: "rgba(120, 180, 255, 0.55)",
+              color: "rgba(34, 211, 238, 0.60)",
+              marginBottom: 4,
+            }}
+          >
+            Visual Terrain Controls
+          </div>
+          <div
+            style={{
+              fontSize: 9,
+              fontWeight: 400,
+              fontStyle: "italic",
+              letterSpacing: "0.01em",
+              color: "rgba(148, 163, 184, 0.50)",
               marginBottom: 14,
             }}
           >
-            Terrain Tuning
+            Render-only — does not affect simulation outcomes
           </div>
           {sliderList}
         </div>
