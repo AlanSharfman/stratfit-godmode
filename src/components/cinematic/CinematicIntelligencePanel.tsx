@@ -129,9 +129,9 @@ const CinematicIntelligencePanel: React.FC<CinematicIntelligencePanelProps> = me
     [activeScenario?.simulationResults?.kpis],
   )
 
-  // Typewriter: active during emerge phase only
-  const typewriterActive = phase === "emerge"
-  const showContent = phase === "emerge" || phase === "dock" || phase === "settled"
+  // Typewriter: active during reveal phase only
+  const typewriterActive = phase === "reveal"
+  const showContent = phase === "reveal" || phase === "settled"
 
   const { renderedRows, isDone } = useRowTypewriter(rows, {
     charDelayMs: 18,
@@ -140,8 +140,8 @@ const CinematicIntelligencePanel: React.FC<CinematicIntelligencePanelProps> = me
     onComplete: onTypewriterComplete,
   })
 
-  // In settled/dock, show full rows
-  const displayRows = (phase === "settled" || phase === "dock") ? rows : renderedRows
+  // In settled, show full rows
+  const displayRows = phase === "settled" ? rows : renderedRows
 
   const isVisible = showContent && rows.length > 0
 
@@ -166,13 +166,13 @@ const CinematicIntelligencePanel: React.FC<CinematicIntelligencePanelProps> = me
           transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
           style={{
             ...GLASS_PANEL,
-            boxShadow: phase === "emerge"
+            boxShadow: phase === "reveal"
               ? "0 0 40px rgba(34,211,238,0.12), 0 0 80px rgba(34,211,238,0.06), 0 8px 32px rgba(0,0,0,0.5)"
               : "0 4px 24px rgba(0,0,0,0.4)",
           }}
         >
-          {/* Emerge glow pulse */}
-          {phase === "emerge" && (
+          {/* Reveal glow pulse */}
+          {phase === "reveal" && (
             <div style={GLOW_PULSE} aria-hidden="true" />
           )}
 
@@ -220,7 +220,7 @@ const CinematicIntelligencePanel: React.FC<CinematicIntelligencePanelProps> = me
                   }}>
                     {text}
                     {/* Blinking cursor on current typing row */}
-                    {phase === "emerge" && !isDone && idx === renderedRows.findIndex((r, i) => i >= rowIdxFromRendered(renderedRows, rows)) && (
+                    {phase === "reveal" && !isDone && idx === renderedRows.findIndex((r, i) => i >= rowIdxFromRendered(renderedRows, rows)) && (
                       <span style={CURSOR}>▎</span>
                     )}
                   </div>
@@ -230,7 +230,7 @@ const CinematicIntelligencePanel: React.FC<CinematicIntelligencePanelProps> = me
           </div>
 
           {/* Footer — survival probability */}
-          {(phase === "settled" || phase === "dock" || isDone) && (
+          {(phase === "settled" || isDone) && (
             <div style={FOOTER}>
               <span style={{ opacity: 0.5 }}>Survival probability:</span>{" "}
               <span style={{ color: riskColor, fontWeight: 600 }}>{riskScore}/100</span>

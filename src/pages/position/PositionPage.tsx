@@ -47,7 +47,7 @@ import IdleMotionLayer from "./IdleMotionLayer"
 import HorizonPulse from "@/components/terrain/overlays/HorizonPulse"
 import { useReducedMotion } from "@/hooks/useReducedMotion"
 import { InsightRevealController } from "@/components/cinematic/InsightRevealController"
-import CinematicIntelligencePanel, { CINEMATIC_INTEL_KEYFRAMES } from "@/components/cinematic/CinematicIntelligencePanel"
+import CommandGlassPanel from "@/components/intelligence/CommandGlassPanel"
 import { useIntelligencePresentation } from "@/hooks/useIntelligencePresentation"
 import SimulationProofOverlay from "@/components/dev/SimulationProofOverlay"
 import {
@@ -110,8 +110,8 @@ export default function PositionPage() {
     [scenarios, activeScenarioId],
   )
 
-  // ── Cinematic Intelligence dual-mode controller ──
-  const { phase: intelPhase, requestDock: intelRequestDock } = useIntelligencePresentation({
+  // ── Command Glass controller (idle → reveal → settled) ──
+  const { phase: intelPhase, requestSettle: intelRequestSettle, isRevealing } = useIntelligencePresentation({
     completedAt: activeScenario?.simulationResults?.completedAt ?? null,
   })
 
@@ -596,23 +596,21 @@ export default function PositionPage() {
               scenario={activeScenario ?? null}
               baselineSnapshotId={baseline ? `bl_${typeof baseline === "object" ? "active" : "none"}` : null}
             />
-            {/* ── Cinematic Intelligence overlay (emerge phase) ── */}
-            {(intelPhase === "emerge" || intelPhase === "dock") && (
-              <div style={{
-                position: "absolute",
-                bottom: 24,
-                left: 24,
-                right: 24,
-                zIndex: 30,
-                pointerEvents: "auto",
-              }}>
-                <CinematicIntelligencePanel
-                  phase={intelPhase}
-                  onTypewriterComplete={intelRequestDock}
-                />
-              </div>
+            {/* ── Terrain dim overlay — subtle desat during command glass reveal ── */}
+            {isRevealing && (
+              <div
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  zIndex: 25,
+                  pointerEvents: "none",
+                  background: "rgba(0,0,0,0.10)",
+                  transition: "opacity 0.6s ease",
+                  mixBlendMode: "multiply",
+                }}
+              />
             )}
-            <style>{CINEMATIC_INTEL_KEYFRAMES}</style>
           </div>
         </div>
 
@@ -640,13 +638,13 @@ export default function PositionPage() {
             )}
           </div>
 
-          {/* Executive Interpretation */}
-          <div className={styles.baselineIntelDock} aria-label="Executive Interpretation">
+          {/* Command Glass — Intelligence Output */}
+          <div className={styles.baselineIntelDock} aria-label="Command Intelligence">
             <ScenarioContextPanel />
-            {intelPhase === "settled" ? (
-              <CinematicIntelligencePanel
+            {(intelPhase === "reveal" || intelPhase === "settled") ? (
+              <CommandGlassPanel
                 phase={intelPhase}
-                onTypewriterComplete={intelRequestDock}
+                onTypewriterComplete={intelRequestSettle}
               />
             ) : (
               <AIInsightPanel />

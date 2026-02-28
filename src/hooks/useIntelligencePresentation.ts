@@ -1,8 +1,8 @@
 // src/hooks/useIntelligencePresentation.ts
 // ═══════════════════════════════════════════════════════════════════════════
-// STRATFIT — Cinematic Intelligence Presentation Controller
+// STRATFIT — Command Glass Presentation Controller
 //
-// State machine: idle → emerge → dock → settled
+// State machine: idle → reveal → settled
 //
 // Trigger: completedAt changes (new simulation run)
 // Safety: StrictMode-safe, setTimeout with cleanup, ref-guarded
@@ -10,67 +10,46 @@
 
 import { useEffect, useRef, useState, useCallback } from "react"
 
-export type IntelligencePhase = "idle" | "emerge" | "dock" | "settled"
+export type IntelligencePhase = "idle" | "reveal" | "settled"
 
 interface UseIntelligencePresentationOptions {
   /** Simulation completedAt — null when no run exists */
   completedAt: number | null
-  /** Maximum time in emerge before forcing dock (safety cap) */
-  maxEmergeDurationMs?: number
-  /** Duration of dock transition animation */
-  dockDurationMs?: number
+  /** Maximum time in reveal before forcing settled (safety cap) */
+  maxRevealDurationMs?: number
 }
 
 interface IntelligencePresentationState {
   phase: IntelligencePhase
-  /** Force transition to dock (called by typewriter onComplete) */
-  requestDock: () => void
-  /** Reset to idle (called on new run start) */
+  /** Typewriter done → transition to settled */
+  requestSettle: () => void
+  /** Reset to idle */
   reset: () => void
+  /** Whether reveal is active (for terrain dim) */
+  isRevealing: boolean
 }
 
 export function useIntelligencePresentation({
   completedAt,
-  maxEmergeDurationMs = 12_000,
-  dockDurationMs = 600,
+  maxRevealDurationMs = 14_000,
 }: UseIntelligencePresentationOptions): IntelligencePresentationState {
   const [phase, setPhase] = useState<IntelligencePhase>("idle")
   const lastCompletedAtRef = useRef<number | null>(null)
-  const emergeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const dockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const safetyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  /** Clear all timers */
+  /** Clear timers */
   const clearTimers = useCallback(() => {
-    if (emergeTimerRef.current != null) {
-      clearTimeout(emergeTimerRef.current)
-      emergeTimerRef.current = null
-    }
-    if (dockTimerRef.current != null) {
-      clearTimeout(dockTimerRef.current)
-      dockTimerRef.current = null
+    if (safetyTimerRef.current != null) {
+      clearTimeout(safetyTimerRef.current)
+      safetyTimerRef.current = null
     }
   }, [])
 
-  /** Trigger dock phase, then settle after dockDurationMs */
-  const transitionToDock = useCallback(() => {
+  /** Public: typewriter done → settle */
+  const requestSettle = useCallback(() => {
     clearTimers()
-    setPhase("dock")
-    dockTimerRef.current = setTimeout(() => {
-      setPhase("settled")
-    }, dockDurationMs)
-  }, [clearTimers, dockDurationMs])
-
-  /** Public: typewriter signals it's done → go to dock */
-  const requestDock = useCallback(() => {
-    setPhase((prev) => {
-      if (prev === "emerge") {
-        // Schedule dock → settled transition
-        transitionToDock()
-        return prev // transitionToDock sets it
-      }
-      return prev
-    })
-  }, [transitionToDock])
+    setPhase("settled")
+  }, [clearTimers])
 
   /** Public: reset to idle */
   const reset = useCallback(() => {
@@ -87,21 +66,23 @@ export function useIntelligencePresentation({
     lastCompletedAtRef.current = completedAt
     clearTimers()
 
-    // → emerge
-    setPhase("emerge")
+    // → reveal
+    setPhase("reveal")
 
-    // Safety cap: if typewriter never finishes, force dock
-    emergeTimerRef.current = setTimeout(() => {
-      transitionToDock()
-    }, maxEmergeDurationMs)
+    // Safety cap: if typewriter never finishes, force settled
+    safetyTimerRef.current = setTimeout(() => {
+      setPhase("settled")
+    }, maxRevealDurationMs)
 
     return () => clearTimers()
-  }, [completedAt, clearTimers, maxEmergeDurationMs, transitionToDock])
+  }, [completedAt, clearTimers, maxRevealDurationMs])
 
   // Cleanup on unmount
   useEffect(() => {
     return () => clearTimers()
   }, [clearTimers])
 
-  return { phase, requestDock, reset }
+  const isRevealing = phase === "reveal"
+
+  return { phase, requestSettle, reset, isRevealing }
 }
