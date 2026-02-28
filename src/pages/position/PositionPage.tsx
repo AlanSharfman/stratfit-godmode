@@ -176,11 +176,13 @@ export default function PositionPage() {
       effectiveInputs
     ) {
       const m = activeScenario.simulationResults.terrain.multipliers
+      const baseBurn = Number(effectiveInputs.burnRate) || Number(effectiveInputs.monthlyBurn) || 0
       const morphed = {
         ...effectiveInputs,
-        cash:       (Number(effectiveInputs.cash) || 0) * m.cash,
-        burnRate:   (Number(effectiveInputs.burnRate) || 0) * m.burn,
-        growthRate: (Number(effectiveInputs.growthRate) || 0) * m.growth,
+        cash:        (Number(effectiveInputs.cash) || 0) * m.cash,
+        burnRate:    baseBurn * m.burn,
+        monthlyBurn: baseBurn * m.burn,
+        growthRate:  (Number(effectiveInputs.growthRate) || 0) * m.growth,
       }
       const metrics = deriveTerrainMetrics(morphed as any)
       scenarioTerrainRef.current = { scenarioId: activeScenarioId, metrics }
