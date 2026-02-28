@@ -87,10 +87,6 @@ export default function PositionPage() {
       scenarioA: scenarioDraft,
     })
 
-    console.log("[Question Submitted]", question)
-    console.log("[Classification Result]", category)
-    console.log("[Store Seeded] studioSessionStore")
-
     // Keep navState as fallback only
     navigate("/studio", {
       state: { questionContext: qc, scenarioDraft },
