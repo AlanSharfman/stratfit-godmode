@@ -11,7 +11,7 @@
 //   reduced motion    → instant text + immediate signals
 // ═══════════════════════════════════════════════════════════════════════════
 
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react"
+import React, { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore"
 import { useBaselineStore } from "@/state/baselineStore"
 import { selectKpis, selectKpiDeltas } from "@/selectors/kpiSelectors"
@@ -24,6 +24,7 @@ import {
   ENABLE_CINEMATIC_SYNC,
   type RevealPhase,
 } from "@/state/cinematicRevealStore"
+import { useReducedMotion } from "@/hooks/useReducedMotion"
 import styles from "./AIInsightPanel.module.css"
 
 /* ── Typewriter hook — rAF-driven, 24ms/char, cancellable ── */
@@ -173,10 +174,17 @@ const FALLBACK_MSG = "Submit a decision to generate scenario intelligence."
 
 /** Phase visibility gates */
 const PANEL_VISIBLE_PHASES: Set<RevealPhase> = new Set([
-  "panel_in", "typewriter", "signals", "blur_out", "restore",
+  "panel_in", "typewriter", "signals",
+  "intel_breakout", "intel_debrief", "intel_retract",
+  "blur_out", "restore",
 ])
 const TYPEWRITER_PHASE: RevealPhase = "typewriter"
 const SIGNALS_PHASE: RevealPhase = "signals"
+
+/** Breakout phase set — when panel is in fixed/cinematic mode */
+const BREAKOUT_PHASES: Set<RevealPhase> = new Set([
+  "intel_breakout", "intel_debrief", "intel_retract",
+])
 
 /** Probability band label from survival score */
 function probabilityBandLabel(score: number): string {
@@ -187,10 +195,19 @@ function probabilityBandLabel(score: number): string {
   return "SEVERE"
 }
 
-const AIInsightPanel: React.FC = memo(() => {
+/* ── Rect type for position tracking ── */
+interface Rect { left: number; top: number; width: number; height: number }
+
+export interface AIInsightPanelProps {
+  /** Ref to terrain viewport — used to calculate breakout destination */
+  terrainViewportRef?: React.RefObject<HTMLDivElement | null>
+}
+
+const AIInsightPanel: React.FC<AIInsightPanelProps> = memo(({ terrainViewportRef }) => {
   const activeScenarioId = usePhase1ScenarioStore((s) => s.activeScenarioId)
   const scenarios = usePhase1ScenarioStore((s) => s.scenarios)
   const baseline = useBaselineStore((s) => s.baseline)
+  const reducedMotion = useReducedMotion()
 
   // Cinematic reveal phase
   const revealPhase = useCinematicRevealStore((s) => s.revealPhase)
@@ -206,9 +223,10 @@ const AIInsightPanel: React.FC = memo(() => {
 
   // Signals cascade: actively cascading during signals phase
   const signalsCascading = ENABLE_CINEMATIC_SYNC && revealPhase === SIGNALS_PHASE
-  // Signals fully visible: post-cascade, idle (no cinematic), or sync disabled
+  // Signals fully visible: post-cascade, idle (no cinematic), sync disabled, or breakout phases
   const signalsFullyVisible = !ENABLE_CINEMATIC_SYNC ||
     revealPhase === "idle" ||
+    BREAKOUT_PHASES.has(revealPhase) ||
     revealPhase === "blur_out" ||
     revealPhase === "restore"
 
@@ -292,6 +310,96 @@ const AIInsightPanel: React.FC = memo(() => {
 
   const ready = insight !== null && panelVisible
 
+  // ═══════════════════════════════════════════════════════════════════════
+  // CINEMATIC BREAKOUT — Position tracking + fixed overlay logic
+  // ═══════════════════════════════════════════════════════════════════════
+
+  const isBreakout = ENABLE_CINEMATIC_SYNC && !reducedMotion && BREAKOUT_PHASES.has(revealPhase)
+  const wrapperRef = useRef<HTMLElement>(null)
+  const dockRectRef = useRef<Rect | null>(null)
+
+  // Capture dock rect when entering breakout
+  useLayoutEffect(() => {
+    if (revealPhase === "intel_breakout" && wrapperRef.current && !dockRectRef.current) {
+      const r = wrapperRef.current.getBoundingClientRect()
+      dockRectRef.current = { left: r.left, top: r.top, width: r.width, height: r.height }
+    }
+    // Clear dock rect when leaving breakout entirely
+    if (!BREAKOUT_PHASES.has(revealPhase)) {
+      dockRectRef.current = null
+    }
+  }, [revealPhase])
+
+  // Compute destination rect (centered on terrain viewport, 56% width, capped height)
+  const destRect = useMemo<Rect | null>(() => {
+    if (!terrainViewportRef?.current) return null
+    const tv = terrainViewportRef.current.getBoundingClientRect()
+    const w = Math.min(tv.width * 0.56, 680)
+    const h = Math.min(tv.height * 0.82, 620)
+    return {
+      left: tv.left + (tv.width - w) / 2,
+      top: tv.top + (tv.height - h) / 2,
+      width: w,
+      height: h,
+    }
+  }, [terrainViewportRef, revealPhase]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Compute current position based on phase
+  const breakoutStyle = useMemo<React.CSSProperties | undefined>(() => {
+    if (!isBreakout) return undefined
+    const dock = dockRectRef.current
+    const dest = destRect
+
+    if (revealPhase === "intel_breakout") {
+      // Animate from dock → destination (CSS transition handles interpolation)
+      if (dest) {
+        return {
+          left: dest.left,
+          top: dest.top,
+          width: dest.width,
+          height: dest.height,
+          overflow: "auto",
+        }
+      }
+    }
+
+    if (revealPhase === "intel_debrief") {
+      if (dest) {
+        return {
+          left: dest.left,
+          top: dest.top,
+          width: dest.width,
+          height: dest.height,
+          overflow: "auto",
+        }
+      }
+    }
+
+    if (revealPhase === "intel_retract") {
+      // Animate back to dock position
+      if (dock) {
+        return {
+          left: dock.left,
+          top: dock.top,
+          width: dock.width,
+          height: dock.height,
+          overflow: "hidden",
+        }
+      }
+    }
+
+    return undefined
+  }, [isBreakout, revealPhase, destRect])
+
+  // Build class string for breakout phases
+  const breakoutClass = isBreakout
+    ? `${styles.breakoutPanel} ${
+        revealPhase === "intel_breakout" ? styles.breakoutLift
+        : revealPhase === "intel_debrief" ? styles.breakoutDebrief
+        : styles.breakoutRetract
+      }`
+    : ""
+
   // Signal cascade — only cascades during 'signals' phase; hidden before, full after
   const signalCount = insight?.probabilitySignals.length ?? 0
   const cascadeVisible = useSignalCascade(signalCount, signalsCascading)
@@ -299,119 +407,165 @@ const AIInsightPanel: React.FC = memo(() => {
     : signalsFullyVisible ? signalCount
     : 0 // hidden during micro_settle/blur_in/panel_in/typewriter
 
-  return (
-    <aside className={`${styles.wrapper}${ready ? ` ${styles.ambientGlow}` : ""}`}>
-      {/* ── Decision-anchored header ── */}
-      <div className={styles.panelHeader}>
-        <div className={styles.panelTitle}>
-          {activeScenario?.decision
-            ? <>Decision Insight &mdash; <span style={{ color: "#22d3ee", fontWeight: 400, fontStyle: "italic" }}>{activeScenario.decision}</span></>
-            : "Scenario Insight"
-          }
-          <span className={styles.strobeDots} aria-hidden="true">
-            <span className={styles.dot} />
-            <span className={styles.dot} />
-            <span className={styles.dot} />
-            <span className={styles.dot} />
-          </span>
+  // ── Ghost placeholder (shown in dock when panel is in breakout) ──
+  if (isBreakout) {
+    return (
+      <>
+        {/* Ghost in the dock */}
+        <div className={styles.dockGhost} aria-hidden="true">
+          INTELLIGENCE DEBRIEF
         </div>
-        {activeScenario?.decisionIntentLabel && (
-          <div style={{
-            fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 4,
-            letterSpacing: "0.04em",
-          }}>
-            Based on <span style={{ color: "rgba(34,211,238,0.6)" }}>{activeScenario.decisionIntentLabel}</span> scenario outcomes
-          </div>
-        )}
-      </div>
 
-      {!ready ? (
-        <div className={styles.section}>
-          <div className={styles.fallback}>{FALLBACK_MSG}</div>
-        </div>
-      ) : (
-        <>
-          {/* ── 1. Executive Summary ── */}
-          <div className={styles.section}>
-            <div className={styles.sectionTitle}>EXECUTIVE SUMMARY</div>
-            <TypewriterText
-              className={styles.summary}
-              text={insight.executiveSummary}
-              enabled={typewriterActive}
-              onComplete={handleTypewriterComplete}
-            />
-          </div>
+        {/* Fixed breakout panel */}
+        <aside
+          ref={wrapperRef}
+          className={`${styles.wrapper} ${breakoutClass}${ready ? ` ${styles.ambientGlow}` : ""}`}
+          style={breakoutStyle}
+          role="complementary"
+          aria-label="Intelligence Debrief"
+        >
+          {/* Scan line effect during breakout traverse */}
+          {revealPhase === "intel_breakout" && (
+            <div className={styles.scanLine} aria-hidden="true" />
+          )}
+          {/* DEBRIEF watermark during debrief hold */}
+          {revealPhase === "intel_debrief" && (
+            <span className={styles.debriefLabel} aria-hidden="true">DEBRIEF</span>
+          )}
+          {renderPanelContent()}
+        </aside>
+      </>
+    )
+  }
 
-          {/* ── 2. Key Drivers ── */}
-          <div className={styles.section}>
-            <div className={styles.sectionTitle}>KEY DRIVERS</div>
-            <ul className={styles.driverList}>
-              {insight.keyDrivers.map((d, i) => (
-                <li key={i} className={styles.driverItem}>
-                  <span className={styles.driverDot} data-tone={d.tone} />
-                  <span className={styles.driverLabel}>{d.label}</span>
-                  <span className={styles.driverSep}>{" — "}</span>
-                  <span className={styles.driverImpact}>{d.impact}</span>
-                </li>
-              ))}
-            </ul>
+  // ── Shared panel content renderer ──
+  function renderPanelContent() {
+    return (
+      <>
+        {/* ── Decision-anchored header ── */}
+        <div className={styles.panelHeader}>
+          <div className={styles.panelTitle}>
+            {activeScenario?.decision
+              ? <>Decision Insight &mdash; <span style={{ color: "#22d3ee", fontWeight: 400, fontStyle: "italic" }}>{activeScenario.decision}</span></>
+              : "Scenario Insight"
+            }
+            <span className={styles.strobeDots} aria-hidden="true">
+              <span className={styles.dot} />
+              <span className={styles.dot} />
+              <span className={styles.dot} />
+              <span className={styles.dot} />
+            </span>
           </div>
-
-          {/* ── 3. Risk Assessment ── */}
-          <div className={styles.section}>
-            <div className={styles.sectionTitle}>RISK ASSESSMENT</div>
-            <TypewriterText
-              className={styles.riskText}
-              text={insight.riskNarrative}
-              enabled={typewriterActive}
-            />
-          </div>
-
-          {/* ── 4. Probability Signals (cascading reveal) ── */}
-          <div className={styles.section}>
-            <div className={styles.sectionTitle}>PROBABILITY SIGNALS</div>
-            <ul className={styles.recList}>
-              {insight.probabilitySignals.map((s, idx) => (
-                <li
-                  key={s.rank}
-                  className={styles.recItem}
-                  style={{
-                    opacity: idx < visibleSignals ? 1 : 0,
-                    transform: idx < visibleSignals
-                      ? "translateY(0)"
-                      : "translateY(8px)",
-                    transition: "opacity 180ms ease-out, transform 180ms ease-out",
-                  }}
-                >
-                  <div>
-                    <span className={styles.recRank}>#{s.rank}</span>
-                    {" "}
-                    <span className={styles.recAction}>{s.title}</span>
-                    <span className={styles.impactBadge} data-level={s.impactLevel}>
-                      {s.probability}%
-                    </span>
-                  </div>
-                  <div className={styles.recRationale}>{s.interpretation}</div>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* ── Footer ── */}
-          <div className={styles.footer}>
-            <div className={styles.footLine}>
-              Survival probability:{" "}
-              <span className={styles.riskValue} style={{ color: riskColor }}>
-                {riskScore}/100
-              </span>
-              {" "}
-              <span className={styles.probabilityBand}>
-                {probabilityBandLabel(riskScore)}
-              </span>
+          {activeScenario?.decisionIntentLabel && (
+            <div style={{
+              fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 4,
+              letterSpacing: "0.04em",
+            }}>
+              Based on <span style={{ color: "rgba(34,211,238,0.6)" }}>{activeScenario.decisionIntentLabel}</span> scenario outcomes
             </div>
+          )}
+        </div>
+
+        {!ready ? (
+          <div className={styles.section}>
+            <div className={styles.fallback}>{FALLBACK_MSG}</div>
           </div>
-        </>
-      )}
+        ) : (
+          <>
+            {/* ── 1. Executive Summary ── */}
+            <div className={styles.section}>
+              <div className={styles.sectionTitle}>EXECUTIVE SUMMARY</div>
+              <TypewriterText
+                className={styles.summary}
+                text={insight!.executiveSummary}
+                enabled={typewriterActive}
+                onComplete={handleTypewriterComplete}
+              />
+            </div>
+
+            {/* ── 2. Key Drivers ── */}
+            <div className={styles.section}>
+              <div className={styles.sectionTitle}>KEY DRIVERS</div>
+              <ul className={styles.driverList}>
+                {insight!.keyDrivers.map((d, i) => (
+                  <li key={i} className={styles.driverItem}>
+                    <span className={styles.driverDot} data-tone={d.tone} />
+                    <span className={styles.driverLabel}>{d.label}</span>
+                    <span className={styles.driverSep}>{" — "}</span>
+                    <span className={styles.driverImpact}>{d.impact}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* ── 3. Risk Assessment ── */}
+            <div className={styles.section}>
+              <div className={styles.sectionTitle}>RISK ASSESSMENT</div>
+              <TypewriterText
+                className={styles.riskText}
+                text={insight!.riskNarrative}
+                enabled={typewriterActive}
+              />
+            </div>
+
+            {/* ── 4. Probability Signals (cascading reveal) ── */}
+            <div className={styles.section}>
+              <div className={styles.sectionTitle}>PROBABILITY SIGNALS</div>
+              <ul className={styles.recList}>
+                {insight!.probabilitySignals.map((s, idx) => (
+                  <li
+                    key={s.rank}
+                    className={styles.recItem}
+                    style={{
+                      opacity: idx < visibleSignals ? 1 : 0,
+                      transform: idx < visibleSignals
+                        ? "translateY(0)"
+                        : "translateY(8px)",
+                      transition: "opacity 180ms ease-out, transform 180ms ease-out",
+                    }}
+                  >
+                    <div>
+                      <span className={styles.recRank}>#{s.rank}</span>
+                      {" "}
+                      <span className={styles.recAction}>{s.title}</span>
+                      <span className={styles.impactBadge} data-level={s.impactLevel}>
+                        {s.probability}%
+                      </span>
+                    </div>
+                    <div className={styles.recRationale}>{s.interpretation}</div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* ── Footer ── */}
+            <div className={styles.footer}>
+              <div className={styles.footLine}>
+                Survival probability:{" "}
+                <span className={styles.riskValue} style={{ color: riskColor }}>
+                  {riskScore}/100
+                </span>
+                {" "}
+                <span className={styles.probabilityBand}>
+                  {probabilityBandLabel(riskScore)}
+                </span>
+              </div>
+            </div>
+          </>
+        )}
+      </>
+    )
+  }
+
+  // ── Breakout render path (already handled above) ──
+  // If we reach here, we're in normal docked mode
+
+  return (
+    <aside
+      ref={wrapperRef}
+      className={`${styles.wrapper}${ready ? ` ${styles.ambientGlow}` : ""}`}
+    >
+      {renderPanelContent()}
     </aside>
   )
 })

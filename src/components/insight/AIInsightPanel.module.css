@@ -312,3 +312,168 @@
       0 0 60px rgba(34, 211, 238, 0.035);
   }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   CINEMATIC BREAKOUT — Intelligence Debrief
+   Panel lifts from right rail, expands over terrain, delivers
+   briefing, then retracts back to dock.
+   ══════════════════════════════════════════════════════════════ */
+
+/* Ghost placeholder — holds space in dock when panel is in breakout */
+.dockGhost {
+  border: 1px dashed rgba(34, 211, 238, 0.12);
+  border-radius: 12px;
+  background: rgba(6, 10, 16, 0.25);
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(34, 211, 238, 0.25);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* Fixed-position panel during breakout/debrief/retract */
+.breakoutPanel {
+  position: fixed;
+  z-index: 200;
+  pointer-events: auto;
+  will-change: transform, width, height, left, top;
+  transition:
+    left 600ms cubic-bezier(0.16, 1, 0.3, 1),
+    top 600ms cubic-bezier(0.16, 1, 0.3, 1),
+    width 600ms cubic-bezier(0.16, 1, 0.3, 1),
+    height 600ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 400ms ease-out,
+    box-shadow 600ms ease-out;
+}
+
+/* Breakout phase — lifting from docked position */
+.breakoutLift {
+  box-shadow:
+    0 0 0 1px rgba(34, 211, 238, 0.30),
+    0 0 0 3px rgba(6, 10, 16, 0.90),
+    0 0 0 5px rgba(34, 211, 238, 0.18),
+    0 8px 32px rgba(0, 0, 0, 0.60),
+    0 0 60px rgba(34, 211, 238, 0.08),
+    0 0 120px rgba(34, 211, 238, 0.04);
+}
+
+/* Debrief phase — centered over terrain, full cinematic presence */
+.breakoutDebrief {
+  box-shadow:
+    0 0 0 1px rgba(34, 211, 238, 0.35),
+    0 0 0 3px rgba(6, 10, 16, 0.92),
+    0 0 0 6px rgba(34, 211, 238, 0.22),
+    0 12px 48px rgba(0, 0, 0, 0.70),
+    0 0 80px rgba(34, 211, 238, 0.10),
+    0 0 160px rgba(34, 211, 238, 0.05);
+  animation: debriefPulse 3s ease-in-out infinite;
+}
+
+/* Retract phase — shrinking back */
+.breakoutRetract {
+  transition:
+    left 500ms cubic-bezier(0.4, 0, 0.2, 1),
+    top 500ms cubic-bezier(0.4, 0, 0.2, 1),
+    width 500ms cubic-bezier(0.4, 0, 0.2, 1),
+    height 500ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 300ms ease-out,
+    box-shadow 400ms ease-out;
+}
+
+@keyframes debriefPulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px rgba(34, 211, 238, 0.35),
+      0 0 0 3px rgba(6, 10, 16, 0.92),
+      0 0 0 6px rgba(34, 211, 238, 0.22),
+      0 12px 48px rgba(0, 0, 0, 0.70),
+      0 0 80px rgba(34, 211, 238, 0.10),
+      0 0 160px rgba(34, 211, 238, 0.05);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(34, 211, 238, 0.45),
+      0 0 0 3px rgba(6, 10, 16, 0.92),
+      0 0 0 8px rgba(34, 211, 238, 0.28),
+      0 16px 60px rgba(0, 0, 0, 0.75),
+      0 0 100px rgba(34, 211, 238, 0.14),
+      0 0 200px rgba(34, 211, 238, 0.07);
+  }
+}
+
+/* Scan line — horizontal sweep during breakout traverse */
+.scanLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(34, 211, 238, 0.4) 20%,
+    rgba(34, 211, 238, 0.8) 50%,
+    rgba(34, 211, 238, 0.4) 80%,
+    transparent 100%
+  );
+  animation: scanSweep 1.6s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 10;
+}
+
+@keyframes scanSweep {
+  0% { top: 0%; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+/* Terrain dim overlay — darkens terrain during debrief */
+.terrainDim {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(3px);
+  transition: opacity 600ms ease-out;
+  border-radius: 14px;
+}
+
+.terrainDimIn  { opacity: 1; }
+.terrainDimOut { opacity: 0; }
+
+/* DEBRIEF label watermark */
+.debriefLabel {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(34, 211, 238, 0.45);
+  z-index: 11;
+  animation: debriefLabelPulse 2s ease-in-out infinite;
+}
+
+@keyframes debriefLabelPulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 0.85; }
+}
+
+/* Reduced motion: disable all breakout transitions */
+@media (prefers-reduced-motion: reduce) {
+  .breakoutPanel,
+  .breakoutRetract {
+    transition: none !important;
+    animation: none !important;
+  }
+  .breakoutDebrief { animation: none !important; }
+  .scanLine { animation: none !important; display: none; }
+  .debriefLabel { animation: none !important; }
+}

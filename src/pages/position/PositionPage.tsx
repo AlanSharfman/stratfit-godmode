@@ -51,6 +51,10 @@ import CommandGlassPanel from "@/components/intelligence/CommandGlassPanel"
 import { useIntelligencePresentation } from "@/hooks/useIntelligencePresentation"
 import SimulationProofOverlay from "@/components/dev/SimulationProofOverlay"
 import {
+  useCinematicRevealStore,
+} from "@/state/cinematicRevealStore"
+import insightStyles from "@/components/insight/AIInsightPanel.module.css"
+import {
   buildPositionViewModel,
 } from "./overlays/positionState"
 
@@ -635,6 +639,8 @@ export default function PositionPage() {
                 }}
               />
             )}
+            {/* ── Terrain dim overlay — intelligence debrief breakout ── */}
+            <TerrainBreakoutDim />
           </div>
         </div>
 
@@ -671,7 +677,7 @@ export default function PositionPage() {
                 onTypewriterComplete={intelRequestSettle}
               />
             ) : (
-              <AIInsightPanel />
+              <AIInsightPanel terrainViewportRef={viewportRef} />
             )}
           </div>
         </div>
@@ -679,3 +685,21 @@ export default function PositionPage() {
     </div>
   )
 }
+
+/* ── Terrain dim overlay for Intelligence Debrief breakout ── */
+const BREAKOUT_DIM_PHASES = new Set(["intel_breakout", "intel_debrief", "intel_retract"])
+
+const TerrainBreakoutDim = React.memo(function TerrainBreakoutDim() {
+  const phase = useCinematicRevealStore((s) => s.revealPhase)
+  const active = BREAKOUT_DIM_PHASES.has(phase)
+  const dimming = phase === "intel_breakout" || phase === "intel_debrief"
+
+  if (!active) return null
+
+  return (
+    <div
+      className={`${insightStyles.terrainDim} ${dimming ? insightStyles.terrainDimIn : insightStyles.terrainDimOut}`}
+      aria-hidden="true"
+    />
+  )
+})

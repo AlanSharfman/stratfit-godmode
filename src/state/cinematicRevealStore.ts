@@ -25,6 +25,9 @@ export type RevealPhase =
   | "panel_in"
   | "typewriter"
   | "signals"
+  | "intel_breakout"   // panel lifts from dock, traverses toward terrain
+  | "intel_debrief"    // panel centered over terrain, content visible
+  | "intel_retract"    // panel shrinks back to dock
   | "blur_out"
   | "restore"
 
@@ -36,6 +39,9 @@ export const PHASE_DURATIONS: Record<RevealPhase, number> = {
   panel_in: 260,
   typewriter: 1800, // max cap — can be cut short by onComplete
   signals: 1000,    // ~3 signals × 120ms stagger + settle
+  intel_breakout: 600,   // lift + traverse
+  intel_debrief: 2800,   // hold over terrain
+  intel_retract: 500,    // shrink back
   blur_out: 500,
   restore: 0,       // instant
 }
@@ -48,6 +54,9 @@ export const PHASE_ORDER: RevealPhase[] = [
   "panel_in",
   "typewriter",
   "signals",
+  "intel_breakout",
+  "intel_debrief",
+  "intel_retract",
   "blur_out",
   "restore",
 ]
@@ -156,6 +165,9 @@ export function deriveBlurIntensity(phase: RevealPhase, progress: number): numbe
     case "panel_in":
     case "typewriter":
     case "signals": return 0.35
+    case "intel_breakout": return 0.35 + progress * 0.10  // slight increase during breakout
+    case "intel_debrief": return 0.45
+    case "intel_retract": return 0.45 - progress * 0.10  // ease back
     case "blur_out": return 0.35 * (1 - progress)
     default: return 0
   }
@@ -169,6 +181,9 @@ export function derivePathGlowIntensity(phase: RevealPhase, progress: number): n
     case "panel_in":
     case "typewriter":
     case "signals": return 0.55
+    case "intel_breakout": return 0.55 + progress * 0.15  // brighten during breakout
+    case "intel_debrief": return 0.70
+    case "intel_retract": return 0.70 - progress * 0.15  // fade back
     case "blur_out": return 0.55 - progress * 0.30
     case "restore": return 0.25
     default: return 0

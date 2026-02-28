@@ -6,13 +6,16 @@
 // Mounted once in PositionPage. Consumes cinematicRevealStore.
 //
 // Timeline (maximal):
-//   T+0      → micro_settle  (450ms)   terrain intensity ramp
-//   T+450    → blur_in       (300ms)   bokeh-blur fade-in
-//   T+750    → panel_in      (260ms)   panel scale/translate
-//   T+1010   → typewriter    (≤1800ms) char-by-char text, cut short by onComplete
-//   T+~2800  → signals       (~1000ms) probability signal cascade  
-//   T+~3800  → blur_out      (500ms)   restore terrain
-//   T+~4300  → restore                 unlock controls, idle
+//   T+0      → micro_settle    (450ms)   terrain intensity ramp
+//   T+450    → blur_in         (300ms)   bokeh-blur fade-in
+//   T+750    → panel_in        (260ms)   panel scale/translate
+//   T+1010   → typewriter      (≤1800ms) char-by-char text, cut short by onComplete
+//   T+~2800  → signals         (~1000ms) probability signal cascade
+//   T+~3800  → intel_breakout  (600ms)   panel lifts from dock, traverses to terrain
+//   T+~4400  → intel_debrief   (2800ms)  panel centered over terrain, cinematic hold
+//   T+~7200  → intel_retract   (500ms)   panel shrinks back to dock
+//   T+~7700  → blur_out        (500ms)   restore terrain
+//   T+~8200  → restore                   unlock controls, idle
 //
 // Reduced motion: collapses entire sequence → instant panel visible + signals
 // ═══════════════════════════════════════════════════════════════════════════
