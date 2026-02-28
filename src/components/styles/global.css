@@ -57,11 +57,11 @@
   --color-red: var(--color-red-500);
   --color-red-dim: rgba(239, 68, 68, 0.3);
   
-  /* Warning — Orange */
-  --color-orange-400: #fb923c;
-  --color-orange-500: #f97316;
-  --color-orange-600: #ea580c;
-  --color-orange: var(--color-orange-500);
+  /* Warning — Amber */
+  --color-amber-400: #fbbf24;
+  --color-amber-500: #f59e0b;
+  --color-amber-600: #d97706;
+  --color-amber: var(--color-amber-500);
   
   /* Accent — Purple */
   --color-purple-400: #c084fc;

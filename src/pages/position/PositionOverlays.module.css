@@ -481,7 +481,7 @@
 .kpiRailCell:nth-child(4) .kpiLabel { color: #60a5fa; }  /* Revenue — blue */
 .kpiRailCell:nth-child(5) .kpiLabel { color: #4ade80; }  /* ARR — green */
 .kpiRailCell:nth-child(6) .kpiLabel { color: #a78bfa; }  /* Momentum — purple */
-.kpiRailCell:nth-child(7) .kpiLabel { color: #fb923c; }  /* Risk Score — orange */
+.kpiRailCell:nth-child(7) .kpiLabel { color: #f87171; }  /* Risk Score — red */
 
 .kpiRailCell .kpiValue {
   font-size: 18px;

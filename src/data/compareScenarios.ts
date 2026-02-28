@@ -84,7 +84,7 @@ export const COMPARE_SCENARIOS: CompareScenario[] = [
     id: 'profitability',
     name: 'Profitability Push',
     shortName: 'Profitable',
-    color: '#FF9500',  // Orange - efficiency/caution
+    color: '#fbbf24',  // Amber - efficiency/caution
     cash: 2100000,
     runway: 48,
     trajectory: 'OPTIMIZING',

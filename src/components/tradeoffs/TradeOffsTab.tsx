@@ -623,7 +623,7 @@ const DynamicTerrainMountain: React.FC<{
   // Color based on risk level
   const getColor = () => {
     if (riskLevel > 70) return '#ff4757'; // High risk - red
-    if (riskLevel > 40) return '#ffa502'; // Medium risk - orange
+    if (riskLevel > 40) return '#fbbf24'; // Medium risk - amber
     return '#00ff9d'; // Low risk - green
   };
 

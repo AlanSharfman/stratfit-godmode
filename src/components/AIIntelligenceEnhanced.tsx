@@ -877,8 +877,15 @@ export default function AIIntelligenceEnhanced({
 }: AIIntelligenceEnhancedProps) {
 
   const viewMode = useScenarioStore((s) => s.viewMode);
-  const engineResults = useScenarioStore((s) => s.engineResults);
   const activeScenarioId = useScenarioStore((s) => s.activeScenarioId);
+  // Narrow selector: only subscribe to the two engine results the ledger needs
+  const engineResultsSlice = useScenarioStore((s) => {
+    const id = s.activeScenarioId;
+    if (!id || !s.engineResults) return null;
+    const base = s.engineResults.base ?? null;
+    const active = s.engineResults[id] ?? null;
+    return base || active ? { base, [id]: active } : null;
+  });
   
   // ORACLE PROTOCOL: Track focused lever for contextual intelligence
   const focusedLever = useUIStore((s) => s.focusedLever);
@@ -901,9 +908,9 @@ export default function AIIntelligenceEnhanced({
 
   // Build ledger
   const ledger = useMemo(() => {
-    if (!engineResults || !activeScenarioId) return null;
-    return buildScenarioDeltaLedger({ engineResults, activeScenario: activeScenarioId });
-  }, [engineResults, activeScenarioId]);
+    if (!engineResultsSlice || !activeScenarioId) return null;
+    return buildScenarioDeltaLedger({ engineResults: engineResultsSlice, activeScenario: activeScenarioId });
+  }, [engineResultsSlice, activeScenarioId]);
 
   // Extract metrics from ledger
   const metrics = useMemo(() => {

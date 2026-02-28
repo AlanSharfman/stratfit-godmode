@@ -30,7 +30,7 @@ export type MarkerGeometry =
 // All colours must be desaturated. No pure saturated hues.
 export const MARKER_PALETTE = {
   liquidity:  "#4fd9c8",  // muted teal — cash-positive signal
-  risk:       "#e87040",  // muted amber-orange — hazard
+  risk:       "#f87171",  // muted red — hazard
   market:     "#8ab4f8",  // muted periwinkle — external context
   waypoint:   "#a5b8c8",  // blue-grey — neutral milestone
   beacon:     "#c0d8f0",  // cold white — attention anchor

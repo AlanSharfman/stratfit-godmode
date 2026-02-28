@@ -11,6 +11,8 @@ export const ROUTE_CONTRACT = [
   "/assessment",
   "/roadmap",
   "/initialize",
+  "/initiate",
+  "/decision",
 ] as const
 
 export const ROUTES = {
@@ -26,6 +28,7 @@ export const ROUTES = {
   // Restore rich modules (already implemented)
   INITIALIZE: "/initialize",
   INITIATE: "/initiate", // alias -> /initialize
+  DECISION: "/decision",
 
   BASELINE: "/baseline",
   OBJECTIVES: "/objectives",

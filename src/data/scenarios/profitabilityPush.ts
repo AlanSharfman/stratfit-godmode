@@ -14,8 +14,8 @@ export const PROFITABILITY_PUSH: ScenarioData = {
   shortName: 'Profitability',
   description: 'Conservative path to profitability without external funding',
   strategy: 'No new funding, reduce burn to $120K/month, focus on margins',
-  color: '#FF9500',      // Orange
-  colorSecondary: '#D97706',
+  color: '#fbbf24',      // Amber
+  colorSecondary: '#d4a10a',
   
   metrics: {
     initialCash: 2.8,      // $2.8M

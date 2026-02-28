@@ -43,7 +43,7 @@ const SCENARIOS: Scenario[] = [
     label: 'Profitability Push',
     description: 'Bootstrap to profitability',
     icon: TrendingDown,
-    color: '#FF9500'  // Orange
+    color: '#fbbf24'  // Amber
   },
   {
     id: 'apac-expansion',
