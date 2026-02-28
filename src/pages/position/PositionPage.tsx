@@ -124,11 +124,12 @@ export default function PositionPage() {
     hydrateScenarios()
   }, [hydrateScenarios])
 
-  // Only hydrate baseline when there's no active scenario — prevents
-  // rehydration from overwriting scenario-morphed terrain mid-render
+  // Always hydrate baseline — terrain pipeline needs real values.
+  // Scenario-first priority in the terrain memo prevents baseline from
+  // overwriting locked scenario metrics.
   useEffect(() => {
-    if (!activeScenarioId) hydrateBaseline()
-  }, [activeScenarioId, hydrateBaseline])
+    hydrateBaseline()
+  }, [hydrateBaseline])
 
   useEffect(() => {
     if (scenarioStoreHydrated && !activeScenarioId) navigate("/decision")
@@ -153,57 +154,53 @@ export default function PositionPage() {
     return active ? ({ ...baselineInputs, ...active.overrides } as const) : baselineInputs
   }, [baselineInputs, overrideScenarios, activeOverrideScenarioId])
 
-  // ── Terrain source-of-truth: scenario multipliers take priority ──
-  // Lock multipliers via ref so intermediate "running" frames don't revert terrain.
-  const lockedMultipliersRef = useRef<{ cash: number; burn: number; growth: number } | null>(null)
+  // ══ Terrain source-of-truth: single selector, scenario-first ══
+  //
+  // Once a scenario completes, derived metrics are LOCKED in a ref keyed
+  // by scenarioId.  Subsequent renders (baseline rehydration, store sync,
+  // override changes) hit PRIORITY 1 and return the locked value instantly.
+  // Only a NEW activeScenarioId clears the lock.
+  const scenarioTerrainRef = useRef<{ scenarioId: string; metrics: TerrainMetrics } | null>(null)
 
-  // When a completed scenario arrives, lock its multipliers
-  const completedMultipliers = activeScenario?.status === "complete"
-    ? activeScenario.simulationResults?.terrain?.multipliers ?? null
-    : null
-
-  if (completedMultipliers) {
-    lockedMultipliersRef.current = completedMultipliers
-  }
-
-  // Clear lock when scenario changes
-  const prevScenarioIdRef = useRef<string | null>(null)
-  if (activeScenarioId !== prevScenarioIdRef.current) {
-    prevScenarioIdRef.current = activeScenarioId
-    // Only clear if the new scenario hasn't completed yet
-    if (activeScenario?.status !== "complete") {
-      lockedMultipliersRef.current = null
+  const terrainMetrics = useMemo(() => {
+    // PRIORITY 1: Already locked for this scenario → stable, no recompute
+    if (activeScenarioId && scenarioTerrainRef.current?.scenarioId === activeScenarioId) {
+      return scenarioTerrainRef.current.metrics
     }
-  }
 
-  const morphedInputs = useMemo(() => {
-    if (!effectiveInputs) return null
-    const multipliers = lockedMultipliersRef.current
-    if (!multipliers) return effectiveInputs
-    return {
-      ...effectiveInputs,
-      cash:       (Number(effectiveInputs.cash) || 0) * multipliers.cash,
-      burnRate:   (Number(effectiveInputs.burnRate) || 0) * multipliers.burn,
-      growthRate: (Number(effectiveInputs.growthRate) || 0) * multipliers.growth,
+    // PRIORITY 2: Scenario just completed → derive from baseline × multipliers, lock
+    if (
+      activeScenarioId &&
+      activeScenario?.status === "complete" &&
+      activeScenario.simulationResults?.terrain?.multipliers &&
+      effectiveInputs
+    ) {
+      const m = activeScenario.simulationResults.terrain.multipliers
+      const morphed = {
+        ...effectiveInputs,
+        cash:       (Number(effectiveInputs.cash) || 0) * m.cash,
+        burnRate:   (Number(effectiveInputs.burnRate) || 0) * m.burn,
+        growthRate: (Number(effectiveInputs.growthRate) || 0) * m.growth,
+      }
+      const metrics = deriveTerrainMetrics(morphed as any)
+      scenarioTerrainRef.current = { scenarioId: activeScenarioId, metrics }
+      return metrics
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [effectiveInputs, activeScenarioId, activeScenario?.status])
 
-  // DEV: log terrain source for debugging
-  if (import.meta.env.DEV) {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useMemo(() => {
-      console.log("TERRAIN SOURCE:", lockedMultipliersRef.current ? "SCENARIO" : "BASELINE",
-        activeScenarioId ? `(scenario ${activeScenarioId.slice(0, 8)})` : "(no scenario)")
-    }, [activeScenarioId, activeScenario?.status])
-  }
+    // PRIORITY 3: No completed scenario → derive from raw baseline
+    return effectiveInputs ? deriveTerrainMetrics(effectiveInputs as any) : undefined
+  }, [activeScenarioId, activeScenario?.status, effectiveInputs])
 
-  const terrainMetrics = useMemo(
-    () => (morphedInputs ? deriveTerrainMetrics(morphedInputs as any) : undefined),
-    // Stabilize: only recompute when scenario identity or status changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [morphedInputs, activeScenarioId, activeScenario?.status],
-  )
+  // DEV: log terrain source once per scenario transition
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      console.log(
+        "TERRAIN SOURCE:",
+        scenarioTerrainRef.current?.scenarioId === activeScenarioId ? "SCENARIO" : "BASELINE",
+        activeScenarioId ? `(scenario ${activeScenarioId.slice(0, 8)})` : "(no scenario)",
+      )
+    }
+  }, [activeScenarioId, activeScenario?.status])
 
   const engineResults = useScenarioStore((s) => s.engineResults)
 
