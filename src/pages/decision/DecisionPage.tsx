@@ -5,6 +5,7 @@ import { useCanonicalBaseline } from "@/state/useCanonicalBaseline"
 import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore"
 import { DECISION_INTENT_OPTIONS, type DecisionIntentType } from "@/state/phase1ScenarioStore"
 import { runDecisionPipeline } from "@/core/decision/runDecisionPipeline"
+import { decisionLeverSchemas, defaultLeverValues, type LeverSchema } from "@/config/decisionLeverSchemas"
 import css from "./DecisionConsole.module.css"
 
 /* ═══════════════════════════════════════════════════════════
@@ -83,15 +84,17 @@ const INTENT_ASSUMPTIONS: Record<DecisionIntentType, string[]> = {
   ],
 }
 
-/* ─── Lever hints per intent (Phase 4 prep — read-only) ── */
+/* ─── Lever value formatter ──────────────────────────────── */
 
-const INTENT_LEVER_HINTS: Record<DecisionIntentType, string[]> = {
-  hiring:            ["New hires", "Avg. salary", "Ramp time (months)", "Revenue per head"],
-  pricing:           ["Price change %", "Churn sensitivity", "Volume impact", "Rollout timeline"],
-  cost_reduction:    ["Burn reduction %", "Headcount change", "Efficiency gain", "Timeline"],
-  fundraising:       ["Raise amount", "Pre-money valuation", "Use of proceeds split", "Close timeline"],
-  growth_investment: ["Investment amount", "Growth multiplier", "Payback period", "Channel mix"],
-  other:             ["Custom lever 1", "Custom lever 2", "Timeline", "Confidence"],
+function formatLeverValue(val: number, lever: LeverSchema): string {
+  const sign = val > 0 ? "+" : ""
+  switch (lever.unit) {
+    case "%":  return `${sign}${val}%`
+    case "mo": return `${val}mo`
+    case "$M": return `$${val}M`
+    case "x":  return `${val.toFixed(1)}x`
+    default:   return `${sign}${val}`
+  }
 }
 
 /* ─── Component ──────────────────────────────────────────── */
@@ -112,6 +115,7 @@ export default function DecisionPage() {
   const [isDone, setIsDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [focused, setFocused] = useState(false)
+  const [leverValues, setLeverValues] = useState<Record<string, number>>(() => defaultLeverValues("other"))
 
   const canRun = useMemo(
     () => !!baseline && decisionText.trim().length >= MIN_CHARS && !isCreating && !isDone,
@@ -129,6 +133,21 @@ export default function DecisionPage() {
     () => DECISION_INTENT_OPTIONS.find((o) => o.value === intentType)?.label ?? "Other",
     [intentType],
   )
+
+  const activeSchema = useMemo(() => decisionLeverSchemas[intentType] ?? [], [intentType])
+
+  const updateLever = React.useCallback((id: string, value: number) => {
+    setLeverValues((prev) => ({ ...prev, [id]: value }))
+  }, [])
+
+  const resetLevers = React.useCallback(() => {
+    setLeverValues(defaultLeverValues(intentType))
+  }, [intentType])
+
+  // Reset lever values when intent changes
+  React.useEffect(() => {
+    setLeverValues(defaultLeverValues(intentType))
+  }, [intentType])
 
   /* ── Baseline guard ── */
   if (!baseline) {
@@ -331,32 +350,57 @@ export default function DecisionPage() {
           <div className={css.glassPanelInner}>
             <div className={css.sectionTitle}>
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 3v10M8 3v10M12 3v10" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" strokeLinecap="round"/><circle cx="4" cy="6" r="2" fill="rgba(34,211,238,0.3)" stroke="rgba(34,211,238,0.6)" strokeWidth="1"/><circle cx="8" cy="10" r="2" fill="rgba(34,211,238,0.3)" stroke="rgba(34,211,238,0.6)" strokeWidth="1"/><circle cx="12" cy="7" r="2" fill="rgba(34,211,238,0.3)" stroke="rgba(34,211,238,0.6)" strokeWidth="1"/></svg>
-              Levers
+              Scenario Levers
+              <span className={css.leverIntentTag}>{selectedIntentLabel}</span>
             </div>
 
-            {/* Placeholder — no sliders exist yet; Phase 4 prep */}
-            <div className={css.leverPlaceholder}>
-              <div className={css.leverPlaceholderIcon}>
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 4v12M10 4v12M15 4v12" stroke="rgba(34,211,238,0.5)" strokeWidth="1.5" strokeLinecap="round"/></svg>
-              </div>
-              <div className={css.leverPlaceholderTitle}>Intent-Based Levers</div>
-              <div className={css.leverPlaceholderDesc}>
-                Coming next: configure scenario levers tuned to your decision type.
-              </div>
-              <div className={css.leverIntentTag}>{selectedIntentLabel}</div>
-            </div>
-
-            <div className={css.leverSeparator} />
-
-            {/* Lever hints for selected intent */}
-            <div>
-              {INTENT_LEVER_HINTS[intentType].map((hint) => (
-                <div key={hint} className={css.leverHintRow}>
-                  <span className={css.leverHintDot} />
-                  <span>{hint}</span>
+            {activeSchema.length > 0 ? (
+              <>
+                <div className={css.leverGroup}>
+                  {activeSchema.map((lever) => {
+                    const val = leverValues[lever.id] ?? lever.default
+                    const isDefault = val === lever.default
+                    return (
+                      <div key={lever.id} className={css.leverRow}>
+                        <div className={css.leverHeader}>
+                          <span className={css.leverLabel}>{lever.label}</span>
+                          <span className={css.leverValue} style={{ color: isDefault ? "rgba(255,255,255,0.35)" : undefined }}>
+                            {formatLeverValue(val, lever)}
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          className={css.leverSlider}
+                          min={lever.min}
+                          max={lever.max}
+                          step={lever.step}
+                          value={val}
+                          onChange={(e) => updateLever(lever.id, Number(e.target.value))}
+                        />
+                        <div className={css.leverRange}>
+                          <span>{lever.min}{lever.unit}</span>
+                          <span>{lever.max}{lever.unit}</span>
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
-              ))}
-            </div>
+                <button type="button" className={css.leverResetBtn} onClick={resetLevers}>
+                  Reset to defaults
+                </button>
+              </>
+            ) : (
+              /* Placeholder for "other" intent with no schema */
+              <div className={css.leverPlaceholder}>
+                <div className={css.leverPlaceholderIcon}>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 4v12M10 4v12M15 4v12" stroke="rgba(34,211,238,0.5)" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                </div>
+                <div className={css.leverPlaceholderTitle}>No Levers Required</div>
+                <div className={css.leverPlaceholderDesc}>
+                  Select a specific decision type to configure scenario levers.
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -371,6 +415,25 @@ export default function DecisionPage() {
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 4h10M3 8h7M3 12h10" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" strokeLinecap="round"/></svg>
                 Assumptions
               </div>
+
+              {/* Live lever values */}
+              {activeSchema.length > 0 && (
+                <>
+                  <ul className={css.assumptionLeverList}>
+                    {activeSchema.map((lever) => {
+                      const val = leverValues[lever.id] ?? lever.default
+                      return (
+                        <li key={lever.id} className={css.assumptionLeverItem}>
+                          <span className={css.assumptionLeverLabel}>{lever.label}</span>
+                          <span className={css.assumptionLeverValue}>{formatLeverValue(val, lever)}</span>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                  <div className={css.assumptionDivider} />
+                </>
+              )}
+
               <ul className={css.assumptionsList}>
                 {INTENT_ASSUMPTIONS[intentType].map((a) => (
                   <li key={a} className={css.assumptionItem}>

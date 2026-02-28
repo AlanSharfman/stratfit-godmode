@@ -374,6 +374,145 @@
   flex-shrink: 0;
 }
 
+/* ── Slider lever rows ── */
+.leverGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.leverRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.leverHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.leverLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.leverValue {
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: rgba(34, 211, 238, 0.8);
+  min-width: 40px;
+  text-align: right;
+}
+
+.leverSlider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  outline: none;
+  transition: background 0.15s;
+  cursor: pointer;
+}
+
+.leverSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #22d3ee;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 6px rgba(34, 211, 238, 0.3);
+  cursor: pointer;
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.leverSlider::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+  transform: scale(1.1);
+}
+
+.leverSlider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #22d3ee;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 6px rgba(34, 211, 238, 0.3);
+  cursor: pointer;
+}
+
+.leverRange {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.2);
+  margin-top: 1px;
+}
+
+.leverResetBtn {
+  margin-top: 8px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  text-align: center;
+  width: 100%;
+}
+
+.leverResetBtn:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ── Assumption lever values ── */
+.assumptionLeverList {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.assumptionLeverItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 5px;
+  background: rgba(34, 211, 238, 0.04);
+  border: 1px solid rgba(34, 211, 238, 0.08);
+}
+
+.assumptionLeverLabel {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.assumptionLeverValue {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: rgba(34, 211, 238, 0.7);
+}
+
+.assumptionDivider {
+  margin: 8px 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+}
+
 /* ── Assumptions panel ── */
 .assumptionsList {
   list-style: none;
