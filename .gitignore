@@ -1,3 +1,11 @@
+# Artifacts / backups
+*.zip
+*.7z
+*.rar
+/backups/
+/audits/
+/tmp/
+
 # Logs
 logs
 *.log
