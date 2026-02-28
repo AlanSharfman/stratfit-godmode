@@ -149,25 +149,7 @@ export default function DecisionPage() {
     setLeverValues(defaultLeverValues(intentType))
   }, [intentType])
 
-  /* ── Baseline guard ── */
-  if (!baseline) {
-    return (
-      <div className={css.page}>
-        <div className={css.guardPage}>
-          <div className={css.guardIcon}>&#9651;</div>
-          <h2 className={css.guardTitle}>Baseline Required</h2>
-          <p className={css.guardDesc}>
-            Complete the Initiate step first to establish your company baseline before running simulations.
-          </p>
-          <button type="button" className={css.btnPrimary} onClick={() => navigate("/initiate")}>
-            Go to Initiate &#8594;
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  /* ── Run trigger — UNCHANGED from prior version ── */
+  /* ── Run trigger ── */
   async function handleRun() {
     setError(null)
     const text = decisionText.trim()
@@ -210,16 +192,36 @@ export default function DecisionPage() {
     }
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── Derived values ── */
-  const baselineChips = useMemo(() => [
-    { label: "Cash", value: baseline.cash >= 1_000_000 ? `$${(baseline.cash / 1_000_000).toFixed(1)}M` : `$${(baseline.cash / 1_000).toFixed(0)}K` },
-    { label: "Burn", value: `$${(baseline.monthlyBurn / 1_000).toFixed(0)}K/mo` },
-    { label: "Runway", value: baseline.monthlyBurn > 0 ? `${Math.round(baseline.cash / baseline.monthlyBurn)}mo` : "\u2014" },
-    { label: "Growth", value: `${(baseline.growthRate * 100).toFixed(1)}%` },
-  ], [baseline])
+  const baselineChips = useMemo(() => {
+    if (!baseline) return []
+    return [
+      { label: "Cash", value: baseline.cash >= 1_000_000 ? `$${(baseline.cash / 1_000_000).toFixed(1)}M` : `$${(baseline.cash / 1_000).toFixed(0)}K` },
+      { label: "Burn", value: `$${(baseline.monthlyBurn / 1_000).toFixed(0)}K/mo` },
+      { label: "Runway", value: baseline.monthlyBurn > 0 ? `${Math.round(baseline.cash / baseline.monthlyBurn)}mo` : "\u2014" },
+      { label: "Growth", value: `${(baseline.growthRate * 100).toFixed(1)}%` },
+    ]
+  }, [baseline])
+
+  /* ── Baseline guard ── */
+  if (!baseline) {
+    return (
+      <div className={css.page}>
+        <div className={css.guardPage}>
+          <div className={css.guardIcon}>&#9651;</div>
+          <h2 className={css.guardTitle}>Baseline Required</h2>
+          <p className={css.guardDesc}>
+            Complete the Initiate step first to establish your company baseline before running simulations.
+          </p>
+          <button type="button" className={css.btnPrimary} onClick={() => navigate("/initiate")}>
+            Go to Initiate &#8594;
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className={css.page}>
