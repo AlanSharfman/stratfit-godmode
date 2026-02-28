@@ -5,9 +5,11 @@ import { useCanonicalBaseline } from "@/state/useCanonicalBaseline"
 import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore"
 import { DECISION_INTENT_OPTIONS, type DecisionIntentType } from "@/state/phase1ScenarioStore"
 import { runDecisionPipeline } from "@/core/decision/runDecisionPipeline"
+import css from "./DecisionConsole.module.css"
 
 /* ═══════════════════════════════════════════════════════════
-   Decision Command Centre — Premium Executive Workspace
+   Decision Console — Institutional Three-Rail Layout
+   Question → Intent → Levers → Assumptions → Run
    ═══════════════════════════════════════════════════════════ */
 
 const MIN_CHARS = 10
@@ -38,6 +40,58 @@ const FEEDBACK_CONFIG: Record<FeedbackState, { label: string; color: string; dot
   ready:   { label: "Decision captured — ready to simulate",  color: "#22d3ee", dot: "#22d3ee" },
   running: { label: "Simulation in progress\u2026",           color: "#fbbf24", dot: "#fbbf24" },
   done:    { label: "Scenario created — view in Position",    color: "#22c55e", dot: "#22c55e" },
+}
+
+/* ─── Intent-based assumptions (static copy — Phase 4 prep) ── */
+
+const INTENT_ASSUMPTIONS: Record<DecisionIntentType, string[]> = {
+  hiring: [
+    "Headcount increases by specified amount",
+    "Monthly burn increases proportionally",
+    "Revenue ramp starts after onboarding window",
+    "Runway shortens until revenue offsets cost",
+  ],
+  pricing: [
+    "Revenue per account changes by adjustment factor",
+    "Churn risk shifts based on price elasticity",
+    "Gross margin recalculates from new ARPA",
+    "Growth rate may slow during transition",
+  ],
+  cost_reduction: [
+    "Monthly burn decreases by target percentage",
+    "Headcount may reduce proportionally",
+    "Runway extends from lower cash drain",
+    "Growth rate may decelerate temporarily",
+  ],
+  fundraising: [
+    "Cash balance increases by raise amount",
+    "Dilution applied at specified valuation",
+    "Monthly burn may increase post-raise",
+    "Runway extends significantly",
+  ],
+  growth_investment: [
+    "Monthly burn increases for growth spend",
+    "Growth rate accelerates by investment factor",
+    "Revenue compounds over 6–12 month horizon",
+    "Runway shortens during investment phase",
+  ],
+  other: [
+    "Scenario runs with current baseline inputs",
+    "All levers remain at default values",
+    "24-month projection from current position",
+    "Probability signals reflect baseline trajectory",
+  ],
+}
+
+/* ─── Lever hints per intent (Phase 4 prep — read-only) ── */
+
+const INTENT_LEVER_HINTS: Record<DecisionIntentType, string[]> = {
+  hiring:            ["New hires", "Avg. salary", "Ramp time (months)", "Revenue per head"],
+  pricing:           ["Price change %", "Churn sensitivity", "Volume impact", "Rollout timeline"],
+  cost_reduction:    ["Burn reduction %", "Headcount change", "Efficiency gain", "Timeline"],
+  fundraising:       ["Raise amount", "Pre-money valuation", "Use of proceeds split", "Close timeline"],
+  growth_investment: ["Investment amount", "Growth multiplier", "Payback period", "Channel mix"],
+  other:             ["Custom lever 1", "Custom lever 2", "Timeline", "Confidence"],
 }
 
 /* ─── Component ──────────────────────────────────────────── */
@@ -71,21 +125,22 @@ export default function DecisionPage() {
   const feedback = deriveFeedback(decisionText, isCreating, isDone)
   const fb = FEEDBACK_CONFIG[feedback]
 
+  const selectedIntentLabel = useMemo(
+    () => DECISION_INTENT_OPTIONS.find((o) => o.value === intentType)?.label ?? "Other",
+    [intentType],
+  )
+
   /* ── Baseline guard ── */
   if (!baseline) {
     return (
-      <div style={PAGE}>
-        <div style={{ ...CONTAINER, textAlign: "center", paddingTop: 100 }}>
-          <div style={{ fontSize: 40, marginBottom: 16 }}>&#9651;</div>
-          <h2 style={{ margin: "0 0 12px", color: "#fff", fontSize: 22, fontWeight: 600 }}>Baseline Required</h2>
-          <p style={{ opacity: 0.5, marginBottom: 24, fontSize: 14, maxWidth: 400, margin: "0 auto 24px" }}>
+      <div className={css.page}>
+        <div className={css.guardPage}>
+          <div className={css.guardIcon}>&#9651;</div>
+          <h2 className={css.guardTitle}>Baseline Required</h2>
+          <p className={css.guardDesc}>
             Complete the Initiate step first to establish your company baseline before running simulations.
           </p>
-          <button
-            type="button"
-            style={BTN_PRIMARY}
-            onClick={() => navigate("/initiate")}
-          >
+          <button type="button" className={css.btnPrimary} onClick={() => navigate("/initiate")}>
             Go to Initiate &#8594;
           </button>
         </div>
@@ -93,6 +148,7 @@ export default function DecisionPage() {
     )
   }
 
+  /* ── Run trigger — UNCHANGED from prior version ── */
   async function handleRun() {
     setError(null)
     const text = decisionText.trim()
@@ -138,385 +194,255 @@ export default function DecisionPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  /* ── Derived values ── */
+  const baselineChips = useMemo(() => [
+    { label: "Cash", value: baseline.cash >= 1_000_000 ? `$${(baseline.cash / 1_000_000).toFixed(1)}M` : `$${(baseline.cash / 1_000).toFixed(0)}K` },
+    { label: "Burn", value: `$${(baseline.monthlyBurn / 1_000).toFixed(0)}K/mo` },
+    { label: "Runway", value: baseline.monthlyBurn > 0 ? `${Math.round(baseline.cash / baseline.monthlyBurn)}mo` : "\u2014" },
+    { label: "Growth", value: `${(baseline.growthRate * 100).toFixed(1)}%` },
+  ], [baseline])
+
   return (
-    <div style={PAGE}>
+    <div className={css.page}>
       {/* ═══ Ambient atmosphere ═══ */}
-      <div style={ATMO_GLOW} aria-hidden="true" />
+      <div className={css.atmoGlow} aria-hidden="true" />
 
-      <div style={CONTAINER}>
+      {/* ═══ TOP BAR ═══ */}
+      <div className={css.topBar}>
+        <nav className={css.breadcrumb}>
+          <span className={css.breadcrumbLink} onClick={() => navigate("/initiate")}>INITIATE</span>
+          <span className={css.breadcrumbSep}>/</span>
+          <span className={css.breadcrumbActive}>DECISION</span>
+        </nav>
+        <h1 className={css.pageTitle}>Decision Console</h1>
+        <p className={css.pageSubtitle}>
+          Translate a decision into scenario levers. Run the model. Read probability signals.
+        </p>
+        <div className={css.headerDivider} />
+      </div>
 
-        {/* ═══════════════════════════════════════
-            TOP — Context Header
-            ═══════════════════════════════════════ */}
-        <header style={{ marginBottom: 32 }}>
-          {/* Breadcrumb */}
-          <nav style={{ marginBottom: 20, fontSize: 11, letterSpacing: "0.08em", display: "flex", alignItems: "center", gap: 6 }}>
-            <span
-              style={{ cursor: "pointer", color: "rgba(255,255,255,0.4)", transition: "color 0.15s" }}
-              onClick={() => navigate("/initiate")}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.7)")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.4)")}
-            >
-              INITIATE
-            </span>
-            <span style={{ color: "rgba(255,255,255,0.2)" }}>/</span>
-            <span style={{ color: "#22d3ee", fontWeight: 600 }}>DECISION</span>
-          </nav>
+      {/* ═══ THREE-RAIL CONSOLE ═══ */}
+      <div className={css.consoleGrid}>
 
-          {/* Title */}
-          <h1 style={{
-            margin: 0, fontSize: 28, fontWeight: 700, color: "#fff",
-            letterSpacing: "-0.01em", lineHeight: 1.2,
-          }}>
-            Strategic Decision Engine
-          </h1>
-          <p style={{
-            margin: "8px 0 0", fontSize: 14, color: "rgba(255,255,255,0.45)",
-            lineHeight: 1.5,
-          }}>
-            Define the decision STRATFIT will simulate across a 24-month horizon.
-          </p>
-
-          {/* Divider */}
-          <div style={{
-            marginTop: 20, height: 1,
-            background: "linear-gradient(90deg, rgba(34,211,238,0.3) 0%, rgba(34,211,238,0.05) 60%, transparent 100%)",
-          }} />
-
-          {/* Baseline chips */}
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 16 }}>
-            {[
-              { label: "Cash", value: baseline.cash >= 1_000_000 ? `$${(baseline.cash / 1_000_000).toFixed(1)}M` : `$${(baseline.cash / 1_000).toFixed(0)}K` },
-              { label: "Burn", value: `$${(baseline.monthlyBurn / 1_000).toFixed(0)}K/mo` },
-              { label: "Runway", value: baseline.monthlyBurn > 0 ? `${Math.round(baseline.cash / baseline.monthlyBurn)}mo` : "\u2014" },
-              { label: "Growth", value: `${(baseline.growthRate * 100).toFixed(1)}%` },
-            ].map((chip) => (
-              <span key={chip.label} style={CHIP}>
-                <span style={{ opacity: 0.5 }}>{chip.label}</span>{" "}
-                <span style={{ fontWeight: 600, color: "rgba(255,255,255,0.8)" }}>{chip.value}</span>
-              </span>
-            ))}
-          </div>
-        </header>
-
-        {/* ═══════════════════════════════════════
-            MIDDLE — Decision Input Panel
-            ═══════════════════════════════════════ */}
-        <section style={{
-          ...PANEL,
-          borderColor: focused ? "rgba(34,211,238,0.35)" : "rgba(255,255,255,0.08)",
-          boxShadow: focused
-            ? "0 0 0 1px rgba(34,211,238,0.15), 0 8px 32px rgba(0,0,0,0.4)"
-            : "0 4px 24px rgba(0,0,0,0.3)",
-        }}>
-          <div style={{
-            display: "flex", justifyContent: "space-between", alignItems: "baseline",
-            marginBottom: 12,
-          }}>
-            <label style={{
-              fontSize: 10, fontWeight: 700, textTransform: "uppercase",
-              letterSpacing: "0.12em", color: "rgba(34,211,238,0.7)",
-            }}>
-              Decision Statement
-            </label>
-            <span style={{
-              fontSize: 11, fontVariantNumeric: "tabular-nums",
-              color: decisionText.length >= 500 ? "#fbbf24"
-                : decisionText.length >= MIN_CHARS ? "rgba(34,211,238,0.5)"
-                : "rgba(255,255,255,0.25)",
-              transition: "color 0.2s",
-            }}>
-              {decisionText.length}/500
-            </span>
-          </div>
-
-          {/* Error */}
-          {error && (
-            <div style={{
-              marginBottom: 12, padding: "10px 14px", borderRadius: 8,
-              background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)",
-              fontSize: 13, color: "#f87171",
-            }}>
-              {error}
-            </div>
-          )}
-
-          {/* Textarea — NEVER disabled */}
-          <textarea
-            ref={textareaRef}
-            value={decisionText}
-            onChange={(e) => { setDecisionText(e.target.value.slice(0, 500)); setIsDone(false) }}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            placeholder="What strategic decision should STRATFIT simulate?"
-            maxLength={500}
-            disabled={false}
-            style={{
-              ...TEXTAREA,
-              borderColor: focused ? "rgba(34,211,238,0.4)" : "rgba(255,255,255,0.1)",
-              boxShadow: focused ? "0 0 0 3px rgba(34,211,238,0.08)" : "none",
-            }}
-          />
-
-          {/* ── Intent selector (MVP deterministic) ── */}
-          <div style={{ marginTop: 14 }}>
-            <label style={{
-              display: "block", fontSize: 10, fontWeight: 700, textTransform: "uppercase",
-              letterSpacing: "0.12em", color: "rgba(34,211,238,0.7)", marginBottom: 8,
-            }}>
-              What decision are you evaluating?
-            </label>
-            <select
-              value={intentType}
-              onChange={(e) => { setIntentType(e.target.value as DecisionIntentType); setIsDone(false) }}
-              disabled={isCreating}
-              style={{
-                width: "100%", padding: "10px 14px", borderRadius: 10,
-                border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)",
-                color: "#fff", fontSize: 14, fontFamily: "inherit",
-                outline: "none", cursor: "pointer",
-                appearance: "none" as const,
-                WebkitAppearance: "none" as const,
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 5l3 3 3-3' stroke='%2322d3ee' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`,
-                backgroundRepeat: "no-repeat",
-                backgroundPosition: "right 14px center",
-                transition: "border-color 0.15s",
-              }}
-              onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(34,211,238,0.4)" }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)" }}
-            >
-              {DECISION_INTENT_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value} style={{ background: "#0f172a", color: "#fff" }}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Example prompts */}
-          {decisionText.length === 0 && !isCreating && !isDone && (
-            <div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 6 }}>
-              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", marginRight: 4, lineHeight: "26px" }}>Try:</span>
-              {EXAMPLE_PROMPTS.map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => { setDecisionText(p); textareaRef.current?.focus() }}
-                  style={{
-                    padding: "4px 10px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.08)",
-                    background: "rgba(255,255,255,0.02)", color: "rgba(255,255,255,0.45)",
-                    fontSize: 11, cursor: "pointer", transition: "border-color 0.15s, color 0.15s",
-                    lineHeight: 1.4,
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(34,211,238,0.3)"; e.currentTarget.style.color = "rgba(255,255,255,0.7)" }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "rgba(255,255,255,0.45)" }}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Actions */}
-          <div style={{ marginTop: 16, display: "flex", gap: 12, alignItems: "center" }}>
-            <button
-              type="button"
-              onClick={handleRun}
-              disabled={!canRun}
-              style={{
-                ...BTN_PRIMARY,
-                opacity: canRun ? 1 : 0.4,
-                cursor: canRun ? "pointer" : "not-allowed",
-                transform: canRun ? "translateY(0)" : "none",
-                transition: "opacity 0.2s, transform 0.15s, box-shadow 0.15s",
-              }}
-              onMouseEnter={(e) => { if (canRun) { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(34,211,238,0.25)" } }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 2px 12px rgba(34,211,238,0.15)" }}
-            >
-              {isCreating ? (
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                  <span style={{
-                    width: 14, height: 14, border: "2px solid rgba(0,0,0,0.2)",
-                    borderTopColor: "#000", borderRadius: "50%",
-                    display: "inline-block",
-                    animation: "decisionSpin 0.6s linear infinite",
-                  }} />
-                  Running\u2026
+        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            LEFT RAIL — Decision Brief
+            ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+        <div>
+          {/* Section 1: Decision Question */}
+          <div className={`${css.glassPanel} ${focused ? css.glassPanelFocused : ""}`}>
+            <div className={css.glassPanelInner}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
+                <div className={css.sectionTitle}>
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                  Decision Question
+                </div>
+                <span className={css.charCount} style={{
+                  color: decisionText.length >= 500 ? "#fbbf24"
+                    : decisionText.length >= MIN_CHARS ? "rgba(34,211,238,0.5)"
+                    : "rgba(255,255,255,0.25)",
+                }}>
+                  {decisionText.length}/500
                 </span>
-              ) : isDone ? (
-                "\u2713 Scenario Created"
-              ) : (
-                "Run Simulation \u2192"
+              </div>
+
+              {error && <div className={css.errorBanner}>{error}</div>}
+
+              <textarea
+                ref={textareaRef}
+                className={css.textarea}
+                value={decisionText}
+                onChange={(e) => { setDecisionText(e.target.value.slice(0, 500)); setIsDone(false) }}
+                onFocus={() => setFocused(true)}
+                onBlur={() => setFocused(false)}
+                placeholder="e.g. Should we hire 3 engineers in Q2?"
+                maxLength={500}
+                disabled={false}
+              />
+
+              {/* Example prompts */}
+              {decisionText.length === 0 && !isCreating && !isDone && (
+                <div className={css.exampleStrip}>
+                  <span className={css.exampleLabel}>Try:</span>
+                  {EXAMPLE_PROMPTS.map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      className={css.exampleBtn}
+                      onClick={() => { setDecisionText(p); textareaRef.current?.focus() }}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
               )}
-            </button>
 
-            <button
-              type="button"
-              onClick={() => navigate("/initiate")}
-              style={BTN_GHOST}
-              onMouseEnter={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)")}
-              onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)")}
-            >
-              \u2190 Back to Initiate
-            </button>
-
-            {/* Keyboard shortcut hint */}
-            {canRun && (
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginLeft: "auto" }}>
-                <kbd style={{ padding: "2px 5px", borderRadius: 4, border: "1px solid rgba(255,255,255,0.12)", fontSize: 10, fontFamily: "'Inter', system-ui, monospace" }}>Ctrl</kbd>
-                {" + "}
-                <kbd style={{ padding: "2px 5px", borderRadius: 4, border: "1px solid rgba(255,255,255,0.12)", fontSize: 10, fontFamily: "'Inter', system-ui, monospace" }}>\u21B5</kbd>
-              </span>
-            )}
-          </div>
-        </section>
-
-        {/* ═══════════════════════════════════════
-            BOTTOM — Feedback Strip + Visual Bridge
-            ═══════════════════════════════════════ */}
-        <div style={{ marginTop: 20 }}>
-          {/* Status strip */}
-          <div style={{
-            display: "flex", alignItems: "center", gap: 10,
-            padding: "12px 16px", borderRadius: 10,
-            background: "rgba(255,255,255,0.02)",
-            border: "1px solid rgba(255,255,255,0.05)",
-            transition: "opacity 0.3s",
-          }}>
-            <div style={{
-              width: 8, height: 8, borderRadius: "50%",
-              background: fb.dot,
-              boxShadow: feedback === "running" ? `0 0 8px ${fb.dot}` : "none",
-              animation: feedback === "running" ? "decisionPulse 1.2s ease-in-out infinite" : "none",
-              transition: "background 0.3s, box-shadow 0.3s",
-              flexShrink: 0,
-            }} />
-            <span style={{
-              fontSize: 12, color: fb.color, fontWeight: 500,
-              transition: "color 0.3s",
-            }}>
-              {fb.label}
-            </span>
+              {/* Warning: no question */}
+              {decisionText.trim().length === 0 && !isCreating && !isDone && (
+                <div className={css.warningBanner}>
+                  Add a decision question for clearer intelligence framing.
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Visual bridge */}
-          <div style={{
-            marginTop: 16, textAlign: "center",
-            display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
-          }}>
-            <div style={{
-              width: 1, height: 24,
-              background: "linear-gradient(180deg, rgba(34,211,238,0.2) 0%, rgba(34,211,238,0.04) 100%)",
-            }} />
-            <span style={{
-              fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase",
-              color: "rgba(255,255,255,0.2)", fontWeight: 600,
-            }}>
-              Simulation results will appear in Position
-            </span>
-            <div style={{
-              width: 60, height: 1,
-              background: "linear-gradient(90deg, transparent, rgba(34,211,238,0.15), transparent)",
-            }} />
+          {/* Section 2: Decision Intent */}
+          <div className={css.glassPanel} style={{ marginTop: 16 }}>
+            <div className={css.glassPanelInner}>
+              <div className={css.sectionTitle}>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                Decision Type
+              </div>
+              <select
+                className={css.intentSelect}
+                value={intentType}
+                onChange={(e) => { setIntentType(e.target.value as DecisionIntentType); setIsDone(false) }}
+                disabled={isCreating}
+              >
+                {DECISION_INTENT_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Section 3: Scenario Snapshot */}
+          <div className={css.glassPanel} style={{ marginTop: 16 }}>
+            <div className={css.glassPanelInner}>
+              <div className={css.sectionTitle}>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="2" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" fill="none"/><path d="M5 7h6M5 10h4" stroke="rgba(34,211,238,0.6)" strokeWidth="1" strokeLinecap="round"/></svg>
+                Scenario Snapshot
+              </div>
+              <div className={css.chipStrip}>
+                {baselineChips.map((c) => (
+                  <span key={c.label} className={css.chip}>
+                    <span style={{ opacity: 0.5 }}>{c.label}</span>{" "}
+                    <span className={css.chipValue}>{c.value}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            CENTER — Levers Panel
+            ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+        <div className={`${css.glassPanel} ${css.leversPanel}`}>
+          <div className={css.glassPanelInner}>
+            <div className={css.sectionTitle}>
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 3v10M8 3v10M12 3v10" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" strokeLinecap="round"/><circle cx="4" cy="6" r="2" fill="rgba(34,211,238,0.3)" stroke="rgba(34,211,238,0.6)" strokeWidth="1"/><circle cx="8" cy="10" r="2" fill="rgba(34,211,238,0.3)" stroke="rgba(34,211,238,0.6)" strokeWidth="1"/><circle cx="12" cy="7" r="2" fill="rgba(34,211,238,0.3)" stroke="rgba(34,211,238,0.6)" strokeWidth="1"/></svg>
+              Levers
+            </div>
+
+            {/* Placeholder — no sliders exist yet; Phase 4 prep */}
+            <div className={css.leverPlaceholder}>
+              <div className={css.leverPlaceholderIcon}>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 4v12M10 4v12M15 4v12" stroke="rgba(34,211,238,0.5)" strokeWidth="1.5" strokeLinecap="round"/></svg>
+              </div>
+              <div className={css.leverPlaceholderTitle}>Intent-Based Levers</div>
+              <div className={css.leverPlaceholderDesc}>
+                Coming next: configure scenario levers tuned to your decision type.
+              </div>
+              <div className={css.leverIntentTag}>{selectedIntentLabel}</div>
+            </div>
+
+            <div className={css.leverSeparator} />
+
+            {/* Lever hints for selected intent */}
+            <div>
+              {INTENT_LEVER_HINTS[intentType].map((hint) => (
+                <div key={hint} className={css.leverHintRow}>
+                  <span className={css.leverHintDot} />
+                  <span>{hint}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            RIGHT RAIL — Assumptions + Run
+            ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+        <div>
+          {/* Assumptions Strip */}
+          <div className={css.glassPanel}>
+            <div className={css.glassPanelInner}>
+              <div className={css.sectionTitle}>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 4h10M3 8h7M3 12h10" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                Assumptions
+              </div>
+              <ul className={css.assumptionsList}>
+                {INTENT_ASSUMPTIONS[intentType].map((a) => (
+                  <li key={a} className={css.assumptionItem}>
+                    <span className={css.assumptionIcon}>&#x25B8;</span>
+                    <span>{a}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Run Panel */}
+          <div className={css.glassPanel} style={{ marginTop: 16 }}>
+            <div className={css.glassPanelInner}>
+              <div className={css.runPanelAccent} />
+              <div className={css.sectionTitle}>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><polygon points="5,3 13,8 5,13" fill="rgba(34,211,238,0.6)"/></svg>
+                Simulate
+              </div>
+
+              <button
+                type="button"
+                className={css.btnPrimary}
+                disabled={!canRun}
+                onClick={handleRun}
+              >
+                {isCreating ? (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 8, justifyContent: "center" }}>
+                    <span className={css.spinner} />
+                    Running&hellip;
+                  </span>
+                ) : isDone ? (
+                  "\u2713 Scenario Created"
+                ) : (
+                  "Run Simulation \u2192"
+                )}
+              </button>
+
+              <button
+                type="button"
+                className={css.btnGhost}
+                onClick={() => navigate("/initiate")}
+              >
+                &larr; Back to Initiate
+              </button>
+
+              {/* Keyboard shortcut hint */}
+              {canRun && (
+                <div className={css.kbdHint}>
+                  <kbd className={css.kbd}>Ctrl</kbd>
+                  {" + "}
+                  <kbd className={css.kbd}>&crarr;</kbd>
+                </div>
+              )}
+
+              {/* Status strip */}
+              <div className={css.statusStrip}>
+                <div
+                  className={`${css.statusDot} ${feedback === "running" ? css.statusDotPulse : ""}`}
+                  style={{
+                    background: fb.dot,
+                    boxShadow: feedback === "running" ? `0 0 8px ${fb.dot}` : "none",
+                  }}
+                />
+                <span className={css.statusLabel} style={{ color: fb.color }}>
+                  {fb.label}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Keyframe animations */}
-      <style>{`
-        @keyframes decisionSpin {
-          to { transform: rotate(360deg); }
-        }
-        @keyframes decisionPulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.3; }
-        }
-      `}</style>
     </div>
   )
-}
-
-/* ═══════════════════════════════════════════════════════════
-   Styles — Premium Decision Command Centre
-   ═══════════════════════════════════════════════════════════ */
-
-const PAGE: React.CSSProperties = {
-  minHeight: "100vh",
-  background: "linear-gradient(180deg, #0a0e17 0%, #0f1520 40%, #101829 100%)",
-  color: "#e2e8f0",
-  fontFamily: "'Inter', system-ui, sans-serif",
-  position: "relative",
-  overflow: "hidden",
-}
-
-const ATMO_GLOW: React.CSSProperties = {
-  position: "absolute",
-  top: -120, left: "50%", transform: "translateX(-50%)",
-  width: 600, height: 300,
-  background: "radial-gradient(ellipse, rgba(34,211,238,0.04) 0%, transparent 70%)",
-  pointerEvents: "none",
-}
-
-const CONTAINER: React.CSSProperties = {
-  position: "relative",
-  maxWidth: 720,
-  margin: "0 auto",
-  padding: "48px 28px 60px",
-}
-
-const PANEL: React.CSSProperties = {
-  padding: "24px 24px 20px",
-  borderRadius: 16,
-  background: "rgba(255,255,255,0.03)",
-  border: "1px solid rgba(255,255,255,0.08)",
-  transition: "border-color 0.2s, box-shadow 0.2s",
-}
-
-const TEXTAREA: React.CSSProperties = {
-  width: "100%",
-  padding: "14px 16px",
-  borderRadius: 10,
-  border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(0,0,0,0.25)",
-  color: "#fff",
-  outline: "none",
-  resize: "vertical",
-  fontSize: 15,
-  lineHeight: 1.6,
-  minHeight: 140,
-  transition: "border-color 0.2s, box-shadow 0.2s",
-}
-
-const CHIP: React.CSSProperties = {
-  padding: "4px 10px",
-  borderRadius: 6,
-  fontSize: 11,
-  background: "rgba(255,255,255,0.03)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  color: "rgba(255,255,255,0.5)",
-}
-
-const BTN_PRIMARY: React.CSSProperties = {
-  padding: "12px 24px",
-  borderRadius: 10,
-  border: "none",
-  background: "linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%)",
-  color: "#000",
-  fontWeight: 700,
-  fontSize: 14,
-  letterSpacing: "0.02em",
-  boxShadow: "0 2px 12px rgba(34,211,238,0.15)",
-  cursor: "pointer",
-}
-
-const BTN_GHOST: React.CSSProperties = {
-  padding: "12px 20px",
-  borderRadius: 10,
-  border: "1px solid rgba(255,255,255,0.12)",
-  background: "transparent",
-  color: "rgba(255,255,255,0.6)",
-  fontWeight: 500,
-  fontSize: 13,
-  cursor: "pointer",
-  transition: "border-color 0.15s, color 0.15s",
 }
