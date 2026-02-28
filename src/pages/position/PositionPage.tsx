@@ -62,6 +62,43 @@ function shlIsOn(weight: number): boolean {
   return weight > 0
 }
 
+/* ─── Deterministic hash for decision text → terrain morph ─── */
+
+/** Simple 32-bit string hash (djb2). Deterministic, no deps. */
+function hashString(str: string): number {
+  let h = 5381
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) + h + str.charCodeAt(i)) | 0
+  }
+  return h >>> 0 // unsigned
+}
+
+/** Map a hash to a bounded multiplier in [lo, hi]. */
+function hashToMultiplier(hash: number, bits: number, lo: number, hi: number): number {
+  // Use `bits` worth of entropy from the hash
+  const frac = ((hash >>> bits) & 0xff) / 255 // 0..1
+  return lo + frac * (hi - lo)
+}
+
+/**
+ * Given baseline inputs and a decision string, produce a new inputs object
+ * with subtle deterministic perturbations so the terrain visibly differs.
+ */
+function morphInputs(
+  base: Record<string, unknown>,
+  decision: string,
+): Record<string, unknown> {
+  const h = hashString(decision)
+  return {
+    ...base,
+    cash:        (Number(base.cash) || 0)        * hashToMultiplier(h, 0, 0.92, 1.08),
+    burnRate:    (Number(base.burnRate) || 0)     * hashToMultiplier(h, 4, 0.92, 1.10),
+    growthRate:  (Number(base.growthRate) || 0)   * hashToMultiplier(h, 8, 0.90, 1.15),
+    grossMargin: (Number(base.grossMargin) || 0) * hashToMultiplier(h, 12, 0.95, 1.05),
+    revenue:     (Number(base.revenue) || 0)     * hashToMultiplier(h, 16, 0.94, 1.06),
+  }
+}
+
 export default function PositionPage() {
   const navigate = useNavigate()
   const [granularity, setGranularity] = useState<TimeGranularity>("quarter")
@@ -101,6 +138,18 @@ export default function PositionPage() {
   const scenarios = usePhase1ScenarioStore((s) => s.scenarios)
   const runSimulation = usePhase1ScenarioStore((s) => s.runSimulation)
 
+  // Auto-run simulation if activeScenario is still in "draft"
+  const lastSimRunRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!scenarioStoreHydrated || !activeScenarioId) return
+    const active = scenarios.find((s) => s.id === activeScenarioId)
+    if (!active || active.status !== "draft") return
+    if (lastSimRunRef.current === active.id) return // already triggered
+    lastSimRunRef.current = active.id
+    runSimulation(active.id)
+  }, [scenarioStoreHydrated, activeScenarioId, scenarios, runSimulation])
+
   useEffect(() => {
     hydrateScenarios()
   }, [hydrateScenarios])
@@ -124,9 +173,22 @@ export default function PositionPage() {
     return active ? ({ ...baselineInputs, ...active.overrides } as const) : baselineInputs
   }, [baselineInputs, overrideScenarios, activeOverrideScenarioId])
 
+  // Phase 3: Morph terrain inputs based on active decision string
+  const activeDecisionText = useMemo(() => {
+    if (!activeScenarioId) return ""
+    const sc = scenarios.find((s) => s.id === activeScenarioId)
+    return sc?.decision ?? ""
+  }, [activeScenarioId, scenarios])
+
+  const morphedInputs = useMemo(() => {
+    if (!effectiveInputs) return null
+    if (!activeDecisionText) return effectiveInputs
+    return morphInputs(effectiveInputs, activeDecisionText)
+  }, [effectiveInputs, activeDecisionText])
+
   const terrainMetrics = useMemo(
-    () => (effectiveInputs ? deriveTerrainMetrics(effectiveInputs as any) : undefined),
-    [effectiveInputs],
+    () => (morphedInputs ? deriveTerrainMetrics(morphedInputs as any) : undefined),
+    [morphedInputs],
   )
 
   const engineResults = useScenarioStore((s) => s.engineResults)

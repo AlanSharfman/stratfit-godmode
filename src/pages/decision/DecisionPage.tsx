@@ -41,6 +41,7 @@ export default function DecisionPage() {
 
   const createScenario = usePhase1ScenarioStore((s) => s.createScenario)
   const setActiveScenarioId = usePhase1ScenarioStore((s) => s.setActiveScenarioId)
+  const runSimulation = usePhase1ScenarioStore((s) => s.runSimulation)
 
   const [decisionText, setDecisionText] = useState("")
   const [isCreating, setIsCreating] = useState(false)
@@ -94,6 +95,7 @@ export default function DecisionPage() {
       })
 
       setActiveScenarioId(scenarioId)
+      runSimulation(scenarioId)
       setIsDone(true)
 
       // Brief pause to show success state before navigation
