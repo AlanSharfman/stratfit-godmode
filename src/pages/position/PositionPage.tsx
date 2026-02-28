@@ -450,6 +450,7 @@ export default function PositionPage() {
           <SimulationStatusPanel
             scenario={activeScenario}
             onRunSimulation={activeScenario ? () => runSimulation(activeScenario.id) : undefined}
+            onGoToInitiate={() => navigate("/initiate")}
           />
 
           {/* Command Centre — overlay toggles + diagnostics */}

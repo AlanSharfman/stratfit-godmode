@@ -4,6 +4,7 @@ import type { Phase1Scenario, SimulationStatus } from "@/state/phase1ScenarioSto
 interface Props {
   scenario: Phase1Scenario | null | undefined
   onRunSimulation?: () => void
+  onGoToInitiate?: () => void
 }
 
 const PANEL: React.CSSProperties = {
@@ -40,7 +41,7 @@ const STATUS_LABELS: Record<SimulationStatus, string> = {
   error: "Error",
 }
 
-export default function SimulationStatusPanel({ scenario, onRunSimulation }: Props) {
+export default function SimulationStatusPanel({ scenario, onRunSimulation, onGoToInitiate }: Props) {
   if (!scenario) {
     return (
       <div style={PANEL} aria-label="Simulation Status">
@@ -86,6 +87,20 @@ export default function SimulationStatusPanel({ scenario, onRunSimulation }: Pro
           }}
         >
           {effectiveStatus === "error" ? "Retry Simulation" : "Run Simulation"}
+        </button>
+      )}
+      {effectiveStatus === "error" && onGoToInitiate && (
+        <button
+          type="button"
+          onClick={onGoToInitiate}
+          style={{
+            marginTop: 6, padding: "6px 14px", borderRadius: 8,
+            border: "1px solid rgba(255,255,255,0.12)",
+            background: "transparent", color: "rgba(255,255,255,0.6)",
+            fontWeight: 500, fontSize: 11, cursor: "pointer",
+          }}
+        >
+          Go to Initiate \u2192
         </button>
       )}
       {effectiveStatus === "running" && (
