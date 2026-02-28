@@ -47,6 +47,8 @@ import IdleMotionLayer from "./IdleMotionLayer"
 import HorizonPulse from "@/components/terrain/overlays/HorizonPulse"
 import { useReducedMotion } from "@/hooks/useReducedMotion"
 import { InsightRevealController } from "@/components/cinematic/InsightRevealController"
+import CinematicIntelligencePanel, { CINEMATIC_INTEL_KEYFRAMES } from "@/components/cinematic/CinematicIntelligencePanel"
+import { useIntelligencePresentation } from "@/hooks/useIntelligencePresentation"
 import SimulationProofOverlay from "@/components/dev/SimulationProofOverlay"
 import {
   buildPositionViewModel,
@@ -107,6 +109,11 @@ export default function PositionPage() {
     () => scenarios.find((s) => s.id === activeScenarioId) ?? null,
     [scenarios, activeScenarioId],
   )
+
+  // ── Cinematic Intelligence dual-mode controller ──
+  const { phase: intelPhase, requestDock: intelRequestDock } = useIntelligencePresentation({
+    completedAt: activeScenario?.simulationResults?.completedAt ?? null,
+  })
 
   // Auto-run simulation if activeScenario is still in "draft"
   const lastSimRunRef = useRef<string | null>(null)
@@ -589,6 +596,23 @@ export default function PositionPage() {
               scenario={activeScenario ?? null}
               baselineSnapshotId={baseline ? `bl_${typeof baseline === "object" ? "active" : "none"}` : null}
             />
+            {/* ── Cinematic Intelligence overlay (emerge phase) ── */}
+            {(intelPhase === "emerge" || intelPhase === "dock") && (
+              <div style={{
+                position: "absolute",
+                bottom: 24,
+                left: 24,
+                right: 24,
+                zIndex: 30,
+                pointerEvents: "auto",
+              }}>
+                <CinematicIntelligencePanel
+                  phase={intelPhase}
+                  onTypewriterComplete={intelRequestDock}
+                />
+              </div>
+            )}
+            <style>{CINEMATIC_INTEL_KEYFRAMES}</style>
           </div>
         </div>
 
@@ -619,7 +643,14 @@ export default function PositionPage() {
           {/* Executive Interpretation */}
           <div className={styles.baselineIntelDock} aria-label="Executive Interpretation">
             <ScenarioContextPanel />
-            <AIInsightPanel />
+            {intelPhase === "settled" ? (
+              <CinematicIntelligencePanel
+                phase={intelPhase}
+                onTypewriterComplete={intelRequestDock}
+              />
+            ) : (
+              <AIInsightPanel />
+            )}
           </div>
         </div>
       </div>
