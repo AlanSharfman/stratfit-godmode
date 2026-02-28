@@ -41,9 +41,21 @@ const STATUS_LABELS: Record<SimulationStatus, string> = {
 }
 
 export default function SimulationStatusPanel({ scenario, onRunSimulation }: Props) {
-  const status: SimulationStatus = scenario?.status ?? "draft"
-  const color = STATUS_COLORS[status]
-  const label = STATUS_LABELS[status]
+  if (!scenario) {
+    return (
+      <div style={PANEL} aria-label="Simulation Status">
+        <div style={HEADING}>Simulation</div>
+        <div style={{ fontSize: 12, opacity: 0.4 }}>No active scenario</div>
+      </div>
+    )
+  }
+
+  const status: SimulationStatus = scenario.status
+  // Truthfulness: if status is "complete" but no simulationResults, show as "running"
+  const effectiveStatus: SimulationStatus =
+    status === "complete" && !scenario.simulationResults ? "running" : status
+  const color = STATUS_COLORS[effectiveStatus]
+  const label = STATUS_LABELS[effectiveStatus]
 
   return (
     <div style={PANEL} aria-label="Simulation Status">
@@ -53,17 +65,17 @@ export default function SimulationStatusPanel({ scenario, onRunSimulation }: Pro
           width: 10, height: 10, borderRadius: "50%",
           background: color,
           boxShadow: `0 0 6px ${color}`,
-          animation: status === "running" ? "pulse 1.2s ease-in-out infinite" : undefined,
+          animation: effectiveStatus === "running" ? "pulse 1.2s ease-in-out infinite" : undefined,
         }} />
         <span style={{ fontSize: 14, fontWeight: 600, color }}>{label}</span>
       </div>
       <div style={{ fontSize: 11, opacity: 0.5 }}>
-        {status === "draft" && "Awaiting simulation run"}
-        {status === "running" && "Simulation in progress\u2026"}
-        {status === "complete" && "Results available"}
-        {status === "error" && "Baseline required \u2014 go to Initiate"}
+        {effectiveStatus === "draft" && "Awaiting simulation run"}
+        {effectiveStatus === "running" && "Simulation in progress\u2026"}
+        {effectiveStatus === "complete" && `Results available \u2014 ${new Date(scenario.simulationResults!.completedAt).toLocaleTimeString()}`}
+        {effectiveStatus === "error" && "Baseline required \u2014 go to Initiate"}
       </div>
-      {(status === "draft" || status === "error") && onRunSimulation && (
+      {(effectiveStatus === "draft" || effectiveStatus === "error") && onRunSimulation && (
         <button
           type="button"
           onClick={onRunSimulation}
@@ -73,10 +85,10 @@ export default function SimulationStatusPanel({ scenario, onRunSimulation }: Pro
             color: "#000", fontWeight: 600, fontSize: 11, cursor: "pointer",
           }}
         >
-          Run Simulation
+          {effectiveStatus === "error" ? "Retry Simulation" : "Run Simulation"}
         </button>
       )}
-      {status === "running" && (
+      {effectiveStatus === "running" && (
         <style>{`@keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.3 } }`}</style>
       )}
     </div>

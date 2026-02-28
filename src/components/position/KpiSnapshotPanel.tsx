@@ -63,10 +63,21 @@ export default function KpiSnapshotPanel({ baseline, simulationKpis }: Props) {
   const headcount = k?.headcount ?? baseline?.headcount ?? null
   const runway = k?.runway ?? (cash != null && burn != null && burn > 0 ? Math.round(cash / burn) : null)
 
+  const hasAnyData = cash != null || burn != null || revenue != null
+  const isSimulated = !!simulationKpis
+
   return (
     <div style={PANEL} aria-label="KPI Snapshot">
-      <div style={HEADING}>KPI Snapshot</div>
-      <div style={GRID}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", ...HEADING }}>
+        <span>KPI Snapshot</span>
+        {isSimulated && (
+          <span style={{ fontSize: 9, color: "#22c55e", fontWeight: 600, letterSpacing: "0.06em" }}>SIMULATED</span>
+        )}
+      </div>
+      {!hasAnyData && (
+        <div style={{ fontSize: 12, opacity: 0.4, padding: "8px 0" }}>No baseline data loaded</div>
+      )}
+      <div style={{ ...GRID, display: hasAnyData ? "grid" : "none" }}>
         <span style={LABEL}>Cash</span>
         <span style={VALUE}>{fmt(cash)}</span>
 

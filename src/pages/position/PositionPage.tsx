@@ -280,10 +280,58 @@ export default function PositionPage() {
     },
   ]
 
-  if (!scenarioStoreHydrated || !baselineHydrated) return <div style={{ padding: 24 }}>Loading…</div>
+  if (!scenarioStoreHydrated || !baselineHydrated) {
+    return (
+      <div style={{
+        minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
+        background: "linear-gradient(180deg, #0a0e17 0%, #0f1520 100%)",
+        color: "#e2e8f0", fontFamily: "'Inter', system-ui, sans-serif",
+      }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{
+            width: 24, height: 24, border: "2px solid rgba(34,211,238,0.3)",
+            borderTopColor: "#22d3ee", borderRadius: "50%",
+            animation: "posLoadSpin 0.8s linear infinite", margin: "0 auto 16px",
+          }} />
+          <span style={{ fontSize: 14, opacity: 0.6 }}>Hydrating stores\u2026</span>
+          <style>{`@keyframes posLoadSpin { to { transform: rotate(360deg) } }`}</style>
+        </div>
+      </div>
+    )
+  }
+
+  if (baselineHydrated && !baseline) {
+    return (
+      <div style={{
+        minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
+        background: "linear-gradient(180deg, #0a0e17 0%, #0f1520 100%)",
+        color: "#e2e8f0", fontFamily: "'Inter', system-ui, sans-serif",
+      }}>
+        <div style={{ textAlign: "center", maxWidth: 400 }}>
+          <div style={{ fontSize: 40, marginBottom: 16 }}>\u25B3</div>
+          <h2 style={{ margin: "0 0 12px", fontSize: 22, fontWeight: 600, color: "#fff" }}>Baseline Required</h2>
+          <p style={{ opacity: 0.5, fontSize: 14, lineHeight: 1.5, marginBottom: 24 }}>
+            Complete the Initiate step to establish your company baseline before viewing Position.
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate("/initiate")}
+            style={{
+              padding: "12px 24px", borderRadius: 10, border: "none",
+              background: "linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%)",
+              color: "#000", fontWeight: 700, fontSize: 14, cursor: "pointer",
+              boxShadow: "0 2px 12px rgba(34,211,238,0.15)",
+            }}
+          >
+            Go to Initiate \u2192
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   if (!activeScenarioId || !activeScenario) {
-    return <div style={{ padding: 24 }}>No active scenario — redirecting…</div>
+    return <div style={{ padding: 24 }}>No active scenario — redirecting\u2026</div>
   }
 
   return (
