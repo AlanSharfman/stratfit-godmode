@@ -52,6 +52,7 @@ import { useIntelligencePresentation } from "@/hooks/useIntelligencePresentation
 import SimulationProofOverlay from "@/components/dev/SimulationProofOverlay"
 import {
   useCinematicRevealStore,
+  isRevealActive,
 } from "@/state/cinematicRevealStore"
 import insightStyles from "@/components/insight/AIInsightPanel.module.css"
 import {
@@ -118,6 +119,10 @@ export default function PositionPage() {
   const { phase: intelPhase, requestSettle: intelRequestSettle, isRevealing } = useIntelligencePresentation({
     completedAt: activeScenario?.simulationResults?.completedAt ?? null,
   })
+
+  // ── Cinematic reveal phase — keep AIInsightPanel mounted during sequence ──
+  const revealPhase = useCinematicRevealStore((s) => s.revealPhase)
+  const cinematicActive = isRevealActive(revealPhase)
 
   // Auto-run simulation if activeScenario is still in "draft"
   const lastSimRunRef = useRef<string | null>(null)
@@ -671,7 +676,7 @@ export default function PositionPage() {
           {/* Command Glass — Intelligence Output */}
           <div className={styles.baselineIntelDock} aria-label="Command Intelligence">
             <ScenarioContextPanel />
-            {(intelPhase === "reveal" || intelPhase === "settled") ? (
+            {(intelPhase === "reveal" || intelPhase === "settled") && !cinematicActive ? (
               <CommandGlassPanel
                 phase={intelPhase}
                 onTypewriterComplete={intelRequestSettle}
