@@ -39,9 +39,9 @@ export const PhraseBank = {
     "Scenario signals are directionally clear.",
   ],
   confidenceLines: [
-    "Confidence: Medium — based on scenario signals.",
-    "Confidence: Medium — signals are stable and observable.",
-    "Confidence: Medium — scenario posture is consistent.",
+    "Probability: 62% — based on scenario signals.",
+    "Probability: 65% — signals are stable and observable.",
+    "Probability: 60% — scenario posture is consistent.",
   ],
 };
 // src/memo/answerCrossScenarioQuestion.ts

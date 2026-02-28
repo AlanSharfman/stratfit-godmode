@@ -36,10 +36,14 @@ function useTypewriter(
 ): string {
   const [displayed, setDisplayed] = useState("")
   const prevTextRef = useRef("")
+  const prevEnabledRef = useRef(false)
   const charIndexRef = useRef(0)
   const lastTickRef = useRef(0)
   const rafRef = useRef(0)
   const completedRef = useRef(false)
+  // Stable ref for onComplete — avoids re-triggering effect when callback identity changes
+  const onCompleteRef = useRef(onComplete)
+  onCompleteRef.current = onComplete
 
   useEffect(() => {
     // If not enabled (reduced motion or pre-typewriter phase), show full text
@@ -47,7 +51,18 @@ function useTypewriter(
       setDisplayed(text)
       prevTextRef.current = text
       completedRef.current = true
+      prevEnabledRef.current = false
       return
+    }
+
+    // If enabled just turned on, force restart typewriter from 0
+    if (!prevEnabledRef.current) {
+      prevEnabledRef.current = true
+      prevTextRef.current = text
+      charIndexRef.current = 0
+      completedRef.current = false
+      lastTickRef.current = 0
+      setDisplayed("")
     }
 
     // If text changed, restart typewriter
@@ -77,7 +92,7 @@ function useTypewriter(
 
         if (charIndexRef.current >= text.length) {
           completedRef.current = true
-          onComplete?.()
+          onCompleteRef.current?.()
           return
         }
       }
@@ -90,7 +105,7 @@ function useTypewriter(
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
     }
-  }, [text, enabled, onComplete])
+  }, [text, enabled]) // onComplete excluded — accessed via stable ref
 
   return displayed || (enabled ? "" : text)
 }
@@ -188,12 +203,14 @@ const AIInsightPanel: React.FC = memo(() => {
 
   // Typewriter is only active during typewriter phase
   const typewriterActive = ENABLE_CINEMATIC_SYNC && revealPhase === TYPEWRITER_PHASE
-  // Signals cascade enabled once in signals phase or later
-  const signalsActive = ENABLE_CINEMATIC_SYNC && (
-    revealPhase === SIGNALS_PHASE ||
+
+  // Signals cascade: actively cascading during signals phase
+  const signalsCascading = ENABLE_CINEMATIC_SYNC && revealPhase === SIGNALS_PHASE
+  // Signals fully visible: post-cascade, idle (no cinematic), or sync disabled
+  const signalsFullyVisible = !ENABLE_CINEMATIC_SYNC ||
+    revealPhase === "idle" ||
     revealPhase === "blur_out" ||
     revealPhase === "restore"
-  )
 
   // Callback: when typewriter finishes, advance to signals phase
   const handleTypewriterComplete = useCallback(() => {
@@ -275,9 +292,12 @@ const AIInsightPanel: React.FC = memo(() => {
 
   const ready = insight !== null && panelVisible
 
-  // Signal cascade
+  // Signal cascade — only cascades during 'signals' phase; hidden before, full after
   const signalCount = insight?.probabilitySignals.length ?? 0
-  const visibleSignals = useSignalCascade(signalCount, signalsActive)
+  const cascadeVisible = useSignalCascade(signalCount, signalsCascading)
+  const visibleSignals = signalsCascading ? cascadeVisible
+    : signalsFullyVisible ? signalCount
+    : 0 // hidden during micro_settle/blur_in/panel_in/typewriter
 
   return (
     <aside className={`${styles.wrapper}${ready ? ` ${styles.ambientGlow}` : ""}`}>

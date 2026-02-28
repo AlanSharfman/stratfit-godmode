@@ -99,3 +99,79 @@ export function selectStressProbability(
 
   return Math.max(0, Math.min(1, stress))
 }
+
+/**
+ * Derive probability signals from simulation KPIs.
+ * Returns an array of { label, value, tone } signals suitable for
+ * the Intelligence panel cascade.
+ *
+ * Pure function — no stores, no side effects.
+ */
+export interface ProbabilitySignal {
+  label: string
+  value: string
+  tone: "positive" | "neutral" | "negative"
+}
+
+export function selectProbabilitySignals(
+  simulationKpis: SimulationKpis | null | undefined,
+): ProbabilitySignal[] {
+  if (!simulationKpis) return []
+
+  const runway = simulationKpis.runway
+  const burn = simulationKpis.monthlyBurn
+  const cash = simulationKpis.cash
+  const rev = simulationKpis.revenue
+  const growth = simulationKpis.growthRate
+  const churn = simulationKpis.churnRate
+
+  const signals: ProbabilitySignal[] = []
+
+  // Runway signal
+  if (runway != null && Number.isFinite(runway)) {
+    signals.push({
+      label: "Runway probability",
+      value: `${runway} months`,
+      tone: runway >= 18 ? "positive" : runway >= 9 ? "neutral" : "negative",
+    })
+  }
+
+  // Burn-to-revenue ratio
+  if (rev > 0 && burn > 0) {
+    const ratio = burn / (rev / 12)
+    signals.push({
+      label: "Burn intensity",
+      value: `${ratio.toFixed(1)}x revenue`,
+      tone: ratio <= 1.0 ? "positive" : ratio <= 1.5 ? "neutral" : "negative",
+    })
+  }
+
+  // Growth signal
+  if (growth > 0) {
+    signals.push({
+      label: "Growth trajectory",
+      value: `${(growth * 100).toFixed(0)}%`,
+      tone: growth >= 0.25 ? "positive" : growth >= 0.10 ? "neutral" : "negative",
+    })
+  }
+
+  // Churn signal
+  if (churn > 0) {
+    signals.push({
+      label: "Churn pressure",
+      value: `${(churn * 100).toFixed(1)}%`,
+      tone: churn <= 0.02 ? "positive" : churn <= 0.05 ? "neutral" : "negative",
+    })
+  }
+
+  // Cash position
+  if (cash > 0) {
+    signals.push({
+      label: "Capital position",
+      value: cash >= 1_000_000 ? `$${(cash / 1_000_000).toFixed(1)}M` : `$${(cash / 1_000).toFixed(0)}K`,
+      tone: cash >= 2_000_000 ? "positive" : cash >= 500_000 ? "neutral" : "negative",
+    })
+  }
+
+  return signals
+}

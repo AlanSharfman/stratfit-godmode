@@ -13,6 +13,10 @@ export interface PositionKpis {
   cashOnHand: number
   revenueMonthly: number
   survivalScore: number
+  /** Gross margin percentage (0–100). */
+  grossMarginPct: number
+  /** Heuristic enterprise value estimate (ARR × growth-derived multiple). */
+  valuationEstimate: number
 }
 
 export interface DiagnosticCardVM {
@@ -35,6 +39,8 @@ export interface PositionViewModel {
   diagnostics: DiagnosticCardVM[]
   /** Source of the riskIndex: 'engine' = real Monte Carlo, 'heuristic' = runway-derived fallback */
   riskSource: RiskSource
+  /** Source of the valuationEstimate: 'engine' = simulation P50, 'heuristic' = ARR × multiple */
+  valuationSource: RiskSource
   /** Objectives snapshot from /objectives step (if present). */
   objectives?: BaselineV1["objectives"]
 }
@@ -69,6 +75,18 @@ function riskFromRunway(runway: number): number {
   if (runway >= 12) return 68
   if (runway >= 6)  return 52
   return 34
+}
+
+/**
+ * Heuristic enterprise value = ARR × growth-implied revenue multiple.
+ * Standard SaaS methodology: slow growth → low multiple, hyper-growth → high multiple.
+ * Returns 0 when ARR is zero (no revenue to value).
+ */
+function valuationFromArrAndGrowth(arr: number, growthPct: number): number {
+  if (arr <= 0) return 0
+  // Base multiple = 3x, scales linearly with growth (capped 1x–20x)
+  const multiple = clamp(3 + (growthPct / 10), 1, 20)
+  return arr * multiple
 }
 
 function confidenceFromCompleteness01(c01: number): { band: "Low" | "Medium" | "High"; pct: number } {
@@ -193,9 +211,12 @@ export function buildPositionViewModel(
   const conf = confidenceFromCompleteness01(completeness.completeness01)
   const cash = safeNum(baseline.financial.cashOnHand, 0)
   const revenueMonthly = arr / 12
+  const grossMarginPct = safeNum(baseline.financial.grossMarginPct, 0)
   // survivalScore: 0-100, blend of runway health + risk
   const survivalScore = clamp(Math.round((riskIndex * 0.6) + (Math.min(runway, 24) / 24) * 40), 0, 100)
-  const kpis: PositionKpis = { arr, burnMonthly: burn, runwayMonths: runway, ebitdaMonthly: ebitda, riskIndex, cashOnHand: cash, revenueMonthly, survivalScore }
+  // Heuristic valuation: ARR × growth-implied revenue multiple (standard SaaS methodology)
+  const valuationEstimate = valuationFromArrAndGrowth(arr, growthPct)
+  const kpis: PositionKpis = { arr, burnMonthly: burn, runwayMonths: runway, ebitdaMonthly: ebitda, riskIndex, cashOnHand: cash, revenueMonthly, survivalScore, grossMarginPct, valuationEstimate }
   return {
     kpis,
     state:           stateFromRunwayAndGrowth(runway, growthPct),
@@ -204,6 +225,7 @@ export function buildPositionViewModel(
     confidenceBand:  conf.band,
     confidencePct:   conf.pct,
     riskSource:      (typeof opts?.riskIndexFromEngine === "number" ? "engine" : "heuristic") as RiskSource,
+    valuationSource: "heuristic" as RiskSource,
     diagnostics:     buildDiagnostics(baseline, kpis),
     objectives:      baseline.objectives,
   }

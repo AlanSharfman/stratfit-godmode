@@ -47,7 +47,7 @@ import IdleMotionLayer from "./IdleMotionLayer"
 import HorizonPulse from "@/components/terrain/overlays/HorizonPulse"
 import { useReducedMotion } from "@/hooks/useReducedMotion"
 import { InsightRevealController } from "@/components/cinematic/InsightRevealController"
-import { useCinematicRevealStore } from "@/state/cinematicRevealStore"
+import SimulationProofOverlay from "@/components/dev/SimulationProofOverlay"
 import {
   buildPositionViewModel,
 } from "./overlays/positionState"
@@ -194,15 +194,28 @@ export default function PositionPage() {
     return effectiveInputs ? deriveTerrainMetrics(effectiveInputs as any) : undefined
   }, [activeScenarioId, activeScenario?.status, activeScenario?.simulationResults?.terrain, effectiveInputs])
 
-  // DEV: log terrain source + selector proof once per scenario transition
+  // DEV: log terrain source + selector proof + runId consistency once per scenario transition
   useEffect(() => {
     if (import.meta.env.DEV) {
       const simResults = activeScenario?.simulationResults ?? null
       const terrainData = selectTerrainMetrics(simResults)
       const simKpis = selectKpis(simResults?.kpis ?? null)
       const risk = selectRiskScore(simResults?.kpis ?? null)
+      const runId = simResults?.completedAt ?? null
 
-      console.group("[PositionPage] Selector pipeline")
+      // Quick hash for verification (djb2)
+      const quickHash = (obj: unknown): string => {
+        const s = JSON.stringify(obj)
+        let h = 5381
+        for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0
+        return (h >>> 0).toString(16).padStart(8, "0")
+      }
+
+      console.group("[PositionPage] Simulation pipeline verification")
+      console.log("runId:", runId)
+      console.log("scenarioConfig hash:", quickHash({ decision: activeScenario?.decision, id: activeScenarioId }))
+      console.log("engineResults hash:", quickHash(simResults))
+      console.log("KPI snapshot hash:", quickHash(simKpis))
       console.log("TERRAIN SOURCE:",
         scenarioTerrainRef.current?.scenarioId === activeScenarioId ? "SCENARIO" : "BASELINE",
         activeScenarioId ? `(scenario ${activeScenarioId.slice(0, 8)})` : "(no scenario)",
@@ -324,17 +337,19 @@ export default function PositionPage() {
     if (lastAutoRunRef.current === completedAt) return // already processed
     lastAutoRunRef.current = completedAt
 
-    // Cinematic reveal — trigger via cinematicRevealStore (replaces legacy insightRevealStore)
-    useCinematicRevealStore.getState().startSequence(completedAt)
+    // Cinematic reveal is triggered by InsightRevealController (mounted in viewport)
+    // — no need to call startSequence here; the controller handles it via props
 
-    const kpis = activeScenario.simulationResults?.kpis
-    if (!kpis) return
+    const simKpisRaw = activeScenario.simulationResults?.kpis
+    if (!simKpisRaw) return
 
+    // Read KPIs through canonical selector — selector-only access contract
+    const autoKpis = selectKpis(simKpisRaw)
     const touched = userTouchedRef.current
 
     // Auto-enable Heat Map when risk is elevated
     // Signals: runway < 12 months OR vm risk tone
-    const runway = kpis.runway
+    const runway = autoKpis?.runwayMonths ?? null
     const runwayLow = runway !== null && runway < 12
     if (runwayLow && !touched.has("heatMap") && !heatmapEnabled) {
       toggleHeatmap()
@@ -568,6 +583,11 @@ export default function PositionPage() {
             <InsightRevealController
               completedAt={activeScenario?.simulationResults?.completedAt ?? null}
               runId={activeScenario?.simulationResults?.completedAt ?? null}
+            />
+            {/* ── DEV: Simulation proof overlay (traceability) ── */}
+            <SimulationProofOverlay
+              scenario={activeScenario ?? null}
+              baselineSnapshotId={baseline ? `bl_${typeof baseline === "object" ? "active" : "none"}` : null}
             />
           </div>
         </div>

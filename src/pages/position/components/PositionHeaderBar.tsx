@@ -52,9 +52,9 @@ export default function PositionHeaderBar({ vm }: Props) {
       </div>
 
       <div className={styles.metric}>
-        <span className={styles.label}>Confidence</span>
+        <span className={styles.label}>Probability</span>
         <span className={styles.value}>
-          {vm.confidencePct}% · {vm.confidenceBand}
+          {vm.confidencePct}% · {vm.confidenceBand === "High" ? "Likely" : vm.confidenceBand === "Medium" ? "Mixed" : "Unlikely"}
         </span>
       </div>
     </div>

@@ -43,13 +43,11 @@ export function InsightRevealController({
   const phaseStartRef = useRef<number>(0)
   const lastCompletedAtRef = useRef<number | null>(null)
 
-  const {
-    revealPhase,
-    isPlaying,
-    startSequence,
-    setPhase,
-    setProgress,
-  } = useCinematicRevealStore()
+  // Use individual selectors to avoid re-rendering on every setProgress tick
+  const isPlaying = useCinematicRevealStore((s) => s.isPlaying)
+  const startSequence = useCinematicRevealStore((s) => s.startSequence)
+  const setPhase = useCinematicRevealStore((s) => s.setPhase)
+  const setProgress = useCinematicRevealStore((s) => s.setProgress)
 
   /* ── Trigger sequence on new completion ── */
   useEffect(() => {
@@ -83,14 +81,25 @@ export function InsightRevealController({
   )
 
   /* ── rAF timeline loop ── */
+  const lastPhaseRef = useRef<RevealPhase>("idle")
+
   useEffect(() => {
     if (!isPlaying || reduced) return
 
     // Mark phase start on first frame
     phaseStartRef.current = performance.now()
+    lastPhaseRef.current = useCinematicRevealStore.getState().revealPhase
 
     const tick = (now: number) => {
       const phase = useCinematicRevealStore.getState().revealPhase
+
+      // Detect external phase change (e.g. typewriter onComplete → signals)
+      // and reset the timer so the new phase gets its full duration
+      if (phase !== lastPhaseRef.current) {
+        lastPhaseRef.current = phase
+        phaseStartRef.current = now
+      }
+
       const duration = PHASE_DURATIONS[phase]
 
       if (duration <= 0) {

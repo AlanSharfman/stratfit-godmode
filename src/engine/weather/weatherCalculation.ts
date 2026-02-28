@@ -135,33 +135,33 @@ export function generateWeatherAlerts(metrics: {
 export function getWeatherDescription(condition: WeatherCondition): {
   title: string;
   description: string;
-  advice: string;
+  outlook: string;
 } {
-  const descriptions: Record<WeatherCondition, { title: string; description: string; advice: string }> = {
+  const descriptions: Record<WeatherCondition, { title: string; description: string; outlook: string }> = {
     clear: {
       title: "Clear Skies",
       description: "Business conditions are favorable with good visibility ahead.",
-      advice: "Ideal conditions for growth initiatives and strategic investments.",
+      outlook: "Ideal conditions for growth initiatives and strategic investments.",
     },
     cloudy: {
       title: "Cloudy Outlook",
       description: "Some uncertainty in the forecast. Monitor key metrics closely.",
-      advice: "Consider building reserves and diversifying revenue streams.",
+      outlook: "Building reserves and diversifying revenue streams is indicated.",
     },
     stormy: {
       title: "Storm Warning",
       description: "Elevated volatility and risk factors detected.",
-      advice: "Focus on stability. Delay non-essential expenditures.",
+      outlook: "Stability focus indicated. Non-essential expenditures may be deferred.",
     },
     turbulent: {
       title: "High Turbulence",
       description: "Multiple risk factors converging. Significant headwinds ahead.",
-      advice: "Activate contingency plans. Prioritize cash preservation.",
+      outlook: "Contingency posture indicated. Cash preservation is the priority signal.",
     },
     critical: {
       title: "Emergency Conditions",
       description: "Critical risk thresholds breached. Immediate action required.",
-      advice: "All hands on deck. Focus exclusively on survival metrics.",
+      outlook: "Survival metrics are the primary signal. All resources focused on continuity.",
     },
   };
 

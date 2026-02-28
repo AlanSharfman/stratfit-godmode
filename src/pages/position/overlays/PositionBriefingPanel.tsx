@@ -25,9 +25,9 @@ export default function PositionBriefingPanel({ vm }: { vm: PositionViewModel | 
           ))}
         </ul>
         <div className={styles.confRow}>
-          <span>Confidence</span>
+          <span>Probability</span>
           <span className={styles.confPill}>
-            {vm ? `${vm.confidenceBand} · ${vm.confidencePct}%` : "—"}
+            {vm ? `${vm.confidencePct}% · ${vm.confidenceBand === "High" ? "Likely" : vm.confidenceBand === "Medium" ? "Mixed" : "Unlikely"}` : "—"}
           </span>
         </div>
 

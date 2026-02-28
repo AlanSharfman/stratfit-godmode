@@ -376,9 +376,9 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis }) => {
           {/* Gross Margin */}
           <div className={styles.card}>
             <div className={`${styles.label} ${styles.labelEfficiency}`}>Gross Margin</div>
-            <div className={styles.value}>—</div>
+            <div className={styles.value}>{k ? `${fmtPct(k.grossMarginPct)}` : "—"}</div>
             <GrossMarginWidget />
-            <div className={styles.sub}>Pending</div>
+            <div className={styles.sub}>Of revenue</div>
           </div>
         </div>
       </section>
@@ -388,10 +388,10 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis }) => {
         <h3 className={styles.sectionHeader}>Valuation</h3>
         <div className={styles.cardStack}>
           <div className={styles.card}>
-            <div className={`${styles.label} ${styles.labelValuation}`}>Enterprise Value (P50)</div>
-            <div className={styles.value}>$ —</div>
+            <div className={`${styles.label} ${styles.labelValuation}`}>Enterprise Value (v1)</div>
+            <div className={styles.value}>{k && k.valuationEstimate > 0 ? `$${fmtMoney(k.valuationEstimate)}` : "$ —"}</div>
             <ValuationWidget />
-            <div className={styles.sub}>Probability dispersion ±—%</div>
+            <div className={styles.sub}>{k && k.valuationEstimate > 0 ? "Revenue multiple" : "Awaiting ARR data"}</div>
           </div>
         </div>
       </section>
