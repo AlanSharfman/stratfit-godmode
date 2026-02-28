@@ -40,77 +40,40 @@
   color: rgba(226, 232, 240, 0.92);
 }
 
-/* ── 3D Spinning Cube (matches logo top-left) ── */
-.cubeScene {
-  width: 16px;
-  height: 16px;
-  perspective: 38px;
-  flex-shrink: 0;
-}
-
-.cube {
-  width: 16px;
-  height: 16px;
+/* ── Strobe Dots (L→R→L bounce) ── */
+.strobeDots {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 12px;
+  vertical-align: middle;
   position: relative;
-  transform-style: preserve-3d;
-  transform: rotateX(-22deg) rotateY(-30deg);
-  animation: cubeSpin 0.9s linear infinite;
+  top: -2px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.20);
 }
 
-.cubeFace {
-  position: absolute;
-  width: 16px;
-  height: 16px;
-  box-sizing: border-box;
-  backface-visibility: visible;
+.dot {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4ade80;
+  opacity: 0.25;
+  animation: strobePing 1.2s ease-in-out infinite alternate;
 }
 
-/* Front — dark navy matching logo left face #0D2C4C */
-.cubeFront {
-  background: #0D2C4C;
-  border: 1px solid #1A4A7C;
-  transform: translateZ(8px);
-}
+.dot:nth-child(1) { animation-delay: 0s; }
+.dot:nth-child(2) { animation-delay: 0.15s; }
+.dot:nth-child(3) { animation-delay: 0.3s; }
+.dot:nth-child(4) { animation-delay: 0.45s; }
 
-/* Back — darkest face matching logo right face #061626 */
-.cubeBack {
-  background: #061626;
-  border: 1px solid #0D2C4C;
-  transform: rotateY(180deg) translateZ(8px);
-}
-
-/* Right — logo right face */
-.cubeRight {
-  background: #061626;
-  border: 1px solid #0D2C4C;
-  transform: rotateY(90deg) translateZ(8px);
-}
-
-/* Left — logo left face */
-.cubeLeft {
-  background: #0D2C4C;
-  border: 1px solid #1A4A7C;
-  transform: rotateY(-90deg) translateZ(8px);
-}
-
-/* Top — bright cyan gradient matching logo top face #00FFFF → #0077FF */
-.cubeTop {
-  background: linear-gradient(135deg, #00FFFF 0%, #0077FF 100%);
-  border: 1px solid rgba(0, 255, 255, 0.9);
-  box-shadow: 0 0 6px rgba(0, 255, 255, 0.5), 0 0 12px rgba(0, 119, 255, 0.3);
-  transform: rotateX(90deg) translateZ(8px);
-}
-
-/* Bottom — dark base */
-.cubeBottom {
-  background: #0a0e14;
-  border: 1px solid #0D2C4C;
-  transform: rotateX(-90deg) translateZ(8px);
-}
-
-@keyframes cubeSpin {
-  0%   { transform: rotateX(-22deg) rotateY(-30deg); }
-  100% { transform: rotateX(-22deg) rotateY(330deg); }
+@keyframes strobePing {
+  0%   { opacity: 0.15; transform: scale(0.7); }
+  50%  { opacity: 1; transform: scale(1.2); }
+  100% { opacity: 0.15; transform: scale(0.7); }
 }
 
 /* ── Sections ── */

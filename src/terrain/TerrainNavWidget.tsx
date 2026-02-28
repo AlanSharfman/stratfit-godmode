@@ -116,22 +116,28 @@ const btnBase: React.CSSProperties = {
   width: 32,
   height: 32,
   borderRadius: 7,
-  border: "1px solid rgba(120, 180, 255, 0.14)",
-  background: "rgba(10, 18, 32, 0.65)",
-  color: "rgba(140, 200, 255, 0.80)",
+  border: "1px solid rgba(34, 211, 238, 0.30)",
+  background: "rgba(0, 0, 0, 0.40)",
+  color: "rgba(255, 255, 255, 0.90)",
   cursor: "pointer",
   outline: "none",
   padding: 0,
-  transition: "background 0.15s, color 0.15s, border-color 0.15s",
+  transition: "background 0.12s, color 0.12s, border-color 0.12s",
   userSelect: "none",
   WebkitUserSelect: "none",
   touchAction: "none",
 };
 
 const btnHover: Partial<React.CSSProperties> = {
-  background: "rgba(40, 100, 200, 0.25)",
-  color: "rgba(180, 220, 255, 1)",
-  borderColor: "rgba(120, 180, 255, 0.32)",
+  background: "rgba(0, 0, 0, 0.55)",
+  color: "rgba(255, 255, 255, 1)",
+  borderColor: "rgba(34, 211, 238, 0.50)",
+};
+
+const btnActive: Partial<React.CSSProperties> = {
+  background: "rgba(74, 222, 128, 0.18)",
+  color: "#4ade80",
+  borderColor: "rgba(74, 222, 128, 0.50)",
 };
 
 // ── Component ──
@@ -179,12 +185,12 @@ export default function TerrainNavWidget() {
           width: 34,
           height: 34,
           borderRadius: 8,
-          background: "rgba(10, 18, 32, 0.72)",
+          background: "rgba(0, 0, 0, 0.40)",
           backdropFilter: "blur(8px)",
           WebkitBackdropFilter: "blur(8px)",
         }}
         onMouseEnter={(e) => Object.assign(e.currentTarget.style, btnHover)}
-        onMouseLeave={(e) => Object.assign(e.currentTarget.style, { background: "rgba(10, 18, 32, 0.72)", color: btnBase.color, borderColor: btnBase.border })}
+        onMouseLeave={(e) => Object.assign(e.currentTarget.style, { background: "rgba(0, 0, 0, 0.40)", color: btnBase.color, borderColor: btnBase.border })}
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <polygon points="3 11 22 2 13 21 11 13 3 11" />
@@ -206,11 +212,11 @@ export default function TerrainNavWidget() {
         gap: 3,
         padding: "10px 8px 8px",
         borderRadius: 12,
-        background: "rgba(8, 14, 26, 0.78)",
+        background: "rgba(0, 0, 0, 0.40)",
         backdropFilter: "blur(14px)",
         WebkitBackdropFilter: "blur(14px)",
-        border: "1px solid rgba(120, 180, 255, 0.12)",
-        boxShadow: "0 6px 24px rgba(0,0,0,0.45), inset 0 1px 0 rgba(140,200,255,0.04)",
+        border: "1px solid rgba(34, 211, 238, 0.20)",
+        boxShadow: "0 6px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(34, 211, 238, 0.04)",
         userSelect: "none",
         pointerEvents: "auto",
       }}
@@ -223,7 +229,7 @@ export default function TerrainNavWidget() {
           fontWeight: 700,
           textTransform: "uppercase",
           letterSpacing: "0.12em",
-          color: "rgba(120, 180, 255, 0.45)",
+          color: "rgba(255, 255, 255, 0.70)",
           fontFamily: "'Inter', system-ui, sans-serif",
         }}>
           Navigate
@@ -238,7 +244,7 @@ export default function TerrainNavWidget() {
             borderRadius: 4,
             border: "none",
             background: "transparent",
-            color: "rgba(140, 200, 255, 0.40)",
+            color: "rgba(34, 211, 238, 0.45)",
             fontSize: 12,
             lineHeight: 1,
           }}
@@ -267,11 +273,11 @@ export default function TerrainNavWidget() {
             ...btnBase,
             fontSize: 9,
             fontWeight: 700,
-            color: "rgba(140, 200, 255, 0.55)",
+            color: "rgba(34, 211, 238, 0.60)",
             letterSpacing: "0.04em",
           }}
           onMouseEnter={(e) => Object.assign(e.currentTarget.style, btnHover)}
-          onMouseLeave={(e) => Object.assign(e.currentTarget.style, { background: btnBase.background, color: "rgba(140, 200, 255, 0.55)", borderColor: btnBase.border })}
+          onMouseLeave={(e) => Object.assign(e.currentTarget.style, { background: btnBase.background, color: "rgba(34, 211, 238, 0.60)", borderColor: btnBase.border })}
         >
           ⟳
         </button>
@@ -315,9 +321,9 @@ function DpadButton({
   return (
     <button
       title={title}
-      onPointerDown={(e) => { e.preventDefault(); dir.start(); }}
-      onPointerUp={dir.stop}
-      onPointerLeave={dir.stop}
+      onPointerDown={(e) => { e.preventDefault(); Object.assign(e.currentTarget.style, btnActive); dir.start(); }}
+      onPointerUp={(e) => { dir.stop(); Object.assign(e.currentTarget.style, { background: btnBase.background, color: btnBase.color, borderColor: btnBase.border }); }}
+      onPointerLeave={(e) => { dir.stop(); Object.assign(e.currentTarget.style, { background: btnBase.background, color: btnBase.color, borderColor: btnBase.border }); }}
       onContextMenu={(e) => e.preventDefault()}
       onMouseEnter={(e) => Object.assign(e.currentTarget.style, btnHover)}
       onMouseLeave={(e) => {
@@ -325,7 +331,7 @@ function DpadButton({
         Object.assign(e.currentTarget.style, {
           background: btnBase.background,
           color: btnBase.color,
-          borderColor: "rgba(120, 180, 255, 0.14)",
+          borderColor: "rgba(34, 211, 238, 0.30)",
         });
       }}
       style={{ ...btnBase, ...extraStyle }}

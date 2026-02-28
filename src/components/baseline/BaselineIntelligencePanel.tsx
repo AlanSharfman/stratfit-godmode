@@ -123,16 +123,13 @@ const BaselineIntelligencePanel: React.FC = memo(() => {
   return (
     <aside className={styles.rightPanel}>
       <div className={styles.panelHeader}>
-        <div className={styles.panelTitle}>BASELINE INTELLIGENCE</div>
-        <div className={styles.cubeScene} aria-hidden="true">
-          <div className={styles.cube}>
-            <div className={`${styles.cubeFace} ${styles.cubeFront}`} />
-            <div className={`${styles.cubeFace} ${styles.cubeBack}`} />
-            <div className={`${styles.cubeFace} ${styles.cubeRight}`} />
-            <div className={`${styles.cubeFace} ${styles.cubeLeft}`} />
-            <div className={`${styles.cubeFace} ${styles.cubeTop}`} />
-            <div className={`${styles.cubeFace} ${styles.cubeBottom}`} />
-          </div>
+        <div className={styles.panelTitle}>BASELINE INTELLIGENCE
+          <span className={styles.strobeDots} aria-hidden="true">
+            <span className={styles.dot} />
+            <span className={styles.dot} />
+            <span className={styles.dot} />
+            <span className={styles.dot} />
+          </span>
         </div>
       </div>
 
