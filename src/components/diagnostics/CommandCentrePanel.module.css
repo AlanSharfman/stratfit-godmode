@@ -265,7 +265,39 @@
   background: rgba(255, 255, 255, 0.06);
 }
 
-/* ── VIDEO pulse / strobe animation ── */
+/* ── VIDEO ON — soft institutional white pulse ── */
+.videoOn {
+  animation: ccVideoOnPulse 2.4s ease-in-out infinite;
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.videoOn .rowLabel {
+  color: rgba(255, 255, 255, 1);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.videoOn:hover {
+  border-color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+@keyframes ccVideoOnPulse {
+  0%, 100% {
+    box-shadow:
+      0 0 3px rgba(255, 255, 255, 0.06),
+      0 0 6px rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.28);
+  }
+  50% {
+    box-shadow:
+      0 0 6px rgba(255, 255, 255, 0.18),
+      0 0 14px rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.45);
+  }
+}
+
+/* ── VIDEO pulse / strobe animation (idle attract) ── */
 .videoPulse {
   animation: ccVideoPulse 1.6s ease-in-out infinite;
   border-color: rgba(255, 255, 255, 0.30);

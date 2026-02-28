@@ -230,13 +230,6 @@ export default function PositionPage() {
   const shlWeights = useSemanticBalance((s) => s.weights)
   const setWeight = useSemanticBalance((s) => s.setWeight)
 
-  const toggleShl = useCallback(
-    (key: SemanticLayerKey) => (next: boolean) => {
-      setWeight(key, next ? DEFAULT_SHL_WEIGHTS[key] : 0)
-    },
-    [setWeight],
-  )
-
   // ── View toggles ──
   const heatmapEnabled = useViewTogglesStore((s) => s.heatmapEnabled)
   const toggleHeatmap = useViewTogglesStore((s) => s.toggleHeatmap)
@@ -280,47 +273,109 @@ export default function PositionPage() {
     }
   }, [videoActive])
 
-  // ── Diagnostic Groups (DEMO MODE / SCENARIO LAYERS / ANALYSIS / TERRAIN) ──
+  // ── Auto-activation: once per simulation run, only turns ON, respects manual overrides ──
+  // Tracks which layers the user has manually toggled off after auto-enable.
+  const userTouchedRef = useRef<Set<string>>(new Set())
+  const lastAutoRunRef = useRef<number | null>(null)
+
+  // Wrap toggle handlers to record manual user touches
+  const makeTrackedToggle = useCallback(
+    (id: string, baseFn: () => void) => () => {
+      userTouchedRef.current.add(id)
+      baseFn()
+    },
+    [],
+  )
+
+  const makeTrackedShlToggle = useCallback(
+    (id: string, key: SemanticLayerKey) => (next: boolean) => {
+      userTouchedRef.current.add(id)
+      setWeight(key, next ? DEFAULT_SHL_WEIGHTS[key] : 0)
+    },
+    [setWeight],
+  )
+
+  const trackedToggleHeatmap = useCallback(() => {
+    userTouchedRef.current.add("heatMap")
+    toggleHeatmap()
+  }, [toggleHeatmap])
+
+  // Auto-activation effect — fires once per completed simulation run
+  useEffect(() => {
+    if (!activeScenario || activeScenario.status !== "complete") return
+    const completedAt = activeScenario.simulationResults?.completedAt
+    if (!completedAt) return
+    if (lastAutoRunRef.current === completedAt) return // already processed
+    lastAutoRunRef.current = completedAt
+
+    const kpis = activeScenario.simulationResults?.kpis
+    if (!kpis) return
+
+    const touched = userTouchedRef.current
+
+    // Auto-enable Heat Map when risk is elevated
+    // Signals: runway < 12 months OR vm risk tone
+    const runway = kpis.runway
+    const runwayLow = runway !== null && runway < 12
+    if (runwayLow && !touched.has("heatMap") && !heatmapEnabled) {
+      toggleHeatmap()
+    }
+
+    // Auto-enable Risk Field when downside dominates
+    if (runwayLow && !touched.has("riskField") && !shlIsOn(shlWeights.risk)) {
+      setWeight("risk", DEFAULT_SHL_WEIGHTS.risk)
+    }
+
+    // Auto-enable Diverge when scenario spread exists (scenario completed = spread available)
+    if (!touched.has("diverge") && !shlIsOn(shlWeights.divergence)) {
+      setWeight("divergence", DEFAULT_SHL_WEIGHTS.divergence)
+    }
+
+    // Auto-enable Confidence when data completeness is Low
+    if (vm && vm.confidenceBand === "Low" && !touched.has("confidence") && !shlIsOn(shlWeights.confidence)) {
+      setWeight("confidence", DEFAULT_SHL_WEIGHTS.confidence)
+    }
+  }, [
+    activeScenario?.status,
+    activeScenario?.simulationResults?.completedAt,
+    activeScenario?.simulationResults?.kpis,
+    vm?.confidenceBand,
+  ]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Diagnostic Groups (MODE / PRIMARY INSIGHT / SECONDARY) ──
   const diagnosticGroups = [
     {
-      heading: "DEMO MODE",
+      heading: "MODE",
       items: [
         {
           id: "liveVideo",
           label: "VIDEO",
           value: videoActive,
           onChange: handleVideoToggle,
-          className: videoPulsing ? "videoPulse" : "videoItem",
+          className: videoActive ? "videoOn" : (videoPulsing ? "videoPulse" : "videoItem"),
         },
       ],
     },
     {
-      heading: "SCENARIO LAYERS",
+      heading: "PRIMARY INSIGHT",
       items: [
-        { id: "markers", label: "Markers", value: renderFlags.showMarkers, onChange: () => renderFlags.toggle("showMarkers") },
-        { id: "flow", label: "Flow", value: shlIsOn(shlWeights.flow), onChange: toggleShl("flow") },
-        { id: "diverge", label: "Diverge", value: shlIsOn(shlWeights.divergence), onChange: toggleShl("divergence") },
-        { id: "envelope", label: "Envelope", value: renderFlags.showEnvelope, onChange: () => renderFlags.toggle("showEnvelope") },
+        { id: "heatMap", label: "Heat Map", value: heatmapEnabled, onChange: trackedToggleHeatmap },
+        { id: "riskField", label: "Risk Field", value: shlIsOn(shlWeights.risk), onChange: makeTrackedShlToggle("riskField", "risk") },
+        { id: "confidence", label: "Confidence", value: shlIsOn(shlWeights.confidence), onChange: makeTrackedShlToggle("confidence", "confidence") },
       ],
     },
     {
-      heading: "ANALYSIS",
+      heading: "SECONDARY",
       collapsed: true,
       items: [
-        { id: "riskField", label: "Risk Field", value: shlIsOn(shlWeights.risk), onChange: toggleShl("risk") },
-        { id: "confidence", label: "Confidence", value: shlIsOn(shlWeights.confidence), onChange: toggleShl("confidence") },
-        { id: "heatMap", label: "Heat Map", value: heatmapEnabled, onChange: () => toggleHeatmap() },
-        { id: "annotations", label: "Annotations", value: renderFlags.showAnnotations, onChange: () => renderFlags.toggle("showAnnotations") },
-        { id: "preview", label: "Preview", value: renderFlags.showPreview, onChange: () => renderFlags.toggle("showPreview") },
-      ],
-    },
-    {
-      heading: "TERRAIN",
-      collapsed: true,
-      items: [
-        { id: "heat", label: "Heat", value: shlIsOn(shlWeights.heat), onChange: toggleShl("heat") },
-        { id: "resonance", label: "Resonance", value: shlIsOn(shlWeights.resonance), onChange: toggleShl("resonance") },
-        { id: "topo", label: "Topo", value: shlIsOn(shlWeights.topography), onChange: toggleShl("topography") },
+        { id: "markers", label: "Markers", value: renderFlags.showMarkers, onChange: makeTrackedToggle("markers", () => renderFlags.toggle("showMarkers")) },
+        { id: "flow", label: "Flow", value: shlIsOn(shlWeights.flow), onChange: makeTrackedShlToggle("flow", "flow") },
+        { id: "diverge", label: "Diverge", value: shlIsOn(shlWeights.divergence), onChange: makeTrackedShlToggle("diverge", "divergence") },
+        { id: "envelope", label: "Envelope", value: renderFlags.showEnvelope, onChange: makeTrackedToggle("envelope", () => renderFlags.toggle("showEnvelope")) },
+        { id: "annotations", label: "Annotations", value: renderFlags.showAnnotations, onChange: makeTrackedToggle("annotations", () => renderFlags.toggle("showAnnotations")) },
+        { id: "heat", label: "Heat", value: shlIsOn(shlWeights.heat), onChange: makeTrackedShlToggle("heat", "heat") },
+        { id: "resonance", label: "Resonance", value: shlIsOn(shlWeights.resonance), onChange: makeTrackedShlToggle("resonance", "resonance") },
+        { id: "topo", label: "Topo", value: shlIsOn(shlWeights.topography), onChange: makeTrackedShlToggle("topo", "topography") },
       ],
     },
   ]

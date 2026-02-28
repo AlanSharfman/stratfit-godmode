@@ -1,7 +1,7 @@
 /**
  * CommandCentrePanel — Docked panel for Position right rail.
- * Four-tier hierarchy: DEMO MODE / SCENARIO LAYERS / ANALYSIS / TERRAIN.
- * ANALYSIS + TERRAIN are collapsible accordions (collapsed by default).
+ * Three-tier hierarchy: MODE / PRIMARY INSIGHT / SECONDARY (accordion).
+ * Visual design language (bezel, spacing, glow, typography) unchanged.
  */
 import React, { useState } from "react";
 import styles from "./CommandCentrePanel.module.css";
