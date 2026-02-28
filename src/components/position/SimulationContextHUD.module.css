@@ -1,8 +1,8 @@
-/* SimulationContextHUD — glass overlay inside terrain top-right */
+/* SimulationContextHUD — glass overlay inside terrain top-left */
 .hud {
   position: absolute;
   top: 14px;
-  right: 14px;
+  left: 14px;
   z-index: 20;
   min-width: 200px;
   max-width: 280px;

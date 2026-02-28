@@ -130,6 +130,9 @@ export default function TerrainStage({
 
         // Transparent clear — Position page supplies charcoal gradient behind Canvas.
         gl.setClearColor(fogColor, 0);
+
+        // Tone mapping — default
+        gl.toneMappingExposure = 1.0;
       }}
     >
       {/* OrbitControls — always mounted so TerrainNavWidget can steer programmatically.
@@ -153,9 +156,20 @@ export default function TerrainStage({
       {/* Fog stays deterministic; background comes from DOM gradient behind the canvas. */}
       <fog attach="fog" args={[fogColor, 420, 2400]} />
 
-      {/* Lights: lifted for brighter terrain readability */}
+      {/* ═══════════════════════════════════════════════════════════════
+          DEFAULT LIGHTING — LOCKED
+          ─────────────────────────────────────────────────────────────
+          Ambient:    1.55
+          Key:        2.10  pos [120,180,120]  color #DFFAEE
+          Fill:       0.85  pos [-80,120,-60]  color #6ef0ff
+          Fog:        #050A10  near 420  far 2400
+          Exposure:   1.0
+          ─────────────────────────────────────────────────────────────
+          DO NOT MODIFY without explicit user approval.
+          DO NOT touch terrainMaterials.ts when adjusting these.
+          ═══════════════════════════════════════════════════════════════ */}
       <ambientLight intensity={1.55} />
-      <directionalLight position={[120, 180, 120]} intensity={2.10} color="#DFFAFF" />
+      <directionalLight position={[120, 180, 120]} intensity={2.10} color="#DFFAEE" />
       <directionalLight position={[-80, 120, -60]} intensity={0.85} color="#6ef0ff" />
 
       <HorizonBand />

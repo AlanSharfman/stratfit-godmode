@@ -248,7 +248,7 @@ export default function TerrainTuningPanel({ params, onChange, inline }: Props) 
         style={{
           position: "absolute",
           top: 16,
-          left: 16,
+          right: 16,
           zIndex: 100,
           width: 36,
           height: 36,
@@ -293,7 +293,7 @@ export default function TerrainTuningPanel({ params, onChange, inline }: Props) 
           style={{
             position: "absolute",
             top: 60,
-            left: 16,
+            right: 16,
             zIndex: 99,
             width: 252,
             padding: "16px 14px 14px",

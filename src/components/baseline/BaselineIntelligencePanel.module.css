@@ -1,7 +1,7 @@
 /* ── BaselineIntelligencePanel ───────────────────────────────────
-   Docked intelligence readout for Position right rail.
-   Typography: Inter (labels) · JetBrains Mono (metrics/badges)
-   Palette: slate-900 base, cyan-400 accents, red/green/purple signals
+   Deep-explanation intelligence readout for Position right rail.
+   Typography: Inter (labels) · JetBrains Mono (metrics)
+   Palette: slate-900 base, cyan-400 accents, tone-coded drivers
    ────────────────────────────────────────────────────────────── */
 
 .rightPanel {
@@ -78,8 +78,8 @@
 
 /* ── Sections ── */
 .panelSection {
-  padding: 10px 14px;
-  border-bottom: 1px solid rgba(182, 228, 255, 0.06);
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(182, 228, 255, 0.08);
 }
 
 .panelSection:last-of-type {
@@ -93,115 +93,104 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: rgba(34, 211, 238, 0.65);
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
-/* ── Key-value grid (Structural Metrics) ── */
-.kvGrid {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.kvRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  padding: 5px 0;
-  border-bottom: 1px solid rgba(182, 228, 255, 0.05);
-}
-
-.kvRow:last-child {
-  border-bottom: none;
-}
-
-.k {
+/* ── Diagnostic headline ── */
+.headline {
   font-family: 'Inter', system-ui, sans-serif;
-  font-size: 12px;
-  color: rgba(200, 215, 230, 0.78);
-}
-
-.v {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  color: rgba(214, 246, 255, 0.90);
+  line-height: 1.55;
+  color: rgba(214, 246, 255, 0.92);
 }
 
-/* ── Status row (System Diagnostic) ── */
-.statusRow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.statusLabel {
-  font-family: 'Inter', system-ui, sans-serif;
-  font-size: 12px;
-  color: rgba(185, 205, 225, 0.68);
-}
-
-.statusValue {
-  font-family: 'Inter', system-ui, sans-serif;
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-/* ── Constraint card ── */
-.constraintLabel {
-  font-family: 'Inter', system-ui, sans-serif;
-  font-size: 11px;
-  color: rgba(185, 205, 225, 0.55);
-  padding: 8px 10px 2px;
-}
-
-.constraintValue {
-  font-family: 'Inter', system-ui, sans-serif;
-  font-size: 12px;
-  color: rgba(214, 246, 255, 0.88);
-  padding: 2px 10px 8px;
-}
-
-/* ── Story text ── */
-.storyText {
-  font-family: 'Inter', system-ui, sans-serif;
-  font-size: 12px;
-  line-height: 1.6;
-  color: rgba(200, 215, 230, 0.82);
-}
-
-/* ── Signal list ── */
-.signalList {
+/* ── Driver list ── */
+.driverList {
   list-style: none;
   padding: 0;
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
 }
 
-.signalList li {
-  font-size: 12px;
-  padding: 2px 0;
-  border: none;
-  background: transparent;
-}
-
-.signalList li span:last-child {
+.driverItem {
+  display: flex;
+  align-items: baseline;
+  gap: 0;
   font-family: 'Inter', system-ui, sans-serif;
   font-size: 12px;
+  line-height: 1.55;
+}
+
+.driverDot {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-right: 8px;
+  position: relative;
+  top: -1px;
+  background: rgba(148, 163, 184, 0.5);
+}
+
+.driverDot[data-tone="risk"]     { background: #f87171; }
+.driverDot[data-tone="info"]     { background: #38bdf8; }
+.driverDot[data-tone="strength"] { background: #4ade80; }
+.driverDot[data-tone="strategy"] { background: #a78bfa; }
+
+.driverLabel {
+  font-weight: 600;
+  color: rgba(214, 246, 255, 0.88);
+  white-space: nowrap;
+}
+
+.driverSep {
+  color: rgba(148, 163, 184, 0.40);
+  margin: 0 1px;
+  flex-shrink: 0;
+}
+
+.driverImpact {
   font-weight: 400;
-  line-height: 1.6;
+  color: rgba(200, 215, 230, 0.72);
+}
+
+/* ── Story / Interpretation text ── */
+.storyText {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 12px;
+  line-height: 1.65;
   color: rgba(200, 215, 230, 0.82);
+}
+
+/* ── Typewriter cursor ── */
+.twCursor {
+  color: rgba(34, 211, 238, 0.6);
+  animation: cursorBlink 0.8s step-end infinite;
+}
+
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
+}
+
+/* ── Fallback message ── */
+.fallback {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 12px;
+  line-height: 1.6;
+  color: rgba(148, 163, 184, 0.55);
+  font-style: italic;
+  padding: 4px 0;
 }
 
 /* ── Panel footer ── */
 .panelFoot {
   padding: 10px 14px 12px;
-  border-top: 1px solid rgba(182, 228, 255, 0.06);
+  border-top: 1px solid rgba(182, 228, 255, 0.08);
 }
 
 .footLine {

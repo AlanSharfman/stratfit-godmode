@@ -80,9 +80,14 @@
   color: rgba(34, 211, 238, 0.60);
   text-transform: uppercase;
   margin-bottom: 6px;
-  margin-top: 10px;
+  margin-top: 38px;
   padding-left: 2px;
   position: relative;
+}
+
+/* First group heading needs no extra top gap */
+.group:first-child .groupHeading {
+  margin-top: 10px;
 }
 
 /* Left accent bar on group headers */

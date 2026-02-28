@@ -9,6 +9,33 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { useTerrainControls } from "./useTerrainControls";
 
+// ── Live camera position readout ──
+function useCameraPosition(controls: any) {
+  const [pos, setPos] = useState({ x: 0, y: 0, z: 0 });
+  const rafRef = useRef(0);
+
+  useEffect(() => {
+    if (!controls?.object) return;
+    let active = true;
+    const tick = () => {
+      if (!active) return;
+      const cam = controls.object as THREE.PerspectiveCamera;
+      setPos((prev) => {
+        const nx = Math.round(cam.position.x);
+        const ny = Math.round(cam.position.y);
+        const nz = Math.round(cam.position.z);
+        if (prev.x === nx && prev.y === ny && prev.z === nz) return prev;
+        return { x: nx, y: ny, z: nz };
+      });
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { active = false; cancelAnimationFrame(rafRef.current); };
+  }, [controls]);
+
+  return pos;
+}
+
 // ── Tuning ──
 const STEP_RAD = 0.04;          // radians per tick (~2.3°)
 const TICK_INTERVAL_MS = 50;    // continuous press repeat rate
@@ -144,6 +171,7 @@ const btnActive: Partial<React.CSSProperties> = {
 export default function TerrainNavWidget() {
   const controls = useTerrainControls((s) => s.controls);
   const [collapsed, setCollapsed] = useState(false);
+  const camPos = useCameraPosition(controls);
 
   const orbitLeft  = useCallback(() => orbitCamera(controls, -STEP_RAD, 0), [controls]);
   const orbitRight = useCallback(() => orbitCamera(controls, STEP_RAD, 0), [controls]);
@@ -308,6 +336,31 @@ export default function TerrainNavWidget() {
         <DpadButton dir={zIn} title="Zoom in" style={{ flex: 1 }}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
         </DpadButton>
+      </div>
+
+      {/* Camera position readout */}
+      <div
+        style={{
+          marginTop: 4,
+          padding: "3px 6px",
+          borderRadius: 4,
+          background: "rgba(0, 0, 0, 0.35)",
+          border: "1px solid rgba(34, 211, 238, 0.12)",
+          fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+          fontSize: 8,
+          lineHeight: 1.3,
+          color: "rgba(34, 211, 238, 0.55)",
+          letterSpacing: "0.04em",
+          textAlign: "center",
+          width: "100%",
+          boxSizing: "border-box",
+          whiteSpace: "nowrap",
+        }}
+        title={`Camera: x=${camPos.x} y=${camPos.y} z=${camPos.z}`}
+      >
+        <span style={{ color: "rgba(255,255,255,0.35)" }}>x</span>{camPos.x}{" "}
+        <span style={{ color: "rgba(255,255,255,0.35)" }}>y</span>{camPos.y}{" "}
+        <span style={{ color: "rgba(255,255,255,0.35)" }}>z</span>{camPos.z}
       </div>
     </div>
   );

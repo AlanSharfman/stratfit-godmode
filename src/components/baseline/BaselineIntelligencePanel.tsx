@@ -1,7 +1,6 @@
 import React, { memo, useEffect, useMemo, useRef, useState } from "react";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
 import { useScenarioStore } from "@/state/scenarioStore";
-import { useMarkerLinkStore } from "@/state/markerLinkStore";
 import { computeBaselineCompleteness } from "@/logic/confidence/baselineCompleteness";
 import {
   aggregateStructuralHeatScore,
@@ -10,73 +9,141 @@ import {
 } from "@/logic/heat/structuralHeatEngine";
 import styles from "./BaselineIntelligencePanel.module.css";
 
+/* ── helpers ── */
 function clamp(n: number, lo: number, hi: number) {
   return Math.max(lo, Math.min(hi, Number.isFinite(n) ? n : lo));
 }
 
-function fmtUsdM(n: number) {
-  if (!Number.isFinite(n)) return "—";
-  return `$${(n / 1_000_000).toFixed(1)}M`;
-}
-/* \u2500\u2500 Typewriter hook \u2500 types text char-by-char with medium pace \u2500\u2500 */
-function useTypewriter(text: string, speed = 30): string {
-  const [displayed, setDisplayed] = useState(text)
-  const prevRef = useRef(text)
+/* ── Typewriter hook — types text char-by-char ── */
+function useTypewriter(text: string, speed = 28): string {
+  const [displayed, setDisplayed] = useState(text);
+  const prevRef = useRef(text);
 
   useEffect(() => {
-    if (text === prevRef.current && displayed === text) return
-    prevRef.current = text
-    let i = 0
-    setDisplayed("")
+    if (text === prevRef.current && displayed === text) return;
+    prevRef.current = text;
+    let i = 0;
+    setDisplayed("");
     const id = setInterval(() => {
-      i++
-      setDisplayed(text.slice(0, i))
-      if (i >= text.length) clearInterval(id)
-    }, speed)
-    return () => clearInterval(id)
-  }, [text, speed])
+      i++;
+      setDisplayed(text.slice(0, i));
+      if (i >= text.length) clearInterval(id);
+    }, speed);
+    return () => clearInterval(id);
+  }, [text, speed]);
 
-  return displayed || text
+  return displayed || text;
 }
 
 function TypewriterText({ text, className }: { text: string; className?: string }) {
-  const typed = useTypewriter(text, 30)
+  const typed = useTypewriter(text, 28);
   return (
     <div className={className}>
       {typed}
-      {typed.length < text.length && <span className={styles.twCursor}>\u258E</span>}
+      {typed.length < text.length && <span className={styles.twCursor}>{"\u258E"}</span>}
     </div>
-  )
+  );
 }
+
+/* ── Driver derivation ── */
 type Tone = "risk" | "info" | "strength" | "strategy";
 
-const SIGNAL_MARKERS: Array<{ id: string; label: string; tone: Tone }> = [
-  { id: "burn-acceleration", label: "Burn acceleration relative to ARR scale", tone: "risk" },
-  { id: "margin-volatility", label: "Margin volatility sensitivity", tone: "risk" },
-  { id: "capital-dependency", label: "Capital dependency within 9\u201312 months", tone: "info" },
-  { id: "revenue-concentration", label: "Revenue concentration risk", tone: "strategy" },
-  { id: "runway-strength", label: "Runway buffer integrity", tone: "strength" },
-];
-
-function pickPrimaryConstraintMarker(args: {
-  runwayMonths: number;
-  marginPct: number;
-}) {
-  const { runwayMonths, marginPct } = args;
-
-  if (runwayMonths < 9) return "capital-dependency";
-  if (marginPct < 45) return "margin-volatility";
-  return "burn-acceleration";
+interface Driver {
+  label: string;
+  impact: string;
+  tone: Tone;
 }
+
+function deriveDrivers(args: {
+  runway: number;
+  margin: number;
+  burn: number;
+  revenue: number;
+  structuralScore: number;
+}): Driver[] {
+  const { runway, margin, burn, revenue, structuralScore } = args;
+  const out: Driver[] = [];
+
+  // 1 — Runway pressure (always evaluate first)
+  if (runway < 9) {
+    out.push({ label: "Capital timeline", impact: "Constraining strategic optionality", tone: "risk" });
+  } else if (runway < 18) {
+    out.push({ label: "Capital timeline", impact: "Adequate but narrowing with scale", tone: "info" });
+  } else {
+    out.push({ label: "Capital timeline", impact: "Supports multi-quarter planning horizon", tone: "strength" });
+  }
+
+  // 2 — Margin quality
+  if (margin < 40) {
+    out.push({ label: "Margin composition", impact: "Below institutional threshold", tone: "risk" });
+  } else if (margin < 60) {
+    out.push({ label: "Margin composition", impact: "Serviceable but limits reinvestment rate", tone: "info" });
+  } else {
+    out.push({ label: "Margin composition", impact: "Supports durable unit economics", tone: "strength" });
+  }
+
+  // 3 — Burn proportionality
+  const burnToRev = revenue > 0 ? burn / (revenue / 12) : 999;
+  if (burnToRev > 1.5) {
+    out.push({ label: "Burn proportionality", impact: "Outpacing revenue momentum", tone: "risk" });
+  } else if (burnToRev > 0.8) {
+    out.push({ label: "Burn proportionality", impact: "Tracking close to revenue cadence", tone: "strategy" });
+  } else {
+    out.push({ label: "Burn proportionality", impact: "Well within sustainable envelope", tone: "strength" });
+  }
+
+  // 4 — Structural integrity (only if meaningful)
+  if (structuralScore < 50) {
+    out.push({ label: "Structural integrity", impact: "Multiple dimensions under stress", tone: "risk" });
+  } else if (structuralScore < 70) {
+    out.push({ label: "Structural integrity", impact: "Partial imbalance across dimensions", tone: "strategy" });
+  }
+
+  return out.slice(0, 4);
+}
+
+/* ── Headline derivation ── */
+function deriveHeadline(args: {
+  runway: number;
+  margin: number;
+  structuralScore: number;
+}): string {
+  const { runway, margin, structuralScore } = args;
+
+  if (structuralScore < 48)
+    return "Multiple structural pressures require near-term attention.";
+  if (runway < 9)
+    return "Capital timeline is the binding constraint on forward strategy.";
+  if (margin < 45)
+    return "Margin composition is limiting reinvestment capacity.";
+  if (structuralScore >= 78)
+    return "Structural position supports sustained forward momentum.";
+  return "Position is stable with selective pressure points to monitor.";
+}
+
+/* ── Interpretation derivation ── */
+function deriveInterpretation(args: {
+  runway: number;
+  margin: number;
+  structuralScore: number;
+}): string {
+  const { runway, margin, structuralScore } = args;
+
+  if (structuralScore < 48)
+    return "The current trajectory shows compounding stress across capital, margin and burn dimensions. Prioritise stabilisation before growth investment.";
+  if (runway < 12)
+    return "Liquidity headroom is narrowing. Burn intensity is compressing optionality faster than revenue scale can absorb.";
+  if (margin < 50)
+    return "Margin depth is the primary gate on sustainable scaling. Improving unit economics will unlock broader strategic range.";
+  return "Runway is supported by the current capital base. Trajectory quality depends on maintaining margin stability alongside proportional growth.";
+}
+
+/* ── Component ── */
+const FALLBACK_MSG = "Analysis will appear after simulation completes.";
 
 const BaselineIntelligencePanel: React.FC = memo(() => {
   const { baseline } = useSystemBaseline();
   const baseKpis = useScenarioStore((s) => s.engineResults?.base?.kpis ?? null);
-
-  const activeId = useMarkerLinkStore((s) => s.activeId);
-  const hoverId = useMarkerLinkStore((s) => s.hoverId);
-  const setActive = useMarkerLinkStore((s) => s.setActive);
-  const setHover = useMarkerLinkStore((s) => s.setHover);
 
   const survivalBaselinePct = useMemo(() => {
     const v = baseKpis?.riskIndex?.value;
@@ -88,7 +155,10 @@ const BaselineIntelligencePanel: React.FC = memo(() => {
     [baseline, survivalBaselinePct],
   );
 
-  const structuralScore = useMemo(() => (ctx ? aggregateStructuralHeatScore(ctx) : 70), [ctx]);
+  const structuralScore = useMemo(
+    () => (ctx ? aggregateStructuralHeatScore(ctx) : 70),
+    [ctx],
+  );
   const heat = useMemo(() => evaluateStructuralScore(structuralScore), [structuralScore]);
 
   const completeness = useMemo(() => computeBaselineCompleteness(baseline), [baseline]);
@@ -100,30 +170,29 @@ const BaselineIntelligencePanel: React.FC = memo(() => {
   const cash = baseline?.financial.cashOnHand ?? 0;
   const runway = burn > 0 ? cash / burn : 999;
 
-  const status =
-    structuralScore >= 78 ? "STRONG" :
-    structuralScore >= 62 ? "STABLE" :
-    structuralScore >= 48 ? "WATCH" : "WEAK";
+  const ready = !!baseline;
 
-  const primaryConstraintText =
-    runway < 9
-      ? "Runway compression within 6–9 months"
-      : margin < 45
-        ? "Margin stability below institutional threshold"
-        : "Burn vs margin mismatch";
-
-  const primaryMarkerId = useMemo(
-    () => pickPrimaryConstraintMarker({ runwayMonths: runway, marginPct: margin }),
-    [runway, margin],
+  const headline = useMemo(
+    () => deriveHeadline({ runway, margin, structuralScore }),
+    [runway, margin, structuralScore],
   );
 
-  const isPrimaryActive = activeId === primaryMarkerId;
-  const isPrimaryHover = hoverId === primaryMarkerId;
+  const drivers = useMemo(
+    () => deriveDrivers({ runway, margin, burn, revenue, structuralScore }),
+    [runway, margin, burn, revenue, structuralScore],
+  );
+
+  const interpretation = useMemo(
+    () => deriveInterpretation({ runway, margin, structuralScore }),
+    [runway, margin, structuralScore],
+  );
 
   return (
     <aside className={styles.rightPanel}>
+      {/* ── Header ── */}
       <div className={styles.panelHeader}>
-        <div className={styles.panelTitle}>AI INTELLIGENCE
+        <div className={styles.panelTitle}>
+          AI INTELLIGENCE
           <span className={styles.strobeDots} aria-hidden="true">
             <span className={styles.dot} />
             <span className={styles.dot} />
@@ -133,92 +202,52 @@ const BaselineIntelligencePanel: React.FC = memo(() => {
         </div>
       </div>
 
-      <div className={styles.panelSection}>
-        <div className={styles.sectionTitle}>SYSTEM DIAGNOSTIC</div>
-
-        <div className={styles.statusRow}>
-          <div className={styles.statusLabel}>Status:</div>
-          <div className={styles.statusValue} style={{ color: `var(${heat.color})` }}>
-            {status}
+      {!ready ? (
+        <div className={styles.panelSection}>
+          <div className={styles.fallback}>{FALLBACK_MSG}</div>
+        </div>
+      ) : (
+        <>
+          {/* ── 1. Diagnostic Headline ── */}
+          <div className={styles.panelSection}>
+            <div className={styles.headline}>{headline}</div>
           </div>
-        </div>
 
-        {/* Primary constraint is now linked to the correct mountain marker */}
-        <div
-          className={[
-            "mk-signal",
-            "mk-signal-compact",
-            "mk-tone-risk",
-            isPrimaryActive ? "mk-signal-active" : "",
-            !isPrimaryActive && isPrimaryHover ? "mk-signal-hover" : "",
-          ].join(" ")}
-          data-tone="risk"
-          onMouseEnter={() => setHover(primaryMarkerId)}
-          onMouseLeave={() => setHover(null)}
-          onClick={() => setActive(isPrimaryActive ? null : primaryMarkerId)}
-          style={{ cursor: "pointer" }}
-        >
-          <div className={styles.constraintLabel}>Primary Constraint:</div>
-          <div className={styles.constraintValue}>{primaryConstraintText}</div>
-        </div>
-      </div>
+          {/* ── 2. Primary Drivers ── */}
+          <div className={styles.panelSection}>
+            <div className={styles.sectionTitle}>PRIMARY DRIVERS</div>
+            <ul className={styles.driverList}>
+              {drivers.map((d, i) => (
+                <li key={i} className={styles.driverItem} data-tone={d.tone}>
+                  <span className={styles.driverDot} data-tone={d.tone} />
+                  <span className={styles.driverLabel}>{d.label}</span>
+                  <span className={styles.driverSep}>{" — "}</span>
+                  <span className={styles.driverImpact}>{d.impact}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
 
-      <div className={styles.panelSection}>
-        <div className={styles.sectionTitle}>STRUCTURAL STORY</div>
-        <TypewriterText
-          className={styles.storyText}
-          text={runway < 12
-            ? "Liquidity headroom is narrowing. Burn intensity is compressing optionality faster than revenue scale can absorb."
-            : "Runway is supported by current capital base. Composition quality depends on margin stability and burn proportionality."}
-        />
-      </div>
+          {/* ── 3. Interpretation ── */}
+          <div className={styles.panelSection}>
+            <div className={styles.sectionTitle}>INTERPRETATION</div>
+            <TypewriterText className={styles.storyText} text={interpretation} />
+          </div>
 
-      <div className={styles.panelSection}>
-        <div className={styles.sectionTitle}>KEY SIGNALS (Ranked)</div>
-
-        <ol className={styles.signalList}>
-          {SIGNAL_MARKERS.map((sig) => {
-            const isActive = activeId === sig.id;
-            const isHovered = hoverId === sig.id;
-
-            return (
-              <li
-                key={sig.id}
-                className={[
-                  "mk-signal",
-                  `mk-tone-${sig.tone}`,
-                  isActive ? "mk-signal-active" : "",
-                  !isActive && isHovered ? "mk-signal-hover" : "",
-                ].join(" ")}
-                data-tone={sig.tone}
-                onMouseEnter={() => setHover(sig.id)}
-                onMouseLeave={() => setHover(null)}
-                onClick={() => setActive(isActive ? null : sig.id)}
-                style={{ cursor: "pointer" }}
-              >
-                <span className="mk-signalDot" />
-                <span className="mk-signalText">{sig.label}</span>
-              </li>
-            );
-          })}
-        </ol>
-      </div>
-
-      <div className={styles.panelSection}>
-        <div className={styles.sectionTitle}>TERRAIN INTERPRETATION</div>
-        <TypewriterText
-          className={styles.storyText}
-          text="Each peak maps to Revenue \u2192 Margin \u2192 Runway \u2192 Burn \u2192 Efficiency. Valleys indicate structural fragility. Confidence width reflects certainty."
-        />
-      </div>
-
-      <div className={styles.panelFoot}>
-        <div className={styles.footLine}>
-          Structural score:{" "}
-          <span style={{ color: `var(${heat.color})` }}>{Math.round(structuralScore)}/100</span>
-        </div>
-        <div className={styles.footLine}>Input completeness: {completenessPct}%</div>
-      </div>
+          {/* ── Footer ── */}
+          <div className={styles.panelFoot}>
+            <div className={styles.footLine}>
+              Structural score:{" "}
+              <span style={{ color: `var(${heat.color})` }}>
+                {Math.round(structuralScore)}/100
+              </span>
+            </div>
+            <div className={styles.footLine}>
+              Input completeness: {completenessPct}%
+            </div>
+          </div>
+        </>
+      )}
     </aside>
   );
 });

@@ -36,7 +36,7 @@ import {
 import { buildQuestionContext } from "@/domain/question/questionContext"
 import { buildScenarioADraft } from "@/domain/scenario/scenarioDraft"
 import { studioSessionStore } from "@/state/studioSessionStore"
-import KPIOverlay from "./overlays/KPIOverlay"
+import KPIHealthRail from "@/components/kpi/KPIHealthRail"
 import ExecutiveNarrativeCard from "./components/ExecutiveNarrativeCard"
 import TimeScaleControl from "./overlays/TimeScaleControl"
 import IdleMotionLayer from "./IdleMotionLayer"
@@ -363,7 +363,6 @@ export default function PositionPage() {
     },
     {
       heading: "SECONDARY",
-      collapsed: true,
       items: [
         { id: "markers", label: "Markers", value: renderFlags.showMarkers, onChange: makeTrackedToggle("markers", () => renderFlags.toggle("showMarkers")) },
         { id: "flow", label: "Flow", value: shlIsOn(shlWeights.flow), onChange: makeTrackedShlToggle("flow", "flow") },
@@ -473,9 +472,9 @@ export default function PositionPage() {
             </div>
           </Link>
 
-          {/* KPI instruments — vertical stacked telemetry */}
-          <div className={styles.kpiRailDock} aria-label="KPI Intelligence">
-            <KPIOverlay vm={vm} layout="rail" />
+          {/* KPI instruments — grouped health rail */}
+          <div className={styles.kpiRailDock} aria-label="KPI Health Rail">
+            <KPIHealthRail kpis={vm?.kpis ?? null} />
           </div>
         </div>
 
@@ -488,7 +487,7 @@ export default function PositionPage() {
             <NavLink to={ROUTES.INITIATE} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Initiate</NavLink>
             <NavLink to="/decision" className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Decision</NavLink>
             <NavLink to={ROUTES.POSITION} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Position</NavLink>
-            <span className={styles.pageNavItem} style={{ opacity: 0.25, cursor: "default", pointerEvents: "none", marginLeft: "auto" }}>More coming soon</span>
+            <span className={styles.pageNavItem} style={{ opacity: 0.25, cursor: "default", pointerEvents: "none" }}>More coming soon</span>
           </nav>
 
           {/* Terrain canvas — fills available space */}

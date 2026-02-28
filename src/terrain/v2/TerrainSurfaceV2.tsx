@@ -28,13 +28,13 @@ export type TerrainTuningParams = {
 }
 
 export const DEFAULT_TUNING: TerrainTuningParams = {
-  elevationScale: 1.0,
-  ridgeIntensity: 0.5,
-  valleyDepth: 0.45,
-  terrainRoughness: 0.5,
-  peakSoftness: 0.6,
-  noiseFrequency: 1.0,
-  microDetailStrength: 0.3,
+  elevationScale: 1.22,
+  ridgeIntensity: 0.62,
+  valleyDepth: 0.52,
+  terrainRoughness: 0.45,
+  peakSoftness: 0.56,
+  noiseFrequency: 0.85,
+  microDetailStrength: 0.35,
 }
 
 // ─── Procedural Noise (zero-dependency) ────────────────────────────────────
