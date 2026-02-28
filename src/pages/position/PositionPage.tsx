@@ -124,9 +124,11 @@ export default function PositionPage() {
     hydrateScenarios()
   }, [hydrateScenarios])
 
+  // Only hydrate baseline when there's no active scenario — prevents
+  // rehydration from overwriting scenario-morphed terrain mid-render
   useEffect(() => {
-    hydrateBaseline()
-  }, [hydrateBaseline])
+    if (!activeScenarioId) hydrateBaseline()
+  }, [activeScenarioId, hydrateBaseline])
 
   useEffect(() => {
     if (scenarioStoreHydrated && !activeScenarioId) navigate("/decision")
@@ -151,10 +153,32 @@ export default function PositionPage() {
     return active ? ({ ...baselineInputs, ...active.overrides } as const) : baselineInputs
   }, [baselineInputs, overrideScenarios, activeOverrideScenarioId])
 
-  // Phase 3: Morph terrain inputs using simulation terrain multipliers
+  // ── Terrain source-of-truth: scenario multipliers take priority ──
+  // Lock multipliers via ref so intermediate "running" frames don't revert terrain.
+  const lockedMultipliersRef = useRef<{ cash: number; burn: number; growth: number } | null>(null)
+
+  // When a completed scenario arrives, lock its multipliers
+  const completedMultipliers = activeScenario?.status === "complete"
+    ? activeScenario.simulationResults?.terrain?.multipliers ?? null
+    : null
+
+  if (completedMultipliers) {
+    lockedMultipliersRef.current = completedMultipliers
+  }
+
+  // Clear lock when scenario changes
+  const prevScenarioIdRef = useRef<string | null>(null)
+  if (activeScenarioId !== prevScenarioIdRef.current) {
+    prevScenarioIdRef.current = activeScenarioId
+    // Only clear if the new scenario hasn't completed yet
+    if (activeScenario?.status !== "complete") {
+      lockedMultipliersRef.current = null
+    }
+  }
+
   const morphedInputs = useMemo(() => {
     if (!effectiveInputs) return null
-    const multipliers = activeScenario?.simulationResults?.terrain?.multipliers
+    const multipliers = lockedMultipliersRef.current
     if (!multipliers) return effectiveInputs
     return {
       ...effectiveInputs,
@@ -162,11 +186,23 @@ export default function PositionPage() {
       burnRate:   (Number(effectiveInputs.burnRate) || 0) * multipliers.burn,
       growthRate: (Number(effectiveInputs.growthRate) || 0) * multipliers.growth,
     }
-  }, [effectiveInputs, activeScenario])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveInputs, activeScenarioId, activeScenario?.status])
+
+  // DEV: log terrain source for debugging
+  if (import.meta.env.DEV) {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useMemo(() => {
+      console.log("TERRAIN SOURCE:", lockedMultipliersRef.current ? "SCENARIO" : "BASELINE",
+        activeScenarioId ? `(scenario ${activeScenarioId.slice(0, 8)})` : "(no scenario)")
+    }, [activeScenarioId, activeScenario?.status])
+  }
 
   const terrainMetrics = useMemo(
     () => (morphedInputs ? deriveTerrainMetrics(morphedInputs as any) : undefined),
-    [morphedInputs],
+    // Stabilize: only recompute when scenario identity or status changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [morphedInputs, activeScenarioId, activeScenario?.status],
   )
 
   const engineResults = useScenarioStore((s) => s.engineResults)
