@@ -4,7 +4,7 @@
 //
 // Pure deterministic "strategic CFO" engine.
 // Input:  baseline + scenario KPIs, deltas, risk, drivers, decision
-// Output: executiveSummary, keyDrivers, riskNarrative, recommendations
+// Output: executiveSummary, keyDrivers, riskNarrative, probabilitySignals
 //
 // No OpenAI calls. No side effects. Fully offline.
 // ═══════════════════════════════════════════════════════════════════════════
@@ -29,7 +29,7 @@ export interface AIInsightOutput {
   executiveSummary: string
   keyDrivers: KeyDriverInsight[]
   riskNarrative: string
-  recommendations: Recommendation[]
+  probabilitySignals: ProbabilitySignal[]
 }
 
 export interface KeyDriverInsight {
@@ -38,10 +38,11 @@ export interface KeyDriverInsight {
   tone: "positive" | "negative" | "neutral"
 }
 
-export interface Recommendation {
+export interface ProbabilitySignal {
   rank: number
-  action: string
-  rationale: string
+  title: string
+  probability: number
+  interpretation: string
   impactLevel: "high" | "medium" | "low"
 }
 
@@ -54,7 +55,7 @@ export function buildAIInsight(input: AIInsightInput): AIInsightOutput {
     executiveSummary: buildExecutiveSummary(input),
     keyDrivers: buildKeyDriverInsights(drivers, deltaKpis),
     riskNarrative: buildRiskNarrative(riskScore, scenarioKpis, deltaKpis),
-    recommendations: buildRecommendations(scenarioKpis, deltaKpis, riskScore),
+    probabilitySignals: buildProbabilitySignals(scenarioKpis, deltaKpis, riskScore),
   }
 }
 
@@ -75,13 +76,13 @@ function buildExecutiveSummary(input: AIInsightInput): string {
 
   // Risk tone
   let riskPhrase: string
-  if (riskScore >= 78) riskPhrase = "The overall risk posture remains strong."
-  else if (riskScore >= 60) riskPhrase = "Risk levels are manageable but warrant monitoring."
-  else if (riskScore >= 45) riskPhrase = "Structural risk is elevated and requires active attention."
-  else riskPhrase = "The risk profile indicates material stress across multiple dimensions."
+  if (riskScore >= 78) riskPhrase = "Simulation indicates the overall survival probability remains strong."
+  else if (riskScore >= 60) riskPhrase = "Probability signals show manageable risk levels that warrant monitoring."
+  else if (riskScore >= 45) riskPhrase = "Scenario likelihood suggests elevated structural risk requiring active attention."
+  else riskPhrase = "Simulation indicates material stress across multiple dimensions."
 
   return (
-    `Implementing "${decisionClip}" ${revDir} revenue trajectory and ${burnDir} burn intensity, ` +
+    `Simulation indicates that implementing \"${decisionClip}\" ${revDir} revenue trajectory and ${burnDir} burn intensity, ` +
     `resulting in ${runwayStr} under the modelled scenario. ${riskPhrase}`
   )
 }
@@ -138,9 +139,9 @@ function buildRiskNarrative(
 
   if (riskScore >= 78) {
     return (
-      "Probability of financial stress is low under this scenario. " +
+      "Simulation indicates low probability of financial stress under this scenario. " +
       "The capital base supports multi-quarter execution with margin for deviation. " +
-      "Maintain current trajectory while monitoring burn proportionality."
+      "Current trajectory sustains burn proportionality."
     )
   }
 
@@ -149,15 +150,15 @@ function buildRiskNarrative(
       ? `Runway of ${runway.toFixed(0)} months provides adequate but narrowing headroom. `
       : ""
     return (
-      `${runwayNote}Risk is contained but sensitive to execution velocity. ` +
+      `${runwayNote}Probability signals show contained risk, sensitive to execution velocity. ` +
       "A sustained shortfall in revenue growth or unexpected cost escalation could compress optionality. " +
-      "Recommend pre-positioning contingency measures within 1–2 quarters."
+      "Pre-positioning contingency measures within 1–2 quarters is indicated."
     )
   }
 
   if (riskScore >= 45) {
     return (
-      "Elevated risk profile detected. Multiple pressure vectors are converging: " +
+      "Scenario likelihood suggests an elevated risk profile. Multiple pressure vectors are converging: " +
       `${runway != null ? `runway at ${runway.toFixed(0)} months, ` : ""}` +
       `burn${deltas.burnDelta > 0 ? " escalating" : " compressing"} relative to baseline. ` +
       "Without intervention, probability of financial stress increases materially within 2 quarters."
@@ -165,86 +166,94 @@ function buildRiskNarrative(
   }
 
   return (
-    "Critical risk zone. The modelled scenario produces a capital trajectory that does not support " +
+    "Simulation indicates a critical risk zone. The modelled scenario produces a capital trajectory that does not support " +
     "sustained operations beyond the near term. Immediate corrective action is required across " +
     "burn management, revenue acceleration, or capital injection to avoid structural failure."
   )
 }
 
-/* ── Recommendations ── */
+/* ── Probability Signals ── */
 
-function buildRecommendations(
+function buildProbabilitySignals(
   kpis: SelectedKpis,
   deltas: KpiDeltas,
   riskScore: number,
-): Recommendation[] {
-  const recs: Recommendation[] = []
+): ProbabilitySignal[] {
+  const signals: ProbabilitySignal[] = []
   const runway = kpis.runwayMonths
 
-  // 1 — Revenue-side recommendation
+  // 1 — Revenue-side signal
   if (deltas.revenueDelta < 0) {
-    recs.push({
+    signals.push({
       rank: 1,
-      action: "Accelerate revenue pipeline",
-      rationale: "Revenue contraction is the primary drag on forward trajectory. Prioritise pipeline conversion and expansion motions.",
+      title: "Revenue trajectory contraction",
+      probability: Math.max(5, Math.min(95, 50 - Math.round(deltas.revenueDelta / 1000))),
+      interpretation: "Revenue contraction is the primary drag on forward trajectory. Pipeline conversion and expansion motions are indicated.",
       impactLevel: "high",
     })
   } else if (deltas.growthRateDelta > 0) {
-    recs.push({
+    signals.push({
       rank: 1,
-      action: "Sustain growth momentum",
-      rationale: "Positive growth acceleration is the most material value driver. Protect the resources fuelling this trajectory.",
+      title: "Growth momentum sustaining",
+      probability: Math.max(5, Math.min(95, 50 + Math.round(deltas.growthRateDelta * 10))),
+      interpretation: "Positive growth acceleration is the most material value driver. Scenario likelihood suggests protecting the resources fuelling this trajectory.",
       impactLevel: "high",
     })
   } else {
-    recs.push({
+    signals.push({
       rank: 1,
-      action: "Invest in growth catalysts",
-      rationale: "Revenue trajectory is flat. Identify and fund 1–2 scalable growth levers to shift the compounding curve.",
+      title: "Revenue trajectory flat",
+      probability: 45,
+      interpretation: "Revenue trajectory is flat. Simulation indicates 1–2 scalable growth levers are needed to shift the compounding curve.",
       impactLevel: "high",
     })
   }
 
-  // 2 — Burn / efficiency recommendation
+  // 2 — Burn / efficiency signal
   if (deltas.burnDelta > 0) {
-    recs.push({
+    signals.push({
       rank: 2,
-      action: "Tighten burn discipline",
-      rationale: "Escalating burn is compressing runway faster than revenue can compensate. Review discretionary spend and hiring velocity.",
+      title: "Burn escalation pressure",
+      probability: Math.max(5, Math.min(95, 40 + Math.round(deltas.burnDelta / 500))),
+      interpretation: "Escalating burn is compressing runway faster than revenue can compensate. Discretionary spend and hiring velocity warrant review.",
       impactLevel: riskScore < 60 ? "high" : "medium",
     })
   } else {
-    recs.push({
+    signals.push({
       rank: 2,
-      action: "Maintain cost structure",
-      rationale: "Burn is well managed. Hold current operating envelope and reinvest savings into highest-ROI initiatives.",
+      title: "Cost structure stability",
+      probability: Math.max(5, Math.min(95, 70 + Math.round(riskScore / 10))),
+      interpretation: "Burn is well managed. Current operating envelope holds; savings reinvestment into highest-ROI initiatives is indicated.",
       impactLevel: "medium",
     })
   }
 
-  // 3 — Capital / runway recommendation
+  // 3 — Capital / runway signal
   if (runway != null && runway < 12) {
-    recs.push({
+    signals.push({
       rank: 3,
-      action: "Initiate capital contingency planning",
-      rationale: `Runway of ${runway.toFixed(0)} months is below institutional safety threshold. Begin bridge or extension discussions proactively.`,
+      title: "Capital contingency threshold",
+      probability: Math.max(5, Math.min(95, 30 + Math.round(runway * 3))),
+      interpretation: `Runway of ${runway.toFixed(0)} months is below institutional safety threshold. Probability signals show bridge or extension discussions are warranted.`,
       impactLevel: "high",
     })
   } else if (riskScore < 50) {
-    recs.push({
+    signals.push({
       rank: 3,
-      action: "Stress-test downside scenarios",
-      rationale: "Risk profile warrants pessimistic scenario modelling to identify earliest intervention triggers.",
+      title: "Downside stress exposure",
+      probability: Math.max(5, Math.min(95, riskScore)),
+      interpretation: "Scenario likelihood suggests pessimistic scenario modelling to identify earliest intervention triggers.",
       impactLevel: "medium",
     })
   } else {
-    recs.push({
+    signals.push({
       rank: 3,
-      action: "Optimise capital deployment",
-      rationale: "Capital position supports strategic investment. Evaluate highest-leverage deployment opportunities.",
+      title: "Capital deployment optionality",
+      probability: Math.max(5, Math.min(95, 60 + Math.round(riskScore / 5))),
+      interpretation: "Capital position supports strategic investment. Highest-leverage deployment opportunities are indicated.",
       impactLevel: "low",
     })
   }
 
-  return recs
+  return signals
 }

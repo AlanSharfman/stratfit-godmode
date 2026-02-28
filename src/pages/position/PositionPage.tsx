@@ -46,6 +46,8 @@ import TimeScaleControl from "./overlays/TimeScaleControl"
 import IdleMotionLayer from "./IdleMotionLayer"
 import HorizonPulse from "@/components/terrain/overlays/HorizonPulse"
 import { useReducedMotion } from "@/hooks/useReducedMotion"
+import { InsightRevealController } from "@/components/cinematic/InsightRevealController"
+import { useCinematicRevealStore } from "@/state/cinematicRevealStore"
 import {
   buildPositionViewModel,
 } from "./overlays/positionState"
@@ -322,6 +324,9 @@ export default function PositionPage() {
     if (lastAutoRunRef.current === completedAt) return // already processed
     lastAutoRunRef.current = completedAt
 
+    // Cinematic reveal — trigger via cinematicRevealStore (replaces legacy insightRevealStore)
+    useCinematicRevealStore.getState().startSequence(completedAt)
+
     const kpis = activeScenario.simulationResults?.kpis
     if (!kpis) return
 
@@ -559,6 +564,11 @@ export default function PositionPage() {
               triggerKey={activeScenario?.simulationResults?.completedAt ?? null}
               disabled={reducedMotion}
             />
+            {/* ── Cinematic Reveal Controller — rAF timeline orchestrator ── */}
+            <InsightRevealController
+              completedAt={activeScenario?.simulationResults?.completedAt ?? null}
+              runId={activeScenario?.simulationResults?.completedAt ?? null}
+            />
           </div>
         </div>
 
@@ -586,8 +596,8 @@ export default function PositionPage() {
             )}
           </div>
 
-          {/* AI Intelligence */}
-          <div className={styles.baselineIntelDock} aria-label="AI Intelligence">
+          {/* Executive Interpretation */}
+          <div className={styles.baselineIntelDock} aria-label="Executive Interpretation">
             <ScenarioContextPanel />
             <AIInsightPanel />
           </div>

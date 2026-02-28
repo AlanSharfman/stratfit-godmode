@@ -3,7 +3,7 @@
 // STRATFIT — Horizon Pulse micro-cinematic
 //
 // DOM overlay (not Three.js) — radial gradient flash aligned to the terrain
-// horizon line. Triggers on simulation completion.
+// horizon line. Triggers on panel_in phase of cinematic reveal.
 //
 // • Opacity: 0 → 0.12 → 0 over 600ms
 // • Palette: ice/cyan radial, no bloom (CSS only)
@@ -12,9 +12,13 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import React, { memo, useEffect, useRef, useState } from "react"
+import {
+  useCinematicRevealStore,
+  ENABLE_CINEMATIC_SYNC,
+} from "@/state/cinematicRevealStore"
 
 interface Props {
-  /** Unique key that changes on each simulation completion to re-trigger */
+  /** Unique key that changes on each simulation completion to re-trigger (legacy) */
   triggerKey: number | null
   /** Disable all animation */
   disabled?: boolean
@@ -23,9 +27,24 @@ interface Props {
 const HorizonPulse: React.FC<Props> = memo(({ triggerKey, disabled }) => {
   const [active, setActive] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastRunIdRef = useRef<number | null>(null)
+
+  // Cinematic sync: trigger on panel_in phase
+  const revealPhase = useCinematicRevealStore((s) => s.revealPhase)
+  const revealRunId = useCinematicRevealStore((s) => s.revealRunId)
 
   useEffect(() => {
-    if (disabled || triggerKey == null || triggerKey === 0) return
+    if (disabled) return
+
+    if (ENABLE_CINEMATIC_SYNC) {
+      // Trigger once per reveal when phase reaches panel_in
+      if (revealPhase !== "panel_in") return
+      if (revealRunId === lastRunIdRef.current) return
+      lastRunIdRef.current = revealRunId
+    } else {
+      // Legacy: trigger on triggerKey change
+      if (triggerKey == null || triggerKey === 0) return
+    }
 
     setActive(true)
     timerRef.current = setTimeout(() => setActive(false), 650)
@@ -33,7 +52,7 @@ const HorizonPulse: React.FC<Props> = memo(({ triggerKey, disabled }) => {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current)
     }
-  }, [triggerKey, disabled])
+  }, [triggerKey, disabled, revealPhase, revealRunId])
 
   if (!active) return null
 

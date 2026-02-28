@@ -336,7 +336,7 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis }) => {
               {k ? (Number.isFinite(k.runwayMonths) ? `${k.runwayMonths.toFixed(1)}m` : "—") : "999.0m"}
             </div>
             <RunwayWidget />
-            <div className={styles.sub}>Months at burn</div>
+            <div className={styles.sub}>Stability probability</div>
           </div>
         </div>
       </section>
@@ -388,20 +388,20 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis }) => {
         <h3 className={styles.sectionHeader}>Valuation</h3>
         <div className={styles.cardStack}>
           <div className={styles.card}>
-            <div className={`${styles.label} ${styles.labelValuation}`}>Valuation</div>
+            <div className={`${styles.label} ${styles.labelValuation}`}>Enterprise Value (P50)</div>
             <div className={styles.value}>$ —</div>
             <ValuationWidget />
-            <div className={styles.sub}>DCF baseline • confidence low</div>
+            <div className={styles.sub}>Probability dispersion ±—%</div>
           </div>
         </div>
       </section>
 
-      {/* ── 5. RISK & SURVIVAL ── */}
+      {/* ── 5. SURVIVAL PROBABILITY ── */}
       <section className={styles.section}>
-        <h3 className={styles.sectionHeader}>Risk &amp; Survival</h3>
+        <h3 className={styles.sectionHeader}>Survival Probability</h3>
         <div className={styles.cardStack}>
           <div className={styles.card}>
-            <div className={`${styles.label} ${styles.labelRisk}`}>Risk Score</div>
+            <div className={`${styles.label} ${styles.labelRisk}`}>Survival Probability</div>
             <div className={styles.value}>{k ? k.riskIndex.toFixed(0) : "85"}</div>
             <HeroRiskWidget tone={riskTone} />
             <span className={styles.riskTag} data-tone={riskTone}>

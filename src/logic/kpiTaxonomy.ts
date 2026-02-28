@@ -86,7 +86,7 @@ export const KPI_DEFS: KPIDefinition[] = [
   },
   {
     key: "enterpriseValue",
-    label: "Valuation (Enterprise Value)",
+    label: "Enterprise Value (P50)",
     category: "executive",
     unit: "currency",
     higherIsBetter: true,
@@ -173,7 +173,7 @@ export const KPI_DEFS: KPIDefinition[] = [
   // Risk KPIs
   {
     key: "riskIndex",
-    label: "Risk Score",
+    label: "Survival Probability",
     category: "risk",
     unit: "score",
     higherIsBetter: false,

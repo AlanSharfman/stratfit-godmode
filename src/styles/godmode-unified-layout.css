@@ -462,7 +462,7 @@ aside.right-column,
   scrollbar-color: rgba(34, 211, 238, 0.15) transparent !important;
 }
 
-/* Corner Bolts moved to AI Intelligence panel bezel */
+/* Corner Bolts moved to Executive Interpretation panel bezel */
 
 .right-column::-webkit-scrollbar,
 [data-tour="intel"]::-webkit-scrollbar {

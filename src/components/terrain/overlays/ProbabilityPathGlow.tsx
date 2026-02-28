@@ -5,6 +5,12 @@
 // Renders a soft additive-blended glow tube along the P50 trajectory.
 // Projected onto the terrain surface using terrainRef.getHeightAt().
 //
+// Cinematic sync:
+//   micro_settle / blur_in → ramp 0 → 0.55
+//   typewriter / signals   → hold 0.55
+//   blur_out               → settle to 0.25
+//   restore                → 0.25 steady
+//
 // Key constraints:
 //   - No per-frame allocations. Geometry memoized on path change.
 //   - Additive blending for soft feathered look.
@@ -16,6 +22,11 @@ import React, { useMemo, useRef } from "react"
 import * as THREE from "three"
 import { useFrame } from "@react-three/fiber"
 import type { Vec3 } from "@/selectors/probabilitySelectors"
+import {
+  useCinematicRevealStore,
+  ENABLE_CINEMATIC_SYNC,
+  derivePathGlowIntensity,
+} from "@/state/cinematicRevealStore"
 
 interface Props {
   /** P50 path points in terrain world-space (y=0, needs height projection) */
@@ -69,14 +80,21 @@ export default function ProbabilityPathGlow({
   }, [p50Path, terrainRef, hoverOffset])
 
   // Animate opacity based on intensity — no allocations
+  // When cinematic sync is enabled, derive intensity from reveal phase
   useFrame(() => {
+    let effectiveIntensity = intensity
+    if (ENABLE_CINEMATIC_SYNC) {
+      const { revealPhase, revealProgress } = useCinematicRevealStore.getState()
+      effectiveIntensity = derivePathGlowIntensity(revealPhase, revealProgress)
+    }
+
     if (coreRef.current) {
       const mat = coreRef.current.material as THREE.LineBasicMaterial
-      mat.opacity = intensity * 0.92
+      mat.opacity = effectiveIntensity * 0.92
     }
     if (glowRef.current) {
       const mat = glowRef.current.material as THREE.LineBasicMaterial
-      mat.opacity = intensity * 0.38
+      mat.opacity = effectiveIntensity * 0.38
     }
   })
 
