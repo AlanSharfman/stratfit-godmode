@@ -9,6 +9,25 @@ import { selectTerrainMetrics } from "@/selectors/terrainSelectors"
 
 export type SimulationStatus = "draft" | "running" | "complete" | "error"
 
+/* ── Decision intent types (MVP deterministic) ── */
+
+export type DecisionIntentType =
+  | "hiring"
+  | "pricing"
+  | "cost_reduction"
+  | "fundraising"
+  | "growth_investment"
+  | "other"
+
+export const DECISION_INTENT_OPTIONS: { value: DecisionIntentType; label: string }[] = [
+  { value: "hiring",            label: "Hiring / Team expansion" },
+  { value: "pricing",           label: "Pricing change" },
+  { value: "cost_reduction",    label: "Reduce costs" },
+  { value: "fundraising",       label: "Raise funding" },
+  { value: "growth_investment", label: "Growth investment" },
+  { value: "other",             label: "Other" },
+]
+
 /* ── Simulation result types ── */
 
 export type SimulationKpis = {
@@ -47,6 +66,9 @@ export type Phase1Scenario = {
   createdAt: number
   decision: string
   intent?: unknown
+  /** MVP deterministic intent classification */
+  decisionIntentType?: DecisionIntentType
+  decisionIntentLabel?: string
   status: SimulationStatus
   simulationResults?: SimulationResults
   /** Decision identity — populated on creation */
@@ -57,6 +79,8 @@ export type CreateScenarioInput = {
   createdAt?: number
   decision: string
   intent?: unknown
+  decisionIntentType?: DecisionIntentType
+  decisionIntentLabel?: string
 }
 
 type Phase1ScenarioState = {
@@ -155,6 +179,8 @@ export const usePhase1ScenarioStore = create<Phase1ScenarioState>()(
           createdAt: identity.createdAt,
           decision: input.decision,
           intent: input.intent,
+          decisionIntentType: input.decisionIntentType,
+          decisionIntentLabel: input.decisionIntentLabel,
           status: "draft",
           identity,
         }

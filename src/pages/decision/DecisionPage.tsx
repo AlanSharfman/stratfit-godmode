@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 
 import { useCanonicalBaseline } from "@/state/useCanonicalBaseline"
 import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore"
+import { DECISION_INTENT_OPTIONS, type DecisionIntentType } from "@/state/phase1ScenarioStore"
 import { runDecisionPipeline } from "@/core/decision/runDecisionPipeline"
 
 /* ═══════════════════════════════════════════════════════════
@@ -52,6 +53,7 @@ export default function DecisionPage() {
   const runSimulation = usePhase1ScenarioStore((s) => s.runSimulation)
 
   const [decisionText, setDecisionText] = useState("")
+  const [intentType, setIntentType] = useState<DecisionIntentType>("other")
   const [isCreating, setIsCreating] = useState(false)
   const [isDone, setIsDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -100,9 +102,12 @@ export default function DecisionPage() {
     try {
       const { intent } = await runDecisionPipeline(text, baseline)
 
+      const selectedOption = DECISION_INTENT_OPTIONS.find((o) => o.value === intentType)
       const scenarioId = createScenario({
         decision: text,
         intent,
+        decisionIntentType: intentType,
+        decisionIntentLabel: selectedOption?.label ?? "Other",
         createdAt: Date.now(),
       })
 
@@ -252,6 +257,41 @@ export default function DecisionPage() {
               boxShadow: focused ? "0 0 0 3px rgba(34,211,238,0.08)" : "none",
             }}
           />
+
+          {/* ── Intent selector (MVP deterministic) ── */}
+          <div style={{ marginTop: 14 }}>
+            <label style={{
+              display: "block", fontSize: 10, fontWeight: 700, textTransform: "uppercase",
+              letterSpacing: "0.12em", color: "rgba(34,211,238,0.7)", marginBottom: 8,
+            }}>
+              What decision are you evaluating?
+            </label>
+            <select
+              value={intentType}
+              onChange={(e) => { setIntentType(e.target.value as DecisionIntentType); setIsDone(false) }}
+              disabled={isCreating}
+              style={{
+                width: "100%", padding: "10px 14px", borderRadius: 10,
+                border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)",
+                color: "#fff", fontSize: 14, fontFamily: "inherit",
+                outline: "none", cursor: "pointer",
+                appearance: "none" as const,
+                WebkitAppearance: "none" as const,
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 5l3 3 3-3' stroke='%2322d3ee' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`,
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "right 14px center",
+                transition: "border-color 0.15s",
+              }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(34,211,238,0.4)" }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)" }}
+            >
+              {DECISION_INTENT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value} style={{ background: "#0f172a", color: "#fff" }}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
           {/* Example prompts */}
           {decisionText.length === 0 && !isCreating && !isDone && (

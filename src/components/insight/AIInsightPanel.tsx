@@ -301,10 +301,13 @@ const AIInsightPanel: React.FC = memo(() => {
 
   return (
     <aside className={`${styles.wrapper}${ready ? ` ${styles.ambientGlow}` : ""}`}>
-      {/* ── Header ── */}
+      {/* ── Decision-anchored header ── */}
       <div className={styles.panelHeader}>
         <div className={styles.panelTitle}>
-          EXECUTIVE INTERPRETATION
+          {activeScenario?.decision
+            ? <>Decision Insight &mdash; <span style={{ color: "#22d3ee", fontWeight: 400, fontStyle: "italic" }}>{activeScenario.decision}</span></>
+            : "Scenario Insight"
+          }
           <span className={styles.strobeDots} aria-hidden="true">
             <span className={styles.dot} />
             <span className={styles.dot} />
@@ -312,6 +315,14 @@ const AIInsightPanel: React.FC = memo(() => {
             <span className={styles.dot} />
           </span>
         </div>
+        {activeScenario?.decisionIntentLabel && (
+          <div style={{
+            fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 4,
+            letterSpacing: "0.04em",
+          }}>
+            Based on <span style={{ color: "rgba(34,211,238,0.6)" }}>{activeScenario.decisionIntentLabel}</span> scenario outcomes
+          </div>
+        )}
       </div>
 
       {!ready ? (
