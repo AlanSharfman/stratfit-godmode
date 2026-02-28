@@ -16,7 +16,7 @@ import type { TerrainMetrics } from "@/terrain/terrainFromBaseline"
 import { deriveTerrainMetrics } from "@/terrain/terrainFromBaseline"
 import type { TimeGranularity } from "@/terrain/TimelineTicks"
 
-import { useScenarioStore } from "@/state/scenarioStore"
+// Legacy scenarioStore removed — MVP reads from phase1ScenarioStore only
 import { useBaselineStore } from "@/state/baselineStore"
 import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore"
 import { useSystemBaseline } from "@/system/SystemBaselineProvider"
@@ -50,12 +50,6 @@ import {
 import styles from "./PositionOverlays.module.css"
 
 // Diagnostics panel is togglable via close button
-
-function extractRiskIndex(engineResults: unknown): number | null {
-  const r = engineResults as any
-  const v = r?.base?.kpis?.riskIndex?.value
-  return typeof v === "number" && Number.isFinite(v) ? v : null
-}
 
 /** Treat an SHL weight > 0 as "on" */
 function shlIsOn(weight: number): boolean {
@@ -204,16 +198,14 @@ export default function PositionPage() {
     }
   }, [activeScenarioId, activeScenario?.status])
 
-  const engineResults = useScenarioStore((s) => s.engineResults)
-
-  // V1 baseline from context — only used for legacy KPI overlay / diagnostics VM
+  // V1 baseline from context — only used for legacy left-rail KPI overlay.
+  // Will be replaced by Phase1 scenario KPI data in a future phase.
   const { baseline: baselineV1 } = useSystemBaseline()
 
   const vm = useMemo(() => {
     if (!baselineV1) return null
-    const riskIndexFromEngine = extractRiskIndex(engineResults)
-    return buildPositionViewModel(baselineV1, { riskIndexFromEngine })
-  }, [baselineV1, engineResults])
+    return buildPositionViewModel(baselineV1, { riskIndexFromEngine: null })
+  }, [baselineV1])
 
   const terrainSignals = useMemo(() => {
     const byKey = new Map((vm?.diagnostics ?? []).map((d) => [d.key, d]))
