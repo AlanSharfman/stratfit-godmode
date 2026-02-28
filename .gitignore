@@ -1,10 +1,21 @@
-# Artifacts / backups
+# Artifacts / archives / backups
 *.zip
 *.7z
 *.rar
+*.bak
+*.bak*
+*.tsbuildinfo
 /backups/
 /audits/
 /tmp/
+_archive/
+_quarantine/
+_worktrees/
+_HARD_SAVES/
+_broken_mountain_backup/
+**/_broken_mountain_backup/
+_request_dump/
+stash-backup.txt
 
 # Logs
 logs
@@ -36,45 +47,12 @@ desktop.ini
 Thumbs.db
 
 .vercel
-.env*.local
-
-# Archives (old backups)
-_archive/
-*.zip
-
-# Vite cache
-node_modules/.vite/
-# Local archives & backups
-_archive/
-*.zip
-
-# Vite cache
-node_modules/.vite/
 
 # Secrets
+.env*.local
 .env.local
 
-# local safety backups
-*.bak
-*.bak*
-
-# local recovery artifacts
-_quarantine/
-
-# TypeScript incremental build info
-*.tsbuildinfo
-
-# Local request dumps / dev output
-_request_dump/
+# Vite cache
+node_modules/.vite/
 
 # Cursor / local worktrees & saved snapshots (machine-local, never commit)
-_worktrees/
-_HARD_SAVES/
-
-# local backups
-_broken_mountain_backup/
-**/_broken_mountain_backup/
-*.zip
-
-# local stash artifacts
-stash-backup.txt
