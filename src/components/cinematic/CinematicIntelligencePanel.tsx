@@ -23,6 +23,7 @@ import { selectDrivers } from "@/selectors/driverSelectors"
 import { buildAIInsight } from "@/engine/aiInsightBuilder"
 import type { AIInsightOutput } from "@/engine/aiInsightBuilder"
 import { useRowTypewriter } from "@/hooks/useRowTypewriter"
+import { selectIntentOrderedRows } from "@/engine/intentTemplates"
 import type { IntelligencePhase } from "@/hooks/useIntelligencePresentation"
 
 /* ── Props ── */
@@ -116,7 +117,12 @@ const CinematicIntelligencePanel: React.FC<CinematicIntelligencePanelProps> = me
     })
   }, [baselineKpis, scenarioKpis, activeScenario])
 
-  const rows = useMemo(() => insight ? extractRows(insight) : [], [insight])
+  const baseRows = useMemo(() => insight ? extractRows(insight) : [], [insight])
+  const intentType = activeScenario?.decisionIntentType
+  const rows = useMemo(
+    () => selectIntentOrderedRows(intentType, baseRows),
+    [intentType, baseRows],
+  )
 
   const riskScore = useMemo(
     () => selectRiskScore(activeScenario?.simulationResults?.kpis ?? null),
