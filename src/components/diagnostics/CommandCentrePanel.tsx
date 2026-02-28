@@ -12,6 +12,8 @@ interface ToggleItem {
   value: boolean;
   onChange: (v: boolean) => void;
   visible?: boolean;
+  /** Optional CSS-module class key for special item styling (e.g. "videoPulse") */
+  className?: string;
 }
 
 interface ToggleGroup {
@@ -49,21 +51,28 @@ export default function CommandCentrePanel({
             <div key={group.heading} className={styles.group}>
               <div className={styles.groupHeading}>{group.heading}</div>
               <div className={styles.toggleList}>
-                {visibleItems.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => item.onChange(!item.value)}
-                    className={`${styles.toggleRow} ${item.value ? styles.toggleRowOn : ""}`}
-                  >
-                    <span className={styles.rowLabel}>{item.label}</span>
-                    <span
-                      className={`${styles.toggleState} ${item.value ? styles.toggleStateOn : ""}`}
+                {visibleItems.map((item) => {
+                  const extraCls = item.className && (styles as Record<string, string>)[item.className];
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => item.onChange(!item.value)}
+                      className={[
+                        styles.toggleRow,
+                        item.value ? styles.toggleRowOn : "",
+                        extraCls || "",
+                      ].filter(Boolean).join(" ")}
                     >
-                      {item.value ? "ON" : "OFF"}
-                    </span>
-                  </button>
-                ))}
+                      <span className={styles.rowLabel}>{item.label}</span>
+                      <span
+                        className={`${styles.toggleState} ${item.value ? styles.toggleStateOn : ""}`}
+                      >
+                        {item.value ? "ON" : "OFF"}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           );

@@ -175,3 +175,53 @@
   color: rgba(34, 211, 238, 0.90);
   box-shadow: 0 0 4px rgba(34, 211, 238, 0.15);
 }
+
+/* ── VIDEO item — bright white treatment ── */
+.videoItem .rowLabel {
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.videoItem {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.videoItem:hover {
+  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ── VIDEO pulse / strobe animation ── */
+.videoPulse {
+  animation: ccVideoPulse 1.6s ease-in-out infinite;
+  border-color: rgba(255, 255, 255, 0.30);
+}
+
+.videoPulse .rowLabel {
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.videoPulse:hover {
+  border-color: rgba(255, 255, 255, 0.50);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+@keyframes ccVideoPulse {
+  0%, 100% {
+    box-shadow:
+      0 0 4px rgba(255, 255, 255, 0.08),
+      0 0 8px rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(15, 20, 30, 0.40);
+  }
+  50% {
+    box-shadow:
+      0 0 8px rgba(255, 255, 255, 0.25),
+      0 0 18px rgba(255, 255, 255, 0.10);
+    border-color: rgba(255, 255, 255, 0.50);
+    background: rgba(255, 255, 255, 0.07);
+  }
+}

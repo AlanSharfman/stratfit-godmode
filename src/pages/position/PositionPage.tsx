@@ -241,14 +241,57 @@ export default function PositionPage() {
   const heatmapEnabled = useViewTogglesStore((s) => s.heatmapEnabled)
   const toggleHeatmap = useViewTogglesStore((s) => s.toggleHeatmap)
 
-  // ── Diagnostic Groups (NARRATIVE / FIELDS / TOPOGRAPHY) ──
+  // ── LIVE DEMO / VIDEO state ──
+  const [videoActive, setVideoActive] = useState(false)
+  const videoEverOpened = useRef(false)
+  const [videoPulsing, setVideoPulsing] = useState(true)
+
+  // Pulse cycle: 10s on → 10s off, repeat. Stops permanently once opened.
+  useEffect(() => {
+    if (videoEverOpened.current) {
+      setVideoPulsing(false)
+      return
+    }
+    let mounted = true
+    const cycle = () => {
+      if (!mounted || videoEverOpened.current) return
+      setVideoPulsing(true)
+      const onTimer = setTimeout(() => {
+        if (!mounted || videoEverOpened.current) return
+        setVideoPulsing(false)
+        const offTimer = setTimeout(() => {
+          if (!mounted || videoEverOpened.current) return
+          cycle()
+        }, 10_000)
+        return () => clearTimeout(offTimer)
+      }, 10_000)
+      return () => clearTimeout(onTimer)
+    }
+    cycle()
+    return () => { mounted = false }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleVideoToggle = useCallback(() => {
+    const next = !videoActive
+    setVideoActive(next)
+    if (next) {
+      videoEverOpened.current = true
+      setVideoPulsing(false)
+    }
+  }, [videoActive])
+
+  // ── Diagnostic Groups (LIVE DEMO / FIELDS / TOPOGRAPHY) ──
   const diagnosticGroups = [
     {
-      heading: "NARRATIVE",
+      heading: "LIVE DEMO",
       items: [
-        { id: "heatMap", label: "Heat Map", value: heatmapEnabled, onChange: () => toggleHeatmap() },
-        { id: "envelope", label: "Envelope", value: renderFlags.showEnvelope, onChange: () => renderFlags.toggle("showEnvelope") },
-        { id: "annotations", label: "Annotations", value: renderFlags.showAnnotations, onChange: () => renderFlags.toggle("showAnnotations") },
+        {
+          id: "liveVideo",
+          label: "VIDEO",
+          value: videoActive,
+          onChange: handleVideoToggle,
+          className: videoPulsing ? "videoPulse" : "videoItem",
+        },
       ],
     },
     {
@@ -260,6 +303,9 @@ export default function PositionPage() {
         { id: "preview", label: "Preview", value: renderFlags.showPreview, onChange: () => renderFlags.toggle("showPreview") },
         { id: "flow", label: "Flow", value: shlIsOn(shlWeights.flow), onChange: toggleShl("flow") },
         { id: "diverge", label: "Diverge", value: shlIsOn(shlWeights.divergence), onChange: toggleShl("divergence") },
+        { id: "envelope", label: "Envelope", value: renderFlags.showEnvelope, onChange: () => renderFlags.toggle("showEnvelope") },
+        { id: "annotations", label: "Annotations", value: renderFlags.showAnnotations, onChange: () => renderFlags.toggle("showAnnotations") },
+        { id: "heatMap", label: "Heat Map", value: heatmapEnabled, onChange: () => toggleHeatmap() },
       ],
     },
     {
