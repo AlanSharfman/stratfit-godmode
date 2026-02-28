@@ -5,6 +5,47 @@ import { useCanonicalBaseline } from "@/state/useCanonicalBaseline"
 import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore"
 import { runDecisionPipeline } from "@/core/decision/runDecisionPipeline"
 
+/* ─── Inline Styles ──────────────────────────────────────── */
+
+const PAGE: React.CSSProperties = {
+  minHeight: "100vh",
+  background: "linear-gradient(180deg, #0a0e17 0%, #101829 100%)",
+  color: "#e2e8f0",
+  fontFamily: "'Inter', system-ui, sans-serif",
+}
+
+const CARD: React.CSSProperties = {
+  maxWidth: 780,
+  margin: "0 auto",
+  padding: "40px 28px",
+}
+
+const TEXTAREA: React.CSSProperties = {
+  width: "100%",
+  padding: 16,
+  borderRadius: 12,
+  border: "1px solid rgba(255,255,255,0.15)",
+  background: "rgba(0,0,0,0.30)",
+  color: "#fff",
+  outline: "none",
+  resize: "vertical",
+  fontSize: 16,
+  lineHeight: 1.5,
+  minHeight: 140,
+}
+
+const BTN: React.CSSProperties = {
+  padding: "12px 22px",
+  borderRadius: 10,
+  border: "none",
+  fontWeight: 600,
+  fontSize: 14,
+  cursor: "pointer",
+  transition: "opacity 0.15s",
+}
+
+/* ─── Component ──────────────────────────────────────────── */
+
 export default function DecisionPage() {
   const navigate = useNavigate()
 
@@ -17,30 +58,36 @@ export default function DecisionPage() {
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const canRun = useMemo(() => {
-    return !!baseline && decisionText.trim().length > 3 && !isCreating
-  }, [baseline, decisionText, isCreating])
+  const canRun = useMemo(
+    () => !!baseline && decisionText.trim().length > 3 && !isCreating,
+    [baseline, decisionText, isCreating],
+  )
 
+  /* ── Baseline guard ── */
   if (!baseline) {
     return (
-      <div style={{ padding: 24 }}>
-        <h2>Baseline missing</h2>
-        <p>Please return to Initiate and save baseline.</p>
+      <div style={PAGE}>
+        <div style={{ ...CARD, textAlign: "center", paddingTop: 80 }}>
+          <h2 style={{ margin: "0 0 12px", color: "#fff" }}>Baseline Missing</h2>
+          <p style={{ opacity: 0.6, marginBottom: 20 }}>
+            Please complete the Initiate step first so we have your company baseline.
+          </p>
+          <button
+            type="button"
+            style={{ ...BTN, background: "linear-gradient(135deg, #22d3ee, #06b6d4)", color: "#000" }}
+            onClick={() => navigate("/initiate")}
+          >
+            Go to Initiate →
+          </button>
+        </div>
       </div>
     )
   }
 
   async function handleRun() {
     setError(null)
-
     const text = decisionText.trim()
-    if (!text) return
-
-    if (!baseline) {
-      setError("Baseline missing — go back to Initiate and save baseline first.")
-      console.warn("[DecisionPage] baseline missing")
-      return
-    }
+    if (!text || !baseline) return
 
     setIsCreating(true)
     try {
@@ -59,91 +106,78 @@ export default function DecisionPage() {
       console.error("[DecisionPage] run failed", e)
       setError("Failed to run decision pipeline. Check console for details.")
     } finally {
-      // CRITICAL: never leave UI stuck disabled
       setIsCreating(false)
     }
   }
 
   return (
-    <div style={{ padding: 24, maxWidth: 1100, margin: "0 auto" }}>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16 }}>
-        <h1 style={{ margin: 0, fontSize: 28 }}>Decision Workspace</h1>
-        <div style={{ opacity: 0.8, fontSize: 12 }}>
-          Baseline: {baseline ? "Loaded" : "Missing"}
+    <div style={PAGE}>
+      <div style={CARD}>
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16, marginBottom: 6 }}>
+          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700, color: "#fff" }}>
+            Decision Workspace
+          </h1>
+          <span style={{ fontSize: 11, opacity: 0.5, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+            Baseline: Loaded
+          </span>
         </div>
-      </div>
 
-      <p style={{ marginTop: 8, opacity: 0.8 }}>
-        Enter the decision you want STRATFIT to simulate.
-      </p>
+        <p style={{ margin: "8px 0 20px", opacity: 0.6, fontSize: 14 }}>
+          Describe the decision you want STRATFIT to simulate over 24 months.
+        </p>
 
-      {error ? (
-        <div
-          style={{
-            marginTop: 12,
-            padding: 12,
-            borderRadius: 10,
-            background: "rgba(255, 0, 0, 0.08)",
-            border: "1px solid rgba(255, 0, 0, 0.25)",
-          }}
-        >
-          {error}
-        </div>
-      ) : null}
+        {/* Error */}
+        {error && (
+          <div style={{
+            marginBottom: 14, padding: "10px 14px", borderRadius: 8,
+            background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.25)",
+            fontSize: 13, color: "#f87171",
+          }}>
+            {error}
+          </div>
+        )}
 
-      <div style={{ marginTop: 14 }}>
+        {/* Textarea — NEVER disabled */}
         <textarea
           value={decisionText}
           onChange={(e) => setDecisionText(e.target.value)}
           placeholder="e.g. Should we expand into the US market?"
-          rows={6}
-          // NEVER disable typing; only disable the run button
           disabled={false}
-          style={{
-            width: "100%",
-            padding: 14,
-            borderRadius: 12,
-            border: "1px solid rgba(255,255,255,0.18)",
-            background: "rgba(0,0,0,0.25)",
-            color: "white",
-            outline: "none",
-            resize: "vertical",
-            fontSize: 16,
-            lineHeight: 1.4,
-          }}
+          style={TEXTAREA}
         />
-      </div>
 
-      <div style={{ marginTop: 12, display: "flex", gap: 12 }}>
-        <button
-          onClick={handleRun}
-          disabled={!canRun}
-          style={{
-            padding: "10px 14px",
-            borderRadius: 10,
-            border: "1px solid rgba(255,255,255,0.18)",
-            background: canRun ? "rgba(255,255,255,0.10)" : "rgba(255,255,255,0.04)",
-            color: "white",
-            cursor: canRun ? "pointer" : "not-allowed",
-          }}
-        >
-          {isCreating ? "Running…" : "Run Simulation →"}
-        </button>
+        {/* Actions */}
+        <div style={{ marginTop: 14, display: "flex", gap: 12 }}>
+          <button
+            type="button"
+            onClick={handleRun}
+            disabled={!canRun}
+            style={{
+              ...BTN,
+              background: canRun
+                ? "linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%)"
+                : "rgba(255,255,255,0.06)",
+              color: canRun ? "#000" : "rgba(255,255,255,0.35)",
+              cursor: canRun ? "pointer" : "not-allowed",
+            }}
+          >
+            {isCreating ? "Running…" : "Run Simulation →"}
+          </button>
 
-        <button
-          onClick={() => navigate("/initiate")}
-          style={{
-            padding: "10px 14px",
-            borderRadius: 10,
-            border: "1px solid rgba(255,255,255,0.18)",
-            background: "transparent",
-            color: "white",
-            cursor: "pointer",
-            opacity: 0.9,
-          }}
-        >
-          Back to Initiate
-        </button>
+          <button
+            type="button"
+            onClick={() => navigate("/initiate")}
+            style={{
+              ...BTN,
+              background: "transparent",
+              border: "1px solid rgba(255,255,255,0.15)",
+              color: "rgba(255,255,255,0.7)",
+            }}
+          >
+            ← Back to Initiate
+          </button>
+        </div>
       </div>
     </div>
   )

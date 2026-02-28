@@ -13,17 +13,20 @@ export default function PositionRoute() {
     hydrate()
   }, [hydrate])
 
+  // Gate 1: store not yet rehydrated from localStorage
   if (!hydrated) {
-    return <div style={{ padding: 24 }}>Loading scenario store…</div>
+    return <div style={{ padding: 24, color: "#e2e8f0" }}>Loading scenario store&#8230;</div>
   }
 
+  // Gate 2: no active scenario selected → back to decision
   if (!activeScenarioId) {
     return <Navigate to="/decision" replace />
   }
 
+  // Gate 3: active ID doesn't match any scenario → redirect
   const scenario = scenarios?.find((s) => s.id === activeScenarioId)
   if (!scenario) {
-    return <div style={{ padding: 24 }}>No active scenario — redirecting…</div>
+    return <Navigate to="/decision" replace />
   }
 
   return <PositionPage />
