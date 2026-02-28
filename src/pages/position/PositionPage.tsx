@@ -162,30 +162,31 @@ export default function PositionPage() {
       return scenarioTerrainRef.current.metrics
     }
 
-    // PRIORITY 2: Scenario just completed → derive from baseline × multipliers, lock
-    if (
+    // PRIORITY 2: Scenario has terrain multipliers (running OR complete) → derive & lock
+    const hasMultipliers =
       activeScenarioId &&
-      activeScenario?.status === "complete" &&
+      (activeScenario?.status === "running" || activeScenario?.status === "complete") &&
       activeScenario.simulationResults?.terrain?.multipliers &&
       effectiveInputs
-    ) {
-      const m = activeScenario.simulationResults.terrain.multipliers
-      const baseBurn = Number(effectiveInputs.burnRate) || Number(effectiveInputs.monthlyBurn) || 0
+
+    if (hasMultipliers) {
+      const m = activeScenario!.simulationResults!.terrain.multipliers
+      const baseBurn = Number(effectiveInputs!.burnRate) || Number(effectiveInputs!.monthlyBurn) || 0
       const morphed = {
-        ...effectiveInputs,
-        cash:        (Number(effectiveInputs.cash) || 0) * m.cash,
+        ...effectiveInputs!,
+        cash:        (Number(effectiveInputs!.cash) || 0) * m.cash,
         burnRate:    baseBurn * m.burn,
         monthlyBurn: baseBurn * m.burn,
-        growthRate:  (Number(effectiveInputs.growthRate) || 0) * m.growth,
+        growthRate:  (Number(effectiveInputs!.growthRate) || 0) * m.growth,
       }
-      const metrics = deriveTerrainMetrics(morphed as any)
-      scenarioTerrainRef.current = { scenarioId: activeScenarioId, metrics }
+      const metrics = Object.freeze(deriveTerrainMetrics(morphed as any))
+      scenarioTerrainRef.current = { scenarioId: activeScenarioId!, metrics }
       return metrics
     }
 
-    // PRIORITY 3: No completed scenario → derive from raw baseline
+    // PRIORITY 3: No scenario with multipliers → derive from raw baseline
     return effectiveInputs ? deriveTerrainMetrics(effectiveInputs as any) : undefined
-  }, [activeScenarioId, activeScenario?.status, effectiveInputs])
+  }, [activeScenarioId, activeScenario?.status, activeScenario?.simulationResults?.terrain, effectiveInputs])
 
   // DEV: log terrain source once per scenario transition
   useEffect(() => {

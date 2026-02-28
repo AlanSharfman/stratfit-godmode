@@ -162,18 +162,30 @@ export const usePhase1ScenarioStore = create<Phase1ScenarioState>()(
           return
         }
 
-        // Set status → running
-        set((s) => ({
-          scenarios: s.scenarios.map((sc) =>
-            sc.id === scenarioId ? { ...sc, status: "running" as const } : sc
-          ),
-        }))
-
         // Compute terrain + KPIs deterministically from decision text
         const terrain = computeTerrainData(scenario.decision)
         const kpis = computeKpis(baseline, terrain.multipliers)
 
-        // Simulate with 1.4s delay → complete with rich results
+        // Set status → running, pre-store terrain so Position can morph immediately
+        set((s) => ({
+          scenarios: s.scenarios.map((sc) =>
+            sc.id === scenarioId
+              ? {
+                  ...sc,
+                  status: "running" as const,
+                  simulationResults: {
+                    completedAt: 0, // sentinel: not yet complete
+                    horizonMonths: 24,
+                    summary: "",
+                    kpis,
+                    terrain,
+                  },
+                }
+              : sc
+          ),
+        }))
+
+        // Simulate with 1.4s delay → finalize with timestamp + summary
         setTimeout(() => {
           set((s) => ({
             scenarios: s.scenarios.map((sc) =>
@@ -184,7 +196,7 @@ export const usePhase1ScenarioStore = create<Phase1ScenarioState>()(
                     simulationResults: {
                       completedAt: Date.now(),
                       horizonMonths: 24,
-                      summary: `Simulation complete — ${scenario.decision.slice(0, 60)}`,
+                      summary: `Simulation complete \u2014 ${scenario.decision.slice(0, 60)}`,
                       kpis,
                       terrain,
                     },
