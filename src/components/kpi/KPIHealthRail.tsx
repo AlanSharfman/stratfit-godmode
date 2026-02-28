@@ -220,8 +220,8 @@ function MomentumWidget() {
 /** Valuation Hero Widget — ascending diamond / value gauge */
 function ValuationWidget() {
   return (
-    <div className={styles.heroWidget}>
-      <svg width="56" height="56" viewBox="0 0 32 32" fill="none">
+    <div className={styles.widget}>
+      <svg width="44" height="44" viewBox="0 0 32 32" fill="none">
         {/* Base rings */}
         <circle cx="16" cy="16" r="14" fill="none" stroke="rgba(250,204,21,0.10)" strokeWidth="1" />
         <circle cx="16" cy="16" r="10" fill="none" stroke="rgba(250,204,21,0.08)" strokeWidth="0.8" />
@@ -288,8 +288,8 @@ function HeroRiskWidget({ tone }: { tone: RiskTone }) {
     "rgba(34,211,238,0.30)";
 
   return (
-    <div className={styles.heroWidget}>
-      <svg width="56" height="56" viewBox="0 0 32 32">
+    <div className={styles.widget}>
+      <svg width="44" height="44" viewBox="0 0 32 32">
         {/* Concentric rings */}
         <circle cx="16" cy="16" r="14" fill="none" stroke={ringBg} strokeWidth="1.2" />
         <circle cx="16" cy="16" r="10" fill="none" stroke={ringBg} strokeWidth="1" />

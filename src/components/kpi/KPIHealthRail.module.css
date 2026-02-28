@@ -41,7 +41,7 @@
 .cardStack {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 18px;
 }
 
 /* ── KPI Card ── */
@@ -162,15 +162,15 @@
 
 .heroCard {
   position: relative;
-  padding: 6px 9px;
-  border-radius: 9px;
+  padding: 5px 8px;
+  border-radius: 8px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 2px;
-  min-height: 38px;
+  min-height: 34px;
   width: 100%;
 
   border: 1px solid rgba(34, 211, 238, 0.16);
@@ -239,7 +239,7 @@
 /* Hero value */
 .heroValue {
   font-family: 'Inter', system-ui, sans-serif;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
   color: rgba(230, 248, 255, 0.98);
   white-space: nowrap;
