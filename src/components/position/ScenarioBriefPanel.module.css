@@ -1,0 +1,61 @@
+.panel {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 12px;
+  font-size: 13px;
+  font-family: "Inter", system-ui, sans-serif;
+  color: #e2e8f0;
+}
+
+.heading {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #22d3ee;
+  margin-bottom: 8px;
+}
+
+.decision {
+  color: #fff;
+  font-weight: 600;
+  margin-bottom: 4px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.intent {
+  font-size: 11px;
+  color: #06b6d4;
+  margin-bottom: 10px;
+  font-style: italic;
+}
+
+.kpiGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 16px;
+  font-size: 11px;
+}
+
+.kpiLabel {
+  opacity: 0.5;
+}
+
+.kpiValue {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.horizon {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 11px;
+  opacity: 0.5;
+  display: flex;
+  justify-content: space-between;
+}

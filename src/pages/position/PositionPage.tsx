@@ -39,6 +39,7 @@ import KPIOverlay from "./overlays/KPIOverlay"
 import ExecutiveNarrativeCard from "./components/ExecutiveNarrativeCard"
 import TimeScaleControl from "./overlays/TimeScaleControl"
 import IdleMotionLayer from "./IdleMotionLayer"
+import ScenarioBriefPanel from "@/components/position/ScenarioBriefPanel"
 import {
   buildPositionViewModel,
 } from "./overlays/positionState"
@@ -320,6 +321,11 @@ export default function PositionPage() {
             RIGHT RAIL — Controls (Tuning, Toggles, Diagnostics)
             ══════════════════════════════════════════════════ */}
         <div className={styles.rightCol}>
+          {/* ── Scenario Brief ── */}
+          {activeScenario && (
+            <ScenarioBriefPanel scenario={activeScenario} baseline={baseline} />
+          )}
+
           {/* Command Centre — overlay toggles + diagnostics */}
           <div className={styles.commandCentreDock} aria-label="Command Centre">
             {commandCentreOpen ? (
