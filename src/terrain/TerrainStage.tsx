@@ -132,24 +132,23 @@ export default function TerrainStage({
         gl.setClearColor(fogColor, 0);
       }}
     >
-      {/* Orbit controls — only active when lockCamera is false (non-Position pages) */}
-      {!lockCamera && (
-        <OrbitControls
-          ref={onControlsRef}
-          makeDefault
-          enableRotate
-          enablePan={false}
-          enableZoom={false}
-          enableDamping
-          dampingFactor={0.12}
-          minPolarAngle={0.758}
-          maxPolarAngle={1.456}
-          rotateSpeed={0.8}
-          minDistance={220}
-          maxDistance={700}
-          target={TERRAIN_LOOK_AT}
-        />
-      )}
+      {/* OrbitControls — always mounted so TerrainNavWidget can steer programmatically.
+           When lockCamera is true, all user input (mouse drag/scroll) is disabled. */}
+      <OrbitControls
+        ref={onControlsRef}
+        makeDefault
+        enableRotate={!lockCamera}
+        enablePan={false}
+        enableZoom={false}
+        enableDamping
+        dampingFactor={0.12}
+        minPolarAngle={0.758}
+        maxPolarAngle={1.456}
+        rotateSpeed={0.8}
+        minDistance={220}
+        maxDistance={700}
+        target={TERRAIN_LOOK_AT}
+      />
 
       {/* Fog stays deterministic; background comes from DOM gradient behind the canvas. */}
       <fog attach="fog" args={[fogColor, 420, 2400]} />

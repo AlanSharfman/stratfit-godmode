@@ -113,8 +113,8 @@ const btnBase: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  width: 32,
-  height: 32,
+  width: 35,
+  height: 35,
   borderRadius: 7,
   border: "1px solid rgba(34, 211, 238, 0.30)",
   background: "rgba(0, 0, 0, 0.40)",
@@ -254,7 +254,7 @@ export default function TerrainNavWidget() {
       </div>
 
       {/* D-pad */}
-      <div style={{ display: "grid", gridTemplateColumns: "32px 32px 32px", gridTemplateRows: "32px 32px 32px", gap: 3 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "35px 35px 35px", gridTemplateRows: "35px 35px 35px", gap: 3 }}>
         {/* Row 1: empty | up | empty */}
         <div />
         <DpadButton dir={up} title="Orbit up">
