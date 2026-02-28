@@ -11,6 +11,14 @@ import { runDecisionPipeline } from "@/core/decision/runDecisionPipeline"
 
 const MIN_CHARS = 10
 
+const EXAMPLE_PROMPTS = [
+  "Expand into the US market with a new sales team",
+  "Cut monthly burn by 30% through headcount reduction",
+  "Raise a $5M Series A at $20M pre-money valuation",
+  "Launch a self-serve product tier to increase ARPA",
+  "Pivot from B2C to B2B enterprise sales motion",
+]
+
 /* ─── Feedback states ────────────────────────────────────── */
 
 type FeedbackState = "empty" | "typing" | "ready" | "running" | "done"
@@ -53,6 +61,10 @@ export default function DecisionPage() {
     () => !!baseline && decisionText.trim().length >= MIN_CHARS && !isCreating && !isDone,
     [baseline, decisionText, isCreating, isDone],
   )
+
+  // Keyboard shortcut ref — kept in sync so the stable effect closure always sees latest value
+  const canRunRef = useRef(false)
+  canRunRef.current = canRun
 
   const feedback = deriveFeedback(decisionText, isCreating, isDone)
   const fb = FEEDBACK_CONFIG[feedback]
@@ -107,6 +119,19 @@ export default function DecisionPage() {
       setIsCreating(false)
     }
   }
+
+  // Ctrl+Enter / Cmd+Enter keyboard shortcut
+  React.useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault()
+        if (canRunRef.current) handleRun()
+      }
+    }
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <div style={PAGE}>
@@ -218,7 +243,7 @@ export default function DecisionPage() {
             onChange={(e) => { setDecisionText(e.target.value.slice(0, 500)); setIsDone(false) }}
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
-            placeholder="Describe the strategic decision (e.g. expand to US, reduce burn, hire 5 engineers)"
+            placeholder="What strategic decision should STRATFIT simulate?"
             maxLength={500}
             disabled={false}
             style={{
@@ -227,6 +252,30 @@ export default function DecisionPage() {
               boxShadow: focused ? "0 0 0 3px rgba(34,211,238,0.08)" : "none",
             }}
           />
+
+          {/* Example prompts */}
+          {decisionText.length === 0 && !isCreating && !isDone && (
+            <div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 6 }}>
+              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", marginRight: 4, lineHeight: "26px" }}>Try:</span>
+              {EXAMPLE_PROMPTS.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => { setDecisionText(p); textareaRef.current?.focus() }}
+                  style={{
+                    padding: "4px 10px", borderRadius: 6, border: "1px solid rgba(255,255,255,0.08)",
+                    background: "rgba(255,255,255,0.02)", color: "rgba(255,255,255,0.45)",
+                    fontSize: 11, cursor: "pointer", transition: "border-color 0.15s, color 0.15s",
+                    lineHeight: 1.4,
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(34,211,238,0.3)"; e.currentTarget.style.color = "rgba(255,255,255,0.7)" }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "rgba(255,255,255,0.45)" }}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Actions */}
           <div style={{ marginTop: 16, display: "flex", gap: 12, alignItems: "center" }}>
@@ -270,6 +319,15 @@ export default function DecisionPage() {
             >
               \u2190 Back to Initiate
             </button>
+
+            {/* Keyboard shortcut hint */}
+            {canRun && (
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginLeft: "auto" }}>
+                <kbd style={{ padding: "2px 5px", borderRadius: 4, border: "1px solid rgba(255,255,255,0.12)", fontSize: 10, fontFamily: "'Inter', system-ui, monospace" }}>Ctrl</kbd>
+                {" + "}
+                <kbd style={{ padding: "2px 5px", borderRadius: 4, border: "1px solid rgba(255,255,255,0.12)", fontSize: 10, fontFamily: "'Inter', system-ui, monospace" }}>\u21B5</kbd>
+              </span>
+            )}
           </div>
         </section>
 
