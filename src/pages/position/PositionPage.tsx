@@ -38,7 +38,7 @@ import { buildScenarioADraft } from "@/domain/scenario/scenarioDraft"
 import { studioSessionStore } from "@/state/studioSessionStore"
 import KPIHealthRail from "@/components/kpi/KPIHealthRail"
 import ScenarioContextPanel from "@/components/scenario/ScenarioContextPanel"
-import { selectKpis } from "@/selectors/kpiSelectors"
+import { selectKpis, selectPositionKpis } from "@/selectors/kpiSelectors"
 import { selectTerrainMetrics } from "@/selectors/terrainSelectors"
 import { selectRiskScore } from "@/selectors/riskSelectors"
 import ExecutiveNarrativeCard from "./components/ExecutiveNarrativeCard"
@@ -243,6 +243,30 @@ export default function PositionPage() {
     if (!baselineV1) return null
     return buildPositionViewModel(baselineV1, { riskIndexFromEngine: null })
   }, [baselineV1])
+
+  // ── Live KPIs: simulation results when available, baseline fallback ──
+  const liveKpis = useMemo(() => {
+    if (activeScenario?.status === "complete" && activeScenario.simulationResults?.kpis) {
+      const riskScore = selectRiskScore(activeScenario.simulationResults.kpis)
+      return selectPositionKpis(activeScenario.simulationResults.kpis, riskScore)
+    }
+    return vm?.kpis ?? null
+  }, [
+    activeScenario?.status,
+    activeScenario?.simulationResults?.kpis,
+    vm?.kpis,
+  ])
+
+  // DEV: KPI wiring proof — confirms liveKpis source switches on simulation complete
+  useEffect(() => {
+    if (!import.meta.env.DEV) return
+    const source = (activeScenario?.status === "complete" && activeScenario.simulationResults?.kpis)
+      ? "SIMULATION"
+      : "BASELINE"
+    console.log(
+      `[KPI-Rail] source=${source} runId=${activeScenario?.simulationResults?.completedAt ?? "none"} runway=${liveKpis?.runwayMonths ?? "—"}`,
+    )
+  }, [liveKpis, activeScenario?.status, activeScenario?.simulationResults])
 
   const terrainSignals = useMemo(() => {
     const byKey = new Map((vm?.diagnostics ?? []).map((d) => [d.key, d]))
@@ -518,7 +542,7 @@ export default function PositionPage() {
 
           {/* KPI instruments — grouped health rail */}
           <div className={styles.kpiRailDock} aria-label="KPI Health Rail">
-            <KPIHealthRail kpis={vm?.kpis ?? null} />
+            <KPIHealthRail kpis={liveKpis} />
           </div>
         </div>
 
