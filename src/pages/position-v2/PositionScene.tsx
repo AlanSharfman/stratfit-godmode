@@ -15,6 +15,7 @@ export default function PositionScene() {
       </div>
 
       {/* Screen-space depth layers (safe) */}
+      <div className={styles.vignette} />
       <div className={styles.aerialHaze} />
       <div className={styles.horizonBloom} />
       <div className={styles.horizonGlow} />

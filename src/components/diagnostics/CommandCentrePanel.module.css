@@ -76,7 +76,7 @@
   font-family: 'Inter', system-ui, sans-serif;
   font-size: 9px;
   font-weight: 800;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.22em;
   color: rgba(34, 211, 238, 0.60);
   text-transform: uppercase;
   margin-bottom: 6px;
@@ -152,7 +152,7 @@
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: rgba(200, 220, 235, 0.72);
+  color: rgba(200, 220, 235, 0.58);
   transition: color 0.15s ease;
 }
 
@@ -168,8 +168,8 @@
   letter-spacing: 0.06em;
   padding: 2px 5px;
   border-radius: 3px;
-  background: rgba(226, 232, 240, 0.05);
-  color: rgba(226, 232, 240, 0.30);
+  background: rgba(226, 232, 240, 0.04);
+  color: rgba(226, 232, 240, 0.22);
   transition: all 0.15s ease;
   min-width: 26px;
   text-align: center;
@@ -196,7 +196,7 @@
   font-family: 'Inter', system-ui, sans-serif;
   font-size: 9px;
   font-weight: 800;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.22em;
   color: rgba(34, 211, 238, 0.60);
   text-transform: uppercase;
   position: relative;

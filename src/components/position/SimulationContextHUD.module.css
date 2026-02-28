@@ -20,6 +20,14 @@
   pointer-events: none;
   font-family: 'Inter', system-ui, sans-serif;
   color: rgba(226, 240, 255, 0.88);
+
+  /* Subtle life pulse — soft glow every ~7s */
+  animation: hudGlowPulse 7s ease-in-out infinite;
+}
+
+@keyframes hudGlowPulse {
+  0%, 100% { box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06); }
+  50% { box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 0 18px rgba(34, 211, 238, 0.06); }
 }
 
 .row {

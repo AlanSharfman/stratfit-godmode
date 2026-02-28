@@ -268,24 +268,24 @@ function GrossMarginWidget() {
 /** Hero Risk Widget — larger radar dial with tone-mapped ring */
 function HeroRiskWidget({ tone }: { tone: RiskTone }) {
   const ringColor =
-    tone === "stable" ? "rgba(52,211,153,0.55)" :
-    tone === "critical" ? "rgba(239,68,68,0.65)" :
-    "rgba(34,211,238,0.55)";
+    tone === "stable" ? "rgba(52,211,153,0.35)" :
+    tone === "critical" ? "rgba(239,68,68,0.40)" :
+    "rgba(34,211,238,0.35)";
 
   const ringBg =
-    tone === "stable" ? "rgba(52,211,153,0.12)" :
-    tone === "critical" ? "rgba(239,68,68,0.10)" :
-    "rgba(34,211,238,0.12)";
+    tone === "stable" ? "rgba(52,211,153,0.08)" :
+    tone === "critical" ? "rgba(239,68,68,0.08)" :
+    "rgba(34,211,238,0.08)";
 
   const sweepColor =
-    tone === "stable" ? "rgba(52,211,153,0.50)" :
-    tone === "critical" ? "rgba(239,68,68,0.60)" :
-    "rgba(34,211,238,0.50)";
+    tone === "stable" ? "rgba(52,211,153,0.35)" :
+    tone === "critical" ? "rgba(239,68,68,0.40)" :
+    "rgba(34,211,238,0.35)";
 
   const centerColor =
-    tone === "stable" ? "rgba(52,211,153,0.45)" :
-    tone === "critical" ? "rgba(239,68,68,0.50)" :
-    "rgba(34,211,238,0.45)";
+    tone === "stable" ? "rgba(52,211,153,0.30)" :
+    tone === "critical" ? "rgba(239,68,68,0.35)" :
+    "rgba(34,211,238,0.30)";
 
   return (
     <div className={styles.heroWidget}>
@@ -410,15 +410,10 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis }) => {
         <h3 className={styles.sectionHeader}>Valuation</h3>
         <div className={styles.cardStack}>
           <div className={styles.heroCard} data-tone="valuation">
-            <div className={`${styles.label} ${styles.labelValuation}`}>Valuation</div>
+            <div className={`${styles.label} ${styles.labelValuation}`}>Est. Enterprise Value</div>
             <div className={styles.heroValue}>$ —</div>
             <ValuationWidget />
-            <div className={styles.sub}>Est. Enterprise Value</div>
-            <div className={styles.metaRow}>
-              <span>Method: Pending</span>
-              <span>Confidence: —</span>
-            </div>
-            <div className={styles.driverStub}>Top Drivers: —</div>
+            <div className={styles.sub}>DCF baseline • confidence low</div>
           </div>
         </div>
       </section>
@@ -428,12 +423,11 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis }) => {
         <h3 className={styles.sectionHeader}>Risk &amp; Survival</h3>
         <div className={styles.cardStack}>
           <div className={styles.heroCard} data-tone={riskTone}>
-            <div className={`${styles.label} ${styles.labelRisk}`}>Risk Score</div>
-            <div className={styles.heroValue}>{k ? fmtPct(k.riskIndex) : "85%"}</div>
+            <div className={`${styles.label} ${styles.labelRisk}`}>Risk Index</div>
+            <div className={styles.heroValue}>{k ? k.riskIndex.toFixed(0) : "85"}</div>
             <HeroRiskWidget tone={riskTone} />
-            <div className={styles.sub}>Health / survival</div>
             <span className={styles.riskTag} data-tone={riskTone}>
-              {riskToneLabel(riskTone)}
+              {riskToneLabel(riskTone)} • liquidity pressure
             </span>
           </div>
         </div>

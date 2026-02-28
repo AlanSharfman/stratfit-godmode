@@ -143,8 +143,8 @@ const btnBase: React.CSSProperties = {
   width: 35,
   height: 35,
   borderRadius: 7,
-  border: "1px solid rgba(34, 211, 238, 0.30)",
-  background: "rgba(0, 0, 0, 0.40)",
+  border: "1px solid rgba(255, 255, 255, 0.08)",
+  background: "rgba(12, 24, 36, 0.70)",
   color: "rgba(255, 255, 255, 0.90)",
   cursor: "pointer",
   outline: "none",
@@ -156,9 +156,9 @@ const btnBase: React.CSSProperties = {
 };
 
 const btnHover: Partial<React.CSSProperties> = {
-  background: "rgba(0, 0, 0, 0.55)",
-  color: "rgba(255, 255, 255, 1)",
-  borderColor: "rgba(34, 211, 238, 0.50)",
+  background: "rgba(12, 24, 36, 0.90)",
+  color: "#5CE1FF",
+  borderColor: "rgba(92, 225, 255, 0.35)",
 };
 
 const btnActive: Partial<React.CSSProperties> = {
@@ -240,17 +240,16 @@ export default function TerrainNavWidget() {
         gap: 3,
         padding: "10px 8px 8px",
         borderRadius: 12,
-        background: "#1F3348",
+        background: "#0C1824",
         backdropFilter: "blur(14px) saturate(1.2)",
         WebkitBackdropFilter: "blur(14px) saturate(1.2)",
-        border: "1px solid rgba(200, 215, 230, 0.35)",
+        border: "1px solid rgba(255, 255, 255, 0.08)",
         boxShadow: [
-          "0 0 0 1px rgba(255, 255, 255, 0.18)",
+          "0 0 0 1px rgba(255, 255, 255, 0.06)",
           "0 0 0 3px rgba(6, 10, 16, 0.80)",
-          "0 0 0 4px rgba(200, 215, 230, 0.30)",
-          "inset 0 1px 0 rgba(255, 255, 255, 0.12)",
-          "0 2px 12px rgba(200, 215, 230, 0.08)",
-          "0 0 24px rgba(200, 215, 230, 0.04)",
+          "0 0 0 4px rgba(255, 255, 255, 0.04)",
+          "inset 0 1px 0 rgba(255, 255, 255, 0.06)",
+          "0 2px 12px rgba(0, 0, 0, 0.30)",
         ].join(", "),
         userSelect: "none",
         pointerEvents: "auto",
@@ -391,7 +390,7 @@ function DpadButton({
         Object.assign(e.currentTarget.style, {
           background: btnBase.background,
           color: btnBase.color,
-          borderColor: "rgba(34, 211, 238, 0.30)",
+          borderColor: "rgba(255, 255, 255, 0.08)",
         });
       }}
       style={{ ...btnBase, ...extraStyle }}
