@@ -123,7 +123,7 @@ const BaselineIntelligencePanel: React.FC = memo(() => {
   return (
     <aside className={styles.rightPanel}>
       <div className={styles.panelHeader}>
-        <div className={styles.panelTitle}>BASELINE INTELLIGENCE
+        <div className={styles.panelTitle}>AI INTELLIGENCE
           <span className={styles.strobeDots} aria-hidden="true">
             <span className={styles.dot} />
             <span className={styles.dot} />
