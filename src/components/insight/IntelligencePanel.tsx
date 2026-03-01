@@ -7,7 +7,7 @@
 // Reads from phase1ScenarioStore + baselineStore via selectors.
 // ═══════════════════════════════════════════════════════════════════════════
 
-import React, { memo, useMemo } from "react"
+import React, { memo, useMemo, useState } from "react"
 import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore"
 import { useBaselineStore } from "@/state/baselineStore"
 import { selectKpis, selectKpiDeltas } from "@/selectors/kpiSelectors"
@@ -116,9 +116,12 @@ const IntelligencePanel: React.FC<IntelligencePanelProps> = memo(({ onCollapse }
 
   return (
     <div className={styles.wrapper}>
-      {/* 1. Header Row */}
+      {/* Glass sheen */}
+      <div className={styles.glassSheen} aria-hidden="true" />
+
+      {/* 1. Bezel Header Row */}
       <div className={styles.headerRow}>
-        <span className={styles.headerTitle}>Decision Insight</span>
+        <span className={styles.headerTitle}>INTELLIGENCE</span>
         <button
           type="button"
           className={styles.collapseBtn}
@@ -140,76 +143,120 @@ const IntelligencePanel: React.FC<IntelligencePanelProps> = memo(({ onCollapse }
           Submit a decision to generate scenario intelligence.
         </div>
       ) : (
-        <>
-          {/* 2. Executive Summary */}
-          <div className={styles.section}>
-            <div className={styles.sectionTitle}>Executive Summary</div>
-            <div className={styles.sectionBody}>{insight.executiveSummary}</div>
-          </div>
-
-          {/* 3. Key Drivers */}
-          <div className={styles.section}>
-            <div className={styles.sectionTitle}>Key Drivers</div>
-            <ul className={styles.driverList}>
-              {insight.keyDrivers.map((d, i) => {
-                const sym = driverSymbol(d.tone)
-                return (
-                  <li key={i} className={styles.driverItem}>
-                    <span className={`${styles.driverArrow} ${sym.className}`}>{sym.char}</span>
-                    <span className={styles.driverText}>
-                      {d.label} — {d.impact}
-                    </span>
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-
-          {/* 4. Risk Assessment */}
-          <div className={`${styles.section}${isCritical ? ` ${styles.riskCritical}` : ""}`}>
-            <div className={styles.sectionTitle}>Risk Assessment</div>
-            <div className={`${styles.riskBody}${isCritical ? ` ${styles.riskBorderCritical}` : ""}`}>
-              {insight.riskNarrative}
-            </div>
-          </div>
-
-          {/* 5. Top Signal */}
-          {topSignal && (
-            <div className={styles.section}>
-              <div className={styles.sectionTitle}>Top Signal</div>
-              <div className={styles.signalHeader}>
-                #{topSignal.rank} {topSignal.title}
-                <span className={styles.signalProbability}>— {topSignal.probability}%</span>
-              </div>
-              <div className={styles.signalInterpretation}>{topSignal.interpretation}</div>
-            </div>
-          )}
-
-          {/* 6. Survival Probability */}
-          <div className={styles.survivalSection}>
-            <div className={styles.survivalNumber} style={{ color }}>
-              {riskScore}<span style={{ fontSize: 20, fontWeight: 400, color: "rgba(182,228,255,0.4)" }}>/100</span>
-            </div>
-            <div className={styles.survivalLabel}>Survival Probability</div>
-            <div className={styles.survivalBand} style={{ color }}>
-              {survivalBandLabel(riskScore)}
-            </div>
-          </div>
-
-          {/* 7. Action Buttons */}
-          <div className={styles.actions}>
-            <button type="button" className={styles.actionBtn} disabled>
-              Compare Scenarios
-            </button>
-            <button type="button" className={styles.actionBtn} disabled>
-              Export Report
-            </button>
-          </div>
-        </>
+        <IntelligenceContent insight={insight} riskScore={riskScore} color={color} isCritical={isCritical} topSignal={topSignal} />
       )}
     </div>
   )
 })
 
 IntelligencePanel.displayName = "IntelligencePanel"
+
+/* ── Extracted content sub-component (keeps main component lean) ── */
+
+function IntelligenceContent({
+  insight,
+  riskScore,
+  color,
+  isCritical,
+  topSignal,
+}: {
+  insight: AIInsightOutput
+  riskScore: number
+  color: string
+  isCritical: boolean
+  topSignal: AIInsightOutput["probabilitySignals"][0] | null
+}) {
+  const [summaryExpanded, setSummaryExpanded] = useState(false)
+
+  return (
+    <>
+      {/* Hero: Survival Probability */}
+      <div className={styles.heroSurvival}>
+        <div className={styles.heroNumber} style={{ color, textShadow: `0 0 24px ${color}40` }}>
+          {riskScore}
+        </div>
+        <div className={styles.heroMeta}>
+          <div className={styles.heroLabel}>Survival Probability</div>
+          <div className={styles.heroBand} style={{ color }}>
+            {survivalBandLabel(riskScore)}
+          </div>
+        </div>
+      </div>
+
+      <div className={styles.hairline} />
+
+      {/* Executive Summary — 3-line clamp with Show more */}
+      <div className={styles.section}>
+        <div className={styles.sectionTitle}>Executive Summary</div>
+        <div className={`${styles.sectionBody}${!summaryExpanded ? ` ${styles.summaryClamped}` : ""}`}>
+          {insight.executiveSummary}
+        </div>
+        {insight.executiveSummary.length > 180 && (
+          <button
+            type="button"
+            className={styles.showMoreBtn}
+            onClick={() => setSummaryExpanded((v) => !v)}
+          >
+            {summaryExpanded ? "Show less" : "Show more"}
+          </button>
+        )}
+      </div>
+
+      <div className={styles.hairline} />
+
+      {/* Key Drivers — icon-aligned rows with right-aligned values */}
+      <div className={styles.section}>
+        <div className={styles.sectionTitle}>Key Drivers</div>
+        <ul className={styles.driverList}>
+          {insight.keyDrivers.map((d, i) => {
+            const sym = driverSymbol(d.tone)
+            return (
+              <li key={i} className={styles.driverItem}>
+                <span className={`${styles.driverArrow} ${sym.className}`}>{sym.char}</span>
+                <span className={styles.driverLabel}>{d.label}</span>
+                <span className={styles.driverImpact}>{d.impact}</span>
+              </li>
+            )
+          })}
+        </ul>
+      </div>
+
+      <div className={styles.hairline} />
+
+      {/* Risk Assessment — left accent bar when critical */}
+      <div className={`${styles.section}${isCritical ? ` ${styles.riskCritical}` : ""}`}>
+        <div className={styles.sectionTitle}>Risk Assessment</div>
+        <div className={`${styles.riskBody}${isCritical ? ` ${styles.riskBorderCritical}` : ""}`}>
+          {insight.riskNarrative}
+        </div>
+      </div>
+
+      {/* Top Signal */}
+      {topSignal && (
+        <>
+          <div className={styles.hairline} />
+          <div className={styles.section}>
+            <div className={styles.sectionTitle}>Top Signal</div>
+            <div className={styles.signalHeader}>
+              #{topSignal.rank} {topSignal.title}
+              <span className={styles.signalProbability}>— {topSignal.probability}%</span>
+            </div>
+            <div className={styles.signalInterpretation}>{topSignal.interpretation}</div>
+          </div>
+        </>
+      )}
+
+      {/* Action Buttons */}
+      <div className={styles.actions}>
+        <button type="button" className={styles.actionBtn} disabled>
+          Compare Scenarios
+        </button>
+        <button type="button" className={styles.actionBtn} disabled>
+          Export Report
+        </button>
+      </div>
+    </>
+  )
+}
+
 export default IntelligencePanel
