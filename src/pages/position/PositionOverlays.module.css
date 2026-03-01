@@ -7,10 +7,10 @@
   background: var(--color-bg-void);
   overflow: hidden;
 
-  /* Position-page tokens — deep navy institutional base */
-  --color-bg-void: #0B1620;
-  --color-bg-deep: #080f18;
-  --color-bg-surface: #0d1a26;
+  /* Position-page tokens — deep void institutional base */
+  --color-bg-void: #040810;
+  --color-bg-deep: #030710;
+  --color-bg-surface: #081018;
 
   /* ─────────────────────────────────────────────────────────────
      Shared optics (local, deterministic)
@@ -72,7 +72,7 @@
   height: 100vh;
   z-index: 0;
   pointer-events: none;
-  background: #060A12;
+  background: #040810;
 }
 
 /* ── Atmosphere Layer A: Sky Gradient — moody top → soft horizon (exponential falloff) ── */
