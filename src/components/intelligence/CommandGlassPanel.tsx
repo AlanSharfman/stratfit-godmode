@@ -200,6 +200,30 @@ const CommandGlassPanel: React.FC<CommandGlassPanelProps> = memo(({
               </div>
             </div>
 
+            {/* ── Scenario Context Strip ── */}
+            {activeScenario?.identity && (
+              <div style={CONTEXT_STRIP}>
+                <div style={CONTEXT_LABEL}>SCENARIO CONTEXT</div>
+                <div style={CONTEXT_DECISION}>{activeScenario.identity.decisionQuestion}</div>
+                {intentLabel && (
+                  <div style={CONTEXT_INTENT}>
+                    <span style={CONTEXT_INTENT_DOT} />
+                    {intentLabel}
+                  </div>
+                )}
+                {activeScenario.identity.assumptionsSummary.length > 0 && (
+                  <div style={CONTEXT_ASSUMPTIONS}>
+                    {activeScenario.identity.assumptionsSummary.map((a, i) => (
+                      <div key={i} style={CONTEXT_ASSUMPTION_ROW}>
+                        <span style={CONTEXT_ASSUMPTION_BULLET}>›</span>
+                        {a}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* ── Narrative Intelligence ── */}
               <div style={NARRATIVE_COL}>
                 {displayRows.map((text, idx) => {
@@ -404,6 +428,80 @@ const NARRATIVE_COL: React.CSSProperties = {
   flexDirection: "column",
   gap: 12,
   minWidth: 0,
+}
+
+/* ── Scenario Context Strip ── */
+
+const CONTEXT_STRIP: React.CSSProperties = {
+  position: "relative",
+  zIndex: 5,
+  marginBottom: 16,
+  paddingBottom: 14,
+  borderBottom: "1px solid rgba(255,255,255,0.06)",
+}
+
+const CONTEXT_LABEL: React.CSSProperties = {
+  fontSize: 9,
+  fontWeight: 700,
+  textTransform: "uppercase",
+  letterSpacing: "0.14em",
+  color: "rgba(34,211,238,0.5)",
+  fontFamily: "'Inter', system-ui, sans-serif",
+  marginBottom: 8,
+}
+
+const CONTEXT_DECISION: React.CSSProperties = {
+  fontSize: 13,
+  fontWeight: 500,
+  color: "rgba(255,255,255,0.85)",
+  lineHeight: 1.5,
+  fontFamily: "'Inter', system-ui, sans-serif",
+  textShadow: "0 1px 4px rgba(0,0,0,0.5)",
+  marginBottom: 6,
+}
+
+const CONTEXT_INTENT: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 6,
+  fontSize: 10.5,
+  fontWeight: 600,
+  color: "rgba(34,211,238,0.7)",
+  letterSpacing: "0.04em",
+  fontFamily: "'Inter', system-ui, sans-serif",
+  marginBottom: 8,
+}
+
+const CONTEXT_INTENT_DOT: React.CSSProperties = {
+  display: "inline-block",
+  width: 6,
+  height: 6,
+  borderRadius: "50%",
+  background: "rgba(34,211,238,0.5)",
+  flexShrink: 0,
+}
+
+const CONTEXT_ASSUMPTIONS: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 3,
+}
+
+const CONTEXT_ASSUMPTION_ROW: React.CSSProperties = {
+  display: "flex",
+  alignItems: "baseline",
+  gap: 6,
+  fontSize: 11,
+  color: "rgba(255,255,255,0.5)",
+  lineHeight: 1.5,
+  fontFamily: "'Inter', system-ui, sans-serif",
+}
+
+const CONTEXT_ASSUMPTION_BULLET: React.CSSProperties = {
+  color: "rgba(34,211,238,0.4)",
+  fontWeight: 700,
+  fontSize: 13,
+  flexShrink: 0,
 }
 
 
