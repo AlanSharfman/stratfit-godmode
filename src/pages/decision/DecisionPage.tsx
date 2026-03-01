@@ -6,6 +6,7 @@ import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore"
 import { DECISION_INTENT_OPTIONS, type DecisionIntentType } from "@/state/phase1ScenarioStore"
 import { runDecisionPipeline } from "@/core/decision/runDecisionPipeline"
 import { decisionLeverSchemas, defaultLeverValues, type LeverSchema } from "@/config/decisionLeverSchemas"
+import DecisionCardGrid from "@/components/decision/DecisionCardGrid"
 import css from "./DecisionConsole.module.css"
 
 /* ═══════════════════════════════════════════════════════════
@@ -111,17 +112,27 @@ export default function DecisionPage() {
 
   const [decisionText, setDecisionText] = useState("")
   const [intentType, setIntentType] = useState<DecisionIntentType | null>(null)
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
+  const [selectedCardLabel, setSelectedCardLabel] = useState<string>("Other")
   const [highlightIdx, setHighlightIdx] = useState(0)
   const intentListRef = useRef<HTMLDivElement>(null)
+  const [showFallbackPicker, setShowFallbackPicker] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
   const [isDone, setIsDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [focused, setFocused] = useState(false)
   const [leverValues, setLeverValues] = useState<Record<string, number>>(() => defaultLeverValues("other"))
 
+  const handleCardSelect = useCallback((id: string, intent: DecisionIntentType, label: string) => {
+    setSelectedCardId(id)
+    setSelectedCardLabel(label)
+    setIntentType(intent)
+    setIsDone(false)
+  }, [])
+
   const canRun = useMemo(
-    () => !!baseline && decisionText.trim().length >= MIN_CHARS && intentType !== null && !isCreating && !isDone,
-    [baseline, decisionText, intentType, isCreating, isDone],
+    () => !!baseline && decisionText.trim().length >= MIN_CHARS && selectedCardId !== null && !isCreating && !isDone,
+    [baseline, decisionText, selectedCardId, isCreating, isDone],
   )
 
   // Keyboard shortcut ref — kept in sync so the stable effect closure always sees latest value
@@ -132,8 +143,8 @@ export default function DecisionPage() {
   const fb = FEEDBACK_CONFIG[feedback]
 
   const selectedIntentLabel = useMemo(
-    () => intentType ? (DECISION_INTENT_OPTIONS.find((o) => o.value === intentType)?.label ?? "Other") : "Select a type",
-    [intentType],
+    () => selectedCardId ? selectedCardLabel : (intentType ? (DECISION_INTENT_OPTIONS.find((o) => o.value === intentType)?.label ?? "Other") : "Select a type"),
+    [selectedCardId, selectedCardLabel, intentType],
   )
 
   const activeSchema = useMemo(() => intentType ? (decisionLeverSchemas[intentType] ?? []) : [], [intentType])
@@ -187,12 +198,11 @@ export default function DecisionPage() {
       const { intent } = await runDecisionPipeline(text, baseline)
 
       const effectiveIntent = intentType ?? "other"
-      const selectedOption = DECISION_INTENT_OPTIONS.find((o) => o.value === effectiveIntent)
       const scenarioId = createScenario({
         decision: text,
         intent,
         decisionIntentType: effectiveIntent,
-        decisionIntentLabel: selectedOption?.label ?? "Other",
+        decisionIntentLabel: selectedCardLabel,
         createdAt: Date.now(),
       })
 
@@ -338,51 +348,80 @@ export default function DecisionPage() {
             </div>
           </div>
 
-          {/* Section 2: Decision Intent */}
+          {/* Section 2: Decision Type — Card Grid (primary) */}
           <div className={css.glassPanel} style={{ marginTop: 16 }}>
             <div className={css.glassPanelInner}>
               <div className={css.sectionTitle}>
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 Decision Type
               </div>
-              <div
-                ref={intentListRef}
-                className={css.intentPicker}
-                tabIndex={0}
-                role="listbox"
-                aria-label="Decision type"
-                aria-activedescendant={`intent-${highlightIdx}`}
-                onKeyDown={handleIntentKeyDown}
-              >
-                {DECISION_INTENT_OPTIONS.map((opt, idx) => {
-                  const isSelected = intentType === opt.value
-                  const isHighlighted = highlightIdx === idx
-                  return (
-                    <button
-                      key={opt.value}
-                      id={`intent-${idx}`}
-                      type="button"
-                      role="option"
-                      aria-selected={isSelected}
-                      className={[
-                        css.intentOption,
-                        isSelected ? css.intentOptionSelected : "",
-                        isHighlighted ? css.intentOptionHighlight : "",
-                      ].filter(Boolean).join(" ")}
-                      onClick={() => { setIntentType(opt.value); setHighlightIdx(idx); setIsDone(false) }}
-                      onMouseEnter={() => setHighlightIdx(idx)}
-                      disabled={isCreating}
-                    >
-                      <span className={css.intentOptionDot} />
-                      <span className={css.intentOptionLabel}>{opt.label}</span>
-                      {isSelected && <span className={css.intentOptionCheck}>✓</span>}
-                    </button>
-                  )
-                })}
+              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", margin: "4px 0 12px", letterSpacing: "0.01em" }}>
+                Select a decision type to model outcomes, risk and runway impact.
+              </p>
+
+              <DecisionCardGrid
+                value={selectedCardId}
+                onChange={handleCardSelect}
+                disabled={isCreating}
+              />
+
+              {/* Collapsed fallback — legacy 6-type picker */}
+              <div style={{ marginTop: 12 }}>
+                <button
+                  type="button"
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "rgba(255,255,255,0.25)",
+                    fontSize: 10,
+                    cursor: "pointer",
+                    padding: 0,
+                    textDecoration: "underline",
+                    textUnderlineOffset: 2,
+                  }}
+                  onClick={() => setShowFallbackPicker((v) => !v)}
+                >
+                  {showFallbackPicker ? "Hide" : "Show"} category override
+                </button>
+                {showFallbackPicker && (
+                  <div
+                    ref={intentListRef}
+                    className={css.intentPicker}
+                    tabIndex={0}
+                    role="listbox"
+                    aria-label="Decision type override"
+                    aria-activedescendant={`intent-${highlightIdx}`}
+                    onKeyDown={handleIntentKeyDown}
+                    style={{ marginTop: 8 }}
+                  >
+                    {DECISION_INTENT_OPTIONS.map((opt, idx) => {
+                      const isSelected = intentType === opt.value
+                      const isHighlighted = highlightIdx === idx
+                      return (
+                        <button
+                          key={opt.value}
+                          id={`intent-${idx}`}
+                          type="button"
+                          role="option"
+                          aria-selected={isSelected}
+                          className={[
+                            css.intentOption,
+                            isSelected ? css.intentOptionSelected : "",
+                            isHighlighted ? css.intentOptionHighlight : "",
+                          ].filter(Boolean).join(" ")}
+                          onClick={() => { setIntentType(opt.value); setHighlightIdx(idx); setIsDone(false) }}
+                          onMouseEnter={() => setHighlightIdx(idx)}
+                          disabled={isCreating}
+                        >
+                          <span className={css.intentOptionDot} />
+                          <span className={css.intentOptionLabel}>{opt.label}</span>
+                          {isSelected && <span className={css.intentOptionCheck}>✓</span>}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
-              {!intentType && (
-                <div className={css.intentHint}>↑↓ Navigate · Enter to select</div>
-              )}
             </div>
           </div>
 
