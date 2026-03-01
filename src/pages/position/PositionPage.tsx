@@ -28,6 +28,8 @@ import type { SemanticLayerKey } from "@/render/shl"
 
 import CommandCentrePanel from "@/components/diagnostics/CommandCentrePanel"
 import IntelligencePanel from "@/components/insight/IntelligencePanel"
+import CommandGlassPanel from "@/components/intelligence/CommandGlassPanel"
+import { useIntelligencePresentation } from "@/hooks/useIntelligencePresentation"
 import SimulationContextHUD from "@/components/position/SimulationContextHUD"
 import {
   classifyQuestion,
@@ -119,8 +121,11 @@ export default function PositionPage() {
     [scenarios, activeScenarioId],
   )
 
-  // Auto-open intelligence panel when simulation completes
+  // ── Cinematic intelligence presentation state machine ──
   const simulationCompletedAt = activeScenario?.simulationResults?.completedAt ?? null
+  const presentation = useIntelligencePresentation({ completedAt: simulationCompletedAt })
+
+  // Auto-open intelligence panel when simulation completes (reveal or settled)
   const lastAutoOpenRef = useRef<number | null>(null)
   useEffect(() => {
     if (simulationCompletedAt != null && simulationCompletedAt !== lastAutoOpenRef.current) {
@@ -136,7 +141,10 @@ export default function PositionPage() {
         const tag = (e.target as HTMLElement)?.tagName
         if (tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable) return
         e.preventDefault()
-        setIntelligenceOpen((prev) => !prev)
+        setIntelligenceOpen((prev) => {
+          if (prev) presentation.reset()   // closing → reset cinematic phase
+          return !prev
+        })
       }
     }
     window.addEventListener("keydown", onKeyDown)
@@ -671,11 +679,27 @@ export default function PositionPage() {
             )}
           </div>
 
-          {/* Scenario Context + Intelligence */}
+          {/* Scenario Context + Cinematic Intelligence */}
           <div className={styles.baselineIntelDock} aria-label="Scenario Intelligence">
             <ScenarioContextPanel />
             {intelligenceOpen ? (
-              <IntelligencePanel onCollapse={() => setIntelligenceOpen(false)} />
+              <>
+                {/* Cinematic glass panel — typewriter reveal + specular sweep */}
+                <CommandGlassPanel
+                  phase={presentation.phase}
+                  onTypewriterComplete={presentation.requestSettle}
+                />
+                {/* Collapse button — overlaid below glass panel */}
+                <button
+                  type="button"
+                  className={styles.intelCollapseBtn}
+                  onClick={() => { setIntelligenceOpen(false); presentation.reset() }}
+                  aria-label="Collapse intelligence panel (I)"
+                >
+                  <span>Collapse</span>
+                  <span className={styles.kbdHint}>I</span>
+                </button>
+              </>
             ) : (
               <button
                 type="button"
