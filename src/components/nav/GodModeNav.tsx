@@ -4,7 +4,10 @@ import "./godmodeNav.css";
 export default function GodModeNav() {
   return (
     <header className="gm-nav">
-      <div className="gm-logo">STRATFIT</div>
+      <div className="gm-logo">
+        <img src="/stratfit-logo.png" alt="STRATFIT" style={{ height: '32px', width: 'auto', marginRight: '8px' }} />
+        STRATFIT
+      </div>
 
       <nav className="gm-links">
         <NavItem to="/position" label="POSITION" />

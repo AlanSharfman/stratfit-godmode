@@ -239,6 +239,7 @@ export default function ExportReportButton({
 <body>
   <div class="report">
     <div class="header">
+      <img src="/stratfit-logo.png" alt="STRATFIT" style="height:32px;width:auto;margin-bottom:8px" />
       <div class="logo">STRATFIT</div>
       <div class="subtitle">Strategy Intelligence Report</div>
       <div class="date">Generated on ${dateStr}</div>

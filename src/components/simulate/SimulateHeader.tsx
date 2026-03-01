@@ -23,7 +23,7 @@ export default function SimulateHeader({
     <header className="simulate-header">
       <div className="simulate-header-left">
         <div className="simulate-logo">
-          <Zap className="simulate-logo-icon" size={24} />
+          <img src="/stratfit-logo.png" alt="STRATFIT" style={{ height: '28px', width: 'auto' }} />
           <div className="simulate-logo-text">
             <span className="simulate-title">MONTE CARLO SIMULATION</span>
             <span className="simulate-subtitle">

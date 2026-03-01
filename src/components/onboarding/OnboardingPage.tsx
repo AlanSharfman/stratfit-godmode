@@ -216,7 +216,7 @@ export default function OnboardingPage({ onComplete, onSkip }: OnboardingPagePro
         {/* Header */}
         <header className="onboarding-header">
           <div className="logo">
-            <span className="logo-icon">⛰️</span>
+            <img src="/stratfit-logo.png" alt="STRATFIT" style={{ height: '36px', width: 'auto', marginRight: '8px' }} />
             <span className="logo-text">STRATFIT</span>
           </div>
           

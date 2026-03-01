@@ -555,21 +555,7 @@ export default function PositionPage() {
         <div className={styles.leftCol}>
           {/* Logo lockup */}
           <Link to={ROUTES.POSITION} className={styles.logoLockup}>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="32" height="32" overflow="hidden" className="brand-logo-cube" style={{ display: "block", animation: "pulseGlow 3s ease-in-out infinite, float 4s ease-in-out infinite", transition: "all 0.5s cubic-bezier(0.4, 0, 0.2, 1)" }} aria-hidden="true">
-              <defs>
-                <linearGradient id="pgTopGlow" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#00FFFF" />
-                  <stop offset="100%" stopColor="#0077FF" />
-                </linearGradient>
-                <filter id="pgNeonAura" x="-30%" y="-30%" width="160%" height="160%">
-                  <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#00FFFF" floodOpacity="0.4" />
-                </filter>
-              </defs>
-              <polygon points="15,35 50,55 50,95 15,75" fill="#0D2C4C" stroke="#1A4A7C" strokeWidth="1" />
-              <polygon points="50,55 85,35 85,75 50,95" fill="#061626" stroke="#0D2C4C" strokeWidth="1" />
-              <polygon points="50,15 85,35 50,55 15,35" fill="url(#pgTopGlow)" filter="url(#pgNeonAura)" />
-              <polyline points="15,35 50,55 85,35" fill="none" stroke="#FFFFFF" strokeWidth="1.5" strokeOpacity="0.9" />
-            </svg>
+            <img src="/stratfit-logo.png" alt="STRATFIT" style={{ display: 'block', height: '36px', width: 'auto' }} />
             <div>
               <div className={styles.logoName}>STRATFIT</div>
               <div className={styles.logoSub}>SCENARIO INTELLIGENCE</div>
