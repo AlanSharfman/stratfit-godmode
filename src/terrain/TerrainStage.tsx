@@ -35,8 +35,8 @@ import { useRenderFlagsStore } from "@/state/renderFlagsStore";
 import type { TerrainMetrics } from "@/terrain/terrainFromBaseline";
 import { useTerrainControls } from "@/terrain/useTerrainControls";
 
-// Canonical camera target — must be consistent across all camera setups
-const TERRAIN_LOOK_AT: [number, number, number] = [0, 14, 0];
+// Canonical camera target — shifted left so terrain content avoids the right overlay zone
+const TERRAIN_LOOK_AT: [number, number, number] = [-20, 14, 0];
 
 function readCssVar(varName: string, fallback: string): string {
   if (typeof window === "undefined") return fallback;
@@ -118,12 +118,12 @@ export default function TerrainStage({
     <Canvas
       style={{ position: "absolute", inset: 0, zIndex: 0 }}
       dpr={[1, 2]}
-      camera={{ position: [0, 155, 460], fov: 46, near: 0.1, far: 5000 }}
+      camera={{ position: [-40, 155, 460], fov: 46, near: 0.1, far: 5000 }}
       gl={{ antialias: true, alpha: true }}
       onCreated={({ camera, gl }) => {
         // Only set defaults when not locked — locked pages inject a CameraCompositionRig.
         if (!lockCamera) {
-          camera.position.set(0, 155, 460);
+          camera.position.set(-40, 155, 460);
           camera.lookAt(...TERRAIN_LOOK_AT);
           camera.updateProjectionMatrix();
         }
