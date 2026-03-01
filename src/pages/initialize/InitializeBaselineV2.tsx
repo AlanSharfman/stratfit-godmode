@@ -395,6 +395,9 @@ export default function InitializeBaselineConsoleV2() {
 
         {/* ═══════════ MAIN INSTRUMENT AREA ═══════════ */}
         <main className={styles.instrumentArea}>
+          {/* ── Phase 2.0: Inner Platform shelf ── */}
+          <div className={styles.innerPlatform}>
+
           {/* ── Instrument Header ── */}
           <header className={styles.instrumentHeader}>
             <h1 className={styles.instrumentTitle}>INITIALIZE BASELINE</h1>
@@ -474,6 +477,9 @@ export default function InitializeBaselineConsoleV2() {
             </div>
           </div>
 
+          {/* ── Phase 2.0: Zone Separator ── */}
+          <div className={styles.zoneSeparator} />
+
           {/* ═══════════════════════════════════════════════════════
               STEP 1 — Identity & Context
               ═══════════════════════════════════════════════════════ */}
@@ -481,6 +487,7 @@ export default function InitializeBaselineConsoleV2() {
             <div className={styles.stepContent}>
               <div className={styles.singlePanel}>
                 <h3 className={styles.panelTitle}>IDENTITY &amp; CONTEXT</h3>
+                <div className={styles.panelBody}>
                 <div className={styles.identityGrid}>
                   <label className={styles.identityLabel}>
                     <span className={styles.identityLabelText}>Company Name</span>
@@ -519,6 +526,7 @@ export default function InitializeBaselineConsoleV2() {
                     </select>
                   </label>
                 </div>
+                </div>
               </div>
             </div>
           )}
@@ -534,6 +542,7 @@ export default function InitializeBaselineConsoleV2() {
                 <div className={styles.sectionPanel}>
                   <span className={styles.panelStatusDot} />
                   <h3 className={styles.panelTitle}>LIQUIDITY &amp; CAPITAL STRUCTURE</h3>
+                  <div className={styles.panelBody}>
 
                   <SliderRow
                     label="Cash on Hand"
@@ -624,12 +633,14 @@ export default function InitializeBaselineConsoleV2() {
                       </span>
                     </div>
                   )}
+                  </div>
                 </div>
 
                 {/* ── REVENUE ENGINE ── */}
                 <div className={styles.sectionPanel}>
                   <span className={styles.panelStatusDot} />
                   <h3 className={styles.panelTitle}>REVENUE ENGINE</h3>
+                  <div className={styles.panelBody}>
 
                   <SliderRow
                     label="Current ARR"
@@ -679,6 +690,7 @@ export default function InitializeBaselineConsoleV2() {
                     format={(v) => `${v}%`}
                     onChange={(v) => update("netRevenueRetentionPct", v)}
                   />
+                  </div>
                 </div>
 
                 {/* ── COST STRUCTURE ── */}
@@ -699,6 +711,7 @@ export default function InitializeBaselineConsoleV2() {
                       &#9660;
                     </span>
                   </button>
+                  <div className={styles.panelBody}>
 
                   {costExpanded && (
                     <>
@@ -763,12 +776,14 @@ export default function InitializeBaselineConsoleV2() {
                       </div>
                     </>
                   )}
+                  </div>
                 </div>
 
                 {/* ── BURN METRICS ── */}
                 <div className={styles.sectionPanel}>
                   <span className={styles.panelStatusDot} />
                   <h3 className={styles.panelTitle}>BURN METRICS</h3>
+                  <div className={styles.panelBody}>
 
                   <SliderRow
                     label="Revenue / Head"
@@ -796,6 +811,7 @@ export default function InitializeBaselineConsoleV2() {
                       {fmtCurrency(metrics.monthlyBurn)}
                     </span>
                   </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -810,6 +826,7 @@ export default function InitializeBaselineConsoleV2() {
                 <div className={styles.sectionPanel}>
                   <span className={styles.panelStatusDot} />
                   <h3 className={styles.panelTitle}>EXECUTION VELOCITY</h3>
+                  <div className={styles.panelBody}>
 
                   <div className={styles.inputRow}>
                     <span className={styles.inputLabel}>Hiring Velocity</span>
@@ -841,11 +858,13 @@ export default function InitializeBaselineConsoleV2() {
                       onChange={(v) => update("burnFlexibility", v)}
                     />
                   </div>
+                  </div>
                 </div>
 
                 <div className={styles.sectionPanel}>
                   <span className={styles.panelStatusDot} />
                   <h3 className={styles.panelTitle}>COST &amp; COGS</h3>
+                  <div className={styles.panelBody}>
 
                   <InputRow
                     label="Headcount"
@@ -881,12 +900,14 @@ export default function InitializeBaselineConsoleV2() {
                     format={fmtCurrency}
                     onChange={() => {}}
                   />
+                  </div>
                 </div>
 
                 {/* ── CUSTOMER UNIT ECONOMICS ── */}
                 <div className={styles.sectionPanel}>
                   <span className={styles.panelStatusDot} />
                   <h3 className={styles.panelTitle}>CUSTOMER UNIT ECONOMICS</h3>
+                  <div className={styles.panelBody}>
 
                   <InputRow
                     label="CAC (Cost)"
@@ -942,6 +963,7 @@ export default function InitializeBaselineConsoleV2() {
                         : "\u2014"}
                     </span>
                   </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -956,6 +978,7 @@ export default function InitializeBaselineConsoleV2() {
                 <div className={styles.sectionPanel}>
                   <span className={styles.panelStatusDot} />
                   <h3 className={styles.panelTitle}>STRATEGIC POSTURE</h3>
+                  <div className={styles.panelBody}>
 
                   <div className={styles.inputRow}>
                     <span className={styles.inputLabel}>Risk Tolerance</span>
@@ -996,11 +1019,13 @@ export default function InitializeBaselineConsoleV2() {
                       <span className={styles.priorityEnd}>Expansion</span>
                     </div>
                   </div>
+                  </div>
                 </div>
 
                 <div className={styles.sectionPanel}>
                   <span className={styles.panelStatusDot} />
                   <h3 className={styles.panelTitle}>SUMMARY</h3>
+                  <div className={styles.panelBody}>
                   <div className={styles.summaryGrid}>
                     <div className={styles.summaryItem}>
                       <span className={styles.summaryItemLabel}>Runway</span>
@@ -1075,6 +1100,7 @@ export default function InitializeBaselineConsoleV2() {
                       </span>
                     </div>
                   </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1119,6 +1145,9 @@ export default function InitializeBaselineConsoleV2() {
               )}
             </div>
           </footer>
+
+          </div>
+          {/* ^^^ innerPlatform */}
         </main>
 
           </div>
