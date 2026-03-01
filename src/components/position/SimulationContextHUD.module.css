@@ -4,8 +4,8 @@
   top: 14px;
   left: 14px;
   z-index: 20;
-  /* Match insightOverlay width token */
-  width: clamp(600px, 54vw, 740px);
+  /* 30% of insightOverlay width */
+  width: clamp(180px, 16.2vw, 222px);
   padding: 10px 14px 10px 12px;
   border-radius: 18px;
 
