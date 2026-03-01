@@ -1,10 +1,28 @@
 /* ── IntelligencePanel — Expanded right-rail intelligence display ──────── */
 
+/* ── Glass sheen (top gradient) ── */
+.glassSheen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: linear-gradient(
+    180deg,
+    rgba(182, 228, 255, 0.04) 0%,
+    transparent 100%
+  );
+  pointer-events: none;
+  border-radius: 10px 10px 0 0;
+  z-index: 0;
+}
+
 .wrapper {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0;
-  padding: 16px 16px 20px 16px;
+  padding: 14px 16px 20px 16px;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
@@ -12,21 +30,23 @@
   font-family: Inter, system-ui, sans-serif;
 }
 
-/* ── Header row ── */
+/* ── Bezel Header Row ── */
 .headerRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 6px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(0, 206, 209, 0.15);
+  margin-bottom: 12px;
 }
 
 .headerTitle {
   font-family: ui-monospace, "JetBrains Mono", monospace;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 1.5px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
   text-transform: uppercase;
-  color: #00CED1;
+  color: rgba(0, 206, 209, 0.85);
 }
 
 .collapseBtn {
@@ -87,29 +107,31 @@
   color: #E0E0E0;
 }
 
-/* ── Key Drivers ── */
+/* ── Key Drivers — aligned rows ── */
 .driverList {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .driverItem {
   display: flex;
   align-items: baseline;
   gap: 6px;
-  font-size: 13px;
+  font-size: 12.5px;
   line-height: 1.4;
   color: #E0E0E0;
 }
 
 .driverArrow {
   flex-shrink: 0;
-  font-size: 13px;
+  font-size: 11px;
   line-height: 1;
+  width: 14px;
+  text-align: center;
 }
 
 .driverArrowPositive {
@@ -124,8 +146,17 @@
   color: #94A3B8;
 }
 
-.driverText {
+.driverLabel {
   flex: 1;
+  min-width: 0;
+}
+
+.driverImpact {
+  flex-shrink: 0;
+  font-family: ui-monospace, "JetBrains Mono", monospace;
+  font-size: 11px;
+  color: rgba(182, 228, 255, 0.6);
+  text-align: right;
 }
 
 /* ── Risk Assessment ── */
@@ -165,43 +196,81 @@
   margin-left: 4px;
 }
 
-/* ── Survival Probability ── */
-.survivalSection {
-  text-align: center;
-  padding: 16px 0 12px;
-  border-top: 1px solid rgba(182, 228, 255, 0.08);
-  border-bottom: 1px solid rgba(182, 228, 255, 0.08);
+/* ── Hero Survival Probability ── */
+.heroSurvival {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 0 12px;
 }
 
-.survivalNumber {
-  font-size: 34px;
-  font-weight: 700;
+.heroNumber {
+  font-size: 48px;
+  font-weight: 800;
   line-height: 1;
-  letter-spacing: -0.02em;
-  /* color set inline based on score */
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
 }
 
-.survivalLabel {
+.heroMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.heroLabel {
+  font-family: ui-monospace, "JetBrains Mono", monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(182, 228, 255, 0.45);
+}
+
+.heroBand {
   font-family: ui-monospace, "JetBrains Mono", monospace;
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  color: rgba(182, 228, 255, 0.5);
-  margin-top: 6px;
 }
 
-.survivalBand {
+/* ── Hairline section dividers ── */
+.hairline {
+  height: 1px;
+  background: rgba(182, 228, 255, 0.06);
+  margin: 4px 0;
+}
+
+/* ── Summary clamp ── */
+.summaryClamped {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.showMoreBtn {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: rgba(0, 206, 209, 0.7);
   font-family: ui-monospace, "JetBrains Mono", monospace;
   font-size: 10px;
   font-weight: 600;
-  letter-spacing: 1.2px;
-  text-transform: uppercase;
-  margin-top: 4px;
-  /* color set inline based on score */
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
-/* ── Divider ── */
+.showMoreBtn:hover {
+  color: rgba(0, 206, 209, 1);
+}
+
+/* ── Divider (legacy compat) ── */
 .divider {
   height: 1px;
   background: rgba(182, 228, 255, 0.08);
