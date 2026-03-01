@@ -235,9 +235,13 @@ export default function DecisionPage() {
           <span className={css.breadcrumbSep}>/</span>
           <span className={css.breadcrumbActive}>DECISION</span>
         </nav>
+        <div className={css.systemBadge}>
+          <span className={css.systemBadgeDot} />
+          Decision Engine · Online
+        </div>
         <h1 className={css.pageTitle}>Decision Console</h1>
         <p className={css.pageSubtitle}>
-          Translate a decision into scenario levers. Run the model. Read probability signals.
+          Translate a strategic decision into scenario levers. Run the model. Read probability signals.
         </p>
         <div className={css.headerDivider} />
       </div>
