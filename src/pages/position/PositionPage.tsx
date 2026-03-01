@@ -70,6 +70,8 @@ export default function PositionPage() {
   const [intelligenceOpen, setIntelligenceOpen] = useState(false)
   const [terrainTuning, setTerrainTuning] = useState<TerrainTuningParams>({ ...DEFAULT_TUNING })
   const viewportRef = useRef<HTMLDivElement>(null)
+  const insightScrollRef = useRef<HTMLDivElement>(null)
+  const autoScrollRef = useRef<number | null>(null)
   const reducedMotion = useReducedMotion()
 
   // ── ResizeObserver: update Three.js renderer when right rail expands/collapses ──
@@ -126,7 +128,7 @@ export default function PositionPage() {
   const presentation = useIntelligencePresentation({ completedAt: simulationCompletedAt })
 
   // Auto-open insights panel — 5s after simulation completes (let terrain render)
-  // Auto-close after 25s of being open
+  // Auto-close after 15s of being open
   const lastAutoOpenRef = useRef<number | null>(null)
   const autoCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -144,11 +146,11 @@ export default function PositionPage() {
       // Wait 5s for terrain to settle before revealing insights
       const openTimer = setTimeout(() => {
         setIntelligenceOpen(true)
-        // Auto-close after 20s
+        // Auto-close after 15s
         clearAutoClose()
         autoCloseTimerRef.current = setTimeout(() => {
           setIntelligenceOpen(false)
-        }, 20_000)
+        }, 15_000)
       }, 5_000)
       return () => clearTimeout(openTimer)
     }
@@ -158,9 +160,46 @@ export default function PositionPage() {
   useEffect(() => {
     if (!intelligenceOpen) {
       clearAutoClose()
+      // Stop auto-scroll
+      if (autoScrollRef.current) {
+        cancelAnimationFrame(autoScrollRef.current)
+        autoScrollRef.current = null
+      }
     }
     return () => clearAutoClose()
   }, [intelligenceOpen, clearAutoClose])
+
+  // ── Auto-scroll insight content slowly when slid out ──
+  useEffect(() => {
+    if (!intelligenceOpen) return
+    const el = insightScrollRef.current
+    if (!el) return
+    // Start after a 1.5s delay (let slide animation finish)
+    const startDelay = setTimeout(() => {
+      let lastTime = 0
+      const scrollSpeed = 0.025 // px per ms — very slow cinematic crawl
+      function tick(time: number) {
+        if (!lastTime) lastTime = time
+        const dt = time - lastTime
+        lastTime = time
+        if (el) {
+          const maxScroll = el.scrollHeight - el.clientHeight
+          if (el.scrollTop < maxScroll) {
+            el.scrollTop += scrollSpeed * dt
+            autoScrollRef.current = requestAnimationFrame(tick)
+          }
+        }
+      }
+      autoScrollRef.current = requestAnimationFrame(tick)
+    }, 1500)
+    return () => {
+      clearTimeout(startDelay)
+      if (autoScrollRef.current) {
+        cancelAnimationFrame(autoScrollRef.current)
+        autoScrollRef.current = null
+      }
+    }
+  }, [intelligenceOpen])
 
   // ── Intelligence panel keyboard shortcut (I key) ──
   useEffect(() => {
@@ -695,38 +734,39 @@ export default function PositionPage() {
             className={`${styles.baselineIntelDock}${intelligenceOpen ? ` ${styles.insightSlideOut}` : ""}`}
             aria-label="Scenario Insights"
           >
-            <ScenarioContextPanel />
-            {intelligenceOpen ? (
-              <>
-                {/* Cinematic glass panel — typewriter reveal + specular sweep */}
-                <CommandGlassPanel
-                  phase={presentation.phase}
-                  onTypewriterComplete={presentation.requestSettle}
-                />
-                {/* Collapse button — overlaid below glass panel */}
+            <div ref={insightScrollRef} className={intelligenceOpen ? styles.insightScrollWrap : undefined}>
+              <ScenarioContextPanel />
+              {intelligenceOpen ? (
+                <>
+                  {/* Cinematic glass panel — typewriter reveal + specular sweep */}
+                  <CommandGlassPanel
+                    phase={presentation.phase}
+                    onTypewriterComplete={presentation.requestSettle}
+                  />
+                  {/* Collapse button — overlaid below glass panel */}
+                  <button
+                    type="button"
+                    className={styles.intelCollapseBtn}
+                    onClick={() => setIntelligenceOpen(false)}
+                    aria-label="Collapse insights panel (I)"
+                  >
+                    <span>Collapse</span>
+                    <span className={styles.kbdHint}>I</span>
+                  </button>
+                </>
+              ) : (
                 <button
                   type="button"
-                  className={styles.intelCollapseBtn}
-                  onClick={() => setIntelligenceOpen(false)}
-                  aria-label="Collapse insights panel (I)"
+                  className={styles.intelToggle}
+                  onClick={() => {
+                    setIntelligenceOpen(true)
+                    // Start auto-close on manual open
+                    clearAutoClose()
+                    autoCloseTimerRef.current = setTimeout(() => {
+                      setIntelligenceOpen(false)
+                    }, 15_000)
+                  }}
                 >
-                  <span>Collapse</span>
-                  <span className={styles.kbdHint}>I</span>
-                </button>
-              </>
-            ) : (
-              <button
-                type="button"
-                className={styles.intelToggle}
-                onClick={() => {
-                  setIntelligenceOpen(true)
-                  // Start auto-close on manual open
-                  clearAutoClose()
-                  autoCloseTimerRef.current = setTimeout(() => {
-                    setIntelligenceOpen(false)
-                  }, 20_000)
-                }}
-              >
                 {/* Bejeweled insight diamond icon */}
                 <span className={styles.insightIcon} aria-hidden="true">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -749,6 +789,7 @@ export default function PositionPage() {
                 <span className={styles.kbdHint}>I</span>
               </button>
             )}
+            </div>
           </div>
         </div>
       </div>
