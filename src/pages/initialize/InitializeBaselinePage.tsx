@@ -30,6 +30,7 @@ interface FormState {
 
   currentARR: number
   monthlyGrowthPct: number
+  grossMarginPct: number
   avgDealSize: number
   monthlyChurnPct: number
   salesEfficiency: number
@@ -41,6 +42,9 @@ interface FormState {
   rdSpend: number
   gaSpend: number
   cogsPct: number
+
+  /* Customer Unit Economics */
+  cac: number
 
   /* Step 3 — Operating Structure */
   hiringVelocity: HiringVelocity
@@ -72,6 +76,7 @@ const INITIAL: FormState = {
 
   currentARR: 1_200_000,
   monthlyGrowthPct: 8,
+  grossMarginPct: 70,
   avgDealSize: 3_200,
   monthlyChurnPct: 3,
   salesEfficiency: 1.0,
@@ -83,6 +88,7 @@ const INITIAL: FormState = {
   rdSpend: 80_000,
   gaSpend: 30_000,
   cogsPct: 45_000,
+  cac: 8_000,
 
   hiringVelocity: "Medium",
   salesRampTime: 4,
@@ -286,12 +292,25 @@ export default function InitializeBaselinePage() {
     form.gaSpend
   const operatingProfit = form.currentARR - totalCost
 
+  /* ── Customer unit economics (derived) ── */
+  const monthlyChurnDecimal = form.monthlyChurnPct / 100
+  const ltv =
+    monthlyChurnDecimal > 0
+      ? (form.avgDealSize * (form.grossMarginPct / 100)) / monthlyChurnDecimal
+      : 0
+  const ltvCacRatio = form.cac > 0 ? ltv / form.cac : 0
+  const cacPaybackMonths =
+    form.avgDealSize > 0 && form.grossMarginPct > 0
+      ? form.cac / ((form.avgDealSize / 12) * (form.grossMarginPct / 100))
+      : 0
+  const grossProfit = (form.currentARR / 12) * (form.grossMarginPct / 100)
+
   const handleLock = useCallback(() => {
     setBaseline({
       cash: form.cashOnHand,
       monthlyBurn: form.monthlyNetBurn,
       revenue: form.currentARR / 12,
-      grossMargin: 0.7,
+      grossMargin: form.grossMarginPct / 100,
       growthRate: form.monthlyGrowthPct / 100,
       churnRate: form.monthlyChurnPct / 100,
       headcount: form.headcount,
@@ -407,6 +426,30 @@ export default function InitializeBaselinePage() {
               <span className={css.metricLabel}>SURVIVAL PROBABILITY</span>
               <span className={css.metricValue}>
                 {metrics.survivalProbability} %
+              </span>
+            </div>
+
+            <div className={css.metricItem}>
+              <span className={css.metricLabel}>GROSS MARGIN</span>
+              <span className={css.metricValue}>
+                {form.grossMarginPct.toFixed(0)} %
+              </span>
+            </div>
+
+            <div className={css.metricItem}>
+              <span className={css.metricLabel}>LTV / CAC</span>
+              <span
+                className={css.metricValue}
+                style={{
+                  color:
+                    ltvCacRatio >= 3
+                      ? "#34d399"
+                      : ltvCacRatio >= 1
+                        ? "#fbbf24"
+                        : "#f87171",
+                }}
+              >
+                {ltvCacRatio > 0 ? `${ltvCacRatio.toFixed(1)}x` : "—"}
               </span>
             </div>
           </div>
@@ -579,6 +622,13 @@ export default function InitializeBaselinePage() {
                     min={0} max={30} step={0.1}
                     format={(v) => `${v.toFixed(1)}%`}
                     onChange={(v) => update("monthlyGrowthPct", v)}
+                  />
+                  <SliderRow
+                    label="Gross Margin %"
+                    value={form.grossMarginPct}
+                    min={0} max={100} step={0.5}
+                    format={(v) => `${v.toFixed(1)}%`}
+                    onChange={(v) => update("grossMarginPct", v)}
                   />
                   <InputRow
                     label="Average Deal Size (ACV)"
@@ -810,6 +860,72 @@ export default function InitializeBaselinePage() {
                     showScale={false}
                   />
                 </div>
+
+                {/* ── CUSTOMER UNIT ECONOMICS ── */}
+                <div className={css.sectionPanel}>
+                  <h3 className={css.panelTitle}>CUSTOMER UNIT ECONOMICS</h3>
+
+                  <InputRow
+                    label="CAC (Acquisition Cost)"
+                    value={form.cac}
+                    prefix="$"
+                    onChange={(v) => update("cac", Number(v) || 0)}
+                  />
+                  <SliderRow
+                    label="Gross Margin %"
+                    value={form.grossMarginPct}
+                    min={0} max={100} step={0.5}
+                    format={(v) => `${v.toFixed(1)}%`}
+                    onChange={(v) => update("grossMarginPct", v)}
+                  />
+
+                  <div className={css.panelDivider} />
+
+                  <div className={css.derivedRow}>
+                    <span className={css.derivedLabel}>
+                      &#8901; Gross Profit / mo
+                    </span>
+                    <span className={css.derivedValue}>
+                      {fmtCurrency(grossProfit)}
+                    </span>
+                  </div>
+                  <div className={css.derivedRow}>
+                    <span className={css.derivedLabel}>
+                      &#8901; LTV
+                    </span>
+                    <span className={css.derivedValue}>
+                      {ltv > 0 ? fmtCurrency(ltv) : "\u2014"}
+                    </span>
+                  </div>
+                  <div className={css.derivedRow}>
+                    <span className={css.derivedLabel}>
+                      &#8901; LTV / CAC
+                    </span>
+                    <span
+                      className={css.derivedValue}
+                      style={{
+                        color:
+                          ltvCacRatio >= 3
+                            ? "#34d399"
+                            : ltvCacRatio >= 1
+                              ? "#fbbf24"
+                              : "#f87171",
+                      }}
+                    >
+                      {ltvCacRatio > 0 ? `${ltvCacRatio.toFixed(1)}x` : "\u2014"}
+                    </span>
+                  </div>
+                  <div className={css.derivedRow}>
+                    <span className={css.derivedLabel}>
+                      &#8901; CAC Payback
+                    </span>
+                    <span className={css.derivedValue}>
+                      {cacPaybackMonths > 0
+                        ? `${cacPaybackMonths.toFixed(1)} months`
+                        : "\u2014"}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -910,6 +1026,36 @@ export default function InitializeBaselinePage() {
                         }}
                       >
                         {fmtCurrency(operatingProfit)}
+                      </span>
+                    </div>
+                    <div className={css.summaryItem}>
+                      <span className={css.summaryItemLabel}>Gross Margin</span>
+                      <span className={css.summaryItemValue}>
+                        {form.grossMarginPct.toFixed(0)}%
+                      </span>
+                    </div>
+                    <div className={css.summaryItem}>
+                      <span className={css.summaryItemLabel}>LTV / CAC</span>
+                      <span
+                        className={css.summaryItemValue}
+                        style={{
+                          color:
+                            ltvCacRatio >= 3
+                              ? "#34d399"
+                              : ltvCacRatio >= 1
+                                ? "#fbbf24"
+                                : "#f87171",
+                        }}
+                      >
+                        {ltvCacRatio > 0 ? `${ltvCacRatio.toFixed(1)}x` : "\u2014"}
+                      </span>
+                    </div>
+                    <div className={css.summaryItem}>
+                      <span className={css.summaryItemLabel}>CAC Payback</span>
+                      <span className={css.summaryItemValue}>
+                        {cacPaybackMonths > 0
+                          ? `${cacPaybackMonths.toFixed(1)} mo`
+                          : "\u2014"}
                       </span>
                     </div>
                   </div>
