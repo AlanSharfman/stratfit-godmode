@@ -55,14 +55,23 @@
 
 /* ─── Sidebar Header ──────────────────────────────────────────────────── */
 .sidebarHeader {
-  padding: 28px 22px 24px;
+  padding: 14px 12px 12px;
   border-bottom: 1px solid rgba(255,255,255,0.04);
 }
 
 .sidebarLogo {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+}
+
+.sidebarLogoImg {
+  width: 100%;
+  max-width: 200px;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  filter: brightness(1.05);
 }
 
 .sidebarLogoIcon {

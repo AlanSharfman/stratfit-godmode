@@ -352,27 +352,11 @@ export default function InitializeBaselineConsoleV2() {
         <aside className={styles.sidebar}>
           <div className={styles.sidebarHeader}>
             <div className={styles.sidebarLogo}>
-              <div className={styles.sidebarLogoIcon}>
-                <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
-                  <path
-                    d="M14 3L25 14L14 25L3 14L14 3Z"
-                    stroke="rgba(34,211,238,0.50)"
-                    strokeWidth="1.5"
-                    fill="rgba(34,211,238,0.05)"
-                  />
-                  <path
-                    d="M14 8L21 14L14 21L7 14L14 8Z"
-                    stroke="rgba(34,211,238,0.30)"
-                    strokeWidth="1"
-                    fill="rgba(34,211,238,0.02)"
-                  />
-                  <rect x="12" y="12" width="4" height="4" rx="1" fill="rgba(34,211,238,0.20)" />
-                </svg>
-              </div>
-              <div>
-                <div className={styles.sidebarWordmark}>STRATFIT</div>
-                <div className={styles.sidebarSubtitle}>Baseline Initialization</div>
-              </div>
+              <img
+                src="/stratfit-logo.png"
+                alt="STRATFIT"
+                className={styles.sidebarLogoImg}
+              />
             </div>
           </div>
 
