@@ -12,7 +12,7 @@
 // └─────────────────────────────────────────────────────────────────────┘
 // ═══════════════════════════════════════════════════════════════════════════
 
-export { selectKpis, selectKpiDeltas } from "./kpiSelectors"
+export { selectKpis, selectKpiDeltas, selectPositionKpis } from "./kpiSelectors"
 export type { SelectedKpis, KpiDeltas } from "./kpiSelectors"
 
 export { selectRiskScore } from "./riskSelectors"

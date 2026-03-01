@@ -46,14 +46,9 @@ import TimeScaleControl from "./overlays/TimeScaleControl"
 import IdleMotionLayer from "./IdleMotionLayer"
 import HorizonPulse from "@/components/terrain/overlays/HorizonPulse"
 import { useReducedMotion } from "@/hooks/useReducedMotion"
-import { InsightRevealController } from "@/components/cinematic/InsightRevealController"
 import CommandGlassPanel from "@/components/intelligence/CommandGlassPanel"
 import { useIntelligencePresentation } from "@/hooks/useIntelligencePresentation"
 import SimulationProofOverlay from "@/components/dev/SimulationProofOverlay"
-import {
-  useCinematicRevealStore,
-} from "@/state/cinematicRevealStore"
-import insightStyles from "@/components/insight/AIInsightPanel.module.css"
 import {
   buildPositionViewModel,
 } from "./overlays/positionState"
@@ -179,15 +174,16 @@ export default function PositionPage() {
       return scenarioTerrainRef.current.metrics
     }
 
-    // PRIORITY 2: Scenario has terrain multipliers (running OR complete) → derive & lock
+    // PRIORITY 2: Scenario has terrain data (running OR complete) → derive via selector & lock
+    const terrainData = selectTerrainMetrics(activeScenario?.simulationResults ?? null)
     const hasMultipliers =
       activeScenarioId &&
       (activeScenario?.status === "running" || activeScenario?.status === "complete") &&
-      activeScenario.simulationResults?.terrain?.multipliers &&
+      terrainData?.multipliers &&
       effectiveInputs
 
     if (hasMultipliers) {
-      const m = activeScenario!.simulationResults!.terrain.multipliers
+      const m = terrainData!.multipliers
       const baseBurn = Number(effectiveInputs!.burnRate) || Number(effectiveInputs!.monthlyBurn) || 0
       const morphed = {
         ...effectiveInputs!,
@@ -371,9 +367,6 @@ export default function PositionPage() {
     if (!completedAt) return
     if (lastAutoRunRef.current === completedAt) return // already processed
     lastAutoRunRef.current = completedAt
-
-    // Cinematic reveal is triggered by InsightRevealController (mounted in viewport)
-    // — no need to call startSequence here; the controller handles it via props
 
     const simKpisRaw = activeScenario.simulationResults?.kpis
     if (!simKpisRaw) return
@@ -614,11 +607,6 @@ export default function PositionPage() {
               triggerKey={activeScenario?.simulationResults?.completedAt ?? null}
               disabled={reducedMotion}
             />
-            {/* ── Cinematic Reveal Controller — rAF timeline orchestrator ── */}
-            <InsightRevealController
-              completedAt={activeScenario?.simulationResults?.completedAt ?? null}
-              runId={activeScenario?.simulationResults?.completedAt ?? null}
-            />
             {/* ── DEV: Simulation proof overlay (traceability) ── */}
             <SimulationProofOverlay
               scenario={activeScenario ?? null}
@@ -639,8 +627,7 @@ export default function PositionPage() {
                 }}
               />
             )}
-            {/* ── Terrain dim overlay — intelligence debrief breakout ── */}
-            <TerrainBreakoutDim />
+
           </div>
         </div>
 
@@ -677,7 +664,7 @@ export default function PositionPage() {
                 onTypewriterComplete={intelRequestSettle}
               />
             ) : (
-              <AIInsightPanel terrainViewportRef={viewportRef} />
+              <AIInsightPanel />
             )}
           </div>
         </div>
@@ -685,21 +672,3 @@ export default function PositionPage() {
     </div>
   )
 }
-
-/* ── Terrain dim overlay for Intelligence Debrief breakout ── */
-const BREAKOUT_DIM_PHASES = new Set(["intel_breakout", "intel_debrief", "intel_retract"])
-
-const TerrainBreakoutDim = React.memo(function TerrainBreakoutDim() {
-  const phase = useCinematicRevealStore((s) => s.revealPhase)
-  const active = BREAKOUT_DIM_PHASES.has(phase)
-  const dimming = phase === "intel_breakout" || phase === "intel_debrief"
-
-  if (!active) return null
-
-  return (
-    <div
-      className={`${insightStyles.terrainDim} ${dimming ? insightStyles.terrainDimIn : insightStyles.terrainDimOut}`}
-      aria-hidden="true"
-    />
-  )
-})

@@ -88,6 +88,8 @@ type Phase1ScenarioState = {
   hydrate: () => void
   scenarios: Phase1Scenario[]
   activeScenarioId: string | null
+  /** RunId of the most recently completed simulation (completedAt timestamp) */
+  lastCompletedRunId: number | null
   setActiveScenarioId: (id: string | null) => void
   createScenario: (input: CreateScenarioInput) => string
   runSimulation: (scenarioId: string) => void
@@ -158,6 +160,7 @@ export const usePhase1ScenarioStore = create<Phase1ScenarioState>()(
 
       scenarios: [],
       activeScenarioId: null,
+      lastCompletedRunId: null,
 
       setActiveScenarioId: (id) => set({ activeScenarioId: id }),
 
@@ -240,14 +243,16 @@ export const usePhase1ScenarioStore = create<Phase1ScenarioState>()(
 
         // Simulate with 1.4s delay → finalize with timestamp + summary
         setTimeout(() => {
+          const completedAt = Date.now()
           set((s) => ({
+            lastCompletedRunId: completedAt,
             scenarios: s.scenarios.map((sc) =>
               sc.id === scenarioId
                 ? {
                     ...sc,
                     status: "complete" as const,
                     simulationResults: {
-                      completedAt: Date.now(),
+                      completedAt,
                       horizonMonths: 24,
                       summary: `Simulation complete \u2014 ${scenario.decision.slice(0, 60)}`,
                       kpis,
@@ -289,6 +294,7 @@ export const usePhase1ScenarioStore = create<Phase1ScenarioState>()(
       partialize: (s) => ({
         scenarios: s.scenarios,
         activeScenarioId: s.activeScenarioId,
+        lastCompletedRunId: s.lastCompletedRunId,
       }),
       onRehydrateStorage: () => (state) => {
         // mark hydrated after persist rehydrates

@@ -38,9 +38,42 @@
 import type { SelectedKpis } from "@/selectors/kpiSelectors"
 import type { DriverSignal } from "@/selectors/driverSelectors"
 import type { ProbabilitySignal as RawProbabilitySignal } from "@/selectors/probabilitySelectors"
+import type { BaselineInputs } from "@/state/baselineStore"
 
 // ── Re-export for barrel convenience ──
 export type { SelectedKpis, DriverSignal, RawProbabilitySignal }
+
+// ═════════════════════════════════════════════════════════════════
+// CANONICAL INPUT CONTRACT (Initiate → Simulation Engine)
+// ═════════════════════════════════════════════════════════════════
+
+/**
+ * Decision deltas — optional overrides applied to baseline inputs
+ * during scenario simulation. Produced by the Decision page.
+ */
+export interface DecisionDeltas {
+  /** Free-text decision query */
+  decision: string
+  /** Deterministic intent classification */
+  intentType?: string
+  intentLabel?: string
+}
+
+/**
+ * ScenarioConfig — the ONLY input consumed by the simulation engine.
+ * Combines baseline snapshot + decision deltas + engine parameters.
+ * Built by phase1ScenarioStore.runSimulation().
+ */
+export interface ScenarioConfig {
+  /** Baseline financial snapshot */
+  baseline: BaselineInputs
+  /** Decision text + intent classification */
+  decision: DecisionDeltas
+  /** Projection horizon */
+  horizonMonths: number
+  /** Deterministic seed (derived from decision hash) */
+  seed: number
+}
 
 // ═════════════════════════════════════════════════════════════════
 // VALUATION SUMMARY (v1 — ARR × revenue multiple, deterministic)
