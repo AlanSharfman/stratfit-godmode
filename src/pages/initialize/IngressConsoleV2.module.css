@@ -2,7 +2,7 @@
    STRATFIT — INITIALIZE BASELINE · Instrument Console V2
    Dense instrument panel layout · Compact inline sliders
    Palette: Cyan (#22d3ee) · Charcoal (#1a2332) · Emerald (#34d399) · Indigo (#6366f1)
-   ConsoleFrame provides outer shell — this module handles interior layout only
+   Self-contained 3-layer shell: outerChassis → bezelFrame → glassSurface
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ─── ANIMATIONS ────────────────────────────────────────────────────────── */
@@ -25,6 +25,184 @@
 @keyframes sfMountainShimmer {
   0%, 100% { opacity: 0.06; }
   50%      { opacity: 0.09; }
+}
+@keyframes sfSpecularSweep {
+  0%   { left: -40%; opacity: 0; }
+  15%  { opacity: 0.5; }
+  50%  { opacity: 0.25; }
+  100% { left: 140%; opacity: 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   OUTER CHASSIS — Deep vignette viewport enclosure
+   ═══════════════════════════════════════════════════════════════════════════ */
+.outerChassis {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+  background:
+    radial-gradient(ellipse 75% 50% at 50% 0%, rgba(12,28,52,0.22) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 85% 100%, rgba(8,22,45,0.12) 0%, transparent 45%),
+    radial-gradient(ellipse 40% 35% at 8% 55%, rgba(6,18,38,0.10) 0%, transparent 45%),
+    linear-gradient(180deg, #040710 0%, #070c16 20%, #0a0f1a 40%, #0c1220 60%, #070c16 85%, #040710 100%);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Ambient noise texture */
+.outerChassis::after {
+  content: '';
+  position: fixed;
+  inset: -10%;
+  width: 120%;
+  height: 120%;
+  background-image:
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.30;
+  mix-blend-mode: overlay;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BEZEL FRAME — Metallic stepped border enclosure
+   ═══════════════════════════════════════════════════════════════════════════ */
+.bezelFrame {
+  position: relative;
+  width: 100%;
+  max-width: 1380px;
+  border-radius: 20px;
+  padding: 10px;
+  background:
+    linear-gradient(
+      158deg,
+      rgba(100,120,150,0.35) 0%,
+      rgba(70,90,120,0.24) 12%,
+      rgba(35,50,75,0.16) 30%,
+      rgba(20,32,55,0.12) 50%,
+      rgba(35,50,75,0.16) 70%,
+      rgba(70,90,120,0.24) 88%,
+      rgba(100,120,150,0.35) 100%
+    );
+  box-shadow:
+    /* Inner edge highlights */
+    inset 0 1px 0 rgba(255,255,255,0.12),
+    inset 0 -1px 0 rgba(0,0,0,0.50),
+    inset 1px 0 0 rgba(255,255,255,0.05),
+    inset -1px 0 0 rgba(255,255,255,0.05),
+    /* Outer hairline */
+    0 0 0 1px rgba(255,255,255,0.06),
+    /* Inner hairline (cyan accent) */
+    0 0 0 2px rgba(120,220,255,0.10),
+    0 0 0 3px rgba(0,0,0,0.50),
+    0 0 0 5px rgba(45,65,100,0.08),
+    0 0 0 6px rgba(0,0,0,0.35),
+    /* Deep depth shadow */
+    0 24px 80px rgba(0,0,0,0.65),
+    0 10px 30px rgba(0,0,0,0.45),
+    /* Subtle cyan ambient glow */
+    0 0 90px rgba(34,211,238,0.02);
+}
+
+/* Top specular edge */
+.bezelFrame::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 28px;
+  right: 28px;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255,255,255,0.14) 25%,
+    rgba(255,255,255,0.28) 50%,
+    rgba(255,255,255,0.14) 75%,
+    transparent 100%
+  );
+  z-index: 2;
+  border-radius: 20px;
+}
+
+/* Specular sweep animation */
+.bezelFrame::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -40%;
+  width: 35%;
+  height: 100%;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    rgba(255,255,255,0.025) 40%,
+    rgba(255,255,255,0.05) 50%,
+    rgba(255,255,255,0.025) 60%,
+    transparent 100%
+  );
+  z-index: 3;
+  pointer-events: none;
+  border-radius: 20px;
+  animation: sfSpecularSweep 8s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GLASS SURFACE — Frosted console interior
+   ═══════════════════════════════════════════════════════════════════════════ */
+.glassSurface {
+  position: relative;
+  z-index: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(8,12,18,0.55);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow:
+    inset 0 2px 6px rgba(0,0,0,0.35),
+    inset 0 -1px 0 rgba(0,0,0,0.28),
+    0 0 0 1px rgba(0,0,0,0.55),
+    0 0 0 2px rgba(45,70,110,0.07),
+    inset 0 0 80px rgba(0,0,0,0.20),
+    inset 0 0 120px rgba(5,10,20,0.35);
+}
+
+/* Reflection band — brighter haze across top 18% */
+.glassSurface::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 18%;
+  background: linear-gradient(180deg,
+    rgba(255,255,255,0.025) 0%,
+    rgba(255,255,255,0.012) 40%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+  border-radius: 12px 12px 0 0;
+}
+
+/* Subtle grain overlay */
+.glassSurface::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.018'/%3E%3C/svg%3E");
+  background-size: 128px 128px;
+  opacity: 0.40;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  z-index: 2;
+  border-radius: 12px;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

@@ -1,8 +1,7 @@
 import React, { useCallback, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useBaselineStore } from "@/state/baselineStore"
-import ConsoleFrame from "@/layout/ConsoleFrame"
-import css from "./IngressConsoleV2.module.css"
+import styles from "./IngressConsoleV2.module.css"
 
 /* ═══════════════════════════════════════════════════════════════════
    TYPES
@@ -182,12 +181,12 @@ function SliderRow({
   label, value, min, max, step, format, onChange,
 }: SliderRowProps) {
   return (
-    <div className={css.sliderRow}>
-      <span className={css.sliderLabel}>{label}</span>
-      <div className={css.sliderControl}>
+    <div className={styles.sliderRow}>
+      <span className={styles.sliderLabel}>{label}</span>
+      <div className={styles.sliderControl}>
         <input
           type="range"
-          className={css.sliderInput}
+          className={styles.sliderInput}
           min={min}
           max={max}
           step={step}
@@ -196,7 +195,7 @@ function SliderRow({
           onChange={(e) => onChange(Number(e.target.value))}
         />
       </div>
-      <span className={css.sliderValue}>{format(value)}</span>
+      <span className={styles.sliderValue}>{format(value)}</span>
     </div>
   )
 }
@@ -215,18 +214,18 @@ function InputRow({
   label, value, prefix, suffix, type = "number", placeholder, onChange,
 }: InputRowProps) {
   return (
-    <div className={css.inputRow}>
-      <span className={css.inputLabel}>{label}</span>
-      <div className={css.inputFieldWrap}>
-        {prefix && <span className={css.inputPrefix}>{prefix}</span>}
+    <div className={styles.inputRow}>
+      <span className={styles.inputLabel}>{label}</span>
+      <div className={styles.inputFieldWrap}>
+        {prefix && <span className={styles.inputPrefix}>{prefix}</span>}
         <input
-          className={css.inputField}
+          className={styles.inputField}
           type={type}
           value={value}
           placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)}
         />
-        {suffix && <span className={css.inputSuffix}>{suffix}</span>}
+        {suffix && <span className={styles.inputSuffix}>{suffix}</span>}
       </div>
     </div>
   )
@@ -242,12 +241,12 @@ function ToggleGroup<T extends string>({
   options, value, onChange,
 }: ToggleGroupProps<T>) {
   return (
-    <div className={css.toggleGroup}>
+    <div className={styles.toggleGroup}>
       {options.map((opt) => (
         <button
           key={opt}
           type="button"
-          className={`${css.toggleOption} ${value === opt ? css.toggleOptionActive : ""}`}
+          className={`${styles.toggleOption} ${value === opt ? styles.toggleOptionActive : ""}`}
           onClick={() => onChange(opt)}
         >
           {opt}
@@ -320,37 +319,39 @@ export default function InitializeBaselineConsoleV2() {
   /* ══════════════════ RENDER ══════════════════ */
 
   return (
-    <ConsoleFrame>
-      <div className={css.consoleLayout} data-sf-initiate="v2">
+    <div className={styles.outerChassis}>
+      <div className={styles.bezelFrame}>
+        <div className={styles.glassSurface}>
+          <div data-sf-initiate="v2" className={styles.consoleLayout}>
 
-        {/* ── V2 debug badge ── */}
-        <div
-          style={{
-            position: "fixed",
-            top: 12,
-            right: 12,
-            zIndex: 99999,
-            background: "rgba(0, 220, 255, 0.16)",
-            border: "1px solid rgba(120, 220, 255, 0.35)",
-            padding: "8px 10px",
-            borderRadius: 10,
-            color: "#67e8f9",
-            fontSize: 11,
-            fontWeight: 700,
-            letterSpacing: "0.12em",
-            textTransform: "uppercase" as const,
-            pointerEvents: "none" as const,
-            fontFamily: "Inter, system-ui, sans-serif",
-          }}
-        >
-          INITIATE V2
-        </div>
+            {/* ── V2 debug badge ── */}
+            <div
+              style={{
+                position: "fixed",
+                top: 12,
+                right: 12,
+                zIndex: 99999,
+                background: "rgba(0, 220, 255, 0.16)",
+                border: "1px solid rgba(120, 220, 255, 0.35)",
+                padding: "8px 10px",
+                borderRadius: 10,
+                color: "#67e8f9",
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase" as const,
+                pointerEvents: "none" as const,
+                fontFamily: "Inter, system-ui, sans-serif",
+              }}
+            >
+              INITIATE V2
+            </div>
 
         {/* ═══════════ LEFT SIDEBAR — System Nav Rail ═══════════ */}
-        <aside className={css.sidebar}>
-          <div className={css.sidebarHeader}>
-            <div className={css.sidebarLogo}>
-              <div className={css.sidebarLogoIcon}>
+        <aside className={styles.sidebar}>
+          <div className={styles.sidebarHeader}>
+            <div className={styles.sidebarLogo}>
+              <div className={styles.sidebarLogoIcon}>
                 <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
                   <path
                     d="M14 3L25 14L14 25L3 14L14 3Z"
@@ -368,50 +369,50 @@ export default function InitializeBaselineConsoleV2() {
                 </svg>
               </div>
               <div>
-                <div className={css.sidebarWordmark}>STRATFIT</div>
-                <div className={css.sidebarSubtitle}>Baseline Initialization</div>
+                <div className={styles.sidebarWordmark}>STRATFIT</div>
+                <div className={styles.sidebarSubtitle}>Baseline Initialization</div>
               </div>
             </div>
           </div>
 
-          <nav className={css.wizardNav}>
+          <nav className={styles.wizardNav}>
             {WIZARD_STEPS.map((step) => (
               <button
                 key={step.num}
                 type="button"
-                className={`${css.wizardStep} ${activeStep === step.num ? css.wizardStepActive : ""} ${activeStep > step.num ? css.wizardStepDone : ""}`}
+                className={`${styles.wizardStep} ${activeStep === step.num ? styles.wizardStepActive : ""} ${activeStep > step.num ? styles.wizardStepDone : ""}`}
                 onClick={() => setActiveStep(step.num)}
               >
-                <span className={css.wizardStepNum}>
+                <span className={styles.wizardStepNum}>
                   {activeStep > step.num ? "\u2713" : step.num}
                 </span>
-                <span className={css.wizardStepLabel}>{step.label}</span>
+                <span className={styles.wizardStepLabel}>{step.label}</span>
               </button>
             ))}
           </nav>
         </aside>
 
         {/* ═══════════ MAIN INSTRUMENT AREA ═══════════ */}
-        <main className={css.instrumentArea}>
+        <main className={styles.instrumentArea}>
           {/* ── Instrument Header ── */}
-          <header className={css.instrumentHeader}>
-            <h1 className={css.instrumentTitle}>INITIALIZE BASELINE</h1>
-            <p className={css.instrumentSubtitle}>
+          <header className={styles.instrumentHeader}>
+            <h1 className={styles.instrumentTitle}>INITIALIZE BASELINE</h1>
+            <p className={styles.instrumentSubtitle}>
               Enter your current financial truth to anchor scenario modeling.
             </p>
           </header>
 
           {/* ── Metrics Readout Strip ── */}
-          <div className={css.metricsStrip}>
-            <div className={css.metricItem}>
-              <span className={css.metricIcon}>
+          <div className={styles.metricsStrip}>
+            <div className={styles.metricItem}>
+              <span className={styles.metricIcon}>
                 <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
                   <path d="M7 1v5l3.5 2" stroke="rgba(34,211,238,0.65)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
                   <circle cx="7" cy="7" r="5.5" stroke="rgba(34,211,238,0.35)" strokeWidth="1.2" opacity="0.5"/>
                 </svg>
               </span>
               <span
-                className={css.metricValue}
+                className={styles.metricValue}
                 style={{
                   color:
                     metrics.runway < 6
@@ -423,41 +424,41 @@ export default function InitializeBaselineConsoleV2() {
               >
                 {metrics.runway.toFixed(1)}
               </span>
-              <span className={css.metricUnit}>months</span>
+              <span className={styles.metricUnit}>months</span>
             </div>
 
-            <div className={css.metricItem}>
-              <span className={css.metricLabel}>BURN MULTIPLE</span>
-              <span className={css.metricValue}>
+            <div className={styles.metricItem}>
+              <span className={styles.metricLabel}>BURN MULTIPLE</span>
+              <span className={styles.metricValue}>
                 {metrics.burnMultiple.toFixed(2)} x
               </span>
             </div>
 
-            <div className={css.metricItem}>
-              <span className={css.metricLabel}>$ MONTHLY BURN</span>
-              <span className={css.metricValue}>
+            <div className={styles.metricItem}>
+              <span className={styles.metricLabel}>$ MONTHLY BURN</span>
+              <span className={styles.metricValue}>
                 {fmtCurrency(metrics.monthlyBurn)}
               </span>
             </div>
 
-            <div className={css.metricItem}>
-              <span className={css.metricLabel}>SURVIVAL PROBABILITY</span>
-              <span className={css.metricValue}>
+            <div className={styles.metricItem}>
+              <span className={styles.metricLabel}>SURVIVAL PROBABILITY</span>
+              <span className={styles.metricValue}>
                 {metrics.survivalProbability} %
               </span>
             </div>
 
-            <div className={css.metricItem}>
-              <span className={css.metricLabel}>GROSS MARGIN</span>
-              <span className={css.metricValue}>
+            <div className={styles.metricItem}>
+              <span className={styles.metricLabel}>GROSS MARGIN</span>
+              <span className={styles.metricValue}>
                 {form.grossMarginPct.toFixed(0)} %
               </span>
             </div>
 
-            <div className={css.metricItem}>
-              <span className={css.metricLabel}>LTV / CAC</span>
+            <div className={styles.metricItem}>
+              <span className={styles.metricLabel}>LTV / CAC</span>
               <span
-                className={css.metricValue}
+                className={styles.metricValue}
                 style={{
                   color:
                     ltvCacRatio >= 3
@@ -476,24 +477,24 @@ export default function InitializeBaselineConsoleV2() {
               STEP 1 — Identity & Context
               ═══════════════════════════════════════════════════════ */}
           {activeStep === 1 && (
-            <div className={css.stepContent}>
-              <div className={css.singlePanel}>
-                <h3 className={css.panelTitle}>IDENTITY &amp; CONTEXT</h3>
-                <div className={css.identityGrid}>
-                  <label className={css.identityLabel}>
-                    <span className={css.identityLabelText}>Company Name</span>
+            <div className={styles.stepContent}>
+              <div className={styles.singlePanel}>
+                <h3 className={styles.panelTitle}>IDENTITY &amp; CONTEXT</h3>
+                <div className={styles.identityGrid}>
+                  <label className={styles.identityLabel}>
+                    <span className={styles.identityLabelText}>Company Name</span>
                     <input
-                      className={css.identityInput}
+                      className={styles.identityInput}
                       type="text"
                       placeholder="e.g. Acme Inc."
                       value={form.companyName}
                       onChange={(e) => update("companyName", e.target.value)}
                     />
                   </label>
-                  <label className={css.identityLabel}>
-                    <span className={css.identityLabelText}>Industry</span>
+                  <label className={styles.identityLabel}>
+                    <span className={styles.identityLabelText}>Industry</span>
                     <select
-                      className={css.identitySelect}
+                      className={styles.identitySelect}
                       value={form.industry}
                       onChange={(e) => update("industry", e.target.value)}
                     >
@@ -503,10 +504,10 @@ export default function InitializeBaselineConsoleV2() {
                       ))}
                     </select>
                   </label>
-                  <label className={css.identityLabel}>
-                    <span className={css.identityLabelText}>Stage</span>
+                  <label className={styles.identityLabel}>
+                    <span className={styles.identityLabelText}>Stage</span>
                     <select
-                      className={css.identitySelect}
+                      className={styles.identitySelect}
                       value={form.stage}
                       onChange={(e) => update("stage", e.target.value)}
                     >
@@ -525,13 +526,13 @@ export default function InitializeBaselineConsoleV2() {
               STEP 2 — Financial Position
               ═══════════════════════════════════════════════════════ */}
           {activeStep === 2 && (
-            <div className={css.stepContent}>
-              <div className={css.panelGrid}>
+            <div className={styles.stepContent}>
+              <div className={styles.panelGrid}>
 
                 {/* ── LIQUIDITY & CAPITAL STRUCTURE ── */}
-                <div className={css.sectionPanel}>
-                  <span className={css.panelStatusDot} />
-                  <h3 className={css.panelTitle}>LIQUIDITY &amp; CAPITAL STRUCTURE</h3>
+                <div className={styles.sectionPanel}>
+                  <span className={styles.panelStatusDot} />
+                  <h3 className={styles.panelTitle}>LIQUIDITY &amp; CAPITAL STRUCTURE</h3>
 
                   <SliderRow
                     label="Cash on Hand"
@@ -548,7 +549,7 @@ export default function InitializeBaselineConsoleV2() {
                     onChange={(v) => update("monthlyNetBurn", v)}
                   />
 
-                  <div className={css.panelDivider} />
+                  <div className={styles.panelDivider} />
 
                   <InputRow
                     label="Debt Outstanding"
@@ -563,12 +564,12 @@ export default function InitializeBaselineConsoleV2() {
                     onChange={(v) => update("debtInterestRate", Number(v) || 0)}
                   />
 
-                  <div className={css.inputRow}>
-                    <span className={css.inputLabel}>Fundraising Window</span>
-                    <div className={css.incrGroup}>
+                  <div className={styles.inputRow}>
+                    <span className={styles.inputLabel}>Fundraising Window</span>
+                    <div className={styles.incrGroup}>
                       <button
                         type="button"
-                        className={css.incrBtn}
+                        className={styles.incrBtn}
                         onClick={() =>
                           update(
                             "fundraisingWindow",
@@ -578,12 +579,12 @@ export default function InitializeBaselineConsoleV2() {
                       >
                         &minus;
                       </button>
-                      <span className={css.incrValue}>
+                      <span className={styles.incrValue}>
                         {form.fundraisingWindow} months
                       </span>
                       <button
                         type="button"
-                        className={css.incrBtn}
+                        className={styles.incrBtn}
                         onClick={() =>
                           update("fundraisingWindow", form.fundraisingWindow + 1)
                         }
@@ -593,8 +594,8 @@ export default function InitializeBaselineConsoleV2() {
                     </div>
                   </div>
 
-                  <div className={css.inputRow}>
-                    <span className={css.inputLabel}>Access to Capital</span>
+                  <div className={styles.inputRow}>
+                    <span className={styles.inputLabel}>Access to Capital</span>
                     <ToggleGroup
                       options={["Moderate", "Strong"] as AccessToCapital[]}
                       value={form.accessToCapital}
@@ -602,20 +603,20 @@ export default function InitializeBaselineConsoleV2() {
                     />
                   </div>
 
-                  <div className={css.panelDivider} />
-                  <div className={css.derivedRow}>
-                    <span className={css.derivedLabel}>&#8901; Runway</span>
-                    <span className={css.derivedValue}>
+                  <div className={styles.panelDivider} />
+                  <div className={styles.derivedRow}>
+                    <span className={styles.derivedLabel}>&#8901; Runway</span>
+                    <span className={styles.derivedValue}>
                       {metrics.runway.toFixed(1)} months
                       &nbsp;&nbsp;{metrics.burnMultiple.toFixed(1)}x
                     </span>
                   </div>
                   {form.debtOutstanding > 0 && (
-                    <div className={css.derivedRow}>
-                      <span className={css.derivedLabel}>
+                    <div className={styles.derivedRow}>
+                      <span className={styles.derivedLabel}>
                         &#8901; Monthly Interest Burden
                       </span>
-                      <span className={css.derivedValue}>
+                      <span className={styles.derivedValue}>
                         {fmtCurrency(
                           (form.debtOutstanding * (form.debtInterestRate / 100)) / 12,
                         )}
@@ -625,9 +626,9 @@ export default function InitializeBaselineConsoleV2() {
                 </div>
 
                 {/* ── REVENUE ENGINE ── */}
-                <div className={css.sectionPanel}>
-                  <span className={css.panelStatusDot} />
-                  <h3 className={css.panelTitle}>REVENUE ENGINE</h3>
+                <div className={styles.sectionPanel}>
+                  <span className={styles.panelStatusDot} />
+                  <h3 className={styles.panelTitle}>REVENUE ENGINE</h3>
 
                   <SliderRow
                     label="Current ARR"
@@ -680,16 +681,16 @@ export default function InitializeBaselineConsoleV2() {
                 </div>
 
                 {/* ── COST STRUCTURE ── */}
-                <div className={css.sectionPanel}>
-                  <span className={css.panelStatusDot} />
+                <div className={styles.sectionPanel}>
+                  <span className={styles.panelStatusDot} />
                   <button
                     type="button"
-                    className={css.panelTitleBtn}
+                    className={styles.panelTitleBtn}
                     onClick={() => setCostExpanded((p) => !p)}
                   >
-                    <h3 className={css.panelTitle}>COST STRUCTURE</h3>
+                    <h3 className={styles.panelTitle}>COST STRUCTURE</h3>
                     <span
-                      className={css.expandChevron}
+                      className={styles.expandChevron}
                       style={{
                         transform: costExpanded ? "rotate(180deg)" : "rotate(0)",
                       }}
@@ -734,22 +735,22 @@ export default function InitializeBaselineConsoleV2() {
                         onChange={(v) => update("gaSpend", Number(v) || 0)}
                       />
 
-                      <div className={css.panelDivider} />
+                      <div className={styles.panelDivider} />
 
-                      <div className={css.derivedRow}>
-                        <span className={css.derivedLabel}>
+                      <div className={styles.derivedRow}>
+                        <span className={styles.derivedLabel}>
                           Revenue / Employee
                         </span>
-                        <span className={css.derivedValue}>
+                        <span className={styles.derivedValue}>
                           {fmtCurrency(revenuePerEmployee)}
                         </span>
                       </div>
-                      <div className={css.derivedRow}>
-                        <span className={css.derivedLabel}>
+                      <div className={styles.derivedRow}>
+                        <span className={styles.derivedLabel}>
                           Operating Profit
                         </span>
                         <span
-                          className={css.derivedValue}
+                          className={styles.derivedValue}
                           style={{
                             color:
                               operatingProfit >= 0 ? "#34d399" : "#f87171",
@@ -764,9 +765,9 @@ export default function InitializeBaselineConsoleV2() {
                 </div>
 
                 {/* ── BURN METRICS ── */}
-                <div className={css.sectionPanel}>
-                  <span className={css.panelStatusDot} />
-                  <h3 className={css.panelTitle}>BURN METRICS</h3>
+                <div className={styles.sectionPanel}>
+                  <span className={styles.panelStatusDot} />
+                  <h3 className={styles.panelTitle}>BURN METRICS</h3>
 
                   <SliderRow
                     label="Revenue / Head"
@@ -776,21 +777,21 @@ export default function InitializeBaselineConsoleV2() {
                     onChange={() => {}}
                   />
 
-                  <div className={css.panelDivider} />
+                  <div className={styles.panelDivider} />
 
-                  <div className={css.derivedRow}>
-                    <span className={css.derivedLabel}>
+                  <div className={styles.derivedRow}>
+                    <span className={styles.derivedLabel}>
                       &#8901; Burn Multiple
                     </span>
-                    <span className={css.derivedValue}>
+                    <span className={styles.derivedValue}>
                       {metrics.burnMultiple.toFixed(1)}x
                     </span>
                   </div>
-                  <div className={css.derivedRow}>
-                    <span className={css.derivedLabel}>
+                  <div className={styles.derivedRow}>
+                    <span className={styles.derivedLabel}>
                       &#8901; Monthly Burn
                     </span>
-                    <span className={css.derivedValue}>
+                    <span className={styles.derivedValue}>
                       {fmtCurrency(metrics.monthlyBurn)}
                     </span>
                   </div>
@@ -803,14 +804,14 @@ export default function InitializeBaselineConsoleV2() {
               STEP 3 — Operating Structure
               ═══════════════════════════════════════════════════════ */}
           {activeStep === 3 && (
-            <div className={css.stepContent}>
-              <div className={css.panelGrid}>
-                <div className={css.sectionPanel}>
-                  <span className={css.panelStatusDot} />
-                  <h3 className={css.panelTitle}>EXECUTION VELOCITY</h3>
+            <div className={styles.stepContent}>
+              <div className={styles.panelGrid}>
+                <div className={styles.sectionPanel}>
+                  <span className={styles.panelStatusDot} />
+                  <h3 className={styles.panelTitle}>EXECUTION VELOCITY</h3>
 
-                  <div className={css.inputRow}>
-                    <span className={css.inputLabel}>Hiring Velocity</span>
+                  <div className={styles.inputRow}>
+                    <span className={styles.inputLabel}>Hiring Velocity</span>
                     <ToggleGroup
                       options={["Low", "Medium", "High"] as HiringVelocity[]}
                       value={form.hiringVelocity}
@@ -831,8 +832,8 @@ export default function InitializeBaselineConsoleV2() {
                     format={(v) => `${v} mo`}
                     onChange={(v) => update("engineeringVelocity", v)}
                   />
-                  <div className={css.inputRow}>
-                    <span className={css.inputLabel}>Burn Flexibility</span>
+                  <div className={styles.inputRow}>
+                    <span className={styles.inputLabel}>Burn Flexibility</span>
                     <ToggleGroup
                       options={["Fixed", "Variable"] as BurnFlexibility[]}
                       value={form.burnFlexibility}
@@ -841,9 +842,9 @@ export default function InitializeBaselineConsoleV2() {
                   </div>
                 </div>
 
-                <div className={css.sectionPanel}>
-                  <span className={css.panelStatusDot} />
-                  <h3 className={css.panelTitle}>COST &amp; COGS</h3>
+                <div className={styles.sectionPanel}>
+                  <span className={styles.panelStatusDot} />
+                  <h3 className={styles.panelTitle}>COST &amp; COGS</h3>
 
                   <InputRow
                     label="Headcount"
@@ -871,7 +872,7 @@ export default function InitializeBaselineConsoleV2() {
                     onChange={(v) => update("cogsPct", Number(v) || 0)}
                   />
 
-                  <div className={css.panelDivider} />
+                  <div className={styles.panelDivider} />
                   <SliderRow
                     label="Revenue / Head"
                     value={revenuePerEmployee}
@@ -882,9 +883,9 @@ export default function InitializeBaselineConsoleV2() {
                 </div>
 
                 {/* ── CUSTOMER UNIT ECONOMICS ── */}
-                <div className={css.sectionPanel}>
-                  <span className={css.panelStatusDot} />
-                  <h3 className={css.panelTitle}>CUSTOMER UNIT ECONOMICS</h3>
+                <div className={styles.sectionPanel}>
+                  <span className={styles.panelStatusDot} />
+                  <h3 className={styles.panelTitle}>CUSTOMER UNIT ECONOMICS</h3>
 
                   <InputRow
                     label="CAC (Cost)"
@@ -900,26 +901,26 @@ export default function InitializeBaselineConsoleV2() {
                     onChange={(v) => update("grossMarginPct", v)}
                   />
 
-                  <div className={css.panelDivider} />
+                  <div className={styles.panelDivider} />
 
-                  <div className={css.derivedRow}>
-                    <span className={css.derivedLabel}>
+                  <div className={styles.derivedRow}>
+                    <span className={styles.derivedLabel}>
                       &#8901; Gross Profit / mo
                     </span>
-                    <span className={css.derivedValue}>
+                    <span className={styles.derivedValue}>
                       {fmtCurrency(grossProfit)}
                     </span>
                   </div>
-                  <div className={css.derivedRow}>
-                    <span className={css.derivedLabel}>&#8901; LTV</span>
-                    <span className={css.derivedValue}>
+                  <div className={styles.derivedRow}>
+                    <span className={styles.derivedLabel}>&#8901; LTV</span>
+                    <span className={styles.derivedValue}>
                       {ltv > 0 ? fmtCurrency(ltv) : "\u2014"}
                     </span>
                   </div>
-                  <div className={css.derivedRow}>
-                    <span className={css.derivedLabel}>&#8901; LTV / CAC</span>
+                  <div className={styles.derivedRow}>
+                    <span className={styles.derivedLabel}>&#8901; LTV / CAC</span>
                     <span
-                      className={css.derivedValue}
+                      className={styles.derivedValue}
                       style={{
                         color:
                           ltvCacRatio >= 3
@@ -932,9 +933,9 @@ export default function InitializeBaselineConsoleV2() {
                       {ltvCacRatio > 0 ? `${ltvCacRatio.toFixed(1)}x` : "\u2014"}
                     </span>
                   </div>
-                  <div className={css.derivedRow}>
-                    <span className={css.derivedLabel}>&#8901; CAC Payback</span>
-                    <span className={css.derivedValue}>
+                  <div className={styles.derivedRow}>
+                    <span className={styles.derivedLabel}>&#8901; CAC Payback</span>
+                    <span className={styles.derivedValue}>
                       {cacPaybackMonths > 0
                         ? `${cacPaybackMonths.toFixed(1)} months`
                         : "\u2014"}
@@ -949,14 +950,14 @@ export default function InitializeBaselineConsoleV2() {
               STEP 4 — Strategic Intent
               ═══════════════════════════════════════════════════════ */}
           {activeStep === 4 && (
-            <div className={css.stepContent}>
-              <div className={css.panelGrid}>
-                <div className={css.sectionPanel}>
-                  <span className={css.panelStatusDot} />
-                  <h3 className={css.panelTitle}>STRATEGIC POSTURE</h3>
+            <div className={styles.stepContent}>
+              <div className={styles.panelGrid}>
+                <div className={styles.sectionPanel}>
+                  <span className={styles.panelStatusDot} />
+                  <h3 className={styles.panelTitle}>STRATEGIC POSTURE</h3>
 
-                  <div className={css.inputRow}>
-                    <span className={css.inputLabel}>Risk Tolerance</span>
+                  <div className={styles.inputRow}>
+                    <span className={styles.inputLabel}>Risk Tolerance</span>
                     <ToggleGroup
                       options={
                         [
@@ -977,13 +978,13 @@ export default function InitializeBaselineConsoleV2() {
                     onChange={(v) => update("targetGrowthBand", v)}
                   />
 
-                  <div className={css.priorityRow}>
-                    <span className={css.priorityLabel}>Priority Balance</span>
-                    <div className={css.priorityControl}>
-                      <span className={css.priorityEnd}>Survival</span>
+                  <div className={styles.priorityRow}>
+                    <span className={styles.priorityLabel}>Priority Balance</span>
+                    <div className={styles.priorityControl}>
+                      <span className={styles.priorityEnd}>Survival</span>
                       <input
                         type="range"
-                        className={css.sliderInput}
+                        className={styles.sliderInput}
                         min={0} max={100} step={1}
                         value={form.priorityBalance}
                         style={sliderFill(form.priorityBalance, 0, 100)}
@@ -991,49 +992,49 @@ export default function InitializeBaselineConsoleV2() {
                           update("priorityBalance", Number(e.target.value))
                         }
                       />
-                      <span className={css.priorityEnd}>Expansion</span>
+                      <span className={styles.priorityEnd}>Expansion</span>
                     </div>
                   </div>
                 </div>
 
-                <div className={css.sectionPanel}>
-                  <span className={css.panelStatusDot} />
-                  <h3 className={css.panelTitle}>SUMMARY</h3>
-                  <div className={css.summaryGrid}>
-                    <div className={css.summaryItem}>
-                      <span className={css.summaryItemLabel}>Runway</span>
-                      <span className={css.summaryItemValue}>
+                <div className={styles.sectionPanel}>
+                  <span className={styles.panelStatusDot} />
+                  <h3 className={styles.panelTitle}>SUMMARY</h3>
+                  <div className={styles.summaryGrid}>
+                    <div className={styles.summaryItem}>
+                      <span className={styles.summaryItemLabel}>Runway</span>
+                      <span className={styles.summaryItemValue}>
                         {metrics.runway.toFixed(1)} mo
                       </span>
                     </div>
-                    <div className={css.summaryItem}>
-                      <span className={css.summaryItemLabel}>Burn Multiple</span>
-                      <span className={css.summaryItemValue}>
+                    <div className={styles.summaryItem}>
+                      <span className={styles.summaryItemLabel}>Burn Multiple</span>
+                      <span className={styles.summaryItemValue}>
                         {metrics.burnMultiple.toFixed(2)}x
                       </span>
                     </div>
-                    <div className={css.summaryItem}>
-                      <span className={css.summaryItemLabel}>Monthly Burn</span>
-                      <span className={css.summaryItemValue}>
+                    <div className={styles.summaryItem}>
+                      <span className={styles.summaryItemLabel}>Monthly Burn</span>
+                      <span className={styles.summaryItemValue}>
                         {fmtCurrency(metrics.monthlyBurn)}
                       </span>
                     </div>
-                    <div className={css.summaryItem}>
-                      <span className={css.summaryItemLabel}>Survival</span>
-                      <span className={css.summaryItemValue}>
+                    <div className={styles.summaryItem}>
+                      <span className={styles.summaryItemLabel}>Survival</span>
+                      <span className={styles.summaryItemValue}>
                         {metrics.survivalProbability}%
                       </span>
                     </div>
-                    <div className={css.summaryItem}>
-                      <span className={css.summaryItemLabel}>Rev / Head</span>
-                      <span className={css.summaryItemValue}>
+                    <div className={styles.summaryItem}>
+                      <span className={styles.summaryItemLabel}>Rev / Head</span>
+                      <span className={styles.summaryItemValue}>
                         {fmtCurrency(revenuePerEmployee)}
                       </span>
                     </div>
-                    <div className={css.summaryItem}>
-                      <span className={css.summaryItemLabel}>Op. Profit</span>
+                    <div className={styles.summaryItem}>
+                      <span className={styles.summaryItemLabel}>Op. Profit</span>
                       <span
-                        className={css.summaryItemValue}
+                        className={styles.summaryItemValue}
                         style={{
                           color:
                             operatingProfit >= 0 ? "#34d399" : "#f87171",
@@ -1042,16 +1043,16 @@ export default function InitializeBaselineConsoleV2() {
                         {fmtCurrency(operatingProfit)}
                       </span>
                     </div>
-                    <div className={css.summaryItem}>
-                      <span className={css.summaryItemLabel}>Gross Margin</span>
-                      <span className={css.summaryItemValue}>
+                    <div className={styles.summaryItem}>
+                      <span className={styles.summaryItemLabel}>Gross Margin</span>
+                      <span className={styles.summaryItemValue}>
                         {form.grossMarginPct.toFixed(0)}%
                       </span>
                     </div>
-                    <div className={css.summaryItem}>
-                      <span className={css.summaryItemLabel}>LTV / CAC</span>
+                    <div className={styles.summaryItem}>
+                      <span className={styles.summaryItemLabel}>LTV / CAC</span>
                       <span
-                        className={css.summaryItemValue}
+                        className={styles.summaryItemValue}
                         style={{
                           color:
                             ltvCacRatio >= 3
@@ -1064,9 +1065,9 @@ export default function InitializeBaselineConsoleV2() {
                         {ltvCacRatio > 0 ? `${ltvCacRatio.toFixed(1)}x` : "\u2014"}
                       </span>
                     </div>
-                    <div className={css.summaryItem}>
-                      <span className={css.summaryItemLabel}>CAC Payback</span>
-                      <span className={css.summaryItemValue}>
+                    <div className={styles.summaryItem}>
+                      <span className={styles.summaryItemLabel}>CAC Payback</span>
+                      <span className={styles.summaryItemValue}>
                         {cacPaybackMonths > 0
                           ? `${cacPaybackMonths.toFixed(1)} mo`
                           : "\u2014"}
@@ -1079,16 +1080,16 @@ export default function InitializeBaselineConsoleV2() {
           )}
 
           {/* ═══ CONSOLE ACTION BAR ═══ */}
-          <footer className={css.footer}>
-            <div className={css.footerStatus}>
-              <span className={css.footerDot} />
+          <footer className={styles.footer}>
+            <div className={styles.footerStatus}>
+              <span className={styles.footerDot} />
               DRAFT &mdash; NOT LOCKED
             </div>
-            <div className={css.footerActions}>
+            <div className={styles.footerActions}>
               {canGoBack && (
                 <button
                   type="button"
-                  className={css.backBtn}
+                  className={styles.backBtn}
                   onClick={() =>
                     setActiveStep((activeStep - 1) as WizardStep)
                   }
@@ -1099,7 +1100,7 @@ export default function InitializeBaselineConsoleV2() {
               {canGoNext ? (
                 <button
                   type="button"
-                  className={css.lockBtn}
+                  className={styles.lockBtn}
                   onClick={() =>
                     setActiveStep((activeStep + 1) as WizardStep)
                   }
@@ -1109,7 +1110,7 @@ export default function InitializeBaselineConsoleV2() {
               ) : (
                 <button
                   type="button"
-                  className={css.lockBtn}
+                  className={styles.lockBtn}
                   onClick={handleLock}
                 >
                   LOCK BASELINE &amp; ENTER STRATFIT
@@ -1119,6 +1120,8 @@ export default function InitializeBaselineConsoleV2() {
           </footer>
         </main>
       </div>
-    </ConsoleFrame>
+        </div>
+      </div>
+    </div>
   )
 }
