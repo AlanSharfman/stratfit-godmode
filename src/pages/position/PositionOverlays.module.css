@@ -72,7 +72,7 @@
   height: 100vh;
   z-index: 0;
   pointer-events: none;
-  background: #0B1620;
+  background: #060A12;
 }
 
 /* ── Atmosphere Layer A: Sky Gradient — moody top → soft horizon (exponential falloff) ── */
@@ -778,21 +778,18 @@
   50%      { opacity: 1; transform: scale(1.2); }
 }
 
-/* Glass materialize — fades onto terrain from nothing */
+/* Glass materialize — fades onto terrain from nothing (NO scale — height stays constant) */
 @keyframes insightMaterialize {
   0% {
     opacity: 0;
-    transform: scale(0.96);
     backdrop-filter: blur(0px) saturate(1);
     -webkit-backdrop-filter: blur(0px) saturate(1);
   }
   40% {
     opacity: 0.6;
-    transform: scale(0.985);
   }
   100% {
     opacity: 1;
-    transform: scale(1);
     backdrop-filter: blur(14px) saturate(1.15);
     -webkit-backdrop-filter: blur(14px) saturate(1.15);
   }

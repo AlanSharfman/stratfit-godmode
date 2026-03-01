@@ -246,8 +246,8 @@ const CommandGlassPanel: React.FC<CommandGlassPanelProps> = memo(({
                       ? (text.startsWith("▲") ? "rgba(52,211,153,0.95)" : text.startsWith("▼") ? "rgba(239,68,68,0.95)" : "rgba(255,255,255,0.82)")
                       : isConcern ? "rgba(239,68,68,0.88)"
                       : "rgba(255,255,255,0.82)",
-                    fontSize: isFirst ? 13.5 : 12.5,
-                    fontWeight: isFirst ? 600 : 400,
+                    fontSize: 13.5,
+                    fontWeight: 600,
                     lineHeight: 1.75,
                   }
 

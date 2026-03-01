@@ -20,9 +20,10 @@ export default function CameraCompositionRig() {
     // - ridge sits upper third
     // - a touch more foreground depth
     // - slightly flatter pitch for institutional "survey" feel
-    // NOTE: lookAt target MUST match OrbitControls target (0, 14, 0)
-    camera.position.set(0, 150, 500);
-    camera.lookAt(0, 14, 0);
+    // - shifted LEFT so terrain markers never encroach the right overlay zone
+    // NOTE: lookAt target MUST match OrbitControls target (-20, 14, 0)
+    camera.position.set(-40, 150, 500);
+    camera.lookAt(-20, 14, 0);
     camera.updateProjectionMatrix();
   }, [camera]);
 
