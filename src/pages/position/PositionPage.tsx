@@ -125,14 +125,42 @@ export default function PositionPage() {
   const simulationCompletedAt = activeScenario?.simulationResults?.completedAt ?? null
   const presentation = useIntelligencePresentation({ completedAt: simulationCompletedAt })
 
-  // Auto-open intelligence panel when simulation completes (reveal or settled)
+  // Auto-open insights panel — 5s after simulation completes (let terrain render)
+  // Auto-close after 25s of being open
   const lastAutoOpenRef = useRef<number | null>(null)
+  const autoCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Clear auto-close timer
+  const clearAutoClose = useCallback(() => {
+    if (autoCloseTimerRef.current) {
+      clearTimeout(autoCloseTimerRef.current)
+      autoCloseTimerRef.current = null
+    }
+  }, [])
+
   useEffect(() => {
     if (simulationCompletedAt != null && simulationCompletedAt !== lastAutoOpenRef.current) {
       lastAutoOpenRef.current = simulationCompletedAt
-      setIntelligenceOpen(true)
+      // Wait 5s for terrain to settle before revealing insights
+      const openTimer = setTimeout(() => {
+        setIntelligenceOpen(true)
+        // Auto-close after 25s
+        clearAutoClose()
+        autoCloseTimerRef.current = setTimeout(() => {
+          setIntelligenceOpen(false)
+        }, 25_000)
+      }, 5_000)
+      return () => clearTimeout(openTimer)
     }
-  }, [simulationCompletedAt])
+  }, [simulationCompletedAt, clearAutoClose])
+
+  // If user manually opens, start 25s auto-close; if user manually closes, cancel it
+  useEffect(() => {
+    if (!intelligenceOpen) {
+      clearAutoClose()
+    }
+    return () => clearAutoClose()
+  }, [intelligenceOpen, clearAutoClose])
 
   // ── Intelligence panel keyboard shortcut (I key) ──
   useEffect(() => {
@@ -552,7 +580,7 @@ export default function PositionPage() {
         <div className={styles.leftCol}>
           {/* Logo lockup */}
           <Link to={ROUTES.POSITION} className={styles.logoLockup}>
-            <img src="/stratfit-logo.png" alt="STRATFIT" style={{ display: 'block', height: '36px', width: 'auto' }} />
+            <img src="/stratfit-logo.png" alt="STRATFIT" className={styles.logoImg} />
             <div>
               <div className={styles.logoName}>STRATFIT</div>
               <div className={styles.logoSub}>SCENARIO INTELLIGENCE</div>
@@ -662,8 +690,8 @@ export default function PositionPage() {
             )}
           </div>
 
-          {/* Scenario Context + Cinematic Intelligence */}
-          <div className={styles.baselineIntelDock} aria-label="Scenario Intelligence">
+          {/* Scenario Context + Cinematic Insights */}
+          <div className={styles.baselineIntelDock} aria-label="Scenario Insights">
             <ScenarioContextPanel />
             {intelligenceOpen ? (
               <>
@@ -677,7 +705,7 @@ export default function PositionPage() {
                   type="button"
                   className={styles.intelCollapseBtn}
                   onClick={() => setIntelligenceOpen(false)}
-                  aria-label="Collapse intelligence panel (I)"
+                  aria-label="Collapse insights panel (I)"
                 >
                   <span>Collapse</span>
                   <span className={styles.kbdHint}>I</span>
@@ -687,15 +715,44 @@ export default function PositionPage() {
               <button
                 type="button"
                 className={styles.intelToggle}
-                onClick={() => setIntelligenceOpen(true)}
+                onClick={() => {
+                  setIntelligenceOpen(true)
+                  // Start auto-close on manual open
+                  clearAutoClose()
+                  autoCloseTimerRef.current = setTimeout(() => {
+                    setIntelligenceOpen(false)
+                  }, 25_000)
+                }}
               >
-                <span style={{ fontSize: 14, lineHeight: 1 }}>📊</span>
-                <span>Intelligence</span>
+                {/* Bejeweled insight diamond icon */}
+                <span className={styles.insightIcon} aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L3 9L12 22L21 9L12 2Z" fill="url(#gemFill)" stroke="url(#gemStroke)" strokeWidth="1.5" />
+                    <path d="M3 9H21" stroke="rgba(255,255,255,0.25)" strokeWidth="0.8" />
+                    <path d="M12 2L8 9L12 22L16 9L12 2Z" fill="rgba(255,255,255,0.08)" />
+                    <defs>
+                      <linearGradient id="gemFill" x1="12" y1="2" x2="12" y2="22">
+                        <stop offset="0%" stopColor="rgba(0,255,255,0.35)" />
+                        <stop offset="100%" stopColor="rgba(99,102,241,0.2)" />
+                      </linearGradient>
+                      <linearGradient id="gemStroke" x1="3" y1="2" x2="21" y2="22">
+                        <stop offset="0%" stopColor="rgba(0,255,255,0.8)" />
+                        <stop offset="100%" stopColor="rgba(99,102,241,0.6)" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                </span>
+                <span>INSIGHTS</span>
                 <span className={styles.kbdHint}>I</span>
               </button>
             )}
           </div>
         </div>
+      </div>
+
+      {/* Legal disclaimer */}
+      <div className={styles.legalDisclaimer}>
+        All projections, probabilities and scenario outcomes are generated by STRATFIT's Monte Carlo simulation engine and do not constitute financial advice. Results are illustrative and based on user-supplied inputs. Past performance is not indicative of future results.
       </div>
     </div>
   )

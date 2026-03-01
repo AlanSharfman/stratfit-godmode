@@ -394,6 +394,7 @@ function InitializeBaselineLegacy() {
                 alt="STRATFIT"
                 className={css.sidebarLogoImg}
               />
+              <span className={css.sidebarLogoText}>STRATFIT</span>
             </div>
           </div>
 

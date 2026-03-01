@@ -54,10 +54,9 @@ function extractRows(insight: AIInsightOutput): string[] {
   // Row 5: Risk narrative
   rows.push(insight.riskNarrative)
 
-  // Row 6: Top probability signal
-  if (insight.probabilitySignals.length > 0) {
-    const top = insight.probabilitySignals[0]
-    rows.push(`#${top.rank} ${top.title} — ${top.probability}% — ${top.interpretation}`)
+  // Row 6+: All probability signals with %
+  for (const sig of insight.probabilitySignals) {
+    rows.push(`⚡ ${sig.title} — ${sig.probability}% probability — ${sig.interpretation}`)
   }
 
   return rows
@@ -139,8 +138,8 @@ const CommandGlassPanel: React.FC<CommandGlassPanelProps> = memo(({
   const showContent = phase === "reveal" || phase === "settled"
 
   const { renderedRows, isDone } = useRowTypewriter(rows, {
-    charDelayMs: 18,
-    rowPauseMs: 340,
+    charDelayMs: 35,
+    rowPauseMs: 600,
     start: typewriterActive,
     onComplete: onTypewriterComplete,
   })
@@ -192,8 +191,8 @@ const CommandGlassPanel: React.FC<CommandGlassPanelProps> = memo(({
             <div style={HEADER}>
               <div style={HEADER_TITLE}>
                 {decisionQuestion
-                  ? <>Decision Insight &mdash; <span style={HEADER_QUESTION}>{decisionQuestion.length > 55 ? decisionQuestion.slice(0, 55) + "…" : decisionQuestion}</span></>
-                  : "Command Intelligence"
+                  ? <>Strategic Insight &mdash; <span style={HEADER_QUESTION}>{decisionQuestion.length > 55 ? decisionQuestion.slice(0, 55) + "…" : decisionQuestion}</span></>
+                  : "STRATFIT INSIGHTS"
                 }
               </div>
               {intentLabel && (
@@ -209,26 +208,33 @@ const CommandGlassPanel: React.FC<CommandGlassPanelProps> = memo(({
                 if (!text) return null
                 const isFirst = idx === 0
                 const isDriver = idx >= 1 && idx <= 3
-                const isRisk = idx === rows.length - 2
-                const isSignal = idx === rows.length - 1
+                const isRisk = idx === rows.length - 2 || text.includes("risk") || text.includes("Risk")
+                const isSignal = text.startsWith("⚡")
+                const isConcern = text.startsWith("▼") || isRisk
 
                 // Row label
                 let label = ""
                 if (isFirst) label = "EXECUTIVE SUMMARY"
                 else if (isDriver && idx === 1) label = "KEY DRIVERS"
-                else if (isRisk) label = "RISK ASSESSMENT"
-                else if (isSignal) label = "TOP SIGNAL"
+                else if (isRisk && !isSignal) label = "RISK ASSESSMENT"
+                else if (isSignal && (idx === 4 || (idx > 3 && !rows[idx - 1]?.startsWith("⚡")))) label = "PROBABILITY SIGNALS"
 
                 return (
-                  <div key={idx} style={ROW}>
+                  <div key={idx} style={{
+                    ...ROW,
+                    ...(isConcern ? CONCERN_ROW : {}),
+                  }}>
                     {label && <div style={ROW_LABEL}>{label}</div>}
                     <div style={{
                       ...ROW_TEXT,
                       color: isDriver
-                        ? (text.startsWith("▲") ? "rgba(52,211,153,0.9)" : text.startsWith("▼") ? "rgba(239,68,68,0.85)" : "rgba(255,255,255,0.75)")
-                        : "rgba(255,255,255,0.78)",
-                      fontSize: isFirst ? 13 : 12,
-                      fontWeight: isFirst ? 500 : 400,
+                        ? (text.startsWith("▲") ? "rgba(52,211,153,0.95)" : text.startsWith("▼") ? "rgba(239,68,68,0.95)" : "rgba(255,255,255,0.82)")
+                        : isSignal ? "rgba(251,191,36,0.92)"
+                        : isConcern ? "rgba(239,68,68,0.88)"
+                        : "rgba(255,255,255,0.82)",
+                      fontSize: isFirst ? 13.5 : 12.5,
+                      fontWeight: isFirst ? 600 : isSignal ? 500 : 400,
+                      lineHeight: 1.65,
                     }}>
                       {text}
                       {/* Blinking cursor on active typing row */}
@@ -241,11 +247,16 @@ const CommandGlassPanel: React.FC<CommandGlassPanelProps> = memo(({
               })}
             </div>
 
-            {/* Footer — survival probability */}
+            {/* Footer — survival probability with % */}
             {(phase === "settled" || isDone) && (
               <div style={FOOTER}>
-                <span style={{ opacity: 0.5 }}>Survival probability:</span>{" "}
-                <span style={{ color: riskColor, fontWeight: 600 }}>{riskScore}/100</span>
+                <span style={{ opacity: 0.55 }}>Survival probability:</span>{" "}
+                <span style={{
+                  color: riskColor,
+                  fontWeight: 700,
+                  fontSize: 13,
+                  letterSpacing: "0.02em",
+                }}>{riskScore}%</span>
               </div>
             )}
           </motion.div>
@@ -270,17 +281,20 @@ function findTypingRow(rendered: string[], full: string[]): number {
 
 const GLASS_PANEL: React.CSSProperties = {
   position: "relative",
-  background: "linear-gradient(165deg, rgba(12,18,24,0.62) 0%, rgba(8,12,16,0.58) 100%)",
-  backdropFilter: "blur(18px) saturate(1.15)",
-  WebkitBackdropFilter: "blur(18px) saturate(1.15)",
-  border: "1px solid rgba(120,220,255,0.14)",
-  borderRadius: 14,
-  padding: "18px 20px 16px",
+  background: "linear-gradient(165deg, rgba(8,14,22,0.72) 0%, rgba(6,10,16,0.68) 100%)",
+  backdropFilter: "blur(22px) saturate(1.2)",
+  WebkitBackdropFilter: "blur(22px) saturate(1.2)",
+  border: "1px solid rgba(120,220,255,0.16)",
+  borderRadius: 16,
+  padding: "22px 24px 18px",
   overflow: "hidden",
   boxShadow:
-    "0 1px 0 rgba(255,255,255,0.04) inset, " +
-    "0 8px 40px rgba(0,0,0,0.45), " +
-    "0 0 0 1px rgba(0,0,0,0.3)",
+    "0 1px 0 rgba(255,255,255,0.05) inset, " +
+    "0 0 0 1px rgba(0,255,255,0.08), " +
+    "0 0 0 3px rgba(4,8,16,0.85), " +
+    "0 0 0 4px rgba(0,255,255,0.06), " +
+    "0 12px 48px rgba(0,0,0,0.5), " +
+    "0 0 24px rgba(0,255,255,0.04)",
 }
 
 const SPECULAR_SWEEP: React.CSSProperties = {
@@ -333,31 +347,33 @@ const REVEAL_GLOW: React.CSSProperties = {
 const HEADER: React.CSSProperties = {
   position: "relative",
   zIndex: 5,
-  marginBottom: 14,
-  paddingBottom: 11,
-  borderBottom: "1px solid rgba(255,255,255,0.06)",
+  marginBottom: 16,
+  paddingBottom: 13,
+  borderBottom: "1px solid rgba(255,255,255,0.07)",
 }
 
 const HEADER_TITLE: React.CSSProperties = {
-  fontSize: 12,
-  fontWeight: 700,
+  fontSize: 13,
+  fontWeight: 800,
   textTransform: "uppercase",
-  letterSpacing: "0.08em",
-  color: "rgba(255,255,255,0.72)",
+  letterSpacing: "0.1em",
+  color: "rgba(255,255,255,0.82)",
+  fontFamily: "'Inter', system-ui, sans-serif",
 }
 
 const HEADER_QUESTION: React.CSSProperties = {
   color: "#22d3ee",
-  fontWeight: 400,
+  fontWeight: 500,
   fontStyle: "italic",
-  fontSize: 11,
+  fontSize: 12,
 }
 
 const HEADER_SUB: React.CSSProperties = {
   fontSize: 11,
-  color: "rgba(255,255,255,0.35)",
-  marginTop: 3,
-  letterSpacing: "0.04em",
+  color: "rgba(255,255,255,0.4)",
+  marginTop: 4,
+  letterSpacing: "0.05em",
+  fontFamily: "'Inter', system-ui, sans-serif",
 }
 
 const ROWS_CONTAINER: React.CSSProperties = {
@@ -369,6 +385,13 @@ const ROWS_CONTAINER: React.CSSProperties = {
 }
 
 const ROW: React.CSSProperties = {}
+
+const CONCERN_ROW: React.CSSProperties = {
+  borderLeft: "2px solid rgba(239,68,68,0.5)",
+  paddingLeft: 10,
+  background: "rgba(239,68,68,0.04)",
+  borderRadius: 4,
+}
 
 const ROW_LABEL: React.CSSProperties = {
   fontSize: 9,

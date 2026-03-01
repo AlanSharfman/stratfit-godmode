@@ -1157,3 +1157,33 @@
   box-shadow: 0 0 6px rgba(34,211,238,0.4);
   animation: sfGlowPulse 2s ease-in-out infinite;
 }
+
+/* ── Logo Text + Legal Disclaimer ── */
+.topBarLogoText {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 1.2rem;
+  font-weight: 900;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  background: linear-gradient(to right, #ffffff, rgba(0, 255, 255, 0.8));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.2));
+}
+
+.legalDisclaimer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 8px 24px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.2);
+  text-align: center;
+  z-index: 5;
+  pointer-events: none;
+  line-height: 1.5;
+}

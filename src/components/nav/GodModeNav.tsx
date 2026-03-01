@@ -5,8 +5,8 @@ export default function GodModeNav() {
   return (
     <header className="gm-nav">
       <div className="gm-logo">
-        <img src="/stratfit-logo.png" alt="STRATFIT" style={{ height: '32px', width: 'auto', marginRight: '8px' }} />
-        STRATFIT
+        <img src="/stratfit-logo.png" alt="STRATFIT" className="gm-logo-img" />
+        <span className="gm-logo-text">STRATFIT</span>
       </div>
 
       <nav className="gm-links">
