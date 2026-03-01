@@ -30,15 +30,20 @@ export interface SelectedKpis {
  */
 export function selectKpis(simulationKpis: SimulationKpis | null | undefined): SelectedKpis | null {
   if (!simulationKpis) return null
+  const arr = simulationKpis.revenue * 12
+  const growthRate = simulationKpis.growthRate
+  // Valuation: ARR × growth-implied revenue multiple (standard SaaS heuristic)
+  const multiple = Math.max(1, Math.min(20, 3 + (growthRate / 10)))
+  const valuation = arr > 0 ? arr * multiple : null
   return {
-    arr: simulationKpis.revenue * 12,
+    arr,
     revenue: simulationKpis.revenue,
     runwayMonths: simulationKpis.runway,
     burnMonthly: simulationKpis.monthlyBurn,
     grossMargin: simulationKpis.grossMargin,
-    valuation: null, // not yet computed by Phase1 engine
+    valuation,
     cashOnHand: simulationKpis.cash,
-    growthRate: simulationKpis.growthRate,
+    growthRate,
     churnRate: simulationKpis.churnRate,
     headcount: simulationKpis.headcount,
     arpa: simulationKpis.arpa,

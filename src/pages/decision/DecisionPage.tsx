@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
 import { useCanonicalBaseline } from "@/state/useCanonicalBaseline"
@@ -110,7 +110,9 @@ export default function DecisionPage() {
   const runSimulation = usePhase1ScenarioStore((s) => s.runSimulation)
 
   const [decisionText, setDecisionText] = useState("")
-  const [intentType, setIntentType] = useState<DecisionIntentType>("other")
+  const [intentType, setIntentType] = useState<DecisionIntentType | null>(null)
+  const [highlightIdx, setHighlightIdx] = useState(0)
+  const intentListRef = useRef<HTMLDivElement>(null)
   const [isCreating, setIsCreating] = useState(false)
   const [isDone, setIsDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -118,8 +120,8 @@ export default function DecisionPage() {
   const [leverValues, setLeverValues] = useState<Record<string, number>>(() => defaultLeverValues("other"))
 
   const canRun = useMemo(
-    () => !!baseline && decisionText.trim().length >= MIN_CHARS && !isCreating && !isDone,
-    [baseline, decisionText, isCreating, isDone],
+    () => !!baseline && decisionText.trim().length >= MIN_CHARS && intentType !== null && !isCreating && !isDone,
+    [baseline, decisionText, intentType, isCreating, isDone],
   )
 
   // Keyboard shortcut ref — kept in sync so the stable effect closure always sees latest value
@@ -130,24 +132,49 @@ export default function DecisionPage() {
   const fb = FEEDBACK_CONFIG[feedback]
 
   const selectedIntentLabel = useMemo(
-    () => DECISION_INTENT_OPTIONS.find((o) => o.value === intentType)?.label ?? "Other",
+    () => intentType ? (DECISION_INTENT_OPTIONS.find((o) => o.value === intentType)?.label ?? "Other") : "Select a type",
     [intentType],
   )
 
-  const activeSchema = useMemo(() => decisionLeverSchemas[intentType] ?? [], [intentType])
+  const activeSchema = useMemo(() => intentType ? (decisionLeverSchemas[intentType] ?? []) : [], [intentType])
 
   const updateLever = React.useCallback((id: string, value: number) => {
     setLeverValues((prev) => ({ ...prev, [id]: value }))
   }, [])
 
   const resetLevers = React.useCallback(() => {
-    setLeverValues(defaultLeverValues(intentType))
+    if (intentType) setLeverValues(defaultLeverValues(intentType))
   }, [intentType])
 
   // Reset lever values when intent changes
   React.useEffect(() => {
-    setLeverValues(defaultLeverValues(intentType))
+    if (intentType) setLeverValues(defaultLeverValues(intentType))
   }, [intentType])
+
+  // Intent picker keyboard handler
+  const handleIntentKeyDown = useCallback((e: React.KeyboardEvent) => {
+    const len = DECISION_INTENT_OPTIONS.length
+    if (e.key === "ArrowDown" || e.key === "j") {
+      e.preventDefault()
+      setHighlightIdx((i) => (i + 1) % len)
+    } else if (e.key === "ArrowUp" || e.key === "k") {
+      e.preventDefault()
+      setHighlightIdx((i) => (i - 1 + len) % len)
+    } else if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault()
+      const opt = DECISION_INTENT_OPTIONS[highlightIdx]
+      if (opt) {
+        setIntentType(opt.value)
+        setIsDone(false)
+      }
+    }
+  }, [highlightIdx])
+
+  // Scroll highlighted item into view
+  useEffect(() => {
+    const el = intentListRef.current?.children[highlightIdx] as HTMLElement | undefined
+    el?.scrollIntoView({ block: "nearest", behavior: "smooth" })
+  }, [highlightIdx])
 
   /* ── Run trigger ── */
   async function handleRun() {
@@ -159,11 +186,12 @@ export default function DecisionPage() {
     try {
       const { intent } = await runDecisionPipeline(text, baseline)
 
-      const selectedOption = DECISION_INTENT_OPTIONS.find((o) => o.value === intentType)
+      const effectiveIntent = intentType ?? "other"
+      const selectedOption = DECISION_INTENT_OPTIONS.find((o) => o.value === effectiveIntent)
       const scenarioId = createScenario({
         decision: text,
         intent,
-        decisionIntentType: intentType,
+        decisionIntentType: effectiveIntent,
         decisionIntentLabel: selectedOption?.label ?? "Other",
         createdAt: Date.now(),
       })
@@ -317,16 +345,44 @@ export default function DecisionPage() {
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 Decision Type
               </div>
-              <select
-                className={css.intentSelect}
-                value={intentType}
-                onChange={(e) => { setIntentType(e.target.value as DecisionIntentType); setIsDone(false) }}
-                disabled={isCreating}
+              <div
+                ref={intentListRef}
+                className={css.intentPicker}
+                tabIndex={0}
+                role="listbox"
+                aria-label="Decision type"
+                aria-activedescendant={`intent-${highlightIdx}`}
+                onKeyDown={handleIntentKeyDown}
               >
-                {DECISION_INTENT_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
+                {DECISION_INTENT_OPTIONS.map((opt, idx) => {
+                  const isSelected = intentType === opt.value
+                  const isHighlighted = highlightIdx === idx
+                  return (
+                    <button
+                      key={opt.value}
+                      id={`intent-${idx}`}
+                      type="button"
+                      role="option"
+                      aria-selected={isSelected}
+                      className={[
+                        css.intentOption,
+                        isSelected ? css.intentOptionSelected : "",
+                        isHighlighted ? css.intentOptionHighlight : "",
+                      ].filter(Boolean).join(" ")}
+                      onClick={() => { setIntentType(opt.value); setHighlightIdx(idx); setIsDone(false) }}
+                      onMouseEnter={() => setHighlightIdx(idx)}
+                      disabled={isCreating}
+                    >
+                      <span className={css.intentOptionDot} />
+                      <span className={css.intentOptionLabel}>{opt.label}</span>
+                      {isSelected && <span className={css.intentOptionCheck}>✓</span>}
+                    </button>
+                  )
+                })}
+              </div>
+              {!intentType && (
+                <div className={css.intentHint}>↑↓ Navigate · Enter to select</div>
+              )}
             </div>
           </div>
 
@@ -403,7 +459,7 @@ export default function DecisionPage() {
                 </div>
                 <div className={css.leverPlaceholderTitle}>No Levers Required</div>
                 <div className={css.leverPlaceholderDesc}>
-                  Select a specific decision type to configure scenario levers.
+                  {intentType ? "Configure scenario levers for this decision type." : "Select a decision type above to configure scenario levers."}
                 </div>
               </div>
             )}
@@ -441,7 +497,7 @@ export default function DecisionPage() {
               )}
 
               <ul className={css.assumptionsList}>
-                {INTENT_ASSUMPTIONS[intentType].map((a) => (
+                {(INTENT_ASSUMPTIONS[intentType ?? "other"]).map((a) => (
                   <li key={a} className={css.assumptionItem}>
                     <span className={css.assumptionIcon}>&#x25B8;</span>
                     <span>{a}</span>
