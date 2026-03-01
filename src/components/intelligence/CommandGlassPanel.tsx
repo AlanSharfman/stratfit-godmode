@@ -18,7 +18,7 @@
 //   settled → static content, full rows, no cursor
 // ═══════════════════════════════════════════════════════════════════════════
 
-import React, { memo, useMemo } from "react"
+import React, { memo, useMemo, useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore"
 import { useBaselineStore } from "@/state/baselineStore"
@@ -159,6 +159,31 @@ const CommandGlassPanel: React.FC<CommandGlassPanelProps> = memo(({
   const decisionQuestion = activeScenario?.decision ?? null
   const intentLabel = activeScenario?.decisionIntentLabel ?? null
 
+  // Material throb — highlight key financial terms for 3s during reveal
+  const [throbActive, setThrobActive] = useState(false)
+  useEffect(() => {
+    if (phase === "reveal") {
+      const delay = setTimeout(() => setThrobActive(true), 800)
+      const stop = setTimeout(() => setThrobActive(false), 3800)
+      return () => { clearTimeout(delay); clearTimeout(stop) }
+    } else {
+      setThrobActive(false)
+    }
+  }, [phase])
+
+  /** Wrap material words in throb spans */
+  function renderThrobText(text: string, baseStyle: React.CSSProperties): React.ReactNode {
+    if (!throbActive) return text
+    // Match key financial terms and percentages
+    const pattern = /(\d+\.?\d*%|runway|burn|risk|revenue|cash|ARR|churn|margin|growth|survival|probability|critical|severe|momentum)/gi
+    const parts = text.split(pattern)
+    return parts.map((part, i) =>
+      pattern.test(part)
+        ? <span key={i} style={THROB_WORD}>{part}</span>
+        : part
+    )
+  }
+
   return (
     <>
       <AnimatePresence mode="wait">
@@ -219,24 +244,36 @@ const CommandGlassPanel: React.FC<CommandGlassPanelProps> = memo(({
                 else if (isRisk && !isSignal) label = "RISK ASSESSMENT"
                 else if (isSignal && (idx === 4 || (idx > 3 && !rows[idx - 1]?.startsWith("⚡")))) label = "PROBABILITY SIGNALS"
 
+                // Bullet marker for drivers and signals
+                const bulletColor = isDriver
+                  ? (text.startsWith("▲") ? "rgba(52,211,153,0.9)" : text.startsWith("▼") ? "rgba(239,68,68,0.9)" : "rgba(255,255,255,0.5)")
+                  : isSignal ? "rgba(251,191,36,0.85)"
+                  : isConcern ? "rgba(239,68,68,0.7)"
+                  : undefined
+                const showBullet = isDriver || isSignal || isConcern
+
+                const rowTextStyle: React.CSSProperties = {
+                  ...ROW_TEXT,
+                  color: isDriver
+                    ? (text.startsWith("▲") ? "rgba(52,211,153,0.95)" : text.startsWith("▼") ? "rgba(239,68,68,0.95)" : "rgba(255,255,255,0.82)")
+                    : isSignal ? "rgba(251,191,36,0.92)"
+                    : isConcern ? "rgba(239,68,68,0.88)"
+                    : "rgba(255,255,255,0.82)",
+                  fontSize: isFirst ? 14 : 12.5,
+                  fontWeight: isFirst ? 600 : isSignal ? 500 : 400,
+                  lineHeight: 1.7,
+                }
+
                 return (
                   <div key={idx} style={{
                     ...ROW,
                     ...(isConcern ? CONCERN_ROW : {}),
+                    ...(showBullet ? BULLET_ROW : {}),
                   }}>
                     {label && <div style={phase === "reveal" ? ROW_LABEL_GLOW : ROW_LABEL}>{label}</div>}
-                    <div style={{
-                      ...ROW_TEXT,
-                      color: isDriver
-                        ? (text.startsWith("▲") ? "rgba(52,211,153,0.95)" : text.startsWith("▼") ? "rgba(239,68,68,0.95)" : "rgba(255,255,255,0.82)")
-                        : isSignal ? "rgba(251,191,36,0.92)"
-                        : isConcern ? "rgba(239,68,68,0.88)"
-                        : "rgba(255,255,255,0.82)",
-                      fontSize: isFirst ? 13.5 : 12.5,
-                      fontWeight: isFirst ? 600 : isSignal ? 500 : 400,
-                      lineHeight: 1.65,
-                    }}>
-                      {text}
+                    <div style={rowTextStyle}>
+                      {showBullet && <span style={{ ...BULLET_DOT, background: bulletColor }} />}
+                      {renderThrobText(text, rowTextStyle)}
                       {/* Blinking cursor on active typing row */}
                       {phase === "reveal" && !isDone && idx === findTypingRow(renderedRows, rows) && (
                         <span style={CURSOR}>▎</span>
@@ -353,12 +390,13 @@ const HEADER: React.CSSProperties = {
 }
 
 const HEADER_TITLE: React.CSSProperties = {
-  fontSize: 13,
+  fontSize: 14,
   fontWeight: 800,
   textTransform: "uppercase",
-  letterSpacing: "0.1em",
-  color: "rgba(255,255,255,0.82)",
+  letterSpacing: "0.12em",
+  color: "rgba(255,255,255,0.88)",
   fontFamily: "'Inter', system-ui, sans-serif",
+  lineHeight: 1.3,
 }
 
 const HEADER_QUESTION: React.CSSProperties = {
@@ -369,11 +407,12 @@ const HEADER_QUESTION: React.CSSProperties = {
 }
 
 const HEADER_SUB: React.CSSProperties = {
-  fontSize: 11,
-  color: "rgba(255,255,255,0.4)",
-  marginTop: 4,
+  fontSize: 11.5,
+  color: "rgba(255,255,255,0.45)",
+  marginTop: 5,
   letterSpacing: "0.05em",
   fontFamily: "'Inter', system-ui, sans-serif",
+  lineHeight: 1.4,
 }
 
 const ROWS_CONTAINER: React.CSSProperties = {
@@ -381,16 +420,39 @@ const ROWS_CONTAINER: React.CSSProperties = {
   zIndex: 5,
   display: "flex",
   flexDirection: "column",
-  gap: 8,
+  gap: 10,
 }
 
-const ROW: React.CSSProperties = {}
+const ROW: React.CSSProperties = {
+  padding: "4px 0",
+}
+
+const BULLET_ROW: React.CSSProperties = {
+  paddingLeft: 2,
+}
 
 const CONCERN_ROW: React.CSSProperties = {
   borderLeft: "2px solid rgba(239,68,68,0.5)",
-  paddingLeft: 10,
+  paddingLeft: 12,
   background: "rgba(239,68,68,0.04)",
   borderRadius: 4,
+}
+
+const BULLET_DOT: React.CSSProperties = {
+  display: "inline-block",
+  width: 5,
+  height: 5,
+  borderRadius: "50%",
+  marginRight: 8,
+  verticalAlign: "middle",
+  flexShrink: 0,
+}
+
+const THROB_WORD: React.CSSProperties = {
+  color: "rgba(0,255,255,0.95)",
+  textShadow: "0 0 8px rgba(0,255,255,0.5), 0 0 16px rgba(0,255,255,0.25)",
+  animation: "cmdGlassThrob 3s ease-in-out forwards",
+  fontWeight: 600,
 }
 
 const ROW_LABEL: React.CSSProperties = {
@@ -414,9 +476,10 @@ const ROW_LABEL_GLOW: React.CSSProperties = {
 }
 
 const ROW_TEXT: React.CSSProperties = {
-  fontSize: 12,
-  lineHeight: 1.55,
+  fontSize: 12.5,
+  lineHeight: 1.7,
   fontFamily: "'Inter', system-ui, sans-serif",
+  letterSpacing: "0.01em",
 }
 
 const CURSOR: React.CSSProperties = {
@@ -429,12 +492,13 @@ const CURSOR: React.CSSProperties = {
 const FOOTER: React.CSSProperties = {
   position: "relative",
   zIndex: 5,
-  marginTop: 14,
-  paddingTop: 11,
-  borderTop: "1px solid rgba(255,255,255,0.06)",
-  fontSize: 11,
-  color: "rgba(255,255,255,0.5)",
+  marginTop: 16,
+  paddingTop: 12,
+  borderTop: "1px solid rgba(255,255,255,0.08)",
+  fontSize: 12,
+  color: "rgba(255,255,255,0.55)",
   letterSpacing: "0.04em",
+  fontFamily: "'Inter', system-ui, sans-serif",
 }
 
 CommandGlassPanel.displayName = "CommandGlassPanel"
@@ -458,5 +522,10 @@ export const COMMAND_GLASS_KEYFRAMES = `
   0%   { color: rgba(34,211,238,1); text-shadow: 0 0 18px rgba(34,211,238,0.8), 0 0 36px rgba(34,211,238,0.4); }
   50%  { color: rgba(34,211,238,0.85); text-shadow: 0 0 10px rgba(34,211,238,0.5), 0 0 20px rgba(34,211,238,0.2); }
   100% { color: rgba(34,211,238,0.55); text-shadow: none; }
+}
+@keyframes cmdGlassThrob {
+  0%   { color: rgba(0,255,255,1); text-shadow: 0 0 12px rgba(0,255,255,0.7), 0 0 24px rgba(0,255,255,0.35); }
+  33%  { color: rgba(0,255,255,0.9); text-shadow: 0 0 8px rgba(0,255,255,0.5), 0 0 16px rgba(0,255,255,0.2); }
+  100% { color: inherit; text-shadow: none; font-weight: inherit; }
 }
 `
