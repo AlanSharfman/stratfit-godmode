@@ -112,8 +112,10 @@ function fmtCurrency(v: number): string {
 function sliderFill(value: number, min: number, max: number): React.CSSProperties {
   const pct = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100))
   return {
-    background: `linear-gradient(90deg, #0e7490 0%, #22d3ee ${pct * 0.7}%, #67e8f9 ${pct}%, rgba(255,255,255,0.035) ${pct}%, rgba(255,255,255,0.035) 100%)`,
-    boxShadow: pct > 5 ? `0 0 ${4 + pct * 0.08}px rgba(34,211,238,${0.12 + pct * 0.002}), inset 0 1px 2px rgba(0,0,0,0.3)` : 'none',
+    background: `linear-gradient(90deg, #065f73 0%, #0e7490 ${pct * 0.3}%, #22d3ee ${pct * 0.7}%, #67e8f9 ${pct}%, rgba(255,255,255,0.04) ${pct}%, rgba(255,255,255,0.04) 100%)`,
+    boxShadow: pct > 3
+      ? `0 0 ${6 + pct * 0.12}px rgba(34,211,238,${0.18 + pct * 0.004}), 0 0 ${2 + pct * 0.06}px rgba(103,232,249,${0.10 + pct * 0.002}), inset 0 1px 2px rgba(0,0,0,0.35)`
+      : 'inset 0 1px 2px rgba(0,0,0,0.35)',
   }
 }
 
@@ -181,27 +183,35 @@ function SliderRow({
 }: SliderRowProps) {
   return (
     <div className={css.sliderRow}>
-      <span className={css.sliderLabel}>{label}</span>
-      <div className={css.sliderControl}>
-        <input
-          type="range"
-          className={css.sliderInput}
-          min={min}
-          max={max}
-          step={step}
-          value={value}
-          style={sliderFill(value, min, max)}
-          onChange={(e) => onChange(Number(e.target.value))}
-        />
-        {showScale && (
-          <div className={css.sliderScale}>
-            <span>LOW</span>
-            <span>NEUTRAL</span>
-            <span>HIGH</span>
-          </div>
-        )}
+      <div className={css.sliderHeader}>
+        <span className={css.sliderLabel}>{label}</span>
+        <span className={css.sliderInfoIcon}>i</span>
       </div>
-      <span className={css.sliderValue}>{format(value)}</span>
+      <div className={css.sliderBody}>
+        <div className={css.sliderControl}>
+          <input
+            type="range"
+            className={css.sliderInput}
+            min={min}
+            max={max}
+            step={step}
+            value={value}
+            style={sliderFill(value, min, max)}
+            onChange={(e) => onChange(Number(e.target.value))}
+          />
+          {showScale && (
+            <div className={css.sliderScale}>
+              <span>LOW</span>
+              <span>NEUTRAL</span>
+              <span>HIGH</span>
+            </div>
+          )}
+        </div>
+        <div className={css.sliderValueWrap}>
+          <span className={css.sliderValue}>{format(value)}</span>
+          <span className={css.sliderValueBar} />
+        </div>
+      </div>
     </div>
   )
 }
@@ -512,6 +522,7 @@ export default function InitializeBaselinePage() {
 
                 {/* ── LIQUIDITY & CAPITAL STRUCTURE ── */}
                 <div className={css.sectionPanel}>
+                  <span className={css.panelStatusDot} />
                   <h3 className={css.panelTitle}>LIQUIDITY &amp; CAPITAL STRUCTURE</h3>
 
                   <SliderRow
@@ -607,6 +618,7 @@ export default function InitializeBaselinePage() {
 
                 {/* ── REVENUE ENGINE ── */}
                 <div className={css.sectionPanel}>
+                  <span className={css.panelStatusDot} />
                   <h3 className={css.panelTitle}>REVENUE ENGINE</h3>
 
                   <SliderRow
@@ -661,6 +673,7 @@ export default function InitializeBaselinePage() {
 
                 {/* ── COST STRUCTURE ── */}
                 <div className={css.sectionPanel}>
+                  <span className={css.panelStatusDot} />
                   <button
                     type="button"
                     className={css.panelTitleBtn}
@@ -744,6 +757,7 @@ export default function InitializeBaselinePage() {
 
                 {/* ── BURN METRICS ── */}
                 <div className={css.sectionPanel}>
+                  <span className={css.panelStatusDot} />
                   <h3 className={css.panelTitle}>BURN METRICS</h3>
 
                   <SliderRow
@@ -785,6 +799,7 @@ export default function InitializeBaselinePage() {
             <div className={css.stepContent}>
               <div className={css.panelGrid}>
                 <div className={css.sectionPanel}>
+                  <span className={css.panelStatusDot} />
                   <h3 className={css.panelTitle}>EXECUTION VELOCITY</h3>
 
                   <div className={css.inputRow}>
@@ -822,6 +837,7 @@ export default function InitializeBaselinePage() {
                 </div>
 
                 <div className={css.sectionPanel}>
+                  <span className={css.panelStatusDot} />
                   <h3 className={css.panelTitle}>COST &amp; COGS</h3>
 
                   <InputRow
@@ -863,6 +879,7 @@ export default function InitializeBaselinePage() {
 
                 {/* ── CUSTOMER UNIT ECONOMICS ── */}
                 <div className={css.sectionPanel}>
+                  <span className={css.panelStatusDot} />
                   <h3 className={css.panelTitle}>CUSTOMER UNIT ECONOMICS</h3>
 
                   <InputRow
@@ -937,6 +954,7 @@ export default function InitializeBaselinePage() {
             <div className={css.stepContent}>
               <div className={css.panelGrid}>
                 <div className={css.sectionPanel}>
+                  <span className={css.panelStatusDot} />
                   <h3 className={css.panelTitle}>STRATEGIC POSTURE</h3>
 
                   <div className={css.inputRow}>
@@ -982,6 +1000,7 @@ export default function InitializeBaselinePage() {
                 </div>
 
                 <div className={css.sectionPanel}>
+                  <span className={css.panelStatusDot} />
                   <h3 className={css.panelTitle}>SUMMARY</h3>
                   <div className={css.summaryGrid}>
                     <div className={css.summaryItem}>
