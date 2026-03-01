@@ -25,3 +25,16 @@
   100% { transform: translateY(0px); }
 }
 
+/* ── Global: Ensure dropdown options are always visible (dark theme) ── */
+select {
+  color-scheme: dark;
+}
+select option {
+  background: #0f1520;
+  color: #e2e8f0;
+}
+select option:checked {
+  background: #1a2740;
+  color: #22d3ee;
+}
+
