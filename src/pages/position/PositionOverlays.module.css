@@ -677,10 +677,10 @@
 /* ── Intelligence overlay — transparent glass materializing on terrain ── */
 .insightOverlay {
   position: fixed;
-  bottom: 56px;
+  bottom: 0;
   right: 20px;
   width: clamp(600px, 54vw, 740px);
-  max-height: clamp(440px, 54vh, 600px);
+  top: 56px;
   z-index: 100;
   padding: 0;
   display: flex;

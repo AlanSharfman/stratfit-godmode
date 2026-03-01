@@ -21,7 +21,6 @@
 import React, { memo, useMemo, useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore"
-import { useBaselineStore } from "@/state/baselineStore"
 import { selectKpis, selectKpiDeltas } from "@/selectors/kpiSelectors"
 import { selectRiskScore } from "@/selectors/riskSelectors"
 import { selectDrivers } from "@/selectors/driverSelectors"
@@ -37,7 +36,7 @@ interface CommandGlassPanelProps {
   onTypewriterComplete: () => void
 }
 
-/* ── Row extraction — narrative rows only (data shown in KPI table) ── */
+/* ── Row extraction — narrative rows for typewriter ── */
 function extractRows(insight: AIInsightOutput): string[] {
   const rows: string[] = []
   rows.push(insight.executiveSummary)
@@ -50,22 +49,6 @@ function extractRows(insight: AIInsightOutput): string[] {
   return rows
 }
 
-/** Format currency values for KPI table display */
-function fmtCurrency(v: number): string {
-  const abs = Math.abs(v)
-  if (abs >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`
-  if (abs >= 1_000) return `$${Math.round(v / 1_000)}K`
-  return `$${Math.round(v)}`
-}
-
-/** Format delta with sign for table impact column */
-function fmtDelta(v: number, fmt: "currency" | "months" | "pct"): string {
-  const sign = v > 0 ? "+" : ""
-  if (fmt === "currency") return `${sign}${fmtCurrency(v)}`
-  if (fmt === "months") return `${sign}${Math.round(v)} mo`
-  return `${sign}${v.toFixed(1)}%`
-}
-
 /* ── Component ── */
 const CommandGlassPanel: React.FC<CommandGlassPanelProps> = memo(({
   phase,
@@ -73,57 +56,32 @@ const CommandGlassPanel: React.FC<CommandGlassPanelProps> = memo(({
 }) => {
   const activeScenarioId = usePhase1ScenarioStore((s) => s.activeScenarioId)
   const scenarios = usePhase1ScenarioStore((s) => s.scenarios)
-  const baseline = useBaselineStore((s) => s.baseline)
 
   const activeScenario = useMemo(
     () => scenarios.find((s) => s.id === activeScenarioId) ?? null,
     [scenarios, activeScenarioId],
   )
 
-  // Build baseline KPIs
-  const baselineKpis = useMemo(() => {
-    if (!baseline) return null
-    return selectKpis({
-      cash: baseline.cash ?? 0,
-      monthlyBurn: baseline.monthlyBurn ?? 0,
-      revenue: baseline.revenue ?? 0,
-      grossMargin: baseline.grossMargin ?? 0,
-      growthRate: baseline.growthRate ?? 0,
-      churnRate: baseline.churnRate ?? 0,
-      headcount: baseline.headcount ?? 0,
-      arpa: baseline.arpa ?? 0,
-      runway: (baseline.monthlyBurn ?? 0) > 0
-        ? Math.round((baseline.cash ?? 0) / (baseline.monthlyBurn ?? 1))
-        : null,
-    })
-  }, [baseline])
-
-  // Build scenario KPIs from simulation results
-  const scenarioKpis = useMemo(
-    () => selectKpis(activeScenario?.simulationResults?.kpis ?? null),
-    [activeScenario?.simulationResults?.kpis],
-  )
-
   // Derive intelligence rows via canonical selectors → buildAIInsight
   const insight: AIInsightOutput | null = useMemo(() => {
-    if (!baselineKpis || !scenarioKpis || !activeScenario?.simulationResults) return null
+    if (!activeScenario?.simulationResults) return null
     if (activeScenario.status !== "complete") return null
 
-    const deltas = selectKpiDeltas(baselineKpis, scenarioKpis)
-    if (!deltas) return null
+    const kpis = selectKpis(activeScenario.simulationResults.kpis)
+    if (!kpis) return null
 
     const riskScore = selectRiskScore(activeScenario.simulationResults.kpis)
-    const drivers = selectDrivers(baselineKpis, scenarioKpis, deltas)
+    const drivers = selectDrivers(kpis, kpis, selectKpiDeltas(kpis, kpis)!)
 
     return buildAIInsight({
       decisionQuestion: activeScenario.decision,
-      baselineKpis,
-      scenarioKpis,
-      deltaKpis: deltas,
+      baselineKpis: kpis,
+      scenarioKpis: kpis,
+      deltaKpis: selectKpiDeltas(kpis, kpis)!,
       riskScore,
       drivers,
     })
-  }, [baselineKpis, scenarioKpis, activeScenario])
+  }, [activeScenario])
 
   const baseRows = useMemo(() => insight ? extractRows(insight) : [], [insight])
   const intentType = activeScenario?.decisionIntentType
@@ -152,57 +110,6 @@ const CommandGlassPanel: React.FC<CommandGlassPanelProps> = memo(({
   const displayRows = phase === "settled" ? rows : renderedRows
 
   const isVisible = showContent && rows.length > 0
-
-  // ── KPI comparison table rows (baseline → scenario) ──
-  const kpiTableRows = useMemo(() => {
-    if (!baselineKpis || !scenarioKpis) return []
-    return [
-      {
-        label: "Cash",
-        current: fmtCurrency(baselineKpis.cashOnHand),
-        projected: fmtCurrency(scenarioKpis.cashOnHand),
-        delta: fmtDelta(scenarioKpis.cashOnHand - baselineKpis.cashOnHand, "currency"),
-        deltaColor: scenarioKpis.cashOnHand >= baselineKpis.cashOnHand ? "rgba(52,211,153,0.95)" : "rgba(239,68,68,0.95)",
-      },
-      {
-        label: "Runway",
-        current: baselineKpis.runwayMonths != null ? `${baselineKpis.runwayMonths} mo` : "—",
-        projected: scenarioKpis.runwayMonths != null ? `${scenarioKpis.runwayMonths} mo` : "—",
-        delta: baselineKpis.runwayMonths != null && scenarioKpis.runwayMonths != null
-          ? fmtDelta(scenarioKpis.runwayMonths - baselineKpis.runwayMonths, "months")
-          : "—",
-        deltaColor: (scenarioKpis.runwayMonths ?? 0) >= (baselineKpis.runwayMonths ?? 0) ? "rgba(52,211,153,0.95)" : "rgba(239,68,68,0.95)",
-      },
-      {
-        label: "Burn Rate",
-        current: `${fmtCurrency(baselineKpis.burnMonthly)}/mo`,
-        projected: `${fmtCurrency(scenarioKpis.burnMonthly)}/mo`,
-        delta: fmtDelta(scenarioKpis.burnMonthly - baselineKpis.burnMonthly, "currency"),
-        deltaColor: scenarioKpis.burnMonthly <= baselineKpis.burnMonthly ? "rgba(52,211,153,0.95)" : "rgba(239,68,68,0.95)",
-      },
-      {
-        label: "Revenue",
-        current: `${fmtCurrency(baselineKpis.revenue)}/mo`,
-        projected: `${fmtCurrency(scenarioKpis.revenue)}/mo`,
-        delta: fmtDelta(scenarioKpis.revenue - baselineKpis.revenue, "currency"),
-        deltaColor: scenarioKpis.revenue >= baselineKpis.revenue ? "rgba(52,211,153,0.95)" : "rgba(239,68,68,0.95)",
-      },
-      {
-        label: "ARR",
-        current: fmtCurrency(baselineKpis.arr),
-        projected: fmtCurrency(scenarioKpis.arr),
-        delta: fmtDelta(scenarioKpis.arr - baselineKpis.arr, "currency"),
-        deltaColor: scenarioKpis.arr >= baselineKpis.arr ? "rgba(52,211,153,0.95)" : "rgba(239,68,68,0.95)",
-      },
-      {
-        label: "Growth",
-        current: `${baselineKpis.growthRate.toFixed(1)}%`,
-        projected: `${scenarioKpis.growthRate.toFixed(1)}%`,
-        delta: fmtDelta(scenarioKpis.growthRate - baselineKpis.growthRate, "pct"),
-        deltaColor: scenarioKpis.growthRate >= baselineKpis.growthRate ? "rgba(52,211,153,0.95)" : "rgba(239,68,68,0.95)",
-      },
-    ]
-  }, [baselineKpis, scenarioKpis])
 
   // Risk color
   const riskColor = riskScore >= 78 ? "rgba(52,211,153,0.9)"
@@ -293,9 +200,7 @@ const CommandGlassPanel: React.FC<CommandGlassPanelProps> = memo(({
               </div>
             </div>
 
-            {/* ── 2-Column God Mode Layout ── */}
-            <div style={COLUMNS_GRID}>
-              {/* LEFT: Narrative Intelligence */}
+            {/* ── Narrative Intelligence ── */}
               <div style={NARRATIVE_COL}>
                 {displayRows.map((text, idx) => {
                   if (!text) return null
@@ -344,65 +249,6 @@ const CommandGlassPanel: React.FC<CommandGlassPanelProps> = memo(({
                   )
                 })}
               </div>
-
-              {/* RIGHT: KPI Impact Data + Probability Signals */}
-              <motion.div
-                style={DATA_COL}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 1.2, delay: 1.5, ease: [0.16, 1, 0.3, 1] }}
-              >
-                {/* KPI Impact Table */}
-                {kpiTableRows.length > 0 && (
-                  <div>
-                    <div style={SECTION_LABEL}>SCENARIO IMPACT</div>
-                    <table style={KPI_TABLE}>
-                      <thead>
-                        <tr>
-                          <th style={{ ...TABLE_HEADER_CELL, textAlign: "left" as const }}>Metric</th>
-                          <th style={TABLE_HEADER_CELL}>Current</th>
-                          <th style={TABLE_HEADER_CELL}>Projected</th>
-                          <th style={TABLE_HEADER_CELL}>Impact</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {kpiTableRows.map((row, i) => (
-                          <tr key={i}>
-                            <td style={{ ...TABLE_CELL, ...TABLE_METRIC_CELL }}>{row.label}</td>
-                            <td style={TABLE_CELL}>{row.current}</td>
-                            <td style={TABLE_CELL}>{row.projected}</td>
-                            <td style={{ ...TABLE_CELL, ...TABLE_DELTA_CELL, color: row.deltaColor }}>{row.delta}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-
-                {/* Probability Signal Bars */}
-                {insight && insight.probabilitySignals.length > 0 && (
-                  <div>
-                    <div style={SECTION_LABEL}>PROBABILITY SIGNALS</div>
-                    {insight.probabilitySignals.map((sig, i) => {
-                      const barColor = sig.probability >= 70
-                        ? "rgba(52,211,153,0.85)"
-                        : sig.probability >= 45
-                        ? "rgba(251,191,36,0.85)"
-                        : "rgba(239,68,68,0.85)"
-                      return (
-                        <div key={i} style={SIGNAL_ROW}>
-                          <span style={SIGNAL_LABEL}>{sig.title}</span>
-                          <div style={SIGNAL_TRACK}>
-                            <div style={{ ...SIGNAL_FILL, width: `${sig.probability}%`, background: barColor }} />
-                          </div>
-                          <span style={{ ...SIGNAL_VALUE, color: barColor }}>{sig.probability}%</span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </motion.div>
-            </div>
 
             {/* Footer — full width */}
             {(phase === "settled" || isDone) && (
@@ -549,133 +395,18 @@ const SURVIVAL_BADGE: React.CSSProperties = {
   flexShrink: 0,
 }
 
-/* ── 2-Column Grid ── */
-
-const COLUMNS_GRID: React.CSSProperties = {
-  position: "relative",
-  zIndex: 5,
-  display: "grid",
-  gridTemplateColumns: "1.15fr 1fr",
-  gap: 28,
-  minHeight: 0,
-}
+/* ── Narrative Column ── */
 
 const NARRATIVE_COL: React.CSSProperties = {
+  position: "relative",
+  zIndex: 5,
   display: "flex",
   flexDirection: "column",
   gap: 12,
   minWidth: 0,
-  borderRight: "1px solid rgba(255,255,255,0.08)",
-  paddingRight: 24,
 }
 
-const DATA_COL: React.CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  gap: 22,
-  minWidth: 0,
-}
 
-/* ── Section Labels (right column) ── */
-
-const SECTION_LABEL: React.CSSProperties = {
-  fontSize: 9.5,
-  fontWeight: 700,
-  textTransform: "uppercase",
-  letterSpacing: "0.14em",
-  color: "rgba(34,211,238,0.6)",
-  fontFamily: "'Inter', system-ui, sans-serif",
-  marginBottom: 8,
-  paddingBottom: 6,
-  borderBottom: "1px solid rgba(34,211,238,0.12)",
-}
-
-/* ── KPI Impact Table ── */
-
-const KPI_TABLE: React.CSSProperties = {
-  width: "100%",
-  borderCollapse: "collapse",
-  fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-}
-
-const TABLE_HEADER_CELL: React.CSSProperties = {
-  fontSize: 8.5,
-  fontWeight: 700,
-  textTransform: "uppercase",
-  letterSpacing: "0.12em",
-  color: "rgba(255,255,255,0.35)",
-  padding: "6px 6px 8px",
-  textAlign: "right",
-  borderBottom: "1px solid rgba(255,255,255,0.08)",
-  fontFamily: "'Inter', system-ui, sans-serif",
-}
-
-const TABLE_CELL: React.CSSProperties = {
-  fontSize: 11.5,
-  padding: "5px 6px",
-  textAlign: "right",
-  color: "rgba(255,255,255,0.8)",
-  borderBottom: "1px solid rgba(255,255,255,0.04)",
-  lineHeight: 1.6,
-  textShadow: "0 1px 3px rgba(0,0,0,0.5)",
-}
-
-const TABLE_METRIC_CELL: React.CSSProperties = {
-  textAlign: "left",
-  fontWeight: 600,
-  color: "rgba(255,255,255,0.6)",
-  fontSize: 11,
-  fontFamily: "'Inter', system-ui, sans-serif",
-  letterSpacing: "0.02em",
-}
-
-const TABLE_DELTA_CELL: React.CSSProperties = {
-  fontWeight: 700,
-  fontSize: 11.5,
-  letterSpacing: "0.01em",
-}
-
-/* ── Probability Signal Bars ── */
-
-const SIGNAL_ROW: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 10,
-  padding: "5px 0",
-}
-
-const SIGNAL_LABEL: React.CSSProperties = {
-  fontSize: 10.5,
-  fontWeight: 500,
-  color: "rgba(255,255,255,0.65)",
-  width: 76,
-  flexShrink: 0,
-  fontFamily: "'Inter', system-ui, sans-serif",
-  letterSpacing: "0.01em",
-}
-
-const SIGNAL_TRACK: React.CSSProperties = {
-  flex: 1,
-  height: 5,
-  background: "rgba(255,255,255,0.06)",
-  borderRadius: 3,
-  overflow: "hidden",
-}
-
-const SIGNAL_FILL: React.CSSProperties = {
-  height: "100%",
-  borderRadius: 3,
-}
-
-const SIGNAL_VALUE: React.CSSProperties = {
-  fontSize: 12,
-  fontWeight: 700,
-  fontFamily: "'JetBrains Mono', monospace",
-  width: 36,
-  textAlign: "right",
-  flexShrink: 0,
-  letterSpacing: "0.02em",
-}
 
 /* ── Narrative Row Tokens (left column) ── */
 
