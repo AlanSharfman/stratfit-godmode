@@ -47,6 +47,9 @@ import IdleMotionLayer from "./IdleMotionLayer"
 import HorizonPulse from "@/components/terrain/overlays/HorizonPulse"
 import { useReducedMotion } from "@/hooks/useReducedMotion"
 import SimulationProofOverlay from "@/components/dev/SimulationProofOverlay"
+import { InsightRevealController } from "@/components/cinematic/InsightRevealController"
+import CinematicIntelligencePanel, { CINEMATIC_INTEL_KEYFRAMES } from "@/components/cinematic/CinematicIntelligencePanel"
+import { useIntelligencePresentation } from "@/hooks/useIntelligencePresentation"
 import {
   buildPositionViewModel,
 } from "./overlays/positionState"
@@ -118,6 +121,19 @@ export default function PositionPage() {
     () => scenarios.find((s) => s.id === activeScenarioId) ?? null,
     [scenarios, activeScenarioId],
   )
+
+  // ── Cinematic intelligence presentation (idle → reveal → settled) ──
+  const simulationCompletedAt = activeScenario?.simulationResults?.completedAt ?? null
+  const { phase: intelPhase, requestSettle, isRevealing } = useIntelligencePresentation({
+    completedAt: simulationCompletedAt,
+  })
+
+  // Auto-open intelligence panel when cinematic reveal starts
+  useEffect(() => {
+    if (intelPhase === "reveal" || intelPhase === "settled") {
+      setIntelligenceOpen(true)
+    }
+  }, [intelPhase])
 
   // ── Intelligence panel keyboard shortcut (I key) ──
   useEffect(() => {
@@ -518,6 +534,15 @@ export default function PositionPage() {
     <div className={styles.page}>
 
 
+      {/* ═══ Cinematic reveal timeline controller (render-less) ═══ */}
+      <InsightRevealController
+        completedAt={simulationCompletedAt}
+        runId={simulationCompletedAt}
+      />
+
+      {/* Cinematic keyframes */}
+      <style>{CINEMATIC_INTEL_KEYFRAMES}</style>
+
       {/* ═══ LAYER 1: Deep navy canvas backdrop ═══ */}
       <div className={styles.canvasLayer} />
 
@@ -577,7 +602,23 @@ export default function PositionPage() {
           </nav>
 
           {/* Terrain canvas — fills available space */}
-          <div ref={viewportRef} className={styles.terrainViewport} aria-label="Position terrain">
+          <div ref={viewportRef} className={styles.terrainViewport} aria-label="Position terrain" style={{ position: "relative" }}>
+            {/* Terrain dim during cinematic reveal */}
+            {isRevealing && (
+              <div
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  background: "rgba(10,14,23,0.45)",
+                  backdropFilter: "blur(3px)",
+                  WebkitBackdropFilter: "blur(3px)",
+                  zIndex: 40,
+                  pointerEvents: "none",
+                  transition: "opacity 0.5s ease",
+                }}
+              />
+            )}
             <TerrainStage
               lockCamera={true}
               pathsEnabled={false}
@@ -628,11 +669,31 @@ export default function PositionPage() {
               triggerKey={activeScenario?.simulationResults?.completedAt ?? null}
               disabled={reducedMotion}
             />
-            {/* ── DEV: Simulation proof overlay (traceability) ── */}
-            <SimulationProofOverlay
+            {/* DEV: Simulation proof overlay — hidden for demo */}
+            {/* <SimulationProofOverlay
               scenario={activeScenario ?? null}
               baselineSnapshotId={baseline ? `bl_${typeof baseline === "object" ? "active" : "none"}` : null}
-            />
+            /> */}
+
+            {/* ── Cinematic Intelligence Panel — overlay on terrain during reveal ── */}
+            {(intelPhase === "reveal" || intelPhase === "settled") && (
+              <div style={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 50,
+                pointerEvents: intelPhase === "reveal" ? "none" : "auto",
+              }}>
+                <div style={{ width: "min(460px, 80%)", maxHeight: "80%", overflow: "auto" }}>
+                  <CinematicIntelligencePanel
+                    phase={intelPhase}
+                    onTypewriterComplete={requestSettle}
+                  />
+                </div>
+              </div>
+            )}
 
           </div>
         </div>
