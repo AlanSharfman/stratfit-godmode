@@ -388,8 +388,13 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis }) => {
         <h3 className={styles.sectionHeader}>Valuation</h3>
         <div className={styles.cardStack}>
           <div className={styles.card}>
-            <div className={`${styles.label} ${styles.labelValuation}`}>Enterprise Value (v1)</div>
+            <div className={`${styles.label} ${styles.labelValuation}`}>Enterprise Value</div>
             <div className={styles.value}>{k && k.valuationEstimate > 0 ? `$${fmtMoney(k.valuationEstimate)}` : "$ —"}</div>
+            {k && (
+              <span className={styles.probBadge} data-tone={deriveRiskTone(k.riskIndex)}>
+                {fmtPct(k.riskIndex)} probability
+              </span>
+            )}
             <ValuationWidget />
             <div className={styles.sub}>{k && k.valuationEstimate > 0 ? "Revenue multiple" : "Awaiting ARR data"}</div>
           </div>

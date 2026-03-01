@@ -277,6 +277,36 @@
   z-index: 1;
 }
 
+/* ── Probability badge (valuation card) ── */
+.probBadge {
+  display: inline-block;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 10px;
+  border-radius: 999px;
+  margin: 2px auto 0;
+  position: relative;
+  z-index: 1;
+}
+.probBadge[data-tone="stable"] {
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.10);
+  border: 1px solid rgba(52, 211, 153, 0.18);
+}
+.probBadge[data-tone="watch"] {
+  color: rgba(250, 204, 21, 0.90);
+  background: rgba(250, 204, 21, 0.08);
+  border: 1px solid rgba(250, 204, 21, 0.18);
+}
+.probBadge[data-tone="critical"] {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.10);
+  border: 1px solid rgba(248, 113, 113, 0.18);
+}
+
 .riskTag[data-tone="stable"] {
   color: #34d399;
   background: rgba(52, 211, 153, 0.10);

@@ -230,7 +230,7 @@ export default function InitializeBaselinePage() {
           <span className={css.navBreadcrumbMuted}>Scenario Ingress</span>
         </div>
         <div className={css.navRight}>
-          <span className={css.navPill}>MVP &bull; Phase-1</span>
+          <span className={css.navPill}>God Mode &bull; v1</span>
           <button type="button" className={css.navHelpBtn} title="Help">?</button>
         </div>
       </nav>
@@ -241,6 +241,10 @@ export default function InitializeBaselinePage() {
       <div className={css.headerArea}>
         <div className={css.headerRow}>
           <div>
+            <div className={css.systemBadge}>
+              <span className={css.systemBadgeDot} />
+              System Calibration
+            </div>
             <h1 className={css.pageTitle}>Initiate Scenario</h1>
             <p className={css.pageSubtitle}>
               Upload or enter baseline data to generate probability-first decision signals.
@@ -383,20 +387,30 @@ export default function InitializeBaselinePage() {
                     </div>
                   </div>
 
-                  {/* Live Runway Preview */}
+                  {/* Live Metric Preview Strip */}
                   {liveRunway !== null && (
-                    <div
-                      className={css.runwayPreview}
-                      style={{
-                        background: liveRunway < 6 ? "rgba(248,113,113,0.08)" : liveRunway < 12 ? "rgba(251,191,36,0.08)" : "rgba(34,211,238,0.05)",
-                        border: `1px solid ${liveRunway < 6 ? "rgba(248,113,113,0.2)" : liveRunway < 12 ? "rgba(251,191,36,0.15)" : "rgba(34,211,238,0.12)"}`
-                      }}
-                    >
-                      <span style={{ opacity: 0.6 }}>Estimated Runway</span>
-                      <span className={css.runwayValue} style={{ color: liveRunway < 6 ? "#f87171" : liveRunway < 12 ? "#fbbf24" : "#22d3ee" }}>
-                        {liveRunway} months
-                      </span>
-                    </div>
+                    <>
+                      <div className={css.metricStrip}>
+                        <div className={css.metricCell}>
+                          <div className={css.metricCellLabel}>Runway</div>
+                          <div className={css.metricCellValue} style={{ color: liveRunway < 6 ? "#f87171" : liveRunway < 12 ? "#fbbf24" : "#22d3ee" }}>
+                            {liveRunway}<span className={css.metricCellUnit}>mo</span>
+                          </div>
+                        </div>
+                        <div className={css.metricCell}>
+                          <div className={css.metricCellLabel}>Monthly Burn</div>
+                          <div className={css.metricCellValue}>
+                            {toNum(form.monthlyBurn) > 0 ? `$${Math.round(toNum(form.monthlyBurn) / 1000)}k` : "—"}
+                          </div>
+                        </div>
+                        <div className={css.metricCell}>
+                          <div className={css.metricCellLabel}>Cash</div>
+                          <div className={css.metricCellValue}>
+                            {toNum(form.cashBalance) > 0 ? `$${(toNum(form.cashBalance) / 1000000).toFixed(1)}M` : "—"}
+                          </div>
+                        </div>
+                      </div>
+                    </>
                   )}
 
                   {/* Risk Environment */}
@@ -426,16 +440,19 @@ export default function InitializeBaselinePage() {
                   <div className={css.formSection}>
                     <div className={css.formSectionTitle}>Runway Confidence <span style={{ opacity: 0.4 }}>(optional)</span></div>
                     <label className={css.formLabel}>
-                      Confidence in runway estimate ({form.runwayConfidence}%)
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                        <span>Confidence in runway estimate</span>
+                        <span className={css.confidenceValue}>{form.runwayConfidence}%</span>
+                      </div>
                       <input
                         type="range" min="0" max="100"
+                        className={css.confidenceSlider}
                         value={form.runwayConfidence}
                         onChange={(e) => update("runwayConfidence", e.target.value)}
-                        style={{ width: "100%", accentColor: "#22d3ee" }}
                       />
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, opacity: 0.35 }}>
-                        <span>0% - Uncertain</span>
-                        <span>100% - Very confident</span>
+                      <div className={css.confidenceLabels}>
+                        <span>Uncertain</span>
+                        <span>Very Confident</span>
                       </div>
                     </label>
                   </div>

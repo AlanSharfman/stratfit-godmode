@@ -47,6 +47,7 @@ import IdleMotionLayer from "./IdleMotionLayer"
 import HorizonPulse from "@/components/terrain/overlays/HorizonPulse"
 import { useReducedMotion } from "@/hooks/useReducedMotion"
 import CommandGlassPanel from "@/components/intelligence/CommandGlassPanel"
+import IntelligenceSpotlight from "@/components/insight/IntelligenceSpotlight"
 import { useIntelligencePresentation } from "@/hooks/useIntelligencePresentation"
 import SimulationProofOverlay from "@/components/dev/SimulationProofOverlay"
 import {
@@ -497,6 +498,9 @@ export default function PositionPage() {
 
   return (
     <div className={styles.page}>
+      {/* Portal mount for Intelligence Spotlight */}
+      <div id="spotlight-portal" style={{ position: 'fixed', inset: 0, zIndex: 9000, pointerEvents: 'none' }} />
+
       {/* ═══ LAYER 1: Deep navy canvas backdrop ═══ */}
       <div className={styles.canvasLayer} />
 
@@ -658,14 +662,19 @@ export default function PositionPage() {
           {/* Command Glass — Intelligence Output */}
           <div className={styles.baselineIntelDock} aria-label="Command Intelligence">
             <ScenarioContextPanel />
-            {(intelPhase === "reveal" || intelPhase === "settled") ? (
-              <CommandGlassPanel
-                phase={intelPhase}
-                onTypewriterComplete={intelRequestSettle}
-              />
-            ) : (
-              <AIInsightPanel />
-            )}
+            <IntelligenceSpotlight
+              triggerKey={activeScenario?.simulationResults?.completedAt ?? null}
+              reducedMotion={reducedMotion}
+            >
+              {(intelPhase === "reveal" || intelPhase === "settled") ? (
+                <CommandGlassPanel
+                  phase={intelPhase}
+                  onTypewriterComplete={intelRequestSettle}
+                />
+              ) : (
+                <AIInsightPanel />
+              )}
+            </IntelligenceSpotlight>
           </div>
         </div>
       </div>
