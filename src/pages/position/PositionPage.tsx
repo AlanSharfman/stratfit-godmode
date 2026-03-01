@@ -144,11 +144,11 @@ export default function PositionPage() {
       // Wait 5s for terrain to settle before revealing insights
       const openTimer = setTimeout(() => {
         setIntelligenceOpen(true)
-        // Auto-close after 25s
+        // Auto-close after 20s
         clearAutoClose()
         autoCloseTimerRef.current = setTimeout(() => {
           setIntelligenceOpen(false)
-        }, 25_000)
+        }, 20_000)
       }, 5_000)
       return () => clearTimeout(openTimer)
     }
@@ -572,7 +572,7 @@ export default function PositionPage() {
       <div className={styles.atmoVignette} aria-hidden="true" />
 
       {/* ═══ LAYER 2: God Mode 3-column instrument grid ═══ */}
-      <div className={`${styles.uiLayer}${intelligenceOpen ? ` ${styles.uiLayerExpanded}` : ""}`}>
+      <div className={styles.uiLayer}>
 
         {/* ══════════════════════════════════════════════════
             LEFT RAIL — Intelligence Panel (KPIs + Briefing)
@@ -596,7 +596,7 @@ export default function PositionPage() {
         {/* ══════════════════════════════════════════════════
             CENTER — Terrain Canvas (dominant, immersive)
             ══════════════════════════════════════════════════ */}
-        <div className={`${styles.centreCol}${intelligenceOpen ? ` ${styles.centreColDimmed}` : ""}`}>
+        <div className={styles.centreCol}>
           {/* Top nav row */}
           <nav className={styles.pageNav} aria-label="Primary navigation">
             <NavLink to={ROUTES.INITIATE} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Initiate</NavLink>
@@ -669,7 +669,7 @@ export default function PositionPage() {
         {/* ══════════════════════════════════════════════════
             RIGHT RAIL — Controls (Tuning, Toggles, Diagnostics)
             ══════════════════════════════════════════════════ */}
-        <div className={`${styles.rightCol}${intelligenceOpen ? ` ${styles.rightColExpanded}` : ""}`}>
+        <div className={styles.rightCol}>
           {/* Command Centre — above fold */}
           <div className={styles.commandCentreDock} aria-label="Command Centre">
             {commandCentreOpen ? (
@@ -691,7 +691,10 @@ export default function PositionPage() {
           </div>
 
           {/* Scenario Context + Cinematic Insights */}
-          <div className={styles.baselineIntelDock} aria-label="Scenario Insights">
+          <div
+            className={`${styles.baselineIntelDock}${intelligenceOpen ? ` ${styles.insightSlideOut}` : ""}`}
+            aria-label="Scenario Insights"
+          >
             <ScenarioContextPanel />
             {intelligenceOpen ? (
               <>
@@ -721,7 +724,7 @@ export default function PositionPage() {
                   clearAutoClose()
                   autoCloseTimerRef.current = setTimeout(() => {
                     setIntelligenceOpen(false)
-                  }, 25_000)
+                  }, 20_000)
                 }}
               >
                 {/* Bejeweled insight diamond icon */}
