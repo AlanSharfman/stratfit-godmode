@@ -275,7 +275,7 @@ export default function LandingPage({ onStart, onStartWithPersona }: LandingPage
       <footer className="landing-footer">
         <div className="footer-content">
           <div className="footer-logo">
-            <img src="/stratfit-logo.png" alt="STRATFIT" style={{ display: 'block', height: '48px', width: 'auto' }} />
+            <img src="/stratfit-logo.png" alt="STRATFIT" className="brand-logo-cube" style={{ display: 'block', height: '48px', width: 'auto', animation: 'pulseGlow 3s ease-in-out infinite, float 4s ease-in-out infinite', transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)' }} />
           </div>
           <p className="footer-tagline">Scenario Intelligence for Strategic Decisions</p>
           <p className="footer-copyright">© 2025 STRATFIT. All rights reserved.</p>

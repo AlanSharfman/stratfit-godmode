@@ -27,7 +27,7 @@ import { useSemanticBalance, DEFAULT_SHL_WEIGHTS } from "@/render/shl"
 import type { SemanticLayerKey } from "@/render/shl"
 
 import CommandCentrePanel from "@/components/diagnostics/CommandCentrePanel"
-import AIInsightPanel from "@/components/insight/AIInsightPanel"
+import IntelligencePanel from "@/components/insight/IntelligencePanel"
 import SimulationContextHUD from "@/components/position/SimulationContextHUD"
 import {
   classifyQuestion,
@@ -41,14 +41,11 @@ import ScenarioContextPanel from "@/components/scenario/ScenarioContextPanel"
 import { selectKpis, selectPositionKpis } from "@/selectors/kpiSelectors"
 import { selectTerrainMetrics } from "@/selectors/terrainSelectors"
 import { selectRiskScore } from "@/selectors/riskSelectors"
-import ExecutiveNarrativeCard from "./components/ExecutiveNarrativeCard"
+// ExecutiveNarrativeCard removed — intelligence rendered via IntelligencePanel
 import TimeScaleControl from "./overlays/TimeScaleControl"
 import IdleMotionLayer from "./IdleMotionLayer"
 import HorizonPulse from "@/components/terrain/overlays/HorizonPulse"
 import { useReducedMotion } from "@/hooks/useReducedMotion"
-import CommandGlassPanel from "@/components/intelligence/CommandGlassPanel"
-import IntelligenceSpotlight from "@/components/insight/IntelligenceSpotlight"
-import { useIntelligencePresentation } from "@/hooks/useIntelligencePresentation"
 import SimulationProofOverlay from "@/components/dev/SimulationProofOverlay"
 import {
   buildPositionViewModel,
@@ -68,9 +65,21 @@ export default function PositionPage() {
   const [granularity, setGranularity] = useState<TimeGranularity>("quarter")
   const [rippleKey, setRippleKey] = useState(0)
   const [commandCentreOpen, setCommandCentreOpen] = useState(true)
+  const [intelligenceOpen, setIntelligenceOpen] = useState(false)
   const [terrainTuning, setTerrainTuning] = useState<TerrainTuningParams>({ ...DEFAULT_TUNING })
   const viewportRef = useRef<HTMLDivElement>(null)
   const reducedMotion = useReducedMotion()
+
+  // ── ResizeObserver: update Three.js renderer when right rail expands/collapses ──
+  useEffect(() => {
+    const el = viewportRef.current
+    if (!el) return
+    const ro = new ResizeObserver(() => {
+      window.dispatchEvent(new Event("resize"))
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   useEffect(() => {
     function onRipple() { setRippleKey((k) => k + 1) }
@@ -110,10 +119,19 @@ export default function PositionPage() {
     [scenarios, activeScenarioId],
   )
 
-  // ── Command Glass controller (idle → reveal → settled) ──
-  const { phase: intelPhase, requestSettle: intelRequestSettle, isRevealing } = useIntelligencePresentation({
-    completedAt: activeScenario?.simulationResults?.completedAt ?? null,
-  })
+  // ── Intelligence panel keyboard shortcut (I key) ──
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "i" || e.key === "I") {
+        const tag = (e.target as HTMLElement)?.tagName
+        if (tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable) return
+        e.preventDefault()
+        setIntelligenceOpen((prev) => !prev)
+      }
+    }
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [])
 
   // Auto-run simulation if activeScenario is still in "draft"
   const lastSimRunRef = useRef<string | null>(null)
@@ -498,8 +516,7 @@ export default function PositionPage() {
 
   return (
     <div className={styles.page}>
-      {/* Portal mount for Intelligence Spotlight */}
-      <div id="spotlight-portal" style={{ position: 'fixed', inset: 0, zIndex: 9000, pointerEvents: 'none' }} />
+
 
       {/* ═══ LAYER 1: Deep navy canvas backdrop ═══ */}
       <div className={styles.canvasLayer} />
@@ -512,7 +529,7 @@ export default function PositionPage() {
       <div className={styles.atmoVignette} aria-hidden="true" />
 
       {/* ═══ LAYER 2: God Mode 3-column instrument grid ═══ */}
-      <div className={styles.uiLayer}>
+      <div className={`${styles.uiLayer}${intelligenceOpen ? ` ${styles.uiLayerExpanded}` : ""}`}>
 
         {/* ══════════════════════════════════════════════════
             LEFT RAIL — Intelligence Panel (KPIs + Briefing)
@@ -520,7 +537,7 @@ export default function PositionPage() {
         <div className={styles.leftCol}>
           {/* Logo lockup */}
           <Link to={ROUTES.POSITION} className={styles.logoLockup}>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="32" height="32" overflow="hidden" style={{ display: "block" }} aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="32" height="32" overflow="hidden" className="brand-logo-cube" style={{ display: "block", animation: "pulseGlow 3s ease-in-out infinite, float 4s ease-in-out infinite", transition: "all 0.5s cubic-bezier(0.4, 0, 0.2, 1)" }} aria-hidden="true">
               <defs>
                 <linearGradient id="pgTopGlow" x1="0%" y1="0%" x2="100%" y2="100%">
                   <stop offset="0%" stopColor="#00FFFF" />
@@ -616,21 +633,6 @@ export default function PositionPage() {
               scenario={activeScenario ?? null}
               baselineSnapshotId={baseline ? `bl_${typeof baseline === "object" ? "active" : "none"}` : null}
             />
-            {/* ── Terrain dim overlay — subtle desat during command glass reveal ── */}
-            {isRevealing && (
-              <div
-                aria-hidden="true"
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  zIndex: 25,
-                  pointerEvents: "none",
-                  background: "rgba(0,0,0,0.10)",
-                  transition: "opacity 0.6s ease",
-                  mixBlendMode: "multiply",
-                }}
-              />
-            )}
 
           </div>
         </div>
@@ -638,7 +640,7 @@ export default function PositionPage() {
         {/* ══════════════════════════════════════════════════
             RIGHT RAIL — Controls (Tuning, Toggles, Diagnostics)
             ══════════════════════════════════════════════════ */}
-        <div className={styles.rightCol}>
+        <div className={`${styles.rightCol}${intelligenceOpen ? ` ${styles.rightColExpanded}` : ""}`}>
           {/* Command Centre — above fold */}
           <div className={styles.commandCentreDock} aria-label="Command Centre">
             {commandCentreOpen ? (
@@ -659,22 +661,22 @@ export default function PositionPage() {
             )}
           </div>
 
-          {/* Command Glass — Intelligence Output */}
-          <div className={styles.baselineIntelDock} aria-label="Command Intelligence">
+          {/* Scenario Context + Intelligence */}
+          <div className={styles.baselineIntelDock} aria-label="Scenario Intelligence">
             <ScenarioContextPanel />
-            <IntelligenceSpotlight
-              triggerKey={activeScenario?.simulationResults?.completedAt ?? null}
-              reducedMotion={reducedMotion}
-            >
-              {(intelPhase === "reveal" || intelPhase === "settled") ? (
-                <CommandGlassPanel
-                  phase={intelPhase}
-                  onTypewriterComplete={intelRequestSettle}
-                />
-              ) : (
-                <AIInsightPanel />
-              )}
-            </IntelligenceSpotlight>
+            {intelligenceOpen ? (
+              <IntelligencePanel onCollapse={() => setIntelligenceOpen(false)} />
+            ) : (
+              <button
+                type="button"
+                className={styles.intelToggle}
+                onClick={() => setIntelligenceOpen(true)}
+              >
+                <span style={{ fontSize: 14, lineHeight: 1 }}>📊</span>
+                <span>Intelligence</span>
+                <span className={styles.kbdHint}>I</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

@@ -671,10 +671,16 @@
 }
 
 .logo-text {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Inter', sans-serif;
   font-size: 20px;
-  font-weight: 700;
+  font-weight: 900;
   letter-spacing: 4px;
+  /* GOD MODE — Text Gradient */
+  background: linear-gradient(to right, #ffffff, rgba(0, 255, 255, 0.8));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.2));
 }
 
 .footer-tagline {

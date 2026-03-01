@@ -246,6 +246,12 @@
   grid-template-columns: 280px 1fr 320px;
   height: 100vh;
   pointer-events: none;
+  transition: grid-template-columns 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* When intelligence panel is expanded, widen the right column */
+.uiLayerExpanded {
+  grid-template-columns: 280px 1fr min(400px, 34vw);
 }
 
 /* ── Embedded logo lockup (left col top) ── */
@@ -262,12 +268,17 @@
 
 .logoName {
   font-family: 'Inter', system-ui, sans-serif;
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 1.4px;
-  color: #ffffff;
+  font-size: 1.1rem;
+  font-weight: 900;
+  letter-spacing: 2px;
   text-transform: uppercase;
   line-height: 1;
+  /* GOD MODE — Text Gradient */
+  background: linear-gradient(to right, #ffffff, rgba(0, 255, 255, 0.8));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.2));
 }
 
 .logoSub {
@@ -614,6 +625,54 @@
 .baselineIntelDock {
   padding: 14px 8px 10px;
   pointer-events: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 180, 255, 0.15) transparent;
+}
+
+/* Right column expanded state */
+.rightColExpanded {
+  /* Class applied to rightCol — grid-template change is on uiLayerExpanded */
+}
+
+/* ── Intelligence toggle button ── */
+.intelToggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  margin-top: 8px;
+  border: 1px solid rgba(0, 206, 209, 0.2);
+  border-radius: 8px;
+  background: rgba(0, 206, 209, 0.06);
+  color: rgba(0, 206, 209, 0.85);
+  font-family: ui-monospace, "JetBrains Mono", monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.intelToggle:hover {
+  background: rgba(0, 206, 209, 0.12);
+  border-color: rgba(0, 206, 209, 0.4);
+}
+
+.kbdHint {
+  margin-left: auto;
+  font-size: 9px;
+  color: rgba(182, 228, 255, 0.35);
+  letter-spacing: 0.06em;
+  font-weight: 400;
+  border: 1px solid rgba(182, 228, 255, 0.15);
+  border-radius: 3px;
+  padding: 1px 5px;
 }
 
 /* ── Command Centre collapse toggle ── */

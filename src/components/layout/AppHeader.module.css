@@ -23,11 +23,16 @@
 }
 
 .logo {
+  font-family: 'Inter', sans-serif;
   font-size: var(--sf-h1);
-  letter-spacing: 0.12em;
-  font-weight: 700;
-  color: var(--sf-ice);
-  text-shadow: var(--sf-glow-ice);
+  font-weight: 900;
+  letter-spacing: 2px;
+  /* GOD MODE — Text Gradient */
+  background: linear-gradient(to right, #ffffff, rgba(0, 255, 255, 0.8));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.2));
 }
 
 .sub {

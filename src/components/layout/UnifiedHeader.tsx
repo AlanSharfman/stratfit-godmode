@@ -128,11 +128,21 @@ export default function UnifiedHeader({
           gap: 10px;
           flex-shrink: 0;
         }
+        .uh-logo img {
+          animation: pulseGlow 3s ease-in-out infinite,
+                     float 4s ease-in-out infinite;
+          transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
         .uh-logo-text {
-          font-size: 18px;
-          font-weight: 800;
-          letter-spacing: 0.08em;
-          color: #fff;
+          font-family: 'Inter', sans-serif;
+          font-size: 1.8rem;
+          font-weight: 900;
+          letter-spacing: 2px;
+          background: linear-gradient(to right, #ffffff, rgba(0, 255, 255, 0.8));
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.2));
         }
         .uh-status {
           display: flex;
@@ -407,7 +417,7 @@ export default function UnifiedHeader({
       <header className="unified-header">
         {/* LOGO */}
         <div className="uh-logo">
-          <img src="/stratfit-logo.png" alt="STRATFIT" style={{ display: 'block', height: '40px', width: 'auto' }} />
+          <img src="/stratfit-logo.png" alt="STRATFIT" className="brand-logo-cube" style={{ display: 'block', height: '40px', width: 'auto' }} />
           <div className="uh-status">
             <span>System Status</span>
             <span>·</span>

@@ -22,7 +22,9 @@
             ]
         },
         "strict": true,
-        "noEmit": true
+        "noEmit": true,
+        "incremental": true,
+        "tsBuildInfoFile": ".tsbuildinfo"
     },
     "include": [
         "src"

@@ -22,7 +22,7 @@ export function TopBar({
     <div className="sfOn-topbar">
       <div className="sfOn-topbarLeft">
         <div className="sfOn-brand">
-          <img src="/stratfit-logo.png" alt="STRATFIT" style={{ display: 'block', height: '36px', width: 'auto', marginRight: '8px' }} />
+          <img src="/stratfit-logo.png" alt="STRATFIT" className="brand-logo-cube" style={{ display: 'block', height: '36px', width: 'auto', marginRight: '8px', animation: 'pulseGlow 3s ease-in-out infinite, float 4s ease-in-out infinite', transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)' }} />
           <div>
             <div className="sfOn-brandMark">STRATFIT</div>
             <div className="sfOn-brandSub">Onboarding</div>
