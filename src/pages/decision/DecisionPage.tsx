@@ -268,6 +268,9 @@ export default function DecisionPage() {
 
       {/* ═══ TOP BAR ═══ */}
       <div className={css.topBar}>
+        <div className={css.topBarLogo}>
+          <img src="/stratfit-logo.png" alt="STRATFIT" style={{ height: '32px', width: 'auto' }} />
+        </div>
         <nav className={css.breadcrumb}>
           <span className={css.breadcrumbLink} onClick={() => navigate("/initiate")}>INITIATE</span>
           <span className={css.breadcrumbSep}>/</span>

@@ -72,7 +72,7 @@ export default function LandingPage({ onStart, onStartWithPersona }: LandingPage
       <header className="landing-header">
         <div className="god-mode-banner">
           <div className="banner-glow" />
-          <span className="banner-icon">✦</span>
+          <img src="/stratfit-logo.png" alt="STRATFIT" style={{ height: '36px', width: 'auto', marginRight: '12px' }} />
           <span className="banner-text">STRATFIT: GOD MODE ACTIVATED</span>
           <span className="banner-icon">✦</span>
         </div>
