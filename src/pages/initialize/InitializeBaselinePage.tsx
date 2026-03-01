@@ -1,152 +1,270 @@
-import React, { useCallback, useMemo, useRef, useState } from "react"
+import React, { useCallback, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useBaselineStore } from "@/state/baselineStore"
 import css from "./IngressConsole.module.css"
 
-/* === Types === */
+/* ═══════════════════════════════════════════════════════════════════
+   TYPES
+   ═══════════════════════════════════════════════════════════════════ */
 
-type RevenueMode = "ARR" | "MRR"
-type MarketVolatility = "Low" | "Medium" | "High"
-type FundingEnv = "Tight" | "Normal" | "Loose"
-type IngressPath = "manual" | "excel" | "xero"
+type AccessToCapital = "Moderate" | "Strong"
+type HiringVelocity = "Low" | "Medium" | "High"
+type BurnFlexibility = "Fixed" | "Variable"
+type RiskTolerance = "Conservative" | "Balanced" | "Aggressive"
+type WizardStep = 1 | 2 | 3 | 4
 
 interface FormState {
+  /* Step 1 — Identity & Context */
   companyName: string
   industry: string
   stage: string
-  cashBalance: string
-  monthlyBurn: string
-  revenueValue: string
-  revenueMode: RevenueMode
-  grossMarginPct: string
-  growthRatePct: string
-  churnPct: string
-  headcount: string
-  marketVolatility: MarketVolatility
-  fundingEnvironment: FundingEnv
-  runwayConfidence: string
+
+  /* Step 2 — Financial Position */
+  cashOnHand: number
+  monthlyNetBurn: number
+  debtOutstanding: number
+  debtInterestRate: number
+  fundraisingWindow: number
+  accessToCapital: AccessToCapital
+
+  currentARR: number
+  monthlyGrowthPct: number
+  avgDealSize: number
+  monthlyChurnPct: number
+  salesEfficiency: number
+  netRevenueRetentionPct: number
+
+  headcount: number
+  avgFullyLoadedCost: number
+  salesMarketingSpend: number
+  rdSpend: number
+  gaSpend: number
+  cogsPct: number
+
+  /* Step 3 — Operating Structure */
+  hiringVelocity: HiringVelocity
+  salesRampTime: number
+  engineeringVelocity: number
+  burnFlexibility: BurnFlexibility
+
+  /* Step 4 — Strategic Intent */
+  riskTolerance: RiskTolerance
+  targetGrowthBand: number
+  priorityBalance: number
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   DEFAULTS
+   ═══════════════════════════════════════════════════════════════════ */
 
 const INITIAL: FormState = {
   companyName: "",
   industry: "",
   stage: "",
-  cashBalance: "",
-  monthlyBurn: "",
-  revenueValue: "",
-  revenueMode: "ARR",
-  grossMarginPct: "",
-  growthRatePct: "",
-  churnPct: "",
-  headcount: "",
-  marketVolatility: "Medium",
-  fundingEnvironment: "Normal",
-  runwayConfidence: "60",
+
+  cashOnHand: 500_000,
+  monthlyNetBurn: 75_000,
+  debtOutstanding: 0,
+  debtInterestRate: 0,
+  fundraisingWindow: 6,
+  accessToCapital: "Moderate",
+
+  currentARR: 1_200_000,
+  monthlyGrowthPct: 8,
+  avgDealSize: 3_200,
+  monthlyChurnPct: 3,
+  salesEfficiency: 1.0,
+  netRevenueRetentionPct: 110,
+
+  headcount: 18,
+  avgFullyLoadedCost: 140_000,
+  salesMarketingSpend: 60_000,
+  rdSpend: 80_000,
+  gaSpend: 30_000,
+  cogsPct: 45_000,
+
+  hiringVelocity: "Medium",
+  salesRampTime: 4,
+  engineeringVelocity: 4,
+  burnFlexibility: "Variable",
+
+  riskTolerance: "Balanced",
+  targetGrowthBand: 4,
+  priorityBalance: 50,
 }
 
-/* === Helpers === */
+/* ═══════════════════════════════════════════════════════════════════
+   HELPERS
+   ═══════════════════════════════════════════════════════════════════ */
 
-function toNum(v: string): number {
-  const n = Number(v.replace(/,/g, ""))
-  return Number.isFinite(n) ? n : 0
+function fmtCurrency(v: number): string {
+  if (Math.abs(v) >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`
+  return `$${Math.round(Math.abs(v)).toLocaleString()}`
 }
 
-function pctToDecimal(v: string): number {
-  return toNum(v) / 100
-}
-
-function volatilityToArpa(v: MarketVolatility): number {
-  if (v === "Low") return 2500
-  if (v === "High") return 800
-  return 1500
-}
-
-/* === Validation === */
-
-type Errors = Partial<Record<keyof FormState, string>>
-
-function validate(f: FormState): Errors {
-  const e: Errors = {}
-  if (!f.cashBalance || toNum(f.cashBalance) < 0) e.cashBalance = "Cash balance is required"
-  if (!f.monthlyBurn || toNum(f.monthlyBurn) <= 0) e.monthlyBurn = "Monthly burn must be > 0"
-  if (!f.revenueValue) e.revenueValue = "Revenue is required"
-  if (f.grossMarginPct === "" || toNum(f.grossMarginPct) < 0 || toNum(f.grossMarginPct) > 100)
-    e.grossMarginPct = "Gross margin must be 0-100%"
-  if (f.growthRatePct === "") e.growthRatePct = "Growth rate is required"
-  if (f.churnPct === "" || toNum(f.churnPct) < 0 || toNum(f.churnPct) > 100)
-    e.churnPct = "Churn must be 0-100%"
-  if (!f.headcount || toNum(f.headcount) <= 0) e.headcount = "Headcount must be > 0"
-  return e
-}
-
-/* === Readiness === */
-
-interface ReadinessField {
-  key: string
-  label: string
-  check: (f: FormState) => boolean
-  critical: boolean
-}
-
-const READINESS_FIELDS: ReadinessField[] = [
-  { key: "cash",      label: "Cash Balance",  check: (f) => !!f.cashBalance && toNum(f.cashBalance) >= 0, critical: true },
-  { key: "burn",      label: "Monthly Burn",  check: (f) => !!f.monthlyBurn && toNum(f.monthlyBurn) > 0,  critical: true },
-  { key: "revenue",   label: "Revenue",       check: (f) => !!f.revenueValue && toNum(f.revenueValue) > 0, critical: true },
-  { key: "margin",    label: "Gross Margin",  check: (f) => f.grossMarginPct !== "" && toNum(f.grossMarginPct) >= 0 && toNum(f.grossMarginPct) <= 100, critical: true },
-  { key: "growth",    label: "Growth Rate",   check: (f) => f.growthRatePct !== "",                       critical: true },
-  { key: "churn",     label: "Churn Rate",    check: (f) => f.churnPct !== "" && toNum(f.churnPct) >= 0,   critical: false },
-  { key: "headcount", label: "Headcount",     check: (f) => !!f.headcount && toNum(f.headcount) > 0,      critical: false },
-  { key: "company",   label: "Company Name",  check: (f) => f.companyName.trim().length > 0,               critical: false },
-  { key: "industry",  label: "Industry",      check: (f) => f.industry.trim().length > 0,                  critical: false },
-]
-
-function computeReadiness(f: FormState): { score: number; present: string[]; missing: string[] } {
-  const present: string[] = []
-  const missing: string[] = []
-  for (const field of READINESS_FIELDS) {
-    if (field.check(f)) present.push(field.key)
-    else missing.push(field.key)
+function sliderFill(value: number, min: number, max: number): React.CSSProperties {
+  const pct = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100))
+  return {
+    background: `linear-gradient(90deg, #22d3ee 0%, #22d3ee ${pct}%, rgba(255,255,255,0.08) ${pct}%, rgba(255,255,255,0.08) 100%)`,
   }
-  const score = Math.round((present.length / READINESS_FIELDS.length) * 100)
-  return { score, present, missing }
 }
 
-const READINESS_THRESHOLD = 56
+function computeMetrics(f: FormState) {
+  const runway = f.monthlyNetBurn > 0 ? f.cashOnHand / f.monthlyNetBurn : 0
+  const monthlyRevGrowth = (f.monthlyGrowthPct / 100) * (f.currentARR / 12)
+  const burnMultiple =
+    monthlyRevGrowth > 0 ? f.monthlyNetBurn / monthlyRevGrowth : 0
 
-/* === Example decisions === */
+  let prob = 0
+  if (runway >= 24) prob = 80
+  else if (runway >= 18) prob = 65
+  else if (runway >= 12) prob = 45
+  else if (runway >= 6) prob = 25
+  else prob = Math.max(0, Math.round((runway / 6) * 25))
+  if (f.monthlyGrowthPct > 5) prob += 8
+  if (f.netRevenueRetentionPct > 100) prob += 7
+  if (f.monthlyChurnPct < 3) prob += 5
+  prob = Math.min(100, prob)
 
-const EXAMPLE_DECISIONS = [
-  { group: "Financial", items: [
-    "Can we hire 3 engineers without cutting runway below 12 months?",
-    "What happens if churn rises by 1% for two quarters?",
-  ]},
-  { group: "Strategic", items: [
-    "Should we expand into a new segment this year?",
-    "What if pricing increases by 8% with churn sensitivity?",
-  ]},
-  { group: "Operational", items: [
-    "Can we reduce burn by 10% without breaking growth momentum?",
-    "What if delivery capacity improves by 15%?",
-  ]},
+  return {
+    runway: Number.isFinite(runway) ? runway : 0,
+    burnMultiple: Number.isFinite(burnMultiple) ? burnMultiple : 0,
+    monthlyBurn: f.monthlyNetBurn,
+    survivalProbability: prob,
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   WIZARD CONFIG
+   ═══════════════════════════════════════════════════════════════════ */
+
+const WIZARD_STEPS: { num: WizardStep; label: string }[] = [
+  { num: 1, label: "Identity & Context" },
+  { num: 2, label: "Financial Position" },
+  { num: 3, label: "Operating Structure" },
+  { num: 4, label: "Strategic Intent" },
 ]
 
-/* === Component === */
+const STAGES = [
+  "Pre-Seed", "Seed", "Series A", "Series B", "Series C+", "Growth", "Bootstrapped",
+]
+const INDUSTRIES = [
+  "SaaS", "Fintech", "HealthTech", "EdTech", "E-Commerce",
+  "AI / ML", "DevTools", "Marketplace", "Hardware", "Other",
+]
+
+/* ═══════════════════════════════════════════════════════════════════
+   SUB-COMPONENTS
+   ═══════════════════════════════════════════════════════════════════ */
+
+interface SliderRowProps {
+  label: string
+  value: number
+  min: number
+  max: number
+  step: number
+  format: (v: number) => string
+  onChange: (v: number) => void
+  showScale?: boolean
+}
+
+function SliderRow({
+  label, value, min, max, step, format, onChange, showScale = true,
+}: SliderRowProps) {
+  return (
+    <div className={css.sliderRow}>
+      <span className={css.sliderLabel}>{label}</span>
+      <div className={css.sliderControl}>
+        <input
+          type="range"
+          className={css.sliderInput}
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          style={sliderFill(value, min, max)}
+          onChange={(e) => onChange(Number(e.target.value))}
+        />
+        {showScale && (
+          <div className={css.sliderScale}>
+            <span>LOW</span>
+            <span>NEUTRAL</span>
+            <span>HIGH</span>
+          </div>
+        )}
+      </div>
+      <span className={css.sliderValue}>{format(value)}</span>
+    </div>
+  )
+}
+
+interface InputRowProps {
+  label: string
+  value: number | string
+  prefix?: string
+  suffix?: string
+  type?: string
+  placeholder?: string
+  onChange: (v: string) => void
+}
+
+function InputRow({
+  label, value, prefix, suffix, type = "number", placeholder, onChange,
+}: InputRowProps) {
+  return (
+    <div className={css.inputRow}>
+      <span className={css.inputLabel}>{label}</span>
+      <div className={css.inputFieldWrap}>
+        {prefix && <span className={css.inputPrefix}>{prefix}</span>}
+        <input
+          className={css.inputField}
+          type={type}
+          value={value}
+          placeholder={placeholder}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        {suffix && <span className={css.inputSuffix}>{suffix}</span>}
+      </div>
+    </div>
+  )
+}
+
+interface ToggleGroupProps<T extends string> {
+  options: T[]
+  value: T
+  onChange: (v: T) => void
+}
+
+function ToggleGroup<T extends string>({
+  options, value, onChange,
+}: ToggleGroupProps<T>) {
+  return (
+    <div className={css.toggleGroup}>
+      {options.map((opt) => (
+        <button
+          key={opt}
+          type="button"
+          className={`${css.toggleOption} ${value === opt ? css.toggleOptionActive : ""}`}
+          onClick={() => onChange(opt)}
+        >
+          {opt}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   MAIN COMPONENT
+   ═══════════════════════════════════════════════════════════════════ */
 
 export default function InitializeBaselinePage() {
   const navigate = useNavigate()
   const setBaseline = useBaselineStore((s) => s.setBaseline)
-  const formRef = useRef<HTMLDivElement>(null)
 
   const [form, setForm] = useState<FormState>({ ...INITIAL })
-  const [touched, setTouched] = useState(false)
-  const [activePath, setActivePath] = useState<IngressPath>("manual")
-
-  const errors = useMemo(() => validate(form), [form])
-  const hasErrors = Object.keys(errors).length > 0
-  const showErrors = touched && hasErrors
-
-  const readiness = useMemo(() => computeReadiness(form), [form])
-  const canProceed = readiness.score >= READINESS_THRESHOLD && !hasErrors
+  const [activeStep, setActiveStep] = useState<WizardStep>(2)
+  const [costExpanded, setCostExpanded] = useState(true)
 
   const update = useCallback(
     <K extends keyof FormState>(key: K, value: FormState[K]) => {
@@ -155,446 +273,690 @@ export default function InitializeBaselinePage() {
     [],
   )
 
-  const handleProceed = useCallback(() => {
-    setTouched(true)
-    if (Object.keys(validate(form)).length > 0) return
+  const metrics = useMemo(() => computeMetrics(form), [form])
 
-    const monthlyRevenue =
-      form.revenueMode === "ARR" ? toNum(form.revenueValue) / 12 : toNum(form.revenueValue)
+  const revenuePerEmployee =
+    form.headcount > 0 ? Math.round(form.currentARR / form.headcount) : 0
+  const totalCost =
+    form.headcount * form.avgFullyLoadedCost +
+    form.salesMarketingSpend +
+    form.rdSpend +
+    form.gaSpend
+  const operatingProfit = form.currentARR - totalCost
 
+  const handleLock = useCallback(() => {
     setBaseline({
-      cash: toNum(form.cashBalance),
-      monthlyBurn: toNum(form.monthlyBurn),
-      revenue: monthlyRevenue,
-      grossMargin: pctToDecimal(form.grossMarginPct),
-      growthRate: pctToDecimal(form.growthRatePct),
-      churnRate: pctToDecimal(form.churnPct),
-      headcount: Math.round(toNum(form.headcount)),
-      arpa: volatilityToArpa(form.marketVolatility),
+      cash: form.cashOnHand,
+      monthlyBurn: form.monthlyNetBurn,
+      revenue: form.currentARR / 12,
+      grossMargin: 0.7,
+      growthRate: form.monthlyGrowthPct / 100,
+      churnRate: form.monthlyChurnPct / 100,
+      headcount: form.headcount,
+      arpa: form.avgDealSize || 1500,
     })
-
     navigate("/decision", { replace: true })
   }, [form, navigate, setBaseline])
 
-  const scrollToForm = useCallback(() => {
-    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-  }, [])
+  const canGoNext = activeStep < 4
+  const canGoBack = activeStep > 1
 
-  const field = (
-    key: keyof FormState,
-    label: string,
-    opts?: { placeholder?: string; type?: string; min?: string; max?: string },
-  ) => (
-    <label className={css.formLabel}>
-      {label}
-      <input
-        className={`${css.formInput} ${showErrors && errors[key] ? css.formInputError : ""}`}
-        type={opts?.type ?? "text"}
-        inputMode={opts?.type === "number" ? "decimal" : undefined}
-        placeholder={opts?.placeholder}
-        min={opts?.min}
-        max={opts?.max}
-        value={form[key]}
-        onChange={(e) => update(key, e.target.value as never)}
-      />
-      {showErrors && errors[key] && <span className={css.fieldError}>{errors[key]}</span>}
-    </label>
-  )
-
-  const liveRunway = useMemo(() => {
-    const cash = toNum(form.cashBalance)
-    const burn = toNum(form.monthlyBurn)
-    return burn > 0 ? Math.round(cash / burn) : null
-  }, [form.cashBalance, form.monthlyBurn])
-
-  const readinessColor = readiness.score >= 80 ? "#34d399"
-    : readiness.score >= READINESS_THRESHOLD ? "#22d3ee"
-    : "#f87171"
+  /* ══════════════════ RENDER ══════════════════ */
 
   return (
     <div className={css.page}>
+      <div className={css.chromeFrame}>
+        <div className={css.mainLayout}>
 
-      {/* ================================================================
-          TOP NAV BAR
-          ================================================================ */}
-      <nav className={css.navBar}>
-        <div className={css.navLeft}>
-          <div className={css.navGlyph}>
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><polygon points="8,2 14,13 2,13" stroke="rgba(34,211,238,0.7)" strokeWidth="1.5" fill="rgba(34,211,238,0.08)"/></svg>
-          </div>
-          <span className={css.navWordmark}>STRATFIT</span>
-        </div>
-        <div className={css.navBreadcrumb}>
-          <span className={css.navBreadcrumbActive}>Initiate</span>
-          <span className={css.navBreadcrumbSep}>/</span>
-          <span className={css.navBreadcrumbMuted}>Scenario Ingress</span>
-        </div>
-        <div className={css.navRight}>
-          <span className={css.navPill}>God Mode &bull; v1</span>
-          <button type="button" className={css.navHelpBtn} title="Help">?</button>
-        </div>
-      </nav>
-
-      {/* ================================================================
-          PAGE HEADER
-          ================================================================ */}
-      <div className={css.headerArea}>
-        <div className={css.headerRow}>
-          <div>
-            <div className={css.systemBadge}>
-              <span className={css.systemBadgeDot} />
-              System Calibration
-            </div>
-            <h1 className={css.pageTitle}>Initiate Scenario</h1>
-            <p className={css.pageSubtitle}>
-              Upload or enter baseline data to generate probability-first decision signals.
-            </p>
-          </div>
-        </div>
-        <div className={css.tagStrip}>
-          <span className={css.tag}>Financial</span>
-          <span className={css.tag}>Strategic</span>
-          <span className={css.tag}>Operational</span>
-        </div>
-        <div className={css.headerDivider} />
-      </div>
-
-      {/* ================================================================
-          THREE-COLUMN CONSOLE GRID
-          ================================================================ */}
-      <div className={css.consoleGrid}>
-
-        {/* ────────────────────────────────────────
-            LEFT RAIL - Ingress Modes
-            ──────────────────────────────────────── */}
-        <div className={css.leftRail}>
-          <div className={css.glassPanel}>
-            <div className={css.glassPanelInner}>
-              <div className={css.sectionTitle}>
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h8" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" strokeLinecap="round"/></svg>
-                Ingress Modes
-              </div>
-              <div className={css.ingressCards}>
-                {/* Manual Entry */}
-                <div
-                  className={`${css.ingressCard} ${activePath === "manual" ? css.ingressCardActive : ""}`}
-                  onClick={() => { setActivePath("manual"); scrollToForm() }}
-                  role="button"
-                  tabIndex={0}
-                >
-                  <div className={css.ingressCardHeader}>
-                    <span className={css.ingressCardTitle}>Manual Entry</span>
-                    <span className={css.ingressCardBadge}>Active</span>
-                  </div>
-                  <div className={css.ingressCardDesc}>Enter baseline financials directly.</div>
+          {/* ═══════════ SIDEBAR ═══════════ */}
+          <aside className={css.sidebar}>
+            <div className={css.sidebarHeader}>
+              <div className={css.sidebarLogo}>
+                <div className={css.sidebarLogoIcon}>
+                  <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                    <path
+                      d="M14 3L25 14L14 25L3 14L14 3Z"
+                      stroke="rgba(34,211,238,0.6)"
+                      strokeWidth="1.5"
+                      fill="rgba(34,211,238,0.06)"
+                    />
+                    <path
+                      d="M14 8L21 14L14 21L7 14L14 8Z"
+                      stroke="rgba(34,211,238,0.35)"
+                      strokeWidth="1"
+                      fill="rgba(34,211,238,0.03)"
+                    />
+                    <rect x="12" y="12" width="4" height="4" rx="1" fill="rgba(34,211,238,0.25)" />
+                  </svg>
                 </div>
-
-                {/* Excel Template */}
-                <div
-                  className={`${css.ingressCard} ${activePath === "excel" ? css.ingressCardActive : ""}`}
-                  onClick={() => setActivePath("excel")}
-                  role="button"
-                  tabIndex={0}
-                >
-                  <div className={css.ingressCardHeader}>
-                    <span className={css.ingressCardTitle}>Excel Template</span>
-                    <span className={css.ingressCardBadge}>Available</span>
-                  </div>
-                  <div className={css.ingressCardDesc}>Download template, fill offline, upload.</div>
-                </div>
-
-                {/* Xero */}
-                <div className={`${css.ingressCard} ${css.ingressCardDisabled}`}>
-                  <div className={css.ingressCardHeader}>
-                    <span className={css.ingressCardTitle}>
-                      <span style={{ marginRight: 5, opacity: 0.4 }}>{"\uD83D\uDD12"}</span>
-                      Xero Integration
-                    </span>
-                    <span className={`${css.ingressCardBadge} ${css.ingressCardBadgeDisabled}`}>Coming Soon</span>
-                  </div>
-                  <div className={css.ingressCardDesc}>Automated baseline pull from Xero.</div>
+                <div>
+                  <div className={css.sidebarWordmark}>STRATFIT</div>
+                  <div className={css.sidebarSubtitle}>Baseline Initialization</div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* ────────────────────────────────────────
-            CENTER - Ingress Workspace
-            ──────────────────────────────────────── */}
-        <div>
-          <div className={css.glassPanel}>
-            <div className={css.glassPanelInner}>
-              <div className={css.sectionTitle}>
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="3" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" fill="none"/><path d="M5 6h6M5 9h4" stroke="rgba(34,211,238,0.6)" strokeWidth="1" strokeLinecap="round"/></svg>
-                Ingress Workspace
+            <nav className={css.wizardNav}>
+              {WIZARD_STEPS.map((step) => (
+                <button
+                  key={step.num}
+                  type="button"
+                  className={`${css.wizardStep} ${activeStep === step.num ? css.wizardStepActive : ""} ${activeStep > step.num ? css.wizardStepDone : ""}`}
+                  onClick={() => setActiveStep(step.num)}
+                >
+                  <span className={css.wizardStepNum}>
+                    {activeStep > step.num ? "\u2713" : step.num}
+                  </span>
+                  <span className={css.wizardStepLabel}>{step.label}</span>
+                </button>
+              ))}
+            </nav>
+          </aside>
+
+          {/* ═══════════ CONTENT ═══════════ */}
+          <main className={css.content}>
+            {/* ── Header ── */}
+            <header className={css.contentHeader}>
+              <h1 className={css.contentTitle}>INITIALIZE BASELINE</h1>
+              <p className={css.contentSubtitle}>
+                Enter your current financial truth to anchor scenario modeling.
+              </p>
+            </header>
+
+            {/* ── Live Metrics Strip ── */}
+            <div className={css.metricsStrip}>
+              <div className={css.metricItem}>
+                <span className={css.metricIcon}>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M7 1v5l3.5 2" stroke="#22d3ee" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                    <circle cx="7" cy="7" r="5.5" stroke="#22d3ee" strokeWidth="1.2" opacity="0.5"/>
+                  </svg>
+                </span>
+                <span
+                  className={css.metricValue}
+                  style={{
+                    color:
+                      metrics.runway < 6
+                        ? "#f87171"
+                        : metrics.runway < 12
+                          ? "#fbbf24"
+                          : "#22d3ee",
+                  }}
+                >
+                  {metrics.runway.toFixed(1)}
+                </span>
+                <span className={css.metricUnit}>months</span>
               </div>
 
-              {/* ── Manual Entry Mode ── */}
-              {activePath === "manual" && (
-                <div ref={formRef}>
-                  {/* Company Snapshot */}
-                  <div className={css.formSection}>
-                    <div className={css.formSectionTitle}>Company Snapshot <span style={{ opacity: 0.4 }}>(optional)</span></div>
-                    <div className={css.formGrid}>
-                      {field("companyName", "Company Name", { placeholder: "e.g. Acme Inc." })}
-                      <div className={css.formRow}>
-                        {field("industry", "Industry", { placeholder: "e.g. SaaS, Fintech" })}
-                        {field("stage", "Stage", { placeholder: "e.g. Seed, Series A" })}
-                      </div>
-                    </div>
-                  </div>
+              <div className={css.metricItem}>
+                <span className={css.metricLabel}>BURN MULTIPLE</span>
+                <span className={css.metricValue}>
+                  {metrics.burnMultiple.toFixed(2)} x
+                </span>
+              </div>
 
-                  {/* Financial Baseline */}
-                  <div className={css.formSection}>
-                    <div className={css.formSectionTitle}>Financial Baseline</div>
-                    <div className={css.formGrid}>
-                      {field("cashBalance", "Cash Balance ($)", { placeholder: "e.g. 500000", type: "number", min: "0" })}
-                      {field("monthlyBurn", "Monthly Burn ($)", { placeholder: "e.g. 25000", type: "number", min: "0" })}
-                      <div className={css.formRow}>
-                        <label className={css.formLabel}>
-                          Revenue ({form.revenueMode})
-                          <input
-                            className={`${css.formInput} ${showErrors && errors.revenueValue ? css.formInputError : ""}`}
-                            type="number"
-                            placeholder={form.revenueMode === "ARR" ? "e.g. 240000" : "e.g. 20000"}
-                            value={form.revenueValue}
-                            onChange={(e) => update("revenueValue", e.target.value)}
-                          />
-                          {showErrors && errors.revenueValue && <span className={css.fieldError}>{errors.revenueValue}</span>}
-                        </label>
-                        <label className={css.formLabel}>
-                          Revenue Type
-                          <select className={css.formSelect} value={form.revenueMode} onChange={(e) => update("revenueMode", e.target.value as RevenueMode)}>
-                            <option value="ARR">ARR (Annual)</option>
-                            <option value="MRR">MRR (Monthly)</option>
-                          </select>
-                        </label>
-                      </div>
-                      {field("grossMarginPct", "Gross Margin (%)", { placeholder: "e.g. 70", type: "number", min: "0", max: "100" })}
-                    </div>
-                  </div>
+              <div className={css.metricItem}>
+                <span className={css.metricLabel}>$ MONTHLY BURN</span>
+                <span className={css.metricValue}>
+                  {fmtCurrency(metrics.monthlyBurn)}
+                </span>
+              </div>
 
-                  {/* Growth & Stability */}
-                  <div className={css.formSection}>
-                    <div className={css.formSectionTitle}>Growth &amp; Stability</div>
-                    <div className={css.formGrid}>
-                      <div className={css.formRow}>
-                        {field("growthRatePct", "Monthly Growth (%)", { placeholder: "e.g. 5", type: "number" })}
-                        {field("churnPct", "Monthly Churn (%)", { placeholder: "e.g. 3", type: "number", min: "0", max: "100" })}
-                      </div>
-                      {field("headcount", "Headcount", { placeholder: "e.g. 12", type: "number", min: "1" })}
-                    </div>
-                  </div>
+              <div className={css.metricItem}>
+                <span className={css.metricLabel}>SURVIVAL PROBABILITY</span>
+                <span className={css.metricValue}>
+                  {metrics.survivalProbability} %
+                </span>
+              </div>
+            </div>
 
-                  {/* Live Metric Preview Strip */}
-                  {liveRunway !== null && (
-                    <>
-                      <div className={css.metricStrip}>
-                        <div className={css.metricCell}>
-                          <div className={css.metricCellLabel}>Runway</div>
-                          <div className={css.metricCellValue} style={{ color: liveRunway < 6 ? "#f87171" : liveRunway < 12 ? "#fbbf24" : "#22d3ee" }}>
-                            {liveRunway}<span className={css.metricCellUnit}>mo</span>
-                          </div>
-                        </div>
-                        <div className={css.metricCell}>
-                          <div className={css.metricCellLabel}>Monthly Burn</div>
-                          <div className={css.metricCellValue}>
-                            {toNum(form.monthlyBurn) > 0 ? `$${Math.round(toNum(form.monthlyBurn) / 1000)}k` : "—"}
-                          </div>
-                        </div>
-                        <div className={css.metricCell}>
-                          <div className={css.metricCellLabel}>Cash</div>
-                          <div className={css.metricCellValue}>
-                            {toNum(form.cashBalance) > 0 ? `$${(toNum(form.cashBalance) / 1000000).toFixed(1)}M` : "—"}
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  {/* Risk Environment */}
-                  <div className={css.formSection}>
-                    <div className={css.formSectionTitle}>Risk Environment</div>
-                    <div className={css.formRow}>
-                      <label className={css.formLabel}>
-                        Market Volatility
-                        <select className={css.formSelect} value={form.marketVolatility} onChange={(e) => update("marketVolatility", e.target.value as MarketVolatility)}>
-                          <option value="Low">Low</option>
-                          <option value="Medium">Medium</option>
-                          <option value="High">High</option>
-                        </select>
-                      </label>
-                      <label className={css.formLabel}>
-                        Funding Environment
-                        <select className={css.formSelect} value={form.fundingEnvironment} onChange={(e) => update("fundingEnvironment", e.target.value as FundingEnv)}>
-                          <option value="Tight">Tight</option>
-                          <option value="Normal">Normal</option>
-                          <option value="Loose">Loose</option>
-                        </select>
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* Runway Confidence */}
-                  <div className={css.formSection}>
-                    <div className={css.formSectionTitle}>Runway Confidence <span style={{ opacity: 0.4 }}>(optional)</span></div>
-                    <label className={css.formLabel}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                        <span>Confidence in runway estimate</span>
-                        <span className={css.confidenceValue}>{form.runwayConfidence}%</span>
-                      </div>
+            {/* ═══════════════════════════════════════════════════════
+                STEP 1 — Identity & Context
+                ═══════════════════════════════════════════════════════ */}
+            {activeStep === 1 && (
+              <div className={css.stepContent}>
+                <div className={css.singlePanel}>
+                  <h3 className={css.panelTitle}>IDENTITY &amp; CONTEXT</h3>
+                  <div className={css.identityGrid}>
+                    <label className={css.identityLabel}>
+                      <span className={css.identityLabelText}>Company Name</span>
                       <input
-                        type="range" min="0" max="100"
-                        className={css.confidenceSlider}
-                        value={form.runwayConfidence}
-                        onChange={(e) => update("runwayConfidence", e.target.value)}
+                        className={css.identityInput}
+                        type="text"
+                        placeholder="e.g. Acme Inc."
+                        value={form.companyName}
+                        onChange={(e) => update("companyName", e.target.value)}
                       />
-                      <div className={css.confidenceLabels}>
-                        <span>Uncertain</span>
-                        <span>Very Confident</span>
-                      </div>
+                    </label>
+                    <label className={css.identityLabel}>
+                      <span className={css.identityLabelText}>Industry</span>
+                      <select
+                        className={css.identitySelect}
+                        value={form.industry}
+                        onChange={(e) => update("industry", e.target.value)}
+                      >
+                        <option value="">Select industry…</option>
+                        {INDUSTRIES.map((i) => (
+                          <option key={i} value={i}>{i}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className={css.identityLabel}>
+                      <span className={css.identityLabelText}>Stage</span>
+                      <select
+                        className={css.identitySelect}
+                        value={form.stage}
+                        onChange={(e) => update("stage", e.target.value)}
+                      >
+                        <option value="">Select stage…</option>
+                        {STAGES.map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
                     </label>
                   </div>
                 </div>
-              )}
-
-              {/* ── Excel Template Mode ── */}
-              {activePath === "excel" && (
-                <div className={css.excelPanel}>
-                  <div className={css.excelBtnRow}>
-                    <button type="button" className={css.excelBtnOutline}>Download Template</button>
-                    <button type="button" className={css.excelBtnSolid}>Upload File</button>
-                  </div>
-                  <div className={css.excelFormats}>Accepted formats: .xlsx, .csv</div>
-                  <div className={css.excelUploadSlot}>
-                    No file uploaded. Drag and drop or use the Upload button above.
-                  </div>
-                </div>
-              )}
-
-              {/* ── Xero Mode (locked) ── */}
-              {activePath === "xero" && (
-                <div className={css.xeroLocked}>
-                  <div className={css.xeroLockedTitle}>Xero Integration Coming Soon</div>
-                  <ul className={css.xeroBullets}>
-                    <li className={css.xeroBullet}><span className={css.xeroBulletDot} /> Connect Xero for automated baseline pull</li>
-                    <li className={css.xeroBullet}><span className={css.xeroBulletDot} /> Sync chart of accounts &amp; run rate metrics</li>
-                  </ul>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* ────────────────────────────────────────
-            RIGHT RAIL - Readiness + Guidance
-            ──────────────────────────────────────── */}
-        <div className={css.rightRail}>
-
-          {/* Scenario Readiness */}
-          <div className={`${css.glassPanel} ${css.readinessPanel}`}>
-            <div className={css.glassPanelInner}>
-              <div className={css.sectionTitle}>
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" fill="none"/><path d="M8 5v3.5l2.5 1.5" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" strokeLinecap="round"/></svg>
-                Scenario Readiness
               </div>
-              <div className={css.readinessMeterBar}>
-                <div className={css.readinessMeterFill} style={{ width: `${readiness.score}%`, background: readinessColor }} />
-              </div>
-              <div className={css.readinessScore}>
-                <span className={css.readinessScoreValue} style={{ color: readinessColor }}>{readiness.score}%</span>
-                <span className={css.readinessScoreLabel}>
-                  {readiness.score >= 80 ? "Ready" : readiness.score >= READINESS_THRESHOLD ? "Minimum Met" : "Incomplete"}
-                </span>
-              </div>
-              <ul className={css.readinessFieldList}>
-                {READINESS_FIELDS.map((rf) => {
-                  const isPresent = readiness.present.includes(rf.key)
-                  return (
-                    <li key={rf.key} className={css.readinessFieldItem}>
-                      <span className={`${css.readinessFieldCheck} ${isPresent ? css.readinessFieldPresent : css.readinessFieldMissing}`}>
-                        {isPresent ? "\u2713" : "\u2013"}
-                      </span>
-                      <span style={{ color: isPresent ? "rgba(255,255,255,0.65)" : undefined }}>
-                        {rf.label}
-                        {rf.critical && !isPresent && <span style={{ color: "#f87171", marginLeft: 4, fontSize: 9 }}>required</span>}
-                      </span>
-                    </li>
-                  )
-                })}
-              </ul>
-              <div className={css.readinessHint}>
-                {readiness.score < READINESS_THRESHOLD
-                  ? "Fill the required fields to unlock the decision engine."
-                  : "Baseline is sufficient. Additional fields improve simulation accuracy."
-                }
-              </div>
-              <div className={css.readinessMinLine}>Minimum: {READINESS_THRESHOLD}% to proceed</div>
-            </div>
-          </div>
-
-          {/* What happens next */}
-          <div className={`${css.glassPanel} ${css.stepsCard}`}>
-            <div className={css.glassPanelInner}>
-              <div className={css.sectionTitle}>
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 2v12M4 8h8l-3-3M4 8h8l-3 3" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                What Happens Next
-              </div>
-              <ol className={css.stepsList}>
-                <li className={css.stepItem}><span className={css.stepNumber}>1</span> Define a strategic decision</li>
-                <li className={css.stepItem}><span className={css.stepNumber}>2</span> Adjust scenario levers</li>
-                <li className={css.stepItem}><span className={css.stepNumber}>3</span> Run the probability model</li>
-                <li className={css.stepItem}><span className={css.stepNumber}>4</span> Read probability signals</li>
-              </ol>
-            </div>
-          </div>
-
-          {/* Example decisions */}
-          <div className={`${css.glassPanel} ${css.examplesCard}`}>
-            <div className={css.glassPanelInner}>
-              <div className={css.sectionTitle}>
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 3h10v10H3z" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" fill="none" rx="2"/><path d="M6 6h4M6 9h2" stroke="rgba(34,211,238,0.6)" strokeWidth="1" strokeLinecap="round"/></svg>
-                Example Decisions
-              </div>
-              {EXAMPLE_DECISIONS.map((group) => (
-                <div key={group.group} className={css.exampleGroup}>
-                  <div className={css.exampleGroupLabel}>{group.group}</div>
-                  {group.items.map((item) => (
-                    <div key={item} className={css.exampleItem}>{item}</div>
-                  ))}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ================================================================
-          FOOTER ACTION BAR
-          ================================================================ */}
-      <div className={css.footerBar}>
-        <div className={css.footerInner}>
-          <div className={css.footerLeft}>
-            <span className={css.footerDraftDot} />
-            Data saved locally
-          </div>
-          <div className={css.footerRight}>
-            {showErrors && (
-              <div className={css.footerErrorBanner}>Fix highlighted fields before proceeding.</div>
             )}
-            {!canProceed && (
-              <span className={css.btnDisabledHint}>Complete at least {READINESS_THRESHOLD}% readiness to proceed</span>
+
+            {/* ═══════════════════════════════════════════════════════
+                STEP 2 — Financial Position
+                ═══════════════════════════════════════════════════════ */}
+            {activeStep === 2 && (
+              <div className={css.stepContent}>
+                <div className={css.panelGrid}>
+
+                  {/* ── LIQUIDITY & FUNDING ── */}
+                  <div className={css.sectionPanel}>
+                    <h3 className={css.panelTitle}>LIQUIDITY &amp; FUNDING</h3>
+
+                    <SliderRow
+                      label="Cash on Hand"
+                      value={form.cashOnHand}
+                      min={0} max={5_000_000} step={10_000}
+                      format={fmtCurrency}
+                      onChange={(v) => update("cashOnHand", v)}
+                    />
+                    <SliderRow
+                      label="Monthly Net Burn"
+                      value={form.monthlyNetBurn}
+                      min={0} max={500_000} step={1_000}
+                      format={fmtCurrency}
+                      onChange={(v) => update("monthlyNetBurn", v)}
+                    />
+
+                    <div className={css.panelDivider} />
+
+                    <InputRow
+                      label="Debt Outstanding"
+                      value={form.debtOutstanding}
+                      prefix="$"
+                      onChange={(v) => update("debtOutstanding", Number(v) || 0)}
+                    />
+                    <InputRow
+                      label="Interest Rate"
+                      value={form.debtInterestRate}
+                      suffix="%"
+                      onChange={(v) => update("debtInterestRate", Number(v) || 0)}
+                    />
+
+                    <div className={css.inputRow}>
+                      <span className={css.inputLabel}>Fundraising Window</span>
+                      <div className={css.incrGroup}>
+                        <button
+                          type="button"
+                          className={css.incrBtn}
+                          onClick={() =>
+                            update(
+                              "fundraisingWindow",
+                              Math.max(0, form.fundraisingWindow - 1),
+                            )
+                          }
+                        >
+                          &minus;
+                        </button>
+                        <span className={css.incrValue}>
+                          {form.fundraisingWindow} months
+                        </span>
+                        <button
+                          type="button"
+                          className={css.incrBtn}
+                          onClick={() =>
+                            update("fundraisingWindow", form.fundraisingWindow + 1)
+                          }
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className={css.inputRow}>
+                      <span className={css.inputLabel}>Access to Capital</span>
+                      <ToggleGroup
+                        options={["Moderate", "Strong"] as AccessToCapital[]}
+                        value={form.accessToCapital}
+                        onChange={(v) => update("accessToCapital", v)}
+                      />
+                    </div>
+
+                    <div className={css.panelDivider} />
+                    <div className={css.derivedRow}>
+                      <span className={css.derivedLabel}>&#8901; Runway</span>
+                      <span className={css.derivedValue}>
+                        {metrics.runway.toFixed(1)} months
+                        &nbsp;&nbsp;{metrics.burnMultiple.toFixed(1)}x
+                      </span>
+                    </div>
+                    {form.debtOutstanding > 0 && (
+                      <div className={css.derivedRow}>
+                        <span className={css.derivedLabel}>
+                          &#8901; Monthly Interest Burden
+                        </span>
+                        <span className={css.derivedValue}>
+                          {fmtCurrency(
+                            (form.debtOutstanding * (form.debtInterestRate / 100)) / 12,
+                          )}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ── REVENUE ENGINE ── */}
+                  <div className={css.sectionPanel}>
+                    <h3 className={css.panelTitle}>REVENUE ENGINE</h3>
+
+                    <SliderRow
+                      label="Current ARR"
+                      value={form.currentARR}
+                      min={0} max={10_000_000} step={10_000}
+                      format={fmtCurrency}
+                      onChange={(v) => update("currentARR", v)}
+                    />
+                    <SliderRow
+                      label="Monthly Growth %"
+                      value={form.monthlyGrowthPct}
+                      min={0} max={30} step={0.1}
+                      format={(v) => `${v.toFixed(1)}%`}
+                      onChange={(v) => update("monthlyGrowthPct", v)}
+                    />
+                    <InputRow
+                      label="Average Deal Size (ACV)"
+                      value={form.avgDealSize}
+                      prefix="$"
+                      onChange={(v) => update("avgDealSize", Number(v) || 0)}
+                    />
+                    <SliderRow
+                      label="Monthly Churn %"
+                      value={form.monthlyChurnPct}
+                      min={0} max={15} step={0.1}
+                      format={(v) => `${v.toFixed(1)}%`}
+                      onChange={(v) => update("monthlyChurnPct", v)}
+                    />
+                    <SliderRow
+                      label="Sales Efficiency"
+                      value={form.salesEfficiency}
+                      min={0} max={3} step={0.1}
+                      format={(v) => `${v.toFixed(1)}x`}
+                      onChange={(v) => update("salesEfficiency", v)}
+                    />
+                    <SliderRow
+                      label="Net Revenue Retention %"
+                      value={form.netRevenueRetentionPct}
+                      min={50} max={200} step={1}
+                      format={(v) => `${v}%`}
+                      onChange={(v) => update("netRevenueRetentionPct", v)}
+                    />
+                  </div>
+
+                  {/* ── COST STRUCTURE ── */}
+                  <div className={css.sectionPanel}>
+                    <button
+                      type="button"
+                      className={css.panelTitleBtn}
+                      onClick={() => setCostExpanded((p) => !p)}
+                    >
+                      <h3 className={css.panelTitle}>COST STRUCTURE</h3>
+                      <span
+                        className={css.expandChevron}
+                        style={{
+                          transform: costExpanded ? "rotate(180deg)" : "rotate(0)",
+                        }}
+                      >
+                        &#9660;
+                      </span>
+                    </button>
+
+                    {costExpanded && (
+                      <>
+                        <InputRow
+                          label="Headcount"
+                          value={form.headcount}
+                          onChange={(v) => update("headcount", Number(v) || 0)}
+                        />
+                        <InputRow
+                          label="Avg Fully Loaded Cost"
+                          value={form.avgFullyLoadedCost}
+                          prefix="$"
+                          onChange={(v) =>
+                            update("avgFullyLoadedCost", Number(v) || 0)
+                          }
+                        />
+                        <InputRow
+                          label="Sales & Marketing Spend"
+                          value={form.salesMarketingSpend}
+                          prefix="$"
+                          onChange={(v) =>
+                            update("salesMarketingSpend", Number(v) || 0)
+                          }
+                        />
+                        <InputRow
+                          label="R&D Spend"
+                          value={form.rdSpend}
+                          prefix="$"
+                          onChange={(v) => update("rdSpend", Number(v) || 0)}
+                        />
+                        <InputRow
+                          label="G&A Spend"
+                          value={form.gaSpend}
+                          prefix="$"
+                          onChange={(v) => update("gaSpend", Number(v) || 0)}
+                        />
+
+                        <div className={css.panelDivider} />
+
+                        <div className={css.derivedRow}>
+                          <span className={css.derivedLabel}>
+                            Revenue / Employee
+                          </span>
+                          <span className={css.derivedValue}>
+                            {fmtCurrency(revenuePerEmployee)}
+                          </span>
+                        </div>
+                        <div className={css.derivedRow}>
+                          <span className={css.derivedLabel}>
+                            Revenue and Operating Profit
+                          </span>
+                          <span
+                            className={css.derivedValue}
+                            style={{
+                              color:
+                                operatingProfit >= 0 ? "#34d399" : "#f87171",
+                            }}
+                          >
+                            {operatingProfit < 0 ? "-" : ""}
+                            {fmtCurrency(Math.abs(operatingProfit))}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* ── BURN METRICS ── */}
+                  <div className={css.sectionPanel}>
+                    <h3 className={css.panelTitle}>BURN METRICS</h3>
+
+                    <SliderRow
+                      label="Revenue per Employee"
+                      value={revenuePerEmployee}
+                      min={0} max={200_000} step={1_000}
+                      format={fmtCurrency}
+                      onChange={() => {}}
+                      showScale={false}
+                    />
+
+                    <div className={css.panelDivider} />
+
+                    <div className={css.derivedRow}>
+                      <span className={css.derivedLabel}>
+                        &#8901; Burn Multiple
+                      </span>
+                      <span className={css.derivedValue}>
+                        {metrics.burnMultiple.toFixed(1)}x
+                      </span>
+                    </div>
+                    <div className={css.derivedRow}>
+                      <span className={css.derivedLabel}>
+                        &#8901; Derived Monthly Burn
+                      </span>
+                      <span className={css.derivedValue}>
+                        {fmtCurrency(metrics.monthlyBurn)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
-            <button
-              type="button"
-              className={css.btnPrimary}
-              disabled={!canProceed}
-              onClick={handleProceed}
-            >
-              Proceed to Decision &rarr;
-            </button>
-          </div>
+
+            {/* ═══════════════════════════════════════════════════════
+                STEP 3 — Operating Structure
+                ═══════════════════════════════════════════════════════ */}
+            {activeStep === 3 && (
+              <div className={css.stepContent}>
+                <div className={css.panelGrid}>
+                  <div className={css.sectionPanel}>
+                    <h3 className={css.panelTitle}>EXECUTION VELOCITY</h3>
+
+                    <div className={css.inputRow}>
+                      <span className={css.inputLabel}>Hiring Velocity</span>
+                      <ToggleGroup
+                        options={["Low", "Medium", "High"] as HiringVelocity[]}
+                        value={form.hiringVelocity}
+                        onChange={(v) => update("hiringVelocity", v)}
+                      />
+                    </div>
+                    <SliderRow
+                      label="Sales Ramp Time"
+                      value={form.salesRampTime}
+                      min={1} max={12} step={1}
+                      format={(v) => `${v} months`}
+                      onChange={(v) => update("salesRampTime", v)}
+                      showScale={false}
+                    />
+                    <SliderRow
+                      label="Engineering Velocity"
+                      value={form.engineeringVelocity}
+                      min={1} max={12} step={1}
+                      format={(v) => `${v} months`}
+                      onChange={(v) => update("engineeringVelocity", v)}
+                      showScale={false}
+                    />
+                    <div className={css.inputRow}>
+                      <span className={css.inputLabel}>Burn Flexibility</span>
+                      <ToggleGroup
+                        options={["Fixed", "Variable"] as BurnFlexibility[]}
+                        value={form.burnFlexibility}
+                        onChange={(v) => update("burnFlexibility", v)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className={css.sectionPanel}>
+                    <h3 className={css.panelTitle}>COST &amp; COGS</h3>
+
+                    <InputRow
+                      label="Headcount"
+                      value={form.headcount}
+                      onChange={(v) => update("headcount", Number(v) || 0)}
+                    />
+                    <InputRow
+                      label="Avg Fully Loaded Cost"
+                      value={form.avgFullyLoadedCost}
+                      prefix="$"
+                      onChange={(v) =>
+                        update("avgFullyLoadedCost", Number(v) || 0)
+                      }
+                    />
+                    <InputRow
+                      label="G&A Spend"
+                      value={form.gaSpend}
+                      prefix="$"
+                      onChange={(v) => update("gaSpend", Number(v) || 0)}
+                    />
+                    <InputRow
+                      label="COGS"
+                      value={form.cogsPct}
+                      prefix="$"
+                      onChange={(v) => update("cogsPct", Number(v) || 0)}
+                    />
+
+                    <div className={css.panelDivider} />
+                    <SliderRow
+                      label="Revenue per Employee"
+                      value={revenuePerEmployee}
+                      min={0} max={200_000} step={1_000}
+                      format={fmtCurrency}
+                      onChange={() => {}}
+                      showScale={false}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ═══════════════════════════════════════════════════════
+                STEP 4 — Strategic Intent
+                ═══════════════════════════════════════════════════════ */}
+            {activeStep === 4 && (
+              <div className={css.stepContent}>
+                <div className={css.panelGrid}>
+                  <div className={css.sectionPanel}>
+                    <h3 className={css.panelTitle}>STRATEGIC POSTURE</h3>
+
+                    <div className={css.inputRow}>
+                      <span className={css.inputLabel}>Risk Tolerance</span>
+                      <ToggleGroup
+                        options={
+                          [
+                            "Conservative",
+                            "Balanced",
+                            "Aggressive",
+                          ] as RiskTolerance[]
+                        }
+                        value={form.riskTolerance}
+                        onChange={(v) => update("riskTolerance", v)}
+                      />
+                    </div>
+                    <SliderRow
+                      label="Target Growth Band"
+                      value={form.targetGrowthBand}
+                      min={1} max={12} step={1}
+                      format={(v) => `${v} months`}
+                      onChange={(v) => update("targetGrowthBand", v)}
+                      showScale={false}
+                    />
+
+                    <div className={css.priorityRow}>
+                      <span className={css.priorityLabel}>Priority Balance</span>
+                      <div className={css.priorityControl}>
+                        <span className={css.priorityEnd}>Survival</span>
+                        <input
+                          type="range"
+                          className={css.sliderInput}
+                          min={0} max={100} step={1}
+                          value={form.priorityBalance}
+                          style={sliderFill(form.priorityBalance, 0, 100)}
+                          onChange={(e) =>
+                            update("priorityBalance", Number(e.target.value))
+                          }
+                        />
+                        <span className={css.priorityEnd}>Expansion</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={css.sectionPanel}>
+                    <h3 className={css.panelTitle}>SUMMARY</h3>
+                    <div className={css.summaryGrid}>
+                      <div className={css.summaryItem}>
+                        <span className={css.summaryItemLabel}>Runway</span>
+                        <span className={css.summaryItemValue}>
+                          {metrics.runway.toFixed(1)} months
+                        </span>
+                      </div>
+                      <div className={css.summaryItem}>
+                        <span className={css.summaryItemLabel}>Burn Multiple</span>
+                        <span className={css.summaryItemValue}>
+                          {metrics.burnMultiple.toFixed(2)}x
+                        </span>
+                      </div>
+                      <div className={css.summaryItem}>
+                        <span className={css.summaryItemLabel}>Monthly Burn</span>
+                        <span className={css.summaryItemValue}>
+                          {fmtCurrency(metrics.monthlyBurn)}
+                        </span>
+                      </div>
+                      <div className={css.summaryItem}>
+                        <span className={css.summaryItemLabel}>Survival</span>
+                        <span className={css.summaryItemValue}>
+                          {metrics.survivalProbability}%
+                        </span>
+                      </div>
+                      <div className={css.summaryItem}>
+                        <span className={css.summaryItemLabel}>
+                          Revenue / Head
+                        </span>
+                        <span className={css.summaryItemValue}>
+                          {fmtCurrency(revenuePerEmployee)}
+                        </span>
+                      </div>
+                      <div className={css.summaryItem}>
+                        <span className={css.summaryItemLabel}>Op. Profit</span>
+                        <span
+                          className={css.summaryItemValue}
+                          style={{
+                            color:
+                              operatingProfit >= 0 ? "#34d399" : "#f87171",
+                          }}
+                        >
+                          {fmtCurrency(operatingProfit)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ═══ FOOTER ═══ */}
+            <footer className={css.footer}>
+              <div className={css.footerStatus}>
+                <span className={css.footerDot} />
+                DRAFT &mdash; NOT LOCKED
+              </div>
+              <div className={css.footerActions}>
+                {canGoBack && (
+                  <button
+                    type="button"
+                    className={css.backBtn}
+                    onClick={() =>
+                      setActiveStep((activeStep - 1) as WizardStep)
+                    }
+                  >
+                    BACK
+                  </button>
+                )}
+                {canGoNext ? (
+                  <button
+                    type="button"
+                    className={css.lockBtn}
+                    onClick={() =>
+                      setActiveStep((activeStep + 1) as WizardStep)
+                    }
+                  >
+                    NEXT &rarr;
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className={css.lockBtn}
+                    onClick={handleLock}
+                  >
+                    LOCK BASELINE &amp; ENTER STRATFIT
+                  </button>
+                )}
+              </div>
+            </footer>
+          </main>
         </div>
       </div>
     </div>
