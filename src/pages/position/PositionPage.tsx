@@ -128,7 +128,7 @@ export default function PositionPage() {
   const presentation = useIntelligencePresentation({ completedAt: simulationCompletedAt })
 
   // Auto-open insights panel — 5s after simulation completes (let terrain render)
-  // Auto-close after 15s of being open
+  // Auto-close after 20s of being open
   const lastAutoOpenRef = useRef<number | null>(null)
   const autoCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -146,11 +146,11 @@ export default function PositionPage() {
       // Wait 5s for terrain to settle before revealing insights
       const openTimer = setTimeout(() => {
         setIntelligenceOpen(true)
-        // Auto-close after 15s
+        // Auto-close after 20s
         clearAutoClose()
         autoCloseTimerRef.current = setTimeout(() => {
           setIntelligenceOpen(false)
-        }, 15_000)
+        }, 20_000)
       }, 5_000)
       return () => clearTimeout(openTimer)
     }
@@ -169,29 +169,34 @@ export default function PositionPage() {
     return () => clearAutoClose()
   }, [intelligenceOpen, clearAutoClose])
 
-  // ── Auto-scroll insight content slowly when slid out ──
+  // ── Auto-scroll insight content — perfectly steady to the end ──
   useEffect(() => {
     if (!intelligenceOpen) return
     const el = insightScrollRef.current
     if (!el) return
-    // Start after a 1.5s delay (let slide animation finish)
+    // Start after slide begins (2.5s in)
     const startDelay = setTimeout(() => {
       let lastTime = 0
-      const scrollSpeed = 0.025 // px per ms — very slow cinematic crawl
+      const PX_PER_MS = 0.04 // constant scroll speed
       function tick(time: number) {
-        if (!lastTime) lastTime = time
-        const dt = time - lastTime
+        if (!lastTime) { lastTime = time }
+        const rawDt = time - lastTime
         lastTime = time
+        // Cap dt to 32ms (1 frame @30fps) — prevents jumps from tab blur
+        const dt = Math.min(rawDt, 32)
         if (el) {
           const maxScroll = el.scrollHeight - el.clientHeight
+          if (maxScroll > 0 && el.scrollTop < maxScroll) {
+            el.scrollTop = Math.min(el.scrollTop + PX_PER_MS * dt, maxScroll)
+          }
+          // Keep ticking until we reach the very end
           if (el.scrollTop < maxScroll) {
-            el.scrollTop += scrollSpeed * dt
             autoScrollRef.current = requestAnimationFrame(tick)
           }
         }
       }
       autoScrollRef.current = requestAnimationFrame(tick)
-    }, 1500)
+    }, 2500)
     return () => {
       clearTimeout(startDelay)
       if (autoScrollRef.current) {
@@ -764,7 +769,7 @@ export default function PositionPage() {
                     clearAutoClose()
                     autoCloseTimerRef.current = setTimeout(() => {
                       setIntelligenceOpen(false)
-                    }, 15_000)
+                  }, 20_000)
                   }}
                 >
                 {/* Bejeweled insight diamond icon */}

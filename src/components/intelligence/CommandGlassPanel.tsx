@@ -37,29 +37,33 @@ interface CommandGlassPanelProps {
   onTypewriterComplete: () => void
 }
 
-/* ── Row extraction — formatting only, no calculations ── */
+/* ── Row extraction — narrative rows only (data shown in KPI table) ── */
 function extractRows(insight: AIInsightOutput): string[] {
   const rows: string[] = []
-
-  // Row 1: Executive summary
   rows.push(insight.executiveSummary)
-
-  // Row 2–4: Key drivers (top 3)
   const topDrivers = insight.keyDrivers.slice(0, 3)
   for (const d of topDrivers) {
     const arrow = d.tone === "positive" ? "▲" : d.tone === "negative" ? "▼" : "◆"
     rows.push(`${arrow} ${d.label} — ${d.impact}`)
   }
-
-  // Row 5: Risk narrative
   rows.push(insight.riskNarrative)
-
-  // Row 6+: All probability signals with %
-  for (const sig of insight.probabilitySignals) {
-    rows.push(`⚡ ${sig.title} — ${sig.probability}% probability — ${sig.interpretation}`)
-  }
-
   return rows
+}
+
+/** Format currency values for KPI table display */
+function fmtCurrency(v: number): string {
+  const abs = Math.abs(v)
+  if (abs >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`
+  if (abs >= 1_000) return `$${Math.round(v / 1_000)}K`
+  return `$${Math.round(v)}`
+}
+
+/** Format delta with sign for table impact column */
+function fmtDelta(v: number, fmt: "currency" | "months" | "pct"): string {
+  const sign = v > 0 ? "+" : ""
+  if (fmt === "currency") return `${sign}${fmtCurrency(v)}`
+  if (fmt === "months") return `${sign}${Math.round(v)} mo`
+  return `${sign}${v.toFixed(1)}%`
 }
 
 /* ── Component ── */
@@ -149,6 +153,57 @@ const CommandGlassPanel: React.FC<CommandGlassPanelProps> = memo(({
 
   const isVisible = showContent && rows.length > 0
 
+  // ── KPI comparison table rows (baseline → scenario) ──
+  const kpiTableRows = useMemo(() => {
+    if (!baselineKpis || !scenarioKpis) return []
+    return [
+      {
+        label: "Cash",
+        current: fmtCurrency(baselineKpis.cashOnHand),
+        projected: fmtCurrency(scenarioKpis.cashOnHand),
+        delta: fmtDelta(scenarioKpis.cashOnHand - baselineKpis.cashOnHand, "currency"),
+        deltaColor: scenarioKpis.cashOnHand >= baselineKpis.cashOnHand ? "rgba(52,211,153,0.95)" : "rgba(239,68,68,0.95)",
+      },
+      {
+        label: "Runway",
+        current: baselineKpis.runwayMonths != null ? `${baselineKpis.runwayMonths} mo` : "—",
+        projected: scenarioKpis.runwayMonths != null ? `${scenarioKpis.runwayMonths} mo` : "—",
+        delta: baselineKpis.runwayMonths != null && scenarioKpis.runwayMonths != null
+          ? fmtDelta(scenarioKpis.runwayMonths - baselineKpis.runwayMonths, "months")
+          : "—",
+        deltaColor: (scenarioKpis.runwayMonths ?? 0) >= (baselineKpis.runwayMonths ?? 0) ? "rgba(52,211,153,0.95)" : "rgba(239,68,68,0.95)",
+      },
+      {
+        label: "Burn Rate",
+        current: `${fmtCurrency(baselineKpis.burnMonthly)}/mo`,
+        projected: `${fmtCurrency(scenarioKpis.burnMonthly)}/mo`,
+        delta: fmtDelta(scenarioKpis.burnMonthly - baselineKpis.burnMonthly, "currency"),
+        deltaColor: scenarioKpis.burnMonthly <= baselineKpis.burnMonthly ? "rgba(52,211,153,0.95)" : "rgba(239,68,68,0.95)",
+      },
+      {
+        label: "Revenue",
+        current: `${fmtCurrency(baselineKpis.revenue)}/mo`,
+        projected: `${fmtCurrency(scenarioKpis.revenue)}/mo`,
+        delta: fmtDelta(scenarioKpis.revenue - baselineKpis.revenue, "currency"),
+        deltaColor: scenarioKpis.revenue >= baselineKpis.revenue ? "rgba(52,211,153,0.95)" : "rgba(239,68,68,0.95)",
+      },
+      {
+        label: "ARR",
+        current: fmtCurrency(baselineKpis.arr),
+        projected: fmtCurrency(scenarioKpis.arr),
+        delta: fmtDelta(scenarioKpis.arr - baselineKpis.arr, "currency"),
+        deltaColor: scenarioKpis.arr >= baselineKpis.arr ? "rgba(52,211,153,0.95)" : "rgba(239,68,68,0.95)",
+      },
+      {
+        label: "Growth",
+        current: `${baselineKpis.growthRate.toFixed(1)}%`,
+        projected: `${scenarioKpis.growthRate.toFixed(1)}%`,
+        delta: fmtDelta(scenarioKpis.growthRate - baselineKpis.growthRate, "pct"),
+        deltaColor: scenarioKpis.growthRate >= baselineKpis.growthRate ? "rgba(52,211,153,0.95)" : "rgba(239,68,68,0.95)",
+      },
+    ]
+  }, [baselineKpis, scenarioKpis])
+
   // Risk color
   const riskColor = riskScore >= 78 ? "rgba(52,211,153,0.9)"
     : riskScore >= 60 ? "rgba(251,191,36,0.9)"
@@ -214,86 +269,146 @@ const CommandGlassPanel: React.FC<CommandGlassPanelProps> = memo(({
 
             {/* Header */}
             <div style={HEADER}>
-              <div style={HEADER_TITLE}>
-                {decisionQuestion
-                  ? <>Strategic Insight &mdash; <span style={HEADER_QUESTION}>{decisionQuestion.length > 55 ? decisionQuestion.slice(0, 55) + "…" : decisionQuestion}</span></>
-                  : "STRATFIT INSIGHTS"
-                }
-              </div>
-              {intentLabel && (
-                <div style={HEADER_SUB}>
-                  Based on <span style={{ color: "rgba(34,211,238,0.65)" }}>{intentLabel}</span> scenario outcomes
-                </div>
-              )}
-            </div>
-
-            {/* Intelligence rows */}
-            <div style={ROWS_CONTAINER}>
-              {displayRows.map((text, idx) => {
-                if (!text) return null
-                const isFirst = idx === 0
-                const isDriver = idx >= 1 && idx <= 3
-                const isRisk = idx === rows.length - 2 || text.includes("risk") || text.includes("Risk")
-                const isSignal = text.startsWith("⚡")
-                const isConcern = text.startsWith("▼") || isRisk
-
-                // Row label
-                let label = ""
-                if (isFirst) label = "EXECUTIVE SUMMARY"
-                else if (isDriver && idx === 1) label = "KEY DRIVERS"
-                else if (isRisk && !isSignal) label = "RISK ASSESSMENT"
-                else if (isSignal && (idx === 4 || (idx > 3 && !rows[idx - 1]?.startsWith("⚡")))) label = "PROBABILITY SIGNALS"
-
-                // Bullet marker for drivers and signals
-                const bulletColor = isDriver
-                  ? (text.startsWith("▲") ? "rgba(52,211,153,0.9)" : text.startsWith("▼") ? "rgba(239,68,68,0.9)" : "rgba(255,255,255,0.5)")
-                  : isSignal ? "rgba(251,191,36,0.85)"
-                  : isConcern ? "rgba(239,68,68,0.7)"
-                  : undefined
-                const showBullet = isDriver || isSignal || isConcern
-
-                const rowTextStyle: React.CSSProperties = {
-                  ...ROW_TEXT,
-                  color: isDriver
-                    ? (text.startsWith("▲") ? "rgba(52,211,153,0.95)" : text.startsWith("▼") ? "rgba(239,68,68,0.95)" : "rgba(255,255,255,0.82)")
-                    : isSignal ? "rgba(251,191,36,0.92)"
-                    : isConcern ? "rgba(239,68,68,0.88)"
-                    : "rgba(255,255,255,0.82)",
-                  fontSize: isFirst ? 14 : 12.5,
-                  fontWeight: isFirst ? 600 : isSignal ? 500 : 400,
-                  lineHeight: 1.7,
-                }
-
-                return (
-                  <div key={idx} style={{
-                    ...ROW,
-                    ...(isConcern ? CONCERN_ROW : {}),
-                    ...(showBullet ? BULLET_ROW : {}),
-                  }}>
-                    {label && <div style={phase === "reveal" ? ROW_LABEL_GLOW : ROW_LABEL}>{label}</div>}
-                    <div style={rowTextStyle}>
-                      {showBullet && <span style={{ ...BULLET_DOT, background: bulletColor }} />}
-                      {renderThrobText(text, rowTextStyle)}
-                      {/* Blinking cursor on active typing row */}
-                      {phase === "reveal" && !isDone && idx === findTypingRow(renderedRows, rows) && (
-                        <span style={CURSOR}>▎</span>
-                      )}
-                    </div>
+              <div style={HEADER_ROW}>
+                <div>
+                  <div style={HEADER_TITLE}>
+                    {decisionQuestion
+                      ? <>Strategic Insight &mdash; <span style={HEADER_QUESTION}>{decisionQuestion.length > 65 ? decisionQuestion.slice(0, 65) + "…" : decisionQuestion}</span></>
+                      : "STRATFIT INSIGHTS"
+                    }
                   </div>
-                )
-              })}
+                  {intentLabel && (
+                    <div style={HEADER_SUB}>
+                      Based on <span style={{ color: "rgba(34,211,238,0.65)" }}>{intentLabel}</span> scenario outcomes
+                    </div>
+                  )}
+                </div>
+                {/* Survival badge — top right */}
+                {(phase === "settled" || isDone) && (
+                  <div style={SURVIVAL_BADGE}>
+                    <span style={{ fontSize: 8.5, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.12em", color: "rgba(255,255,255,0.4)" }}>Survival</span>
+                    <span style={{ color: riskColor, fontWeight: 800, fontSize: 20, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "-0.02em" }}>{riskScore}%</span>
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Footer — survival probability with % */}
+            {/* ── 2-Column God Mode Layout ── */}
+            <div style={COLUMNS_GRID}>
+              {/* LEFT: Narrative Intelligence */}
+              <div style={NARRATIVE_COL}>
+                {displayRows.map((text, idx) => {
+                  if (!text) return null
+                  const isFirst = idx === 0
+                  const isDriver = idx >= 1 && idx <= 3
+                  const isRisk = !isDriver && !isFirst && (text.includes("risk") || text.includes("Risk") || text.includes("uncertainty"))
+                  const isConcern = text.startsWith("▼") || isRisk
+
+                  let label = ""
+                  if (isFirst) label = "EXECUTIVE SUMMARY"
+                  else if (isDriver && idx === 1) label = "KEY DRIVERS"
+                  else if (isRisk) label = "RISK ASSESSMENT"
+
+                  const bulletColor = isDriver
+                    ? (text.startsWith("▲") ? "rgba(52,211,153,0.9)" : text.startsWith("▼") ? "rgba(239,68,68,0.9)" : "rgba(255,255,255,0.5)")
+                    : isConcern ? "rgba(239,68,68,0.7)"
+                    : undefined
+                  const showBullet = isDriver || isConcern
+
+                  const rowTextStyle: React.CSSProperties = {
+                    ...ROW_TEXT,
+                    color: isDriver
+                      ? (text.startsWith("▲") ? "rgba(52,211,153,0.95)" : text.startsWith("▼") ? "rgba(239,68,68,0.95)" : "rgba(255,255,255,0.82)")
+                      : isConcern ? "rgba(239,68,68,0.88)"
+                      : "rgba(255,255,255,0.82)",
+                    fontSize: isFirst ? 13.5 : 12.5,
+                    fontWeight: isFirst ? 600 : 400,
+                    lineHeight: 1.75,
+                  }
+
+                  return (
+                    <div key={idx} style={{
+                      ...ROW,
+                      ...(isConcern ? CONCERN_ROW : {}),
+                      ...(showBullet ? BULLET_ROW : {}),
+                    }}>
+                      {label && <div style={phase === "reveal" ? ROW_LABEL_GLOW : ROW_LABEL}>{label}</div>}
+                      <div style={rowTextStyle}>
+                        {showBullet && <span style={{ ...BULLET_DOT, background: bulletColor }} />}
+                        {renderThrobText(text, rowTextStyle)}
+                        {phase === "reveal" && !isDone && idx === findTypingRow(renderedRows, rows) && (
+                          <span style={CURSOR}>▎</span>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* RIGHT: KPI Impact Data + Probability Signals */}
+              <motion.div
+                style={DATA_COL}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 1.2, delay: 1.5, ease: [0.16, 1, 0.3, 1] }}
+              >
+                {/* KPI Impact Table */}
+                {kpiTableRows.length > 0 && (
+                  <div>
+                    <div style={SECTION_LABEL}>SCENARIO IMPACT</div>
+                    <table style={KPI_TABLE}>
+                      <thead>
+                        <tr>
+                          <th style={{ ...TABLE_HEADER_CELL, textAlign: "left" as const }}>Metric</th>
+                          <th style={TABLE_HEADER_CELL}>Current</th>
+                          <th style={TABLE_HEADER_CELL}>Projected</th>
+                          <th style={TABLE_HEADER_CELL}>Impact</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {kpiTableRows.map((row, i) => (
+                          <tr key={i}>
+                            <td style={{ ...TABLE_CELL, ...TABLE_METRIC_CELL }}>{row.label}</td>
+                            <td style={TABLE_CELL}>{row.current}</td>
+                            <td style={TABLE_CELL}>{row.projected}</td>
+                            <td style={{ ...TABLE_CELL, ...TABLE_DELTA_CELL, color: row.deltaColor }}>{row.delta}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Probability Signal Bars */}
+                {insight && insight.probabilitySignals.length > 0 && (
+                  <div>
+                    <div style={SECTION_LABEL}>PROBABILITY SIGNALS</div>
+                    {insight.probabilitySignals.map((sig, i) => {
+                      const barColor = sig.probability >= 70
+                        ? "rgba(52,211,153,0.85)"
+                        : sig.probability >= 45
+                        ? "rgba(251,191,36,0.85)"
+                        : "rgba(239,68,68,0.85)"
+                      return (
+                        <div key={i} style={SIGNAL_ROW}>
+                          <span style={SIGNAL_LABEL}>{sig.title}</span>
+                          <div style={SIGNAL_TRACK}>
+                            <div style={{ ...SIGNAL_FILL, width: `${sig.probability}%`, background: barColor }} />
+                          </div>
+                          <span style={{ ...SIGNAL_VALUE, color: barColor }}>{sig.probability}%</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </motion.div>
+            </div>
+
+            {/* Footer — full width */}
             {(phase === "settled" || isDone) && (
               <div style={FOOTER}>
-                <span style={{ opacity: 0.55 }}>Survival probability:</span>{" "}
-                <span style={{
-                  color: riskColor,
-                  fontWeight: 700,
-                  fontSize: 13,
-                  letterSpacing: "0.02em",
-                }}>{riskScore}%</span>
+                <span style={{ opacity: 0.45 }}>Simulation engine analysis complete</span>
+                <span style={FOOTER_ENGINE}>STRATFIT Engine</span>
               </div>
             )}
           </motion.div>
@@ -313,7 +428,7 @@ function findTypingRow(rendered: string[], full: string[]): number {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   STYLE TOKENS — Premium Command Glass
+   STYLE TOKENS — God Mode Command Glass (2-Column Layout)
    ═══════════════════════════════════════════════════════════════ */
 
 const GLASS_PANEL: React.CSSProperties = {
@@ -323,7 +438,7 @@ const GLASS_PANEL: React.CSSProperties = {
   WebkitBackdropFilter: "blur(22px) saturate(1.2)",
   border: "1px solid rgba(120,220,255,0.16)",
   borderRadius: 16,
-  padding: "22px 24px 18px",
+  padding: "24px 28px 20px",
   overflow: "hidden",
   boxShadow:
     "0 1px 0 rgba(255,255,255,0.05) inset, " +
@@ -384,13 +499,20 @@ const REVEAL_GLOW: React.CSSProperties = {
 const HEADER: React.CSSProperties = {
   position: "relative",
   zIndex: 5,
-  marginBottom: 16,
-  paddingBottom: 13,
+  marginBottom: 18,
+  paddingBottom: 14,
   borderBottom: "1px solid rgba(255,255,255,0.07)",
 }
 
+const HEADER_ROW: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "flex-start",
+  gap: 16,
+}
+
 const HEADER_TITLE: React.CSSProperties = {
-  fontSize: 14,
+  fontSize: 13,
   fontWeight: 800,
   textTransform: "uppercase",
   letterSpacing: "0.12em",
@@ -407,7 +529,7 @@ const HEADER_QUESTION: React.CSSProperties = {
 }
 
 const HEADER_SUB: React.CSSProperties = {
-  fontSize: 11.5,
+  fontSize: 11,
   color: "rgba(255,255,255,0.45)",
   marginTop: 5,
   letterSpacing: "0.05em",
@@ -415,13 +537,146 @@ const HEADER_SUB: React.CSSProperties = {
   lineHeight: 1.4,
 }
 
-const ROWS_CONTAINER: React.CSSProperties = {
-  position: "relative",
-  zIndex: 5,
+const SURVIVAL_BADGE: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
-  gap: 10,
+  alignItems: "center",
+  gap: 2,
+  padding: "6px 14px",
+  borderRadius: 10,
+  background: "rgba(255,255,255,0.04)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  flexShrink: 0,
 }
+
+/* ── 2-Column Grid ── */
+
+const COLUMNS_GRID: React.CSSProperties = {
+  position: "relative",
+  zIndex: 5,
+  display: "grid",
+  gridTemplateColumns: "1.15fr 1fr",
+  gap: 28,
+  minHeight: 0,
+}
+
+const NARRATIVE_COL: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 12,
+  minWidth: 0,
+  borderRight: "1px solid rgba(255,255,255,0.06)",
+  paddingRight: 24,
+}
+
+const DATA_COL: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 22,
+  minWidth: 0,
+}
+
+/* ── Section Labels (right column) ── */
+
+const SECTION_LABEL: React.CSSProperties = {
+  fontSize: 9.5,
+  fontWeight: 700,
+  textTransform: "uppercase",
+  letterSpacing: "0.14em",
+  color: "rgba(34,211,238,0.6)",
+  fontFamily: "'Inter', system-ui, sans-serif",
+  marginBottom: 8,
+  paddingBottom: 6,
+  borderBottom: "1px solid rgba(34,211,238,0.12)",
+}
+
+/* ── KPI Impact Table ── */
+
+const KPI_TABLE: React.CSSProperties = {
+  width: "100%",
+  borderCollapse: "collapse",
+  fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+}
+
+const TABLE_HEADER_CELL: React.CSSProperties = {
+  fontSize: 8.5,
+  fontWeight: 700,
+  textTransform: "uppercase",
+  letterSpacing: "0.12em",
+  color: "rgba(255,255,255,0.35)",
+  padding: "6px 6px 8px",
+  textAlign: "right",
+  borderBottom: "1px solid rgba(255,255,255,0.08)",
+  fontFamily: "'Inter', system-ui, sans-serif",
+}
+
+const TABLE_CELL: React.CSSProperties = {
+  fontSize: 11.5,
+  padding: "5px 6px",
+  textAlign: "right",
+  color: "rgba(255,255,255,0.75)",
+  borderBottom: "1px solid rgba(255,255,255,0.03)",
+  lineHeight: 1.6,
+}
+
+const TABLE_METRIC_CELL: React.CSSProperties = {
+  textAlign: "left",
+  fontWeight: 600,
+  color: "rgba(255,255,255,0.6)",
+  fontSize: 11,
+  fontFamily: "'Inter', system-ui, sans-serif",
+  letterSpacing: "0.02em",
+}
+
+const TABLE_DELTA_CELL: React.CSSProperties = {
+  fontWeight: 700,
+  fontSize: 11.5,
+  letterSpacing: "0.01em",
+}
+
+/* ── Probability Signal Bars ── */
+
+const SIGNAL_ROW: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 10,
+  padding: "5px 0",
+}
+
+const SIGNAL_LABEL: React.CSSProperties = {
+  fontSize: 10.5,
+  fontWeight: 500,
+  color: "rgba(255,255,255,0.65)",
+  width: 76,
+  flexShrink: 0,
+  fontFamily: "'Inter', system-ui, sans-serif",
+  letterSpacing: "0.01em",
+}
+
+const SIGNAL_TRACK: React.CSSProperties = {
+  flex: 1,
+  height: 5,
+  background: "rgba(255,255,255,0.06)",
+  borderRadius: 3,
+  overflow: "hidden",
+}
+
+const SIGNAL_FILL: React.CSSProperties = {
+  height: "100%",
+  borderRadius: 3,
+}
+
+const SIGNAL_VALUE: React.CSSProperties = {
+  fontSize: 12,
+  fontWeight: 700,
+  fontFamily: "'JetBrains Mono', monospace",
+  width: 36,
+  textAlign: "right",
+  flexShrink: 0,
+  letterSpacing: "0.02em",
+}
+
+/* ── Narrative Row Tokens (left column) ── */
 
 const ROW: React.CSSProperties = {
   padding: "4px 0",
@@ -456,28 +711,28 @@ const THROB_WORD: React.CSSProperties = {
 }
 
 const ROW_LABEL: React.CSSProperties = {
-  fontSize: 9,
+  fontSize: 9.5,
   fontWeight: 700,
   textTransform: "uppercase",
   letterSpacing: "0.12em",
   color: "rgba(34,211,238,0.55)",
-  marginBottom: 3,
+  marginBottom: 4,
 }
 
 const ROW_LABEL_GLOW: React.CSSProperties = {
-  fontSize: 9,
+  fontSize: 9.5,
   fontWeight: 700,
   textTransform: "uppercase",
   letterSpacing: "0.12em",
   color: "rgba(34,211,238,0.9)",
-  marginBottom: 3,
+  marginBottom: 4,
   textShadow: "0 0 12px rgba(34,211,238,0.6), 0 0 24px rgba(34,211,238,0.3)",
   animation: "cmdGlassLabelGlow 2s ease-out forwards",
 }
 
 const ROW_TEXT: React.CSSProperties = {
   fontSize: 12.5,
-  lineHeight: 1.7,
+  lineHeight: 1.75,
   fontFamily: "'Inter', system-ui, sans-serif",
   letterSpacing: "0.01em",
 }
@@ -492,13 +747,24 @@ const CURSOR: React.CSSProperties = {
 const FOOTER: React.CSSProperties = {
   position: "relative",
   zIndex: 5,
-  marginTop: 16,
+  marginTop: 18,
   paddingTop: 12,
-  borderTop: "1px solid rgba(255,255,255,0.08)",
-  fontSize: 12,
-  color: "rgba(255,255,255,0.55)",
+  borderTop: "1px solid rgba(255,255,255,0.07)",
+  fontSize: 11,
+  color: "rgba(255,255,255,0.45)",
   letterSpacing: "0.04em",
   fontFamily: "'Inter', system-ui, sans-serif",
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+}
+
+const FOOTER_ENGINE: React.CSSProperties = {
+  fontSize: 9,
+  fontWeight: 600,
+  textTransform: "uppercase",
+  letterSpacing: "0.12em",
+  color: "rgba(34,211,238,0.35)",
 }
 
 CommandGlassPanel.displayName = "CommandGlassPanel"
