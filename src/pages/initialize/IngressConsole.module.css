@@ -62,7 +62,7 @@
 .sidebarLogo {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 10px;
 }
 
 .sidebarLogoImg {
@@ -77,13 +77,10 @@
   font-family: 'Inter', system-ui, sans-serif;
   font-size: 1.1rem;
   font-weight: 900;
-  letter-spacing: 3px;
+  letter-spacing: 2px;
   text-transform: uppercase;
-  background: linear-gradient(to right, #ffffff, rgba(0, 255, 255, 0.8));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.2));
+  color: #ffffff;
+  line-height: 1;
 }
 
 .sidebarLogoIcon {

@@ -224,7 +224,7 @@ const CommandGlassPanel: React.FC<CommandGlassPanelProps> = memo(({
                     ...ROW,
                     ...(isConcern ? CONCERN_ROW : {}),
                   }}>
-                    {label && <div style={ROW_LABEL}>{label}</div>}
+                    {label && <div style={phase === "reveal" ? ROW_LABEL_GLOW : ROW_LABEL}>{label}</div>}
                     <div style={{
                       ...ROW_TEXT,
                       color: isDriver
@@ -402,6 +402,17 @@ const ROW_LABEL: React.CSSProperties = {
   marginBottom: 3,
 }
 
+const ROW_LABEL_GLOW: React.CSSProperties = {
+  fontSize: 9,
+  fontWeight: 700,
+  textTransform: "uppercase",
+  letterSpacing: "0.12em",
+  color: "rgba(34,211,238,0.9)",
+  marginBottom: 3,
+  textShadow: "0 0 12px rgba(34,211,238,0.6), 0 0 24px rgba(34,211,238,0.3)",
+  animation: "cmdGlassLabelGlow 2s ease-out forwards",
+}
+
 const ROW_TEXT: React.CSSProperties = {
   fontSize: 12,
   lineHeight: 1.55,
@@ -442,5 +453,10 @@ export const COMMAND_GLASS_KEYFRAMES = `
 @keyframes cmdGlassBlink {
   0%, 100% { opacity: 1; }
   50%      { opacity: 0; }
+}
+@keyframes cmdGlassLabelGlow {
+  0%   { color: rgba(34,211,238,1); text-shadow: 0 0 18px rgba(34,211,238,0.8), 0 0 36px rgba(34,211,238,0.4); }
+  50%  { color: rgba(34,211,238,0.85); text-shadow: 0 0 10px rgba(34,211,238,0.5), 0 0 20px rgba(34,211,238,0.2); }
+  100% { color: rgba(34,211,238,0.55); text-shadow: none; }
 }
 `
