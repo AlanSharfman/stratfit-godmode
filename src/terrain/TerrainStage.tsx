@@ -85,10 +85,10 @@ export default function TerrainStage({
     setControls(instance);
   }, [setControls]);
 
-  const [fogColor, setFogColor] = useState("#040810");
+  const [fogColor, setFogColor] = useState("#020814");
   useEffect(() => {
     // Use the global "charcoal" void token when available.
-    setFogColor(readCssVar("--color-bg-void", readCssVar("--navy-950", "#040810")));
+    setFogColor(readCssVar("--color-bg-void", readCssVar("--navy-950", "#020814")));
   }, []);
 
   // ── Render flags ──
@@ -162,7 +162,7 @@ export default function TerrainStage({
           Ambient:    1.55
           Key:        2.10  pos [120,180,120]  color #DFFAEE
           Fill:       0.85  pos [-80,120,-60]  color #6ef0ff
-          Fog:        #040810  near 420  far 2400
+          Fog:        #020814  near 420  far 2400
           Exposure:   1.0
           ─────────────────────────────────────────────────────────────
           DO NOT MODIFY without explicit user approval.
