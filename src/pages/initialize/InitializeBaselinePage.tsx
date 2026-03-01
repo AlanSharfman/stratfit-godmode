@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useBaselineStore } from "@/state/baselineStore"
+import ConsoleFrame from "@/layout/ConsoleFrame"
 import css from "./IngressConsole.module.css"
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -105,8 +106,8 @@ function fmtCurrency(v: number): string {
 function sliderFill(value: number, min: number, max: number): React.CSSProperties {
   const pct = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100))
   return {
-    background: `linear-gradient(90deg, #0e7490 0%, #22d3ee ${pct * 0.7}%, #67e8f9 ${pct}%, rgba(255,255,255,0.04) ${pct}%, rgba(255,255,255,0.04) 100%)`,
-    boxShadow: pct > 5 ? `0 0 ${4 + pct * 0.08}px rgba(34,211,238,${0.15 + pct * 0.002}), inset 0 1px 2px rgba(0,0,0,0.3)` : 'none',
+    background: `linear-gradient(90deg, #0e7490 0%, #22d3ee ${pct * 0.7}%, #67e8f9 ${pct}%, rgba(255,255,255,0.035) ${pct}%, rgba(255,255,255,0.035) 100%)`,
+    boxShadow: pct > 5 ? `0 0 ${4 + pct * 0.08}px rgba(34,211,238,${0.12 + pct * 0.002}), inset 0 1px 2px rgba(0,0,0,0.3)` : 'none',
   }
 }
 
@@ -305,661 +306,659 @@ export default function InitializeBaselinePage() {
   /* ══════════════════ RENDER ══════════════════ */
 
   return (
-    <div className={css.page}>
-      <div className={css.chromeFrame}>
-        <div className={css.mainLayout}>
+    <ConsoleFrame>
+      <div className={css.consoleLayout}>
 
-          {/* ═══════════ SIDEBAR ═══════════ */}
-          <aside className={css.sidebar}>
-            <div className={css.sidebarHeader}>
-              <div className={css.sidebarLogo}>
-                <div className={css.sidebarLogoIcon}>
-                  <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                    <path
-                      d="M14 3L25 14L14 25L3 14L14 3Z"
-                      stroke="rgba(96,165,250,0.55)"
-                      strokeWidth="1.5"
-                      fill="rgba(96,165,250,0.06)"
+        {/* ═══════════ LEFT SIDEBAR — System Nav Rail ═══════════ */}
+        <aside className={css.sidebar}>
+          <div className={css.sidebarHeader}>
+            <div className={css.sidebarLogo}>
+              <div className={css.sidebarLogoIcon}>
+                <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+                  <path
+                    d="M14 3L25 14L14 25L3 14L14 3Z"
+                    stroke="rgba(34,211,238,0.50)"
+                    strokeWidth="1.5"
+                    fill="rgba(34,211,238,0.05)"
+                  />
+                  <path
+                    d="M14 8L21 14L14 21L7 14L14 8Z"
+                    stroke="rgba(34,211,238,0.30)"
+                    strokeWidth="1"
+                    fill="rgba(34,211,238,0.02)"
+                  />
+                  <rect x="12" y="12" width="4" height="4" rx="1" fill="rgba(34,211,238,0.20)" />
+                </svg>
+              </div>
+              <div>
+                <div className={css.sidebarWordmark}>STRATFIT</div>
+                <div className={css.sidebarSubtitle}>Baseline Initialization</div>
+              </div>
+            </div>
+          </div>
+
+          <nav className={css.wizardNav}>
+            {WIZARD_STEPS.map((step) => (
+              <button
+                key={step.num}
+                type="button"
+                className={`${css.wizardStep} ${activeStep === step.num ? css.wizardStepActive : ""} ${activeStep > step.num ? css.wizardStepDone : ""}`}
+                onClick={() => setActiveStep(step.num)}
+              >
+                <span className={css.wizardStepNum}>
+                  {activeStep > step.num ? "\u2713" : step.num}
+                </span>
+                <span className={css.wizardStepLabel}>{step.label}</span>
+              </button>
+            ))}
+          </nav>
+        </aside>
+
+        {/* ═══════════ MAIN INSTRUMENT AREA ═══════════ */}
+        <main className={css.instrumentArea}>
+          {/* ── Instrument Header ── */}
+          <header className={css.instrumentHeader}>
+            <h1 className={css.instrumentTitle}>INITIALIZE BASELINE</h1>
+            <p className={css.instrumentSubtitle}>
+              Enter your current financial truth to anchor scenario modeling.
+            </p>
+          </header>
+
+          {/* ── Metrics Readout Strip ── */}
+          <div className={css.metricsStrip}>
+            <div className={css.metricItem}>
+              <span className={css.metricIcon}>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M7 1v5l3.5 2" stroke="rgba(34,211,238,0.65)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                  <circle cx="7" cy="7" r="5.5" stroke="rgba(34,211,238,0.35)" strokeWidth="1.2" opacity="0.5"/>
+                </svg>
+              </span>
+              <span
+                className={css.metricValue}
+                style={{
+                  color:
+                    metrics.runway < 6
+                      ? "#f87171"
+                      : metrics.runway < 12
+                        ? "#fbbf24"
+                        : "rgba(255,255,255,0.92)",
+                }}
+              >
+                {metrics.runway.toFixed(1)}
+              </span>
+              <span className={css.metricUnit}>months</span>
+            </div>
+
+            <div className={css.metricItem}>
+              <span className={css.metricLabel}>BURN MULTIPLE</span>
+              <span className={css.metricValue}>
+                {metrics.burnMultiple.toFixed(2)} x
+              </span>
+            </div>
+
+            <div className={css.metricItem}>
+              <span className={css.metricLabel}>$ MONTHLY BURN</span>
+              <span className={css.metricValue}>
+                {fmtCurrency(metrics.monthlyBurn)}
+              </span>
+            </div>
+
+            <div className={css.metricItem}>
+              <span className={css.metricLabel}>SURVIVAL PROBABILITY</span>
+              <span className={css.metricValue}>
+                {metrics.survivalProbability} %
+              </span>
+            </div>
+          </div>
+
+          {/* ═══════════════════════════════════════════════════════
+              STEP 1 — Identity & Context
+              ═══════════════════════════════════════════════════════ */}
+          {activeStep === 1 && (
+            <div className={css.stepContent}>
+              <div className={css.singlePanel}>
+                <h3 className={css.panelTitle}>IDENTITY &amp; CONTEXT</h3>
+                <div className={css.identityGrid}>
+                  <label className={css.identityLabel}>
+                    <span className={css.identityLabelText}>Company Name</span>
+                    <input
+                      className={css.identityInput}
+                      type="text"
+                      placeholder="e.g. Acme Inc."
+                      value={form.companyName}
+                      onChange={(e) => update("companyName", e.target.value)}
                     />
-                    <path
-                      d="M14 8L21 14L14 21L7 14L14 8Z"
-                      stroke="rgba(140,180,220,0.35)"
-                      strokeWidth="1"
-                      fill="rgba(96,165,250,0.03)"
-                    />
-                    <rect x="12" y="12" width="4" height="4" rx="1" fill="rgba(140,180,220,0.25)" />
-                  </svg>
-                </div>
-                <div>
-                  <div className={css.sidebarWordmark}>STRATFIT</div>
-                  <div className={css.sidebarSubtitle}>Baseline Initialization</div>
+                  </label>
+                  <label className={css.identityLabel}>
+                    <span className={css.identityLabelText}>Industry</span>
+                    <select
+                      className={css.identitySelect}
+                      value={form.industry}
+                      onChange={(e) => update("industry", e.target.value)}
+                    >
+                      <option value="">Select industry…</option>
+                      {INDUSTRIES.map((i) => (
+                        <option key={i} value={i}>{i}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className={css.identityLabel}>
+                    <span className={css.identityLabelText}>Stage</span>
+                    <select
+                      className={css.identitySelect}
+                      value={form.stage}
+                      onChange={(e) => update("stage", e.target.value)}
+                    >
+                      <option value="">Select stage…</option>
+                      {STAGES.map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  </label>
                 </div>
               </div>
             </div>
+          )}
 
-            <nav className={css.wizardNav}>
-              {WIZARD_STEPS.map((step) => (
-                <button
-                  key={step.num}
-                  type="button"
-                  className={`${css.wizardStep} ${activeStep === step.num ? css.wizardStepActive : ""} ${activeStep > step.num ? css.wizardStepDone : ""}`}
-                  onClick={() => setActiveStep(step.num)}
-                >
-                  <span className={css.wizardStepNum}>
-                    {activeStep > step.num ? "\u2713" : step.num}
-                  </span>
-                  <span className={css.wizardStepLabel}>{step.label}</span>
-                </button>
-              ))}
-            </nav>
-          </aside>
+          {/* ═══════════════════════════════════════════════════════
+              STEP 2 — Financial Position
+              ═══════════════════════════════════════════════════════ */}
+          {activeStep === 2 && (
+            <div className={css.stepContent}>
+              <div className={css.panelGrid}>
 
-          {/* ═══════════ CONTENT ═══════════ */}
-          <main className={css.content}>
-            {/* ── Header ── */}
-            <header className={css.contentHeader}>
-              <h1 className={css.contentTitle}>INITIALIZE BASELINE</h1>
-              <p className={css.contentSubtitle}>
-                Enter your current financial truth to anchor scenario modeling.
-              </p>
-            </header>
+                {/* ── LIQUIDITY & CAPITAL STRUCTURE ── */}
+                <div className={css.sectionPanel}>
+                  <h3 className={css.panelTitle}>LIQUIDITY &amp; CAPITAL STRUCTURE</h3>
 
-            {/* ── Live Metrics Strip ── */}
-            <div className={css.metricsStrip}>
-              <div className={css.metricItem}>
-                <span className={css.metricIcon}>
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path d="M7 1v5l3.5 2" stroke="rgba(140,180,220,0.8)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-                    <circle cx="7" cy="7" r="5.5" stroke="rgba(140,180,220,0.5)" strokeWidth="1.2" opacity="0.5"/>
-                  </svg>
-                </span>
-                <span
-                  className={css.metricValue}
-                  style={{
-                    color:
-                      metrics.runway < 6
-                        ? "#f87171"
-                        : metrics.runway < 12
-                          ? "#fbbf24"
-                          : "#ffffff",
-                  }}
-                >
-                  {metrics.runway.toFixed(1)}
-                </span>
-                <span className={css.metricUnit}>months</span>
-              </div>
+                  <SliderRow
+                    label="Cash on Hand"
+                    value={form.cashOnHand}
+                    min={0} max={5_000_000} step={10_000}
+                    format={fmtCurrency}
+                    onChange={(v) => update("cashOnHand", v)}
+                  />
+                  <SliderRow
+                    label="Monthly Net Burn"
+                    value={form.monthlyNetBurn}
+                    min={0} max={500_000} step={1_000}
+                    format={fmtCurrency}
+                    onChange={(v) => update("monthlyNetBurn", v)}
+                  />
 
-              <div className={css.metricItem}>
-                <span className={css.metricLabel}>BURN MULTIPLE</span>
-                <span className={css.metricValue}>
-                  {metrics.burnMultiple.toFixed(2)} x
-                </span>
-              </div>
+                  <div className={css.panelDivider} />
 
-              <div className={css.metricItem}>
-                <span className={css.metricLabel}>$ MONTHLY BURN</span>
-                <span className={css.metricValue}>
-                  {fmtCurrency(metrics.monthlyBurn)}
-                </span>
-              </div>
+                  <InputRow
+                    label="Debt Outstanding"
+                    value={form.debtOutstanding}
+                    prefix="$"
+                    onChange={(v) => update("debtOutstanding", Number(v) || 0)}
+                  />
+                  <InputRow
+                    label="Interest Rate"
+                    value={form.debtInterestRate}
+                    suffix="%"
+                    onChange={(v) => update("debtInterestRate", Number(v) || 0)}
+                  />
 
-              <div className={css.metricItem}>
-                <span className={css.metricLabel}>SURVIVAL PROBABILITY</span>
-                <span className={css.metricValue}>
-                  {metrics.survivalProbability} %
-                </span>
-              </div>
-            </div>
-
-            {/* ═══════════════════════════════════════════════════════
-                STEP 1 — Identity & Context
-                ═══════════════════════════════════════════════════════ */}
-            {activeStep === 1 && (
-              <div className={css.stepContent}>
-                <div className={css.singlePanel}>
-                  <h3 className={css.panelTitle}>IDENTITY &amp; CONTEXT</h3>
-                  <div className={css.identityGrid}>
-                    <label className={css.identityLabel}>
-                      <span className={css.identityLabelText}>Company Name</span>
-                      <input
-                        className={css.identityInput}
-                        type="text"
-                        placeholder="e.g. Acme Inc."
-                        value={form.companyName}
-                        onChange={(e) => update("companyName", e.target.value)}
-                      />
-                    </label>
-                    <label className={css.identityLabel}>
-                      <span className={css.identityLabelText}>Industry</span>
-                      <select
-                        className={css.identitySelect}
-                        value={form.industry}
-                        onChange={(e) => update("industry", e.target.value)}
+                  <div className={css.inputRow}>
+                    <span className={css.inputLabel}>Fundraising Window</span>
+                    <div className={css.incrGroup}>
+                      <button
+                        type="button"
+                        className={css.incrBtn}
+                        onClick={() =>
+                          update(
+                            "fundraisingWindow",
+                            Math.max(0, form.fundraisingWindow - 1),
+                          )
+                        }
                       >
-                        <option value="">Select industry…</option>
-                        {INDUSTRIES.map((i) => (
-                          <option key={i} value={i}>{i}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className={css.identityLabel}>
-                      <span className={css.identityLabelText}>Stage</span>
-                      <select
-                        className={css.identitySelect}
-                        value={form.stage}
-                        onChange={(e) => update("stage", e.target.value)}
+                        &minus;
+                      </button>
+                      <span className={css.incrValue}>
+                        {form.fundraisingWindow} months
+                      </span>
+                      <button
+                        type="button"
+                        className={css.incrBtn}
+                        onClick={() =>
+                          update("fundraisingWindow", form.fundraisingWindow + 1)
+                        }
                       >
-                        <option value="">Select stage…</option>
-                        {STAGES.map((s) => (
-                          <option key={s} value={s}>{s}</option>
-                        ))}
-                      </select>
-                    </label>
+                        +
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </div>
-            )}
 
-            {/* ═══════════════════════════════════════════════════════
-                STEP 2 — Financial Position
-                ═══════════════════════════════════════════════════════ */}
-            {activeStep === 2 && (
-              <div className={css.stepContent}>
-                <div className={css.panelGrid}>
-
-                  {/* ── LIQUIDITY & FUNDING ── */}
-                  <div className={css.sectionPanel}>
-                    <h3 className={css.panelTitle}>LIQUIDITY &amp; CAPITAL STRUCTURE</h3>
-
-                    <SliderRow
-                      label="Cash on Hand"
-                      value={form.cashOnHand}
-                      min={0} max={5_000_000} step={10_000}
-                      format={fmtCurrency}
-                      onChange={(v) => update("cashOnHand", v)}
+                  <div className={css.inputRow}>
+                    <span className={css.inputLabel}>Access to Capital</span>
+                    <ToggleGroup
+                      options={["Moderate", "Strong"] as AccessToCapital[]}
+                      value={form.accessToCapital}
+                      onChange={(v) => update("accessToCapital", v)}
                     />
-                    <SliderRow
-                      label="Monthly Net Burn"
-                      value={form.monthlyNetBurn}
-                      min={0} max={500_000} step={1_000}
-                      format={fmtCurrency}
-                      onChange={(v) => update("monthlyNetBurn", v)}
-                    />
+                  </div>
 
-                    <div className={css.panelDivider} />
-
-                    <InputRow
-                      label="Debt Outstanding"
-                      value={form.debtOutstanding}
-                      prefix="$"
-                      onChange={(v) => update("debtOutstanding", Number(v) || 0)}
-                    />
-                    <InputRow
-                      label="Interest Rate"
-                      value={form.debtInterestRate}
-                      suffix="%"
-                      onChange={(v) => update("debtInterestRate", Number(v) || 0)}
-                    />
-
-                    <div className={css.inputRow}>
-                      <span className={css.inputLabel}>Fundraising Window</span>
-                      <div className={css.incrGroup}>
-                        <button
-                          type="button"
-                          className={css.incrBtn}
-                          onClick={() =>
-                            update(
-                              "fundraisingWindow",
-                              Math.max(0, form.fundraisingWindow - 1),
-                            )
-                          }
-                        >
-                          &minus;
-                        </button>
-                        <span className={css.incrValue}>
-                          {form.fundraisingWindow} months
-                        </span>
-                        <button
-                          type="button"
-                          className={css.incrBtn}
-                          onClick={() =>
-                            update("fundraisingWindow", form.fundraisingWindow + 1)
-                          }
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className={css.inputRow}>
-                      <span className={css.inputLabel}>Access to Capital</span>
-                      <ToggleGroup
-                        options={["Moderate", "Strong"] as AccessToCapital[]}
-                        value={form.accessToCapital}
-                        onChange={(v) => update("accessToCapital", v)}
-                      />
-                    </div>
-
-                    <div className={css.panelDivider} />
+                  <div className={css.panelDivider} />
+                  <div className={css.derivedRow}>
+                    <span className={css.derivedLabel}>&#8901; Runway</span>
+                    <span className={css.derivedValue}>
+                      {metrics.runway.toFixed(1)} months
+                      &nbsp;&nbsp;{metrics.burnMultiple.toFixed(1)}x
+                    </span>
+                  </div>
+                  {form.debtOutstanding > 0 && (
                     <div className={css.derivedRow}>
-                      <span className={css.derivedLabel}>&#8901; Runway</span>
+                      <span className={css.derivedLabel}>
+                        &#8901; Monthly Interest Burden
+                      </span>
                       <span className={css.derivedValue}>
-                        {metrics.runway.toFixed(1)} months
-                        &nbsp;&nbsp;{metrics.burnMultiple.toFixed(1)}x
+                        {fmtCurrency(
+                          (form.debtOutstanding * (form.debtInterestRate / 100)) / 12,
+                        )}
                       </span>
                     </div>
-                    {form.debtOutstanding > 0 && (
+                  )}
+                </div>
+
+                {/* ── REVENUE ENGINE ── */}
+                <div className={css.sectionPanel}>
+                  <h3 className={css.panelTitle}>REVENUE ENGINE</h3>
+
+                  <SliderRow
+                    label="Current ARR"
+                    value={form.currentARR}
+                    min={0} max={10_000_000} step={10_000}
+                    format={fmtCurrency}
+                    onChange={(v) => update("currentARR", v)}
+                  />
+                  <SliderRow
+                    label="Monthly Growth %"
+                    value={form.monthlyGrowthPct}
+                    min={0} max={30} step={0.1}
+                    format={(v) => `${v.toFixed(1)}%`}
+                    onChange={(v) => update("monthlyGrowthPct", v)}
+                  />
+                  <InputRow
+                    label="Average Deal Size (ACV)"
+                    value={form.avgDealSize}
+                    prefix="$"
+                    onChange={(v) => update("avgDealSize", Number(v) || 0)}
+                  />
+                  <SliderRow
+                    label="Monthly Churn %"
+                    value={form.monthlyChurnPct}
+                    min={0} max={15} step={0.1}
+                    format={(v) => `${v.toFixed(1)}%`}
+                    onChange={(v) => update("monthlyChurnPct", v)}
+                  />
+                  <SliderRow
+                    label="Sales Efficiency"
+                    value={form.salesEfficiency}
+                    min={0} max={3} step={0.1}
+                    format={(v) => `${v.toFixed(1)}x`}
+                    onChange={(v) => update("salesEfficiency", v)}
+                  />
+                  <SliderRow
+                    label="Net Revenue Retention %"
+                    value={form.netRevenueRetentionPct}
+                    min={50} max={200} step={1}
+                    format={(v) => `${v}%`}
+                    onChange={(v) => update("netRevenueRetentionPct", v)}
+                  />
+                </div>
+
+                {/* ── COST STRUCTURE ── */}
+                <div className={css.sectionPanel}>
+                  <button
+                    type="button"
+                    className={css.panelTitleBtn}
+                    onClick={() => setCostExpanded((p) => !p)}
+                  >
+                    <h3 className={css.panelTitle}>COST STRUCTURE</h3>
+                    <span
+                      className={css.expandChevron}
+                      style={{
+                        transform: costExpanded ? "rotate(180deg)" : "rotate(0)",
+                      }}
+                    >
+                      &#9660;
+                    </span>
+                  </button>
+
+                  {costExpanded && (
+                    <>
+                      <InputRow
+                        label="Headcount"
+                        value={form.headcount}
+                        onChange={(v) => update("headcount", Number(v) || 0)}
+                      />
+                      <InputRow
+                        label="Avg Fully Loaded Cost"
+                        value={form.avgFullyLoadedCost}
+                        prefix="$"
+                        onChange={(v) =>
+                          update("avgFullyLoadedCost", Number(v) || 0)
+                        }
+                      />
+                      <InputRow
+                        label="Sales & Marketing Spend"
+                        value={form.salesMarketingSpend}
+                        prefix="$"
+                        onChange={(v) =>
+                          update("salesMarketingSpend", Number(v) || 0)
+                        }
+                      />
+                      <InputRow
+                        label="R&D Spend"
+                        value={form.rdSpend}
+                        prefix="$"
+                        onChange={(v) => update("rdSpend", Number(v) || 0)}
+                      />
+                      <InputRow
+                        label="G&A Spend"
+                        value={form.gaSpend}
+                        prefix="$"
+                        onChange={(v) => update("gaSpend", Number(v) || 0)}
+                      />
+
+                      <div className={css.panelDivider} />
+
                       <div className={css.derivedRow}>
                         <span className={css.derivedLabel}>
-                          &#8901; Monthly Interest Burden
+                          Revenue / Employee
                         </span>
                         <span className={css.derivedValue}>
-                          {fmtCurrency(
-                            (form.debtOutstanding * (form.debtInterestRate / 100)) / 12,
-                          )}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* ── REVENUE ENGINE ── */}
-                  <div className={css.sectionPanel}>
-                    <h3 className={css.panelTitle}>REVENUE ENGINE</h3>
-
-                    <SliderRow
-                      label="Current ARR"
-                      value={form.currentARR}
-                      min={0} max={10_000_000} step={10_000}
-                      format={fmtCurrency}
-                      onChange={(v) => update("currentARR", v)}
-                    />
-                    <SliderRow
-                      label="Monthly Growth %"
-                      value={form.monthlyGrowthPct}
-                      min={0} max={30} step={0.1}
-                      format={(v) => `${v.toFixed(1)}%`}
-                      onChange={(v) => update("monthlyGrowthPct", v)}
-                    />
-                    <InputRow
-                      label="Average Deal Size (ACV)"
-                      value={form.avgDealSize}
-                      prefix="$"
-                      onChange={(v) => update("avgDealSize", Number(v) || 0)}
-                    />
-                    <SliderRow
-                      label="Monthly Churn %"
-                      value={form.monthlyChurnPct}
-                      min={0} max={15} step={0.1}
-                      format={(v) => `${v.toFixed(1)}%`}
-                      onChange={(v) => update("monthlyChurnPct", v)}
-                    />
-                    <SliderRow
-                      label="Sales Efficiency"
-                      value={form.salesEfficiency}
-                      min={0} max={3} step={0.1}
-                      format={(v) => `${v.toFixed(1)}x`}
-                      onChange={(v) => update("salesEfficiency", v)}
-                    />
-                    <SliderRow
-                      label="Net Revenue Retention %"
-                      value={form.netRevenueRetentionPct}
-                      min={50} max={200} step={1}
-                      format={(v) => `${v}%`}
-                      onChange={(v) => update("netRevenueRetentionPct", v)}
-                    />
-                  </div>
-
-                  {/* ── COST STRUCTURE ── */}
-                  <div className={css.sectionPanel}>
-                    <button
-                      type="button"
-                      className={css.panelTitleBtn}
-                      onClick={() => setCostExpanded((p) => !p)}
-                    >
-                      <h3 className={css.panelTitle}>COST STRUCTURE</h3>
-                      <span
-                        className={css.expandChevron}
-                        style={{
-                          transform: costExpanded ? "rotate(180deg)" : "rotate(0)",
-                        }}
-                      >
-                        &#9660;
-                      </span>
-                    </button>
-
-                    {costExpanded && (
-                      <>
-                        <InputRow
-                          label="Headcount"
-                          value={form.headcount}
-                          onChange={(v) => update("headcount", Number(v) || 0)}
-                        />
-                        <InputRow
-                          label="Avg Fully Loaded Cost"
-                          value={form.avgFullyLoadedCost}
-                          prefix="$"
-                          onChange={(v) =>
-                            update("avgFullyLoadedCost", Number(v) || 0)
-                          }
-                        />
-                        <InputRow
-                          label="Sales & Marketing Spend"
-                          value={form.salesMarketingSpend}
-                          prefix="$"
-                          onChange={(v) =>
-                            update("salesMarketingSpend", Number(v) || 0)
-                          }
-                        />
-                        <InputRow
-                          label="R&D Spend"
-                          value={form.rdSpend}
-                          prefix="$"
-                          onChange={(v) => update("rdSpend", Number(v) || 0)}
-                        />
-                        <InputRow
-                          label="G&A Spend"
-                          value={form.gaSpend}
-                          prefix="$"
-                          onChange={(v) => update("gaSpend", Number(v) || 0)}
-                        />
-
-                        <div className={css.panelDivider} />
-
-                        <div className={css.derivedRow}>
-                          <span className={css.derivedLabel}>
-                            Revenue / Employee
-                          </span>
-                          <span className={css.derivedValue}>
-                            {fmtCurrency(revenuePerEmployee)}
-                          </span>
-                        </div>
-                        <div className={css.derivedRow}>
-                          <span className={css.derivedLabel}>
-                            Revenue and Operating Profit
-                          </span>
-                          <span
-                            className={css.derivedValue}
-                            style={{
-                              color:
-                                operatingProfit >= 0 ? "#34d399" : "#f87171",
-                            }}
-                          >
-                            {operatingProfit < 0 ? "-" : ""}
-                            {fmtCurrency(Math.abs(operatingProfit))}
-                          </span>
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  {/* ── BURN METRICS ── */}
-                  <div className={css.sectionPanel}>
-                    <h3 className={css.panelTitle}>BURN METRICS</h3>
-
-                    <SliderRow
-                      label="Revenue per Employee"
-                      value={revenuePerEmployee}
-                      min={0} max={200_000} step={1_000}
-                      format={fmtCurrency}
-                      onChange={() => {}}
-                      showScale={false}
-                    />
-
-                    <div className={css.panelDivider} />
-
-                    <div className={css.derivedRow}>
-                      <span className={css.derivedLabel}>
-                        &#8901; Burn Multiple
-                      </span>
-                      <span className={css.derivedValue}>
-                        {metrics.burnMultiple.toFixed(1)}x
-                      </span>
-                    </div>
-                    <div className={css.derivedRow}>
-                      <span className={css.derivedLabel}>
-                        &#8901; Derived Monthly Burn
-                      </span>
-                      <span className={css.derivedValue}>
-                        {fmtCurrency(metrics.monthlyBurn)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ═══════════════════════════════════════════════════════
-                STEP 3 — Operating Structure
-                ═══════════════════════════════════════════════════════ */}
-            {activeStep === 3 && (
-              <div className={css.stepContent}>
-                <div className={css.panelGrid}>
-                  <div className={css.sectionPanel}>
-                    <h3 className={css.panelTitle}>EXECUTION VELOCITY</h3>
-
-                    <div className={css.inputRow}>
-                      <span className={css.inputLabel}>Hiring Velocity</span>
-                      <ToggleGroup
-                        options={["Low", "Medium", "High"] as HiringVelocity[]}
-                        value={form.hiringVelocity}
-                        onChange={(v) => update("hiringVelocity", v)}
-                      />
-                    </div>
-                    <SliderRow
-                      label="Sales Ramp Time"
-                      value={form.salesRampTime}
-                      min={1} max={12} step={1}
-                      format={(v) => `${v} months`}
-                      onChange={(v) => update("salesRampTime", v)}
-                      showScale={false}
-                    />
-                    <SliderRow
-                      label="Engineering Velocity"
-                      value={form.engineeringVelocity}
-                      min={1} max={12} step={1}
-                      format={(v) => `${v} months`}
-                      onChange={(v) => update("engineeringVelocity", v)}
-                      showScale={false}
-                    />
-                    <div className={css.inputRow}>
-                      <span className={css.inputLabel}>Burn Flexibility</span>
-                      <ToggleGroup
-                        options={["Fixed", "Variable"] as BurnFlexibility[]}
-                        value={form.burnFlexibility}
-                        onChange={(v) => update("burnFlexibility", v)}
-                      />
-                    </div>
-                  </div>
-
-                  <div className={css.sectionPanel}>
-                    <h3 className={css.panelTitle}>COST &amp; COGS</h3>
-
-                    <InputRow
-                      label="Headcount"
-                      value={form.headcount}
-                      onChange={(v) => update("headcount", Number(v) || 0)}
-                    />
-                    <InputRow
-                      label="Avg Fully Loaded Cost"
-                      value={form.avgFullyLoadedCost}
-                      prefix="$"
-                      onChange={(v) =>
-                        update("avgFullyLoadedCost", Number(v) || 0)
-                      }
-                    />
-                    <InputRow
-                      label="G&A Spend"
-                      value={form.gaSpend}
-                      prefix="$"
-                      onChange={(v) => update("gaSpend", Number(v) || 0)}
-                    />
-                    <InputRow
-                      label="COGS"
-                      value={form.cogsPct}
-                      prefix="$"
-                      onChange={(v) => update("cogsPct", Number(v) || 0)}
-                    />
-
-                    <div className={css.panelDivider} />
-                    <SliderRow
-                      label="Revenue per Employee"
-                      value={revenuePerEmployee}
-                      min={0} max={200_000} step={1_000}
-                      format={fmtCurrency}
-                      onChange={() => {}}
-                      showScale={false}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ═══════════════════════════════════════════════════════
-                STEP 4 — Strategic Intent
-                ═══════════════════════════════════════════════════════ */}
-            {activeStep === 4 && (
-              <div className={css.stepContent}>
-                <div className={css.panelGrid}>
-                  <div className={css.sectionPanel}>
-                    <h3 className={css.panelTitle}>STRATEGIC POSTURE</h3>
-
-                    <div className={css.inputRow}>
-                      <span className={css.inputLabel}>Risk Tolerance</span>
-                      <ToggleGroup
-                        options={
-                          [
-                            "Conservative",
-                            "Balanced",
-                            "Aggressive",
-                          ] as RiskTolerance[]
-                        }
-                        value={form.riskTolerance}
-                        onChange={(v) => update("riskTolerance", v)}
-                      />
-                    </div>
-                    <SliderRow
-                      label="Target Growth Band"
-                      value={form.targetGrowthBand}
-                      min={1} max={12} step={1}
-                      format={(v) => `${v} months`}
-                      onChange={(v) => update("targetGrowthBand", v)}
-                      showScale={false}
-                    />
-
-                    <div className={css.priorityRow}>
-                      <span className={css.priorityLabel}>Priority Balance</span>
-                      <div className={css.priorityControl}>
-                        <span className={css.priorityEnd}>Survival</span>
-                        <input
-                          type="range"
-                          className={css.sliderInput}
-                          min={0} max={100} step={1}
-                          value={form.priorityBalance}
-                          style={sliderFill(form.priorityBalance, 0, 100)}
-                          onChange={(e) =>
-                            update("priorityBalance", Number(e.target.value))
-                          }
-                        />
-                        <span className={css.priorityEnd}>Expansion</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className={css.sectionPanel}>
-                    <h3 className={css.panelTitle}>SUMMARY</h3>
-                    <div className={css.summaryGrid}>
-                      <div className={css.summaryItem}>
-                        <span className={css.summaryItemLabel}>Runway</span>
-                        <span className={css.summaryItemValue}>
-                          {metrics.runway.toFixed(1)} months
-                        </span>
-                      </div>
-                      <div className={css.summaryItem}>
-                        <span className={css.summaryItemLabel}>Burn Multiple</span>
-                        <span className={css.summaryItemValue}>
-                          {metrics.burnMultiple.toFixed(2)}x
-                        </span>
-                      </div>
-                      <div className={css.summaryItem}>
-                        <span className={css.summaryItemLabel}>Monthly Burn</span>
-                        <span className={css.summaryItemValue}>
-                          {fmtCurrency(metrics.monthlyBurn)}
-                        </span>
-                      </div>
-                      <div className={css.summaryItem}>
-                        <span className={css.summaryItemLabel}>Survival</span>
-                        <span className={css.summaryItemValue}>
-                          {metrics.survivalProbability}%
-                        </span>
-                      </div>
-                      <div className={css.summaryItem}>
-                        <span className={css.summaryItemLabel}>
-                          Revenue / Head
-                        </span>
-                        <span className={css.summaryItemValue}>
                           {fmtCurrency(revenuePerEmployee)}
                         </span>
                       </div>
-                      <div className={css.summaryItem}>
-                        <span className={css.summaryItemLabel}>Op. Profit</span>
+                      <div className={css.derivedRow}>
+                        <span className={css.derivedLabel}>
+                          Revenue and Operating Profit
+                        </span>
                         <span
-                          className={css.summaryItemValue}
+                          className={css.derivedValue}
                           style={{
                             color:
                               operatingProfit >= 0 ? "#34d399" : "#f87171",
                           }}
                         >
-                          {fmtCurrency(operatingProfit)}
+                          {operatingProfit < 0 ? "-" : ""}
+                          {fmtCurrency(Math.abs(operatingProfit))}
                         </span>
                       </div>
+                    </>
+                  )}
+                </div>
+
+                {/* ── BURN METRICS ── */}
+                <div className={css.sectionPanel}>
+                  <h3 className={css.panelTitle}>BURN METRICS</h3>
+
+                  <SliderRow
+                    label="Revenue per Employee"
+                    value={revenuePerEmployee}
+                    min={0} max={200_000} step={1_000}
+                    format={fmtCurrency}
+                    onChange={() => {}}
+                    showScale={false}
+                  />
+
+                  <div className={css.panelDivider} />
+
+                  <div className={css.derivedRow}>
+                    <span className={css.derivedLabel}>
+                      &#8901; Burn Multiple
+                    </span>
+                    <span className={css.derivedValue}>
+                      {metrics.burnMultiple.toFixed(1)}x
+                    </span>
+                  </div>
+                  <div className={css.derivedRow}>
+                    <span className={css.derivedLabel}>
+                      &#8901; Derived Monthly Burn
+                    </span>
+                    <span className={css.derivedValue}>
+                      {fmtCurrency(metrics.monthlyBurn)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ═══════════════════════════════════════════════════════
+              STEP 3 — Operating Structure
+              ═══════════════════════════════════════════════════════ */}
+          {activeStep === 3 && (
+            <div className={css.stepContent}>
+              <div className={css.panelGrid}>
+                <div className={css.sectionPanel}>
+                  <h3 className={css.panelTitle}>EXECUTION VELOCITY</h3>
+
+                  <div className={css.inputRow}>
+                    <span className={css.inputLabel}>Hiring Velocity</span>
+                    <ToggleGroup
+                      options={["Low", "Medium", "High"] as HiringVelocity[]}
+                      value={form.hiringVelocity}
+                      onChange={(v) => update("hiringVelocity", v)}
+                    />
+                  </div>
+                  <SliderRow
+                    label="Sales Ramp Time"
+                    value={form.salesRampTime}
+                    min={1} max={12} step={1}
+                    format={(v) => `${v} months`}
+                    onChange={(v) => update("salesRampTime", v)}
+                    showScale={false}
+                  />
+                  <SliderRow
+                    label="Engineering Velocity"
+                    value={form.engineeringVelocity}
+                    min={1} max={12} step={1}
+                    format={(v) => `${v} months`}
+                    onChange={(v) => update("engineeringVelocity", v)}
+                    showScale={false}
+                  />
+                  <div className={css.inputRow}>
+                    <span className={css.inputLabel}>Burn Flexibility</span>
+                    <ToggleGroup
+                      options={["Fixed", "Variable"] as BurnFlexibility[]}
+                      value={form.burnFlexibility}
+                      onChange={(v) => update("burnFlexibility", v)}
+                    />
+                  </div>
+                </div>
+
+                <div className={css.sectionPanel}>
+                  <h3 className={css.panelTitle}>COST &amp; COGS</h3>
+
+                  <InputRow
+                    label="Headcount"
+                    value={form.headcount}
+                    onChange={(v) => update("headcount", Number(v) || 0)}
+                  />
+                  <InputRow
+                    label="Avg Fully Loaded Cost"
+                    value={form.avgFullyLoadedCost}
+                    prefix="$"
+                    onChange={(v) =>
+                      update("avgFullyLoadedCost", Number(v) || 0)
+                    }
+                  />
+                  <InputRow
+                    label="G&A Spend"
+                    value={form.gaSpend}
+                    prefix="$"
+                    onChange={(v) => update("gaSpend", Number(v) || 0)}
+                  />
+                  <InputRow
+                    label="COGS"
+                    value={form.cogsPct}
+                    prefix="$"
+                    onChange={(v) => update("cogsPct", Number(v) || 0)}
+                  />
+
+                  <div className={css.panelDivider} />
+                  <SliderRow
+                    label="Revenue per Employee"
+                    value={revenuePerEmployee}
+                    min={0} max={200_000} step={1_000}
+                    format={fmtCurrency}
+                    onChange={() => {}}
+                    showScale={false}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ═══════════════════════════════════════════════════════
+              STEP 4 — Strategic Intent
+              ═══════════════════════════════════════════════════════ */}
+          {activeStep === 4 && (
+            <div className={css.stepContent}>
+              <div className={css.panelGrid}>
+                <div className={css.sectionPanel}>
+                  <h3 className={css.panelTitle}>STRATEGIC POSTURE</h3>
+
+                  <div className={css.inputRow}>
+                    <span className={css.inputLabel}>Risk Tolerance</span>
+                    <ToggleGroup
+                      options={
+                        [
+                          "Conservative",
+                          "Balanced",
+                          "Aggressive",
+                        ] as RiskTolerance[]
+                      }
+                      value={form.riskTolerance}
+                      onChange={(v) => update("riskTolerance", v)}
+                    />
+                  </div>
+                  <SliderRow
+                    label="Target Growth Band"
+                    value={form.targetGrowthBand}
+                    min={1} max={12} step={1}
+                    format={(v) => `${v} months`}
+                    onChange={(v) => update("targetGrowthBand", v)}
+                    showScale={false}
+                  />
+
+                  <div className={css.priorityRow}>
+                    <span className={css.priorityLabel}>Priority Balance</span>
+                    <div className={css.priorityControl}>
+                      <span className={css.priorityEnd}>Survival</span>
+                      <input
+                        type="range"
+                        className={css.sliderInput}
+                        min={0} max={100} step={1}
+                        value={form.priorityBalance}
+                        style={sliderFill(form.priorityBalance, 0, 100)}
+                        onChange={(e) =>
+                          update("priorityBalance", Number(e.target.value))
+                        }
+                      />
+                      <span className={css.priorityEnd}>Expansion</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={css.sectionPanel}>
+                  <h3 className={css.panelTitle}>SUMMARY</h3>
+                  <div className={css.summaryGrid}>
+                    <div className={css.summaryItem}>
+                      <span className={css.summaryItemLabel}>Runway</span>
+                      <span className={css.summaryItemValue}>
+                        {metrics.runway.toFixed(1)} months
+                      </span>
+                    </div>
+                    <div className={css.summaryItem}>
+                      <span className={css.summaryItemLabel}>Burn Multiple</span>
+                      <span className={css.summaryItemValue}>
+                        {metrics.burnMultiple.toFixed(2)}x
+                      </span>
+                    </div>
+                    <div className={css.summaryItem}>
+                      <span className={css.summaryItemLabel}>Monthly Burn</span>
+                      <span className={css.summaryItemValue}>
+                        {fmtCurrency(metrics.monthlyBurn)}
+                      </span>
+                    </div>
+                    <div className={css.summaryItem}>
+                      <span className={css.summaryItemLabel}>Survival</span>
+                      <span className={css.summaryItemValue}>
+                        {metrics.survivalProbability}%
+                      </span>
+                    </div>
+                    <div className={css.summaryItem}>
+                      <span className={css.summaryItemLabel}>
+                        Revenue / Head
+                      </span>
+                      <span className={css.summaryItemValue}>
+                        {fmtCurrency(revenuePerEmployee)}
+                      </span>
+                    </div>
+                    <div className={css.summaryItem}>
+                      <span className={css.summaryItemLabel}>Op. Profit</span>
+                      <span
+                        className={css.summaryItemValue}
+                        style={{
+                          color:
+                            operatingProfit >= 0 ? "#34d399" : "#f87171",
+                        }}
+                      >
+                        {fmtCurrency(operatingProfit)}
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* ═══ FOOTER ═══ */}
-            <footer className={css.footer}>
-              <div className={css.footerStatus}>
-                <span className={css.footerDot} />
-                DRAFT &mdash; NOT LOCKED
-              </div>
-              <div className={css.footerActions}>
-                {canGoBack && (
-                  <button
-                    type="button"
-                    className={css.backBtn}
-                    onClick={() =>
-                      setActiveStep((activeStep - 1) as WizardStep)
-                    }
-                  >
-                    BACK
-                  </button>
-                )}
-                {canGoNext ? (
-                  <button
-                    type="button"
-                    className={css.lockBtn}
-                    onClick={() =>
-                      setActiveStep((activeStep + 1) as WizardStep)
-                    }
-                  >
-                    NEXT &rarr;
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className={css.lockBtn}
-                    onClick={handleLock}
-                  >
-                    LOCK BASELINE &amp; ENTER STRATFIT
-                  </button>
-                )}
-              </div>
-            </footer>
-          </main>
-        </div>
+          {/* ═══ CONSOLE ACTION BAR ═══ */}
+          <footer className={css.footer}>
+            <div className={css.footerStatus}>
+              <span className={css.footerDot} />
+              DRAFT &mdash; NOT LOCKED
+            </div>
+            <div className={css.footerActions}>
+              {canGoBack && (
+                <button
+                  type="button"
+                  className={css.backBtn}
+                  onClick={() =>
+                    setActiveStep((activeStep - 1) as WizardStep)
+                  }
+                >
+                  BACK
+                </button>
+              )}
+              {canGoNext ? (
+                <button
+                  type="button"
+                  className={css.lockBtn}
+                  onClick={() =>
+                    setActiveStep((activeStep + 1) as WizardStep)
+                  }
+                >
+                  NEXT &rarr;
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className={css.lockBtn}
+                  onClick={handleLock}
+                >
+                  LOCK BASELINE &amp; ENTER STRATFIT
+                </button>
+              )}
+            </div>
+          </footer>
+        </main>
       </div>
-    </div>
+    </ConsoleFrame>
   )
 }
