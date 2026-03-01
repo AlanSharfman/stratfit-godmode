@@ -2,21 +2,7 @@ import React, { useCallback, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useBaselineStore } from "@/state/baselineStore"
 import ConsoleFrame from "@/layout/ConsoleFrame"
-import css from "./IngressConsole.module.css"
-
-/* ═══════════════════════════════════════════════════════════════════
-   FEATURE FLAG — V2 Dense Instrument Console
-   Set localStorage key SF_INITIATE_V2 = "false" to force legacy.
-   Default: V2 ON.
-   ═══════════════════════════════════════════════════════════════════ */
-const USE_INITIATE_V2 =
-  typeof window !== "undefined" &&
-  window.localStorage.getItem("SF_INITIATE_V2") !== "false"
-
-// Lazy-load V2 to keep legacy bundle untouched
-const InitializeBaselineV2 = React.lazy(
-  () => import("./InitializeBaselineV2"),
-)
+import css from "./IngressConsoleV2.module.css"
 
 /* ═══════════════════════════════════════════════════════════════════
    TYPES
@@ -126,10 +112,10 @@ function fmtCurrency(v: number): string {
 function sliderFill(value: number, min: number, max: number): React.CSSProperties {
   const pct = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100))
   return {
-    background: `linear-gradient(90deg, #065f73 0%, #0e7490 ${pct * 0.3}%, #22d3ee ${pct * 0.7}%, #67e8f9 ${pct}%, rgba(255,255,255,0.04) ${pct}%, rgba(255,255,255,0.04) 100%)`,
+    background: `linear-gradient(90deg, #065f73 0%, #0e7490 ${pct * 0.3}%, #22d3ee ${pct * 0.7}%, #67e8f9 ${pct}%, rgba(255,255,255,0.035) ${pct}%, rgba(255,255,255,0.035) 100%)`,
     boxShadow: pct > 3
-      ? `0 0 ${6 + pct * 0.12}px rgba(34,211,238,${0.18 + pct * 0.004}), 0 0 ${2 + pct * 0.06}px rgba(103,232,249,${0.10 + pct * 0.002}), inset 0 1px 2px rgba(0,0,0,0.35)`
-      : 'inset 0 1px 2px rgba(0,0,0,0.35)',
+      ? `0 0 ${4 + pct * 0.08}px rgba(34,211,238,${0.14 + pct * 0.003}), inset 0 1px 2px rgba(0,0,0,0.30)`
+      : 'inset 0 1px 2px rgba(0,0,0,0.30)',
   }
 }
 
@@ -178,7 +164,7 @@ const INDUSTRIES = [
 ]
 
 /* ═══════════════════════════════════════════════════════════════════
-   SUB-COMPONENTS
+   SUB-COMPONENTS — Compact Inline Variants
    ═══════════════════════════════════════════════════════════════════ */
 
 interface SliderRowProps {
@@ -189,43 +175,28 @@ interface SliderRowProps {
   step: number
   format: (v: number) => string
   onChange: (v: number) => void
-  showScale?: boolean
 }
 
+/** V2 Compact Inline Slider: Label LEFT · Track MID · Value RIGHT */
 function SliderRow({
-  label, value, min, max, step, format, onChange, showScale = true,
+  label, value, min, max, step, format, onChange,
 }: SliderRowProps) {
   return (
     <div className={css.sliderRow}>
-      <div className={css.sliderHeader}>
-        <span className={css.sliderLabel}>{label}</span>
-        <span className={css.sliderInfoIcon}>i</span>
+      <span className={css.sliderLabel}>{label}</span>
+      <div className={css.sliderControl}>
+        <input
+          type="range"
+          className={css.sliderInput}
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          style={sliderFill(value, min, max)}
+          onChange={(e) => onChange(Number(e.target.value))}
+        />
       </div>
-      <div className={css.sliderBody}>
-        <div className={css.sliderControl}>
-          <input
-            type="range"
-            className={css.sliderInput}
-            min={min}
-            max={max}
-            step={step}
-            value={value}
-            style={sliderFill(value, min, max)}
-            onChange={(e) => onChange(Number(e.target.value))}
-          />
-          {showScale && (
-            <div className={css.sliderScale}>
-              <span>LOW</span>
-              <span>NEUTRAL</span>
-              <span>HIGH</span>
-            </div>
-          )}
-        </div>
-        <div className={css.sliderValueWrap}>
-          <span className={css.sliderValue}>{format(value)}</span>
-          <span className={css.sliderValueBar} />
-        </div>
-      </div>
+      <span className={css.sliderValue}>{format(value)}</span>
     </div>
   )
 }
@@ -287,43 +258,10 @@ function ToggleGroup<T extends string>({
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   DEFAULT EXPORT — Feature Flag Router
+   MAIN COMPONENT — V2 Dense Instrument Console
    ═══════════════════════════════════════════════════════════════════ */
 
-export default function InitializeBaselinePage() {
-  if (USE_INITIATE_V2) {
-    return (
-      <React.Suspense
-        fallback={
-          <div
-            style={{
-              minHeight: "100vh",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "#040710",
-              color: "rgba(255,255,255,0.3)",
-              fontFamily: "Inter, system-ui, sans-serif",
-              fontSize: 13,
-              letterSpacing: "0.08em",
-            }}
-          >
-            LOADING CONSOLE…
-          </div>
-        }
-      >
-        <InitializeBaselineV2 />
-      </React.Suspense>
-    )
-  }
-  return <InitializeBaselineLegacy />
-}
-
-/* ═══════════════════════════════════════════════════════════════════
-   LEGACY COMPONENT
-   ═══════════════════════════════════════════════════════════════════ */
-
-function InitializeBaselineLegacy() {
+export default function InitializeBaselineV2() {
   const navigate = useNavigate()
   const setBaseline = useBaselineStore((s) => s.setBaseline)
 
@@ -390,7 +328,7 @@ function InitializeBaselineLegacy() {
           <div className={css.sidebarHeader}>
             <div className={css.sidebarLogo}>
               <div className={css.sidebarLogoIcon}>
-                <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+                <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
                   <path
                     d="M14 3L25 14L14 25L3 14L14 3Z"
                     stroke="rgba(34,211,238,0.50)"
@@ -444,7 +382,7 @@ function InitializeBaselineLegacy() {
           <div className={css.metricsStrip}>
             <div className={css.metricItem}>
               <span className={css.metricIcon}>
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
                   <path d="M7 1v5l3.5 2" stroke="rgba(34,211,238,0.65)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
                   <circle cx="7" cy="7" r="5.5" stroke="rgba(34,211,238,0.35)" strokeWidth="1.2" opacity="0.5"/>
                 </svg>
@@ -457,7 +395,7 @@ function InitializeBaselineLegacy() {
                       ? "#f87171"
                       : metrics.runway < 12
                         ? "#fbbf24"
-                        : "rgba(255,255,255,0.92)",
+                        : "rgba(255,255,255,0.90)",
                 }}
               >
                 {metrics.runway.toFixed(1)}
@@ -506,7 +444,7 @@ function InitializeBaselineLegacy() {
                         : "#f87171",
                 }}
               >
-                {ltvCacRatio > 0 ? `${ltvCacRatio.toFixed(1)}x` : "—"}
+                {ltvCacRatio > 0 ? `${ltvCacRatio.toFixed(1)}x` : "\u2014"}
               </span>
             </div>
           </div>
@@ -710,7 +648,7 @@ function InitializeBaselineLegacy() {
                     onChange={(v) => update("salesEfficiency", v)}
                   />
                   <SliderRow
-                    label="Net Revenue Retention %"
+                    label="NRR %"
                     value={form.netRevenueRetentionPct}
                     min={50} max={200} step={1}
                     format={(v) => `${v}%`}
@@ -753,7 +691,7 @@ function InitializeBaselineLegacy() {
                         }
                       />
                       <InputRow
-                        label="Sales & Marketing Spend"
+                        label="Sales & Marketing"
                         value={form.salesMarketingSpend}
                         prefix="$"
                         onChange={(v) =>
@@ -785,7 +723,7 @@ function InitializeBaselineLegacy() {
                       </div>
                       <div className={css.derivedRow}>
                         <span className={css.derivedLabel}>
-                          Revenue and Operating Profit
+                          Operating Profit
                         </span>
                         <span
                           className={css.derivedValue}
@@ -808,12 +746,11 @@ function InitializeBaselineLegacy() {
                   <h3 className={css.panelTitle}>BURN METRICS</h3>
 
                   <SliderRow
-                    label="Revenue per Employee"
+                    label="Revenue / Head"
                     value={revenuePerEmployee}
                     min={0} max={200_000} step={1_000}
                     format={fmtCurrency}
                     onChange={() => {}}
-                    showScale={false}
                   />
 
                   <div className={css.panelDivider} />
@@ -828,7 +765,7 @@ function InitializeBaselineLegacy() {
                   </div>
                   <div className={css.derivedRow}>
                     <span className={css.derivedLabel}>
-                      &#8901; Derived Monthly Burn
+                      &#8901; Monthly Burn
                     </span>
                     <span className={css.derivedValue}>
                       {fmtCurrency(metrics.monthlyBurn)}
@@ -861,17 +798,15 @@ function InitializeBaselineLegacy() {
                     label="Sales Ramp Time"
                     value={form.salesRampTime}
                     min={1} max={12} step={1}
-                    format={(v) => `${v} months`}
+                    format={(v) => `${v} mo`}
                     onChange={(v) => update("salesRampTime", v)}
-                    showScale={false}
                   />
                   <SliderRow
-                    label="Engineering Velocity"
+                    label="Eng Velocity"
                     value={form.engineeringVelocity}
                     min={1} max={12} step={1}
-                    format={(v) => `${v} months`}
+                    format={(v) => `${v} mo`}
                     onChange={(v) => update("engineeringVelocity", v)}
-                    showScale={false}
                   />
                   <div className={css.inputRow}>
                     <span className={css.inputLabel}>Burn Flexibility</span>
@@ -893,7 +828,7 @@ function InitializeBaselineLegacy() {
                     onChange={(v) => update("headcount", Number(v) || 0)}
                   />
                   <InputRow
-                    label="Avg Fully Loaded Cost"
+                    label="Avg Loaded Cost"
                     value={form.avgFullyLoadedCost}
                     prefix="$"
                     onChange={(v) =>
@@ -915,12 +850,11 @@ function InitializeBaselineLegacy() {
 
                   <div className={css.panelDivider} />
                   <SliderRow
-                    label="Revenue per Employee"
+                    label="Revenue / Head"
                     value={revenuePerEmployee}
                     min={0} max={200_000} step={1_000}
                     format={fmtCurrency}
                     onChange={() => {}}
-                    showScale={false}
                   />
                 </div>
 
@@ -930,7 +864,7 @@ function InitializeBaselineLegacy() {
                   <h3 className={css.panelTitle}>CUSTOMER UNIT ECONOMICS</h3>
 
                   <InputRow
-                    label="CAC (Acquisition Cost)"
+                    label="CAC (Cost)"
                     value={form.cac}
                     prefix="$"
                     onChange={(v) => update("cac", Number(v) || 0)}
@@ -954,17 +888,13 @@ function InitializeBaselineLegacy() {
                     </span>
                   </div>
                   <div className={css.derivedRow}>
-                    <span className={css.derivedLabel}>
-                      &#8901; LTV
-                    </span>
+                    <span className={css.derivedLabel}>&#8901; LTV</span>
                     <span className={css.derivedValue}>
                       {ltv > 0 ? fmtCurrency(ltv) : "\u2014"}
                     </span>
                   </div>
                   <div className={css.derivedRow}>
-                    <span className={css.derivedLabel}>
-                      &#8901; LTV / CAC
-                    </span>
+                    <span className={css.derivedLabel}>&#8901; LTV / CAC</span>
                     <span
                       className={css.derivedValue}
                       style={{
@@ -980,9 +910,7 @@ function InitializeBaselineLegacy() {
                     </span>
                   </div>
                   <div className={css.derivedRow}>
-                    <span className={css.derivedLabel}>
-                      &#8901; CAC Payback
-                    </span>
+                    <span className={css.derivedLabel}>&#8901; CAC Payback</span>
                     <span className={css.derivedValue}>
                       {cacPaybackMonths > 0
                         ? `${cacPaybackMonths.toFixed(1)} months`
@@ -1019,12 +947,11 @@ function InitializeBaselineLegacy() {
                     />
                   </div>
                   <SliderRow
-                    label="Target Growth Band"
+                    label="Growth Band"
                     value={form.targetGrowthBand}
                     min={1} max={12} step={1}
-                    format={(v) => `${v} months`}
+                    format={(v) => `${v} mo`}
                     onChange={(v) => update("targetGrowthBand", v)}
-                    showScale={false}
                   />
 
                   <div className={css.priorityRow}>
@@ -1053,7 +980,7 @@ function InitializeBaselineLegacy() {
                     <div className={css.summaryItem}>
                       <span className={css.summaryItemLabel}>Runway</span>
                       <span className={css.summaryItemValue}>
-                        {metrics.runway.toFixed(1)} months
+                        {metrics.runway.toFixed(1)} mo
                       </span>
                     </div>
                     <div className={css.summaryItem}>
@@ -1075,9 +1002,7 @@ function InitializeBaselineLegacy() {
                       </span>
                     </div>
                     <div className={css.summaryItem}>
-                      <span className={css.summaryItemLabel}>
-                        Revenue / Head
-                      </span>
+                      <span className={css.summaryItemLabel}>Rev / Head</span>
                       <span className={css.summaryItemValue}>
                         {fmtCurrency(revenuePerEmployee)}
                       </span>
