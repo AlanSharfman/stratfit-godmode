@@ -4,8 +4,32 @@
    Glass bezel + cyan edge highlight.
    ────────────────────────────────────────────────────────────── */
 
-/* ── Rail container ── */
+/* ── PHASE 1: Design Tokens ── */
 .rail {
+  --sf-bg: rgba(10, 14, 20, 0.92);
+  --sf-card-bg: linear-gradient(175deg, rgba(16, 22, 30, 0.94), rgba(10, 14, 20, 0.90));
+  --sf-border: rgba(200, 215, 230, 0.10);
+  --sf-border-strong: rgba(200, 215, 230, 0.18);
+  --sf-cyan: rgba(34, 211, 238, 0.85);
+  --sf-cyan-dim: rgba(34, 211, 238, 0.55);
+  --sf-emerald: rgba(52, 211, 153, 0.85);
+  --sf-indigo: rgba(129, 140, 248, 0.85);
+  --sf-lime: rgba(163, 230, 53, 0.80);
+  --sf-lime-dim: rgba(163, 230, 53, 0.45);
+  --sf-risk-red: rgba(248, 113, 113, 0.85);
+  --sf-blue: rgba(96, 165, 250, 0.85);
+  --sf-text: rgba(230, 248, 255, 0.96);
+  --sf-text-dim: rgba(148, 180, 214, 0.55);
+  --sf-glow-cyan: rgba(34, 211, 238, 0.06);
+  --sf-glow-lime: rgba(163, 230, 53, 0.05);
+  --sf-radius: 14px;
+  --sf-card-pad: 10px 12px;
+  --sf-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.08),
+    0 4px 14px rgba(0, 0, 0, 0.35);
+
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -15,40 +39,57 @@
 
 /* ── Section group ── */
 .section {
-  padding: 8px 0 4px;
+  padding: 10px 0 6px;
 }
 
 .section + .section {
-  border-top: 1px solid rgba(200, 220, 240, 0.06);
-  margin-top: 22px;
+  border-top: none;
+  margin-top: 4px;
+  padding-top: 6px;
 }
 
-/* ── Section header ── */
+/* ── PHASE 2: Section headers — command labels ── */
 .sectionHeader {
   font-family: 'Inter', system-ui, sans-serif;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(34, 211, 238, 0.60);
-  padding: 0 4px 5px;
-  margin: 0;
-  border-bottom: 1px solid rgba(34, 211, 238, 0.08);
-  margin-bottom: 6px;
+  color: var(--sf-cyan-dim);
+  padding: 0 4px 8px;
+  margin: 0 0 8px;
+  position: relative;
+}
+
+/* Gradient divider under header */
+.sectionHeader::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 4px;
+  right: 4px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(34, 211, 238, 0.22) 30%,
+    rgba(34, 211, 238, 0.22) 70%,
+    transparent 100%
+  );
 }
 
 /* ── Card stack ── */
 .cardStack {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 14px;
 }
 
-/* ── KPI Card ── */
+/* ── PHASE 3: KPI Card — premium jewel glass ── */
 .card {
   position: relative;
-  padding: 5px 8px;
-  border-radius: 8px;
+  padding: var(--sf-card-pad);
+  border-radius: var(--sf-radius);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -58,38 +99,36 @@
   min-height: 34px;
   width: 100%;
 
-  border: 1px solid rgba(200, 215, 230, 0.15);
-  background:
-    linear-gradient(
-      175deg,
-      rgba(16, 22, 30, 0.92),
-      rgba(10, 14, 20, 0.88)
-    );
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.06),
-    0 0 0 2.5px rgba(6, 10, 16, 0.80),
-    0 0 0 3.5px rgba(200, 215, 230, 0.10),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.10),
-    0 2px 8px rgba(0, 0, 0, 0.20);
+  border: 1px solid var(--sf-border);
+  background: var(--sf-card-bg);
+  box-shadow: var(--sf-shadow);
 
   transition:
-    transform 0.18s ease,
-    border-color 0.18s ease,
-    box-shadow 0.18s ease;
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 200ms ease;
   cursor: default;
 }
 
-.card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(34, 211, 238, 0.20);
-  box-shadow:
-    0 0 0 1px rgba(34, 211, 238, 0.10),
-    0 0 0 2.5px rgba(6, 10, 16, 0.80),
-    0 0 0 3.5px rgba(34, 211, 238, 0.13),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 6px 18px rgba(0, 0, 0, 0.30),
-    0 0 10px rgba(34, 211, 238, 0.03);
+/* Inner highlight bevel */
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--sf-radius);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  pointer-events: none;
+  z-index: 1;
+}
+
+@media (pointer: fine) {
+  .card:hover {
+    transform: translateY(-1px);
+    border-color: var(--sf-border-strong);
+    box-shadow:
+      var(--sf-shadow),
+      0 0 12px var(--sf-glow-cyan);
+  }
 }
 
 /* ── Label ── */
@@ -97,19 +136,19 @@
   font-family: 'Inter', system-ui, sans-serif;
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   text-align: center;
   width: 100%;
-  color: rgba(34, 211, 238, 0.78);
+  color: var(--sf-cyan);
 }
 
-/* Per-section label tinting — palette: emerald, blue, indigo, gold, cyan (no orange) */
-.labelCapital    { color: rgba(52, 211, 153, 0.85); }   /* emerald */
-.labelPerf       { color: rgba(96, 165, 250, 0.85); }   /* blue */
-.labelEfficiency { color: rgba(129, 140, 248, 0.85); }  /* indigo */
-.labelValuation  { color: rgba(250, 204, 21, 0.85); }   /* gold */
-.labelRisk       { color: rgba(34, 211, 238, 0.85); }   /* cyan */
+/* Per-section label tinting — palette: emerald, blue, indigo, lime, cyan (no orange, no yellow) */
+.labelCapital    { color: var(--sf-emerald); }     /* Liquidity — emerald */
+.labelPerf       { color: var(--sf-blue); }        /* Revenue — blue */
+.labelEfficiency { color: var(--sf-indigo); }      /* Efficiency — indigo */
+.labelValuation  { color: var(--sf-lime); }        /* Valuation — muted lime */
+.labelRisk       { color: var(--sf-cyan); }        /* Risk — cyan */
 
 /* Value */
 .value {
@@ -117,12 +156,12 @@
   font-size: 18px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: rgba(230, 248, 255, 0.96);
+  color: var(--sf-text);
   white-space: nowrap;
   text-align: center;
   width: 100%;
-  line-height: 1.2;
-  letter-spacing: -0.01em;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -131,10 +170,10 @@
 .sub {
   font-family: 'Inter', system-ui, sans-serif;
   font-size: 8px;
-  color: rgba(148, 180, 214, 0.72);
+  color: var(--sf-text-dim);
   text-align: center;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.10em;
   width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -153,6 +192,7 @@
   min-height: 18px;
   flex: 1;
   position: relative;
+  opacity: 0.82; /* Phase 5: dim widgets so numbers remain primary */
 }
 
 /* Soft glow halo behind each widget */
@@ -161,7 +201,7 @@
   position: absolute;
   inset: -4px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(100, 200, 255, 0.05) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(100, 200, 255, 0.04) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -172,7 +212,7 @@
 .heroCard {
   position: relative;
   padding: 5px 8px;
-  border-radius: 8px;
+  border-radius: var(--sf-radius);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -182,21 +222,9 @@
   min-height: 34px;
   width: 100%;
 
-  border: 1px solid rgba(34, 211, 238, 0.16);
-  background:
-    linear-gradient(
-      170deg,
-      rgba(14, 20, 28, 0.94),
-      rgba(8, 12, 18, 0.90)
-    );
-  box-shadow:
-    0 0 0 1px rgba(34, 211, 238, 0.06),
-    0 0 0 3px rgba(6, 10, 16, 0.85),
-    0 0 0 4px rgba(34, 211, 238, 0.10),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.10),
-    0 4px 16px rgba(0, 0, 0, 0.30),
-    0 0 16px rgba(34, 211, 238, 0.02);
+  border: 1px solid var(--sf-border);
+  background: var(--sf-card-bg);
+  box-shadow: var(--sf-shadow);
 
   transition:
     transform 0.18s ease,
@@ -204,15 +232,14 @@
   cursor: default;
 }
 
-.heroCard:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    0 0 0 1px rgba(34, 211, 238, 0.12),
-    0 0 0 3px rgba(6, 10, 16, 0.85),
-    0 0 0 4px rgba(34, 211, 238, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 8px 24px rgba(0, 0, 0, 0.35),
-    0 0 22px rgba(34, 211, 238, 0.04);
+@media (pointer: fine) {
+  .heroCard:hover {
+    transform: translateY(-1px);
+    border-color: var(--sf-border-strong);
+    box-shadow:
+      var(--sf-shadow),
+      0 0 18px var(--sf-glow-cyan);
+  }
 }
 
 /* Energy ring glow behind the hero card */
@@ -238,11 +265,11 @@
 }
 
 .heroCard[data-tone="valuation"]::before {
-  box-shadow: 0 0 16px rgba(250, 204, 21, 0.10), inset 0 0 8px rgba(250, 204, 21, 0.04);
+  box-shadow: 0 0 16px rgba(163, 230, 53, 0.08), inset 0 0 8px rgba(163, 230, 53, 0.03);
 }
 
 .heroCard[data-tone="valuation"] {
-  border-color: rgba(250, 204, 21, 0.18);
+  border-color: rgba(163, 230, 53, 0.16);
 }
 
 /* Hero value — matches .value with tabular-nums + overflow guard */
@@ -251,7 +278,7 @@
   font-size: 18px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: rgba(230, 248, 255, 0.98);
+  color: var(--sf-text);
   white-space: nowrap;
   text-align: center;
   width: 100%;
@@ -297,9 +324,9 @@
   border: 1px solid rgba(52, 211, 153, 0.18);
 }
 .probBadge[data-tone="watch"] {
-  color: rgba(250, 204, 21, 0.90);
-  background: rgba(250, 204, 21, 0.08);
-  border: 1px solid rgba(250, 204, 21, 0.18);
+  color: rgba(163, 230, 53, 0.88);
+  background: rgba(163, 230, 53, 0.08);
+  border: 1px solid rgba(163, 230, 53, 0.16);
 }
 .probBadge[data-tone="critical"] {
   color: #f87171;

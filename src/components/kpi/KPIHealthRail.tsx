@@ -195,30 +195,30 @@ function BurnWidget() {
   );
 }
 
-/** Valuation Widget — ascending diamond / value gauge */
+/** Valuation Widget — ascending diamond / value gauge (lime palette) */
 function ValuationWidget() {
   return (
     <div className={styles.widget}>
       <svg width="44" height="44" viewBox="0 0 32 32" fill="none">
         {/* Base rings */}
-        <circle cx="16" cy="16" r="14" fill="none" stroke="rgba(250,204,21,0.10)" strokeWidth="1" />
-        <circle cx="16" cy="16" r="10" fill="none" stroke="rgba(250,204,21,0.08)" strokeWidth="0.8" />
+        <circle cx="16" cy="16" r="14" fill="none" stroke="rgba(163,230,53,0.10)" strokeWidth="1" />
+        <circle cx="16" cy="16" r="10" fill="none" stroke="rgba(163,230,53,0.08)" strokeWidth="0.8" />
         {/* Diamond */}
-        <path d="M16 4 L24 14 L16 28 L8 14 Z" fill="rgba(250,204,21,0.06)" stroke="rgba(250,204,21,0.35)" strokeWidth="1" strokeLinejoin="round">
+        <path d="M16 4 L24 14 L16 28 L8 14 Z" fill="rgba(163,230,53,0.06)" stroke="rgba(163,230,53,0.32)" strokeWidth="1" strokeLinejoin="round">
           <animate attributeName="opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite" />
         </path>
         {/* Inner diamond */}
-        <path d="M16 9 L20 14 L16 22 L12 14 Z" fill="rgba(250,204,21,0.10)" stroke="rgba(250,204,21,0.25)" strokeWidth="0.8" strokeLinejoin="round" />
+        <path d="M16 9 L20 14 L16 22 L12 14 Z" fill="rgba(163,230,53,0.10)" stroke="rgba(163,230,53,0.22)" strokeWidth="0.8" strokeLinejoin="round" />
         {/* Center dot */}
-        <circle cx="16" cy="14" r="2" fill="rgba(250,204,21,0.45)">
+        <circle cx="16" cy="14" r="2" fill="rgba(163,230,53,0.40)">
           <animate attributeName="r" values="2;3;2" dur="2s" repeatCount="indefinite" />
           <animate attributeName="opacity" values="0.5;0.2;0.5" dur="2s" repeatCount="indefinite" />
         </circle>
         {/* Ascending ticks */}
-        <line x1="6" y1="22" x2="6" y2="18" stroke="rgba(250,204,21,0.15)" strokeWidth="0.8" strokeLinecap="round">
+        <line x1="6" y1="22" x2="6" y2="18" stroke="rgba(163,230,53,0.14)" strokeWidth="0.8" strokeLinecap="round">
           <animate attributeName="opacity" values="0.15;0.4;0.15" dur="2.5s" repeatCount="indefinite" />
         </line>
-        <line x1="26" y1="22" x2="26" y2="16" stroke="rgba(250,204,21,0.15)" strokeWidth="0.8" strokeLinecap="round">
+        <line x1="26" y1="22" x2="26" y2="16" stroke="rgba(163,230,53,0.14)" strokeWidth="0.8" strokeLinecap="round">
           <animate attributeName="opacity" values="0.4;0.15;0.4" dur="2.5s" repeatCount="indefinite" />
         </line>
       </svg>
