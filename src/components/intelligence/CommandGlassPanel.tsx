@@ -434,53 +434,55 @@ const NARRATIVE_COL: React.CSSProperties = {
 const CONTEXT_STRIP: React.CSSProperties = {
   position: "relative",
   zIndex: 5,
-  marginBottom: 16,
-  paddingBottom: 14,
+  marginBottom: 20,
+  paddingBottom: 18,
   borderBottom: "1px solid rgba(255,255,255,0.06)",
 }
 
 const CONTEXT_INTENT: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: 6,
-  fontSize: 11,
-  fontWeight: 600,
-  color: "rgba(34,211,238,0.85)",
-  letterSpacing: "0.04em",
+  gap: 8,
+  fontSize: 13,
+  fontWeight: 700,
+  color: "rgba(34,211,238,0.92)",
+  letterSpacing: "0.05em",
   fontFamily: "'Inter', system-ui, sans-serif",
-  marginBottom: 8,
+  marginBottom: 10,
+  textShadow: "0 0 8px rgba(34,211,238,0.25)",
 }
 
 const CONTEXT_INTENT_DOT: React.CSSProperties = {
   display: "inline-block",
-  width: 6,
-  height: 6,
+  width: 8,
+  height: 8,
   borderRadius: "50%",
-  background: "rgba(34,211,238,0.5)",
+  background: "rgba(34,211,238,0.6)",
+  boxShadow: "0 0 6px rgba(34,211,238,0.3)",
   flexShrink: 0,
 }
 
 const CONTEXT_ASSUMPTIONS: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
-  gap: 3,
+  gap: 6,
 }
 
 const CONTEXT_ASSUMPTION_ROW: React.CSSProperties = {
   display: "flex",
   alignItems: "baseline",
-  gap: 6,
-  fontSize: 13,
-  color: "rgba(255,255,255,0.82)",
-  lineHeight: 1.65,
+  gap: 8,
+  fontSize: 14.5,
+  color: "rgba(255,255,255,0.88)",
+  lineHeight: 1.7,
   fontFamily: "'Inter', system-ui, sans-serif",
   textShadow: "0 1px 4px rgba(0,0,0,0.5)",
 }
 
 const CONTEXT_ASSUMPTION_BULLET: React.CSSProperties = {
-  color: "rgba(34,211,238,0.65)",
-  fontWeight: 700,
-  fontSize: 14,
+  color: "rgba(34,211,238,0.8)",
+  fontWeight: 800,
+  fontSize: 17,
   flexShrink: 0,
 }
 
