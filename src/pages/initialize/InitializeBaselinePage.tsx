@@ -6,15 +6,15 @@ import css from "./IngressConsole.module.css"
 
 /* ═══════════════════════════════════════════════════════════════════
    FEATURE FLAG — V2 Dense Instrument Console
-   Set localStorage key SF_INITIATE_V2 = "false" to force legacy.
-   Default: V2 ON.
+   Set localStorage key sf_initiate_v2 = "1" to enable V2.
+   Default: legacy.
    ═══════════════════════════════════════════════════════════════════ */
 const USE_INITIATE_V2 =
   typeof window !== "undefined" &&
-  window.localStorage.getItem("SF_INITIATE_V2") !== "false"
+  window.localStorage.getItem("sf_initiate_v2") === "1"
 
 // Lazy-load V2 to keep legacy bundle untouched
-const InitializeBaselineV2 = React.lazy(
+const InitializeBaselineConsoleV2 = React.lazy(
   () => import("./InitializeBaselineV2"),
 )
 
@@ -312,7 +312,7 @@ export default function InitializeBaselinePage() {
           </div>
         }
       >
-        <InitializeBaselineV2 />
+        <InitializeBaselineConsoleV2 />
       </React.Suspense>
     )
   }
@@ -383,7 +383,7 @@ function InitializeBaselineLegacy() {
 
   return (
     <ConsoleFrame>
-      <div className={css.consoleLayout}>
+      <div className={css.consoleLayout} data-sf-initiate="legacy">
 
         {/* ═══════════ LEFT SIDEBAR — System Nav Rail ═══════════ */}
         <aside className={css.sidebar}>

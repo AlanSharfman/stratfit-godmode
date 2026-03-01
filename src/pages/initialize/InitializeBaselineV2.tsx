@@ -261,7 +261,7 @@ function ToggleGroup<T extends string>({
    MAIN COMPONENT — V2 Dense Instrument Console
    ═══════════════════════════════════════════════════════════════════ */
 
-export default function InitializeBaselineV2() {
+export default function InitializeBaselineConsoleV2() {
   const navigate = useNavigate()
   const setBaseline = useBaselineStore((s) => s.setBaseline)
 
@@ -321,7 +321,30 @@ export default function InitializeBaselineV2() {
 
   return (
     <ConsoleFrame>
-      <div className={css.consoleLayout}>
+      <div className={css.consoleLayout} data-sf-initiate="v2">
+
+        {/* ── V2 debug badge ── */}
+        <div
+          style={{
+            position: "fixed",
+            top: 12,
+            right: 12,
+            zIndex: 99999,
+            background: "rgba(0, 220, 255, 0.16)",
+            border: "1px solid rgba(120, 220, 255, 0.35)",
+            padding: "8px 10px",
+            borderRadius: 10,
+            color: "#67e8f9",
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: "0.12em",
+            textTransform: "uppercase" as const,
+            pointerEvents: "none" as const,
+            fontFamily: "Inter, system-ui, sans-serif",
+          }}
+        >
+          INITIATE V2
+        </div>
 
         {/* ═══════════ LEFT SIDEBAR — System Nav Rail ═══════════ */}
         <aside className={css.sidebar}>
