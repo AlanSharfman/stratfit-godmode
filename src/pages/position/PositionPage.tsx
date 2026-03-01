@@ -30,7 +30,7 @@ import CommandCentrePanel from "@/components/diagnostics/CommandCentrePanel"
 import IntelligencePanel from "@/components/insight/IntelligencePanel"
 import CommandGlassPanel from "@/components/intelligence/CommandGlassPanel"
 import { useIntelligencePresentation } from "@/hooks/useIntelligencePresentation"
-// SimulationContextHUD removed — clean God Mode presentation
+import SimulationContextHUD from "@/components/position/SimulationContextHUD"
 import {
   classifyQuestion,
   QuestionCategory,
@@ -687,7 +687,15 @@ export default function PositionPage() {
             <TerrainTuningPanel params={terrainTuning} onChange={setTerrainTuning} />
             {/* Terrain navigation D-pad — bottom-right of viewport */}
             <TerrainNavWidget />
-            {/* ── HUD: Simulation context overlay — REMOVED for clean God Mode ── */}
+            {/* ── HUD: Simulation context pill — transparent glass matching insight overlay ── */}
+            <SimulationContextHUD
+              riskTone={vm?.stateTone ?? "watch"}
+              riskLabel={vm?.state ?? "Assessing"}
+              simulationStatus={activeScenario?.status ?? "draft"}
+              completedAt={activeScenario?.simulationResults?.completedAt ?? null}
+              insightText={vm?.bullets?.[0] ?? ""}
+              runKey={activeScenario?.simulationResults?.completedAt ?? null}
+            />
             {/* ── Horizon Pulse — simulation completion flash ── */}
             <HorizonPulse
               triggerKey={activeScenario?.simulationResults?.completedAt ?? null}
