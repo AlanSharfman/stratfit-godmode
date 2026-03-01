@@ -486,23 +486,20 @@
   margin: 0 auto;
   width: 100%;
 
-  border: 1px solid rgba(200, 215, 230, 0.22);
+  border: 1px solid rgba(0, 255, 255, 0.10);
   background:
     linear-gradient(
-      175deg,
-      rgba(38, 42, 50, 0.95),
-      rgba(28, 32, 38, 0.92)
+      165deg,
+      rgba(6, 12, 20, 0.08) 0%,
+      rgba(4, 8, 14, 0.05) 100%
     );
+  backdrop-filter: blur(3px) saturate(1.02);
+  -webkit-backdrop-filter: blur(3px) saturate(1.02);
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.14),
-    0 0 0 2.5px rgba(6, 10, 16, 0.80),
-    0 0 0 3.5px rgba(200, 215, 230, 0.20),
-    0 0 0 5.5px rgba(6, 10, 16, 0.75),
-    0 0 0 6.5px rgba(200, 215, 230, 0.14),
-    inset 0 1px 0 rgba(255, 255, 255, 0.10),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.15),
-    0 4px 12px rgba(0, 0, 0, 0.30),
-    0 0 16px rgba(200, 215, 230, 0.03);
+    0 0 0 1px rgba(0, 255, 255, 0.08),
+    0 0 24px rgba(0, 255, 255, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 4px 12px rgba(0, 0, 0, 0.20);
 }
 
 .kpiRailCell .kpiLabel {
