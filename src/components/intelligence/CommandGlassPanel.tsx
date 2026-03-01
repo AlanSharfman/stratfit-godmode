@@ -178,33 +178,29 @@ const CommandGlassPanel: React.FC<CommandGlassPanelProps> = memo(({
             <div style={HEADER}>
               <div style={HEADER_ROW}>
                 <div>
-                  <div style={HEADER_TITLE}>
-                    {decisionQuestion
-                      ? <>Strategic Insight &mdash; <span style={HEADER_QUESTION}>{decisionQuestion.length > 65 ? decisionQuestion.slice(0, 65) + "…" : decisionQuestion}</span></>
-                      : "STRATFIT INSIGHTS"
-                    }
-                  </div>
+                  <div style={HEADER_TITLE}>STRATEGIC INSIGHT</div>
+                  {decisionQuestion && (
+                    <div style={HEADER_DECISION}>{decisionQuestion}</div>
+                  )}
                   {intentLabel && (
                     <div style={HEADER_SUB}>
-                      Based on <span style={{ color: "rgba(34,211,238,0.65)" }}>{intentLabel}</span> scenario outcomes
+                      Based on <span style={{ color: "rgba(34,211,238,0.85)" }}>{intentLabel}</span> scenario outcomes
                     </div>
                   )}
                 </div>
                 {/* Survival badge — top right */}
                 {(phase === "settled" || isDone) && (
                   <div style={SURVIVAL_BADGE}>
-                    <span style={{ fontSize: 8.5, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.12em", color: "rgba(255,255,255,0.4)" }}>Survival</span>
+                    <span style={{ fontSize: 8.5, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.12em", color: "rgba(255,255,255,0.5)" }}>Survival</span>
                     <span style={{ color: riskColor, fontWeight: 800, fontSize: 20, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "-0.02em" }}>{riskScore}%</span>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* ── Scenario Context Strip ── */}
+            {/* ── Scenario Context — assumptions beneath header ── */}
             {activeScenario?.identity && (
               <div style={CONTEXT_STRIP}>
-                <div style={CONTEXT_LABEL}>SCENARIO CONTEXT</div>
-                <div style={CONTEXT_DECISION}>{activeScenario.identity.decisionQuestion}</div>
                 {intentLabel && (
                   <div style={CONTEXT_INTENT}>
                     <span style={CONTEXT_INTENT_DOT} />
@@ -391,16 +387,19 @@ const HEADER_TITLE: React.CSSProperties = {
   textShadow: "0 1px 6px rgba(0,0,0,0.7)",
 }
 
-const HEADER_QUESTION: React.CSSProperties = {
-  color: "#22d3ee",
+const HEADER_DECISION: React.CSSProperties = {
+  fontSize: 14,
   fontWeight: 500,
-  fontStyle: "italic",
-  fontSize: 12,
+  color: "rgba(255,255,255,0.92)",
+  lineHeight: 1.5,
+  fontFamily: "'Inter', system-ui, sans-serif",
+  marginTop: 6,
+  textShadow: "0 1px 4px rgba(0,0,0,0.5)",
 }
 
 const HEADER_SUB: React.CSSProperties = {
   fontSize: 11,
-  color: "rgba(255,255,255,0.45)",
+  color: "rgba(255,255,255,0.55)",
   marginTop: 5,
   letterSpacing: "0.05em",
   fontFamily: "'Inter', system-ui, sans-serif",
@@ -440,33 +439,13 @@ const CONTEXT_STRIP: React.CSSProperties = {
   borderBottom: "1px solid rgba(255,255,255,0.06)",
 }
 
-const CONTEXT_LABEL: React.CSSProperties = {
-  fontSize: 9,
-  fontWeight: 700,
-  textTransform: "uppercase",
-  letterSpacing: "0.14em",
-  color: "rgba(34,211,238,0.5)",
-  fontFamily: "'Inter', system-ui, sans-serif",
-  marginBottom: 8,
-}
-
-const CONTEXT_DECISION: React.CSSProperties = {
-  fontSize: 13,
-  fontWeight: 500,
-  color: "rgba(255,255,255,0.85)",
-  lineHeight: 1.5,
-  fontFamily: "'Inter', system-ui, sans-serif",
-  textShadow: "0 1px 4px rgba(0,0,0,0.5)",
-  marginBottom: 6,
-}
-
 const CONTEXT_INTENT: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   gap: 6,
-  fontSize: 10.5,
+  fontSize: 11,
   fontWeight: 600,
-  color: "rgba(34,211,238,0.7)",
+  color: "rgba(34,211,238,0.85)",
   letterSpacing: "0.04em",
   fontFamily: "'Inter', system-ui, sans-serif",
   marginBottom: 8,
@@ -491,16 +470,17 @@ const CONTEXT_ASSUMPTION_ROW: React.CSSProperties = {
   display: "flex",
   alignItems: "baseline",
   gap: 6,
-  fontSize: 11,
-  color: "rgba(255,255,255,0.5)",
-  lineHeight: 1.5,
+  fontSize: 13,
+  color: "rgba(255,255,255,0.82)",
+  lineHeight: 1.65,
   fontFamily: "'Inter', system-ui, sans-serif",
+  textShadow: "0 1px 4px rgba(0,0,0,0.5)",
 }
 
 const CONTEXT_ASSUMPTION_BULLET: React.CSSProperties = {
-  color: "rgba(34,211,238,0.4)",
+  color: "rgba(34,211,238,0.65)",
   fontWeight: 700,
-  fontSize: 13,
+  fontSize: 14,
   flexShrink: 0,
 }
 
@@ -541,22 +521,23 @@ const THROB_WORD: React.CSSProperties = {
 }
 
 const ROW_LABEL: React.CSSProperties = {
-  fontSize: 9.5,
+  fontSize: 10,
   fontWeight: 700,
   textTransform: "uppercase",
   letterSpacing: "0.12em",
-  color: "rgba(34,211,238,0.55)",
+  color: "rgba(34,211,238,0.85)",
   marginBottom: 4,
+  textShadow: "0 0 6px rgba(34,211,238,0.3)",
 }
 
 const ROW_LABEL_GLOW: React.CSSProperties = {
-  fontSize: 9.5,
+  fontSize: 10,
   fontWeight: 700,
   textTransform: "uppercase",
   letterSpacing: "0.12em",
-  color: "rgba(34,211,238,0.9)",
+  color: "rgba(34,211,238,1)",
   marginBottom: 4,
-  textShadow: "0 0 12px rgba(34,211,238,0.6), 0 0 24px rgba(34,211,238,0.3)",
+  textShadow: "0 0 14px rgba(34,211,238,0.7), 0 0 28px rgba(34,211,238,0.35)",
   animation: "cmdGlassLabelGlow 2s ease-out forwards",
 }
 
