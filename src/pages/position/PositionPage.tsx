@@ -736,30 +736,21 @@ export default function PositionPage() {
 
           {/* Scenario Context + Cinematic Insights */}
           <div
-            className={`${styles.baselineIntelDock}${intelligenceOpen ? ` ${styles.insightSlideOut}` : ""}`}
+            className={styles.baselineIntelDock}
             aria-label="Scenario Insights"
           >
-            <div ref={insightScrollRef} className={intelligenceOpen ? styles.insightScrollWrap : undefined}>
               <ScenarioContextPanel />
-              {intelligenceOpen ? (
-                <>
-                  {/* Cinematic glass panel — typewriter reveal + specular sweep */}
-                  <CommandGlassPanel
-                    phase={presentation.phase}
-                    onTypewriterComplete={presentation.requestSettle}
-                  />
-                  {/* Collapse button — overlaid below glass panel */}
-                  <button
-                    type="button"
-                    className={styles.intelCollapseBtn}
-                    onClick={() => setIntelligenceOpen(false)}
-                    aria-label="Collapse insights panel (I)"
-                  >
-                    <span>Collapse</span>
-                    <span className={styles.kbdHint}>I</span>
-                  </button>
-                </>
-              ) : (
+              {/* Simulation running effect — while simulation is in progress */}
+              {activeScenario?.status === "running" && (
+                <div className={styles.simRunning}>
+                  <div className={styles.simRunningLabel}>Simulating scenario</div>
+                  <div className={styles.simRunningDots}>
+                    <span /><span /><span />
+                  </div>
+                </div>
+              )}
+              {/* INSIGHTS toggle — only when not running and not open */}
+              {activeScenario?.status !== "running" && !intelligenceOpen && (
                 <button
                   type="button"
                   className={styles.intelToggle}
@@ -794,10 +785,34 @@ export default function PositionPage() {
                 <span className={styles.kbdHint}>I</span>
               </button>
             )}
-            </div>
           </div>
         </div>
       </div>
+
+      {/* ══════════════════════════════════════════════════
+          INTELLIGENCE OVERLAY — Transparent glass on terrain
+          Renders as fixed overlay, separate from right rail
+          ══════════════════════════════════════════════════ */}
+      {intelligenceOpen && (
+        <div className={styles.insightOverlay} aria-label="Intelligence Overlay">
+          <div ref={insightScrollRef} className={styles.insightScrollWrap}>
+            <CommandGlassPanel
+              phase={presentation.phase}
+              onTypewriterComplete={presentation.requestSettle}
+            />
+          </div>
+          {/* Close button — bottom of overlay */}
+          <button
+            type="button"
+            className={styles.intelCollapseBtn}
+            onClick={() => setIntelligenceOpen(false)}
+            aria-label="Dismiss insights (I)"
+          >
+            <span>Dismiss</span>
+            <span className={styles.kbdHint}>I</span>
+          </button>
+        </div>
+      )}
 
       {/* Legal disclaimer */}
       <div className={styles.legalDisclaimer}>

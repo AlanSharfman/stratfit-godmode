@@ -433,20 +433,19 @@ function findTypingRow(rendered: string[], full: string[]): number {
 
 const GLASS_PANEL: React.CSSProperties = {
   position: "relative",
-  background: "linear-gradient(165deg, rgba(8,14,22,0.72) 0%, rgba(6,10,16,0.68) 100%)",
-  backdropFilter: "blur(22px) saturate(1.2)",
-  WebkitBackdropFilter: "blur(22px) saturate(1.2)",
-  border: "1px solid rgba(120,220,255,0.16)",
+  /* Transparent glass — terrain visible through panel */
+  background: "linear-gradient(165deg, rgba(6,12,20,0.32) 0%, rgba(4,8,14,0.28) 100%)",
+  backdropFilter: "blur(8px) saturate(1.1)",
+  WebkitBackdropFilter: "blur(8px) saturate(1.1)",
+  border: "1px solid rgba(120,220,255,0.12)",
   borderRadius: 16,
   padding: "24px 28px 20px",
   overflow: "hidden",
   boxShadow:
-    "0 1px 0 rgba(255,255,255,0.05) inset, " +
-    "0 0 0 1px rgba(0,255,255,0.08), " +
-    "0 0 0 3px rgba(4,8,16,0.85), " +
-    "0 0 0 4px rgba(0,255,255,0.06), " +
-    "0 12px 48px rgba(0,0,0,0.5), " +
-    "0 0 24px rgba(0,255,255,0.04)",
+    "0 1px 0 rgba(255,255,255,0.03) inset, " +
+    "0 0 0 1px rgba(0,255,255,0.06), " +
+    "0 12px 48px rgba(0,0,0,0.25), " +
+    "0 0 24px rgba(0,255,255,0.03)",
 }
 
 const SPECULAR_SWEEP: React.CSSProperties = {
@@ -516,9 +515,10 @@ const HEADER_TITLE: React.CSSProperties = {
   fontWeight: 800,
   textTransform: "uppercase",
   letterSpacing: "0.12em",
-  color: "rgba(255,255,255,0.88)",
+  color: "rgba(255,255,255,0.92)",
   fontFamily: "'Inter', system-ui, sans-serif",
   lineHeight: 1.3,
+  textShadow: "0 1px 6px rgba(0,0,0,0.7)",
 }
 
 const HEADER_QUESTION: React.CSSProperties = {
@@ -565,7 +565,7 @@ const NARRATIVE_COL: React.CSSProperties = {
   flexDirection: "column",
   gap: 12,
   minWidth: 0,
-  borderRight: "1px solid rgba(255,255,255,0.06)",
+  borderRight: "1px solid rgba(255,255,255,0.08)",
   paddingRight: 24,
 }
 
@@ -614,9 +614,10 @@ const TABLE_CELL: React.CSSProperties = {
   fontSize: 11.5,
   padding: "5px 6px",
   textAlign: "right",
-  color: "rgba(255,255,255,0.75)",
-  borderBottom: "1px solid rgba(255,255,255,0.03)",
+  color: "rgba(255,255,255,0.8)",
+  borderBottom: "1px solid rgba(255,255,255,0.04)",
   lineHeight: 1.6,
+  textShadow: "0 1px 3px rgba(0,0,0,0.5)",
 }
 
 const TABLE_METRIC_CELL: React.CSSProperties = {
@@ -735,6 +736,7 @@ const ROW_TEXT: React.CSSProperties = {
   lineHeight: 1.75,
   fontFamily: "'Inter', system-ui, sans-serif",
   letterSpacing: "0.01em",
+  textShadow: "0 1px 4px rgba(0,0,0,0.6)",
 }
 
 const CURSOR: React.CSSProperties = {
