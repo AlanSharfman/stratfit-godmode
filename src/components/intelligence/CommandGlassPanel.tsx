@@ -304,18 +304,18 @@ function findTypingRow(rendered: string[], full: string[]): number {
 const GLASS_PANEL: React.CSSProperties = {
   position: "relative",
   /* Near-invisible glass — terrain shines through */
-  background: "linear-gradient(165deg, rgba(6,12,20,0.14) 0%, rgba(4,8,14,0.10) 100%)",
-  backdropFilter: "blur(4px) saturate(1.05)",
-  WebkitBackdropFilter: "blur(4px) saturate(1.05)",
-  border: "1px solid rgba(120,220,255,0.08)",
+  background: "linear-gradient(165deg, rgba(6,12,20,0.06) 0%, rgba(4,8,14,0.03) 100%)",
+  backdropFilter: "blur(2px) saturate(1.02)",
+  WebkitBackdropFilter: "blur(2px) saturate(1.02)",
+  border: "1px solid rgba(120,220,255,0.05)",
   borderRadius: 16,
   padding: "24px 28px 20px",
   overflow: "hidden",
   boxShadow:
-    "0 1px 0 rgba(255,255,255,0.02) inset, " +
-    "0 0 0 1px rgba(0,255,255,0.04), " +
-    "0 12px 48px rgba(0,0,0,0.15), " +
-    "0 0 24px rgba(0,255,255,0.02)",
+    "0 1px 0 rgba(255,255,255,0.01) inset, " +
+    "0 0 0 1px rgba(0,255,255,0.02), " +
+    "0 12px 48px rgba(0,0,0,0.08), " +
+    "0 0 24px rgba(0,255,255,0.01)",
 }
 
 const SPECULAR_SWEEP: React.CSSProperties = {
