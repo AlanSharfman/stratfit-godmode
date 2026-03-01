@@ -320,8 +320,9 @@ export default function InitializeBaselineConsoleV2() {
 
   return (
     <div className={styles.outerChassis}>
-      <div className={styles.bezelFrame}>
+      <div className={styles.bezelFrame} data-sf-chassis>
         <div className={styles.glassSurface}>
+          <div className={styles.backdrop} aria-hidden="true" />
           <div data-sf-initiate="v2" className={styles.consoleLayout}>
 
             {/* ── V2 debug badge ── */}
@@ -1119,9 +1120,13 @@ export default function InitializeBaselineConsoleV2() {
             </div>
           </footer>
         </main>
-      </div>
+
+          </div>
+          {/* ^^^ consoleLayout */}
         </div>
+        {/* ^^^ glassSurface */}
       </div>
+      {/* ^^^ bezelFrame */}
     </div>
   )
 }
