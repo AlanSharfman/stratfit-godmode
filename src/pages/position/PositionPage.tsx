@@ -141,10 +141,7 @@ export default function PositionPage() {
         const tag = (e.target as HTMLElement)?.tagName
         if (tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable) return
         e.preventDefault()
-        setIntelligenceOpen((prev) => {
-          if (prev) presentation.reset()   // closing → reset cinematic phase
-          return !prev
-        })
+        setIntelligenceOpen((prev) => !prev)
       }
     }
     window.addEventListener("keydown", onKeyDown)
@@ -571,7 +568,7 @@ export default function PositionPage() {
         {/* ══════════════════════════════════════════════════
             CENTER — Terrain Canvas (dominant, immersive)
             ══════════════════════════════════════════════════ */}
-        <div className={styles.centreCol}>
+        <div className={`${styles.centreCol}${intelligenceOpen ? ` ${styles.centreColDimmed}` : ""}`}>
           {/* Top nav row */}
           <nav className={styles.pageNav} aria-label="Primary navigation">
             <NavLink to={ROUTES.INITIATE} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Initiate</NavLink>
@@ -679,7 +676,7 @@ export default function PositionPage() {
                 <button
                   type="button"
                   className={styles.intelCollapseBtn}
-                  onClick={() => { setIntelligenceOpen(false); presentation.reset() }}
+                  onClick={() => setIntelligenceOpen(false)}
                   aria-label="Collapse intelligence panel (I)"
                 >
                   <span>Collapse</span>
