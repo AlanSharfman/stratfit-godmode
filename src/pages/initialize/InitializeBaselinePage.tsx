@@ -105,7 +105,8 @@ function fmtCurrency(v: number): string {
 function sliderFill(value: number, min: number, max: number): React.CSSProperties {
   const pct = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100))
   return {
-    background: `linear-gradient(90deg, #3b82f6 0%, #60a5fa ${pct}%, rgba(255,255,255,0.06) ${pct}%, rgba(255,255,255,0.06) 100%)`,
+    background: `linear-gradient(90deg, #0e7490 0%, #22d3ee ${pct * 0.7}%, #67e8f9 ${pct}%, rgba(255,255,255,0.04) ${pct}%, rgba(255,255,255,0.04) 100%)`,
+    boxShadow: pct > 5 ? `0 0 ${4 + pct * 0.08}px rgba(34,211,238,${0.15 + pct * 0.002}), inset 0 1px 2px rgba(0,0,0,0.3)` : 'none',
   }
 }
 
