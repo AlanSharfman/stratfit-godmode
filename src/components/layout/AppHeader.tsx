@@ -9,8 +9,8 @@ export default function AppHeader() {
       <div className={styles.inner}>
         <div className={styles.brand}>
           <div className={styles.logo}>
-            <img src="/stratfit-logo.png" alt="STRATFIT" style={{ height: '28px', width: 'auto', marginRight: '8px' }} />
-            STRATFIT
+            <img src="/stratfit-logo.png" alt="STRATFIT" className={styles.logoImg} />
+            <span className={styles.logoText}>STRATFIT</span>
           </div>
           <div className={styles.sub}>Scenario Intelligence</div>
         </div>

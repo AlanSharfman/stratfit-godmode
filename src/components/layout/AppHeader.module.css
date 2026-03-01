@@ -41,6 +41,27 @@
   -webkit-text-fill-color: initial;
 }
 
+.logoImg {
+  display: block;
+  height: 28px;
+  width: auto;
+  object-fit: contain;
+  -webkit-text-fill-color: initial;
+}
+
+.logoText {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 1.2rem;
+  font-weight: 900;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  background: linear-gradient(to right, #ffffff, rgba(0, 255, 255, 0.8));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.2));
+}
+
 .sub {
   font-size: var(--sf-small);
   letter-spacing: var(--sf-tracking);
