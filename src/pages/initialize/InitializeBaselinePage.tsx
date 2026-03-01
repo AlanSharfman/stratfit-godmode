@@ -105,7 +105,7 @@ function fmtCurrency(v: number): string {
 function sliderFill(value: number, min: number, max: number): React.CSSProperties {
   const pct = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100))
   return {
-    background: `linear-gradient(90deg, #22d3ee 0%, #22d3ee ${pct}%, rgba(255,255,255,0.08) ${pct}%, rgba(255,255,255,0.08) 100%)`,
+    background: `linear-gradient(90deg, #3b82f6 0%, #60a5fa ${pct}%, rgba(255,255,255,0.06) ${pct}%, rgba(255,255,255,0.06) 100%)`,
   }
 }
 
@@ -316,17 +316,17 @@ export default function InitializeBaselinePage() {
                   <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
                     <path
                       d="M14 3L25 14L14 25L3 14L14 3Z"
-                      stroke="rgba(34,211,238,0.6)"
+                      stroke="rgba(96,165,250,0.55)"
                       strokeWidth="1.5"
-                      fill="rgba(34,211,238,0.06)"
+                      fill="rgba(96,165,250,0.06)"
                     />
                     <path
                       d="M14 8L21 14L14 21L7 14L14 8Z"
-                      stroke="rgba(34,211,238,0.35)"
+                      stroke="rgba(140,180,220,0.35)"
                       strokeWidth="1"
-                      fill="rgba(34,211,238,0.03)"
+                      fill="rgba(96,165,250,0.03)"
                     />
-                    <rect x="12" y="12" width="4" height="4" rx="1" fill="rgba(34,211,238,0.25)" />
+                    <rect x="12" y="12" width="4" height="4" rx="1" fill="rgba(140,180,220,0.25)" />
                   </svg>
                 </div>
                 <div>
@@ -368,8 +368,8 @@ export default function InitializeBaselinePage() {
               <div className={css.metricItem}>
                 <span className={css.metricIcon}>
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path d="M7 1v5l3.5 2" stroke="#22d3ee" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-                    <circle cx="7" cy="7" r="5.5" stroke="#22d3ee" strokeWidth="1.2" opacity="0.5"/>
+                    <path d="M7 1v5l3.5 2" stroke="rgba(140,180,220,0.8)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                    <circle cx="7" cy="7" r="5.5" stroke="rgba(140,180,220,0.5)" strokeWidth="1.2" opacity="0.5"/>
                   </svg>
                 </span>
                 <span
@@ -380,7 +380,7 @@ export default function InitializeBaselinePage() {
                         ? "#f87171"
                         : metrics.runway < 12
                           ? "#fbbf24"
-                          : "#22d3ee",
+                          : "#ffffff",
                   }}
                 >
                   {metrics.runway.toFixed(1)}
@@ -468,7 +468,7 @@ export default function InitializeBaselinePage() {
 
                   {/* ── LIQUIDITY & FUNDING ── */}
                   <div className={css.sectionPanel}>
-                    <h3 className={css.panelTitle}>LIQUIDITY &amp; FUNDING</h3>
+                    <h3 className={css.panelTitle}>LIQUIDITY &amp; CAPITAL STRUCTURE</h3>
 
                     <SliderRow
                       label="Cash on Hand"
