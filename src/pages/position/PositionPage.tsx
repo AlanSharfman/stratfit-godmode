@@ -50,6 +50,7 @@ import IdleMotionLayer from "./IdleMotionLayer"
 import HorizonPulse from "@/components/terrain/overlays/HorizonPulse"
 import { useReducedMotion } from "@/hooks/useReducedMotion"
 import SimulationProofOverlay from "@/components/dev/SimulationProofOverlay"
+import TerrainEventLayer from "@/components/terrain/events/TerrainEventLayer"
 import {
   buildPositionViewModel,
 } from "./overlays/positionState"
@@ -703,6 +704,7 @@ export default function PositionPage() {
             >
               <CameraCompositionRig />
               <SkyAtmosphere />
+              <TerrainEventLayer />
             </TerrainStage>
             <div className={styles.canvasVignette} aria-hidden="true" />
             <IdleMotionLayer viewportRef={viewportRef} />
