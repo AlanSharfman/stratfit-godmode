@@ -6,7 +6,6 @@ import { ROUTES } from "@/routes/routeContract"
 
 import TerrainStage from "@/terrain/TerrainStage"
 import CameraCompositionRig from "@/pages/position-v2/rigs/CameraCompositionRig"
-import TerrainBreathRig from "@/pages/position-v2/rigs/TerrainBreathRig"
 import SkyAtmosphere from "@/pages/position-v2/rigs/SkyAtmosphere"
 import TerrainTuningPanel from "@/terrain/v2/TerrainTuningPanel"
 import TerrainNavWidget from "@/terrain/TerrainNavWidget"
@@ -27,29 +26,19 @@ import { useSemanticBalance, DEFAULT_SHL_WEIGHTS } from "@/render/shl"
 import type { SemanticLayerKey } from "@/render/shl"
 
 import CommandCentrePanel from "@/components/diagnostics/CommandCentrePanel"
-import IntelligencePanel from "@/components/insight/IntelligencePanel"
 import CommandGlassPanel from "@/components/intelligence/CommandGlassPanel"
 import { useIntelligencePresentation } from "@/hooks/useIntelligencePresentation"
 import SimulationContextHUD from "@/components/position/SimulationContextHUD"
-import {
-  classifyQuestion,
-  QuestionCategory,
-} from "@/domain/question/questionClassifier"
-import { buildQuestionContext } from "@/domain/question/questionContext"
-import { buildScenarioADraft } from "@/domain/scenario/scenarioDraft"
-import { studioSessionStore } from "@/state/studioSessionStore"
 import KPIHealthRail from "@/components/kpi/KPIHealthRail"
 import ScenarioContextPanel from "@/components/scenario/ScenarioContextPanel"
 import { selectKpis } from "@/selectors/kpiSelectors"
 import { selectTerrainMetrics } from "@/selectors/terrainSelectors"
 import { selectRiskScore } from "@/selectors/riskSelectors"
 import { useSelectSimulationKpis } from "@/selectors/simulationKpiSelector"
-// ExecutiveNarrativeCard removed — intelligence rendered via IntelligencePanel
-import TimeScaleControl from "./overlays/TimeScaleControl"
+// ExecutiveNarrativeCard removed — intelligence rendered via CommandGlassPanel
 import IdleMotionLayer from "./IdleMotionLayer"
 import HorizonPulse from "@/components/terrain/overlays/HorizonPulse"
 import { useReducedMotion } from "@/hooks/useReducedMotion"
-import SimulationProofOverlay from "@/components/dev/SimulationProofOverlay"
 import {
   buildPositionViewModel,
 } from "./overlays/positionState"
@@ -67,7 +56,7 @@ function shlIsOn(weight: number): boolean {
 
 export default function PositionPage() {
   const navigate = useNavigate()
-  const [granularity, setGranularity] = useState<TimeGranularity>("quarter")
+  const [granularity] = useState<TimeGranularity>("quarter")
   const [rippleKey, setRippleKey] = useState(0)
   const [commandCentreOpen, setCommandCentreOpen] = useState(true)
   const [terrainTuning, setTerrainTuning] = useState<TerrainTuningParams>({ ...DEFAULT_TUNING })
@@ -88,6 +77,7 @@ export default function PositionPage() {
   const [overlayStrobe, setOverlayStrobe] = useState(false)       // Bezel strobe
   const [typewriterDone, setTypewriterDone] = useState(false)     // Typewriter finished
   const [overlayUserDismissed, setOverlayUserDismissed] = useState(false) // User manually closed
+  const overlayUserDismissedRef = useRef(false) // Ref mirror for closure-safe reads
   const slideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const dwellTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const strobeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -108,23 +98,6 @@ export default function PositionPage() {
     window.addEventListener("sf:terrain-ripple", onRipple)
     return () => window.removeEventListener("sf:terrain-ripple", onRipple)
   }, [])
-
-  const handleQuestionSubmit = useCallback((question: string) => {
-    const category: QuestionCategory = classifyQuestion(question)
-    const qc = buildQuestionContext(question, category)
-    const scenarioDraft = buildScenarioADraft(qc)
-
-    // STEP 14: Seed canonical store BEFORE navigation (deterministic runtime)
-    studioSessionStore.seed({
-      questionContext: qc,
-      scenarioA: scenarioDraft,
-    })
-
-    // Keep navState as fallback only
-    navigate("/studio", {
-      state: { questionContext: qc, scenarioDraft },
-    })
-  }, [navigate])
 
   const baseline = useBaselineStore((s) => s.baseline)
   const baselineHydrated = useBaselineStore((s) => s.isHydrated)
@@ -159,6 +132,7 @@ export default function PositionPage() {
   const slideOverlayIn = useCallback(() => {
     clearSlideTimers()
     setOverlayUserDismissed(false)
+    overlayUserDismissedRef.current = false
     setOverlayMounted(true)
     setTypewriterDone(false)
     // Trigger slide-in on next frame so the DOM is mounted first
@@ -193,6 +167,7 @@ export default function PositionPage() {
   /** User manually dismisses overlay */
   const handleOverlayDismiss = useCallback(() => {
     setOverlayUserDismissed(true)
+    overlayUserDismissedRef.current = true
     slideOverlayOut()
   }, [slideOverlayOut])
 
@@ -203,13 +178,14 @@ export default function PositionPage() {
     if (simulationCompletedAt != null && simulationCompletedAt !== lastAutoOpenRef.current) {
       lastAutoOpenRef.current = simulationCompletedAt
       const openTimer = setTimeout(() => {
-        if (!overlayUserDismissed) {
+        // Read from ref (not stale closure) so a dismiss during the 4s delay is respected
+        if (!overlayUserDismissedRef.current) {
           slideOverlayIn()
         }
       }, 4_000)
       return () => clearTimeout(openTimer)
     }
-  }, [simulationCompletedAt, slideOverlayIn, overlayUserDismissed])
+  }, [simulationCompletedAt, slideOverlayIn])
 
   // Dwell timer: 15 seconds after typewriter finishes → slide back
   useEffect(() => {
@@ -424,7 +400,7 @@ export default function PositionPage() {
 
     // PRIORITY 4: No scenario → derive from raw baseline
     return effectiveInputs ? deriveTerrainMetrics(effectiveInputs as any) : undefined
-  }, [activeScenarioId, activeScenario?.status, activeScenario?.simulationResults?.terrain, activeScenario?.simulationResults?.terrainMetrics, effectiveInputs])
+  }, [activeScenarioId, activeScenario?.status, activeScenario?.simulationResults?.terrainMetrics, effectiveInputs])
 
   // DEV: log terrain source + selector proof + runId consistency once per scenario transition
   useEffect(() => {
@@ -460,6 +436,11 @@ export default function PositionPage() {
     }
   }, [activeScenarioId, activeScenario?.status, activeScenario?.simulationResults, terrainMetrics])
 
+  // ── Engine run id (when available) for risk selector wiring ──
+  const engineRunId = activeScenario?.status === "complete"
+    ? activeScenario.simulationResults?.completedAt?.toString()
+    : undefined
+
   // V1 baseline from context — fallback for KPIs only when NO scenario is active.
   const { baseline: baselineV1 } = useSystemBaseline()
 
@@ -467,11 +448,6 @@ export default function PositionPage() {
     if (!baselineV1) return null
     return buildPositionViewModel(baselineV1, { riskIndexFromEngine: null })
   }, [baselineV1])
-
-  // ── Engine run id (when available) for risk selector wiring ──
-  const engineRunId = activeScenario?.status === "complete"
-    ? activeScenario.simulationResults?.completedAt?.toString()
-    : undefined
 
   // ── Live KPIs: simulation selector (single source), baseline fallback ──
   const simKpis = useSelectSimulationKpis()
