@@ -181,10 +181,15 @@ export default function PositionPage() {
   // ── Auto-scroll insight content — perfectly steady to the end ──
   // CRITICAL: The rAF loop must NEVER self-terminate.
   // Content grows dynamically as the typewriter reveals rows, so scrollHeight
-  // increases over time. If we stop the loop when scrollTop >= maxScroll
-  // (e.g. after Executive Summary fits in viewport), new content that later
-  // overflows will never be scrolled to. Keep the loop alive — cleanup
-  // happens via the useEffect return when the overlay closes.
+  // increases over time.
+  //
+  // SCROLL STRATEGY:
+  //   • Track previous scrollHeight — when it grows (new row appeared),
+  //     snap scrollTop to the new bottom instantly (no lag/jump).
+  //   • Between height changes, smooth-scroll at a constant rate so the
+  //     user sees the text glide upward.
+  //   • This eliminates the "stop → jump → scroll" stutter caused by
+  //     fixed-rate scrolling that can't keep up with sudden height increases.
   useEffect(() => {
     if (!intelligenceOpen || insightCollapsed) return
     const el = insightScrollRef.current
@@ -192,6 +197,7 @@ export default function PositionPage() {
     // Start after slide begins (2.5s in)
     const startDelay = setTimeout(() => {
       let lastTime = 0
+      let prevScrollHeight = el.scrollHeight
       const PX_PER_MS = 0.04 // constant scroll speed — never changes
       function tick(time: number) {
         if (!lastTime) { lastTime = time }
@@ -200,10 +206,18 @@ export default function PositionPage() {
         // Cap dt to 32ms (1 frame @30fps) — prevents jumps from tab blur
         const dt = Math.min(rawDt, 32)
         if (el) {
-          const maxScroll = el.scrollHeight - el.clientHeight
-          if (maxScroll > 0 && el.scrollTop < maxScroll) {
+          const currentScrollHeight = el.scrollHeight
+          const maxScroll = currentScrollHeight - el.clientHeight
+
+          // When content height grows (new row appeared), snap to bottom
+          // so there's zero lag between content appearing and being visible.
+          if (currentScrollHeight > prevScrollHeight && maxScroll > 0) {
+            el.scrollTop = maxScroll
+          } else if (maxScroll > 0 && el.scrollTop < maxScroll) {
+            // Steady smooth scroll between height changes
             el.scrollTop = Math.min(el.scrollTop + PX_PER_MS * dt, maxScroll)
           }
+          prevScrollHeight = currentScrollHeight
         }
         // ALWAYS schedule next frame — content grows as typewriter reveals
         autoScrollRef.current = requestAnimationFrame(tick)
