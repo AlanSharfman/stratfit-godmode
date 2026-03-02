@@ -134,8 +134,8 @@ const CinematicIntelligencePanel: React.FC<CinematicIntelligencePanelProps> = me
   const showContent = phase === "reveal" || phase === "settled"
 
   const { renderedRows, isDone } = useRowTypewriter(rows, {
-    charDelayMs: 18,
-    rowPauseMs: 340,
+    charDelayMs: 21,
+    rowPauseMs: 390,
     start: typewriterActive,
     onComplete: onTypewriterComplete,
   })

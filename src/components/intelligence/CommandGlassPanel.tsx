@@ -100,8 +100,8 @@ const CommandGlassPanel: React.FC<CommandGlassPanelProps> = memo(({
   const showContent = phase === "reveal" || phase === "settled"
 
   const { renderedRows, isDone } = useRowTypewriter(rows, {
-    charDelayMs: 24,
-    rowPauseMs: 260,
+    charDelayMs: 28,
+    rowPauseMs: 300,
     start: typewriterActive,
     onComplete: onTypewriterComplete,
   })
@@ -306,7 +306,7 @@ const GLASS_PANEL: React.CSSProperties = {
   border: "1px solid rgba(120,220,255,0.05)",
   borderRadius: 16,
   padding: "24px 28px 20px",
-  overflow: "hidden",
+  overflow: "visible",
   boxShadow:
     "0 1px 0 rgba(255,255,255,0.01) inset, " +
     "0 0 0 1px rgba(0,255,255,0.02), " +
@@ -425,8 +425,9 @@ const NARRATIVE_COL: React.CSSProperties = {
   zIndex: 5,
   display: "flex",
   flexDirection: "column",
-  gap: 12,
+  gap: 14,
   minWidth: 0,
+  paddingBottom: 8,
 }
 
 /* ── Scenario Context Strip ── */
