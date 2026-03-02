@@ -66,13 +66,13 @@ export default function PositionDebugHUD() {
         : null
       const completedAtRaw = active?.simulationResults?.completedAt ?? null
       const kpiRunway = kpis?.runway ?? null
-      // Approximate event count from KPIs (matches detectSimulationEvents logic)
+      // Approximate terrain signal count from KPIs (matches detectTerrainEvents logic)
       let eventCountFromKpi = 0
       if (kpis) {
-        if (kpiRunway != null && kpiRunway > 0 && kpiRunway < 24) eventCountFromKpi++
-        if (kpis.revenue > 0) eventCountFromKpi++ // peakValue
-        if (kpis.monthlyBurn > 0 && kpis.revenue > 0 && kpis.monthlyBurn / kpis.revenue > 1.5) eventCountFromKpi++ // riskSpike
-        if (kpis.revenue > 0 && kpis.monthlyBurn > kpis.revenue) eventCountFromKpi++ // breakeven
+        if (kpis.monthlyBurn > 0 && kpis.revenue > 0 && kpis.monthlyBurn / kpis.revenue > 1.3) eventCountFromKpi++ // risk_spike
+        if (kpiRunway != null && kpiRunway > 0 && kpiRunway < 24) eventCountFromKpi++ // liquidity_stress
+        if (kpis.churnRate > 0.04 || kpis.grossMargin < 0.4) eventCountFromKpi++ // volatility_zone
+        if (kpis.revenue > 0 && kpis.monthlyBurn > kpis.revenue && kpis.growthRate > 0) eventCountFromKpi++ // growth_inflection
       }
       return {
         activeId: s.activeScenarioId,

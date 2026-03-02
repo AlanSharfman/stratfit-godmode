@@ -1,12 +1,13 @@
 // src/selectors/terrainSelectors.ts
 // ═══════════════════════════════════════════════════════════════════════════
-// STRATFIT — Canonical Terrain selector
+// STRATFIT — Canonical Terrain selectors
 //
-// Extracts terrain multipliers / data from Phase1 simulation results.
-// Pure function. No stores.
+// Pure functions. No stores. No UI.
 // ═══════════════════════════════════════════════════════════════════════════
 
 import type { SimulationResults, TerrainData } from "@/state/phase1ScenarioStore"
+import type { TerrainEvent } from "@/domain/events/terrainEventTypes"
+import { detectTerrainEvents } from "@/engine/analysis/detectTerrainEvents"
 
 /**
  * Extract terrain data from Phase1 simulation results.
@@ -17,4 +18,15 @@ export function selectTerrainMetrics(
 ): TerrainData | null {
   if (!simulationResults?.terrain) return null
   return simulationResults.terrain
+}
+
+/**
+ * Derive terrain events from engine results.
+ * Returns [] if results are missing or incomplete.
+ */
+export function selectTerrainEvents(
+  simulationResults: SimulationResults | null | undefined,
+): TerrainEvent[] {
+  if (!simulationResults?.kpis) return []
+  return detectTerrainEvents(simulationResults.kpis, simulationResults.horizonMonths)
 }

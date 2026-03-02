@@ -30,7 +30,7 @@ import BaselineTimelineTicks from "@/terrain/BaselineTimelineTicks";
 import type { TimeGranularity } from "@/terrain/TimelineTicks";
 import { baselineSeedString } from "@/terrain/seed";
 import LiquidityFlowLayer from "@/components/terrain/liquidity/LiquidityFlowLayer";
-import TerrainEventLayer from "@/components/terrain/events/TerrainEventLayer";
+import TerrainSignalsLayer from "@/components/terrain/signals/TerrainSignalsLayer";
 import StrategicMarkers from "@/terrain/StrategicMarkers";
 import HorizonBand from "@/terrain/HorizonBand";
 import { useRenderFlagsStore } from "@/state/renderFlagsStore";
@@ -210,7 +210,7 @@ export default function TerrainStage({
               <BaselineTimelineTicks visible terrainRef={terrainRef} />
             )}
             <LiquidityFlowLayer terrainRef={terrainRef} enabled={liquidityOn} />
-            <TerrainEventLayer terrainRef={terrainRef} />
+            <TerrainSignalsLayer terrainRef={terrainRef} />
             {showMarkers && <StrategicMarkers />}
           </>
         )}
