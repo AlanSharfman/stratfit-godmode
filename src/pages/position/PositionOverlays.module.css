@@ -669,7 +669,7 @@
 /* ── Intelligence overlay — transparent glass materializing on terrain ── */
 .insightOverlay {
   position: fixed;
-  bottom: 0;
+  bottom: 48px;
   right: 20px;
   /* LOCKED dimensions — never change throughout workflow */
   width: 520px;
