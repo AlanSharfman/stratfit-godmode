@@ -669,12 +669,13 @@
 /* ── Intelligence overlay — transparent glass materializing on terrain ── */
 .insightOverlay {
   position: fixed;
-  /* Covers bottom half of screen, right-aligned */
-  top: 50vh;
-  bottom: 20px;
+  /* Raised position — starts at 40vh, capped height */
+  top: 40vh;
+  bottom: 24px;
   right: 20px;
-  /* Width locked, height stretches via top+bottom */
+  /* Width locked, height capped for readability */
   width: 520px;
+  max-height: 420px;
   z-index: 100;
   padding: 0;
   display: flex;
@@ -899,7 +900,8 @@
   padding: 0 4px;
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 255, 255, 0.12) transparent;
-  /* NO scroll-behavior:smooth — rAF handles scrolling pixel-by-pixel */
+  overscroll-behavior: contain;
+  overflow-anchor: none;
 }
 
 /* ── Overlay fade-out transition ── */

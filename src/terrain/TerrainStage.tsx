@@ -31,6 +31,7 @@ import type { TimeGranularity } from "@/terrain/TimelineTicks";
 import { baselineSeedString } from "@/terrain/seed";
 import LiquidityFlowLayer from "@/components/terrain/liquidity/LiquidityFlowLayer";
 import TerrainEventLayer from "@/components/terrain/events/TerrainEventLayer";
+import StrategicMarkers from "@/terrain/StrategicMarkers";
 import HorizonBand from "@/terrain/HorizonBand";
 import { useRenderFlagsStore } from "@/state/renderFlagsStore";
 import type { TerrainMetrics } from "@/terrain/terrainFromBaseline";
@@ -210,6 +211,7 @@ export default function TerrainStage({
             )}
             <LiquidityFlowLayer terrainRef={terrainRef} enabled={liquidityOn} />
             <TerrainEventLayer terrainRef={terrainRef} />
+            {showMarkers && <StrategicMarkers />}
           </>
         )}
       </Suspense>

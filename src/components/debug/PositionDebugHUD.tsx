@@ -6,6 +6,8 @@
 // Mount only when URL has ?debugHud=1.
 // ═══════════════════════════════════════════════════════════════
 
+// WHY: Phase 1 — enhanced debug HUD shows completedAt, event count, overlay state,
+// presentation phase so the user can SEE the system's internal state on-screen.
 import React from "react"
 import { useDebugSignals, useDebugFlags } from "@/debug/debugSignals"
 import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore"
@@ -49,7 +51,7 @@ export default function PositionDebugHUD() {
     })),
   )
 
-  const { activeId, activeStatus, leverSnippet, terrainSeed, valueDeltaPct } = usePhase1ScenarioStore(
+  const { activeId, activeStatus, completedAtRaw, leverSnippet, terrainSeed, valueDeltaPct, kpiRunway, eventCountFromKpi } = usePhase1ScenarioStore(
     useShallow((s) => {
       const active = s.scenarios.find((sc) => sc.id === s.activeScenarioId)
       const levers = active?.leverValues ?? {}
@@ -62,12 +64,25 @@ export default function PositionDebugHUD() {
       const valueDeltaPct = kpis
         ? ((kpis.revenue - kpis.monthlyBurn) / Math.max(kpis.monthlyBurn, 1) * 100).toFixed(1)
         : null
+      const completedAtRaw = active?.simulationResults?.completedAt ?? null
+      const kpiRunway = kpis?.runway ?? null
+      // Approximate event count from KPIs (matches detectSimulationEvents logic)
+      let eventCountFromKpi = 0
+      if (kpis) {
+        if (kpiRunway != null && kpiRunway > 0 && kpiRunway < 24) eventCountFromKpi++
+        if (kpis.revenue > 0) eventCountFromKpi++ // peakValue
+        if (kpis.monthlyBurn > 0 && kpis.revenue > 0 && kpis.monthlyBurn / kpis.revenue > 1.5) eventCountFromKpi++ // riskSpike
+        if (kpis.revenue > 0 && kpis.monthlyBurn > kpis.revenue) eventCountFromKpi++ // breakeven
+      }
       return {
         activeId: s.activeScenarioId,
         activeStatus: active?.status ?? null,
+        completedAtRaw,
         leverSnippet,
         terrainSeed: seed,
         valueDeltaPct,
+        kpiRunway,
+        eventCountFromKpi,
       }
     }),
   )
@@ -134,6 +149,20 @@ export default function PositionDebugHUD() {
         >
           {activeStatus ?? "—"}
         </span>
+      </div>
+      <div>
+        <span style={LABEL}>completedAt: </span>
+        <span style={completedAtRaw && completedAtRaw > 0 ? VAL_OK : VAL_BAD}>
+          {completedAtRaw ?? "null"}
+        </span>
+      </div>
+      <div>
+        <span style={LABEL}>runway: </span>
+        <span style={kpiRunway != null ? VAL_OK : VAL_WARN}>
+          {kpiRunway != null ? `${kpiRunway}mo` : "—"}
+        </span>
+        <span style={LABEL}> kpiEvents≈</span>
+        <span style={eventCountFromKpi > 0 ? VAL_OK : VAL_WARN}>{eventCountFromKpi}</span>
       </div>
       <div>
         <span style={LABEL}>levers: </span>

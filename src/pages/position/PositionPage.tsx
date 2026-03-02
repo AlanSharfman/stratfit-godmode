@@ -76,6 +76,8 @@ export default function PositionPage() {
   const viewportRef = useRef<HTMLDivElement>(null)
   const insightScrollRef = useRef<HTMLDivElement>(null)
   const userScrolledAwayRef = useRef(false)
+  const scrollRafRef = useRef<number | null>(null)
+  const needsScrollRef = useRef(false)
   const reducedMotion = useReducedMotion()
   const { debugHud } = useDebugFlags()
 
@@ -178,42 +180,53 @@ export default function PositionPage() {
     }
   }, [simulationCompletedAt])
 
-  // ── Follow-tail scroll — pins to bottom as content grows, pauses if user scrolls up ──
-  // Uses MutationObserver to detect content changes instead of rAF loop.
+  // ── Follow-tail scroll — rAF-throttled, no jitter ──
+  // MutationObserver sets a "needsScroll" flag; single rAF frame applies scroll.
+  // User scroll-away pauses auto-follow (24px threshold).
   useEffect(() => {
     if (!intelligenceOpen || insightCollapsed) return
     const el = insightScrollRef.current
     if (!el) return
 
     userScrolledAwayRef.current = false
+    needsScrollRef.current = false
 
-    // Detect user scrolling away from bottom
-    const BOTTOM_THRESHOLD = 8 // px tolerance for "at bottom"
+    const BOTTOM_THRESHOLD = 24
     const onScroll = () => {
       const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < BOTTOM_THRESHOLD
       userScrolledAwayRef.current = !atBottom
     }
 
-    // When content mutates (typewriter chars), scroll to bottom if user hasn't scrolled away
-    const scrollToBottom = () => {
-      if (!userScrolledAwayRef.current) {
-        el.scrollTop = el.scrollHeight
+    // rAF loop — only scrolls when flag is set, one frame at a time
+    let running = true
+    const scrollEl = el // capture non-null ref for closure
+    function tick() {
+      if (!running) return
+      if (needsScrollRef.current && !userScrolledAwayRef.current) {
+        needsScrollRef.current = false
+        scrollEl.scrollTo({ top: scrollEl.scrollHeight, behavior: "auto" })
       }
+      scrollRafRef.current = requestAnimationFrame(tick)
     }
 
-    const observer = new MutationObserver(scrollToBottom)
-    // Start observing after materialize animation (3s + 200ms buffer)
+    const onMutation = () => { needsScrollRef.current = true }
+    const observer = new MutationObserver(onMutation)
+
+    // Start observing immediately but delay first scroll until materialize done
+    observer.observe(el, { childList: true, subtree: true, characterData: true })
     const startDelay = setTimeout(() => {
-      observer.observe(el, { childList: true, subtree: true, characterData: true })
-      scrollToBottom() // initial pin
+      needsScrollRef.current = true // initial pin after animation
+      scrollRafRef.current = requestAnimationFrame(tick)
     }, 3200)
 
     el.addEventListener("scroll", onScroll, { passive: true })
 
     return () => {
+      running = false
       clearTimeout(startDelay)
       observer.disconnect()
       el.removeEventListener("scroll", onScroll)
+      if (scrollRafRef.current) cancelAnimationFrame(scrollRafRef.current)
     }
   }, [intelligenceOpen, insightCollapsed])
 
@@ -829,6 +842,9 @@ export default function PositionPage() {
         <div
           className={`${styles.insightOverlay}${insightCollapsed ? ` ${styles.insightCompact}` : ""}`}
           aria-label="Intelligence Overlay"
+          // Reset auto-collapse timer on any user activity inside expanded overlay
+          onMouseMove={!insightCollapsed ? () => scheduleAutoCollapse(20_000) : undefined}
+          onWheel={!insightCollapsed ? () => scheduleAutoCollapse(20_000) : undefined}
           {...(insightCollapsed ? {
             role: "button",
             tabIndex: 0,
