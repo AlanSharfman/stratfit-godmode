@@ -243,6 +243,10 @@ interface InputRowProps {
 function InputRow({
   label, value, prefix, suffix, type = "number", placeholder, onChange,
 }: InputRowProps) {
+  const displayValue =
+    type === "number" && typeof value === "number"
+      ? value.toLocaleString()
+      : value
   return (
     <div className={css.inputRow}>
       <span className={css.inputLabel}>{label}</span>
@@ -250,10 +254,14 @@ function InputRow({
         {prefix && <span className={css.inputPrefix}>{prefix}</span>}
         <input
           className={css.inputField}
-          type={type}
-          value={value}
+          type="text"
+          inputMode={type === "number" ? "numeric" : undefined}
+          value={displayValue}
           placeholder={placeholder}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => {
+            const raw = e.target.value.replace(/,/g, "")
+            onChange(raw)
+          }}
         />
         {suffix && <span className={css.inputSuffix}>{suffix}</span>}
       </div>

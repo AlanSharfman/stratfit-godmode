@@ -70,8 +70,6 @@ export default function PositionPage() {
   const [granularity, setGranularity] = useState<TimeGranularity>("quarter")
   const [rippleKey, setRippleKey] = useState(0)
   const [commandCentreOpen, setCommandCentreOpen] = useState(true)
-  const [intelligenceOpen, setIntelligenceOpen] = useState(false)
-  const [insightCollapsed, setInsightCollapsed] = useState(false)
   const [terrainTuning, setTerrainTuning] = useState<TerrainTuningParams>({ ...DEFAULT_TUNING })
   const viewportRef = useRef<HTMLDivElement>(null)
   const insightScrollRef = useRef<HTMLDivElement>(null)
@@ -80,6 +78,19 @@ export default function PositionPage() {
   const needsScrollRef = useRef(false)
   const reducedMotion = useReducedMotion()
   const { debugHud } = useDebugFlags()
+
+  /* ── Slide overlay state machine ──
+     States: hidden → sliding-in → visible → typewriting → dwelling → sliding-out → hidden
+     The overlay DOM is always mounted; visibility is controlled by CSS classes.
+  */
+  const [overlayVisible, setOverlayVisible] = useState(false)    // CSS slide-in class
+  const [overlayMounted, setOverlayMounted] = useState(false)     // DOM mount
+  const [overlayStrobe, setOverlayStrobe] = useState(false)       // Bezel strobe
+  const [typewriterDone, setTypewriterDone] = useState(false)     // Typewriter finished
+  const [overlayUserDismissed, setOverlayUserDismissed] = useState(false) // User manually closed
+  const slideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const dwellTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const strobeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // ── ResizeObserver: update Three.js renderer when right rail expands/collapses ──
   useEffect(() => {
@@ -137,54 +148,91 @@ export default function PositionPage() {
   const simulationCompletedAt = activeScenario?.simulationResults?.completedAt || null
   const presentation = useIntelligencePresentation({ completedAt: simulationCompletedAt })
 
-  // Auto-open insights panel — 5s after simulation completes (let terrain render)
-  const lastAutoOpenRef = useRef<number | null>(null)
-  const autoCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  // ── Unified auto-collapse helpers ──
-  const clearAutoClose = useCallback(() => {
-    if (autoCloseTimerRef.current) {
-      clearTimeout(autoCloseTimerRef.current)
-      autoCloseTimerRef.current = null
-    }
+  // ── Slide overlay helpers ──
+  const clearSlideTimers = useCallback(() => {
+    if (slideTimerRef.current) { clearTimeout(slideTimerRef.current); slideTimerRef.current = null }
+    if (dwellTimerRef.current) { clearTimeout(dwellTimerRef.current); dwellTimerRef.current = null }
+    if (strobeTimerRef.current) { clearTimeout(strobeTimerRef.current); strobeTimerRef.current = null }
   }, [])
 
-  const scheduleAutoCollapse = useCallback((ms = 20_000) => {
-    clearAutoClose()
-    autoCloseTimerRef.current = setTimeout(() => {
-      setInsightCollapsed(true)
-    }, ms)
-  }, [clearAutoClose])
+  /** Slide the overlay OUT (visible on terrain) */
+  const slideOverlayIn = useCallback(() => {
+    clearSlideTimers()
+    setOverlayUserDismissed(false)
+    setOverlayMounted(true)
+    setTypewriterDone(false)
+    // Trigger slide-in on next frame so the DOM is mounted first
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setOverlayVisible(true)
+        setOverlayStrobe(true)
+        // Remove strobe class after animation finishes (2.4s)
+        strobeTimerRef.current = setTimeout(() => setOverlayStrobe(false), 2500)
+      })
+    })
+  }, [clearSlideTimers])
 
-  // ── Universal auto-collapse: fires whenever overlay is expanded ──
-  // Guarantees collapse after 20s regardless of HOW the overlay was opened.
-  useEffect(() => {
-    if (intelligenceOpen && !insightCollapsed) {
-      scheduleAutoCollapse(20_000)
-    } else {
-      clearAutoClose()
-    }
-    return () => clearAutoClose()
-  }, [intelligenceOpen, insightCollapsed, scheduleAutoCollapse, clearAutoClose])
+  /** Slide the overlay BACK into the rail */
+  const slideOverlayOut = useCallback(() => {
+    clearSlideTimers()
+    setOverlayVisible(false)
+    setOverlayStrobe(false)
+    // After CSS transition completes (1.2s), unmount
+    slideTimerRef.current = setTimeout(() => {
+      setOverlayMounted(false)
+      setTypewriterDone(false)
+    }, 1400)
+  }, [clearSlideTimers])
 
-  // Auto-open after simulation completes (5s delay for terrain settle)
+  /** User manually opens overlay */
+  const handleOverlayOpen = useCallback(() => {
+    setOverlayUserDismissed(false)
+    slideOverlayIn()
+  }, [slideOverlayIn])
+
+  /** User manually dismisses overlay */
+  const handleOverlayDismiss = useCallback(() => {
+    setOverlayUserDismissed(true)
+    slideOverlayOut()
+  }, [slideOverlayOut])
+
+  // Auto-open: 4 seconds after simulation completes (terrain settle)
+  const lastAutoOpenRef = useRef<number | null>(null)
+
   useEffect(() => {
     if (simulationCompletedAt != null && simulationCompletedAt !== lastAutoOpenRef.current) {
       lastAutoOpenRef.current = simulationCompletedAt
       const openTimer = setTimeout(() => {
-        setIntelligenceOpen(true)
-        setInsightCollapsed(false)
-        // auto-collapse is handled by the universal useEffect above
-      }, 5_000)
+        if (!overlayUserDismissed) {
+          slideOverlayIn()
+        }
+      }, 4_000)
       return () => clearTimeout(openTimer)
     }
-  }, [simulationCompletedAt])
+  }, [simulationCompletedAt, slideOverlayIn, overlayUserDismissed])
+
+  // Dwell timer: 15 seconds after typewriter finishes → slide back
+  useEffect(() => {
+    if (typewriterDone && overlayVisible) {
+      dwellTimerRef.current = setTimeout(() => {
+        slideOverlayOut()
+      }, 15_000)
+      return () => {
+        if (dwellTimerRef.current) clearTimeout(dwellTimerRef.current)
+      }
+    }
+  }, [typewriterDone, overlayVisible, slideOverlayOut])
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => clearSlideTimers()
+  }, [clearSlideTimers])
 
   // ── Follow-tail scroll — rAF-throttled, no jitter ──
   // MutationObserver sets a "needsScroll" flag; single rAF frame applies scroll.
   // User scroll-away pauses auto-follow (24px threshold).
   useEffect(() => {
-    if (!intelligenceOpen || insightCollapsed) return
+    if (!overlayVisible) return
     const el = insightScrollRef.current
     if (!el) return
 
@@ -212,23 +260,20 @@ export default function PositionPage() {
     const onMutation = () => { needsScrollRef.current = true }
     const observer = new MutationObserver(onMutation)
 
-    // Start observing immediately but delay first scroll until materialize done
+    // Start observing immediately — start scroll loop right away (slide handles the delay)
     observer.observe(el, { childList: true, subtree: true, characterData: true })
-    const startDelay = setTimeout(() => {
-      needsScrollRef.current = true // initial pin after animation
-      scrollRafRef.current = requestAnimationFrame(tick)
-    }, 3200)
+    needsScrollRef.current = true
+    scrollRafRef.current = requestAnimationFrame(tick)
 
     el.addEventListener("scroll", onScroll, { passive: true })
 
     return () => {
       running = false
-      clearTimeout(startDelay)
       observer.disconnect()
       el.removeEventListener("scroll", onScroll)
       if (scrollRafRef.current) cancelAnimationFrame(scrollRafRef.current)
     }
-  }, [intelligenceOpen, insightCollapsed])
+  }, [overlayVisible])
 
   // ── Intelligence panel keyboard shortcut (I key) ──
   useEffect(() => {
@@ -237,12 +282,16 @@ export default function PositionPage() {
         const tag = (e.target as HTMLElement)?.tagName
         if (tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable) return
         e.preventDefault()
-        setIntelligenceOpen((prev) => !prev)
+        if (overlayVisible) {
+          handleOverlayDismiss()
+        } else {
+          handleOverlayOpen()
+        }
       }
     }
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
-  }, [])
+  }, [overlayVisible, handleOverlayDismiss, handleOverlayOpen])
 
   // Auto-run simulation if activeScenario is still in "draft"
   const lastSimRunRef = useRef<string | null>(null)
@@ -798,15 +847,12 @@ export default function PositionPage() {
                   </div>
                 </div>
               )}
-              {/* INSIGHTS toggle — only when not running and not open */}
-              {activeScenario?.status !== "running" && !intelligenceOpen && (
+              {/* INSIGHTS toggle — only when not running and overlay not visible */}
+              {activeScenario?.status !== "running" && !overlayVisible && !overlayMounted && (
                 <button
                   type="button"
                   className={styles.intelToggle}
-                  onClick={() => {
-                    setIntelligenceOpen(true)
-                    setInsightCollapsed(false)
-                  }}
+                  onClick={handleOverlayOpen}
                 >
                 {/* Bejeweled insight diamond icon */}
                 <span className={styles.insightIcon} aria-hidden="true">
@@ -835,57 +881,60 @@ export default function PositionPage() {
       </div>
 
       {/* ══════════════════════════════════════════════════
-          INTELLIGENCE OVERLAY — Transparent glass on terrain
-          Fixed 520×380 panel → auto-collapses to compact pill after 20s
+          INTELLIGENCE OVERLAY — Slides out from right rail over terrain
+          4s after terrain → slide out → typewriter → 15s dwell → slide back
           ══════════════════════════════════════════════════ */}
-      {intelligenceOpen && (
+      {overlayMounted && (
         <div
-          className={`${styles.insightOverlay}${insightCollapsed ? ` ${styles.insightCompact}` : ""}`}
+          className={[
+            styles.insightOverlay,
+            overlayVisible ? styles.insightSlideIn : "",
+            overlayStrobe ? styles.insightStrobeBezel : "",
+          ].filter(Boolean).join(" ")}
           aria-label="Intelligence Overlay"
-          // Reset auto-collapse timer on any user activity inside expanded overlay
-          onMouseMove={!insightCollapsed ? () => scheduleAutoCollapse(20_000) : undefined}
-          onWheel={!insightCollapsed ? () => scheduleAutoCollapse(20_000) : undefined}
-          {...(insightCollapsed ? {
-            role: "button",
-            tabIndex: 0,
-            onClick: () => {
-              setInsightCollapsed(false)
-            },
-            onKeyDown: (e: React.KeyboardEvent) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault()
-                setInsightCollapsed(false)
-              }
-            },
-          } : {})}
+          // User interaction resets dwell timer
+          onMouseMove={overlayVisible ? () => {
+            if (typewriterDone && dwellTimerRef.current) {
+              clearTimeout(dwellTimerRef.current)
+              dwellTimerRef.current = setTimeout(() => slideOverlayOut(), 15_000)
+            }
+          } : undefined}
         >
-          {insightCollapsed ? (
-            /* ── Compact pill interior — vertical label + chevron ── */
-            <div className={styles.insightCompactInner}>
-              <span className={styles.insightCompactChevron} aria-hidden="true">◂</span>
-              <span className={styles.insightCompactLabel}>INSIGHT</span>
-            </div>
-          ) : (
-            <>
-              <div ref={insightScrollRef} className={styles.insightScrollWrap}>
-                <CommandGlassPanel
-                  phase={presentation.phase}
-                  onTypewriterComplete={presentation.requestSettle}
-                />
-              </div>
-              {/* Close button — bottom of overlay */}
-              <button
-                type="button"
-                className={styles.intelCollapseBtn}
-                onClick={() => setIntelligenceOpen(false)}
-                aria-label="Dismiss insights (I)"
-              >
-                <span>Dismiss</span>
-                <span className={styles.kbdHint}>I</span>
-              </button>
-            </>
-          )}
+          <div ref={insightScrollRef} className={styles.insightScrollWrap}>
+            <CommandGlassPanel
+              phase={presentation.phase}
+              onTypewriterComplete={() => {
+                presentation.requestSettle()
+                setTypewriterDone(true)
+              }}
+            />
+          </div>
+          {/* Close button — bottom of overlay */}
+          <button
+            type="button"
+            className={styles.intelCollapseBtn}
+            onClick={handleOverlayDismiss}
+            aria-label="Dismiss insights (I)"
+          >
+            <span>Dismiss</span>
+            <span className={styles.kbdHint}>I</span>
+          </button>
         </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════
+          RE-OPEN TAB — Shows when overlay is hidden and user can re-open
+          ══════════════════════════════════════════════════ */}
+      {!overlayVisible && !overlayMounted && activeScenario?.status === "complete" && (
+        <button
+          type="button"
+          className={styles.insightReopenTab}
+          onClick={handleOverlayOpen}
+          aria-label="Show Intelligence (I)"
+        >
+          <span className={styles.insightReopenChevron} aria-hidden="true">&#9664;</span>
+          <span className={styles.insightReopenLabel}>INSIGHT</span>
+        </button>
       )}
 
       {/* ══ Debug HUD — only when ?debugHud=1 (reactive) ══ */}
