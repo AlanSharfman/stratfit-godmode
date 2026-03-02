@@ -829,17 +829,8 @@ export default function PositionPage() {
             aria-label="Scenario Insights"
           >
               <ScenarioContextPanel />
-              {/* Simulation running effect — while simulation is in progress */}
-              {activeScenario?.status === "running" && (
-                <div className={styles.simRunning}>
-                  <div className={styles.simRunningLabel}>Simulating scenario</div>
-                  <div className={styles.simRunningDots}>
-                    <span /><span /><span />
-                  </div>
-                </div>
-              )}
-              {/* INSIGHTS toggle — only when not running and overlay not visible */}
-              {activeScenario?.status !== "running" && !overlayVisible && !overlayMounted && (
+              {/* INSIGHTS toggle — only when overlay not visible */}
+              {!overlayVisible && !overlayMounted && (
                 <button
                   type="button"
                   className={styles.intelToggle}

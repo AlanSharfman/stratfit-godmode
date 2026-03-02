@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useBaselineStore } from "@/state/baselineStore"
 import styles from "./IngressConsoleV2.module.css"
@@ -307,6 +307,8 @@ export default function InitializeBaselineConsoleV2() {
       : 0
   const grossProfit = (form.currentARR / 12) * (form.grossMarginPct / 100)
 
+  const [simulating, setSimulating] = useState(false)
+
   const handleLock = useCallback(() => {
     setBaseline({
       cash: form.cashOnHand,
@@ -318,8 +320,17 @@ export default function InitializeBaselineConsoleV2() {
       headcount: form.headcount,
       arpa: form.avgDealSize || 1500,
     })
-    navigate("/decision", { replace: true })
-  }, [form, navigate, setBaseline])
+    setSimulating(true)
+  }, [form, setBaseline])
+
+  // 2-second cinematic → navigate to position
+  useEffect(() => {
+    if (!simulating) return
+    const timer = setTimeout(() => {
+      navigate("/position", { replace: true })
+    }, 2000)
+    return () => clearTimeout(timer)
+  }, [simulating, navigate])
 
   const canGoNext = activeStep < 4
   const canGoBack = activeStep > 1
@@ -327,6 +338,18 @@ export default function InitializeBaselineConsoleV2() {
   /* ══════════════════ RENDER ══════════════════ */
 
   return (
+    <>
+    {simulating && (
+      <div className={styles.simCinematic}>
+        <div className={styles.simCinematicInner}>
+          <div className={styles.simScanBar} />
+          <div className={styles.simCinematicLabel}>Simulating scenario</div>
+          <div className={styles.simCinematicDots}>
+            <span /><span /><span />
+          </div>
+        </div>
+      </div>
+    )}
     <div className={styles.outerChassis}>
       <div className={styles.bezelFrame} data-sf-chassis>
         <div className={styles.glassSurface}>
@@ -1149,5 +1172,6 @@ export default function InitializeBaselineConsoleV2() {
       </div>
       {/* ^^^ bezelFrame */}
     </div>
+    </>
   )
 }

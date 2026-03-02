@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useBaselineStore } from "@/state/baselineStore"
 import ConsoleFrame from "@/layout/ConsoleFrame"
@@ -370,6 +370,8 @@ function InitializeBaselineLegacy() {
       : 0
   const grossProfit = (form.currentARR / 12) * (form.grossMarginPct / 100)
 
+  const [simulating, setSimulating] = useState(false)
+
   const handleLock = useCallback(() => {
     setBaseline({
       cash: form.cashOnHand,
@@ -381,8 +383,17 @@ function InitializeBaselineLegacy() {
       headcount: form.headcount,
       arpa: form.avgDealSize || 1500,
     })
-    navigate("/decision", { replace: true })
-  }, [form, navigate, setBaseline])
+    setSimulating(true)
+  }, [form, setBaseline])
+
+  // 2-second cinematic → navigate to position
+  useEffect(() => {
+    if (!simulating) return
+    const timer = setTimeout(() => {
+      navigate("/position", { replace: true })
+    }, 2000)
+    return () => clearTimeout(timer)
+  }, [simulating, navigate])
 
   const canGoNext = activeStep < 4
   const canGoBack = activeStep > 1
@@ -391,6 +402,17 @@ function InitializeBaselineLegacy() {
 
   return (
     <ConsoleFrame>
+      {simulating && (
+        <div className={css.simCinematic}>
+          <div className={css.simCinematicInner}>
+            <div className={css.simScanBar} />
+            <div className={css.simCinematicLabel}>Simulating scenario</div>
+            <div className={css.simCinematicDots}>
+              <span /><span /><span />
+            </div>
+          </div>
+        </div>
+      )}
       <div className={css.consoleLayout} data-sf-initiate="legacy">
 
         {/* ═══════════ LEFT SIDEBAR — System Nav Rail ═══════════ */}
