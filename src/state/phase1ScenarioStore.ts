@@ -6,6 +6,9 @@ import { logDecisionFlow } from "@/dev/decisionFlowLog"
 import { selectKpis } from "@/selectors/kpiSelectors"
 import { selectRiskScore } from "@/selectors/riskSelectors"
 import { selectTerrainMetrics } from "@/selectors/terrainSelectors"
+import type { LeverValues } from "@/domain/decision/LeverValues"
+import { normalizeLeverValues, stableStringifyLevers } from "@/domain/decision/LeverValues"
+import { applyLeversToBaseline } from "@/domain/decision/applyLevers"
 
 export type SimulationStatus = "draft" | "running" | "complete" | "error"
 
@@ -79,6 +82,8 @@ export type Phase1Scenario = {
   /** MVP deterministic intent classification */
   decisionIntentType?: DecisionIntentType
   decisionIntentLabel?: string
+  /** Lever values used for this scenario — persisted for Position page access */
+  leverValues?: LeverValues
   status: SimulationStatus
   simulationResults?: SimulationResults
   /** Decision identity — populated on creation */
@@ -91,6 +96,7 @@ export type CreateScenarioInput = {
   intent?: unknown
   decisionIntentType?: DecisionIntentType
   decisionIntentLabel?: string
+  leverValues?: LeverValues
 }
 
 type Phase1ScenarioState = {
@@ -129,9 +135,10 @@ function hashToMultiplier(hash: number, bits: number, lo: number, hi: number): n
   return lo + frac * (hi - lo)
 }
 
-function computeTerrainData(scenarioId: string, decision: string): TerrainData {
-  // Seed from scenario_id for uniqueness; incorporate decision for determinism
-  const seed = hashString(`${scenarioId}::${decision}`)
+function computeTerrainData(scenarioId: string, decision: string, leverValues?: LeverValues): TerrainData {
+  // Seed from scenario_id + decision + lever values for full determinism
+  const leverStr = leverValues ? stableStringifyLevers(leverValues) : ""
+  const seed = hashString(`${scenarioId}::${decision}::${leverStr}`)
   return {
     seed,
     multipliers: {
@@ -220,6 +227,7 @@ export const usePhase1ScenarioStore = create<Phase1ScenarioState>()(
           intent: input.intent,
           decisionIntentType: input.decisionIntentType,
           decisionIntentLabel: input.decisionIntentLabel,
+          leverValues: normalizeLeverValues(input.leverValues),
           status: "draft",
           identity,
         }
@@ -254,9 +262,11 @@ export const usePhase1ScenarioStore = create<Phase1ScenarioState>()(
           return
         }
 
-        // Compute terrain + KPIs deterministically from scenario_id + decision text
-        const terrain = computeTerrainData(scenarioId, scenario.decision)
-        const kpis = computeKpis(baseline, terrain.multipliers)
+        // Compute terrain + KPIs deterministically from scenario_id + decision text + levers
+        const levers = scenario.leverValues ?? {}
+        const adjusted = applyLeversToBaseline(baseline, levers)
+        const terrain = computeTerrainData(scenarioId, scenario.decision, levers)
+        const kpis = computeKpis(adjusted, terrain.multipliers)
         const terrainMetrics = computeEngineTerrainMetrics(kpis, terrain.multipliers)
 
         // Set status → running, pre-store terrain so Position can morph immediately

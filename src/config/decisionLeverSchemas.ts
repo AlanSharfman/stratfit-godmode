@@ -1,8 +1,11 @@
 // src/config/decisionLeverSchemas.ts
+// ═══════════════════════════════════════════════════════════════
 // Deterministic lever schema mapping per DecisionIntentType.
-// UI-only for now — does NOT feed into simulation engine inputs.
+// Feeds into simulation engine via applyLeversToBaseline().
+// ═══════════════════════════════════════════════════════════════
 
 import type { DecisionIntentType } from "@/state/phase1ScenarioStore"
+import type { LeverValues } from "@/domain/decision/LeverValues"
 
 export interface LeverSchema {
   id: string
@@ -49,11 +52,24 @@ export const decisionLeverSchemas: Record<DecisionIntentType, LeverSchema[]> = {
 }
 
 /** Build default lever values for a given intent type */
-export function defaultLeverValues(intent: DecisionIntentType): Record<string, number> {
+export function defaultLeverValues(intent: DecisionIntentType): LeverValues {
   const schema = decisionLeverSchemas[intent]
-  const values: Record<string, number> = {}
+  const values: LeverValues = {}
   for (const lever of schema) {
     values[lever.id] = lever.default
+  }
+  return values
+}
+
+/** Build default lever values across ALL intent types (global defaults) */
+export function getAllDefaultLeverValues(): LeverValues {
+  const values: LeverValues = {}
+  for (const levers of Object.values(decisionLeverSchemas)) {
+    for (const lever of levers) {
+      if (!(lever.id in values)) {
+        values[lever.id] = lever.default
+      }
+    }
   }
   return values
 }

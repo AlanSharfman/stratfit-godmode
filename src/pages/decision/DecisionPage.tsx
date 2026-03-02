@@ -203,6 +203,7 @@ export default function DecisionPage() {
         intent,
         decisionIntentType: effectiveIntent,
         decisionIntentLabel: selectedCardLabel,
+        leverValues,
         createdAt: Date.now(),
       })
 

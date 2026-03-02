@@ -49,12 +49,25 @@ export default function PositionDebugHUD() {
     })),
   )
 
-  const { activeId, activeStatus } = usePhase1ScenarioStore(
+  const { activeId, activeStatus, leverSnippet, terrainSeed, valueDeltaPct } = usePhase1ScenarioStore(
     useShallow((s) => {
       const active = s.scenarios.find((sc) => sc.id === s.activeScenarioId)
+      const levers = active?.leverValues ?? {}
+      const leverKeys = Object.keys(levers).slice(0, 3)
+      const leverSnippet = leverKeys.length > 0
+        ? leverKeys.map((k) => `${k}=${levers[k]}`).join(" ")
+        : "none"
+      const seed = active?.simulationResults?.terrain?.seed ?? null
+      const kpis = active?.simulationResults?.kpis
+      const valueDeltaPct = kpis
+        ? ((kpis.revenue - kpis.monthlyBurn) / Math.max(kpis.monthlyBurn, 1) * 100).toFixed(1)
+        : null
       return {
         activeId: s.activeScenarioId,
         activeStatus: active?.status ?? null,
+        leverSnippet,
+        terrainSeed: seed,
+        valueDeltaPct,
       }
     }),
   )
@@ -121,6 +134,18 @@ export default function PositionDebugHUD() {
         >
           {activeStatus ?? "—"}
         </span>
+      </div>
+      <div>
+        <span style={LABEL}>levers: </span>
+        <span style={leverSnippet !== "none" ? VAL_OK : VAL_WARN}>{leverSnippet}</span>
+      </div>
+      <div>
+        <span style={LABEL}>seed: </span>
+        <span style={terrainSeed ? VAL_OK : VAL_WARN}>{terrainSeed ?? "—"}</span>
+      </div>
+      <div>
+        <span style={LABEL}>valueDelta%: </span>
+        <span style={valueDeltaPct ? VAL_OK : VAL_WARN}>{valueDeltaPct ?? "—"}</span>
       </div>
     </div>
   )
