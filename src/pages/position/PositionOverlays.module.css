@@ -669,9 +669,9 @@
 /* ── Intelligence overlay — slides out from right rail over terrain ── */
 .insightOverlay {
   position: fixed;
-  /* Positioned to match the terrain mid-right area */
-  top: 80px;
-  bottom: 60px;
+  /* Positioned: starts at 50% page height, extends to bottom */
+  top: 50vh;
+  bottom: 24px;
   right: 320px; /* aligned to left edge of right rail */
   width: 480px;
   z-index: 100;
@@ -909,12 +909,14 @@
   max-height: none;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 12px 14px 8px;
+  padding: 16px 14px 12px;
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 255, 255, 0.12) transparent;
   overscroll-behavior: contain;
   overflow-anchor: none;
   scroll-behavior: auto;
+  /* Keep top content visible — never clip against upper border */
+  scroll-padding-top: 16px;
 }
 
 /* ── Overlay fade-out transition ── */

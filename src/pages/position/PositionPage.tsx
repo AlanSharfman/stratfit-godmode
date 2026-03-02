@@ -245,14 +245,29 @@ export default function PositionPage() {
       userScrolledAwayRef.current = !atBottom
     }
 
-    // rAF loop — only scrolls when flag is set, one frame at a time
+    // rAF loop — smooth incremental scroll, never jumps
+    // Scrolls 3-6px per frame toward bottom — fluid motion, no jitter
     let running = true
     const scrollEl = el // capture non-null ref for closure
+    const SCROLL_SPEED = 4 // px per frame — smooth, readable pace
+
     function tick() {
       if (!running) return
       if (needsScrollRef.current && !userScrolledAwayRef.current) {
-        needsScrollRef.current = false
-        scrollEl.scrollTo({ top: scrollEl.scrollHeight, behavior: "auto" })
+        const gap = scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight
+        if (gap > 1) {
+          // Scroll by a small increment — never teleport
+          const step = Math.min(SCROLL_SPEED, gap)
+          scrollEl.scrollTop += step
+          // If still more to scroll, keep the flag set
+          if (gap - step > 1) {
+            // needsScrollRef stays true — next frame continues
+          } else {
+            needsScrollRef.current = false
+          }
+        } else {
+          needsScrollRef.current = false
+        }
       }
       scrollRafRef.current = requestAnimationFrame(tick)
     }
