@@ -1,5 +1,6 @@
 import type { BaselineV1 } from "@/onboard/baseline"
 import { computeBaselineCompleteness } from "@/logic/confidence/baselineCompleteness"
+import { selectEngineRiskScore } from "@/domain/engine/engineSelectors"
 
 export type StatusTone = "strong" | "watch" | "risk"
 export type PositionHealthStatus = "Stable" | "Growth" | "Pressured" | "Fragile"
@@ -68,7 +69,11 @@ function ebitdaMonthlyApprox(b: BaselineV1): number {
   return grossProfitMonthly - (payroll + sm + rd + ga)
 }
 
-function riskFromRunway(runway: number): number {
+/**
+ * Runway-based risk heuristic — internal fallback only.
+ * Used when neither engine risk nor explicit override is available.
+ */
+function riskFallbackFromRunway(runway: number): number {
   if (!Number.isFinite(runway)) return 60
   if (runway >= 24) return 85
   if (runway >= 18) return 78
@@ -197,16 +202,23 @@ function buildDiagnostics(b: BaselineV1, k: PositionKpis): DiagnosticCardVM[] {
 
 export function buildPositionViewModel(
   baseline: BaselineV1,
-  opts?: { riskIndexFromEngine?: number | null },
+  opts?: { riskIndexFromEngine?: number | null; engineRunId?: string },
 ): PositionViewModel {
   const runway   = runwayMonths(baseline)
   const arr      = safeNum(baseline.financial.arr, 0)
   const burn     = safeNum(baseline.financial.monthlyBurn, 0)
   const ebitda   = ebitdaMonthlyApprox(baseline)
   const growthPct = safeNum(baseline.financial.growthRatePct, 0)
-  const riskIndex = typeof opts?.riskIndexFromEngine === "number"
-    ? clamp(opts.riskIndexFromEngine, 0, 100)
-    : riskFromRunway(runway)
+  // Risk priority: explicit override → engine selector → runway heuristic
+  let riskIndex: number
+  if (typeof opts?.riskIndexFromEngine === "number") {
+    riskIndex = clamp(opts.riskIndexFromEngine, 0, 100)
+  } else if (opts?.engineRunId) {
+    const engineRisk = selectEngineRiskScore(opts.engineRunId)
+    riskIndex = engineRisk !== null ? clamp(engineRisk, 0, 100) : riskFallbackFromRunway(runway)
+  } else {
+    riskIndex = riskFallbackFromRunway(runway)
+  }
   const completeness = computeBaselineCompleteness(baseline)
   const conf = confidenceFromCompleteness01(completeness.completeness01)
   const cash = safeNum(baseline.financial.cashOnHand, 0)
@@ -224,7 +236,7 @@ export function buildPositionViewModel(
     bullets:         bulletsForState(baseline, kpis),
     confidenceBand:  conf.band,
     confidencePct:   conf.pct,
-    riskSource:      (typeof opts?.riskIndexFromEngine === "number" ? "engine" : "heuristic") as RiskSource,
+    riskSource:      (typeof opts?.riskIndexFromEngine === "number" || (opts?.engineRunId && selectEngineRiskScore(opts.engineRunId) !== null)) ? "engine" as RiskSource : "heuristic" as RiskSource,
     valuationSource: "heuristic" as RiskSource,
     diagnostics:     buildDiagnostics(baseline, kpis),
     objectives:      baseline.objectives,

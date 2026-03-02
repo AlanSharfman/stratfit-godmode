@@ -40,9 +40,10 @@ import { buildScenarioADraft } from "@/domain/scenario/scenarioDraft"
 import { studioSessionStore } from "@/state/studioSessionStore"
 import KPIHealthRail from "@/components/kpi/KPIHealthRail"
 import ScenarioContextPanel from "@/components/scenario/ScenarioContextPanel"
-import { selectKpis, selectPositionKpis } from "@/selectors/kpiSelectors"
+import { selectKpis } from "@/selectors/kpiSelectors"
 import { selectTerrainMetrics } from "@/selectors/terrainSelectors"
 import { selectRiskScore } from "@/selectors/riskSelectors"
+import { useSelectSimulationKpis } from "@/selectors/simulationKpiSelector"
 // ExecutiveNarrativeCard removed — intelligence rendered via IntelligencePanel
 import TimeScaleControl from "./overlays/TimeScaleControl"
 import IdleMotionLayer from "./IdleMotionLayer"
@@ -280,7 +281,38 @@ export default function PositionPage() {
       return scenarioTerrainRef.current.metrics
     }
 
-    // PRIORITY 2: Scenario has terrain data (running OR complete) → derive via selector & lock
+    // PRIORITY 2: Scenario has engine-computed terrainMetrics → use directly & lock
+    const engineMetrics = activeScenario?.simulationResults?.terrainMetrics
+    if (
+      activeScenarioId &&
+      (activeScenario?.status === "running" || activeScenario?.status === "complete") &&
+      engineMetrics
+    ) {
+      // Merge engine metrics into full TerrainMetrics shape (supply defaults for legacy fields)
+      const metrics: TerrainMetrics = Object.freeze({
+        elevationScale: engineMetrics.elevationScale,
+        roughness: engineMetrics.roughness,
+        ridgeIntensity: engineMetrics.ridgeIntensity,
+        volatility: engineMetrics.volatility,
+        // Legacy fields — computed from baseline as fallback
+        liquidityDepth: effectiveInputs
+          ? Math.min(
+              ((Number(effectiveInputs.cash) || 0) /
+                (Number(effectiveInputs.burnRate) || Number((effectiveInputs as any).monthlyBurn) || 1)) / 12,
+              2,
+            )
+          : 1,
+        growthSlope: effectiveInputs
+          ? (Math.abs(Number(effectiveInputs.growthRate) || 0) <= 1
+              ? Number(effectiveInputs.growthRate) || 0
+              : (Number(effectiveInputs.growthRate) || 0) / 100)
+          : 0,
+      })
+      scenarioTerrainRef.current = { scenarioId: activeScenarioId!, metrics }
+      return metrics
+    }
+
+    // PRIORITY 3 (legacy): Scenario has multipliers but no engine metrics → derive via heuristic
     const terrainData = selectTerrainMetrics(activeScenario?.simulationResults ?? null)
     const hasMultipliers =
       activeScenarioId &&
@@ -303,9 +335,9 @@ export default function PositionPage() {
       return metrics
     }
 
-    // PRIORITY 3: No scenario with multipliers → derive from raw baseline
+    // PRIORITY 4: No scenario → derive from raw baseline
     return effectiveInputs ? deriveTerrainMetrics(effectiveInputs as any) : undefined
-  }, [activeScenarioId, activeScenario?.status, activeScenario?.simulationResults?.terrain, effectiveInputs])
+  }, [activeScenarioId, activeScenario?.status, activeScenario?.simulationResults?.terrain, activeScenario?.simulationResults?.terrainMetrics, effectiveInputs])
 
   // DEV: log terrain source + selector proof + runId consistency once per scenario transition
   useEffect(() => {
@@ -313,7 +345,7 @@ export default function PositionPage() {
       const simResults = activeScenario?.simulationResults ?? null
       const terrainData = selectTerrainMetrics(simResults)
       const simKpis = selectKpis(simResults?.kpis ?? null)
-      const risk = selectRiskScore(simResults?.kpis ?? null)
+      const risk = selectRiskScore(simResults?.kpis ?? null, engineRunId)
       const runId = simResults?.completedAt ?? null
 
       // Quick hash for verification (djb2)
@@ -341,8 +373,7 @@ export default function PositionPage() {
     }
   }, [activeScenarioId, activeScenario?.status, activeScenario?.simulationResults, terrainMetrics])
 
-  // V1 baseline from context — only used for legacy left-rail KPI overlay.
-  // Will be replaced by Phase1 scenario KPI data in a future phase.
+  // V1 baseline from context — fallback for KPIs only when NO scenario is active.
   const { baseline: baselineV1 } = useSystemBaseline()
 
   const vm = useMemo(() => {
@@ -350,18 +381,14 @@ export default function PositionPage() {
     return buildPositionViewModel(baselineV1, { riskIndexFromEngine: null })
   }, [baselineV1])
 
-  // ── Live KPIs: simulation results when available, baseline fallback ──
-  const liveKpis = useMemo(() => {
-    if (activeScenario?.status === "complete" && activeScenario.simulationResults?.kpis) {
-      const riskScore = selectRiskScore(activeScenario.simulationResults.kpis)
-      return selectPositionKpis(activeScenario.simulationResults.kpis, riskScore)
-    }
-    return vm?.kpis ?? null
-  }, [
-    activeScenario?.status,
-    activeScenario?.simulationResults?.kpis,
-    vm?.kpis,
-  ])
+  // ── Engine run id (when available) for risk selector wiring ──
+  const engineRunId = activeScenario?.status === "complete"
+    ? activeScenario.simulationResults?.completedAt?.toString()
+    : undefined
+
+  // ── Live KPIs: simulation selector (single source), baseline fallback ──
+  const simKpis = useSelectSimulationKpis()
+  const liveKpis = useMemo(() => simKpis ?? vm?.kpis ?? null, [simKpis, vm?.kpis])
 
   // DEV: KPI wiring proof — confirms liveKpis source switches on simulation complete
   useEffect(() => {

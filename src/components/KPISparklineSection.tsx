@@ -4,51 +4,43 @@
 // No particles, no starships, no dials. Bloomberg-meets-Palantir.
 
 import React from "react";
-import { useShallow } from "zustand/react/shallow";
-import { useScenarioStore } from "@/state/scenarioStore";
+import { useSimulationKpiSnapshot, useSelectSimulationKpis } from "@/selectors/simulationKpiSelector";
 
 // ============================================================================
 // MAIN COMPONENT — AVIONICS INSTRUMENT STRIP
 // ============================================================================
 
 export default function KPISparklineSection() {
-  const { activeScenarioId, engineResults } = useScenarioStore(
-    useShallow((s) => ({
-      activeScenarioId: s.activeScenarioId,
-      engineResults: s.engineResults,
-    }))
-  );
+  const { raw } = useSimulationKpiSnapshot();
+  const simKpis = useSelectSimulationKpis();
 
-  // KPI values from engine
-  const kpis = engineResults?.[activeScenarioId ?? "base"]?.kpis ?? {};
-  
-  // Derived metrics
-  const runway = kpis.runway?.value ?? 24;
-  const runwayDisplay = `${runway}`;
+  // Derived metrics from simulation — single KPI source
+  const runway = simKpis?.runwayMonths ?? 24;
+  const runwayDisplay = `${Math.round(runway)}`;
 
-  const growthRaw = kpis.arrGrowthPct?.value ?? 8;
+  const growthRaw = raw?.growthRate ?? 8;
   const growthPct = growthRaw > 1 ? growthRaw : growthRaw * 100;
   const momentumDisplay = `${growthPct >= 0 ? "+" : ""}${growthPct.toFixed(0)}%`;
-  
-  const riskScore = kpis.riskIndex?.value ?? 30;
+
+  const riskScore = simKpis?.riskIndex ?? 30;
   const survivalPct = Math.round(100 - riskScore);
   const survivalDisplay = `${survivalPct}%`;
 
-  const cashRaw = kpis.cashPosition?.value ?? 4200000;
+  const cashRaw = simKpis?.cashOnHand ?? 4_200_000;
   const cashDisplay = `$${(cashRaw / 1_000_000).toFixed(1)}M`;
 
   // Enterprise Value
-  const evRaw = kpis.enterpriseValue?.value ?? 0;
+  const evRaw = simKpis?.valuationEstimate ?? 0;
   const evDisplay = evRaw > 0 ? `$${(evRaw / 1_000_000).toFixed(1)}M` : "—";
 
-  // Burn Quality
-  const burnRaw = kpis.burnQuality?.value ?? 50;
-  const monthlyBurn = burnRaw > 0 ? Math.round(burnRaw * 1000) : 0;
-  const burnDisplay = monthlyBurn > 0 ? `$${(monthlyBurn / 1000).toFixed(0)}K` : `${burnRaw}/100`;
+  // Burn
+  const burnMonthly = simKpis?.burnMonthly ?? 0;
+  const burnDisplay = burnMonthly > 0 ? `$${(burnMonthly / 1_000).toFixed(0)}K` : "—";
 
   // Revenue
-  const arrCurrent = kpis.arrCurrent?.display ?? "$4.0M";
-  const arrNext = kpis.arrNext12?.display ?? "$4.8M";
+  const arrVal = simKpis?.arr ?? 0;
+  const arrCurrent = arrVal > 0 ? `$${(arrVal / 1_000_000).toFixed(1)}M` : "$4.0M";
+  const arrNext = arrVal > 0 ? `$${((arrVal * 1.2) / 1_000_000).toFixed(1)}M` : "$4.8M";
 
   return (
     <div className="kpi-sparkline-section">

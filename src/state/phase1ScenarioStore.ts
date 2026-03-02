@@ -53,12 +53,22 @@ export type TerrainData = {
   multipliers: TerrainMultipliers
 }
 
+/** Engine-produced terrain shape metrics — replaces UI-side deriveTerrainMetrics */
+export type EngineTerrainMetrics = {
+  elevationScale: number
+  roughness: number
+  ridgeIntensity: number
+  volatility: number
+}
+
 export type SimulationResults = {
   completedAt: number
   horizonMonths: number
   summary: string
   kpis: SimulationKpis
   terrain: TerrainData
+  /** Engine-computed terrain metrics — canonical source for terrain shape */
+  terrainMetrics?: EngineTerrainMetrics
 }
 
 export type Phase1Scenario = {
@@ -119,8 +129,9 @@ function hashToMultiplier(hash: number, bits: number, lo: number, hi: number): n
   return lo + frac * (hi - lo)
 }
 
-function computeTerrainData(decision: string): TerrainData {
-  const seed = hashString(decision)
+function computeTerrainData(scenarioId: string, decision: string): TerrainData {
+  // Seed from scenario_id for uniqueness; incorporate decision for determinism
+  const seed = hashString(`${scenarioId}::${decision}`)
   return {
     seed,
     multipliers: {
@@ -128,6 +139,31 @@ function computeTerrainData(decision: string): TerrainData {
       burn:   hashToMultiplier(seed, 4, 0.90, 1.15),
       growth: hashToMultiplier(seed, 8, 0.85, 1.20),
     },
+  }
+}
+
+/**
+ * Derive terrain shape metrics from simulation KPIs.
+ * Produces the same shape as TerrainMetrics but from engine output,
+ * removing the need for UI-side deriveTerrainMetrics on scenario paths.
+ */
+function computeEngineTerrainMetrics(
+  kpis: SimulationKpis,
+  multipliers: TerrainMultipliers,
+): EngineTerrainMetrics {
+  const growthFactor = Math.abs(kpis.growthRate) <= 1
+    ? kpis.growthRate
+    : kpis.growthRate / 100
+  const marginFactor = Math.abs(kpis.grossMargin) <= 1
+    ? kpis.grossMargin
+    : kpis.grossMargin / 100
+  const burnPressure = kpis.revenue > 0 ? kpis.monthlyBurn / kpis.revenue : 0
+
+  return {
+    elevationScale: 1 + growthFactor * 2,
+    roughness: Math.min(burnPressure * 2, 4),
+    ridgeIntensity: Math.min(Math.abs(multipliers.growth - 1) * 5, 1),
+    volatility: Math.abs(growthFactor - marginFactor),
   }
 }
 
@@ -218,9 +254,10 @@ export const usePhase1ScenarioStore = create<Phase1ScenarioState>()(
           return
         }
 
-        // Compute terrain + KPIs deterministically from decision text
-        const terrain = computeTerrainData(scenario.decision)
+        // Compute terrain + KPIs deterministically from scenario_id + decision text
+        const terrain = computeTerrainData(scenarioId, scenario.decision)
         const kpis = computeKpis(baseline, terrain.multipliers)
+        const terrainMetrics = computeEngineTerrainMetrics(kpis, terrain.multipliers)
 
         // Set status → running, pre-store terrain so Position can morph immediately
         set((s) => ({
@@ -235,6 +272,7 @@ export const usePhase1ScenarioStore = create<Phase1ScenarioState>()(
                     summary: "",
                     kpis,
                     terrain,
+                    terrainMetrics,
                   },
                 }
               : sc
@@ -257,6 +295,7 @@ export const usePhase1ScenarioStore = create<Phase1ScenarioState>()(
                       summary: `Simulation complete \u2014 ${scenario.decision.slice(0, 60)}`,
                       kpis,
                       terrain,
+                      terrainMetrics,
                     },
                   }
                 : sc

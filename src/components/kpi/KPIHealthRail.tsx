@@ -7,6 +7,7 @@
 
 import React, { memo, useId, useMemo, useState } from "react";
 import type { PositionKpis } from "@/pages/position/overlays/positionState";
+import { useSelectSimulationKpis } from "@/selectors/simulationKpiSelector";
 import styles from "./KPIHealthRail.module.css";
 
 /* ── Formatting helpers (identical to prior KPIOverlay) ── */
@@ -308,7 +309,8 @@ export interface KPIHealthRailProps {
 }
 
 const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis }) => {
-  const k = kpis;
+  const simKpis = useSelectSimulationKpis();
+  const k = simKpis ?? kpis; // Simulation-first, prop as baseline fallback
 
   const riskTone = useMemo<RiskTone>(
     () => deriveRiskTone(k?.riskIndex ?? 0),

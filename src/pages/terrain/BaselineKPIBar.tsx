@@ -6,6 +6,7 @@ import React, { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useScenarioStore } from "@/state/scenarioStore";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
+import { useSelectSimulationKpis } from "@/selectors/simulationKpiSelector";
 import {
   aggregateStructuralHeatScore,
   buildBaselineModel,
@@ -52,37 +53,46 @@ export default function BaselineKPIBar() {
     })),
   );
 
-  // Survival baseline derived from BASE engine results (not scenario variants)
+  // Phase1 scenario KPIs via canonical selector — simulation-first
+  const simKpis = useSelectSimulationKpis();
+
+  // Survival baseline: prefer simulation risk, fallback to legacy engine
   const survivalBaselinePct = useMemo(() => {
+    if (simKpis) return clamp(Math.round(100 - simKpis.riskIndex), 0, 100);
     const k = engineResults?.base?.kpis;
     const riskIndex = k?.riskIndex?.value;
-    // In this codebase, riskIndex is used as "danger"; survival ~= 100 - danger.
     const surv = 100 - (typeof riskIndex === "number" ? riskIndex : 30);
     return clamp(surv, 0, 100);
-  }, [engineResults]);
+  }, [simKpis, engineResults]);
 
   const ctx = useMemo(() => (baseline ? buildBaselineModel(baseline, survivalBaselinePct) : null), [baseline, survivalBaselinePct]);
 
-  // Display values — baseline truth layer
-  const runwayMonths = ctx ? ctx.derived.runwayMonths : 0;
-  const runwayDisplay = baseline ? `${Math.round(runwayMonths)}` : "—";
+  // Display values — simulation-first via canonical selector, baseline fallback
+  const runwayMonths = simKpis
+    ? simKpis.runwayMonths
+    : ctx ? ctx.derived.runwayMonths : 0;
+  const runwayDisplay = (simKpis || baseline) ? `${Math.round(runwayMonths)}` : "—";
 
-  const grossMargin = baseline?.financial.grossMarginPct ?? 0;
-  const marginDisplay = baseline ? `${grossMargin.toFixed(0)}%` : "—";
+  const grossMargin = simKpis
+    ? simKpis.grossMarginPct
+    : baseline?.financial.grossMarginPct ?? 0;
+  const marginDisplay = (simKpis || baseline) ? `${grossMargin.toFixed(0)}%` : "—";
 
   const revConc = baseline?.financial.revenueConcentrationPct ?? 0;
   const concDisplay = baseline ? `${revConc.toFixed(0)}%` : "—";
 
-  const burnRatio = ctx ? ctx.derived.burnRatio : 0;
-  const burnRatioDisplay = baseline ? burnRatio.toFixed(burnRatio >= 2 ? 1 : 2) : "—";
+  const burnRatio = simKpis
+    ? (simKpis.revenueMonthly > 0 ? simKpis.burnMonthly / simKpis.revenueMonthly : 0)
+    : ctx ? ctx.derived.burnRatio : 0;
+  const burnRatioDisplay = (simKpis || baseline) ? burnRatio.toFixed(burnRatio >= 2 ? 1 : 2) : "—";
 
-  const survivalDisplay = baseline ? `${Math.round(survivalBaselinePct)}%` : "—";
+  const survivalDisplay = (simKpis || baseline) ? `${Math.round(survivalBaselinePct)}%` : "—";
 
-  const cashRaw = baseline?.financial.cashOnHand ?? 0;
-  const cashDisplay = baseline ? `$${(cashRaw / 1_000_000).toFixed(1)}M` : "—";
+  const cashRaw = simKpis ? simKpis.cashOnHand : baseline?.financial.cashOnHand ?? 0;
+  const cashDisplay = (simKpis || baseline) ? `$${(cashRaw / 1_000_000).toFixed(1)}M` : "—";
 
-  const arr = baseline?.financial.arr ?? 0;
-  const arrDisplay = baseline ? `$${(arr / 1_000_000).toFixed(1)}M` : "—";
+  const arr = simKpis ? simKpis.arr : baseline?.financial.arr ?? 0;
+  const arrDisplay = (simKpis || baseline) ? `$${(arr / 1_000_000).toFixed(1)}M` : "—";
 
   const aggregateScore = useMemo(() => (ctx ? aggregateStructuralHeatScore(ctx) : 70), [ctx]);
   const aggregateHeat = useMemo(() => {
