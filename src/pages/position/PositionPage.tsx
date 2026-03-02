@@ -577,7 +577,6 @@ export default function PositionPage() {
         { id: "diverge", label: "Diverge", value: shlIsOn(shlWeights.divergence), onChange: makeTrackedShlToggle("diverge", "divergence") },
         { id: "envelope", label: "Envelope", value: renderFlags.showEnvelope, onChange: makeTrackedToggle("envelope", () => renderFlags.toggle("showEnvelope")) },
         { id: "annotations", label: "Annotations", value: renderFlags.showAnnotations, onChange: makeTrackedToggle("annotations", () => renderFlags.toggle("showAnnotations")) },
-        { id: "heat", label: "Heat", value: shlIsOn(shlWeights.heat), onChange: makeTrackedShlToggle("heat", "heat") },
         { id: "resonance", label: "Resonance", value: shlIsOn(shlWeights.resonance), onChange: makeTrackedShlToggle("resonance", "resonance") },
         { id: "topo", label: "Topo", value: shlIsOn(shlWeights.topography), onChange: makeTrackedShlToggle("topo", "topography") },
       ],
