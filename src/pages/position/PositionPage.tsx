@@ -75,9 +75,7 @@ export default function PositionPage() {
   const [terrainTuning, setTerrainTuning] = useState<TerrainTuningParams>({ ...DEFAULT_TUNING })
   const viewportRef = useRef<HTMLDivElement>(null)
   const insightScrollRef = useRef<HTMLDivElement>(null)
-  const autoScrollRef = useRef<number | null>(null)
-  const lastUserScrollAtRef = useRef(0)
-  const userInteractingRef = useRef(false)
+  const userScrolledAwayRef = useRef(false)
   const reducedMotion = useReducedMotion()
   const { debugHud } = useDebugFlags()
 
@@ -180,91 +178,42 @@ export default function PositionPage() {
     }
   }, [simulationCompletedAt])
 
-  // Stop rAF scroll when overlay closes
-  useEffect(() => {
-    if (!intelligenceOpen) {
-      if (autoScrollRef.current) {
-        cancelAnimationFrame(autoScrollRef.current)
-        autoScrollRef.current = null
-      }
-    }
-  }, [intelligenceOpen])
-
-  // ── Smooth auto-scroll — eases toward bottom, pauses on user interaction ──
-  // StartDelay = 3200ms (after 3000ms materialize animation completes)
-  // Easing: el.scrollTop += (desired - current) * k per frame
-  // User interaction pauses auto-scroll for 1500ms
+  // ── Follow-tail scroll — pins to bottom as content grows, pauses if user scrolls up ──
+  // Uses MutationObserver to detect content changes instead of rAF loop.
   useEffect(() => {
     if (!intelligenceOpen || insightCollapsed) return
     const el = insightScrollRef.current
     if (!el) return
 
-    // Track user interaction on the scroll container
-    const markInteraction = () => {
-      lastUserScrollAtRef.current = Date.now()
-      userInteractingRef.current = true
-    }
-    const clearInteraction = () => {
-      userInteractingRef.current = false
-    }
-    const onMouseEnter = () => { userInteractingRef.current = true }
-    const onMouseLeave = () => {
-      userInteractingRef.current = false
-      // Don't reset lastUserScrollAtRef — let the 1500ms cooldown expire naturally
+    userScrolledAwayRef.current = false
+
+    // Detect user scrolling away from bottom
+    const BOTTOM_THRESHOLD = 8 // px tolerance for "at bottom"
+    const onScroll = () => {
+      const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < BOTTOM_THRESHOLD
+      userScrolledAwayRef.current = !atBottom
     }
 
-    el.addEventListener("wheel", markInteraction, { passive: true })
-    el.addEventListener("touchstart", markInteraction, { passive: true })
-    el.addEventListener("pointerdown", markInteraction)
-    el.addEventListener("pointerup", clearInteraction)
-    el.addEventListener("touchend", clearInteraction)
-    el.addEventListener("mouseenter", onMouseEnter)
-    el.addEventListener("mouseleave", onMouseLeave)
-
-    // Start after materialize animation finishes (3000ms + 200ms buffer)
-    const startDelay = setTimeout(() => {
-      const EASE_K = 0.015 // smoothing factor per frame — lower = smoother
-      const USER_PAUSE_MS = 1500
-
-      function tick() {
-        if (!el) return
-        const maxScroll = el.scrollHeight - el.clientHeight
-        if (maxScroll <= 0) {
-          autoScrollRef.current = requestAnimationFrame(tick)
-          return
-        }
-
-        const now = Date.now()
-        const userPaused = userInteractingRef.current ||
-          (now - lastUserScrollAtRef.current < USER_PAUSE_MS)
-
-        if (!userPaused) {
-          const desired = maxScroll
-          const current = el.scrollTop
-          const delta = desired - current
-          if (Math.abs(delta) > 0.5) {
-            el.scrollTop = current + delta * EASE_K
-          }
-        }
-
-        autoScrollRef.current = requestAnimationFrame(tick)
+    // When content mutates (typewriter chars), scroll to bottom if user hasn't scrolled away
+    const scrollToBottom = () => {
+      if (!userScrolledAwayRef.current) {
+        el.scrollTop = el.scrollHeight
       }
-      autoScrollRef.current = requestAnimationFrame(tick)
+    }
+
+    const observer = new MutationObserver(scrollToBottom)
+    // Start observing after materialize animation (3s + 200ms buffer)
+    const startDelay = setTimeout(() => {
+      observer.observe(el, { childList: true, subtree: true, characterData: true })
+      scrollToBottom() // initial pin
     }, 3200)
+
+    el.addEventListener("scroll", onScroll, { passive: true })
 
     return () => {
       clearTimeout(startDelay)
-      if (autoScrollRef.current) {
-        cancelAnimationFrame(autoScrollRef.current)
-        autoScrollRef.current = null
-      }
-      el.removeEventListener("wheel", markInteraction)
-      el.removeEventListener("touchstart", markInteraction)
-      el.removeEventListener("pointerdown", markInteraction)
-      el.removeEventListener("pointerup", clearInteraction)
-      el.removeEventListener("touchend", clearInteraction)
-      el.removeEventListener("mouseenter", onMouseEnter)
-      el.removeEventListener("mouseleave", onMouseLeave)
+      observer.disconnect()
+      el.removeEventListener("scroll", onScroll)
     }
   }, [intelligenceOpen, insightCollapsed])
 
