@@ -407,9 +407,7 @@
   display: flex;
   flex-direction: column;
   gap: 0;
-  background: rgba(0, 0, 0, 0.58);
-  backdrop-filter: blur(18px) saturate(1.05);
-  -webkit-backdrop-filter: blur(18px) saturate(1.05);
+  background: transparent;
   border-right: none;
 }
 
@@ -672,7 +670,6 @@
   bottom: 0;
   right: 20px;
   width: clamp(600px, 54vw, 740px);
-  height: calc(100vh - 56px);
   max-height: calc(100vh - 56px);
   z-index: 100;
   padding: 0;
