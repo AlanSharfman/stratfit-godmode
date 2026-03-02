@@ -100,8 +100,8 @@ const CommandGlassPanel: React.FC<CommandGlassPanelProps> = memo(({
   const showContent = phase === "reveal" || phase === "settled"
 
   const { renderedRows, isDone } = useRowTypewriter(rows, {
-    charDelayMs: 35,
-    rowPauseMs: 600,
+    charDelayMs: 24,
+    rowPauseMs: 260,
     start: typewriterActive,
     onComplete: onTypewriterComplete,
   })

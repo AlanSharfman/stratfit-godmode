@@ -175,6 +175,12 @@ export default function PositionPage() {
   }, [intelligenceOpen, clearAutoClose])
 
   // ── Auto-scroll insight content — perfectly steady to the end ──
+  // CRITICAL: The rAF loop must NEVER self-terminate.
+  // Content grows dynamically as the typewriter reveals rows, so scrollHeight
+  // increases over time. If we stop the loop when scrollTop >= maxScroll
+  // (e.g. after Executive Summary fits in viewport), new content that later
+  // overflows will never be scrolled to. Keep the loop alive — cleanup
+  // happens via the useEffect return when the overlay closes.
   useEffect(() => {
     if (!intelligenceOpen || insightCollapsed) return
     const el = insightScrollRef.current
@@ -182,7 +188,7 @@ export default function PositionPage() {
     // Start after slide begins (2.5s in)
     const startDelay = setTimeout(() => {
       let lastTime = 0
-      const PX_PER_MS = 0.04 // constant scroll speed
+      const PX_PER_MS = 0.04 // constant scroll speed — never changes
       function tick(time: number) {
         if (!lastTime) { lastTime = time }
         const rawDt = time - lastTime
@@ -194,11 +200,9 @@ export default function PositionPage() {
           if (maxScroll > 0 && el.scrollTop < maxScroll) {
             el.scrollTop = Math.min(el.scrollTop + PX_PER_MS * dt, maxScroll)
           }
-          // Keep ticking until we reach the very end
-          if (el.scrollTop < maxScroll) {
-            autoScrollRef.current = requestAnimationFrame(tick)
-          }
         }
+        // ALWAYS schedule next frame — content grows as typewriter reveals
+        autoScrollRef.current = requestAnimationFrame(tick)
       }
       autoScrollRef.current = requestAnimationFrame(tick)
     }, 2500)
