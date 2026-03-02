@@ -76,6 +76,8 @@ export default function PositionPage() {
   const viewportRef = useRef<HTMLDivElement>(null)
   const insightScrollRef = useRef<HTMLDivElement>(null)
   const autoScrollRef = useRef<number | null>(null)
+  const lastUserScrollAtRef = useRef(0)
+  const userInteractingRef = useRef(false)
   const reducedMotion = useReducedMotion()
   const { debugHud } = useDebugFlags()
 
@@ -136,11 +138,10 @@ export default function PositionPage() {
   const presentation = useIntelligencePresentation({ completedAt: simulationCompletedAt })
 
   // Auto-open insights panel — 5s after simulation completes (let terrain render)
-  // Auto-close after 20s of being open
   const lastAutoOpenRef = useRef<number | null>(null)
   const autoCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Clear auto-close timer
+  // ── Unified auto-collapse helpers ──
   const clearAutoClose = useCallback(() => {
     if (autoCloseTimerRef.current) {
       clearTimeout(autoCloseTimerRef.current)
@@ -148,88 +149,122 @@ export default function PositionPage() {
     }
   }, [])
 
+  const scheduleAutoCollapse = useCallback((ms = 20_000) => {
+    clearAutoClose()
+    autoCloseTimerRef.current = setTimeout(() => {
+      setInsightCollapsed(true)
+    }, ms)
+  }, [clearAutoClose])
+
+  // ── Universal auto-collapse: fires whenever overlay is expanded ──
+  // Guarantees collapse after 20s regardless of HOW the overlay was opened.
+  useEffect(() => {
+    if (intelligenceOpen && !insightCollapsed) {
+      scheduleAutoCollapse(20_000)
+    } else {
+      clearAutoClose()
+    }
+    return () => clearAutoClose()
+  }, [intelligenceOpen, insightCollapsed, scheduleAutoCollapse, clearAutoClose])
+
+  // Auto-open after simulation completes (5s delay for terrain settle)
   useEffect(() => {
     if (simulationCompletedAt != null && simulationCompletedAt !== lastAutoOpenRef.current) {
       lastAutoOpenRef.current = simulationCompletedAt
-      // Wait 5s for terrain to settle before revealing insights
       const openTimer = setTimeout(() => {
         setIntelligenceOpen(true)
         setInsightCollapsed(false)
-        // Auto-collapse to compact pill after 20s
-        clearAutoClose()
-        autoCloseTimerRef.current = setTimeout(() => {
-          setInsightCollapsed(true)
-        }, 20_000)
+        // auto-collapse is handled by the universal useEffect above
       }, 5_000)
       return () => clearTimeout(openTimer)
     }
-  }, [simulationCompletedAt, clearAutoClose])
+  }, [simulationCompletedAt])
 
-  // If user manually opens, start 25s auto-close; if user manually closes, cancel it
+  // Stop rAF scroll when overlay closes
   useEffect(() => {
     if (!intelligenceOpen) {
-      clearAutoClose()
-      // Stop auto-scroll
       if (autoScrollRef.current) {
         cancelAnimationFrame(autoScrollRef.current)
         autoScrollRef.current = null
       }
     }
-    return () => clearAutoClose()
-  }, [intelligenceOpen, clearAutoClose])
+  }, [intelligenceOpen])
 
-  // ── Auto-scroll insight content — perfectly steady to the end ──
-  // CRITICAL: The rAF loop must NEVER self-terminate.
-  // Content grows dynamically as the typewriter reveals rows, so scrollHeight
-  // increases over time.
-  //
-  // SCROLL STRATEGY:
-  //   • Track previous scrollHeight — when it grows (new row appeared),
-  //     snap scrollTop to the new bottom instantly (no lag/jump).
-  //   • Between height changes, smooth-scroll at a constant rate so the
-  //     user sees the text glide upward.
-  //   • This eliminates the "stop → jump → scroll" stutter caused by
-  //     fixed-rate scrolling that can't keep up with sudden height increases.
+  // ── Smooth auto-scroll — eases toward bottom, pauses on user interaction ──
+  // StartDelay = 3200ms (after 3000ms materialize animation completes)
+  // Easing: el.scrollTop += (desired - current) * k per frame
+  // User interaction pauses auto-scroll for 1500ms
   useEffect(() => {
     if (!intelligenceOpen || insightCollapsed) return
     const el = insightScrollRef.current
     if (!el) return
-    // Start after slide begins (2.5s in)
-    const startDelay = setTimeout(() => {
-      let lastTime = 0
-      let prevScrollHeight = el.scrollHeight
-      const PX_PER_MS = 0.04 // constant scroll speed — never changes
-      function tick(time: number) {
-        if (!lastTime) { lastTime = time }
-        const rawDt = time - lastTime
-        lastTime = time
-        // Cap dt to 32ms (1 frame @30fps) — prevents jumps from tab blur
-        const dt = Math.min(rawDt, 32)
-        if (el) {
-          const currentScrollHeight = el.scrollHeight
-          const maxScroll = currentScrollHeight - el.clientHeight
 
-          // When content height grows (new row appeared), snap to bottom
-          // so there's zero lag between content appearing and being visible.
-          if (currentScrollHeight > prevScrollHeight && maxScroll > 0) {
-            el.scrollTop = maxScroll
-          } else if (maxScroll > 0 && el.scrollTop < maxScroll) {
-            // Steady smooth scroll between height changes
-            el.scrollTop = Math.min(el.scrollTop + PX_PER_MS * dt, maxScroll)
-          }
-          prevScrollHeight = currentScrollHeight
+    // Track user interaction on the scroll container
+    const markInteraction = () => {
+      lastUserScrollAtRef.current = Date.now()
+      userInteractingRef.current = true
+    }
+    const clearInteraction = () => {
+      userInteractingRef.current = false
+    }
+    const onMouseEnter = () => { userInteractingRef.current = true }
+    const onMouseLeave = () => {
+      userInteractingRef.current = false
+      // Don't reset lastUserScrollAtRef — let the 1500ms cooldown expire naturally
+    }
+
+    el.addEventListener("wheel", markInteraction, { passive: true })
+    el.addEventListener("touchstart", markInteraction, { passive: true })
+    el.addEventListener("pointerdown", markInteraction)
+    el.addEventListener("pointerup", clearInteraction)
+    el.addEventListener("touchend", clearInteraction)
+    el.addEventListener("mouseenter", onMouseEnter)
+    el.addEventListener("mouseleave", onMouseLeave)
+
+    // Start after materialize animation finishes (3000ms + 200ms buffer)
+    const startDelay = setTimeout(() => {
+      const EASE_K = 0.015 // smoothing factor per frame — lower = smoother
+      const USER_PAUSE_MS = 1500
+
+      function tick() {
+        if (!el) return
+        const maxScroll = el.scrollHeight - el.clientHeight
+        if (maxScroll <= 0) {
+          autoScrollRef.current = requestAnimationFrame(tick)
+          return
         }
-        // ALWAYS schedule next frame — content grows as typewriter reveals
+
+        const now = Date.now()
+        const userPaused = userInteractingRef.current ||
+          (now - lastUserScrollAtRef.current < USER_PAUSE_MS)
+
+        if (!userPaused) {
+          const desired = maxScroll
+          const current = el.scrollTop
+          const delta = desired - current
+          if (Math.abs(delta) > 0.5) {
+            el.scrollTop = current + delta * EASE_K
+          }
+        }
+
         autoScrollRef.current = requestAnimationFrame(tick)
       }
       autoScrollRef.current = requestAnimationFrame(tick)
-    }, 2500)
+    }, 3200)
+
     return () => {
       clearTimeout(startDelay)
       if (autoScrollRef.current) {
         cancelAnimationFrame(autoScrollRef.current)
         autoScrollRef.current = null
       }
+      el.removeEventListener("wheel", markInteraction)
+      el.removeEventListener("touchstart", markInteraction)
+      el.removeEventListener("pointerdown", markInteraction)
+      el.removeEventListener("pointerup", clearInteraction)
+      el.removeEventListener("touchend", clearInteraction)
+      el.removeEventListener("mouseenter", onMouseEnter)
+      el.removeEventListener("mouseleave", onMouseLeave)
     }
   }, [intelligenceOpen, insightCollapsed])
 
@@ -810,11 +845,6 @@ export default function PositionPage() {
                   onClick={() => {
                     setIntelligenceOpen(true)
                     setInsightCollapsed(false)
-                    // Start auto-collapse on manual open
-                    clearAutoClose()
-                    autoCloseTimerRef.current = setTimeout(() => {
-                      setInsightCollapsed(true)
-                    }, 20_000)
                   }}
                 >
                 {/* Bejeweled insight diamond icon */}
@@ -856,20 +886,11 @@ export default function PositionPage() {
             tabIndex: 0,
             onClick: () => {
               setInsightCollapsed(false)
-              // Restart auto-collapse timer on re-expand
-              clearAutoClose()
-              autoCloseTimerRef.current = setTimeout(() => {
-                setInsightCollapsed(true)
-              }, 20_000)
             },
             onKeyDown: (e: React.KeyboardEvent) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault()
                 setInsightCollapsed(false)
-                clearAutoClose()
-                autoCloseTimerRef.current = setTimeout(() => {
-                  setInsightCollapsed(true)
-                }, 20_000)
               }
             },
           } : {})}
