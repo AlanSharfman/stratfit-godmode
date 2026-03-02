@@ -128,7 +128,10 @@ export default function PositionPage() {
   )
 
   // ── Cinematic intelligence presentation state machine ──
-  const simulationCompletedAt = activeScenario?.simulationResults?.completedAt ?? null
+  // IMPORTANT: Use || (not ??) so the `completedAt: 0` sentinel during "running"
+  // status is treated as null.  Only a real timestamp triggers the cascade.
+  // Without this, the overlay fires twice: once at 0, again at Date.now().
+  const simulationCompletedAt = activeScenario?.simulationResults?.completedAt || null
   const presentation = useIntelligencePresentation({ completedAt: simulationCompletedAt })
 
   // Auto-open insights panel — 5s after simulation completes (let terrain render)

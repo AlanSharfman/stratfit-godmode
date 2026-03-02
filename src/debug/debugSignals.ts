@@ -6,18 +6,46 @@
 // components (TerrainStage, TerrainEventLayer) and exposes them to the
 // DOM-side PositionDebugHUD.
 //
-// Gated by ?debugHud=1 — zero overhead in production.
+// Reactive to URL changes — no module-scope URLSearchParams.
 // ═══════════════════════════════════════════════════════════════
 
 import { create } from "zustand"
+import { useSyncExternalStore } from "react"
 
-export const DEBUG_HUD =
-  typeof window !== "undefined" &&
-  new URLSearchParams(window.location.search).has("debugHud")
+// ── Reactive URL flag reader ──────────────────────────────────
+// Works inside R3F Canvas, DOM, anywhere — no react-router dependency.
 
-export const DEBUG_EVENTS =
-  typeof window !== "undefined" &&
-  new URLSearchParams(window.location.search).has("debugEvents")
+function getSearchString(): string {
+  return typeof window !== "undefined" ? window.location.search : ""
+}
+
+function subscribeToLocation(cb: () => void): () => void {
+  window.addEventListener("popstate", cb)
+  window.addEventListener("sf:location-change", cb)
+  return () => {
+    window.removeEventListener("popstate", cb)
+    window.removeEventListener("sf:location-change", cb)
+  }
+}
+
+/** Reactive hook — reads ?debugHud and ?debugEvents from URL on every navigation. */
+export function useDebugFlags(): { debugHud: boolean; debugEvents: boolean } {
+  const search = useSyncExternalStore(subscribeToLocation, getSearchString, () => "")
+  const params = new URLSearchParams(search)
+  return {
+    debugHud: params.has("debugHud"),
+    debugEvents: params.has("debugEvents"),
+  }
+}
+
+/** Non-reactive snapshot — reads URL at call time. For use outside React. */
+export function getDebugFlags(): { debugHud: boolean; debugEvents: boolean } {
+  const params = new URLSearchParams(getSearchString())
+  return {
+    debugHud: params.has("debugHud"),
+    debugEvents: params.has("debugEvents"),
+  }
+}
 
 export type DebugSignals = {
   terrainReady: boolean
