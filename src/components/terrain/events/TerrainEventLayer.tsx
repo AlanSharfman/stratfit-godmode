@@ -4,7 +4,7 @@
 //
 // Group renderer that maps simulation events to TerrainEventNode positions.
 // Pulls events from engine signals and distributes them along the terrain
-// timeline axis (X). Y is terrain surface height, Z is center.
+// timeline axis (X). Y is sampled from terrain surface. Z follows P50 meander.
 //
 // Must be mounted inside <Canvas> as a child of TerrainStage.
 // ═══════════════════════════════════════════════════════════════════════════
@@ -12,8 +12,16 @@
 import React, { useState, useCallback, useMemo, memo } from "react"
 import { useShallow } from "zustand/react/shallow"
 import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore"
+import { TERRAIN_CONSTANTS } from "@/terrain/terrainConstants"
+import { getTerrainHeight } from "@/terrain/terrainHeightSampler"
 import TerrainEventNode from "./TerrainEventNode"
 import type { TerrainEventNodeProps } from "./TerrainEventNode"
+
+// ── Debug flag — append ?debugEvents to URL to force diagnostic markers ──
+
+const DEBUG_EVENTS =
+  typeof window !== "undefined" &&
+  new URLSearchParams(window.location.search).has("debugEvents")
 
 // ── Event detection types ───────────────────────────────────────
 
@@ -46,10 +54,6 @@ const EVENT_CATEGORY: Record<SimulationEventType, TerrainEventNodeProps["categor
 
 // ── Event detection (deterministic, pure) ───────────────────────
 
-/**
- * Detect simulation events from Phase1 scenario results.
- * Deterministic: same inputs → same events.
- */
 function detectSimulationEvents(
   kpis: { cash: number; monthlyBurn: number; revenue: number; runway: number | null } | null,
   horizonMonths: number,
@@ -73,9 +77,7 @@ function detectSimulationEvents(
   if (kpis.revenue > 0 && kpis.monthlyBurn > 0) {
     const gap = kpis.monthlyBurn - kpis.revenue
     if (gap > 0 && kpis.revenue > 0) {
-      // Simple linear projection: months until revenue ≥ burn
-      // Assumes current growth trajectory continues
-      const monthsToBreakeven = Math.ceil(gap / (kpis.revenue * 0.05)) // ~5% MoM growth assumption
+      const monthsToBreakeven = Math.ceil(gap / (kpis.revenue * 0.05))
       if (monthsToBreakeven > 0 && monthsToBreakeven <= horizonMonths) {
         events.push({
           id: "breakeven",
@@ -113,22 +115,38 @@ function detectSimulationEvents(
   return events
 }
 
-// ── Terrain coordinate mapping ──────────────────────────────────
+// ── Terrain coordinate mapping — matches P50Path + TimelineTicks ──
 
-/** Terrain X spans roughly [-200, 200] for a 24-month horizon */
-const TERRAIN_X_MIN = -200
-const TERRAIN_X_MAX = 200
-const TERRAIN_Z_CENTER = 0
-const TERRAIN_BASE_Y = 0
+/** Path X bounds (plane-local). Matches P50Path & TimelineTicks. */
+const PATH_X0 = -TERRAIN_CONSTANTS.width * 0.36  // ≈ -201.6
+const PATH_X1 = TERRAIN_CONSTANTS.width * 0.36   // ≈ +201.6
 
-function monthToTerrainX(month: number, horizonMonths: number): number {
+/** P50Path meander formula — constants match TimelineTicks exactly. */
+const MEANDER_AMP1 = 22
+const MEANDER_AMP2 = 9
+const MEANDER_W1 = Math.PI * 2 * 1.05
+const MEANDER_W2 = Math.PI * 2 * 2.35
+const MEANDER_P1 = 0.75
+const MEANDER_P2 = 1.9
+
+/** Small vertical offset so pillars sit just above terrain surface. */
+const EVENT_Y_OFFSET = 0.8
+
+function eventToTerrainXZ(
+  month: number,
+  horizonMonths: number,
+): { x: number; z: number } {
   const t = Math.max(0, Math.min(1, month / Math.max(1, horizonMonths)))
-  return TERRAIN_X_MIN + t * (TERRAIN_X_MAX - TERRAIN_X_MIN)
+  const x = PATH_X0 + t * (PATH_X1 - PATH_X0)
+  const z =
+    Math.sin(t * MEANDER_W1 + MEANDER_P1) * MEANDER_AMP1 +
+    Math.sin(t * MEANDER_W2 + MEANDER_P2) * MEANDER_AMP2
+  return { x, z }
 }
 
 // ── Selector: pull events from store ────────────────────────────
 
-function useSimulationEvents(): SimulationEvent[] {
+function useSimulationEvents(): { events: SimulationEvent[]; horizonMonths: number } {
   const { kpis, horizonMonths } = usePhase1ScenarioStore(
     useShallow((s) => {
       const active = s.scenarios.find((sc) => sc.id === s.activeScenarioId)
@@ -142,10 +160,12 @@ function useSimulationEvents(): SimulationEvent[] {
     }),
   )
 
-  return useMemo(
+  const events = useMemo(
     () => detectSimulationEvents(kpis, horizonMonths),
     [kpis, horizonMonths],
   )
+
+  return { events, horizonMonths }
 }
 
 // ── Layer component ─────────────────────────────────────────────
@@ -155,43 +175,81 @@ export interface TerrainEventLayerProps {
   onFocusChange?: (eventId: string | null) => void
 }
 
-const TerrainEventLayer: React.FC<TerrainEventLayerProps> = memo(({ onFocusChange }) => {
-  const events = useSimulationEvents()
-  const [focusedId, setFocusedId] = useState<string | null>(null)
+const TerrainEventLayer: React.FC<TerrainEventLayerProps> = memo(
+  ({ onFocusChange }) => {
+    const { events, horizonMonths } = useSimulationEvents()
+    const [focusedId, setFocusedId] = useState<string | null>(null)
 
-  const handleFocusChange = useCallback(
-    (eventId: string | null) => {
-      setFocusedId(eventId)
-      onFocusChange?.(eventId)
-    },
-    [onFocusChange],
-  )
+    const handleFocusChange = useCallback(
+      (eventId: string | null) => {
+        setFocusedId(eventId)
+        onFocusChange?.(eventId)
+      },
+      [onFocusChange],
+    )
 
-  if (events.length === 0) return null
+    /** Sample terrain Y at (x, z) via standalone height sampler. */
+    const getY = useCallback(
+      (x: number, z: number) => {
+        return getTerrainHeight(x, z) + EVENT_Y_OFFSET
+      },
+      [],
+    )
 
-  // Determine horizon from events for coordinate mapping
-  const maxMonth = Math.max(...events.map((e) => e.month), 24)
+    // Build positioned event nodes (only when events exist)
+    const eventNodes = useMemo(() => {
+      if (events.length === 0) return null
+      return events.map((evt) => {
+        const { x, z } = eventToTerrainXZ(evt.month, horizonMonths)
+        const y = getY(x, z)
+        return (
+          <TerrainEventNode
+            key={evt.id}
+            eventId={evt.id}
+            position={[x, y, z]}
+            importance={EVENT_IMPORTANCE[evt.type]}
+            category={EVENT_CATEGORY[evt.type]}
+            isFocused={focusedId === evt.id}
+            onFocusChange={handleFocusChange}
+          />
+        )
+      })
+    }, [events, horizonMonths, getY, focusedId, handleFocusChange])
 
-  return (
-    <group name="terrain-event-layer">
-      {events.map((evt) => (
-        <TerrainEventNode
-          key={evt.id}
-          eventId={evt.id}
-          position={[
-            monthToTerrainX(evt.month, maxMonth),
-            TERRAIN_BASE_Y,
-            TERRAIN_Z_CENTER,
-          ]}
-          importance={EVENT_IMPORTANCE[evt.type]}
-          category={EVENT_CATEGORY[evt.type]}
-          isFocused={focusedId === evt.id}
-          onFocusChange={handleFocusChange}
-        />
-      ))}
-    </group>
-  )
-})
+    // ── DEBUG markers (only when ?debugEvents in URL) ────────────
+    const debugMarkers = useMemo(() => {
+      if (!DEBUG_EVENTS) return null
+      const dbg1 = eventToTerrainXZ(6, 24)
+      const dbg2 = eventToTerrainXZ(18, 24)
+      const y1 = getY(dbg1.x, dbg1.z)
+      const y2 = getY(dbg2.x, dbg2.z)
+      return (
+        <>
+          {/* Hotpink cube — highly visible proof the layer renders */}
+          <mesh position={[dbg1.x, y1 + 6, dbg1.z]}>
+            <boxGeometry args={[4, 4, 4]} />
+            <meshStandardMaterial color="hotpink" />
+          </mesh>
+          {/* Forced TerrainEventNode — verify pillar renders above terrain */}
+          <TerrainEventNode
+            position={[dbg2.x, y2, dbg2.z]}
+            importance={1}
+            category="info"
+            eventId="__debug_forced__"
+          />
+        </>
+      )
+    }, [getY])
+
+    // NEVER early-return — always render the group so debug markers appear
+    return (
+      <group name="TerrainEventLayer">
+        {debugMarkers}
+        {eventNodes}
+      </group>
+    )
+  },
+)
 
 TerrainEventLayer.displayName = "TerrainEventLayer"
 export default TerrainEventLayer

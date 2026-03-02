@@ -70,6 +70,7 @@ export default function PositionPage() {
   const [rippleKey, setRippleKey] = useState(0)
   const [commandCentreOpen, setCommandCentreOpen] = useState(true)
   const [intelligenceOpen, setIntelligenceOpen] = useState(false)
+  const [insightCollapsed, setInsightCollapsed] = useState(false)
   const [terrainTuning, setTerrainTuning] = useState<TerrainTuningParams>({ ...DEFAULT_TUNING })
   const viewportRef = useRef<HTMLDivElement>(null)
   const insightScrollRef = useRef<HTMLDivElement>(null)
@@ -148,10 +149,11 @@ export default function PositionPage() {
       // Wait 5s for terrain to settle before revealing insights
       const openTimer = setTimeout(() => {
         setIntelligenceOpen(true)
-        // Auto-close after 20s
+        setInsightCollapsed(false)
+        // Auto-collapse to compact pill after 20s
         clearAutoClose()
         autoCloseTimerRef.current = setTimeout(() => {
-          setIntelligenceOpen(false)
+          setInsightCollapsed(true)
         }, 20_000)
       }, 5_000)
       return () => clearTimeout(openTimer)
@@ -173,7 +175,7 @@ export default function PositionPage() {
 
   // ── Auto-scroll insight content — perfectly steady to the end ──
   useEffect(() => {
-    if (!intelligenceOpen) return
+    if (!intelligenceOpen || insightCollapsed) return
     const el = insightScrollRef.current
     if (!el) return
     // Start after slide begins (2.5s in)
@@ -206,7 +208,7 @@ export default function PositionPage() {
         autoScrollRef.current = null
       }
     }
-  }, [intelligenceOpen])
+  }, [intelligenceOpen, insightCollapsed])
 
   // ── Intelligence panel keyboard shortcut (I key) ──
   useEffect(() => {
@@ -785,11 +787,12 @@ export default function PositionPage() {
                   className={styles.intelToggle}
                   onClick={() => {
                     setIntelligenceOpen(true)
-                    // Start auto-close on manual open
+                    setInsightCollapsed(false)
+                    // Start auto-collapse on manual open
                     clearAutoClose()
                     autoCloseTimerRef.current = setTimeout(() => {
-                      setIntelligenceOpen(false)
-                  }, 20_000)
+                      setInsightCollapsed(true)
+                    }, 20_000)
                   }}
                 >
                 {/* Bejeweled insight diamond icon */}
@@ -820,26 +823,61 @@ export default function PositionPage() {
 
       {/* ══════════════════════════════════════════════════
           INTELLIGENCE OVERLAY — Transparent glass on terrain
-          Renders as fixed overlay, separate from right rail
+          Fixed 520×380 panel → auto-collapses to compact pill after 20s
           ══════════════════════════════════════════════════ */}
       {intelligenceOpen && (
-        <div className={styles.insightOverlay} aria-label="Intelligence Overlay">
-          <div ref={insightScrollRef} className={styles.insightScrollWrap}>
-            <CommandGlassPanel
-              phase={presentation.phase}
-              onTypewriterComplete={presentation.requestSettle}
-            />
-          </div>
-          {/* Close button — bottom of overlay */}
-          <button
-            type="button"
-            className={styles.intelCollapseBtn}
-            onClick={() => setIntelligenceOpen(false)}
-            aria-label="Dismiss insights (I)"
-          >
-            <span>Dismiss</span>
-            <span className={styles.kbdHint}>I</span>
-          </button>
+        <div
+          className={`${styles.insightOverlay}${insightCollapsed ? ` ${styles.insightCompact}` : ""}`}
+          aria-label="Intelligence Overlay"
+          {...(insightCollapsed ? {
+            role: "button",
+            tabIndex: 0,
+            onClick: () => {
+              setInsightCollapsed(false)
+              // Restart auto-collapse timer on re-expand
+              clearAutoClose()
+              autoCloseTimerRef.current = setTimeout(() => {
+                setInsightCollapsed(true)
+              }, 20_000)
+            },
+            onKeyDown: (e: React.KeyboardEvent) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault()
+                setInsightCollapsed(false)
+                clearAutoClose()
+                autoCloseTimerRef.current = setTimeout(() => {
+                  setInsightCollapsed(true)
+                }, 20_000)
+              }
+            },
+          } : {})}
+        >
+          {insightCollapsed ? (
+            /* ── Compact pill interior — vertical label + chevron ── */
+            <div className={styles.insightCompactInner}>
+              <span className={styles.insightCompactChevron} aria-hidden="true">◂</span>
+              <span className={styles.insightCompactLabel}>INSIGHT</span>
+            </div>
+          ) : (
+            <>
+              <div ref={insightScrollRef} className={styles.insightScrollWrap}>
+                <CommandGlassPanel
+                  phase={presentation.phase}
+                  onTypewriterComplete={presentation.requestSettle}
+                />
+              </div>
+              {/* Close button — bottom of overlay */}
+              <button
+                type="button"
+                className={styles.intelCollapseBtn}
+                onClick={() => setIntelligenceOpen(false)}
+                aria-label="Dismiss insights (I)"
+              >
+                <span>Dismiss</span>
+                <span className={styles.kbdHint}>I</span>
+              </button>
+            </>
+          )}
         </div>
       )}
 
