@@ -55,7 +55,7 @@ import {
 } from "./overlays/positionState"
 
 import PositionDebugHUD from "@/components/debug/PositionDebugHUD"
-import { DEBUG_HUD } from "@/debug/debugSignals"
+import { useDebugFlags } from "@/debug/debugSignals"
 import styles from "./PositionOverlays.module.css"
 
 // Diagnostics panel is togglable via close button
@@ -77,6 +77,7 @@ export default function PositionPage() {
   const insightScrollRef = useRef<HTMLDivElement>(null)
   const autoScrollRef = useRef<number | null>(null)
   const reducedMotion = useReducedMotion()
+  const { debugHud } = useDebugFlags()
 
   // ── ResizeObserver: update Three.js renderer when right rail expands/collapses ──
   useEffect(() => {
@@ -888,8 +889,8 @@ export default function PositionPage() {
         </div>
       )}
 
-      {/* ══ Debug HUD — only when ?debugHud=1 ══ */}
-      {DEBUG_HUD && <PositionDebugHUD />}
+      {/* ══ Debug HUD — only when ?debugHud=1 (reactive) ══ */}
+      {debugHud && <PositionDebugHUD />}
 
       {/* Legal disclaimer */}
       <div className={styles.legalDisclaimer}>

@@ -8,25 +8,36 @@
 //   ?overlays=0  → force ALL off
 //   ?debugHud=1  → also force ALL on (debug mode)
 //
-// Each layer reads its own independent flag — no single master guard.
+// REACTIVE: URL params are read live (no module-scope cache).
+// Works inside R3F Canvas and DOM via useSyncExternalStore.
 // ═══════════════════════════════════════════════════════════════
 
+import { useSyncExternalStore } from "react"
 import { useRenderFlagsStore } from "@/state/renderFlagsStore"
 
-// ── URL overrides (read once at module load) ──
+// ── Reactive URL reader (shared with debugSignals.ts pattern) ──
 
-const _params =
-  typeof window !== "undefined"
-    ? new URLSearchParams(window.location.search)
-    : new URLSearchParams()
+function getSearchString(): string {
+  return typeof window !== "undefined" ? window.location.search : ""
+}
 
-/** ?overlays=1 forces all on; ?overlays=0 forces all off */
-const URL_OVERLAYS_FORCE: boolean | null = _params.has("overlays")
-  ? _params.get("overlays") === "1"
-  : null
+function subscribeToLocation(cb: () => void): () => void {
+  window.addEventListener("popstate", cb)
+  window.addEventListener("sf:location-change", cb)
+  return () => {
+    window.removeEventListener("popstate", cb)
+    window.removeEventListener("sf:location-change", cb)
+  }
+}
 
-/** ?debugHud=1 also forces all overlays on */
-const URL_DEBUG_HUD = _params.has("debugHud")
+/** Parse URL overlay force from a search string. */
+function parseUrlOverrides(search: string): { force: boolean | null; debugHud: boolean } {
+  const params = new URLSearchParams(search)
+  const force = params.has("overlays")
+    ? params.get("overlays") === "1"
+    : null
+  return { force, debugHud: params.has("debugHud") }
+}
 
 export type OverlayVisibility = {
   pathsOn: boolean
@@ -35,55 +46,42 @@ export type OverlayVisibility = {
   eventsOn: boolean
 }
 
+const ALL_ON: OverlayVisibility = { pathsOn: true, timelineOn: true, liquidityOn: true, eventsOn: true }
+const ALL_OFF: OverlayVisibility = { pathsOn: false, timelineOn: false, liquidityOn: false, eventsOn: false }
+
 /**
- * Read current overlay visibility from renderFlagsStore,
- * with URL force-overrides applied.
- *
- * Usage (inside React component / hook):
- * ```ts
- * const vis = useOverlayVisibility()
- * ```
- *
- * Usage (outside React, snapshot):
- * ```ts
- * const vis = selectOverlayVisibility()
- * ```
+ * Non-React snapshot — reads URL at call time + store snapshot.
+ * Safe for use outside of React components.
  */
 export function selectOverlayVisibility(): OverlayVisibility {
-  // If URL says force all on / off, that wins
-  if (URL_OVERLAYS_FORCE === true || URL_DEBUG_HUD) {
-    return { pathsOn: true, timelineOn: true, liquidityOn: true, eventsOn: true }
-  }
-  if (URL_OVERLAYS_FORCE === false) {
-    return { pathsOn: false, timelineOn: false, liquidityOn: false, eventsOn: false }
-  }
+  const { force, debugHud } = parseUrlOverrides(getSearchString())
+  if (force === true || debugHud) return ALL_ON
+  if (force === false) return ALL_OFF
 
-  // Otherwise read from store (snapshot — for non-React callers)
   const state = useRenderFlagsStore.getState()
   return {
     pathsOn: state.showPaths,
-    timelineOn: state.showPaths, // timeline follows paths toggle
+    timelineOn: state.showPaths,
     liquidityOn: state.showFlow,
-    eventsOn: true, // events always on unless URL forced off
+    eventsOn: true,
   }
 }
 
 /**
- * React hook variant — subscribes to renderFlagsStore changes.
- * Respects URL overrides (which are static per page load).
+ * React hook — subscribes to both URL changes AND renderFlagsStore.
+ * Immediately reactive to ?overlays= and ?debugHud= changes.
  */
 export function useOverlayVisibility(): OverlayVisibility {
-  // URL force takes priority — no store subscription needed
-  if (URL_OVERLAYS_FORCE === true || URL_DEBUG_HUD) {
-    return { pathsOn: true, timelineOn: true, liquidityOn: true, eventsOn: true }
-  }
-  if (URL_OVERLAYS_FORCE === false) {
-    return { pathsOn: false, timelineOn: false, liquidityOn: false, eventsOn: false }
-  }
+  const search = useSyncExternalStore(subscribeToLocation, getSearchString, () => "")
+  const { force, debugHud } = parseUrlOverrides(search)
 
-  // Subscribe to store
+  // Always call store hooks unconditionally (Rules of Hooks)
   const showPaths = useRenderFlagsStore((s) => s.showPaths)
   const showFlow = useRenderFlagsStore((s) => s.showFlow)
+
+  // URL force takes priority
+  if (force === true || debugHud) return ALL_ON
+  if (force === false) return ALL_OFF
 
   return {
     pathsOn: showPaths,

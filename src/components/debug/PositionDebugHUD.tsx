@@ -7,7 +7,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import React from "react"
-import { useDebugSignals, DEBUG_EVENTS } from "@/debug/debugSignals"
+import { useDebugSignals, useDebugFlags } from "@/debug/debugSignals"
 import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore"
 import { useShallow } from "zustand/react/shallow"
 
@@ -37,6 +37,7 @@ const VAL_WARN: React.CSSProperties = { color: "#f59e0b" }
 const VAL_BAD: React.CSSProperties = { color: "#ef4444" }
 
 export default function PositionDebugHUD() {
+  const { debugEvents } = useDebugFlags()
   const { terrainReady, pathsOn, timelineOn, liquidityOn, eventsOn, eventsLength } = useDebugSignals(
     useShallow((s) => ({
       terrainReady: s.terrainReady,
@@ -71,8 +72,8 @@ export default function PositionDebugHUD() {
       </div>
       <div>
         <span style={LABEL}>debugEvents: </span>
-        <span style={DEBUG_EVENTS ? VAL_OK : VAL_WARN}>
-          {String(DEBUG_EVENTS)}
+        <span style={debugEvents ? VAL_OK : VAL_WARN}>
+          {String(debugEvents)}
         </span>
       </div>
       <div>

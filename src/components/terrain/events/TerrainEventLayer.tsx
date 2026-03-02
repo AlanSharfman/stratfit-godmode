@@ -14,7 +14,7 @@ import { useShallow } from "zustand/react/shallow"
 import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore"
 import { TERRAIN_CONSTANTS } from "@/terrain/terrainConstants"
 import type { TerrainSurfaceHandle } from "@/terrain/TerrainSurface"
-import { DEBUG_EVENTS, DEBUG_HUD, useDebugSignals } from "@/debug/debugSignals"
+import { useDebugFlags, useDebugSignals } from "@/debug/debugSignals"
 import TerrainEventNode from "./TerrainEventNode"
 import type { TerrainEventNodeProps } from "./TerrainEventNode"
 
@@ -191,16 +191,20 @@ const TerrainEventLayer: React.FC<TerrainEventLayerProps> = memo(
       useSimulationEvents()
     const [focusedId, setFocusedId] = useState<string | null>(null)
 
+    // ── Reactive debug flags from URL ──
+    const { debugHud, debugEvents } = useDebugFlags()
+
     // ── Publish debug signals to HUD store ──
     const setEventsLength = useDebugSignals((s) => s.setEventsLength)
     const setActiveScenario = useDebugSignals((s) => s.setActiveScenario)
 
     useEffect(() => {
-      if (DEBUG_HUD) {
+      if (debugHud) {
         setEventsLength(events.length)
         setActiveScenario(activeScenarioId, activeScenarioStatus)
       }
     }, [
+      debugHud,
       events.length,
       activeScenarioId,
       activeScenarioStatus,
@@ -208,13 +212,13 @@ const TerrainEventLayer: React.FC<TerrainEventLayerProps> = memo(
       setActiveScenario,
     ])
 
-    // ── STEP 4: Console proof — only log when values change ──
+    // ── Console proof — only log when values change and debugHud is on ──
     const prevSnap = useRef<string>("")
     useEffect(() => {
-      if (!DEBUG_HUD) return
+      if (!debugHud) return
       const terrReady = !!terrainRef.current
       const snap = JSON.stringify({
-        debugEvents: DEBUG_EVENTS,
+        debugEvents,
         terrainReady: terrReady,
         eventsLen: events.length,
         activeScenarioId,
@@ -224,7 +228,7 @@ const TerrainEventLayer: React.FC<TerrainEventLayerProps> = memo(
         prevSnap.current = snap
         console.log("[TerrainEventLayer]", JSON.parse(snap))
       }
-    }, [events.length, activeScenarioId, activeScenarioStatus, terrainRef])
+    }, [debugHud, debugEvents, events.length, activeScenarioId, activeScenarioStatus, terrainRef])
 
     const handleFocusChange = useCallback(
       (eventId: string | null) => {
@@ -269,11 +273,11 @@ const TerrainEventLayer: React.FC<TerrainEventLayerProps> = memo(
       })
     }, [events, horizonMonths, getY, focusedId, handleFocusChange])
 
-    // ── STEP 2: HUGE debug objects — always render when ?debugEvents ──
+    // ── HUGE debug objects — always render when ?debugEvents ──
     // NOT gated by terrainReady or events.length.
     // Giant hotpink box at [0, 40, 0] visible from ANY camera angle.
     const debugMarkers = useMemo(() => {
-      if (!DEBUG_EVENTS) return null
+      if (!debugEvents) return null
       return (
         <>
           {/* GIANT hotpink cube — unmissable proof the layer renders */}
@@ -301,7 +305,7 @@ const TerrainEventLayer: React.FC<TerrainEventLayerProps> = memo(
           />
         </>
       )
-    }, [getY])
+    }, [debugEvents, getY])
 
     // NEVER early-return — always render the group so debug markers appear
     return (

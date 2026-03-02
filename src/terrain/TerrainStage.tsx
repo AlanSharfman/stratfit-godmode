@@ -35,7 +35,7 @@ import HorizonBand from "@/terrain/HorizonBand";
 import { useRenderFlagsStore } from "@/state/renderFlagsStore";
 import type { TerrainMetrics } from "@/terrain/terrainFromBaseline";
 import { useTerrainControls } from "@/terrain/useTerrainControls";
-import { DEBUG_HUD, useDebugSignals } from "@/debug/debugSignals";
+import { useDebugFlags, useDebugSignals } from "@/debug/debugSignals";
 import { useOverlayVisibility } from "@/domain/ui/overlayVisibility";
 
 // Canonical camera target — shifted left so terrain content avoids the right overlay zone
@@ -106,16 +106,17 @@ export default function TerrainStage({
   const liquidityOn = vis.liquidityOn;
 
   // ── Publish debug signals (zero-cost when debugHud is off) ──
+  const { debugHud } = useDebugFlags();
   const setDebugTerrainReady = useDebugSignals((s) => s.setTerrainReady);
   const setDebugPathsOn = useDebugSignals((s) => s.setPathsOn);
   const setOverlayFlags = useDebugSignals((s) => s.setOverlayFlags);
   useEffect(() => {
-    if (DEBUG_HUD) {
+    if (debugHud) {
       setDebugTerrainReady(terrainReady);
       setDebugPathsOn(pathsOn);
       setOverlayFlags({ timelineOn, liquidityOn, eventsOn: vis.eventsOn });
     }
-  }, [terrainReady, pathsOn, timelineOn, liquidityOn, vis.eventsOn, setDebugTerrainReady, setDebugPathsOn, setOverlayFlags]);
+  }, [debugHud, terrainReady, pathsOn, timelineOn, liquidityOn, vis.eventsOn, setDebugTerrainReady, setDebugPathsOn, setOverlayFlags]);
 
   useEffect(() => {
     if (terrainReady) return;
