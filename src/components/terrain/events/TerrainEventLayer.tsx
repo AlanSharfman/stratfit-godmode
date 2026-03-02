@@ -9,19 +9,14 @@
 // Must be mounted inside <Canvas> as a child of TerrainStage.
 // ═══════════════════════════════════════════════════════════════════════════
 
-import React, { useState, useCallback, useMemo, memo } from "react"
+import React, { useState, useCallback, useMemo, useEffect, useRef, memo } from "react"
 import { useShallow } from "zustand/react/shallow"
 import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore"
 import { TERRAIN_CONSTANTS } from "@/terrain/terrainConstants"
-import { getTerrainHeight } from "@/terrain/terrainHeightSampler"
+import type { TerrainSurfaceHandle } from "@/terrain/TerrainSurface"
+import { DEBUG_EVENTS, DEBUG_HUD, useDebugSignals } from "@/debug/debugSignals"
 import TerrainEventNode from "./TerrainEventNode"
 import type { TerrainEventNodeProps } from "./TerrainEventNode"
-
-// ── Debug flag — append ?debugEvents to URL to force diagnostic markers ──
-
-const DEBUG_EVENTS =
-  typeof window !== "undefined" &&
-  new URLSearchParams(window.location.search).has("debugEvents")
 
 // ── Event detection types ───────────────────────────────────────
 
@@ -146,39 +141,90 @@ function eventToTerrainXZ(
 
 // ── Selector: pull events from store ────────────────────────────
 
-function useSimulationEvents(): { events: SimulationEvent[]; horizonMonths: number } {
-  const { kpis, horizonMonths } = usePhase1ScenarioStore(
-    useShallow((s) => {
-      const active = s.scenarios.find((sc) => sc.id === s.activeScenarioId)
-      if (active?.status === "complete" && active.simulationResults) {
-        return {
-          kpis: active.simulationResults.kpis,
-          horizonMonths: active.simulationResults.horizonMonths,
+function useSimulationEvents(): {
+  events: SimulationEvent[]
+  horizonMonths: number
+  activeScenarioId: string | null
+  activeScenarioStatus: string | null
+} {
+  const { kpis, horizonMonths, activeScenarioId, activeScenarioStatus } =
+    usePhase1ScenarioStore(
+      useShallow((s) => {
+        const active = s.scenarios.find((sc) => sc.id === s.activeScenarioId)
+        if (active?.status === "complete" && active.simulationResults) {
+          return {
+            kpis: active.simulationResults.kpis,
+            horizonMonths: active.simulationResults.horizonMonths,
+            activeScenarioId: s.activeScenarioId,
+            activeScenarioStatus: active.status,
+          }
         }
-      }
-      return { kpis: null, horizonMonths: 24 }
-    }),
-  )
+        return {
+          kpis: null,
+          horizonMonths: 24,
+          activeScenarioId: s.activeScenarioId,
+          activeScenarioStatus: active?.status ?? null,
+        }
+      }),
+    )
 
   const events = useMemo(
     () => detectSimulationEvents(kpis, horizonMonths),
     [kpis, horizonMonths],
   )
 
-  return { events, horizonMonths }
+  return { events, horizonMonths, activeScenarioId, activeScenarioStatus }
 }
 
 // ── Layer component ─────────────────────────────────────────────
 
 export interface TerrainEventLayerProps {
+  /** Terrain surface ref — provides getHeightAt for correct Y anchoring */
+  terrainRef: React.RefObject<TerrainSurfaceHandle | null>
   /** Called when a node gains/loses focus */
   onFocusChange?: (eventId: string | null) => void
 }
 
 const TerrainEventLayer: React.FC<TerrainEventLayerProps> = memo(
-  ({ onFocusChange }) => {
-    const { events, horizonMonths } = useSimulationEvents()
+  ({ terrainRef, onFocusChange }) => {
+    const { events, horizonMonths, activeScenarioId, activeScenarioStatus } =
+      useSimulationEvents()
     const [focusedId, setFocusedId] = useState<string | null>(null)
+
+    // ── Publish debug signals to HUD store ──
+    const setEventsLength = useDebugSignals((s) => s.setEventsLength)
+    const setActiveScenario = useDebugSignals((s) => s.setActiveScenario)
+
+    useEffect(() => {
+      if (DEBUG_HUD) {
+        setEventsLength(events.length)
+        setActiveScenario(activeScenarioId, activeScenarioStatus)
+      }
+    }, [
+      events.length,
+      activeScenarioId,
+      activeScenarioStatus,
+      setEventsLength,
+      setActiveScenario,
+    ])
+
+    // ── STEP 4: Console proof — only log when values change ──
+    const prevSnap = useRef<string>("")
+    useEffect(() => {
+      if (!DEBUG_HUD) return
+      const terrReady = !!terrainRef.current
+      const snap = JSON.stringify({
+        debugEvents: DEBUG_EVENTS,
+        terrainReady: terrReady,
+        eventsLen: events.length,
+        activeScenarioId,
+        activeScenarioStatus,
+      })
+      if (snap !== prevSnap.current) {
+        prevSnap.current = snap
+        console.log("[TerrainEventLayer]", JSON.parse(snap))
+      }
+    }, [events.length, activeScenarioId, activeScenarioStatus, terrainRef])
 
     const handleFocusChange = useCallback(
       (eventId: string | null) => {
@@ -188,12 +234,14 @@ const TerrainEventLayer: React.FC<TerrainEventLayerProps> = memo(
       [onFocusChange],
     )
 
-    /** Sample terrain Y at (x, z) via standalone height sampler. */
+    /** Sample terrain Y at (x, z) via terrainRef.getHeightAt (matches P50Path). */
     const getY = useCallback(
       (x: number, z: number) => {
-        return getTerrainHeight(x, z) + EVENT_Y_OFFSET
+        const terrain = terrainRef.current
+        if (terrain) return terrain.getHeightAt(x, z) + EVENT_Y_OFFSET
+        return TERRAIN_CONSTANTS.yOffset + EVENT_Y_OFFSET
       },
-      [],
+      [terrainRef],
     )
 
     // Build positioned event nodes (only when events exist)
@@ -202,6 +250,11 @@ const TerrainEventLayer: React.FC<TerrainEventLayerProps> = memo(
       return events.map((evt) => {
         const { x, z } = eventToTerrainXZ(evt.month, horizonMonths)
         const y = getY(x, z)
+        if (import.meta.env.DEV) {
+          console.warn(
+            `[TerrainEventLayer] node "${evt.type}" → x=${x.toFixed(1)} y=${y.toFixed(1)} z=${z.toFixed(1)}`,
+          )
+        }
         return (
           <TerrainEventNode
             key={evt.id}
@@ -216,26 +269,35 @@ const TerrainEventLayer: React.FC<TerrainEventLayerProps> = memo(
       })
     }, [events, horizonMonths, getY, focusedId, handleFocusChange])
 
-    // ── DEBUG markers (only when ?debugEvents in URL) ────────────
+    // ── STEP 2: HUGE debug objects — always render when ?debugEvents ──
+    // NOT gated by terrainReady or events.length.
+    // Giant hotpink box at [0, 40, 0] visible from ANY camera angle.
     const debugMarkers = useMemo(() => {
       if (!DEBUG_EVENTS) return null
-      const dbg1 = eventToTerrainXZ(6, 24)
-      const dbg2 = eventToTerrainXZ(18, 24)
-      const y1 = getY(dbg1.x, dbg1.z)
-      const y2 = getY(dbg2.x, dbg2.z)
       return (
         <>
-          {/* Hotpink cube — highly visible proof the layer renders */}
-          <mesh position={[dbg1.x, y1 + 6, dbg1.z]}>
-            <boxGeometry args={[4, 4, 4]} />
-            <meshStandardMaterial color="hotpink" />
+          {/* GIANT hotpink cube — unmissable proof the layer renders */}
+          <mesh position={[0, 40, 0]}>
+            <boxGeometry args={[20, 20, 20]} />
+            <meshStandardMaterial color="hotpink" emissive="hotpink" emissiveIntensity={0.5} />
           </mesh>
-          {/* Forced TerrainEventNode — verify pillar renders above terrain */}
+
+          {/* Forced TerrainEventNode — proves node component renders */}
           <TerrainEventNode
-            position={[dbg2.x, y2, dbg2.z]}
+            position={[0, 42, 0]}
             importance={1}
-            category="info"
+            category="risk"
+            isFocused={true}
             eventId="__debug_forced__"
+          />
+
+          {/* Terrain-anchored debug pillar (uses getY when terrain is ready) */}
+          <TerrainEventNode
+            position={[0, getY(0, 0), 0]}
+            importance={0.8}
+            category="info"
+            isFocused={false}
+            eventId="__debug_terrain_anchored__"
           />
         </>
       )

@@ -50,11 +50,12 @@ import IdleMotionLayer from "./IdleMotionLayer"
 import HorizonPulse from "@/components/terrain/overlays/HorizonPulse"
 import { useReducedMotion } from "@/hooks/useReducedMotion"
 import SimulationProofOverlay from "@/components/dev/SimulationProofOverlay"
-import TerrainEventLayer from "@/components/terrain/events/TerrainEventLayer"
 import {
   buildPositionViewModel,
 } from "./overlays/positionState"
 
+import PositionDebugHUD from "@/components/debug/PositionDebugHUD"
+import { DEBUG_HUD } from "@/debug/debugSignals"
 import styles from "./PositionOverlays.module.css"
 
 // Diagnostics panel is togglable via close button
@@ -706,7 +707,6 @@ export default function PositionPage() {
             >
               <CameraCompositionRig />
               <SkyAtmosphere />
-              <TerrainEventLayer />
             </TerrainStage>
             <div className={styles.canvasVignette} aria-hidden="true" />
             <IdleMotionLayer viewportRef={viewportRef} />
@@ -880,6 +880,9 @@ export default function PositionPage() {
           )}
         </div>
       )}
+
+      {/* ══ Debug HUD — only when ?debugHud=1 ══ */}
+      {DEBUG_HUD && <PositionDebugHUD />}
 
       {/* Legal disclaimer */}
       <div className={styles.legalDisclaimer}>

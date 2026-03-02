@@ -30,10 +30,13 @@ import BaselineTimelineTicks from "@/terrain/BaselineTimelineTicks";
 import type { TimeGranularity } from "@/terrain/TimelineTicks";
 import { baselineSeedString } from "@/terrain/seed";
 import LiquidityFlowLayer from "@/components/terrain/liquidity/LiquidityFlowLayer";
+import TerrainEventLayer from "@/components/terrain/events/TerrainEventLayer";
 import HorizonBand from "@/terrain/HorizonBand";
 import { useRenderFlagsStore } from "@/state/renderFlagsStore";
 import type { TerrainMetrics } from "@/terrain/terrainFromBaseline";
 import { useTerrainControls } from "@/terrain/useTerrainControls";
+import { DEBUG_HUD, useDebugSignals } from "@/debug/debugSignals";
+import { useOverlayVisibility } from "@/domain/ui/overlayVisibility";
 
 // Canonical camera target — shifted left so terrain content avoids the right overlay zone
 const TERRAIN_LOOK_AT: [number, number, number] = [-20, 14, 0];
@@ -92,8 +95,27 @@ export default function TerrainStage({
   }, []);
 
   // ── Render flags ──
-  const { showMarkers, showFlow, showPaths } = useRenderFlagsStore();
-  const pathsOn = typeof pathsEnabled === "boolean" ? pathsEnabled : showPaths;
+  const { showMarkers } = useRenderFlagsStore();
+
+  // ── Overlay visibility (canonical) — URL overrides take priority ──
+  const vis = useOverlayVisibility();
+  // If pathsEnabled prop is explicitly set (and no URL override), respect it.
+  // overlayVisibility already handles ?overlays= and ?debugHud= force.
+  const pathsOn = typeof pathsEnabled === "boolean" ? (vis.pathsOn || pathsEnabled) : vis.pathsOn;
+  const timelineOn = typeof pathsEnabled === "boolean" ? (vis.timelineOn || pathsEnabled) : vis.timelineOn;
+  const liquidityOn = vis.liquidityOn;
+
+  // ── Publish debug signals (zero-cost when debugHud is off) ──
+  const setDebugTerrainReady = useDebugSignals((s) => s.setTerrainReady);
+  const setDebugPathsOn = useDebugSignals((s) => s.setPathsOn);
+  const setOverlayFlags = useDebugSignals((s) => s.setOverlayFlags);
+  useEffect(() => {
+    if (DEBUG_HUD) {
+      setDebugTerrainReady(terrainReady);
+      setDebugPathsOn(pathsOn);
+      setOverlayFlags({ timelineOn, liquidityOn, eventsOn: vis.eventsOn });
+    }
+  }, [terrainReady, pathsOn, timelineOn, liquidityOn, vis.eventsOn, setDebugTerrainReady, setDebugPathsOn, setOverlayFlags]);
 
   useEffect(() => {
     if (terrainReady) return;
@@ -181,11 +203,12 @@ export default function TerrainStage({
             {pathsOn && (
               <P50Path terrainRef={terrainRef} rebuildKey={rebuildKey} />
             )}
-            {/* Canonical ticks (BaselineTimelineTicks) — only when paths are enabled */}
-            {pathsOn && (
+            {/* Canonical ticks (BaselineTimelineTicks) — follows timelineOn */}
+            {timelineOn && (
               <BaselineTimelineTicks visible terrainRef={terrainRef} />
             )}
-            <LiquidityFlowLayer terrainRef={terrainRef} enabled={showFlow} />
+            <LiquidityFlowLayer terrainRef={terrainRef} enabled={liquidityOn} />
+            <TerrainEventLayer terrainRef={terrainRef} />
           </>
         )}
       </Suspense>

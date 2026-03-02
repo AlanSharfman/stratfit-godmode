@@ -21,12 +21,12 @@ const CATEGORY_COLORS: Record<TerrainEventNodeProps["category"], string> = {
 
 // ── Constants ───────────────────────────────────────────────────
 
-const PILLAR_RADIUS = 0.015 * 40 // terrain-scale adjusted
-const MIN_HEIGHT = 0.08 * 40
-const MAX_HEIGHT = 0.22 * 40
-const RING_THICKNESS = 0.06
-const RING_RADIUS_OFFSET = 1.3
-const BASE_COLOR = "#1a1e2e" // dark titanium
+const PILLAR_RADIUS = 2.4  // ~4× prev — visible at camera distance
+const MIN_HEIGHT = 6
+const MAX_HEIGHT = 18
+const RING_THICKNESS = 0.4
+const RING_RADIUS_OFFSET = 1.6
+const BASE_COLOR = "#0d1117" // dark titanium
 
 // ── Types ───────────────────────────────────────────────────────
 
@@ -90,23 +90,36 @@ const TerrainEventNode: React.FC<TerrainEventNodeProps> = memo(
           <meshStandardMaterial
             color={BASE_COLOR}
             emissive={accentColor}
-            emissiveIntensity={hovered ? 0.35 : 0.12}
-            metalness={0.7}
-            roughness={0.4}
+            emissiveIntensity={hovered ? 0.65 : 0.35}
+            metalness={0.6}
+            roughness={0.35}
           />
         </mesh>
 
-        {/* ── Pillar cap (thin disc at top) ── */}
+        {/* ── Pillar cap (bright disc at top) ── */}
         <mesh position={[0, height, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <circleGeometry args={[PILLAR_RADIUS * 1.3, 8]} />
+          <circleGeometry args={[PILLAR_RADIUS * 1.5, 12]} />
           <meshStandardMaterial
             color={accentColor}
             emissive={accentColor}
-            emissiveIntensity={0.3}
-            metalness={0.5}
-            roughness={0.3}
+            emissiveIntensity={0.6}
+            metalness={0.4}
+            roughness={0.25}
             transparent
-            opacity={0.8}
+            opacity={0.9}
+          />
+        </mesh>
+        {/* ── Glow halo at base — always visible ── */}
+        <mesh position={[0, 0.15, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[PILLAR_RADIUS * 1.2, PILLAR_RADIUS * 2.5, 24]} />
+          <meshStandardMaterial
+            color={accentColor}
+            emissive={accentColor}
+            emissiveIntensity={0.4}
+            transparent
+            opacity={0.45}
+            side={THREE.DoubleSide}
+            depthWrite={false}
           />
         </mesh>
 
