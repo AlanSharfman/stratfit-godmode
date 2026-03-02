@@ -33,10 +33,12 @@ const BASE_COLOR = "#0d1117" // dark titanium
 export type TerrainEventNodeProps = {
   /** World-space position [x, y, z] */
   position: [number, number, number]
-  /** Importance factor 0–1, controls pillar height */
-  importance: number
+  /** Severity 0–1, controls pillar height */
+  severity: number
   /** Category determines accent color */
   category: "positive" | "info" | "strategic" | "risk"
+  /** Human-readable description (shown on hover in future) */
+  description?: string
   /** When true, show focus ring at base */
   isFocused?: boolean
   /** Unique event identifier */
@@ -48,11 +50,11 @@ export type TerrainEventNodeProps = {
 // ── Component ───────────────────────────────────────────────────
 
 const TerrainEventNode: React.FC<TerrainEventNodeProps> = memo(
-  ({ position, importance, category, isFocused = false, eventId, onFocusChange }) => {
+  ({ position, severity, category, isFocused = false, eventId, onFocusChange }) => {
     const meshRef = useRef<THREE.Mesh>(null)
     const [hovered, setHovered] = useState(false)
 
-    const height = MIN_HEIGHT + (MAX_HEIGHT - MIN_HEIGHT) * Math.max(0, Math.min(1, importance))
+    const height = MIN_HEIGHT + (MAX_HEIGHT - MIN_HEIGHT) * Math.max(0, Math.min(1, severity))
     const accentColor = CATEGORY_COLORS[category]
     const showRing = isFocused || hovered
 

@@ -18,96 +18,42 @@ import { useDebugFlags, useDebugSignals } from "@/debug/debugSignals"
 import TerrainEventNode from "./TerrainEventNode"
 import type { TerrainEventNodeProps } from "./TerrainEventNode"
 
-// ── Event detection types ───────────────────────────────────────
+// ── TerrainEvent schema ─────────────────────────────────────────
 
-export type SimulationEventType = "breakeven" | "peakValue" | "riskSpike" | "runwayEnd"
+export type TerrainEventType =
+  | "risk_spike"
+  | "liquidity_stress"
+  | "volatility_zone"
+  | "growth_inflection"
+  | "probability_shift"
+  | "downside_regime"
 
-export interface SimulationEvent {
+export interface TerrainEvent {
   id: string
-  type: SimulationEventType
-  /** Month index on the horizon (0-based) */
-  month: number
-  /** Optional label */
-  label?: string
+  type: TerrainEventType
+  /** Normalised severity 0–1 */
+  severity: number
+  /** Month-index timestamp on the horizon (0-based) */
+  timestamp: number
+  /** KPI metric that sourced this event */
+  metricSource: string
+  /** Human-readable description */
+  description: string
+  /** Impact on outcome probability (signed, −1…+1) */
+  probabilityImpact: number
+  /** Pre-computed world-space coordinates */
+  coordinates: { x: number; y: number; z: number }
 }
 
-// ── Importance mapping ──────────────────────────────────────────
+// ── Visual mapping ──────────────────────────────────────────────
 
-const EVENT_IMPORTANCE: Record<SimulationEventType, number> = {
-  breakeven: 0.5,
-  peakValue: 0.8,
-  riskSpike: 0.7,
-  runwayEnd: 1.0,
-}
-
-const EVENT_CATEGORY: Record<SimulationEventType, TerrainEventNodeProps["category"]> = {
-  breakeven: "positive",
-  peakValue: "strategic",
-  riskSpike: "risk",
-  runwayEnd: "risk",
-}
-
-// ── Event detection (deterministic, pure) ───────────────────────
-
-function detectSimulationEvents(
-  kpis: { cash: number; monthlyBurn: number; revenue: number; runway: number | null } | null,
-  horizonMonths: number,
-): SimulationEvent[] {
-  if (!kpis) return []
-
-  const events: SimulationEvent[] = []
-
-  // Runway end — if runway < horizon
-  const runway = kpis.runway ?? horizonMonths
-  if (runway > 0 && runway < horizonMonths) {
-    events.push({
-      id: "runway-end",
-      type: "runwayEnd",
-      month: Math.round(runway),
-      label: "Cash runway exhausted",
-    })
-  }
-
-  // Breakeven — if revenue can cover burn within horizon
-  if (kpis.revenue > 0 && kpis.monthlyBurn > 0) {
-    const gap = kpis.monthlyBurn - kpis.revenue
-    if (gap > 0 && kpis.revenue > 0) {
-      const monthsToBreakeven = Math.ceil(gap / (kpis.revenue * 0.05))
-      if (monthsToBreakeven > 0 && monthsToBreakeven <= horizonMonths) {
-        events.push({
-          id: "breakeven",
-          type: "breakeven",
-          month: monthsToBreakeven,
-          label: "Projected breakeven",
-        })
-      }
-    }
-  }
-
-  // Peak value — place at 60% of horizon (structural marker)
-  if (kpis.revenue > 0) {
-    events.push({
-      id: "peak-value",
-      type: "peakValue",
-      month: Math.round(horizonMonths * 0.6),
-      label: "Peak projected value",
-    })
-  }
-
-  // Risk spike — if burn ratio is concerning, place at 30% of horizon
-  if (kpis.monthlyBurn > 0 && kpis.revenue > 0) {
-    const burnRatio = kpis.monthlyBurn / kpis.revenue
-    if (burnRatio > 1.5) {
-      events.push({
-        id: "risk-spike",
-        type: "riskSpike",
-        month: Math.round(horizonMonths * 0.3),
-        label: "Elevated burn risk",
-      })
-    }
-  }
-
-  return events
+const EVENT_CATEGORY: Record<TerrainEventType, TerrainEventNodeProps["category"]> = {
+  risk_spike: "risk",
+  liquidity_stress: "risk",
+  volatility_zone: "info",
+  growth_inflection: "positive",
+  probability_shift: "strategic",
+  downside_regime: "risk",
 }
 
 // ── Terrain coordinate mapping — matches P50Path + TimelineTicks ──
@@ -127,7 +73,7 @@ const MEANDER_P2 = 1.9
 /** Small vertical offset so pillars sit just above terrain surface. */
 const EVENT_Y_OFFSET = 0.8
 
-function eventToTerrainXZ(
+function monthToTerrainXZ(
   month: number,
   horizonMonths: number,
 ): { x: number; z: number } {
@@ -139,10 +85,159 @@ function eventToTerrainXZ(
   return { x, z }
 }
 
+// ── Event detection (deterministic, pure) ───────────────────────
+
+/** Clamp helper */
+const clamp01 = (v: number) => Math.max(0, Math.min(1, v))
+
+function detectTerrainEvents(
+  kpis: {
+    cash: number
+    monthlyBurn: number
+    revenue: number
+    grossMargin: number
+    growthRate: number
+    churnRate: number
+    runway: number | null
+  } | null,
+  horizonMonths: number,
+): TerrainEvent[] {
+  if (!kpis) return []
+
+  const events: TerrainEvent[] = []
+  const runway = kpis.runway ?? horizonMonths
+
+  // Helper: build coordinates for a given month
+  const coords = (month: number) => {
+    const { x, z } = monthToTerrainXZ(month, horizonMonths)
+    return { x, y: 0, z } // Y is resolved later by getHeightAt
+  }
+
+  // ── risk_spike — burn ratio dangerously high ──
+  if (kpis.monthlyBurn > 0 && kpis.revenue > 0) {
+    const burnRatio = kpis.monthlyBurn / kpis.revenue
+    if (burnRatio > 1.3) {
+      const month = Math.round(horizonMonths * 0.3)
+      events.push({
+        id: "risk-spike",
+        type: "risk_spike",
+        severity: clamp01((burnRatio - 1.3) / 1.7), // 1.3→0, 3.0→1
+        timestamp: month,
+        metricSource: "monthlyBurn/revenue",
+        description: `Burn ratio ${burnRatio.toFixed(1)}× revenue — elevated operational risk`,
+        probabilityImpact: -clamp01((burnRatio - 1.3) / 2),
+        coordinates: coords(month),
+      })
+    }
+  }
+
+  // ── liquidity_stress — runway shorter than horizon ──
+  if (runway > 0 && runway < horizonMonths) {
+    const month = Math.round(runway)
+    const severityRaw = 1 - runway / horizonMonths // shorter runway → higher severity
+    events.push({
+      id: "liquidity-stress",
+      type: "liquidity_stress",
+      severity: clamp01(severityRaw),
+      timestamp: month,
+      metricSource: "runway",
+      description: `Cash runway exhausted at month ${month} of ${horizonMonths}`,
+      probabilityImpact: -clamp01(severityRaw * 0.8),
+      coordinates: coords(month),
+    })
+  }
+
+  // ── volatility_zone — high churn + low margin ──
+  if (kpis.churnRate > 0.04 || kpis.grossMargin < 0.4) {
+    const churnSev = clamp01((kpis.churnRate - 0.04) / 0.08) // 4%→0, 12%→1
+    const marginSev = clamp01((0.5 - kpis.grossMargin) / 0.3)  // 50%→0, 20%→1
+    const severity = clamp01(Math.max(churnSev, marginSev))
+    if (severity > 0.1) {
+      const month = Math.round(horizonMonths * 0.45)
+      events.push({
+        id: "volatility-zone",
+        type: "volatility_zone",
+        severity,
+        timestamp: month,
+        metricSource: "churnRate,grossMargin",
+        description: `Volatile unit economics — churn ${(kpis.churnRate * 100).toFixed(1)}%, margin ${(kpis.grossMargin * 100).toFixed(0)}%`,
+        probabilityImpact: -severity * 0.3,
+        coordinates: coords(month),
+      })
+    }
+  }
+
+  // ── growth_inflection — revenue can outpace burn ──
+  if (kpis.revenue > 0 && kpis.monthlyBurn > 0 && kpis.growthRate > 0) {
+    const gap = kpis.monthlyBurn - kpis.revenue
+    if (gap > 0) {
+      const monthsToBreakeven = Math.ceil(
+        Math.log(kpis.monthlyBurn / kpis.revenue) / Math.log(1 + kpis.growthRate),
+      )
+      if (monthsToBreakeven > 0 && monthsToBreakeven <= horizonMonths) {
+        events.push({
+          id: "growth-inflection",
+          type: "growth_inflection",
+          severity: clamp01(1 - monthsToBreakeven / horizonMonths),
+          timestamp: monthsToBreakeven,
+          metricSource: "revenue,growthRate",
+          description: `Revenue crosses burn at month ${monthsToBreakeven} (${(kpis.growthRate * 100).toFixed(1)}% MoM growth)`,
+          probabilityImpact: clamp01(0.3 + (1 - monthsToBreakeven / horizonMonths) * 0.5),
+          coordinates: coords(monthsToBreakeven),
+        })
+      }
+    }
+  }
+
+  // ── probability_shift — compound positive signals ──
+  const positiveSignals =
+    (kpis.growthRate > 0.08 ? 1 : 0) +
+    (kpis.grossMargin > 0.6 ? 1 : 0) +
+    (kpis.churnRate < 0.03 ? 1 : 0) +
+    (runway >= horizonMonths ? 1 : 0)
+  if (positiveSignals >= 2) {
+    const month = Math.round(horizonMonths * 0.65)
+    const severity = clamp01(positiveSignals / 4)
+    events.push({
+      id: "probability-shift",
+      type: "probability_shift",
+      severity,
+      timestamp: month,
+      metricSource: "growthRate,grossMargin,churnRate,runway",
+      description: `${positiveSignals}/4 positive signals — outcome probability elevated`,
+      probabilityImpact: clamp01(severity * 0.6),
+      coordinates: coords(month),
+    })
+  }
+
+  // ── downside_regime — multiple risk factors compound ──
+  const riskFactors =
+    (kpis.monthlyBurn > kpis.revenue * 2 ? 1 : 0) +
+    (runway < horizonMonths * 0.5 ? 1 : 0) +
+    (kpis.churnRate > 0.06 ? 1 : 0) +
+    (kpis.grossMargin < 0.3 ? 1 : 0)
+  if (riskFactors >= 2) {
+    const month = Math.round(horizonMonths * 0.5)
+    const severity = clamp01(riskFactors / 4)
+    events.push({
+      id: "downside-regime",
+      type: "downside_regime",
+      severity,
+      timestamp: month,
+      metricSource: "monthlyBurn,runway,churnRate,grossMargin",
+      description: `${riskFactors}/4 risk factors active — downside regime`,
+      probabilityImpact: -clamp01(severity * 0.7),
+      coordinates: coords(month),
+    })
+  }
+
+  return events
+}
+
 // ── Selector: pull events from store ────────────────────────────
 
-function useSimulationEvents(): {
-  events: SimulationEvent[]
+function useTerrainEvents(): {
+  events: TerrainEvent[]
   horizonMonths: number
   activeScenarioId: string | null
   activeScenarioStatus: string | null
@@ -169,7 +264,7 @@ function useSimulationEvents(): {
     )
 
   const events = useMemo(
-    () => detectSimulationEvents(kpis, horizonMonths),
+    () => detectTerrainEvents(kpis, horizonMonths),
     [kpis, horizonMonths],
   )
 
@@ -188,7 +283,7 @@ export interface TerrainEventLayerProps {
 const TerrainEventLayer: React.FC<TerrainEventLayerProps> = memo(
   ({ terrainRef, onFocusChange }) => {
     const { events, horizonMonths, activeScenarioId, activeScenarioStatus } =
-      useSimulationEvents()
+      useTerrainEvents()
     const [focusedId, setFocusedId] = useState<string | null>(null)
 
     // ── Reactive debug flags from URL ──
@@ -252,26 +347,26 @@ const TerrainEventLayer: React.FC<TerrainEventLayerProps> = memo(
     const eventNodes = useMemo(() => {
       if (events.length === 0) return null
       return events.map((evt) => {
-        const { x, z } = eventToTerrainXZ(evt.month, horizonMonths)
-        const y = getY(x, z)
+        const y = getY(evt.coordinates.x, evt.coordinates.z)
         if (import.meta.env.DEV) {
           console.warn(
-            `[TerrainEventLayer] node "${evt.type}" → x=${x.toFixed(1)} y=${y.toFixed(1)} z=${z.toFixed(1)}`,
+            `[TerrainEventLayer] node "${evt.type}" sev=${evt.severity.toFixed(2)} → x=${evt.coordinates.x.toFixed(1)} y=${y.toFixed(1)} z=${evt.coordinates.z.toFixed(1)}`,
           )
         }
         return (
           <TerrainEventNode
             key={evt.id}
             eventId={evt.id}
-            position={[x, y, z]}
-            importance={EVENT_IMPORTANCE[evt.type]}
+            position={[evt.coordinates.x, y, evt.coordinates.z]}
+            severity={evt.severity}
             category={EVENT_CATEGORY[evt.type]}
+            description={evt.description}
             isFocused={focusedId === evt.id}
             onFocusChange={handleFocusChange}
           />
         )
       })
-    }, [events, horizonMonths, getY, focusedId, handleFocusChange])
+    }, [events, getY, focusedId, handleFocusChange])
 
     // ── HUGE debug objects — always render when ?debugEvents ──
     // NOT gated by terrainReady or events.length.
@@ -289,7 +384,7 @@ const TerrainEventLayer: React.FC<TerrainEventLayerProps> = memo(
           {/* Forced TerrainEventNode — proves node component renders */}
           <TerrainEventNode
             position={[0, 42, 0]}
-            importance={1}
+            severity={1}
             category="risk"
             isFocused={true}
             eventId="__debug_forced__"
@@ -298,7 +393,7 @@ const TerrainEventLayer: React.FC<TerrainEventLayerProps> = memo(
           {/* Terrain-anchored debug pillar (uses getY when terrain is ready) */}
           <TerrainEventNode
             position={[0, getY(0, 0), 0]}
-            importance={0.8}
+            severity={0.8}
             category="info"
             isFocused={false}
             eventId="__debug_terrain_anchored__"
