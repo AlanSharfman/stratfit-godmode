@@ -672,7 +672,6 @@
   bottom: 0;
   right: 20px;
   width: clamp(600px, 54vw, 740px);
-  height: calc(100vh - 56px);
   max-height: calc(100vh - 56px);
   z-index: 100;
   padding: 0;
