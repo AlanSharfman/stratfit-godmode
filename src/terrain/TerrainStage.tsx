@@ -46,6 +46,8 @@ import TerrainTargetPulse from "@/components/intelligence/TerrainTargetPulse";
 import TerrainTargetLabel from "@/components/intelligence/TerrainTargetLabel";
 import TerrainTargetSpotlight from "@/components/intelligence/TerrainTargetSpotlight";
 import IntelligenceCameraFocus from "@/components/intelligence/IntelligenceCameraFocus";
+import TerrainSignalSystem from "@/components/mountain/TerrainSignalSystem";
+import RiskWeatherSystem from "@/components/mountain/RiskWeatherSystem";
 import { eventToFocusPosition } from "@/domain/intelligence/eventFocus";
 import { computeSignalIntensity } from "@/components/terrain/signals/signalStyle";
 import { POSITION_PRESET } from "@/scene/camera/terrainCameraPresets";
@@ -267,6 +269,10 @@ export default function TerrainStage({
             <TerrainTargetLabel terrainRef={terrainRef} />
             <TerrainTargetSpotlight terrainRef={terrainRef} />
             <IntelligenceCameraFocus terrainRef={terrainRef} />
+            {/* Phase 220: Terrain Signal System — ridge path, pulse, beacons, laser */}
+            <TerrainSignalSystem terrainRef={terrainRef} />
+            {/* Phase 230: Risk Weather System — fog, turbulence, storms, lightning */}
+            <RiskWeatherSystem />
           </>
         )}
       </Suspense>
