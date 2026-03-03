@@ -10,7 +10,8 @@ import React, { memo } from "react";
 
 const NOTICE_TEXT =
   "STRATFIT provides probabilistic scenario modelling based on user inputs and system assumptions. " +
-  "Results represent simulated outcomes and do not constitute financial advice, forecasts, or guarantees.";
+  "Results represent simulated outcomes and do not constitute financial advice, forecasts, or guarantees. " +
+  "Users should apply professional judgement before making strategic or financial decisions.";
 
 export interface SystemProbabilityNoticeProps {
   /** Override position — defaults to bottom-center fixed */
