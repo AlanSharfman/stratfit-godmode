@@ -17,6 +17,13 @@ import TerrainStage from "@/terrain/TerrainStage"
 import CameraCompositionRig from "@/scene/camera/CameraCompositionRig"
 import SkyAtmosphere from "@/scene/rigs/SkyAtmosphere"
 import GhostTerrainSurface from "@/components/compare/GhostTerrainSurface"
+import TerrainHighlightFX from "@/features/compare/TerrainHighlightFX"
+import CinematicCamera from "@/features/intelligence/CinematicCamera"
+import { LightingModulatorR3F } from "@/features/intelligence/LightingModulator"
+import OverlayEngine from "@/features/intelligence/OverlayEngine"
+import { useBriefingClock } from "@/features/intelligence/useBriefingClock"
+import type { BriefingPlan } from "@/features/intelligence/BriefingDirector"
+import type { HighlightTarget } from "@/features/compare/highlightContract"
 import type { TerrainMetrics } from "@/terrain/terrainFromBaseline"
 import type { TerrainEvent } from "@/domain/events/terrainEventTypes"
 import type { ScenarioOption } from "@/components/compare/CompareScenarioSelect"
@@ -45,6 +52,14 @@ export interface CompareTerrainAreaProps {
   onSelectA: (id: string | null) => void
   onSelectB: (id: string | null) => void
   onSelectC: (id: string | null) => void
+
+  /* Highlight target from insight panel */
+  highlightTarget?: HighlightTarget
+  highlightTs?: number
+
+  /* Executive Briefing (Ultimate mode) */
+  briefingActive?: boolean
+  briefingPlan?: BriefingPlan | null
 }
 
 /* ── Ghost tint palette (no orange per spec) ── */
@@ -73,8 +88,16 @@ const CompareTerrainArea: React.FC<CompareTerrainAreaProps> = memo(
     onSelectA,
     onSelectB,
     onSelectC,
+    highlightTarget,
+    highlightTs,
+    briefingActive,
+    briefingPlan,
   }) => {
     const is3 = nScenarios === 3
+    const clockNowMs = useBriefingClock((s) => s.nowMs)
+    const clockPaused = useBriefingClock((s) => s.paused)
+    const clockActive = useBriefingClock((s) => s.active)
+    const clockLightingProgress = useBriefingClock((s) => s.lightingProgress)
 
     /* ═══ SPLIT VIEW ═══ */
     if (viewMode === "split") {
@@ -163,6 +186,31 @@ const CompareTerrainArea: React.FC<CompareTerrainAreaProps> = memo(
           >
             <CameraCompositionRig />
             <SkyAtmosphere />
+
+            {/* ── Terrain highlight FX (insight linking) ── */}
+            <TerrainHighlightFX
+              active={highlightTarget}
+              enabled={!!highlightTarget}
+              triggerTs={highlightTs}
+            />
+
+            {/* ── Executive Briefing in-canvas subsystems ── */}
+            {briefingActive && briefingPlan && (
+              <>
+                <CinematicCamera
+                  active={clockActive}
+                  shots={briefingPlan.shots}
+                  nowMs={clockNowMs}
+                  paused={clockPaused}
+                />
+                <LightingModulatorR3F active={clockActive} progress={clockLightingProgress} />
+                <OverlayEngine
+                  active={clockActive}
+                  events={briefingPlan.overlays}
+                  nowMs={clockNowMs}
+                />
+              </>
+            )}
 
             {/* Ghost B terrain — emerald tint */}
             <GhostTerrainSurface

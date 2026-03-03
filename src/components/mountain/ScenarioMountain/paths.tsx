@@ -5,6 +5,7 @@ import * as THREE from "three";
 
 import { clamp01 } from "./helpers";
 import { MODE_CONFIGS, type MountainMode } from "./types";
+import { sampleMountainHeight } from "./terrainSampler";
 
 // ============================================================================
 // STRATEGIC PATH + MILESTONES (lightweight overlays; no terrain rewrite)
@@ -15,19 +16,20 @@ export function StrategicPath({
   color,
   mode,
   glowIntensity,
+  dataPoints,
 }: {
   solverPath: { riskIndex: number; enterpriseValue: number; runway: number }[];
   color: string;
   mode: MountainMode;
   glowIntensity: number;
+  dataPoints?: number[];
 }) {
   const config = MODE_CONFIGS[mode] ?? MODE_CONFIGS.default;
   const lineRef = useRef<any>(null);
   const glowRef = useRef<any>(null);
 
   // Map solverPath points into a compact, stable curve above the mountain.
-  // This is intentionally heuristic: it gives a consistent "trajectory" overlay
-  // without needing to know the terrain heightfield in world-space.
+  // Path XY is projected to terrain, Z is terrain-sampled height + offset.
   const points = useMemo(() => {
     if (!solverPath?.length) return [];
     const maxRunway = Math.max(...solverPath.map((p) => p.runway || 0), 1);
@@ -45,12 +47,15 @@ export function StrategicPath({
 
       const x = (t - 0.5) * 10; // left↔right across the scene
       const y = -1.2 + t * 0.8; // slightly forward over time
-      const cutBoost = config.pathCutBoost ?? 1;
-      const z =
-        (0.3 + runway01 * 2.2 + ev01 * 1.2 - risk01 * 0.8) / cutBoost; // lift (deeper embed in strategy)
+
+      // Sample terrain height at this XY position and add hover offset
+      const terrainH = sampleMountainHeight(x, y, dataPoints);
+      const hoverOffset = 0.35;
+      const z = terrainH + hoverOffset + (runway01 * 0.3 + ev01 * 0.15 - risk01 * 0.1);
+
       return new THREE.Vector3(x, y, z);
     });
-  }, [solverPath, config]);
+  }, [solverPath, config, dataPoints]);
 
   const curvePoints = useMemo(() => {
     if (points.length < 2) return points;
@@ -80,7 +85,7 @@ export function StrategicPath({
   if (mode === "ghost" && config.pathGlow <= 0) return null;
 
   return (
-    <group>
+    <group renderOrder={100}>
       {/* Outer glow layer for depth and realism */}
       <DreiLine
         ref={glowRef}
@@ -126,11 +131,13 @@ export function MilestoneOrbs({
   mode,
   glowIntensity,
   solverPath,
+  dataPoints,
 }: {
   color: string;
   mode: MountainMode;
   glowIntensity: number;
   solverPath?: { riskIndex: number; enterpriseValue: number; runway: number }[];
+  dataPoints?: number[];
 }) {
   const config = MODE_CONFIGS[mode] ?? MODE_CONFIGS.default;
 
@@ -160,7 +167,8 @@ export function MilestoneOrbs({
       const risk01 = clamp01((p.riskIndex ?? 50) / 100);
       const x = (t - 0.5) * 10;
       const y = -1.2 + t * 0.8;
-      const z = 0.3 + runway01 * 2.2 + ev01 * 1.2 - risk01 * 0.8;
+      const terrainH = sampleMountainHeight(x, y, dataPoints);
+      const z = terrainH + 0.35 + (runway01 * 0.3 + ev01 * 0.15 - risk01 * 0.1);
       return new THREE.Vector3(x, y, z);
     });
 

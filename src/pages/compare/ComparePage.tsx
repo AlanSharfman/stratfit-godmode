@@ -1,6 +1,6 @@
 // src/pages/compare/ComparePage.tsx
 // ═══════════════════════════════════════════════════════════════════════════
-// STRATFIT — Compare Command Centre (Split ↔ Ghost Overlay)
+// STRATFIT — Compare Command Centre (Split ↔ Ghost ↔ Ultimate)
 //
 // Top 60%:  Terrain area
 //   Split mode  → side-by-side CompareTerrainPanels (2 or 3)
@@ -9,10 +9,11 @@
 //   Bottom-left  (60%): CompareTablePanel (KPI deltas)
 //   Bottom-right (40%): CompareInsightPanel (AI narrative)
 //
+// Ultimate mode: Executive Briefing — cinematic terrain presentation.
 // Query params:  ?view=split|ghost  &n=2|3
 // ═══════════════════════════════════════════════════════════════════════════
 
-import React, { useCallback, useEffect, useMemo } from "react"
+import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { Link, NavLink, useSearchParams } from "react-router-dom"
 
 import { ROUTES } from "@/routes/routeContract"
@@ -28,6 +29,13 @@ import CompareTablePanel from "@/components/compare/CompareTablePanel"
 import CompareInsightPanel from "@/components/compare/CompareInsightPanel"
 import { type ScenarioOption } from "@/components/compare/CompareScenarioSelect"
 import CommandModeStrip from "@/components/command/CommandModeStrip"
+import ProbabilityNotice from "@/components/legal/ProbabilityNotice"
+import CompareQueryPanel from "@/features/compare/CompareQueryPanel"
+import BriefingDirector from "@/features/intelligence/BriefingDirector"
+import { generateInvestorPlanStub } from "@/features/intelligence/generateInvestorPlanStub"
+import type { BriefingPlan } from "@/features/intelligence/BriefingDirector"
+import type { IntelligenceState } from "@/features/intelligence/intelligenceState"
+import type { HighlightState } from "@/features/compare/highlightContract"
 import { useCommandAutoEvaluate } from "@/hooks/useCommandAutoEvaluate"
 import type { TerrainEvent } from "@/domain/events/terrainEventTypes"
 
@@ -35,6 +43,16 @@ import type { TerrainEvent } from "@/domain/events/terrainEventTypes"
 
 export default function ComparePage() {
   const [searchParams, setSearchParams] = useSearchParams()
+
+  // ── Highlight state (insight → terrain linking) ──
+  const [highlight, setHighlight] = useState<HighlightState>({})
+  // ── Q&A panel state ──
+  const [showQA, setShowQA] = useState(false)
+  // ── Ultimate mode (Executive Briefing) ──
+  const [compareMode, setCompareMode] = useState<"standard" | "ultimate">("standard")
+  const [briefingActive, setBriefingActive] = useState(false)
+  const [briefingPlan, setBriefingPlan] = useState<BriefingPlan | null>(null)
+  const [briefingState, setBriefingState] = useState<IntelligenceState>("idle")
 
   const baseline = useCanonicalBaseline()
   const baselineHydrated = useBaselineStore((s) => s.isHydrated)
@@ -195,6 +213,24 @@ export default function ComparePage() {
   const availablePairs: ComparePair[] = is3Mode ? ["AB", "AC", "BC"] : ["AB"]
 
   const isGhost = viewMode === "ghost"
+  const isUltimate = compareMode === "ultimate"
+  const isBriefingPlaying = briefingState === "entering" || briefingState === "playing" || briefingState === "exiting"
+
+  // ── Generate briefing plan ──
+  const handleGenerateBriefing = useCallback(() => {
+    const plan = generateInvestorPlanStub(pairKpisL, pairKpisR, pairLabelL, pairLabelR)
+    setBriefingPlan(plan)
+    setBriefingActive(true)
+  }, [pairKpisL, pairKpisR, pairLabelL, pairLabelR])
+
+  const handleBriefingComplete = useCallback(() => {
+    setBriefingActive(false)
+    setBriefingPlan(null)
+  }, [])
+
+  const handleBriefingStateChange = useCallback((state: IntelligenceState) => {
+    setBriefingState(state)
+  }, [])
 
   // ── Loading guards ──
   if (!scenarioStoreHydrated || !baselineHydrated) {
@@ -245,6 +281,22 @@ export default function ComparePage() {
         </nav>
 
         <div style={S.headerRight}>
+          {/* Standard ↔ Ultimate toggle */}
+          <div style={S.modeToggle}>
+            <button
+              type="button"
+              onClick={() => { setCompareMode("standard"); setBriefingActive(false) }}
+              style={compareMode === "standard" ? S.modeBtnActive : S.modeBtn}
+              disabled={isBriefingPlaying}
+            >Standard</button>
+            <button
+              type="button"
+              onClick={() => setCompareMode("ultimate")}
+              style={compareMode === "ultimate" ? S.modeBtnUltimateActive : S.modeBtn}
+              disabled={isBriefingPlaying}
+            >Ultimate</button>
+          </div>
+
           {/* Split ↔ Ghost toggle */}
           <div style={S.viewToggle}>
             <button
@@ -289,13 +341,29 @@ export default function ComparePage() {
       {/* ── Headline strip ── */}
       <div style={S.headlineStrip}>
         <span style={S.headlineText}>{headline}</span>
-        {isGhost && (
+        {isGhost && !isBriefingPlaying && (
           <span style={S.headlineBadge}>GHOST OVERLAY</span>
+        )}
+        {isUltimate && !isBriefingPlaying && (
+          <button
+            type="button"
+            onClick={handleGenerateBriefing}
+            style={S.generateBtn}
+            disabled={!pairKpisL || !pairKpisR}
+          >
+            ◈ Generate Executive Briefing
+          </button>
+        )}
+        {isBriefingPlaying && (
+          <span style={S.briefingBadge}>EXECUTIVE BRIEFING</span>
         )}
       </div>
 
       {/* ═══ MAIN GRID: Terrain (60%) + Analytics (40%) ═══ */}
-      <div style={S.commandGrid}>
+      <div style={{
+        ...S.commandGrid,
+        ...(isBriefingPlaying ? { gridTemplateRows: "1fr" } : {}),
+      }}>
 
         {/* ── TOP: Terrain Area ── */}
         <div style={S.terrainRow}>
@@ -334,11 +402,18 @@ export default function ComparePage() {
             onSelectA={setAId}
             onSelectB={setBId}
             onSelectC={setCId}
+            highlightTarget={highlight.active}
+            highlightTs={highlight.ts}
+            briefingActive={briefingActive}
+            briefingPlan={briefingPlan}
           />
         </div>
 
-        {/* ── BOTTOM: Analytics ── */}
-        <div style={S.analyticsRow}>
+        {/* ── BOTTOM: Analytics (hidden during briefing) ── */}
+        <div style={{
+          ...S.analyticsRow,
+          ...(isBriefingPlaying ? { display: "none" } : {}),
+        }}>
           {/* Left 60%: Table */}
           <div style={S.analyticsLeft}>
             <CompareTablePanel
@@ -352,7 +427,7 @@ export default function ComparePage() {
             />
           </div>
 
-          {/* Right 40%: AI Insights */}
+          {/* Right 40%: AI Insights + Q&A button + Probability Notice */}
           <div style={S.analyticsRight}>
             <CompareInsightPanel
               kpisA={pairKpisL}
@@ -362,7 +437,22 @@ export default function ComparePage() {
               summaryA={activePair === "BC" ? scenarioB?.simulationResults?.summary : scenarioA?.simulationResults?.summary}
               summaryB={activePair === "AC" ? scenarioC?.simulationResults?.summary : activePair === "BC" ? scenarioC?.simulationResults?.summary : scenarioB?.simulationResults?.summary}
               activePair={activePair}
+              onHighlight={setHighlight}
             />
+
+            {/* Q&A trigger + Probability notice */}
+            <div style={S.insightFooter}>
+              <button
+                type="button"
+                onClick={() => setShowQA(true)}
+                style={S.qaBtn}
+                title="Ask a structured question about this comparison"
+              >
+                <span style={S.qaBtnIcon}>◈</span>
+                Ask about comparison
+              </button>
+              <ProbabilityNotice mode="tooltip" />
+            </div>
           </div>
         </div>
       </div>
@@ -371,6 +461,27 @@ export default function ComparePage() {
       <div style={S.commandStrip}>
         <CommandModeStrip engineResults={activeSimResults} />
       </div>
+
+      {/* ── Briefing Director ── */}
+      <BriefingDirector
+        active={briefingActive}
+        plan={briefingPlan}
+        onComplete={handleBriefingComplete}
+        onStateChange={handleBriefingStateChange}
+        ttsEnabled={false}
+      />
+
+      {/* ── Q&A Modal ── */}
+      {showQA && !isBriefingPlaying && (
+        <CompareQueryPanel
+          kpisA={pairKpisL}
+          kpisB={pairKpisR}
+          labelA={pairLabelL}
+          labelB={pairLabelR}
+          onClose={() => setShowQA(false)}
+          onHighlight={setHighlight}
+        />
+      )}
 
       {/* Legal */}
       <div style={S.legal}>
@@ -620,6 +731,82 @@ const S: Record<string, React.CSSProperties> = {
     textTransform: "uppercase" as const,
   },
 
+  briefingBadge: {
+    fontSize: 8,
+    fontWeight: 800,
+    letterSpacing: "0.16em",
+    color: "rgba(16,185,129,0.85)",
+    background: "rgba(16,185,129,0.1)",
+    padding: "2px 8px",
+    borderRadius: 3,
+    marginLeft: 12,
+    textTransform: "uppercase" as const,
+  },
+
+  generateBtn: {
+    marginLeft: 12,
+    padding: "4px 12px",
+    borderRadius: 4,
+    border: "1px solid rgba(16,185,129,0.2)",
+    background: "rgba(16,185,129,0.08)",
+    color: "rgba(16,185,129,0.85)",
+    fontSize: 9,
+    fontWeight: 700,
+    fontFamily: FONT,
+    cursor: "pointer",
+    letterSpacing: "0.06em",
+    textTransform: "uppercase" as const,
+    transition: "background 200ms ease",
+  },
+
+  modeToggle: {
+    display: "flex",
+    gap: 0,
+    borderRadius: 4,
+    overflow: "hidden",
+    border: GLASS_BORDER,
+  },
+
+  modeBtn: {
+    padding: "4px 10px",
+    border: "none",
+    background: "rgba(0,0,0,0.3)",
+    color: "rgba(148,180,214,0.5)",
+    fontSize: 10,
+    fontWeight: 600,
+    fontFamily: FONT,
+    cursor: "pointer",
+    letterSpacing: "0.06em",
+    transition: "background 200ms ease, color 200ms ease",
+    textTransform: "uppercase" as const,
+  },
+
+  modeBtnActive: {
+    padding: "4px 10px",
+    border: "none",
+    background: "rgba(34,211,238,0.12)",
+    color: CYAN,
+    fontSize: 10,
+    fontWeight: 800,
+    fontFamily: FONT,
+    cursor: "pointer",
+    letterSpacing: "0.06em",
+    textTransform: "uppercase" as const,
+  },
+
+  modeBtnUltimateActive: {
+    padding: "4px 10px",
+    border: "none",
+    background: "rgba(16,185,129,0.12)",
+    color: "rgba(16,185,129,0.9)",
+    fontSize: 10,
+    fontWeight: 800,
+    fontFamily: FONT,
+    cursor: "pointer",
+    letterSpacing: "0.06em",
+    textTransform: "uppercase" as const,
+  },
+
   /* ── Command Grid ── */
   commandGrid: {
     flex: 1,
@@ -654,6 +841,38 @@ const S: Record<string, React.CSSProperties> = {
   analyticsRight: {
     minHeight: 0,
     overflow: "hidden",
+    display: "flex",
+    flexDirection: "column",
+  },
+
+  insightFooter: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "4px 8px",
+    flexShrink: 0,
+  },
+
+  qaBtn: {
+    display: "flex",
+    alignItems: "center",
+    gap: 5,
+    padding: "5px 10px",
+    borderRadius: 5,
+    border: "1px solid rgba(34,211,238,0.12)",
+    background: "rgba(34,211,238,0.04)",
+    color: "rgba(34,211,238,0.6)",
+    fontSize: 9,
+    fontWeight: 600,
+    fontFamily: FONT,
+    cursor: "pointer",
+    letterSpacing: "0.04em",
+    transition: "background 180ms ease, color 180ms ease",
+    textTransform: "uppercase" as const,
+  },
+
+  qaBtnIcon: {
+    fontSize: 11,
   },
 
   commandStrip: {

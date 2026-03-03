@@ -4,12 +4,17 @@
 //
 // Delta narrative, key drivers, risk commentary, and next investigations.
 // Structured for future AI wiring. Uses simulation summary + heuristics.
+//
+// Insight items can reference terrain targets — hover/click fires
+// onHighlight(target) so the parent can drive TerrainHighlightFX.
 // ═══════════════════════════════════════════════════════════════════════════
 
-import React, { memo, useMemo } from "react"
+import React, { memo, useCallback, useMemo, useState } from "react"
 import type { SimulationKpis } from "@/state/phase1ScenarioStore"
 import { selectRiskScore } from "@/selectors/riskSelectors"
 import type { ComparePair } from "@/store/compareStore"
+import type { HighlightTarget, HighlightState } from "@/features/compare/highlightContract"
+import { CANONICAL_TARGETS } from "@/features/compare/highlightContract"
 
 export interface CompareInsightPanelProps {
   kpisA: SimulationKpis | null
@@ -19,15 +24,26 @@ export interface CompareInsightPanelProps {
   summaryA?: string
   summaryB?: string
   activePair: ComparePair
+  /** Callback to drive terrain highlight FX */
+  onHighlight?: (state: HighlightState) => void
+}
+
+// ── Insight Item (text + optional terrain target) ──
+
+interface InsightItem {
+  id: string
+  text: string
+  target?: HighlightTarget
 }
 
 // ── Insight Generation ──
 
 interface Insights {
   executive: string
-  drivers: string[]
+  drivers: InsightItem[]
   risk: string
-  nextInvestigation: string[]
+  riskTarget?: HighlightTarget
+  nextInvestigation: InsightItem[]
 }
 
 function generateInsights(
@@ -41,9 +57,9 @@ function generateInsights(
   if (!kpisA || !kpisB) {
     return {
       executive: "Select two scenarios with completed simulations to generate delta insights.",
-      drivers: ["Awaiting scenario data…"],
+      drivers: [{ id: "d-wait", text: "Awaiting scenario data…" }],
       risk: "No risk differential available without completed simulations.",
-      nextInvestigation: ["Complete at least two scenario simulations to enable comparison intelligence."],
+      nextInvestigation: [{ id: "n-wait", text: "Complete at least two scenario simulations to enable comparison intelligence." }],
     }
   }
 
@@ -73,58 +89,100 @@ function generateInsights(
     executive = `${labelA} outperforms on revenue by ${Math.abs(revPct).toFixed(1)}%. ${labelB} ${riskDelta < -3 ? "offers lower structural risk, creating a risk-return trade-off" : "does not materially reduce risk, weakening the case for the revenue sacrifice"}.`
   }
 
-  // ── Key drivers ──
-  const drivers: string[] = []
+  // ── Key drivers (with terrain targets) ──
+  const drivers: InsightItem[] = []
   if (Math.abs(revDelta) > 0) {
-    drivers.push(`Revenue ${revDelta > 0 ? "increases" : "decreases"} by ${fmtCurrency(Math.abs(revDelta))} (${Math.abs(revPct).toFixed(1)}%) — ${Math.abs(revPct) > 20 ? "material shift in top-line trajectory" : "incremental variance"}.`)
+    drivers.push({
+      id: "d-rev",
+      text: `Revenue ${revDelta > 0 ? "increases" : "decreases"} by ${fmtCurrency(Math.abs(revDelta))} (${Math.abs(revPct).toFixed(1)}%) — ${Math.abs(revPct) > 20 ? "material shift in top-line trajectory" : "incremental variance"}.`,
+      target: CANONICAL_TARGETS.revenueGrowth,
+    })
   }
   if (Math.abs(burnDelta) > 0) {
-    drivers.push(`Burn rate ${burnDelta > 0 ? "increases" : "decreases"} by ${fmtCurrency(Math.abs(burnDelta))}/mo${burnDelta > 0 ? ", compressing operational flexibility" : ", improving capital efficiency"}.`)
+    drivers.push({
+      id: "d-burn",
+      text: `Burn rate ${burnDelta > 0 ? "increases" : "decreases"} by ${fmtCurrency(Math.abs(burnDelta))}/mo${burnDelta > 0 ? ", compressing operational flexibility" : ", improving capital efficiency"}.`,
+      target: CANONICAL_TARGETS.burnEfficiency,
+    })
   }
   if (Math.abs(marginDelta) > 1) {
-    drivers.push(`Gross margin ${marginDelta > 0 ? "improves" : "declines"} by ${Math.abs(marginDelta).toFixed(1)}pp — ${Math.abs(marginDelta) > 5 ? "structural unit-economics shift" : "moderate movement"}.`)
+    drivers.push({
+      id: "d-margin",
+      text: `Gross margin ${marginDelta > 0 ? "improves" : "declines"} by ${Math.abs(marginDelta).toFixed(1)}pp — ${Math.abs(marginDelta) > 5 ? "structural unit-economics shift" : "moderate movement"}.`,
+      target: CANONICAL_TARGETS.revenueGrowth,
+    })
   }
   if (Math.abs(growthDelta) > 0.01) {
-    drivers.push(`Growth rate delta of ${(growthDelta * 100).toFixed(1)}pp — ${Math.abs(growthDelta) > 0.05 ? "step-change in trajectory" : "incremental adjustment"}.`)
+    drivers.push({
+      id: "d-growth",
+      text: `Growth rate delta of ${(growthDelta * 100).toFixed(1)}pp — ${Math.abs(growthDelta) > 0.05 ? "step-change in trajectory" : "incremental adjustment"}.`,
+      target: CANONICAL_TARGETS.revenueGrowth,
+    })
   }
   if (Math.abs(churnDelta) > 0.005) {
-    drivers.push(`Churn ${churnDelta > 0 ? "increases" : "decreases"} by ${Math.abs(churnDelta * 100).toFixed(1)}pp — ${Math.abs(churnDelta) > 0.02 ? "retention signal requires attention" : "watchable but manageable"}.`)
+    drivers.push({
+      id: "d-churn",
+      text: `Churn ${churnDelta > 0 ? "increases" : "decreases"} by ${Math.abs(churnDelta * 100).toFixed(1)}pp — ${Math.abs(churnDelta) > 0.02 ? "retention signal requires attention" : "watchable but manageable"}.`,
+      target: CANONICAL_TARGETS.demandVolatility,
+    })
   }
-  if (drivers.length === 0) drivers.push("No material structural drivers identified between scenarios.")
+  if (drivers.length === 0) drivers.push({ id: "d-none", text: "No material structural drivers identified between scenarios." })
 
   // ── Risk commentary ──
   let risk: string
+  let riskTarget: HighlightTarget | undefined
   if (Math.abs(riskDelta) < 3) {
     risk = `Risk profiles are broadly equivalent (${riskA.toFixed(0)} vs ${riskB.toFixed(0)}). Neither scenario materially changes the company's structural risk exposure. Probability of capital exhaustion remains within the same confidence band.`
   } else if (riskDelta > 0) {
     risk = `${labelB} increases structural risk by ${riskDelta.toFixed(0)}pts (${riskA.toFixed(0)}→${riskB.toFixed(0)}). ${riskDelta > 15 ? "This is a significant escalation — probability of runway exhaustion increases meaningfully. Capital planning should be revisited." : "Elevated but manageable if offset by growth returns. Monitor monthly burn-to-revenue ratio."}`
+    riskTarget = CANONICAL_TARGETS.fundingRisk
   } else {
     risk = `${labelB} reduces structural risk by ${Math.abs(riskDelta).toFixed(0)}pts (${riskA.toFixed(0)}→${riskB.toFixed(0)}). ${Math.abs(riskDelta) > 15 ? "Material de-risking — this meaningfully widens the survival corridor." : "Directionally positive. Survival probability improves modestly."}`
+    riskTarget = CANONICAL_TARGETS.runwayHorizon
   }
 
   // ── Next investigation ──
-  const nextInvestigation: string[] = []
+  const nextInvestigation: InsightItem[] = []
   if (Math.abs(revPct) > 15) {
-    nextInvestigation.push("Validate revenue assumptions with cohort-level data — top-line variance of this magnitude warrants bottom-up verification.")
+    nextInvestigation.push({
+      id: "n-rev",
+      text: "Validate revenue assumptions with cohort-level data — top-line variance of this magnitude warrants bottom-up verification.",
+      target: CANONICAL_TARGETS.revenueGrowth,
+    })
   }
   if (runwayDelta < -3) {
-    nextInvestigation.push("Model capital raise timing under the shorter-runway scenario — assess whether bridge or extension is required.")
+    nextInvestigation.push({
+      id: "n-runway",
+      text: "Model capital raise timing under the shorter-runway scenario — assess whether bridge or extension is required.",
+      target: CANONICAL_TARGETS.runwayHorizon,
+    })
   }
   if (Math.abs(churnDelta) > 0.015) {
-    nextInvestigation.push("Examine churn drivers by segment — determine whether the delta is concentration-driven or systemic.")
+    nextInvestigation.push({
+      id: "n-churn",
+      text: "Examine churn drivers by segment — determine whether the delta is concentration-driven or systemic.",
+      target: CANONICAL_TARGETS.demandVolatility,
+    })
   }
   if (Math.abs(marginDelta) > 5) {
-    nextInvestigation.push("Decompose gross margin shift into COGS components — identify whether driven by pricing, mix, or cost structure.")
+    nextInvestigation.push({
+      id: "n-margin",
+      text: "Decompose gross margin shift into COGS components — identify whether driven by pricing, mix, or cost structure.",
+    })
   }
   if (burnDelta > 50_000) {
-    nextInvestigation.push("Audit incremental burn against hiring plan — ensure spend aligns with revenue-generating capacity.")
+    nextInvestigation.push({
+      id: "n-burn",
+      text: "Audit incremental burn against hiring plan — ensure spend aligns with revenue-generating capacity.",
+      target: CANONICAL_TARGETS.burnEfficiency,
+    })
   }
   if (nextInvestigation.length === 0) {
-    nextInvestigation.push("Run sensitivity analysis on key assumptions to identify which lever most affects the variance.")
-    nextInvestigation.push("Consider adding a third scenario to test an alternative strategic path.")
+    nextInvestigation.push({ id: "n-sens", text: "Run sensitivity analysis on key assumptions to identify which lever most affects the variance." })
+    nextInvestigation.push({ id: "n-3rd", text: "Consider adding a third scenario to test an alternative strategic path." })
   }
 
-  return { executive, drivers, risk, nextInvestigation }
+  return { executive, drivers, risk, riskTarget, nextInvestigation }
 }
 
 function fmtCurrency(v: number): string {
@@ -143,11 +201,41 @@ const CompareInsightPanel: React.FC<CompareInsightPanelProps> = memo(({
   summaryA,
   summaryB,
   activePair,
+  onHighlight,
 }) => {
   const insights = useMemo(
     () => generateInsights(kpisA, kpisB, labelA, labelB, summaryA, summaryB),
     [kpisA, kpisB, labelA, labelB, summaryA, summaryB],
   )
+
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
+
+  const fireHighlight = useCallback(
+    (item: InsightItem) => {
+      if (!onHighlight || !item.target) return
+      onHighlight({ active: item.target, sourceId: item.id, ts: Date.now() })
+    },
+    [onHighlight],
+  )
+
+  const clearHighlight = useCallback(() => {
+    onHighlight?.({ active: undefined, sourceId: undefined, ts: Date.now() })
+    setHoveredId(null)
+  }, [onHighlight])
+
+  const handleItemEnter = useCallback(
+    (item: InsightItem) => {
+      setHoveredId(item.id)
+      fireHighlight(item)
+    },
+    [fireHighlight],
+  )
+
+  const handleRiskEnter = useCallback(() => {
+    if (!onHighlight || !insights.riskTarget) return
+    setHoveredId("risk")
+    onHighlight({ active: insights.riskTarget, sourceId: "risk", ts: Date.now() })
+  }, [onHighlight, insights.riskTarget])
 
   return (
     <div style={S.panel}>
@@ -170,10 +258,21 @@ const CompareInsightPanel: React.FC<CompareInsightPanelProps> = memo(({
         <section style={S.section}>
           <h4 style={S.sectionHead}>Key Drivers</h4>
           <ul style={S.list}>
-            {insights.drivers.map((d, i) => (
-              <li key={i} style={S.listItem}>
-                <span style={S.bullet}>▸</span>
-                <span style={S.bodyText}>{d}</span>
+            {insights.drivers.map((d) => (
+              <li
+                key={d.id}
+                style={{
+                  ...S.listItem,
+                  ...(d.target ? S.listItemHoverable : {}),
+                  ...(hoveredId === d.id ? S.listItemHovered : {}),
+                }}
+                onMouseEnter={() => handleItemEnter(d)}
+                onMouseLeave={clearHighlight}
+                onClick={() => fireHighlight(d)}
+              >
+                <span style={S.bullet}>{d.target ? "⬡" : "▸"}</span>
+                <span style={S.bodyText}>{d.text}</span>
+                {d.target && <span style={S.linkIcon}>⌖</span>}
               </li>
             ))}
           </ul>
@@ -182,17 +281,38 @@ const CompareInsightPanel: React.FC<CompareInsightPanelProps> = memo(({
         {/* Risk */}
         <section style={S.section}>
           <h4 style={S.sectionHead}>Risk Commentary</h4>
-          <p style={S.bodyText}>{insights.risk}</p>
+          <p
+            style={{
+              ...S.bodyText,
+              ...(insights.riskTarget ? S.textHoverable : {}),
+              ...(hoveredId === "risk" ? S.textHovered : {}),
+            }}
+            onMouseEnter={handleRiskEnter}
+            onMouseLeave={clearHighlight}
+          >
+            {insights.risk}
+          </p>
         </section>
 
         {/* Next */}
         <section style={S.section}>
           <h4 style={S.sectionHead}>Next Signals to Examine</h4>
           <ul style={S.list}>
-            {insights.nextInvestigation.map((n, i) => (
-              <li key={i} style={S.listItem}>
-                <span style={S.bullet}>→</span>
-                <span style={S.bodyText}>{n}</span>
+            {insights.nextInvestigation.map((n) => (
+              <li
+                key={n.id}
+                style={{
+                  ...S.listItem,
+                  ...(n.target ? S.listItemHoverable : {}),
+                  ...(hoveredId === n.id ? S.listItemHovered : {}),
+                }}
+                onMouseEnter={() => handleItemEnter(n)}
+                onMouseLeave={clearHighlight}
+                onClick={() => fireHighlight(n)}
+              >
+                <span style={S.bullet}>{n.target ? "⬡" : "→"}</span>
+                <span style={S.bodyText}>{n.text}</span>
+                {n.target && <span style={S.linkIcon}>⌖</span>}
               </li>
             ))}
           </ul>
@@ -310,5 +430,39 @@ const S: Record<string, React.CSSProperties> = {
     color: "rgba(34,211,238,0.4)",
     flexShrink: 0,
     marginTop: 1,
+  },
+
+  /* ── Highlight-linked items ── */
+  listItemHoverable: {
+    cursor: "pointer",
+    borderRadius: 4,
+    padding: "3px 4px",
+    margin: "-3px -4px",
+    transition: "background 180ms ease, border-color 180ms ease",
+    borderLeft: "2px solid transparent",
+  },
+
+  listItemHovered: {
+    background: "rgba(34,211,238,0.06)",
+    borderLeftColor: "rgba(34,211,238,0.5)",
+  },
+
+  textHoverable: {
+    cursor: "pointer",
+    borderRadius: 4,
+    padding: "3px 4px",
+    transition: "background 180ms ease",
+  },
+
+  textHovered: {
+    background: "rgba(34,211,238,0.06)",
+  },
+
+  linkIcon: {
+    fontSize: 10,
+    color: "rgba(34,211,238,0.3)",
+    marginLeft: "auto",
+    flexShrink: 0,
+    paddingLeft: 4,
   },
 }

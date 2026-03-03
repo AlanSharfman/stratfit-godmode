@@ -37,6 +37,7 @@ import { clamp01, lerp, smoothSeismicNoise } from "./helpers";
 import { ContinuityCues } from "./markers";
 import { SCENARIO_PALETTE_COLORS, paletteForScenario, heightColor, godModePalette } from "./materials";
 import { MilestoneOrbs, StrategicPath } from "./paths";
+import { sampleMountainHeight } from "./terrainSampler";
 import { MODE_CONFIGS, type ModeConfig, type MountainMode } from "./types";
 
 // ============================================================================
@@ -655,6 +656,7 @@ function GhostTerrain({ isVisible, opacityMultiplier = 1 }: { isVisible: boolean
       rotation={[-Math.PI / 2, 0, 0]} 
       position={[0, -2.15, 0]}
       scale={[0.995, 0.995, 0.995]} // Slightly smaller to avoid Z-fighting
+      renderOrder={10}
     >
       {/* Ghost Wireframe — Tactical Silver baseline (blueprint look) */}
       <mesh geometry={geometry}>
@@ -797,7 +799,7 @@ function ConfidenceEnvelope({
   if (!geometry) return null;
 
   return (
-    <group rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.97, 0]} scale={[0.902, 0.902, 0.902]}>
+    <group rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.97, 0]} scale={[0.902, 0.902, 0.902]} renderOrder={50}>
       {/* Upper envelope wireframe — desaturated cyan */}
       <mesh geometry={geometry}>
         <meshBasicMaterial
@@ -1930,6 +1932,7 @@ export function ScenarioMountainImpl({
             color={pathColor ?? scenarioColor ?? SCENARIO_PALETTE_COLORS[scenarioId]?.active ?? "#22d3ee"}
             mode={mode}
             glowIntensity={glowIntensity}
+            dataPoints={resolvedDataPoints}
           />
         ) : null}
 
@@ -1947,7 +1950,8 @@ export function ScenarioMountainImpl({
             const risk01 = Math.max(0, Math.min(1, (p.riskIndex ?? 50) / 100));
             const x = -0.5 * 10;
             const y = -1.2;
-            const z = (0.3 + r01 * 2.2 + ev01 * 1.2 - risk01 * 0.8) / (config.pathCutBoost ?? 1);
+            const terrainH = sampleMountainHeight(x, y, resolvedDataPoints);
+            const z = terrainH + 0.35 + (r01 * 0.3 + ev01 * 0.15 - risk01 * 0.1);
             return [x, y, z] as [number, number, number];
           })()}
           forward={(() => {
@@ -1961,7 +1965,8 @@ export function ScenarioMountainImpl({
             const risk01 = Math.max(0, Math.min(1, (p.riskIndex ?? 50) / 100));
             const x = -0.5 * 10;
             const y = -1.2;
-            const z = (0.3 + r01 * 2.2 + ev01 * 1.2 - risk01 * 0.8) / (config.pathCutBoost ?? 1);
+            const terrainH = sampleMountainHeight(x, y, resolvedDataPoints);
+            const z = terrainH + 0.35 + (r01 * 0.3 + ev01 * 0.15 - risk01 * 0.1);
             return [x, y, z - 6] as [number, number, number];
           })()}
         />
@@ -1971,15 +1976,19 @@ export function ScenarioMountainImpl({
             mode={mode}
             glowIntensity={glowIntensity}
             solverPath={solverPath}
+            dataPoints={resolvedDataPoints}
           />
         ) : null}
 
-        <CameraResetEffect
-          resetKey={resetViewKey}
-          controlsRef={controlsRef}
-          cameraPosition={cameraConfig.position}
-          target={orbitTarget}
-        />
+        {/* Guard: skip camera reset when god mode / cinematic camera is driving */}
+        {!isGodMode && (
+          <CameraResetEffect
+            resetKey={resetViewKey}
+            controlsRef={controlsRef}
+            cameraPosition={cameraConfig.position}
+            target={orbitTarget}
+          />
+        )}
         
         {/* GOD MODE: Subtle auto-rotation + locked zoom | Default: standard controls */}
         <OrbitControls 
