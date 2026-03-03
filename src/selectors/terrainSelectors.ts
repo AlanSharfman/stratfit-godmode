@@ -8,6 +8,12 @@
 import type { SimulationResults, TerrainData } from "@/state/phase1ScenarioStore"
 import type { TerrainEvent } from "@/domain/events/terrainEventTypes"
 
+// Re-export timeline selectors for unified access
+export {
+  selectTimelineTerrainMetrics,
+  lerpTerrainMetrics,
+} from "@/selectors/timelineTerrainSelectors"
+
 /**
  * Extract terrain data from Phase1 simulation results.
  * Returns null if results are missing or incomplete.

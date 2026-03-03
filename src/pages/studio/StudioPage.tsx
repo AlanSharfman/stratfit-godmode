@@ -41,6 +41,17 @@ import HeatmapOverlay from "@/components/command/HeatmapOverlay"
 import CodeOverlay from "@/components/command/CodeOverlay"
 import { selectRiskScore } from "@/selectors/riskSelectors"
 
+// ── Timeline Simulation Engine ──
+import { useStudioTimelineStore } from "@/stores/studioTimelineStore"
+import { useTimelineTerrainMetrics } from "@/hooks/useTimelineTerrainMetrics"
+import { useTimelineResolutionWarning } from "@/hooks/useTimelineResolutionWarning"
+import { useTimelinePerformanceSafety } from "@/hooks/useTimelinePerformanceSafety"
+import TimelineScrubber from "@/components/studio/TimelineScrubber"
+import SimulationPlayback from "@/components/studio/SimulationPlayback"
+import TimelineMetrics from "@/components/studio/TimelineMetrics"
+import TimelineInsights from "@/components/studio/TimelineInsights"
+import type { TimelineResolution } from "@/core/simulation/timelineTypes"
+
 /* ── Lever value formatting (same as DecisionPage) ───────── */
 
 function formatLeverValue(val: number, lever: LeverSchema): string {
@@ -181,6 +192,35 @@ export default function StudioPage() {
     }
   }, [activeScenario?.id, activeScenario?.simulationResults])
 
+  // ── Timeline Simulation Engine ──
+  const tlResolution = useStudioTimelineStore((s) => s.resolution)
+  const tlHorizon = useStudioTimelineStore((s) => s.horizon)
+  const tlTimeline = useStudioTimelineStore((s) => s.timeline)
+  const tlCurrentStep = useStudioTimelineStore((s) => s.currentStep)
+  const tlEngineResults = useStudioTimelineStore((s) => s.engineResults)
+  const tlSetResolution = useStudioTimelineStore((s) => s.setResolution)
+  const tlSetHorizon = useStudioTimelineStore((s) => s.setHorizon)
+  const tlGenerate = useStudioTimelineStore((s) => s.generateTimeline)
+
+  const timelineTerrainMetrics = useTimelineTerrainMetrics()
+  const resolutionWarning = useTimelineResolutionWarning()
+  const perfSafety = useTimelinePerformanceSafety()
+
+  const tlCurrentPoint = useMemo(() => {
+    return tlEngineResults?.timeline[tlCurrentStep] ?? null
+  }, [tlEngineResults, tlCurrentStep])
+
+  const tlPreviousPoint = useMemo(() => {
+    if (!tlEngineResults || tlCurrentStep <= 0) return null
+    return tlEngineResults.timeline[tlCurrentStep - 1] ?? null
+  }, [tlEngineResults, tlCurrentStep])
+
+  // Merge terrain metrics: timeline overrides scenario if timeline is active
+  const effectiveTerrainMetrics = useMemo<TerrainMetrics | undefined>(() => {
+    if (timelineTerrainMetrics) return timelineTerrainMetrics
+    return terrainMetrics
+  }, [timelineTerrainMetrics, terrainMetrics])
+
   // ── Loading / redirect guards ──
   if (!scenarioStoreHydrated || !baselineHydrated) {
     return (
@@ -292,6 +332,59 @@ export default function StudioPage() {
             placeholder="Studio scenario"
           />
 
+          {/* ── Timeline Config ── */}
+          <div style={{ ...S.sectionHeader, marginTop: 18 }}>
+            <span style={S.sectionIcon}>◈</span>
+            <span style={S.sectionTitle}>Timeline</span>
+          </div>
+
+          <div style={S.timelineConfigRow}>
+            <label style={S.timelineLabel}>Resolution</label>
+            <select
+              value={tlResolution}
+              onChange={(e) => tlSetResolution(e.target.value as TimelineResolution)}
+              style={{ ...S.select, marginBottom: 0 }}
+            >
+              <option value="monthly">Monthly</option>
+              <option value="quarterly">Quarterly</option>
+              <option value="yearly">Yearly</option>
+            </select>
+          </div>
+
+          <div style={{ ...S.timelineConfigRow, marginTop: 6 }}>
+            <label style={S.timelineLabel}>Horizon (years)</label>
+            <input
+              type="number"
+              min={1}
+              max={10}
+              value={tlHorizon}
+              onChange={(e) => tlSetHorizon(Number(e.target.value))}
+              style={{ ...S.textInput, width: 60, textAlign: "center" }}
+            />
+          </div>
+
+          {/* Resolution warning */}
+          {resolutionWarning.active && (
+            <div style={S.resolutionWarning}>
+              ⚠ {resolutionWarning.message}
+            </div>
+          )}
+
+          {/* Performance warning */}
+          {perfSafety.reduced && (
+            <div style={S.resolutionWarning}>
+              ⚡ {perfSafety.warning}
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={tlGenerate}
+            style={S.generateBtn}
+          >
+            Generate Timeline
+          </button>
+
           {/* Levers */}
           <div style={{ ...S.sectionHeader, marginTop: 18 }}>
             <span style={S.sectionIcon}>▸</span>
@@ -359,14 +452,14 @@ export default function StudioPage() {
           </div>
         </aside>
 
-        {/* ── CENTER: Terrain ── */}
+        {/* ── CENTER: Terrain + Timeline ── */}
         <main style={S.center}>
           <div style={S.terrainViewport}>
             <TerrainStage
               lockCamera={false}
               pathsEnabled={false}
               terrainMetrics={{
-                ...(terrainMetrics ?? {
+                ...(effectiveTerrainMetrics ?? {
                   elevationScale: 1,
                   roughness: 1,
                   liquidityDepth: 1,
@@ -383,13 +476,13 @@ export default function StudioPage() {
             <TerrainNavWidget />
             {/* ── Command Mode overlays ── */}
             <HeatmapOverlay
-              terrainMetrics={terrainMetrics ?? null}
+              terrainMetrics={effectiveTerrainMetrics ?? null}
               riskScore={riskScoreForOverlays}
               visible={commandMode === "heatmap"}
             />
             <CodeOverlay
               kpis={activeSimResults?.kpis ?? null}
-              terrainMetrics={terrainMetrics ?? null}
+              terrainMetrics={effectiveTerrainMetrics ?? null}
               riskScore={riskScoreForOverlays}
               visible={commandMode === "code"}
             />
@@ -398,6 +491,33 @@ export default function StudioPage() {
               <CommandModeStrip engineResults={activeSimResults} />
             </div>
           </div>
+
+          {/* ═══ TIMELINE CONTROL BAR ═══ */}
+          {tlTimeline.length > 0 && (
+            <div style={S.timelineBar}>
+              <SimulationPlayback />
+              <TimelineScrubber />
+            </div>
+          )}
+
+          {/* ═══ BOTTOM: Timeline Intelligence + KPI Panel ═══ */}
+          {tlEngineResults && (
+            <div style={S.bottomPanel}>
+              <div style={S.bottomLeft}>
+                <TimelineInsights
+                  engineTimeline={tlEngineResults.timeline}
+                  timelineSteps={tlTimeline}
+                  currentStep={tlCurrentStep}
+                />
+              </div>
+              <div style={S.bottomRight}>
+                <TimelineMetrics
+                  currentPoint={tlCurrentPoint}
+                  previousPoint={tlPreviousPoint}
+                />
+              </div>
+            </div>
+          )}
         </main>
 
         {/* ── RIGHT: Signal Brief / Narrative ── */}
@@ -778,20 +898,23 @@ const S: Record<string, React.CSSProperties> = {
   /* ── Center ── */
   center: {
     gridColumn: 2,
-    position: "relative" as const,
+    display: "flex",
+    flexDirection: "column" as const,
     minHeight: 0,
     background: VOID,
     overflow: "hidden",
   },
 
   terrainViewport: {
-    position: "absolute" as const,
-    inset: 8,
+    position: "relative" as const,
+    flex: 1,
+    margin: 8,
     borderRadius: 12,
     overflow: "hidden",
     border: "2px solid rgba(220,230,245,0.35)",
     boxShadow: "0 0 0 2px rgba(255,255,255,0.15), 0 0 0 5px rgba(6,10,16,0.85), 0 18px 80px rgba(0,0,0,0.55)",
     background: VOID,
+    minHeight: 0,
   },
 
   canvasVignette: {
@@ -859,5 +982,92 @@ const S: Record<string, React.CSSProperties> = {
     textAlign: "center" as const,
     pointerEvents: "none" as const,
     zIndex: 5,
+  },
+
+  /* ── Timeline Config ── */
+  timelineConfigRow: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+    marginTop: 4,
+  },
+
+  timelineLabel: {
+    fontSize: 10,
+    fontWeight: 600,
+    color: "rgba(148,180,214,0.55)",
+    letterSpacing: "0.04em",
+    flexShrink: 0,
+  },
+
+  resolutionWarning: {
+    marginTop: 6,
+    padding: "6px 8px",
+    borderRadius: 4,
+    background: "rgba(250, 204, 21, 0.08)",
+    border: "1px solid rgba(250, 204, 21, 0.2)",
+    fontSize: 10,
+    color: "rgba(250, 204, 21, 0.85)",
+    lineHeight: 1.4,
+  },
+
+  generateBtn: {
+    marginTop: 8,
+    padding: "7px 14px",
+    borderRadius: 6,
+    border: "1px solid rgba(34,211,238,0.2)",
+    background: "rgba(34,211,238,0.08)",
+    color: CYAN,
+    fontFamily: FONT,
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase" as const,
+    cursor: "pointer",
+    transition: "background 200ms ease",
+    width: "100%",
+  },
+
+  /* ── Timeline Bar ── */
+  timelineBar: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    padding: "6px 12px",
+    margin: "0 8px 4px",
+    borderRadius: 8,
+    background: "rgba(6, 12, 20, 0.7)",
+    backdropFilter: "blur(10px)",
+    border: "1px solid rgba(182, 228, 255, 0.08)",
+    flexShrink: 0,
+  },
+
+  /* ── Bottom Panel ── */
+  bottomPanel: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 8,
+    padding: "0 8px 8px",
+    flexShrink: 0,
+    maxHeight: 200,
+    overflow: "hidden",
+  },
+
+  bottomLeft: {
+    borderRadius: 8,
+    background: "rgba(6, 12, 20, 0.6)",
+    backdropFilter: "blur(10px)",
+    border: "1px solid rgba(182, 228, 255, 0.08)",
+    overflowY: "auto" as const,
+    maxHeight: 190,
+    scrollbarWidth: "thin" as const,
+    scrollbarColor: "rgba(100,180,255,0.12) transparent",
+  },
+
+  bottomRight: {
+    borderRadius: 8,
+    overflowY: "auto" as const,
+    maxHeight: 190,
   },
 }
