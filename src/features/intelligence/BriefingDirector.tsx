@@ -37,6 +37,7 @@ import { useBriefingClock } from "./useBriefingClock"
 import type { CameraShot } from "./CinematicCamera"
 import type { OverlayEvent } from "./OverlayEngine"
 import { ttsSpeak, ttsCancel, ttsAvailable } from "./ttsEngine"
+import { intelligenceTarget } from "@/stores/intelligenceTargetStore"
 
 /* ── Briefing plan (provided by generateInvestorPlanStub or future AI) ── */
 
@@ -106,6 +107,7 @@ const BriefingDirector: React.FC<BriefingDirectorProps> = memo(
         exitStartRef.current = performance.now()
         transitionTo("exiting")
         ttsCancel()
+        intelligenceTarget.clear()
       }
     }, [active, plan, state, transitionTo])
 
@@ -188,6 +190,24 @@ const BriefingDirector: React.FC<BriefingDirectorProps> = memo(
         ttsSpeak(activeCue.text)
       }
     }, [ttsEnabled, state, plan, clockMs])
+
+    // ── Intelligence terrain targeting ──
+    useEffect(() => {
+      if (state !== "playing" || !plan) {
+        intelligenceTarget.clear()
+        return
+      }
+
+      const activeCue = plan.cues.find(
+        (c) => clockMs >= c.startMs && clockMs < c.startMs + c.durationMs,
+      )
+
+      if (activeCue?.targetAnchorId) {
+        intelligenceTarget.set(activeCue.targetAnchorId)
+      } else {
+        intelligenceTarget.clear()
+      }
+    }, [state, plan, clockMs])
 
     // ── Compute effective progress for lighting ──
     const lightingProgress = useMemo(() => {

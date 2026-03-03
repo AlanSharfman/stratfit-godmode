@@ -41,6 +41,11 @@ import { useDebugFlags, useDebugSignals } from "@/debug/debugSignals";
 import { useOverlayVisibility } from "@/domain/ui/overlayVisibility";
 import TerrainFocusGlow from "@/components/terrain/intelligence/TerrainFocusGlow";
 import TerrainHeatmapLayer from "@/terrain/layers/TerrainHeatmapLayer";
+import TerrainLaserTarget from "@/components/intelligence/TerrainLaserTarget";
+import TerrainTargetPulse from "@/components/intelligence/TerrainTargetPulse";
+import TerrainTargetLabel from "@/components/intelligence/TerrainTargetLabel";
+import TerrainTargetSpotlight from "@/components/intelligence/TerrainTargetSpotlight";
+import IntelligenceCameraFocus from "@/components/intelligence/IntelligenceCameraFocus";
 import { eventToFocusPosition } from "@/domain/intelligence/eventFocus";
 import { computeSignalIntensity } from "@/components/terrain/signals/signalStyle";
 import { POSITION_PRESET } from "@/scene/camera/terrainCameraPresets";
@@ -256,6 +261,12 @@ export default function TerrainStage({
                 isActive={true}
               />
             )}
+            {/* Intelligence Targeting System — laser, pulse, label, spotlight, camera */}
+            <TerrainLaserTarget terrainRef={terrainRef} />
+            <TerrainTargetPulse terrainRef={terrainRef} />
+            <TerrainTargetLabel terrainRef={terrainRef} />
+            <TerrainTargetSpotlight terrainRef={terrainRef} />
+            <IntelligenceCameraFocus terrainRef={terrainRef} />
           </>
         )}
       </Suspense>

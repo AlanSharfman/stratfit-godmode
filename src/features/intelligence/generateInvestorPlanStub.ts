@@ -119,6 +119,7 @@ export function generateInvestorPlanStub(
       text: `${labelA} establishes a baseline runway of ${runwayA.toFixed(0)} months.`,
       subtitle: "Structural foundation under current assumptions.",
       pauseAfterMs: 800,
+      targetAnchorId: "capital_efficiency",
     },
     // Cue 2 — Scenario divergence (during shot 2)
     {
@@ -127,6 +128,7 @@ export function generateInvestorPlanStub(
       durationMs: 5000,
       text: `${better} projects ${Math.abs(revPct).toFixed(0)}% ${revDelta > 0 ? "higher" : "lower"} revenue — a ${Math.abs(revPct) > 15 ? "material" : "measured"} divergence.`,
       pauseAfterMs: 600,
+      targetAnchorId: "revenue_engine",
     },
     // Cue 3 — Risk concentration (during shot 3)
     {
@@ -136,6 +138,7 @@ export function generateInvestorPlanStub(
       text: `Risk concentrates at the runway horizon. ${runwayB.toFixed(0)} months under ${labelB} assumptions.`,
       subtitle: "Probability-weighted — not deterministic.",
       pauseAfterMs: 1000,
+      targetAnchorId: "risk_peak",
     },
     // Cue 4 — Path forward (during shot 4)
     {
@@ -144,6 +147,7 @@ export function generateInvestorPlanStub(
       durationMs: 5000,
       text: "Three execution milestones define the corridor between these outcomes.",
       pauseAfterMs: 0,
+      targetAnchorId: "valuation_peak",
     },
   ]
 

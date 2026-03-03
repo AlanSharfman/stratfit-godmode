@@ -24,6 +24,8 @@ export interface NarrationCue {
   pauseAfterMs?: number
   /** Line 2 (optional) */
   subtitle?: string
+  /** Terrain anchor id to highlight during this cue */
+  targetAnchorId?: string
 }
 
 export interface CaptionRailProps {
