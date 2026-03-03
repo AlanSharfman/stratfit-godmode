@@ -54,6 +54,9 @@ import { useCommandStore } from "@/store/commandStore"
 import CommandModeStrip from "@/components/command/CommandModeStrip"
 import HeatmapOverlay from "@/components/command/HeatmapOverlay"
 import CodeOverlay from "@/components/command/CodeOverlay"
+import { selectTerrainEvents } from "@/selectors/terrainSelectors"
+import { selectPrimarySignal } from "@/domain/intelligence/selectPrimarySignal"
+import { buildTerrainExplanation } from "@/domain/intelligence/buildTerrainExplanation"
 import styles from "./PositionOverlays.module.css"
 
 // Diagnostics panel is togglable via close button
@@ -456,6 +459,23 @@ export default function PositionPage() {
   const commandMode = useCommandStore((s) => s.currentMode)
   const riskScoreForOverlays = selectRiskScore(activeSimResults?.kpis ?? null, engineRunId)
 
+  // ── A10.1: Primary terrain event + explanation ──
+  const terrainEvents = useMemo(
+    () => selectTerrainEvents(activeSimResults),
+    [activeSimResults],
+  )
+  const primaryEvent = useMemo(
+    () => selectPrimarySignal(terrainEvents),
+    [terrainEvents],
+  )
+  const terrainExplanation = useMemo(() => {
+    if (!primaryEvent) return null
+    return buildTerrainExplanation({
+      event: primaryEvent,
+      monthLabel: (m: number) => `Month ${m + 1}`,
+    })
+  }, [primaryEvent])
+
   // V1 baseline from context — fallback for KPIs only when NO scenario is active.
   const { baseline: baselineV1 } = useSystemBaseline()
 
@@ -799,6 +819,7 @@ export default function PositionPage() {
             <TerrainStage
               lockCamera={true}
               pathsEnabled={false}
+              focusedEvent={primaryEvent}
               terrainMetrics={{
                 ...(terrainMetrics ?? {
                   elevationScale: 1,
@@ -962,6 +983,43 @@ export default function PositionPage() {
                 setTypewriterDone(true)
               }}
             />
+            {/* ── A10.1: Terrain-bound intelligence explanation ── */}
+            {terrainExplanation && (
+              <div style={{
+                marginTop: 16,
+                padding: "14px 18px",
+                background: "rgba(0,229,255,0.04)",
+                borderLeft: "2px solid rgba(0,229,255,0.35)",
+                borderRadius: 4,
+                fontFamily: "'Inter', system-ui, sans-serif",
+              }}>
+                <div style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase" as const,
+                  color: "rgba(0,229,255,0.85)",
+                  marginBottom: 6,
+                }}>
+                  {terrainExplanation.title}
+                </div>
+                <div style={{
+                  fontSize: 12.5,
+                  lineHeight: 1.55,
+                  color: "rgba(255,255,255,0.78)",
+                  marginBottom: 8,
+                }}>
+                  {terrainExplanation.body}
+                </div>
+                <div style={{
+                  fontSize: 10.5,
+                  color: "rgba(255,255,255,0.38)",
+                  fontStyle: "italic",
+                }}>
+                  {terrainExplanation.footnote}
+                </div>
+              </div>
+            )}
           </div>
           {/* Close button — bottom of overlay */}
           <button

@@ -38,6 +38,9 @@ import type { TerrainMetrics } from "@/terrain/terrainFromBaseline";
 import { useTerrainControls } from "@/terrain/useTerrainControls";
 import { useDebugFlags, useDebugSignals } from "@/debug/debugSignals";
 import { useOverlayVisibility } from "@/domain/ui/overlayVisibility";
+import TerrainFocusGlow from "@/components/terrain/intelligence/TerrainFocusGlow";
+import { eventToFocusPosition } from "@/domain/intelligence/eventFocus";
+import { computeSignalIntensity } from "@/components/terrain/signals/signalStyle";
 
 // Canonical camera target — shifted left so terrain content avoids the right overlay zone
 const TERRAIN_LOOK_AT: [number, number, number] = [-20, 14, 0];
@@ -67,6 +70,8 @@ type TerrainStageProps = {
   }>
   /** Override events for TerrainSignalsLayer — used by Compare mode */
   overrideEvents?: import("@/domain/events/terrainEventTypes").TerrainEvent[]
+  /** Primary event to highlight with a terrain glow (A10.1) */
+  focusedEvent?: import("@/domain/events/terrainEventTypes").TerrainEvent | null
   children?: ReactNode
 }
 
@@ -77,6 +82,7 @@ export default function TerrainStage({
   pathsEnabled,
   signals,
   overrideEvents,
+  focusedEvent,
   children,
 }: TerrainStageProps) {
   const terrainRef = useRef<TerrainSurfaceHandle>(null!);
@@ -215,6 +221,19 @@ export default function TerrainStage({
             <LiquidityFlowLayer terrainRef={terrainRef} enabled={liquidityOn} />
             <TerrainSignalsLayer terrainRef={terrainRef} overrideEvents={overrideEvents} />
             {showMarkers && <StrategicMarkers />}
+            {/* A10.1 — Focus glow for primary intelligence event */}
+            {focusedEvent && (
+              <TerrainFocusGlow
+                position={(() => {
+                  const p = eventToFocusPosition(focusedEvent)
+                  const terrain = terrainRef.current
+                  const y = terrain ? terrain.getHeightAt(p.x, p.z) + 1.0 : p.y + 1.0
+                  return { x: p.x, y, z: p.z }
+                })()}
+                intensity={computeSignalIntensity(focusedEvent.severity, focusedEvent.probabilityImpact)}
+                isActive={true}
+              />
+            )}
           </>
         )}
       </Suspense>
