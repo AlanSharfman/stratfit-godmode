@@ -58,6 +58,8 @@ import { selectTerrainEvents } from "@/selectors/terrainSelectors"
 import { selectPrimarySignal } from "@/domain/intelligence/selectPrimarySignal"
 import { buildTerrainExplanation } from "@/domain/intelligence/buildTerrainExplanation"
 import { useIntelligenceStore } from "@/store/intelligenceStore"
+import InsightTetherOverlay from "@/components/terrain/intelligence/InsightTetherOverlay"
+import { eventToFocusPosition } from "@/domain/intelligence/eventFocus"
 import styles from "./PositionOverlays.module.css"
 
 // Diagnostics panel is togglable via close button
@@ -886,6 +888,12 @@ export default function PositionPage() {
             <div style={{ position: "absolute", bottom: 10, left: "50%", transform: "translateX(-50%)", zIndex: 4 }}>
               <CommandModeStrip engineResults={activeSimResults} />
             </div>
+            {/* ── Insight Tether — subtle line from overlay title to terrain focus ── */}
+            <InsightTetherOverlay
+              focusWorldPosition={displayEvent ? eventToFocusPosition(displayEvent) : null}
+              enabled={!!displayEvent && overlayVisible}
+              viewportRef={viewportRef as React.RefObject<HTMLDivElement>}
+            />
             {/* DEV: Simulation proof overlay — hidden for demo */}
             {/* <SimulationProofOverlay
               scenario={activeScenario ?? null}
@@ -1042,14 +1050,17 @@ export default function PositionPage() {
                     </button>
                   </div>
                 )}
-                <div style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase" as const,
-                  color: "rgba(0,229,255,0.85)",
-                  marginBottom: 6,
-                }}>
+                <div
+                  id="primary-insight-anchor"
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase" as const,
+                    color: "rgba(0,229,255,0.85)",
+                    marginBottom: 6,
+                  }}
+                >
                   {displayExplanation.title}
                 </div>
                 <div style={{
