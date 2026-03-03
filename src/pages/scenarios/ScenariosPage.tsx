@@ -3,7 +3,7 @@
 
 export default function ScenariosPage() {
     return (
-        <div className="page-container" style={{ padding: "2rem" }}>
+        <div className="page-container" style={{ padding: "2rem", minHeight: "100vh", background: "linear-gradient(180deg, #030712 0%, #0a1628 100%)" }}>
             <h1 style={{ color: "rgba(226, 232, 240, 0.9)", fontSize: "1.5rem", fontWeight: 600 }}>
                 Scenarios
             </h1>

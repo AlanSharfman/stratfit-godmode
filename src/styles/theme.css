@@ -7,8 +7,8 @@
      ───────────────────────────────────────────────────────────── */
 
   /* Foundation */
-  --sf-bg: #050913;              /* deep navy */
-  --sf-bg-2: #070f1f;            /* slightly lifted navy */
+  --sf-bg: #030712;              /* deep navy — matches landing page */
+  --sf-bg-2: #0a1628;            /* navy blue — matches landing page */
   --sf-panel: rgba(8, 16, 32, 0.72);
   --sf-panel-2: rgba(8, 16, 32, 0.55);
   --sf-border: rgba(120, 190, 255, 0.14);

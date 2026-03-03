@@ -4,6 +4,8 @@
   flex-direction: column;
   gap: 28px;
   color: #e6f6ff;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #030712 0%, #0a1628 100%);
 }
 
 .heroPanel {

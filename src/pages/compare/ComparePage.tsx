@@ -509,7 +509,7 @@ const FONT = "'Inter', system-ui, sans-serif"
 const CYAN = "rgba(34, 211, 238, 0.85)"
 const CYAN_DIM = "rgba(34, 211, 238, 0.15)"
 const GLASS_BORDER = "1px solid rgba(182, 228, 255, 0.1)"
-const VOID = "#020814"
+const VOID = "#030712"
 
 const S: Record<string, React.CSSProperties> = {
   page: {
@@ -517,7 +517,7 @@ const S: Record<string, React.CSSProperties> = {
     width: "100%",
     height: "100vh",
     overflow: "hidden",
-    background: `linear-gradient(180deg, ${VOID} 0%, #0a0e17 50%, #0f1520 100%)`,
+    background: `linear-gradient(180deg, ${VOID} 0%, #0a1628 100%)`,
     fontFamily: FONT,
     color: "#e2e8f0",
     display: "flex",
@@ -529,7 +529,7 @@ const S: Record<string, React.CSSProperties> = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    background: `linear-gradient(180deg, ${VOID} 0%, #0f1520 100%)`,
+    background: `linear-gradient(180deg, ${VOID} 0%, #0a1628 100%)`,
     color: "#e2e8f0",
     fontFamily: FONT,
   },
