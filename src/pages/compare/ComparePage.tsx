@@ -32,6 +32,7 @@ import CommandModeStrip from "@/components/command/CommandModeStrip"
 import ProbabilityNotice from "@/components/legal/ProbabilityNotice"
 import SimulationStatusWidget from "@/components/system/SimulationStatusWidget"
 import SimulationRunOverlay from "@/components/system/SimulationRunOverlay"
+import SimulationPipelineWidget from "@/components/system/SimulationPipelineWidget"
 import SystemProbabilityNotice from "@/components/system/ProbabilityNotice"
 import CompareQueryPanel from "@/features/compare/CompareQueryPanel"
 import BriefingDirector from "@/features/intelligence/BriefingDirector"
@@ -269,6 +270,7 @@ export default function ComparePage() {
       {/* Simulation engine overlays */}
       <SimulationStatusWidget />
       <SimulationRunOverlay />
+      <SimulationPipelineWidget />
 
       {/* ═══ HEADER ═══ */}
       <header style={S.header}>

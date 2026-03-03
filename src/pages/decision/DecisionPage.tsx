@@ -9,6 +9,7 @@ import { decisionLeverSchemas, defaultLeverValues, type LeverSchema } from "@/co
 import DecisionCardGrid from "@/components/decision/DecisionCardGrid"
 import SimulationStatusWidget from "@/components/system/SimulationStatusWidget"
 import SimulationRunOverlay from "@/components/system/SimulationRunOverlay"
+import SimulationPipelineWidget from "@/components/system/SimulationPipelineWidget"
 import SystemProbabilityNotice from "@/components/system/ProbabilityNotice"
 import css from "./DecisionConsole.module.css"
 
@@ -280,6 +281,7 @@ export default function DecisionPage() {
       {/* Simulation engine overlays */}
       <SimulationStatusWidget />
       <SimulationRunOverlay />
+      <SimulationPipelineWidget />
 
       {/* ═══ Simulating cinematic overlay ═══ */}
       {simulating && (

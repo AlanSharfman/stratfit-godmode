@@ -214,20 +214,20 @@ export default function TerrainStage({
       <fog attach="fog" args={[fogColor, 420, 2400]} />
 
       {/* ═══════════════════════════════════════════════════════════════
-          DEFAULT LIGHTING — LOCKED
-          ─────────────────────────────────────────────────────────────
-          Ambient:    1.55
-          Key:        2.10  pos [120,180,120]  color #DFFAEE
-          Fill:       0.85  pos [-80,120,-60]  color #6ef0ff
+          DEFAULT LIGHTING — SHADOW-CONTRAST TUNED
+          ───────────────────────────────────────────────────────────
+          Ambient:    0.35  (reduced to reveal ridge shadows)
+          Key:        1.40  pos [120,180,120]  color #DFFAEE
+          Rim:        0.55  pos [-80,120,-60]  color #6ef0ff
           Fog:        #020814  near 420  far 2400
           Exposure:   1.0
-          ─────────────────────────────────────────────────────────────
+          ───────────────────────────────────────────────────────────
           DO NOT MODIFY without explicit user approval.
           DO NOT touch terrainMaterials.ts when adjusting these.
-          ═══════════════════════════════════════════════════════════════ */}
-      <ambientLight intensity={1.55} />
-      <directionalLight position={[120, 180, 120]} intensity={2.10} color="#DFFAEE" />
-      <directionalLight position={[-80, 120, -60]} intensity={0.85} color="#6ef0ff" />
+          ═══════════════════════════════════════════════════════════ */}
+      <ambientLight intensity={0.35} />
+      <directionalLight position={[120, 180, 120]} intensity={1.40} color="#DFFAEE" />
+      <directionalLight position={[-80, 120, -60]} intensity={0.55} color="#6ef0ff" />
 
       <HorizonBand />
 
@@ -242,7 +242,7 @@ export default function TerrainStage({
             <BaselineTimelineTicks visible={timelineOn} terrainRef={terrainRef} />
             <LiquidityFlowLayer terrainRef={terrainRef} enabled={liquidityOn} />
             <TerrainSignalsLayer terrainRef={terrainRef} overrideEvents={overrideEvents} />
-            {showMarkers && <StrategicMarkers />}
+            {showMarkers && <StrategicMarkers terrainRef={terrainRef} />}
             {/* A10.1 — Focus glow for primary intelligence event */}
             {focusedEvent && (
               <TerrainFocusGlow

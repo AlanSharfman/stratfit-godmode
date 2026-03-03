@@ -37,6 +37,7 @@ import { computePositionInstruments } from "@/components/position/computePositio
 import ScenarioContextPanel from "@/components/scenario/ScenarioContextPanel"
 import SimulationStatusWidget from "@/components/system/SimulationStatusWidget"
 import SimulationRunOverlay from "@/components/system/SimulationRunOverlay"
+import SimulationPipelineWidget from "@/components/system/SimulationPipelineWidget"
 import SystemProbabilityNotice from "@/components/system/ProbabilityNotice"
 import { selectKpis } from "@/selectors/kpiSelectors"
 import { selectTerrainMetrics } from "@/selectors/terrainSelectors"
@@ -798,6 +799,7 @@ export default function PositionPage() {
       {/* Simulation engine overlays */}
       <SimulationStatusWidget />
       <SimulationRunOverlay />
+      <SimulationPipelineWidget />
 
       {/* ═══ LAYER 1: Deep navy canvas backdrop ═══ */}
       <div className={styles.canvasLayer} />

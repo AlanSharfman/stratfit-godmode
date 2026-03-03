@@ -116,7 +116,7 @@ export default function P50Path({
     <Line
       points={points}
       color="#00E0FF"
-      lineWidth={3}
+      lineWidth={5}
       transparent
       opacity={visible ? 0.92 : 0}
     />

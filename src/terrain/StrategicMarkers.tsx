@@ -5,12 +5,17 @@
 import React from "react"
 import StrategicMarkerBeacon from "./StrategicMarkerBeacon"
 import { STRATEGIC_MARKERS } from "./strategicMarkerDefs"
+import type { TerrainSurfaceHandle } from "@/terrain/TerrainSurface"
 
-export default function StrategicMarkers() {
+type Props = {
+  terrainRef?: React.RefObject<TerrainSurfaceHandle>
+}
+
+export default function StrategicMarkers({ terrainRef }: Props) {
   return (
     <>
       {STRATEGIC_MARKERS.map((m) => (
-        <StrategicMarkerBeacon key={m.id} marker={m} />
+        <StrategicMarkerBeacon key={m.id} marker={m} terrainRef={terrainRef} />
       ))}
     </>
   )

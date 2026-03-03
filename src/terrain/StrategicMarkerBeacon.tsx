@@ -2,12 +2,16 @@
 // WHY: Lightweight marker beacon that renders inside TerrainStage WITHOUT
 // requiring PositionNarrativeProvider. Replaces MarkerBeacon dependency
 // so StrategicMarkers can be safely mounted in the Position page canvas.
+// Terrain-sampled Y: markers follow ridge elevation via terrainRef.getHeightAt.
 
 import React, { useMemo, useRef } from "react"
 import * as THREE from "three"
 import { useFrame, useThree } from "@react-three/fiber"
 import { Html } from "@react-three/drei"
 import type { MarkerDef, MarkerKind } from "./MarkerBeacon"
+import type { TerrainSurfaceHandle } from "@/terrain/TerrainSurface"
+
+const MARKER_LIFT = 0.04
 
 function colorForKind(kind: MarkerKind): string {
   switch (kind) {
@@ -20,7 +24,12 @@ function colorForKind(kind: MarkerKind): string {
   }
 }
 
-export default function StrategicMarkerBeacon({ marker }: { marker: MarkerDef }) {
+type Props = {
+  marker: MarkerDef
+  terrainRef?: React.RefObject<TerrainSurfaceHandle>
+}
+
+export default function StrategicMarkerBeacon({ marker, terrainRef }: Props) {
   const { camera } = useThree()
   const groupRef = useRef<THREE.Group>(null)
 
@@ -28,6 +37,18 @@ export default function StrategicMarkerBeacon({ marker }: { marker: MarkerDef })
     () => new THREE.Color(marker.color ?? colorForKind(marker.kind)),
     [marker.kind, marker.color],
   )
+
+  // Terrain-sampled position: use marker's XZ but sample Y from terrain
+  const position = useMemo(() => {
+    const mx = marker.position.x
+    const mz = marker.position.z
+    if (terrainRef?.current) {
+      const terrainY = terrainRef.current.getHeightAt(mx, mz)
+      return new THREE.Vector3(mx, terrainY + MARKER_LIFT, mz)
+    }
+    // Fallback to original position
+    return marker.position.clone()
+  }, [marker.position, terrainRef])
 
   useFrame(() => {
     const g = groupRef.current
@@ -38,7 +59,7 @@ export default function StrategicMarkerBeacon({ marker }: { marker: MarkerDef })
   })
 
   return (
-    <group ref={groupRef} position={marker.position}>
+    <group ref={groupRef} position={position}>
       {/* Stem */}
       <mesh position={[0, -0.8, 0]}>
         <cylinderGeometry args={[0.03, 0.03, 1.6, 10]} />
