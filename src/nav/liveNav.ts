@@ -10,9 +10,6 @@ export type NavItem = {
 
 export const LIVE_NAV: NavItem[] = [
   { label: "Position",   path: "/position" },
-  { label: "Compass",    path: "/compass" },
   { label: "Studio",     path: "/studio" },
   { label: "Compare",    path: "/compare" },
-  { label: "Assessment", path: "/assessment" },
-  { label: "Roadmap",    path: "/roadmap" },
 ]

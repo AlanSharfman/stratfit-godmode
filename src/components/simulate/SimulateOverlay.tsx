@@ -1,5 +1,3 @@
-'use client'
-
 import React, { useState, useEffect, useMemo } from 'react'
 import { useScenarioStore } from '@/state/scenarioStore'
 import ScenarioMountain from '@/components/mountain/ScenarioMountain'

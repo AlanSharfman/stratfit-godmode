@@ -34,7 +34,7 @@ function MainNav() {
             key={item.key}
             to={item.href}
             className={({ isActive }) =>
-              `${styles.navItem}${item.key === "coming" ? " " + styles.separated : ""}${isActive ? " " + styles.active : ""}`
+              `${styles.navItem}${isActive ? " " + styles.active : ""}`
             }
           >
             {item.label}
