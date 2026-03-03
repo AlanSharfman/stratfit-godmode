@@ -40,6 +40,7 @@ import CommandModeStrip from "@/components/command/CommandModeStrip"
 import HeatmapOverlay from "@/components/command/HeatmapOverlay"
 import CodeOverlay from "@/components/command/CodeOverlay"
 import { selectRiskScore } from "@/selectors/riskSelectors"
+import RiskIntelligencePanel from "@/components/Risk/RiskIntelligencePanel"
 
 // ── Timeline Simulation Engine ──
 import { useStudioTimelineStore } from "@/stores/studioTimelineStore"
@@ -540,6 +541,11 @@ export default function StudioPage() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* ── Risk Intelligence (Phase 300) ── */}
+          <div style={{ padding: "10px 0 0", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+            <RiskIntelligencePanel />
           </div>
         </aside>
 

@@ -28,6 +28,8 @@ import {
   type RiskIntelligenceOutput,
 } from "@/engine/riskIntelligenceEngine";
 import type { SystemStateLevel } from "@/utils/scenarioIntelligenceMapping";
+import RiskTransmissionStrip from "./RiskTransmissionStrip";
+import RiskDeltaBadge from "./RiskDeltaBadge";
 import styles from "./RiskIntelligencePanel.module.css";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -283,6 +285,7 @@ const RiskIntelligencePanel: React.FC = memo(() => {
           </div>
           <div className={styles.survivalPill}>
             Survival: {(survivalProbability * 100).toFixed(0)}%
+            <RiskDeltaBadge compact />
           </div>
         </div>
       </div>
@@ -323,6 +326,9 @@ const RiskIntelligencePanel: React.FC = memo(() => {
           <RiskTrendSpark trajectory={trajectory} peakMonth={peakMonth} />
         </div>
       </div>
+
+      {/* ═══ RISK TRANSMISSION ═══ */}
+      <RiskTransmissionStrip />
 
       {/* ═══ TOP THREATS ═══ */}
       {topThreats.length > 0 && (
