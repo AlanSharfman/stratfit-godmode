@@ -22,6 +22,7 @@ import { useDebugFlags, useDebugSignals } from "@/debug/debugSignals"
 
 import { signalParamsByType, perTypeCap, MAX_SIGNALS, computeSignalIntensity } from "./signalStyle"
 import { useSignalClock } from "./useSignalClock"
+import { useUiFocusStore } from "@/store/uiFocusStore"
 
 import RiskSpikeBeam from "./primitives/RiskSpikeBeam"
 import LiquidityStressField from "./primitives/LiquidityStressField"
@@ -109,26 +110,30 @@ function SignalForEvent({
   intensity,
   alpha,
   clock,
+  resonanceBoost,
 }: {
   event: TerrainEvent
   position: [number, number, number]
   intensity: number
   alpha: number
   clock: React.RefObject<{ t: number; dt: number }>
+  resonanceBoost: number
 }) {
+  const effectiveIntensity = Math.min(1, intensity * (1 + resonanceBoost * 0.15))
+  const effectiveAlpha = Math.min(1, alpha * (1 + resonanceBoost * 0.1))
   switch (event.type) {
     case "risk_spike":
-      return <RiskSpikeBeam position={position} intensity={intensity} alpha={alpha} clock={clock} />
+      return <RiskSpikeBeam position={position} intensity={effectiveIntensity} alpha={effectiveAlpha} clock={clock} />
     case "liquidity_stress":
-      return <LiquidityStressField position={position} intensity={intensity} alpha={alpha} clock={clock} />
+      return <LiquidityStressField position={position} intensity={effectiveIntensity} alpha={effectiveAlpha} clock={clock} />
     case "volatility_zone":
-      return <VolatilityField position={position} intensity={intensity} alpha={alpha} clock={clock} />
+      return <VolatilityField position={position} intensity={effectiveIntensity} alpha={effectiveAlpha} clock={clock} />
     case "growth_inflection":
-      return <GrowthArc position={position} intensity={intensity} alpha={alpha} clock={clock} />
+      return <GrowthArc position={position} intensity={effectiveIntensity} alpha={effectiveAlpha} clock={clock} />
     case "probability_shift":
-      return <ProbabilityRipple position={position} intensity={intensity} alpha={alpha} clock={clock} />
+      return <ProbabilityRipple position={position} intensity={effectiveIntensity} alpha={effectiveAlpha} clock={clock} />
     case "downside_regime":
-      return <DownsideShadow position={position} intensity={intensity} alpha={alpha} clock={clock} />
+      return <DownsideShadow position={position} intensity={effectiveIntensity} alpha={effectiveAlpha} clock={clock} />
     default:
       return null
   }
@@ -179,6 +184,9 @@ const TerrainSignalsLayer: React.FC<TerrainSignalsLayerProps> = memo(
   ({ terrainRef }) => {
     const { events, activeScenarioId, activeScenarioStatus } =
       useTerrainSignalEvents()
+
+    // Spatial resonance — read selectedEventId from uiFocusStore
+    const selectedEventId = useUiFocusStore((s) => s.selectedEventId)
 
     // Single global animation clock — all primitives consume this ref
     const clockRef = useSignalClock()
@@ -231,6 +239,7 @@ const TerrainSignalsLayer: React.FC<TerrainSignalsLayerProps> = memo(
         const { event, intensity, alphaMultiplier } = item
         const y = getY(event.coordinates.x, event.coordinates.z)
         const pos: [number, number, number] = [event.coordinates.x, y, event.coordinates.z]
+        const resonanceBoost = selectedEventId === event.id ? 1 : 0
 
         return (
           <SignalForEvent
@@ -240,10 +249,11 @@ const TerrainSignalsLayer: React.FC<TerrainSignalsLayerProps> = memo(
             intensity={intensity}
             alpha={alphaMultiplier}
             clock={clockRef}
+            resonanceBoost={resonanceBoost}
           />
         )
       })
-    }, [curated, getY, clockRef])
+    }, [curated, getY, clockRef, selectedEventId])
 
     return (
       <group name="TerrainSignalsLayer">

@@ -30,6 +30,10 @@ import CommandGlassPanel from "@/components/intelligence/CommandGlassPanel"
 import { useIntelligencePresentation } from "@/hooks/useIntelligencePresentation"
 import SimulationContextHUD from "@/components/position/SimulationContextHUD"
 import KPIHealthRail from "@/components/kpi/KPIHealthRail"
+import ProbabilityBand from "@/components/position/ProbabilityBand"
+import BiasVectorBar from "@/components/position/BiasVectorBar"
+import ExecutiveSummaryBar from "@/components/position/ExecutiveSummaryBar"
+import { computePositionInstruments } from "@/components/position/computePositionInstruments"
 import ScenarioContextPanel from "@/components/scenario/ScenarioContextPanel"
 import { selectKpis } from "@/selectors/kpiSelectors"
 import { selectTerrainMetrics } from "@/selectors/terrainSelectors"
@@ -453,6 +457,29 @@ export default function PositionPage() {
   const simKpis = useSelectSimulationKpis()
   const liveKpis = useMemo(() => simKpis ?? vm?.kpis ?? null, [simKpis, vm?.kpis])
 
+  // ── C+ Instrument precomputation (deterministic, no math in components) ──
+  const baselineKpisForInstruments = useMemo(() => {
+    if (!baseline) return null
+    const bl = baseline as Record<string, unknown>
+    return {
+      cash: Number(bl.cash) || 0,
+      monthlyBurn: Number(bl.monthlyBurn) || Number(bl.burnRate) || 0,
+      revenue: Number(bl.revenue) || 0,
+      grossMargin: Number(bl.grossMargin) || 0.5,
+      growthRate: Number(bl.growthRate) || 0,
+      churnRate: Number(bl.churnRate) || 0,
+      headcount: Number(bl.headcount) || 0,
+      arpa: Number(bl.arpa) || 0,
+      runway: null as number | null,
+    }
+  }, [baseline])
+
+  const instruments = useMemo(() => {
+    const scenarioKpis = activeScenario?.simulationResults?.kpis
+    if (!scenarioKpis) return null
+    return computePositionInstruments(scenarioKpis, baselineKpisForInstruments)
+  }, [activeScenario?.simulationResults?.kpis, baselineKpisForInstruments])
+
   // DEV: KPI wiring proof — confirms liveKpis source switches on simulation complete
   useEffect(() => {
     if (!import.meta.env.DEV) return
@@ -711,6 +738,13 @@ export default function PositionPage() {
             LEFT RAIL — Intelligence Panel (KPIs + Briefing)
             ══════════════════════════════════════════════════ */}
         <div className={styles.leftCol}>
+          {/* Executive Summary Bar — tone-aware, top of rail */}
+          {instruments && (
+            <div className={styles.execSummaryDock}>
+              <ExecutiveSummaryBar {...instruments.summary} />
+            </div>
+          )}
+
           {/* Logo lockup */}
           <Link to={ROUTES.POSITION} className={styles.logoLockup}>
             <img src="/stratfit-logo.png" alt="STRATFIT" className={styles.logoImg} />
@@ -723,6 +757,16 @@ export default function PositionPage() {
           {/* KPI instruments — grouped health rail */}
           <div className={styles.kpiRailDock} aria-label="KPI Health Rail">
             <KPIHealthRail kpis={liveKpis} />
+
+            {/* C+ Probability Bands — instrument gauges */}
+            {instruments && (
+              <div className={styles.instrumentDock}>
+                {instruments.bands.map((band) => (
+                  <ProbabilityBand key={band.metric} {...band} />
+                ))}
+                <BiasVectorBar {...instruments.bias} />
+              </div>
+            )}
           </div>
         </div>
 
