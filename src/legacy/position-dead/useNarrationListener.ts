@@ -13,7 +13,7 @@ export default function useNarrationListener() {
         "%cSTRATFIT Narration",
         "color:#8fd3ff;font-weight:600"
       )
-      console.log("Cue:", cue)
+
       console.groupEnd()
     }
 

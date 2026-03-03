@@ -412,20 +412,7 @@ export default function PositionPage() {
         return (h >>> 0).toString(16).padStart(8, "0")
       }
 
-      console.group("[PositionPage] Simulation pipeline verification")
-      console.log("runId:", runId)
-      console.log("scenarioConfig hash:", quickHash({ decision: activeScenario?.decision, id: activeScenarioId }))
-      console.log("engineResults hash:", quickHash(simResults))
-      console.log("KPI snapshot hash:", quickHash(simKpis))
-      console.log("TERRAIN SOURCE:",
-        scenarioTerrainRef.current?.scenarioId === activeScenarioId ? "SCENARIO" : "BASELINE",
-        activeScenarioId ? `(scenario ${activeScenarioId.slice(0, 8)})` : "(no scenario)",
-      )
-      console.log("TERRAIN METRICS (selector):", terrainData)
-      console.log("SELECTED KPIS:", simKpis)
-      console.log("RISK SCORE (selector):", risk)
-      console.log("TERRAIN METRICS (resolved):", terrainMetrics)
-      console.groupEnd()
+
     }
   }, [activeScenarioId, activeScenario?.status, activeScenario?.simulationResults, terrainMetrics])
 
@@ -562,9 +549,7 @@ export default function PositionPage() {
     const source = (activeScenario?.status === "complete" && activeScenario.simulationResults?.kpis)
       ? "SIMULATION"
       : "BASELINE"
-    console.log(
-      `[KPI-Rail] source=${source} runId=${activeScenario?.simulationResults?.completedAt ?? "none"} runway=${liveKpis?.runwayMonths ?? "—"}`,
-    )
+
   }, [liveKpis, activeScenario?.status, activeScenario?.simulationResults])
 
   const terrainSignals = useMemo(() => {

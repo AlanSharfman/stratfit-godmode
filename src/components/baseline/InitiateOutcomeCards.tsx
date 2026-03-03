@@ -183,9 +183,7 @@ export default function InitiateOutcomeCards({ riskCurve, confidenceCurve }: Pro
     const cards = useMemo(() => {
         const result = computeOutcomeCards(riskCurve, confidenceCurve);
 
-        if (DEBUG_OUTCOMES) {
-            console.log("[DEBUG_OUTCOMES] Computed scores:", result.map((c) => `${c.label}: ${c.score}`));
-        }
+
 
         return result;
     }, [riskCurve, confidenceCurve]);

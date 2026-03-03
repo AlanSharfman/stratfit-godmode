@@ -49,12 +49,12 @@ export function buildScenarioFactPack(
   // Example: get values from intelligence.systemState or kpis
   // Here, use dummy values for illustration
   const facts: ScenarioFactPack["facts"] = {
-    runwayBand: "medium", // TODO: map from intelligence
-    riskBand: "moderate", // TODO: map from intelligence
-    growthBand: "moderate", // TODO: map from intelligence
-    marginBand: "ok", // TODO: map from intelligence
-    burnBand: "moderate", // TODO: map from intelligence
-    valuationBand: "mid", // TODO: map from intelligence
+    runwayBand: bandValue(intelligence.kpis?.runway ?? 1, RUNWAY_THRESHOLDS) as any,
+    riskBand: bandValue(intelligence.kpis?.risk ?? 5, RISK_THRESHOLDS) as any,
+    growthBand: bandValue(intelligence.kpis?.growth ?? 5, GROWTH_THRESHOLDS) as any,
+    marginBand: bandValue(intelligence.kpis?.margin ?? 25, MARGIN_THRESHOLDS) as any,
+    burnBand: bandValue(intelligence.kpis?.burn ?? 25, BURN_THRESHOLDS) as any,
+    valuationBand: bandValue(intelligence.kpis?.valuation ?? 10, VALUATION_THRESHOLDS) as any,
   };
 
   return {

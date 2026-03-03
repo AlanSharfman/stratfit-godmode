@@ -120,10 +120,7 @@ const TerrainEventLayer: React.FC<TerrainEventLayerProps> = memo(
         activeScenarioId,
         activeScenarioStatus,
       })
-      if (snap !== prevSnap.current) {
-        prevSnap.current = snap
-        console.log("[TerrainEventLayer]", JSON.parse(snap))
-      }
+
     }, [debugHud, debugEvents, events.length, activeScenarioId, activeScenarioStatus, terrainRef])
 
     const handleFocusChange = useCallback(

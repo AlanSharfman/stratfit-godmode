@@ -79,8 +79,8 @@ export const PLANS: Record<PlanTier, PlanFeatures> = {
 
 // Hook to check feature access
 export function useFeatureAccess() {
-  // TODO: Get actual user tier from database/auth
-  const userTier: PlanTier = 'free'; // Replace with actual user tier
+  // NOTE: This is a placeholder. Replace with actual user tier from database/auth.
+  const userTier: PlanTier = 'pro'; // Replace with actual user tier
   
   const plan = PLANS[userTier];
   

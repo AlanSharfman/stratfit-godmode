@@ -335,15 +335,7 @@ export const usePhase1ScenarioStore = create<Phase1ScenarioState>()(
             engineResults: { kpis, terrain },
           })
 
-          // DEV: selector proof — prove selectors return correct data
-          if (import.meta.env.DEV) {
-            console.group("[phase1ScenarioStore] Selector proof")
-            console.log("ENGINE RESULTS", { kpis, terrain })
-            console.log("SELECTED KPIS", selectKpis(kpis))
-            console.log("TERRAIN METRICS", selectTerrainMetrics({ completedAt: Date.now(), horizonMonths: 24, summary: "", kpis, terrain }))
-            console.log("RISK SCORE", selectRiskScore(kpis))
-            console.groupEnd()
-          }
+
         }, 1400)
       },
 

@@ -15,6 +15,7 @@
 import React, { useEffect, useMemo, useRef } from "react"
 import * as THREE from "three"
 import { useFrame } from "@react-three/fiber"
+import { Line as DreiLine } from "@react-three/drei"
 import type { HighlightTarget } from "./highlightContract"
 import { resolveTargetXZ } from "./highlightContract"
 
@@ -30,6 +31,10 @@ export interface TerrainHighlightFXProps {
   pulse?: boolean
   /** Timestamp of last trigger — change forces re-fire */
   triggerTs?: number
+  /** If true, render a downbeam ray from rayOriginY to the marker */
+  rayEnabled?: boolean
+  /** World-space Y elevation where the ray beam starts (default: 60) */
+  rayOriginY?: number
 }
 
 const CYAN_COLOR = new THREE.Color(0x22d3ee)
@@ -42,10 +47,13 @@ export default function TerrainHighlightFX({
   holdMs = 1800,
   pulse = true,
   triggerTs,
+  rayEnabled = false,
+  rayOriginY = 60,
 }: TerrainHighlightFXProps) {
   const pinRef = useRef<THREE.Mesh>(null)
   const ringRef = useRef<THREE.Mesh>(null)
   const glowRef = useRef<THREE.PointLight>(null)
+  const rayRef = useRef<any>(null)
   const phaseRef = useRef<"idle" | "fadeIn" | "hold" | "fadeOut">("idle")
   const timerRef = useRef(0)
   const opacityRef = useRef(0)
@@ -126,6 +134,12 @@ export default function TerrainHighlightFX({
       glowRef.current.intensity = opacity * 3.0
       glowRef.current.visible = opacity > 0.01
     }
+    if (rayRef.current) {
+      // DreiLine exposes material via .material on the underlying Line2 object
+      const mat = rayRef.current?.material
+      if (mat) mat.opacity = opacity * 0.45
+      if (rayRef.current) rayRef.current.visible = opacity > 0.01
+    }
   }
 
   if (!pos || !enabled) return null
@@ -133,8 +147,31 @@ export default function TerrainHighlightFX({
   // Y position: place slightly above the terrain surface
   const y = 4
 
+  // Ray beam points: from high above down to the marker
+  const rayPoints = useMemo(():
+    [[number, number, number], [number, number, number]] =>
+    [[0, rayOriginY - y, 0], [0, 0, 0]],
+    [rayOriginY, y]
+  )
+
   return (
     <group position={[pos.x, y, pos.z]} name="terrain-highlight-fx">
+      {/* ── Downbeam ray from panel anchor to terrain marker ── */}
+      {rayEnabled && (
+        <DreiLine
+          ref={rayRef}
+          points={rayPoints}
+          color="#22d3ee"
+          lineWidth={1.2}
+          transparent
+          opacity={0}
+          depthWrite={false}
+          dashed
+          dashScale={4}
+          dashSize={2}
+          gapSize={1.5}
+        />
+      )}
       {/* ── Pin marker ── */}
       <mesh ref={pinRef} renderOrder={20}>
         <sphereGeometry args={[2.5, 16, 12]} />

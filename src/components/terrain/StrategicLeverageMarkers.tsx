@@ -361,13 +361,7 @@ export default function StrategicLeverageMarkers({
         });
 
         // Debug log once
-        if (DEBUG_MARKERS && result.length > 0) {
-            console.log("[DEBUG_MARKERS] Marker count:", result.length);
-            console.log(
-                "[DEBUG_MARKERS] First 3 positions:",
-                result.slice(0, 3).map((p) => `(${p.position.x.toFixed(1)}, ${p.position.y.toFixed(1)}, ${p.position.z.toFixed(1)})`),
-            );
-        }
+
 
         return result;
     }, [centerline, getHeightAt, worldState.markers]);

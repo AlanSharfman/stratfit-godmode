@@ -301,7 +301,7 @@ export default function ScenarioDeltaSnapshot() {
     const b = spiderBaseAxes.map((a: any) => Number(a.v01 ?? a.value01 ?? a.value ?? 0).toFixed(3)).join(",");
     const s = spiderScenarioAxes.map((a: any) => Number(a.v01 ?? a.value01 ?? a.value ?? 0).toFixed(3)).join(",");
     const sig = `${scenarioKey} | B[${b}] S[${s}]`;
-    console.log("[IG][VAR_RADAR_SIG]", sig);
+
     return sig;
   }, [spiderBaseAxes, spiderScenarioAxes, scenarioKey]);
 

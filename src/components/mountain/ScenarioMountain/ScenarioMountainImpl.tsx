@@ -1553,10 +1553,6 @@ export function ScenarioMountainImpl({
     ? Math.max(0, Math.min(1, structuralHeatScore / 100))
     : undefined;
   
-  // TODO: Implement timeline and heatmap rendering logic
-  // - timelineEnabled: Show historical progression overlay
-  // - heatmapEnabled: Show intensity/concentration visualization
-  
   const {
     activeScenarioId,
     engineResults,
@@ -1578,7 +1574,33 @@ export function ScenarioMountainImpl({
     if (Array.isArray(dataPoints) && dataPoints.length > 0) return dataPoints;
     return engineResultToMountainForces((engineResult ?? null) as any);
   }, [dataPoints, engineResult]);
-  
+
+  // Timeline: map resolvedDataPoints to a 3D polyline above the terrain surface.
+  // Points run left→right (X axis), height from data, slight Y lift for visibility.
+  const timelinePoints = useMemo((): [number, number, number][] => {
+    if (!timelineEnabled || !resolvedDataPoints?.length) return []
+    const pts = resolvedDataPoints
+    const count = pts.length
+    const xRange = 840  // matches terrain plane width * scaleX
+    return pts.map((v, i): [number, number, number] => {
+      const x = (i / Math.max(count - 1, 1)) * xRange - xRange / 2
+      const y = (v / 100) * 18 + 2.5  // normalized height + float above surface
+      return [x, y, 0]
+    })
+  }, [timelineEnabled, resolvedDataPoints])
+
+  // Heatmap: derive per-segment intensity from data to drive color opacity overlay
+  const heatmapSegments = useMemo(() => {
+    if (!heatmapEnabled || !resolvedDataPoints?.length) return []
+    const pts = resolvedDataPoints
+    const count = pts.length
+    const xRange = 840
+    return pts.map((v, i) => ({
+      x: (i / Math.max(count - 1, 1)) * xRange - xRange / 2,
+      intensity: Math.max(0, Math.min(1, v / 100)),
+    }))
+  }, [heatmapEnabled, resolvedDataPoints])
+
   // riskLevel = danger score (higher = more dangerous)
   // riskIndex is health (higher = healthier), so invert it
   const riskLevel = 100 - (kpiValues.riskIndex?.value ?? 50);
@@ -1911,6 +1933,36 @@ export function ScenarioMountainImpl({
 
         {/* Structural recalibration scan line — single sweep during simulation */}
         <RecalibrationScanLine active={isRecalibrating} />
+
+        {/* ── TIMELINE OVERLAY — historical progression polyline above terrain surface ── */}
+        {timelineEnabled && timelinePoints.length >= 2 && (
+          <DreiLine
+            points={timelinePoints}
+            color="#22d3ee"
+            lineWidth={1.5}
+            transparent
+            opacity={0.65}
+            depthWrite={false}
+          />
+        )}
+
+        {/* ── HEATMAP OVERLAY — flat intensity columns at data positions ── */}
+        {heatmapEnabled && heatmapSegments.length > 0 && heatmapSegments.map((seg, i) => (
+          <mesh
+            key={i}
+            position={[seg.x, (seg.intensity * 9), 0]}
+            renderOrder={10}
+          >
+            <boxGeometry args={[840 / Math.max(heatmapSegments.length, 1) * 0.8, seg.intensity * 18, 2]} />
+            <meshBasicMaterial
+              color={new THREE.Color().setHSL(0.56 - seg.intensity * 0.56, 0.9, 0.5)}
+              transparent
+              opacity={0.18 + seg.intensity * 0.22}
+              depthWrite={false}
+              toneMapped={false}
+            />
+          </mesh>
+        ))}
         
         <DigitalHorizon
           scenarioId={scenarioId}

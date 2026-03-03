@@ -20,9 +20,9 @@ app.get("/api/health", (_req, res) => {
 // Export pitch to PDF
 app.get("/api/export-pitch", async (_req, res) => {
   try {
-    console.log("📄 Generating investor deck...");
+
     const url = await exportPitch();
-    console.log(`✅ Deck ready: ${url}`);
+
     res.json({ url, success: true });
   } catch (error) {
     console.error("❌ Export failed:", error);
@@ -37,8 +37,7 @@ app.get("/api/export-pitch", async (_req, res) => {
 // Start server
 if (require.main === module) {
   app.listen(PORT, () => {
-    console.log(`🚀 STRATFIT Pitch API running on http://localhost:${PORT}`);
-    console.log(`   📄 Export endpoint: http://localhost:${PORT}/api/export-pitch`);
+
   });
 }
 

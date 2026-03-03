@@ -244,10 +244,7 @@ const TerrainSignalsLayer: React.FC<TerrainSignalsLayerProps> = memo(
         types: curated.map((c) => c.event.type),
         activeScenarioId,
       })
-      if (snap !== prevSnap.current) {
-        prevSnap.current = snap
-        console.log("[TerrainSignalsLayer]", JSON.parse(snap))
-      }
+
     }, [debugHud, events.length, curated, activeScenarioId])
 
     /** Sample terrain Y at (x, z) — memoized callback */
