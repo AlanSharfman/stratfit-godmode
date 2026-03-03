@@ -390,7 +390,7 @@ function InitializeBaselineLegacy() {
   /* ══════════════════ RENDER ══════════════════ */
 
   return (
-    <ConsoleFrame>
+    <ConsoleFrame maxWidth={2400}>
       <div className={css.consoleLayout} data-sf-initiate="legacy">
 
         {/* ═══════════ LEFT SIDEBAR — System Nav Rail ═══════════ */}

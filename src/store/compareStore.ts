@@ -11,6 +11,7 @@
 import { create } from "zustand"
 
 export type ComparePair = "AB" | "AC" | "BC"
+export type CompareViewMode = "split" | "ghost"
 
 interface CompareState {
   /** Scenario ID for A panel. null = raw baseline */
@@ -23,6 +24,8 @@ interface CompareState {
   compareCount: 2 | 3
   /** Which pair drives the analytics delta */
   activePair: ComparePair
+  /** Split (side-by-side) or Ghost (overlay) view */
+  viewMode: CompareViewMode
   /** Remembered C selection when toggling 3→2 */
   _lastCId: string | null
 
@@ -31,6 +34,7 @@ interface CompareState {
   setCId: (id: string | null) => void
   setCompareCount: (n: 2 | 3) => void
   setActivePair: (pair: ComparePair) => void
+  setViewMode: (mode: CompareViewMode) => void
   swap: () => void
   rotate: () => void
 }
@@ -41,6 +45,7 @@ export const useCompareStore = create<CompareState>()((set) => ({
   cId: null,
   compareCount: 2,
   activePair: "AB",
+  viewMode: "split",
   _lastCId: null,
 
   setAId: (id) => set({ aId: id }),
@@ -63,6 +68,7 @@ export const useCompareStore = create<CompareState>()((set) => ({
       return { compareCount: n }
     }),
   setActivePair: (pair) => set({ activePair: pair }),
+  setViewMode: (mode) => set({ viewMode: mode }),
   swap: () => set((s) => ({ aId: s.bId, bId: s.aId })),
   rotate: () => set((s) => ({ aId: s.bId, bId: s.cId, cId: s.aId })),
 }))

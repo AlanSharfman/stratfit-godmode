@@ -1,27 +1,29 @@
 // src/pages/compare/ComparePage.tsx
 // ═══════════════════════════════════════════════════════════════════════════
-// STRATFIT — Compare Command Centre
+// STRATFIT — Compare Command Centre (Split ↔ Ghost Overlay)
 //
-// Top 60%:  Terrain panels (2 or 3 depending on toggle)
+// Top 60%:  Terrain area
+//   Split mode  → side-by-side CompareTerrainPanels (2 or 3)
+//   Ghost mode  → single canvas with translucent ghost overlays
 // Bottom 40%: Analytics layer
-//   Bottom-left (60%):  CompareTablePanel (KPI deltas)
+//   Bottom-left  (60%): CompareTablePanel (KPI deltas)
 //   Bottom-right (40%): CompareInsightPanel (AI narrative)
 //
-// Each terrain panel has its own scenario selector dropdown.
-// 2↔3 toggle in header. Pairwise delta selection in 3-mode.
+// Query params:  ?view=split|ghost  &n=2|3
 // ═══════════════════════════════════════════════════════════════════════════
 
-import React, { useEffect, useMemo } from "react"
-import { Link, NavLink } from "react-router-dom"
+import React, { useCallback, useEffect, useMemo } from "react"
+import { Link, NavLink, useSearchParams } from "react-router-dom"
 
 import { ROUTES } from "@/routes/routeContract"
 import { useBaselineStore } from "@/state/baselineStore"
 import { useCanonicalBaseline } from "@/state/useCanonicalBaseline"
 import { usePhase1ScenarioStore, type SimulationKpis } from "@/state/phase1ScenarioStore"
-import { useCompareStore, type ComparePair } from "@/store/compareStore"
+import { useCompareStore, type ComparePair, type CompareViewMode } from "@/store/compareStore"
 import { deriveTerrainMetrics, type TerrainMetrics } from "@/terrain/terrainFromBaseline"
 
-import CompareTerrainPanel from "@/components/compare/CompareTerrainPanel"
+import CompareTerrainArea from "@/components/compare/CompareTerrainArea"
+import CompareGhostHeaderBar from "@/components/compare/CompareGhostHeaderBar"
 import CompareTablePanel from "@/components/compare/CompareTablePanel"
 import CompareInsightPanel from "@/components/compare/CompareInsightPanel"
 import { type ScenarioOption } from "@/components/compare/CompareScenarioSelect"
@@ -32,6 +34,8 @@ import type { TerrainEvent } from "@/domain/events/terrainEventTypes"
 /* ── Component ───────────────────────────────────────────── */
 
 export default function ComparePage() {
+  const [searchParams, setSearchParams] = useSearchParams()
+
   const baseline = useCanonicalBaseline()
   const baselineHydrated = useBaselineStore((s) => s.isHydrated)
   const baselineInputs = useBaselineStore((s) => s.baselineInputs)
@@ -47,10 +51,41 @@ export default function ComparePage() {
     setAId, setBId, setCId,
     compareCount, setCompareCount,
     activePair, setActivePair,
+    viewMode, setViewMode,
     swap, rotate,
   } = useCompareStore()
 
   const is3Mode = compareCount === 3
+
+  // ── Sync query params → store on mount ──
+  useEffect(() => {
+    const qView = searchParams.get("view")
+    if (qView === "split" || qView === "ghost") setViewMode(qView)
+    const qN = searchParams.get("n")
+    if (qN === "2") setCompareCount(2)
+    else if (qN === "3") setCompareCount(3)
+    // Only on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // ── Sync store → query params ──
+  const syncParams = useCallback(
+    (nextView: CompareViewMode, nextN: 2 | 3) => {
+      setSearchParams(
+        (prev) => {
+          prev.set("view", nextView)
+          prev.set("n", String(nextN))
+          return prev
+        },
+        { replace: true },
+      )
+    },
+    [setSearchParams],
+  )
+
+  useEffect(() => {
+    syncParams(viewMode, compareCount)
+  }, [viewMode, compareCount, syncParams])
 
   // ── Hydrate stores ──
   useEffect(() => { hydrateBaseline() }, [hydrateBaseline])
@@ -159,6 +194,8 @@ export default function ComparePage() {
   // ── Available pairs ──
   const availablePairs: ComparePair[] = is3Mode ? ["AB", "AC", "BC"] : ["AB"]
 
+  const isGhost = viewMode === "ghost"
+
   // ── Loading guards ──
   if (!scenarioStoreHydrated || !baselineHydrated) {
     return (
@@ -208,6 +245,22 @@ export default function ComparePage() {
         </nav>
 
         <div style={S.headerRight}>
+          {/* Split ↔ Ghost toggle */}
+          <div style={S.viewToggle}>
+            <button
+              type="button"
+              onClick={() => setViewMode("split")}
+              style={viewMode === "split" ? S.viewBtnActive : S.viewBtn}
+              title="Split — side-by-side terrains"
+            >Split</button>
+            <button
+              type="button"
+              onClick={() => setViewMode("ghost")}
+              style={viewMode === "ghost" ? S.viewBtnActive : S.viewBtn}
+              title="Ghost — overlay terrains"
+            >Ghost</button>
+          </div>
+
           {/* 2/3 toggle */}
           <div style={S.countToggle}>
             <button
@@ -222,11 +275,13 @@ export default function ComparePage() {
             >3</button>
           </div>
 
-          {/* Swap (2-mode) / Rotate (3-mode) */}
-          {is3Mode ? (
-            <button type="button" onClick={rotate} style={S.swapBtn} title="Rotate A→B→C→A">↻</button>
-          ) : (
-            <button type="button" onClick={swap} style={S.swapBtn} title="Swap A ↔ B">⇄</button>
+          {/* Swap (2-mode) / Rotate (3-mode) — only in split view; ghost bar has its own */}
+          {!isGhost && (
+            is3Mode ? (
+              <button type="button" onClick={rotate} style={S.swapBtn} title="Rotate A→B→C→A">↻</button>
+            ) : (
+              <button type="button" onClick={swap} style={S.swapBtn} title="Swap A ↔ B">⇄</button>
+            )
           )}
         </div>
       </header>
@@ -234,44 +289,52 @@ export default function ComparePage() {
       {/* ── Headline strip ── */}
       <div style={S.headlineStrip}>
         <span style={S.headlineText}>{headline}</span>
+        {isGhost && (
+          <span style={S.headlineBadge}>GHOST OVERLAY</span>
+        )}
       </div>
 
       {/* ═══ MAIN GRID: Terrain (60%) + Analytics (40%) ═══ */}
       <div style={S.commandGrid}>
 
-        {/* ── TOP: Terrain Panels ── */}
-        <div style={{ ...S.terrainRow, gridTemplateColumns: is3Mode ? "1fr 1fr 1fr" : "1fr 1fr" }}>
-          <CompareTerrainPanel
-            slot="A"
-            dotColor="rgba(148,180,214,0.5)"
-            terrainMetrics={metricsA}
-            events={eventsA}
-            selectedId={aId}
-            scenarioOptions={scenarioOptions}
-            onSelectScenario={setAId}
-          />
-          <CompareTerrainPanel
-            slot="B"
-            dotColor="rgba(34,197,94,0.7)"
-            terrainMetrics={metricsB}
-            events={eventsB}
-            colorVariant="green"
-            selectedId={bId}
-            scenarioOptions={scenarioOptions}
-            onSelectScenario={setBId}
-          />
-          {is3Mode && (
-            <CompareTerrainPanel
-              slot="C"
-              dotColor="rgba(168,85,247,0.7)"
-              terrainMetrics={metricsC}
-              events={eventsC}
-              colorVariant="frost"
-              selectedId={cId}
+        {/* ── TOP: Terrain Area ── */}
+        <div style={S.terrainRow}>
+          {/* Ghost mode: compact header bar above canvas */}
+          {isGhost && (
+            <CompareGhostHeaderBar
+              nScenarios={compareCount}
+              activePair={activePair}
+              selectedAId={aId}
+              selectedBId={bId}
+              selectedCId={cId}
               scenarioOptions={scenarioOptions}
-              onSelectScenario={setCId}
+              onSelectA={setAId}
+              onSelectB={setBId}
+              onSelectC={setCId}
+              onPairChange={setActivePair}
+              onSwap={swap}
+              onRotate={rotate}
             />
           )}
+
+          <CompareTerrainArea
+            viewMode={viewMode}
+            nScenarios={compareCount}
+            activePair={activePair}
+            selectedAId={aId}
+            selectedBId={bId}
+            selectedCId={cId}
+            metricsA={metricsA}
+            metricsB={metricsB}
+            metricsC={metricsC}
+            eventsA={eventsA}
+            eventsB={eventsB}
+            eventsC={eventsC}
+            scenarioOptions={scenarioOptions}
+            onSelectA={setAId}
+            onSelectB={setBId}
+            onSelectC={setCId}
+          />
         </div>
 
         {/* ── BOTTOM: Analytics ── */}
@@ -445,6 +508,42 @@ const S: Record<string, React.CSSProperties> = {
     gap: 8,
   },
 
+  /* ── Split/Ghost view toggle ── */
+  viewToggle: {
+    display: "flex",
+    gap: 0,
+    borderRadius: 4,
+    overflow: "hidden",
+    border: GLASS_BORDER,
+  },
+
+  viewBtn: {
+    padding: "4px 10px",
+    border: "none",
+    background: "rgba(0,0,0,0.3)",
+    color: "rgba(148,180,214,0.5)",
+    fontSize: 10,
+    fontWeight: 600,
+    fontFamily: FONT,
+    cursor: "pointer",
+    letterSpacing: "0.06em",
+    transition: "background 200ms ease, color 200ms ease",
+    textTransform: "uppercase" as const,
+  },
+
+  viewBtnActive: {
+    padding: "4px 10px",
+    border: "none",
+    background: "rgba(34,211,238,0.12)",
+    color: CYAN,
+    fontSize: 10,
+    fontWeight: 800,
+    fontFamily: FONT,
+    cursor: "pointer",
+    letterSpacing: "0.06em",
+    textTransform: "uppercase" as const,
+  },
+
   countToggle: {
     display: "flex",
     gap: 0,
@@ -509,6 +608,18 @@ const S: Record<string, React.CSSProperties> = {
     letterSpacing: "0.02em",
   },
 
+  headlineBadge: {
+    fontSize: 8,
+    fontWeight: 800,
+    letterSpacing: "0.16em",
+    color: "rgba(129,140,248,0.7)",
+    background: "rgba(129,140,248,0.08)",
+    padding: "2px 8px",
+    borderRadius: 3,
+    marginLeft: 12,
+    textTransform: "uppercase" as const,
+  },
+
   /* ── Command Grid ── */
   commandGrid: {
     flex: 1,
@@ -521,8 +632,8 @@ const S: Record<string, React.CSSProperties> = {
   },
 
   terrainRow: {
-    display: "grid",
-    gap: 2,
+    display: "flex",
+    flexDirection: "column",
     minHeight: 0,
     overflow: "hidden",
   },
