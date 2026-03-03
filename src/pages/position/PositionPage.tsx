@@ -57,6 +57,7 @@ import CodeOverlay from "@/components/command/CodeOverlay"
 import { selectTerrainEvents } from "@/selectors/terrainSelectors"
 import { selectPrimarySignal } from "@/domain/intelligence/selectPrimarySignal"
 import { buildTerrainExplanation } from "@/domain/intelligence/buildTerrainExplanation"
+import { useIntelligenceStore } from "@/store/intelligenceStore"
 import styles from "./PositionOverlays.module.css"
 
 // Diagnostics panel is togglable via close button
@@ -74,9 +75,7 @@ export default function PositionPage() {
   const [terrainTuning, setTerrainTuning] = useState<TerrainTuningParams>({ ...DEFAULT_TUNING })
   const viewportRef = useRef<HTMLDivElement>(null)
   const insightScrollRef = useRef<HTMLDivElement>(null)
-  const userScrolledAwayRef = useRef(false)
-  const scrollRafRef = useRef<number | null>(null)
-  const needsScrollRef = useRef(false)
+  const [userScrolling, setUserScrolling] = useState(false)
   const reducedMotion = useReducedMotion()
   const { debugHud } = useDebugFlags()
 
@@ -216,67 +215,39 @@ export default function PositionPage() {
     return () => clearSlideTimers()
   }, [clearSlideTimers])
 
-  // ── Follow-tail scroll — rAF-throttled, no jitter ──
-  // MutationObserver sets a "needsScroll" flag; single rAF frame applies scroll.
-  // User scroll-away pauses auto-follow (24px threshold).
+  // ── Follow-tail scroll — smooth scrollTo on simulation completion only ──
+  // NOT on every re-render. Respects user manual scrolling.
   useEffect(() => {
     if (!overlayVisible) return
     const el = insightScrollRef.current
     if (!el) return
 
-    userScrolledAwayRef.current = false
-    needsScrollRef.current = false
+    // Reset user-scrolling flag when overlay opens
+    setUserScrolling(false)
 
-    const BOTTOM_THRESHOLD = 24
+    const BOTTOM_THRESHOLD = 40
     const onScroll = () => {
       const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < BOTTOM_THRESHOLD
-      userScrolledAwayRef.current = !atBottom
-    }
-
-    // rAF loop — smooth incremental scroll, never jumps
-    // Scrolls 3-6px per frame toward bottom — fluid motion, no jitter
-    let running = true
-    const scrollEl = el // capture non-null ref for closure
-    const SCROLL_SPEED = 4 // px per frame — smooth, readable pace
-
-    function tick() {
-      if (!running) return
-      if (needsScrollRef.current && !userScrolledAwayRef.current) {
-        const gap = scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight
-        if (gap > 1) {
-          // Scroll by a small increment — never teleport
-          const step = Math.min(SCROLL_SPEED, gap)
-          scrollEl.scrollTop += step
-          // If still more to scroll, keep the flag set
-          if (gap - step > 1) {
-            // needsScrollRef stays true — next frame continues
-          } else {
-            needsScrollRef.current = false
-          }
-        } else {
-          needsScrollRef.current = false
-        }
+      if (!atBottom) {
+        setUserScrolling(true)
       }
-      scrollRafRef.current = requestAnimationFrame(tick)
     }
-
-    const onMutation = () => { needsScrollRef.current = true }
-    const observer = new MutationObserver(onMutation)
-
-    // Start observing immediately — start scroll loop right away (slide handles the delay)
-    observer.observe(el, { childList: true, subtree: true, characterData: true })
-    needsScrollRef.current = true
-    scrollRafRef.current = requestAnimationFrame(tick)
 
     el.addEventListener("scroll", onScroll, { passive: true })
-
-    return () => {
-      running = false
-      observer.disconnect()
-      el.removeEventListener("scroll", onScroll)
-      if (scrollRafRef.current) cancelAnimationFrame(scrollRafRef.current)
-    }
+    return () => el.removeEventListener("scroll", onScroll)
   }, [overlayVisible])
+
+  // Auto-scroll to bottom ONLY when a new simulation completes
+  useEffect(() => {
+    if (!simulationCompletedAt || !overlayVisible || userScrolling) return
+    const el = insightScrollRef.current
+    if (!el) return
+    // Small delay to let content render
+    const t = setTimeout(() => {
+      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" })
+    }, 300)
+    return () => clearTimeout(t)
+  }, [simulationCompletedAt, overlayVisible, userScrolling])
 
   // ── Intelligence panel keyboard shortcut (I key) ──
   useEffect(() => {
@@ -475,6 +446,38 @@ export default function PositionPage() {
       monthLabel: (m: number) => `Month ${m + 1}`,
     })
   }, [primaryEvent])
+
+  // ── A10.2: Event-locked intelligence mode ──
+  const lockedEventId = useIntelligenceStore((s) => s.lockedEventId)
+  const setLockedEventId = useIntelligenceStore((s) => s.setLockedEventId)
+
+  // Resolve locked event from terrain events list
+  const lockedEvent = useMemo(() => {
+    if (!lockedEventId) return null
+    return terrainEvents.find((e) => e.id === lockedEventId) ?? null
+  }, [lockedEventId, terrainEvents])
+
+  // Build explanation for locked event
+  const lockedExplanation = useMemo(() => {
+    if (!lockedEvent) return null
+    return buildTerrainExplanation({
+      event: lockedEvent,
+      monthLabel: (m: number) => `Month ${m + 1}`,
+    })
+  }, [lockedEvent])
+
+  // Display event = locked event (if valid) or auto primary
+  const displayEvent = lockedEvent ?? primaryEvent
+  const displayExplanation = lockedEvent ? lockedExplanation : terrainExplanation
+
+  // A10.2.5: Scroll to top when lockedEventId changes
+  useEffect(() => {
+    if (lockedEventId !== null) {
+      const el = insightScrollRef.current
+      if (el) el.scrollTo({ top: 0, behavior: "smooth" })
+      setUserScrolling(false) // re-enable auto-scroll when unlocked
+    }
+  }, [lockedEventId])
 
   // V1 baseline from context — fallback for KPIs only when NO scenario is active.
   const { baseline: baselineV1 } = useSystemBaseline()
@@ -819,7 +822,7 @@ export default function PositionPage() {
             <TerrainStage
               lockCamera={true}
               pathsEnabled={false}
-              focusedEvent={primaryEvent}
+              focusedEvent={displayEvent}
               terrainMetrics={{
                 ...(terrainMetrics ?? {
                   elevationScale: 1,
@@ -983,16 +986,62 @@ export default function PositionPage() {
                 setTypewriterDone(true)
               }}
             />
-            {/* ── A10.1: Terrain-bound intelligence explanation ── */}
-            {terrainExplanation && (
+            {/* ── A10.2: Terrain-bound intelligence — lock-aware ── */}
+            {displayExplanation && (
               <div style={{
                 marginTop: 16,
                 padding: "14px 18px",
-                background: "rgba(0,229,255,0.04)",
-                borderLeft: "2px solid rgba(0,229,255,0.35)",
+                background: lockedEventId
+                  ? "rgba(0,229,255,0.06)"
+                  : "rgba(0,229,255,0.04)",
+                borderLeft: lockedEventId
+                  ? "3px solid rgba(0,229,255,0.65)"
+                  : "2px solid rgba(0,229,255,0.35)",
                 borderRadius: 4,
                 fontFamily: "'Inter', system-ui, sans-serif",
+                transition: "border-left 0.3s ease, background 0.3s ease",
               }}>
+                {/* A10.2.7: Focused Signal header + Return to Auto */}
+                {lockedEventId && (
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginBottom: 10,
+                  }}>
+                    <span style={{
+                      fontSize: 9.5,
+                      fontWeight: 700,
+                      letterSpacing: "0.12em",
+                      textTransform: "uppercase" as const,
+                      color: "rgba(0,229,255,0.7)",
+                      background: "rgba(0,229,255,0.08)",
+                      padding: "3px 8px",
+                      borderRadius: 3,
+                    }}>
+                      FOCUSED SIGNAL
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setLockedEventId(null)}
+                      style={{
+                        background: "rgba(255,255,255,0.06)",
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        borderRadius: 3,
+                        padding: "3px 10px",
+                        fontSize: 10,
+                        color: "rgba(255,255,255,0.55)",
+                        cursor: "pointer",
+                        letterSpacing: "0.04em",
+                        transition: "background 0.2s ease",
+                      }}
+                      onMouseEnter={(e) => { (e.target as HTMLElement).style.background = "rgba(255,255,255,0.12)" }}
+                      onMouseLeave={(e) => { (e.target as HTMLElement).style.background = "rgba(255,255,255,0.06)" }}
+                    >
+                      Return to Auto
+                    </button>
+                  </div>
+                )}
                 <div style={{
                   fontSize: 11,
                   fontWeight: 600,
@@ -1001,7 +1050,7 @@ export default function PositionPage() {
                   color: "rgba(0,229,255,0.85)",
                   marginBottom: 6,
                 }}>
-                  {terrainExplanation.title}
+                  {displayExplanation.title}
                 </div>
                 <div style={{
                   fontSize: 12.5,
@@ -1009,14 +1058,14 @@ export default function PositionPage() {
                   color: "rgba(255,255,255,0.78)",
                   marginBottom: 8,
                 }}>
-                  {terrainExplanation.body}
+                  {displayExplanation.body}
                 </div>
                 <div style={{
                   fontSize: 10.5,
                   color: "rgba(255,255,255,0.38)",
                   fontStyle: "italic",
                 }}>
-                  {terrainExplanation.footnote}
+                  {displayExplanation.footnote}
                 </div>
               </div>
             )}

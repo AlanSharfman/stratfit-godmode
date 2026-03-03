@@ -24,6 +24,7 @@ import { signalParamsByType, perTypeCap, MAX_SIGNALS, computeSignalIntensity } f
 import { useSignalClock } from "./useSignalClock"
 import { useUiFocusStore } from "@/store/uiFocusStore"
 import { useCommandStore, MODE_EMPHASIS } from "@/store/commandStore"
+import { useIntelligenceStore } from "@/store/intelligenceStore"
 
 import RiskSpikeBeam from "./primitives/RiskSpikeBeam"
 import LiquidityStressField from "./primitives/LiquidityStressField"
@@ -112,6 +113,7 @@ function SignalForEvent({
   alpha,
   clock,
   resonanceBoost,
+  onSignalClick,
 }: {
   event: TerrainEvent
   position: [number, number, number]
@@ -119,25 +121,44 @@ function SignalForEvent({
   alpha: number
   clock: React.RefObject<{ t: number; dt: number }>
   resonanceBoost: number
+  onSignalClick?: () => void
 }) {
   const effectiveIntensity = Math.min(1, intensity * (1 + resonanceBoost * 0.15))
   const effectiveAlpha = Math.min(1, alpha * (1 + resonanceBoost * 0.1))
+
+  const handleClick = useCallback((e: any) => {
+    e.stopPropagation()
+    onSignalClick?.()
+  }, [onSignalClick])
+
+  let primitive: React.ReactNode = null
   switch (event.type) {
     case "risk_spike":
-      return <RiskSpikeBeam position={position} intensity={effectiveIntensity} alpha={effectiveAlpha} clock={clock} />
+      primitive = <RiskSpikeBeam position={position} intensity={effectiveIntensity} alpha={effectiveAlpha} clock={clock} />
+      break
     case "liquidity_stress":
-      return <LiquidityStressField position={position} intensity={effectiveIntensity} alpha={effectiveAlpha} clock={clock} />
+      primitive = <LiquidityStressField position={position} intensity={effectiveIntensity} alpha={effectiveAlpha} clock={clock} />
+      break
     case "volatility_zone":
-      return <VolatilityField position={position} intensity={effectiveIntensity} alpha={effectiveAlpha} clock={clock} />
+      primitive = <VolatilityField position={position} intensity={effectiveIntensity} alpha={effectiveAlpha} clock={clock} />
+      break
     case "growth_inflection":
-      return <GrowthArc position={position} intensity={effectiveIntensity} alpha={effectiveAlpha} clock={clock} />
+      primitive = <GrowthArc position={position} intensity={effectiveIntensity} alpha={effectiveAlpha} clock={clock} />
+      break
     case "probability_shift":
-      return <ProbabilityRipple position={position} intensity={effectiveIntensity} alpha={effectiveAlpha} clock={clock} />
+      primitive = <ProbabilityRipple position={position} intensity={effectiveIntensity} alpha={effectiveAlpha} clock={clock} />
+      break
     case "downside_regime":
-      return <DownsideShadow position={position} intensity={effectiveIntensity} alpha={effectiveAlpha} clock={clock} />
-    default:
-      return null
+      primitive = <DownsideShadow position={position} intensity={effectiveIntensity} alpha={effectiveAlpha} clock={clock} />
+      break
   }
+  if (!primitive) return null
+  // Wrap in invisible click target — no camera movement, no re-render of terrain
+  return (
+    <group onClick={handleClick}>
+      {primitive}
+    </group>
+  )
 }
 
 // ── Hook: read events from store via selector ───────────────────
@@ -191,6 +212,9 @@ const TerrainSignalsLayer: React.FC<TerrainSignalsLayerProps> = memo(
 
     // Spatial resonance — read selectedEventId from uiFocusStore
     const selectedEventId = useUiFocusStore((s) => s.selectedEventId)
+
+    // A10.2 — Intelligence lock: click signal → lock overlay to that event
+    const setLockedEventId = useIntelligenceStore((s) => s.setLockedEventId)
 
     // Single global animation clock — all primitives consume this ref
     const clockRef = useSignalClock()
@@ -272,10 +296,11 @@ const TerrainSignalsLayer: React.FC<TerrainSignalsLayerProps> = memo(
             alpha={modeAlpha}
             clock={clockRef}
             resonanceBoost={resonanceBoost}
+            onSignalClick={() => setLockedEventId(event.id)}
           />
         )
       })
-    }, [curated, getY, clockRef, selectedEventId, hasEmphasis, emphasizedTypes])
+    }, [curated, getY, clockRef, selectedEventId, hasEmphasis, emphasizedTypes, setLockedEventId])
 
     return (
       <group name="TerrainSignalsLayer">
