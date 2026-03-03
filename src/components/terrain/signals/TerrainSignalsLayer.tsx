@@ -178,12 +178,15 @@ function useTerrainSignalEvents(): {
 export interface TerrainSignalsLayerProps {
   /** Terrain surface ref — provides getHeightAt for correct Y anchoring */
   terrainRef: React.RefObject<TerrainSurfaceHandle | null>
+  /** When provided, uses these events instead of reading from the active scenario store */
+  overrideEvents?: TerrainEvent[]
 }
 
 const TerrainSignalsLayer: React.FC<TerrainSignalsLayerProps> = memo(
-  ({ terrainRef }) => {
-    const { events, activeScenarioId, activeScenarioStatus } =
-      useTerrainSignalEvents()
+  ({ terrainRef, overrideEvents }) => {
+    const storeData = useTerrainSignalEvents()
+    const events = overrideEvents ?? storeData.events
+    const { activeScenarioId, activeScenarioStatus } = storeData
 
     // Spatial resonance — read selectedEventId from uiFocusStore
     const selectedEventId = useUiFocusStore((s) => s.selectedEventId)

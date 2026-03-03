@@ -65,6 +65,8 @@ type TerrainStageProps = {
     detail: string
     metricLine: string
   }>
+  /** Override events for TerrainSignalsLayer — used by Compare mode */
+  overrideEvents?: import("@/domain/events/terrainEventTypes").TerrainEvent[]
   children?: ReactNode
 }
 
@@ -74,6 +76,7 @@ export default function TerrainStage({
   lockCamera = false,
   pathsEnabled,
   signals,
+  overrideEvents,
   children,
 }: TerrainStageProps) {
   const terrainRef = useRef<TerrainSurfaceHandle>(null!);
@@ -210,7 +213,7 @@ export default function TerrainStage({
               <BaselineTimelineTicks visible terrainRef={terrainRef} />
             )}
             <LiquidityFlowLayer terrainRef={terrainRef} enabled={liquidityOn} />
-            <TerrainSignalsLayer terrainRef={terrainRef} />
+            <TerrainSignalsLayer terrainRef={terrainRef} overrideEvents={overrideEvents} />
             {showMarkers && <StrategicMarkers />}
           </>
         )}
