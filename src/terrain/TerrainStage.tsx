@@ -40,6 +40,7 @@ import { useTerrainControls } from "@/terrain/useTerrainControls";
 import { useDebugFlags, useDebugSignals } from "@/debug/debugSignals";
 import { useOverlayVisibility } from "@/domain/ui/overlayVisibility";
 import TerrainFocusGlow from "@/components/terrain/intelligence/TerrainFocusGlow";
+import TerrainHeatmapLayer from "@/terrain/layers/TerrainHeatmapLayer";
 import { eventToFocusPosition } from "@/domain/intelligence/eventFocus";
 import { computeSignalIntensity } from "@/components/terrain/signals/signalStyle";
 import { POSITION_PRESET } from "@/scene/camera/terrainCameraPresets";
@@ -76,6 +77,8 @@ type TerrainStageProps = {
   focusedEvent?: import("@/domain/events/terrainEventTypes").TerrainEvent | null
   /** Color variant for terrain surface (default | green | frost) */
   colorVariant?: TerrainColorVariant
+  /** Enable red→green heatmap overlay on terrain */
+  heatmapEnabled?: boolean
   /** Azimuth (horizontal orbit) limits in radians. Defaults: unconstrained. */
   minAzimuthAngle?: number
   maxAzimuthAngle?: number
@@ -96,6 +99,7 @@ export default function TerrainStage({
   overrideEvents,
   focusedEvent,
   colorVariant,
+  heatmapEnabled = false,
   minAzimuthAngle = -Infinity,
   maxAzimuthAngle = Infinity,
   minPolarAngle: minPolar = 0.758,
@@ -229,6 +233,7 @@ export default function TerrainStage({
 
       <Suspense fallback={null}>
         <TerrainSurface ref={terrainRef} terrainMetrics={terrainMetrics} colorVariant={colorVariant} />
+        <TerrainHeatmapLayer enabled={heatmapEnabled} terrainMetrics={terrainMetrics} />
         {terrainReady && (
           <>
             {/* A12: Always mount P50Path — emphasis via visible prop, never unmount */}

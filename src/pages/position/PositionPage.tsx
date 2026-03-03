@@ -867,6 +867,7 @@ export default function PositionPage() {
               lockCamera={true}
               pathsEnabled={false}
               focusedEvent={displayEvent}
+              heatmapEnabled={heatmapEnabled || commandMode === "heatmap"}
               terrainMetrics={{
                 ...(terrainMetrics ?? {
                   elevationScale: 1,
