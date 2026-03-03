@@ -33,6 +33,12 @@ import { deriveTerrainMetrics } from "@/terrain/terrainFromBaseline"
 import { selectTerrainMetrics } from "@/selectors/terrainSelectors"
 import CommandGlassPanel from "@/components/intelligence/CommandGlassPanel"
 import { useIntelligencePresentation } from "@/hooks/useIntelligencePresentation"
+import { useCommandAutoEvaluate } from "@/hooks/useCommandAutoEvaluate"
+import { useCommandStore } from "@/store/commandStore"
+import CommandModeStrip from "@/components/command/CommandModeStrip"
+import HeatmapOverlay from "@/components/command/HeatmapOverlay"
+import CodeOverlay from "@/components/command/CodeOverlay"
+import { selectRiskScore } from "@/selectors/riskSelectors"
 
 /* ── Lever value formatting (same as DecisionPage) ───────── */
 
@@ -156,6 +162,12 @@ export default function StudioPage() {
   // ── Intelligence presentation (narrative brief) ──
   const simulationCompletedAt = activeScenario?.simulationResults?.completedAt || null
   const presentation = useIntelligencePresentation({ completedAt: simulationCompletedAt })
+
+  // ── Command Centre Auto-Evaluate ──
+  const activeSimResults = activeScenario?.simulationResults ?? null
+  useCommandAutoEvaluate(activeSimResults)
+  const commandMode = useCommandStore((s) => s.currentMode)
+  const riskScoreForOverlays = selectRiskScore(activeSimResults?.kpis ?? null)
 
   // ── Run stamp ──
   const runStamp = useMemo(() => {
@@ -366,6 +378,22 @@ export default function StudioPage() {
               <SkyAtmosphere />
             </TerrainStage>
             <div style={S.canvasVignette} />
+            {/* ── Command Mode overlays ── */}
+            <HeatmapOverlay
+              terrainMetrics={terrainMetrics ?? null}
+              riskScore={riskScoreForOverlays}
+              visible={commandMode === "heatmap"}
+            />
+            <CodeOverlay
+              kpis={activeSimResults?.kpis ?? null}
+              terrainMetrics={terrainMetrics ?? null}
+              riskScore={riskScoreForOverlays}
+              visible={commandMode === "code"}
+            />
+            {/* ── Command Mode Strip ── */}
+            <div style={{ position: "absolute", bottom: 10, left: "50%", transform: "translateX(-50%)", zIndex: 4 }}>
+              <CommandModeStrip engineResults={activeSimResults} />
+            </div>
           </div>
         </main>
 

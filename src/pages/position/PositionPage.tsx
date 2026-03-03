@@ -49,6 +49,11 @@ import {
 
 import PositionDebugHUD from "@/components/debug/PositionDebugHUD"
 import { useDebugFlags } from "@/debug/debugSignals"
+import { useCommandAutoEvaluate } from "@/hooks/useCommandAutoEvaluate"
+import { useCommandStore } from "@/store/commandStore"
+import CommandModeStrip from "@/components/command/CommandModeStrip"
+import HeatmapOverlay from "@/components/command/HeatmapOverlay"
+import CodeOverlay from "@/components/command/CodeOverlay"
 import styles from "./PositionOverlays.module.css"
 
 // Diagnostics panel is togglable via close button
@@ -445,6 +450,12 @@ export default function PositionPage() {
     ? activeScenario.simulationResults?.completedAt?.toString()
     : undefined
 
+  // ── Command Centre Auto-Evaluate ──
+  const activeSimResults = activeScenario?.simulationResults ?? null
+  useCommandAutoEvaluate(activeSimResults)
+  const commandMode = useCommandStore((s) => s.currentMode)
+  const riskScoreForOverlays = selectRiskScore(activeSimResults?.kpis ?? null, engineRunId)
+
   // V1 baseline from context — fallback for KPIs only when NO scenario is active.
   const { baseline: baselineV1 } = useSystemBaseline()
 
@@ -835,6 +846,22 @@ export default function PositionPage() {
               triggerKey={activeScenario?.simulationResults?.completedAt ?? null}
               disabled={reducedMotion}
             />
+            {/* ── Command Mode overlays ── */}
+            <HeatmapOverlay
+              terrainMetrics={terrainMetrics ?? null}
+              riskScore={riskScoreForOverlays}
+              visible={commandMode === "heatmap"}
+            />
+            <CodeOverlay
+              kpis={activeSimResults?.kpis ?? null}
+              terrainMetrics={terrainMetrics ?? null}
+              riskScore={riskScoreForOverlays}
+              visible={commandMode === "code"}
+            />
+            {/* ── Command Mode Strip ── */}
+            <div style={{ position: "absolute", bottom: 10, left: "50%", transform: "translateX(-50%)", zIndex: 4 }}>
+              <CommandModeStrip engineResults={activeSimResults} />
+            </div>
             {/* DEV: Simulation proof overlay — hidden for demo */}
             {/* <SimulationProofOverlay
               scenario={activeScenario ?? null}

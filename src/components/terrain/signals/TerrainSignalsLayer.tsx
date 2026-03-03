@@ -23,6 +23,7 @@ import { useDebugFlags, useDebugSignals } from "@/debug/debugSignals"
 import { signalParamsByType, perTypeCap, MAX_SIGNALS, computeSignalIntensity } from "./signalStyle"
 import { useSignalClock } from "./useSignalClock"
 import { useUiFocusStore } from "@/store/uiFocusStore"
+import { useCommandStore, MODE_EMPHASIS } from "@/store/commandStore"
 
 import RiskSpikeBeam from "./primitives/RiskSpikeBeam"
 import LiquidityStressField from "./primitives/LiquidityStressField"
@@ -235,6 +236,11 @@ const TerrainSignalsLayer: React.FC<TerrainSignalsLayerProps> = memo(
       [terrainRef],
     )
 
+    // ── Command mode emphasis — adjust intensity/opacity per mode ──
+    const commandMode = useCommandStore((s) => s.currentMode)
+    const emphasizedTypes = MODE_EMPHASIS[commandMode]
+    const hasEmphasis = emphasizedTypes.length > 0
+
     // Build signal nodes — memoized positions + curated events
     const signalNodes = useMemo(() => {
       if (curated.length === 0) return null
@@ -244,19 +250,32 @@ const TerrainSignalsLayer: React.FC<TerrainSignalsLayerProps> = memo(
         const pos: [number, number, number] = [event.coordinates.x, y, event.coordinates.z]
         const resonanceBoost = selectedEventId === event.id ? 1 : 0
 
+        // Command mode emphasis: boost emphasized types, dim others
+        let modeIntensity = intensity
+        let modeAlpha = alphaMultiplier
+        if (hasEmphasis) {
+          if (emphasizedTypes.includes(event.type)) {
+            modeIntensity = Math.min(1, intensity * 1.3)
+            modeAlpha = Math.min(1, alphaMultiplier * 1.2)
+          } else {
+            modeIntensity = intensity * 0.35
+            modeAlpha = alphaMultiplier * 0.3
+          }
+        }
+
         return (
           <SignalForEvent
             key={event.id}
             event={event}
             position={pos}
-            intensity={intensity}
-            alpha={alphaMultiplier}
+            intensity={modeIntensity}
+            alpha={modeAlpha}
             clock={clockRef}
             resonanceBoost={resonanceBoost}
           />
         )
       })
-    }, [curated, getY, clockRef, selectedEventId])
+    }, [curated, getY, clockRef, selectedEventId, hasEmphasis, emphasizedTypes])
 
     return (
       <group name="TerrainSignalsLayer">

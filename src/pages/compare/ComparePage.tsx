@@ -20,6 +20,8 @@ import { deriveTerrainMetrics, type TerrainMetrics } from "@/terrain/terrainFrom
 
 import SplitTerrainView from "@/components/terrain/compare/SplitTerrainView"
 import DeltaSummaryPanel from "@/components/compare/DeltaSummaryPanel"
+import CommandModeStrip from "@/components/command/CommandModeStrip"
+import { useCommandAutoEvaluate } from "@/hooks/useCommandAutoEvaluate"
 import type { TerrainEvent } from "@/domain/events/terrainEventTypes"
 
 /* ── Component ───────────────────────────────────────────── */
@@ -162,6 +164,10 @@ export default function ComparePage() {
     ? "BASELINE (B)"
     : `${(scenarioB?.decision ?? "Scenario").slice(0, 20)} (B)`
 
+  // ── Command Centre Auto-Evaluate (use B-side results as primary) ──
+  const activeSimResultsForCompare = scenarioB?.simulationResults ?? scenarioA?.simulationResults ?? null
+  useCommandAutoEvaluate(activeSimResultsForCompare)
+
   // ── Headline ──
   const headline = useMemo(() => {
     if (!kpisA || !kpisB) return "Select two scenarios to compare."
@@ -278,6 +284,10 @@ export default function ComparePage() {
             labelA={labelA}
             labelB={labelB}
           />
+          {/* ── Command Mode Strip ── */}
+          <div style={{ position: "absolute", bottom: 10, left: "50%", transform: "translateX(-50%)", zIndex: 4 }}>
+            <CommandModeStrip engineResults={activeSimResultsForCompare} />
+          </div>
         </main>
 
         {/* ── RIGHT: Delta Summary ── */}
