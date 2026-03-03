@@ -1971,8 +1971,8 @@ export function ScenarioMountainImpl({
           isRecalibrating={isRecalibrating}
         />
 
-        {/* Strategic Path + Milestones overlays */}
-        {showPath ? (
+        {/* Strategic Path + Milestones overlays: always on in God Mode */}
+        {(showPath || isGodMode) ? (
           <StrategicPath
             solverPath={solverPath?.length ? solverPath : [
               { riskIndex: 60, enterpriseValue: 1, runway: 12 },
@@ -1988,9 +1988,9 @@ export function ScenarioMountainImpl({
           />
         ) : null}
 
-        {/* Continuity cues: reality anchor + origin marker + forward cue (strategy only) */}
+        {/* Continuity cues: reality anchor + origin marker + forward cue (strategy / god mode) */}
         <ContinuityCues
-          enabled={mode === "strategy"}
+          enabled={mode === "strategy" || isGodMode}
           origin={(() => {
             const sp = solverPath?.length ? solverPath : [{ riskIndex: 60, enterpriseValue: 1, runway: 12 }];
             const p = sp[0];
@@ -2000,11 +2000,12 @@ export function ScenarioMountainImpl({
             const r01 = (p.runway ?? 0) / maxR;
             const ev01 = ((p.enterpriseValue ?? 0) - minEV) / (maxEV - minEV);
             const risk01 = Math.max(0, Math.min(1, (p.riskIndex ?? 50) / 100));
-            const x = -0.5 * 10;
-            const y = -1.2;
-            const terrainH = sampleMountainHeight(x, y, resolvedDataPoints);
-            const z = terrainH + 0.35 + (r01 * 0.3 + ev01 * 0.15 - risk01 * 0.1);
-            return [x, y, z] as [number, number, number];
+            const mesh_x = -0.5 * 10;
+            const mesh_y = -1.2;
+            const terrainH = sampleMountainHeight(mesh_x, mesh_y, resolvedDataPoints);
+            const mesh_z = terrainH + 0.35 + (r01 * 0.3 + ev01 * 0.15 - risk01 * 0.1);
+            // mesh-local → world: rotation[-π/2,0,0], pos[0,-2,0], scale 0.9
+            return [mesh_x * 0.9, mesh_z * 0.9 - 2, -mesh_y * 0.9] as [number, number, number];
           })()}
           forward={(() => {
             const sp = solverPath?.length ? solverPath : [{ riskIndex: 60, enterpriseValue: 1, runway: 12 }];
@@ -2015,14 +2016,15 @@ export function ScenarioMountainImpl({
             const r01 = (p.runway ?? 0) / maxR;
             const ev01 = ((p.enterpriseValue ?? 0) - minEV) / (maxEV - minEV);
             const risk01 = Math.max(0, Math.min(1, (p.riskIndex ?? 50) / 100));
-            const x = -0.5 * 10;
-            const y = -1.2;
-            const terrainH = sampleMountainHeight(x, y, resolvedDataPoints);
-            const z = terrainH + 0.35 + (r01 * 0.3 + ev01 * 0.15 - risk01 * 0.1);
-            return [x, y, z - 6] as [number, number, number];
+            // Forward point: same x, advance depth by 6 mesh units
+            const mesh_x = -0.5 * 10;
+            const mesh_y_fwd = -1.2 - 6; // 6 mesh units deeper
+            const terrainH = sampleMountainHeight(mesh_x, mesh_y_fwd, resolvedDataPoints);
+            const mesh_z = terrainH + 0.35 + (r01 * 0.3 + ev01 * 0.15 - risk01 * 0.1);
+            return [mesh_x * 0.9, mesh_z * 0.9 - 2, -mesh_y_fwd * 0.9] as [number, number, number];
           })()}
         />
-        {showMilestones ? (
+        {(showMilestones || isGodMode) ? (
           <MilestoneOrbs
             color={pathColor ?? SCENARIO_PALETTE_COLORS[scenarioId]?.active ?? "#22d3ee"}
             mode={mode}

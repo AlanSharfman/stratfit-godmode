@@ -45,15 +45,23 @@ export function StrategicPath({
       const ev01 = ((p.enterpriseValue ?? 0) - minEV) / (maxEV - minEV);
       const risk01 = clamp01((p.riskIndex ?? 50) / 100);
 
-      const x = (t - 0.5) * 10; // left↔right across the scene
-      const y = -1.2 + t * 0.8; // slightly forward over time
+      // Mesh-local coordinates (sampler uses PlaneGeometry local space)
+      const mesh_x = (t - 0.5) * 10; // left↔right
+      const mesh_y = -1.2 + t * 0.8; // forward (PlaneGeometry Y → world -Z after rotation)
 
-      // Sample terrain height at this XY position and add hover offset
-      const terrainH = sampleMountainHeight(x, y, dataPoints);
+      // Sample terrain height (returns PlaneGeometry local Z = world Y after rotation)
+      const terrainH = sampleMountainHeight(mesh_x, mesh_y, dataPoints);
       const hoverOffset = 0.35;
-      const z = terrainH + hoverOffset + (runway01 * 0.3 + ev01 * 0.15 - risk01 * 0.1);
+      const mesh_z = terrainH + hoverOffset + (runway01 * 0.3 + ev01 * 0.15 - risk01 * 0.1);
 
-      return new THREE.Vector3(x, y, z);
+      // Convert mesh-local → world via terrain group transform:
+      //   rotation [-π/2, 0, 0]: local-Z → world-Y, local-Y → world-(-Z)
+      //   position [0, -2, 0], scale [0.9, 0.9, 0.9]
+      const worldX = mesh_x * 0.9;
+      const worldY = mesh_z * 0.9 - 2;
+      const worldZ = -mesh_y * 0.9;
+
+      return new THREE.Vector3(worldX, worldY, worldZ);
     });
   }, [solverPath, config, dataPoints]);
 
@@ -165,11 +173,12 @@ export function MilestoneOrbs({
       const runway01 = (p.runway ?? 0) / maxRunway;
       const ev01 = ((p.enterpriseValue ?? 0) - minEV) / (maxEV - minEV);
       const risk01 = clamp01((p.riskIndex ?? 50) / 100);
-      const x = (t - 0.5) * 10;
-      const y = -1.2 + t * 0.8;
-      const terrainH = sampleMountainHeight(x, y, dataPoints);
-      const z = terrainH + 0.35 + (runway01 * 0.3 + ev01 * 0.15 - risk01 * 0.1);
-      return new THREE.Vector3(x, y, z);
+      const mesh_x = (t - 0.5) * 10;
+      const mesh_y = -1.2 + t * 0.8;
+      const terrainH = sampleMountainHeight(mesh_x, mesh_y, dataPoints);
+      const mesh_z = terrainH + 0.35 + (runway01 * 0.3 + ev01 * 0.15 - risk01 * 0.1);
+      // Convert mesh-local → world (same terrain group transform as StrategicPath)
+      return new THREE.Vector3(mesh_x * 0.9, mesh_z * 0.9 - 2, -mesh_y * 0.9);
     });
 
     const typeOrder = [
