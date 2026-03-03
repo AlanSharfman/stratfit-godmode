@@ -661,6 +661,17 @@
   pointer-events: auto;
 }
 
+.riskIntelDock {
+  padding: 4px 8px;
+  pointer-events: auto;
+  flex-shrink: 0;
+  max-height: 45vh;
+  overflow-y: auto;
+  overflow-x: clip;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 224, 255, 0.12) transparent;
+}
+
 .baselineIntelDock {
   padding: 10px 8px 8px;
   pointer-events: auto;

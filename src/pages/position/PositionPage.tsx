@@ -68,6 +68,7 @@ import LegendMini from "@/components/terrain/ui/LegendMini"
 import TerrainRenderContractPanel from "@/components/debug/TerrainRenderContractPanel"
 import { buildRenderContract } from "@/domain/terrain/buildRenderContract"
 import { POSITION_PRESET } from "@/scene/camera/terrainCameraPresets"
+import RiskIntelligencePanel from "@/components/Risk/RiskIntelligencePanel"
 import styles from "./PositionOverlays.module.css"
 
 // Diagnostics panel is togglable via close button
@@ -959,6 +960,11 @@ export default function PositionPage() {
                 <span className={styles.chevron}>&#9656;</span>
               </button>
             )}
+          </div>
+
+          {/* ═══ Risk Intelligence Panel — Phase 300 ═══ */}
+          <div className={styles.riskIntelDock} aria-label="Risk Intelligence">
+            <RiskIntelligencePanel />
           </div>
 
           {/* Scenario Context + Cinematic Insights */}
