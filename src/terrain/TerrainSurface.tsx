@@ -8,7 +8,8 @@ import type { TerrainMetrics } from "@/terrain/terrainFromBaseline"
 import { baselineReliefScalar, baselineSeedString, createSeed } from "@/terrain/seed"
 import { TERRAIN_CONSTANTS } from "@/terrain/terrainConstants"
 import { buildTerrainWithMetrics, sampleTerrainHeight } from "@/terrain/buildTerrain"
-import { createTerrainSolidMaterial, createTerrainWireMaterial } from "@/terrain/terrainMaterials"
+import { createTerrainSolidMaterial, createTerrainSolidMaterialVariant, createTerrainWireMaterial } from "@/terrain/terrainMaterials"
+import type { TerrainColorVariant } from "@/terrain/terrainMaterials"
 
 export type TerrainSurfaceHandle = {
   getHeightAt: (worldX: number, worldZ: number) => number
@@ -19,10 +20,12 @@ export type TerrainSurfaceHandle = {
 
 type Props = {
   terrainMetrics?: TerrainMetrics
+  /** Color variant for the terrain surface (used by Compare B-side) */
+  colorVariant?: TerrainColorVariant
 }
 
 const TerrainSurface = forwardRef<TerrainSurfaceHandle, Props>(function TerrainSurface(
-  { terrainMetrics },
+  { terrainMetrics, colorVariant },
   ref
 ) {
   const solidRef = useRef<THREE.Mesh>(null)
@@ -50,7 +53,12 @@ const TerrainSurface = forwardRef<TerrainSurfaceHandle, Props>(function TerrainS
     }
   }, [geometry])
 
-  const solidMat = useMemo(() => createTerrainSolidMaterial(), [])
+  const solidMat = useMemo(
+    () => colorVariant && colorVariant !== "default"
+      ? createTerrainSolidMaterialVariant(colorVariant)
+      : createTerrainSolidMaterial(),
+    [colorVariant],
+  )
   const wireMat = useMemo(() => createTerrainWireMaterial(), [])
 
   useEffect(() => () => solidMat.dispose(), [solidMat])

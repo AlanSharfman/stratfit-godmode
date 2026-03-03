@@ -23,6 +23,7 @@ import { OrbitControls } from "@react-three/drei";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import type { TerrainSurfaceHandle } from "@/terrain/TerrainSurface";
 import TerrainSurface from "@/terrain/TerrainSurface";
+import type { TerrainColorVariant } from "@/terrain/terrainMaterials";
 import P50Path from "@/paths/P50Path";
 
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
@@ -72,6 +73,8 @@ type TerrainStageProps = {
   overrideEvents?: import("@/domain/events/terrainEventTypes").TerrainEvent[]
   /** Primary event to highlight with a terrain glow (A10.1) */
   focusedEvent?: import("@/domain/events/terrainEventTypes").TerrainEvent | null
+  /** Color variant for terrain surface (default | green | frost) */
+  colorVariant?: TerrainColorVariant
   children?: ReactNode
 }
 
@@ -83,6 +86,7 @@ export default function TerrainStage({
   signals,
   overrideEvents,
   focusedEvent,
+  colorVariant,
   children,
 }: TerrainStageProps) {
   const terrainRef = useRef<TerrainSurfaceHandle>(null!);
@@ -208,7 +212,7 @@ export default function TerrainStage({
       <HorizonBand />
 
       <Suspense fallback={null}>
-        <TerrainSurface ref={terrainRef} terrainMetrics={terrainMetrics} />
+        <TerrainSurface ref={terrainRef} terrainMetrics={terrainMetrics} colorVariant={colorVariant} />
         {terrainReady && (
           <>
             {pathsOn && (

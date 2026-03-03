@@ -60,7 +60,7 @@ const SplitTerrainView: React.FC<SplitTerrainViewProps> = memo(
       {/* ── RIGHT: Side B ── */}
       <div style={S.half}>
         <div style={S.label}>
-          <span style={{ ...S.labelDot, background: "rgba(34,211,238,0.7)" }} />
+          <span style={{ ...S.labelDot, background: "rgba(34,197,94,0.7)" }} />
           <span style={S.labelText}>{labelB}</span>
         </div>
         <div style={S.viewport}>
@@ -69,6 +69,7 @@ const SplitTerrainView: React.FC<SplitTerrainViewProps> = memo(
             pathsEnabled={false}
             terrainMetrics={{ ...DEFAULT_METRICS, ...metricsB }}
             overrideEvents={eventsB}
+            colorVariant="green"
           >
             <CameraCompositionRig />
             <SkyAtmosphere />
