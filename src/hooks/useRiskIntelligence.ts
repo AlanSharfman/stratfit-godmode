@@ -3,12 +3,18 @@
 // STRATFIT — Phase 300: useRiskIntelligence Hook
 //
 // Single read point for Risk Intelligence in UI.
-// Reads phase1ScenarioStore → runs riskIntelligenceEngine → returns output.
+// Risk derived strictly from engineResults.timeline[].riskIndex.
+//
+// Data flow:
+//   1. studioTimelineStore.engineResults.timeline  (primary)
+//   2. Fallback: KPI-projected timeline via buildTimelineFromKpis
+//   3. phase1ScenarioStore → selectKpis → qualitative intelligence
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { useMemo } from "react";
 import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore";
 import { useBaselineStore } from "@/state/baselineStore";
+import { useStudioTimelineStore } from "@/stores/studioTimelineStore";
 import { selectKpis } from "@/selectors/kpiSelectors";
 import type { SelectedKpis } from "@/selectors/kpiSelectors";
 import {
@@ -29,6 +35,9 @@ export function useRiskIntelligence(): UseRiskIntelligenceReturn {
   const activeScenarioId = usePhase1ScenarioStore((s) => s.activeScenarioId);
   const scenarios = usePhase1ScenarioStore((s) => s.scenarios);
   const baseline = useBaselineStore((s) => s.baseline);
+
+  // ── Engine timeline — primary risk source ────────────────────
+  const engineResults = useStudioTimelineStore((s) => s.engineResults);
 
   const activeScenario = useMemo(
     () => scenarios.find((s) => s.id === activeScenarioId) ?? null,
@@ -63,16 +72,19 @@ export function useRiskIntelligence(): UseRiskIntelligenceReturn {
 
     const simKpis = activeScenario.simulationResults.kpis;
     const selectedKpis = selectKpis(simKpis);
+    const horizon = activeScenario.simulationResults.horizonMonths ?? 24;
 
-    const engineRunId = activeScenario.simulationResults.completedAt?.toString();
+    // Strict: use engineResults.timeline[].riskIndex when available
+    const timeline = engineResults?.timeline ?? null;
 
     return computeRiskIntelligence({
       simulationKpis: simKpis,
       selectedKpis,
-      engineRunId,
+      timeline,
+      horizonMonths: horizon,
       baselineKpis: baselineKpis ?? selectedKpis,
     });
-  }, [activeScenario, baselineKpis]);
+  }, [activeScenario, baselineKpis, engineResults]);
 
   // Compute baseline delta: how much riskier is scenario vs baseline?
   const baselineDelta = useMemo(() => {
