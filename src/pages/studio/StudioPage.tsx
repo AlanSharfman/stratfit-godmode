@@ -26,8 +26,8 @@ import {
 } from "@/config/decisionLeverSchemas"
 
 import TerrainStage from "@/terrain/TerrainStage"
-import CameraCompositionRig from "@/pages/position-v2/rigs/CameraCompositionRig"
-import SkyAtmosphere from "@/pages/position-v2/rigs/SkyAtmosphere"
+import CameraCompositionRig from "@/scene/camera/CameraCompositionRig"
+import SkyAtmosphere from "@/scene/rigs/SkyAtmosphere"
 import type { TerrainMetrics } from "@/terrain/terrainFromBaseline"
 import { deriveTerrainMetrics } from "@/terrain/terrainFromBaseline"
 import { selectTerrainMetrics } from "@/selectors/terrainSelectors"

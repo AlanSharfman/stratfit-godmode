@@ -10,8 +10,8 @@ import React, { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { ROUTES } from "@/routes/routeContract"
 import TerrainStage from "@/terrain/TerrainStage"
-import CameraCompositionRig from "@/pages/position-v2/rigs/CameraCompositionRig"
-import SkyAtmosphere from "@/pages/position-v2/rigs/SkyAtmosphere"
+import CameraCompositionRig from "@/scene/camera/CameraCompositionRig"
+import SkyAtmosphere from "@/scene/rigs/SkyAtmosphere"
 import type { TerrainMetrics } from "@/terrain/terrainFromBaseline"
 
 /* ── Static terrain metrics for the welcome background ── */

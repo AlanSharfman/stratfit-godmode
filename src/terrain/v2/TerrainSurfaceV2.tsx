@@ -15,27 +15,11 @@ import { useMemo, useEffect } from "react"
 // No external deps. No global state. Deterministic.
 // ═══════════════════════════════════════════════════════════════════════════
 
-// ─── Tuning Parameter Contract ─────────────────────────────────────────────
-
-export type TerrainTuningParams = {
-  elevationScale: number      // 0–2
-  ridgeIntensity: number      // 0–1
-  valleyDepth: number         // 0–1
-  terrainRoughness: number    // 0–1
-  peakSoftness: number        // 0–1
-  noiseFrequency: number      // 0–3
-  microDetailStrength: number // 0–1
-}
-
-export const DEFAULT_TUNING: TerrainTuningParams = {
-  elevationScale: 1.22,
-  ridgeIntensity: 0.62,
-  valleyDepth: 0.52,
-  terrainRoughness: 0.45,
-  peakSoftness: 0.56,
-  noiseFrequency: 0.85,
-  microDetailStrength: 0.35,
-}
+// ─── Tuning Parameter Contract (re-exported from shared) ───────────────────
+export type { TerrainTuningParams } from "@/terrain/terrainTuning"
+export { DEFAULT_TUNING } from "@/terrain/terrainTuning"
+import type { TerrainTuningParams } from "@/terrain/terrainTuning"
+import { DEFAULT_TUNING } from "@/terrain/terrainTuning"
 
 // ─── Procedural Noise (zero-dependency) ────────────────────────────────────
 
