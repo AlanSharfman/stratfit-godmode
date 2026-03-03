@@ -1,6 +1,6 @@
-// src/pages/studio/StudioPage.tsx
+// src/pages/compare/ComparePage.tsx
 // ═══════════════════════════════════════════════════════════════════════════
-// STRATFIT — Studio Stub (Phase D0)
+// STRATFIT — Compare Stub (Phase D0)
 // Institutional placeholder. No legacy systems mounted.
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -8,14 +8,14 @@ import React from "react"
 import { Link } from "react-router-dom"
 import { ROUTES } from "@/routes/routeContract"
 
-export default function StudioPage() {
+export default function ComparePage() {
   return (
     <div style={shell}>
       <div style={card}>
-        <div style={eyebrow}>STUDIO</div>
-        <h1 style={title}>Strategy Studio</h1>
+        <div style={eyebrow}>COMPARE</div>
+        <h1 style={title}>Scenario Compare</h1>
         <p style={purpose}>
-          Compose, layer, and stress-test scenario configurations against your baseline.
+          Side-by-side institutional comparison of scenario outcomes, deltas, and probability distributions.
         </p>
         <div style={badge}>Wiring in progress</div>
         <Link to={ROUTES.POSITION} style={link}>
