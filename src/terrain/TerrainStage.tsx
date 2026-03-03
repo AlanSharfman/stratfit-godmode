@@ -42,9 +42,10 @@ import { useOverlayVisibility } from "@/domain/ui/overlayVisibility";
 import TerrainFocusGlow from "@/components/terrain/intelligence/TerrainFocusGlow";
 import { eventToFocusPosition } from "@/domain/intelligence/eventFocus";
 import { computeSignalIntensity } from "@/components/terrain/signals/signalStyle";
+import { POSITION_PRESET } from "@/scene/camera/terrainCameraPresets";
 
-// Canonical camera target — shifted left so terrain content avoids the right overlay zone
-const TERRAIN_LOOK_AT: [number, number, number] = [-20, 14, 0];
+// Canonical camera target — from terrainCameraPresets single source of truth
+const TERRAIN_LOOK_AT: [number, number, number] = POSITION_PRESET.target;
 
 function readCssVar(varName: string, fallback: string): string {
   if (typeof window === "undefined") return fallback;
@@ -155,12 +156,12 @@ export default function TerrainStage({
     <Canvas
       style={{ position: "absolute", inset: 0, zIndex: 0 }}
       dpr={[1, 2]}
-      camera={{ position: [-40, 155, 460], fov: 46, near: 0.1, far: 5000 }}
+      camera={{ position: POSITION_PRESET.pos as unknown as [number, number, number], fov: POSITION_PRESET.fov, near: 0.1, far: 5000 }}
       gl={{ antialias: true, alpha: true }}
       onCreated={({ camera, gl }) => {
         // Only set defaults when not locked — locked pages inject a CameraCompositionRig.
         if (!lockCamera) {
-          camera.position.set(-40, 155, 460);
+          camera.position.set(...POSITION_PRESET.pos);
           camera.lookAt(...TERRAIN_LOOK_AT);
           camera.updateProjectionMatrix();
         }
@@ -215,13 +216,10 @@ export default function TerrainStage({
         <TerrainSurface ref={terrainRef} terrainMetrics={terrainMetrics} colorVariant={colorVariant} />
         {terrainReady && (
           <>
-            {pathsOn && (
-              <P50Path terrainRef={terrainRef} rebuildKey={rebuildKey} />
-            )}
+            {/* A12: Always mount P50Path — emphasis via visible prop, never unmount */}
+            <P50Path terrainRef={terrainRef} rebuildKey={rebuildKey} visible={pathsOn} />
             {/* Canonical ticks (BaselineTimelineTicks) — follows timelineOn */}
-            {timelineOn && (
-              <BaselineTimelineTicks visible terrainRef={terrainRef} />
-            )}
+            <BaselineTimelineTicks visible={timelineOn} terrainRef={terrainRef} />
             <LiquidityFlowLayer terrainRef={terrainRef} enabled={liquidityOn} />
             <TerrainSignalsLayer terrainRef={terrainRef} overrideEvents={overrideEvents} />
             {showMarkers && <StrategicMarkers />}

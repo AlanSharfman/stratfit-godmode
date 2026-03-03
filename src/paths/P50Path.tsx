@@ -17,6 +17,8 @@ type Props = {
   rebuildKey?: string
   /** Engine run id — when wired to the store, drives series lookup */
   runId?: string
+  /** A12: emphasis-based visibility — always mounted, opacity control */
+  visible?: boolean
 }
 
 const FLAT_FALLBACK_COUNT = 240
@@ -27,6 +29,7 @@ export default function P50Path({
   hoverOffset = 0.68,
   rebuildKey,
   runId = "",
+  visible = true,
 }: Props) {
   const [points, setPoints] = useState<THREE.Vector3[]>([])
 
@@ -115,7 +118,7 @@ export default function P50Path({
       color="#00E0FF"
       lineWidth={3}
       transparent
-      opacity={0.92}
+      opacity={visible ? 0.92 : 0}
     />
   )
 }

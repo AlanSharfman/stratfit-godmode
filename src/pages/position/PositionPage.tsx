@@ -60,6 +60,10 @@ import { buildTerrainExplanation } from "@/domain/intelligence/buildTerrainExpla
 import { useIntelligenceStore } from "@/store/intelligenceStore"
 import InsightTetherOverlay from "@/components/terrain/intelligence/InsightTetherOverlay"
 import { eventToFocusPosition } from "@/domain/intelligence/eventFocus"
+import LegendMini from "@/components/terrain/ui/LegendMini"
+import TerrainRenderContractPanel from "@/components/debug/TerrainRenderContractPanel"
+import { buildRenderContract } from "@/domain/terrain/buildRenderContract"
+import { POSITION_PRESET } from "@/scene/camera/terrainCameraPresets"
 import styles from "./PositionOverlays.module.css"
 
 // Diagnostics panel is togglable via close button
@@ -471,6 +475,38 @@ export default function PositionPage() {
   // Display event = locked event (if valid) or auto primary
   const displayEvent = lockedEvent ?? primaryEvent
   const displayExplanation = lockedEvent ? lockedExplanation : terrainExplanation
+
+  // ── A11: Render Contract (debug panel) ──
+  const renderContract = useMemo(
+    () =>
+      buildRenderContract({
+        engineResults: activeSimResults ?? undefined,
+        completedAt: activeScenario?.simulationResults?.completedAt ?? null,
+        eventCount: terrainEvents.length,
+        hasTerrainMetrics: !!terrainMetrics,
+        layers: {
+          terrainMesh: true,
+          p50Path: true,       // A12: always mounted
+          signals: true,       // always mounted
+          focusGlow: !!displayEvent,
+          tether: !!displayEvent && overlayVisible,
+          heatmap: commandMode === "heatmap",
+          annotations: false,
+          legend: true,        // A14.3: always mounted
+        },
+        mode: commandMode,
+        toggles: {
+          heatmapEnabled: commandMode === "heatmap",
+          overlayVisible,
+        },
+        camera: {
+          pos: POSITION_PRESET.pos,
+          target: POSITION_PRESET.target,
+          fov: POSITION_PRESET.fov,
+        },
+      }),
+    [activeSimResults, activeScenario?.simulationResults?.completedAt, terrainEvents.length, terrainMetrics, displayEvent, overlayVisible, commandMode],
+  )
 
   // A10.2.5: Scroll to top when lockedEventId changes
   useEffect(() => {
@@ -899,6 +935,10 @@ export default function PositionPage() {
               scenario={activeScenario ?? null}
               baselineSnapshotId={baseline ? `bl_${typeof baseline === "object" ? "active" : "none"}` : null}
             /> */}
+            {/* A14.3: Always-visible mini legend */}
+            <LegendMini />
+            {/* A11: Render contract debug panel (?debug=1) */}
+            <TerrainRenderContractPanel contract={renderContract} label="Position" />
 
           </div>
         </div>
