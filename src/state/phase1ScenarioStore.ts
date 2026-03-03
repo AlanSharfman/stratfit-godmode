@@ -1,3 +1,12 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// STRATFIT — CANONICAL Scenario Store (Phase 1)
+//
+// SINGLE SOURCE OF TRUTH for scenario state across all routed pages:
+//   /position, /studio, /compare, /decision
+//
+// All terrain metrics, simulation results, KPIs, and events MUST flow
+// through this store. Do NOT use the legacy scenarioStore for new features.
+// ═══════════════════════════════════════════════════════════════════════════
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import { useBaselineStore } from "@/state/baselineStore"

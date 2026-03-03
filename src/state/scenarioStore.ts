@@ -1,5 +1,13 @@
 // src/state/scenarioStore.ts
-// STRATFIT — Scenario Management Store
+// ═══════════════════════════════════════════════════════════════════════════
+// @deprecated — LEGACY STORE. Do NOT use for new features.
+//
+// All routed pages (Position, Studio, Compare, Decision) now use
+// phase1ScenarioStore exclusively. This store is retained only for
+// non-routed legacy components.
+//
+// CANONICAL STORE: src/state/phase1ScenarioStore.ts
+// ═══════════════════════════════════════════════════════════════════════════
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
