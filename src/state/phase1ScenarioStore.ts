@@ -9,6 +9,8 @@ import { selectTerrainMetrics } from "@/selectors/terrainSelectors"
 import type { LeverValues } from "@/domain/decision/LeverValues"
 import { normalizeLeverValues, stableStringifyLevers } from "@/domain/decision/LeverValues"
 import { applyLeversToBaseline } from "@/domain/decision/applyLevers"
+import { generateSimulationEvents } from "@/engine/analysis/generateSimulationEvents"
+import type { TerrainEvent } from "@/domain/events/terrainEventTypes"
 
 export type SimulationStatus = "draft" | "running" | "complete" | "error"
 
@@ -72,6 +74,8 @@ export type SimulationResults = {
   terrain: TerrainData
   /** Engine-computed terrain metrics — canonical source for terrain shape */
   terrainMetrics?: EngineTerrainMetrics
+  /** Engine-generated terrain events — deterministic from KPIs */
+  events?: TerrainEvent[]
 }
 
 export type Phase1Scenario = {
@@ -292,6 +296,8 @@ export const usePhase1ScenarioStore = create<Phase1ScenarioState>()(
         // Simulate with 1.4s delay → finalize with timestamp + summary
         setTimeout(() => {
           const completedAt = Date.now()
+          // Engine-generated events — deterministic from KPIs
+          const events = generateSimulationEvents(kpis, 24)
           set((s) => ({
             lastCompletedRunId: completedAt,
             scenarios: s.scenarios.map((sc) =>
@@ -306,6 +312,7 @@ export const usePhase1ScenarioStore = create<Phase1ScenarioState>()(
                       kpis,
                       terrain,
                       terrainMetrics,
+                      events,
                     },
                   }
                 : sc

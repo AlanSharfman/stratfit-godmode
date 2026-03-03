@@ -7,7 +7,6 @@
 
 import type { SimulationResults, TerrainData } from "@/state/phase1ScenarioStore"
 import type { TerrainEvent } from "@/domain/events/terrainEventTypes"
-import { detectTerrainEvents } from "@/engine/analysis/detectTerrainEvents"
 
 /**
  * Extract terrain data from Phase1 simulation results.
@@ -21,12 +20,13 @@ export function selectTerrainMetrics(
 }
 
 /**
- * Derive terrain events from engine results.
- * Returns [] if results are missing or incomplete.
+ * Read engine-generated terrain events — pass-through only.
+ * Events are produced by generateSimulationEvents() in the engine layer
+ * and attached to SimulationResults.events during runSimulation().
+ * This selector performs NO derivation.
  */
 export function selectTerrainEvents(
   simulationResults: SimulationResults | null | undefined,
 ): TerrainEvent[] {
-  if (!simulationResults?.kpis) return []
-  return detectTerrainEvents(simulationResults.kpis, simulationResults.horizonMonths)
+  return simulationResults?.events ?? []
 }
