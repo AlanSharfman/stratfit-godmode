@@ -4,7 +4,7 @@
 //
 // Side-by-side synchronized terrain comparison.
 // Both sides share identical camera config, lighting, and lock state.
-// No independent orbit. No camera drift. No async render divergence.
+// Mouse orbit enabled: ±45° azimuth + vertical, no zoom, no pan.
 // ═══════════════════════════════════════════════════════════════════════════
 
 import React, { memo } from "react"
@@ -31,6 +31,10 @@ const DEFAULT_METRICS: TerrainMetrics = {
   volatility: 0,
 }
 
+const AZIMUTH_LIMIT = Math.PI / 4  // ±45°
+const POLAR_CENTER = 1.107         // midpoint of default polar range
+const POLAR_LIMIT  = Math.PI / 4  // ±45° vertical
+
 const SplitTerrainView: React.FC<SplitTerrainViewProps> = memo(
   ({ metricsA, metricsB, eventsA, eventsB, labelA = "BASELINE (A)", labelB = "SCENARIO (B)" }) => (
     <div style={S.container}>
@@ -42,10 +46,14 @@ const SplitTerrainView: React.FC<SplitTerrainViewProps> = memo(
         </div>
         <div style={S.viewport}>
           <TerrainStage
-            lockCamera
             pathsEnabled={false}
             terrainMetrics={{ ...DEFAULT_METRICS, ...metricsA }}
             overrideEvents={eventsA}
+            minAzimuthAngle={-AZIMUTH_LIMIT}
+            maxAzimuthAngle={AZIMUTH_LIMIT}
+            minPolarAngle={Math.max(0.3, POLAR_CENTER - POLAR_LIMIT)}
+            maxPolarAngle={Math.min(1.8, POLAR_CENTER + POLAR_LIMIT)}
+            rotateSpeed={0.25}
           >
             <CameraCompositionRig />
             <SkyAtmosphere />
@@ -65,11 +73,15 @@ const SplitTerrainView: React.FC<SplitTerrainViewProps> = memo(
         </div>
         <div style={S.viewport}>
           <TerrainStage
-            lockCamera
             pathsEnabled={false}
             terrainMetrics={{ ...DEFAULT_METRICS, ...metricsB }}
             overrideEvents={eventsB}
             colorVariant="green"
+            minAzimuthAngle={-AZIMUTH_LIMIT}
+            maxAzimuthAngle={AZIMUTH_LIMIT}
+            minPolarAngle={Math.max(0.3, POLAR_CENTER - POLAR_LIMIT)}
+            maxPolarAngle={Math.min(1.8, POLAR_CENTER + POLAR_LIMIT)}
+            rotateSpeed={0.25}
           >
             <CameraCompositionRig />
             <SkyAtmosphere />

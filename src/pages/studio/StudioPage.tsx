@@ -26,6 +26,7 @@ import {
 } from "@/config/decisionLeverSchemas"
 
 import TerrainStage from "@/terrain/TerrainStage"
+import TerrainNavWidget from "@/terrain/TerrainNavWidget"
 import CameraCompositionRig from "@/scene/camera/CameraCompositionRig"
 import SkyAtmosphere from "@/scene/rigs/SkyAtmosphere"
 import type { TerrainMetrics } from "@/terrain/terrainFromBaseline"
@@ -362,7 +363,7 @@ export default function StudioPage() {
         <main style={S.center}>
           <div style={S.terrainViewport}>
             <TerrainStage
-              lockCamera={true}
+              lockCamera={false}
               pathsEnabled={false}
               terrainMetrics={{
                 ...(terrainMetrics ?? {
@@ -378,6 +379,8 @@ export default function StudioPage() {
               <SkyAtmosphere />
             </TerrainStage>
             <div style={S.canvasVignette} />
+            {/* Terrain navigation D-pad */}
+            <TerrainNavWidget />
             {/* ── Command Mode overlays ── */}
             <HeatmapOverlay
               terrainMetrics={terrainMetrics ?? null}

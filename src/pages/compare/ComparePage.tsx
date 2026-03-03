@@ -8,7 +8,7 @@
 // No simulation rerun on compare. Engine results read-only.
 // ═══════════════════════════════════════════════════════════════════════════
 
-import React, { useCallback, useEffect, useMemo } from "react"
+import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { Link, NavLink } from "react-router-dom"
 
 import { ROUTES } from "@/routes/routeContract"
@@ -20,6 +20,7 @@ import { deriveTerrainMetrics, type TerrainMetrics } from "@/terrain/terrainFrom
 
 import SplitTerrainView from "@/components/terrain/compare/SplitTerrainView"
 import DeltaSummaryPanel from "@/components/compare/DeltaSummaryPanel"
+import CompareTableView from "@/components/compare/CompareTableView"
 import CommandModeStrip from "@/components/command/CommandModeStrip"
 import { useCommandAutoEvaluate } from "@/hooks/useCommandAutoEvaluate"
 import type { TerrainEvent } from "@/domain/events/terrainEventTypes"
@@ -38,6 +39,7 @@ export default function ComparePage() {
   const activeScenarioId = usePhase1ScenarioStore((s) => s.activeScenarioId)
 
   const { aId, bId, setAId, setBId, swap } = useCompareStore()
+  const [viewMode, setViewMode] = useState<"terrain" | "table">("terrain")
 
   // ── Hydrate stores ──
   useEffect(() => { hydrateBaseline() }, [hydrateBaseline])
@@ -247,6 +249,26 @@ export default function ComparePage() {
           {/* Swap */}
           <button type="button" onClick={swap} style={S.swapBtn} title="Swap A ↔ B">⇄</button>
 
+          {/* View toggle */}
+          <div style={S.viewToggle}>
+            <button
+              type="button"
+              onClick={() => setViewMode("terrain")}
+              style={viewMode === "terrain" ? S.viewBtnActive : S.viewBtn}
+              title="Terrain view"
+            >
+              ▲ Terrain
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("table")}
+              style={viewMode === "table" ? S.viewBtnActive : S.viewBtn}
+              title="Table view"
+            >
+              ▤ Table
+            </button>
+          </div>
+
           {/* Dropdown B */}
           <div style={S.selectorGroup}>
             <span style={S.selectorLabel}>B</span>
@@ -271,31 +293,42 @@ export default function ComparePage() {
         <span style={S.headlineText}>{headline}</span>
       </div>
 
-      {/* ═══ BODY — Split Terrain + Delta Rail ═══ */}
-      <div style={S.body}>
+      {/* ═══ BODY — Split Terrain + Delta Rail  OR  Table ═══ */}
+      {viewMode === "terrain" ? (
+        <div style={S.body}>
+          {/* ── CENTER: Split Terrain ── */}
+          <main style={S.center}>
+            <SplitTerrainView
+              metricsA={metricsA}
+              metricsB={metricsB}
+              eventsA={eventsA}
+              eventsB={eventsB}
+              labelA={labelA}
+              labelB={labelB}
+            />
+            {/* ── Command Mode Strip ── */}
+            <div style={{ position: "absolute", bottom: 10, left: "50%", transform: "translateX(-50%)", zIndex: 4 }}>
+              <CommandModeStrip engineResults={activeSimResultsForCompare} />
+            </div>
+          </main>
 
-        {/* ── CENTER: Split Terrain ── */}
-        <main style={S.center}>
-          <SplitTerrainView
-            metricsA={metricsA}
-            metricsB={metricsB}
-            eventsA={eventsA}
-            eventsB={eventsB}
+          {/* ── RIGHT: Delta Summary ── */}
+          <aside style={S.rightRail}>
+            <DeltaSummaryPanel kpisA={kpisA} kpisB={kpisB} />
+          </aside>
+        </div>
+      ) : (
+        <div style={S.bodyTable}>
+          <CompareTableView
+            kpisA={kpisA}
+            kpisB={kpisB}
             labelA={labelA}
             labelB={labelB}
+            decisionA={scenarioA?.decision}
+            decisionB={scenarioB?.decision}
           />
-          {/* ── Command Mode Strip ── */}
-          <div style={{ position: "absolute", bottom: 10, left: "50%", transform: "translateX(-50%)", zIndex: 4 }}>
-            <CommandModeStrip engineResults={activeSimResultsForCompare} />
-          </div>
-        </main>
-
-        {/* ── RIGHT: Delta Summary ── */}
-        <aside style={S.rightRail}>
-          <DeltaSummaryPanel kpisA={kpisA} kpisB={kpisB} />
-        </aside>
-
-      </div>
+        </div>
+      )}
 
       {/* Legal */}
       <div style={S.legal}>
@@ -499,6 +532,13 @@ const S: Record<string, React.CSSProperties> = {
     overflow: "hidden",
   },
 
+  bodyTable: {
+    flex: 1,
+    position: "relative" as const,
+    minHeight: 0,
+    overflow: "hidden",
+  },
+
   center: {
     gridColumn: 1,
     position: "relative" as const,
@@ -519,6 +559,42 @@ const S: Record<string, React.CSSProperties> = {
     borderLeft: GLASS_BORDER,
     scrollbarWidth: "thin" as const,
     scrollbarColor: "rgba(100,180,255,0.12) transparent",
+  },
+
+  /* ── View toggle ── */
+  viewToggle: {
+    display: "flex",
+    alignItems: "center",
+    gap: 0,
+    marginLeft: 12,
+    borderRadius: 4,
+    overflow: "hidden",
+    border: GLASS_BORDER,
+  },
+
+  viewBtn: {
+    padding: "4px 10px",
+    border: "none",
+    background: "rgba(0,0,0,0.3)",
+    color: "rgba(148,180,214,0.5)",
+    fontSize: 10,
+    fontWeight: 600,
+    letterSpacing: "0.06em",
+    fontFamily: FONT,
+    cursor: "pointer",
+    transition: "background 200ms ease, color 200ms ease",
+  },
+
+  viewBtnActive: {
+    padding: "4px 10px",
+    border: "none",
+    background: "rgba(34,211,238,0.12)",
+    color: CYAN,
+    fontSize: 10,
+    fontWeight: 700,
+    letterSpacing: "0.06em",
+    fontFamily: FONT,
+    cursor: "pointer",
   },
 
   /* ── Legal ── */

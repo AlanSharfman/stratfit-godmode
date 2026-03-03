@@ -76,6 +76,14 @@ type TerrainStageProps = {
   focusedEvent?: import("@/domain/events/terrainEventTypes").TerrainEvent | null
   /** Color variant for terrain surface (default | green | frost) */
   colorVariant?: TerrainColorVariant
+  /** Azimuth (horizontal orbit) limits in radians. Defaults: unconstrained. */
+  minAzimuthAngle?: number
+  maxAzimuthAngle?: number
+  /** Polar (vertical orbit) limits in radians. Default: 0.758 – 1.456. */
+  minPolarAngle?: number
+  maxPolarAngle?: number
+  /** Mouse-drag orbit speed multiplier. Default: 0.8. */
+  rotateSpeed?: number
   children?: ReactNode
 }
 
@@ -88,6 +96,11 @@ export default function TerrainStage({
   overrideEvents,
   focusedEvent,
   colorVariant,
+  minAzimuthAngle = -Infinity,
+  maxAzimuthAngle = Infinity,
+  minPolarAngle: minPolar = 0.758,
+  maxPolarAngle: maxPolar = 1.456,
+  rotateSpeed = 0.8,
   children,
 }: TerrainStageProps) {
   const terrainRef = useRef<TerrainSurfaceHandle>(null!);
@@ -183,9 +196,11 @@ export default function TerrainStage({
         enableZoom={false}
         enableDamping
         dampingFactor={0.12}
-        minPolarAngle={0.758}
-        maxPolarAngle={1.456}
-        rotateSpeed={0.8}
+        minPolarAngle={minPolar}
+        maxPolarAngle={maxPolar}
+        minAzimuthAngle={minAzimuthAngle}
+        maxAzimuthAngle={maxAzimuthAngle}
+        rotateSpeed={rotateSpeed}
         minDistance={220}
         maxDistance={700}
         target={TERRAIN_LOOK_AT}

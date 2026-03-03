@@ -79,7 +79,7 @@ export default function WelcomePage() {
         {/* Badge */}
         <div style={S.badge}>
           <span style={S.badgeDot} />
-          <span style={S.badgeText}>GOD MODE</span>
+          <span style={S.badgeText}>SCENARIO INTELLIGENCE</span>
         </div>
 
         {/* Headline */}
