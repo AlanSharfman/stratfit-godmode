@@ -119,6 +119,7 @@ export default function DecisionPage() {
   const [showFallbackPicker, setShowFallbackPicker] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
   const [isDone, setIsDone] = useState(false)
+  const [simulating, setSimulating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [focused, setFocused] = useState(false)
   const [leverValues, setLeverValues] = useState<Record<string, number>>(() => defaultLeverValues("other"))
@@ -211,8 +212,8 @@ export default function DecisionPage() {
       runSimulation(scenarioId)
       setIsDone(true)
 
-      // Brief pause to show success state before navigation
-      setTimeout(() => navigate("/position"), 600)
+      // Show simulating cinematic → 3.5s → navigate to position
+      setSimulating(true)
     } catch (e) {
       console.error("[DecisionPage] run failed", e)
       setError("Failed to run decision pipeline. Check console for details.")
@@ -220,6 +221,15 @@ export default function DecisionPage() {
       setIsCreating(false)
     }
   }
+
+  // 3.5-second simulating cinematic → navigate to position
+  useEffect(() => {
+    if (!simulating) return
+    const timer = setTimeout(() => {
+      navigate("/position", { replace: true })
+    }, 3500)
+    return () => clearTimeout(timer)
+  }, [simulating, navigate])
 
   // Ctrl+Enter / Cmd+Enter keyboard shortcut
   React.useEffect(() => {
@@ -264,6 +274,19 @@ export default function DecisionPage() {
 
   return (
     <div className={css.page}>
+      {/* ═══ Simulating cinematic overlay ═══ */}
+      {simulating && (
+        <div className={css.simCinematic}>
+          <div className={css.simCinematicInner}>
+            <div className={css.simScanBar} />
+            <div className={css.simCinematicLabel}>Simulating scenario</div>
+            <div className={css.simCinematicDots}>
+              <span /><span /><span />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ═══ Ambient atmosphere ═══ */}
       <div className={css.atmoGlow} aria-hidden="true" />
 

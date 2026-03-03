@@ -307,8 +307,6 @@ export default function InitializeBaselineConsoleV2() {
       : 0
   const grossProfit = (form.currentARR / 12) * (form.grossMarginPct / 100)
 
-  const [simulating, setSimulating] = useState(false)
-
   const handleLock = useCallback(() => {
     setBaseline({
       cash: form.cashOnHand,
@@ -320,17 +318,8 @@ export default function InitializeBaselineConsoleV2() {
       headcount: form.headcount,
       arpa: form.avgDealSize || 1500,
     })
-    setSimulating(true)
-  }, [form, setBaseline])
-
-  // 2-second cinematic → navigate to position
-  useEffect(() => {
-    if (!simulating) return
-    const timer = setTimeout(() => {
-      navigate("/position", { replace: true })
-    }, 2000)
-    return () => clearTimeout(timer)
-  }, [simulating, navigate])
+    navigate("/decision", { replace: true })
+  }, [form, setBaseline, navigate])
 
   const canGoNext = activeStep < 4
   const canGoBack = activeStep > 1
@@ -339,17 +328,6 @@ export default function InitializeBaselineConsoleV2() {
 
   return (
     <>
-    {simulating && (
-      <div className={styles.simCinematic}>
-        <div className={styles.simCinematicInner}>
-          <div className={styles.simScanBar} />
-          <div className={styles.simCinematicLabel}>Simulating scenario</div>
-          <div className={styles.simCinematicDots}>
-            <span /><span /><span />
-          </div>
-        </div>
-      </div>
-    )}
     <div className={styles.outerChassis}>
       <div className={styles.bezelFrame} data-sf-chassis>
         <div className={styles.glassSurface}>

@@ -1233,3 +1233,88 @@
   pointer-events: none;
   line-height: 1.5;
 }
+
+/* ─── SIMULATING CINEMATIC OVERLAY ─────────────────────────────────────── */
+
+.simCinematic {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, rgba(6, 20, 30, 0.97) 0%, rgba(2, 8, 20, 0.99) 100%);
+  animation: simCinematicFadeIn 400ms ease-out forwards;
+}
+
+@keyframes simCinematicFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.simCinematicInner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  min-width: 320px;
+  padding: 48px 60px;
+  border-radius: 16px;
+  background: rgba(8, 18, 30, 0.8);
+  border: 1px solid rgba(34, 211, 238, 0.12);
+  box-shadow: 0 0 60px rgba(0, 220, 255, 0.06), 0 0 120px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.simScanBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, rgba(34, 211, 238, 0.7) 50%, transparent 100%);
+  animation: simScanBarSweep 1.8s ease-in-out infinite;
+}
+
+@keyframes simScanBarSweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.simCinematicLabel {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(34, 211, 238, 0.85);
+  text-shadow: 0 0 12px rgba(34, 211, 238, 0.3);
+}
+
+.simCinematicDots {
+  display: flex;
+  gap: 8px;
+}
+
+.simCinematicDots span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(0, 255, 255, 0.6);
+  animation: simDotPulse 1.4s ease-in-out infinite;
+}
+
+.simCinematicDots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.simCinematicDots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes simDotPulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50%      { opacity: 1; transform: scale(1.2); }
+}
