@@ -1,26 +1,30 @@
 // src/pages/compare/ComparePage.tsx
 // ═══════════════════════════════════════════════════════════════════════════
-// STRATFIT — Compare Page (Phase D1 — God Mode)
+// STRATFIT — Compare Command Centre
 //
-// Split-screen synchronized terrain comparison.
-// Left = Baseline (A). Right = Scenario (B).
-// No delta heatmap. No third terrain. No camera drift.
-// No simulation rerun on compare. Engine results read-only.
+// Top 60%:  Terrain panels (2 or 3 depending on toggle)
+// Bottom 40%: Analytics layer
+//   Bottom-left (60%):  CompareTablePanel (KPI deltas)
+//   Bottom-right (40%): CompareInsightPanel (AI narrative)
+//
+// Each terrain panel has its own scenario selector dropdown.
+// 2↔3 toggle in header. Pairwise delta selection in 3-mode.
 // ═══════════════════════════════════════════════════════════════════════════
 
-import React, { useCallback, useEffect, useMemo, useState } from "react"
+import React, { useEffect, useMemo } from "react"
 import { Link, NavLink } from "react-router-dom"
 
 import { ROUTES } from "@/routes/routeContract"
 import { useBaselineStore } from "@/state/baselineStore"
 import { useCanonicalBaseline } from "@/state/useCanonicalBaseline"
 import { usePhase1ScenarioStore, type SimulationKpis } from "@/state/phase1ScenarioStore"
-import { useCompareStore } from "@/store/compareStore"
+import { useCompareStore, type ComparePair } from "@/store/compareStore"
 import { deriveTerrainMetrics, type TerrainMetrics } from "@/terrain/terrainFromBaseline"
 
-import SplitTerrainView from "@/components/terrain/compare/SplitTerrainView"
-import DeltaSummaryPanel from "@/components/compare/DeltaSummaryPanel"
-import CompareTableView from "@/components/compare/CompareTableView"
+import CompareTerrainPanel from "@/components/compare/CompareTerrainPanel"
+import CompareTablePanel from "@/components/compare/CompareTablePanel"
+import CompareInsightPanel from "@/components/compare/CompareInsightPanel"
+import { type ScenarioOption } from "@/components/compare/CompareScenarioSelect"
 import CommandModeStrip from "@/components/command/CommandModeStrip"
 import { useCommandAutoEvaluate } from "@/hooks/useCommandAutoEvaluate"
 import type { TerrainEvent } from "@/domain/events/terrainEventTypes"
@@ -38,8 +42,15 @@ export default function ComparePage() {
   const scenarios = usePhase1ScenarioStore((s) => s.scenarios)
   const activeScenarioId = usePhase1ScenarioStore((s) => s.activeScenarioId)
 
-  const { aId, bId, setAId, setBId, swap } = useCompareStore()
-  const [viewMode, setViewMode] = useState<"terrain" | "table">("terrain")
+  const {
+    aId, bId, cId,
+    setAId, setBId, setCId,
+    compareCount, setCompareCount,
+    activePair, setActivePair,
+    swap, rotate,
+  } = useCompareStore()
+
+  const is3Mode = compareCount === 3
 
   // ── Hydrate stores ──
   useEffect(() => { hydrateBaseline() }, [hydrateBaseline])
@@ -47,9 +58,7 @@ export default function ComparePage() {
 
   // ── Default B to active scenario on first mount ──
   useEffect(() => {
-    if (bId === null && activeScenarioId) {
-      setBId(activeScenarioId)
-    }
+    if (bId === null && activeScenarioId) setBId(activeScenarioId)
   }, [bId, activeScenarioId, setBId])
 
   // ── Completed scenarios for dropdowns ──
@@ -58,86 +67,50 @@ export default function ComparePage() {
     [scenarios],
   )
 
-  // ── Resolve sides ──
-  const scenarioA = useMemo(
-    () => (aId ? scenarios.find((s) => s.id === aId) ?? null : null),
-    [aId, scenarios],
-  )
-  const scenarioB = useMemo(
-    () => (bId ? scenarios.find((s) => s.id === bId) ?? null : null),
-    [bId, scenarios],
+  const scenarioOptions = useMemo<ScenarioOption[]>(
+    () => completedScenarios.map((s) => ({ id: s.id, label: s.decision.slice(0, 28) })),
+    [completedScenarios],
   )
 
-  // ── Terrain metrics A (baseline or scenario) ──
-  const metricsA = useMemo<TerrainMetrics>(() => {
-    if (scenarioA?.simulationResults?.terrainMetrics) {
-      const em = scenarioA.simulationResults.terrainMetrics
+  // ── Resolve scenarios ──
+  const scenarioA = useMemo(() => (aId ? scenarios.find((s) => s.id === aId) ?? null : null), [aId, scenarios])
+  const scenarioB = useMemo(() => (bId ? scenarios.find((s) => s.id === bId) ?? null : null), [bId, scenarios])
+  const scenarioC = useMemo(() => (cId ? scenarios.find((s) => s.id === cId) ?? null : null), [cId, scenarios])
+
+  // ── Terrain metrics derivation helper ──
+  function deriveMetrics(scenario: typeof scenarioA): TerrainMetrics {
+    if (scenario?.simulationResults?.terrainMetrics) {
+      const em = scenario.simulationResults.terrainMetrics
       return {
         elevationScale: em.elevationScale,
         roughness: em.roughness,
         ridgeIntensity: em.ridgeIntensity,
         volatility: em.volatility,
         liquidityDepth: baselineInputs
-          ? Math.min(
-              ((Number(baselineInputs.cash) || 0) /
-                (Number(baselineInputs.burnRate) || Number(baselineInputs.monthlyBurn) || 1)) / 12,
-              2,
-            )
+          ? Math.min(((Number(baselineInputs.cash) || 0) / (Number(baselineInputs.burnRate) || Number(baselineInputs.monthlyBurn) || 1)) / 12, 2)
           : 1,
         growthSlope: baselineInputs
-          ? (Math.abs(Number(baselineInputs.growthRate) || 0) <= 1
-              ? Number(baselineInputs.growthRate) || 0
-              : (Number(baselineInputs.growthRate) || 0) / 100)
-          : 0,
-      }
-    }
-    // Raw baseline derivation
-    if (baselineInputs) return deriveTerrainMetrics(baselineInputs as any)
-    return { elevationScale: 1, roughness: 1, liquidityDepth: 1, growthSlope: 0, volatility: 0 }
-  }, [scenarioA, baselineInputs])
-
-  // ── Terrain metrics B (scenario) ──
-  const metricsB = useMemo<TerrainMetrics>(() => {
-    if (scenarioB?.simulationResults?.terrainMetrics) {
-      const em = scenarioB.simulationResults.terrainMetrics
-      return {
-        elevationScale: em.elevationScale,
-        roughness: em.roughness,
-        ridgeIntensity: em.ridgeIntensity,
-        volatility: em.volatility,
-        liquidityDepth: baselineInputs
-          ? Math.min(
-              ((Number(baselineInputs.cash) || 0) /
-                (Number(baselineInputs.burnRate) || Number(baselineInputs.monthlyBurn) || 1)) / 12,
-              2,
-            )
-          : 1,
-        growthSlope: baselineInputs
-          ? (Math.abs(Number(baselineInputs.growthRate) || 0) <= 1
-              ? Number(baselineInputs.growthRate) || 0
-              : (Number(baselineInputs.growthRate) || 0) / 100)
+          ? (Math.abs(Number(baselineInputs.growthRate) || 0) <= 1 ? Number(baselineInputs.growthRate) || 0 : (Number(baselineInputs.growthRate) || 0) / 100)
           : 0,
       }
     }
     if (baselineInputs) return deriveTerrainMetrics(baselineInputs as any)
     return { elevationScale: 1, roughness: 1, liquidityDepth: 1, growthSlope: 0, volatility: 0 }
-  }, [scenarioB, baselineInputs])
+  }
 
-  // ── Events per side ──
-  const eventsA = useMemo<TerrainEvent[]>(
-    () => scenarioA?.simulationResults?.events ?? [],
-    [scenarioA],
-  )
-  const eventsB = useMemo<TerrainEvent[]>(
-    () => scenarioB?.simulationResults?.events ?? [],
-    [scenarioB],
-  )
+  const metricsA = useMemo(() => deriveMetrics(scenarioA), [scenarioA, baselineInputs])
+  const metricsB = useMemo(() => deriveMetrics(scenarioB), [scenarioB, baselineInputs])
+  const metricsC = useMemo(() => deriveMetrics(scenarioC), [scenarioC, baselineInputs])
 
-  // ── KPIs for delta panel ──
-  const kpisA = useMemo<SimulationKpis | null>(() => {
-    if (scenarioA?.simulationResults?.kpis) return scenarioA.simulationResults.kpis
-    // Derive "baseline KPIs" from raw baseline inputs
-    if (baseline) {
+  // ── Events ──
+  const eventsA = useMemo<TerrainEvent[]>(() => scenarioA?.simulationResults?.events ?? [], [scenarioA])
+  const eventsB = useMemo<TerrainEvent[]>(() => scenarioB?.simulationResults?.events ?? [], [scenarioB])
+  const eventsC = useMemo<TerrainEvent[]>(() => scenarioC?.simulationResults?.events ?? [], [scenarioC])
+
+  // ── KPIs ──
+  function deriveKpis(scenario: typeof scenarioA): SimulationKpis | null {
+    if (scenario?.simulationResults?.kpis) return scenario.simulationResults.kpis
+    if (!scenario && baseline) {
       return {
         cash: baseline.cash,
         monthlyBurn: baseline.monthlyBurn,
@@ -151,34 +124,40 @@ export default function ComparePage() {
       }
     }
     return null
-  }, [scenarioA, baseline])
+  }
 
-  const kpisB = useMemo<SimulationKpis | null>(
-    () => scenarioB?.simulationResults?.kpis ?? null,
-    [scenarioB],
-  )
+  const kpisA = useMemo(() => deriveKpis(scenarioA), [scenarioA, baseline])
+  const kpisB = useMemo(() => deriveKpis(scenarioB), [scenarioB, baseline])
+  const kpisC = useMemo(() => deriveKpis(scenarioC), [scenarioC, baseline])
 
   // ── Labels ──
-  const labelA = aId === null
-    ? "BASELINE (A)"
-    : `${(scenarioA?.decision ?? "Scenario").slice(0, 20)} (A)`
-  const labelB = bId === null
-    ? "BASELINE (B)"
-    : `${(scenarioB?.decision ?? "Scenario").slice(0, 20)} (B)`
+  const labelA = aId === null ? "Baseline" : (scenarioA?.decision ?? "Scenario").slice(0, 20)
+  const labelB = bId === null ? "Baseline" : (scenarioB?.decision ?? "Scenario").slice(0, 20)
+  const labelC = cId === null ? "Baseline" : (scenarioC?.decision ?? "Scenario").slice(0, 20)
 
-  // ── Command Centre Auto-Evaluate (use B-side results as primary) ──
-  const activeSimResultsForCompare = scenarioB?.simulationResults ?? scenarioA?.simulationResults ?? null
-  useCommandAutoEvaluate(activeSimResultsForCompare)
+  // ── Active pair KPIs (for analytics panels) ──
+  const { pairKpisL, pairKpisR, pairLabelL, pairLabelR } = useMemo(() => {
+    if (activePair === "AC") return { pairKpisL: kpisA, pairKpisR: kpisC, pairLabelL: labelA, pairLabelR: labelC }
+    if (activePair === "BC") return { pairKpisL: kpisB, pairKpisR: kpisC, pairLabelL: labelB, pairLabelR: labelC }
+    return { pairKpisL: kpisA, pairKpisR: kpisB, pairLabelL: labelA, pairLabelR: labelB }
+  }, [activePair, kpisA, kpisB, kpisC, labelA, labelB, labelC])
+
+  // ── Command Centre Auto-Evaluate ──
+  const activeSimResults = scenarioB?.simulationResults ?? scenarioA?.simulationResults ?? null
+  useCommandAutoEvaluate(activeSimResults)
 
   // ── Headline ──
   const headline = useMemo(() => {
-    if (!kpisA || !kpisB) return "Select two scenarios to compare."
-    const revA = kpisA.revenue
-    const revB = kpisB.revenue
-    const pct = revA > 0 ? (((revB - revA) / revA) * 100).toFixed(1) : "0"
-    const dir = revB >= revA ? "higher" : "lower"
-    return `Scenario B projects ${Math.abs(Number(pct))}% ${dir} revenue than A.`
-  }, [kpisA, kpisB])
+    if (!pairKpisL || !pairKpisR) return "Select scenarios to compare."
+    const revL = pairKpisL.revenue
+    const revR = pairKpisR.revenue
+    const pct = revL > 0 ? (((revR - revL) / revL) * 100).toFixed(1) : "0"
+    const dir = revR >= revL ? "higher" : "lower"
+    return `${pairLabelR} projects ${Math.abs(Number(pct))}% ${dir} revenue than ${pairLabelL}.`
+  }, [pairKpisL, pairKpisR, pairLabelL, pairLabelR])
+
+  // ── Available pairs ──
+  const availablePairs: ComparePair[] = is3Mode ? ["AB", "AC", "BC"] : ["AB"]
 
   // ── Loading guards ──
   if (!scenarioStoreHydrated || !baselineHydrated) {
@@ -211,7 +190,7 @@ export default function ComparePage() {
   return (
     <div style={S.page}>
 
-      {/* ═══ TOP: Compare Header ═══ */}
+      {/* ═══ HEADER ═══ */}
       <header style={S.header}>
         <div style={S.headerLeft}>
           <Link to={ROUTES.POSITION} style={S.logoLink}>
@@ -229,62 +208,26 @@ export default function ComparePage() {
         </nav>
 
         <div style={S.headerRight}>
-          {/* Dropdown A */}
-          <div style={S.selectorGroup}>
-            <span style={S.selectorLabel}>A</span>
-            <select
-              value={aId ?? "__baseline__"}
-              onChange={(e) => setAId(e.target.value === "__baseline__" ? null : e.target.value)}
-              style={S.select}
-            >
-              <option value="__baseline__">Baseline</option>
-              {completedScenarios.map((sc) => (
-                <option key={sc.id} value={sc.id}>
-                  {sc.decision.slice(0, 30)}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Swap */}
-          <button type="button" onClick={swap} style={S.swapBtn} title="Swap A ↔ B">⇄</button>
-
-          {/* View toggle */}
-          <div style={S.viewToggle}>
+          {/* 2/3 toggle */}
+          <div style={S.countToggle}>
             <button
               type="button"
-              onClick={() => setViewMode("terrain")}
-              style={viewMode === "terrain" ? S.viewBtnActive : S.viewBtn}
-              title="Terrain view"
-            >
-              ▲ Terrain
-            </button>
+              onClick={() => setCompareCount(2)}
+              style={compareCount === 2 ? S.countBtnActive : S.countBtn}
+            >2</button>
             <button
               type="button"
-              onClick={() => setViewMode("table")}
-              style={viewMode === "table" ? S.viewBtnActive : S.viewBtn}
-              title="Table view"
-            >
-              ▤ Table
-            </button>
+              onClick={() => setCompareCount(3)}
+              style={compareCount === 3 ? S.countBtnActive : S.countBtn}
+            >3</button>
           </div>
 
-          {/* Dropdown B */}
-          <div style={S.selectorGroup}>
-            <span style={S.selectorLabel}>B</span>
-            <select
-              value={bId ?? "__baseline__"}
-              onChange={(e) => setBId(e.target.value === "__baseline__" ? null : e.target.value)}
-              style={S.select}
-            >
-              <option value="__baseline__">Baseline</option>
-              {completedScenarios.map((sc) => (
-                <option key={sc.id} value={sc.id}>
-                  {sc.decision.slice(0, 30)}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Swap (2-mode) / Rotate (3-mode) */}
+          {is3Mode ? (
+            <button type="button" onClick={rotate} style={S.swapBtn} title="Rotate A→B→C→A">↻</button>
+          ) : (
+            <button type="button" onClick={swap} style={S.swapBtn} title="Swap A ↔ B">⇄</button>
+          )}
         </div>
       </header>
 
@@ -293,42 +236,78 @@ export default function ComparePage() {
         <span style={S.headlineText}>{headline}</span>
       </div>
 
-      {/* ═══ BODY — Split Terrain + Delta Rail  OR  Table ═══ */}
-      {viewMode === "terrain" ? (
-        <div style={S.body}>
-          {/* ── CENTER: Split Terrain ── */}
-          <main style={S.center}>
-            <SplitTerrainView
-              metricsA={metricsA}
-              metricsB={metricsB}
-              eventsA={eventsA}
-              eventsB={eventsB}
-              labelA={labelA}
-              labelB={labelB}
-            />
-            {/* ── Command Mode Strip ── */}
-            <div style={{ position: "absolute", bottom: 10, left: "50%", transform: "translateX(-50%)", zIndex: 4 }}>
-              <CommandModeStrip engineResults={activeSimResultsForCompare} />
-            </div>
-          </main>
+      {/* ═══ MAIN GRID: Terrain (60%) + Analytics (40%) ═══ */}
+      <div style={S.commandGrid}>
 
-          {/* ── RIGHT: Delta Summary ── */}
-          <aside style={S.rightRail}>
-            <DeltaSummaryPanel kpisA={kpisA} kpisB={kpisB} />
-          </aside>
-        </div>
-      ) : (
-        <div style={S.bodyTable}>
-          <CompareTableView
-            kpisA={kpisA}
-            kpisB={kpisB}
-            labelA={labelA}
-            labelB={labelB}
-            decisionA={scenarioA?.decision}
-            decisionB={scenarioB?.decision}
+        {/* ── TOP: Terrain Panels ── */}
+        <div style={{ ...S.terrainRow, gridTemplateColumns: is3Mode ? "1fr 1fr 1fr" : "1fr 1fr" }}>
+          <CompareTerrainPanel
+            slot="A"
+            dotColor="rgba(148,180,214,0.5)"
+            terrainMetrics={metricsA}
+            events={eventsA}
+            selectedId={aId}
+            scenarioOptions={scenarioOptions}
+            onSelectScenario={setAId}
           />
+          <CompareTerrainPanel
+            slot="B"
+            dotColor="rgba(34,197,94,0.7)"
+            terrainMetrics={metricsB}
+            events={eventsB}
+            colorVariant="green"
+            selectedId={bId}
+            scenarioOptions={scenarioOptions}
+            onSelectScenario={setBId}
+          />
+          {is3Mode && (
+            <CompareTerrainPanel
+              slot="C"
+              dotColor="rgba(168,85,247,0.7)"
+              terrainMetrics={metricsC}
+              events={eventsC}
+              colorVariant="frost"
+              selectedId={cId}
+              scenarioOptions={scenarioOptions}
+              onSelectScenario={setCId}
+            />
+          )}
         </div>
-      )}
+
+        {/* ── BOTTOM: Analytics ── */}
+        <div style={S.analyticsRow}>
+          {/* Left 60%: Table */}
+          <div style={S.analyticsLeft}>
+            <CompareTablePanel
+              kpisLeft={pairKpisL}
+              kpisRight={pairKpisR}
+              labelLeft={pairLabelL}
+              labelRight={pairLabelR}
+              activePair={activePair}
+              is3Way={is3Mode}
+              onPairChange={setActivePair}
+            />
+          </div>
+
+          {/* Right 40%: AI Insights */}
+          <div style={S.analyticsRight}>
+            <CompareInsightPanel
+              kpisA={pairKpisL}
+              kpisB={pairKpisR}
+              labelA={pairLabelL}
+              labelB={pairLabelR}
+              summaryA={activePair === "BC" ? scenarioB?.simulationResults?.summary : scenarioA?.simulationResults?.summary}
+              summaryB={activePair === "AC" ? scenarioC?.simulationResults?.summary : activePair === "BC" ? scenarioC?.simulationResults?.summary : scenarioB?.simulationResults?.summary}
+              activePair={activePair}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Command Mode Strip ── */}
+      <div style={S.commandStrip}>
+        <CommandModeStrip engineResults={activeSimResults} />
+      </div>
 
       {/* Legal */}
       <div style={S.legal}>
@@ -343,7 +322,6 @@ export default function ComparePage() {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const FONT = "'Inter', system-ui, sans-serif"
-const MONO = "ui-monospace, 'JetBrains Mono', monospace"
 const CYAN = "rgba(34, 211, 238, 0.85)"
 const CYAN_DIM = "rgba(34, 211, 238, 0.15)"
 const GLASS_BORDER = "1px solid rgba(182, 228, 255, 0.1)"
@@ -467,29 +445,37 @@ const S: Record<string, React.CSSProperties> = {
     gap: 8,
   },
 
-  selectorGroup: {
+  countToggle: {
     display: "flex",
-    alignItems: "center",
-    gap: 4,
-  },
-
-  selectorLabel: {
-    fontSize: 10,
-    fontWeight: 800,
-    letterSpacing: "0.12em",
-    color: "rgba(148,180,214,0.5)",
-  },
-
-  select: {
-    padding: "4px 8px",
+    gap: 0,
     borderRadius: 4,
+    overflow: "hidden",
     border: GLASS_BORDER,
-    background: "rgba(6,12,20,0.7)",
-    color: "#e2e8f0",
-    fontFamily: FONT,
+  },
+
+  countBtn: {
+    padding: "4px 12px",
+    border: "none",
+    background: "rgba(0,0,0,0.3)",
+    color: "rgba(148,180,214,0.5)",
     fontSize: 11,
-    outline: "none",
-    maxWidth: 160,
+    fontWeight: 700,
+    fontFamily: FONT,
+    cursor: "pointer",
+    letterSpacing: "0.06em",
+    transition: "background 200ms ease, color 200ms ease",
+  },
+
+  countBtnActive: {
+    padding: "4px 12px",
+    border: "none",
+    background: "rgba(34,211,238,0.12)",
+    color: CYAN,
+    fontSize: 11,
+    fontWeight: 800,
+    fontFamily: FONT,
+    cursor: "pointer",
+    letterSpacing: "0.06em",
   },
 
   swapBtn: {
@@ -523,78 +509,48 @@ const S: Record<string, React.CSSProperties> = {
     letterSpacing: "0.02em",
   },
 
-  /* ── Body ── */
-  body: {
+  /* ── Command Grid ── */
+  commandGrid: {
     flex: 1,
     display: "grid",
-    gridTemplateColumns: "1fr 260px",
+    gridTemplateRows: "3fr 2fr",
+    minHeight: 0,
+    overflow: "hidden",
+    gap: 2,
+    padding: "2px",
+  },
+
+  terrainRow: {
+    display: "grid",
+    gap: 2,
     minHeight: 0,
     overflow: "hidden",
   },
 
-  bodyTable: {
-    flex: 1,
-    position: "relative" as const,
+  analyticsRow: {
+    display: "grid",
+    gridTemplateColumns: "3fr 2fr",
+    gap: 2,
     minHeight: 0,
     overflow: "hidden",
   },
 
-  center: {
-    gridColumn: 1,
-    position: "relative" as const,
+  analyticsLeft: {
     minHeight: 0,
     overflow: "hidden",
-    background: VOID,
   },
 
-  rightRail: {
-    gridColumn: 2,
-    display: "flex",
-    flexDirection: "column" as const,
-    padding: "14px 12px 10px",
-    overflowY: "auto" as const,
-    overflowX: "hidden" as const,
-    background: "rgba(0,0,0,0.4)",
-    backdropFilter: "blur(14px)",
-    borderLeft: GLASS_BORDER,
-    scrollbarWidth: "thin" as const,
-    scrollbarColor: "rgba(100,180,255,0.12) transparent",
-  },
-
-  /* ── View toggle ── */
-  viewToggle: {
-    display: "flex",
-    alignItems: "center",
-    gap: 0,
-    marginLeft: 12,
-    borderRadius: 4,
+  analyticsRight: {
+    minHeight: 0,
     overflow: "hidden",
-    border: GLASS_BORDER,
   },
 
-  viewBtn: {
-    padding: "4px 10px",
-    border: "none",
-    background: "rgba(0,0,0,0.3)",
-    color: "rgba(148,180,214,0.5)",
-    fontSize: 10,
-    fontWeight: 600,
-    letterSpacing: "0.06em",
-    fontFamily: FONT,
-    cursor: "pointer",
-    transition: "background 200ms ease, color 200ms ease",
-  },
-
-  viewBtnActive: {
-    padding: "4px 10px",
-    border: "none",
-    background: "rgba(34,211,238,0.12)",
-    color: CYAN,
-    fontSize: 10,
-    fontWeight: 700,
-    letterSpacing: "0.06em",
-    fontFamily: FONT,
-    cursor: "pointer",
+  commandStrip: {
+    position: "absolute",
+    bottom: 24,
+    left: "50%",
+    transform: "translateX(-50%)",
+    zIndex: 6,
   },
 
   /* ── Legal ── */
