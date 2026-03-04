@@ -354,6 +354,110 @@
 
 /* .heroWidget removed — hero cards now use .widget */
 
+/* ── Active (focused) card state ── */
+.cardActive {
+  border-color: var(--sf-cyan) !important;
+  box-shadow:
+    var(--sf-shadow),
+    0 0 16px rgba(34, 211, 238, 0.14),
+    inset -3px 0 0 0 var(--sf-cyan);
+  transform: translateY(-1px);
+}
+
+.cardActive::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--sf-cyan);
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+}
+
+/* ── AI commentary expansion ── */
+.commentary {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 11px;
+  line-height: 1.55;
+  color: rgba(200, 220, 240, 0.78);
+  padding: 8px 6px 4px;
+  width: 100%;
+  text-align: left;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition:
+    max-height 320ms ease,
+    opacity 280ms ease,
+    padding 280ms ease;
+}
+
+.commentaryVisible {
+  max-height: 120px;
+  opacity: 1;
+  padding: 8px 6px 6px;
+}
+
+/* ── Stress-test trigger ── */
+.stressBtn {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--sf-cyan);
+  background: rgba(34, 211, 238, 0.06);
+  border: 1px solid rgba(34, 211, 238, 0.20);
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  width: 100%;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition:
+    max-height 280ms ease,
+    opacity 250ms ease,
+    background 150ms ease;
+}
+
+.stressBtnVisible {
+  max-height: 32px;
+  opacity: 1;
+  margin-top: 4px;
+}
+
+.stressBtn:hover {
+  background: rgba(34, 211, 238, 0.14);
+  border-color: rgba(34, 211, 238, 0.40);
+}
+
+/* ── Zone label overlay on active card ── */
+.zoneLabel {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(34, 211, 238, 0.50);
+  text-align: right;
+  width: 100%;
+  padding: 0 4px;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition:
+    max-height 250ms ease,
+    opacity 200ms ease;
+}
+
+.zoneLabelVisible {
+  max-height: 16px;
+  opacity: 1;
+}
+
 /* ══════════════════════════════════════════════════════════════════
    WIDGET ANIMATIONS (burn bars, etc)
    ══════════════════════════════════════════════════════════════════ */

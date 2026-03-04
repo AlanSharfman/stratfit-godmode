@@ -5,9 +5,13 @@
 // UI-only — no store/selector/simulation changes
 // ═══════════════════════════════════════════════════════════════════════════
 
-import React, { memo, useId, useMemo, useState } from "react";
+import React, { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import type { PositionKpis } from "@/pages/position/overlays/positionState";
 import { useSelectSimulationKpis } from "@/selectors/simulationKpiSelector";
+import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping";
+import { KPI_ZONE_MAP, KPI_STRESS_PROMPTS } from "@/domain/intelligence/kpiZoneMapping";
+import { getKpiCommentary } from "@/domain/intelligence/kpiCommentary";
 import styles from "./KPIHealthRail.module.css";
 
 /* ── Formatting helpers (identical to prior KPIOverlay) ── */
@@ -306,118 +310,239 @@ function HeroRiskWidget({ tone }: { tone: RiskTone }) {
 
 export interface KPIHealthRailProps {
   kpis: PositionKpis | null;
+  focusedKpi?: KpiKey | null;
+  onFocusKpi?: (key: KpiKey | null) => void;
 }
 
-const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis }) => {
+interface KpiCardDef {
+  key: KpiKey;
+  labelCls: string;
+  label: string;
+  getValue: (k: PositionKpis) => string;
+  widget: React.ReactNode;
+  sub: string | ((k: PositionKpis) => string);
+  extra?: (k: PositionKpis, riskTone: RiskTone) => React.ReactNode;
+}
+
+function KpiCard({
+  def,
+  k,
+  riskTone,
+  isActive,
+  commentary,
+  onHover,
+  onStressTest,
+}: {
+  def: KpiCardDef;
+  k: PositionKpis | null;
+  riskTone: RiskTone;
+  isActive: boolean;
+  commentary: string;
+  onHover: (key: KpiKey | null) => void;
+  onStressTest: (key: KpiKey) => void;
+}) {
+  const zone = KPI_ZONE_MAP[def.key];
+  return (
+    <div
+      className={`${styles.card} ${isActive ? styles.cardActive : ""}`}
+      onMouseEnter={() => onHover(def.key)}
+      onMouseLeave={() => onHover(null)}
+      data-kpi={def.key}
+    >
+      <div className={`${styles.label} ${def.labelCls}`}>{def.label}</div>
+      <div className={styles.value}>{k ? def.getValue(k) : "—"}</div>
+      {def.widget}
+      <div className={styles.sub}>{typeof def.sub === "function" ? (k ? def.sub(k) : "") : def.sub}</div>
+      {def.extra?.(k!, riskTone)}
+      <div className={`${styles.zoneLabel} ${isActive ? styles.zoneLabelVisible : ""}`}>
+        {zone.label}
+      </div>
+      <div className={`${styles.commentary} ${isActive ? styles.commentaryVisible : ""}`}>
+        {commentary}
+      </div>
+      <button
+        className={`${styles.stressBtn} ${isActive ? styles.stressBtnVisible : ""}`}
+        onClick={(e) => { e.stopPropagation(); onStressTest(def.key); }}
+      >
+        ⚡ Stress-Test This
+      </button>
+    </div>
+  );
+}
+
+const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, onFocusKpi }) => {
   const simKpis = useSelectSimulationKpis();
-  const k = simKpis ?? kpis; // Simulation-first, prop as baseline fallback
+  const k = simKpis ?? kpis;
+  const navigate = useNavigate();
+  const railRef = useRef<HTMLDivElement>(null);
 
   const riskTone = useMemo<RiskTone>(
     () => deriveRiskTone(k?.riskIndex ?? 0),
     [k?.riskIndex],
   );
 
+  const handleHover = useCallback(
+    (key: KpiKey | null) => { onFocusKpi?.(key); },
+    [onFocusKpi],
+  );
+
+  const handleStressTest = useCallback(
+    (key: KpiKey) => {
+      const prompt = KPI_STRESS_PROMPTS[key];
+      navigate("/decision", { state: { prefillPrompt: prompt } });
+    },
+    [navigate],
+  );
+
+  const getCommentary = useCallback(
+    (key: KpiKey): string => {
+      if (!k) return "";
+      return getKpiCommentary(key, k);
+    },
+    [k],
+  );
+
+  // Scroll-based focus via IntersectionObserver
+  useEffect(() => {
+    if (!railRef.current || !onFocusKpi) return;
+    const cards = railRef.current.querySelectorAll<HTMLElement>("[data-kpi]");
+    if (!cards.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting && entry.intersectionRatio > 0.6) {
+            const key = (entry.target as HTMLElement).dataset.kpi as KpiKey;
+            if (key) onFocusKpi(key);
+          }
+        }
+      },
+      { root: railRef.current, threshold: [0.6] },
+    );
+
+    cards.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [onFocusKpi]);
+
+  const CARDS: KpiCardDef[] = useMemo(() => [
+    {
+      key: "cash" as KpiKey,
+      labelCls: styles.labelCapital,
+      label: "Cash",
+      getValue: (kk) => `$${fmtMoney(kk.cashOnHand)}`,
+      widget: <CashWidget />,
+      sub: "On hand",
+    },
+    {
+      key: "runway" as KpiKey,
+      labelCls: styles.labelCapital,
+      label: "Runway",
+      getValue: (kk) => Number.isFinite(kk.runwayMonths) ? `${kk.runwayMonths.toFixed(1)}m` : "—",
+      widget: <RunwayWidget />,
+      sub: "Stability probability",
+    },
+    {
+      key: "arr" as KpiKey,
+      labelCls: styles.labelPerf,
+      label: "ARR",
+      getValue: (kk) => `$${fmtMoney(kk.arr)}`,
+      widget: <ArrWidget />,
+      sub: "Annual run rate",
+    },
+    {
+      key: "revenue" as KpiKey,
+      labelCls: styles.labelPerf,
+      label: "Revenue",
+      getValue: (kk) => `$${fmtMoney(kk.revenueMonthly)}`,
+      widget: <RevenueWidget />,
+      sub: "Monthly",
+    },
+    {
+      key: "burn" as KpiKey,
+      labelCls: styles.labelEfficiency,
+      label: "Burn",
+      getValue: (kk) => `$${fmtMoney(kk.burnMonthly)}`,
+      widget: <BurnWidget />,
+      sub: "Monthly",
+    },
+    {
+      key: "grossMargin" as KpiKey,
+      labelCls: styles.labelEfficiency,
+      label: "Gross Margin",
+      getValue: (kk) => fmtPct(kk.grossMarginPct),
+      widget: <GrossMarginWidget />,
+      sub: "Of revenue",
+    },
+    {
+      key: "enterpriseValue" as KpiKey,
+      labelCls: styles.labelValuation,
+      label: "Enterprise Value",
+      getValue: (kk) => kk.valuationEstimate > 0 ? `$${fmtMoney(kk.valuationEstimate)}` : "$ —",
+      widget: <ValuationWidget />,
+      sub: (kk) => kk.valuationEstimate > 0 ? "Revenue multiple" : "Awaiting ARR data",
+      extra: (kk, _rt) => kk ? (
+        <span className={styles.probBadge} data-tone={deriveRiskTone(kk.riskIndex)}>
+          {fmtPct(kk.riskIndex)} probability
+        </span>
+      ) : null,
+    },
+    {
+      key: "survivalProbability" as KpiKey,
+      labelCls: styles.labelRisk,
+      label: "Survival Probability",
+      getValue: (kk) => kk.riskIndex.toFixed(0),
+      widget: <></>,
+      sub: "",
+      extra: (kk, rt) => (
+        <>
+          <HeroRiskWidget tone={rt} />
+          <span className={styles.riskTag} data-tone={rt}>
+            {riskToneLabel(rt)} • liquidity pressure
+          </span>
+        </>
+      ),
+    },
+  ], []);
+
+  const SECTIONS = useMemo(() => [
+    { header: "Liquidity", keys: ["cash", "runway"] as KpiKey[] },
+    { header: "Revenue Engine", keys: ["arr", "revenue"] as KpiKey[] },
+    { header: "Efficiency", keys: ["burn", "grossMargin"] as KpiKey[] },
+    { header: "Valuation", keys: ["enterpriseValue"] as KpiKey[] },
+    { header: "Survival Probability", keys: ["survivalProbability"] as KpiKey[] },
+  ], []);
+
+  const cardMap = useMemo(() => {
+    const m = new Map<string, KpiCardDef>();
+    for (const c of CARDS) m.set(c.key, c);
+    return m;
+  }, [CARDS]);
+
   return (
-    <div className={styles.rail}>
-
-      {/* ── 1. LIQUIDITY ── */}
-      <section className={styles.section}>
-        <h3 className={styles.sectionHeader}>Liquidity</h3>
-        <div className={styles.cardStack}>
-          {/* Cash */}
-          <div className={styles.card}>
-            <div className={`${styles.label} ${styles.labelCapital}`}>Cash</div>
-            <div className={styles.value}>{k ? `$${fmtMoney(k.cashOnHand)}` : "$0"}</div>
-            <CashWidget />
-            <div className={styles.sub}>On hand</div>
+    <div className={styles.rail} ref={railRef}>
+      {SECTIONS.map((sec) => (
+        <section key={sec.header} className={styles.section}>
+          <h3 className={styles.sectionHeader}>{sec.header}</h3>
+          <div className={styles.cardStack}>
+            {sec.keys.map((key) => {
+              const def = cardMap.get(key);
+              if (!def) return null;
+              return (
+                <KpiCard
+                  key={key}
+                  def={def}
+                  k={k}
+                  riskTone={riskTone}
+                  isActive={focusedKpi === key}
+                  commentary={getCommentary(key)}
+                  onHover={handleHover}
+                  onStressTest={handleStressTest}
+                />
+              );
+            })}
           </div>
-          {/* Runway */}
-          <div className={styles.card}>
-            <div className={`${styles.label} ${styles.labelCapital}`}>Runway</div>
-            <div className={styles.value}>
-              {k ? (Number.isFinite(k.runwayMonths) ? `${k.runwayMonths.toFixed(1)}m` : "—") : "999.0m"}
-            </div>
-            <RunwayWidget />
-            <div className={styles.sub}>Stability probability</div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── 2. REVENUE ENGINE ── */}
-      <section className={styles.section}>
-        <h3 className={styles.sectionHeader}>Revenue Engine</h3>
-        <div className={styles.cardStack}>
-          {/* ARR */}
-          <div className={styles.card}>
-            <div className={`${styles.label} ${styles.labelPerf}`}>ARR</div>
-            <div className={styles.value}>{k ? `$${fmtMoney(k.arr)}` : "$0"}</div>
-            <ArrWidget />
-            <div className={styles.sub}>Annual run rate</div>
-          </div>
-          {/* Revenue */}
-          <div className={styles.card}>
-            <div className={`${styles.label} ${styles.labelPerf}`}>Revenue</div>
-            <div className={styles.value}>{k ? `$${fmtMoney(k.revenueMonthly)}` : "$0"}</div>
-            <RevenueWidget />
-            <div className={styles.sub}>Monthly</div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── 3. EFFICIENCY ── */}
-      <section className={styles.section}>
-        <h3 className={styles.sectionHeader}>Efficiency</h3>
-        <div className={styles.cardStack}>
-          {/* Burn */}
-          <div className={styles.card}>
-            <div className={`${styles.label} ${styles.labelEfficiency}`}>Burn</div>
-            <div className={styles.value}>{k ? `$${fmtMoney(k.burnMonthly)}` : "$0"}</div>
-            <BurnWidget />
-            <div className={styles.sub}>Monthly</div>
-          </div>
-          {/* Gross Margin */}
-          <div className={styles.card}>
-            <div className={`${styles.label} ${styles.labelEfficiency}`}>Gross Margin</div>
-            <div className={styles.value}>{k ? `${fmtPct(k.grossMarginPct)}` : "—"}</div>
-            <GrossMarginWidget />
-            <div className={styles.sub}>Of revenue</div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── 4. VALUATION ── */}
-      <section className={styles.section}>
-        <h3 className={styles.sectionHeader}>Valuation</h3>
-        <div className={styles.cardStack}>
-          <div className={styles.card}>
-            <div className={`${styles.label} ${styles.labelValuation}`}>Enterprise Value</div>
-            <div className={styles.value}>{k && k.valuationEstimate > 0 ? `$${fmtMoney(k.valuationEstimate)}` : "$ —"}</div>
-            {k && (
-              <span className={styles.probBadge} data-tone={deriveRiskTone(k.riskIndex)}>
-                {fmtPct(k.riskIndex)} probability
-              </span>
-            )}
-            <ValuationWidget />
-            <div className={styles.sub}>{k && k.valuationEstimate > 0 ? "Revenue multiple" : "Awaiting ARR data"}</div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── 5. SURVIVAL PROBABILITY ── */}
-      <section className={styles.section}>
-        <h3 className={styles.sectionHeader}>Survival Probability</h3>
-        <div className={styles.cardStack}>
-          <div className={styles.card}>
-            <div className={`${styles.label} ${styles.labelRisk}`}>Survival Probability</div>
-            <div className={styles.value}>{k ? k.riskIndex.toFixed(0) : "85"}</div>
-            <HeroRiskWidget tone={riskTone} />
-            <span className={styles.riskTag} data-tone={riskTone}>
-              {riskToneLabel(riskTone)} • liquidity pressure
-            </span>
-          </div>
-        </div>
-      </section>
-
+        </section>
+      ))}
     </div>
   );
 });

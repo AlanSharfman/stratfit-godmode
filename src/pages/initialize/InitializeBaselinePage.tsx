@@ -385,7 +385,7 @@ export default function InitializeBaselinePage() {
       arpa: form.avgDealSize || 1500,
       stage: form.stage || undefined,
     })
-    navigate("/decision", { replace: true })
+    navigate("/position", { replace: true })
   }, [form, setBaseline, navigate])
 
   /* ── Excel download ── */

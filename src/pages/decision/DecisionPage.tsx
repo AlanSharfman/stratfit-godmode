@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { useNavigate, Link } from "react-router-dom"
+import { useNavigate, useLocation, Link } from "react-router-dom"
 
 import { useCanonicalBaseline } from "@/state/useCanonicalBaseline"
 import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore"
@@ -12,6 +12,9 @@ import SimulationRunOverlay from "@/components/system/SimulationRunOverlay"
 import SimulationPipelineWidget from "@/components/system/SimulationPipelineWidget"
 import SystemProbabilityNotice from "@/components/system/ProbabilityNotice"
 import PortalNav from "@/components/nav/PortalNav"
+import { useSelectSimulationKpis } from "@/selectors/simulationKpiSelector"
+import { generateSuggestions, getZoneStripData } from "@/domain/intelligence/decisionSuggestions"
+import type { StressTestSuggestion } from "@/domain/intelligence/decisionSuggestions"
 
 import css from "./DecisionPage.module.css"
 
@@ -135,11 +138,17 @@ function timeAgo(ts: number): string {
 
 export default function DecisionPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const baseline = useCanonicalBaseline()
+  const simKpis = useSelectSimulationKpis()
   const createScenario = usePhase1ScenarioStore((s) => s.createScenario)
   const setActiveScenarioId = usePhase1ScenarioStore((s) => s.setActiveScenarioId)
   const runSimulation = usePhase1ScenarioStore((s) => s.runSimulation)
   const scenarios = usePhase1ScenarioStore((s) => s.scenarios)
+
+  // ── Zone strip + smart suggestions derived from simulation KPIs ──
+  const zoneStrip = useMemo(() => simKpis ? getZoneStripData(simKpis) : null, [simKpis])
+  const smartSuggestions = useMemo(() => simKpis ? generateSuggestions(simKpis) : [], [simKpis])
 
   // ── State ──
   const [promptText, setPromptText] = useState("")
@@ -154,6 +163,17 @@ export default function DecisionPage() {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const canRunRef = useRef(false)
   const handleRunRef = useRef<() => void>(() => {})
+
+  // ── Pre-fill from Position page stress-test buttons ──
+  const prefillHandled = useRef(false)
+  useEffect(() => {
+    if (prefillHandled.current) return
+    const state = location.state as { prefillPrompt?: string } | null
+    if (state?.prefillPrompt) {
+      setPromptText(state.prefillPrompt)
+      prefillHandled.current = true
+    }
+  }, [location.state])
 
   // ── Rotating example placeholder ──
   const [exampleIdx, setExampleIdx] = useState(0)
@@ -240,6 +260,15 @@ export default function DecisionPage() {
     textareaRef.current?.focus()
   }, [])
 
+  // ── Smart suggestion click → prefill + set intent ──
+  const handleSuggestion = useCallback((s: StressTestSuggestion) => {
+    setPromptText(s.prompt)
+    setIntentType(s.intent)
+    setIsDone(false)
+    setShowResponse(true)
+    textareaRef.current?.focus()
+  }, [])
+
   // ── Run scenario ──
   async function handleRun() {
     setError(null)
@@ -270,7 +299,7 @@ export default function DecisionPage() {
   // Simulating → navigate after 3.5s
   useEffect(() => {
     if (!simulating) return
-    const timer = setTimeout(() => navigate("/position", { replace: true }), 3500)
+    const timer = setTimeout(() => navigate("/studio", { replace: true }), 3500)
     return () => clearTimeout(timer)
   }, [simulating, navigate])
 
@@ -335,6 +364,18 @@ export default function DecisionPage() {
 
       {error && <div className={css.errorBanner}>{error}</div>}
 
+      {/* ═══ ZONE CONTEXT STRIP ═══ */}
+      {zoneStrip && (
+        <div className={css.zoneStrip}>
+          {zoneStrip.map((z) => (
+            <div key={z.key} className={css.zoneBlock} data-health={z.health}>
+              <span className={css.zoneDot} data-health={z.health} />
+              <span className={css.zoneBlockLabel}>{z.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* ═══ PROMPT HERO ═══ */}
       <div className={css.promptHero}>
         <div className={css.heroLabel}>Stress Test Console</div>
@@ -342,8 +383,36 @@ export default function DecisionPage() {
         <p className={css.heroSubtitle}>
           Stress-test your decisions before execution — in minutes.
         </p>
+
+        {/* ═══ SMART SUGGESTIONS (KPI-driven, primary UX) ═══ */}
+        {smartSuggestions.length > 0 && !showResponse && (
+          <div className={css.suggestionsBlock}>
+            <div className={css.suggestionsLabel}>
+              Recommended stress tests based on your position
+            </div>
+            <div className={css.suggestionsGrid}>
+              {smartSuggestions.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  className={css.suggestionCard}
+                  data-urgency={s.urgency}
+                  onClick={() => handleSuggestion(s)}
+                >
+                  <div className={css.suggestionUrgency} data-urgency={s.urgency}>
+                    {s.urgency === "critical" ? "URGENT" : s.urgency === "high" ? "HIGH PRIORITY" : s.urgency === "moderate" ? "MODERATE" : "EXPLORE"}
+                  </div>
+                  <div className={css.suggestionHeadline}>{s.headline}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className={css.promptSectionLabel}>
-          Describe the business decision you'd like to stress-test.
+          {smartSuggestions.length > 0
+            ? "Or describe your own decision to stress-test"
+            : "Describe the business decision you'd like to stress-test."}
         </div>
 
         {/* Prompt card */}
@@ -489,6 +558,54 @@ export default function DecisionPage() {
               ))}
             </div>
 
+            {/* Zone impact preview — before/after */}
+            {zoneStrip && (
+              <div className={css.zonePreview}>
+                <span className={css.zonePreviewLabel}>Now</span>
+                <div className={css.zonePreviewDots}>
+                  {zoneStrip.map((z) => {
+                    const colors: Record<string, string> = {
+                      critical: "#ef4444", watch: "#facc15", healthy: "#22d3ee", strong: "#34d399",
+                    }
+                    return (
+                      <div
+                        key={z.key}
+                        className={css.zonePreviewDot}
+                        title={`${z.label}: ${z.health}`}
+                        style={{ background: colors[z.health] ?? "#94b4d6", boxShadow: `0 0 4px ${colors[z.health] ?? "#94b4d6"}` }}
+                      />
+                    )
+                  })}
+                </div>
+                <span className={css.zonePreviewArrow}>→</span>
+                <span className={css.zonePreviewLabel}>After</span>
+                <div className={css.zonePreviewDots}>
+                  {zoneStrip.map((z) => {
+                    const impacted = impactState?.lit.includes(
+                      z.label === "Margin" ? "Growth" : z.label === "Value" ? "Value" : z.label === "Survival" ? "Risk" : z.label
+                    )
+                    const colors: Record<string, string> = {
+                      critical: "#ef4444", watch: "#facc15", healthy: "#22d3ee", strong: "#34d399",
+                    }
+                    const baseColor = colors[z.health] ?? "#94b4d6"
+                    const afterColor = impacted ? "rgba(34, 211, 238, 0.9)" : baseColor
+                    return (
+                      <div
+                        key={z.key}
+                        className={css.zonePreviewDot}
+                        title={`${z.label}: ${impacted ? "impacted" : z.health}`}
+                        style={{
+                          background: afterColor,
+                          boxShadow: impacted ? `0 0 8px rgba(34, 211, 238, 0.5)` : `0 0 4px ${baseColor}`,
+                          animation: impacted ? "none" : undefined,
+                        }}
+                      />
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Constraint tuning */}
             {constraintLevers.length > 0 && (
               <>
@@ -552,7 +669,7 @@ export default function DecisionPage() {
                 className={`${css.historyCard} ${sc.id === scenarios.find((s) => s.id === sc.id)?.id && isDone ? css.historyCardActive : ""}`}
                 onClick={() => {
                   setActiveScenarioId(sc.id)
-                  navigate("/position")
+                  navigate("/studio")
                 }}
               >
                 <div className={css.historyDecision}>{sc.decision}</div>

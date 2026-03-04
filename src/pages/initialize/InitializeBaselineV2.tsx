@@ -318,7 +318,7 @@ export default function InitializeBaselineConsoleV2() {
       headcount: form.headcount,
       arpa: form.avgDealSize || 1500,
     })
-    navigate("/decision", { replace: true })
+    navigate("/position", { replace: true })
   }, [form, setBaseline, navigate])
 
   const canGoNext = activeStep < 4

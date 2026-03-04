@@ -30,9 +30,11 @@ import CommandGlassPanel from "@/components/intelligence/CommandGlassPanel"
 import { useIntelligencePresentation } from "@/hooks/useIntelligencePresentation"
 import SimulationContextHUD from "@/components/position/SimulationContextHUD"
 import KPIHealthRail from "@/components/kpi/KPIHealthRail"
+import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
 import ProbabilityBand from "@/components/position/ProbabilityBand"
 import BiasVectorBar from "@/components/position/BiasVectorBar"
 import ExecutiveSummaryBar from "@/components/position/ExecutiveSummaryBar"
+import PositionExecSummary from "@/components/position/PositionExecSummary"
 import { computePositionInstruments } from "@/components/position/computePositionInstruments"
 import ScenarioContextPanel from "@/components/scenario/ScenarioContextPanel"
 import SimulationStatusWidget from "@/components/system/SimulationStatusWidget"
@@ -87,6 +89,7 @@ export default function PositionPage() {
   const [terrainTuning, setTerrainTuning] = useState<TerrainTuningParams>({ ...DEFAULT_TUNING })
   const viewportRef = useRef<HTMLDivElement>(null)
   const insightScrollRef = useRef<HTMLDivElement>(null)
+  const [focusedKpi, setFocusedKpi] = useState<KpiKey | null>(null)
   const [userScrolling, setUserScrolling] = useState(false)
   const reducedMotion = useReducedMotion()
   const { debugHud } = useDebugFlags()
@@ -301,10 +304,6 @@ export default function PositionPage() {
   useEffect(() => {
     hydrateBaseline()
   }, [hydrateBaseline])
-
-  useEffect(() => {
-    if (scenarioStoreHydrated && !activeScenarioId) navigate("/decision")
-  }, [scenarioStoreHydrated, activeScenarioId, navigate])
 
   useEffect(() => {
     if (baselineHydrated && !baseline) navigate("/initiate")
@@ -701,17 +700,18 @@ export default function PositionPage() {
       ],
     },
     {
-      heading: "PRIMARY INSIGHT",
+      heading: "INSIGHT LAYERS",
       items: [
         { id: "heatMap", label: "Heat Map", value: heatmapEnabled, onChange: trackedToggleHeatmap },
         { id: "riskField", label: "Risk Field", value: shlIsOn(shlWeights.risk), onChange: makeTrackedShlToggle("riskField", "risk") },
         { id: "confidence", label: "Confidence", value: shlIsOn(shlWeights.confidence), onChange: makeTrackedShlToggle("confidence", "confidence") },
+        { id: "markers", label: "Markers", value: renderFlags.showMarkers, onChange: makeTrackedToggle("markers", () => renderFlags.toggle("showMarkers")) },
       ],
     },
     {
-      heading: "SECONDARY",
+      heading: "ADVANCED",
+      collapsed: true,
       items: [
-        { id: "markers", label: "Markers", value: renderFlags.showMarkers, onChange: makeTrackedToggle("markers", () => renderFlags.toggle("showMarkers")) },
         { id: "flow", label: "Flow", value: shlIsOn(shlWeights.flow), onChange: makeTrackedShlToggle("flow", "flow") },
         { id: "diverge", label: "Diverge", value: shlIsOn(shlWeights.divergence), onChange: makeTrackedShlToggle("diverge", "divergence") },
         { id: "envelope", label: "Envelope", value: renderFlags.showEnvelope, onChange: makeTrackedToggle("envelope", () => renderFlags.toggle("showEnvelope")) },
@@ -817,9 +817,12 @@ export default function PositionPage() {
             </div>
           </Link>
 
+          {/* Intelligence Executive Summary */}
+          <PositionExecSummary kpis={liveKpis} />
+
           {/* KPI instruments — grouped health rail */}
           <div className={styles.kpiRailDock} aria-label="KPI Health Rail">
-            <KPIHealthRail kpis={liveKpis} />
+            <KPIHealthRail kpis={liveKpis} focusedKpi={focusedKpi} onFocusKpi={setFocusedKpi} />
 
             {/* C+ Probability Bands — instrument gauges */}
             {instruments && (
@@ -854,6 +857,9 @@ export default function PositionPage() {
             <TerrainStage
               pathsEnabled={true}
               focusedEvent={displayEvent}
+              focusedKpi={focusedKpi}
+              zoneKpis={liveKpis}
+              hideMarkers={!!focusedKpi}
               heatmapEnabled={heatmapEnabled || commandMode === "heatmap"}
               terrainMetrics={{
                 ...(terrainMetrics ?? {
@@ -960,6 +966,43 @@ export default function PositionPage() {
               </button>
             )}
           </div>
+
+          {/* Stress-Test This Position CTA */}
+          <button
+            type="button"
+            onClick={() => navigate("/decision")}
+            style={{
+              width: "100%",
+              padding: "10px 14px",
+              background: "linear-gradient(135deg, rgba(34,211,238,0.12), rgba(99,102,241,0.08))",
+              border: "1px solid rgba(34,211,238,0.30)",
+              borderRadius: 10,
+              color: "#22d3ee",
+              fontFamily: "'Inter', system-ui, sans-serif",
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: "0.10em",
+              textTransform: "uppercase" as const,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              transition: "background 200ms ease, border-color 200ms ease, box-shadow 200ms ease",
+              marginBottom: 6,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "linear-gradient(135deg, rgba(34,211,238,0.22), rgba(99,102,241,0.14))"
+              e.currentTarget.style.boxShadow = "0 0 16px rgba(34,211,238,0.18)"
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "linear-gradient(135deg, rgba(34,211,238,0.12), rgba(99,102,241,0.08))"
+              e.currentTarget.style.boxShadow = "none"
+            }}
+          >
+            <span style={{ fontSize: 14 }}>⚡</span>
+            Stress-Test This Position
+          </button>
 
           {/* ═══ Risk Intelligence Panel — Phase 300 ═══ */}
           <div className={styles.riskIntelDock} aria-label="Risk Intelligence">

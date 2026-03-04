@@ -45,6 +45,9 @@ import { useDebugFlags, useDebugSignals } from "@/debug/debugSignals";
 import { useOverlayVisibility } from "@/domain/ui/overlayVisibility";
 import TerrainFocusGlow from "@/components/terrain/intelligence/TerrainFocusGlow";
 import TerrainHeatmapLayer from "@/terrain/layers/TerrainHeatmapLayer";
+import TerrainZoneHighlight from "@/terrain/layers/TerrainZoneHighlight";
+import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping";
+import type { PositionKpis } from "@/pages/position/overlays/positionState";
 import TerrainLaserTarget from "@/components/intelligence/TerrainLaserTarget";
 import TerrainTargetPulse from "@/components/intelligence/TerrainTargetPulse";
 import TerrainTargetLabel from "@/components/intelligence/TerrainTargetLabel";
@@ -90,6 +93,10 @@ type TerrainStageProps = {
   colorVariant?: TerrainColorVariant
   /** Enable red→green heatmap overlay on terrain */
   heatmapEnabled?: boolean
+  /** Active KPI zone highlight key */
+  focusedKpi?: KpiKey | null
+  /** KPI data for zone health color derivation */
+  zoneKpis?: PositionKpis | null
   /** Azimuth (horizontal orbit) limits in radians. Defaults: unconstrained. */
   minAzimuthAngle?: number
   maxAzimuthAngle?: number
@@ -115,6 +122,8 @@ export default function TerrainStage({
   focusedEvent,
   colorVariant,
   heatmapEnabled = false,
+  focusedKpi = null,
+  zoneKpis = null,
   minAzimuthAngle = -Infinity,
   maxAzimuthAngle = Infinity,
   minPolarAngle: minPolar = 0.758,
@@ -256,6 +265,7 @@ export default function TerrainStage({
       <Suspense fallback={null}>
         <TerrainSurface ref={terrainRef} terrainMetrics={terrainMetrics} colorVariant={colorVariant} />
         <TerrainHeatmapLayer enabled={heatmapEnabled} terrainMetrics={terrainMetrics} />
+        <TerrainZoneHighlight focusedKpi={focusedKpi} kpis={zoneKpis} terrainMetrics={terrainMetrics} />
         {terrainReady && (
           <>
             {/* A12: Always mount P50Path — emphasis via visible prop, never unmount */}
