@@ -15,6 +15,7 @@ import { logDecisionFlow } from "@/dev/decisionFlowLog"
 import { selectKpis } from "@/selectors/kpiSelectors"
 import { selectRiskScore } from "@/selectors/riskSelectors"
 import { selectTerrainMetrics } from "@/selectors/terrainSelectors"
+import { useScenarioStore } from "@/state/scenarioStore"
 import type { LeverValues } from "@/domain/decision/LeverValues"
 import { normalizeLeverValues, stableStringifyLevers } from "@/domain/decision/LeverValues"
 import { applyLeversToBaseline } from "@/domain/decision/applyLevers"
@@ -333,6 +334,27 @@ export const usePhase1ScenarioStore = create<Phase1ScenarioState>()(
                 : sc
             ),
           }))
+          // Bridge into scenarioStore.engineResults for ScenarioMountain God Mode (Compare)
+          const riskIdx = selectRiskScore(kpis)
+          const arr = kpis.revenue * 12
+          useScenarioStore.getState().setEngineResult(scenarioId, {
+            kpis: {
+              cash: { value: kpis.cash },
+              monthlyBurn: { value: kpis.monthlyBurn },
+              revenue: { value: kpis.revenue },
+              grossMargin: { value: kpis.grossMargin },
+              growthRate: { value: kpis.growthRate },
+              churnRate: { value: kpis.churnRate },
+              headcount: { value: kpis.headcount },
+              arpa: { value: kpis.arpa },
+              runway: { value: kpis.runway ?? 0 },
+              riskIndex: { value: riskIdx },
+              riskScore: { value: 100 - riskIdx },
+              enterpriseValue: { value: arr * 8 },
+              burnQuality: { value: kpis.monthlyBurn },
+            },
+          })
+
           // DEV: log decision → scenarioInputs → engineResults linkage
           logDecisionFlow("simulationComplete", {
             scenarioId,

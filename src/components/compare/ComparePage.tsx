@@ -217,6 +217,7 @@ const ComparePage: React.FC = () => {
               scenario={scenarioId}
               dataPoints={dataPoints}
               activeKpiIndex={hoveredKpiIndex}
+              godMode
             />
           </ErrorBoundary>
         ) : (

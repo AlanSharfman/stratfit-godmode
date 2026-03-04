@@ -217,7 +217,7 @@ const CompareView: React.FC = memo(() => {
           <div className={styles.mountainLabel}>{leftData.name.toUpperCase()}</div>
           <div className={styles.mountainCanvas}>
             <TerrainWithFallback dataPoints={leftDataPoints}>
-              <ScenarioMountain scenario="base" dataPoints={leftDataPoints} />
+              <ScenarioMountain scenario="base" dataPoints={leftDataPoints} godMode />
             </TerrainWithFallback>
           </div>
         </div>
@@ -231,7 +231,7 @@ const CompareView: React.FC = memo(() => {
           <div className={styles.mountainCanvas}>
             {rightData ? (
               <TerrainWithFallback dataPoints={rightDataPoints}>
-                <ScenarioMountain scenario="upside" dataPoints={rightDataPoints} />
+                <ScenarioMountain scenario="upside" dataPoints={rightDataPoints} godMode />
               </TerrainWithFallback>
             ) : (
               <div className={styles.emptyMountain}>No scenario selected</div>
