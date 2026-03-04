@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { BriefingSection, CommandBriefing } from "../../core/command/generateCommandBriefing";
 import BriefingAudioControls from "./BriefingAudioControls";
+import type { BriefingAudioHandle } from "./BriefingAudioControls";
 
 interface CommandBriefingPanelProps {
   briefing: CommandBriefing;
@@ -136,6 +137,7 @@ export default function CommandBriefingPanel({
 }: CommandBriefingPanelProps) {
   const [activeSectionIdx, setActiveSectionIdx] = useState(0);
   const [audioPlaying, setAudioPlaying] = useState(false);
+  const audioRef = useRef<BriefingAudioHandle>(null);
 
   // 8 beats → 8 sections: 1:1 mapping
   useEffect(() => {
@@ -179,7 +181,10 @@ export default function CommandBriefingPanel({
       {/* Audio controls */}
       <div className="px-2 py-2 border-t border-slate-800/60">
         <BriefingAudioControls
-          text={briefing.plainText}
+          ref={audioRef}
+          sections={briefing.sections}
+          autoPlay={isDirectorPlaying}
+          onSectionChange={(idx) => setActiveSectionIdx(idx)}
           onPlay={() => setAudioPlaying(true)}
           onPause={() => setAudioPlaying(false)}
           onEnd={() => setAudioPlaying(false)}

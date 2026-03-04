@@ -37,7 +37,7 @@ import TerrainTheatre from "./TerrainTheatre";
 import BriefingRail from "./BriefingRail";
 import SignalTiles from "./SignalTiles";
 import type { SignalTileData } from "./SignalTiles";
-import { INVESTOR_BRIEFING_SCRIPT } from "./director/DirectorScript";
+import { INTELLIGENCE_BRIEFING_SCRIPT } from "./director/DirectorScript";
 import { useDirectorMode } from "./director/useDirectorMode";
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -232,7 +232,7 @@ const TheatreLayout: React.FC = memo(() => {
   }, [simResults, baseline, activeScenario, signalData.dispersionWidth, terrainSignals, pathSignals, riskHotspots]);
 
   // ── Director mode ──
-  const director = useDirectorMode(INVESTOR_BRIEFING_SCRIPT);
+  const director = useDirectorMode(INTELLIGENCE_BRIEFING_SCRIPT);
 
   const tileEmphasis = director.currentBeat?.tileOverrides ?? null;
 
@@ -254,7 +254,7 @@ const TheatreLayout: React.FC = memo(() => {
       {/* ── Right: Briefing Rail ── */}
       <div style={S.rightColumn}>
         <BriefingRail
-          beats={INVESTOR_BRIEFING_SCRIPT}
+          beats={INTELLIGENCE_BRIEFING_SCRIPT}
           activeBeatIndex={director.beatIndex}
           status={director.status}
           beatProgress={director.beatProgress}

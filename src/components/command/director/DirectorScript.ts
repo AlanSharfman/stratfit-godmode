@@ -44,10 +44,10 @@ export interface Beat {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// DEFAULT INVESTOR BRIEFING SCRIPT (8 beats, terrain-aware)
+// DEFAULT INTELLIGENCE BRIEFING SCRIPT (8 beats, terrain-aware)
 // ────────────────────────────────────────────────────────────────────────────
 
-export const INVESTOR_BRIEFING_SCRIPT: Beat[] = [
+export const INTELLIGENCE_BRIEFING_SCRIPT: Beat[] = [
   {
     id: "strategic_orientation",
     title: "Strategic Orientation",

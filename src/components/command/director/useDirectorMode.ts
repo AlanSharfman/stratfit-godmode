@@ -59,7 +59,7 @@ const TICK_MS = 50; // 20 fps update rate — smooth enough for UI, light on CPU
 // ────────────────────────────────────────────────────────────────────────────
 
 export function useDirectorMode(
-  script: Beat[] = INVESTOR_BRIEFING_SCRIPT,
+  script: Beat[] = INTELLIGENCE_BRIEFING_SCRIPT,
 ): DirectorState & DirectorControls {
   const [status, setStatus] = useState<DirectorStatus>("idle");
   const [beatIndex, setBeatIndex] = useState(0);
