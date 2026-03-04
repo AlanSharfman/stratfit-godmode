@@ -32,6 +32,9 @@ import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore";
 import SystemProbabilityNotice from "@/components/system/ProbabilityNotice";
 import ProvenanceBadge from "@/components/system/ProvenanceBadge";
 
+// Valuation visualisation (V-3A)
+import EnterpriseValueDistribution from "@/components/valuation/EnterpriseValueDistribution";
+
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
 // ═══════════════════════════════════════════════════════════════════════════
@@ -219,45 +222,48 @@ export default function ValuationPage() {
                 <span className={styles.panelIcon}>📊</span>
                 <span className={styles.panelTitle}>Enterprise Value Distribution</span>
               </div>
-              <div className={styles.panelBody}>
+              <div className={styles.panelBody} style={{ flexDirection: "column", gap: 16 }}>
                 {valuation ? (
-                  <table className={styles.breakdownTable}>
-                    <thead>
-                      <tr>
-                        <th>Method</th>
-                        <th>Enterprise Value</th>
-                        <th>Detail</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td>DCF</td>
-                        <td className={selectedMethod === "dcf" ? styles.breakdownHighlight : ""}>
-                          {fmtM(valuation.dcf.enterpriseValue)}
-                        </td>
-                        <td>Terminal: {fmtM(valuation.dcf.terminalValue)}</td>
-                      </tr>
-                      <tr>
-                        <td>Revenue Multiple</td>
-                        <td className={selectedMethod === "revenue_multiple" ? styles.breakdownHighlight : ""}>
-                          {fmtM(valuation.revenueMultiple.enterpriseValue)}
-                        </td>
-                        <td>{fmtX(valuation.revenueMultiple.multiple)} ARR</td>
-                      </tr>
-                      <tr>
-                        <td>EBITDA Multiple</td>
-                        <td>{fmtM(valuation.ebitdaMultiple.enterpriseValue)}</td>
-                        <td>{fmtX(valuation.ebitdaMultiple.multiple)} EBITDA</td>
-                      </tr>
-                      <tr>
-                        <td style={{ fontWeight: 600 }}>Blended</td>
-                        <td className={styles.breakdownHighlight}>
-                          {fmtM(valuation.blendedValue)}
-                        </td>
-                        <td>(DCF + Rev + EBITDA) / 3</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                  <>
+                    <EnterpriseValueDistribution valuation={valuation} />
+                    <table className={styles.breakdownTable}>
+                      <thead>
+                        <tr>
+                          <th>Method</th>
+                          <th>Enterprise Value</th>
+                          <th>Detail</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>DCF</td>
+                          <td className={selectedMethod === "dcf" ? styles.breakdownHighlight : ""}>
+                            {fmtM(valuation.dcf.enterpriseValue)}
+                          </td>
+                          <td>Terminal: {fmtM(valuation.dcf.terminalValue)}</td>
+                        </tr>
+                        <tr>
+                          <td>Revenue Multiple</td>
+                          <td className={selectedMethod === "revenue_multiple" ? styles.breakdownHighlight : ""}>
+                            {fmtM(valuation.revenueMultiple.enterpriseValue)}
+                          </td>
+                          <td>{fmtX(valuation.revenueMultiple.multiple)} ARR</td>
+                        </tr>
+                        <tr>
+                          <td>EBITDA Multiple</td>
+                          <td>{fmtM(valuation.ebitdaMultiple.enterpriseValue)}</td>
+                          <td>{fmtX(valuation.ebitdaMultiple.multiple)} EBITDA</td>
+                        </tr>
+                        <tr>
+                          <td style={{ fontWeight: 600 }}>Blended</td>
+                          <td className={styles.breakdownHighlight}>
+                            {fmtM(valuation.blendedValue)}
+                          </td>
+                          <td>(DCF + Rev + EBITDA) / 3</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </>
                 ) : (
                   <div className={styles.placeholder}>
                     Awaiting valuation data
