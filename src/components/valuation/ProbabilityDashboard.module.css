@@ -1,0 +1,127 @@
+/* src/components/valuation/ProbabilityDashboard.module.css */
+/* STRATFIT — Probability Dashboard (Phase V-3B) */
+/* Institutional dark · KPI rows with progress bars */
+
+/* ============================================================================
+   DASHBOARD
+   ============================================================================ */
+
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+/* ============================================================================
+   ROW
+   ============================================================================ */
+
+.row {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  overflow: hidden;
+  min-height: 56px;
+}
+
+/* ── Progress bar (absolute, behind content) ── */
+
+.bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: 6px 0 0 6px;
+  transition: width 0.4s ease;
+  pointer-events: none;
+}
+
+.bar_positive {
+  background: linear-gradient(90deg, rgba(34, 211, 238, 0.12) 0%, rgba(34, 211, 238, 0.03) 100%);
+}
+
+.bar_negative {
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.12) 0%, rgba(239, 68, 68, 0.03) 100%);
+}
+
+.bar_neutral {
+  background: linear-gradient(90deg, rgba(251, 191, 36, 0.10) 0%, rgba(251, 191, 36, 0.02) 100%);
+}
+
+/* ── Content (on top of bar) ── */
+
+.rowContent {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  gap: 12px;
+}
+
+/* ── Label column ── */
+
+.labelCol {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.75);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hint {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.02em;
+}
+
+/* ── Value ── */
+
+.value {
+  font-size: 20px;
+  font-weight: 400;
+  font-family: "JetBrains Mono", "IBM Plex Mono", monospace;
+  letter-spacing: -0.01em;
+  flex-shrink: 0;
+}
+
+.value_positive {
+  color: #22d3ee;
+}
+
+.value_negative {
+  color: #ef4444;
+}
+
+.value_neutral {
+  color: rgba(251, 191, 36, 0.85);
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
+@media (max-width: 600px) {
+  .label {
+    font-size: 11px;
+  }
+
+  .value {
+    font-size: 16px;
+  }
+
+  .rowContent {
+    padding: 10px 12px;
+  }
+}

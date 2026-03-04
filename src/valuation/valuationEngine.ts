@@ -78,6 +78,7 @@ export function computeValuation(engineResults: EngineResults): ValuationResults
       revenueMultiple: { enterpriseValue: 0, multiple: 0 },
       ebitdaMultiple: { enterpriseValue: 0, multiple: 0 },
       blendedValue: 0,
+      probabilities: { valueCreate: 0, valueLoss: 1, target: 0 },
     }
   }
 
@@ -132,6 +133,18 @@ export function computeValuation(engineResults: EngineResults): ValuationResults
   const methodCount = 3
   const blendedValue = (dcfEnterpriseValue + revEV + ebitdaEV) / methodCount
 
+  // ── 5) Probabilities — cross-method agreement (V-3B) ──
+  const evs = [dcfEnterpriseValue, revEV, ebitdaEV]
+  const createCount = evs.filter((v) => v > 0).length
+  const lossCount = evs.filter((v) => v <= 0).length
+  const targetCount = evs.filter((v) => v >= blendedValue).length
+
+  const probabilities = {
+    valueCreate: createCount / methodCount,
+    valueLoss: lossCount / methodCount,
+    target: targetCount / methodCount,
+  }
+
   return {
     dcf: {
       enterpriseValue: dcfEnterpriseValue,
@@ -147,5 +160,6 @@ export function computeValuation(engineResults: EngineResults): ValuationResults
       multiple: ebitdaMultiple,
     },
     blendedValue,
+    probabilities,
   }
 }

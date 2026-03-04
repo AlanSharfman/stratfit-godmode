@@ -6,6 +6,15 @@
 // No UI. No store. Consumed by valuationEngine and valuationSelectors.
 // ═══════════════════════════════════════════════════════════════════════════
 
+export interface ValuationProbabilities {
+  /** Fraction of methods producing EV > 0 (0–1) */
+  valueCreate: number
+  /** Fraction of methods producing EV ≤ 0 (0–1) */
+  valueLoss: number
+  /** Fraction of methods producing EV ≥ blendedValue (0–1) */
+  target: number
+}
+
 export interface ValuationResults {
   dcf: {
     enterpriseValue: number
@@ -24,4 +33,7 @@ export interface ValuationResults {
   }
 
   blendedValue: number
+
+  /** Probability metrics derived from cross-method agreement (V-3B) */
+  probabilities: ValuationProbabilities
 }

@@ -35,6 +35,9 @@ import ProvenanceBadge from "@/components/system/ProvenanceBadge";
 // Valuation visualisation (V-3A)
 import EnterpriseValueDistribution from "@/components/valuation/EnterpriseValueDistribution";
 
+// Probability dashboard (V-3B)
+import ProbabilityDashboard from "@/components/valuation/ProbabilityDashboard";
+
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
 // ═══════════════════════════════════════════════════════════════════════════
@@ -280,10 +283,14 @@ export default function ValuationPage() {
                 <span className={styles.panelTitle}>Probability Dashboard</span>
               </div>
               <div className={styles.panelBody}>
-                <div className={styles.placeholder}>
-                  Probability bands, survival curves, outcome distributions
-                  <span className={styles.placeholderPhase}>Phase V-3</span>
-                </div>
+                {valuation ? (
+                  <ProbabilityDashboard valuation={valuation} />
+                ) : (
+                  <div className={styles.placeholder}>
+                    Awaiting valuation data
+                    <span className={styles.placeholderPhase}>Phase V-3B</span>
+                  </div>
+                )}
               </div>
             </div>
 
