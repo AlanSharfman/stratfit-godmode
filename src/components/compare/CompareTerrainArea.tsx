@@ -13,6 +13,7 @@
 
 import React, { memo } from "react"
 import CompareTerrainPanel from "@/components/compare/CompareTerrainPanel"
+import GodModeLayers from "@/components/compare/GodModeLayers"
 import TerrainStage from "@/terrain/TerrainStage"
 import CameraCompositionRig from "@/scene/camera/CameraCompositionRig"
 import SkyAtmosphere from "@/scene/rigs/SkyAtmosphere"
@@ -211,6 +212,9 @@ const CompareTerrainArea: React.FC<CompareTerrainAreaProps> = memo(
                 />
               </>
             )}
+
+            {/* God Mode intelligence layers on primary terrain */}
+            <GodModeLayers scenarioId={selectedAId} />
 
             {/* Ghost B terrain — emerald tint */}
             <GhostTerrainSurface
