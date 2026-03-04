@@ -21,10 +21,17 @@ import {
   selectValuationFromSimulation,
   selectWaterfallFromSimulation,
 } from "@/selectors/valuationSelectors";
+import { selectStressProbability } from "@/selectors/probabilitySelectors";
+import { selectTerrainEvents } from "@/selectors/terrainSelectors";
 import { deriveTerrainMetrics } from "@/terrain/terrainFromBaseline";
 import type { TerrainMetrics } from "@/terrain/terrainFromBaseline";
 import { generateCommandBriefing } from "../../core/command/generateCommandBriefing";
-import type { BriefingInputs } from "../../core/command/generateCommandBriefing";
+import type {
+  BriefingInputs,
+  TerrainSignals,
+  PathSignals,
+  RiskHotspot,
+} from "../../core/command/generateCommandBriefing";
 
 import TerrainTheatre from "./TerrainTheatre";
 import BriefingRail from "./BriefingRail";
@@ -122,6 +129,43 @@ const TheatreLayout: React.FC = memo(() => {
     };
   }, [simResults]);
 
+  // ── Terrain-aware briefing signals (from selectors only) ──
+  const terrainSignals = useMemo<TerrainSignals | null>(() => {
+    const engineMetrics = simResults?.terrainMetrics;
+    if (!engineMetrics) return null;
+    return {
+      elevationScale: engineMetrics.elevationScale,
+      roughness: engineMetrics.roughness,
+      ridgeIntensity: engineMetrics.ridgeIntensity,
+      volatility: engineMetrics.volatility,
+    };
+  }, [simResults?.terrainMetrics]);
+
+  const pathSignals = useMemo<PathSignals | null>(() => {
+    const kpis = simResults?.kpis;
+    if (!kpis) return null;
+    return {
+      pathPointCount: 120,
+      stressProbability: selectStressProbability(kpis),
+      growthRate: kpis.growthRate,
+      churnRate: kpis.churnRate,
+    };
+  }, [simResults?.kpis]);
+
+  const riskHotspots = useMemo<RiskHotspot[]>(() => {
+    const events = selectTerrainEvents(simResults);
+    return events
+      .filter((e) => e.severity > 0.3)
+      .slice(0, 5)
+      .map((e) => ({
+        id: e.id,
+        type: e.type,
+        severity: e.severity,
+        description: e.description,
+        month: e.timestamp,
+      }));
+  }, [simResults]);
+
   // ── Command briefing ──
   const briefing = useMemo(() => {
     const kpis = selectKpis(simResults?.kpis ?? null);
@@ -179,10 +223,13 @@ const TheatreLayout: React.FC = memo(() => {
         seed: null,
         engineVersion: "stratfit-v1",
       },
+      terrainSignals,
+      pathSignals,
+      riskHotspots,
     };
 
     return generateCommandBriefing(inputs);
-  }, [simResults, baseline, activeScenario, signalData.dispersionWidth]);
+  }, [simResults, baseline, activeScenario, signalData.dispersionWidth, terrainSignals, pathSignals, riskHotspots]);
 
   // ── Director mode ──
   const director = useDirectorMode(INVESTOR_BRIEFING_SCRIPT);

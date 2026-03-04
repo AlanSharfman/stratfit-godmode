@@ -10,14 +10,18 @@
 // No simulation engine changes. No terrain mesh changes.
 // ═══════════════════════════════════════════════════════════════════════════
 
-import React, { memo, useEffect, useMemo } from "react";
+import React, { memo, useCallback, useEffect, useMemo } from "react";
+import type { ReactNode } from "react";
 import TerrainStage from "@/terrain/TerrainStage";
+import type { TerrainSurfaceHandle } from "@/terrain/TerrainSurface";
 import CameraCompositionRig from "@/scene/camera/CameraCompositionRig";
 import SkyAtmosphere from "@/scene/rigs/SkyAtmosphere";
 import type { CameraPreset } from "@/scene/camera/terrainCameraPresets";
 import type { TerrainMetrics } from "@/terrain/terrainFromBaseline";
 import type { Beat, CameraShot } from "./director/DirectorScript";
 import { intelligenceTarget } from "@/stores/intelligenceTargetStore";
+import CinematicBeaconLayer from "./CinematicBeaconLayer";
+import CinematicAnnotationOverlay from "./CinematicAnnotationOverlay";
 
 // ────────────────────────────────────────────────────────────────────────────
 // CAMERA SHOT → PRESET MAPPING
@@ -92,6 +96,8 @@ interface TerrainTheatreProps {
   terrainMetrics?: TerrainMetrics;
 }
 
+const EMPTY_MARKERS: string[] = [];
+
 const TerrainTheatre: React.FC<TerrainTheatreProps> = memo(
   ({ currentBeat, terrainMetrics }) => {
     const preset = useMemo<CameraPreset>(() => {
@@ -100,6 +106,7 @@ const TerrainTheatre: React.FC<TerrainTheatreProps> = memo(
     }, [currentBeat]);
 
     const metrics = terrainMetrics ?? EMPTY_METRICS;
+    const activeMarkers = currentBeat?.highlightMarkers ?? EMPTY_MARKERS;
 
     // Drive intelligence target store from director beats
     useEffect(() => {
@@ -113,13 +120,25 @@ const TerrainTheatre: React.FC<TerrainTheatreProps> = memo(
       };
     }, [currentBeat?.laserTargetKey]);
 
+    // Render cinematic overlays when terrain is ready (inside R3F Canvas)
+    const renderOverlays = useCallback(
+      (terrainRef: React.RefObject<TerrainSurfaceHandle>): ReactNode => (
+        <>
+          <CinematicBeaconLayer markerIds={activeMarkers} terrainRef={terrainRef} />
+          <CinematicAnnotationOverlay markerIds={activeMarkers} terrainRef={terrainRef} />
+        </>
+      ),
+      [activeMarkers],
+    );
+
     return (
       <div style={S.viewport}>
         <TerrainStage
           lockCamera
           pathsEnabled
           terrainMetrics={metrics}
-          heatmapEnabled={currentBeat?.highlightType === "risk_zone"}
+          heatmapEnabled={currentBeat?.highlightType === "risk_zone" || currentBeat?.highlightType === "terrain_surface"}
+          renderWhenReady={renderOverlays}
         >
           <CameraCompositionRig preset={preset} />
           <SkyAtmosphere />

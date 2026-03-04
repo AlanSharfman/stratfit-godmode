@@ -13,7 +13,13 @@ export type TerrainAnchorType =
   | "risk_peak"
   | "inflection_point"
   | "capital_efficiency"
-  | "valuation_peak";
+  | "valuation_peak"
+  | "roughness_zone"
+  | "ev_trajectory"
+  | "leverage_nodes"
+  | "wide_overview"
+  | "path_trajectory"
+  | "probability_band";
 
 export interface TerrainAnchor {
   id: string;
@@ -49,6 +55,12 @@ const [RISK_X, RISK_Z] = uvToWorld(0.60, 0.35);
 const [INFLECT_X, INFLECT_Z] = uvToWorld(0.50, 0.50);
 const [CAP_X, CAP_Z] = uvToWorld(0.35, 0.45);
 const [VAL_X, VAL_Z] = uvToWorld(0.55, 0.50);
+const [ROUGH_X, ROUGH_Z] = uvToWorld(0.55, 0.42);
+const [EVTRAJ_X, EVTRAJ_Z] = uvToWorld(0.52, 0.55);
+const [LEVER_X, LEVER_Z] = uvToWorld(0.45, 0.48);
+const [OVER_X, OVER_Z] = uvToWorld(0.50, 0.50);
+const [PATH_X, PATH_Z] = uvToWorld(0.42, 0.58);
+const [PROB_X, PROB_Z] = uvToWorld(0.58, 0.46);
 
 export const TERRAIN_ANCHORS: TerrainAnchor[] = [
   {
@@ -92,6 +104,48 @@ export const TERRAIN_ANCHORS: TerrainAnchor[] = [
     description: "Maximum value concentration on the terrain.",
     position: [VAL_X, 0, VAL_Z],
     type: "valuation_peak",
+  },
+  {
+    id: "roughness_zone",
+    label: "Roughness Zone",
+    description: "Operational friction concentrates in this terrain region.",
+    position: [ROUGH_X, 0, ROUGH_Z],
+    type: "roughness_zone",
+  },
+  {
+    id: "ev_trajectory",
+    label: "EV Trajectory",
+    description: "Enterprise value progression along the strategic corridor.",
+    position: [EVTRAJ_X, 0, EVTRAJ_Z],
+    type: "ev_trajectory",
+  },
+  {
+    id: "leverage_nodes",
+    label: "Leverage Nodes",
+    description: "Strategic leverage converges at these ridge structures.",
+    position: [LEVER_X, 0, LEVER_Z],
+    type: "leverage_nodes",
+  },
+  {
+    id: "wide_overview",
+    label: "Strategic Overview",
+    description: "Full terrain landscape — probabilistic scenario surface.",
+    position: [OVER_X, 0, OVER_Z],
+    type: "wide_overview",
+  },
+  {
+    id: "path_trajectory",
+    label: "Path Trajectory",
+    description: "Strategic path traverses the terrain toward modelled outcomes.",
+    position: [PATH_X, 0, PATH_Z],
+    type: "path_trajectory",
+  },
+  {
+    id: "probability_band",
+    label: "Probability Band",
+    description: "Outcome dispersion envelope across the terrain surface.",
+    position: [PROB_X, 0, PROB_Z],
+    type: "probability_band",
   },
 ];
 

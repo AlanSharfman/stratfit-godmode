@@ -1,10 +1,10 @@
 // src/components/command/director/DirectorScript.ts
 // ═══════════════════════════════════════════════════════════════════════════
-// STRATFIT — Director Mode Script (Cinematic Intelligence Theatre)
+// STRATFIT — Director Mode Script (Cinematic Intelligence Theatre v2)
 //
-// Defines the scripted beat sequence for Investor Briefing mode.
+// Defines the scripted 8-beat sequence for terrain-aware Investor Briefing.
 // Each beat controls: camera, highlight, laser anchor, transcript line,
-// and optional tile emphasis overrides.
+// tile emphasis, and optional marker highlights + pacing.
 //
 // Pure data — no React, no side effects.
 // ═══════════════════════════════════════════════════════════════════════════
@@ -21,120 +21,143 @@ export type HighlightType =
   | "valuation_peak"
   | "probability_band"
   | "leverage_nodes"
+  | "terrain_surface"
   | "none";
 
 export type TileEmphasis = "ev" | "risk" | "dispersion" | "runway";
 
 export interface Beat {
-  /** Unique beat identifier */
   id: string;
-  /** Display title for the beat (director timeline) */
   title: string;
-  /** Duration in milliseconds */
   durationMs: number;
-  /** Camera movement type */
   cameraShot: CameraShot;
-  /** Terrain highlight layer to activate */
   highlightType: HighlightType;
-  /** Terrain anchor id for laser targeting */
   laserTargetKey: string | null;
-  /** Transcript line displayed in briefing rail */
   transcriptLine: string;
-  /** Optional tile emphasis overrides */
   tileOverrides: TileEmphasis[] | null;
+  /** Camera target key consumed by TerrainTheatre for precise framing */
+  cameraTarget: string | null;
+  /** Marker keys to highlight on terrain during this beat */
+  highlightMarkers: string[];
+  /** Suggested dwell time in ms before auto-advancing (director pacing) */
+  pauseMs: number;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// DEFAULT INVESTOR BRIEFING SCRIPT
+// DEFAULT INVESTOR BRIEFING SCRIPT (8 beats, terrain-aware)
 // ────────────────────────────────────────────────────────────────────────────
 
 export const INVESTOR_BRIEFING_SCRIPT: Beat[] = [
   {
-    id: "opening",
-    title: "Opening",
-    durationMs: 8000,
+    id: "strategic_orientation",
+    title: "Strategic Orientation",
+    durationMs: 10000,
     cameraShot: "wide",
     highlightType: "none",
     laserTargetKey: null,
     transcriptLine:
-      "This is a probabilistic scenario model. The terrain you see represents the strategic landscape derived from your baseline data and simulation parameters.",
+      "This is a probabilistic terrain analysis. The landscape encodes growth trajectory as elevation, operational friction as roughness, and strategic leverage as ridge structures. All figures are model-derived probability indicators.",
     tileOverrides: null,
+    cameraTarget: "wide_overview",
+    highlightMarkers: [],
+    pauseMs: 10000,
   },
   {
-    id: "revenue_trajectory",
-    title: "Revenue Trajectory",
+    id: "terrain_difficulty",
+    title: "Terrain Difficulty",
+    durationMs: 12000,
+    cameraShot: "pan",
+    highlightType: "terrain_surface",
+    laserTargetKey: "roughness_zone",
+    transcriptLine:
+      "The terrain surface encodes operational friction from the scenario's burn structure and margin dynamics. Ridge intensity indicates leverage divergence between growth and margin assumptions. Surface volatility signals dispersion in the growth-to-margin trajectory.",
+    tileOverrides: ["risk"],
+    cameraTarget: "terrain_surface",
+    highlightMarkers: ["roughness_zone"],
+    pauseMs: 12000,
+  },
+  {
+    id: "risk_concentration",
+    title: "Risk Concentration",
+    durationMs: 11000,
+    cameraShot: "zoom",
+    highlightType: "risk_zone",
+    laserTargetKey: "risk_peak",
+    transcriptLine:
+      "Risk concentration appears where multiple structural pressure points converge on the terrain surface. Hotspots indicate localised areas where the probability distribution skews toward downside scenarios.",
+    tileOverrides: ["risk", "runway"],
+    cameraTarget: "risk_peak",
+    highlightMarkers: ["risk_peak"],
+    pauseMs: 11000,
+  },
+  {
+    id: "valuation_trajectory",
+    title: "Valuation Trajectory",
+    durationMs: 11000,
+    cameraShot: "track",
+    highlightType: "valuation_peak",
+    laserTargetKey: "valuation_peak",
+    transcriptLine:
+      "Enterprise value synthesis blends DCF, revenue multiple, and EBITDA multiple methodologies. The P50 estimate represents the probability-weighted central case. Primary value drivers are identified through sequential marginal attribution.",
+    tileOverrides: ["ev", "dispersion"],
+    cameraTarget: "valuation_peak",
+    highlightMarkers: ["ev_trajectory"],
+    pauseMs: 11000,
+  },
+  {
+    id: "path_viability",
+    title: "Strategic Path Viability",
     durationMs: 10000,
     cameraShot: "track",
     highlightType: "trajectory",
     laserTargetKey: "revenue_engine",
     transcriptLine:
-      "The revenue engine anchors the forward model. Growth assumptions flow from baseline metrics — current ARR, retention cohorts, and expansion rates feed into the projection corridor.",
-    tileOverrides: ["ev"],
+      "The strategic path traverses the terrain surface from current position toward modelled outcomes. Path stress probability indicates the likelihood of trajectory deviation. Growth trajectory versus churn pressure determines net path momentum.",
+    tileOverrides: ["ev", "runway"],
+    cameraTarget: "path_trajectory",
+    highlightMarkers: ["revenue_engine", "inflection_point"],
+    pauseMs: 10000,
   },
   {
-    id: "margin_structure",
-    title: "Margin & Capital",
-    durationMs: 7000,
+    id: "milestone_friction",
+    title: "Milestone Friction",
+    durationMs: 9000,
     cameraShot: "pan",
     highlightType: "leverage_nodes",
     laserTargetKey: "margin_expansion",
     transcriptLine:
-      "Margin expansion and capital efficiency create the leverage geometry. The model captures how operational improvements compound through the valuation framework.",
+      "Milestone friction represents headwinds that the strategic path must absorb. The waterfall attribution identifies driver groups with negative marginal impact. Ridge structures suggest concentrated leverage at key transition points.",
     tileOverrides: ["ev", "dispersion"],
+    cameraTarget: "margin_expansion",
+    highlightMarkers: ["leverage_nodes"],
+    pauseMs: 9000,
   },
   {
-    id: "risk_assessment",
-    title: "Risk Profile",
-    durationMs: 7000,
-    cameraShot: "zoom",
-    highlightType: "risk_zone",
-    laserTargetKey: "risk_peak",
-    transcriptLine:
-      "Risk concentration appears at the peak elevation. The model identifies structural pressure points where multiple risk factors converge — these inform the probability-weighted downside scenarios.",
-    tileOverrides: ["risk"],
-  },
-  {
-    id: "inflection_analysis",
-    title: "Inflection Point",
-    durationMs: 8000,
-    cameraShot: "track",
-    highlightType: "trajectory",
-    laserTargetKey: "inflection_point",
-    transcriptLine:
-      "The inflection zone marks where the business model transitions from investment phase to value creation. Timing of this transition significantly affects terminal value.",
-    tileOverrides: ["ev", "runway"],
-  },
-  {
-    id: "valuation_synthesis",
-    title: "Valuation Synthesis",
-    durationMs: 8000,
-    cameraShot: "zoom",
-    highlightType: "valuation_peak",
-    laserTargetKey: "valuation_peak",
-    transcriptLine:
-      "Enterprise value synthesis blends DCF, revenue multiple, and EBITDA multiple methodologies. The P50 estimate represents the probability-weighted central case across all scenarios modelled.",
-    tileOverrides: ["ev", "dispersion"],
-  },
-  {
-    id: "probability_landscape",
-    title: "Probability Landscape",
-    durationMs: 10000,
+    id: "robustness_envelope",
+    title: "Robustness Envelope",
+    durationMs: 13000,
     cameraShot: "wide",
     highlightType: "probability_band",
     laserTargetKey: "capital_efficiency",
     transcriptLine:
-      "The probability landscape shows the distribution of outcomes. Wider dispersion indicates higher uncertainty — the model quantifies this uncertainty without prescribing actions.",
+      "The robustness envelope measures how sensitive the modelled outcome is to methodology and assumption variation. Methodology dispersion, probability zone distribution, and the interquartile range define the boundaries of the outcome space.",
     tileOverrides: ["dispersion", "risk"],
+    cameraTarget: "probability_band",
+    highlightMarkers: ["capital_efficiency"],
+    pauseMs: 13000,
   },
   {
-    id: "closing",
-    title: "Summary",
-    durationMs: 12000,
+    id: "executive_implication",
+    title: "Executive Implication",
+    durationMs: 14000,
     cameraShot: "wide",
     highlightType: "none",
     laserTargetKey: null,
     transcriptLine:
-      "This analysis is model-derived and probabilistic. All outputs should be interpreted within the context of the assumptions provided. No guarantee of future performance is expressed or implied.",
+      "This analysis presents scenario indicators — not directives. The terrain-path synthesis combines surface difficulty with path stress to indicate the overall likelihood of achieving modelled milestones. All outputs are subject to stated assumptions.",
     tileOverrides: null,
+    cameraTarget: "wide_overview",
+    highlightMarkers: [],
+    pauseMs: 14000,
   },
 ];

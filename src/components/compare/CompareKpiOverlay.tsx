@@ -1,7 +1,7 @@
 import React, { useMemo } from "react"
 import { useScenarioStore } from "@/state/scenarioStore"
 import { useSimulationStore } from "@/state/simulationStore"
-import { selectKpisFromResults, type CanonicalKpis } from "@/simulation/kpiSelectors"
+import { selectKpisFromResults, type CanonicalKpis } from "@/simulation/engineKpiSelectors"
 
 type RunLike = {
   scenarioId?: string | null

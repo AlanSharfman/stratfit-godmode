@@ -1,6 +1,6 @@
 import { useMemo } from "react"
 import { SingleEngineResult } from "@/types/engine"
-import { getScenarioKpis } from "@/logic/kpis/kpiSelectors"
+import { getScenarioKpis } from "@/logic/kpis/legacyKpiSelectors"
 import { selectDivergence } from "@/logic/divergence/selectDivergence"
 
 export function useScenarioSelection(

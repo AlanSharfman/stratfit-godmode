@@ -51,9 +51,9 @@ function SectionBlock({
     return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
-  // Highlight probability terms inline
+  // Highlight probability/terrain terms inline
   const renderLine = (line: string, idx: number) => {
-    const probRegex = /(P10|P50|P90|P\d{1,2}|probability|dispersion)/gi;
+    const probRegex = /(P10|P50|P90|P\d{1,2}|probability|dispersion|robustness|likelihood)/gi;
     const parts = line.split(probRegex);
     return (
       <p key={idx} className="text-sm leading-relaxed text-slate-200 mt-1.5">
@@ -113,10 +113,13 @@ function BriefingLegend() {
         <span className="w-3 h-0.5 bg-cyan-500 rounded-full inline-block" /> Path trajectory
       </span>
       <span className="flex items-center gap-1.5">
-        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/50 border border-emerald-400/40 inline-block" /> Scenario orb
+        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/50 border border-emerald-400/40 inline-block" /> Milestone orb
       </span>
       <span className="flex items-center gap-1.5">
-        <span className="w-3 h-2 bg-cyan-800/40 border border-cyan-600/30 rounded inline-block" /> Confidence envelope
+        <span className="w-3 h-2 bg-cyan-800/40 border border-cyan-600/30 rounded inline-block" /> Robustness envelope
+      </span>
+      <span className="flex items-center gap-1.5">
+        <span className="w-2.5 h-2.5 rounded-full bg-red-500/50 border border-red-400/40 inline-block" /> Risk hotspot
       </span>
       <span className="flex items-center gap-1.5">
         <span className="w-3 h-0.5 bg-amber-500/60 rounded-full inline-block" /> Baseline reference
@@ -134,14 +137,13 @@ export default function CommandBriefingPanel({
   const [activeSectionIdx, setActiveSectionIdx] = useState(0);
   const [audioPlaying, setAudioPlaying] = useState(false);
 
-  // Map director beat index to closest section
+  // 8 beats → 8 sections: 1:1 mapping
   useEffect(() => {
     if (!isDirectorPlaying) return;
-    // Map the 8 director beats to our 6 sections
-    const beatToSection = [0, 0, 1, 2, 3, 3, 4, 5];
-    const mapped = beatToSection[Math.min(activeBeatIdx, beatToSection.length - 1)] ?? 0;
+    const sectionCount = briefing.sections.length;
+    const mapped = Math.min(activeBeatIdx, sectionCount - 1);
     setActiveSectionIdx(mapped);
-  }, [activeBeatIdx, isDirectorPlaying]);
+  }, [activeBeatIdx, isDirectorPlaying, briefing.sections.length]);
 
   const handleSectionClick = useCallback((idx: number) => {
     setActiveSectionIdx(idx);

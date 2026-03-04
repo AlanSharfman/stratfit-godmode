@@ -94,6 +94,8 @@ type TerrainStageProps = {
   maxPolarAngle?: number
   /** Mouse-drag orbit speed multiplier. Default: 0.8. */
   rotateSpeed?: number
+  /** Render callback invoked when terrain is ready — receives terrainRef for height sampling */
+  renderWhenReady?: (terrainRef: React.RefObject<TerrainSurfaceHandle>) => ReactNode
   children?: ReactNode
 }
 
@@ -112,6 +114,7 @@ export default function TerrainStage({
   minPolarAngle: minPolar = 0.758,
   maxPolarAngle: maxPolar = 1.456,
   rotateSpeed = 0.8,
+  renderWhenReady,
   children,
 }: TerrainStageProps) {
   const terrainRef = useRef<TerrainSurfaceHandle>(null!);
@@ -273,6 +276,8 @@ export default function TerrainStage({
             <TerrainSignalSystem terrainRef={terrainRef} />
             {/* Phase 230: Risk Weather System — fog, turbulence, storms, lightning */}
             <RiskWeatherSystem />
+            {/* Extension point: terrain-ready overlays (Command Centre beacons, annotations) */}
+            {renderWhenReady?.(terrainRef)}
           </>
         )}
       </Suspense>
