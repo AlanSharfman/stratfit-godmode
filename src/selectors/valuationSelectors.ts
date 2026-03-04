@@ -13,7 +13,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import type { EngineResults, EngineTimelinePoint, EngineSummary } from "@/core/engine/types"
-import type { ValuationResults, WaterfallPayload, WaterfallStep } from "@/valuation/valuationTypes"
+import type { ValuationResults, WaterfallPayload, WaterfallStep, ValuationNarrativePayload, NarrativeSection } from "@/valuation/valuationTypes"
 import type { SimulationResults, SimulationKpis } from "@/state/phase1ScenarioStore"
 import type { Baseline } from "@/types/baseline"
 import { computeValuation } from "@/valuation/valuationEngine"
@@ -223,5 +223,186 @@ export function selectWaterfallFromSimulation(
       method: "DCF + REV + EBITDA (blended)",
       horizonYears: Math.max(1, Math.round(horizonMonths / 12)),
     },
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// V-5 — STRATEGIC NARRATIVE GENERATION
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Deterministic, board-ready narrative derived from:
+//   - ValuationResults (method EVs, blended, probabilities)
+//   - WaterfallPayload (baseline→scenario attribution)
+//   - Scenario decision text
+//
+// Uses probabilistic language only — no "recommend", "guarantee", "certain".
+// All text generation here. UI receives payload and renders only.
+// ═══════════════════════════════════════════════════════════════════════════
+
+const FORBIDDEN_NARRATIVE = /\b(recommend|guarantee|certain|definite|will\s+achieve|assured|should\s+invest)\b/gi
+
+/** Format currency for narrative prose */
+function narrativeFmtM(v: number): string {
+  const abs = Math.abs(v)
+  if (abs >= 1_000_000_000) return `$${(abs / 1_000_000_000).toFixed(1)}B`
+  if (abs >= 1_000_000) return `$${(abs / 1_000_000).toFixed(1)}M`
+  if (abs >= 1_000) return `$${(abs / 1_000).toFixed(0)}K`
+  return `$${abs.toFixed(0)}`
+}
+
+function narrativePct(v: number): string {
+  return `${(Math.abs(v) * 100).toFixed(1)}%`
+}
+
+function narrativeTone(delta: number): "positive" | "negative" | "neutral" {
+  if (delta > 0) return "positive"
+  if (delta < 0) return "negative"
+  return "neutral"
+}
+
+function sanitiseNarrative(text: string): string {
+  return text.replace(FORBIDDEN_NARRATIVE, "modelled estimate")
+}
+
+/**
+ * Select strategic narrative from valuation + waterfall data.
+ *
+ * Returns null when insufficient data.
+ * Pure function — no store access, no side effects.
+ */
+export function selectValuationNarrative(
+  valuation: ValuationResults | null,
+  waterfall: WaterfallPayload | null,
+  decisionLabel?: string,
+): ValuationNarrativePayload | null {
+  if (!valuation || !waterfall || waterfall.baselineEV == null || waterfall.scenarioEV == null) {
+    return null
+  }
+
+  const { baselineEV, scenarioEV, steps } = waterfall
+  const totalDelta = scenarioEV - baselineEV
+  const totalDeltaPct = baselineEV !== 0 ? totalDelta / Math.abs(baselineEV) : 0
+  const direction = totalDelta > 0 ? "upside" : totalDelta < 0 ? "downside" : "neutral"
+
+  // ── Identify top driver and key risk ──
+  const sortedByAbsDelta = [...steps].sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
+  const topDriver = sortedByAbsDelta[0] ?? null
+  const positiveDrivers = steps.filter((s) => s.direction === "up")
+  const negativeDrivers = steps.filter((s) => s.direction === "down")
+  const topRisk = negativeDrivers.length > 0 
+    ? negativeDrivers.sort((a, b) => a.delta - b.delta)[0] 
+    : null
+
+  // ── Method agreement ──
+  const { dcf, revenueMultiple, ebitdaMultiple, blendedValue, probabilities } = valuation
+  const methodEVs = [dcf.enterpriseValue, revenueMultiple.enterpriseValue, ebitdaMultiple.enterpriseValue]
+  const methodSpread = Math.max(...methodEVs) - Math.min(...methodEVs)
+  const spreadPct = blendedValue > 0 ? methodSpread / blendedValue : 0
+  const methodAgreement = spreadPct < 0.2 ? "strong" : spreadPct < 0.5 ? "moderate" : "weak"
+
+  // ═══ Build Sections ═══
+  const sections: NarrativeSection[] = []
+
+  // 1. Valuation Summary
+  const dirLabel = direction === "upside" ? "upside potential" : direction === "downside" ? "downside risk" : "neutral positioning"
+  const scenarioCtx = decisionLabel ? ` under the "${decisionLabel}" scenario` : ""
+  sections.push({
+    id: "valuation_summary",
+    title: "Valuation Summary",
+    body: sanitiseNarrative(
+      `The modelled enterprise value${scenarioCtx} is ${narrativeFmtM(scenarioEV)} (blended), ` +
+      `representing ${narrativePct(Math.abs(totalDeltaPct))} ${dirLabel} relative to the ${narrativeFmtM(baselineEV)} baseline. ` +
+      `Cross-method agreement is ${methodAgreement} — DCF at ${narrativeFmtM(dcf.enterpriseValue)}, ` +
+      `revenue multiple at ${narrativeFmtM(revenueMultiple.enterpriseValue)}, ` +
+      `and EBITDA multiple at ${narrativeFmtM(ebitdaMultiple.enterpriseValue)}.`
+    ),
+    tone: narrativeTone(totalDelta),
+  })
+
+  // 2. Key Driver Attribution
+  if (topDriver) {
+    const driverDir = topDriver.direction === "up" ? "contributes" : "reduces"
+    const driverCountText = positiveDrivers.length > 1
+      ? ` ${positiveDrivers.length} of ${steps.length} modelled drivers contribute positively.`
+      : ""
+    sections.push({
+      id: "key_drivers",
+      title: "Key Driver Attribution",
+      body: sanitiseNarrative(
+        `The largest modelled driver is ${topDriver.label.toLowerCase()}, which ${driverDir} ` +
+        `${narrativeFmtM(Math.abs(topDriver.delta))} to enterprise value.${driverCountText}` +
+        (topRisk
+          ? ` The primary headwind is ${topRisk.label.toLowerCase()}, accounting for a ${narrativeFmtM(Math.abs(topRisk.delta))} reduction.`
+          : " No significant headwinds were identified in the modelled drivers." )
+      ),
+      tone: topDriver.direction === "up" ? "positive" : "negative",
+    })
+  }
+
+  // 3. Risk Profile
+  const riskTone = negativeDrivers.length === 0 ? "positive"
+    : negativeDrivers.length <= 1 ? "caution"
+    : "negative"
+  const totalNegative = negativeDrivers.reduce((sum, d) => sum + Math.abs(d.delta), 0)
+  sections.push({
+    id: "risk_profile",
+    title: "Risk Profile",
+    body: sanitiseNarrative(
+      negativeDrivers.length === 0
+        ? "No modelled drivers exhibit downside pressure in this scenario. " +
+          "The valuation profile appears constructive across all attribution dimensions."
+        : `${negativeDrivers.length} of ${steps.length} modelled drivers exhibit downside pressure, ` +
+          `representing a combined ${narrativeFmtM(totalNegative)} drag on enterprise value. ` +
+          (methodAgreement === "weak"
+            ? "Cross-method divergence is elevated, suggesting material sensitivity to input assumptions."
+            : "Cross-method convergence is supportive of the modelled range." )
+    ),
+    tone: riskTone as NarrativeSection["tone"],
+  })
+
+  // 4. Probability Assessment
+  sections.push({
+    id: "probability",
+    title: "Probability Assessment",
+    body: sanitiseNarrative(
+      `Based on cross-method analysis, ${narrativePct(probabilities.valueCreate)} of modelled approaches ` +
+      `indicate positive value creation. ` +
+      `${narrativePct(probabilities.target)} of methods produce valuations at or above the blended estimate. ` +
+      `The modelled probability of value loss is ${narrativePct(probabilities.valueLoss)}.`
+    ),
+    tone: probabilities.valueCreate >= 0.67 ? "positive" : probabilities.valueLoss >= 0.67 ? "negative" : "neutral",
+  })
+
+  // 5. Board Recommendation Context
+  sections.push({
+    id: "board_context",
+    title: "Board Context",
+    body: sanitiseNarrative(
+      direction === "upside"
+        ? `The scenario exhibits constructive valuation dynamics. The modelled ${narrativePct(Math.abs(totalDeltaPct))} ` +
+          `uplift is concentrated in ${topDriver ? topDriver.label.toLowerCase() : "operational improvements"}, ` +
+          `which may warrant strategic prioritisation. All estimates are subject to model assumptions and input sensitivity.`
+        : direction === "downside"
+        ? `The scenario indicates valuation compression of ${narrativePct(Math.abs(totalDeltaPct))}. ` +
+          `Board attention may be warranted on ${topRisk ? topRisk.label.toLowerCase() : "operational headwinds"}. ` +
+          `Mitigation pathways could be explored through scenario iteration. All estimates are modelled projections.`
+        : `The scenario produces near-neutral valuation impact. The strategic decision does not materially ` +
+          `alter the modelled enterprise value within current assumptions.`
+    ),
+    tone: direction === "upside" ? "positive" : direction === "downside" ? "caution" : "neutral",
+  })
+
+  // ── Headline ──
+  const headline = direction === "upside"
+    ? `Scenario projects ${narrativePct(Math.abs(totalDeltaPct))} valuation uplift to ${narrativeFmtM(scenarioEV)}`
+    : direction === "downside"
+    ? `Scenario indicates ${narrativePct(Math.abs(totalDeltaPct))} valuation compression to ${narrativeFmtM(scenarioEV)}`
+    : `Scenario produces neutral valuation impact at ${narrativeFmtM(scenarioEV)}`
+
+  return {
+    headline: sanitiseNarrative(headline),
+    sections,
+    disclaimer: "All valuations reflect probability-weighted modelled outputs and are subject to input sensitivity. " +
+      "These are modelled estimates, not predictions or financial advice.",
   }
 }

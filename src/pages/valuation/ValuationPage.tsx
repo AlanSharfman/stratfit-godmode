@@ -21,8 +21,8 @@
 import { useState, useMemo } from "react";
 import styles from "./ValuationPage.module.css";
 
-// Canonical selector (V-2A bridge + V-4 waterfall)
-import { selectValuationFromSimulation, selectWaterfallFromSimulation } from "@/selectors/valuationSelectors";
+// Canonical selectors (V-2A bridge + V-4 waterfall + V-5 narrative)
+import { selectValuationFromSimulation, selectWaterfallFromSimulation, selectValuationNarrative } from "@/selectors/valuationSelectors";
 import type { ValuationResults } from "@/valuation/valuationTypes";
 
 // Canonical store — same source as Position/Risk/Compare
@@ -41,6 +41,9 @@ import ProbabilityDashboard from "@/components/valuation/ProbabilityDashboard";
 
 // Waterfall chart (V-4)
 import ValuationWaterfall from "@/components/valuation/ValuationWaterfall";
+
+// AI Strategic Narrative (V-5)
+import ValuationStrategicNarrative from "@/components/valuation/ValuationStrategicNarrative";
 
 // Shared portal nav
 import PortalNav from "@/components/nav/PortalNav";
@@ -114,6 +117,12 @@ export default function ValuationPage() {
   const waterfallData = useMemo(
     () => selectWaterfallFromSimulation(simResults, baseline),
     [simResults, baseline],
+  );
+
+  // ── AI Strategic Narrative (V-5) ──
+  const narrativeData = useMemo(
+    () => selectValuationNarrative(valuation, waterfallData, activeScenario?.decision),
+    [valuation, waterfallData, activeScenario?.decision],
   );
 
   // ── Derived display values (formatting only — no computation) ──
@@ -322,17 +331,14 @@ export default function ValuationPage() {
               </div>
             </div>
 
-            {/* Panel 4: AI Strategic Analysis */}
+            {/* Panel 4: AI Strategic Analysis (V-5) */}
             <div className={styles.panel}>
               <div className={styles.panelHeader}>
                 <span className={styles.panelIcon}>🧠</span>
                 <span className={styles.panelTitle}>AI Strategic Analysis</span>
               </div>
               <div className={styles.panelBody}>
-                <div className={styles.placeholder}>
-                  AI-generated board-ready valuation narrative
-                  <span className={styles.placeholderPhase}>Phase V-5</span>
-                </div>
+                <ValuationStrategicNarrative narrative={narrativeData} />
               </div>
             </div>
           </div>

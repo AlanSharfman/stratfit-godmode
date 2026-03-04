@@ -62,3 +62,20 @@ export interface WaterfallPayload {
     horizonYears?: number | null
   }
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// STRATEGIC NARRATIVE TYPES (Phase V-5)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface NarrativeSection {
+  id: string
+  title: string
+  body: string
+  tone: "positive" | "negative" | "neutral" | "caution"
+}
+
+export interface ValuationNarrativePayload {
+  headline: string
+  sections: NarrativeSection[]
+  disclaimer: string
+}

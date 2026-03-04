@@ -661,13 +661,9 @@ export default function PositionPage() {
     const autoKpis = selectKpis(simKpisRaw)
     const touched = userTouchedRef.current
 
-    // Auto-enable Heat Map when risk is elevated
-    // Signals: runway < 12 months OR vm risk tone
+    // Heat Map is user-opt-in only — no auto-enable
     const runway = autoKpis?.runwayMonths ?? null
     const runwayLow = runway !== null && runway < 12
-    if (runwayLow && !touched.has("heatMap") && !heatmapEnabled) {
-      toggleHeatmap()
-    }
 
     // Auto-enable Risk Field when downside dominates
     if (runwayLow && !touched.has("riskField") && !shlIsOn(shlWeights.risk)) {

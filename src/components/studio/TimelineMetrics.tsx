@@ -103,11 +103,8 @@ interface Props {
 }
 
 const TimelineMetrics: React.FC<Props> = memo(({ currentPoint, previousPoint }) => {
-  if (!currentPoint) {
-    return <div style={S.empty}>Generate a timeline to view metrics.</div>;
-  }
-
   const metrics = useMemo(() => {
+    if (!currentPoint) return null;
     const prev = previousPoint ?? currentPoint;
     return [
       {
@@ -136,6 +133,10 @@ const TimelineMetrics: React.FC<Props> = memo(({ currentPoint, previousPoint }) 
       },
     ];
   }, [currentPoint, previousPoint]);
+
+  if (!metrics) {
+    return <div style={S.empty}>Generate a timeline to view metrics.</div>;
+  }
 
   return (
     <div style={S.panel}>
