@@ -62,6 +62,7 @@ const S: Record<string, React.CSSProperties> = {
     background: "rgba(34, 211, 238, 0.06)",
     boxShadow: `inset 3px 0 12px -4px rgba(34, 211, 238, 0.15)`,
     transition: "all 300ms ease",
+    position: "relative" as const,
   },
   linePlayed: {
     padding: "10px 16px",
@@ -103,10 +104,14 @@ interface TranscriptPanelProps {
   activeBeatIndex: number;
   /** Director status */
   status: DirectorStatus;
+  /** Callback with active line Y position (relative to theatreRef) for laser anchor */
+  onAnchorY?: (y: number | null) => void;
+  /** Ref to the TheatreLayout container (for relative Y calculation) */
+  theatreRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 const TranscriptPanel: React.FC<TranscriptPanelProps> = memo(
-  ({ beats, activeBeatIndex, status }) => {
+  ({ beats, activeBeatIndex, status, onAnchorY, theatreRef }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const activeLineRef = useRef<HTMLDivElement>(null);
 
@@ -119,6 +124,19 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = memo(
         });
       }
     }, [activeBeatIndex]);
+
+    // Report active line Y position for laser anchor
+    useEffect(() => {
+      if (!onAnchorY) return;
+      if (!activeLineRef.current || !theatreRef?.current) {
+        onAnchorY(null);
+        return;
+      }
+      const theatreRect = theatreRef.current.getBoundingClientRect();
+      const lineRect = activeLineRef.current.getBoundingClientRect();
+      const relativeY = lineRect.top - theatreRect.top + lineRect.height / 2;
+      onAnchorY(relativeY);
+    }, [activeBeatIndex, status, onAnchorY, theatreRef]);
 
     if (status === "idle") {
       return (
@@ -151,6 +169,22 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = memo(
               ref={isActive ? activeLineRef : undefined}
               style={lineStyle}
             >
+              {/* Laser origin indicator */}
+              {isActive && (
+                <span
+                  style={{
+                    position: "absolute",
+                    left: -4,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: CYAN,
+                    boxShadow: `0 0 10px ${CYAN}80, 0 0 4px ${CYAN}`,
+                  }}
+                />
+              )}
               <span style={S.beatLabel}>{beat.title}</span>
               {beat.transcriptLine}
             </div>

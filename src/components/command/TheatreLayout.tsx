@@ -12,7 +12,7 @@
 // No UI-side computation — selector-only access.
 // ═══════════════════════════════════════════════════════════════════════════
 
-import React, { memo, useEffect, useMemo, useRef } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore";
 import { useBaselineStore } from "@/state/baselineStore";
 import { useStudioTimelineStore } from "@/stores/studioTimelineStore";
@@ -40,6 +40,7 @@ import SignalTiles from "./SignalTiles";
 import type { SignalTileData } from "./SignalTiles";
 import { INTELLIGENCE_BRIEFING_SCRIPT } from "./director/DirectorScript";
 import { useDirectorMode } from "./director/useDirectorMode";
+import LaserAnchorOverlay from "./LaserAnchorOverlay";
 
 // ────────────────────────────────────────────────────────────────────────────
 // STYLES
@@ -51,6 +52,7 @@ const S: Record<string, React.CSSProperties> = {
     flex: 1,
     minHeight: 0,
     overflow: "hidden",
+    position: "relative",
   },
   leftColumn: {
     flex: "0 0 65%",
@@ -88,9 +90,11 @@ const POST_BRIEFING_COLLAPSE_MS = 3500;
 interface TheatreLayoutProps {
   /** Called once after the briefing finishes + POST_BRIEFING_COLLAPSE_MS delay */
   onComplete?: () => void;
+  /** Auto-start the director sequence on mount (Investor Briefing mode) */
+  autoPlay?: boolean;
 }
 
-const TheatreLayout: React.FC<TheatreLayoutProps> = memo(({ onComplete }) => {
+const TheatreLayout: React.FC<TheatreLayoutProps> = memo(({ onComplete, autoPlay = true }) => {
   // ── Canonical data access ──
   const activeScenarioId = usePhase1ScenarioStore((s) => s.activeScenarioId);
   const scenarios = usePhase1ScenarioStore((s) => s.scenarios);
@@ -251,6 +255,26 @@ const TheatreLayout: React.FC<TheatreLayoutProps> = memo(({ onComplete }) => {
   // ── Director mode ──
   const director = useDirectorMode(INTELLIGENCE_BRIEFING_SCRIPT);
 
+  // Auto-play: start director sequence on mount when autoPlay is enabled
+  const autoPlayFiredRef = useRef(false);
+  useEffect(() => {
+    if (autoPlay && !autoPlayFiredRef.current && director.status === "idle") {
+      autoPlayFiredRef.current = true;
+      // Small delay so UI renders first before beat starts
+      const t = setTimeout(() => director.play(), 300);
+      return () => clearTimeout(t);
+    }
+  }, [autoPlay, director.status, director.play]);
+
+  // ── Laser anchor tracking ──
+  const theatreRef = useRef<HTMLDivElement>(null);
+  const [laserAnchorY, setLaserAnchorY] = useState<number | null>(null);
+
+  // Track transcript active line position for laser anchor
+  const handleTranscriptAnchorY = useCallback((y: number | null) => {
+    setLaserAnchorY(y);
+  }, []);
+
   // Auto-collapse to console after briefing completes (plays once only)
   const collapseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
@@ -268,7 +292,14 @@ const TheatreLayout: React.FC<TheatreLayoutProps> = memo(({ onComplete }) => {
   const tileEmphasis = director.currentBeat?.tileOverrides ?? null;
 
   return (
-    <div style={S.theatre}>
+    <div ref={theatreRef} style={S.theatre}>
+      {/* ── Laser Anchor Overlay (cross-panel) ── */}
+      <LaserAnchorOverlay
+        anchorY={laserAnchorY}
+        active={director.status === "playing"}
+        hasTarget={!!director.currentBeat?.laserTargetKey}
+      />
+
       {/* ── Left: Terrain + Tiles ── */}
       <div style={S.leftColumn}>
         <div style={S.terrainArea}>
@@ -295,6 +326,8 @@ const TheatreLayout: React.FC<TheatreLayoutProps> = memo(({ onComplete }) => {
           onPause={director.pause}
           onStop={director.stop}
           briefing={briefing}
+          onAnchorY={handleTranscriptAnchorY}
+          theatreRef={theatreRef}
         />
       </div>
     </div>

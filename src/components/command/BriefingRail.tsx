@@ -176,6 +176,10 @@ interface BriefingRailProps {
   onStop: () => void;
   /** Data-driven command briefing (optional — falls back to TranscriptPanel) */
   briefing?: CommandBriefing | null;
+  /** Callback with active transcript line Y position for laser anchor overlay */
+  onAnchorY?: (y: number | null) => void;
+  /** Ref to the TheatreLayout container (for relative positioning) */
+  theatreRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 const BriefingRail: React.FC<BriefingRailProps> = memo(
@@ -190,6 +194,8 @@ const BriefingRail: React.FC<BriefingRailProps> = memo(
     onPause,
     onStop,
     briefing,
+    onAnchorY,
+    theatreRef,
   }) => {
     const overallProgress =
       totalDuration > 0 ? Math.min(1, totalElapsed / totalDuration) : 0;
@@ -202,6 +208,45 @@ const BriefingRail: React.FC<BriefingRailProps> = memo(
         {/* ── Header ── */}
         <div style={S.header}>
           <span style={S.headerTitle}>◆ Intelligence Briefing</span>
+        </div>
+
+        {/* ── Video Panel Entry ── */}
+        <div
+          style={{
+            padding: "8px 16px",
+            borderBottom: "1px solid rgba(182, 228, 255, 0.06)",
+            flexShrink: 0,
+          }}
+        >
+          <button
+            type="button"
+            style={{
+              width: "100%",
+              padding: "8px 12px",
+              fontSize: 10,
+              fontWeight: 600,
+              letterSpacing: "0.06em",
+              fontFamily: FONT,
+              border: "1px solid rgba(168, 85, 247, 0.25)",
+              borderRadius: 6,
+              background: "rgba(168, 85, 247, 0.08)",
+              color: "rgba(168, 85, 247, 0.85)",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              transition: "background 200ms ease",
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.background = "rgba(168, 85, 247, 0.16)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.background = "rgba(168, 85, 247, 0.08)")
+            }
+          >
+            ▶ Watch Introduction
+          </button>
         </div>
 
         {/* ── Playback Controls ── */}
@@ -277,6 +322,8 @@ const BriefingRail: React.FC<BriefingRailProps> = memo(
               beats={beats}
               activeBeatIndex={activeBeatIndex}
               status={status}
+              onAnchorY={onAnchorY}
+              theatreRef={theatreRef}
             />
           )}
         </div>
