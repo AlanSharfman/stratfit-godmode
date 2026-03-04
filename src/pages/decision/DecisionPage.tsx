@@ -40,16 +40,63 @@ const INTENT_PILLS: IntentPill[] = [
   { intent: "product_launch",    label: "Product Launch",   prompt: "Launch a new product line — model adoption curve, margin structure, and cannibalisation risk.",              chips: ["Revenue", "Margin"] },
 ]
 
-/* ── Typewriter hint phrases ── */
+/* ── Rotating example phrases (fade, not typewriter) ── */
 
-const HINT_PHRASES = [
-  "Raise a $5M Series A at 18 months runway…",
-  "Cut 20% of headcount and model the survival impact…",
-  "Double marketing spend for 6 months and stress test cash…",
-  "Launch in Europe with a 12-month ramp assumption…",
-  "Increase prices 15% and measure churn sensitivity…",
-  "Acquire a competitor at 4x revenue and model integration…",
+const ROTATING_EXAMPLES = [
+  "Should we raise $8M now or extend runway another 6 months?",
+  "Can we hire 10 engineers before the next funding round without risking survival?",
+  "What happens if we increase prices by 15% and churn rises?",
+  "Can we expand into Europe this year while maintaining 14 months runway?",
+  "If we cut burn by 20%, does survival probability actually improve?",
 ]
+
+const EXAMPLE_CHIPS: Array<{ label: string; exampleIdx: number }> = [
+  { label: "Raising capital",       exampleIdx: 0 },
+  { label: "Hiring ahead of funding", exampleIdx: 1 },
+  { label: "Increasing prices",    exampleIdx: 2 },
+  { label: "Expanding markets",    exampleIdx: 3 },
+  { label: "Reducing burn",        exampleIdx: 4 },
+]
+
+/* ── Decision detection (keyword classifier) ── */
+
+type DetectedType = "Capital Raise" | "Hiring" | "Pricing" | "Market Expansion" | "Efficiency" | "General Strategy"
+
+function classifyDecision(text: string): DetectedType {
+  const t = text.toLowerCase()
+  if (/raise|fund|series|capital|debt/i.test(t)) return "Capital Raise"
+  if (/hir|headcount|engineer|recruit|layoff|redund/i.test(t)) return "Hiring"
+  if (/pric|pricing|discount|package|plan\b/i.test(t)) return "Pricing"
+  if (/expand|europe|market|region|geo|international/i.test(t)) return "Market Expansion"
+  if (/cut|reduce|burn|efficiency|cost/i.test(t)) return "Efficiency"
+  return "General Strategy"
+}
+
+/* ── Impact bar domain mapping (lit / unlit / primary) ── */
+
+const IMPACT_DOMAINS = ["Runway", "Burn", "Growth", "Risk", "Value"] as const
+
+const IMPACT_DOMAIN_MAP: Record<DetectedType, { lit: string[]; primary: string[] }> = {
+  "Capital Raise":     { lit: ["Runway", "Risk", "Value", "Burn"], primary: ["Runway"] },
+  "Hiring":            { lit: ["Burn", "Runway", "Growth", "Risk"], primary: ["Burn"] },
+  "Pricing":           { lit: ["Growth", "Risk", "Value"],          primary: ["Growth"] },
+  "Market Expansion":  { lit: ["Growth", "Burn", "Risk"],           primary: ["Growth"] },
+  "Efficiency":        { lit: ["Burn", "Runway", "Risk", "Value"],  primary: ["Burn", "Runway"] },
+  "General Strategy":  { lit: ["Risk"],                             primary: [] },
+}
+
+/* ── Map detected type to existing intent type for downstream flow ── */
+
+function detectedToIntent(dt: DetectedType): DecisionIntentType {
+  switch (dt) {
+    case "Capital Raise": return "fundraising"
+    case "Hiring": return "hiring"
+    case "Pricing": return "pricing"
+    case "Market Expansion": return "market_entry"
+    case "Efficiency": return "cost_reduction"
+    default: return "other"
+  }
+}
 
 /* ── Impact direction data ── */
 
@@ -108,28 +155,32 @@ export default function DecisionPage() {
   const canRunRef = useRef(false)
   const handleRunRef = useRef<() => void>(() => {})
 
-  // ── Typewriter hint ──
-  const [hintIdx, setHintIdx] = useState(0)
-  const [hintText, setHintText] = useState("")
-  const [hintCharIdx, setHintCharIdx] = useState(0)
+  // ── Rotating example placeholder ──
+  const [exampleIdx, setExampleIdx] = useState(0)
+  const [exampleVisible, setExampleVisible] = useState(true)
 
   useEffect(() => {
     if (promptText.length > 0) return
-    const phrase = HINT_PHRASES[hintIdx % HINT_PHRASES.length]
-    if (hintCharIdx <= phrase.length) {
-      const t = setTimeout(() => {
-        setHintText(phrase.slice(0, hintCharIdx))
-        setHintCharIdx((p) => p + 1)
-      }, 45)
-      return () => clearTimeout(t)
-    }
-    const pause = setTimeout(() => {
-      setHintCharIdx(0)
-      setHintText("")
-      setHintIdx((p) => p + 1)
-    }, 2800)
-    return () => clearTimeout(pause)
-  }, [hintCharIdx, hintIdx, promptText])
+    const cycle = setInterval(() => {
+      setExampleVisible(false)
+      setTimeout(() => {
+        setExampleIdx((prev) => (prev + 1) % ROTATING_EXAMPLES.length)
+        setExampleVisible(true)
+      }, 250)
+    }, 4000)
+    return () => clearInterval(cycle)
+  }, [promptText])
+
+  // ── Decision detection ──
+  const detectedType = useMemo<DetectedType | null>(
+    () => (promptText.trim().length >= 10 ? classifyDecision(promptText) : null),
+    [promptText],
+  )
+
+  const impactState = useMemo(() => {
+    if (!detectedType) return null
+    return IMPACT_DOMAIN_MAP[detectedType]
+  }, [detectedType])
 
   // ── Derived ──
   const activePill = useMemo(
@@ -176,20 +227,18 @@ export default function DecisionPage() {
   // ── Prompt submit → detect intent + show response zone ──
   const handlePromptSubmit = useCallback(() => {
     if (!promptText.trim()) return
-    const text = promptText.toLowerCase()
-    let detected: DecisionIntentType = "other"
-    if (/pric/i.test(text)) detected = "pricing"
-    else if (/hir|team|headcount|staff/i.test(text)) detected = "hiring"
-    else if (/cut|reduc|efficienc|lean/i.test(text)) detected = "cost_reduction"
-    else if (/raise|fund|series|capital|runway.*extend/i.test(text)) detected = "fundraising"
-    else if (/grow|invest|expansion|scale.*rev/i.test(text)) detected = "growth_investment"
-    else if (/acqui|buy|merge/i.test(text)) detected = "acquisition"
-    else if (/market.*entr|expand.*region|launch.*region|europe|asia/i.test(text)) detected = "market_entry"
-    else if (/product.*launch|new.*product|launch.*product/i.test(text)) detected = "product_launch"
-
-    setIntentType(detected)
+    const dt = classifyDecision(promptText)
+    setIntentType(detectedToIntent(dt))
     setShowResponse(true)
   }, [promptText])
+
+  // ── Example chip click → prefill prompt ──
+  const handleExampleChip = useCallback((idx: number) => {
+    const text = ROTATING_EXAMPLES[idx]
+    setPromptText(text)
+    setShowResponse(false)
+    textareaRef.current?.focus()
+  }, [])
 
   // ── Run scenario ──
   async function handleRun() {
@@ -288,16 +337,26 @@ export default function DecisionPage() {
 
       {/* ═══ PROMPT HERO ═══ */}
       <div className={css.promptHero}>
-        <div className={css.heroLabel}>Decision Command Console</div>
-        <h1 className={css.heroTitle}>What decision are you considering?</h1>
+        <div className={css.heroLabel}>Stress Test Console</div>
+        <h1 className={css.heroTitle}>Clarity for every decision.</h1>
         <p className={css.heroSubtitle}>
-          Describe your strategic move in natural language. STRATFIT will classify it,
-          set up the simulation parameters, and run it through the engine.
+          Stress-test your decisions before execution — in minutes.
         </p>
+        <div className={css.promptSectionLabel}>
+          Describe the business decision you'd like to stress-test.
+        </div>
 
         {/* Prompt card */}
         <div className={`${css.promptCard} ${simulating ? css.promptCardLocked : ""}`}>
           <div className={css.textareaWrap}>
+            {/* Rotating example overlay (visible when textarea is empty) */}
+            {promptText.length === 0 && (
+              <div
+                className={`${css.rotatingExample} ${exampleVisible ? "" : css.rotatingExampleHidden}`}
+              >
+                {ROTATING_EXAMPLES[exampleIdx]}
+              </div>
+            )}
             <textarea
               ref={textareaRef}
               className={css.textarea}
@@ -306,7 +365,7 @@ export default function DecisionPage() {
                 setPromptText(e.target.value)
                 if (showResponse) setShowResponse(false)
               }}
-              placeholder={promptText.length === 0 ? hintText || "Describe your decision…" : undefined}
+              placeholder=""
               rows={3}
               disabled={simulating}
             />
@@ -339,7 +398,47 @@ export default function DecisionPage() {
           </div>
         </div>
 
-        {/* Quick-start pills */}
+        {/* Quick example chips */}
+        <div className={css.exampleChips}>
+          {EXAMPLE_CHIPS.map((chip) => (
+            <button
+              key={chip.label}
+              type="button"
+              className={css.exampleChip}
+              onClick={() => handleExampleChip(chip.exampleIdx)}
+            >
+              {chip.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Decision Detected + Impact Bar */}
+        {detectedType && (
+          <div className={css.detectedCard}>
+            <div className={css.detectedHeader}>
+              <span className={css.detectedDot} />
+              <span className={css.detectedLabel}>Decision Detected</span>
+              <span className={css.detectedType}>{detectedType}</span>
+            </div>
+            <div className={css.impactBar}>
+              {IMPACT_DOMAINS.map((domain) => {
+                const isLit = impactState?.lit.includes(domain)
+                const isPrimary = impactState?.primary.includes(domain)
+                return (
+                  <div
+                    key={domain}
+                    className={`${css.impactPill} ${isPrimary ? css.impactPillPrimary : isLit ? css.impactPillLit : ""}`}
+                  >
+                    <span className={css.impactPillDot} />
+                    {domain}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Quick-start intent pills (existing) */}
         <div className={css.pillsRow}>
           {INTENT_PILLS.map((pill) => (
             <button
