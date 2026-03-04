@@ -11,6 +11,7 @@ import SimulationStatusWidget from "@/components/system/SimulationStatusWidget"
 import SimulationRunOverlay from "@/components/system/SimulationRunOverlay"
 import SimulationPipelineWidget from "@/components/system/SimulationPipelineWidget"
 import SystemProbabilityNotice from "@/components/system/ProbabilityNotice"
+import LeverSliderGroup, { formatLeverValue } from "@/components/decision/LeverSliderGroup"
 import css from "./DecisionConsole.module.css"
 
 /* ═══════════════════════════════════════════════════════════
@@ -89,18 +90,7 @@ const INTENT_ASSUMPTIONS: Record<DecisionIntentType, string[]> = {
   ],
 }
 
-/* ─── Lever value formatter ──────────────────────────────── */
-
-function formatLeverValue(val: number, lever: LeverSchema): string {
-  const sign = val > 0 ? "+" : ""
-  switch (lever.unit) {
-    case "%":  return `${sign}${val}%`
-    case "mo": return `${val}mo`
-    case "$M": return `$${val}M`
-    case "x":  return `${val.toFixed(1)}x`
-    default:   return `${sign}${val}`
-  }
-}
+/* ─── formatLeverValue imported from LeverSliderGroup ────── */
 
 /* ─── Component ──────────────────────────────────────────── */
 
@@ -153,6 +143,8 @@ export default function DecisionPage() {
   )
 
   const activeSchema = useMemo(() => intentType ? (decisionLeverSchemas[intentType] ?? []) : [], [intentType])
+
+  const constraintLevers = useMemo(() => activeSchema.filter((l) => l.tier === "constraint"), [activeSchema])
 
   const updateLever = React.useCallback((id: string, value: number) => {
     setLeverValues((prev) => ({ ...prev, [id]: value }))
@@ -492,37 +484,14 @@ export default function DecisionPage() {
               <span className={css.leverIntentTag}>{selectedIntentLabel}</span>
             </div>
 
-            {activeSchema.length > 0 ? (
+            {constraintLevers.length > 0 ? (
               <>
-                <div className={css.leverGroup}>
-                  {activeSchema.map((lever) => {
-                    const val = leverValues[lever.id] ?? lever.default
-                    const isDefault = val === lever.default
-                    return (
-                      <div key={lever.id} className={css.leverRow}>
-                        <div className={css.leverHeader}>
-                          <span className={css.leverLabel}>{lever.label}</span>
-                          <span className={css.leverValue} style={{ color: isDefault ? "rgba(255,255,255,0.35)" : undefined }}>
-                            {formatLeverValue(val, lever)}
-                          </span>
-                        </div>
-                        <input
-                          type="range"
-                          className={css.leverSlider}
-                          min={lever.min}
-                          max={lever.max}
-                          step={lever.step}
-                          value={val}
-                          onChange={(e) => updateLever(lever.id, Number(e.target.value))}
-                        />
-                        <div className={css.leverRange}>
-                          <span>{lever.min}{lever.unit}</span>
-                          <span>{lever.max}{lever.unit}</span>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
+                <LeverSliderGroup
+                  levers={constraintLevers}
+                  values={leverValues}
+                  onChange={updateLever}
+                  className={css.leverGroup}
+                />
                 <button type="button" className={css.leverResetBtn} onClick={resetLevers}>
                   Reset to defaults
                 </button>

@@ -15,38 +15,40 @@ export interface LeverSchema {
   max: number
   step: number
   default: number
+  /** constraint = core decision input (Decision + Studio), tuning = sensitivity/assumption (Studio only) */
+  tier: "constraint" | "tuning"
 }
 
 export const decisionLeverSchemas: Record<DecisionIntentType, LeverSchema[]> = {
   hiring: [
-    { id: "headcount",   label: "Headcount change",          unit: "",   min: -5,  max: 20, step: 1, default: 0 },
-    { id: "salaryBand",  label: "Salary band impact",        unit: "%",  min: -20, max: 20, step: 1, default: 0 },
-    { id: "rampTime",    label: "Ramp time",                  unit: "mo", min: 0,   max: 12, step: 1, default: 3 },
-    { id: "revenueHead", label: "Revenue per head",           unit: "%",  min: -10, max: 30, step: 1, default: 0 },
+    { id: "headcount",   label: "Headcount change",          unit: "",   min: -5,  max: 20, step: 1, default: 0,  tier: "constraint" },
+    { id: "salaryBand",  label: "Salary band impact",        unit: "%",  min: -20, max: 20, step: 1, default: 0,  tier: "tuning" },
+    { id: "rampTime",    label: "Ramp time",                  unit: "mo", min: 0,   max: 12, step: 1, default: 3,  tier: "tuning" },
+    { id: "revenueHead", label: "Revenue per head",           unit: "%",  min: -10, max: 30, step: 1, default: 0,  tier: "tuning" },
   ],
   pricing: [
-    { id: "priceChange",      label: "Price change",          unit: "%",  min: -30, max: 50,  step: 1, default: 0 },
-    { id: "churnSensitivity", label: "Churn sensitivity",     unit: "%",  min: 0,   max: 100, step: 5, default: 20 },
-    { id: "volumeImpact",     label: "Volume impact",         unit: "%",  min: -20, max: 20,  step: 1, default: 0 },
-    { id: "rolloutTimeline",  label: "Rollout timeline",      unit: "mo", min: 1,   max: 12,  step: 1, default: 3 },
+    { id: "priceChange",      label: "Price change",          unit: "%",  min: -30, max: 50,  step: 1, default: 0,  tier: "constraint" },
+    { id: "churnSensitivity", label: "Churn sensitivity",     unit: "%",  min: 0,   max: 100, step: 5, default: 20, tier: "tuning" },
+    { id: "volumeImpact",     label: "Volume impact",         unit: "%",  min: -20, max: 20,  step: 1, default: 0,  tier: "tuning" },
+    { id: "rolloutTimeline",  label: "Rollout timeline",      unit: "mo", min: 1,   max: 12,  step: 1, default: 3,  tier: "tuning" },
   ],
   cost_reduction: [
-    { id: "opexReduction", label: "Opex reduction",           unit: "%",  min: 0,  max: 40, step: 1, default: 10 },
-    { id: "headcountCut",  label: "Headcount change",         unit: "",   min: -20, max: 0, step: 1, default: 0 },
-    { id: "efficiencyGain", label: "Efficiency gain",         unit: "%",  min: 0,  max: 30, step: 1, default: 5 },
-    { id: "timeline",      label: "Implementation timeline",  unit: "mo", min: 1,  max: 12, step: 1, default: 3 },
+    { id: "opexReduction", label: "Opex reduction",           unit: "%",  min: 0,  max: 40, step: 1, default: 10, tier: "constraint" },
+    { id: "headcountCut",  label: "Headcount change",         unit: "",   min: -20, max: 0, step: 1, default: 0,  tier: "constraint" },
+    { id: "efficiencyGain", label: "Efficiency gain",         unit: "%",  min: 0,  max: 30, step: 1, default: 5,  tier: "tuning" },
+    { id: "timeline",      label: "Implementation timeline",  unit: "mo", min: 1,  max: 12, step: 1, default: 3,  tier: "tuning" },
   ],
   fundraising: [
-    { id: "capitalRaise",  label: "Capital raised",           unit: "$M", min: 0,  max: 50, step: 1, default: 10 },
-    { id: "preMoneyVal",   label: "Pre-money valuation",      unit: "$M", min: 1,  max: 200, step: 1, default: 20 },
-    { id: "useOfProceeds", label: "Growth allocation",        unit: "%",  min: 0,  max: 100, step: 5, default: 50 },
-    { id: "closeTiming",   label: "Close timing",             unit: "mo", min: 1,  max: 18, step: 1, default: 6 },
+    { id: "capitalRaise",  label: "Capital raised",           unit: "$M", min: 0,  max: 50, step: 1, default: 10, tier: "constraint" },
+    { id: "preMoneyVal",   label: "Pre-money valuation",      unit: "$M", min: 1,  max: 200, step: 1, default: 20, tier: "constraint" },
+    { id: "useOfProceeds", label: "Growth allocation",        unit: "%",  min: 0,  max: 100, step: 5, default: 50, tier: "tuning" },
+    { id: "closeTiming",   label: "Close timing",             unit: "mo", min: 1,  max: 18, step: 1, default: 6,  tier: "tuning" },
   ],
   growth_investment: [
-    { id: "growthSpend",   label: "Growth spend increase",    unit: "%",  min: 0,  max: 50, step: 1, default: 15 },
-    { id: "growthMulti",   label: "Growth multiplier",        unit: "x",  min: 1,  max: 5,  step: 0.1, default: 1.5 },
-    { id: "roiTiming",     label: "ROI timing",               unit: "mo", min: 1,  max: 24, step: 1, default: 12 },
-    { id: "channelMix",    label: "Channel concentration",    unit: "%",  min: 0,  max: 100, step: 5, default: 50 },
+    { id: "growthSpend",   label: "Growth spend increase",    unit: "%",  min: 0,  max: 50, step: 1, default: 15, tier: "constraint" },
+    { id: "growthMulti",   label: "Growth multiplier",        unit: "x",  min: 1,  max: 5,  step: 0.1, default: 1.5, tier: "tuning" },
+    { id: "roiTiming",     label: "ROI timing",               unit: "mo", min: 1,  max: 24, step: 1, default: 12, tier: "tuning" },
+    { id: "channelMix",    label: "Channel concentration",    unit: "%",  min: 0,  max: 100, step: 5, default: 50, tier: "tuning" },
   ],
   other: [],
 }

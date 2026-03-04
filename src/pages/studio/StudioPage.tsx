@@ -24,6 +24,7 @@ import {
   defaultLeverValues,
   type LeverSchema,
 } from "@/config/decisionLeverSchemas"
+import LeverSliderGroup from "@/components/decision/LeverSliderGroup"
 
 import TerrainStage from "@/terrain/TerrainStage"
 import TerrainNavWidget from "@/terrain/TerrainNavWidget"
@@ -54,18 +55,7 @@ import TimelineMetrics from "@/components/studio/TimelineMetrics"
 import TimelineInsights from "@/components/studio/TimelineInsights"
 import type { TimelineResolution } from "@/core/simulation/timelineTypes"
 
-/* ── Lever value formatting (same as DecisionPage) ───────── */
-
-function formatLeverValue(val: number, lever: LeverSchema): string {
-  const sign = val > 0 ? "+" : ""
-  switch (lever.unit) {
-    case "%":  return `${sign}${val}%`
-    case "mo": return `${val}mo`
-    case "$M": return `$${val}M`
-    case "x":  return `${val.toFixed(1)}x`
-    default:   return `${sign}${val}`
-  }
-}
+/* ── formatLeverValue now imported from LeverSliderGroup ── */
 
 /* ── Component ───────────────────────────────────────────── */
 
@@ -397,41 +387,17 @@ export default function StudioPage() {
           </div>
 
           {activeSchema.length > 0 ? (
-            <div style={S.leverGroup}>
-              {activeSchema.map((lever) => {
-                const val = leverValues[lever.id] ?? lever.default
-                const isDefault = val === lever.default
-                return (
-                  <div key={lever.id} style={S.leverRow}>
-                    <div style={S.leverHeader}>
-                      <span style={S.leverLabel}>{lever.label}</span>
-                      <span style={{
-                        ...S.leverValue,
-                        color: isDefault ? "rgba(255,255,255,0.35)" : "rgba(34,211,238,0.9)",
-                      }}>
-                        {formatLeverValue(val, lever)}
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min={lever.min}
-                      max={lever.max}
-                      step={lever.step}
-                      value={val}
-                      onChange={(e) => updateLever(lever.id, Number(e.target.value))}
-                      style={S.slider}
-                    />
-                    <div style={S.leverRange}>
-                      <span>{lever.min}{lever.unit}</span>
-                      <span>{lever.max}{lever.unit}</span>
-                    </div>
-                  </div>
-                )
-              })}
+            <>
+              <LeverSliderGroup
+                levers={activeSchema}
+                values={leverValues}
+                onChange={updateLever}
+                grouped
+              />
               <button type="button" onClick={resetLevers} style={S.resetBtn}>
                 Reset to defaults
               </button>
-            </div>
+            </>
           ) : (
             <div style={S.leverPlaceholder}>
               Select a decision type to configure levers.
