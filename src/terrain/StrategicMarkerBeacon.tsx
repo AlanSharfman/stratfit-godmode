@@ -101,7 +101,7 @@ export default function StrategicMarkerBeacon({ marker, terrainRef }: Props) {
         />
       </mesh>
 
-      {/* Label (billboard via Html) */}
+      {/* Label — colour-accented frosted glass tag (not a black pill) */}
       <Html
         position={[0, 1.2, 0]}
         center
@@ -109,16 +109,19 @@ export default function StrategicMarkerBeacon({ marker, terrainRef }: Props) {
       >
         <div
           style={{
-            fontSize: 11,
-            fontWeight: 600,
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
             padding: "4px 12px",
-            borderRadius: 999,
-            background: "rgba(8,12,16,0.82)",
-            border: "1px solid rgba(255,255,255,0.2)",
-            color: "rgba(255,255,255,0.95)",
-            boxShadow: "0 8px 18px rgba(0,0,0,0.5)",
-            backdropFilter: "blur(10px)",
-            letterSpacing: "0.04em",
+            borderRadius: 6,
+            background: "rgba(6, 12, 20, 0.88)",
+            border: `1px solid ${marker.color ?? colorForKind(marker.kind)}50`,
+            color: marker.color ?? colorForKind(marker.kind),
+            boxShadow: `0 0 12px ${marker.color ?? colorForKind(marker.kind)}25, 0 4px 16px rgba(0,0,0,0.5)`,
+            backdropFilter: "blur(12px)",
+            fontFamily: "'Inter', system-ui, sans-serif",
+            userSelect: "none",
           }}
         >
           {marker.label}

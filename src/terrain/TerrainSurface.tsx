@@ -5,6 +5,7 @@ import { useNarrativeStore } from "@/state/narrativeStore"
 import { useRenderFlagsStore } from "@/state/renderFlagsStore"
 
 import type { TerrainMetrics } from "@/terrain/terrainFromBaseline"
+import type { MetricsInput } from "@/terrain/buildTerrain"
 import { baselineReliefScalar, baselineSeedString, createSeed } from "@/terrain/seed"
 import { TERRAIN_CONSTANTS } from "@/terrain/terrainConstants"
 import { buildTerrainWithMetrics, sampleTerrainHeight } from "@/terrain/buildTerrain"
@@ -19,7 +20,7 @@ export type TerrainSurfaceHandle = {
 }
 
 type Props = {
-  terrainMetrics?: TerrainMetrics
+  terrainMetrics?: MetricsInput
   /** Color variant for the terrain surface (used by Compare B-side) */
   colorVariant?: TerrainColorVariant
 }

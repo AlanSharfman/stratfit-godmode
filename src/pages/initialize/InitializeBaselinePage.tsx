@@ -102,7 +102,7 @@ const INITIAL: FormState = {
 }
 
 const STAGES = [
-  "Pre-Seed", "Seed", "Series A", "Series B", "Series C+", "Growth", "Bootstrapped",
+  "Ideation", "Startup", "Early Growth", "Growth", "High Growth", "Scale", "Exit Ready",
 ]
 const INDUSTRIES = [
   "SaaS", "Fintech", "HealthTech", "EdTech", "E-Commerce",
@@ -190,7 +190,7 @@ const CSV_FIELD_MAP: Array<{ key: keyof FormState; label: string; example: strin
   { key: "contactEmail", label: "Email", example: "jane@acme.com" },
   { key: "companyName", label: "Company Name", example: "Acme Inc" },
   { key: "industry", label: "Industry", example: "SaaS" },
-  { key: "stage", label: "Stage", example: "Series A" },
+  { key: "stage", label: "Stage", example: "Early Growth" },
   { key: "cashOnHand", label: "Cash on Hand ($)", example: "500000" },
   { key: "monthlyNetBurn", label: "Monthly Net Burn ($)", example: "75000" },
   { key: "debtOutstanding", label: "Debt Outstanding ($)", example: "0" },
@@ -428,6 +428,7 @@ export default function InitializeBaselinePage() {
       churnRate: form.monthlyChurnPct / 100,
       headcount: form.headcount,
       arpa: form.avgDealSize || 1500,
+      stage: form.stage || undefined,
     })
     navigate("/decision", { replace: true })
   }, [form, setBaseline, navigate])

@@ -239,8 +239,9 @@ const RiskPage: React.FC = () => {
       arrP50: arrPercentiles.p50,
       arrP75: arrPercentiles.p75,
       leverDebtExposure: levers.fundingPressure,
+      stage: zustandBaseline?.stage,
     });
-  }, [baselineMetrics, shockedBatch, arrPercentiles, levers.fundingPressure]);
+  }, [baselineMetrics, shockedBatch, arrPercentiles, levers.fundingPressure, zustandBaseline?.stage]);
 
   // ── Scenario risk cards ──
   const scenarioCards = useMemo<ScenarioRiskCard[]>(() => {
@@ -286,9 +287,14 @@ const RiskPage: React.FC = () => {
     );
     const shocked = shockedBatch;
 
+    const stageLabel = zustandBaseline?.stage
+      ? zustandBaseline.stage.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+      : null;
+
     const lines: string[] = [];
     lines.push(
-      `The current risk landscape shows a baseline survival probability of **${(survival * 100).toFixed(1)}%** across the simulation horizon, with an estimated runway of **${Math.round(runway)} months**.`,
+      `The current risk landscape shows a baseline survival probability of **${(survival * 100).toFixed(1)}%** across the simulation horizon, with an estimated runway of **${Math.round(runway)} months**.` +
+        (stageLabel ? ` The company is in the **${stageLabel}** lifecycle stage, which is factored into the composite risk score.` : ""),
     );
 
     if (riskEvents.length > 0) {
@@ -318,7 +324,7 @@ const RiskPage: React.FC = () => {
 
     lines.push("All figures are probability-weighted simulation indicators, not forecasts.");
     return lines;
-  }, [baselineMetrics, terrainEvents, shockedBatch, shockSigma, scenarioCards]);
+  }, [baselineMetrics, terrainEvents, shockedBatch, shockSigma, scenarioCards, zustandBaseline?.stage]);
 
   // ── Derived command strip values ──
   const cmdRiskScore = riskIndex ? Math.round(riskIndex.score * 100) : (baselineMetrics ? 0 : null);

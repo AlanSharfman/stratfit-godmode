@@ -2,6 +2,9 @@ import * as THREE from "three";
 import { terrainHeightMode } from "@/config/featureFlags";
 import { TERRAIN_CONSTANTS } from "./terrainConstants";
 import type { TerrainMetrics } from "./terrainFromBaseline";
+import type { MetricsAtX } from "./timeSeriesTerrainMetrics";
+
+export type MetricsInput = TerrainMetrics | MetricsAtX;
 
 /**
  * Sample terrain height at world coordinates.
@@ -12,13 +15,17 @@ export function sampleTerrainHeight(
     worldZ: number,
     seed: number,
     params = TERRAIN_CONSTANTS,
-    metrics?: TerrainMetrics,
+    metrics?: MetricsInput,
 ): number {
     if (terrainHeightMode === "neutral") {
         return params.yOffset;
     }
 
-    const heightRel = heightfieldAtWorld(worldX, worldZ, seed, params, metrics);
+    const resolved: TerrainMetrics | undefined = typeof metrics === "function"
+        ? metrics((worldX + params.width * 0.5) / params.width)
+        : metrics;
+
+    const heightRel = heightfieldAtWorld(worldX, worldZ, seed, params, resolved);
     return heightRel + params.yOffset;
 }
 
@@ -64,7 +71,7 @@ export function buildTerrainWithMetrics(
     size: number,
     seed: number,
     reliefScalar: number = 1.0,
-    metrics?: TerrainMetrics,
+    metrics?: MetricsInput,
 ) {
     const segments = 220;
     const geo = new THREE.PlaneGeometry(
@@ -81,15 +88,19 @@ export function buildTerrainWithMetrics(
     }
 
     const pos = geo.attributes.position as THREE.BufferAttribute;
-
-    // Seed model is cached; avoid re-deriving peaks/ridge per vertex.
     const model = getSeedModel(seed, TERRAIN_CONSTANTS);
+    const isFunction = typeof metrics === "function";
+    const halfW = TERRAIN_CONSTANTS.width * 0.5;
 
     for (let i = 0; i < pos.count; i++) {
         const x = pos.getX(i);
         const z = pos.getY(i); // PlaneGeometry uses X/Y; later rotated in TerrainStage
 
-        const h = heightfieldFromModel(x, z, model, TERRAIN_CONSTANTS, metrics) * reliefScalar;
+        const resolved: TerrainMetrics | undefined = isFunction
+            ? metrics((x + halfW) / TERRAIN_CONSTANTS.width)
+            : metrics;
+
+        const h = heightfieldFromModel(x, z, model, TERRAIN_CONSTANTS, resolved) * reliefScalar;
         pos.setZ(i, h);
     }
 

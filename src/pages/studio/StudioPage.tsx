@@ -207,11 +207,18 @@ export default function StudioPage() {
     return tlEngineResults.timeline[tlCurrentStep - 1] ?? null
   }, [tlEngineResults, tlCurrentStep])
 
-  // Merge terrain metrics: timeline overrides scenario if timeline is active
-  const effectiveTerrainMetrics = useMemo<TerrainMetrics | undefined>(() => {
+  // Merge terrain metrics: timeline function overrides static scenario metrics
+  const effectiveTerrainMetrics = useMemo(() => {
     if (timelineTerrainMetrics) return timelineTerrainMetrics
     return terrainMetrics
   }, [timelineTerrainMetrics, terrainMetrics])
+
+  // Static snapshot for overlays that need scalar .volatility / .roughness values
+  const overlayMetrics: TerrainMetrics | null = useMemo(() => {
+    if (!effectiveTerrainMetrics) return null
+    if (typeof effectiveTerrainMetrics === "function") return effectiveTerrainMetrics(0.5)
+    return effectiveTerrainMetrics
+  }, [effectiveTerrainMetrics])
 
   // ── Loading / redirect guards ──
   if (!scenarioStoreHydrated || !baselineHydrated) {
@@ -436,15 +443,13 @@ export default function StudioPage() {
             <TerrainStage
               lockCamera={false}
               pathsEnabled={false}
-              terrainMetrics={{
-                ...(effectiveTerrainMetrics ?? {
-                  elevationScale: 1,
-                  roughness: 1,
-                  liquidityDepth: 1,
-                  growthSlope: 0,
-                  volatility: 0,
-                }),
-              } satisfies TerrainMetrics}
+              terrainMetrics={effectiveTerrainMetrics ?? {
+                elevationScale: 1,
+                roughness: 1,
+                liquidityDepth: 1,
+                growthSlope: 0,
+                volatility: 0,
+              }}
             >
               <CameraCompositionRig />
               <SkyAtmosphere />
@@ -454,13 +459,13 @@ export default function StudioPage() {
             <TerrainNavWidget />
             {/* ── Command Mode overlays ── */}
             <HeatmapOverlay
-              terrainMetrics={effectiveTerrainMetrics ?? null}
+              terrainMetrics={overlayMetrics}
               riskScore={riskScoreForOverlays}
               visible={commandMode === "heatmap"}
             />
             <CodeOverlay
               kpis={activeSimResults?.kpis ?? null}
-              terrainMetrics={effectiveTerrainMetrics ?? null}
+              terrainMetrics={overlayMetrics}
               riskScore={riskScoreForOverlays}
               visible={commandMode === "code"}
             />

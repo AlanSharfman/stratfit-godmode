@@ -69,7 +69,7 @@ interface ValInputs {
   nrr: number;
   grossMargin: number;
   rule40: number;
-  stage: "pre-seed" | "seed" | "series-a" | "series-b" | "growth";
+  stage: "ideation" | "startup" | "early-growth" | "growth" | "high-growth" | "scale" | "exit-ready";
 }
 
 function calcMultiple(inputs: ValInputs, method: ValuationMethodId) {
@@ -101,13 +101,14 @@ function calcMultiple(inputs: ValInputs, method: ValuationMethodId) {
   else if (inputs.rule40 >= 40) r40Mult = 1.1;
   else if (inputs.rule40 < 20) r40Mult = 0.8;
 
-  // Stage
   const stageMults: Record<string, number> = {
-    "pre-seed": 0.7,
-    seed: 0.85,
-    "series-a": 1.0,
-    "series-b": 1.1,
-    growth: 1.15,
+    ideation: 0.6,
+    startup: 0.8,
+    "early-growth": 1.0,
+    growth: 1.1,
+    "high-growth": 1.15,
+    scale: 1.18,
+    "exit-ready": 1.2,
   };
 
   // Method adjustments
@@ -146,7 +147,7 @@ export default function ValuationPage() {
     nrr: 115,
     grossMargin: 75,
     rule40: 50,
-    stage: "seed",
+    stage: "startup",
   });
 
   const [method, setMethod] = useState<ValuationMethodId>("stratfit");
@@ -538,14 +539,16 @@ function StageSelect({
   onChange,
 }: {
   value: string;
-  onChange: (v: "pre-seed" | "seed" | "series-a" | "series-b" | "growth") => void;
+  onChange: (v: ValInputs["stage"]) => void;
 }) {
   const stages = [
-    { id: "pre-seed", label: "Pre-Seed" },
-    { id: "seed", label: "Seed" },
-    { id: "series-a", label: "Series A" },
-    { id: "series-b", label: "Series B" },
+    { id: "ideation", label: "Ideation" },
+    { id: "startup", label: "Startup" },
+    { id: "early-growth", label: "Early Growth" },
     { id: "growth", label: "Growth" },
+    { id: "high-growth", label: "High Growth" },
+    { id: "scale", label: "Scale" },
+    { id: "exit-ready", label: "Exit Ready" },
   ] as const;
 
   return (

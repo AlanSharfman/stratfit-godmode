@@ -18,7 +18,7 @@ import { useSystemBaseline } from "@/system/SystemBaselineProvider";
 import { baselineReliefScalar, baselineSeedString, createSeed } from "@/terrain/seed";
 import { buildTerrainWithMetrics } from "@/terrain/buildTerrain";
 import { TERRAIN_CONSTANTS } from "@/terrain/terrainConstants";
-import type { TerrainMetrics } from "@/terrain/terrainFromBaseline";
+import type { MetricsInput } from "@/terrain/buildTerrain";
 
 // ────────────────────────────────────────────────────────────────────────────
 // COLOR STOPS — institutional red → amber → green
@@ -44,7 +44,7 @@ function lerpHeatColor(t: number, out: THREE.Color): void {
 
 interface TerrainHeatmapLayerProps {
   enabled: boolean;
-  terrainMetrics?: TerrainMetrics;
+  terrainMetrics?: MetricsInput;
   opacity?: number;
 }
 

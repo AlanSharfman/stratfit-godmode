@@ -346,8 +346,9 @@ export interface SaneBounds {
 export function getSaneBounds(
   stage: string
 ): SaneBounds {
-  // More mature stages get tighter bounds
-  const isEarly = stage === "pre-seed" || stage === "seed";
+  const isEarly =
+    stage === "pre-seed" || stage === "seed" ||
+    stage === "ideation" || stage === "startup";
   return {
     maxARRMultiple: isEarly ? 50 : 30,
     minARRMultiple: 1,

@@ -17,6 +17,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import React, { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import * as THREE from "three";
 import type { ReactNode } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
@@ -34,9 +35,11 @@ import LiquidityFlowLayer from "@/components/terrain/liquidity/LiquidityFlowLaye
 import TerrainSignalsLayer from "@/components/terrain/signals/TerrainSignalsLayer";
 import StrategicMarkers from "@/terrain/StrategicMarkers";
 import MarkerProjectionLayer from "@/terrain/MarkerProjectionLayer";
+import PathWaypoints from "@/terrain/PathWaypoints";
+import TimelineRuler from "@/terrain/TimelineRuler";
 import HorizonBand from "@/terrain/HorizonBand";
 import { useRenderFlagsStore } from "@/state/renderFlagsStore";
-import type { TerrainMetrics } from "@/terrain/terrainFromBaseline";
+import type { MetricsInput } from "@/terrain/buildTerrain";
 import { useTerrainControls } from "@/terrain/useTerrainControls";
 import { useDebugFlags, useDebugSignals } from "@/debug/debugSignals";
 import { useOverlayVisibility } from "@/domain/ui/overlayVisibility";
@@ -64,7 +67,7 @@ function readCssVar(varName: string, fallback: string): string {
 
 type TerrainStageProps = {
   granularity?: TimeGranularity
-  terrainMetrics?: TerrainMetrics
+  terrainMetrics?: MetricsInput
   /** When true, no OrbitControls are mounted — camera is fully programmatic. */
   lockCamera?: boolean
   /**
@@ -124,6 +127,11 @@ export default function TerrainStage({
   const terrainRef = useRef<TerrainSurfaceHandle>(null!);
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const [terrainReady, setTerrainReady] = useState(false);
+  const [pathCurve, setPathCurve] = useState<THREE.CatmullRomCurve3 | null>(null);
+
+  const handlePathReady = useCallback((curve: THREE.CatmullRomCurve3) => {
+    setPathCurve(curve);
+  }, []);
   const { baseline } = useSystemBaseline();
   const rebuildKey = baselineSeedString(baseline as any);
   const setControls = useTerrainControls((s) => s.setControls);
@@ -251,13 +259,16 @@ export default function TerrainStage({
         {terrainReady && (
           <>
             {/* A12: Always mount P50Path — emphasis via visible prop, never unmount */}
-            <P50Path terrainRef={terrainRef} rebuildKey={rebuildKey} visible={pathsOn} />
+            <P50Path terrainRef={terrainRef} rebuildKey={rebuildKey} visible={pathsOn} onPathReady={handlePathReady} />
+            {/* Path-anchored waypoints: replace scattered markers with on-path milestones */}
+            {showMarkers && !hideMarkers && pathsOn && <PathWaypoints pathCurve={pathCurve} />}
             {/* Canonical ticks (BaselineTimelineTicks) — follows timelineOn */}
             <BaselineTimelineTicks visible={timelineOn} terrainRef={terrainRef} />
             <LiquidityFlowLayer terrainRef={terrainRef} enabled={liquidityOn} />
             <TerrainSignalsLayer terrainRef={terrainRef} overrideEvents={overrideEvents} />
             {showMarkers && !hideMarkers && <StrategicMarkers terrainRef={terrainRef} />}
             {showMarkers && !hideMarkers && <MarkerProjectionLayer terrainRef={terrainRef} />}
+            <TimelineRuler terrainRef={terrainRef} visible={timelineOn} />
             {/* A10.1 — Focus glow for primary intelligence event */}
             {focusedEvent && (
               <TerrainFocusGlow

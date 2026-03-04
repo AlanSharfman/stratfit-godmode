@@ -11,6 +11,7 @@ import {
   selectVarianceSeries,
   selectConfidenceSeries,
 } from "@/domain/engine/engineSelectors"
+import { useStudioTimelineStore } from "@/stores/studioTimelineStore"
 
 type Props = {
   terrainRef: React.RefObject<TerrainSurfaceHandle>
@@ -20,18 +21,27 @@ type Props = {
   runId?: string
   /** A12: emphasis-based visibility — always mounted, opacity control */
   visible?: boolean
+  /** Fires with the computed CatmullRom spline when path geometry is ready */
+  onPathReady?: (curve: THREE.CatmullRomCurve3) => void
 }
 
 const FLAT_FALLBACK_COUNT = 240
-const Z_SCALE = 40 // max lateral displacement from risk series
+/**
+ * Max lateral (Z) displacement driven by risk index.
+ * Lower = gentler bends, more elegant ribbon trajectory.
+ * Was 40 → now 18 to eliminate the "drunk line" effect.
+ */
+const Z_SCALE = 18
 
-// Tube radius and radial segments — tuned for the terrain scale
-const TUBE_RADIUS = 0.55
-const TUBE_RADIAL = 10
-// Glow tube is wider, rendered via BackSide for halo effect
-const GLOW_RADIUS = 2.2
+// Tube radius tuned for a proper ribbon corridor feel on the terrain
+const TUBE_RADIUS = 0.85
+const TUBE_RADIAL = 12
+// Glow tube: wider for an ethereal aura halo
+const GLOW_RADIUS = 3.5
+// Ribbon: flat translucent strip along the spline for ground-shadow effect
+const RIBBON_RADIUS = 2.8
+const RIBBON_RADIAL = 4
 
-// Subsample path points for curve input — CatmullRomCurve3 handles smoothing
 function subsample(pts: THREE.Vector3[], targetCount: number): THREE.Vector3[] {
   if (pts.length <= targetCount) return pts
   const step = (pts.length - 1) / (targetCount - 1)
@@ -44,10 +54,13 @@ export default function P50Path({
   rebuildKey,
   runId = "",
   visible = true,
+  onPathReady,
 }: Props) {
   const [points, setPoints] = useState<THREE.Vector3[]>([])
   const tubeMat = useRef<THREE.MeshStandardMaterial>(null)
   const glowMat = useRef<THREE.MeshBasicMaterial>(null)
+
+  const engineResults = useStudioTimelineStore((s) => s.engineResults)
 
   const x0 = useMemo(() => -TERRAIN_CONSTANTS.width * 0.36, [])
   const x1 = useMemo(() => TERRAIN_CONSTANTS.width * 0.36, [])
@@ -56,16 +69,24 @@ export default function P50Path({
     const terrain = terrainRef.current
     if (!terrain) return
 
-    // ── Pull analytical series from engine selectors ────────────
-    const risk = selectRiskIndexSeries(runId) as number[]
-    const variance = selectVarianceSeries(runId) as number[]
-    const confidence = selectConfidenceSeries(runId) as number[]
+    // Prefer real engine timeline data when available
+    const timeline = engineResults?.timeline
+    const hasTimeline = timeline && timeline.length > 1
+
+    const risk = hasTimeline
+      ? timeline.map((p) => p.riskIndex)
+      : (selectRiskIndexSeries(runId) as number[])
+    const variance = hasTimeline
+      ? timeline.map((p) => Math.abs(p.ebitda) / Math.max(1, Math.abs(timeline[0].ebitda || 1)))
+      : (selectVarianceSeries(runId) as number[])
+    const confidence = hasTimeline
+      ? timeline.map((p) => 1 - p.riskIndex)
+      : (selectConfidenceSeries(runId) as number[])
 
     const hasSeries =
       risk.length > 0 && variance.length > 0 && confidence.length > 0
     const count = hasSeries ? risk.length : FLAT_FALLBACK_COUNT
 
-    // ── Build trajectory XZ ────────────────────────────────────
     const trajectoryXZ: Array<{ x: number; z: number }> = []
 
     if (hasSeries) {
@@ -119,7 +140,9 @@ export default function P50Path({
     )
 
     setPoints(next)
-  }, [terrainRef, x0, x1, hoverOffset, rebuildKey, runId])
+  }, [terrainRef, x0, x1, hoverOffset, rebuildKey, runId, engineResults])
+
+  const ribbonMat = useRef<THREE.MeshBasicMaterial>(null)
 
   // ── Animate tube glow pulse ────────────────────────────────────
   useFrame(({ clock }) => {
@@ -131,25 +154,38 @@ export default function P50Path({
     if (glowMat.current) {
       glowMat.current.opacity = 0.06 + Math.sin(t * 1.2 + 1.0) * 0.02
     }
+    if (ribbonMat.current) {
+      ribbonMat.current.opacity = 0.035 + Math.sin(t * 0.8 + 0.5) * 0.01
+    }
   })
 
   // ── Build tube geometries from CatmullRom spline ───────────────
-  const { tubeGeo, glowGeo, spinePoints } = useMemo(() => {
-    if (points.length < 4) return { tubeGeo: null, glowGeo: null, spinePoints: [] }
+  const { tubeGeo, glowGeo, ribbonGeo, spinePoints } = useMemo(() => {
+    if (points.length < 4) return { tubeGeo: null, glowGeo: null, ribbonGeo: null, spinePoints: [] }
 
-    // Subsample for curve control points — avoids over-tessellation
-    const ctrl = subsample(points, 80)
-    const curve = new THREE.CatmullRomCurve3(ctrl, false, "catmullrom", 0.4)
+    // Fewer control points + higher tension = silk-smooth spline
+    const ctrl = subsample(points, 60)
+    const curve = new THREE.CatmullRomCurve3(ctrl, false, "catmullrom", 0.6)
 
     const tubeSeg = 300
     const tubeGeo = new THREE.TubeGeometry(curve, tubeSeg, TUBE_RADIUS, TUBE_RADIAL, false)
     const glowGeo = new THREE.TubeGeometry(curve, tubeSeg, GLOW_RADIUS, TUBE_RADIAL, false)
+    // Ribbon: few radial segments for a flat-ish strip, wider than core tube
+    const ribbonGeo = new THREE.TubeGeometry(curve, tubeSeg, RIBBON_RADIUS, RIBBON_RADIAL, false)
 
     // Spine centerline for the crisp bright line on top
     const spinePoints = curve.getPoints(300)
 
-    return { tubeGeo, glowGeo, spinePoints }
+    return { tubeGeo, glowGeo, ribbonGeo, spinePoints }
   }, [points])
+
+  // ── Fire onPathReady when curve is rebuilt ─────────────────────
+  useEffect(() => {
+    if (!onPathReady || points.length < 4) return
+    const ctrl = subsample(points, 60)
+    const curve = new THREE.CatmullRomCurve3(ctrl, false, "catmullrom", 0.6)
+    onPathReady(curve)
+  }, [points, onPathReady])
 
   if (points.length < 2) return null
 
@@ -157,6 +193,20 @@ export default function P50Path({
 
   return (
     <group renderOrder={15}>
+      {/* Ground ribbon — wide, flat, translucent corridor shadow */}
+      {ribbonGeo && (
+        <mesh geometry={ribbonGeo} renderOrder={11}>
+          <meshBasicMaterial
+            ref={ribbonMat}
+            color="#00D4FF"
+            transparent
+            opacity={0.04 * masterOpacity}
+            side={THREE.DoubleSide}
+            depthWrite={false}
+          />
+        </mesh>
+      )}
+
       {/* Outer glow halo — wide transparent tube, BackSide for aura */}
       {glowGeo && (
         <mesh geometry={glowGeo} renderOrder={13}>
@@ -192,10 +242,10 @@ export default function P50Path({
       {spinePoints.length > 1 && (
         <Line
           points={spinePoints}
-          color="#AAFAFF"
-          lineWidth={1.2}
+          color="#DAFAFF"
+          lineWidth={1.6}
           transparent
-          opacity={0.65 * masterOpacity}
+          opacity={0.75 * masterOpacity}
           renderOrder={16}
           depthWrite={false}
         />

@@ -10,7 +10,7 @@ import { BASELINE_STORAGE_KEY } from "@/onboard/baseline"
 export type RiskSeverity = "low" | "medium" | "high" | "unknown"
 
 export type BaselineInputs = {
-  // Canonical Phase 1 fields (8)
+  // Canonical Phase 1 fields (8 numeric + optional stage)
   cash: number
   monthlyBurn: number
   revenue: number
@@ -19,6 +19,7 @@ export type BaselineInputs = {
   churnRate: number
   headcount: number
   arpa: number
+  stage?: string
 
   // TEMP legacy aliases (shim)
   runwayMonths?: number
@@ -113,7 +114,7 @@ export const DEFAULT_INPUTS: BaselineInputs = {
 }
 
 function inputsToBaseline(inputs: BaselineInputs): Baseline {
-  return {
+  const b: Baseline = {
     cash: clampNumber(inputs.cash),
     monthlyBurn: clampNumber(inputs.monthlyBurn),
     revenue: clampNumber(inputs.revenue),
@@ -123,6 +124,8 @@ function inputsToBaseline(inputs: BaselineInputs): Baseline {
     headcount: clampNumber(inputs.headcount),
     arpa: clampNumber(inputs.arpa),
   }
+  if (inputs.stage) b.stage = inputs.stage
+  return b
 }
 
 function baselineToInputs(baseline: Baseline | null): BaselineInputs {
