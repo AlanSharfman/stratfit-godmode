@@ -19,6 +19,7 @@ import React, { useEffect, useMemo, useState, useCallback, useRef } from "react"
 import { useRiskStore } from "@/state/riskStore";
 import { useLeverStore } from "@/state/leverStore";
 import { useSimulationStore } from "@/state/simulationStore";
+import { useBaselineStore } from "@/state/baselineStore";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
 import SoftGateOverlay from "@/components/common/SoftGateOverlay";
 import ProvenanceBadge from "@/components/system/ProvenanceBadge";
@@ -79,13 +80,22 @@ const RiskPage: React.FC = () => {
   const summary = useSimulationStore((s) => s.summary);
   const leversRaw = useLeverStore((s) => s.levers);
   const { baseline: systemBaseline } = useSystemBaseline();
-  const hasBaseline = systemBaseline !== null;
+  const zustandBaseline = useBaselineStore((s) => s.baseline);
+  const zustandHydrated = useBaselineStore((s) => s.isHydrated);
+  const hydrateBaseline = useBaselineStore((s) => s.hydrate);
+  // Gate: accept baseline from either Zustand store (InitializeV2) or SystemBaseline (legacy onboarding)
+  const hasBaseline = zustandBaseline !== null || systemBaseline !== null;
 
   // ── Local state ──
   const [shockedBatch, setShockedBatch] = useState<ShockedBatchResult | null>(null);
   const [isComputing, setIsComputing] = useState(false);
   const [disclosureOpen, setDisclosureOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Hydrate baseline store from localStorage on mount ──
+  useEffect(() => {
+    hydrateBaseline();
+  }, [hydrateBaseline]);
 
   // ── Derive levers ──
   const levers: LeverState = useMemo(
@@ -106,14 +116,16 @@ const RiskPage: React.FC = () => {
   // ── Simulation config ──
   const config: SimulationConfig = useMemo(() => {
     const fin = systemBaseline?.financial;
+    // Fall back to Zustand baseline values if systemBaseline (legacy) is unavailable
+    const zb = zustandBaseline;
     return {
       iterations: 200, // mini-batch for shock (fast)
       timeHorizonMonths: fullResult?.timeHorizonMonths ?? 36,
-      startingCash: fin?.cashOnHand ?? 4_000_000,
-      startingARR: fin?.arr ?? 4_800_000,
-      monthlyBurn: fin?.monthlyBurn ?? 47_000,
+      startingCash: fin?.cashOnHand ?? zb?.cash ?? 4_000_000,
+      startingARR: fin?.arr ?? zb?.revenue ?? 4_800_000,
+      monthlyBurn: fin?.monthlyBurn ?? zb?.monthlyBurn ?? 47_000,
     };
-  }, [fullResult, systemBaseline]);
+  }, [fullResult, systemBaseline, zustandBaseline]);
 
   // ── Baseline metrics from full MC result ──
   const baselineMetrics: BaselineMetrics | null = useMemo(() => {
@@ -206,11 +218,11 @@ const RiskPage: React.FC = () => {
     return (
       <div className={styles.root} style={{ position: "relative" }}>
         <PortalNav />
-        {!hasBaseline && (
+        {zustandHydrated && !hasBaseline && (
           <SoftGateOverlay message="Complete onboarding before running risk analysis." />
         )}
 
-        <div style={{ filter: !hasBaseline ? "blur(4px)" : "none" }}>
+        <div style={{ filter: zustandHydrated && !hasBaseline ? "blur(4px)" : "none" }}>
           <RiskCommandBar score={0} trend="stable" volatility="medium" />
           <div className={styles.emptyState}>
             <div className={styles.emptyTitle}>Structural Risk Analysis Unavailable</div>
@@ -229,11 +241,11 @@ const RiskPage: React.FC = () => {
   return (
     <div className={styles.root} style={{ position: "relative" }}>
       <PortalNav />
-      {!hasBaseline && (
+      {zustandHydrated && !hasBaseline && (
         <SoftGateOverlay message="Complete onboarding before running risk analysis." />
       )}
 
-      <div style={{ filter: !hasBaseline ? "blur(4px)" : "none" }}>
+      <div style={{ filter: zustandHydrated && !hasBaseline ? "blur(4px)" : "none" }}>
       {/* ── COMMAND BAR ─────────────────────────────────────── */}
       <RiskCommandBar
         score={commandScore}

@@ -1,11 +1,11 @@
 // src/components/command/BriefingAudioControls.tsx
 // ═══════════════════════════════════════════════════════════════════════════
-// STRATFIT — NASA Documentary Voice Engine
+// STRATFIT — Warm American Narrator Voice Engine
 //
-// Smooth, flowing female narration — like a NASA documentary narrator
-// in awe of the universe. Sentence-level chunking prevents the Chrome
-// 15-second cutoff. Inter-section breathing pauses give natural rhythm.
-// Smart voice auto-selection prefers known high-quality female voices.
+// Soft, sweet, conversational American female voice — like a warm,
+// curious 30-year-old woman genuinely in awe of what the data reveals.
+// Not formal or stiff. Engaging, pleasant, flowing naturally.
+// Sentence-level chunking + breathing pauses for human rhythm.
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
@@ -34,42 +34,58 @@ interface BriefingAudioControlsProps {
 
 // ── Voice tuning constants ──
 const RATE_MIN = 0.82;
-const RATE_MAX = 1.0;
-const RATE_DEFAULT = 0.88; // Slow, deliberate — documentary pacing
-const PITCH_DEFAULT = 1.02; // Slightly elevated — warm female register
-const INTER_SECTION_PAUSE_MS = 750; // Breathing room between sections
-const INTER_SENTENCE_PAUSE_MS = 180; // Micro-pause between sentences for flow
+const RATE_MAX = 1.05;
+const RATE_DEFAULT = 0.92; // Natural conversational pace — not too slow, not rushed
+const PITCH_DEFAULT = 1.08; // Warm, youthful female register — sweet, not robotic
+const INTER_SECTION_PAUSE_MS = 600; // Natural breath between sections
+const INTER_SENTENCE_PAUSE_MS = 140; // Quick micro-pause — conversational, not ponderous
 const CHROME_KEEPALIVE_MS = 5000; // Prevent Chrome from killing long utterances
 
 // ── Preferred voices (ranked best → fallback) ──
-// These are known high-quality, smooth female voices across browsers.
-const PREFERRED_VOICE_PATTERNS: RegExp[] = [
-  /\bMicrosoft\s+(?:Jenny|Aria)\b/i,       // Edge: Jenny/Aria — neural, very smooth
-  /\bGoogle\s+UK\s+English\s+Female\b/i,    // Chrome: warm UK female
-  /\bGoogle\s+US\s+English\b/i,             // Chrome: US female (shared name)
-  /\bSamantha\b/i,                           // macOS/Safari: Samantha — iconic smooth
-  /\bKaren\b/i,                              // macOS: Karen (AU English)
-  /\bFiona\b/i,                              // macOS: Fiona (UK English)
-  /\bMoira\b/i,                              // macOS: Moira (Irish English)
-  /\bVictoria\b/i,                           // macOS: Victoria
-  /\bMicrosoft\s+Zira\b/i,                   // Windows: Zira — soft female
-  /\bMicrosoft\s+Hazel\b/i,                  // Windows: Hazel (UK)
-  /\bMicrosoft\s+Susan\b/i,                  // Windows: Susan (UK)
-  /\bfemale\b/i,                             // Generic female keyword match
+// Prioritises soft, warm AMERICAN female voices. The goal is a sweet,
+// engaging 30-year-old American woman — curious and in awe, not a stiff
+// British newsreader. Neural/online voices first (much smoother).
+const PREFERRED_VOICE_PATTERNS: Array<{ pattern: RegExp; boost: number }> = [
+  // === Tier 1: Neural American female — best available ===
+  { pattern: /\bMicrosoft\s+Jenny\b/i,                   boost: 2000 }, // Edge: Jenny — warm American neural
+  { pattern: /\bMicrosoft\s+Aria\b/i,                    boost: 1950 }, // Edge: Aria — American neural
+  { pattern: /\bMicrosoft\s+Ana\b/i,                     boost: 1900 }, // Edge: Ana — young American
+  { pattern: /\bMicrosoft\s+Michelle\b/i,                boost: 1850 }, // Edge: Michelle
+  // === Tier 2: Google American ===
+  { pattern: /\bGoogle\s+US\s+English\b/i,               boost: 1600 }, // Chrome: US English female
+  // === Tier 3: macOS American ===
+  { pattern: /\bSamantha\b/i,                            boost: 1500 }, // macOS: Samantha — iconic US voice
+  { pattern: /\bAllison\b/i,                             boost: 1450 }, // macOS: Allison — American
+  { pattern: /\bAva\b/i,                                 boost: 1400 }, // macOS: Ava — American
+  { pattern: /\bSusan\b/i,                               boost: 1350 }, // macOS: Susan — American
+  { pattern: /\bVictoria\b/i,                            boost: 1300 }, // macOS: Victoria
+  // === Tier 4: Windows SAPI American fallback ===
+  { pattern: /\bMicrosoft\s+Zira\b/i,                    boost: 1000 }, // Windows: Zira — US female
+  // === Tier 5: Other English female (less preferred) ===
+  { pattern: /\bGoogle\s+UK\s+English\s+Female\b/i,      boost: 500 },  // Chrome UK — too formal
+  { pattern: /\bfemale\b/i,                              boost: 300 },  // Generic female keyword
 ];
 
-/** Score a voice by how well it matches our NASA narrator preference */
+/** Score a voice — higher = better match for warm American female narrator */
 function scoreVoice(v: SpeechSynthesisVoice): number {
+  let score = 0;
   const name = v.name;
-  // Rank by position in preference list (lower index = higher score)
-  for (let i = 0; i < PREFERRED_VOICE_PATTERNS.length; i++) {
-    if (PREFERRED_VOICE_PATTERNS[i].test(name)) return 1000 - i;
+
+  // Check against preference list
+  for (const { pattern, boost } of PREFERRED_VOICE_PATTERNS) {
+    if (pattern.test(name)) {
+      score = Math.max(score, boost);
+    }
   }
-  // Prefer en-GB / en-US over others
-  if (v.lang === "en-GB") return 50;
-  if (v.lang === "en-US") return 40;
-  if (v.lang.startsWith("en")) return 20;
-  return 0;
+
+  // American English gets a significant locale bonus
+  if (v.lang === "en-US") score += 100;
+  else if (v.lang.startsWith("en")) score += 10;
+
+  // "Online" / "Neural" tag in name = much smoother
+  if (/online|neural/i.test(name)) score += 200;
+
+  return score;
 }
 
 /** Split text into sentences for smooth chunked delivery */
