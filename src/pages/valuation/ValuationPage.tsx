@@ -1,23 +1,24 @@
 // src/pages/valuation/ValuationPage.tsx
 // ═══════════════════════════════════════════════════════════════════════════
-// STRATFIT — Valuation Module Shell (Phase V-2)
+// STRATFIT — Valuation Module Shell (Phase V-2A)
 //
 // Route: /valuation
-// Reads exclusively from selectValuation(engineResults).
-// No UI-side valuation math. No new stores.
+// Canonical data: usePhase1ScenarioStore → activeScenario.simulationResults
+//   (same path as Position, Risk, Compare)
+// Selector: selectValuationFromSimulation(simResults) → ValuationResults
+// No UI-side valuation math. No new stores. No terrain dependency.
 // 7 placeholder sections — wired in subsequent phases.
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { useState, useMemo } from "react";
 import styles from "./ValuationPage.module.css";
 
-// V-1 engine + selector
-import { selectValuation } from "@/selectors/valuationSelectors";
+// V-1 selector (V-2A canonical bridge)
+import { selectValuationFromSimulation } from "@/selectors/valuationSelectors";
 import type { ValuationResults } from "@/valuation/valuationTypes";
-import type { EngineResults } from "@/core/engine/types";
 
-// Store — read-only access to engineResults
-import { useStudioTimelineStore } from "@/stores/studioTimelineStore";
+// Canonical store — same source as Position/Risk/Compare
+import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore";
 
 // System components (reuse existing)
 import SystemProbabilityNotice from "@/components/system/ProbabilityNotice";
@@ -27,7 +28,7 @@ import ProvenanceBadge from "@/components/system/ProvenanceBadge";
 // TYPES
 // ═══════════════════════════════════════════════════════════════════════════
 
-type MethodId = "dcf" | "revenue-multiple" | "comparable";
+type MethodId = "dcf" | "revenue_multiple";
 
 interface MethodDef {
   id: MethodId;
@@ -37,8 +38,7 @@ interface MethodDef {
 
 const METHODS: MethodDef[] = [
   { id: "dcf", label: "DCF", disabled: false },
-  { id: "revenue-multiple", label: "REVENUE MULTIPLE", disabled: false },
-  { id: "comparable", label: "COMPARABLE COMPANIES", disabled: true },
+  { id: "revenue_multiple", label: "REVENUE MULTIPLE", disabled: false },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -133,14 +133,23 @@ export default function ValuationPage() {
   // ── Method selector state ──
   const [selectedMethod, setSelectedMethod] = useState<MethodId>("dcf");
 
-  // ── Read engineResults from store (read-only) ──
-  const engineResults = useStudioTimelineStore((s) => s.engineResults);
+  // ── Canonical data access (same path as Position/Risk/Compare) ──
+  const activeScenarioId = usePhase1ScenarioStore((s) => s.activeScenarioId);
+  const scenarios = usePhase1ScenarioStore((s) => s.scenarios);
 
-  // ── Derive valuation via V-1 pure selector ──
-  const valuation: ValuationResults | null = useMemo(() => {
-    if (!engineResults) return null;
-    return selectValuation(engineResults);
-  }, [engineResults]);
+  const activeScenario = useMemo(
+    () => scenarios.find((s) => s.id === activeScenarioId) ?? null,
+    [scenarios, activeScenarioId],
+  );
+
+  const simResults = activeScenario?.simulationResults ?? null;
+  const hasRun = simResults != null && simResults.completedAt > 0;
+
+  // ── Derive valuation via V-2A canonical bridge selector ──
+  const valuation: ValuationResults | null = useMemo(
+    () => selectValuationFromSimulation(simResults),
+    [simResults],
+  );
 
   // ── Active method EV for headline ──
   const headlineEV = useMemo(() => {
@@ -148,10 +157,8 @@ export default function ValuationPage() {
     switch (selectedMethod) {
       case "dcf":
         return valuation.dcf.enterpriseValue;
-      case "revenue-multiple":
+      case "revenue_multiple":
         return valuation.revenueMultiple.enterpriseValue;
-      case "comparable":
-        return valuation.blendedValue; // fallback — comparables not yet computed
       default:
         return valuation.blendedValue;
     }
@@ -162,22 +169,34 @@ export default function ValuationPage() {
       <div className={styles.content}>
         {/* ═══ HEADER ═══ */}
         <div className={styles.header}>
-          <h1 className={styles.headerTitle}>Valuation Intelligence</h1>
+          <h1 className={styles.headerTitle}>Valuation</h1>
           <p className={styles.headerSub}>
-            Deterministic enterprise value from the STRATFIT engine — no UI-side
-            math.
+            Financial consequence layer of strategy
           </p>
         </div>
 
-        {/* ═══ HEADLINE VALUE ═══ */}
-        <div className={styles.headline}>
-          <div className={styles.headlineLabel}>
-            Enterprise Value ({selectedMethod === "dcf" ? "DCF" : selectedMethod === "revenue-multiple" ? "Revenue Multiple" : "Blended"})
+        {/* ═══ EMPTY STATE ═══ */}
+        {!hasRun && (
+          <div className={styles.headline}>
+            <div className={styles.headlineLabel}>Enterprise Value</div>
+            <div className={styles.headlineValue}>—</div>
+            <div className={styles.headlineMeta}>
+              <span className={styles.metaLabel}>
+                Run a scenario to generate valuation distribution.
+              </span>
+            </div>
           </div>
-          <div className={styles.headlineValue}>
-            {valuation ? fmtM(headlineEV) : "—"}
-          </div>
-          {valuation && (
+        )}
+
+        {/* ═══ HEADLINE VALUE (active run) ═══ */}
+        {hasRun && valuation && (
+          <div className={styles.headline}>
+            <div className={styles.headlineLabel}>
+              Enterprise Value ({selectedMethod === "dcf" ? "DCF" : "Revenue Multiple"})
+            </div>
+            <div className={styles.headlineValue}>
+              {fmtM(headlineEV)}
+            </div>
             <div className={styles.headlineMeta}>
               <span className={styles.metaItem}>
                 <span className={styles.metaLabel}>DCF</span>
@@ -203,15 +222,8 @@ export default function ValuationPage() {
                 <span className={styles.metaValue}>{fmtM(valuation.blendedValue)}</span>
               </span>
             </div>
-          )}
-          {!valuation && (
-            <div className={styles.headlineMeta}>
-              <span className={styles.metaLabel}>
-                Run a simulation to generate valuation data
-              </span>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* ═══ METHOD SELECTOR ═══ */}
         <div className={styles.methodBar}>
@@ -235,7 +247,7 @@ export default function ValuationPage() {
           ))}
         </div>
 
-        {/* ═══ BREAKDOWN TABLE (live from V-1 engine) ═══ */}
+        {/* ═══ BREAKDOWN TABLE (live from V-1 engine via canonical bridge) ═══ */}
         {valuation && (
           <table className={styles.breakdownTable}>
             <thead>
@@ -255,7 +267,7 @@ export default function ValuationPage() {
               </tr>
               <tr>
                 <td>Revenue Multiple</td>
-                <td className={selectedMethod === "revenue-multiple" ? styles.breakdownHighlight : ""}>
+                <td className={selectedMethod === "revenue_multiple" ? styles.breakdownHighlight : ""}>
                   {fmtM(valuation.revenueMultiple.enterpriseValue)}
                 </td>
                 <td>{fmtX(valuation.revenueMultiple.multiple)} ARR</td>
@@ -303,7 +315,7 @@ export default function ValuationPage() {
         </div>
       </div>
 
-      {/* ═══ PROBABILITY NOTICE ═══ */}
+      {/* ═══ PROBABILITY NOTICE (visible, not behind accordion) ═══ */}
       <SystemProbabilityNotice />
     </div>
   );
