@@ -8,6 +8,7 @@ import PositionRoute from "@/pages/position/PositionRoute"
 import StudioPage from "@/pages/studio/StudioPage"
 import ComparePage from "@/pages/compare/ComparePage"
 import RiskRoute from "@/routes/RiskRoute"
+import ValuationRoute from "@/routes/ValuationRoute"
 
 export default function AppRouter() {
   return (
@@ -20,6 +21,7 @@ export default function AppRouter() {
       <Route path="/studio" element={<StudioPage />} />
       <Route path="/compare" element={<ComparePage />} />
       <Route path="/risk" element={<RiskRoute />} />
+      <Route path="/valuation" element={<ValuationRoute />} />
 
       {/* Compat redirects */}
       <Route path="/initialize" element={<Navigate to="/initiate" replace />} />

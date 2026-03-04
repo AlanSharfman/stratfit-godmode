@@ -23,6 +23,7 @@ import { ConfidenceGauge } from "@/components/confidence/LegacyConfidenceGauge";
 import { LegalDisclosureAccordion } from "@/components/legal/LegalDisclosureAccordion";
 import SystemProbabilityNotice from "@/components/system/ProbabilityNotice";
 import ProvenanceBadge from "@/components/system/ProvenanceBadge";
+import ValuationIntelligencePanel from "@/components/valuation/ValuationIntelligencePanel";
 import { computeConfidence, type ConfidenceResult } from "@/logic/confidence/modelConfidence";
 import { computeBaselineCompleteness } from "@/logic/confidence/baselineCompleteness";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
@@ -435,6 +436,9 @@ export default function ValuationPage() {
         <div style={{ margin: "24px 0" }}>
           <ConfidenceGauge result={groundedConfidence} />
         </div>
+
+        {/* ═══ VALUATION INTELLIGENCE PANEL (Phase 300) ═══ */}
+        <ValuationIntelligencePanel />
 
         {/* ═══ LEGAL DISCLOSURE (canonical accordion) ═══ */}
         <LegalDisclosureAccordion showAssumptions showModelDetails={false} />
