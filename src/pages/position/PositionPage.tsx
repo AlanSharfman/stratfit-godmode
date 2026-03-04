@@ -852,8 +852,7 @@ export default function PositionPage() {
           {/* Terrain canvas — fills available space */}
           <div ref={viewportRef} className={styles.terrainViewport} aria-label="Position terrain" style={{ position: "relative" }}>
             <TerrainStage
-              lockCamera={true}
-              pathsEnabled={false}
+              pathsEnabled={true}
               focusedEvent={displayEvent}
               heatmapEnabled={heatmapEnabled || commandMode === "heatmap"}
               terrainMetrics={{

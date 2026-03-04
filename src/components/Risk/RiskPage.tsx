@@ -76,7 +76,6 @@ const RiskPage: React.FC = () => {
   const shockSigma = useRiskStore((s) => s.shockSigma);
   const setShockSigma = useRiskStore((s) => s.setShockSigma);
   const fullResult = useSimulationStore((s) => s.fullResult);
-  const hasSimulated = useSimulationStore((s) => s.hasSimulated);
   const summary = useSimulationStore((s) => s.summary);
   const leversRaw = useLeverStore((s) => s.levers);
   const { baseline: systemBaseline } = useSystemBaseline();
@@ -127,31 +126,59 @@ const RiskPage: React.FC = () => {
     };
   }, [fullResult, systemBaseline, zustandBaseline]);
 
-  // ── Baseline metrics from full MC result ──
+  // ── Baseline metrics ──
+  // Primary: derive from fullResult (old MC pipeline) when available.
+  // Fallback: run a local sigma-0 mini-batch so Risk works even when
+  //           only the V2 phase1 scenario flow has been used.
   const baselineMetrics: BaselineMetrics | null = useMemo(() => {
-    if (!fullResult || !summary) return null;
-    // Derive churn rate from simulation paths
-    const allGrowths = fullResult.allSimulations.flatMap((r) =>
-      r.monthlySnapshots.map((s) => s.growthRate)
-    );
-    const negGrowths = allGrowths.filter((g) => g < 0);
-    const churnRate =
-      negGrowths.length > 0
-        ? Math.abs(negGrowths.reduce((a, b) => a + b, 0) / negGrowths.length) * 100
-        : 0;
+    if (fullResult && summary) {
+      // Legacy path — fullResult from old MC pipeline
+      const allGrowths = fullResult.allSimulations.flatMap((r) =>
+        r.monthlySnapshots.map((s) => s.growthRate)
+      );
+      const negGrowths = allGrowths.filter((g) => g < 0);
+      const churnRate =
+        negGrowths.length > 0
+          ? Math.abs(negGrowths.reduce((a, b) => a + b, 0) / negGrowths.length) * 100
+          : 0;
+      return {
+        survivalRate: fullResult.survivalRate,
+        medianARR: fullResult.arrPercentiles.p50,
+        medianRunway: fullResult.runwayPercentiles.p50,
+        medianBurn:
+          fullResult.allSimulations.reduce((sum, s) => {
+            const last = s.monthlySnapshots[s.monthlySnapshots.length - 1];
+            return sum + (last?.burn ?? 0);
+          }, 0) / fullResult.allSimulations.length,
+        churnRate,
+      };
+    }
 
+    // V2 path — run a local baseline batch (sigma=0, 200 paths)
+    if (!hasBaseline) return null;
+    const batch = computeShockedBatch(levers, config, 0, 200);
     return {
-      survivalRate: fullResult.survivalRate,
-      medianARR: fullResult.arrPercentiles.p50,
-      medianRunway: fullResult.runwayPercentiles.p50,
-      medianBurn:
-        fullResult.allSimulations.reduce((sum, s) => {
-          const last = s.monthlySnapshots[s.monthlySnapshots.length - 1];
-          return sum + (last?.burn ?? 0);
-        }, 0) / fullResult.allSimulations.length,
-      churnRate,
+      survivalRate: batch.survivalRate,
+      medianARR: batch.medianARR,
+      medianRunway: batch.medianRunway,
+      medianBurn: batch.medianBurn,
+      churnRate: batch.churnRate,
     };
-  }, [fullResult, summary]);
+  }, [fullResult, summary, hasBaseline, levers, config]);
+
+  // ── ARR percentiles (for riskIndex) — derive from fullResult or local batch ──
+  const arrPercentiles = useMemo(() => {
+    if (fullResult) {
+      return fullResult.arrPercentiles;
+    }
+    // Quick local derivation: run a wider baseline batch and pick percentiles
+    if (!hasBaseline) return null;
+    const batch = computeShockedBatch(levers, config, 0, 200);
+    // The batch doesn't expose percentiles directly, but we can derive
+    // approximate ones from baselineMetrics median.
+    const med = batch.medianARR;
+    return { p25: med * 0.8, p50: med, p75: med * 1.25 };
+  }, [fullResult, hasBaseline, levers, config]);
 
   // ── Compute shocked batch (debounced) ──
   useEffect(() => {
@@ -183,18 +210,18 @@ const RiskPage: React.FC = () => {
 
   // ── Risk Index ──
   const riskIndex: RiskIndexResult | null = useMemo(() => {
-    if (!baselineMetrics || !shockedBatch || !fullResult) return null;
+    if (!baselineMetrics || !shockedBatch || !arrPercentiles) return null;
     return computeRiskIndex({
       baselineSurvival: baselineMetrics.survivalRate,
       shockedSurvival: shockedBatch.survivalRate,
       baselineRunway: baselineMetrics.medianRunway,
       shockedRunway: shockedBatch.medianRunway,
-      arrP25: fullResult.arrPercentiles.p25,
-      arrP50: fullResult.arrPercentiles.p50,
-      arrP75: fullResult.arrPercentiles.p75,
+      arrP25: arrPercentiles.p25,
+      arrP50: arrPercentiles.p50,
+      arrP75: arrPercentiles.p75,
       leverDebtExposure: levers.fundingPressure,
     });
-  }, [baselineMetrics, shockedBatch, fullResult, levers.fundingPressure]);
+  }, [baselineMetrics, shockedBatch, arrPercentiles, levers.fundingPressure]);
 
   // ── Derived command bar ──
   const commandScore = riskIndex ? Math.round(riskIndex.score * 100) : 0;
@@ -213,21 +240,18 @@ const RiskPage: React.FC = () => {
     [setShockSigma]
   );
 
-  // ── Empty state ──
-  if (!hasSimulated || !fullResult) {
+  // ── Empty state — only shown when no baseline exists at all ──
+  if (!hasBaseline && zustandHydrated) {
     return (
       <div className={styles.root} style={{ position: "relative" }}>
         <PortalNav />
-        {zustandHydrated && !hasBaseline && (
-          <SoftGateOverlay message="Complete onboarding before running risk analysis." />
-        )}
-
-        <div style={{ filter: zustandHydrated && !hasBaseline ? "blur(4px)" : "none" }}>
+        <SoftGateOverlay message="Complete onboarding before running risk analysis." />
+        <div style={{ filter: "blur(4px)" }}>
           <RiskCommandBar score={0} trend="stable" volatility="medium" />
           <div className={styles.emptyState}>
             <div className={styles.emptyTitle}>Structural Risk Analysis Unavailable</div>
             <div className={styles.emptyText}>
-              Run a simulation in Strategy Studio to unlock the shock propagation engine.
+              Complete onboarding to unlock the shock propagation engine.
             </div>
           </div>
         </div>
@@ -241,11 +265,8 @@ const RiskPage: React.FC = () => {
   return (
     <div className={styles.root} style={{ position: "relative" }}>
       <PortalNav />
-      {zustandHydrated && !hasBaseline && (
-        <SoftGateOverlay message="Complete onboarding before running risk analysis." />
-      )}
 
-      <div style={{ filter: zustandHydrated && !hasBaseline ? "blur(4px)" : "none" }}>
+      <div>
       {/* ── COMMAND BAR ─────────────────────────────────────── */}
       <RiskCommandBar
         score={commandScore}
