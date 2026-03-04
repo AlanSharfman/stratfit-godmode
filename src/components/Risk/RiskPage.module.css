@@ -17,8 +17,7 @@
 /* ── TERRAIN HERO ──────────────────────────────────────────────────────── */
 .terrainHero {
   position: relative;
-  flex: 0 0 48%;
-  min-height: 240px;
+  flex: 1.2 0 280px;
   overflow: hidden;
   border-bottom: 1px solid rgba(0, 224, 255, 0.08);
 }
@@ -124,7 +123,7 @@
 
 /* ── BOTTOM PANELS ─────────────────────────────────────────────────────── */
 .bottomPanels {
-  flex: 1;
+  flex: 1 0 220px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   min-height: 0;

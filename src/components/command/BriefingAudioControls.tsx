@@ -268,14 +268,45 @@ const BriefingAudioControls = forwardRef<BriefingAudioHandle, BriefingAudioContr
       [play, pause, stop, isPlaying],
     );
 
-    // Auto-play when director starts
+    // Eagerly preload first two sections so audio is instant when play() fires
+    const preloadReadyRef = useRef(false);
+    const preloadFiredRef = useRef(false);
     useEffect(() => {
-      if (autoPlay && !autoPlayedRef.current && sections.length > 0) {
+      if (engine !== "openai" || sections.length === 0 || preloadFiredRef.current) return;
+      preloadFiredRef.current = true;
+      const preloadFirst = synthesizeSection(sections[0]).catch(() => null);
+      if (sections.length > 1) synthesizeSection(sections[1]).catch(() => {});
+      preloadFirst.then(() => { preloadReadyRef.current = true; });
+    }, [engine, sections, synthesizeSection]);
+
+    // Auto-play when director starts — waits for OpenAI preload cache
+    useEffect(() => {
+      if (!autoPlay || autoPlayedRef.current || sections.length === 0) {
+        if (!autoPlay) autoPlayedRef.current = false;
+        return;
+      }
+
+      if (engine !== "openai" || preloadReadyRef.current) {
         autoPlayedRef.current = true;
         play();
+        return;
       }
-      if (!autoPlay) autoPlayedRef.current = false;
-    }, [autoPlay, sections.length, play]);
+
+      // Poll until first section is cached (check every 200ms, up to 15s)
+      let attempts = 0;
+      const timer = setInterval(() => {
+        attempts++;
+        if (preloadReadyRef.current || attempts > 75) {
+          clearInterval(timer);
+          if (!autoPlayedRef.current) {
+            autoPlayedRef.current = true;
+            play();
+          }
+        }
+      }, 200);
+
+      return () => clearInterval(timer);
+    }, [autoPlay, sections.length, play, engine]);
 
     // Cleanup on unmount
     useEffect(() => {

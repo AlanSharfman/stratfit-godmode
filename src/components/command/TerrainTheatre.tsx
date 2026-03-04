@@ -18,6 +18,7 @@ import CameraCompositionRig from "@/scene/camera/CameraCompositionRig";
 import SkyAtmosphere from "@/scene/rigs/SkyAtmosphere";
 import type { CameraPreset } from "@/scene/camera/terrainCameraPresets";
 import type { TerrainMetrics } from "@/terrain/terrainFromBaseline";
+import type { MetricsInput } from "@/terrain/buildTerrain";
 import type { Beat, CameraShot } from "./director/DirectorScript";
 import { intelligenceTarget } from "@/stores/intelligenceTargetStore";
 import CinematicBeaconLayer from "./CinematicBeaconLayer";
@@ -92,8 +93,8 @@ const S: Record<string, React.CSSProperties> = {
 interface TerrainTheatreProps {
   /** Current director beat (null when idle) */
   currentBeat: Beat | null;
-  /** Terrain metrics from simulation (optional) */
-  terrainMetrics?: TerrainMetrics;
+  /** Terrain metrics from simulation — static object or time-varying function */
+  terrainMetrics?: MetricsInput;
 }
 
 const EMPTY_MARKERS: string[] = [];
@@ -105,7 +106,7 @@ const TerrainTheatre: React.FC<TerrainTheatreProps> = memo(
       return SHOT_PRESETS[currentBeat.cameraShot] ?? DEFAULT_PRESET;
     }, [currentBeat]);
 
-    const metrics = terrainMetrics ?? EMPTY_METRICS;
+    const metrics: MetricsInput = terrainMetrics ?? EMPTY_METRICS;
     const activeMarkers = currentBeat?.highlightMarkers ?? EMPTY_MARKERS;
 
     // Drive intelligence target store from director beats

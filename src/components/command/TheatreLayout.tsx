@@ -26,6 +26,8 @@ import { selectStressProbability } from "@/selectors/probabilitySelectors";
 import { selectTerrainEvents } from "@/selectors/terrainSelectors";
 import { deriveTerrainMetrics } from "@/terrain/terrainFromBaseline";
 import type { TerrainMetrics } from "@/terrain/terrainFromBaseline";
+import { useTimelineTerrainMetrics } from "@/hooks/useTimelineTerrainMetrics";
+import type { MetricsInput } from "@/terrain/buildTerrain";
 import { generateCommandBriefing } from "../../core/command/generateCommandBriefing";
 import type {
   BriefingInputs,
@@ -99,6 +101,7 @@ const TheatreLayout: React.FC<TheatreLayoutProps> = memo(({ onComplete, autoPlay
   const activeScenarioId = usePhase1ScenarioStore((s) => s.activeScenarioId);
   const scenarios = usePhase1ScenarioStore((s) => s.scenarios);
   const baseline = useBaselineStore((s) => s.baseline);
+  const baselineInputs = useBaselineStore((s) => s.baselineInputs);
 
   const activeScenario = useMemo(
     () => scenarios.find((s) => s.id === activeScenarioId) ?? null,
@@ -115,11 +118,42 @@ const TheatreLayout: React.FC<TheatreLayoutProps> = memo(({ onComplete, autoPlay
     return tlEngineResults.timeline[tlCurrentStep] ?? null;
   }, [tlEngineResults, tlCurrentStep]);
 
-  // ── Terrain metrics ──
+  // ── Terrain metrics (same priority logic as StudioPage) ──
   const terrainMetrics = useMemo<TerrainMetrics | undefined>(() => {
-    if (!baseline) return undefined;
-    return deriveTerrainMetrics(baseline);
-  }, [baseline]);
+    const engineMetrics = activeScenario?.simulationResults?.terrainMetrics;
+    if (
+      activeScenario &&
+      (activeScenario.status === "running" || activeScenario.status === "complete") &&
+      engineMetrics
+    ) {
+      return {
+        elevationScale: engineMetrics.elevationScale,
+        roughness: engineMetrics.roughness,
+        ridgeIntensity: engineMetrics.ridgeIntensity,
+        volatility: engineMetrics.volatility,
+        liquidityDepth: baselineInputs
+          ? Math.min(
+              ((Number(baselineInputs.cash) || 0) /
+                (Number(baselineInputs.burnRate) || Number((baselineInputs as any).monthlyBurn) || 1)) / 12,
+              2,
+            )
+          : 1,
+        growthSlope: baselineInputs
+          ? (Math.abs(Number(baselineInputs.growthRate) || 0) <= 1
+              ? Number(baselineInputs.growthRate) || 0
+              : (Number(baselineInputs.growthRate) || 0) / 100)
+          : 0,
+      };
+    }
+    return baseline ? deriveTerrainMetrics(baseline) : undefined;
+  }, [activeScenario?.status, activeScenario?.simulationResults?.terrainMetrics, baselineInputs, baseline]);
+
+  // Timeline-aware terrain: function overrides static metrics when timeline active
+  const timelineTerrainMetrics = useTimelineTerrainMetrics();
+  const effectiveTerrainMetrics = useMemo<MetricsInput | undefined>(() => {
+    if (timelineTerrainMetrics) return timelineTerrainMetrics;
+    return terrainMetrics;
+  }, [timelineTerrainMetrics, terrainMetrics]);
 
   // ── Signal tile data from selectors ──
   const signalData = useMemo<SignalTileData>(() => {
@@ -305,7 +339,7 @@ const TheatreLayout: React.FC<TheatreLayoutProps> = memo(({ onComplete, autoPlay
         <div style={S.terrainArea}>
           <TerrainTheatre
             currentBeat={director.currentBeat}
-            terrainMetrics={terrainMetrics}
+            terrainMetrics={effectiveTerrainMetrics}
           />
         </div>
         <div style={S.tilesBar}>
