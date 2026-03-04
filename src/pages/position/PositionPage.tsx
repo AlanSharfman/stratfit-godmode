@@ -608,7 +608,7 @@ export default function PositionPage() {
     }
     cycle()
     return () => { mounted = false }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, []) // mount-once: self-contained animation cycle, no external deps
 
   const handleVideoToggle = useCallback(() => {
     const next = !videoActive

@@ -141,6 +141,8 @@ export default function DecisionPage() {
   const canRunRef = useRef(false)
   canRunRef.current = canRun
 
+  const handleRunRef = useRef<() => void>(() => {})
+
   // Reset lever values when intent changes
   useEffect(() => {
     if (intentType) {
@@ -192,6 +194,7 @@ export default function DecisionPage() {
       setIsCreating(false)
     }
   }
+  handleRunRef.current = handleRun
 
   // Simulating cinematic → navigate to studio after 3.5s
   useEffect(() => {
@@ -200,17 +203,17 @@ export default function DecisionPage() {
     return () => clearTimeout(timer)
   }, [simulating, navigate])
 
-  // Ctrl+Enter / Cmd+Enter shortcut
+  // Ctrl+Enter / Cmd+Enter shortcut — uses refs so listener never needs re-registration
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
         e.preventDefault()
-        if (canRunRef.current) handleRun()
+        if (canRunRef.current) handleRunRef.current()
       }
     }
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
 
   /* ── Baseline guard ── */
   if (!baseline) {

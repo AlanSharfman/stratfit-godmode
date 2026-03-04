@@ -122,7 +122,6 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
       if (runIdRef.current !== runId) return;
 
       if (error) {
-        console.error('Simulation worker error:', error);
         failRun(String(error));
         emitCompute("terrain_simulation", "error");
         setPhase('idle');
@@ -132,7 +131,6 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
 
       const typed = result as SimulationOutput | undefined;
       if (!typed?.result || !typed?.verdict) {
-        console.error('Worker returned invalid simulation payload:', event.data);
         failRun('Worker returned invalid simulation payload');
         emitCompute("terrain_simulation", "error");
         setPhase('idle');
@@ -168,7 +166,6 @@ export default function SimulateOverlayWired({ isOpen, onClose, levers }: Simula
 
   const handleWorkerError = useCallback(
     (err: ErrorEvent) => {
-      console.error('Simulation worker error:', err);
       failRun((err as any)?.message ? String((err as any).message) : 'Worker error');
       emitCompute("terrain_simulation", "error");
       setPhase('idle');
