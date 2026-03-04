@@ -2,7 +2,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 // STRATFIT — Portal Nav Bar (shared across pages without inline nav)
 //
-// Minimal horizontal nav bar rendered at the top of pages that
+// Elevated horizontal nav bar rendered at the top of pages that
 // don't have their own header nav (Decision, Risk, Valuation).
 // Reads from ROUTES constant — no store access.
 // ═══════════════════════════════════════════════════════════════════════════
@@ -24,49 +24,64 @@ const S: Record<string, React.CSSProperties> = {
   nav: {
     display: "flex",
     alignItems: "center",
-    gap: 2,
-    padding: "0 24px",
-    height: 40,
-    background: "rgba(0, 0, 0, 0.25)",
-    borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
+    justifyContent: "center",
+    gap: 0,
+    padding: "0 32px",
+    height: 46,
+    background: "linear-gradient(180deg, rgba(10, 18, 32, 0.95) 0%, rgba(6, 12, 24, 0.98) 100%)",
+    borderBottom: "1px solid rgba(34, 211, 238, 0.12)",
+    boxShadow: "0 2px 12px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(34, 211, 238, 0.06)",
     flexShrink: 0,
+    backdropFilter: "blur(12px)",
+    position: "relative" as const,
+    zIndex: 20,
   },
   link: {
-    padding: "8px 14px",
+    padding: "10px 18px",
     fontSize: 11,
-    fontWeight: 500,
-    letterSpacing: "0.06em",
+    fontWeight: 600,
+    letterSpacing: "0.08em",
     textTransform: "uppercase" as const,
     color: "rgba(255, 255, 255, 0.45)",
     textDecoration: "none",
     borderRadius: 4,
-    transition: "color 0.15s, background 0.15s",
+    transition: "color 0.2s, background 0.2s",
+    whiteSpace: "nowrap" as const,
   },
   linkActive: {
-    padding: "8px 14px",
+    padding: "10px 18px",
     fontSize: 11,
-    fontWeight: 500,
-    letterSpacing: "0.06em",
+    fontWeight: 600,
+    letterSpacing: "0.08em",
     textTransform: "uppercase" as const,
     color: "#22d3ee",
     textDecoration: "none",
     borderRadius: 4,
-    background: "rgba(34, 211, 238, 0.08)",
-    transition: "color 0.15s, background 0.15s",
+    background: "rgba(34, 211, 238, 0.1)",
+    transition: "color 0.2s, background 0.2s",
+    whiteSpace: "nowrap" as const,
+  },
+  divider: {
+    width: 1,
+    height: 18,
+    background: "rgba(255, 255, 255, 0.1)",
+    flexShrink: 0,
   },
 };
 
 export default function PortalNav() {
   return (
     <nav style={S.nav} aria-label="Portal navigation">
-      {NAV_ITEMS.map((item) => (
-        <NavLink
-          key={item.to}
-          to={item.to}
-          style={({ isActive }) => (isActive ? S.linkActive : S.link)}
-        >
-          {item.label}
-        </NavLink>
+      {NAV_ITEMS.map((item, i) => (
+        <span key={item.to} style={{ display: "flex", alignItems: "center" }}>
+          {i > 0 && <span style={S.divider} aria-hidden="true" />}
+          <NavLink
+            to={item.to}
+            style={({ isActive }) => (isActive ? S.linkActive : S.link)}
+          >
+            {item.label}
+          </NavLink>
+        </span>
       ))}
     </nav>
   );

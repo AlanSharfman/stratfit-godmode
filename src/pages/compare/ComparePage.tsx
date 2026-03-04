@@ -284,11 +284,17 @@ export default function ComparePage() {
 
         <nav style={S.headerNav}>
           <NavLink to={ROUTES.INITIATE} style={S.navItem}>Initiate</NavLink>
+          <span style={S.navDivider} aria-hidden="true" />
           <NavLink to="/decision" style={S.navItem}>Decision</NavLink>
+          <span style={S.navDivider} aria-hidden="true" />
           <NavLink to={ROUTES.POSITION} style={S.navItem}>Position</NavLink>
+          <span style={S.navDivider} aria-hidden="true" />
           <NavLink to={ROUTES.STUDIO} style={S.navItem}>Studio</NavLink>
+          <span style={S.navDivider} aria-hidden="true" />
           <NavLink to={ROUTES.COMPARE} style={({ isActive }) => isActive ? S.navItemActive : S.navItem}>Compare</NavLink>
+          <span style={S.navDivider} aria-hidden="true" />
           <NavLink to={ROUTES.RISK} style={S.navItem}>Risk</NavLink>
+          <span style={S.navDivider} aria-hidden="true" />
           <NavLink to={ROUTES.VALUATION} style={S.navItem}>Valuation</NavLink>
         </nav>
 
@@ -517,7 +523,7 @@ const FONT = "'Inter', system-ui, sans-serif"
 const CYAN = "rgba(34, 211, 238, 0.85)"
 const CYAN_DIM = "rgba(34, 211, 238, 0.15)"
 const GLASS_BORDER = "1px solid rgba(182, 228, 255, 0.1)"
-const VOID = "#030712"
+const VOID = "#081020"
 
 const S: Record<string, React.CSSProperties> = {
   page: {
@@ -630,6 +636,14 @@ const S: Record<string, React.CSSProperties> = {
     textTransform: "uppercase" as const,
     textDecoration: "none",
     color: CYAN,
+  },
+
+  navDivider: {
+    display: "inline-block",
+    width: 1,
+    height: 16,
+    background: "rgba(255, 255, 255, 0.12)",
+    flexShrink: 0,
   },
 
   headerRight: {

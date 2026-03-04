@@ -255,11 +255,17 @@ export default function StudioPage() {
 
         <nav style={S.headerNav}>
           <NavLink to={ROUTES.INITIATE} style={S.navItem}>Initiate</NavLink>
+          <span style={S.navDivider} aria-hidden="true" />
           <NavLink to="/decision" style={S.navItem}>Decision</NavLink>
+          <span style={S.navDivider} aria-hidden="true" />
           <NavLink to={ROUTES.POSITION} style={S.navItem}>Position</NavLink>
+          <span style={S.navDivider} aria-hidden="true" />
           <NavLink to={ROUTES.STUDIO} style={({ isActive }) => isActive ? S.navItemActive : S.navItem}>Studio</NavLink>
+          <span style={S.navDivider} aria-hidden="true" />
           <NavLink to={ROUTES.COMPARE} style={S.navItem}>Compare</NavLink>
+          <span style={S.navDivider} aria-hidden="true" />
           <NavLink to={ROUTES.RISK} style={S.navItem}>Risk</NavLink>
+          <span style={S.navDivider} aria-hidden="true" />
           <NavLink to={ROUTES.VALUATION} style={S.navItem}>Valuation</NavLink>
         </nav>
 
@@ -543,7 +549,7 @@ const CYAN = "rgba(34, 211, 238, 0.85)"
 const CYAN_DIM = "rgba(34, 211, 238, 0.15)"
 const GLASS_BG = "rgba(6, 12, 20, 0.7)"
 const GLASS_BORDER = "1px solid rgba(182, 228, 255, 0.1)"
-const VOID = "#020814"
+const VOID = "#081020"
 
 const S: Record<string, React.CSSProperties> = {
   page: {
@@ -551,7 +557,7 @@ const S: Record<string, React.CSSProperties> = {
     width: "100%",
     height: "100vh",
     overflow: "hidden",
-    background: `linear-gradient(180deg, ${VOID} 0%, #0a0e17 50%, #0f1520 100%)`,
+    background: `linear-gradient(180deg, ${VOID} 0%, #0c1a2e 50%, #0d1b2a 100%)`,
     fontFamily: FONT,
     color: "#e2e8f0",
     display: "flex",
@@ -563,7 +569,7 @@ const S: Record<string, React.CSSProperties> = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    background: `linear-gradient(180deg, ${VOID} 0%, #0f1520 100%)`,
+    background: `linear-gradient(180deg, ${VOID} 0%, #0d1b2a 100%)`,
     color: "#e2e8f0",
     fontFamily: FONT,
   },
@@ -656,6 +662,14 @@ const S: Record<string, React.CSSProperties> = {
     textTransform: "uppercase" as const,
     textDecoration: "none",
     color: CYAN,
+  },
+
+  navDivider: {
+    display: "inline-block",
+    width: 1,
+    height: 16,
+    background: "rgba(255, 255, 255, 0.12)",
+    flexShrink: 0,
   },
 
   headerRight: {

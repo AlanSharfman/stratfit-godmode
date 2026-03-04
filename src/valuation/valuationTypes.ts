@@ -1,6 +1,6 @@
 // src/valuation/valuationTypes.ts
 // ═══════════════════════════════════════════════════════════════════════════
-// STRATFIT — Valuation Engine Types (Phase V-1)
+// STRATFIT — Valuation Engine Types (Phase V-1 + V-4)
 //
 // Pure type definitions for the deterministic valuation computation layer.
 // No UI. No store. Consumed by valuationEngine and valuationSelectors.
@@ -36,4 +36,29 @@ export interface ValuationResults {
 
   /** Probability metrics derived from cross-method agreement (V-3B) */
   probabilities: ValuationProbabilities
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// WATERFALL TYPES (Phase V-4)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface WaterfallStep {
+  id: string
+  label: string
+  /** Positive or negative contribution to EV (absolute $) */
+  delta: number
+  /** Direction derived in engine/selector — NOT in UI */
+  direction: "up" | "down" | "flat"
+  /** Optional probability weight for the driver (0–1) */
+  probability?: number | null
+}
+
+export interface WaterfallPayload {
+  baselineEV: number | null
+  scenarioEV: number | null
+  steps: WaterfallStep[]
+  notes?: {
+    method?: string
+    horizonYears?: number | null
+  }
 }
