@@ -82,6 +82,24 @@ const INTENT_ASSUMPTIONS: Record<DecisionIntentType, string[]> = {
     "Revenue compounds over 6–12 month horizon",
     "Runway shortens during investment phase",
   ],
+  acquisition: [
+    "Cash outflow for acquisition purchase price",
+    "Target revenue consolidates post-close",
+    "Synergy benefits phase in over integration window",
+    "Integration risk may temporarily reduce efficiency",
+  ],
+  market_entry: [
+    "Entry cost increases burn during launch phase",
+    "Revenue ramp depends on time to scale",
+    "Local competition affects market capture rate",
+    "Total addressable market bounds upside potential",
+  ],
+  product_launch: [
+    "Launch investment increases near-term burn",
+    "Demand forecast drives revenue projection",
+    "Time to market delays initial revenue recognition",
+    "Product margin determines contribution profitability",
+  ],
   other: [
     "Scenario runs with current baseline inputs",
     "All levers remain at default values",

@@ -131,6 +131,31 @@ const TEMPLATE_PRIORITIES: Record<DecisionIntentType, TemplatePriority> = {
     "risk_narrative",    // Risk envelope
     "signal_generic",
   ],
+  acquisition: [
+    "executive_summary",
+    "driver_capital",    // Acquisition cost / cash impact
+    "driver_revenue",    // Revenue consolidation
+    "driver_burn",       // Integration burn
+    "risk_narrative",    // Integration risk
+    "signal_capital",
+    "signal_generic",
+  ],
+  market_entry: [
+    "executive_summary",
+    "driver_revenue",    // Market capture potential
+    "driver_burn",       // Entry cost / burn increase
+    "driver_capital",    // Capital deployment
+    "risk_narrative",    // Competitive risk
+    "signal_generic",
+  ],
+  product_launch: [
+    "executive_summary",
+    "driver_revenue",    // Demand-driven revenue
+    "driver_burn",       // Launch spend
+    "signal_revenue",    // Margin contribution
+    "risk_narrative",    // Execution risk
+    "signal_generic",
+  ],
   other: [
     // Default ordering — no reorder, keep as-is
     "executive_summary",

@@ -31,6 +31,9 @@ export type DecisionIntentType =
   | "cost_reduction"
   | "fundraising"
   | "growth_investment"
+  | "acquisition"
+  | "market_entry"
+  | "product_launch"
   | "other"
 
 export const DECISION_INTENT_OPTIONS: { value: DecisionIntentType; label: string }[] = [
@@ -39,6 +42,9 @@ export const DECISION_INTENT_OPTIONS: { value: DecisionIntentType; label: string
   { value: "cost_reduction",    label: "Reduce costs" },
   { value: "fundraising",       label: "Raise funding" },
   { value: "growth_investment", label: "Growth investment" },
+  { value: "acquisition",       label: "Acquisition" },
+  { value: "market_entry",      label: "Market entry" },
+  { value: "product_launch",    label: "Product launch" },
   { value: "other",             label: "Other" },
 ]
 

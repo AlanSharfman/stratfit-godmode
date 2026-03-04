@@ -50,6 +50,24 @@ export const decisionLeverSchemas: Record<DecisionIntentType, LeverSchema[]> = {
     { id: "roiTiming",     label: "ROI timing",               unit: "mo", min: 1,  max: 24, step: 1, default: 12, tier: "tuning" },
     { id: "channelMix",    label: "Channel concentration",    unit: "%",  min: 0,  max: 100, step: 5, default: 50, tier: "tuning" },
   ],
+  acquisition: [
+    { id: "acquisitionPrice",  label: "Acquisition price",     unit: "$M", min: 0,  max: 500, step: 5, default: 0,  tier: "constraint" },
+    { id: "targetRevenue",     label: "Target revenue",        unit: "$M", min: 0,  max: 200, step: 5, default: 0,  tier: "constraint" },
+    { id: "synergyLevel",      label: "Synergy level",         unit: "%",  min: 0,  max: 50,  step: 5, default: 0,  tier: "constraint" },
+    { id: "integrationTime",   label: "Integration time",      unit: "mo", min: 1,  max: 24,  step: 1, default: 12, tier: "constraint" },
+  ],
+  market_entry: [
+    { id: "marketSize",        label: "Market size",           unit: "$M", min: 0,  max: 500, step: 10, default: 0,  tier: "constraint" },
+    { id: "entryCost",         label: "Entry cost",            unit: "$M", min: 0,  max: 100, step: 5,  default: 0,  tier: "constraint" },
+    { id: "timeToScale",       label: "Time to scale",         unit: "mo", min: 1,  max: 36,  step: 1,  default: 12, tier: "constraint" },
+    { id: "localCompetition",  label: "Local competition",     unit: "%",  min: 0,  max: 100, step: 5,  default: 50, tier: "constraint" },
+  ],
+  product_launch: [
+    { id: "launchInvestment",  label: "Launch investment",      unit: "$M", min: 0,  max: 100, step: 5,  default: 0,  tier: "constraint" },
+    { id: "expectedDemand",    label: "Expected demand",        unit: "%",  min: 0,  max: 100, step: 5,  default: 50, tier: "constraint" },
+    { id: "timeToMarket",      label: "Time to market",         unit: "mo", min: 1,  max: 24,  step: 1,  default: 6,  tier: "constraint" },
+    { id: "productMargin",     label: "Product margin",         unit: "%",  min: 0,  max: 80,  step: 5,  default: 40, tier: "constraint" },
+  ],
   other: [],
 }
 
