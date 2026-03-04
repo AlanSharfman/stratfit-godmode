@@ -1,5 +1,5 @@
 import * as THREE from "three"
-import type { MarkerDef } from "./MarkerBeacon"
+import type { MarkerDef } from "./markerTypes"
 
 export const STRATEGIC_MARKERS: MarkerDef[] = [
   // Liquidity

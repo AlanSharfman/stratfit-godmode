@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react"
-import type { MarkerDef } from "@/terrain/MarkerBeacon"
+import type { MarkerDef } from "@/terrain/markerTypes"
 import {
   POSITION_ANCHORS,
   createAnchorInsights,

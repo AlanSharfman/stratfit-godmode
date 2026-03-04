@@ -8,7 +8,7 @@ import React, { useMemo, useRef } from "react"
 import * as THREE from "three"
 import { useFrame, useThree } from "@react-three/fiber"
 import { Html } from "@react-three/drei"
-import type { MarkerDef, MarkerKind } from "./MarkerBeacon"
+import type { MarkerDef, MarkerKind } from "./markerTypes"
 import type { TerrainSurfaceHandle } from "@/terrain/TerrainSurface"
 
 const MARKER_LIFT = 0.04
