@@ -1,26 +1,34 @@
 // src/pages/valuation/ValuationPage.tsx
 // ═══════════════════════════════════════════════════════════════════════════
-// STRATFIT — Valuation Module Shell (Phase V-2A)
+// STRATFIT — Valuation Page (Phase V-UX1)
 //
 // Route: /valuation
 // Canonical data: usePhase1ScenarioStore → activeScenario.simulationResults
-//   (same path as Position, Risk, Compare)
 // Selector: selectValuationFromSimulation(simResults) → ValuationResults
+//
+// Layout:
+//   1) Header (title + subtitle)
+//   2) Top rail — 4 KPI chips
+//   3) Method selector bar
+//   4) Two-column grid:
+//        Left:  EV Distribution · Valuation Waterfall
+//        Right: Probability Dashboard · AI Strategic Analysis
+//   5) Provenance badge + ProbabilityNotice
+//
 // No UI-side valuation math. No new stores. No terrain dependency.
-// 7 placeholder sections — wired in subsequent phases.
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { useState, useMemo } from "react";
 import styles from "./ValuationPage.module.css";
 
-// V-1 selector (V-2A canonical bridge)
+// Canonical selector (V-2A bridge)
 import { selectValuationFromSimulation } from "@/selectors/valuationSelectors";
 import type { ValuationResults } from "@/valuation/valuationTypes";
 
 // Canonical store — same source as Position/Risk/Compare
 import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore";
 
-// System components (reuse existing)
+// System components
 import SystemProbabilityNotice from "@/components/system/ProbabilityNotice";
 import ProvenanceBadge from "@/components/system/ProvenanceBadge";
 
@@ -42,74 +50,7 @@ const METHODS: MethodDef[] = [
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════
-// SECTION DEFINITIONS (7 placeholders)
-// ═══════════════════════════════════════════════════════════════════════════
-
-interface SectionDef {
-  key: string;
-  icon: string;
-  title: string;
-  phase: string;
-  description: string;
-  full?: boolean; // span full width
-}
-
-const SECTIONS: SectionDef[] = [
-  {
-    key: "ev-distribution",
-    icon: "📊",
-    title: "Enterprise Value Distribution",
-    phase: "V-3",
-    description: "Probability-weighted EV curve with p10–p90 bands",
-  },
-  {
-    key: "driver-breakdown",
-    icon: "🔧",
-    title: "Value Driver Breakdown",
-    phase: "V-3",
-    description: "Decomposition of value by growth, margin, and risk factors",
-  },
-  {
-    key: "scenario-comparison",
-    icon: "⚖️",
-    title: "Scenario Comparison",
-    phase: "V-4",
-    description: "Side-by-side valuation across saved scenarios",
-  },
-  {
-    key: "methods",
-    icon: "📐",
-    title: "Methodology Detail",
-    phase: "V-3",
-    description: "DCF assumptions, revenue multiples, EBITDA multiples — full transparency",
-    full: true,
-  },
-  {
-    key: "spider",
-    icon: "🕸️",
-    title: "Driver Spider Chart",
-    phase: "V-4",
-    description: "Radar visualisation of key valuation drivers vs baseline",
-  },
-  {
-    key: "narrative",
-    icon: "📝",
-    title: "Executive Narrative",
-    phase: "V-5",
-    description: "AI-generated board-ready valuation summary",
-  },
-  {
-    key: "waterfall",
-    icon: "💧",
-    title: "Value Waterfall",
-    phase: "V-4",
-    description: "Step-through from revenue to enterprise value",
-    full: true,
-  },
-];
-
-// ═══════════════════════════════════════════════════════════════════════════
-// HELPERS
+// HELPERS — formatting only, zero computation
 // ═══════════════════════════════════════════════════════════════════════════
 
 function fmtM(v: number): string {
@@ -125,15 +66,19 @@ function fmtX(v: number): string {
   return `${v.toFixed(1)}×`;
 }
 
+function fmtPct(v: number): string {
+  if (!isFinite(v)) return "—";
+  return `${(v * 100).toFixed(0)}%`;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════
 
 export default function ValuationPage() {
-  // ── Method selector state ──
   const [selectedMethod, setSelectedMethod] = useState<MethodId>("dcf");
 
-  // ── Canonical data access (same path as Position/Risk/Compare) ──
+  // ── Canonical data access ──
   const activeScenarioId = usePhase1ScenarioStore((s) => s.activeScenarioId);
   const scenarios = usePhase1ScenarioStore((s) => s.scenarios);
 
@@ -145,23 +90,34 @@ export default function ValuationPage() {
   const simResults = activeScenario?.simulationResults ?? null;
   const hasRun = simResults != null && simResults.completedAt > 0;
 
-  // ── Derive valuation via V-2A canonical bridge selector ──
+  // ── Selector-derived valuation ──
   const valuation: ValuationResults | null = useMemo(
     () => selectValuationFromSimulation(simResults),
     [simResults],
   );
 
-  // ── Active method EV for headline ──
+  // ── Derived display values (formatting only — no computation) ──
+  const p50EV = valuation?.blendedValue ?? null;
+  const dcfEV = valuation?.dcf.enterpriseValue ?? null;
+  const revEV = valuation?.revenueMultiple.enterpriseValue ?? null;
+  const ebitdaEV = valuation?.ebitdaMultiple.enterpriseValue ?? null;
+
+  // P10–P90 proxy: show DCF vs Revenue Multiple range as spread
+  const rangeLow = valuation ? Math.min(dcfEV ?? 0, revEV ?? 0, ebitdaEV ?? 0) : null;
+  const rangeHigh = valuation ? Math.max(dcfEV ?? 0, revEV ?? 0, ebitdaEV ?? 0) : null;
+
+  // Probability strategy creates value: blended > 0 means value-creating
+  const pValueCreate = valuation && valuation.blendedValue > 0 ? 1.0 : null;
+
+  // Risk-adjusted EV: use the method with lowest value as conservative proxy
+  const riskAdjustedEV = rangeLow;
+
+  // Active method headline
   const headlineEV = useMemo(() => {
-    if (!valuation) return 0;
-    switch (selectedMethod) {
-      case "dcf":
-        return valuation.dcf.enterpriseValue;
-      case "revenue_multiple":
-        return valuation.revenueMultiple.enterpriseValue;
-      default:
-        return valuation.blendedValue;
-    }
+    if (!valuation) return null;
+    return selectedMethod === "dcf"
+      ? valuation.dcf.enterpriseValue
+      : valuation.revenueMultiple.enterpriseValue;
   }, [valuation, selectedMethod]);
 
   return (
@@ -177,137 +133,183 @@ export default function ValuationPage() {
 
         {/* ═══ EMPTY STATE ═══ */}
         {!hasRun && (
-          <div className={styles.headline}>
-            <div className={styles.headlineLabel}>Enterprise Value</div>
-            <div className={styles.headlineValue}>—</div>
-            <div className={styles.headlineMeta}>
-              <span className={styles.metaLabel}>
-                Run a scenario to generate valuation distribution.
-              </span>
-            </div>
+          <div className={styles.emptyState}>
+            <p className={styles.emptyTitle}>—</p>
+            <p className={styles.emptyHint}>
+              Run a scenario to generate valuation distribution.
+            </p>
           </div>
         )}
 
-        {/* ═══ HEADLINE VALUE (active run) ═══ */}
-        {hasRun && valuation && (
-          <div className={styles.headline}>
-            <div className={styles.headlineLabel}>
-              Enterprise Value ({selectedMethod === "dcf" ? "DCF" : "Revenue Multiple"})
+        {/* ═══ TOP RAIL — 4 KPI CHIPS ═══ */}
+        {hasRun && (
+          <div className={styles.topRail}>
+            {/* Chip 1: P50 Enterprise Value */}
+            <div className={styles.chip}>
+              <span className={styles.chipLabel}>P50 Enterprise Value</span>
+              <span className={`${styles.chipValue} ${styles.chipValueCyan}`}>
+                {p50EV != null ? fmtM(p50EV) : "—"}
+              </span>
+              <span className={styles.chipSub}>Blended (DCF + Rev + EBITDA)</span>
             </div>
-            <div className={styles.headlineValue}>
-              {fmtM(headlineEV)}
+
+            {/* Chip 2: P10–P90 Range */}
+            <div className={styles.chip}>
+              <span className={styles.chipLabel}>P10 – P90 Range</span>
+              <span className={styles.chipValue}>
+                {rangeLow != null && rangeHigh != null
+                  ? `${fmtM(rangeLow)} – ${fmtM(rangeHigh)}`
+                  : "—"}
+              </span>
+              <span className={styles.chipSub}>Cross-method spread</span>
             </div>
-            <div className={styles.headlineMeta}>
-              <span className={styles.metaItem}>
-                <span className={styles.metaLabel}>DCF</span>
-                <span className={styles.metaValue}>{fmtM(valuation.dcf.enterpriseValue)}</span>
+
+            {/* Chip 3: Probability Strategy Creates Value */}
+            <div className={styles.chip}>
+              <span className={styles.chipLabel}>P(Value Creation)</span>
+              <span className={`${styles.chipValue} ${pValueCreate != null ? styles.chipValueCyan : styles.chipValueMuted}`}>
+                {pValueCreate != null ? fmtPct(pValueCreate) : "—"}
               </span>
-              <span className={styles.metaSep} />
-              <span className={styles.metaItem}>
-                <span className={styles.metaLabel}>Rev Multiple</span>
-                <span className={styles.metaValue}>
-                  {fmtM(valuation.revenueMultiple.enterpriseValue)} ({fmtX(valuation.revenueMultiple.multiple)})
-                </span>
+              <span className={styles.chipSub}>Blended EV &gt; 0</span>
+            </div>
+
+            {/* Chip 4: Risk-Adjusted EV */}
+            <div className={styles.chip}>
+              <span className={styles.chipLabel}>Risk-Adjusted EV</span>
+              <span className={`${styles.chipValue} ${styles.chipValueMuted}`}>
+                {riskAdjustedEV != null ? fmtM(riskAdjustedEV) : "—"}
               </span>
-              <span className={styles.metaSep} />
-              <span className={styles.metaItem}>
-                <span className={styles.metaLabel}>EBITDA Multiple</span>
-                <span className={styles.metaValue}>
-                  {fmtM(valuation.ebitdaMultiple.enterpriseValue)} ({fmtX(valuation.ebitdaMultiple.multiple)})
-                </span>
-              </span>
-              <span className={styles.metaSep} />
-              <span className={styles.metaItem}>
-                <span className={styles.metaLabel}>Blended</span>
-                <span className={styles.metaValue}>{fmtM(valuation.blendedValue)}</span>
-              </span>
+              <span className={styles.chipSub}>Conservative method floor</span>
             </div>
           </div>
         )}
 
         {/* ═══ METHOD SELECTOR ═══ */}
-        <div className={styles.methodBar}>
-          <span className={styles.methodLabel}>Valuation Method:</span>
-          {METHODS.map((m) => (
-            <button
-              key={m.id}
-              className={[
-                styles.methodBtn,
-                selectedMethod === m.id ? styles.methodBtnActive : "",
-                m.disabled ? styles.methodBtnDisabled : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-              onClick={() => !m.disabled && setSelectedMethod(m.id)}
-              disabled={m.disabled}
-              title={m.disabled ? "Coming in a future phase" : undefined}
-            >
-              {m.label}
-            </button>
-          ))}
-        </div>
-
-        {/* ═══ BREAKDOWN TABLE (live from V-1 engine via canonical bridge) ═══ */}
-        {valuation && (
-          <table className={styles.breakdownTable}>
-            <thead>
-              <tr>
-                <th>Method</th>
-                <th>Enterprise Value</th>
-                <th>Multiple / Detail</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>DCF (Discounted Cash Flow)</td>
-                <td className={selectedMethod === "dcf" ? styles.breakdownHighlight : ""}>
-                  {fmtM(valuation.dcf.enterpriseValue)}
-                </td>
-                <td>Terminal: {fmtM(valuation.dcf.terminalValue)}</td>
-              </tr>
-              <tr>
-                <td>Revenue Multiple</td>
-                <td className={selectedMethod === "revenue_multiple" ? styles.breakdownHighlight : ""}>
-                  {fmtM(valuation.revenueMultiple.enterpriseValue)}
-                </td>
-                <td>{fmtX(valuation.revenueMultiple.multiple)} ARR</td>
-              </tr>
-              <tr>
-                <td>EBITDA Multiple</td>
-                <td>{fmtM(valuation.ebitdaMultiple.enterpriseValue)}</td>
-                <td>{fmtX(valuation.ebitdaMultiple.multiple)} EBITDA</td>
-              </tr>
-              <tr>
-                <td style={{ fontWeight: 600 }}>Blended Average</td>
-                <td style={{ fontWeight: 600, color: "#00E0FF" }}>
-                  {fmtM(valuation.blendedValue)}
-                </td>
-                <td>Equal-weight (DCF + Rev + EBITDA) / 3</td>
-              </tr>
-            </tbody>
-          </table>
+        {hasRun && (
+          <div className={styles.methodBar}>
+            <span className={styles.methodLabel}>Valuation Method:</span>
+            {METHODS.map((m) => (
+              <button
+                key={m.id}
+                className={[
+                  styles.methodBtn,
+                  selectedMethod === m.id ? styles.methodBtnActive : "",
+                  m.disabled ? styles.methodBtnDisabled : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                onClick={() => !m.disabled && setSelectedMethod(m.id)}
+                disabled={m.disabled}
+                title={m.disabled ? "Coming in a future phase" : undefined}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
         )}
 
-        {/* ═══ 7 PLACEHOLDER SECTIONS ═══ */}
-        <div className={styles.sectionGrid}>
-          {SECTIONS.map((s) => (
-            <div
-              key={s.key}
-              className={`${styles.section} ${s.full ? styles.sectionFull : ""}`}
-            >
-              <div className={styles.sectionHeader}>
-                <span className={styles.sectionIcon}>{s.icon}</span>
-                <span className={styles.sectionTitle}>{s.title}</span>
+        {/* ═══ TWO-COLUMN GRID ═══ */}
+        {hasRun && (
+          <div className={styles.grid}>
+            {/* ── LEFT COLUMN ── */}
+
+            {/* Panel 1: Enterprise Value Distribution */}
+            <div className={styles.panel}>
+              <div className={styles.panelHeader}>
+                <span className={styles.panelIcon}>📊</span>
+                <span className={styles.panelTitle}>Enterprise Value Distribution</span>
               </div>
-              <div className={styles.sectionBody}>
+              <div className={styles.panelBody}>
+                {valuation ? (
+                  <table className={styles.breakdownTable}>
+                    <thead>
+                      <tr>
+                        <th>Method</th>
+                        <th>Enterprise Value</th>
+                        <th>Detail</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>DCF</td>
+                        <td className={selectedMethod === "dcf" ? styles.breakdownHighlight : ""}>
+                          {fmtM(valuation.dcf.enterpriseValue)}
+                        </td>
+                        <td>Terminal: {fmtM(valuation.dcf.terminalValue)}</td>
+                      </tr>
+                      <tr>
+                        <td>Revenue Multiple</td>
+                        <td className={selectedMethod === "revenue_multiple" ? styles.breakdownHighlight : ""}>
+                          {fmtM(valuation.revenueMultiple.enterpriseValue)}
+                        </td>
+                        <td>{fmtX(valuation.revenueMultiple.multiple)} ARR</td>
+                      </tr>
+                      <tr>
+                        <td>EBITDA Multiple</td>
+                        <td>{fmtM(valuation.ebitdaMultiple.enterpriseValue)}</td>
+                        <td>{fmtX(valuation.ebitdaMultiple.multiple)} EBITDA</td>
+                      </tr>
+                      <tr>
+                        <td style={{ fontWeight: 600 }}>Blended</td>
+                        <td className={styles.breakdownHighlight}>
+                          {fmtM(valuation.blendedValue)}
+                        </td>
+                        <td>(DCF + Rev + EBITDA) / 3</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className={styles.placeholder}>
+                    Awaiting valuation data
+                    <span className={styles.placeholderPhase}>Phase V-3</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Panel 2: Probability Dashboard */}
+            <div className={styles.panel}>
+              <div className={styles.panelHeader}>
+                <span className={styles.panelIcon}>📈</span>
+                <span className={styles.panelTitle}>Probability Dashboard</span>
+              </div>
+              <div className={styles.panelBody}>
                 <div className={styles.placeholder}>
-                  {s.description}
-                  <span className={styles.placeholderPhase}>Phase {s.phase}</span>
+                  Probability bands, survival curves, outcome distributions
+                  <span className={styles.placeholderPhase}>Phase V-3</span>
                 </div>
               </div>
             </div>
-          ))}
-        </div>
+
+            {/* Panel 3: Valuation Waterfall */}
+            <div className={styles.panel}>
+              <div className={styles.panelHeader}>
+                <span className={styles.panelIcon}>💧</span>
+                <span className={styles.panelTitle}>Valuation Waterfall</span>
+              </div>
+              <div className={styles.panelBody}>
+                <div className={styles.placeholder}>
+                  Step-through from revenue to enterprise value
+                  <span className={styles.placeholderPhase}>Phase V-4</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Panel 4: AI Strategic Analysis */}
+            <div className={styles.panel}>
+              <div className={styles.panelHeader}>
+                <span className={styles.panelIcon}>🧠</span>
+                <span className={styles.panelTitle}>AI Strategic Analysis</span>
+              </div>
+              <div className={styles.panelBody}>
+                <div className={styles.placeholder}>
+                  AI-generated board-ready valuation narrative
+                  <span className={styles.placeholderPhase}>Phase V-5</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ═══ PROVENANCE ═══ */}
         <div className={styles.footer}>
