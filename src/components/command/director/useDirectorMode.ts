@@ -10,7 +10,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import type { Beat } from "./DirectorScript";
-import { INVESTOR_BRIEFING_SCRIPT } from "./DirectorScript";
+import { INTELLIGENCE_BRIEFING_SCRIPT } from "./DirectorScript";
 
 // ────────────────────────────────────────────────────────────────────────────
 // TYPES

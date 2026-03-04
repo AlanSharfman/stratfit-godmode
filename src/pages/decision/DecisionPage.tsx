@@ -193,10 +193,10 @@ export default function DecisionPage() {
     }
   }
 
-  // Simulating cinematic → navigate to position after 3.5s
+  // Simulating cinematic → navigate to studio after 3.5s
   useEffect(() => {
     if (!simulating) return
-    const timer = setTimeout(() => navigate("/position", { replace: true }), 3500)
+    const timer = setTimeout(() => navigate("/studio", { replace: true }), 3500)
     return () => clearTimeout(timer)
   }, [simulating, navigate])
 

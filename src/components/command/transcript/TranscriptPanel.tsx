@@ -125,7 +125,7 @@ const TranscriptPanel: React.FC<TranscriptPanelProps> = memo(
         <div style={S.container}>
           <div style={S.header}>Transcript</div>
           <div style={S.idle}>
-            Start the Investor Briefing to begin the narrated walkthrough.
+            Start the Intelligence Briefing to begin the narrated walkthrough.
           </div>
         </div>
       );

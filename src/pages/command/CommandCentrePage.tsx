@@ -145,7 +145,7 @@ export default function CommandCentrePage() {
             onClick={toggleTheatre}
             style={theatreActive ? S.investorBtnActive : S.investorBtn}
           >
-            ◆ Investor Briefing
+            ◆ Intelligence Briefing
           </button>
           <ProvenanceBadge />
         </div>
@@ -166,7 +166,7 @@ export default function CommandCentrePage() {
               fontSize: 14,
             }}
           >
-            Activate Investor Briefing to launch the Intelligence Theatre.
+            Activate Intelligence Briefing to launch the Intelligence Theatre.
           </div>
         )}
       </div>
