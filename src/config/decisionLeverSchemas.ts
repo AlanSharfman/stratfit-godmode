@@ -17,6 +17,10 @@ export interface LeverSchema {
   default: number
   /** constraint = core decision input (Decision + Studio), tuning = sensitivity/assumption (Studio only) */
   tier: "constraint" | "tuning"
+  /** Optional impact dimension chips for UI presentation */
+  impactChips?: ("Revenue" | "Cost" | "Capital" | "Risk" | "Time" | "Margin" | "Runway" | "Execution")[]
+  /** Optional summary template for scenario strip rendering */
+  summaryTemplate?: string
 }
 
 export const decisionLeverSchemas: Record<DecisionIntentType, LeverSchema[]> = {

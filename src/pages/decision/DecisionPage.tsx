@@ -1,120 +1,108 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom"
 
 import { useCanonicalBaseline } from "@/state/useCanonicalBaseline"
 import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore"
-import { DECISION_INTENT_OPTIONS, type DecisionIntentType } from "@/state/phase1ScenarioStore"
+import type { DecisionIntentType } from "@/state/phase1ScenarioStore"
 import { runDecisionPipeline } from "@/core/decision/runDecisionPipeline"
-import { decisionLeverSchemas, defaultLeverValues, type LeverSchema } from "@/config/decisionLeverSchemas"
-import DecisionCardGrid from "@/components/decision/DecisionCardGrid"
+import { decisionLeverSchemas, defaultLeverValues } from "@/config/decisionLeverSchemas"
+import LeverSliderGroup, { formatLeverValue } from "@/components/decision/LeverSliderGroup"
 import SimulationStatusWidget from "@/components/system/SimulationStatusWidget"
 import SimulationRunOverlay from "@/components/system/SimulationRunOverlay"
 import SimulationPipelineWidget from "@/components/system/SimulationPipelineWidget"
 import SystemProbabilityNotice from "@/components/system/ProbabilityNotice"
-import LeverSliderGroup, { formatLeverValue } from "@/components/decision/LeverSliderGroup"
-import css from "./DecisionConsole.module.css"
+import css from "./DecisionPage.module.css"
 
 /* ═══════════════════════════════════════════════════════════
-   Decision Console — Institutional Three-Rail Layout
-   Question → Intent → Levers → Assumptions → Run
+   Strategic Decision Console — D-UX1 (Nuclear Infinity God Mode)
+   Left: 8-card Strategic Grid (intent selection)
+   Right: Constraint Console (Tier A levers only)
+   Bottom: Scenario Summary + Institutional Run CTA
    ═══════════════════════════════════════════════════════════ */
 
-const MIN_CHARS = 10
+/* ── Strategic intent card data ── */
 
-const EXAMPLE_PROMPTS = [
-  "Expand into the US market with a new sales team",
-  "Cut monthly burn by 30% through headcount reduction",
-  "Raise a $5M Series A at $20M pre-money valuation",
-  "Launch a self-serve product tier to increase ARPA",
-  "Pivot from B2C to B2B enterprise sales motion",
+interface IntentCard {
+  intent: DecisionIntentType
+  title: string
+  description: string
+  chips: string[]
+}
+
+const INTENT_CARDS: IntentCard[] = [
+  {
+    intent: "pricing",
+    title: "PRICING STRATEGY",
+    description: "Adjust pricing posture and test demand response.",
+    chips: ["Revenue", "Margin", "Risk"],
+  },
+  {
+    intent: "hiring",
+    title: "HIRING PLAN",
+    description: "Scale the team with controlled headcount expansion.",
+    chips: ["Cost", "Runway", "Execution"],
+  },
+  {
+    intent: "cost_reduction",
+    title: "EFFICIENCY PROGRAM",
+    description: "Reduce operating load and improve operating leverage.",
+    chips: ["Cost", "Runway", "Margin"],
+  },
+  {
+    intent: "fundraising",
+    title: "CAPITAL RAISE",
+    description: "Model runway extension, dilution pressure, and timing.",
+    chips: ["Capital", "Runway", "Time"],
+  },
+  {
+    intent: "growth_investment",
+    title: "GROWTH INITIATIVE",
+    description: "Increase growth investment within defined risk limits.",
+    chips: ["Revenue", "Cost", "Risk"],
+  },
+  {
+    intent: "acquisition",
+    title: "ACQUISITION",
+    description: "Simulate purchase cost, integration timeline, and synergies.",
+    chips: ["Capital", "Revenue", "Execution"],
+  },
+  {
+    intent: "market_entry",
+    title: "MARKET ENTRY",
+    description: "Expand into a new segment/region with controlled ramp.",
+    chips: ["Revenue", "Capital", "Risk"],
+  },
+  {
+    intent: "product_launch",
+    title: "PRODUCT LAUNCH",
+    description: "Introduce a product line and model adoption and margin.",
+    chips: ["Revenue", "Margin", "Time"],
+  },
 ]
 
-/* ─── Feedback states ────────────────────────────────────── */
+/* ── Scenario summary builder ── */
 
-type FeedbackState = "empty" | "typing" | "ready" | "running" | "done"
+function buildScenarioSummary(
+  intent: DecisionIntentType,
+  card: IntentCard | undefined,
+  values: Record<string, number>,
+): string {
+  const schema = decisionLeverSchemas[intent] ?? []
+  const constraints = schema.filter((l) => l.tier === "constraint")
+  if (!card || constraints.length === 0) return ""
 
-function deriveFeedback(text: string, isCreating: boolean, isDone: boolean): FeedbackState {
-  if (isDone) return "done"
-  if (isCreating) return "running"
-  if (text.trim().length >= MIN_CHARS) return "ready"
-  if (text.trim().length > 0) return "typing"
-  return "empty"
+  const parts = constraints.map((l) => {
+    const v = values[l.id] ?? l.default
+    return `${l.label} ${formatLeverValue(v, l)}`
+  })
+
+  return `${card.title}: ${parts.join(" · ")}. (Explore sensitivity levers in Studio.)`
 }
 
-const FEEDBACK_CONFIG: Record<FeedbackState, { label: string; color: string; dot: string }> = {
-  empty:   { label: "Waiting for decision input",              color: "rgba(255,255,255,0.3)", dot: "#475569" },
-  typing:  { label: "Keep typing — minimum 10 characters",    color: "rgba(255,255,255,0.45)", dot: "#fbbf24" },
-  ready:   { label: "Decision captured — ready to simulate",  color: "#22d3ee", dot: "#22d3ee" },
-  running: { label: "Simulation in progress\u2026",           color: "#fbbf24", dot: "#fbbf24" },
-  done:    { label: "Scenario created — view in Position",    color: "#22c55e", dot: "#22c55e" },
-}
-
-/* ─── Intent-based assumptions (static copy — Phase 4 prep) ── */
-
-const INTENT_ASSUMPTIONS: Record<DecisionIntentType, string[]> = {
-  hiring: [
-    "Headcount increases by specified amount",
-    "Monthly burn increases proportionally",
-    "Revenue ramp starts after onboarding window",
-    "Runway shortens until revenue offsets cost",
-  ],
-  pricing: [
-    "Revenue per account changes by adjustment factor",
-    "Churn risk shifts based on price elasticity",
-    "Gross margin recalculates from new ARPA",
-    "Growth rate may slow during transition",
-  ],
-  cost_reduction: [
-    "Monthly burn decreases by target percentage",
-    "Headcount may reduce proportionally",
-    "Runway extends from lower cash drain",
-    "Growth rate may decelerate temporarily",
-  ],
-  fundraising: [
-    "Cash balance increases by raise amount",
-    "Dilution applied at specified valuation",
-    "Monthly burn may increase post-raise",
-    "Runway extends significantly",
-  ],
-  growth_investment: [
-    "Monthly burn increases for growth spend",
-    "Growth rate accelerates by investment factor",
-    "Revenue compounds over 6–12 month horizon",
-    "Runway shortens during investment phase",
-  ],
-  acquisition: [
-    "Cash outflow for acquisition purchase price",
-    "Target revenue consolidates post-close",
-    "Synergy benefits phase in over integration window",
-    "Integration risk may temporarily reduce efficiency",
-  ],
-  market_entry: [
-    "Entry cost increases burn during launch phase",
-    "Revenue ramp depends on time to scale",
-    "Local competition affects market capture rate",
-    "Total addressable market bounds upside potential",
-  ],
-  product_launch: [
-    "Launch investment increases near-term burn",
-    "Demand forecast drives revenue projection",
-    "Time to market delays initial revenue recognition",
-    "Product margin determines contribution profitability",
-  ],
-  other: [
-    "Scenario runs with current baseline inputs",
-    "All levers remain at default values",
-    "24-month projection from current position",
-    "Probability signals reflect baseline trajectory",
-  ],
-}
-
-/* ─── formatLeverValue imported from LeverSliderGroup ────── */
-
-/* ─── Component ──────────────────────────────────────────── */
+/* ── Component ── */
 
 export default function DecisionPage() {
   const navigate = useNavigate()
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const baseline = useCanonicalBaseline()
 
@@ -122,102 +110,72 @@ export default function DecisionPage() {
   const setActiveScenarioId = usePhase1ScenarioStore((s) => s.setActiveScenarioId)
   const runSimulation = usePhase1ScenarioStore((s) => s.runSimulation)
 
-  const [decisionText, setDecisionText] = useState("")
   const [intentType, setIntentType] = useState<DecisionIntentType | null>(null)
-  const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
-  const [selectedCardLabel, setSelectedCardLabel] = useState<string>("Other")
-  const [highlightIdx, setHighlightIdx] = useState(0)
-  const intentListRef = useRef<HTMLDivElement>(null)
-  const [showFallbackPicker, setShowFallbackPicker] = useState(false)
+  const [leverValues, setLeverValues] = useState<Record<string, number>>({})
   const [isCreating, setIsCreating] = useState(false)
   const [isDone, setIsDone] = useState(false)
   const [simulating, setSimulating] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [focused, setFocused] = useState(false)
-  const [leverValues, setLeverValues] = useState<Record<string, number>>(() => defaultLeverValues("other"))
 
-  const handleCardSelect = useCallback((id: string, intent: DecisionIntentType, label: string) => {
-    setSelectedCardId(id)
-    setSelectedCardLabel(label)
-    setIntentType(intent)
-    setIsDone(false)
-  }, [])
-
-  const canRun = useMemo(
-    () => !!baseline && decisionText.trim().length >= MIN_CHARS && selectedCardId !== null && !isCreating && !isDone,
-    [baseline, decisionText, selectedCardId, isCreating, isDone],
+  const activeCard = useMemo(
+    () => INTENT_CARDS.find((c) => c.intent === intentType) ?? null,
+    [intentType],
   )
 
-  // Keyboard shortcut ref — kept in sync so the stable effect closure always sees latest value
+  const constraintLevers = useMemo(() => {
+    if (!intentType) return []
+    return (decisionLeverSchemas[intentType] ?? []).filter((l) => l.tier === "constraint")
+  }, [intentType])
+
+  const constraintCount = useMemo(() => {
+    if (!intentType) return 0
+    return (decisionLeverSchemas[intentType] ?? []).filter((l) => l.tier === "constraint").length
+  }, [intentType])
+
+  const canRun = useMemo(
+    () => !!baseline && intentType !== null && !isCreating && !isDone,
+    [baseline, intentType, isCreating, isDone],
+  )
+
   const canRunRef = useRef(false)
   canRunRef.current = canRun
 
-  const feedback = deriveFeedback(decisionText, isCreating, isDone)
-  const fb = FEEDBACK_CONFIG[feedback]
+  // Reset lever values when intent changes
+  useEffect(() => {
+    if (intentType) {
+      setLeverValues(defaultLeverValues(intentType))
+      setIsDone(false)
+    }
+  }, [intentType])
 
-  const selectedIntentLabel = useMemo(
-    () => selectedCardId ? selectedCardLabel : (intentType ? (DECISION_INTENT_OPTIONS.find((o) => o.value === intentType)?.label ?? "Other") : "Select a type"),
-    [selectedCardId, selectedCardLabel, intentType],
-  )
-
-  const activeSchema = useMemo(() => intentType ? (decisionLeverSchemas[intentType] ?? []) : [], [intentType])
-
-  const constraintLevers = useMemo(() => activeSchema.filter((l) => l.tier === "constraint"), [activeSchema])
-
-  const updateLever = React.useCallback((id: string, value: number) => {
+  const updateLever = useCallback((id: string, value: number) => {
     setLeverValues((prev) => ({ ...prev, [id]: value }))
   }, [])
 
-  const resetLevers = React.useCallback(() => {
+  const resetLevers = useCallback(() => {
     if (intentType) setLeverValues(defaultLeverValues(intentType))
   }, [intentType])
 
-  // Reset lever values when intent changes
-  React.useEffect(() => {
-    if (intentType) setLeverValues(defaultLeverValues(intentType))
-  }, [intentType])
-
-  // Intent picker keyboard handler
-  const handleIntentKeyDown = useCallback((e: React.KeyboardEvent) => {
-    const len = DECISION_INTENT_OPTIONS.length
-    if (e.key === "ArrowDown" || e.key === "j") {
-      e.preventDefault()
-      setHighlightIdx((i) => (i + 1) % len)
-    } else if (e.key === "ArrowUp" || e.key === "k") {
-      e.preventDefault()
-      setHighlightIdx((i) => (i - 1 + len) % len)
-    } else if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault()
-      const opt = DECISION_INTENT_OPTIONS[highlightIdx]
-      if (opt) {
-        setIntentType(opt.value)
-        setIsDone(false)
-      }
-    }
-  }, [highlightIdx])
-
-  // Scroll highlighted item into view
-  useEffect(() => {
-    const el = intentListRef.current?.children[highlightIdx] as HTMLElement | undefined
-    el?.scrollIntoView({ block: "nearest", behavior: "smooth" })
-  }, [highlightIdx])
+  const scenarioSummary = useMemo(
+    () => intentType ? buildScenarioSummary(intentType, activeCard ?? undefined, leverValues) : "",
+    [intentType, activeCard, leverValues],
+  )
 
   /* ── Run trigger ── */
   async function handleRun() {
     setError(null)
-    const text = decisionText.trim()
-    if (!text || !baseline) return
+    if (!baseline || !intentType) return
 
     setIsCreating(true)
     try {
-      const { intent } = await runDecisionPipeline(text, baseline)
+      const decisionText = activeCard?.description ?? "Custom scenario"
+      const { intent } = await runDecisionPipeline(decisionText, baseline)
 
-      const effectiveIntent = intentType ?? "other"
       const scenarioId = createScenario({
-        decision: text,
+        decision: decisionText,
         intent,
-        decisionIntentType: effectiveIntent,
-        decisionIntentLabel: selectedCardLabel,
+        decisionIntentType: intentType,
+        decisionIntentLabel: activeCard?.title ?? "Other",
         leverValues,
         createdAt: Date.now(),
       })
@@ -225,8 +183,6 @@ export default function DecisionPage() {
       setActiveScenarioId(scenarioId)
       runSimulation(scenarioId)
       setIsDone(true)
-
-      // Show simulating cinematic → 3.5s → navigate to position
       setSimulating(true)
     } catch (e) {
       console.error("[DecisionPage] run failed", e)
@@ -236,17 +192,15 @@ export default function DecisionPage() {
     }
   }
 
-  // 3.5-second simulating cinematic → navigate to position
+  // Simulating cinematic → navigate to position after 3.5s
   useEffect(() => {
     if (!simulating) return
-    const timer = setTimeout(() => {
-      navigate("/position", { replace: true })
-    }, 3500)
+    const timer = setTimeout(() => navigate("/position", { replace: true }), 3500)
     return () => clearTimeout(timer)
   }, [simulating, navigate])
 
-  // Ctrl+Enter / Cmd+Enter keyboard shortcut
-  React.useEffect(() => {
+  // Ctrl+Enter / Cmd+Enter shortcut
+  useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
         e.preventDefault()
@@ -256,17 +210,6 @@ export default function DecisionPage() {
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  /* ── Derived values ── */
-  const baselineChips = useMemo(() => {
-    if (!baseline) return []
-    return [
-      { label: "Cash", value: baseline.cash >= 1_000_000 ? `$${(baseline.cash / 1_000_000).toFixed(1)}M` : `$${(baseline.cash / 1_000).toFixed(0)}K` },
-      { label: "Burn", value: `$${(baseline.monthlyBurn / 1_000).toFixed(0)}K/mo` },
-      { label: "Runway", value: baseline.monthlyBurn > 0 ? `${Math.round(baseline.cash / baseline.monthlyBurn)}mo` : "\u2014" },
-      { label: "Growth", value: `${(baseline.growthRate * 100).toFixed(1)}%` },
-    ]
-  }, [baseline])
 
   /* ── Baseline guard ── */
   if (!baseline) {
@@ -306,335 +249,149 @@ export default function DecisionPage() {
         </div>
       )}
 
-      {/* ═══ Ambient atmosphere ═══ */}
-      <div className={css.atmoGlow} aria-hidden="true" />
-
-      {/* ═══ TOP BAR ═══ */}
-      <div className={css.topBar}>
-        <div className={css.topBarLogo}>
-          <img src="/stratfit-logo.png" alt="STRATFIT" style={{ height: '32px', width: 'auto', display: 'block' }} />
-          <span className={css.topBarLogoText}>STRATFIT</span>
-        </div>
-        <nav className={css.breadcrumb}>
-          <span className={css.breadcrumbLink} onClick={() => navigate("/initiate")}>INITIATE</span>
-          <span className={css.breadcrumbSep}>/</span>
-          <span className={css.breadcrumbActive}>DECISION</span>
-        </nav>
-        <div className={css.systemBadge}>
-          <span className={css.systemBadgeDot} />
-          Decision Engine · Online
-        </div>
-        <h1 className={css.pageTitle}>Decision Console</h1>
+      {/* ═══ Header block ═══ */}
+      <div className={css.headerBlock}>
+        <h1 className={css.pageTitle}>Strategic Decision</h1>
         <p className={css.pageSubtitle}>
-          Translate a strategic decision into scenario levers. Run the model. Read probability signals.
+          Select a strategic move. Set constraints. Run the scenario.
+        </p>
+        <p className={css.pageMicrocopy}>
+          Constraints define the move. Sensitivities are explored in Studio.
         </p>
         <div className={css.headerDivider} />
       </div>
 
-      {/* ═══ THREE-RAIL CONSOLE ═══ */}
-      <div className={css.consoleGrid}>
+      {error && <div className={css.errorBanner}>{error}</div>}
 
-        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-            LEFT RAIL — Decision Brief
-            ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-        <div>
-          {/* Section 1: Decision Question */}
-          <div className={`${css.glassPanel} ${focused ? css.glassPanelFocused : ""}`}>
-            <div className={css.glassPanelInner}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
-                <div className={css.sectionTitle}>
-                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" strokeLinecap="round"/></svg>
-                  Decision Question
-                </div>
-                <span className={css.charCount} style={{
-                  color: decisionText.length >= 500 ? "#fbbf24"
-                    : decisionText.length >= MIN_CHARS ? "rgba(34,211,238,0.5)"
-                    : "rgba(255,255,255,0.25)",
-                }}>
-                  {decisionText.length}/500
-                </span>
-              </div>
+      {/* ═══ Main 2-column grid ═══ */}
+      <div className={css.mainGrid}>
 
-              {error && <div className={css.errorBanner}>{error}</div>}
-
-              <textarea
-                ref={textareaRef}
-                className={css.textarea}
-                value={decisionText}
-                onChange={(e) => { setDecisionText(e.target.value.slice(0, 500)); setIsDone(false) }}
-                onFocus={() => setFocused(true)}
-                onBlur={() => setFocused(false)}
-                placeholder="e.g. Should we hire 3 engineers in Q2?"
-                maxLength={500}
-                disabled={false}
-              />
-
-              {/* Example prompts */}
-              {decisionText.length === 0 && !isCreating && !isDone && (
-                <div className={css.exampleStrip}>
-                  <span className={css.exampleLabel}>Try:</span>
-                  {EXAMPLE_PROMPTS.map((p) => (
-                    <button
-                      key={p}
-                      type="button"
-                      className={css.exampleBtn}
-                      onClick={() => { setDecisionText(p); textareaRef.current?.focus() }}
-                    >
-                      {p}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* Warning: no question */}
-              {decisionText.trim().length === 0 && !isCreating && !isDone && (
-                <div className={css.warningBanner}>
-                  Add a decision question for clearer intelligence framing.
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Section 2: Decision Type — Card Grid (primary) */}
-          <div className={css.glassPanel} style={{ marginTop: 16 }}>
-            <div className={css.glassPanelInner}>
-              <div className={css.sectionTitle}>
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                Decision Type
-              </div>
-              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", margin: "4px 0 12px", letterSpacing: "0.01em" }}>
-                Select a decision type to model outcomes, risk and runway impact.
-              </p>
-
-              <DecisionCardGrid
-                value={selectedCardId}
-                onChange={handleCardSelect}
+        {/* ── LEFT: Strategic Grid (8 cards) ── */}
+        <div className={css.strategicGrid}>
+          {INTENT_CARDS.map((card) => {
+            const isSelected = intentType === card.intent
+            const numConstraints = (decisionLeverSchemas[card.intent] ?? []).filter((l) => l.tier === "constraint").length
+            return (
+              <button
+                key={card.intent}
+                type="button"
+                className={`${css.card} ${isSelected ? css.cardSelected : ""}`}
+                onClick={() => setIntentType(card.intent)}
                 disabled={isCreating}
-              />
-
-              {/* Collapsed fallback — legacy 6-type picker */}
-              <div style={{ marginTop: 12 }}>
-                <button
-                  type="button"
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: "rgba(255,255,255,0.25)",
-                    fontSize: 10,
-                    cursor: "pointer",
-                    padding: 0,
-                    textDecoration: "underline",
-                    textUnderlineOffset: 2,
-                  }}
-                  onClick={() => setShowFallbackPicker((v) => !v)}
-                >
-                  {showFallbackPicker ? "Hide" : "Show"} category override
-                </button>
-                {showFallbackPicker && (
-                  <div
-                    ref={intentListRef}
-                    className={css.intentPicker}
-                    tabIndex={0}
-                    role="listbox"
-                    aria-label="Decision type override"
-                    aria-activedescendant={`intent-${highlightIdx}`}
-                    onKeyDown={handleIntentKeyDown}
-                    style={{ marginTop: 8 }}
-                  >
-                    {DECISION_INTENT_OPTIONS.map((opt, idx) => {
-                      const isSelected = intentType === opt.value
-                      const isHighlighted = highlightIdx === idx
-                      return (
-                        <button
-                          key={opt.value}
-                          id={`intent-${idx}`}
-                          type="button"
-                          role="option"
-                          aria-selected={isSelected}
-                          className={[
-                            css.intentOption,
-                            isSelected ? css.intentOptionSelected : "",
-                            isHighlighted ? css.intentOptionHighlight : "",
-                          ].filter(Boolean).join(" ")}
-                          onClick={() => { setIntentType(opt.value); setHighlightIdx(idx); setIsDone(false) }}
-                          onMouseEnter={() => setHighlightIdx(idx)}
-                          disabled={isCreating}
-                        >
-                          <span className={css.intentOptionDot} />
-                          <span className={css.intentOptionLabel}>{opt.label}</span>
-                          {isSelected && <span className={css.intentOptionCheck}>✓</span>}
-                        </button>
-                      )
-                    })}
+              >
+                <div className={css.cardIndicator}>
+                  {isSelected ? (
+                    <div className={css.cardCheckmark}>✓</div>
+                  ) : (
+                    <div className={css.cardDot} />
+                  )}
+                </div>
+                <div className={css.cardTitle}>{card.title}</div>
+                <div className={css.cardDesc}>{card.description}</div>
+                <div className={css.cardMeta}>
+                  <div className={css.cardChips}>
+                    {card.chips.map((ch) => (
+                      <span key={ch} className={css.chip}>{ch}</span>
+                    ))}
                   </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Section 3: Scenario Snapshot */}
-          <div className={css.glassPanel} style={{ marginTop: 16 }}>
-            <div className={css.glassPanelInner}>
-              <div className={css.sectionTitle}>
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="2" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" fill="none"/><path d="M5 7h6M5 10h4" stroke="rgba(34,211,238,0.6)" strokeWidth="1" strokeLinecap="round"/></svg>
-                Scenario Snapshot
-              </div>
-              <div className={css.chipStrip}>
-                {baselineChips.map((c) => (
-                  <span key={c.label} className={css.chip}>
-                    <span style={{ opacity: 0.5 }}>{c.label}</span>{" "}
-                    <span className={css.chipValue}>{c.value}</span>
+                  <span className={css.cardConstraintTag}>
+                    {numConstraints} constraint{numConstraints !== 1 ? "s" : ""}
                   </span>
-                ))}
-              </div>
-            </div>
-          </div>
+                </div>
+              </button>
+            )
+          })}
         </div>
 
-        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-            CENTER — Levers Panel
-            ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-        <div className={`${css.glassPanel} ${css.leversPanel}`}>
-          <div className={css.glassPanelInner}>
-            <div className={css.sectionTitle}>
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 3v10M8 3v10M12 3v10" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" strokeLinecap="round"/><circle cx="4" cy="6" r="2" fill="rgba(34,211,238,0.3)" stroke="rgba(34,211,238,0.6)" strokeWidth="1"/><circle cx="8" cy="10" r="2" fill="rgba(34,211,238,0.3)" stroke="rgba(34,211,238,0.6)" strokeWidth="1"/><circle cx="12" cy="7" r="2" fill="rgba(34,211,238,0.3)" stroke="rgba(34,211,238,0.6)" strokeWidth="1"/></svg>
-              Scenario Levers
-              <span className={css.leverIntentTag}>{selectedIntentLabel}</span>
-            </div>
+        {/* ── RIGHT: Constraint Console ── */}
+        <div className={css.consolePanel}>
+          <div className={css.consoleSectionTitle}>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <path d="M4 3v10M8 3v10M12 3v10" stroke="rgba(34,211,238,0.5)" strokeWidth="1.5" strokeLinecap="round"/>
+              <circle cx="4" cy="6" r="1.5" fill="rgba(34,211,238,0.3)" stroke="rgba(34,211,238,0.5)" strokeWidth="0.8"/>
+              <circle cx="8" cy="10" r="1.5" fill="rgba(34,211,238,0.3)" stroke="rgba(34,211,238,0.5)" strokeWidth="0.8"/>
+              <circle cx="12" cy="7" r="1.5" fill="rgba(34,211,238,0.3)" stroke="rgba(34,211,238,0.5)" strokeWidth="0.8"/>
+            </svg>
+            Constraints
+          </div>
+          <p className={css.consoleSubtext}>
+            Define the decision magnitude. Assumptions and sensitivities live in Studio.
+          </p>
 
-            {constraintLevers.length > 0 ? (
-              <>
-                <LeverSliderGroup
-                  levers={constraintLevers}
-                  values={leverValues}
-                  onChange={updateLever}
-                  className={css.leverGroup}
-                />
-                <button type="button" className={css.leverResetBtn} onClick={resetLevers}>
-                  Reset to defaults
-                </button>
-              </>
-            ) : (
-              /* Placeholder for "other" intent with no schema */
-              <div className={css.leverPlaceholder}>
-                <div className={css.leverPlaceholderIcon}>
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 4v12M10 4v12M15 4v12" stroke="rgba(34,211,238,0.5)" strokeWidth="1.5" strokeLinecap="round"/></svg>
-                </div>
-                <div className={css.leverPlaceholderTitle}>No Levers Required</div>
-                <div className={css.leverPlaceholderDesc}>
-                  {intentType ? "Configure scenario levers for this decision type." : "Select a decision type above to configure scenario levers."}
-                </div>
-              </div>
-            )}
+          {constraintLevers.length > 0 ? (
+            <>
+              <LeverSliderGroup
+                levers={constraintLevers}
+                values={leverValues}
+                onChange={updateLever}
+              />
+              <button type="button" className={css.consoleResetBtn} onClick={resetLevers}>
+                Reset to defaults
+              </button>
+            </>
+          ) : (
+            <div className={css.consolePlaceholder}>
+              <div className={css.consolePlaceholderIcon}>▸</div>
+              {intentType
+                ? "No constraint levers for this intent."
+                : "Select a strategic move to configure constraints."}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ═══ Scenario Summary Strip ═══ */}
+      {scenarioSummary && (
+        <div className={css.summaryStrip}>
+          <div className={css.summaryDot} />
+          <div className={css.summaryText}>
+            <strong>{activeCard?.title ?? ""}: </strong>
+            {scenarioSummary.replace(`${activeCard?.title ?? ""}: `, "")}
           </div>
         </div>
+      )}
 
-        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-            RIGHT RAIL — Assumptions + Run
-            ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-        <div>
-          {/* Assumptions Strip */}
-          <div className={css.glassPanel}>
-            <div className={css.glassPanelInner}>
-              <div className={css.sectionTitle}>
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 4h10M3 8h7M3 12h10" stroke="rgba(34,211,238,0.6)" strokeWidth="1.5" strokeLinecap="round"/></svg>
-                Assumptions
-              </div>
+      {/* ═══ Run CTA block ═══ */}
+      <div className={css.runBlock}>
+        <button
+          type="button"
+          className={css.btnPrimary}
+          disabled={!canRun}
+          onClick={handleRun}
+        >
+          {isCreating ? (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+              <span className={css.spinner} />
+              Running&hellip;
+            </span>
+          ) : isDone ? (
+            "\u2713 Scenario Created"
+          ) : (
+            "Run Scenario"
+          )}
+        </button>
 
-              {/* Live lever values */}
-              {activeSchema.length > 0 && (
-                <>
-                  <ul className={css.assumptionLeverList}>
-                    {activeSchema.map((lever) => {
-                      const val = leverValues[lever.id] ?? lever.default
-                      return (
-                        <li key={lever.id} className={css.assumptionLeverItem}>
-                          <span className={css.assumptionLeverLabel}>{lever.label}</span>
-                          <span className={css.assumptionLeverValue}>{formatLeverValue(val, lever)}</span>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                  <div className={css.assumptionDivider} />
-                </>
-              )}
+        <Link to="/studio" className={css.btnSecondary}>
+          Open Studio
+        </Link>
 
-              <ul className={css.assumptionsList}>
-                {(INTENT_ASSUMPTIONS[intentType ?? "other"]).map((a) => (
-                  <li key={a} className={css.assumptionItem}>
-                    <span className={css.assumptionIcon}>&#x25B8;</span>
-                    <span>{a}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
+        {canRun && (
+          <span className={css.kbdHint}>
+            <kbd className={css.kbd}>Ctrl</kbd>
+            {" + "}
+            <kbd className={css.kbd}>&crarr;</kbd>
+          </span>
+        )}
 
-          {/* Run Panel */}
-          <div className={css.glassPanel} style={{ marginTop: 16 }}>
-            <div className={css.glassPanelInner}>
-              <div className={css.runPanelAccent} />
-              <div className={css.sectionTitle}>
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><polygon points="5,3 13,8 5,13" fill="rgba(34,211,238,0.6)"/></svg>
-                Simulate
-              </div>
-
-              <button
-                type="button"
-                className={css.btnPrimary}
-                disabled={!canRun}
-                onClick={handleRun}
-              >
-                {isCreating ? (
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 8, justifyContent: "center" }}>
-                    <span className={css.spinner} />
-                    Running&hellip;
-                  </span>
-                ) : isDone ? (
-                  "\u2713 Scenario Created"
-                ) : (
-                  "Run Simulation \u2192"
-                )}
-              </button>
-
-              <button
-                type="button"
-                className={css.btnGhost}
-                onClick={() => navigate("/initiate")}
-              >
-                &larr; Back to Initiate
-              </button>
-
-              {/* Keyboard shortcut hint */}
-              {canRun && (
-                <div className={css.kbdHint}>
-                  <kbd className={css.kbd}>Ctrl</kbd>
-                  {" + "}
-                  <kbd className={css.kbd}>&crarr;</kbd>
-                </div>
-              )}
-
-              {/* Status strip */}
-              <div className={css.statusStrip}>
-                <div
-                  className={`${css.statusDot} ${feedback === "running" ? css.statusDotPulse : ""}`}
-                  style={{
-                    background: fb.dot,
-                    boxShadow: feedback === "running" ? `0 0 8px ${fb.dot}` : "none",
-                  }}
-                />
-                <span className={css.statusLabel} style={{ color: fb.color }}>
-                  {fb.label}
-                </span>
-              </div>
-            </div>
-          </div>
+        <div className={css.runMicro}>
+          Outputs are probability-weighted scenario signals — not predictions.
         </div>
       </div>
 
       {/* Legal disclaimer */}
       <div className={css.legalDisclaimer}>
-        All projections, probabilities and scenario outcomes are generated by STRATFIT's Monte Carlo simulation engine and do not constitute financial advice. Results are illustrative and based on user-supplied inputs.
+        All projections, probabilities and scenario outcomes are generated by STRATFIT's simulation engine
+        and do not constitute financial advice. Results are illustrative and based on user-supplied inputs.
       </div>
       <SystemProbabilityNotice />
     </div>
