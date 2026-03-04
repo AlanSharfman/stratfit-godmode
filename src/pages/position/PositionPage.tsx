@@ -15,7 +15,6 @@ import type { TerrainMetrics } from "@/terrain/terrainFromBaseline"
 import { deriveTerrainMetrics } from "@/terrain/terrainFromBaseline"
 import type { TimeGranularity } from "@/terrain/TimelineTicks"
 
-// Legacy scenarioStore removed — MVP reads from phase1ScenarioStore only
 import { useBaselineStore } from "@/state/baselineStore"
 import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore"
 import { useSystemBaseline } from "@/system/SystemBaselineProvider"
@@ -33,7 +32,6 @@ import KPIHealthRail from "@/components/kpi/KPIHealthRail"
 import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
 import ProbabilityBand from "@/components/position/ProbabilityBand"
 import BiasVectorBar from "@/components/position/BiasVectorBar"
-import ExecutiveSummaryBar from "@/components/position/ExecutiveSummaryBar"
 import PositionExecSummary from "@/components/position/PositionExecSummary"
 import { computePositionInstruments } from "@/components/position/computePositionInstruments"
 import ScenarioContextPanel from "@/components/scenario/ScenarioContextPanel"
@@ -45,7 +43,6 @@ import { selectKpis } from "@/selectors/kpiSelectors"
 import { selectTerrainMetrics } from "@/selectors/terrainSelectors"
 import { selectRiskScore } from "@/selectors/riskSelectors"
 import { useSelectSimulationKpis } from "@/selectors/simulationKpiSelector"
-// ExecutiveNarrativeCard removed — intelligence rendered via CommandGlassPanel
 import IdleMotionLayer from "./IdleMotionLayer"
 import HorizonPulse from "@/components/terrain/overlays/HorizonPulse"
 import { useReducedMotion } from "@/hooks/useReducedMotion"
@@ -73,8 +70,6 @@ import { POSITION_PRESET } from "@/scene/camera/terrainCameraPresets"
 import RiskIntelligencePanel from "@/components/Risk/RiskIntelligencePanel"
 import ProvenanceBadge from "@/components/system/ProvenanceBadge"
 import styles from "./PositionOverlays.module.css"
-
-// Diagnostics panel is togglable via close button
 
 /** Treat an SHL weight > 0 as "on" */
 function shlIsOn(weight: number): boolean {
@@ -396,27 +391,6 @@ export default function PositionPage() {
     return effectiveInputs ? deriveTerrainMetrics(effectiveInputs as any) : undefined
   }, [activeScenarioId, activeScenario?.status, activeScenario?.simulationResults?.terrainMetrics, effectiveInputs])
 
-  // DEV: log terrain source + selector proof + runId consistency once per scenario transition
-  useEffect(() => {
-    if (import.meta.env.DEV) {
-      const simResults = activeScenario?.simulationResults ?? null
-      const terrainData = selectTerrainMetrics(simResults)
-      const simKpis = selectKpis(simResults?.kpis ?? null)
-      const risk = selectRiskScore(simResults?.kpis ?? null, engineRunId)
-      const runId = simResults?.completedAt ?? null
-
-      // Quick hash for verification (djb2)
-      const quickHash = (obj: unknown): string => {
-        const s = JSON.stringify(obj)
-        let h = 5381
-        for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0
-        return (h >>> 0).toString(16).padStart(8, "0")
-      }
-
-
-    }
-  }, [activeScenarioId, activeScenario?.status, activeScenario?.simulationResults, terrainMetrics])
-
   // ── Engine run id (when available) for risk selector wiring ──
   const engineRunId = activeScenario?.status === "complete"
     ? activeScenario.simulationResults?.completedAt?.toString()
@@ -543,15 +517,6 @@ export default function PositionPage() {
     if (!scenarioKpis) return null
     return computePositionInstruments(scenarioKpis, baselineKpisForInstruments)
   }, [activeScenario?.simulationResults?.kpis, baselineKpisForInstruments])
-
-  // DEV: KPI wiring proof — confirms liveKpis source switches on simulation complete
-  useEffect(() => {
-    if (!import.meta.env.DEV) return
-    const source = (activeScenario?.status === "complete" && activeScenario.simulationResults?.kpis)
-      ? "SIMULATION"
-      : "BASELINE"
-
-  }, [liveKpis, activeScenario?.status, activeScenario?.simulationResults])
 
   const terrainSignals = useMemo(() => {
     const byKey = new Map((vm?.diagnostics ?? []).map((d) => [d.key, d]))
@@ -801,13 +766,6 @@ export default function PositionPage() {
             LEFT RAIL — Intelligence Panel (KPIs + Briefing)
             ══════════════════════════════════════════════════ */}
         <div className={styles.leftCol}>
-          {/* Executive Summary Bar — tone-aware, top of rail */}
-          {instruments && (
-            <div className={styles.execSummaryDock}>
-              <ExecutiveSummaryBar {...instruments.summary} />
-            </div>
-          )}
-
           {/* Logo lockup */}
           <Link to={ROUTES.POSITION} className={styles.logoLockup}>
             <img src="/stratfit-logo.png" alt="STRATFIT" className={styles.logoImg} />
