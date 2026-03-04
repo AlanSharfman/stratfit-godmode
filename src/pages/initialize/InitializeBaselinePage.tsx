@@ -5,10 +5,10 @@ import PortalNav from "@/components/nav/PortalNav"
 import css from "./IngressConsole.module.css"
 
 /* ═══════════════════════════════════════════════════════════════════
-   STRATFIT — Initiate Intelligence Console (God Mode)
+   STRATFIT — Initiate Intelligence Console (God Mode Wizard)
 
-   Prompt-first onboarding. 3 input paths (Manual / Xero / Excel).
-   Single-scroll collapsible glass panels. Live intelligence rail.
+   4-step sidebar wizard. Persistent metrics strip. Glass panels.
+   Input paths: Manual / Xero / Excel.
    ═══════════════════════════════════════════════════════════════════ */
 
 /* ── Types ── */
@@ -109,6 +109,13 @@ const INDUSTRIES = [
   "AI / ML", "DevTools", "Marketplace", "Hardware", "Other",
 ]
 
+const STEP_LABELS = [
+  "Identity & Context",
+  "Financial Position",
+  "Operating Structure",
+  "Strategic Intent",
+]
+
 /* ── Helpers ── */
 
 function fmtCurrency(v: number): string {
@@ -142,14 +149,6 @@ function computeMetrics(f: FormState) {
   if (f.monthlyChurnPct < 3) prob += 5
   prob = Math.min(100, prob)
 
-  const monthlyChurnDecimal = f.monthlyChurnPct / 100
-  const ltv = monthlyChurnDecimal > 0
-    ? (f.avgDealSize * (f.grossMarginPct / 100)) / monthlyChurnDecimal
-    : 0
-  const ltvCacRatio = f.cac > 0 ? ltv / f.cac : 0
-  const cacPaybackMonths = f.avgDealSize > 0 && f.grossMarginPct > 0
-    ? f.cac / ((f.avgDealSize / 12) * (f.grossMarginPct / 100))
-    : 0
   const totalCost =
     f.headcount * f.avgFullyLoadedCost + f.salesMarketingSpend + f.rdSpend + f.gaSpend
   const operatingProfit = f.currentARR - totalCost
@@ -160,27 +159,9 @@ function computeMetrics(f: FormState) {
     burnMultiple: Number.isFinite(burnMultiple) ? burnMultiple : 0,
     monthlyBurn: f.monthlyNetBurn,
     survivalProbability: prob,
-    grossMarginPct: f.grossMarginPct,
-    ltvCacRatio,
-    cacPaybackMonths,
     operatingProfit,
     revenuePerHead,
   }
-}
-
-function completionPct(f: FormState): number {
-  let filled = 0
-  let total = 0
-  const check = (v: unknown, empty: unknown = "") => {
-    total++
-    if (v !== empty && v !== 0 && v !== "") filled++
-  }
-  check(f.contactName); check(f.contactEmail); check(f.companyName)
-  check(f.industry); check(f.stage)
-  check(f.cashOnHand, 0); check(f.monthlyNetBurn, 0); check(f.currentARR, 0)
-  check(f.monthlyGrowthPct, 0); check(f.grossMarginPct, 0); check(f.avgDealSize, 0)
-  check(f.monthlyChurnPct, 0); check(f.headcount, 0); check(f.cac, 0)
-  return total > 0 ? Math.round((filled / total) * 100) : 0
 }
 
 /* ── CSV helpers ── */
@@ -350,33 +331,6 @@ function PillSelect({ options, value, onChange }: {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   SECTION WRAPPER (collapsible)
-   ═══════════════════════════════════════════════════════════════════ */
-
-function Section({ id, title, isOpen, onToggle, completed, children }: {
-  id: string; title: string; isOpen: boolean; completed?: boolean
-  onToggle: (id: string) => void; children: React.ReactNode
-}) {
-  return (
-    <div className={`${css.sectionPanel} ${completed ? css.sectionCompleted : ""}`}>
-      <button
-        type="button"
-        className={css.sectionHeader}
-        onClick={() => onToggle(id)}
-      >
-        <span className={css.sectionTitle}>
-          {completed ? "\u2713 " : ""}{title}
-        </span>
-        <span className={`${css.sectionChevron} ${isOpen ? css.sectionChevronOpen : ""}`}>
-          &#9660;
-        </span>
-      </button>
-      {isOpen && <div className={css.sectionBody}>{children}</div>}
-    </div>
-  )
-}
-
-/* ═══════════════════════════════════════════════════════════════════
    MAIN COMPONENT
    ═══════════════════════════════════════════════════════════════════ */
 
@@ -385,11 +339,8 @@ export default function InitializeBaselinePage() {
   const setBaseline = useBaselineStore((s) => s.setBaseline)
 
   const [form, setForm] = useState<FormState>({ ...INITIAL })
+  const [step, setStep] = useState(1)
   const [inputPath, setInputPath] = useState<InputPath>("manual")
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    identity: true, liquidity: true, revenue: false,
-    cost: false, operations: false, strategy: false,
-  })
   const [showXeroModal, setShowXeroModal] = useState(false)
   const [uploadMsg, setUploadMsg] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const [toast, setToast] = useState<string | null>(null)
@@ -404,20 +355,24 @@ export default function InitializeBaselinePage() {
   )
 
   const metrics = useMemo(() => computeMetrics(form), [form])
-  const completion = useMemo(() => completionPct(form), [form])
 
-  const toggleSection = useCallback((id: string) => {
-    setOpenSections((prev) => ({ ...prev, [id]: !prev[id] }))
-  }, [])
-
-  // ── Toast auto-dismiss ──
   useEffect(() => {
     if (!toast) return
     const t = setTimeout(() => setToast(null), 3000)
     return () => clearTimeout(t)
   }, [toast])
 
-  // ── Lock baseline ──
+  /* ── Step completion checks ── */
+  const stepComplete = useMemo(() => ({
+    1: !!(form.contactName && form.contactEmail && form.companyName && form.industry && form.stage),
+    2: form.cashOnHand > 0 && form.monthlyNetBurn > 0 && form.currentARR > 0,
+    3: form.headcount > 0,
+    4: !!form.riskTolerance,
+  }), [form])
+
+  const canLock = form.companyName.trim().length > 0 && form.cashOnHand > 0
+
+  /* ── Lock baseline ── */
   const handleLock = useCallback(() => {
     setBaseline({
       cash: form.cashOnHand,
@@ -433,13 +388,13 @@ export default function InitializeBaselinePage() {
     navigate("/decision", { replace: true })
   }, [form, setBaseline, navigate])
 
-  // ── Excel download ──
+  /* ── Excel download ── */
   const handleDownloadTemplate = useCallback(() => {
     downloadCSV("stratfit-baseline-template.csv", generateCSVTemplate())
     setToast("Template downloaded — fill in your data and upload it back.")
   }, [])
 
-  // ── Excel upload ──
+  /* ── Excel upload ── */
   const handleFileUpload = useCallback((file: File) => {
     setUploadMsg(null)
     const reader = new FileReader()
@@ -455,7 +410,6 @@ export default function InitializeBaselinePage() {
         return
       }
       setForm((prev) => ({ ...prev, ...parsed }))
-      setOpenSections({ identity: true, liquidity: true, revenue: true, cost: true, operations: true, strategy: true })
       setUploadMsg({ type: "success", text: `Imported ${Object.keys(parsed).length} fields. Review and adjust below.` })
       setToast("Data imported successfully.")
     }
@@ -476,113 +430,23 @@ export default function InitializeBaselinePage() {
     if (file) handleFileUpload(file)
   }, [handleFileUpload])
 
-  // ── Path card click ──
+  /* ── Path card click ── */
   const handlePathClick = useCallback((path: InputPath) => {
     setInputPath(path)
     if (path === "xero") setShowXeroModal(true)
   }, [])
 
-  // ── Sections completion checks ──
-  const identityDone = !!(form.contactName && form.contactEmail && form.companyName && form.industry && form.stage)
-  const liquidityDone = form.cashOnHand > 0 && form.monthlyNetBurn > 0
-  const revenueDone = form.currentARR > 0 && form.grossMarginPct > 0
-  const canLock = form.companyName.trim().length > 0 && form.cashOnHand > 0
+  /* ── Runway color ── */
+  const runwayColor = metrics.runway < 6 ? "#f87171" : metrics.runway < 12 ? "#fbbf24" : "#34d399"
 
-  return (
-    <div className={css.page}>
-      <PortalNav />
+  /* ═══ STEP RENDERERS ═══ */
 
-      {/* ═══ HERO ═══ */}
-      <div className={css.hero}>
-        <div className={css.heroLabel}>Initiate Intelligence Console</div>
-        <h1 className={css.heroTitle}>Initialize Your Strategic Baseline</h1>
-        <p className={css.heroSubtitle}>
-          Establish your company's financial truth to anchor all scenario modelling,
-          risk analysis, and strategic projections. Choose how to input your data.
-        </p>
-
-        {/* ── Input Path Cards ── */}
-        <div className={css.pathCards}>
-          <button
-            type="button"
-            className={`${css.pathCard} ${inputPath === "manual" ? css.pathCardActive : ""}`}
-            onClick={() => handlePathClick("manual")}
-          >
-            <span className={css.pathIcon}>&#9998;</span>
-            <span className={css.pathTitle}>Manual Entry</span>
-            <span className={css.pathDesc}>Fill in your financials using sliders and inputs</span>
-          </button>
-
-          <button
-            type="button"
-            className={`${css.pathCard} ${inputPath === "xero" ? css.pathCardActive : ""}`}
-            onClick={() => handlePathClick("xero")}
-          >
-            <span className={css.pathBadge}>Coming Soon</span>
-            <span className={css.pathIcon}>&#9741;</span>
-            <span className={css.pathTitle}>Connect Xero</span>
-            <span className={css.pathDesc}>Auto-import from your accounting platform</span>
-          </button>
-
-          <button
-            type="button"
-            className={`${css.pathCard} ${inputPath === "excel" ? css.pathCardActive : ""}`}
-            onClick={() => handlePathClick("excel")}
-          >
-            <span className={css.pathIcon}>&#9783;</span>
-            <span className={css.pathTitle}>Import Excel</span>
-            <span className={css.pathDesc}>Download our template, fill it in, upload it back</span>
-          </button>
-        </div>
-      </div>
-
-      {/* ═══ EXCEL UPLOAD ZONE ═══ */}
-      {inputPath === "excel" && (
-        <div style={{ maxWidth: 760, margin: "0 auto", padding: "0 40px" }}>
-          <div className={css.uploadZone}>
-            <div className={css.uploadActions}>
-              <button type="button" className={css.btnDownload} onClick={handleDownloadTemplate}>
-                &#8681; Download Template
-              </button>
-              <button type="button" className={css.btnUpload} onClick={() => fileInputRef.current?.click()}>
-                &#8682; Upload Completed File
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".csv,.xlsx,.xls"
-                style={{ display: "none" }}
-                onChange={onFileChange}
-              />
-            </div>
-            <div
-              className={`${css.dropZone} ${dragOver ? css.dropZoneActive : ""}`}
-              onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={onDrop}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <span className={css.dropText}>
-                {dragOver ? "Drop your file here" : "Or drag and drop your CSV file here"}
-              </span>
-            </div>
-            {uploadMsg && (
-              <div className={uploadMsg.type === "success" ? css.uploadSuccess : css.uploadError}>
-                {uploadMsg.text}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ═══ CONTENT ZONE ═══ */}
-      <div className={css.contentZone}>
-        {/* ── Left: Input Panels ── */}
-        <div className={css.inputPanels}>
-
-          {/* ── 1. Identity & Contact ── */}
-          <Section id="identity" title="Identity & Contact" isOpen={!!openSections.identity}
-            onToggle={toggleSection} completed={identityDone}>
+  function renderStep1() {
+    return (
+      <>
+        <div className={css.glassPanel}>
+          <div className={css.glassPanelHeader}>Identity & Contact</div>
+          <div className={css.glassPanelBody}>
             <div className={css.formRow}>
               <span className={css.formLabel}>Your Name</span>
               <div className={css.formField}>
@@ -604,6 +468,7 @@ export default function InitializeBaselinePage() {
                   value={form.companyName} onChange={(e) => update("companyName", e.target.value)} />
               </div>
             </div>
+            <div className={css.divider} />
             <div className={css.formRow}>
               <span className={css.formLabel}>Industry</span>
               <div className={css.formField}>
@@ -618,11 +483,80 @@ export default function InitializeBaselinePage() {
                   onChange={(v) => update("stage", v)} />
               </div>
             </div>
-          </Section>
+          </div>
+        </div>
 
-          {/* ── 2. Liquidity & Capital ── */}
-          <Section id="liquidity" title="Liquidity & Capital Structure" isOpen={!!openSections.liquidity}
-            onToggle={toggleSection} completed={liquidityDone}>
+        {/* Input path selector */}
+        <div className={css.glassPanel}>
+          <div className={css.glassPanelHeader}>Data Input Method</div>
+          <div className={css.glassPanelBody}>
+            <div style={{ display: "flex", gap: 8 }}>
+              {(["manual", "xero", "excel"] as InputPath[]).map((p) => (
+                <button
+                  key={p} type="button"
+                  className={`${css.toggleOption} ${inputPath === p ? css.toggleOptionActive : ""}`}
+                  style={{ flex: 1, textAlign: "center", borderRadius: 6, border: `1px solid ${inputPath === p ? "rgba(34,211,238,0.3)" : "rgba(255,255,255,0.06)"}` }}
+                  onClick={() => handlePathClick(p)}
+                >
+                  {p === "manual" ? "Manual Entry" : p === "xero" ? "Connect Xero" : "Import Excel"}
+                </button>
+              ))}
+            </div>
+
+            {inputPath === "excel" && (
+              <div className={css.uploadZone}>
+                <div className={css.uploadActions}>
+                  <button type="button" className={css.btnDownload} onClick={handleDownloadTemplate}>
+                    &#8681; Download Template
+                  </button>
+                  <button type="button" className={css.btnUpload} onClick={() => fileInputRef.current?.click()}>
+                    &#8682; Upload Completed File
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".csv,.xlsx,.xls"
+                    style={{ display: "none" }}
+                    onChange={onFileChange}
+                  />
+                </div>
+                <div
+                  className={`${css.dropZone} ${dragOver ? css.dropZoneActive : ""}`}
+                  onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={onDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <span className={css.dropText}>
+                    {dragOver ? "Drop your file here" : "Or drag and drop your CSV file here"}
+                  </span>
+                </div>
+                {uploadMsg && (
+                  <div className={uploadMsg.type === "success" ? css.uploadSuccess : css.uploadError}>
+                    {uploadMsg.text}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {inputPath === "xero" && (
+              <div style={{ fontSize: 12, color: "rgba(251,191,36,0.6)", padding: "8px 0" }}>
+                Xero integration coming soon. Use manual entry or Excel import for now.
+              </div>
+            )}
+          </div>
+        </div>
+      </>
+    )
+  }
+
+  function renderStep2() {
+    return (
+      <>
+        {/* Liquidity & Funding */}
+        <div className={css.glassPanel}>
+          <div className={css.glassPanelHeader}>Liquidity & Funding</div>
+          <div className={css.glassPanelBody}>
             <SliderRow label="Cash on Hand" value={form.cashOnHand}
               min={0} max={5_000_000} step={10_000} format={fmtCurrency}
               onChange={(v) => update("cashOnHand", v)} />
@@ -660,17 +594,21 @@ export default function InitializeBaselinePage() {
             <div className={css.divider} />
             <div className={css.derivedRow}>
               <span className={css.derivedLabel}>Runway</span>
-              <span className={css.derivedValue} style={{
-                color: metrics.runway < 6 ? "#f87171" : metrics.runway < 12 ? "#fbbf24" : "#34d399"
-              }}>
+              <span className={css.derivedValue} style={{ color: runwayColor }}>
                 {metrics.runway.toFixed(1)} months
               </span>
             </div>
-          </Section>
+            <div className={css.derivedRow}>
+              <span className={css.derivedLabel}>Burn Multiple</span>
+              <span className={css.derivedValue}>{metrics.burnMultiple.toFixed(2)}x</span>
+            </div>
+          </div>
+        </div>
 
-          {/* ── 3. Revenue Engine ── */}
-          <Section id="revenue" title="Revenue Engine" isOpen={!!openSections.revenue}
-            onToggle={toggleSection} completed={revenueDone}>
+        {/* Revenue Engine */}
+        <div className={css.glassPanel}>
+          <div className={css.glassPanelHeader}>Revenue Engine</div>
+          <div className={css.glassPanelBody}>
             <SliderRow label="Current ARR" value={form.currentARR}
               min={0} max={10_000_000} step={10_000} format={fmtCurrency}
               onChange={(v) => update("currentARR", v)} />
@@ -691,11 +629,19 @@ export default function InitializeBaselinePage() {
             <SliderRow label="Net Revenue Retention %" value={form.netRevenueRetentionPct}
               min={50} max={200} step={1} format={(v) => `${v}%`}
               onChange={(v) => update("netRevenueRetentionPct", v)} />
-          </Section>
+          </div>
+        </div>
+      </>
+    )
+  }
 
-          {/* ── 4. Cost Structure ── */}
-          <Section id="cost" title="Cost Structure" isOpen={!!openSections.cost}
-            onToggle={toggleSection}>
+  function renderStep3() {
+    return (
+      <div className={css.twoCol}>
+        {/* Cost Structure */}
+        <div className={css.glassPanel} style={{ marginBottom: 0 }}>
+          <div className={css.glassPanelHeader}>Cost Structure</div>
+          <div className={css.glassPanelBody}>
             <InputRow label="Headcount" value={form.headcount}
               onChange={(v) => update("headcount", Number(v) || 0)} />
             <InputRow label="Avg Fully Loaded Cost" value={form.avgFullyLoadedCost} prefix="$"
@@ -723,11 +669,13 @@ export default function InitializeBaselinePage() {
                 {metrics.operatingProfit < 0 ? "-" : ""}{fmtCurrency(Math.abs(metrics.operatingProfit))}
               </span>
             </div>
-          </Section>
+          </div>
+        </div>
 
-          {/* ── 5. Operating Structure ── */}
-          <Section id="operations" title="Operating Structure" isOpen={!!openSections.operations}
-            onToggle={toggleSection}>
+        {/* Execution Velocity */}
+        <div className={css.glassPanel} style={{ marginBottom: 0 }}>
+          <div className={css.glassPanelHeader}>Execution Velocity</div>
+          <div className={css.glassPanelBody}>
             <div className={css.formRow}>
               <span className={css.formLabel}>Hiring Velocity</span>
               <div className={css.formField}>
@@ -748,140 +696,186 @@ export default function InitializeBaselinePage() {
                   value={form.burnFlexibility} onChange={(v) => update("burnFlexibility", v)} />
               </div>
             </div>
-          </Section>
-
-          {/* ── 6. Strategic Intent ── */}
-          <Section id="strategy" title="Strategic Intent" isOpen={!!openSections.strategy}
-            onToggle={toggleSection}>
-            <div className={css.formRow}>
-              <span className={css.formLabel}>Risk Tolerance</span>
-              <div className={css.formField}>
-                <ToggleGroup
-                  options={["Conservative", "Balanced", "Aggressive"] as RiskTolerance[]}
-                  value={form.riskTolerance} onChange={(v) => update("riskTolerance", v)} />
-              </div>
-            </div>
-            <SliderRow label="Target Growth Band" value={form.targetGrowthBand}
-              min={1} max={12} step={1} format={(v) => `${v} months`}
-              onChange={(v) => update("targetGrowthBand", v)} />
-            <div className={css.formRow}>
-              <span className={css.formLabel}>Priority Balance</span>
-              <div className={css.formField}>
-                <div className={css.priorityWrap}>
-                  <span className={css.priorityEnd}>Survival</span>
-                  <div className={css.sliderTrack}>
-                    <input type="range" className={css.sliderInput}
-                      min={0} max={100} step={1} value={form.priorityBalance}
-                      style={sliderFill(form.priorityBalance, 0, 100)}
-                      onChange={(e) => update("priorityBalance", Number(e.target.value))} />
-                  </div>
-                  <span className={css.priorityEnd}>Expansion</span>
-                </div>
-              </div>
-            </div>
-          </Section>
+          </div>
         </div>
+      </div>
+    )
+  }
 
-        {/* ── Right: Live Intelligence Rail ── */}
-        <div className={css.liveRail}>
-          <div className={css.railTitle}>Live Intelligence</div>
-
-          <div className={css.railMetric}>
-            <span className={css.railMetricLabel}>Runway</span>
-            <span className={css.railMetricValue} style={{
-              color: metrics.runway < 6 ? "#f87171" : metrics.runway < 12 ? "#fbbf24" : "#34d399"
-            }}>
-              {metrics.runway.toFixed(1)} mo
-            </span>
-          </div>
-
-          <div className={css.railMetric}>
-            <span className={css.railMetricLabel}>Burn Multiple</span>
-            <span className={css.railMetricValue}>{metrics.burnMultiple.toFixed(2)}x</span>
-          </div>
-
-          <div className={css.railMetric}>
-            <span className={css.railMetricLabel}>Monthly Burn</span>
-            <span className={css.railMetricValue}>{fmtCurrency(metrics.monthlyBurn)}</span>
-          </div>
-
-          <div className={css.railDivider} />
-
-          <div className={css.railMetric}>
-            <span className={css.railMetricLabel}>Survival Probability</span>
-            <span className={css.railMetricValue} style={{
-              color: metrics.survivalProbability >= 60 ? "#34d399"
-                : metrics.survivalProbability >= 30 ? "#fbbf24" : "#f87171"
-            }}>
-              {metrics.survivalProbability}%
-            </span>
-          </div>
-
-          <div className={css.railMetric}>
-            <span className={css.railMetricLabel}>Gross Margin</span>
-            <span className={css.railMetricValue}>{metrics.grossMarginPct.toFixed(0)}%</span>
-          </div>
-
-          <div className={css.railMetric}>
-            <span className={css.railMetricLabel}>LTV / CAC</span>
-            <span className={css.railMetricValue} style={{
-              color: metrics.ltvCacRatio >= 3 ? "#34d399" : metrics.ltvCacRatio >= 1 ? "#fbbf24" : "#f87171"
-            }}>
-              {metrics.ltvCacRatio > 0 ? `${metrics.ltvCacRatio.toFixed(1)}x` : "\u2014"}
-            </span>
-          </div>
-
-          <div className={css.railDivider} />
-
-          <div className={css.railMetric}>
-            <span className={css.railMetricLabel}>Revenue / Head</span>
-            <span className={css.railMetricValue}>{fmtCurrency(metrics.revenuePerHead)}</span>
-          </div>
-
-          <div className={css.railMetric}>
-            <span className={css.railMetricLabel}>Operating Profit</span>
-            <span className={css.railMetricValue} style={{
-              color: metrics.operatingProfit >= 0 ? "#34d399" : "#f87171"
-            }}>
-              {fmtCurrency(metrics.operatingProfit)}
-            </span>
-          </div>
-
-          <div className={css.railMetric}>
-            <span className={css.railMetricLabel}>CAC Payback</span>
-            <span className={css.railMetricValue}>
-              {metrics.cacPaybackMonths > 0 ? `${metrics.cacPaybackMonths.toFixed(1)} mo` : "\u2014"}
-            </span>
-          </div>
-
-          <div className={css.railDivider} />
-
-          {/* Progress */}
-          <div className={css.progressWrap}>
-            <div className={css.progressLabel}>
-              <span className={css.progressText}>Completion</span>
-              <span className={css.progressPct}>{completion}%</span>
+  function renderStep4() {
+    return (
+      <div className={css.glassPanel}>
+        <div className={css.glassPanelHeader}>Strategic Posture</div>
+        <div className={css.glassPanelBody}>
+          <div className={css.formRow}>
+            <span className={css.formLabel}>Risk Tolerance</span>
+            <div className={css.formField}>
+              <ToggleGroup
+                options={["Conservative", "Balanced", "Aggressive"] as RiskTolerance[]}
+                value={form.riskTolerance} onChange={(v) => update("riskTolerance", v)} />
             </div>
-            <div className={css.progressTrack}>
-              <div className={css.progressFill} style={{ width: `${completion}%` }} />
+          </div>
+          <SliderRow label="Target Growth Band" value={form.targetGrowthBand}
+            min={1} max={12} step={1} format={(v) => `${v} months`}
+            onChange={(v) => update("targetGrowthBand", v)} />
+          <div className={css.formRow}>
+            <span className={css.formLabel}>Priority Balance</span>
+            <div className={css.formField}>
+              <div className={css.priorityWrap}>
+                <span className={css.priorityEnd}>Survival</span>
+                <div className={css.sliderTrack}>
+                  <input type="range" className={css.sliderInput}
+                    min={0} max={100} step={1} value={form.priorityBalance}
+                    style={sliderFill(form.priorityBalance, 0, 100)}
+                    onChange={(e) => update("priorityBalance", Number(e.target.value))} />
+                </div>
+                <span className={css.priorityEnd}>Expansion</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
+    )
+  }
 
-      {/* ═══ LOCK ZONE ═══ */}
-      <div className={css.lockZone}>
-        <button
-          type="button"
-          className={css.lockBtn}
-          disabled={!canLock}
-          onClick={handleLock}
-        >
-          Lock Baseline &amp; Enter STRATFIT
-        </button>
-        <div className={css.legal}>
-          All projections are generated by STRATFIT's simulation engine and do not constitute
-          financial advice. Results are illustrative and based on user-supplied inputs.
+  const NEXT_LABELS = [
+    "Continue to Financial Position",
+    "Continue to Operating Structure",
+    "Continue to Strategic Intent",
+  ]
+
+  return (
+    <div className={css.page}>
+      <PortalNav />
+
+      <div className={css.shell}>
+        {/* ═══ LEFT SIDEBAR ═══ */}
+        <div className={css.sidebar}>
+          <div className={css.sidebarLogo}>
+            <div className={css.logoIcon}>&#9670;</div>
+            <div className={css.logoText}>
+              <span className={css.logoTitle}>STRATFIT</span>
+              <span className={css.logoSub}>Baseline Initialization</span>
+            </div>
+          </div>
+
+          <div className={css.stepList}>
+            {STEP_LABELS.map((label, i) => {
+              const n = i + 1
+              const isActive = step === n
+              const isDone = stepComplete[n as keyof typeof stepComplete]
+              return (
+                <button
+                  key={n}
+                  type="button"
+                  className={[
+                    css.stepItem,
+                    isActive ? css.stepItemActive : "",
+                    !isActive && isDone ? css.stepItemCompleted : "",
+                  ].join(" ")}
+                  onClick={() => setStep(n)}
+                >
+                  <span className={css.stepNumber}>
+                    {!isActive && isDone ? "\u2713" : n}
+                  </span>
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Input path toggle */}
+          <div className={css.pathToggle}>
+            {(["manual", "xero", "excel"] as InputPath[]).map((p) => (
+              <button
+                key={p} type="button"
+                className={`${css.pathToggleBtn} ${inputPath === p ? css.pathToggleBtnActive : ""}`}
+                onClick={() => handlePathClick(p)}
+              >
+                {p === "manual" ? "Manual" : p === "xero" ? "Xero" : "Excel"}
+              </button>
+            ))}
+          </div>
+
+          <div className={css.sidebarFooter}>
+            <div className={css.draftStatus}>Draft &mdash; Not Locked</div>
+          </div>
+        </div>
+
+        {/* ═══ RIGHT CONTENT ═══ */}
+        <div className={css.content}>
+          {/* Header */}
+          <div className={css.contentHeader}>
+            <h1 className={css.contentTitle}>Initialize Baseline</h1>
+            <p className={css.contentSubtitle}>
+              Enter your current financial truth to anchor scenario modelling.
+            </p>
+          </div>
+
+          {/* Metrics Strip */}
+          <div className={css.metricsStrip}>
+            <div className={css.metricItem}>
+              <span className={css.metricIcon}>&#9650;</span>
+              <span className={css.metricLabel}>Runway</span>
+              <span className={css.metricValue} style={{ color: runwayColor }}>
+                {metrics.runway.toFixed(1)} months
+              </span>
+            </div>
+            <div className={css.metricItem}>
+              <span className={css.metricLabel}>Burn Multiple</span>
+              <span className={css.metricValue}>{metrics.burnMultiple.toFixed(2)}x</span>
+            </div>
+            <div className={css.metricItem}>
+              <span className={css.metricLabel}>$ Monthly Burn</span>
+              <span className={css.metricValue}>{fmtCurrency(metrics.monthlyBurn)}</span>
+            </div>
+            <div className={css.metricItem}>
+              <span className={css.metricLabel}>Survival Probability</span>
+              <span className={css.metricValue} style={{
+                color: metrics.survivalProbability >= 60 ? "#34d399"
+                  : metrics.survivalProbability >= 30 ? "#fbbf24" : "#f87171"
+              }}>
+                {metrics.survivalProbability}%
+              </span>
+            </div>
+          </div>
+
+          {/* Step Content */}
+          <div className={css.stepContent}>
+            {step === 1 && renderStep1()}
+            {step === 2 && renderStep2()}
+            {step === 3 && renderStep3()}
+            {step === 4 && renderStep4()}
+          </div>
+
+          {/* Action Bar */}
+          <div className={css.actionBar}>
+            {step === 4 && (
+              <div className={css.legal}>
+                All projections are generated by STRATFIT&#39;s simulation engine
+                and do not constitute financial advice.
+              </div>
+            )}
+
+            {step > 1 && (
+              <button type="button" className={css.btnBack}
+                onClick={() => setStep(step - 1)}>
+                Back
+              </button>
+            )}
+
+            {step < 4 ? (
+              <button type="button" className={css.btnNext}
+                onClick={() => setStep(step + 1)}>
+                {NEXT_LABELS[step - 1]} &rarr;
+              </button>
+            ) : (
+              <button type="button" className={css.lockBtn}
+                disabled={!canLock} onClick={handleLock}>
+                Lock Baseline &amp; Enter STRATFIT
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -892,7 +886,7 @@ export default function InitializeBaselinePage() {
             <span className={css.modalLogo}>&#9741;</span>
             <h2 className={css.modalTitle}>Connect Your Xero Account</h2>
             <p className={css.modalDesc}>
-              Automatically import your P&L, balance sheet, and cash flow data
+              Automatically import your P&amp;L, balance sheet, and cash flow data
               from Xero to populate your baseline instantly.
             </p>
             <button type="button" className={css.modalBtn}

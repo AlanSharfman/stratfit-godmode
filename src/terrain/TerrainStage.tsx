@@ -268,7 +268,7 @@ export default function TerrainStage({
             <TerrainSignalsLayer terrainRef={terrainRef} overrideEvents={overrideEvents} />
             {showMarkers && !hideMarkers && <StrategicMarkers terrainRef={terrainRef} />}
             {showMarkers && !hideMarkers && <MarkerProjectionLayer terrainRef={terrainRef} />}
-            <TimelineRuler terrainRef={terrainRef} visible={timelineOn} />
+            <TimelineRuler terrainRef={terrainRef} />
             {/* A10.1 — Focus glow for primary intelligence event */}
             {focusedEvent && (
               <TerrainFocusGlow

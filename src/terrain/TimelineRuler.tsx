@@ -1,11 +1,13 @@
 // src/terrain/TimelineRuler.tsx
-// R3F component: renders month tick marks and labels along the terrain X axis
+// R3F component: renders month tick marks and labels along the terrain X axis.
+// Uses studio timeline engine data when available, otherwise falls back to
+// a baseline-derived or default 24-month horizon.
 
 import React, { useMemo } from "react"
 import { Html } from "@react-three/drei"
-import * as THREE from "three"
 import { TERRAIN_CONSTANTS } from "@/terrain/terrainConstants"
 import { useStudioTimelineStore } from "@/stores/studioTimelineStore"
+import { useBaselineStore } from "@/state/baselineStore"
 import type { TerrainSurfaceHandle } from "@/terrain/TerrainSurface"
 
 type Props = {
@@ -16,30 +18,45 @@ type Props = {
 const TICK_COLOR = "#00E0FF"
 const TICK_HEIGHT = 3.5
 const Z_OFFSET = TERRAIN_CONSTANTS.depth * 0.42
+const DEFAULT_HORIZON_MONTHS = 24
+
+function buildTicks(horizonMonths: number): Array<{ month: number; worldX: number }> {
+  const n = Math.max(2, Math.round(horizonMonths))
+  const x0 = -TERRAIN_CONSTANTS.width * 0.36
+  const x1 = TERRAIN_CONSTANTS.width * 0.36
+
+  const interval = n <= 12 ? 1 : n <= 24 ? 3 : 6
+  const result: Array<{ month: number; worldX: number }> = []
+
+  for (let m = 0; m < n; m += interval) {
+    const t = m / (n - 1)
+    result.push({ month: m, worldX: x0 + (x1 - x0) * t })
+  }
+  if (result[result.length - 1]?.month !== n - 1) {
+    result.push({ month: n - 1, worldX: x1 })
+  }
+  return result
+}
 
 export default function TimelineRuler({ terrainRef, visible = true }: Props) {
   const engineResults = useStudioTimelineStore((s) => s.engineResults)
+  const baselineInputs = useBaselineStore((s) => s.baselineInputs)
 
   const ticks = useMemo(() => {
-    if (!engineResults || engineResults.timeline.length < 2) return []
-
-    const n = engineResults.timeline.length
-    const x0 = -TERRAIN_CONSTANTS.width * 0.36
-    const x1 = TERRAIN_CONSTANTS.width * 0.36
-
-    const interval = n <= 12 ? 1 : n <= 24 ? 3 : 6
-    const result: Array<{ month: number; worldX: number }> = []
-
-    for (let m = 0; m < n; m += interval) {
-      const t = m / (n - 1)
-      result.push({ month: m, worldX: x0 + (x1 - x0) * t })
+    // Priority 1: real engine timeline data
+    if (engineResults && engineResults.timeline.length >= 2) {
+      return buildTicks(engineResults.timeline.length)
     }
-    // Always include the last month
-    if (result[result.length - 1]?.month !== n - 1) {
-      result.push({ month: n - 1, worldX: x1 })
+
+    // Priority 2: baseline runway as horizon
+    const runway = baselineInputs?.runwayMonths
+    if (runway && Number.isFinite(runway) && runway >= 3) {
+      return buildTicks(Math.min(Math.round(runway), 60))
     }
-    return result
-  }, [engineResults])
+
+    // Priority 3: default 24-month horizon
+    return buildTicks(DEFAULT_HORIZON_MONTHS)
+  }, [engineResults, baselineInputs?.runwayMonths])
 
   if (!visible || ticks.length === 0) return null
 
