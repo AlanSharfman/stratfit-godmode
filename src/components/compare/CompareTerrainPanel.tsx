@@ -76,7 +76,6 @@ const CompareTerrainPanel: React.FC<CompareTerrainPanelProps> = memo(
         <div style={S.canvas}>
           <TerrainStage
             pathsEnabled={false}
-            hideMarkers
             terrainMetrics={{ ...DEFAULT_METRICS, ...terrainMetrics }}
             overrideEvents={events}
             colorVariant={colorVariant}

@@ -11,6 +11,9 @@ import { sampleMountainHeight } from "./terrainSampler";
 // STRATEGIC PATH + MILESTONES (lightweight overlays; no terrain rewrite)
 // ============================================================================
 
+/** Minimum height lift above terrain surface — path never renders under terrain */
+const PATH_LIFT = 0.55;
+
 export function StrategicPath({
   solverPath,
   color,
@@ -51,8 +54,9 @@ export function StrategicPath({
 
       // Sample terrain height (returns PlaneGeometry local Z = world Y after rotation)
       const terrainH = sampleMountainHeight(mesh_x, mesh_y, dataPoints);
-      const hoverOffset = 0.35;
-      const mesh_z = terrainH + hoverOffset + (runway01 * 0.3 + ev01 * 0.15 - risk01 * 0.1);
+      // Compute data-driven offset; clamp so path NEVER goes below terrain
+      const dataOffset = runway01 * 0.3 + ev01 * 0.15 - risk01 * 0.1;
+      const mesh_z = terrainH + PATH_LIFT + Math.max(0, dataOffset);
 
       // Convert mesh-local → world via terrain group transform:
       //   rotation [-π/2, 0, 0]: local-Z → world-Y, local-Y → world-(-Z)
@@ -101,7 +105,8 @@ export function StrategicPath({
         color={color}
         transparent
         opacity={0.5 * config.pathGlow * glowIntensity}
-        lineWidth={6}
+        lineWidth={8}
+        depthTest={false}
         dashed={mode === "celebration"}
         dashScale={1}
         dashSize={0.8}
@@ -114,7 +119,8 @@ export function StrategicPath({
         color={color}
         transparent
         opacity={mode === "ghost" ? 0.2 : 0.95}
-        lineWidth={3}
+        lineWidth={4}
+        depthTest={false}
         dashed={mode === "celebration"}
         dashScale={1}
         dashSize={0.8}
@@ -125,9 +131,10 @@ export function StrategicPath({
         <DreiLine
           points={curvePoints}
           color="#7dd3fc"
-          lineWidth={3 * (config.trajectoryHaloWidthMult ?? 1.8)}
+          lineWidth={3.5 * (config.trajectoryHaloWidthMult ?? 1.8)}
           transparent
           opacity={config.trajectoryHaloOpacity ?? 0.22}
+          depthTest={false}
         />
       )}
     </group>
@@ -176,7 +183,8 @@ export function MilestoneOrbs({
       const mesh_x = (t - 0.5) * 10;
       const mesh_y = -1.2 + t * 0.8;
       const terrainH = sampleMountainHeight(mesh_x, mesh_y, dataPoints);
-      const mesh_z = terrainH + 0.35 + (runway01 * 0.3 + ev01 * 0.15 - risk01 * 0.1);
+      const dataOffset = runway01 * 0.3 + ev01 * 0.15 - risk01 * 0.1;
+      const mesh_z = terrainH + PATH_LIFT + Math.max(0, dataOffset);
       // Convert mesh-local → world (same terrain group transform as StrategicPath)
       return new THREE.Vector3(mesh_x * 0.9, mesh_z * 0.9 - 2, -mesh_y * 0.9);
     });
@@ -253,24 +261,26 @@ export function MilestoneOrb({
     <group position={position}>
       {mode === "celebration" ? (
         <mesh ref={glowRef}>
-          <sphereGeometry args={[0.15, 16, 16]} />
+          <sphereGeometry args={[0.18, 16, 16]} />
           <meshBasicMaterial
             color={color}
             transparent
             opacity={0.15 * glowMultiplier}
             depthWrite={false}
+            depthTest={false}
           />
         </mesh>
       ) : null}
       <mesh ref={meshRef}>
-        <sphereGeometry args={[0.08, 16, 16]} />
+        <sphereGeometry args={[0.1, 16, 16]} />
         <meshStandardMaterial
           color={color}
           emissive={color}
-          emissiveIntensity={glowMultiplier * glowIntensity * 0.35}
+          emissiveIntensity={glowMultiplier * glowIntensity * 0.45}
           transparent
           opacity={1}
           depthWrite={false}
+          depthTest={false}
         />
       </mesh>
       {mode === "celebration" ? (
