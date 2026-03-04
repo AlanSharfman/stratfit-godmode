@@ -17,14 +17,23 @@ const TTS_FORMAT = "mp3";
 
 /** Resolve OpenAI API key from env or localStorage (same pattern as openaiScenarioQa) */
 function getApiKey(): string | null {
-  const fromEnv = (import.meta as any)?.env?.VITE_OPENAI_API_KEY as string | undefined;
-  if (fromEnv && fromEnv.trim()) return fromEnv.trim();
+  // Vite statically replaces import.meta.env.VITE_* at build time
+  const fromEnv = import.meta.env.VITE_OPENAI_API_KEY as string | undefined;
+  if (fromEnv && fromEnv.trim()) {
+    console.log("[openaiTTS] API key resolved from env var (length:", fromEnv.trim().length, ")");
+    return fromEnv.trim();
+  }
   try {
     const fromLs = window.localStorage.getItem("OPENAI_API_KEY");
-    return fromLs && fromLs.trim() ? fromLs.trim() : null;
+    if (fromLs && fromLs.trim()) {
+      console.log("[openaiTTS] API key resolved from localStorage (length:", fromLs.trim().length, ")");
+      return fromLs.trim();
+    }
   } catch {
-    return null;
+    // ignore
   }
+  console.warn("[openaiTTS] No API key found — checked VITE_OPENAI_API_KEY env and localStorage.OPENAI_API_KEY");
+  return null;
 }
 
 export interface TTSOptions {

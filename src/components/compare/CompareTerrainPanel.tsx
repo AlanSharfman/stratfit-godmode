@@ -6,7 +6,6 @@
 
 import React, { memo } from "react"
 import TerrainStage from "@/terrain/TerrainStage"
-import GodModeLayers from "@/components/compare/GodModeLayers"
 import CameraCompositionRig from "@/scene/camera/CameraCompositionRig"
 import SkyAtmosphere from "@/scene/rigs/SkyAtmosphere"
 import type { TerrainMetrics } from "@/terrain/terrainFromBaseline"
@@ -77,6 +76,7 @@ const CompareTerrainPanel: React.FC<CompareTerrainPanelProps> = memo(
         <div style={S.canvas}>
           <TerrainStage
             pathsEnabled={false}
+            hideMarkers
             terrainMetrics={{ ...DEFAULT_METRICS, ...terrainMetrics }}
             overrideEvents={events}
             colorVariant={colorVariant}
@@ -88,7 +88,6 @@ const CompareTerrainPanel: React.FC<CompareTerrainPanelProps> = memo(
           >
             <CameraCompositionRig />
             <SkyAtmosphere />
-            <GodModeLayers scenarioId={selectedId} />
           </TerrainStage>
           <div style={S.vignette} />
         </div>

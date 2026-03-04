@@ -18,6 +18,7 @@ import PortalNav from "@/components/nav/PortalNav";
 import ProvenanceBadge from "@/components/system/ProvenanceBadge";
 import SystemProbabilityNotice from "@/components/system/ProbabilityNotice";
 import TheatreLayout from "@/components/command/TheatreLayout";
+import TimelineSyncStrip from "@/components/timeline/TimelineSyncStrip";
 
 const FONT = "'Inter', system-ui, sans-serif";
 const CYAN = "#22d3ee";
@@ -150,6 +151,9 @@ export default function CommandCentrePage() {
           <ProvenanceBadge />
         </div>
       </div>
+
+      {/* ── Timeline Sync ── */}
+      <TimelineSyncStrip mode="all" />
 
       {/* ── Theatre ── */}
       <div style={S.theatreContainer}>

@@ -4,7 +4,7 @@
 // so StrategicMarkers can be safely mounted in the Position page canvas.
 // Terrain-sampled Y: markers follow ridge elevation via terrainRef.getHeightAt.
 
-import React, { useMemo, useRef } from "react"
+import React, { useEffect, useMemo, useRef, useState } from "react"
 import * as THREE from "three"
 import { useFrame, useThree } from "@react-three/fiber"
 import { Html } from "@react-three/drei"
@@ -38,16 +38,17 @@ export default function StrategicMarkerBeacon({ marker, terrainRef }: Props) {
     [marker.kind, marker.color],
   )
 
-  // Terrain-sampled position: use marker's XZ but sample Y from terrain
-  const position = useMemo(() => {
+  // Terrain-sampled position: use marker's XZ but sample Y from terrain.
+  // useState + useEffect ensures we re-sample once terrainRef.current becomes available
+  // (useMemo would not re-run when a ref's .current changes).
+  const [position, setPosition] = useState<THREE.Vector3>(() => marker.position.clone())
+
+  useEffect(() => {
     const mx = marker.position.x
     const mz = marker.position.z
-    if (terrainRef?.current) {
-      const terrainY = terrainRef.current.getHeightAt(mx, mz)
-      return new THREE.Vector3(mx, terrainY + MARKER_LIFT, mz)
-    }
-    // Fallback to original position
-    return marker.position.clone()
+    const terrain = terrainRef?.current
+    const y = terrain ? terrain.getHeightAt(mx, mz) + MARKER_LIFT : marker.position.y
+    setPosition(new THREE.Vector3(mx, y, mz))
   }, [marker.position, terrainRef])
 
   useFrame(() => {

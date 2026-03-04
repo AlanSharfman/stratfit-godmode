@@ -22,7 +22,7 @@ function getApiKey(): string | null {
   // Prefer Vite env. Optional localStorage override for dev.
   // - VITE_OPENAI_API_KEY="..." (recommended for local dev only)
   // - localStorage.OPENAI_API_KEY="..." (optional)
-  const fromEnv = (import.meta as any)?.env?.VITE_OPENAI_API_KEY as string | undefined;
+  const fromEnv = import.meta.env.VITE_OPENAI_API_KEY as string | undefined;
   if (fromEnv && fromEnv.trim()) return fromEnv.trim();
   try {
     const fromLs = window.localStorage.getItem("OPENAI_API_KEY");

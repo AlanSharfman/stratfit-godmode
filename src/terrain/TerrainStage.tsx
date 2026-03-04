@@ -33,6 +33,7 @@ import { baselineSeedString } from "@/terrain/seed";
 import LiquidityFlowLayer from "@/components/terrain/liquidity/LiquidityFlowLayer";
 import TerrainSignalsLayer from "@/components/terrain/signals/TerrainSignalsLayer";
 import StrategicMarkers from "@/terrain/StrategicMarkers";
+import MarkerProjectionLayer from "@/terrain/MarkerProjectionLayer";
 import HorizonBand from "@/terrain/HorizonBand";
 import { useRenderFlagsStore } from "@/state/renderFlagsStore";
 import type { TerrainMetrics } from "@/terrain/terrainFromBaseline";
@@ -96,6 +97,8 @@ type TerrainStageProps = {
   rotateSpeed?: number
   /** Render callback invoked when terrain is ready — receives terrainRef for height sampling */
   renderWhenReady?: (terrainRef: React.RefObject<TerrainSurfaceHandle>) => ReactNode
+  /** When true, suppresses StrategicMarkers regardless of renderFlagsStore.showMarkers */
+  hideMarkers?: boolean
   children?: ReactNode
 }
 
@@ -115,6 +118,7 @@ export default function TerrainStage({
   maxPolarAngle: maxPolar = 1.456,
   rotateSpeed = 0.8,
   renderWhenReady,
+  hideMarkers = false,
   children,
 }: TerrainStageProps) {
   const terrainRef = useRef<TerrainSurfaceHandle>(null!);
@@ -252,7 +256,8 @@ export default function TerrainStage({
             <BaselineTimelineTicks visible={timelineOn} terrainRef={terrainRef} />
             <LiquidityFlowLayer terrainRef={terrainRef} enabled={liquidityOn} />
             <TerrainSignalsLayer terrainRef={terrainRef} overrideEvents={overrideEvents} />
-            {showMarkers && <StrategicMarkers terrainRef={terrainRef} />}
+            {showMarkers && !hideMarkers && <StrategicMarkers terrainRef={terrainRef} />}
+            {showMarkers && !hideMarkers && <MarkerProjectionLayer terrainRef={terrainRef} />}
             {/* A10.1 — Focus glow for primary intelligence event */}
             {focusedEvent && (
               <TerrainFocusGlow

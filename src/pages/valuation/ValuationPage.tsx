@@ -47,6 +47,7 @@ import ValuationStrategicNarrative from "@/components/valuation/ValuationStrateg
 
 // Shared portal nav
 import PortalNav from "@/components/nav/PortalNav";
+import TimelineSyncStrip from "@/components/timeline/TimelineSyncStrip";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -153,6 +154,9 @@ export default function ValuationPage() {
     <div className={styles.container}>
       {/* ═══ PORTAL NAV ═══ */}
       <PortalNav />
+
+      {/* ═══ TIMELINE SYNC ═══ */}
+      <TimelineSyncStrip mode="valuation" />
 
       <div className={styles.content}>
         {/* ═══ HEADER ═══ */}

@@ -43,6 +43,7 @@ import type { IntelligenceState } from "@/features/intelligence/intelligenceStat
 import type { HighlightState } from "@/features/compare/highlightContract"
 import { useCommandAutoEvaluate } from "@/hooks/useCommandAutoEvaluate"
 import type { TerrainEvent } from "@/domain/events/terrainEventTypes"
+import TimelineSyncStrip from "@/components/timeline/TimelineSyncStrip"
 
 /* ── Component ───────────────────────────────────────────── */
 
@@ -428,6 +429,9 @@ export default function ComparePage() {
             briefingPlan={briefingPlan}
           />
         </div>
+
+        {/* ── TIMELINE SYNC STRIP ── */}
+        <TimelineSyncStrip mode="all" showGenerate />
 
         {/* ── BOTTOM: Analytics (hidden during briefing) ── */}
         <div style={{
@@ -846,7 +850,7 @@ const S: Record<string, React.CSSProperties> = {
   commandGrid: {
     flex: 1,
     display: "grid",
-    gridTemplateRows: "3fr 2fr",
+    gridTemplateRows: "3fr auto 2fr",
     minHeight: 0,
     overflow: "hidden",
     gap: 2,

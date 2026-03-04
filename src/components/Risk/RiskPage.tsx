@@ -41,6 +41,7 @@ import RiskCommandBar from "./RiskCommandBar";
 
 import styles from "./RiskPage.module.css";
 import PortalNav from "@/components/nav/PortalNav";
+import TimelineSyncStrip from "@/components/timeline/TimelineSyncStrip";
 
 // ── Sigma labels ─────────────────────────────────────────────────────
 const SIGMA_LABELS: Record<number, string> = {
@@ -267,6 +268,9 @@ const RiskPage: React.FC = () => {
       <PortalNav />
 
       <div>
+      {/* ── TIMELINE SYNC ── */}
+      <TimelineSyncStrip mode="risk" />
+
       {/* ── COMMAND BAR ─────────────────────────────────────── */}
       <RiskCommandBar
         score={commandScore}
@@ -327,11 +331,11 @@ const RiskPage: React.FC = () => {
         {/* ═══ CENTER: SURVIVAL DISTRIBUTION ═══ */}
         <div className={styles.centerCol}>
           <SurvivalCurveComparison
-            baselineSurvivalByMonth={fullResult.survivalByMonth}
-            shockedSurvivalByMonth={shockedBatch?.survivalByMonth ?? fullResult.survivalByMonth}
-            baselineSurvivalRate={fullResult.survivalRate}
-            shockedSurvivalRate={shockedBatch?.survivalRate ?? fullResult.survivalRate}
-            timeHorizonMonths={fullResult.timeHorizonMonths}
+            baselineSurvivalByMonth={fullResult?.survivalByMonth ?? Array.from({ length: config.timeHorizonMonths }, () => baselineMetrics?.survivalRate ?? 1)}
+            shockedSurvivalByMonth={shockedBatch?.survivalByMonth ?? fullResult?.survivalByMonth ?? Array.from({ length: config.timeHorizonMonths }, () => baselineMetrics?.survivalRate ?? 1)}
+            baselineSurvivalRate={fullResult?.survivalRate ?? baselineMetrics?.survivalRate ?? 1}
+            shockedSurvivalRate={shockedBatch?.survivalRate ?? fullResult?.survivalRate ?? baselineMetrics?.survivalRate ?? 1}
+            timeHorizonMonths={fullResult?.timeHorizonMonths ?? config.timeHorizonMonths}
             isComputing={isComputing}
           />
 

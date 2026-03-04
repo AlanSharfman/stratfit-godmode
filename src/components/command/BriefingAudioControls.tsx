@@ -49,7 +49,12 @@ const BriefingAudioControls = forwardRef<BriefingAudioHandle, BriefingAudioContr
     { sections, onSectionChange, onPlay, onPause, onEnd, autoPlay = false },
     ref,
   ) {
-    const [engine] = useState<AudioEngine>(() => (hasOpenAIKey() ? "openai" : "webspeech"));
+    const [engine] = useState<AudioEngine>(() => {
+      const hasKey = hasOpenAIKey();
+      const selected: AudioEngine = hasKey ? "openai" : "webspeech";
+      console.log(`[BriefingAudio] engine=${selected}, hasOpenAIKey=${hasKey}`);
+      return selected;
+    });
     const [status, setStatus] = useState<PlaybackStatus>("ready");
     const [currentSection, setCurrentSection] = useState(-1);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);

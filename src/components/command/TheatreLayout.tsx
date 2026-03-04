@@ -15,6 +15,7 @@
 import React, { memo, useMemo } from "react";
 import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore";
 import { useBaselineStore } from "@/state/baselineStore";
+import { useStudioTimelineStore } from "@/stores/studioTimelineStore";
 import { selectKpis } from "@/selectors/kpiSelectors";
 import { selectRiskScore } from "@/selectors/riskSelectors";
 import {
@@ -94,6 +95,14 @@ const TheatreLayout: React.FC = memo(() => {
 
   const simResults = activeScenario?.simulationResults ?? null;
 
+  // ── Timeline data (override signals when timeline is active) ──
+  const tlEngineResults = useStudioTimelineStore((s) => s.engineResults);
+  const tlCurrentStep = useStudioTimelineStore((s) => s.currentStep);
+  const tlCurrentPoint = useMemo(() => {
+    if (!tlEngineResults) return null;
+    return tlEngineResults.timeline[tlCurrentStep] ?? null;
+  }, [tlEngineResults, tlCurrentStep]);
+
   // ── Terrain metrics ──
   const terrainMetrics = useMemo<TerrainMetrics | undefined>(() => {
     if (!baseline) return undefined;
@@ -122,12 +131,12 @@ const TheatreLayout: React.FC = memo(() => {
     }
 
     return {
-      evP50: valuation?.blendedValue ?? null,
-      riskIndex: riskIndex ?? null,
+      evP50: tlCurrentPoint?.enterpriseValue ?? valuation?.blendedValue ?? null,
+      riskIndex: tlCurrentPoint?.riskIndex ?? riskIndex ?? null,
       dispersionWidth: dispersion,
       runwayMonths: kpis?.runwayMonths ?? null,
     };
-  }, [simResults]);
+  }, [simResults, tlCurrentPoint]);
 
   // ── Terrain-aware briefing signals (from selectors only) ──
   const terrainSignals = useMemo<TerrainSignals | null>(() => {
