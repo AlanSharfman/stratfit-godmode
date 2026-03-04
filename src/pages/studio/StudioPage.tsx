@@ -256,9 +256,9 @@ export default function StudioPage() {
         <nav style={S.headerNav}>
           <NavLink to={ROUTES.INITIATE} style={S.navItem}>Initiate</NavLink>
           <span style={S.navDivider} aria-hidden="true" />
-          <NavLink to="/decision" style={S.navItem}>Decision</NavLink>
-          <span style={S.navDivider} aria-hidden="true" />
           <NavLink to={ROUTES.POSITION} style={S.navItem}>Position</NavLink>
+          <span style={S.navDivider} aria-hidden="true" />
+          <NavLink to={ROUTES.DECISION} style={S.navItem}>Decision</NavLink>
           <span style={S.navDivider} aria-hidden="true" />
           <NavLink to={ROUTES.STUDIO} style={({ isActive }) => isActive ? S.navItemActive : S.navItem}>Studio</NavLink>
           <span style={S.navDivider} aria-hidden="true" />
@@ -267,6 +267,8 @@ export default function StudioPage() {
           <NavLink to={ROUTES.RISK} style={S.navItem}>Risk</NavLink>
           <span style={S.navDivider} aria-hidden="true" />
           <NavLink to={ROUTES.VALUATION} style={S.navItem}>Valuation</NavLink>
+          <span style={S.navDivider} aria-hidden="true" />
+          <NavLink to={ROUTES.COMMAND} style={S.navItem}>Command Centre</NavLink>
         </nav>
 
         <div style={S.headerRight}>

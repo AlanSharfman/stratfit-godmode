@@ -1,29 +1,31 @@
 // Flat array used by validateRoutingContract — must include every path in LIVE_NAV.
 export const ROUTE_CONTRACT = [
+  "/initiate",
   "/position",
+  "/decision",
   "/studio",
   "/compare",
-  "/initiate",
-  "/decision",
   "/risk",
   "/valuation",
+  "/command",
 ] as const
 
 export const ROUTES = {
   // Core tabs (routed)
+  INITIATE: "/initiate",
   POSITION: "/position",
+  DECISION: "/decision",
   STUDIO: "/studio",
   COMPARE: "/compare",
-  INITIATE: "/initiate",
-  DECISION: "/decision",
+  RISK: "/risk",
+  VALUATION: "/valuation",
+  COMMAND: "/command",
 
   // Future (not yet routed — kept for forward-reference only)
   COMPASS: "/compass",
   INSIGHTS: "/insights",
   ASSESSMENT: "/assessment",
   ROADMAP: "/roadmap",
-  RISK: "/risk",
-  VALUATION: "/valuation",
   COMING_FEATURES: "/coming-features",
   BASELINE: "/baseline",
   OBJECTIVES: "/objectives",

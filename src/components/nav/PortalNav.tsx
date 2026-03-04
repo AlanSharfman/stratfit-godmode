@@ -12,12 +12,13 @@ import { ROUTES } from "@/routes/routeContract";
 
 const NAV_ITEMS = [
   { to: ROUTES.INITIATE, label: "Initiate" },
-  { to: ROUTES.DECISION, label: "Decision" },
   { to: ROUTES.POSITION, label: "Position" },
+  { to: ROUTES.DECISION, label: "Decision" },
   { to: ROUTES.STUDIO, label: "Studio" },
   { to: ROUTES.COMPARE, label: "Compare" },
   { to: ROUTES.RISK, label: "Risk" },
   { to: ROUTES.VALUATION, label: "Valuation" },
+  { to: ROUTES.COMMAND, label: "Command Centre" },
 ] as const;
 
 const S: Record<string, React.CSSProperties> = {
