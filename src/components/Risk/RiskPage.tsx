@@ -39,6 +39,7 @@ import SurvivalCurveComparison from "./SurvivalCurveComparison";
 import RiskCommandBar from "./RiskCommandBar";
 
 import styles from "./RiskPage.module.css";
+import PortalNav from "@/components/nav/PortalNav";
 
 // ── Sigma labels ─────────────────────────────────────────────────────
 const SIGMA_LABELS: Record<number, string> = {
@@ -204,6 +205,7 @@ const RiskPage: React.FC = () => {
   if (!hasSimulated || !fullResult) {
     return (
       <div className={styles.root} style={{ position: "relative" }}>
+        <PortalNav />
         {!hasBaseline && (
           <SoftGateOverlay message="Complete onboarding before running risk analysis." />
         )}
@@ -226,6 +228,7 @@ const RiskPage: React.FC = () => {
 
   return (
     <div className={styles.root} style={{ position: "relative" }}>
+      <PortalNav />
       {!hasBaseline && (
         <SoftGateOverlay message="Complete onboarding before running risk analysis." />
       )}

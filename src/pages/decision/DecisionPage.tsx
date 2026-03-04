@@ -12,6 +12,7 @@ import SimulationRunOverlay from "@/components/system/SimulationRunOverlay"
 import SimulationPipelineWidget from "@/components/system/SimulationPipelineWidget"
 import SystemProbabilityNotice from "@/components/system/ProbabilityNotice"
 import css from "./DecisionPage.module.css"
+import PortalNav from "@/components/nav/PortalNav"
 
 /* ═══════════════════════════════════════════════════════════
    Strategic Decision Console — D-UX1 (Nuclear Infinity God Mode)
@@ -231,6 +232,9 @@ export default function DecisionPage() {
 
   return (
     <div className={css.page}>
+      {/* Portal navigation */}
+      <PortalNav />
+
       {/* Simulation engine overlays */}
       <SimulationStatusWidget />
       <SimulationRunOverlay />

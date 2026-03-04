@@ -19,7 +19,6 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { useState, useMemo } from "react";
-import { NavLink } from "react-router-dom";
 import styles from "./ValuationPage.module.css";
 
 // Canonical selector (V-2A bridge)
@@ -28,7 +27,6 @@ import type { ValuationResults } from "@/valuation/valuationTypes";
 
 // Canonical store — same source as Position/Risk/Compare
 import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore";
-import { ROUTES } from "@/routes/routeContract";
 
 // System components
 import SystemProbabilityNotice from "@/components/system/ProbabilityNotice";
@@ -39,6 +37,9 @@ import EnterpriseValueDistribution from "@/components/valuation/EnterpriseValueD
 
 // Probability dashboard (V-3B)
 import ProbabilityDashboard from "@/components/valuation/ProbabilityDashboard";
+
+// Shared portal nav
+import PortalNav from "@/components/nav/PortalNav";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -131,15 +132,7 @@ export default function ValuationPage() {
   return (
     <div className={styles.container}>
       {/* ═══ PORTAL NAV ═══ */}
-      <nav className={styles.portalNav}>
-        <NavLink to={ROUTES.INITIATE} className={({ isActive }) => `${styles.portalNavItem}${isActive ? " " + styles.portalNavActive : ""}`}>Initiate</NavLink>
-        <NavLink to={ROUTES.DECISION} className={({ isActive }) => `${styles.portalNavItem}${isActive ? " " + styles.portalNavActive : ""}`}>Decision</NavLink>
-        <NavLink to={ROUTES.POSITION} className={({ isActive }) => `${styles.portalNavItem}${isActive ? " " + styles.portalNavActive : ""}`}>Position</NavLink>
-        <NavLink to={ROUTES.STUDIO} className={({ isActive }) => `${styles.portalNavItem}${isActive ? " " + styles.portalNavActive : ""}`}>Studio</NavLink>
-        <NavLink to={ROUTES.COMPARE} className={({ isActive }) => `${styles.portalNavItem}${isActive ? " " + styles.portalNavActive : ""}`}>Compare</NavLink>
-        <NavLink to={ROUTES.RISK} className={({ isActive }) => `${styles.portalNavItem}${isActive ? " " + styles.portalNavActive : ""}`}>Risk</NavLink>
-        <NavLink to={ROUTES.VALUATION} className={({ isActive }) => `${styles.portalNavItem}${isActive ? " " + styles.portalNavActive : ""}`}>Valuation</NavLink>
-      </nav>
+      <PortalNav />
 
       <div className={styles.content}>
         {/* ═══ HEADER ═══ */}

@@ -596,7 +596,7 @@ const S: Record<string, React.CSSProperties> = {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    height: 48,
+    minHeight: 48,
     padding: "0 16px",
     background: "rgba(0,0,0,0.5)",
     backdropFilter: "blur(12px)",
@@ -635,7 +635,8 @@ const S: Record<string, React.CSSProperties> = {
   headerNav: {
     display: "flex",
     alignItems: "center",
-    gap: 16,
+    gap: 10,
+    flexWrap: "wrap" as const,
   },
 
   navItem: {
