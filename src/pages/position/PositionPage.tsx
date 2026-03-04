@@ -684,7 +684,7 @@ export default function PositionPage() {
     activeScenario?.simulationResults?.completedAt,
     activeScenario?.simulationResults?.kpis,
     vm?.confidenceBand,
-  ]) // eslint-disable-line react-hooks/exhaustive-deps
+  ]) // setWeight/shlWeights/shlIsOn omitted: stable Zustand selectors + setter
 
   // ── Diagnostic Groups (MODE / PRIMARY INSIGHT / SECONDARY) ──
   const diagnosticGroups = [
