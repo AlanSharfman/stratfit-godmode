@@ -21,12 +21,13 @@
 import { useState, useMemo } from "react";
 import styles from "./ValuationPage.module.css";
 
-// Canonical selector (V-2A bridge)
-import { selectValuationFromSimulation } from "@/selectors/valuationSelectors";
+// Canonical selector (V-2A bridge + V-4 waterfall)
+import { selectValuationFromSimulation, selectWaterfallFromSimulation } from "@/selectors/valuationSelectors";
 import type { ValuationResults } from "@/valuation/valuationTypes";
 
 // Canonical store — same source as Position/Risk/Compare
 import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore";
+import { useBaselineStore } from "@/state/baselineStore";
 
 // System components
 import SystemProbabilityNotice from "@/components/system/ProbabilityNotice";
@@ -37,6 +38,9 @@ import EnterpriseValueDistribution from "@/components/valuation/EnterpriseValueD
 
 // Probability dashboard (V-3B)
 import ProbabilityDashboard from "@/components/valuation/ProbabilityDashboard";
+
+// Waterfall chart (V-4)
+import ValuationWaterfall from "@/components/valuation/ValuationWaterfall";
 
 // Shared portal nav
 import PortalNav from "@/components/nav/PortalNav";
@@ -90,6 +94,7 @@ export default function ValuationPage() {
   // ── Canonical data access ──
   const activeScenarioId = usePhase1ScenarioStore((s) => s.activeScenarioId);
   const scenarios = usePhase1ScenarioStore((s) => s.scenarios);
+  const baseline = useBaselineStore((s) => s.baseline);
 
   const activeScenario = useMemo(
     () => scenarios.find((s) => s.id === activeScenarioId) ?? null,
@@ -103,6 +108,12 @@ export default function ValuationPage() {
   const valuation: ValuationResults | null = useMemo(
     () => selectValuationFromSimulation(simResults),
     [simResults],
+  );
+
+  // ── Waterfall attribution (V-4) ──
+  const waterfallData = useMemo(
+    () => selectWaterfallFromSimulation(simResults, baseline),
+    [simResults, baseline],
   );
 
   // ── Derived display values (formatting only — no computation) ──
@@ -307,10 +318,7 @@ export default function ValuationPage() {
                 <span className={styles.panelTitle}>Valuation Waterfall</span>
               </div>
               <div className={styles.panelBody}>
-                <div className={styles.placeholder}>
-                  Step-through from revenue to enterprise value
-                  <span className={styles.placeholderPhase}>Phase V-4</span>
-                </div>
+                <ValuationWaterfall waterfall={waterfallData} />
               </div>
             </div>
 
