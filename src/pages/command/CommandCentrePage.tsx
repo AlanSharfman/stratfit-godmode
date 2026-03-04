@@ -13,7 +13,7 @@
 // No simulation engine changes. Selector-only access.
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import PortalNav from "@/components/nav/PortalNav";
 import ProvenanceBadge from "@/components/system/ProvenanceBadge";
 import SystemProbabilityNotice from "@/components/system/ProbabilityNotice";
@@ -124,9 +124,18 @@ const S: Record<string, React.CSSProperties> = {
 
 export default function CommandCentrePage() {
   const [theatreActive, setTheatreActive] = useState(true);
+  // Guard: auto-collapse fires at most once per theatre session
+  const hasCollapsedRef = useRef(false);
 
   const toggleTheatre = useCallback(() => {
+    hasCollapsedRef.current = false; // reset guard when user manually toggles
     setTheatreActive((v) => !v);
+  }, []);
+
+  const handleBriefingComplete = useCallback(() => {
+    if (hasCollapsedRef.current) return;
+    hasCollapsedRef.current = true;
+    setTheatreActive(false);
   }, []);
 
   return (
@@ -158,7 +167,7 @@ export default function CommandCentrePage() {
       {/* ── Theatre ── */}
       <div style={S.theatreContainer}>
         {theatreActive ? (
-          <TheatreLayout />
+          <TheatreLayout onComplete={handleBriefingComplete} />
         ) : (
           <div
             style={{

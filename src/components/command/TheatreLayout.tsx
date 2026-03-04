@@ -12,7 +12,7 @@
 // No UI-side computation — selector-only access.
 // ═══════════════════════════════════════════════════════════════════════════
 
-import React, { memo, useMemo } from "react";
+import React, { memo, useEffect, useMemo, useRef } from "react";
 import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore";
 import { useBaselineStore } from "@/state/baselineStore";
 import { useStudioTimelineStore } from "@/stores/studioTimelineStore";
@@ -82,7 +82,15 @@ const S: Record<string, React.CSSProperties> = {
 // COMPONENT
 // ────────────────────────────────────────────────────────────────────────────
 
-const TheatreLayout: React.FC = memo(() => {
+/** Delay in ms after briefing finishes before calling onComplete (auto-collapse) */
+const POST_BRIEFING_COLLAPSE_MS = 3500;
+
+interface TheatreLayoutProps {
+  /** Called once after the briefing finishes + POST_BRIEFING_COLLAPSE_MS delay */
+  onComplete?: () => void;
+}
+
+const TheatreLayout: React.FC<TheatreLayoutProps> = memo(({ onComplete }) => {
   // ── Canonical data access ──
   const activeScenarioId = usePhase1ScenarioStore((s) => s.activeScenarioId);
   const scenarios = usePhase1ScenarioStore((s) => s.scenarios);
@@ -242,6 +250,20 @@ const TheatreLayout: React.FC = memo(() => {
 
   // ── Director mode ──
   const director = useDirectorMode(INTELLIGENCE_BRIEFING_SCRIPT);
+
+  // Auto-collapse to console after briefing completes (plays once only)
+  const collapseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (director.status === "finished" && onComplete) {
+      collapseTimerRef.current = setTimeout(onComplete, POST_BRIEFING_COLLAPSE_MS);
+    }
+    return () => {
+      if (collapseTimerRef.current) {
+        clearTimeout(collapseTimerRef.current);
+        collapseTimerRef.current = null;
+      }
+    };
+  }, [director.status, onComplete]);
 
   const tileEmphasis = director.currentBeat?.tileOverrides ?? null;
 

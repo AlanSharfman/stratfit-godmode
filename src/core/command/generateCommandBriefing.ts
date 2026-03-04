@@ -174,7 +174,7 @@ export function generateCommandBriefing(inputs: BriefingInputs): CommandBriefing
     lines: orientLines,
     cameraTarget: "wide_overview",
     highlightMarkers: [],
-    pauseMs: 10000,
+    pauseMs: 7000,
   });
 
   // ── Beat 2: Terrain Difficulty (10–22s) ──
@@ -196,12 +196,12 @@ export function generateCommandBriefing(inputs: BriefingInputs): CommandBriefing
     terrainLines.push("We don't have terrain signals yet — once you run a simulation, this whole landscape will come alive with data.");
   }
   sections.push({
-    t: 10,
+    t: 7,
     title: "Terrain Difficulty",
     lines: terrainLines,
     cameraTarget: "terrain_surface",
     highlightMarkers: ["roughness_zone"],
-    pauseMs: 12000,
+    pauseMs: 8000,
   });
 
   // ── Beat 3: Risk Concentration (22–33s) ──
@@ -224,12 +224,12 @@ export function generateCommandBriefing(inputs: BriefingInputs): CommandBriefing
     );
   }
   sections.push({
-    t: 22,
+    t: 15,
     title: "Risk Concentration",
     lines: riskLines,
     cameraTarget: "risk_peak",
     highlightMarkers: riskHotspots.slice(0, 3).map((h) => h.id),
-    pauseMs: 11000,
+    pauseMs: 7000,
   });
 
   // ── Beat 4: Valuation Trajectory (33–44s) ──
@@ -262,12 +262,12 @@ export function generateCommandBriefing(inputs: BriefingInputs): CommandBriefing
     evLines.push("We're still waiting on valuation data — run a simulation and this section will light up with the value trajectory.");
   }
   sections.push({
-    t: 33,
+    t: 22,
     title: "Valuation Trajectory",
     lines: evLines,
     cameraTarget: "valuation_peak",
     highlightMarkers: ["ev_trajectory"],
-    pauseMs: 11000,
+    pauseMs: 7000,
   });
 
   // ── Beat 5: Strategic Path Viability (44–54s) ──
@@ -297,12 +297,12 @@ export function generateCommandBriefing(inputs: BriefingInputs): CommandBriefing
     pathLines.push("We'll need a completed simulation to show you the path viability — it's worth the wait, trust me.");
   }
   sections.push({
-    t: 44,
+    t: 29,
     title: "Strategic Path Viability",
     lines: pathLines,
     cameraTarget: "path_trajectory",
     highlightMarkers: ["revenue_engine", "inflection_point"],
-    pauseMs: 10000,
+    pauseMs: 7000,
   });
 
   // ── Beat 6: Milestone Friction (54–63s) ──
@@ -334,12 +334,12 @@ export function generateCommandBriefing(inputs: BriefingInputs): CommandBriefing
     );
   }
   sections.push({
-    t: 54,
+    t: 36,
     title: "Milestone Friction",
     lines: milestoneLines,
     cameraTarget: "margin_expansion",
     highlightMarkers: ["leverage_nodes"],
-    pauseMs: 9000,
+    pauseMs: 6000,
   });
 
   // ── Beat 7: Robustness Envelope (63–76s) ──
@@ -378,12 +378,12 @@ export function generateCommandBriefing(inputs: BriefingInputs): CommandBriefing
     robustLines.push("We'll be able to show you the robustness envelope once a simulation completes.");
   }
   sections.push({
-    t: 63,
+    t: 42,
     title: "Robustness Envelope",
     lines: robustLines,
     cameraTarget: "probability_band",
     highlightMarkers: ["capital_efficiency"],
-    pauseMs: 13000,
+    pauseMs: 9000,
   });
 
   // ── Beat 8: What It All Means (76–90s) ──
@@ -422,12 +422,12 @@ export function generateCommandBriefing(inputs: BriefingInputs): CommandBriefing
     );
   }
   sections.push({
-    t: 76,
+    t: 51,
     title: "What It All Means",
     lines: implLines,
     cameraTarget: "wide_overview",
     highlightMarkers: [],
-    pauseMs: 14000,
+    pauseMs: 9000,
   });
 
   // ── Build plain text for audio ──
@@ -436,7 +436,7 @@ export function generateCommandBriefing(inputs: BriefingInputs): CommandBriefing
     .join("\n\n");
 
   // ── Total duration ──
-  const durationSec = 90;
+  const durationSec = 60;
 
   return { sections, plainText, durationSec };
 }

@@ -4,14 +4,15 @@
 // so StrategicMarkers can be safely mounted in the Position page canvas.
 // Terrain-sampled Y: markers follow ridge elevation via terrainRef.getHeightAt.
 
-import React, { useEffect, useMemo, useRef, useState } from "react"
+import React, { useMemo, useRef } from "react"
 import * as THREE from "three"
 import { useFrame, useThree } from "@react-three/fiber"
 import { Html } from "@react-three/drei"
 import type { MarkerDef, MarkerKind } from "./markerTypes"
 import type { TerrainSurfaceHandle } from "@/terrain/TerrainSurface"
 
-const MARKER_LIFT = 0.04
+/** Height lift above terrain surface — ensures marker never clips into terrain */
+const MARKER_LIFT = 6
 
 function colorForKind(kind: MarkerKind): string {
   switch (kind) {
@@ -38,69 +39,86 @@ export default function StrategicMarkerBeacon({ marker, terrainRef }: Props) {
     [marker.kind, marker.color],
   )
 
-  // Terrain-sampled position: use marker's XZ but sample Y from terrain.
-  // useState + useEffect ensures we re-sample once terrainRef.current becomes available
-  // (useMemo would not re-run when a ref's .current changes).
-  const [position, setPosition] = useState<THREE.Vector3>(() => marker.position.clone())
-
-  useEffect(() => {
-    const mx = marker.position.x
-    const mz = marker.position.z
-    const terrain = terrainRef?.current
-    const y = terrain ? terrain.getHeightAt(mx, mz) + MARKER_LIFT : marker.position.y
-    setPosition(new THREE.Vector3(mx, y, mz))
-  }, [marker.position, terrainRef])
-
+  // Sample terrain height every frame so markers always sit above terrain,
+  // even if terrainRef becomes available after mount.
   useFrame(() => {
     const g = groupRef.current
     if (!g) return
+
+    // Position: terrain-sampled Y + lift
+    const mx = marker.position.x
+    const mz = marker.position.z
+    const terrain = terrainRef?.current
+    const y = terrain ? terrain.getHeightAt(mx, mz) + MARKER_LIFT : MARKER_LIFT
+    g.position.set(mx, y, mz)
+
+    // Distance-adaptive scale
     const d = camera.position.distanceTo(g.position)
-    const s = THREE.MathUtils.clamp(d * 0.02, 0.65, 2.25)
+    const s = THREE.MathUtils.clamp(d * 0.025, 1.0, 3.5)
     g.scale.setScalar(s)
   })
 
   return (
-    <group ref={groupRef} position={position}>
+    <group ref={groupRef} position={[marker.position.x, MARKER_LIFT, marker.position.z]}>
       {/* Stem */}
-      <mesh position={[0, -0.8, 0]}>
-        <cylinderGeometry args={[0.03, 0.03, 1.6, 10]} />
+      <mesh position={[0, -2.5, 0]}>
+        <cylinderGeometry args={[0.06, 0.06, 5, 10]} />
         <meshStandardMaterial
           color={baseColor}
           emissive={baseColor}
-          emissiveIntensity={0.25}
+          emissiveIntensity={0.35}
           metalness={0.1}
           roughness={0.35}
+          depthTest={false}
+          depthWrite={false}
         />
       </mesh>
 
       {/* Orb */}
-      <mesh>
-        <sphereGeometry args={[0.22, 22, 22]} />
+      <mesh renderOrder={200}>
+        <sphereGeometry args={[0.5, 22, 22]} />
         <meshStandardMaterial
           color={baseColor}
           emissive={baseColor}
-          emissiveIntensity={0.55}
+          emissiveIntensity={0.65}
           metalness={0.2}
           roughness={0.25}
+          depthTest={false}
+          depthWrite={false}
+        />
+      </mesh>
+
+      {/* Halo ring */}
+      <mesh rotation={[Math.PI / 2, 0, 0]} renderOrder={199}>
+        <ringGeometry args={[0.55, 0.75, 32]} />
+        <meshBasicMaterial
+          color={baseColor}
+          transparent
+          opacity={0.25}
+          side={THREE.DoubleSide}
+          depthTest={false}
+          depthWrite={false}
         />
       </mesh>
 
       {/* Label (billboard via Html) */}
       <Html
-        position={[0, 0.55, 0]}
+        position={[0, 1.2, 0]}
         center
         style={{ pointerEvents: "none", whiteSpace: "nowrap" }}
       >
         <div
           style={{
             fontSize: 11,
-            padding: "4px 10px",
+            fontWeight: 600,
+            padding: "4px 12px",
             borderRadius: 999,
-            background: "rgba(8,12,16,0.72)",
-            border: "1px solid rgba(255,255,255,0.16)",
-            color: "rgba(255,255,255,0.92)",
-            boxShadow: "0 8px 18px rgba(0,0,0,0.35)",
+            background: "rgba(8,12,16,0.82)",
+            border: "1px solid rgba(255,255,255,0.2)",
+            color: "rgba(255,255,255,0.95)",
+            boxShadow: "0 8px 18px rgba(0,0,0,0.5)",
             backdropFilter: "blur(10px)",
+            letterSpacing: "0.04em",
           }}
         >
           {marker.label}
