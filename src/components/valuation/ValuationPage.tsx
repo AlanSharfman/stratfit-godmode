@@ -21,6 +21,8 @@ import { ModelAssumptionsDisclosure } from "@/components/legal/ModelAssumptionsD
 // NEW: Grounded confidence + legal
 import { ConfidenceGauge } from "@/components/confidence/LegacyConfidenceGauge";
 import { LegalDisclosureAccordion } from "@/components/legal/LegalDisclosureAccordion";
+import SystemProbabilityNotice from "@/components/system/ProbabilityNotice";
+import ProvenanceBadge from "@/components/system/ProvenanceBadge";
 import { computeConfidence, type ConfidenceResult } from "@/logic/confidence/modelConfidence";
 import { computeBaselineCompleteness } from "@/logic/confidence/baselineCompleteness";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
@@ -436,7 +438,15 @@ export default function ValuationPage() {
 
         {/* ═══ LEGAL DISCLOSURE (canonical accordion) ═══ */}
         <LegalDisclosureAccordion showAssumptions showModelDetails={false} />
+
+        {/* ═══ PROVENANCE ═══ */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 0 0' }}>
+          <ProvenanceBadge />
+        </div>
       </div>
+
+      {/* System-level probability notice */}
+      <SystemProbabilityNotice />
     </div>
   );
 }

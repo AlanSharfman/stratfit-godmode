@@ -6,6 +6,8 @@ import PageShell from "@/layout/PageShell"
 import { useSimulationSelectors } from "@/core/selectors/useSimulationSelectors";
 import CommentaryPanel from "@/components/commentary/CommentaryPanel";
 import KpiStrip from "@/components/kpi/KpiStrip";
+import SystemProbabilityNotice from "@/components/system/ProbabilityNotice";
+import ProvenanceBadge from "@/components/system/ProvenanceBadge";
 
 function idx12(len: number) {
     return Math.max(0, Math.min(12, len - 1));
@@ -42,6 +44,12 @@ export default function ValuationPage() {
             </div>
 
             <CommentaryPanel />
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 0 0' }}>
+              <ProvenanceBadge />
+            </div>
+
+            <SystemProbabilityNotice />
         </PageShell>
     );
 }
