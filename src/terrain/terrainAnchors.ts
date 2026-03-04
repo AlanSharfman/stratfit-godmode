@@ -31,16 +31,19 @@ export interface TerrainAnchor {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// UV → World conversion (matches generateInvestorPlanStub)
-// Terrain: width=560, depth=360, scale [3.0, 2.8]
+// UV → Geometry-space conversion
+// All scene objects (P50Path, markers, beacons) live in geometry space:
+//   X: [-280, 280], Z: [-180, 180] (PlaneGeometry pre-scale coords).
+// getHeightAt accepts these directly and converts internally to world Y.
 // ────────────────────────────────────────────────────────────────────────────
 
 function uvToWorld(u: number, v: number): [number, number] {
-  const x = (u - 0.5) * 560 * 3.0;
-  const z = (v - 0.5) * 360 * 2.8;
+  const x = (u - 0.5) * 560;
+  const z = (v - 0.5) * 360;
+  // Inset by 10% so anchors never hit the terrain edge-falloff zone
   return [
-    Math.max(-800, Math.min(800, x)),
-    Math.max(-500, Math.min(500, z)),
+    Math.max(-252, Math.min(252, x)),
+    Math.max(-162, Math.min(162, z)),
   ];
 }
 

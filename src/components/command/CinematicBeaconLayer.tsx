@@ -9,7 +9,7 @@
 // Consumed by TerrainTheatre as a child of TerrainStage (inside R3F Canvas).
 // ═══════════════════════════════════════════════════════════════════════════
 
-import React, { memo, useMemo, useRef } from "react";
+import React, { memo, useEffect, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { getTerrainAnchor } from "@/terrain/terrainAnchors";
@@ -42,17 +42,19 @@ const SingleBeacon: React.FC<SingleBeaconProps> = memo(({ anchorId, terrainRef }
   const sphereRef = useRef<THREE.Mesh>(null);
   const ringRef = useRef<THREE.Mesh>(null);
   const ringMatRef = useRef<THREE.MeshBasicMaterial>(null);
+  const [position, setPosition] = useState<[number, number, number]>([0, -9999, 0]);
 
-  const position = useMemo((): [number, number, number] => {
-    if (!anchor) return [0, -9999, 0];
+  // Sample terrain height imperatively after terrain is confirmed ready
+  useEffect(() => {
+    if (!anchor) return;
     const ax = anchor.position[0];
     const az = anchor.position[2];
     const terrain = terrainRef.current;
     const ay = terrain ? terrain.getHeightAt(ax, az) + 0.3 : 0.3;
-    return [ax, ay, az];
+    setPosition([ax, ay, az]);
   }, [anchor, terrainRef]);
 
-  const color = useMemo(() => beaconColor(anchorId), [anchorId]);
+  const color = beaconColor(anchorId);
 
   useFrame(({ clock }) => {
     if (!anchor) return;

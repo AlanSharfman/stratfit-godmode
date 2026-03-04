@@ -82,9 +82,16 @@ const TerrainSurface = forwardRef<TerrainSurfaceHandle, Props>(function TerrainS
       solidMesh: solidRef.current,
       latticeMesh: latticeRef.current,
       getHeightAt: (worldX: number, worldZ: number) => {
-        const y = sampleTerrainHeight(worldX, worldZ, seed, TERRAIN_CONSTANTS, terrainMetrics)
+        // The terrain mesh has scale.set(3.0, 2.8, 2.6) applied in world space.
+        // getHeightAt accepts world XZ and must return world Y.
+        // Step 1: convert world → geometry space (inverse mesh XZ scale)
+        const geomX = worldX / 3.0
+        const geomZ = worldZ / 2.6
+        // Step 2: sample raw geometry height
         const y0 = TERRAIN_CONSTANTS.yOffset
-        return (y - y0) * relief + y0
+        const sampled = sampleTerrainHeight(geomX, geomZ, seed, TERRAIN_CONSTANTS, terrainMetrics)
+        // Step 3: convert geometry height → world Y (apply scale.y=2.8 + relief)
+        return (sampled - y0) * relief * 2.8 + y0
       },
     }),
     [seed, relief, terrainMetrics]
