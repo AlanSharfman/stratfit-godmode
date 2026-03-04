@@ -21,6 +21,7 @@ import { useLeverStore } from "@/state/leverStore";
 import { useSimulationStore } from "@/state/simulationStore";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
 import SoftGateOverlay from "@/components/common/SoftGateOverlay";
+import ProvenanceBadge from "@/components/system/ProvenanceBadge";
 
 import {
   computeShockedBatch,
@@ -436,6 +437,11 @@ const RiskPage: React.FC = () => {
                 </>
               )}
             </div>
+          </div>
+
+          {/* Provenance badge */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 0 8px' }}>
+            <ProvenanceBadge />
           </div>
 
           {/* Legal Disclosure */}

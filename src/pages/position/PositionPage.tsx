@@ -69,6 +69,7 @@ import TerrainRenderContractPanel from "@/components/debug/TerrainRenderContract
 import { buildRenderContract } from "@/domain/terrain/buildRenderContract"
 import { POSITION_PRESET } from "@/scene/camera/terrainCameraPresets"
 import RiskIntelligencePanel from "@/components/Risk/RiskIntelligencePanel"
+import ProvenanceBadge from "@/components/system/ProvenanceBadge"
 import styles from "./PositionOverlays.module.css"
 
 // Diagnostics panel is togglable via close button
@@ -1151,6 +1152,11 @@ export default function PositionPage() {
 
       {/* ══ Debug HUD — only when ?debugHud=1 (reactive) ══ */}
       {debugHud && <PositionDebugHUD />}
+
+      {/* Provenance badge */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 16px 4px' }}>
+        <ProvenanceBadge />
+      </div>
 
       {/* Legal disclaimer */}
       <div className={styles.legalDisclaimer}>

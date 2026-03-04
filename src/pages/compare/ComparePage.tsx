@@ -30,6 +30,7 @@ import CompareInsightPanel from "@/components/compare/CompareInsightPanel"
 import { type ScenarioOption } from "@/components/compare/CompareScenarioSelect"
 import CommandModeStrip from "@/components/command/CommandModeStrip"
 import ProbabilityNotice from "@/components/legal/ProbabilityNotice"
+import ProvenanceBadge from "@/components/system/ProvenanceBadge"
 import SimulationStatusWidget from "@/components/system/SimulationStatusWidget"
 import SimulationRunOverlay from "@/components/system/SimulationRunOverlay"
 import SimulationPipelineWidget from "@/components/system/SimulationPipelineWidget"
@@ -491,6 +492,11 @@ export default function ComparePage() {
           onHighlight={setHighlight}
         />
       )}
+
+      {/* Provenance badge */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 16px 4px' }}>
+        <ProvenanceBadge />
+      </div>
 
       {/* Legal */}
       <div style={S.legal}>

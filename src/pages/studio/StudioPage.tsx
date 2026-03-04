@@ -41,6 +41,7 @@ import HeatmapOverlay from "@/components/command/HeatmapOverlay"
 import CodeOverlay from "@/components/command/CodeOverlay"
 import { selectRiskScore } from "@/selectors/riskSelectors"
 import RiskIntelligencePanel from "@/components/Risk/RiskIntelligencePanel"
+import ProvenanceBadge from "@/components/system/ProvenanceBadge"
 
 // ── Timeline Simulation Engine ──
 import { useStudioTimelineStore } from "@/stores/studioTimelineStore"
@@ -549,6 +550,11 @@ export default function StudioPage() {
           </div>
         </aside>
 
+      </div>
+
+      {/* Provenance badge */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 16px 4px' }}>
+        <ProvenanceBadge />
       </div>
 
       {/* Legal */}
