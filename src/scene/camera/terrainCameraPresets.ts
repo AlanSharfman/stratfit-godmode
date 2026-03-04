@@ -58,10 +58,21 @@ export const WELCOME_PRESET: CameraPreset = {
   fov: 46,
 }
 
+/**
+ * Command Centre — cinematic wide-angle for theatre mode.
+ * Slightly elevated for dramatic framing.
+ */
+export const COMMAND_PRESET: CameraPreset = {
+  pos: [-40, 150, 500],
+  target: [-20, 14, 0],
+  fov: 46,
+}
+
 /** All presets keyed by page context */
 export const CAMERA_PRESETS = {
   position: POSITION_PRESET,
   studio: STUDIO_PRESET,
   compare: COMPARE_PRESET,
   welcome: WELCOME_PRESET,
+  command: COMMAND_PRESET,
 } as const
