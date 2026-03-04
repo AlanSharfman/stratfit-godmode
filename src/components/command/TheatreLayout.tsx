@@ -17,9 +17,14 @@ import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore";
 import { useBaselineStore } from "@/state/baselineStore";
 import { selectKpis } from "@/selectors/kpiSelectors";
 import { selectRiskScore } from "@/selectors/riskSelectors";
-import { selectValuationFromSimulation } from "@/selectors/valuationSelectors";
+import {
+  selectValuationFromSimulation,
+  selectWaterfallFromSimulation,
+} from "@/selectors/valuationSelectors";
 import { deriveTerrainMetrics } from "@/terrain/terrainFromBaseline";
 import type { TerrainMetrics } from "@/terrain/terrainFromBaseline";
+import { generateCommandBriefing } from "../../core/command/generateCommandBriefing";
+import type { BriefingInputs } from "../../core/command/generateCommandBriefing";
 
 import TerrainTheatre from "./TerrainTheatre";
 import BriefingRail from "./BriefingRail";
@@ -117,6 +122,68 @@ const TheatreLayout: React.FC = memo(() => {
     };
   }, [simResults]);
 
+  // ── Command briefing ──
+  const briefing = useMemo(() => {
+    const kpis = selectKpis(simResults?.kpis ?? null);
+    const riskIndex = simResults?.kpis
+      ? selectRiskScore(simResults.kpis)
+      : null;
+    const valuation = selectValuationFromSimulation(simResults);
+    const waterfall = selectWaterfallFromSimulation(
+      simResults,
+      baseline ?? undefined,
+    );
+
+    // Derive P10/P90 synthetic from method spread
+    let evP10: number | null = null;
+    let evP90: number | null = null;
+    if (valuation) {
+      const evs = [
+        valuation.dcf.enterpriseValue,
+        valuation.revenueMultiple.enterpriseValue,
+        valuation.ebitdaMultiple.enterpriseValue,
+      ].filter((v) => isFinite(v));
+      if (evs.length >= 2) {
+        evP10 = Math.min(...evs);
+        evP90 = Math.max(...evs);
+      }
+    }
+
+    // Derive volatility from EV spread relative to P50
+    let volatilityEst: number | null = null;
+    if (valuation && signalData.dispersionWidth != null && valuation.blendedValue > 0) {
+      volatilityEst = signalData.dispersionWidth / valuation.blendedValue;
+    }
+
+    const inputs: BriefingInputs = {
+      scenarioName: activeScenario?.decision ?? "Unknown Scenario",
+      baselineName: "Baseline",
+      evP50: valuation?.blendedValue ?? null,
+      evDCF: valuation?.dcf.enterpriseValue ?? null,
+      evRevMultiple: valuation?.revenueMultiple.enterpriseValue ?? null,
+      evEbitdaMultiple: valuation?.ebitdaMultiple.enterpriseValue ?? null,
+      evP10,
+      evP90,
+      riskIndex: riskIndex ?? null,
+      runwayMonths: kpis?.runwayMonths ?? null,
+      dispersionWidth: signalData.dispersionWidth,
+      volatility: volatilityEst,
+      waterfallSteps: waterfall?.steps?.map((s) => ({
+        label: s.label,
+        delta: s.delta,
+        direction: s.direction,
+      })) ?? null,
+      probZones: null,
+      provenance: {
+        runId: activeScenario?.id ?? "—",
+        seed: null,
+        engineVersion: "stratfit-v1",
+      },
+    };
+
+    return generateCommandBriefing(inputs);
+  }, [simResults, baseline, activeScenario, signalData.dispersionWidth]);
+
   // ── Director mode ──
   const director = useDirectorMode(INVESTOR_BRIEFING_SCRIPT);
 
@@ -149,6 +216,7 @@ const TheatreLayout: React.FC = memo(() => {
           onPlay={director.play}
           onPause={director.pause}
           onStop={director.stop}
+          briefing={briefing}
         />
       </div>
     </div>

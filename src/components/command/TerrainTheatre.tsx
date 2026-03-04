@@ -117,7 +117,7 @@ const TerrainTheatre: React.FC<TerrainTheatreProps> = memo(
       <div style={S.viewport}>
         <TerrainStage
           lockCamera
-          pathsEnabled={false}
+          pathsEnabled
           terrainMetrics={metrics}
           heatmapEnabled={currentBeat?.highlightType === "risk_zone"}
         >

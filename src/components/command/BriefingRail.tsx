@@ -15,6 +15,8 @@ import React, { memo } from "react";
 import type { Beat } from "./director/DirectorScript";
 import type { DirectorStatus } from "./director/useDirectorMode";
 import TranscriptPanel from "./transcript/TranscriptPanel";
+import type { CommandBriefing } from "../../core/command/generateCommandBriefing";
+import CommandBriefingPanel from "./CommandBriefingPanel";
 
 // ────────────────────────────────────────────────────────────────────────────
 // STYLES
@@ -172,6 +174,8 @@ interface BriefingRailProps {
   onPlay: () => void;
   onPause: () => void;
   onStop: () => void;
+  /** Data-driven command briefing (optional — falls back to TranscriptPanel) */
+  briefing?: CommandBriefing | null;
 }
 
 const BriefingRail: React.FC<BriefingRailProps> = memo(
@@ -185,6 +189,7 @@ const BriefingRail: React.FC<BriefingRailProps> = memo(
     onPlay,
     onPause,
     onStop,
+    briefing,
   }) => {
     const overallProgress =
       totalDuration > 0 ? Math.min(1, totalElapsed / totalDuration) : 0;
@@ -259,13 +264,21 @@ const BriefingRail: React.FC<BriefingRailProps> = memo(
           <span>{fmtTime(totalDuration)}</span>
         </div>
 
-        {/* ── Transcript ── */}
+        {/* ── Briefing Content ── */}
         <div style={S.transcriptArea}>
-          <TranscriptPanel
-            beats={beats}
-            activeBeatIndex={activeBeatIndex}
-            status={status}
-          />
+          {briefing ? (
+            <CommandBriefingPanel
+              briefing={briefing}
+              activeBeatIdx={activeBeatIndex}
+              isDirectorPlaying={isPlaying}
+            />
+          ) : (
+            <TranscriptPanel
+              beats={beats}
+              activeBeatIndex={activeBeatIndex}
+              status={status}
+            />
+          )}
         </div>
 
         {/* ── Legal Disclaimer ── */}

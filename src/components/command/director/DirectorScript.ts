@@ -52,7 +52,7 @@ export const INVESTOR_BRIEFING_SCRIPT: Beat[] = [
   {
     id: "opening",
     title: "Opening",
-    durationMs: 5000,
+    durationMs: 8000,
     cameraShot: "wide",
     highlightType: "none",
     laserTargetKey: null,
@@ -63,7 +63,7 @@ export const INVESTOR_BRIEFING_SCRIPT: Beat[] = [
   {
     id: "revenue_trajectory",
     title: "Revenue Trajectory",
-    durationMs: 6000,
+    durationMs: 10000,
     cameraShot: "track",
     highlightType: "trajectory",
     laserTargetKey: "revenue_engine",
@@ -74,7 +74,7 @@ export const INVESTOR_BRIEFING_SCRIPT: Beat[] = [
   {
     id: "margin_structure",
     title: "Margin & Capital",
-    durationMs: 5500,
+    durationMs: 7000,
     cameraShot: "pan",
     highlightType: "leverage_nodes",
     laserTargetKey: "margin_expansion",
@@ -85,7 +85,7 @@ export const INVESTOR_BRIEFING_SCRIPT: Beat[] = [
   {
     id: "risk_assessment",
     title: "Risk Profile",
-    durationMs: 6000,
+    durationMs: 7000,
     cameraShot: "zoom",
     highlightType: "risk_zone",
     laserTargetKey: "risk_peak",
@@ -96,7 +96,7 @@ export const INVESTOR_BRIEFING_SCRIPT: Beat[] = [
   {
     id: "inflection_analysis",
     title: "Inflection Point",
-    durationMs: 5500,
+    durationMs: 8000,
     cameraShot: "track",
     highlightType: "trajectory",
     laserTargetKey: "inflection_point",
@@ -107,7 +107,7 @@ export const INVESTOR_BRIEFING_SCRIPT: Beat[] = [
   {
     id: "valuation_synthesis",
     title: "Valuation Synthesis",
-    durationMs: 6000,
+    durationMs: 8000,
     cameraShot: "zoom",
     highlightType: "valuation_peak",
     laserTargetKey: "valuation_peak",
@@ -118,7 +118,7 @@ export const INVESTOR_BRIEFING_SCRIPT: Beat[] = [
   {
     id: "probability_landscape",
     title: "Probability Landscape",
-    durationMs: 5500,
+    durationMs: 10000,
     cameraShot: "wide",
     highlightType: "probability_band",
     laserTargetKey: "capital_efficiency",
@@ -129,7 +129,7 @@ export const INVESTOR_BRIEFING_SCRIPT: Beat[] = [
   {
     id: "closing",
     title: "Summary",
-    durationMs: 5000,
+    durationMs: 12000,
     cameraShot: "wide",
     highlightType: "none",
     laserTargetKey: null,
