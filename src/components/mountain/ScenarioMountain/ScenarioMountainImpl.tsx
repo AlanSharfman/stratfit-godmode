@@ -39,6 +39,9 @@ import { SCENARIO_PALETTE_COLORS, paletteForScenario, heightColor, godModePalett
 import { MilestoneOrbs, StrategicPath } from "./paths";
 import { sampleMountainHeight } from "./terrainSampler";
 import { MODE_CONFIGS, type ModeConfig, type MountainMode } from "./types";
+import EVHeatLayer from "@/components/mountain/EVHeatLayer";
+import ProbabilityFogLayer from "@/components/mountain/ProbabilityFogLayer";
+import RiskWeatherLayer from "@/components/mountain/RiskWeatherLayer";
 
 // ============================================================================
 // MODE CONFIG (moved to ./types)
@@ -1927,6 +1930,26 @@ export function ScenarioMountainImpl({
               dataPoints={resolvedDataPoints}
               kpiValues={kpiValues}
               enabled
+            />
+          </>
+        )}
+
+        {/* GOD MODE: Terrain Intelligence Overlays (T-INT-2) */}
+        {isGodMode && (
+          <>
+            <EVHeatLayer
+              enterpriseValueMedian={kpiValues.enterpriseValue?.value ?? 0}
+              baselineEV={godModeMetrics.evFactor * 10_000_000}
+            />
+            <ProbabilityFogLayer
+              p10={fullSimResult?.arrPercentiles?.p10 ?? (kpiValues.enterpriseValue?.value ?? 0) * 0.6}
+              p50={fullSimResult?.arrPercentiles?.p50 ?? (kpiValues.enterpriseValue?.value ?? 0)}
+              p90={fullSimResult?.arrPercentiles?.p90 ?? (kpiValues.enterpriseValue?.value ?? 0) * 1.4}
+            />
+            <RiskWeatherLayer
+              riskIndex={kpiValues.riskIndex?.value ?? 50}
+              runwayMonths={kpiValues.runway?.value ?? 24}
+              volatility={clamp01((godModeMetrics.envelopeSpread - 0.05) / 0.45)}
             />
           </>
         )}
