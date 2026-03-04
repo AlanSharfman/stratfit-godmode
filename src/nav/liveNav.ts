@@ -12,4 +12,6 @@ export const LIVE_NAV: NavItem[] = [
   { label: "Position",   path: "/position" },
   { label: "Studio",     path: "/studio" },
   { label: "Compare",    path: "/compare" },
+  { label: "Risk",       path: "/risk" },
+  { label: "Valuation",  path: "/valuation" },
 ]

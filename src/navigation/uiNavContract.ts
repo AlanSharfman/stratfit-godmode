@@ -5,6 +5,8 @@ export const UI_NAV_ITEMS = [
   { key: "position", label: "POSITION", href: "/position" },
   { key: "studio", label: "STUDIO", href: "/studio" },
   { key: "compare", label: "COMPARE", href: "/compare" },
+  { key: "risk", label: "RISK", href: "/risk" },
+  { key: "valuation", label: "VALUATION", href: "/valuation" },
 ] as const
 
 export type UiNavKey = (typeof UI_NAV_ITEMS)[number]["key"]

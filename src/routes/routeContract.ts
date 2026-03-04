@@ -5,6 +5,8 @@ export const ROUTE_CONTRACT = [
   "/compare",
   "/initiate",
   "/decision",
+  "/risk",
+  "/valuation",
 ] as const
 
 export const ROUTES = {

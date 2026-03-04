@@ -288,6 +288,8 @@ export default function ComparePage() {
           <NavLink to={ROUTES.POSITION} style={S.navItem}>Position</NavLink>
           <NavLink to={ROUTES.STUDIO} style={S.navItem}>Studio</NavLink>
           <NavLink to={ROUTES.COMPARE} style={({ isActive }) => isActive ? S.navItemActive : S.navItem}>Compare</NavLink>
+          <NavLink to={ROUTES.RISK} style={S.navItem}>Risk</NavLink>
+          <NavLink to={ROUTES.VALUATION} style={S.navItem}>Valuation</NavLink>
         </nav>
 
         <div style={S.headerRight}>
