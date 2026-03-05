@@ -17,4 +17,21 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (id.includes("node_modules/three/") || id.includes("node_modules/@react-three/")) {
+            return "vendor-three"
+          }
+          if (id.includes("node_modules/react-dom/") || id.includes("node_modules/react-router")) {
+            return "vendor-react"
+          }
+          if (id.includes("node_modules/framer-motion/")) {
+            return "vendor-motion"
+          }
+        },
+      },
+    },
+  },
 });

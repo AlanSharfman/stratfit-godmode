@@ -1,0 +1,375 @@
+.root {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Command Bar ── */
+.commandBar {
+  padding: 16px 24px;
+  background: rgba(4, 8, 16, 0.8);
+  border-bottom: 1px solid rgba(34, 211, 238, 0.06);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.commandInput {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(34, 211, 238, 0.12);
+  border-radius: 10px;
+  padding: 14px 20px;
+  color: rgba(200, 220, 240, 0.95);
+  font-size: 15px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 400;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.commandInput:focus {
+  border-color: rgba(34, 211, 238, 0.35);
+  box-shadow: 0 0 24px rgba(34, 211, 238, 0.08), inset 0 0 12px rgba(34, 211, 238, 0.03);
+}
+
+.commandInput::placeholder { color: rgba(200, 220, 240, 0.25); }
+
+.injectBtn {
+  padding: 14px 28px;
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.15) 0%, rgba(34, 211, 238, 0.06) 100%);
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  border-radius: 10px;
+  color: #22d3ee;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.injectBtn:hover {
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.25) 0%, rgba(34, 211, 238, 0.1) 100%);
+  border-color: rgba(34, 211, 238, 0.5);
+  box-shadow: 0 0 28px rgba(34, 211, 238, 0.15);
+}
+
+.injectBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ── Main layout ── */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── Scenario Stack (left sidebar) ── */
+.stackPanel {
+  width: 260px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  padding: 16px 12px;
+  background: rgba(4, 8, 16, 0.5);
+  border-right: 1px solid rgba(34, 211, 238, 0.04);
+}
+
+.stackTitle {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(34, 211, 238, 0.45);
+  margin-bottom: 12px;
+  padding: 0 4px;
+}
+
+.stackItem {
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  background: rgba(15, 25, 45, 0.6);
+  border: 1px solid rgba(34, 211, 238, 0.06);
+  border-radius: 8px;
+  position: relative;
+  animation: stackIn 0.3s ease-out;
+}
+
+@keyframes stackIn {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.stackItemQuestion {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(200, 220, 240, 0.8);
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.stackItemForces {
+  font-size: 10px;
+  color: rgba(200, 220, 240, 0.3);
+}
+
+.stackItemUndo {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  color: rgba(248, 113, 113, 0.5);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 3px;
+  transition: all 0.15s;
+}
+
+.stackItemUndo:hover {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.08);
+}
+
+.stackEmpty {
+  font-size: 11px;
+  color: rgba(200, 220, 240, 0.2);
+  text-align: center;
+  padding: 24px 12px;
+  line-height: 1.6;
+}
+
+.stackActions {
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.stackActionBtn {
+  flex: 1;
+  padding: 8px 0;
+  background: rgba(15, 25, 45, 0.5);
+  border: 1px solid rgba(34, 211, 238, 0.08);
+  border-radius: 6px;
+  color: rgba(200, 220, 240, 0.5);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.stackActionBtn:hover {
+  border-color: rgba(34, 211, 238, 0.2);
+  color: rgba(200, 220, 240, 0.8);
+}
+
+/* ── Centre: Dual Terrain ── */
+.centreColumn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.dualTerrain {
+  flex: 1;
+  display: flex;
+  gap: 2px;
+  background: #020408;
+}
+
+.terrainPane {
+  flex: 1;
+  position: relative;
+}
+
+.terrainLabel {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  z-index: 10;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: rgba(4, 8, 16, 0.85);
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+}
+
+.labelCurrent {
+  composes: terrainLabel;
+  color: rgba(200, 220, 240, 0.45);
+  border: 1px solid rgba(200, 220, 240, 0.08);
+}
+
+.labelProjected {
+  composes: terrainLabel;
+  color: #22d3ee;
+  border: 1px solid rgba(34, 211, 238, 0.2);
+}
+
+/* ── Cascade Narrative ── */
+.narrativeBar {
+  padding: 10px 24px;
+  min-height: 44px;
+  background: rgba(4, 8, 16, 0.9);
+  border-top: 1px solid rgba(34, 211, 238, 0.06);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.narrativeText {
+  flex: 1;
+  font-size: 13px;
+  color: rgba(200, 220, 240, 0.6);
+  line-height: 1.5;
+  font-style: italic;
+}
+
+.narrativeAudioBtn {
+  background: none;
+  border: 1px solid rgba(34, 211, 238, 0.15);
+  border-radius: 6px;
+  padding: 5px 12px;
+  color: rgba(34, 211, 238, 0.6);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.narrativeAudioBtn:hover {
+  border-color: rgba(34, 211, 238, 0.3);
+  color: #22d3ee;
+}
+
+/* ── Right Panel: Force Visualizer / Impact ── */
+.impactPanel {
+  width: 280px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  padding: 16px 14px;
+  background: rgba(4, 8, 16, 0.5);
+  border-left: 1px solid rgba(34, 211, 238, 0.04);
+}
+
+.panelTitle {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(34, 211, 238, 0.45);
+  margin-bottom: 12px;
+}
+
+.impactRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.impactKpi {
+  font-size: 11px;
+  color: rgba(200, 220, 240, 0.6);
+}
+
+.impactDelta {
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.impactPositive { color: #34d399; }
+.impactNegative { color: #f87171; }
+
+.cascadeSection {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.cascadeTitle {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(200, 220, 240, 0.25);
+  margin-bottom: 8px;
+}
+
+.forceEdge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  font-size: 10px;
+  color: rgba(200, 220, 240, 0.35);
+}
+
+.forceArrow {
+  color: rgba(34, 211, 238, 0.4);
+  font-size: 12px;
+}
+
+.emptyImpact {
+  font-size: 11px;
+  color: rgba(200, 220, 240, 0.2);
+  text-align: center;
+  padding: 32px 12px;
+  line-height: 1.6;
+}
+
+/* ── Suggestions dropdown ── */
+.suggestions {
+  position: absolute;
+  top: 100%;
+  left: 24px;
+  right: 120px;
+  background: rgba(10, 18, 32, 0.98);
+  border: 1px solid rgba(34, 211, 238, 0.15);
+  border-radius: 0 0 10px 10px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  z-index: 30;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.suggestionItem {
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background 0.1s;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+.suggestionItem:hover {
+  background: rgba(34, 211, 238, 0.06);
+}
+
+.suggestionQuestion {
+  font-size: 13px;
+  color: rgba(200, 220, 240, 0.8);
+}
+
+.suggestionMeta {
+  font-size: 10px;
+  color: rgba(200, 220, 240, 0.3);
+  margin-top: 2px;
+}

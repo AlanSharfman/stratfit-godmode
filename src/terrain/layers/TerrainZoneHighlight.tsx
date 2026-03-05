@@ -49,40 +49,50 @@ const TerrainZoneHighlight: React.FC<TerrainZoneHighlightProps> = memo(
       const segments = Math.round(Math.sqrt(count)) - 1
       const vertsPerRow = segments + 1
 
+      // Find height range to determine mountain vs flat ground
+      let minH = Infinity
+      let maxH = -Infinity
+      for (let i = 0; i < count; i++) {
+        const h = pos.getZ(i) // Z = height in geometry space (before rotation)
+        if (h < minH) minH = h
+        if (h > maxH) maxH = h
+      }
+      const heightRange = maxH - minH
+      // Only color vertices above 15% of the height range (mountain, not flat ground)
+      const heightThreshold = minH + heightRange * 0.15
+      const heightFadeRange = heightRange * 0.15 // smooth fade between flat and mountain
+
       const colors = new Float32Array(count * 3)
       const baseColor = color ?? { r: 0.13, g: 0.83, b: 0.93 }
 
       for (let i = 0; i < count; i++) {
         const col = i % vertsPerRow
         const normalizedX = col / segments
+        const h = pos.getZ(i)
 
-        let inZone: boolean
+        // Height mask: 0 on flat ground, ramps to 1 on the mountain
+        const heightFactor = Math.max(0, Math.min(1, (h - heightThreshold) / heightFadeRange))
+        if (heightFactor <= 0) continue // flat ground — no color
+
+        // X-zone mask
+        let zoneFactor = 0
         if (zone.xStart === 0 && zone.xEnd === 1) {
-          inZone = true
+          zoneFactor = 1
         } else {
-          const edgeFade = 0.05
+          const edgeFade = 0.06
           const dLeft = normalizedX - zone.xStart
           const dRight = zone.xEnd - normalizedX
-          if (dLeft < 0 || dRight < 0) {
-            inZone = false
-          } else {
-            const fade = Math.min(dLeft / edgeFade, dRight / edgeFade, 1.0)
-            colors[i * 3] = baseColor.r * fade
-            colors[i * 3 + 1] = baseColor.g * fade
-            colors[i * 3 + 2] = baseColor.b * fade
-            continue
+          if (dLeft >= 0 && dRight >= 0) {
+            zoneFactor = Math.min(dLeft / edgeFade, dRight / edgeFade, 1.0)
           }
         }
 
-        if (inZone) {
-          colors[i * 3] = baseColor.r
-          colors[i * 3 + 1] = baseColor.g
-          colors[i * 3 + 2] = baseColor.b
-        } else {
-          colors[i * 3] = 0
-          colors[i * 3 + 1] = 0
-          colors[i * 3 + 2] = 0
-        }
+        if (zoneFactor <= 0) continue
+
+        const intensity = heightFactor * zoneFactor
+        colors[i * 3] = baseColor.r * intensity
+        colors[i * 3 + 1] = baseColor.g * intensity
+        colors[i * 3 + 2] = baseColor.b * intensity
       }
 
       geo.setAttribute("color", new THREE.BufferAttribute(colors, 3))

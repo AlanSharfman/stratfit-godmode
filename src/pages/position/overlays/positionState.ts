@@ -18,6 +18,12 @@ export interface PositionKpis {
   grossMarginPct: number
   /** Heuristic enterprise value estimate (ARR × growth-derived multiple). */
   valuationEstimate: number
+  /** Month-over-month growth rate percentage (0–100). */
+  growthRatePct: number
+  /** Monthly churn rate percentage (0–100). */
+  churnPct: number
+  /** Revenue per employee — operational efficiency ratio. */
+  efficiencyRatio: number
 }
 
 export interface DiagnosticCardVM {
@@ -228,7 +234,10 @@ export function buildPositionViewModel(
   const survivalScore = clamp(Math.round((riskIndex * 0.6) + (Math.min(runway, 24) / 24) * 40), 0, 100)
   // Heuristic valuation: ARR × growth-implied revenue multiple (standard SaaS methodology)
   const valuationEstimate = valuationFromArrAndGrowth(arr, growthPct)
-  const kpis: PositionKpis = { arr, burnMonthly: burn, runwayMonths: runway, ebitdaMonthly: ebitda, riskIndex, cashOnHand: cash, revenueMonthly, survivalScore, grossMarginPct, valuationEstimate }
+  const churnPct = safeNum(baseline.operating.churnPct, 0)
+  const headcount = safeNum(baseline.financial.headcount, 1)
+  const efficiencyRatio = headcount > 0 ? (revenueMonthly * 12) / headcount : 0
+  const kpis: PositionKpis = { arr, burnMonthly: burn, runwayMonths: runway, ebitdaMonthly: ebitda, riskIndex, cashOnHand: cash, revenueMonthly, survivalScore, grossMarginPct, valuationEstimate, growthRatePct: growthPct, churnPct, efficiencyRatio }
   return {
     kpis,
     state:           stateFromRunwayAndGrowth(runway, growthPct),

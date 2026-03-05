@@ -120,6 +120,11 @@ export function selectPositionKpis(
   // Valuation: sourced from engine, not UI heuristic (zeroed until engine provides it)
   const valuationEstimate = 0
 
+  const growthRatePct = simulationKpis.growthRate ?? 0
+  const churnPct = simulationKpis.churnRate ?? 0
+  const headcount = simulationKpis.headcount ?? 1
+  const efficiencyRatio = headcount > 0 ? (revenueMonthly * 12) / headcount : 0
+
   return {
     arr,
     burnMonthly,
@@ -131,6 +136,9 @@ export function selectPositionKpis(
     survivalScore,
     grossMarginPct,
     valuationEstimate,
+    growthRatePct,
+    churnPct,
+    efficiencyRatio,
   }
 }
 

@@ -3,14 +3,32 @@ import { BrowserRouter } from "react-router-dom"
 import AppRouter from "@/AppRouter"
 import { SystemBaselineProvider } from "@/system/SystemBaselineProvider"
 import StaleDataOverlay from "@/components/system/StaleDataOverlay"
+import QAFloatingPanel from "@/components/qa/QAFloatingPanel"
+import CommandPalette from "@/components/command/CommandPalette"
+import FirstVisitExplainer from "@/components/explainers/FirstVisitExplainer"
+import ErrorBoundary from "@/components/system/ErrorBoundary"
+import KeyboardHelpOverlay from "@/components/system/KeyboardHelpOverlay"
+import OnboardingTour from "@/components/onboarding/OnboardingTour"
+import KeyboardShortcutsBridge from "@/components/system/KeyboardShortcutsBridge"
+import CollaborationPanel from "@/components/collab/CollaborationPanel"
+import "@/styles/responsive.css"
 
 export default function App() {
   return (
-    <SystemBaselineProvider>
-      <BrowserRouter>
-        <StaleDataOverlay />
-        <AppRouter />
-      </BrowserRouter>
-    </SystemBaselineProvider>
+    <ErrorBoundary>
+      <SystemBaselineProvider>
+        <BrowserRouter>
+          <StaleDataOverlay />
+          <AppRouter />
+          <QAFloatingPanel />
+          <CommandPalette />
+          <FirstVisitExplainer />
+          <KeyboardHelpOverlay />
+          <OnboardingTour />
+          <KeyboardShortcutsBridge />
+          <CollaborationPanel />
+        </BrowserRouter>
+      </SystemBaselineProvider>
+    </ErrorBoundary>
   )
 }

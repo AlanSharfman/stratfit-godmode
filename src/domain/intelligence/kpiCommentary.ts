@@ -72,32 +72,58 @@ function valuationCommentary(k: PositionKpis): string {
   return `${fmt(k.valuationEstimate)} enterprise value — the terrain peak is well-defined. Sustaining this elevation requires maintaining growth rate, margin, and risk profile simultaneously.`
 }
 
-function survivalCommentary(k: PositionKpis): string {
-  if (k.riskIndex < 30)
-    return `Survival probability at ${k.riskIndex.toFixed(0)}% — the entire terrain landscape reflects critical stress. Multiple risk vectors are converging. Immediate action across liquidity and burn is recommended.`
-  if (k.riskIndex < 50)
-    return `${k.riskIndex.toFixed(0)}% survival probability shows the terrain under pressure. The landscape is navigable but risk zones are expanding — targeted intervention on the weakest KPIs will improve the overall position.`
-  if (k.riskIndex < 75)
-    return `${k.riskIndex.toFixed(0)}% survival probability. The terrain is stable with manageable risk zones. Continue monitoring liquidity and burn while focusing on growth levers.`
-  return `${k.riskIndex.toFixed(0)}% survival probability represents a strong position. The terrain is elevated across all zones — the strategic focus should be on optimizing rather than surviving.`
+function growthCommentary(k: PositionKpis): string {
+  const gr = k.growthRatePct ?? 0
+  if (gr < 2)
+    return `Growth rate at ${gr.toFixed(1)}% MoM — the growth gradient on the terrain is nearly flat. Without acceleration, compounding effects remain negligible and valuation multiples compress.`
+  if (gr < 8)
+    return `${gr.toFixed(1)}% MoM growth is building momentum but below the inflection threshold. The terrain slope is gradual here — sustainable acceleration above 10% would significantly reshape the landscape.`
+  if (gr < 20)
+    return `${gr.toFixed(1)}% MoM growth — the growth gradient rises sharply. The terrain reflects healthy compounding dynamics. Maintaining this rate meaningfully improves all downstream zones.`
+  return `${gr.toFixed(1)}% MoM growth is exceptional. The terrain peaks in this zone — compounding at this rate reshapes valuation within quarters, not years.`
+}
+
+function churnCommentary(k: PositionKpis): string {
+  const ch = k.churnPct ?? 0
+  if (ch > 10)
+    return `Churn at ${ch.toFixed(1)}% monthly is critically high. The retention wall on the terrain has collapsed — net revenue retention is likely negative, meaning growth is fighting attrition. Immediate focus on retention mechanics is essential.`
+  if (ch > 5)
+    return `${ch.toFixed(1)}% monthly churn creates significant drag. The retention wall shows erosion — every new customer acquired must compensate for departures before contributing to growth.`
+  if (ch > 2)
+    return `${ch.toFixed(1)}% monthly churn is manageable but worth monitoring. The retention wall stands firm — small improvements here compound powerfully over 12-month horizons.`
+  return `${ch.toFixed(1)}% monthly churn is excellent. The retention wall on the terrain is solid — this is a durable foundation for ARR compounding and valuation expansion.`
+}
+
+function efficiencyCommentary(k: PositionKpis): string {
+  const eff = k.efficiencyRatio ?? 0
+  const fmtEff = eff >= 1000 ? `$${(eff / 1000).toFixed(0)}K` : `$${Math.round(eff)}`
+  if (eff < 50_000)
+    return `Revenue per employee at ${fmtEff} — the leverage plateau on the terrain is low. Operational intensity is high relative to output, compressing margins and limiting scalability.`
+  if (eff < 100_000)
+    return `${fmtEff} revenue per employee shows developing operational leverage. The terrain plateau is forming — further automation and process optimization will steepen the gradient.`
+  if (eff < 200_000)
+    return `${fmtEff} per employee reflects solid operational leverage. The plateau is elevated and stable — this supports sustainable scaling without proportional headcount growth.`
+  return `${fmtEff} per employee is exceptional leverage. The terrain plateau reaches peak elevation here — operational efficiency is a structural advantage.`
 }
 
 const COMMENTARY: Record<KpiKey, (k: PositionKpis) => string> = {
-  cash:                cashCommentary,
-  runway:              runwayCommentary,
-  arr:                 arrCommentary,
-  revenue:             revenueCommentary,
-  burn:                burnCommentary,
-  grossMargin:         grossMarginCommentary,
-  enterpriseValue:     valuationCommentary,
-  survivalProbability: survivalCommentary,
+  cash:            cashCommentary,
+  runway:          runwayCommentary,
+  growth:          growthCommentary,
+  arr:             arrCommentary,
+  revenue:         revenueCommentary,
+  burn:            burnCommentary,
+  churn:           churnCommentary,
+  grossMargin:     grossMarginCommentary,
+  efficiency:      efficiencyCommentary,
+  enterpriseValue: valuationCommentary,
 }
 
 export function getKpiCommentary(key: KpiKey, kpis: PositionKpis): string {
   return COMMENTARY[key]?.(kpis) ?? ""
 }
 
-export function getExecutiveSummary(kpis: PositionKpis): {
+export function getExecutiveSummary(kpis: PositionKpis, revealedCount = 10): {
   label: string
   tone: "critical" | "challenging" | "stable" | "strong"
   narrative: string
@@ -112,12 +138,24 @@ export function getExecutiveSummary(kpis: PositionKpis): {
   else if (sp < 75 || rw < 14) { label = "STABLE"; tone = "stable" }
   else { label = "STRONG"; tone = "strong" }
 
+  if (revealedCount < 10) {
+    return {
+      label: `${revealedCount}/10`,
+      tone,
+      narrative: revealedCount === 0
+        ? "Focus each KPI below to reveal its terrain zone and build the mountain of your business."
+        : `${revealedCount} of 10 zones revealed. Continue exploring to complete your position terrain.`,
+    }
+  }
+
   const strengths: string[] = []
   const risks: string[] = []
   if (rw >= 12) strengths.push("healthy runway"); else if (rw < 6) risks.push("runway under 6 months")
   if (kpis.arr >= 1_000_000) strengths.push("ARR above $1M"); else if (kpis.arr < 300_000) risks.push("ARR below $300K")
   if (kpis.grossMarginPct >= 60) strengths.push("strong margins"); else if (kpis.grossMarginPct < 30) risks.push("low gross margin")
   if (kpis.burnMonthly < 80_000) strengths.push("controlled burn"); else if (kpis.burnMonthly > 150_000) risks.push("elevated burn rate")
+  if ((kpis.churnPct ?? 0) <= 2) strengths.push("low churn"); else if ((kpis.churnPct ?? 0) > 8) risks.push("high churn")
+  if ((kpis.growthRatePct ?? 0) >= 10) strengths.push("strong growth"); else if ((kpis.growthRatePct ?? 0) < 3) risks.push("slow growth")
 
   const parts: string[] = [
     `Position assessment: ${label.toLowerCase()}.`,
@@ -125,7 +163,7 @@ export function getExecutiveSummary(kpis: PositionKpis): {
   ]
   if (strengths.length > 0) parts.push(`Key strengths: ${strengths.join(", ")}.`)
   if (risks.length > 0) parts.push(`Areas of concern: ${risks.join(", ")}.`)
-  parts.push("Scroll through each driver below to explore the terrain impact and consider stress-testing any area that needs attention.")
+  parts.push("All 10 zones revealed — your business terrain is complete. Stress-test any area that needs attention.")
 
   return { label, tone, narrative: parts.join(" ") }
 }

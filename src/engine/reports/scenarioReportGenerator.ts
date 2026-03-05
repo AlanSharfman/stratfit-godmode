@@ -1,5 +1,15 @@
 import type { TrajectoryInsight, TrajectoryVector } from "@/types/trajectory";
-import type { RiskZone, WeatherCondition } from "@/state/riskWeatherStore";
+
+/** Stub types — riskWeatherStore was removed. Kept here for report generator compatibility. */
+export type WeatherCondition = "clear" | "cloudy" | "stormy" | "turbulent" | "critical";
+
+export type RiskZone = {
+  name: string;
+  description: string;
+  riskScore: number;
+  condition: WeatherCondition;
+  alerts: Array<{ severity: "info" | "warning" | "critical"; message: string }>;
+};
 
 /**
  * Executive Scenario Report Types

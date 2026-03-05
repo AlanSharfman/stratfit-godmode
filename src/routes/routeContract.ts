@@ -1,41 +1,29 @@
-// Flat array used by validateRoutingContract — must include every path in LIVE_NAV.
 export const ROUTE_CONTRACT = [
   "/initiate",
   "/position",
-  "/decision",
-  "/studio",
-  "/compare",
+  "/what-if",
+  "/actions",
+  "/timeline",
   "/risk",
+  "/compare",
+  "/studio",
   "/valuation",
-  "/command",
+  "/boardroom",
+  "/pulse",
 ] as const
 
 export const ROUTES = {
-  // Core tabs (routed)
   INITIATE: "/initiate",
   POSITION: "/position",
-  DECISION: "/decision",
-  STUDIO: "/studio",
-  COMPARE: "/compare",
+  WHAT_IF: "/what-if",
+  ACTIONS: "/actions",
+  TIMELINE: "/timeline",
   RISK: "/risk",
+  COMPARE: "/compare",
+  STUDIO: "/studio",
   VALUATION: "/valuation",
-  COMMAND: "/command",
-
-  // Future (not yet routed — kept for forward-reference only)
-  COMPASS: "/compass",
-  INSIGHTS: "/insights",
-  ASSESSMENT: "/assessment",
-  ROADMAP: "/roadmap",
-  COMING_FEATURES: "/coming-features",
-  BASELINE: "/baseline",
-  OBJECTIVES: "/objectives",
-  SIMULATE: "/simulate",
-  IMPACT: "/impact",
-  STRATEGY_STUDIO: "/strategy-studio",
-  INITIALIZE: "/initialize",
-
-  // legacy / gated
-  ADVANCED: "/advanced",
+  BOARDROOM: "/boardroom",
+  PULSE: "/pulse",
 } as const
 
 export type AppRoute = (typeof ROUTES)[keyof typeof ROUTES]

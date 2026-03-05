@@ -231,6 +231,66 @@ function ValuationWidget() {
   );
 }
 
+/** Growth Rate Widget — ascending trend arrow */
+function GrowthWidget() {
+  return (
+    <div className={styles.widget}>
+      <svg width="44" height="44" viewBox="0 0 28 28" fill="none">
+        <path d="M4 24 L10 18 L16 20 L22 10 L26 6" stroke="rgba(52,211,153,0.5)" strokeWidth="2" strokeLinecap="round" fill="none">
+          <animate attributeName="strokeDashoffset" from="60" to="0" dur="1.2s" fill="freeze" />
+        </path>
+        <polygon points="22,4 28,8 24,10" fill="rgba(52,211,153,0.4)">
+          <animate attributeName="opacity" values="0.3;0.7;0.3" dur="2s" repeatCount="indefinite" />
+        </polygon>
+        <circle cx="26" cy="6" r="2" fill="rgba(52,211,153,0.5)">
+          <animate attributeName="r" values="2;3;2" dur="1.8s" repeatCount="indefinite" />
+        </circle>
+      </svg>
+    </div>
+  );
+}
+
+/** Churn Widget — funnel with leak */
+function ChurnWidget() {
+  return (
+    <div className={styles.widget}>
+      <svg width="44" height="44" viewBox="0 0 28 28" fill="none">
+        <path d="M6 4 L22 4 L18 14 L10 14 Z" fill="rgba(239,68,68,0.08)" stroke="rgba(239,68,68,0.30)" strokeWidth="1" />
+        <path d="M10 14 L12 24 L16 24 L18 14" fill="rgba(239,68,68,0.06)" stroke="rgba(239,68,68,0.25)" strokeWidth="1" />
+        <circle cx="20" cy="18" r="1.5" fill="rgba(239,68,68,0.4)">
+          <animate attributeName="cy" values="18;24;18" dur="2s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.5;0;0.5" dur="2s" repeatCount="indefinite" />
+        </circle>
+        <circle cx="22" cy="20" r="1" fill="rgba(239,68,68,0.3)">
+          <animate attributeName="cy" values="20;26;20" dur="2.5s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.4;0;0.4" dur="2.5s" repeatCount="indefinite" />
+        </circle>
+      </svg>
+    </div>
+  );
+}
+
+/** Efficiency Widget — gear/ratio gauge */
+function EfficiencyWidget() {
+  return (
+    <div className={styles.widget}>
+      <svg width="44" height="44" viewBox="0 0 28 28" fill="none">
+        <circle cx="14" cy="14" r="10" fill="none" stroke="rgba(96,165,250,0.12)" strokeWidth="1.5" />
+        <circle cx="14" cy="14" r="6" fill="none" stroke="rgba(96,165,250,0.25)" strokeWidth="1.5" strokeDasharray="4,3">
+          <animateTransform attributeName="transform" type="rotate" from="0 14 14" to="360 14 14" dur="6s" repeatCount="indefinite" />
+        </circle>
+        <circle cx="14" cy="14" r="2.5" fill="rgba(96,165,250,0.20)">
+          <animate attributeName="r" values="2.5;3;2.5" dur="2s" repeatCount="indefinite" />
+        </circle>
+        <line x1="14" y1="4" x2="14" y2="8" stroke="rgba(96,165,250,0.3)" strokeWidth="1.5" strokeLinecap="round" />
+        <line x1="14" y1="20" x2="14" y2="24" stroke="rgba(96,165,250,0.3)" strokeWidth="1.5" strokeLinecap="round" />
+        <line x1="4" y1="14" x2="8" y2="14" stroke="rgba(96,165,250,0.3)" strokeWidth="1.5" strokeLinecap="round" />
+        <line x1="20" y1="14" x2="24" y2="14" stroke="rgba(96,165,250,0.3)" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    </div>
+  );
+}
+
 /** Gross Margin mini widget — percentage donut (indigo) */
 function GrossMarginWidget() {
   return (
@@ -312,6 +372,7 @@ export interface KPIHealthRailProps {
   kpis: PositionKpis | null;
   focusedKpi?: KpiKey | null;
   onFocusKpi?: (key: KpiKey | null) => void;
+  revealedKpis?: Set<KpiKey>;
 }
 
 interface KpiCardDef {
@@ -329,6 +390,7 @@ function KpiCard({
   k,
   riskTone,
   isActive,
+  isRevealed,
   commentary,
   onHover,
   onStressTest,
@@ -337,6 +399,7 @@ function KpiCard({
   k: PositionKpis | null;
   riskTone: RiskTone;
   isActive: boolean;
+  isRevealed: boolean;
   commentary: string;
   onHover: (key: KpiKey | null) => void;
   onStressTest: (key: KpiKey) => void;
@@ -349,7 +412,12 @@ function KpiCard({
       onMouseLeave={() => onHover(null)}
       data-kpi={def.key}
     >
-      <div className={`${styles.label} ${def.labelCls}`}>{def.label}</div>
+      <div className={`${styles.label} ${def.labelCls}`}>
+        {def.label}
+        {isRevealed && (
+          <span style={{ marginLeft: 6, fontSize: 10, opacity: 0.5, color: "#34d399" }} aria-label="Revealed">✓</span>
+        )}
+      </div>
       <div className={styles.value}>{k ? def.getValue(k) : "—"}</div>
       {def.widget}
       <div className={styles.sub}>{typeof def.sub === "function" ? (k ? def.sub(k) : "") : def.sub}</div>
@@ -370,7 +438,7 @@ function KpiCard({
   );
 }
 
-const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, onFocusKpi }) => {
+const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, onFocusKpi, revealedKpis }) => {
   const simKpis = useSelectSimulationKpis();
   const k = simKpis ?? kpis;
   const navigate = useNavigate();
@@ -442,6 +510,14 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, on
       sub: "Stability probability",
     },
     {
+      key: "growth" as KpiKey,
+      labelCls: styles.labelPerf,
+      label: "Growth Rate",
+      getValue: (kk) => `${(kk.growthRatePct ?? 0).toFixed(1)}%`,
+      widget: <GrowthWidget />,
+      sub: "Month-over-month",
+    },
+    {
       key: "arr" as KpiKey,
       labelCls: styles.labelPerf,
       label: "ARR",
@@ -466,12 +542,31 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, on
       sub: "Monthly",
     },
     {
+      key: "churn" as KpiKey,
+      labelCls: styles.labelEfficiency,
+      label: "Churn",
+      getValue: (kk) => `${(kk.churnPct ?? 0).toFixed(1)}%`,
+      widget: <ChurnWidget />,
+      sub: "Monthly rate",
+    },
+    {
       key: "grossMargin" as KpiKey,
       labelCls: styles.labelEfficiency,
       label: "Gross Margin",
       getValue: (kk) => fmtPct(kk.grossMarginPct),
       widget: <GrossMarginWidget />,
       sub: "Of revenue",
+    },
+    {
+      key: "efficiency" as KpiKey,
+      labelCls: styles.labelEfficiency,
+      label: "Efficiency",
+      getValue: (kk) => {
+        const eff = kk.efficiencyRatio ?? 0
+        return eff >= 1_000_000 ? `$${(eff / 1_000_000).toFixed(1)}M` : eff >= 1_000 ? `$${(eff / 1_000).toFixed(0)}K` : `$${Math.round(eff)}`
+      },
+      widget: <EfficiencyWidget />,
+      sub: "Revenue / employee",
     },
     {
       key: "enterpriseValue" as KpiKey,
@@ -486,30 +581,13 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, on
         </span>
       ) : null,
     },
-    {
-      key: "survivalProbability" as KpiKey,
-      labelCls: styles.labelRisk,
-      label: "Survival Probability",
-      getValue: (kk) => kk.riskIndex.toFixed(0),
-      widget: <></>,
-      sub: "",
-      extra: (kk, rt) => (
-        <>
-          <HeroRiskWidget tone={rt} />
-          <span className={styles.riskTag} data-tone={rt}>
-            {riskToneLabel(rt)} • liquidity pressure
-          </span>
-        </>
-      ),
-    },
   ], []);
 
   const SECTIONS = useMemo(() => [
     { header: "Liquidity", keys: ["cash", "runway"] as KpiKey[] },
-    { header: "Revenue Engine", keys: ["arr", "revenue"] as KpiKey[] },
-    { header: "Efficiency", keys: ["burn", "grossMargin"] as KpiKey[] },
+    { header: "Growth Engine", keys: ["growth", "arr", "revenue"] as KpiKey[] },
+    { header: "Efficiency", keys: ["burn", "churn", "grossMargin", "efficiency"] as KpiKey[] },
     { header: "Valuation", keys: ["enterpriseValue"] as KpiKey[] },
-    { header: "Survival Probability", keys: ["survivalProbability"] as KpiKey[] },
   ], []);
 
   const cardMap = useMemo(() => {
@@ -534,6 +612,7 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, on
                   k={k}
                   riskTone={riskTone}
                   isActive={focusedKpi === key}
+                  isRevealed={revealedKpis?.has(key) ?? false}
                   commentary={getCommentary(key)}
                   onHover={handleHover}
                   onStressTest={handleStressTest}

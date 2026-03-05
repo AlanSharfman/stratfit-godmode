@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from "react";
 import { useTrajectoryStore } from "@/state/trajectoryStore";
-import { useRiskWeatherStore } from "@/state/riskWeatherStore";
 import {
   generateExecutiveReport,
   formatReportAsMarkdown,
   type ExecutiveReport,
+  type RiskZone,
 } from "@/engine/reports/scenarioReportGenerator";
 
 /**
@@ -13,7 +13,7 @@ import {
  */
 export default function ScenarioReportPanel() {
   const { scenarioVectors: vectors, insights } = useTrajectoryStore();
-  const { zones } = useRiskWeatherStore();
+  const zones: RiskZone[] = [];
   const [report, setReport] = useState<ExecutiveReport | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 

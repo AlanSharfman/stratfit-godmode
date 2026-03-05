@@ -1,24 +1,18 @@
-// src/components/nav/PortalNav.tsx
-// ═══════════════════════════════════════════════════════════════════════════
-// STRATFIT — Portal Nav Bar (shared across pages without inline nav)
-//
-// Elevated horizontal nav bar rendered at the top of pages that
-// don't have their own header nav (Decision, Risk, Valuation).
-// Reads from ROUTES constant — no store access.
-// ═══════════════════════════════════════════════════════════════════════════
-
 import { NavLink } from "react-router-dom";
 import { ROUTES } from "@/routes/routeContract";
 
 const NAV_ITEMS = [
   { to: ROUTES.INITIATE, label: "Initiate" },
   { to: ROUTES.POSITION, label: "Position" },
-  { to: ROUTES.DECISION, label: "Decision" },
-  { to: ROUTES.STUDIO, label: "Studio" },
-  { to: ROUTES.COMPARE, label: "Compare" },
+  { to: ROUTES.WHAT_IF, label: "What If" },
+  { to: ROUTES.ACTIONS, label: "Actions" },
+  { to: ROUTES.TIMELINE, label: "Timeline" },
   { to: ROUTES.RISK, label: "Risk" },
+  { to: ROUTES.COMPARE, label: "Compare" },
+  { to: ROUTES.STUDIO, label: "Studio" },
   { to: ROUTES.VALUATION, label: "Valuation" },
-  { to: ROUTES.COMMAND, label: "Command Centre" },
+  { to: ROUTES.BOARDROOM, label: "Boardroom" },
+  { to: ROUTES.PULSE, label: "Pulse" },
 ] as const;
 
 const S: Record<string, React.CSSProperties> = {
@@ -27,7 +21,7 @@ const S: Record<string, React.CSSProperties> = {
     alignItems: "center",
     justifyContent: "center",
     gap: 0,
-    padding: "0 32px",
+    padding: "0 24px",
     height: 46,
     background: "linear-gradient(180deg, rgba(10, 18, 32, 0.95) 0%, rgba(6, 12, 24, 0.98) 100%)",
     borderBottom: "1px solid rgba(34, 211, 238, 0.12)",
@@ -36,24 +30,25 @@ const S: Record<string, React.CSSProperties> = {
     backdropFilter: "blur(12px)",
     position: "relative" as const,
     zIndex: 20,
+    overflowX: "auto" as const,
   },
   link: {
-    padding: "10px 18px",
-    fontSize: 11,
+    padding: "10px 12px",
+    fontSize: 10,
     fontWeight: 600,
-    letterSpacing: "0.08em",
+    letterSpacing: "0.06em",
     textTransform: "uppercase" as const,
-    color: "rgba(255, 255, 255, 0.45)",
+    color: "rgba(255, 255, 255, 0.4)",
     textDecoration: "none",
     borderRadius: 4,
     transition: "color 0.2s, background 0.2s",
     whiteSpace: "nowrap" as const,
   },
   linkActive: {
-    padding: "10px 18px",
-    fontSize: 11,
+    padding: "10px 12px",
+    fontSize: 10,
     fontWeight: 600,
-    letterSpacing: "0.08em",
+    letterSpacing: "0.06em",
     textTransform: "uppercase" as const,
     color: "#22d3ee",
     textDecoration: "none",
@@ -64,8 +59,8 @@ const S: Record<string, React.CSSProperties> = {
   },
   divider: {
     width: 1,
-    height: 18,
-    background: "rgba(255, 255, 255, 0.1)",
+    height: 16,
+    background: "rgba(255, 255, 255, 0.08)",
     flexShrink: 0,
   },
 };

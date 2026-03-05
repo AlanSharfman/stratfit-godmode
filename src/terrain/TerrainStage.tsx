@@ -1,20 +1,7 @@
 // src/terrain/TerrainStage.tsx
-// ═══════════════════════════════════════════════════════════════════════════
-// STRATFIT — Position Stage (REALITY VISUALIZATION)
-// Navigation Contract: src/contracts/navigationContract.ts
-//
-// ROLE: Single Canvas host for terrain, P50 trajectory, markers, timeline,
-//       and liquidity particles (when enabled).
-//
-// GOD MODE EXTENSION POINT:
-//   Supports safe in-canvas injection via {children}.
-//
-// RULES (UNCHANGED):
-//   - No Objectives dependency — terrain shape is Initiate-derived only.
-//   - No simulation logic.
-//   - No baseline writes.
-//   - Water/liquidity particles are a Position layer.
-// ═══════════════════════════════════════════════════════════════════════════
+// STRATFIT — Terrain Stage (God Mode)
+// Single Canvas host for terrain rendering.
+// Progressive terrain for Position, seed-based for Compare/other pages.
 
 import React, { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
@@ -25,42 +12,27 @@ import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import type { TerrainSurfaceHandle } from "@/terrain/TerrainSurface";
 import TerrainSurface from "@/terrain/TerrainSurface";
 import type { TerrainColorVariant } from "@/terrain/terrainMaterials";
-import P50Path from "@/paths/P50Path";
 
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
-import BaselineTimelineTicks from "@/terrain/BaselineTimelineTicks";
 import type { TimeGranularity } from "@/terrain/TimelineTicks";
 import { baselineSeedString } from "@/terrain/seed";
-import LiquidityFlowLayer from "@/components/terrain/liquidity/LiquidityFlowLayer";
-import TerrainSignalsLayer from "@/components/terrain/signals/TerrainSignalsLayer";
-import StrategicMarkers from "@/terrain/StrategicMarkers";
-import MarkerProjectionLayer from "@/terrain/MarkerProjectionLayer";
-import PathWaypoints from "@/terrain/PathWaypoints";
 import TimelineRuler from "@/terrain/TimelineRuler";
 import HorizonBand from "@/terrain/HorizonBand";
-import { useRenderFlagsStore } from "@/state/renderFlagsStore";
 import type { MetricsInput } from "@/terrain/buildTerrain";
 import { useTerrainControls } from "@/terrain/useTerrainControls";
-import { useDebugFlags, useDebugSignals } from "@/debug/debugSignals";
-import { useOverlayVisibility } from "@/domain/ui/overlayVisibility";
-import TerrainFocusGlow from "@/components/terrain/intelligence/TerrainFocusGlow";
 import TerrainHeatmapLayer from "@/terrain/layers/TerrainHeatmapLayer";
 import TerrainZoneHighlight from "@/terrain/layers/TerrainZoneHighlight";
+import ProgressiveTerrainSurface from "@/terrain/ProgressiveTerrainSurface";
+import type { ProgressiveTerrainHandle } from "@/terrain/ProgressiveTerrainSurface";
+import HealthRidgePath from "@/terrain/HealthRidgePath";
+import WaterLinePlane from "@/terrain/WaterLinePlane";
+import ValleyFogLayer from "@/terrain/ValleyFogLayer";
 import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping";
 import type { PositionKpis } from "@/pages/position/overlays/positionState";
-import TerrainLaserTarget from "@/components/intelligence/TerrainLaserTarget";
-import TerrainTargetPulse from "@/components/intelligence/TerrainTargetPulse";
-import TerrainTargetLabel from "@/components/intelligence/TerrainTargetLabel";
-import TerrainTargetSpotlight from "@/components/intelligence/TerrainTargetSpotlight";
-import IntelligenceCameraFocus from "@/components/intelligence/IntelligenceCameraFocus";
-import TerrainSignalSystem from "@/components/mountain/TerrainSignalSystem";
-import RiskWeatherSystem from "@/components/mountain/RiskWeatherSystem";
-import { eventToFocusPosition } from "@/domain/intelligence/eventFocus";
-import { computeSignalIntensity } from "@/components/terrain/signals/signalStyle";
+import type { CascadeImpulse } from "@/terrain/ProgressiveTerrainSurface";
+import DependencyLines from "@/terrain/DependencyLines";
+import GhostTerrainLayer from "@/terrain/GhostTerrainLayer";
 import { POSITION_PRESET } from "@/scene/camera/terrainCameraPresets";
-
-// Canonical camera target — from terrainCameraPresets single source of truth
-const TERRAIN_LOOK_AT: [number, number, number] = POSITION_PRESET.target;
 
 function readCssVar(varName: string, fallback: string): string {
   if (typeof window === "undefined") return fallback;
@@ -71,55 +43,40 @@ function readCssVar(varName: string, fallback: string): string {
 type TerrainStageProps = {
   granularity?: TimeGranularity
   terrainMetrics?: MetricsInput
-  /** When true, no OrbitControls are mounted — camera is fully programmatic. */
   lockCamera?: boolean
-  /**
-   * Optional per-mount override for path visibility.
-   * If undefined, uses renderFlagsStore.showPaths (default behaviour).
-   */
-  pathsEnabled?: boolean
-  signals?: Array<{
-    key: string
-    label: string
-    tone: "strong" | "watch" | "risk"
-    detail: string
-    metricLine: string
-  }>
-  /** Override events for TerrainSignalsLayer — used by Compare mode */
-  overrideEvents?: import("@/domain/events/terrainEventTypes").TerrainEvent[]
-  /** Primary event to highlight with a terrain glow (A10.1) */
-  focusedEvent?: import("@/domain/events/terrainEventTypes").TerrainEvent | null
-  /** Color variant for terrain surface (default | green | frost) */
   colorVariant?: TerrainColorVariant
-  /** Enable red→green heatmap overlay on terrain */
   heatmapEnabled?: boolean
-  /** Active KPI zone highlight key */
   focusedKpi?: KpiKey | null
-  /** KPI data for zone health color derivation */
   zoneKpis?: PositionKpis | null
-  /** Azimuth (horizontal orbit) limits in radians. Defaults: unconstrained. */
   minAzimuthAngle?: number
   maxAzimuthAngle?: number
-  /** Polar (vertical orbit) limits in radians. Default: 0.758 – 1.456. */
   minPolarAngle?: number
   maxPolarAngle?: number
-  /** Mouse-drag orbit speed multiplier. Default: 0.8. */
   rotateSpeed?: number
-  /** Render callback invoked when terrain is ready — receives terrainRef for height sampling */
   renderWhenReady?: (terrainRef: React.RefObject<TerrainSurfaceHandle>) => ReactNode
-  /** When true, suppresses StrategicMarkers regardless of renderFlagsStore.showMarkers */
   hideMarkers?: boolean
+  progressive?: boolean
+  revealedKpis?: Set<KpiKey>
+  autoRotateSpeed?: number
+  cameraPreset?: { pos: [number, number, number]; target: [number, number, number]; fov: number }
+  cascadeImpulse?: CascadeImpulse | null
+  showDependencyLines?: boolean
+  ghostKpis?: PositionKpis | null
   children?: ReactNode
+  /** @deprecated Accepted for back-compat; no longer rendered. */
+  pathsEnabled?: boolean
+  /** @deprecated Accepted for back-compat; signal layers removed. */
+  overrideEvents?: any[]
+  /** @deprecated Accepted for back-compat; signal layers removed. */
+  focusedEvent?: any
+  /** @deprecated Accepted for back-compat; signal layers removed. */
+  signals?: any[]
 }
 
 export default function TerrainStage({
   granularity,
   terrainMetrics,
   lockCamera = false,
-  pathsEnabled,
-  signals,
-  overrideEvents,
-  focusedEvent,
   colorVariant,
   heatmapEnabled = false,
   focusedKpi = null,
@@ -131,55 +88,37 @@ export default function TerrainStage({
   rotateSpeed = 0.8,
   renderWhenReady,
   hideMarkers = false,
+  progressive = false,
+  revealedKpis,
+  autoRotateSpeed = 0,
+  cameraPreset,
+  cascadeImpulse,
+  showDependencyLines = false,
+  ghostKpis = null,
   children,
+  pathsEnabled: _pathsEnabled,
+  overrideEvents: _overrideEvents,
+  focusedEvent: _focusedEvent,
+  signals: _signals,
 }: TerrainStageProps) {
   const terrainRef = useRef<TerrainSurfaceHandle>(null!);
+  const progressiveRef = useRef<ProgressiveTerrainHandle>(null!);
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const [terrainReady, setTerrainReady] = useState(false);
-  const [pathCurve, setPathCurve] = useState<THREE.CatmullRomCurve3 | null>(null);
+  const effectivePreset = cameraPreset ?? POSITION_PRESET;
 
-  const handlePathReady = useCallback((curve: THREE.CatmullRomCurve3) => {
-    setPathCurve(curve);
-  }, []);
   const { baseline } = useSystemBaseline();
-  const rebuildKey = baselineSeedString(baseline as any);
   const setControls = useTerrainControls((s) => s.setControls);
 
-  // Register / unregister OrbitControls in the terrain controls store
   const onControlsRef = useCallback((instance: OrbitControlsImpl | null) => {
     (controlsRef as React.MutableRefObject<OrbitControlsImpl | null>).current = instance;
     setControls(instance);
   }, [setControls]);
 
-  const [fogColor, setFogColor] = useState("#020814");
+  const [fogColor, setFogColor] = useState("#040810");
   useEffect(() => {
-    // Use the global "charcoal" void token when available.
-    setFogColor(readCssVar("--color-bg-void", readCssVar("--navy-950", "#020814")));
+    setFogColor(readCssVar("--color-bg-void", "#040810"));
   }, []);
-
-  // ── Render flags ──
-  const { showMarkers } = useRenderFlagsStore();
-
-  // ── Overlay visibility (canonical) — URL overrides take priority ──
-  const vis = useOverlayVisibility();
-  // If pathsEnabled prop is explicitly set (and no URL override), respect it.
-  // overlayVisibility already handles ?overlays= and ?debugHud= force.
-  const pathsOn = typeof pathsEnabled === "boolean" ? (vis.pathsOn || pathsEnabled) : vis.pathsOn;
-  const timelineOn = typeof pathsEnabled === "boolean" ? (vis.timelineOn || pathsEnabled) : vis.timelineOn;
-  const liquidityOn = vis.liquidityOn;
-
-  // ── Publish debug signals (zero-cost when debugHud is off) ──
-  const { debugHud } = useDebugFlags();
-  const setDebugTerrainReady = useDebugSignals((s) => s.setTerrainReady);
-  const setDebugPathsOn = useDebugSignals((s) => s.setPathsOn);
-  const setOverlayFlags = useDebugSignals((s) => s.setOverlayFlags);
-  useEffect(() => {
-    if (debugHud) {
-      setDebugTerrainReady(terrainReady);
-      setDebugPathsOn(pathsOn);
-      setOverlayFlags({ timelineOn, liquidityOn, eventsOn: vis.eventsOn });
-    }
-  }, [debugHud, terrainReady, pathsOn, timelineOn, liquidityOn, vis.eventsOn, setDebugTerrainReady, setDebugPathsOn, setOverlayFlags]);
 
   useEffect(() => {
     if (terrainReady) return;
@@ -187,7 +126,7 @@ export default function TerrainStage({
     let raf: number;
     function check() {
       if (cancelled) return;
-      if (terrainRef.current) {
+      if (terrainRef.current || progressiveRef.current) {
         setTerrainReady(true);
         return;
       }
@@ -204,25 +143,18 @@ export default function TerrainStage({
     <Canvas
       style={{ position: "absolute", inset: 0, zIndex: 0 }}
       dpr={[1, 2]}
-      camera={{ position: POSITION_PRESET.pos as unknown as [number, number, number], fov: POSITION_PRESET.fov, near: 0.1, far: 5000 }}
+      camera={{ position: effectivePreset.pos as unknown as [number, number, number], fov: effectivePreset.fov, near: 0.1, far: 5000 }}
       gl={{ antialias: true, alpha: true }}
       onCreated={({ camera, gl }) => {
-        // Only set defaults when not locked — locked pages inject a CameraCompositionRig.
         if (!lockCamera) {
-          camera.position.set(...POSITION_PRESET.pos);
-          camera.lookAt(...TERRAIN_LOOK_AT);
+          camera.position.set(...effectivePreset.pos);
+          camera.lookAt(...effectivePreset.target);
           camera.updateProjectionMatrix();
         }
-
-        // Transparent clear — Position page supplies charcoal gradient behind Canvas.
         gl.setClearColor(fogColor, 0);
-
-        // Tone mapping — default
         gl.toneMappingExposure = 1.0;
       }}
     >
-      {/* OrbitControls — always mounted so TerrainNavWidget can steer programmatically.
-           When lockCamera is true, all user input (mouse drag/scroll) is disabled. */}
       <OrbitControls
         ref={onControlsRef}
         makeDefault
@@ -238,24 +170,13 @@ export default function TerrainStage({
         rotateSpeed={rotateSpeed}
         minDistance={220}
         maxDistance={700}
-        target={TERRAIN_LOOK_AT}
+        target={effectivePreset.target}
+        autoRotate={autoRotateSpeed > 0}
+        autoRotateSpeed={autoRotateSpeed}
       />
 
-      {/* Fog stays deterministic; background comes from DOM gradient behind the canvas. */}
       <fog attach="fog" args={[fogColor, 420, 2400]} />
 
-      {/* ═══════════════════════════════════════════════════════════════
-          DEFAULT LIGHTING — SHADOW-CONTRAST TUNED
-          ───────────────────────────────────────────────────────────
-          Ambient:    0.35  (reduced to reveal ridge shadows)
-          Key:        1.40  pos [120,180,120]  color #DFFAEE
-          Rim:        0.55  pos [-80,120,-60]  color #6ef0ff
-          Fog:        #020814  near 420  far 2400
-          Exposure:   1.0
-          ───────────────────────────────────────────────────────────
-          DO NOT MODIFY without explicit user approval.
-          DO NOT touch terrainMaterials.ts when adjusting these.
-          ═══════════════════════════════════════════════════════════ */}
       <ambientLight intensity={0.35} />
       <directionalLight position={[120, 180, 120]} intensity={1.40} color="#DFFAEE" />
       <directionalLight position={[-80, 120, -60]} intensity={0.55} color="#6ef0ff" />
@@ -263,46 +184,49 @@ export default function TerrainStage({
       <HorizonBand />
 
       <Suspense fallback={null}>
-        <TerrainSurface ref={terrainRef} terrainMetrics={terrainMetrics} colorVariant={colorVariant} />
-        <TerrainHeatmapLayer enabled={heatmapEnabled} terrainMetrics={terrainMetrics} />
-        <TerrainZoneHighlight focusedKpi={focusedKpi} kpis={zoneKpis} terrainMetrics={terrainMetrics} />
-        {terrainReady && (
+        {progressive && revealedKpis ? (
           <>
-            {/* A12: Always mount P50Path — emphasis via visible prop, never unmount */}
-            <P50Path terrainRef={terrainRef} rebuildKey={rebuildKey} visible={pathsOn} onPathReady={handlePathReady} />
-            {/* Path-anchored waypoints: replace scattered markers with on-path milestones */}
-            {showMarkers && !hideMarkers && pathsOn && <PathWaypoints pathCurve={pathCurve} />}
-            {/* Canonical ticks (BaselineTimelineTicks) — follows timelineOn */}
-            <BaselineTimelineTicks visible={timelineOn} terrainRef={terrainRef} />
-            <LiquidityFlowLayer terrainRef={terrainRef} enabled={liquidityOn} />
-            <TerrainSignalsLayer terrainRef={terrainRef} overrideEvents={overrideEvents} />
-            {showMarkers && !hideMarkers && <StrategicMarkers terrainRef={terrainRef} />}
-            {showMarkers && !hideMarkers && <MarkerProjectionLayer terrainRef={terrainRef} />}
-            <TimelineRuler terrainRef={terrainRef} />
-            {/* A10.1 — Focus glow for primary intelligence event */}
-            {focusedEvent && (
-              <TerrainFocusGlow
-                position={(() => {
-                  const p = eventToFocusPosition(focusedEvent)
-                  const terrain = terrainRef.current
-                  const y = terrain ? terrain.getHeightAt(p.x, p.z) + 1.0 : p.y + 1.0
-                  return { x: p.x, y, z: p.z }
-                })()}
-                intensity={computeSignalIntensity(focusedEvent.severity, focusedEvent.probabilityImpact)}
-                isActive={true}
+            <ProgressiveTerrainSurface
+              ref={progressiveRef}
+              revealedKpis={revealedKpis}
+              kpis={zoneKpis}
+              focusedKpi={focusedKpi}
+              cascadeImpulse={cascadeImpulse}
+            />
+            {showDependencyLines && (
+              <DependencyLines
+                focusedKpi={focusedKpi}
+                kpis={zoneKpis}
+                terrainRef={progressiveRef}
               />
             )}
-            {/* Intelligence Targeting System — laser, pulse, label, spotlight, camera */}
-            <TerrainLaserTarget terrainRef={terrainRef} />
-            <TerrainTargetPulse terrainRef={terrainRef} />
-            <TerrainTargetLabel terrainRef={terrainRef} />
-            <TerrainTargetSpotlight terrainRef={terrainRef} />
-            <IntelligenceCameraFocus terrainRef={terrainRef} />
-            {/* Phase 220: Terrain Signal System — ridge path, pulse, beacons, laser */}
-            <TerrainSignalSystem terrainRef={terrainRef} />
-            {/* Phase 230: Risk Weather System — fog, turbulence, storms, lightning */}
-            <RiskWeatherSystem />
-            {/* Extension point: terrain-ready overlays (Command Centre beacons, annotations) */}
+            <HealthRidgePath
+              terrainRef={progressiveRef}
+              revealedKpis={revealedKpis}
+              kpis={zoneKpis}
+            />
+            <WaterLinePlane visible={revealedKpis.size > 0} />
+            <ValleyFogLayer
+              revealedKpis={revealedKpis}
+              kpis={zoneKpis}
+            />
+            {ghostKpis && (
+              <GhostTerrainLayer
+                revealedKpis={revealedKpis}
+                kpis={ghostKpis}
+              />
+            )}
+          </>
+        ) : (
+          <>
+            <TerrainSurface ref={terrainRef} terrainMetrics={terrainMetrics} colorVariant={colorVariant} />
+            <TerrainHeatmapLayer enabled={heatmapEnabled} terrainMetrics={terrainMetrics} />
+            <TerrainZoneHighlight focusedKpi={focusedKpi} kpis={zoneKpis} terrainMetrics={terrainMetrics} />
+          </>
+        )}
+        {terrainReady && (
+          <>
+            <TimelineRuler terrainRef={terrainRef} />
             {renderWhenReady?.(terrainRef)}
           </>
         )}

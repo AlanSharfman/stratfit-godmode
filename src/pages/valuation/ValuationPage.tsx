@@ -1,361 +1,173 @@
-// src/pages/valuation/ValuationPage.tsx
-// ═══════════════════════════════════════════════════════════════════════════
-// STRATFIT — Valuation Page (Phase V-UX1)
-//
-// Route: /valuation
-// Canonical data: usePhase1ScenarioStore → activeScenario.simulationResults
-// Selector: selectValuationFromSimulation(simResults) → ValuationResults
-//
-// Layout:
-//   1) Header (title + subtitle)
-//   2) Top rail — 4 KPI chips
-//   3) Method selector bar
-//   4) Two-column grid:
-//        Left:  EV Distribution · Valuation Waterfall
-//        Right: Probability Dashboard · AI Strategic Analysis
-//   5) Provenance badge + ProbabilityNotice
-//
-// No UI-side valuation math. No new stores. No terrain dependency.
-// ═══════════════════════════════════════════════════════════════════════════
+import React, { useMemo } from "react"
 
-import { useState, useMemo } from "react";
-import styles from "./ValuationPage.module.css";
+import PageShell from "@/components/nav/PageShell"
+import TerrainZoneLegend from "@/components/terrain/TerrainZoneLegend"
+import TerrainStage from "@/terrain/TerrainStage"
+import SkyAtmosphere from "@/scene/rigs/SkyAtmosphere"
+import { POSITION_PROGRESSIVE_PRESET } from "@/scene/camera/terrainCameraPresets"
+import { useSystemBaseline } from "@/system/SystemBaselineProvider"
+import { buildPositionViewModel, type PositionKpis } from "@/pages/position/overlays/positionState"
+import { KPI_KEYS } from "@/domain/intelligence/kpiZoneMapping"
+import { timeSimulation, buildKpiSnapshot } from "@/engine/timeSimulation"
 
-// Canonical selectors (V-2A bridge + V-4 waterfall + V-5 narrative)
-import { selectValuationFromSimulation, selectWaterfallFromSimulation, selectValuationNarrative } from "@/selectors/valuationSelectors";
-import type { ValuationResults } from "@/valuation/valuationTypes";
-
-// Canonical store — same source as Position/Risk/Compare
-import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore";
-import { useBaselineStore } from "@/state/baselineStore";
-
-// System components
-import SystemProbabilityNotice from "@/components/system/ProbabilityNotice";
-import ProvenanceBadge from "@/components/system/ProvenanceBadge";
-
-// Valuation visualisation (V-3A)
-import EnterpriseValueDistribution from "@/components/valuation/EnterpriseValueDistribution";
-
-// Probability dashboard (V-3B)
-import ProbabilityDashboard from "@/components/valuation/ProbabilityDashboard";
-
-// Waterfall chart (V-4)
-import ValuationWaterfall from "@/components/valuation/ValuationWaterfall";
-
-// AI Strategic Narrative (V-5)
-import ValuationStrategicNarrative from "@/components/valuation/ValuationStrategicNarrative";
-
-// Shared portal nav
-import PortalNav from "@/components/nav/PortalNav";
-import TimelineSyncStrip from "@/components/timeline/TimelineSyncStrip";
-
-// ═══════════════════════════════════════════════════════════════════════════
-// TYPES
-// ═══════════════════════════════════════════════════════════════════════════
-
-type MethodId = "dcf" | "revenue_multiple";
-
-interface MethodDef {
-  id: MethodId;
-  label: string;
-  disabled: boolean;
+interface ValuationResult {
+  baseEV: number
+  bearEV: number
+  bullEV: number
+  multiple: number
+  fundingReadiness: number
+  readinessFactors: { label: string; pass: boolean; detail: string }[]
 }
 
-const METHODS: MethodDef[] = [
-  { id: "dcf", label: "DCF", disabled: false },
-  { id: "revenue_multiple", label: "REVENUE MULTIPLE", disabled: false },
-];
+function computeValuation(kpis: PositionKpis): ValuationResult {
+  const arr = kpis.arr || kpis.revenueMonthly * 12
 
-// ═══════════════════════════════════════════════════════════════════════════
-// HELPERS — formatting only, zero computation
-// ═══════════════════════════════════════════════════════════════════════════
+  let multiple = 5
+  if (kpis.growthRatePct > 40) multiple += 4
+  else if (kpis.growthRatePct > 20) multiple += 2
+  else if (kpis.growthRatePct > 10) multiple += 1
 
-function fmtM(v: number): string {
-  if (!isFinite(v) || v === 0) return "$0";
-  if (Math.abs(v) >= 1_000_000_000) return `$${(v / 1_000_000_000).toFixed(1)}B`;
-  if (Math.abs(v) >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
-  if (Math.abs(v) >= 1_000) return `$${(v / 1_000).toFixed(0)}K`;
-  return `$${v.toFixed(0)}`;
+  if (kpis.churnPct < 3) multiple += 2
+  else if (kpis.churnPct < 5) multiple += 1
+  else if (kpis.churnPct > 10) multiple -= 2
+
+  if (kpis.grossMarginPct > 75) multiple += 2
+  else if (kpis.grossMarginPct > 60) multiple += 1
+  else if (kpis.grossMarginPct < 40) multiple -= 2
+
+  if (kpis.efficiencyRatio > 1) multiple += 1
+
+  multiple = Math.max(2, Math.min(25, multiple))
+
+  const baseEV = arr * multiple
+  const bearEV = arr * Math.max(2, multiple * 0.6)
+  const bullEV = arr * Math.min(25, multiple * 1.5)
+
+  const factors: ValuationResult["readinessFactors"] = [
+    { label: "Runway > 18 months", pass: kpis.runwayMonths > 18, detail: `${kpis.runwayMonths.toFixed(1)} months` },
+    { label: "Growth > 15% MoM", pass: kpis.growthRatePct > 15, detail: `${kpis.growthRatePct.toFixed(1)}%` },
+    { label: "Churn < 5%", pass: kpis.churnPct < 5, detail: `${kpis.churnPct.toFixed(1)}%` },
+    { label: "Gross Margin > 60%", pass: kpis.grossMarginPct > 60, detail: `${kpis.grossMarginPct.toFixed(1)}%` },
+    { label: "Efficiency > 0.7x", pass: kpis.efficiencyRatio > 0.7, detail: `${kpis.efficiencyRatio.toFixed(2)}x` },
+    { label: "ARR > $500K", pass: arr > 500_000, detail: `$${(arr / 1000).toFixed(0)}K` },
+    { label: "Burn < Revenue", pass: kpis.burnMonthly < kpis.revenueMonthly, detail: `$${(kpis.burnMonthly / 1000).toFixed(0)}K / $${(kpis.revenueMonthly / 1000).toFixed(0)}K` },
+  ]
+
+  const passCount = factors.filter((f) => f.pass).length
+  const fundingReadiness = Math.round((passCount / factors.length) * 100)
+
+  return { baseEV, bearEV, bullEV, multiple, fundingReadiness, readinessFactors: factors }
 }
 
-function fmtX(v: number): string {
-  if (!isFinite(v)) return "—";
-  return `${v.toFixed(1)}×`;
+function formatEV(v: number): string {
+  if (v >= 1e9) return `$${(v / 1e9).toFixed(1)}B`
+  if (v >= 1e6) return `$${(v / 1e6).toFixed(1)}M`
+  if (v >= 1e3) return `$${(v / 1e3).toFixed(0)}K`
+  return `$${v.toFixed(0)}`
 }
-
-function fmtPct(v: number): string {
-  if (!isFinite(v)) return "—";
-  return `${(v * 100).toFixed(0)}%`;
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// COMPONENT
-// ═══════════════════════════════════════════════════════════════════════════
 
 export default function ValuationPage() {
-  const [selectedMethod, setSelectedMethod] = useState<MethodId>("dcf");
+  const { baseline } = useSystemBaseline()
+  const baseKpis = useMemo(() => {
+    if (!baseline) return null
+    return buildPositionViewModel(baseline as any).kpis
+  }, [baseline])
 
-  // ── Canonical data access ──
-  const activeScenarioId = usePhase1ScenarioStore((s) => s.activeScenarioId);
-  const scenarios = usePhase1ScenarioStore((s) => s.scenarios);
-  const baseline = useBaselineStore((s) => s.baseline);
+  const revealedKpis = useMemo(() => new Set(KPI_KEYS), [])
+  const valuation = useMemo(() => baseKpis ? computeValuation(baseKpis) : null, [baseKpis])
 
-  const activeScenario = useMemo(
-    () => scenarios.find((s) => s.id === activeScenarioId) ?? null,
-    [scenarios, activeScenarioId],
-  );
-
-  const simResults = activeScenario?.simulationResults ?? null;
-  const hasRun = simResults != null && simResults.completedAt > 0;
-
-  // ── Selector-derived valuation ──
-  const valuation: ValuationResults | null = useMemo(
-    () => selectValuationFromSimulation(simResults),
-    [simResults],
-  );
-
-  // ── Waterfall attribution (V-4) ──
-  const waterfallData = useMemo(
-    () => selectWaterfallFromSimulation(simResults, baseline),
-    [simResults, baseline],
-  );
-
-  // ── AI Strategic Narrative (V-5) ──
-  const narrativeData = useMemo(
-    () => selectValuationNarrative(valuation, waterfallData, activeScenario?.decision),
-    [valuation, waterfallData, activeScenario?.decision],
-  );
-
-  // ── Derived display values (formatting only — no computation) ──
-  const p50EV = valuation?.blendedValue ?? null;
-  const dcfEV = valuation?.dcf.enterpriseValue ?? null;
-  const revEV = valuation?.revenueMultiple.enterpriseValue ?? null;
-  const ebitdaEV = valuation?.ebitdaMultiple.enterpriseValue ?? null;
-
-  // P10–P90 proxy: show DCF vs Revenue Multiple range as spread
-  const rangeLow = valuation ? Math.min(dcfEV ?? 0, revEV ?? 0, ebitdaEV ?? 0) : null;
-  const rangeHigh = valuation ? Math.max(dcfEV ?? 0, revEV ?? 0, ebitdaEV ?? 0) : null;
-
-  // Probability strategy creates value: blended > 0 means value-creating
-  const pValueCreate = valuation && valuation.blendedValue > 0 ? 1.0 : null;
-
-  // Risk-adjusted EV: use the method with lowest value as conservative proxy
-  const riskAdjustedEV = rangeLow;
-
-  // Active method headline
-  const headlineEV = useMemo(() => {
-    if (!valuation) return null;
-    return selectedMethod === "dcf"
-      ? valuation.dcf.enterpriseValue
-      : valuation.revenueMultiple.enterpriseValue;
-  }, [valuation, selectedMethod]);
+  if (!baseKpis || !valuation) {
+    return <PageShell><div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(200,220,240,0.3)", fontSize: 14 }}>Complete initiation to view valuation</div></PageShell>
+  }
 
   return (
-    <div className={styles.container}>
-      {/* ═══ PORTAL NAV ═══ */}
-      <PortalNav />
+    <PageShell>
+      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+        {/* Left: Valuation metrics */}
+        <div style={{ width: 380, flexShrink: 0, overflow: "auto", padding: "24px 20px", background: "rgba(4,8,16,0.5)", borderRight: "1px solid rgba(34,211,238,0.04)" }}>
+          {/* EV headline */}
+          <div style={{ textAlign: "center", marginBottom: 32 }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(34,211,238,0.45)", marginBottom: 8 }}>Enterprise Value (Base Case)</div>
+            <div style={{ fontSize: 42, fontWeight: 200, color: "#22d3ee", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+              {formatEV(valuation.baseEV)}
+            </div>
+            <div style={{ fontSize: 11, color: "rgba(200,220,240,0.35)", marginTop: 6 }}>
+              {valuation.multiple.toFixed(1)}x ARR multiple
+            </div>
+          </div>
 
-      {/* ═══ TIMELINE SYNC ═══ */}
-      <TimelineSyncStrip mode="valuation" />
+          {/* Range */}
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 24, padding: "16px", background: "rgba(15,25,45,0.5)", borderRadius: 8, border: "1px solid rgba(34,211,238,0.04)" }}>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 9, fontWeight: 600, color: "#f87171", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 4 }}>Bear</div>
+              <div style={{ fontSize: 18, fontWeight: 600, color: "#f87171" }}>{formatEV(valuation.bearEV)}</div>
+            </div>
+            <div style={{ width: 1, background: "rgba(255,255,255,0.06)" }} />
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 9, fontWeight: 600, color: "#fbbf24", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 4 }}>Base</div>
+              <div style={{ fontSize: 18, fontWeight: 600, color: "#fbbf24" }}>{formatEV(valuation.baseEV)}</div>
+            </div>
+            <div style={{ width: 1, background: "rgba(255,255,255,0.06)" }} />
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 9, fontWeight: 600, color: "#34d399", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 4 }}>Bull</div>
+              <div style={{ fontSize: 18, fontWeight: 600, color: "#34d399" }}>{formatEV(valuation.bullEV)}</div>
+            </div>
+          </div>
 
-      <div className={styles.content}>
-        {/* ═══ HEADER ═══ */}
-        <div className={styles.header}>
-          <h1 className={styles.headerTitle}>Valuation</h1>
-          <p className={styles.headerSub}>
-            Financial consequence layer of strategy
-          </p>
+          {/* Funding Readiness */}
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(34,211,238,0.45)" }}>Funding Readiness</span>
+              <span style={{
+                fontSize: 20, fontWeight: 700,
+                color: valuation.fundingReadiness > 70 ? "#34d399" : valuation.fundingReadiness > 40 ? "#fbbf24" : "#f87171",
+              }}>{valuation.fundingReadiness}%</span>
+            </div>
+            <div style={{ height: 4, background: "rgba(255,255,255,0.04)", borderRadius: 2 }}>
+              <div style={{
+                height: 4, borderRadius: 2, width: `${valuation.fundingReadiness}%`, transition: "width 0.5s",
+                background: valuation.fundingReadiness > 70 ? "#34d399" : valuation.fundingReadiness > 40 ? "#fbbf24" : "#f87171",
+              }} />
+            </div>
+          </div>
+
+          {/* Readiness checklist */}
+          {valuation.readinessFactors.map((f) => (
+            <div key={f.label} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
+              <span style={{ fontSize: 14, width: 20, textAlign: "center" }}>{f.pass ? "✓" : "✗"}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 11, color: f.pass ? "rgba(200,220,240,0.7)" : "rgba(200,220,240,0.4)" }}>{f.label}</div>
+                <div style={{ fontSize: 10, color: "rgba(200,220,240,0.25)" }}>{f.detail}</div>
+              </div>
+            </div>
+          ))}
         </div>
 
-        {/* ═══ EMPTY STATE ═══ */}
-        {!hasRun && (
-          <div className={styles.emptyState}>
-            <p className={styles.emptyTitle}>—</p>
-            <p className={styles.emptyHint}>
-              Run a scenario to generate valuation distribution.
-            </p>
+        {/* Centre: Investor-lens terrain */}
+        <div style={{ flex: 1, position: "relative" }}>
+          <div style={{
+            position: "absolute", top: 10, left: 14, zIndex: 10, fontSize: 9, fontWeight: 700,
+            letterSpacing: "0.14em", textTransform: "uppercase", padding: "4px 10px", borderRadius: 4,
+            background: "rgba(4,8,16,0.85)", color: "rgba(34,211,238,0.5)", border: "1px solid rgba(34,211,238,0.1)",
+          }}>
+            Investor Lens
           </div>
-        )}
-
-        {/* ═══ TOP RAIL — 4 KPI CHIPS ═══ */}
-        {hasRun && (
-          <div className={styles.topRail}>
-            {/* Chip 1: P50 Enterprise Value */}
-            <div className={styles.chip}>
-              <span className={styles.chipLabel}>P50 Enterprise Value</span>
-              <span className={`${styles.chipValue} ${styles.chipValueCyan}`}>
-                {p50EV != null ? fmtM(p50EV) : "—"}
-              </span>
-              <span className={styles.chipSub}>Blended (DCF + Rev + EBITDA)</span>
-            </div>
-
-            {/* Chip 2: P10–P90 Range */}
-            <div className={styles.chip}>
-              <span className={styles.chipLabel}>P10 – P90 Range</span>
-              <span className={styles.chipValue}>
-                {rangeLow != null && rangeHigh != null
-                  ? `${fmtM(rangeLow)} – ${fmtM(rangeHigh)}`
-                  : "—"}
-              </span>
-              <span className={styles.chipSub}>Cross-method spread</span>
-            </div>
-
-            {/* Chip 3: Probability Strategy Creates Value */}
-            <div className={styles.chip}>
-              <span className={styles.chipLabel}>P(Value Creation)</span>
-              <span className={`${styles.chipValue} ${pValueCreate != null ? styles.chipValueCyan : styles.chipValueMuted}`}>
-                {pValueCreate != null ? fmtPct(pValueCreate) : "—"}
-              </span>
-              <span className={styles.chipSub}>Blended EV &gt; 0</span>
-            </div>
-
-            {/* Chip 4: Risk-Adjusted EV */}
-            <div className={styles.chip}>
-              <span className={styles.chipLabel}>Risk-Adjusted EV</span>
-              <span className={`${styles.chipValue} ${styles.chipValueMuted}`}>
-                {riskAdjustedEV != null ? fmtM(riskAdjustedEV) : "—"}
-              </span>
-              <span className={styles.chipSub}>Conservative method floor</span>
-            </div>
-          </div>
-        )}
-
-        {/* ═══ METHOD SELECTOR ═══ */}
-        {hasRun && (
-          <div className={styles.methodBar}>
-            <span className={styles.methodLabel}>Valuation Method:</span>
-            {METHODS.map((m) => (
-              <button
-                key={m.id}
-                className={[
-                  styles.methodBtn,
-                  selectedMethod === m.id ? styles.methodBtnActive : "",
-                  m.disabled ? styles.methodBtnDisabled : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                onClick={() => !m.disabled && setSelectedMethod(m.id)}
-                disabled={m.disabled}
-                title={m.disabled ? "Coming in a future phase" : undefined}
-              >
-                {m.label}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* ═══ TWO-COLUMN GRID ═══ */}
-        {hasRun && (
-          <div className={styles.grid}>
-            {/* ── LEFT COLUMN ── */}
-
-            {/* Panel 1: Enterprise Value Distribution */}
-            <div className={styles.panel}>
-              <div className={styles.panelHeader}>
-                <span className={styles.panelIcon}>📊</span>
-                <span className={styles.panelTitle}>Enterprise Value Distribution</span>
-              </div>
-              <div className={styles.panelBody} style={{ flexDirection: "column", gap: 16 }}>
-                {valuation ? (
-                  <>
-                    <EnterpriseValueDistribution valuation={valuation} />
-                    <table className={styles.breakdownTable}>
-                      <thead>
-                        <tr>
-                          <th>Method</th>
-                          <th>Enterprise Value</th>
-                          <th>Detail</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td>DCF</td>
-                          <td className={selectedMethod === "dcf" ? styles.breakdownHighlight : ""}>
-                            {fmtM(valuation.dcf.enterpriseValue)}
-                          </td>
-                          <td>Terminal: {fmtM(valuation.dcf.terminalValue)}</td>
-                        </tr>
-                        <tr>
-                          <td>Revenue Multiple</td>
-                          <td className={selectedMethod === "revenue_multiple" ? styles.breakdownHighlight : ""}>
-                            {fmtM(valuation.revenueMultiple.enterpriseValue)}
-                          </td>
-                          <td>{fmtX(valuation.revenueMultiple.multiple)} ARR</td>
-                        </tr>
-                        <tr>
-                          <td>EBITDA Multiple</td>
-                          <td>{fmtM(valuation.ebitdaMultiple.enterpriseValue)}</td>
-                          <td>{fmtX(valuation.ebitdaMultiple.multiple)} EBITDA</td>
-                        </tr>
-                        <tr>
-                          <td style={{ fontWeight: 600 }}>Blended</td>
-                          <td className={styles.breakdownHighlight}>
-                            {fmtM(valuation.blendedValue)}
-                          </td>
-                          <td>(DCF + Rev + EBITDA) / 3</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </>
-                ) : (
-                  <div className={styles.placeholder}>
-                    Awaiting valuation data
-                    <span className={styles.placeholderPhase}>Phase V-3</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Panel 2: Probability Dashboard */}
-            <div className={styles.panel}>
-              <div className={styles.panelHeader}>
-                <span className={styles.panelIcon}>📈</span>
-                <span className={styles.panelTitle}>Probability Dashboard</span>
-              </div>
-              <div className={styles.panelBody}>
-                {valuation ? (
-                  <ProbabilityDashboard valuation={valuation} />
-                ) : (
-                  <div className={styles.placeholder}>
-                    Awaiting valuation data
-                    <span className={styles.placeholderPhase}>Phase V-3B</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Panel 3: Valuation Waterfall */}
-            <div className={styles.panel}>
-              <div className={styles.panelHeader}>
-                <span className={styles.panelIcon}>💧</span>
-                <span className={styles.panelTitle}>Valuation Waterfall</span>
-              </div>
-              <div className={styles.panelBody}>
-                <ValuationWaterfall waterfall={waterfallData} />
-              </div>
-            </div>
-
-            {/* Panel 4: AI Strategic Analysis (V-5) */}
-            <div className={styles.panel}>
-              <div className={styles.panelHeader}>
-                <span className={styles.panelIcon}>🧠</span>
-                <span className={styles.panelTitle}>AI Strategic Analysis</span>
-              </div>
-              <div className={styles.panelBody}>
-                <ValuationStrategicNarrative narrative={narrativeData} />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ═══ PROVENANCE ═══ */}
-        <div className={styles.footer}>
-          <ProvenanceBadge />
+          <TerrainStage
+            progressive
+            revealedKpis={revealedKpis}
+            focusedKpi={null}
+            zoneKpis={baseKpis}
+            cameraPreset={POSITION_PROGRESSIVE_PRESET}
+            autoRotateSpeed={0.25}
+            showDependencyLines
+            hideMarkers={false}
+            heatmapEnabled
+          >
+            <SkyAtmosphere />
+          </TerrainStage>
+          <TerrainZoneLegend kpis={baseKpis} revealedKpis={revealedKpis} focusedKpi={null} compact />
         </div>
       </div>
-
-      {/* ═══ PROBABILITY NOTICE (visible, not behind accordion) ═══ */}
-      <SystemProbabilityNotice />
-    </div>
-  );
+    </PageShell>
+  )
 }

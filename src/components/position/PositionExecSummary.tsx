@@ -15,6 +15,7 @@ function fmtMoney(n: number): string {
 
 interface Props {
   kpis: PositionKpis | null
+  revealedCount?: number
 }
 
 const TONE_COLORS: Record<string, { border: string; bg: string; badge: string }> = {
@@ -24,12 +25,12 @@ const TONE_COLORS: Record<string, { border: string; bg: string; badge: string }>
   strong:      { border: "rgba(52,211,153,0.55)",  bg: "rgba(52,211,153,0.06)", badge: "#34d399" },
 }
 
-const PositionExecSummary: React.FC<Props> = memo(({ kpis }) => {
+const PositionExecSummary: React.FC<Props> = memo(({ kpis, revealedCount = 10 }) => {
   const [expanded, setExpanded] = useState(false)
 
   if (!kpis) return null
 
-  const { label, tone, narrative } = getExecutiveSummary(kpis)
+  const { label, tone, narrative } = getExecutiveSummary(kpis, revealedCount)
   const colors = TONE_COLORS[tone] ?? TONE_COLORS.stable
   const rw = kpis.runwayMonths
 

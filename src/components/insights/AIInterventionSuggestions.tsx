@@ -1,8 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useTrajectoryStore } from "@/state/trajectoryStore";
-import { useRiskWeatherStore } from "@/state/riskWeatherStore";
 import type { TrajectoryInsight } from "@/types/trajectory";
-import type { RiskZone } from "@/state/riskWeatherStore";
+import type { RiskZone } from "@/engine/reports/scenarioReportGenerator";
 
 /**
  * Intervention type definitions
@@ -177,7 +176,7 @@ function generateInterventions(
  */
 export default function AIInterventionSuggestions() {
   const { insights } = useTrajectoryStore();
-  const { zones } = useRiskWeatherStore();
+  const zones: RiskZone[] = [];
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<InterventionCategory | "all">("all");
 

@@ -68,9 +68,20 @@ export const COMMAND_PRESET: CameraPreset = {
   fov: 46,
 }
 
+/**
+ * Position page (Progressive Terrain Build) — wide, elevated, centered.
+ * Shows the full flat plane and captures mountain growth from all angles.
+ */
+export const POSITION_PROGRESSIVE_PRESET: CameraPreset = {
+  pos: [0, 240, 720],
+  target: [0, 0, 0],
+  fov: 52,
+}
+
 /** All presets keyed by page context */
 export const CAMERA_PRESETS = {
   position: POSITION_PRESET,
+  positionProgressive: POSITION_PROGRESSIVE_PRESET,
   studio: STUDIO_PRESET,
   compare: COMPARE_PRESET,
   welcome: WELCOME_PRESET,

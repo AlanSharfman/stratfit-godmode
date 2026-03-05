@@ -7,10 +7,10 @@
   background: var(--color-bg-void);
   overflow: hidden;
 
-  /* Position-page tokens — deep void institutional base */
-  --color-bg-void: #020814;
-  --color-bg-deep: #010610;
-  --color-bg-surface: #060E18;
+  /* Position-page tokens — near-black with cold blue undertone */
+  --color-bg-void: #040810;
+  --color-bg-deep: #030610;
+  --color-bg-surface: #050D16;
 
   /* ─────────────────────────────────────────────────────────────
      Shared optics (local, deterministic)
@@ -36,19 +36,19 @@
   --sf-mono: ui-monospace, "JetBrains Mono", monospace;
   --sf-sans: Inter, system-ui, sans-serif;
 
-  /* Atmosphere tuning variables */
-  --atmo-top: rgba(3, 8, 16, 1);
-  --atmo-mid: rgba(16, 28, 40, 1);
-  --atmo-horizon: rgba(170, 210, 225, 0.20);
-  --atmo-strength: 0.93;
-  --haze-deep: 0.28;
-  --haze-horizon: 0.44;
-  --vignette-strength: 0.40;
-  --vignette-top-boost: 0.20;
-  --spotlight-strength: 0.16;
-  --spot-x: 52%;
-  --spot-y: 56%;
-  --spot-radius: 62%;
+  /* Atmosphere tuning variables — near-black stage */
+  --atmo-top: rgba(4, 8, 16, 1);
+  --atmo-mid: rgba(8, 14, 22, 1);
+  --atmo-horizon: rgba(100, 160, 200, 0.08);
+  --atmo-strength: 0.60;
+  --haze-deep: 0.10;
+  --haze-horizon: 0.12;
+  --vignette-strength: 0.50;
+  --vignette-top-boost: 0.25;
+  --spotlight-strength: 0.06;
+  --spot-x: 50%;
+  --spot-y: 50%;
+  --spot-radius: 55%;
 
   /* God Mode 10/10 — motion / grain knobs */
   --idle-strength: 1;

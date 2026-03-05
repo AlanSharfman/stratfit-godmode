@@ -121,6 +121,32 @@ export function generateSuggestions(kpis: PositionKpis): StressTestSuggestion[] 
     })
   }
 
+  // Churn suggestions
+  const churnHealth = getHealthLevel("churn", kpis)
+  if (churnHealth === "critical" || churnHealth === "watch") {
+    suggestions.push({
+      id: "reduce-churn",
+      kpiSource: "churn",
+      intent: "cost_reduction",
+      headline: `Reduce churn — currently ${(kpis.churnPct ?? 0).toFixed(1)}% monthly`,
+      prompt: `Implement retention program to reduce monthly churn from ${(kpis.churnPct ?? 0).toFixed(1)}% to ${Math.max(1, (kpis.churnPct ?? 0) * 0.5).toFixed(1)}%. Model impact on net revenue retention and ARR growth.`,
+      urgency: churnHealth === "critical" ? "critical" : "high",
+    })
+  }
+
+  // Growth suggestions
+  const growthHealth = getHealthLevel("growth", kpis)
+  if (growthHealth === "critical" || growthHealth === "watch") {
+    suggestions.push({
+      id: "accelerate-growth-rate",
+      kpiSource: "growth",
+      intent: "growth_investment",
+      headline: `Accelerate growth — currently ${(kpis.growthRatePct ?? 0).toFixed(1)}% MoM`,
+      prompt: `Invest in growth to increase month-over-month growth rate from ${(kpis.growthRatePct ?? 0).toFixed(1)}% to 10%+. Model investment required and timeline.`,
+      urgency: "high",
+    })
+  }
+
   // Market expansion (always available as exploratory)
   if (suggestions.length < 5) {
     suggestions.push({
@@ -148,12 +174,14 @@ export function getZoneStripData(kpis: PositionKpis): Array<{
   const keys: Array<{ key: KpiKey; label: string }> = [
     { key: "cash", label: "Cash" },
     { key: "runway", label: "Runway" },
+    { key: "growth", label: "Growth" },
     { key: "arr", label: "ARR" },
     { key: "revenue", label: "Revenue" },
     { key: "burn", label: "Burn" },
+    { key: "churn", label: "Churn" },
     { key: "grossMargin", label: "Margin" },
+    { key: "efficiency", label: "Efficiency" },
     { key: "enterpriseValue", label: "Value" },
-    { key: "survivalProbability", label: "Survival" },
   ]
   return keys.map(({ key, label }) => ({
     key,

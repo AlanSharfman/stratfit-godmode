@@ -5,8 +5,6 @@ import React, { useState } from 'react';
 import { useSimulationStore } from '../../state/simulationStore';
 import { useLeverStore } from '../../state/leverStore';
 import { useScenarioStore } from '../../state/scenarioStore';
-import { useRiskStore } from '../../state/riskStore';
-import { useValuationStore } from '../../state/valuationStore';
 import { emitCompute } from '@/engine/computeTelemetry';
 
 import './ExportReportButton.css';
@@ -40,8 +38,8 @@ export default function ExportReportButton({
   const hasSimulated = useSimulationStore(s => s.hasSimulated);
   const levers = useLeverStore(s => s.levers);
   const baseline = useScenarioStore(s => s.baseline);
-  const riskSnapshot = useRiskStore(s => s.riskSnapshot);
-  const valuationSnapshot = useValuationStore(s => s.snapshot);
+  const riskSnapshot: any = null;
+  const valuationSnapshot: any = null;
   
   // Generate report HTML
   const generateReportHTML = () => {
@@ -289,7 +287,7 @@ export default function ExportReportButton({
           <div class="risk-label">${riskSnapshot.overallLevel}</div>
         </div>
         <div class="risk-factors">
-          ${riskSnapshot.factors.map(f => `
+          ${riskSnapshot.factors.map((f: any) => `
             <div class="risk-factor">
               <span class="factor-name">${f.label}</span>
               <span class="factor-score" style="color: ${f.score > 60 ? '#ef4444' : f.score > 40 ? '#fbbf24' : '#22d3ee'}">${f.score}</span>

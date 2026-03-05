@@ -24,11 +24,11 @@ import { useCompareStore, type ComparePair, type CompareViewMode } from "@/store
 import { deriveTerrainMetrics, type TerrainMetrics } from "@/terrain/terrainFromBaseline"
 
 import CompareTerrainArea from "@/components/compare/CompareTerrainArea"
+import OptimalCompareView from "@/components/compare/OptimalCompareView"
 import CompareGhostHeaderBar from "@/components/compare/CompareGhostHeaderBar"
 import CompareTablePanel from "@/components/compare/CompareTablePanel"
 import CompareInsightPanel from "@/components/compare/CompareInsightPanel"
 import { type ScenarioOption } from "@/components/compare/CompareScenarioSelect"
-import CommandModeStrip from "@/components/command/CommandModeStrip"
 import ProbabilityNotice from "@/components/legal/ProbabilityNotice"
 import ProvenanceBadge from "@/components/system/ProvenanceBadge"
 import SimulationStatusWidget from "@/components/system/SimulationStatusWidget"
@@ -41,7 +41,6 @@ import { generateInvestorPlanStub } from "@/features/intelligence/generateInvest
 import type { BriefingPlan } from "@/features/intelligence/BriefingDirector"
 import type { IntelligenceState } from "@/features/intelligence/intelligenceState"
 import type { HighlightState } from "@/features/compare/highlightContract"
-import { useCommandAutoEvaluate } from "@/hooks/useCommandAutoEvaluate"
 import type { TerrainEvent } from "@/domain/events/terrainEventTypes"
 import TimelineSyncStrip from "@/components/timeline/TimelineSyncStrip"
 
@@ -203,7 +202,6 @@ export default function ComparePage() {
 
   // ── Command Centre Auto-Evaluate ──
   const activeSimResults = scenarioB?.simulationResults ?? scenarioA?.simulationResults ?? null
-  useCommandAutoEvaluate(activeSimResults)
 
   // ── Headline ──
   const headline = useMemo(() => {
@@ -288,21 +286,17 @@ export default function ComparePage() {
           <span style={S.navDivider} aria-hidden="true" />
           <NavLink to={ROUTES.POSITION} style={S.navItem}>Position</NavLink>
           <span style={S.navDivider} aria-hidden="true" />
-          <NavLink to={ROUTES.DECISION} style={S.navItem}>Decision</NavLink>
+          <NavLink to={ROUTES.WHAT_IF} style={S.navItem}>What If</NavLink>
           <span style={S.navDivider} aria-hidden="true" />
-          <NavLink to={ROUTES.STUDIO} style={S.navItem}>Studio</NavLink>
+          <NavLink to={ROUTES.ACTIONS} style={S.navItem}>Actions</NavLink>
           <span style={S.navDivider} aria-hidden="true" />
           <NavLink to={ROUTES.COMPARE} style={({ isActive }) => isActive ? S.navItemActive : S.navItem}>Compare</NavLink>
           <span style={S.navDivider} aria-hidden="true" />
-          <NavLink to={ROUTES.RISK} style={S.navItem}>Risk</NavLink>
-          <span style={S.navDivider} aria-hidden="true" />
-          <NavLink to={ROUTES.VALUATION} style={S.navItem}>Valuation</NavLink>
-          <span style={S.navDivider} aria-hidden="true" />
-          <NavLink to={ROUTES.COMMAND} style={S.navItem}>Command Centre</NavLink>
+          <NavLink to={ROUTES.BOARDROOM} style={S.navItem}>Boardroom</NavLink>
         </nav>
 
         <div style={S.headerRight}>
-          {/* Standard ↔ Ultimate toggle */}
+          {/* Standard ↔ Ultimate ↔ vs Optimal toggle */}
           <div style={S.modeToggle}>
             <button
               type="button"
@@ -316,6 +310,12 @@ export default function ComparePage() {
               style={compareMode === "ultimate" ? S.modeBtnUltimateActive : S.modeBtn}
               disabled={isBriefingPlaying}
             >Ultimate</button>
+            <button
+              type="button"
+              onClick={() => setCompareMode("optimal" as any)}
+              style={(compareMode as string) === "optimal" ? { ...S.modeBtnUltimateActive, color: "#22d3ee", background: "rgba(34,211,238,0.12)" } : S.modeBtn}
+              disabled={isBriefingPlaying}
+            >vs Optimal</button>
           </div>
 
           {/* Split ↔ Ghost toggle */}
@@ -406,28 +406,32 @@ export default function ComparePage() {
             />
           )}
 
-          <CompareTerrainArea
-            viewMode={viewMode}
-            nScenarios={compareCount}
-            activePair={activePair}
-            selectedAId={aId}
-            selectedBId={bId}
-            selectedCId={cId}
-            metricsA={metricsA}
-            metricsB={metricsB}
-            metricsC={metricsC}
-            eventsA={eventsA}
-            eventsB={eventsB}
-            eventsC={eventsC}
-            scenarioOptions={scenarioOptions}
-            onSelectA={setAId}
-            onSelectB={setBId}
-            onSelectC={setCId}
-            highlightTarget={highlight.active}
-            highlightTs={highlight.ts}
-            briefingActive={briefingActive}
-            briefingPlan={briefingPlan}
-          />
+          {(compareMode as string) === "optimal" ? (
+            <OptimalCompareView />
+          ) : (
+            <CompareTerrainArea
+              viewMode={viewMode}
+              nScenarios={compareCount}
+              activePair={activePair}
+              selectedAId={aId}
+              selectedBId={bId}
+              selectedCId={cId}
+              metricsA={metricsA}
+              metricsB={metricsB}
+              metricsC={metricsC}
+              eventsA={eventsA}
+              eventsB={eventsB}
+              eventsC={eventsC}
+              scenarioOptions={scenarioOptions}
+              onSelectA={setAId}
+              onSelectB={setBId}
+              onSelectC={setCId}
+              highlightTarget={highlight.active}
+              highlightTs={highlight.ts}
+              briefingActive={briefingActive}
+              briefingPlan={briefingPlan}
+            />
+          )}
         </div>
 
         {/* ── TIMELINE SYNC STRIP ── */}
@@ -479,11 +483,6 @@ export default function ComparePage() {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* ── Command Mode Strip ── */}
-      <div style={S.commandStrip}>
-        <CommandModeStrip engineResults={activeSimResults} />
       </div>
 
       {/* ── Briefing Director ── */}
