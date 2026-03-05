@@ -6,11 +6,10 @@
 // Every page that hosts a TerrainStage reads from here.
 //
 // Composition rules:
-//   - Peak sits in upper third
-//   - Horizon visible
-//   - No extreme top-down
-//   - Consistent cross-page
-//   - Shifted left so overlays don't collide with terrain markers
+//   - Elevated panoramic angle for full terrain coverage
+//   - Peak sits in upper third, horizon visible
+//   - Centered to capture the entire mountain shape
+//   - Consistent cross-page for spatial memory
 // ═══════════════════════════════════════════════════════════════════════════
 
 export interface CameraPreset {
@@ -20,23 +19,23 @@ export interface CameraPreset {
 }
 
 /**
- * Position page — primary terrain view.
- * Institutional "survey" angle: ridge in upper third, foreground depth,
- * slightly left-shifted to avoid overlay collision.
+ * Default elevated panoramic angle — the "god view".
+ * Centred, high enough to see the full terrain footprint,
+ * pulled back for complete coverage of peaks, ridges and valleys.
  */
 export const POSITION_PRESET: CameraPreset = {
-  pos: [-40, 150, 500],
-  target: [-20, 14, 0],
-  fov: 46,
+  pos: [0, 260, 700],
+  target: [0, 0, 0],
+  fov: 50,
 }
 
 /**
- * Studio page — identical to Position for consistency.
+ * Studio page — matches the default panoramic for consistency.
  */
 export const STUDIO_PRESET: CameraPreset = {
-  pos: [-40, 150, 500],
-  target: [-20, 14, 0],
-  fov: 46,
+  pos: [0, 260, 700],
+  target: [0, 0, 0],
+  fov: 50,
 }
 
 /**
@@ -44,38 +43,39 @@ export const STUDIO_PRESET: CameraPreset = {
  * Synchronized cameras ensure visual comparability.
  */
 export const COMPARE_PRESET: CameraPreset = {
-  pos: [-40, 150, 500],
-  target: [-20, 14, 0],
-  fov: 46,
+  pos: [0, 260, 700],
+  target: [0, 0, 0],
+  fov: 50,
 }
 
 /**
- * Welcome page — same composition but used with blur overlay.
+ * Welcome page — same panoramic angle, rendered behind blur overlay.
+ * Slightly wider FOV for cinematic hero framing.
  */
 export const WELCOME_PRESET: CameraPreset = {
-  pos: [-40, 150, 500],
-  target: [-20, 14, 0],
-  fov: 46,
+  pos: [0, 280, 740],
+  target: [0, 0, 0],
+  fov: 52,
 }
 
 /**
  * Command Centre — cinematic wide-angle for theatre mode.
- * Slightly elevated for dramatic framing.
+ * Slightly more elevated for dramatic framing.
  */
 export const COMMAND_PRESET: CameraPreset = {
-  pos: [-40, 150, 500],
-  target: [-20, 14, 0],
-  fov: 46,
+  pos: [0, 280, 740],
+  target: [0, 0, 0],
+  fov: 52,
 }
 
 /**
- * Position page (Progressive Terrain Build) — wide, elevated, centered.
- * Shows the full flat plane and captures mountain growth from all angles.
+ * Progressive Terrain Build — elevated, centered, wide.
+ * Captures mountain growth from a full panoramic position.
  */
 export const POSITION_PROGRESSIVE_PRESET: CameraPreset = {
-  pos: [0, 240, 720],
+  pos: [0, 260, 700],
   target: [0, 0, 0],
-  fov: 52,
+  fov: 50,
 }
 
 /** All presets keyed by page context */

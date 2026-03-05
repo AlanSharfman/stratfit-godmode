@@ -1,11 +1,11 @@
-import React, { useState } from "react"
+import React, { useCallback, useMemo, useState } from "react"
 import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
 import { KPI_KEYS, KPI_ZONE_MAP, getHealthLevel, getHealthColor, type HealthColor } from "@/domain/intelligence/kpiZoneMapping"
+import type { PositionKpis } from "@/pages/position/overlays/positionState"
 
 function colorToCss(c: HealthColor): string {
   return `rgb(${Math.round(c.r * 255)}, ${Math.round(c.g * 255)}, ${Math.round(c.b * 255)})`
 }
-import type { PositionKpis } from "@/pages/position/overlays/positionState"
 
 interface Props {
   kpis: PositionKpis | null
@@ -15,16 +15,21 @@ interface Props {
   compact?: boolean
 }
 
-export default function TerrainZoneLegend({ kpis, revealedKpis, focusedKpi, onFocusKpi, compact = false }: Props) {
+export default React.memo(function TerrainZoneLegend({ kpis, revealedKpis, focusedKpi, onFocusKpi, compact = false }: Props) {
   const [collapsed, setCollapsed] = useState(false)
+  const toggleCollapsed = useCallback(() => setCollapsed((v) => !v), [])
+  const clearFocus = useCallback(() => onFocusKpi?.(null), [onFocusKpi])
 
-  if (!kpis || revealedKpis.size === 0) return null
+  const zones = useMemo(() => {
+    if (!kpis || revealedKpis.size === 0) return []
+    return KPI_KEYS.filter((k) => revealedKpis.has(k)).map((kpi) => {
+      const health = getHealthLevel(kpi, kpis)
+      const color = colorToCss(getHealthColor(health))
+      return { kpi, label: KPI_ZONE_MAP[kpi].label, health, color }
+    })
+  }, [kpis, revealedKpis])
 
-  const zones = KPI_KEYS.filter((k) => revealedKpis.has(k)).map((kpi) => {
-    const health = getHealthLevel(kpi, kpis)
-    const color = colorToCss(getHealthColor(health))
-    return { kpi, label: KPI_ZONE_MAP[kpi].label, health, color }
-  })
+  if (zones.length === 0) return null
 
   return (
     <div style={{
@@ -35,7 +40,7 @@ export default function TerrainZoneLegend({ kpis, revealedKpis, focusedKpi, onFo
       pointerEvents: "auto",
     }}>
       <button
-        onClick={() => setCollapsed((v) => !v)}
+        onClick={toggleCollapsed}
         style={{
           display: "flex", alignItems: "center", gap: 6,
           background: "rgba(4,8,16,0.88)", border: "1px solid rgba(34,211,238,0.1)",
@@ -67,7 +72,7 @@ export default function TerrainZoneLegend({ kpis, revealedKpis, focusedKpi, onFo
               <div
                 key={kpi}
                 onMouseEnter={() => onFocusKpi?.(kpi)}
-                onMouseLeave={() => onFocusKpi?.(null)}
+                onMouseLeave={clearFocus}
                 style={{
                   display: "flex", alignItems: "center", gap: 8,
                   padding: compact ? "4px 10px" : "5px 10px",
@@ -103,4 +108,4 @@ export default function TerrainZoneLegend({ kpis, revealedKpis, focusedKpi, onFo
       )}
     </div>
   )
-}
+})

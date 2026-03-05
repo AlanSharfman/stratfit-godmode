@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react"
+import React, { useMemo, useState, lazy, Suspense } from "react"
 
 import PageShell from "@/components/nav/PageShell"
 import TerrainZoneLegend from "@/components/terrain/TerrainZoneLegend"
@@ -11,8 +11,8 @@ import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
 import { KPI_KEYS, KPI_ZONE_MAP, getHealthLevel, type HealthLevel } from "@/domain/intelligence/kpiZoneMapping"
 import { KPI_GRAPH, propagateForce } from "@/engine/kpiDependencyGraph"
 import { SCENARIO_TEMPLATES, type ScenarioTemplate } from "@/engine/scenarioTemplates"
-import RiskCascadeViz from "@/components/viz/RiskCascadeViz"
-import AlertsDashboard from "@/components/alerts/AlertsDashboard"
+const RiskCascadeViz = lazy(() => import("@/components/viz/RiskCascadeViz"))
+const AlertsDashboard = lazy(() => import("@/components/alerts/AlertsDashboard"))
 
 interface RiskCategory {
   key: string
@@ -101,7 +101,8 @@ function computeStressImpact(kpis: PositionKpis, template: ScenarioTemplate): { 
   const kpiFieldMap: Record<KpiKey, keyof PositionKpis> = {
     cash: "cashOnHand", runway: "runwayMonths", growth: "growthRatePct", arr: "arr",
     revenue: "revenueMonthly", burn: "burnMonthly", churn: "churnPct",
-    grossMargin: "grossMarginPct", efficiency: "efficiencyRatio", enterpriseValue: "valuationEstimate",
+    grossMargin: "grossMarginPct", headcount: "headcount", nrr: "nrrPct",
+    efficiency: "efficiencyRatio", enterpriseValue: "valuationEstimate",
   }
 
   const result = { ...kpis }
@@ -198,12 +199,16 @@ export default function RiskPage() {
           ))}
           {/* Risk Cascade Network */}
           <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid rgba(34,211,238,0.04)" }}>
-            <RiskCascadeViz kpis={baseKpis} />
+            <Suspense fallback={null}>
+              <RiskCascadeViz kpis={baseKpis} />
+            </Suspense>
           </div>
 
           {/* Alerts */}
           <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid rgba(34,211,238,0.04)" }}>
-            <AlertsDashboard kpis={baseKpis} compact />
+            <Suspense fallback={null}>
+              <AlertsDashboard kpis={baseKpis} compact />
+            </Suspense>
           </div>
         </div>
 

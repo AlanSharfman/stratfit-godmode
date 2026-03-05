@@ -3,6 +3,9 @@ import react from "@vitejs/plugin-react";
 import * as path from "path";
 
 export default defineConfig({
+  define: {
+    __BUILD_TIMESTAMP__: JSON.stringify(new Date().toISOString()),
+  },
   server: {
     host: "127.0.0.1",
     port: 62000,

@@ -14,7 +14,8 @@ import { computeActionRecommendations } from "@/engine/sensitivityAnalysis"
 const KPI_LABELS: Record<KpiKey, string> = {
   cash: "Cash", runway: "Runway", growth: "Growth", arr: "ARR",
   revenue: "Revenue", burn: "Burn", churn: "Churn",
-  grossMargin: "Margin", efficiency: "Efficiency", enterpriseValue: "EV",
+  grossMargin: "Margin", headcount: "Team", nrr: "NRR",
+  efficiency: "Efficiency", enterpriseValue: "EV",
 }
 
 function generateWeeklyQuestions(kpis: PositionKpis): string[] {

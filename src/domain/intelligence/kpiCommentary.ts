@@ -106,6 +106,28 @@ function efficiencyCommentary(k: PositionKpis): string {
   return `${fmtEff} per employee is exceptional leverage. The terrain plateau reaches peak elevation here — operational efficiency is a structural advantage.`
 }
 
+function headcountCommentary(k: PositionKpis): string {
+  const hc = k.headcount ?? 0
+  if (hc < 5)
+    return `Team of ${hc} — the talent basin is shallow. Every hire has outsized impact on velocity and culture. Resource constraints limit parallel execution.`
+  if (hc < 20)
+    return `${hc} people on the team — the talent basin is forming depth. Organisational design starts to matter; role clarity and communication overhead become factors.`
+  if (hc < 50)
+    return `Headcount at ${hc} — the talent basin supports multi-stream execution. Efficiency per head becomes the critical metric as the team scales.`
+  return `${hc} employees — the talent basin is deep. At this scale, the terrain reflects structural organisational leverage. Revenue per employee determines elevation.`
+}
+
+function nrrCommentary(k: PositionKpis): string {
+  const n = k.nrrPct ?? 100
+  if (n < 80)
+    return `NRR at ${n.toFixed(0)}% — the expansion ridge has collapsed. Net contraction means growth must outpace churn just to maintain current revenue. This is a structural threat.`
+  if (n < 100)
+    return `${n.toFixed(0)}% NRR indicates net contraction. The expansion ridge is eroding — existing customers are shrinking faster than they expand. Retention and upsell become urgent priorities.`
+  if (n < 120)
+    return `${n.toFixed(0)}% NRR shows healthy expansion dynamics. The ridge is building — existing customers are contributing positive growth, amplifying new acquisition.`
+  return `${n.toFixed(0)}% NRR is exceptional. The expansion ridge dominates the terrain — your existing base is a compounding growth engine independent of new customer acquisition.`
+}
+
 const COMMENTARY: Record<KpiKey, (k: PositionKpis) => string> = {
   cash:            cashCommentary,
   runway:          runwayCommentary,
@@ -115,6 +137,8 @@ const COMMENTARY: Record<KpiKey, (k: PositionKpis) => string> = {
   burn:            burnCommentary,
   churn:           churnCommentary,
   grossMargin:     grossMarginCommentary,
+  headcount:       headcountCommentary,
+  nrr:             nrrCommentary,
   efficiency:      efficiencyCommentary,
   enterpriseValue: valuationCommentary,
 }
@@ -138,13 +162,13 @@ export function getExecutiveSummary(kpis: PositionKpis, revealedCount = 10): {
   else if (sp < 75 || rw < 14) { label = "STABLE"; tone = "stable" }
   else { label = "STRONG"; tone = "strong" }
 
-  if (revealedCount < 10) {
+  if (revealedCount < 12) {
     return {
-      label: `${revealedCount}/10`,
+      label: `${revealedCount}/12`,
       tone,
       narrative: revealedCount === 0
         ? "Focus each KPI below to reveal its terrain zone and build the mountain of your business."
-        : `${revealedCount} of 10 zones revealed. Continue exploring to complete your position terrain.`,
+        : `${revealedCount} of 12 zones revealed. Continue exploring to complete your position terrain.`,
     }
   }
 
@@ -163,7 +187,7 @@ export function getExecutiveSummary(kpis: PositionKpis, revealedCount = 10): {
   ]
   if (strengths.length > 0) parts.push(`Key strengths: ${strengths.join(", ")}.`)
   if (risks.length > 0) parts.push(`Areas of concern: ${risks.join(", ")}.`)
-  parts.push("All 10 zones revealed — your business terrain is complete. Stress-test any area that needs attention.")
+  parts.push("All 12 zones revealed — your business terrain is complete. Stress-test any area that needs attention.")
 
   return { label, tone, narrative: parts.join(" ") }
 }

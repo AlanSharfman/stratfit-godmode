@@ -1,21 +1,17 @@
 import React, { useEffect } from "react"
 import { Navigate } from "react-router-dom"
 import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore"
-import { useBaselineStore } from "@/state/baselineStore"
+import { useSystemBaseline } from "@/system/SystemBaselineProvider"
 import PositionPage from "@/pages/position/PositionPage"
 
 export default function PositionRoute() {
   const scenarioHydrated = usePhase1ScenarioStore((s) => s.isHydrated)
   const hydrateScenarios = usePhase1ScenarioStore((s) => s.hydrate)
-  const baselineHydrated = useBaselineStore((s) => s.isHydrated)
-  const hydrateBaseline = useBaselineStore((s) => s.hydrate)
-  const baseline = useBaselineStore((s) => s.baseline)
-  const activeScenarioId = usePhase1ScenarioStore((s) => s.activeScenarioId)
+  const { baseline } = useSystemBaseline()
 
   useEffect(() => { hydrateScenarios() }, [hydrateScenarios])
-  useEffect(() => { hydrateBaseline() }, [hydrateBaseline])
 
-  if (!scenarioHydrated || !baselineHydrated) {
+  if (!scenarioHydrated) {
     return (
       <div style={{ padding: 24, color: "#e2e8f0", fontFamily: "'Inter', system-ui, sans-serif" }}>
         Loading&#8230;
@@ -27,6 +23,5 @@ export default function PositionRoute() {
     return <Navigate to="/initiate" replace />
   }
 
-  // Allow Position with just a baseline — scenario is optional
   return <PositionPage />
 }

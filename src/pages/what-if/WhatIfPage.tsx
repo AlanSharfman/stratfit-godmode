@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from "react"
+import { AnimatePresence } from "framer-motion"
 
 import PageShell from "@/components/nav/PageShell"
 import TerrainStage from "@/terrain/TerrainStage"
@@ -18,6 +19,7 @@ import ImpactChain from "@/components/cascade/ImpactChain"
 import TerrainZoneLegend from "@/components/terrain/TerrainZoneLegend"
 import { useCascadeNarration } from "@/hooks/useCascadeNarration"
 import ScenarioLibrary from "@/components/persistence/ScenarioLibrary"
+import ScenarioGallery from "@/components/scenarios/ScenarioGallery"
 import { usePersistenceStore } from "@/stores/persistenceStore"
 import { parseNaturalLanguage } from "@/engine/naturalLanguageForceMapper"
 import styles from "./WhatIfPage.module.css"
@@ -32,7 +34,8 @@ interface StackedScenario {
 const KPI_LABELS: Record<KpiKey, string> = {
   cash: "Cash", runway: "Runway", growth: "Growth", arr: "ARR",
   revenue: "Revenue", burn: "Burn", churn: "Churn",
-  grossMargin: "Margin", efficiency: "Efficiency", enterpriseValue: "EV",
+  grossMargin: "Margin", headcount: "Team", nrr: "NRR",
+  efficiency: "Efficiency", enterpriseValue: "EV",
 }
 
 function formatDelta(kpi: KpiKey, v: number): string {
@@ -42,7 +45,8 @@ function formatDelta(kpi: KpiKey, v: number): string {
     if (abs >= 1e3) return `${v > 0 ? "+" : "-"}$${(abs / 1e3).toFixed(0)}K`
     return `${v > 0 ? "+" : "-"}$${abs.toFixed(0)}`
   }
-  if (["churn", "growth", "grossMargin"].includes(kpi)) return `${v > 0 ? "+" : ""}${v.toFixed(1)}%`
+  if (["churn", "growth", "grossMargin", "nrr"].includes(kpi)) return `${v > 0 ? "+" : ""}${v.toFixed(1)}%`
+  if (kpi === "headcount") return `${v > 0 ? "+" : ""}${Math.round(v)}`
   if (kpi === "efficiency") return `${v > 0 ? "+" : ""}${v.toFixed(2)}`
   if (kpi === "runway") return `${v > 0 ? "+" : ""}${v.toFixed(1)} mo`
   return `${v > 0 ? "+" : ""}${v}`
@@ -66,6 +70,7 @@ export default function WhatIfPage() {
   const [timelineMonth, setTimelineMonth] = useState(0)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [showImpactChain, setShowImpactChain] = useState(false)
+  const [showGallery, setShowGallery] = useState(false)
   const [lastCascadeSource, setLastCascadeSource] = useState<{ kpi: KpiKey; delta: number } | null>(null)
   const { narrate: narrateCascade, stop: stopNarration, isNarrating } = useCascadeNarration()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -129,6 +134,7 @@ export default function WhatIfPage() {
       growthRatePct: baseKpis.growthRatePct, arr: baseKpis.arr,
       revenueMonthly: baseKpis.revenueMonthly, burnMonthly: baseKpis.burnMonthly,
       churnPct: baseKpis.churnPct, grossMarginPct: baseKpis.grossMarginPct,
+      headcount: baseKpis.headcount, nrrPct: baseKpis.nrrPct,
       efficiencyRatio: baseKpis.efficiencyRatio, enterpriseValue: baseKpis.valuationEstimate,
     })
     return timeSimulation(snapshot, { direct: cumulativeForces }, 24)
@@ -147,7 +153,9 @@ export default function WhatIfPage() {
       riskIndex: baseKpis.riskIndex, cashOnHand: s.cash,
       revenueMonthly: s.revenue, survivalScore: baseKpis.survivalScore,
       grossMarginPct: s.grossMargin, valuationEstimate: s.enterpriseValue,
-      growthRatePct: s.growth, churnPct: s.churn, efficiencyRatio: s.efficiency,
+      growthRatePct: s.growth, churnPct: s.churn,
+      headcount: s.headcount, nrrPct: s.nrr,
+      efficiencyRatio: s.efficiency,
     }
   }, [timeline, timelineMonth, baseKpis])
 
@@ -282,6 +290,13 @@ export default function WhatIfPage() {
             disabled={!query.trim()}
           >
             Inject Force
+          </button>
+          <button
+            className={styles.injectBtn}
+            onClick={() => setShowGallery(true)}
+            style={{ background: "rgba(167,139,250,0.12)", color: "rgba(167,139,250,0.9)", borderColor: "rgba(167,139,250,0.2)" }}
+          >
+            Browse Scenarios
           </button>
 
           {showSuggestions && suggestions.length > 0 && (
@@ -474,6 +489,13 @@ export default function WhatIfPage() {
           </div>
         </div>
       </div>
+
+      {/* Scenario Gallery Modal */}
+      <AnimatePresence>
+        {showGallery && (
+          <ScenarioGallery onSelect={injectScenario} onClose={() => setShowGallery(false)} />
+        )}
+      </AnimatePresence>
     </PageShell>
   )
 }

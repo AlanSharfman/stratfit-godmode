@@ -38,24 +38,24 @@ export const SCENARIO_TEMPLATES: ScenarioTemplate[] = [
   { id: "government-grant", question: "Secure a $200K government grant", category: "capital", forces: { cash: 200_000 }, description: "Non-dilutive funding without burn impact" },
 
   // ── Hiring ──
-  { id: "hire-sales-team", question: "Hire 3 sales reps", category: "hiring", forces: { burn: 30_000, growth: 12, revenue: 25_000 }, description: "Scale sales team for revenue acceleration" },
-  { id: "hire-senior-eng", question: "Hire a senior engineer", category: "hiring", forces: { burn: 15_000, efficiency: 0.08 }, description: "Improve product velocity and reliability" },
-  { id: "hire-cto", question: "Hire a CTO", category: "hiring", forces: { burn: 22_000, efficiency: 0.15, growth: 5 }, description: "Strategic technical leadership hire" },
-  { id: "hire-marketing", question: "Build a marketing team (2 hires)", category: "hiring", forces: { burn: 20_000, growth: 10 }, description: "Dedicated demand generation capacity" },
+  { id: "hire-sales-team", question: "Hire 3 sales reps", category: "hiring", forces: { burn: 30_000, growth: 12, revenue: 25_000, headcount: 3 }, description: "Scale sales team for revenue acceleration" },
+  { id: "hire-senior-eng", question: "Hire a senior engineer", category: "hiring", forces: { burn: 15_000, efficiency: 0.08, headcount: 1 }, description: "Improve product velocity and reliability" },
+  { id: "hire-cto", question: "Hire a CTO", category: "hiring", forces: { burn: 22_000, efficiency: 0.15, growth: 5, headcount: 1 }, description: "Strategic technical leadership hire" },
+  { id: "hire-marketing", question: "Build a marketing team (2 hires)", category: "hiring", forces: { burn: 20_000, growth: 10, headcount: 2 }, description: "Dedicated demand generation capacity" },
   { id: "outsource-dev", question: "Outsource development offshore", category: "hiring", forces: { burn: -10_000, efficiency: -0.05 }, description: "Lower cost, potential quality tradeoff" },
-  { id: "hire-cs-team", question: "Hire 2 customer success managers", category: "hiring", forces: { burn: 16_000, churn: -3 }, description: "Reduce churn through dedicated support" },
-  { id: "lay-off-20pct", question: "Reduce headcount by 20%", category: "hiring", forces: { burn: -40_000, growth: -10, efficiency: -0.1 }, description: "Significant cost reduction with velocity impact" },
+  { id: "hire-cs-team", question: "Hire 2 customer success managers", category: "hiring", forces: { burn: 16_000, churn: -3, headcount: 2, nrr: 5 }, description: "Reduce churn through dedicated support" },
+  { id: "lay-off-20pct", question: "Reduce headcount by 20%", category: "hiring", forces: { burn: -40_000, growth: -10, efficiency: -0.1, headcount: -5 }, description: "Significant cost reduction with velocity impact" },
 
   // ── Pricing ──
-  { id: "raise-prices-20", question: "Raise prices by 20%", category: "pricing", forces: { revenue: 15_000, churn: 2, grossMargin: 5 }, description: "Higher ARPU with some churn risk" },
-  { id: "lower-prices-15", question: "Lower prices by 15%", category: "pricing", forces: { revenue: -10_000, growth: 8, churn: -2 }, description: "Volume play — sacrifice margin for growth" },
+  { id: "raise-prices-20", question: "Raise prices by 20%", category: "pricing", forces: { revenue: 15_000, churn: 2, grossMargin: 5, nrr: 8 }, description: "Higher ARPU with some churn risk" },
+  { id: "lower-prices-15", question: "Lower prices by 15%", category: "pricing", forces: { revenue: -10_000, growth: 8, churn: -2, nrr: -5 }, description: "Volume play — sacrifice margin for growth" },
   { id: "freemium-tier", question: "Launch a freemium tier", category: "pricing", forces: { growth: 20, burn: 5_000, churn: 3, grossMargin: -8 }, description: "Massive top-of-funnel with conversion challenge" },
-  { id: "annual-plans", question: "Introduce annual pricing (20% discount)", category: "pricing", forces: { cash: 50_000, churn: -4, revenue: -3_000 }, description: "Cash upfront, lower churn, modest revenue reduction" },
-  { id: "enterprise-tier", question: "Launch enterprise pricing tier", category: "pricing", forces: { revenue: 30_000, burn: 10_000, grossMargin: 8 }, description: "High-value contracts with longer sales cycle" },
-  { id: "usage-based", question: "Switch to usage-based pricing", category: "pricing", forces: { revenue: 10_000, churn: -3, growth: 5 }, description: "Align revenue with customer value delivery" },
+  { id: "annual-plans", question: "Introduce annual pricing (20% discount)", category: "pricing", forces: { cash: 50_000, churn: -4, revenue: -3_000, nrr: 6 }, description: "Cash upfront, lower churn, modest revenue reduction" },
+  { id: "enterprise-tier", question: "Launch enterprise pricing tier", category: "pricing", forces: { revenue: 30_000, burn: 10_000, grossMargin: 8, nrr: 12 }, description: "High-value contracts with longer sales cycle" },
+  { id: "usage-based", question: "Switch to usage-based pricing", category: "pricing", forces: { revenue: 10_000, churn: -3, growth: 5, nrr: 5 }, description: "Align revenue with customer value delivery" },
 
   // ── Growth ──
-  { id: "product-led-growth", question: "Invest in product-led growth", category: "growth", forces: { burn: 15_000, growth: 18, churn: -2 }, description: "Self-serve onboarding and viral loops" },
+  { id: "product-led-growth", question: "Invest in product-led growth", category: "growth", forces: { burn: 15_000, growth: 18, churn: -2, nrr: 4 }, description: "Self-serve onboarding and viral loops" },
   { id: "launch-referral", question: "Launch a referral program", category: "growth", forces: { burn: 3_000, growth: 8 }, description: "Low-cost organic acquisition channel" },
   { id: "double-marketing", question: "Double marketing spend", category: "growth", forces: { burn: 25_000, growth: 15, revenue: 20_000 }, description: "Aggressive demand generation push" },
   { id: "international-expansion", question: "Expand to a new market", category: "growth", forces: { burn: 40_000, growth: 10, revenue: 15_000 }, description: "New geography with setup costs" },
@@ -66,7 +66,7 @@ export const SCENARIO_TEMPLATES: ScenarioTemplate[] = [
 
   // ── Efficiency ──
   { id: "automate-ops", question: "Automate manual operations", category: "efficiency", forces: { burn: -12_000, efficiency: 0.2 }, description: "Tooling investment to reduce headcount needs" },
-  { id: "improve-onboarding", question: "Redesign customer onboarding", category: "efficiency", forces: { burn: 5_000, churn: -4, efficiency: 0.05 }, description: "Better first experience reduces early churn" },
+  { id: "improve-onboarding", question: "Redesign customer onboarding", category: "efficiency", forces: { burn: 5_000, churn: -4, efficiency: 0.05, nrr: 3 }, description: "Better first experience reduces early churn" },
   { id: "consolidate-tools", question: "Consolidate SaaS tools", category: "efficiency", forces: { burn: -8_000, efficiency: 0.03 }, description: "Reduce tool sprawl and overhead" },
   { id: "implement-ai", question: "Implement AI for customer support", category: "efficiency", forces: { burn: -5_000, efficiency: 0.12, churn: -1 }, description: "AI-powered support reduces cost per ticket" },
   { id: "tech-debt", question: "Invest in reducing tech debt", category: "efficiency", forces: { burn: 8_000, efficiency: 0.15, growth: -3 }, description: "Short-term velocity hit for long-term gains" },

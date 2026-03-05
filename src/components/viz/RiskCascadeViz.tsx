@@ -17,29 +17,25 @@ const NODE_COLORS = {
 }
 
 const POSITIONS: Record<KpiKey, { x: number; y: number }> = {
-  cash: { x: 80, y: 40 },
-  runway: { x: 200, y: 40 },
-  growth: { x: 350, y: 40 },
-  arr: { x: 80, y: 130 },
-  revenue: { x: 200, y: 130 },
-  burn: { x: 350, y: 130 },
-  churn: { x: 80, y: 220 },
-  grossMargin: { x: 200, y: 220 },
-  efficiency: { x: 350, y: 220 },
-  enterpriseValue: { x: 200, y: 310 },
+  cash: { x: 60, y: 40 },
+  runway: { x: 180, y: 40 },
+  growth: { x: 300, y: 40 },
+  arr: { x: 420, y: 40 },
+  revenue: { x: 60, y: 130 },
+  burn: { x: 180, y: 130 },
+  churn: { x: 300, y: 130 },
+  grossMargin: { x: 420, y: 130 },
+  headcount: { x: 60, y: 220 },
+  nrr: { x: 180, y: 220 },
+  efficiency: { x: 300, y: 220 },
+  enterpriseValue: { x: 420, y: 220 },
 }
 
-export default function RiskCascadeViz({ kpis }: RiskCascadeVizProps) {
+export default React.memo(function RiskCascadeViz({ kpis }: RiskCascadeVizProps) {
   const [hoveredKpi, setHoveredKpi] = useState<KpiKey | null>(null)
 
   const edges = useMemo(() => {
-    const result: { from: KpiKey; to: KpiKey; weight: number }[] = []
-    for (const [from, targets] of Object.entries(KPI_GRAPH)) {
-      for (const { target, weight } of targets) {
-        result.push({ from: from as KpiKey, to: target, weight })
-      }
-    }
-    return result
+    return KPI_GRAPH.edges
   }, [])
 
   const propagation = useMemo(() => {
@@ -84,7 +80,7 @@ export default function RiskCascadeViz({ kpis }: RiskCascadeVizProps) {
           const color = NODE_COLORS[health]
           const isHovered = kpi === hoveredKpi
           const isAffected = downstreamSet.has(kpi)
-          const impact = propagation?.get(kpi)
+          const impact = propagation?.affected.get(kpi)
 
           return (
             <g
@@ -114,15 +110,15 @@ export default function RiskCascadeViz({ kpis }: RiskCascadeVizProps) {
                 {kpi.slice(0, 5).toUpperCase()}
               </text>
               {/* Impact label */}
-              {isAffected && impact != null && (
+              {isAffected && propagation && propagation.affected.get(kpi) != null && (
                 <text
                   x={pos.x} y={pos.y + 28}
                   textAnchor="middle"
-                  fill={impact < 0 ? "#f87171" : "#34d399"}
+                  fill={(propagation?.affected.get(kpi) ?? 0) < 0 ? "#f87171" : "#34d399"}
                   fontSize={9} fontWeight={700} fontFamily="monospace"
                   style={{ pointerEvents: "none" }}
                 >
-                  {impact > 0 ? "+" : ""}{(impact * 100).toFixed(0)}%
+                  {(propagation?.affected.get(kpi) ?? 0) > 0 ? "+" : ""}{((propagation?.affected.get(kpi) ?? 0) * 100).toFixed(0)}%
                 </text>
               )}
             </g>
@@ -135,4 +131,4 @@ export default function RiskCascadeViz({ kpis }: RiskCascadeVizProps) {
       </div>
     </div>
   )
-}
+})

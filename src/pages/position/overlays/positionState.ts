@@ -22,6 +22,10 @@ export interface PositionKpis {
   growthRatePct: number
   /** Monthly churn rate percentage (0–100). */
   churnPct: number
+  /** Total headcount. */
+  headcount: number
+  /** Net Revenue Retention percentage (e.g. 110 = 110%). */
+  nrrPct: number
   /** Revenue per employee — operational efficiency ratio. */
   efficiencyRatio: number
 }
@@ -236,8 +240,9 @@ export function buildPositionViewModel(
   const valuationEstimate = valuationFromArrAndGrowth(arr, growthPct)
   const churnPct = safeNum(baseline.operating.churnPct, 0)
   const headcount = safeNum(baseline.financial.headcount, 1)
+  const nrrPct = safeNum(baseline.financial.nrrPct, 100)
   const efficiencyRatio = headcount > 0 ? (revenueMonthly * 12) / headcount : 0
-  const kpis: PositionKpis = { arr, burnMonthly: burn, runwayMonths: runway, ebitdaMonthly: ebitda, riskIndex, cashOnHand: cash, revenueMonthly, survivalScore, grossMarginPct, valuationEstimate, growthRatePct: growthPct, churnPct, efficiencyRatio }
+  const kpis: PositionKpis = { arr, burnMonthly: burn, runwayMonths: runway, ebitdaMonthly: ebitda, riskIndex, cashOnHand: cash, revenueMonthly, survivalScore, grossMarginPct, valuationEstimate, growthRatePct: growthPct, churnPct, headcount, nrrPct, efficiencyRatio }
   return {
     kpis,
     state:           stateFromRunwayAndGrowth(runway, growthPct),

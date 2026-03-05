@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useThree } from "@react-three/fiber";
-import { POSITION_PRESET } from "@/scene/camera/terrainCameraPresets";
+import { POSITION_PRESET, WELCOME_PRESET } from "@/scene/camera/terrainCameraPresets";
 import type { CameraPreset } from "@/scene/camera/terrainCameraPresets";
 
 /**

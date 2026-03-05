@@ -21,6 +21,8 @@ export function computeOptimalKpis(current: PositionKpis): PositionKpis {
     valuationEstimate: Math.max(current.valuationEstimate * 4, current.arr * 8),
     growthRatePct: Math.max(current.growthRatePct + 20, 35),
     churnPct: Math.max(0.5, current.churnPct * 0.3),
+    headcount: Math.max(current.headcount, 10),
+    nrrPct: Math.min(140, Math.max(current.nrrPct + 20, 115)),
     efficiencyRatio: Math.max(current.efficiencyRatio * 2, 1.2),
   }
 }

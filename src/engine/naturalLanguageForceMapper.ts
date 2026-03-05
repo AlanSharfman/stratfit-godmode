@@ -35,7 +35,7 @@ const KEYWORD_RULES: KeywordRule[] = [
   { patterns: [/freemium/i, /free\s+tier/i, /free\s+plan/i], forces: { growth: 20, burn: 5_000, churn: 3, grossMargin: -8 }, reasoning: "Freemium model: massive top-of-funnel, conversion challenge" },
   { patterns: [/partnership/i, /partner\s+with/i, /distribution\s+deal/i], forces: { growth: 12, revenue: 20_000, grossMargin: -3 }, reasoning: "Strategic partnership: channel growth with margin share" },
   { patterns: [/viral/i, /goes?\s+viral/i, /blow\s+up/i], forces: { growth: 40, burn: 10_000 }, reasoning: "Viral growth: demand spike requiring rapid scaling" },
-  { patterns: [/lay\s*off/i, /fire\s+.*staff/i, /reduce\s+headcount/i, /cut\s+team/i], forces: { burn: -40_000, growth: -10, efficiency: -0.1 }, reasoning: "Layoffs: significant cost reduction with velocity impact" },
+  { patterns: [/lay\s*off/i, /fire\s+.*staff/i, /reduce\s+headcount/i, /cut\s+team/i], forces: { burn: -40_000, growth: -10, efficiency: -0.1, headcount: -5 }, reasoning: "Layoffs: significant cost reduction with velocity impact" },
 ]
 
 function extractAmount(text: string): number | null {
@@ -114,6 +114,7 @@ export function parseNaturalLanguage(query: string): ParsedIntent {
           forces.burn = count * 12_000
           forces.growth = count * 3
           forces.efficiency = count * 0.02
+          forces.headcount = count
         }
 
         if (pattern.source.includes("revenue") && pattern.source.includes("drop")) {

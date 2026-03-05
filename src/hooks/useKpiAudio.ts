@@ -2,30 +2,29 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
 import type { PositionKpis } from "@/pages/position/overlays/positionState"
 import { getKpiCommentary } from "@/domain/intelligence/kpiCommentary"
-
-const OPENAI_TTS_URL = "/api/tts"
+import { synthesizeSpeech, hasOpenAIKey } from "@/voice/openaiTTS"
 
 interface AudioState {
   isPlaying: boolean
   currentKpi: KpiKey | null
-  audioCache: Map<KpiKey, HTMLAudioElement>
   error: string | null
+  loading: boolean
 }
 
 /**
- * Per-KPI audio commentary using OpenAI TTS.
- * Generates 10-15s audio for each KPI as zones are revealed.
- * Falls back to browser SpeechSynthesis if API is unavailable.
+ * Per-KPI audio commentary using OpenAI TTS (nova voice).
+ * Generates 10-15s audio for each KPI zone commentary.
+ * Falls back to browser SpeechSynthesis if no API key is set.
  */
 export function useKpiAudio(kpis: PositionKpis | null) {
   const [state, setState] = useState<AudioState>({
     isPlaying: false,
     currentKpi: null,
-    audioCache: new Map(),
     error: null,
+    loading: false,
   })
   const currentAudioRef = useRef<HTMLAudioElement | null>(null)
-  const cacheRef = useRef(new Map<KpiKey, HTMLAudioElement>())
+  const cacheRef = useRef(new Map<KpiKey, { audio: HTMLAudioElement; url: string }>())
 
   const stop = useCallback(() => {
     if (currentAudioRef.current) {
@@ -36,7 +35,7 @@ export function useKpiAudio(kpis: PositionKpis | null) {
     if (typeof speechSynthesis !== "undefined") {
       speechSynthesis.cancel()
     }
-    setState((s) => ({ ...s, isPlaying: false, currentKpi: null }))
+    setState((s) => ({ ...s, isPlaying: false, currentKpi: null, loading: false }))
   }, [])
 
   const speak = useCallback(async (kpi: KpiKey) => {
@@ -46,48 +45,35 @@ export function useKpiAudio(kpis: PositionKpis | null) {
     const commentary = getKpiCommentary(kpi, kpis)
     if (!commentary) return
 
-    setState((s) => ({ ...s, isPlaying: true, currentKpi: kpi, error: null }))
+    setState((s) => ({ ...s, isPlaying: true, currentKpi: kpi, error: null, loading: true }))
 
-    // Check cache
     const cached = cacheRef.current.get(kpi)
     if (cached) {
-      cached.currentTime = 0
-      cached.play().catch(() => {})
-      currentAudioRef.current = cached
-      cached.onended = () => setState((s) => ({ ...s, isPlaying: false, currentKpi: null }))
+      cached.audio.currentTime = 0
+      cached.audio.play().catch(() => {})
+      currentAudioRef.current = cached.audio
+      cached.audio.onended = () => setState((s) => ({ ...s, isPlaying: false, currentKpi: null }))
+      setState((s) => ({ ...s, loading: false }))
       return
     }
 
-    // Try OpenAI TTS via backend proxy
-    try {
-      const response = await fetch(OPENAI_TTS_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          input: commentary,
-          voice: "nova",
-          model: "tts-1",
-          speed: 1.0,
-        }),
-      })
-
-      if (response.ok) {
-        const blob = await response.blob()
-        const url = URL.createObjectURL(blob)
-        const audio = new Audio(url)
-        cacheRef.current.set(kpi, audio)
-        audio.onended = () => {
-          setState((s) => ({ ...s, isPlaying: false, currentKpi: null }))
-        }
+    if (hasOpenAIKey()) {
+      try {
+        const result = await synthesizeSpeech(commentary, { voice: "nova", speed: 0.95 })
+        const audio = new Audio(result.url)
+        cacheRef.current.set(kpi, { audio, url: result.url })
+        audio.onended = () => setState((s) => ({ ...s, isPlaying: false, currentKpi: null }))
+        setState((s) => ({ ...s, loading: false }))
         audio.play().catch(() => {})
         currentAudioRef.current = audio
         return
+      } catch (err) {
+        console.warn("[useKpiAudio] OpenAI TTS failed, falling back to browser:", err)
       }
-    } catch {
-      // API unavailable, fall through to browser TTS
     }
 
-    // Fallback: browser SpeechSynthesis
+    setState((s) => ({ ...s, loading: false }))
+
     if (typeof speechSynthesis !== "undefined") {
       const utterance = new SpeechSynthesisUtterance(commentary)
       utterance.rate = 0.95
@@ -100,13 +86,12 @@ export function useKpiAudio(kpis: PositionKpis | null) {
     }
   }, [kpis, stop])
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       stop()
-      for (const audio of cacheRef.current.values()) {
+      for (const { audio, url } of cacheRef.current.values()) {
         audio.pause()
-        if (audio.src.startsWith("blob:")) URL.revokeObjectURL(audio.src)
+        URL.revokeObjectURL(url)
       }
       cacheRef.current.clear()
     }
@@ -116,7 +101,9 @@ export function useKpiAudio(kpis: PositionKpis | null) {
     speak,
     stop,
     isPlaying: state.isPlaying,
+    isLoading: state.loading,
     currentKpi: state.currentKpi,
     error: state.error,
+    hasVoice: hasOpenAIKey() || typeof speechSynthesis !== "undefined",
   }
 }

@@ -1,26 +1,20 @@
 // src/hooks/useVoiceInterface.ts
 // STRATFIT — Voice Mode Interface
-// NASA Documentary Profile — clear, crisp, awe-inspiring female voice
-// Anti-jitter: Chrome speechSynthesis keepAlive + guarded cancellation
+// Uses OpenAI TTS (Nova voice) when API key is set, falls back to browser speech.
 
 import { useEffect, useRef } from 'react';
 import { useUIStore } from '../state/uiStore';
+import { synthesizeSpeech, hasOpenAIKey } from '@/voice/openaiTTS';
 
-/**
- * Voice priority — NASA documentary female.
- * Google UK English Female is the gold standard on Chrome.
- * Samantha / Karen are the best macOS options.
- * Microsoft Aria is the best Windows neural voice.
- */
 function pickVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
   const priority = [
-    "Google UK English Female",   // Chrome — best clarity, natural female
-    "Microsoft Aria Online (Natural) - English (United States)", // Edge neural
+    "Google UK English Female",
+    "Microsoft Aria Online (Natural) - English (United States)",
     "Microsoft Aria",
-    "Samantha",                   // macOS — warm, authoritative
-    "Karen",                      // macOS Australian — crisp and clean
-    "Moira",                      // macOS Irish — rich tone
-    "Tessa",                      // macOS South African — clear diction
+    "Samantha",
+    "Karen",
+    "Moira",
+    "Tessa",
     "Microsoft Zira Desktop",
     "Microsoft Zira",
     "Google US English",
@@ -29,10 +23,8 @@ function pickVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null 
     const v = voices.find((v) => v.name === name);
     if (v) return v;
   }
-  // Any voice with "female" in name
   const femaleGuess = voices.find((v) => /female/i.test(v.name));
   if (femaleGuess) return femaleGuess;
-  // Any English voice that isn't a known male
   return voices.find((v) =>
     v.lang.startsWith('en') &&
     !['david', 'daniel', 'mark', 'alex', 'fred', 'george', 'thomas'].some((m) =>
@@ -41,40 +33,31 @@ function pickVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null 
   ) ?? null;
 }
 
-// Chrome bug: speechSynthesis silently pauses after ~15 seconds.
-// Fix: nudge it every 10s while speaking.
 let _keepAliveTimer: ReturnType<typeof setInterval> | null = null;
-
 function startKeepAlive() {
   if (_keepAliveTimer) return;
   _keepAliveTimer = setInterval(() => {
-    if (!window.speechSynthesis.speaking) {
-      stopKeepAlive();
-      return;
-    }
+    if (!window.speechSynthesis.speaking) { stopKeepAlive(); return; }
     window.speechSynthesis.pause();
     window.speechSynthesis.resume();
   }, 10_000);
 }
-
 function stopKeepAlive() {
-  if (_keepAliveTimer) {
-    clearInterval(_keepAliveTimer);
-    _keepAliveTimer = null;
-  }
+  if (_keepAliveTimer) { clearInterval(_keepAliveTimer); _keepAliveTimer = null; }
 }
+
+let _currentAudio: HTMLAudioElement | null = null;
 
 export const useVoiceInterface = (textToSpeak: string | null) => {
   const isVoiceEnabled = useUIStore((s) => s.isVoiceEnabled);
   const lastSpokenRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return;
-
-    const synth = window.speechSynthesis;
+    if (typeof window === 'undefined') return;
 
     if (!textToSpeak || !isVoiceEnabled) {
-      synth.cancel();
+      if (_currentAudio) { _currentAudio.pause(); _currentAudio = null; }
+      window.speechSynthesis?.cancel();
       stopKeepAlive();
       lastSpokenRef.current = null;
       return;
@@ -82,43 +65,49 @@ export const useVoiceInterface = (textToSpeak: string | null) => {
 
     if (textToSpeak === lastSpokenRef.current) return;
 
-    synth.cancel();
+    if (_currentAudio) { _currentAudio.pause(); _currentAudio = null; }
+    window.speechSynthesis?.cancel();
     stopKeepAlive();
+    lastSpokenRef.current = textToSpeak;
 
-    // 80ms buffer — ensures cancel() flushes before new utterance queues
-    const timer = setTimeout(() => {
-      const voices = synth.getVoices();
-      const utterance = new SpeechSynthesisUtterance(textToSpeak);
-
-      // ── NASA Documentary Female Profile ──────────────────────────────────
-      // Slow, deliberate, measured — like narrating the cosmos
-      utterance.rate   = 0.88;  // Unhurried, authoritative pacing
-      utterance.pitch  = 0.96;  // Slightly below neutral — gravitas, not squeaky
-      utterance.volume = 1.0;
-
-      const chosen = pickVoice(voices);
-      if (chosen) utterance.voice = chosen;
-
-      utterance.onstart = () => startKeepAlive();
-      utterance.onend   = () => stopKeepAlive();
-      utterance.onerror = () => stopKeepAlive();
-
-      synth.speak(utterance);
-      lastSpokenRef.current = textToSpeak;
-    }, 80);
-
-    return () => clearTimeout(timer);
+    if (hasOpenAIKey()) {
+      synthesizeSpeech(textToSpeak, { voice: "nova", speed: 0.88 })
+        .then((result) => {
+          const audio = new Audio(result.url);
+          _currentAudio = audio;
+          audio.onended = () => { URL.revokeObjectURL(result.url); _currentAudio = null; };
+          audio.play().catch(() => {});
+        })
+        .catch((err) => {
+          console.warn("[useVoiceInterface] OpenAI TTS failed, falling back:", err);
+          fallbackBrowserTTS(textToSpeak);
+        });
+    } else {
+      const timer = setTimeout(() => fallbackBrowserTTS(textToSpeak), 80);
+      return () => clearTimeout(timer);
+    }
   }, [textToSpeak, isVoiceEnabled]);
 };
 
-// Hook to preload voices (call once on app init)
+function fallbackBrowserTTS(text: string) {
+  if (!window.speechSynthesis) return;
+  const voices = window.speechSynthesis.getVoices();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.rate = 0.88;
+  utterance.pitch = 0.96;
+  utterance.volume = 1.0;
+  const chosen = pickVoice(voices);
+  if (chosen) utterance.voice = chosen;
+  utterance.onstart = () => startKeepAlive();
+  utterance.onend = () => stopKeepAlive();
+  utterance.onerror = () => stopKeepAlive();
+  window.speechSynthesis.speak(utterance);
+}
+
 export const usePreloadVoices = () => {
   useEffect(() => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return;
-
-    const loadVoices = () => {
-      window.speechSynthesis.getVoices();
-    };
+    const loadVoices = () => { window.speechSynthesis.getVoices(); };
     loadVoices();
     window.speechSynthesis.onvoiceschanged = loadVoices;
     return () => { window.speechSynthesis.onvoiceschanged = null; };

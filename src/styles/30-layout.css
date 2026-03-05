@@ -1,1 +1,148 @@
-/* Layout */
+/* ══════════════════════════════════════════════════════════════════════════════
+   STRATFIT — 30-layout.css
+   Shared layout primitives, grid structures, and page scaffolding.
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Page shell ── */
+.sf-page {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background: var(--sf-bg-void);
+}
+
+.sf-page-full {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--sf-bg-void);
+}
+
+/* ── Content container ── */
+.sf-container {
+  width: 100%;
+  max-width: var(--sf-content-max);
+  margin: 0 auto;
+  padding: 0 var(--sf-space-6);
+}
+
+/* ── Flex primitives ── */
+.sf-flex {
+  display: flex;
+}
+
+.sf-flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.sf-flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sf-flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ── Grid primitives ── */
+.sf-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--sf-space-4);
+}
+
+.sf-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sf-space-4);
+}
+
+.sf-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sf-space-4);
+}
+
+/* ── Two-column layout (terrain + panel) ── */
+.sf-layout-split {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: var(--sf-space-4);
+  height: 100%;
+}
+
+/* ── Panel / rail ── */
+.sf-panel {
+  background: var(--sf-glass-bg);
+  backdrop-filter: var(--sf-glass-blur);
+  border: var(--sf-glass-border);
+  border-radius: var(--sf-radius-lg);
+  box-shadow: var(--sf-glass-shadow);
+  padding: var(--sf-space-5);
+  overflow-y: auto;
+}
+
+.sf-panel-compact {
+  padding: var(--sf-space-3);
+  border-radius: var(--sf-radius-md);
+}
+
+/* ── Card ── */
+.sf-card {
+  background: var(--sf-bg-card);
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-md);
+  padding: var(--sf-space-4);
+  transition: border-color var(--sf-duration) var(--sf-ease);
+}
+
+.sf-card:hover {
+  border-color: var(--sf-border-accent);
+}
+
+/* ── Section spacing ── */
+.sf-section {
+  padding: var(--sf-space-8) 0;
+}
+
+/* ── Stack (vertical gap) ── */
+.sf-stack-xs  { display: flex; flex-direction: column; gap: var(--sf-space-1); }
+.sf-stack-sm  { display: flex; flex-direction: column; gap: var(--sf-space-2); }
+.sf-stack-md  { display: flex; flex-direction: column; gap: var(--sf-space-4); }
+.sf-stack-lg  { display: flex; flex-direction: column; gap: var(--sf-space-6); }
+
+/* ── Row (horizontal gap) ── */
+.sf-row-xs  { display: flex; align-items: center; gap: var(--sf-space-1); }
+.sf-row-sm  { display: flex; align-items: center; gap: var(--sf-space-2); }
+.sf-row-md  { display: flex; align-items: center; gap: var(--sf-space-4); }
+.sf-row-lg  { display: flex; align-items: center; gap: var(--sf-space-6); }
+
+/* ── Divider ── */
+.sf-divider {
+  height: 1px;
+  background: var(--sf-border);
+  margin: var(--sf-space-4) 0;
+}
+
+.sf-divider-accent {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--sf-cyan-subtle), transparent);
+  margin: var(--sf-space-4) 0;
+}
+
+/* ── Absolute positioning helpers ── */
+.sf-inset {
+  position: absolute;
+  inset: 0;
+}
+
+.sf-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--sf-z-overlay);
+}

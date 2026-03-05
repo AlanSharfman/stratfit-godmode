@@ -27,6 +27,8 @@ function computeAfterKpis(current: PositionKpis, kpi: KpiKey): PositionKpis {
     burn: "burnMonthly",
     churn: "churnPct",
     grossMargin: "grossMarginPct",
+    headcount: "headcount",
+    nrr: "nrrPct",
     efficiency: "efficiencyRatio",
     enterpriseValue: "valuationEstimate",
   }

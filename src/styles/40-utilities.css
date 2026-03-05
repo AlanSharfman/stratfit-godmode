@@ -1,1 +1,212 @@
-/* Utilities */
+/* ══════════════════════════════════════════════════════════════════════════════
+   STRATFIT — 40-utilities.css
+   Atomic utility classes for rapid styling, plus scrollbar and misc helpers.
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Text utilities ── */
+.sf-text-xs     { font-size: var(--sf-text-xs); }
+.sf-text-sm     { font-size: var(--sf-text-sm); }
+.sf-text-base   { font-size: var(--sf-text-base); }
+.sf-text-md     { font-size: var(--sf-text-md); }
+.sf-text-lg     { font-size: var(--sf-text-lg); }
+.sf-text-xl     { font-size: var(--sf-text-xl); }
+.sf-text-2xl    { font-size: var(--sf-text-2xl); }
+
+.sf-font-mono   { font-family: var(--sf-font-mono); }
+.sf-font-light  { font-weight: var(--sf-weight-light); }
+.sf-font-medium { font-weight: var(--sf-weight-medium); }
+.sf-font-semi   { font-weight: var(--sf-weight-semibold); }
+.sf-font-bold   { font-weight: var(--sf-weight-bold); }
+
+.sf-text-primary   { color: var(--sf-text); }
+.sf-text-secondary { color: var(--sf-text-secondary); }
+.sf-text-muted     { color: var(--sf-text-muted); }
+.sf-text-cyan      { color: var(--sf-cyan); }
+.sf-text-emerald   { color: var(--sf-emerald); }
+.sf-text-risk      { color: var(--sf-risk); }
+.sf-text-amber     { color: var(--sf-amber); }
+
+.sf-tracking-wide    { letter-spacing: var(--sf-tracking-wide); }
+.sf-tracking-wider   { letter-spacing: var(--sf-tracking-wider); }
+.sf-tracking-widest  { letter-spacing: var(--sf-tracking-widest); }
+
+.sf-uppercase  { text-transform: uppercase; }
+.sf-truncate   { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sf-text-center { text-align: center; }
+
+/* ── Spacing utilities ── */
+.sf-mt-1 { margin-top: var(--sf-space-1); }
+.sf-mt-2 { margin-top: var(--sf-space-2); }
+.sf-mt-4 { margin-top: var(--sf-space-4); }
+.sf-mt-6 { margin-top: var(--sf-space-6); }
+.sf-mt-8 { margin-top: var(--sf-space-8); }
+
+.sf-mb-1 { margin-bottom: var(--sf-space-1); }
+.sf-mb-2 { margin-bottom: var(--sf-space-2); }
+.sf-mb-4 { margin-bottom: var(--sf-space-4); }
+.sf-mb-6 { margin-bottom: var(--sf-space-6); }
+
+.sf-p-2  { padding: var(--sf-space-2); }
+.sf-p-3  { padding: var(--sf-space-3); }
+.sf-p-4  { padding: var(--sf-space-4); }
+.sf-p-6  { padding: var(--sf-space-6); }
+
+.sf-gap-1 { gap: var(--sf-space-1); }
+.sf-gap-2 { gap: var(--sf-space-2); }
+.sf-gap-3 { gap: var(--sf-space-3); }
+.sf-gap-4 { gap: var(--sf-space-4); }
+.sf-gap-6 { gap: var(--sf-space-6); }
+
+/* ── Display / visibility ── */
+.sf-hidden     { display: none; }
+.sf-sr-only    {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ── Opacity ── */
+.sf-opacity-0   { opacity: 0; }
+.sf-opacity-50  { opacity: 0.5; }
+.sf-opacity-100 { opacity: 1; }
+
+/* ── Borders ── */
+.sf-border       { border: 1px solid var(--sf-border); }
+.sf-border-accent { border: 1px solid var(--sf-border-accent); }
+.sf-rounded-sm   { border-radius: var(--sf-radius-sm); }
+.sf-rounded-md   { border-radius: var(--sf-radius-md); }
+.sf-rounded-lg   { border-radius: var(--sf-radius-lg); }
+.sf-rounded-full { border-radius: var(--sf-radius-full); }
+
+/* ── Scrollbar styling ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+}
+
+/* ── Transition helpers ── */
+.sf-transition {
+  transition: all var(--sf-duration) var(--sf-ease);
+}
+
+.sf-transition-fast {
+  transition: all 120ms var(--sf-ease);
+}
+
+/* ── Glow / accent effects ── */
+.sf-glow-cyan {
+  box-shadow: var(--sf-shadow-glow);
+}
+
+.sf-border-glow {
+  border: 1px solid var(--sf-cyan-subtle);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.06);
+}
+
+/* ── Glass surface helper ── */
+.sf-glass {
+  background: var(--sf-glass-bg);
+  backdrop-filter: var(--sf-glass-blur);
+  border: var(--sf-glass-border);
+  box-shadow: var(--sf-glass-shadow);
+}
+
+/* ── Pointer / interaction ── */
+.sf-pointer   { cursor: pointer; }
+.sf-no-select { user-select: none; }
+.sf-no-drag   { -webkit-user-drag: none; }
+
+/* ── Cinematic animations ── */
+@keyframes sf-fade-in {
+  from { opacity: 0; transform: translateY(8px); filter: blur(3px); }
+  to   { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+@keyframes sf-fade-in-scale {
+  from { opacity: 0; transform: scale(0.96); filter: blur(4px); }
+  to   { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+
+@keyframes sf-slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes sf-slide-in-left {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes sf-pulse-glow {
+  0%   { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.3); }
+  70%  { box-shadow: 0 0 0 8px rgba(34, 211, 238, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0); }
+}
+
+@keyframes sf-breathe {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 0.8; }
+}
+
+.sf-animate-in {
+  animation: sf-fade-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.sf-animate-in-scale {
+  animation: sf-fade-in-scale 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.sf-animate-slide-right {
+  animation: sf-slide-in-right 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.sf-animate-slide-left {
+  animation: sf-slide-in-left 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.sf-animate-pulse {
+  animation: sf-pulse-glow 2s infinite;
+}
+
+.sf-animate-breathe {
+  animation: sf-breathe 3s ease-in-out infinite;
+}
+
+/* Stagger delay utilities */
+.sf-delay-1 { animation-delay: 0.05s; }
+.sf-delay-2 { animation-delay: 0.1s; }
+.sf-delay-3 { animation-delay: 0.15s; }
+.sf-delay-4 { animation-delay: 0.2s; }
+.sf-delay-5 { animation-delay: 0.25s; }
+.sf-delay-6 { animation-delay: 0.3s; }
+.sf-delay-7 { animation-delay: 0.35s; }
+.sf-delay-8 { animation-delay: 0.4s; }

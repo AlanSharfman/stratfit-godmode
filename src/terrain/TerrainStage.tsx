@@ -160,7 +160,7 @@ export default function TerrainStage({
         makeDefault
         enableRotate={!lockCamera}
         enablePan={false}
-        enableZoom={false}
+        enableZoom={!lockCamera}
         enableDamping
         dampingFactor={0.12}
         minPolarAngle={minPolar}
@@ -168,14 +168,14 @@ export default function TerrainStage({
         minAzimuthAngle={minAzimuthAngle}
         maxAzimuthAngle={maxAzimuthAngle}
         rotateSpeed={rotateSpeed}
-        minDistance={220}
-        maxDistance={700}
+        minDistance={250}
+        maxDistance={900}
         target={effectivePreset.target}
         autoRotate={autoRotateSpeed > 0}
         autoRotateSpeed={autoRotateSpeed}
       />
 
-      <fog attach="fog" args={[fogColor, 420, 2400]} />
+      <fog attach="fog" args={[fogColor, 500, 2800]} />
 
       <ambientLight intensity={0.35} />
       <directionalLight position={[120, 180, 120]} intensity={1.40} color="#DFFAEE" />

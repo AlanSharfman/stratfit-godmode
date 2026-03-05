@@ -21,7 +21,8 @@ const HEALTH_COLORS = {
 const KPI_TO_SNAPSHOT: Record<KpiKey, string> = {
   cash: "cash", runway: "runway", growth: "growth", arr: "arr",
   revenue: "revenue", burn: "burn", churn: "churn",
-  grossMargin: "grossMargin", efficiency: "efficiency", enterpriseValue: "enterpriseValue",
+  grossMargin: "grossMargin", headcount: "headcount", nrr: "nrr",
+  efficiency: "efficiency", enterpriseValue: "enterpriseValue",
 }
 
 function snapshotToKpis(snap: Record<string, number>): PositionKpis {
@@ -34,6 +35,8 @@ function snapshotToKpis(snap: Record<string, number>): PositionKpis {
     burnMonthly: snap.burn ?? 0,
     churnPct: snap.churn ?? 0,
     grossMarginPct: snap.grossMargin ?? 0,
+    headcount: snap.headcount ?? 0,
+    nrrPct: snap.nrr ?? 100,
     efficiencyRatio: snap.efficiency ?? 0,
     valuationEstimate: snap.enterpriseValue ?? 0,
     ebitdaMonthly: 0,
@@ -42,7 +45,7 @@ function snapshotToKpis(snap: Record<string, number>): PositionKpis {
   }
 }
 
-export default function HeatmapTimeline({ kpis, months = 12, compact = false }: HeatmapTimelineProps) {
+export default React.memo(function HeatmapTimeline({ kpis, months = 12, compact = false }: HeatmapTimelineProps) {
   const timeline = useMemo(() => {
     const snapshot = buildKpiSnapshot({
       cashBalance: kpis.cashOnHand, runwayMonths: kpis.runwayMonths,
@@ -134,4 +137,4 @@ export default function HeatmapTimeline({ kpis, months = 12, compact = false }: 
       )}
     </div>
   )
-}
+})

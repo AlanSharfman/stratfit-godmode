@@ -15,7 +15,7 @@ const SEVERITY_COLORS: Record<AlertSeverity, { bg: string; border: string; text:
   info: { bg: "rgba(34,211,238,0.04)", border: "rgba(34,211,238,0.08)", text: "#22d3ee", dot: "#22d3ee" },
 }
 
-export default function AlertsDashboard({ kpis, compact = false }: AlertsDashboardProps) {
+export default React.memo(function AlertsDashboard({ kpis, compact = false }: AlertsDashboardProps) {
   const triggered = useAlertsStore((s) => s.triggered)
   const evaluateAlerts = useAlertsStore((s) => s.evaluateAlerts)
   const acknowledgeAlert = useAlertsStore((s) => s.acknowledgeAlert)
@@ -150,4 +150,4 @@ export default function AlertsDashboard({ kpis, compact = false }: AlertsDashboa
       ))}
     </div>
   )
-}
+})

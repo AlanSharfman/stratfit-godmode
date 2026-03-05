@@ -34,7 +34,7 @@ const VERDICT_COLORS = {
   below: { bg: "rgba(248,113,113,0.04)", border: "rgba(248,113,113,0.08)", text: "#f87171", barBg: "#f87171" },
 }
 
-export default function BenchmarkPanel({ kpis, compact = false }: BenchmarkPanelProps) {
+export default React.memo(function BenchmarkPanel({ kpis, compact = false }: BenchmarkPanelProps) {
   const autoStage = useMemo(() => detectStage(kpis), [kpis])
   const [selectedStage, setSelectedStage] = useState<CompanyStage>(autoStage)
   const profile = useMemo(() => getBenchmarkProfile(selectedStage), [selectedStage])
@@ -142,4 +142,4 @@ export default function BenchmarkPanel({ kpis, compact = false }: BenchmarkPanel
       </div>
     </div>
   )
-}
+})

@@ -125,6 +125,8 @@ export function selectPositionKpis(
   const headcount = simulationKpis.headcount ?? 1
   const efficiencyRatio = headcount > 0 ? (revenueMonthly * 12) / headcount : 0
 
+  const nrrPct = (simulationKpis as any).nrrPct ?? 100
+
   return {
     arr,
     burnMonthly,
@@ -138,6 +140,8 @@ export function selectPositionKpis(
     valuationEstimate,
     growthRatePct,
     churnPct,
+    headcount,
+    nrrPct,
     efficiencyRatio,
   }
 }

@@ -76,20 +76,30 @@ function persistBaseline(baseline: Baseline | null) {
 function safeParseBaseline(raw: string | null): Baseline | null {
   if (!raw) return null
   try {
-    const obj = JSON.parse(raw) as Partial<Baseline>
-    // Validate 8 numeric fields exist (Phase 1 contract)
+    const obj = JSON.parse(raw) as any
+    // Handle BaselineV1 (nested format written by InitializeBaselinePage)
+    if (obj?.version === 1 && obj?.financial) {
+      const f = obj.financial
+      const o = obj.operating ?? {}
+      return {
+        cash:        Number(f.cashOnHand)    || 0,
+        monthlyBurn: Number(f.monthlyBurn)   || 0,
+        revenue:     (Number(f.arr) || 0) / 12,
+        grossMargin: (Number(f.grossMarginPct) || 0) / 100,
+        growthRate:  (Number(f.growthRatePct)  || 0) / 100,
+        churnRate:   (Number(o.churnPct)       || 0) / 100,
+        headcount:   Number(f.headcount)     || 0,
+        arpa:        Number(o.acv)           || 0,
+        stage:       obj.company?.industry   || undefined,
+      }
+    }
+    // Legacy flat format
     const required: (keyof Baseline)[] = [
-      "cash",
-      "monthlyBurn",
-      "revenue",
-      "grossMargin",
-      "growthRate",
-      "churnRate",
-      "headcount",
-      "arpa",
+      "cash", "monthlyBurn", "revenue", "grossMargin",
+      "growthRate", "churnRate", "headcount", "arpa",
     ]
     for (const k of required) {
-      const v = (obj as any)[k]
+      const v = obj[k]
       if (typeof v !== "number" || !Number.isFinite(v)) return null
     }
     return obj as Baseline

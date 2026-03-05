@@ -6,6 +6,7 @@ import type { PositionKpis } from "@/pages/position/overlays/positionState"
 import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
 import { KPI_KEYS, getHealthLevel } from "@/domain/intelligence/kpiZoneMapping"
 import { timeSimulation, buildKpiSnapshot, findFirstCliff } from "@/engine/timeSimulation"
+import { synthesizeSpeech, hasOpenAIKey } from "@/voice/openaiTTS"
 
 interface BriefingTheatreProps {
   kpis: PositionKpis
@@ -20,6 +21,7 @@ function buildInputsFromKpis(kpis: PositionKpis): BriefingInputs {
     growthRatePct: kpis.growthRatePct, arr: kpis.arr,
     revenueMonthly: kpis.revenueMonthly, burnMonthly: kpis.burnMonthly,
     churnPct: kpis.churnPct, grossMarginPct: kpis.grossMarginPct,
+    headcount: kpis.headcount, nrrPct: kpis.nrrPct,
     efficiencyRatio: kpis.efficiencyRatio, enterpriseValue: kpis.valuationEstimate,
   })
   const timeline = timeSimulation(snap, { direct: {} }, 12)
@@ -79,50 +81,89 @@ export default function BriefingTheatre({ kpis, onClose }: BriefingTheatreProps)
   const [activeSection, setActiveSection] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
+  const [voiceLoading, setVoiceLoading] = useState(false)
   const timerRef = useRef<number>(0)
-  const synthRef = useRef<SpeechSynthesisUtterance | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const audioCacheRef = useRef<Map<number, { audio: HTMLAudioElement; url: string }>>(new Map())
 
   const section = briefing.sections[activeSection]
 
-  const speakSection = useCallback((sec: BriefingSection) => {
-    if (typeof window === "undefined" || !window.speechSynthesis) return
-    window.speechSynthesis.cancel()
-    const text = sec.lines.join(" ")
-    const utt = new SpeechSynthesisUtterance(text)
-    utt.rate = 0.92
-    utt.pitch = 1.0
-    const voices = window.speechSynthesis.getVoices()
-    const preferred = voices.find(v => v.name.includes("Samantha") || v.name.includes("Ava") || (v.lang === "en-US" && v.name.includes("Female")))
-    if (preferred) utt.voice = preferred
-    synthRef.current = utt
-    window.speechSynthesis.speak(utt)
+  const stopAudio = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+      audioRef.current = null
+    }
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.cancel()
+    }
   }, [])
+
+  const speakSection = useCallback(async (sec: BriefingSection, sectionIdx?: number) => {
+    stopAudio()
+    const text = sec.lines.join(" ")
+    const idx = sectionIdx ?? 0
+
+    const cached = audioCacheRef.current.get(idx)
+    if (cached) {
+      cached.audio.currentTime = 0
+      cached.audio.play().catch(() => {})
+      audioRef.current = cached.audio
+      return
+    }
+
+    if (hasOpenAIKey()) {
+      setVoiceLoading(true)
+      try {
+        const result = await synthesizeSpeech(text, { voice: "nova", speed: 0.92 })
+        const audio = new Audio(result.url)
+        audioCacheRef.current.set(idx, { audio, url: result.url })
+        audioRef.current = audio
+        audio.play().catch(() => {})
+        setVoiceLoading(false)
+        return
+      } catch (err) {
+        console.warn("[BriefingTheatre] OpenAI TTS failed, falling back:", err)
+        setVoiceLoading(false)
+      }
+    }
+
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      const utt = new SpeechSynthesisUtterance(text)
+      utt.rate = 0.92
+      utt.pitch = 1.0
+      const voices = window.speechSynthesis.getVoices()
+      const preferred = voices.find(v => v.name.includes("Samantha") || v.name.includes("Ava") || (v.lang === "en-US" && v.name.includes("Female")))
+      if (preferred) utt.voice = preferred
+      window.speechSynthesis.speak(utt)
+    }
+  }, [stopAudio])
 
   const advance = useCallback(() => {
     setActiveSection(prev => {
       const next = prev + 1
       if (next >= briefing.sections.length) {
         setIsPlaying(false)
-        window.speechSynthesis?.cancel()
+        stopAudio()
         return prev
       }
-      speakSection(briefing.sections[next])
+      speakSection(briefing.sections[next], next)
       return next
     })
-  }, [briefing, speakSection])
+  }, [briefing, speakSection, stopAudio])
 
   const play = useCallback(() => {
     setIsPlaying(true)
     setActiveSection(0)
     setProgress(0)
-    speakSection(briefing.sections[0])
+    speakSection(briefing.sections[0], 0)
   }, [briefing, speakSection])
 
   const stop = useCallback(() => {
     setIsPlaying(false)
-    window.speechSynthesis?.cancel()
+    stopAudio()
     clearInterval(timerRef.current)
-  }, [])
+  }, [stopAudio])
 
   useEffect(() => {
     if (!isPlaying) return
@@ -141,8 +182,16 @@ export default function BriefingTheatre({ kpis, onClose }: BriefingTheatreProps)
   }, [isPlaying, section, advance])
 
   useEffect(() => {
-    return () => { window.speechSynthesis?.cancel(); clearInterval(timerRef.current) }
-  }, [])
+    return () => {
+      stopAudio()
+      clearInterval(timerRef.current)
+      for (const { audio, url } of audioCacheRef.current.values()) {
+        audio.pause()
+        URL.revokeObjectURL(url)
+      }
+      audioCacheRef.current.clear()
+    }
+  }, [stopAudio])
 
   return (
     <motion.div
@@ -170,13 +219,29 @@ export default function BriefingTheatre({ kpis, onClose }: BriefingTheatreProps)
             {section?.title ?? "Briefing"}
           </div>
         </div>
-        <button onClick={onClose} style={{
-          background: "rgba(200,220,240,0.05)", border: "1px solid rgba(200,220,240,0.1)",
-          borderRadius: 6, padding: "8px 16px", color: "rgba(200,220,240,0.5)",
-          fontSize: 11, cursor: "pointer", fontWeight: 600,
-        }}>
-          Close
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {voiceLoading && (
+            <span style={{ fontSize: 9, color: "rgba(34,211,238,0.5)", fontWeight: 600, letterSpacing: "0.1em" }}>
+              GENERATING VOICE...
+            </span>
+          )}
+          <span style={{
+            fontSize: 8, fontWeight: 700, letterSpacing: "0.1em",
+            padding: "3px 8px", borderRadius: 4,
+            background: hasOpenAIKey() ? "rgba(52,211,153,0.1)" : "rgba(200,220,240,0.05)",
+            color: hasOpenAIKey() ? "#34d399" : "rgba(200,220,240,0.3)",
+            border: `1px solid ${hasOpenAIKey() ? "rgba(52,211,153,0.2)" : "rgba(200,220,240,0.06)"}`,
+          }}>
+            {hasOpenAIKey() ? "NOVA AI VOICE" : "BROWSER VOICE"}
+          </span>
+          <button onClick={onClose} style={{
+            background: "rgba(200,220,240,0.05)", border: "1px solid rgba(200,220,240,0.1)",
+            borderRadius: 6, padding: "8px 16px", color: "rgba(200,220,240,0.5)",
+            fontSize: 11, cursor: "pointer", fontWeight: 600,
+          }}>
+            Close
+          </button>
+        </div>
       </div>
 
       {/* Progress bar */}
@@ -245,7 +310,7 @@ export default function BriefingTheatre({ kpis, onClose }: BriefingTheatreProps)
           {briefing.sections.map((_, i) => (
             <button
               key={i}
-              onClick={() => { setActiveSection(i); setProgress(0); if (isPlaying) speakSection(briefing.sections[i]) }}
+              onClick={() => { setActiveSection(i); setProgress(0); if (isPlaying) speakSection(briefing.sections[i], i) }}
               style={{
                 width: i === activeSection ? 24 : 8, height: 8, borderRadius: 4,
                 background: i === activeSection ? "#22d3ee" : i < activeSection ? "rgba(34,211,238,0.3)" : "rgba(200,220,240,0.08)",

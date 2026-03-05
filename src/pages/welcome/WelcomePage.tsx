@@ -1,10 +1,13 @@
-import React, { useEffect, useState } from "react"
+import React, { useCallback, useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { motion } from "framer-motion"
 import { ROUTES } from "@/routes/routeContract"
 import TerrainStage from "@/terrain/TerrainStage"
 import CameraCompositionRig from "@/scene/camera/CameraCompositionRig"
 import SkyAtmosphere from "@/scene/rigs/SkyAtmosphere"
+import { WELCOME_PRESET } from "@/scene/camera/terrainCameraPresets"
+import { useBaselineStore } from "@/state/baselineStore"
+import { DEMO_COMPANY } from "@/data/demoCompany"
 import type { TerrainMetrics } from "@/terrain/terrainFromBaseline"
 
 const WELCOME_METRICS: TerrainMetrics = {
@@ -42,14 +45,20 @@ function AnimatedCounter({ target, suffix = "" }: { target: number; suffix?: str
 
 export default function WelcomePage() {
   const navigate = useNavigate()
+  const setBaseline = useBaselineStore((s) => s.setBaseline)
+
+  const handleDemo = useCallback(() => {
+    setBaseline(DEMO_COMPANY)
+    navigate(ROUTES.POSITION)
+  }, [setBaseline, navigate])
 
   return (
     <div style={S.page}>
       <div style={S.voidBg} />
 
       <div style={S.terrainLayer}>
-        <TerrainStage lockCamera pathsEnabled={false} terrainMetrics={WELCOME_METRICS} autoRotateSpeed={0.08}>
-          <CameraCompositionRig />
+        <TerrainStage lockCamera pathsEnabled={false} terrainMetrics={WELCOME_METRICS} autoRotateSpeed={0.08} cameraPreset={WELCOME_PRESET}>
+          <CameraCompositionRig preset={WELCOME_PRESET} />
           <SkyAtmosphere />
         </TerrainStage>
       </div>
@@ -57,16 +66,16 @@ export default function WelcomePage() {
       <div style={S.frostOverlay} />
       <div style={S.gradientOverlay} />
 
-      <div style={S.heroContainer}>
-        {/* Logo */}
-        <motion.div {...stagger(0)} style={S.logoRow}>
-          <img src="/stratfit-logo.png" alt="STRATFIT" style={S.logoImg} />
-          <div style={S.logoText}>
-            <span style={S.logoName}>STRATFIT</span>
-            <span style={S.logoSub}>BUSINESS PHYSICS ENGINE</span>
-          </div>
-        </motion.div>
+      {/* Top-left brand mark */}
+      <motion.div {...stagger(0)} style={S.brandMark}>
+        <img src="/stratfit-logo.png" alt="STRATFIT" style={S.brandLogoImg} />
+        <div style={S.brandLogoText}>
+          <span style={S.brandName}>STRATFIT</span>
+          <span style={S.brandSub}>BUSINESS PHYSICS ENGINE</span>
+        </div>
+      </motion.div>
 
+      <div style={S.heroContainer}>
         {/* Badge */}
         <motion.div {...stagger(1)} style={S.badge}>
           <span style={S.badgeDot} />
@@ -90,7 +99,12 @@ export default function WelcomePage() {
         {/* Stats */}
         <motion.div {...stagger(4)} style={S.statsRow}>
           <div style={S.statItem}>
-            <span style={S.statNumber}><AnimatedCounter target={10} /></span>
+            <span style={S.statNumber}><AnimatedCounter target={10000} suffix="+" /></span>
+            <span style={S.statLabel}>Simulations per Scenario</span>
+          </div>
+          <div style={S.statDivider} />
+          <div style={S.statItem}>
+            <span style={S.statNumber}><AnimatedCounter target={12} /></span>
             <span style={S.statLabel}>KPI Zones</span>
           </div>
           <div style={S.statDivider} />
@@ -109,14 +123,23 @@ export default function WelcomePage() {
         <motion.div {...stagger(5)} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
           <motion.button
             type="button"
-            onClick={() => navigate(ROUTES.INITIATE)}
+            onClick={() => navigate(ROUTES.INITIATE, { replace: true })}
             style={S.cta}
             whileHover={{ scale: 1.04, boxShadow: "0 0 40px rgba(34,211,238,0.35), 0 8px 32px rgba(0,0,0,0.5)" }}
             whileTap={{ scale: 0.98 }}
           >
-            Map Your Mountain →
+            Map Your Financial Landscape →
           </motion.button>
           <span style={S.ctaNote}>No signup required · See your terrain in 2 minutes</span>
+          <motion.button
+            type="button"
+            onClick={handleDemo}
+            style={S.demoBtn}
+            whileHover={{ scale: 1.03, background: "rgba(167,139,250,0.12)" }}
+            whileTap={{ scale: 0.97 }}
+          >
+            Try with sample data →
+          </motion.button>
         </motion.div>
 
         {/* Trust badges */}
@@ -151,12 +174,12 @@ const S: Record<string, React.CSSProperties> = {
   terrainLayer: { position: "absolute", inset: 0, zIndex: 1, opacity: 0.45 },
   frostOverlay: { position: "absolute", inset: 0, zIndex: 2, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", background: "rgba(2,8,20,0.3)" },
   gradientOverlay: { position: "absolute", inset: 0, zIndex: 3, background: "radial-gradient(ellipse 80% 60% at 50% 45%, transparent 0%, rgba(2,8,20,0.7) 70%), linear-gradient(180deg, rgba(2,8,20,0.3) 0%, transparent 30%, transparent 70%, rgba(2,8,20,0.6) 100%)", pointerEvents: "none" },
+  brandMark: { position: "absolute" as const, top: 28, left: 32, zIndex: 10, display: "flex", alignItems: "center", gap: 14 },
+  brandLogoImg: { height: 48, width: "auto", filter: "drop-shadow(0 0 12px rgba(34,211,238,0.2))" },
+  brandLogoText: { display: "flex", flexDirection: "column" as const, alignItems: "flex-start" },
+  brandName: { fontSize: 22, fontWeight: 900, letterSpacing: "4px", color: "#fff", textShadow: "0 0 20px rgba(34,211,238,0.15)" },
+  brandSub: { fontSize: 8, fontWeight: 700, letterSpacing: "0.35em", color: "rgba(34,211,238,0.55)", marginTop: 2 },
   heroContainer: { position: "relative", zIndex: 5, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", height: "100%", padding: "40px 24px", textAlign: "center" as const, maxWidth: 720, margin: "0 auto" },
-  logoRow: { display: "flex", alignItems: "center", gap: 12, marginBottom: 20 },
-  logoImg: { height: 40, width: "auto" },
-  logoText: { display: "flex", flexDirection: "column" as const, alignItems: "flex-start" },
-  logoName: { fontSize: 16, fontWeight: 900, letterSpacing: "3px", color: "#fff" },
-  logoSub: { fontSize: 7, fontWeight: 700, letterSpacing: "0.3em", color: "rgba(34,211,238,0.6)", marginTop: 1 },
   badge: { display: "flex", alignItems: "center", gap: 8, padding: "5px 14px", borderRadius: 999, background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.15)", marginBottom: 28 },
   badgeDot: { width: 6, height: 6, borderRadius: "50%", background: "#22d3ee", animation: "welcomePulse 2s ease-in-out infinite" },
   badgeText: { fontSize: 9, fontWeight: 800, letterSpacing: "0.2em", color: "rgba(34,211,238,0.75)" },
@@ -171,7 +194,8 @@ const S: Record<string, React.CSSProperties> = {
   statLabel: { fontSize: 9, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase" as const, color: "rgba(148,180,214,0.4)" },
   statDivider: { width: 1, height: 28, background: "rgba(148,180,214,0.1)" },
   cta: { padding: "15px 40px", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)", color: "#000", fontFamily: FONT, fontSize: 15, fontWeight: 700, letterSpacing: "0.04em", cursor: "pointer", boxShadow: "0 0 30px rgba(34,211,238,0.2), 0 8px 24px rgba(0,0,0,0.4)", marginBottom: 10 },
-  ctaNote: { fontSize: 11, color: "rgba(148,180,214,0.4)", marginBottom: 28 },
+  ctaNote: { fontSize: 11, color: "rgba(148,180,214,0.4)", marginBottom: 12 },
+  demoBtn: { padding: "10px 28px", borderRadius: 8, border: "1px solid rgba(167,139,250,0.2)", background: "rgba(167,139,250,0.06)", color: "rgba(167,139,250,0.85)", fontFamily: FONT, fontSize: 13, fontWeight: 600, cursor: "pointer", letterSpacing: "0.02em", marginBottom: 28 },
   trustRow: { display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" as const, justifyContent: "center" },
   trustBadge: { fontSize: 10, fontWeight: 500, letterSpacing: "0.06em", color: "rgba(148,180,214,0.3)" },
   trustDot: { width: 3, height: 3, borderRadius: "50%", background: "rgba(148,180,214,0.15)" },

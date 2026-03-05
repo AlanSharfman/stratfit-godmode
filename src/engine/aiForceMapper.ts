@@ -19,6 +19,8 @@ Available KPI keys and their meanings:
 - burn: Monthly burn rate (absolute dollar change, positive = more burn)
 - churn: Monthly churn rate (percentage point change, positive = more churn)
 - grossMargin: Gross margin percentage (percentage point change)
+- headcount: Team size (absolute change in people)
+- nrr: Net Revenue Retention percentage (percentage point change)
 - efficiency: Efficiency ratio (absolute change, e.g. 0.1)
 - enterpriseValue: Enterprise value (absolute dollar change)
 
@@ -36,7 +38,7 @@ export async function mapWithAI(
   apiKey: string,
   endpoint = "https://api.openai.com/v1/chat/completions"
 ): Promise<AIForceResponse> {
-  const kpiSummary = `Current KPIs: Cash $${kpis.cashOnHand.toLocaleString()}, Runway ${kpis.runwayMonths.toFixed(1)} months, Growth ${kpis.growthRatePct.toFixed(1)}%, ARR $${kpis.arr.toLocaleString()}, Monthly Revenue $${kpis.revenueMonthly.toLocaleString()}, Monthly Burn $${kpis.burnMonthly.toLocaleString()}, Churn ${kpis.churnPct.toFixed(1)}%, Gross Margin ${kpis.grossMarginPct.toFixed(1)}%, Efficiency ${kpis.efficiencyRatio.toFixed(2)}, EV ${kpis.valuationEstimate ? '$' + kpis.valuationEstimate.toLocaleString() : 'N/A'}`
+  const kpiSummary = `Current KPIs: Cash $${kpis.cashOnHand.toLocaleString()}, Runway ${kpis.runwayMonths.toFixed(1)} months, Growth ${kpis.growthRatePct.toFixed(1)}%, ARR $${kpis.arr.toLocaleString()}, Monthly Revenue $${kpis.revenueMonthly.toLocaleString()}, Monthly Burn $${kpis.burnMonthly.toLocaleString()}, Churn ${kpis.churnPct.toFixed(1)}%, Gross Margin ${kpis.grossMarginPct.toFixed(1)}%, Headcount ${kpis.headcount}, NRR ${kpis.nrrPct.toFixed(0)}%, Efficiency ${kpis.efficiencyRatio.toFixed(2)}, EV ${kpis.valuationEstimate ? '$' + kpis.valuationEstimate.toLocaleString() : 'N/A'}`
 
   const response = await fetch(endpoint, {
     method: "POST",

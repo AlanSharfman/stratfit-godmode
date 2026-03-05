@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react"
+import React, { useMemo, useState, lazy, Suspense } from "react"
 
 import PageShell from "@/components/nav/PageShell"
 import TerrainZoneLegend from "@/components/terrain/TerrainZoneLegend"
@@ -10,7 +10,7 @@ import { buildPositionViewModel, type PositionKpis } from "@/pages/position/over
 import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
 import { KPI_KEYS, KPI_ZONE_MAP, getHealthLevel } from "@/domain/intelligence/kpiZoneMapping"
 import { timeSimulation, buildKpiSnapshot, findFirstCliff, type TimelineState, type KpiSnapshot } from "@/engine/timeSimulation"
-import HeatmapTimeline from "@/components/viz/HeatmapTimeline"
+const HeatmapTimeline = lazy(() => import("@/components/viz/HeatmapTimeline"))
 
 type CaseType = "bear" | "base" | "bull"
 
@@ -35,7 +35,8 @@ const CASE_CONFIGS: Record<CaseType, { label: string; color: string; growthRates
 const KPI_LABELS: Record<KpiKey, string> = {
   cash: "Cash", runway: "Runway", growth: "Growth", arr: "ARR",
   revenue: "Revenue", burn: "Burn", churn: "Churn",
-  grossMargin: "Margin", efficiency: "Efficiency", enterpriseValue: "EV",
+  grossMargin: "Margin", headcount: "Team", nrr: "NRR",
+  efficiency: "Efficiency", enterpriseValue: "EV",
 }
 
 function snapshotToPosition(s: KpiSnapshot, base: PositionKpis): PositionKpis {
@@ -46,7 +47,9 @@ function snapshotToPosition(s: KpiSnapshot, base: PositionKpis): PositionKpis {
     riskIndex: base.riskIndex, cashOnHand: s.cash,
     revenueMonthly: s.revenue, survivalScore: base.survivalScore,
     grossMarginPct: s.grossMargin, valuationEstimate: s.enterpriseValue,
-    growthRatePct: s.growth, churnPct: s.churn, efficiencyRatio: s.efficiency,
+    growthRatePct: s.growth, churnPct: s.churn,
+    headcount: s.headcount, nrrPct: s.nrr,
+    efficiencyRatio: s.efficiency,
   }
 }
 
@@ -69,6 +72,7 @@ export default function TimelinePage() {
       growthRatePct: baseKpis.growthRatePct, arr: baseKpis.arr,
       revenueMonthly: baseKpis.revenueMonthly, burnMonthly: baseKpis.burnMonthly,
       churnPct: baseKpis.churnPct, grossMarginPct: baseKpis.grossMarginPct,
+      headcount: baseKpis.headcount, nrrPct: baseKpis.nrrPct,
       efficiencyRatio: baseKpis.efficiencyRatio, enterpriseValue: baseKpis.valuationEstimate,
     })
   }, [baseKpis])
@@ -205,7 +209,9 @@ export default function TimelinePage() {
 
             {/* Heatmap */}
             <div style={{ marginTop: 20, padding: "12px 0", borderTop: "1px solid rgba(34,211,238,0.04)" }}>
-              <HeatmapTimeline kpis={baseKpis} months={12} compact />
+              <Suspense fallback={null}>
+                <HeatmapTimeline kpis={baseKpis} months={12} compact />
+              </Suspense>
             </div>
           </div>
         </div>

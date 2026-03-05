@@ -17,7 +17,6 @@ import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { Link, NavLink, useSearchParams } from "react-router-dom"
 
 import { ROUTES } from "@/routes/routeContract"
-import { useBaselineStore } from "@/state/baselineStore"
 import { useCanonicalBaseline } from "@/state/useCanonicalBaseline"
 import { usePhase1ScenarioStore, type SimulationKpis } from "@/state/phase1ScenarioStore"
 import { useCompareStore, type ComparePair, type CompareViewMode } from "@/store/compareStore"
@@ -60,9 +59,23 @@ export default function ComparePage() {
   const [briefingState, setBriefingState] = useState<IntelligenceState>("idle")
 
   const baseline = useCanonicalBaseline()
-  const baselineHydrated = useBaselineStore((s) => s.isHydrated)
-  const baselineInputs = useBaselineStore((s) => s.baselineInputs)
-  const hydrateBaseline = useBaselineStore((s) => s.hydrate)
+  // Derive flat terrain inputs from BaselineV1
+  const baselineInputs = useMemo(() => {
+    if (!baseline) return null
+    const f = baseline.financial
+    const o = baseline.operating
+    return {
+      cash:        f.cashOnHand,
+      monthlyBurn: f.monthlyBurn,
+      burnRate:    f.monthlyBurn,
+      revenue:     f.arr / 12,
+      grossMargin: f.grossMarginPct,
+      growthRate:  f.growthRatePct,
+      churnRate:   o.churnPct,
+      headcount:   f.headcount,
+      arpa:        o.acv,
+    }
+  }, [baseline])
 
   const hydrateScenarios = usePhase1ScenarioStore((s) => s.hydrate)
   const scenarioStoreHydrated = usePhase1ScenarioStore((s) => s.isHydrated)
@@ -111,7 +124,6 @@ export default function ComparePage() {
   }, [viewMode, compareCount, syncParams])
 
   // ── Hydrate stores ──
-  useEffect(() => { hydrateBaseline() }, [hydrateBaseline])
   useEffect(() => { hydrateScenarios() }, [hydrateScenarios])
 
   // ── Default B to active scenario on first mount ──
@@ -169,16 +181,20 @@ export default function ComparePage() {
   function deriveKpis(scenario: typeof scenarioA): SimulationKpis | null {
     if (scenario?.simulationResults?.kpis) return scenario.simulationResults.kpis
     if (!scenario && baseline) {
+      const f = baseline.financial
+      const o = baseline.operating
+      const monthlyBurn = f.monthlyBurn ?? 0
+      const cash = f.cashOnHand ?? 0
       return {
-        cash: baseline.cash,
-        monthlyBurn: baseline.monthlyBurn,
-        revenue: baseline.revenue,
-        grossMargin: baseline.grossMargin,
-        growthRate: baseline.growthRate,
-        churnRate: baseline.churnRate,
-        headcount: baseline.headcount,
-        arpa: baseline.arpa,
-        runway: baseline.monthlyBurn > 0 ? Math.round(baseline.cash / baseline.monthlyBurn) : null,
+        cash,
+        monthlyBurn,
+        revenue: (f.arr ?? 0) / 12,
+        grossMargin: (f.grossMarginPct ?? 0) / 100,
+        growthRate: (f.growthRatePct ?? 0) / 100,
+        churnRate: (o.churnPct ?? 0) / 100,
+        headcount: f.headcount ?? 0,
+        arpa: o.acv ?? 0,
+        runway: monthlyBurn > 0 ? Math.round(cash / monthlyBurn) : null,
       }
     }
     return null
@@ -237,7 +253,7 @@ export default function ComparePage() {
   }, [])
 
   // ── Loading guards ──
-  if (!scenarioStoreHydrated || !baselineHydrated) {
+  if (!scenarioStoreHydrated) {
     return (
       <div style={S.loadingShell}>
         <div style={{ textAlign: "center" }}>
@@ -249,7 +265,7 @@ export default function ComparePage() {
     )
   }
 
-  if (baselineHydrated && !baseline) {
+  if (!baseline) {
     return (
       <div style={S.loadingShell}>
         <div style={{ textAlign: "center", maxWidth: 400 }}>

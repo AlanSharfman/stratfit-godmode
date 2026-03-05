@@ -1,1 +1,148 @@
-/* Base */
+/* ══════════════════════════════════════════════════════════════════════════════
+   STRATFIT — 20-base.css
+   Base element styles applied after reset and token layers.
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+html {
+  font-family: var(--sf-font-sans);
+  font-size: 16px;
+  color: var(--sf-text);
+  background: var(--sf-bg-void);
+}
+
+body {
+  min-height: 100vh;
+  background: var(--sf-bg-void);
+  color: var(--sf-text);
+  font-size: var(--sf-text-base);
+  line-height: var(--sf-leading-normal);
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+  isolation: isolate;
+}
+
+/* ── Headings ── */
+h1, h2, h3, h4 {
+  font-family: var(--sf-font-display);
+  letter-spacing: var(--sf-tracking-wide);
+  line-height: var(--sf-leading-tight);
+  color: var(--sf-text);
+}
+
+h1 { font-size: var(--sf-text-3xl); font-weight: var(--sf-weight-light); }
+h2 { font-size: var(--sf-text-2xl); font-weight: var(--sf-weight-light); }
+h3 { font-size: var(--sf-text-xl);  font-weight: var(--sf-weight-medium); }
+h4 { font-size: var(--sf-text-lg);  font-weight: var(--sf-weight-medium); }
+
+/* ── Body text ── */
+p {
+  color: var(--sf-text-secondary);
+  line-height: var(--sf-leading-relaxed);
+}
+
+small {
+  font-size: var(--sf-text-xs);
+  color: var(--sf-text-muted);
+}
+
+code, kbd, samp, pre {
+  font-family: var(--sf-font-mono);
+  font-size: 0.9em;
+}
+
+code {
+  padding: 2px 6px;
+  border-radius: var(--sf-radius-xs);
+  background: rgba(34, 211, 238, 0.06);
+  color: var(--sf-cyan-medium);
+}
+
+pre {
+  padding: var(--sf-space-4);
+  border-radius: var(--sf-radius-md);
+  background: var(--sf-bg-deep);
+  border: 1px solid var(--sf-border);
+  overflow-x: auto;
+}
+
+pre code {
+  padding: 0;
+  background: none;
+}
+
+kbd {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: var(--sf-radius-xs);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: var(--sf-text-xs);
+  line-height: 1.5;
+  color: var(--sf-text-secondary);
+}
+
+/* ── Links ── */
+a {
+  color: var(--sf-cyan);
+  transition: color var(--sf-duration) var(--sf-ease);
+}
+a:hover {
+  color: var(--sf-cyan-bright);
+}
+
+/* ── Horizontal rules ── */
+hr {
+  border: none;
+  height: 1px;
+  background: var(--sf-border);
+  margin: var(--sf-space-6) 0;
+}
+
+/* ── Form elements ── */
+select {
+  color-scheme: dark;
+}
+select option {
+  background: var(--sf-bg-raised);
+  color: var(--sf-text);
+}
+select option:checked {
+  background: rgba(34, 211, 238, 0.12);
+  color: var(--sf-cyan);
+}
+
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="url"],
+textarea {
+  background: var(--sf-bg-surface);
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-sm);
+  padding: var(--sf-space-2) var(--sf-space-3);
+  color: var(--sf-text);
+  transition: border-color var(--sf-duration) var(--sf-ease);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--sf-cyan-dim);
+  box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.08);
+}
+
+/* ── Focus-visible ring ── */
+:focus-visible {
+  outline: 2px solid var(--sf-cyan-dim);
+  outline-offset: 2px;
+}
+
+/* ── Selection ── */
+::selection {
+  background: rgba(34, 211, 238, 0.2);
+  color: #fff;
+}

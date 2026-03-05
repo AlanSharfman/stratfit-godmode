@@ -61,7 +61,7 @@ export function OutcomeHistogram({ baseline, exploration, timeline, setTimeline 
   
   const STEPS = 37
   const START_VALUE = 3.2
-  const NUM_SIMS = 2000
+  const NUM_SIMS = 10_000
   const BINS = 40
 
   // Generate final values at current timeline

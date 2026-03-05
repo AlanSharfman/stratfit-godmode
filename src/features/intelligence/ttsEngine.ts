@@ -1,32 +1,45 @@
 // src/features/intelligence/ttsEngine.ts
-// ═══════════════════════════════════════════════════════════════════════════
-// STRATFIT — TTS Engine (Optional Audio Narration)
+// STRATFIT — TTS Engine (OpenAI Nova + browser fallback)
 //
-// Uses browser SpeechSynthesis when available.
-// Neutral voice, slightly slower rate, interruptible.
-// NarrationCue triggers speak(text).
-// ═══════════════════════════════════════════════════════════════════════════
+// Prefers OpenAI TTS (Nova voice) for natural cinematic narration.
+// Falls back to browser SpeechSynthesis when no API key is configured.
 
-/** Check if TTS is available in this browser */
+import { synthesizeSpeech, hasOpenAIKey } from "@/voice/openaiTTS"
+
+let currentAudio: HTMLAudioElement | null = null
+
 export function ttsAvailable(): boolean {
-  return typeof window !== "undefined" && "speechSynthesis" in window
+  return hasOpenAIKey() || (typeof window !== "undefined" && "speechSynthesis" in window)
 }
 
-/** Speak text with neutral voice. Interruptible. */
-export function ttsSpeak(text: string): void {
-  if (!ttsAvailable()) return
+export async function ttsSpeak(text: string): Promise<void> {
+  ttsCancel()
 
-  // Cancel any ongoing speech
+  if (hasOpenAIKey()) {
+    try {
+      const result = await synthesizeSpeech(text, { voice: "nova", speed: 0.9 })
+      const audio = new Audio(result.url)
+      currentAudio = audio
+      audio.onended = () => {
+        URL.revokeObjectURL(result.url)
+        currentAudio = null
+      }
+      audio.play().catch(() => {})
+      return
+    } catch (err) {
+      console.warn("[ttsEngine] OpenAI TTS failed, falling back to browser:", err)
+    }
+  }
+
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return
+
   window.speechSynthesis.cancel()
 
   const utterance = new SpeechSynthesisUtterance(text)
-
-  // Neutral, slightly slower rate
   utterance.rate = 0.9
   utterance.pitch = 1.0
   utterance.volume = 0.8
 
-  // Prefer a neutral English voice
   const voices = window.speechSynthesis.getVoices()
   const preferred = voices.find(
     (v) =>
@@ -36,15 +49,18 @@ export function ttsSpeak(text: string): void {
         v.name.includes("Samantha") ||
         v.name.includes("Daniel")),
   )
-  if (preferred) {
-    utterance.voice = preferred
-  }
+  if (preferred) utterance.voice = preferred
 
   window.speechSynthesis.speak(utterance)
 }
 
-/** Cancel any ongoing speech */
 export function ttsCancel(): void {
-  if (!ttsAvailable()) return
-  window.speechSynthesis.cancel()
+  if (currentAudio) {
+    currentAudio.pause()
+    currentAudio.currentTime = 0
+    currentAudio = null
+  }
+  if (typeof window !== "undefined" && "speechSynthesis" in window) {
+    window.speechSynthesis.cancel()
+  }
 }

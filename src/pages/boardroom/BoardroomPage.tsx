@@ -1,8 +1,8 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from "react"
 import { AnimatePresence } from "framer-motion"
 
 import PageShell from "@/components/nav/PageShell"
-import BriefingTheatre from "@/components/command/BriefingTheatre"
+const BriefingTheatre = lazy(() => import("@/components/command/BriefingTheatre"))
 import TerrainStage from "@/terrain/TerrainStage"
 import SkyAtmosphere from "@/scene/rigs/SkyAtmosphere"
 import { POSITION_PROGRESSIVE_PRESET } from "@/scene/camera/terrainCameraPresets"
@@ -26,6 +26,8 @@ const KPI_DISPLAY: Record<KpiKey, { label: string; fmt: (k: PositionKpis) => str
   burn: { label: "Monthly Burn", fmt: (k) => `$${(k.burnMonthly / 1000).toFixed(0)}K` },
   churn: { label: "Churn Rate", fmt: (k) => `${k.churnPct.toFixed(1)}%` },
   grossMargin: { label: "Gross Margin", fmt: (k) => `${k.grossMarginPct.toFixed(1)}%` },
+  headcount: { label: "Headcount", fmt: (k) => `${k.headcount}` },
+  nrr: { label: "Net Revenue Retention", fmt: (k) => `${k.nrrPct.toFixed(0)}%` },
   efficiency: { label: "Efficiency", fmt: (k) => `${k.efficiencyRatio.toFixed(2)}` },
   enterpriseValue: { label: "Enterprise Value", fmt: (k) => k.valuationEstimate ? `$${(k.valuationEstimate / 1000).toFixed(0)}K` : "N/A" },
 }
@@ -158,7 +160,11 @@ export default function BoardroomPage() {
 
         {/* Intelligence Briefing Theatre */}
         <AnimatePresence>
-          {mode === "briefing" && <BriefingTheatre kpis={liveKpis} onClose={() => setMode("cinematic")} />}
+          {mode === "briefing" && (
+            <Suspense fallback={<div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(34,211,238,0.3)", fontSize: 13 }}>Loading briefing…</div>}>
+              <BriefingTheatre kpis={liveKpis} onClose={() => setMode("cinematic")} />
+            </Suspense>
+          )}
         </AnimatePresence>
 
         {mode === "cinematic" ? (

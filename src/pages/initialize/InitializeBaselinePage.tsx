@@ -1,17 +1,15 @@
 import React, { useCallback, useMemo, useRef, useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { useBaselineStore } from "@/state/baselineStore"
+import { useSystemBaseline } from "@/system/SystemBaselineProvider"
+import type { BaselineV1 } from "@/onboard/baseline"
 import PortalNav from "@/components/nav/PortalNav"
-import css from "./IngressConsole.module.css"
 
 /* ═══════════════════════════════════════════════════════════════════
-   STRATFIT — Initiate Intelligence Console (God Mode Wizard)
+   STRATFIT — Initiate Command Center (God Mode Single-Page HUD)
 
-   4-step sidebar wizard. Persistent metrics strip. Glass panels.
-   Input paths: Manual / Xero / Excel.
+   Single-page tactical grid. Machined bezel modules.
+   All 8 data modules visible at once with live outcome rail.
    ═══════════════════════════════════════════════════════════════════ */
-
-/* ── Types ── */
 
 type AccessToCapital = "Moderate" | "Strong"
 type HiringVelocity = "Low" | "Medium" | "High"
@@ -25,14 +23,12 @@ interface FormState {
   companyName: string
   industry: string
   stage: string
-
   cashOnHand: number
   monthlyNetBurn: number
   debtOutstanding: number
   debtInterestRate: number
   fundraisingWindow: number
   accessToCapital: AccessToCapital
-
   currentARR: number
   monthlyGrowthPct: number
   grossMarginPct: number
@@ -40,7 +36,6 @@ interface FormState {
   monthlyChurnPct: number
   salesEfficiency: number
   netRevenueRetentionPct: number
-
   headcount: number
   avgFullyLoadedCost: number
   salesMarketingSpend: number
@@ -48,96 +43,42 @@ interface FormState {
   gaSpend: number
   cogsPct: number
   cac: number
-
   hiringVelocity: HiringVelocity
   salesRampTime: number
   engineeringVelocity: number
   burnFlexibility: BurnFlexibility
-
   riskTolerance: RiskTolerance
   targetGrowthBand: number
   priorityBalance: number
 }
 
-/* ── Defaults ── */
-
 const INITIAL: FormState = {
-  contactName: "",
-  contactEmail: "",
-  companyName: "",
-  industry: "",
-  stage: "",
-
-  cashOnHand: 500_000,
-  monthlyNetBurn: 75_000,
-  debtOutstanding: 0,
-  debtInterestRate: 0,
-  fundraisingWindow: 6,
-  accessToCapital: "Moderate",
-
-  currentARR: 1_200_000,
-  monthlyGrowthPct: 8,
-  grossMarginPct: 70,
-  avgDealSize: 3_200,
-  monthlyChurnPct: 3,
-  salesEfficiency: 1.0,
-  netRevenueRetentionPct: 110,
-
-  headcount: 18,
-  avgFullyLoadedCost: 140_000,
-  salesMarketingSpend: 60_000,
-  rdSpend: 80_000,
-  gaSpend: 30_000,
-  cogsPct: 45_000,
-  cac: 8_000,
-
-  hiringVelocity: "Medium",
-  salesRampTime: 4,
-  engineeringVelocity: 4,
-  burnFlexibility: "Variable",
-
-  riskTolerance: "Balanced",
-  targetGrowthBand: 4,
-  priorityBalance: 50,
+  contactName: "", contactEmail: "", companyName: "", industry: "", stage: "",
+  cashOnHand: 500_000, monthlyNetBurn: 75_000, debtOutstanding: 0, debtInterestRate: 0,
+  fundraisingWindow: 6, accessToCapital: "Moderate",
+  currentARR: 1_200_000, monthlyGrowthPct: 8, grossMarginPct: 70, avgDealSize: 3_200,
+  monthlyChurnPct: 3, salesEfficiency: 1.0, netRevenueRetentionPct: 110,
+  headcount: 18, avgFullyLoadedCost: 140_000, salesMarketingSpend: 60_000,
+  rdSpend: 80_000, gaSpend: 30_000, cogsPct: 45_000, cac: 8_000,
+  hiringVelocity: "Medium", salesRampTime: 4, engineeringVelocity: 4, burnFlexibility: "Variable",
+  riskTolerance: "Balanced", targetGrowthBand: 4, priorityBalance: 50,
 }
 
-const STAGES = [
-  "Ideation", "Startup", "Early Growth", "Growth", "High Growth", "Scale", "Exit Ready",
-]
-const INDUSTRIES = [
-  "SaaS", "Fintech", "HealthTech", "EdTech", "E-Commerce",
-  "AI / ML", "DevTools", "Marketplace", "Hardware", "Other",
-]
-
-const STEP_LABELS = [
-  "Identity & Context",
-  "Financial Position",
-  "Operating Structure",
-  "Strategic Intent",
-]
+const STAGES = ["Ideation", "Startup", "Early Growth", "Growth", "High Growth", "Scale", "Exit Ready"]
+const INDUSTRIES = ["SaaS", "Fintech", "HealthTech", "EdTech", "E-Commerce", "AI / ML", "DevTools", "Marketplace", "Hardware", "Other"]
 
 /* ── Helpers ── */
 
 function fmtCurrency(v: number): string {
   if (Math.abs(v) >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`
+  if (Math.abs(v) >= 1_000) return `$${(Math.abs(v) / 1_000).toFixed(0)}K`
   return `$${Math.round(Math.abs(v)).toLocaleString()}`
-}
-
-function sliderFill(value: number, min: number, max: number): React.CSSProperties {
-  const pct = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100))
-  return {
-    background: `linear-gradient(90deg, #065f73 0%, #0e7490 ${pct * 0.3}%, #22d3ee ${pct * 0.7}%, #67e8f9 ${pct}%, rgba(255,255,255,0.035) ${pct}%, rgba(255,255,255,0.035) 100%)`,
-    boxShadow: pct > 3
-      ? `0 0 ${4 + pct * 0.08}px rgba(34,211,238,${0.14 + pct * 0.003})`
-      : "none",
-  }
 }
 
 function computeMetrics(f: FormState) {
   const runway = f.monthlyNetBurn > 0 ? f.cashOnHand / f.monthlyNetBurn : 0
   const monthlyRevGrowth = (f.monthlyGrowthPct / 100) * (f.currentARR / 12)
   const burnMultiple = monthlyRevGrowth > 0 ? f.monthlyNetBurn / monthlyRevGrowth : 0
-
   let prob = 0
   if (runway >= 24) prob = 80
   else if (runway >= 18) prob = 65
@@ -148,12 +89,9 @@ function computeMetrics(f: FormState) {
   if (f.netRevenueRetentionPct > 100) prob += 7
   if (f.monthlyChurnPct < 3) prob += 5
   prob = Math.min(100, prob)
-
-  const totalCost =
-    f.headcount * f.avgFullyLoadedCost + f.salesMarketingSpend + f.rdSpend + f.gaSpend
+  const totalCost = f.headcount * f.avgFullyLoadedCost + f.salesMarketingSpend + f.rdSpend + f.gaSpend
   const operatingProfit = f.currentARR - totalCost
   const revenuePerHead = f.headcount > 0 ? Math.round(f.currentARR / f.headcount) : 0
-
   return {
     runway: Number.isFinite(runway) ? runway : 0,
     burnMultiple: Number.isFinite(burnMultiple) ? burnMultiple : 0,
@@ -202,18 +140,14 @@ const CSV_FIELD_MAP: Array<{ key: keyof FormState; label: string; example: strin
 ]
 
 function generateCSVTemplate(): string {
-  const headers = CSV_FIELD_MAP.map((f) => f.label).join(",")
-  const examples = CSV_FIELD_MAP.map((f) => f.example).join(",")
-  return `${headers}\n${examples}`
+  return CSV_FIELD_MAP.map((f) => f.label).join(",") + "\n" + CSV_FIELD_MAP.map((f) => f.example).join(",")
 }
 
 function downloadCSV(filename: string, content: string) {
   const blob = new Blob([content], { type: "text/csv;charset=utf-8;" })
   const url = URL.createObjectURL(blob)
   const a = document.createElement("a")
-  a.href = url
-  a.download = filename
-  a.click()
+  a.href = url; a.download = filename; a.click()
   URL.revokeObjectURL(url)
 }
 
@@ -222,22 +156,19 @@ function parseCSVToForm(text: string): Partial<FormState> | null {
   if (lines.length < 2) return null
   const headers = lines[0].split(",").map((h) => h.trim())
   const values = lines[1].split(",").map((v) => v.trim())
-
   const result: Record<string, unknown> = {}
+  const numericKeys: Array<keyof FormState> = [
+    "cashOnHand", "monthlyNetBurn", "debtOutstanding", "debtInterestRate",
+    "fundraisingWindow", "currentARR", "monthlyGrowthPct", "grossMarginPct",
+    "avgDealSize", "monthlyChurnPct", "salesEfficiency", "netRevenueRetentionPct",
+    "headcount", "avgFullyLoadedCost", "salesMarketingSpend", "rdSpend",
+    "gaSpend", "cogsPct", "cac", "salesRampTime", "engineeringVelocity",
+    "targetGrowthBand", "priorityBalance",
+  ]
   for (const field of CSV_FIELD_MAP) {
-    const idx = headers.findIndex(
-      (h) => h.toLowerCase() === field.label.toLowerCase(),
-    )
+    const idx = headers.findIndex((h) => h.toLowerCase() === field.label.toLowerCase())
     if (idx === -1 || !values[idx]) continue
     const raw = values[idx]
-    const numericKeys: Array<keyof FormState> = [
-      "cashOnHand", "monthlyNetBurn", "debtOutstanding", "debtInterestRate",
-      "fundraisingWindow", "currentARR", "monthlyGrowthPct", "grossMarginPct",
-      "avgDealSize", "monthlyChurnPct", "salesEfficiency", "netRevenueRetentionPct",
-      "headcount", "avgFullyLoadedCost", "salesMarketingSpend", "rdSpend",
-      "gaSpend", "cogsPct", "cac", "salesRampTime", "engineeringVelocity",
-      "targetGrowthBand", "priorityBalance",
-    ]
     if (numericKeys.includes(field.key)) {
       const n = Number(raw.replace(/[$,%]/g, ""))
       if (!Number.isNaN(n)) result[field.key] = n
@@ -249,83 +180,146 @@ function parseCSVToForm(text: string): Partial<FormState> | null {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   INLINE SUB-COMPONENTS
+   TACTICAL SUB-COMPONENTS
    ═══════════════════════════════════════════════════════════════════ */
 
-function SliderRow({ label, value, min, max, step, format, onChange }: {
-  label: string; value: number; min: number; max: number; step: number
-  format: (v: number) => string; onChange: (v: number) => void
-}) {
+function Module({ title, children, style }: { title: string; children: React.ReactNode; style?: React.CSSProperties }) {
   return (
-    <div className={css.sliderRow}>
-      <span className={css.sliderLabel}>{label}</span>
-      <div className={css.sliderTrack}>
-        <input
-          type="range"
-          className={css.sliderInput}
-          min={min} max={max} step={step} value={value}
-          style={sliderFill(value, min, max)}
-          onChange={(e) => onChange(Number(e.target.value))}
+    <section className="bezel-titanium" style={{ display: "flex", flexDirection: "column", overflow: "hidden", ...style }}>
+      <header style={SC.moduleHeader}>{title}</header>
+      <div style={{ flex: 1, minHeight: 0 }}>{children}</div>
+    </section>
+  )
+}
+
+function PowerBar({ label, value, max, unit = "", color = "cyan", onChange }: {
+  label: string; value: number; max: number; unit?: string; color?: "cyan" | "amber"; onChange?: (v: number) => void
+}) {
+  const pct = Math.min(100, Math.max(0, (value / max) * 100))
+  const isCyan = color === "cyan"
+  const display = unit === "%" ? `${value.toFixed(1)}${unit}`
+    : unit === "x" ? `${value.toFixed(1)}${unit}`
+    : unit ? `${value.toLocaleString()}${unit}`
+    : value >= 1_000_000 ? `$${(value / 1e6).toFixed(1)}M`
+    : value >= 1_000 ? `$${(value / 1e3).toFixed(0)}K`
+    : `${value.toLocaleString()}`
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+        <span style={SC.powerLabel}>{label}</span>
+        <span style={{ ...SC.powerValue, color: isCyan ? "#22d3ee" : "#f59e0b" }}>{display}</span>
+      </div>
+      <div className="bezel-carved" style={SC.powerTrack}>
+        <div
+          className={`power-fill ${isCyan ? "glow-cyan" : "glow-amber"}`}
+          style={{ ...SC.powerFill, width: `${pct}%`, background: isCyan ? "#22d3ee" : "#f59e0b" }}
         />
       </div>
-      <span className={css.sliderValue}>{format(value)}</span>
+      {onChange && (
+        <input
+          type="range"
+          min={0} max={max} step={max > 100 ? max / 200 : 0.1}
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+          style={SC.rangeInput}
+        />
+      )}
     </div>
   )
 }
 
-function InputRow({ label, value, prefix, suffix, onChange }: {
-  label: string; value: number | string; prefix?: string; suffix?: string
-  onChange: (v: string) => void
+function TacticalInput({ label, value, prefix, suffix, placeholder, onChange }: {
+  label: string; value?: string | number; prefix?: string; suffix?: string
+  placeholder?: string; onChange?: (v: string) => void
 }) {
-  const display = typeof value === "number" ? value.toLocaleString() : value
+  const display = typeof value === "number" ? value.toLocaleString() : value ?? ""
   return (
-    <div className={css.formRow}>
-      <span className={css.formLabel}>{label}</span>
-      <div className={css.formField}>
-        <div className={css.inputWrap}>
-          {prefix && <span className={css.inputPrefix}>{prefix}</span>}
-          <input
-            className={css.inputInner}
-            type="text"
-            inputMode="numeric"
-            value={display}
-            onChange={(e) => onChange(e.target.value.replace(/,/g, ""))}
-          />
-          {suffix && <span className={css.inputSuffix}>{suffix}</span>}
-        </div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <label style={SC.inputLabel}>{label}</label>
+      <div className="bezel-carved" style={SC.inputWrap}>
+        {prefix && <span style={SC.inputAffix}>{prefix}</span>}
+        <input
+          style={SC.inputInner}
+          type="text"
+          inputMode="numeric"
+          value={display}
+          placeholder={placeholder}
+          onChange={(e) => onChange?.(e.target.value.replace(/,/g, ""))}
+        />
+        {suffix && <span style={SC.inputAffix}>{suffix}</span>}
       </div>
     </div>
   )
 }
 
-function ToggleGroup<T extends string>({ options, value, onChange }: {
-  options: T[]; value: T; onChange: (v: T) => void
+function StatusToggle({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        padding: "6px 0",
+        borderRadius: 8,
+        fontSize: 9,
+        fontWeight: 900,
+        letterSpacing: "0.12em",
+        textTransform: "uppercase",
+        fontFamily: FONT,
+        cursor: "pointer",
+        transition: "all 0.15s",
+        border: active ? "1px solid rgba(34,211,238,0.5)" : "1px solid rgba(255,255,255,0.05)",
+        background: active ? "rgba(34,211,238,0.1)" : "rgba(255,255,255,0.02)",
+        color: active ? "#22d3ee" : "rgba(100,116,139,0.5)",
+        boxShadow: active ? "0 0 10px rgba(34,211,238,0.1)" : "none",
+      }}
+    >
+      {label}
+    </button>
+  )
+}
+
+function ToggleRow<T extends string>({ label, options, value, onChange }: {
+  label: string; options: T[]; value: T; onChange: (v: T) => void
 }) {
   return (
-    <div className={css.toggleGroup}>
-      {options.map((opt) => (
-        <button
-          key={opt} type="button"
-          className={`${css.toggleOption} ${value === opt ? css.toggleOptionActive : ""}`}
-          onClick={() => onChange(opt)}
-        >{opt}</button>
-      ))}
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+      <span style={SC.toggleLabel}>{label}</span>
+      <div style={SC.toggleGroup}>
+        {options.map((opt) => (
+          <button
+            key={opt} type="button"
+            onClick={() => onChange(opt)}
+            style={{
+              ...SC.toggleBtn,
+              ...(value === opt ? SC.toggleBtnActive : {}),
+            }}
+          >{opt}</button>
+        ))}
+      </div>
     </div>
   )
 }
 
-function PillSelect({ options, value, onChange }: {
-  options: string[]; value: string; onChange: (v: string) => void
-}) {
+function BinarySwitch({ label, active, onToggle }: { label: string; active: boolean; onToggle: () => void }) {
   return (
-    <div className={css.pillGroup}>
-      {options.map((opt) => (
-        <button
-          key={opt} type="button"
-          className={`${css.pillOption} ${value === opt ? css.pillOptionActive : ""}`}
-          onClick={() => onChange(opt)}
-        >{opt}</button>
-      ))}
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+      <span style={{ fontSize: 9, fontWeight: 900, color: "rgba(100,116,139,0.6)", letterSpacing: "0.02em" }}>{label}</span>
+      <div style={{ display: "flex", padding: 2, background: "rgba(0,0,0,0.6)", borderRadius: 4, border: "1px solid rgba(255,255,255,0.08)" }}>
+        <button type="button" onClick={() => { if (!active) onToggle() }} style={{
+          padding: "3px 10px", fontSize: 8, fontWeight: 900, borderRadius: 3, border: "none", fontFamily: FONT,
+          cursor: "pointer", transition: "all 0.15s",
+          background: active ? "#22d3ee" : "transparent",
+          color: active ? "#020617" : "rgba(100,116,139,0.4)",
+          boxShadow: active ? "0 0 10px rgba(34,211,238,0.3)" : "none",
+        }}>Yes</button>
+        <button type="button" onClick={() => { if (active) onToggle() }} style={{
+          padding: "3px 10px", fontSize: 8, fontWeight: 900, borderRadius: 3, border: "none", fontFamily: FONT,
+          cursor: "pointer", transition: "all 0.15s",
+          background: !active ? "rgba(30,41,59,0.8)" : "transparent",
+          color: !active ? "rgba(148,163,184,0.7)" : "rgba(100,116,139,0.4)",
+        }}>No</button>
+      </div>
     </div>
   )
 }
@@ -336,15 +330,15 @@ function PillSelect({ options, value, onChange }: {
 
 export default function InitializeBaselinePage() {
   const navigate = useNavigate()
-  const setBaseline = useBaselineStore((s) => s.setBaseline)
+  const { setBaseline } = useSystemBaseline()
 
   const [form, setForm] = useState<FormState>({ ...INITIAL })
-  const [step, setStep] = useState(1)
   const [inputPath, setInputPath] = useState<InputPath>("manual")
   const [showXeroModal, setShowXeroModal] = useState(false)
   const [uploadMsg, setUploadMsg] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const [dragOver, setDragOver] = useState(false)
+  const [isLocking, setIsLocking] = useState(false)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -362,55 +356,97 @@ export default function InitializeBaselinePage() {
     return () => clearTimeout(t)
   }, [toast])
 
-  /* ── Step completion checks ── */
-  const stepComplete = useMemo(() => ({
-    1: !!(form.contactName && form.contactEmail && form.companyName && form.industry && form.stage),
-    2: form.cashOnHand > 0 && form.monthlyNetBurn > 0 && form.currentARR > 0,
-    3: form.headcount > 0,
-    4: !!form.riskTolerance,
-  }), [form])
-
   const canLock = form.companyName.trim().length > 0 && form.cashOnHand > 0
 
-  /* ── Lock baseline ── */
   const handleLock = useCallback(() => {
-    setBaseline({
-      cash: form.cashOnHand,
-      monthlyBurn: form.monthlyNetBurn,
-      revenue: form.currentARR / 12,
-      grossMargin: form.grossMarginPct / 100,
-      growthRate: form.monthlyGrowthPct / 100,
-      churnRate: form.monthlyChurnPct / 100,
-      headcount: form.headcount,
-      arpa: form.avgDealSize || 1500,
-      stage: form.stage || undefined,
-    })
-    navigate("/position", { replace: true })
+    setIsLocking(true)
+
+    const baseline: BaselineV1 = {
+      version: 1,
+      company: {
+        legalName: form.companyName.trim() || "My Company",
+        industry: form.industry || "SaaS",
+        businessModel: "SaaS",
+        primaryMarket: "B2B",
+        founderName: form.contactName || "",
+        contactEmail: form.contactEmail || "",
+        contactPhone: "",
+        jurisdiction: "",
+      },
+      financial: {
+        arr: form.currentARR,
+        growthRatePct: form.monthlyGrowthPct,
+        grossMarginPct: form.grossMarginPct,
+        revenueConcentrationPct: 0,
+        monthlyBurn: form.monthlyNetBurn,
+        payroll: form.headcount * (form.avgFullyLoadedCost / 12),
+        headcount: form.headcount,
+        cashOnHand: form.cashOnHand,
+        nrrPct: form.netRevenueRetentionPct,
+        avgFullyLoadedCost: form.avgFullyLoadedCost,
+        salesMarketingSpend: form.salesMarketingSpend,
+        rdSpend: form.rdSpend,
+        gaSpend: form.gaSpend,
+      },
+      capital: {
+        totalDebt: form.debtOutstanding,
+        interestRatePct: form.debtInterestRate,
+        monthlyDebtService: 0,
+        lastRaiseAmount: 0,
+        lastRaiseDateISO: null,
+        equityRaisedToDate: 0,
+      },
+      operating: {
+        churnPct: form.monthlyChurnPct,
+        salesCycleMonths: form.salesRampTime,
+        acv: form.avgDealSize,
+        keyPersonDependency: "Medium",
+        customerConcentrationRisk: "Medium",
+        regulatoryExposure: "Low",
+        activeCustomers: form.currentARR > 0 && form.avgDealSize > 0
+          ? Math.round(form.currentARR / form.avgDealSize)
+          : 0,
+      },
+      customerEngine: {
+        cac: form.cac,
+        ltv: form.avgDealSize > 0 && form.monthlyChurnPct > 0
+          ? form.avgDealSize / (form.monthlyChurnPct / 100)
+          : 0,
+        paybackPeriodMonths: form.cac > 0 && form.avgDealSize > 0
+          ? Math.round(form.cac / (form.avgDealSize / 12))
+          : 0,
+        expansionRatePct: form.netRevenueRetentionPct > 100
+          ? form.netRevenueRetentionPct - 100
+          : 0,
+      },
+      posture: {
+        focus: form.priorityBalance > 60 ? "Growth" : "Stabilise",
+        raiseIntent: form.accessToCapital === "Strong" ? "Yes" : "Uncertain",
+        horizonMonths: 24,
+        primaryConstraint: "Cash runway",
+        fastestDownside: "Customer churn",
+      },
+    }
+
+    setBaseline(baseline)
+    setTimeout(() => navigate("/position", { replace: true }), 800)
   }, [form, setBaseline, navigate])
 
-  /* ── Excel download ── */
   const handleDownloadTemplate = useCallback(() => {
     downloadCSV("stratfit-baseline-template.csv", generateCSVTemplate())
     setToast("Template downloaded — fill in your data and upload it back.")
   }, [])
 
-  /* ── Excel upload ── */
   const handleFileUpload = useCallback((file: File) => {
     setUploadMsg(null)
     const reader = new FileReader()
     reader.onload = (e) => {
       const text = e.target?.result
-      if (typeof text !== "string") {
-        setUploadMsg({ type: "error", text: "Could not read file." })
-        return
-      }
+      if (typeof text !== "string") { setUploadMsg({ type: "error", text: "Could not read file." }); return }
       const parsed = parseCSVToForm(text)
-      if (!parsed || Object.keys(parsed).length === 0) {
-        setUploadMsg({ type: "error", text: "No matching columns found. Use the template format." })
-        return
-      }
+      if (!parsed || Object.keys(parsed).length === 0) { setUploadMsg({ type: "error", text: "No matching columns found." }); return }
       setForm((prev) => ({ ...prev, ...parsed }))
-      setUploadMsg({ type: "success", text: `Imported ${Object.keys(parsed).length} fields. Review and adjust below.` })
+      setUploadMsg({ type: "success", text: `Imported ${Object.keys(parsed).length} fields.` })
       setToast("Data imported successfully.")
     }
     reader.onerror = () => setUploadMsg({ type: "error", text: "File read error." })
@@ -424,484 +460,496 @@ export default function InitializeBaselinePage() {
   }, [handleFileUpload])
 
   const onDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    setDragOver(false)
+    e.preventDefault(); setDragOver(false)
     const file = e.dataTransfer.files?.[0]
     if (file) handleFileUpload(file)
   }, [handleFileUpload])
 
-  /* ── Path card click ── */
-  const handlePathClick = useCallback((path: InputPath) => {
-    setInputPath(path)
-    if (path === "xero") setShowXeroModal(true)
-  }, [])
-
-  /* ── Runway color ── */
   const runwayColor = metrics.runway < 6 ? "#f87171" : metrics.runway < 12 ? "#fbbf24" : "#34d399"
+  const survivalColor = metrics.survivalProbability >= 60 ? "#34d399" : metrics.survivalProbability >= 30 ? "#fbbf24" : "#f87171"
 
-  /* ═══ STEP RENDERERS ═══ */
+  const needleAngle = form.riskTolerance === "Conservative" ? -45 : form.riskTolerance === "Aggressive" ? 45 : 0
 
-  function renderStep1() {
-    return (
-      <>
-        <div className={css.glassPanel}>
-          <div className={css.glassPanelHeader}>Identity & Contact</div>
-          <div className={css.glassPanelBody}>
-            <div className={css.formRow}>
-              <span className={css.formLabel}>Your Name</span>
-              <div className={css.formField}>
-                <input className={css.textInput} type="text" placeholder="Jane Doe"
-                  value={form.contactName} onChange={(e) => update("contactName", e.target.value)} />
-              </div>
-            </div>
-            <div className={css.formRow}>
-              <span className={css.formLabel}>Email Address</span>
-              <div className={css.formField}>
-                <input className={css.textInput} type="email" placeholder="jane@acme.com"
-                  value={form.contactEmail} onChange={(e) => update("contactEmail", e.target.value)} />
-              </div>
-            </div>
-            <div className={css.formRow}>
-              <span className={css.formLabel}>Company Name</span>
-              <div className={css.formField}>
-                <input className={css.textInput} type="text" placeholder="Acme Inc."
-                  value={form.companyName} onChange={(e) => update("companyName", e.target.value)} />
-              </div>
-            </div>
-            <div className={css.divider} />
-            <div className={css.formRow}>
-              <span className={css.formLabel}>Industry</span>
-              <div className={css.formField}>
-                <PillSelect options={INDUSTRIES} value={form.industry}
-                  onChange={(v) => update("industry", v)} />
-              </div>
-            </div>
-            <div className={css.formRow}>
-              <span className={css.formLabel}>Stage</span>
-              <div className={css.formField}>
-                <PillSelect options={STAGES} value={form.stage}
-                  onChange={(v) => update("stage", v)} />
-              </div>
-            </div>
+  return (
+    <div className="bg-hex-grid" style={SC.page}>
+      <PortalNav />
+
+      {/* ═══ POWER RAIL — TOP BAR ═══ */}
+      <header className="glow-cyan" style={SC.powerRail}>
+        <div style={SC.powerRailLeft}>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <span style={SC.sysLabel}>INIT_SYSTEM</span>
+            <span style={SC.sysTitle}>STRATFIT GOD MODE</span>
+          </div>
+          <span style={SC.railDivider} />
+          <div style={SC.railTitle}>Initialize Baseline</div>
+          <span style={{ fontSize: 11, color: "rgba(148,180,214,0.35)" }}>Enter your current financial truth to anchor scenario modelling.</span>
+        </div>
+        <div style={SC.metricsRow}>
+          <div style={SC.metricBlock}>
+            <span style={SC.metricLabel}>RUNWAY</span>
+            <span style={{ ...SC.metricValue, color: runwayColor }}>{metrics.runway.toFixed(1)} MO</span>
+          </div>
+          <div style={SC.metricBlock}>
+            <span style={SC.metricLabel}>BURN_MULT</span>
+            <span style={{ ...SC.metricValue, color: "#22d3ee" }}>{metrics.burnMultiple.toFixed(2)}x</span>
+          </div>
+          <div style={SC.metricBlock}>
+            <span style={SC.metricLabel}>$ BURN</span>
+            <span style={{ ...SC.metricValue, color: "#f59e0b" }}>{fmtCurrency(metrics.monthlyBurn)}</span>
+          </div>
+          <div style={SC.metricBlock}>
+            <span style={SC.metricLabel}>SURVIVAL</span>
+            <span style={{ ...SC.metricValue, color: survivalColor }}>{metrics.survivalProbability}%</span>
+          </div>
+          <div style={SC.metricBlock}>
+            <span style={SC.metricLabel}>SIMULATIONS</span>
+            <span style={{ ...SC.metricValue, color: "rgba(167,139,250,0.9)" }}>10,000</span>
           </div>
         </div>
+      </header>
 
-        {/* Input path selector */}
-        <div className={css.glassPanel}>
-          <div className={css.glassPanelHeader}>Data Input Method</div>
-          <div className={css.glassPanelBody}>
-            <div style={{ display: "flex", gap: 8 }}>
+      {/* ═══ TACTICAL GRID ═══ */}
+      <main style={SC.grid} className="gm-scrollbar">
+
+        {/* ── COLUMN 1: Identity & Input Method & Velocity ── */}
+        <div style={SC.col1}>
+          <Module title="A: IDENTITY & CONTACT">
+            <div style={SC.modBody}>
+              <TacticalInput label="Your Name" value={form.contactName} placeholder="Enter name"
+                onChange={(v) => update("contactName", v)} />
+              <TacticalInput label="Email" value={form.contactEmail} placeholder="email@company.com"
+                onChange={(v) => update("contactEmail", v)} />
+              <TacticalInput label="Company Name" value={form.companyName} placeholder="Acme Inc."
+                onChange={(v) => update("companyName", v)} />
+
+              <div style={{ marginTop: 4 }}>
+                <span style={SC.inputLabel}>Stage</span>
+                <div style={SC.pillGrid}>
+                  {STAGES.map((s) => (
+                    <StatusToggle key={s} label={s} active={form.stage === s} onClick={() => update("stage", s)} />
+                  ))}
+                </div>
+              </div>
+              <div style={{ marginTop: 4 }}>
+                <span style={SC.inputLabel}>Industry</span>
+                <div style={SC.pillGrid}>
+                  {INDUSTRIES.map((ind) => (
+                    <StatusToggle key={ind} label={ind} active={form.industry === ind} onClick={() => update("industry", ind)} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </Module>
+
+          <Module title="B: DATA INPUT METHOD">
+            <div style={SC.modBody}>
               {(["manual", "xero", "excel"] as InputPath[]).map((p) => (
                 <button
                   key={p} type="button"
-                  className={`${css.toggleOption} ${inputPath === p ? css.toggleOptionActive : ""}`}
-                  style={{ flex: 1, textAlign: "center", borderRadius: 6, border: `1px solid ${inputPath === p ? "rgba(34,211,238,0.3)" : "rgba(255,255,255,0.06)"}` }}
-                  onClick={() => handlePathClick(p)}
+                  onClick={() => { setInputPath(p); if (p === "xero") setShowXeroModal(true) }}
+                  className={inputPath === p ? "glow-cyan" : ""}
+                  style={{
+                    width: "100%",
+                    padding: inputPath === p ? "18px 12px" : "12px",
+                    borderRadius: 8,
+                    fontSize: 10, fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase",
+                    fontFamily: FONT, cursor: "pointer", transition: "all 0.15s",
+                    border: inputPath === p ? "1px solid rgba(34,211,238,0.4)" : "1px solid rgba(255,255,255,0.05)",
+                    background: inputPath === p ? "rgba(34,211,238,0.06)" : "rgba(255,255,255,0.02)",
+                    color: inputPath === p ? "#22d3ee" : "rgba(100,116,139,0.4)",
+                  }}
                 >
                   {p === "manual" ? "Manual Entry" : p === "xero" ? "Connect Xero" : "Import Excel"}
                 </button>
               ))}
-            </div>
 
-            {inputPath === "excel" && (
-              <div className={css.uploadZone}>
-                <div className={css.uploadActions}>
-                  <button type="button" className={css.btnDownload} onClick={handleDownloadTemplate}>
-                    &#8681; Download Template
-                  </button>
-                  <button type="button" className={css.btnUpload} onClick={() => fileInputRef.current?.click()}>
-                    &#8682; Upload Completed File
-                  </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".csv,.xlsx,.xls"
-                    style={{ display: "none" }}
-                    onChange={onFileChange}
-                  />
-                </div>
-                <div
-                  className={`${css.dropZone} ${dragOver ? css.dropZoneActive : ""}`}
-                  onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
-                  onDragLeave={() => setDragOver(false)}
-                  onDrop={onDrop}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <span className={css.dropText}>
-                    {dragOver ? "Drop your file here" : "Or drag and drop your CSV file here"}
-                  </span>
-                </div>
-                {uploadMsg && (
-                  <div className={uploadMsg.type === "success" ? css.uploadSuccess : css.uploadError}>
-                    {uploadMsg.text}
+              {inputPath === "excel" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button type="button" onClick={handleDownloadTemplate} style={SC.smallBtn}>Download Template</button>
+                    <button type="button" onClick={() => fileInputRef.current?.click()} style={SC.smallBtn}>Upload File</button>
+                    <input ref={fileInputRef} type="file" accept=".csv,.xlsx,.xls" style={{ display: "none" }} onChange={onFileChange} />
                   </div>
-                )}
-              </div>
-            )}
-
-            {inputPath === "xero" && (
-              <div style={{ fontSize: 12, color: "rgba(251,191,36,0.6)", padding: "8px 0" }}>
-                Xero integration coming soon. Use manual entry or Excel import for now.
-              </div>
-            )}
-          </div>
-        </div>
-      </>
-    )
-  }
-
-  function renderStep2() {
-    return (
-      <>
-        {/* Liquidity & Funding */}
-        <div className={css.glassPanel}>
-          <div className={css.glassPanelHeader}>Liquidity & Funding</div>
-          <div className={css.glassPanelBody}>
-            <SliderRow label="Cash on Hand" value={form.cashOnHand}
-              min={0} max={5_000_000} step={10_000} format={fmtCurrency}
-              onChange={(v) => update("cashOnHand", v)} />
-            <SliderRow label="Monthly Net Burn" value={form.monthlyNetBurn}
-              min={0} max={500_000} step={1_000} format={fmtCurrency}
-              onChange={(v) => update("monthlyNetBurn", v)} />
-            <div className={css.divider} />
-            <InputRow label="Debt Outstanding" value={form.debtOutstanding} prefix="$"
-              onChange={(v) => update("debtOutstanding", Number(v) || 0)} />
-            <InputRow label="Interest Rate" value={form.debtInterestRate} suffix="%"
-              onChange={(v) => update("debtInterestRate", Number(v) || 0)} />
-            <div className={css.formRow}>
-              <span className={css.formLabel}>Fundraising Window</span>
-              <div className={css.formField}>
-                <div className={css.incrGroup}>
-                  <button type="button" className={css.incrBtn}
-                    onClick={() => update("fundraisingWindow", Math.max(0, form.fundraisingWindow - 1))}>
-                    &minus;
-                  </button>
-                  <span className={css.incrValue}>{form.fundraisingWindow} months</span>
-                  <button type="button" className={css.incrBtn}
-                    onClick={() => update("fundraisingWindow", form.fundraisingWindow + 1)}>
-                    +
-                  </button>
+                  <div
+                    style={{ ...SC.dropZone, borderColor: dragOver ? "rgba(34,211,238,0.4)" : "rgba(255,255,255,0.06)" }}
+                    onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+                    onDragLeave={() => setDragOver(false)}
+                    onDrop={onDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <span style={{ fontSize: 10, color: "rgba(148,180,214,0.3)" }}>
+                      {dragOver ? "Drop file here" : "Or drag CSV here"}
+                    </span>
+                  </div>
+                  {uploadMsg && (
+                    <span style={{ fontSize: 10, color: uploadMsg.type === "success" ? "#34d399" : "#ef4444" }}>{uploadMsg.text}</span>
+                  )}
                 </div>
-              </div>
+              )}
             </div>
-            <div className={css.formRow}>
-              <span className={css.formLabel}>Access to Capital</span>
-              <div className={css.formField}>
-                <ToggleGroup options={["Moderate", "Strong"] as AccessToCapital[]}
+          </Module>
+
+          <Module title="D: EXECUTION VELOCITY">
+            <div style={SC.modBody}>
+              <ToggleRow label="Hiring Velocity" options={["Low", "Medium", "High"] as HiringVelocity[]}
+                value={form.hiringVelocity} onChange={(v) => update("hiringVelocity", v)} />
+              <PowerBar label="Sales Ramp" value={form.salesRampTime} max={12} unit=" mo" color="cyan"
+                onChange={(v) => update("salesRampTime", Math.round(v))} />
+              <PowerBar label="Engineering Velocity" value={form.engineeringVelocity} max={12} unit=" mo" color="cyan"
+                onChange={(v) => update("engineeringVelocity", Math.round(v))} />
+              <ToggleRow label="Burn Flexibility" options={["Fixed", "Variable"] as BurnFlexibility[]}
+                value={form.burnFlexibility} onChange={(v) => update("burnFlexibility", v)} />
+            </div>
+          </Module>
+        </div>
+
+        {/* ── COLUMN 2: Financial Engines ── */}
+        <div style={SC.col2}>
+          <Module title="E: LIQUIDITY & FUNDING">
+            <div style={{ ...SC.modBody, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <PowerBar label="Cash on Hand" value={form.cashOnHand} max={5_000_000} color="cyan"
+                  onChange={(v) => update("cashOnHand", Math.round(v))} />
+                <PowerBar label="Monthly Net Burn" value={form.monthlyNetBurn} max={500_000} color="amber"
+                  onChange={(v) => update("monthlyNetBurn", Math.round(v))} />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <TacticalInput label="Debt Outstanding" value={form.debtOutstanding} prefix="$"
+                  onChange={(v) => update("debtOutstanding", Number(v) || 0)} />
+                <TacticalInput label="Interest Rate" value={form.debtInterestRate} suffix="%"
+                  onChange={(v) => update("debtInterestRate", Number(v) || 0)} />
+                <TacticalInput label="Fundraising Window" value={form.fundraisingWindow} suffix="months"
+                  onChange={(v) => update("fundraisingWindow", Number(v) || 0)} />
+                <ToggleRow label="Capital Access" options={["Moderate", "Strong"] as AccessToCapital[]}
                   value={form.accessToCapital} onChange={(v) => update("accessToCapital", v)} />
               </div>
             </div>
-            <div className={css.divider} />
-            <div className={css.derivedRow}>
-              <span className={css.derivedLabel}>Runway</span>
-              <span className={css.derivedValue} style={{ color: runwayColor }}>
-                {metrics.runway.toFixed(1)} months
-              </span>
-            </div>
-            <div className={css.derivedRow}>
-              <span className={css.derivedLabel}>Burn Multiple</span>
-              <span className={css.derivedValue}>{metrics.burnMultiple.toFixed(2)}x</span>
-            </div>
-          </div>
-        </div>
+          </Module>
 
-        {/* Revenue Engine */}
-        <div className={css.glassPanel}>
-          <div className={css.glassPanelHeader}>Revenue Engine</div>
-          <div className={css.glassPanelBody}>
-            <SliderRow label="Current ARR" value={form.currentARR}
-              min={0} max={10_000_000} step={10_000} format={fmtCurrency}
-              onChange={(v) => update("currentARR", v)} />
-            <SliderRow label="Monthly Growth %" value={form.monthlyGrowthPct}
-              min={0} max={30} step={0.1} format={(v) => `${v.toFixed(1)}%`}
-              onChange={(v) => update("monthlyGrowthPct", v)} />
-            <SliderRow label="Gross Margin %" value={form.grossMarginPct}
-              min={0} max={100} step={0.5} format={(v) => `${v.toFixed(1)}%`}
-              onChange={(v) => update("grossMarginPct", v)} />
-            <InputRow label="Avg Deal Size (ACV)" value={form.avgDealSize} prefix="$"
-              onChange={(v) => update("avgDealSize", Number(v) || 0)} />
-            <SliderRow label="Monthly Churn %" value={form.monthlyChurnPct}
-              min={0} max={15} step={0.1} format={(v) => `${v.toFixed(1)}%`}
-              onChange={(v) => update("monthlyChurnPct", v)} />
-            <SliderRow label="Sales Efficiency" value={form.salesEfficiency}
-              min={0} max={3} step={0.1} format={(v) => `${v.toFixed(1)}x`}
-              onChange={(v) => update("salesEfficiency", v)} />
-            <SliderRow label="Net Revenue Retention %" value={form.netRevenueRetentionPct}
-              min={50} max={200} step={1} format={(v) => `${v}%`}
-              onChange={(v) => update("netRevenueRetentionPct", v)} />
-          </div>
-        </div>
-      </>
-    )
-  }
-
-  function renderStep3() {
-    return (
-      <div className={css.twoCol}>
-        {/* Cost Structure */}
-        <div className={css.glassPanel} style={{ marginBottom: 0 }}>
-          <div className={css.glassPanelHeader}>Cost Structure</div>
-          <div className={css.glassPanelBody}>
-            <InputRow label="Headcount" value={form.headcount}
-              onChange={(v) => update("headcount", Number(v) || 0)} />
-            <InputRow label="Avg Fully Loaded Cost" value={form.avgFullyLoadedCost} prefix="$"
-              onChange={(v) => update("avgFullyLoadedCost", Number(v) || 0)} />
-            <InputRow label="Sales & Marketing" value={form.salesMarketingSpend} prefix="$"
-              onChange={(v) => update("salesMarketingSpend", Number(v) || 0)} />
-            <InputRow label="R&D Spend" value={form.rdSpend} prefix="$"
-              onChange={(v) => update("rdSpend", Number(v) || 0)} />
-            <InputRow label="G&A Spend" value={form.gaSpend} prefix="$"
-              onChange={(v) => update("gaSpend", Number(v) || 0)} />
-            <InputRow label="COGS" value={form.cogsPct} prefix="$"
-              onChange={(v) => update("cogsPct", Number(v) || 0)} />
-            <InputRow label="CAC" value={form.cac} prefix="$"
-              onChange={(v) => update("cac", Number(v) || 0)} />
-            <div className={css.divider} />
-            <div className={css.derivedRow}>
-              <span className={css.derivedLabel}>Revenue / Employee</span>
-              <span className={css.derivedValue}>{fmtCurrency(metrics.revenuePerHead)}</span>
-            </div>
-            <div className={css.derivedRow}>
-              <span className={css.derivedLabel}>Operating Profit</span>
-              <span className={css.derivedValue} style={{
-                color: metrics.operatingProfit >= 0 ? "#34d399" : "#f87171"
-              }}>
-                {metrics.operatingProfit < 0 ? "-" : ""}{fmtCurrency(Math.abs(metrics.operatingProfit))}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Execution Velocity */}
-        <div className={css.glassPanel} style={{ marginBottom: 0 }}>
-          <div className={css.glassPanelHeader}>Execution Velocity</div>
-          <div className={css.glassPanelBody}>
-            <div className={css.formRow}>
-              <span className={css.formLabel}>Hiring Velocity</span>
-              <div className={css.formField}>
-                <ToggleGroup options={["Low", "Medium", "High"] as HiringVelocity[]}
-                  value={form.hiringVelocity} onChange={(v) => update("hiringVelocity", v)} />
+          <Module title="F: REVENUE ENGINE">
+            <div style={{ ...SC.modBody, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <PowerBar label="Current ARR" value={form.currentARR} max={10_000_000} color="cyan"
+                  onChange={(v) => update("currentARR", Math.round(v))} />
+                <PowerBar label="Monthly Growth" value={form.monthlyGrowthPct} max={30} unit="%" color="cyan"
+                  onChange={(v) => update("monthlyGrowthPct", Math.round(v * 10) / 10)} />
+                <PowerBar label="Gross Margin" value={form.grossMarginPct} max={100} unit="%" color="cyan"
+                  onChange={(v) => update("grossMarginPct", Math.round(v * 10) / 10)} />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <TacticalInput label="Avg Deal Size (ACV)" value={form.avgDealSize} prefix="$"
+                  onChange={(v) => update("avgDealSize", Number(v) || 0)} />
+                <PowerBar label="Monthly Churn" value={form.monthlyChurnPct} max={15} unit="%" color="amber"
+                  onChange={(v) => update("monthlyChurnPct", Math.round(v * 10) / 10)} />
+                <PowerBar label="Sales Efficiency" value={form.salesEfficiency} max={3} unit="x" color="cyan"
+                  onChange={(v) => update("salesEfficiency", Math.round(v * 10) / 10)} />
+                <PowerBar label="Net Revenue Retention" value={form.netRevenueRetentionPct} max={200} unit="%" color="cyan"
+                  onChange={(v) => update("netRevenueRetentionPct", Math.round(v))} />
               </div>
             </div>
-            <SliderRow label="Sales Ramp Time" value={form.salesRampTime}
-              min={1} max={12} step={1} format={(v) => `${v} months`}
-              onChange={(v) => update("salesRampTime", v)} />
-            <SliderRow label="Engineering Velocity" value={form.engineeringVelocity}
-              min={1} max={12} step={1} format={(v) => `${v} months`}
-              onChange={(v) => update("engineeringVelocity", v)} />
-            <div className={css.formRow}>
-              <span className={css.formLabel}>Burn Flexibility</span>
-              <div className={css.formField}>
-                <ToggleGroup options={["Fixed", "Variable"] as BurnFlexibility[]}
-                  value={form.burnFlexibility} onChange={(v) => update("burnFlexibility", v)} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
+          </Module>
 
-  function renderStep4() {
-    return (
-      <div className={css.glassPanel}>
-        <div className={css.glassPanelHeader}>Strategic Posture</div>
-        <div className={css.glassPanelBody}>
-          <div className={css.formRow}>
-            <span className={css.formLabel}>Risk Tolerance</span>
-            <div className={css.formField}>
-              <ToggleGroup
-                options={["Conservative", "Balanced", "Aggressive"] as RiskTolerance[]}
-                value={form.riskTolerance} onChange={(v) => update("riskTolerance", v)} />
+          <Module title="G: COST STRUCTURE">
+            <div style={{ ...SC.modBody, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+              <TacticalInput label="Headcount" value={form.headcount}
+                onChange={(v) => update("headcount", Number(v) || 0)} />
+              <TacticalInput label="Avg Loaded Cost" value={form.avgFullyLoadedCost} prefix="$"
+                onChange={(v) => update("avgFullyLoadedCost", Number(v) || 0)} />
+              <TacticalInput label="Sales & Marketing" value={form.salesMarketingSpend} prefix="$"
+                onChange={(v) => update("salesMarketingSpend", Number(v) || 0)} />
+              <TacticalInput label="R&D Spend" value={form.rdSpend} prefix="$"
+                onChange={(v) => update("rdSpend", Number(v) || 0)} />
+              <TacticalInput label="G&A Spend" value={form.gaSpend} prefix="$"
+                onChange={(v) => update("gaSpend", Number(v) || 0)} />
+              <TacticalInput label="COGS" value={form.cogsPct} prefix="$"
+                onChange={(v) => update("cogsPct", Number(v) || 0)} />
+              <TacticalInput label="CAC" value={form.cac} prefix="$"
+                onChange={(v) => update("cac", Number(v) || 0)} />
             </div>
-          </div>
-          <SliderRow label="Target Growth Band" value={form.targetGrowthBand}
-            min={1} max={12} step={1} format={(v) => `${v} months`}
-            onChange={(v) => update("targetGrowthBand", v)} />
-          <div className={css.formRow}>
-            <span className={css.formLabel}>Priority Balance</span>
-            <div className={css.formField}>
-              <div className={css.priorityWrap}>
-                <span className={css.priorityEnd}>Survival</span>
-                <div className={css.sliderTrack}>
-                  <input type="range" className={css.sliderInput}
-                    min={0} max={100} step={1} value={form.priorityBalance}
-                    style={sliderFill(form.priorityBalance, 0, 100)}
-                    onChange={(e) => update("priorityBalance", Number(e.target.value))} />
+          </Module>
+        </div>
+
+        {/* ── COLUMN 3: Strategic Posture & Dynamic Outcome Rail ── */}
+        <div style={SC.col3}>
+          <Module title="H: STRATEGIC POSTURE">
+            <div style={{ ...SC.modBody, display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
+              <span style={{ fontSize: 9, fontWeight: 900, color: "rgba(34,211,238,0.5)", letterSpacing: "0.16em", textTransform: "uppercase" }}>Risk Tolerance</span>
+
+              {/* Dial */}
+              <div className="bezel-carved" style={SC.dial}>
+                <div style={SC.dialInner}>
+                  <div className="gm-needle glow-cyan" style={{ ...SC.dialNeedle, "--needle-angle": `${needleAngle}deg` } as React.CSSProperties} />
                 </div>
-                <span className={css.priorityEnd}>Expansion</span>
+              </div>
+
+              <div style={{ display: "flex", gap: 0, width: "100%" }}>
+                {(["Conservative", "Balanced", "Aggressive"] as RiskTolerance[]).map((r) => (
+                  <button key={r} type="button" onClick={() => update("riskTolerance", r)} style={{
+                    flex: 1, padding: "6px 0", fontSize: 8, fontWeight: 900, letterSpacing: "0.08em",
+                    textTransform: "uppercase", fontFamily: FONT, cursor: "pointer", transition: "all 0.15s",
+                    border: "none", borderRadius: 0,
+                    background: form.riskTolerance === r ? "rgba(34,211,238,0.1)" : "transparent",
+                    color: form.riskTolerance === r ? "#22d3ee" : "rgba(100,116,139,0.4)",
+                    borderBottom: form.riskTolerance === r ? "2px solid #22d3ee" : "2px solid transparent",
+                  }}>{r}</button>
+                ))}
+              </div>
+
+              <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 10, borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: 12 }}>
+                <BinarySwitch label="External Capital Required?" active={form.accessToCapital === "Strong"} onToggle={() => update("accessToCapital", form.accessToCapital === "Strong" ? "Moderate" : "Strong")} />
+                <BinarySwitch label="Focus on Runway?" active={form.priorityBalance < 40} onToggle={() => update("priorityBalance", form.priorityBalance < 40 ? 60 : 20)} />
+                <BinarySwitch label="Growth-at-all-Costs?" active={form.priorityBalance > 75} onToggle={() => update("priorityBalance", form.priorityBalance > 75 ? 50 : 90)} />
               </div>
             </div>
-          </div>
+          </Module>
+
+          {/* Dynamic Outcome Rail */}
+          <Module title="DYNAMIC OUTCOME RAIL" style={{ flex: 1 }}>
+            <div style={{ ...SC.modBody, display: "flex", flexDirection: "column", gap: 10 }} className="gm-scrollbar">
+              <OutcomeCard label="ARR" value={fmtCurrency(form.currentARR)} color="#22d3ee" />
+              <OutcomeCard label="Growth" value={`${form.monthlyGrowthPct.toFixed(1)}%`} color="#22d3ee" />
+              <OutcomeCard label="Avg Contract" value={fmtCurrency(form.avgDealSize)} color="#22d3ee" />
+              <OutcomeCard label="Gross Margin" value={`${form.grossMarginPct.toFixed(1)}%`} color="#34d399" />
+              <OutcomeCard label="Churn" value={`${form.monthlyChurnPct.toFixed(1)}%`} color="#f59e0b" />
+              <OutcomeCard label="NRR" value={`${form.netRevenueRetentionPct}%`} color={form.netRevenueRetentionPct >= 100 ? "#34d399" : "#f87171"} />
+              <OutcomeCard label="Rev/Employee" value={fmtCurrency(metrics.revenuePerHead)} color="#a78bfa" />
+              <OutcomeCard label="Op. Profit" value={`${metrics.operatingProfit < 0 ? "-" : ""}${fmtCurrency(Math.abs(metrics.operatingProfit))}`}
+                color={metrics.operatingProfit >= 0 ? "#34d399" : "#f87171"} />
+            </div>
+          </Module>
+
+          {/* Lock Button */}
+          <button
+            type="button"
+            onClick={handleLock}
+            disabled={!canLock || isLocking}
+            className={isLocking ? "" : "gm-lock-idle glow-cyan"}
+            style={{
+              height: 52,
+              borderRadius: 10,
+              border: isLocking ? "2px solid rgba(239,68,68,0.5)" : "2px solid rgba(34,211,238,0.4)",
+              background: isLocking ? "rgba(239,68,68,0.15)" : "rgba(15,23,42,0.9)",
+              color: isLocking ? "#f87171" : "#22d3ee",
+              fontSize: 11, fontWeight: 900, letterSpacing: "0.2em", textTransform: "uppercase",
+              fontFamily: FONT, cursor: canLock ? "pointer" : "default",
+              opacity: canLock ? 1 : 0.35,
+              transition: "all 0.3s",
+              flexShrink: 0,
+            }}
+          >
+            {isLocking ? "CALCULATING VECTORS..." : "LOCK BASELINE & ENTER STRATFIT"}
+          </button>
         </div>
-      </div>
-    )
-  }
-
-  const NEXT_LABELS = [
-    "Continue to Financial Position",
-    "Continue to Operating Structure",
-    "Continue to Strategic Intent",
-  ]
-
-  return (
-    <div className={css.page}>
-      <PortalNav />
-
-      <div className={css.shell}>
-        {/* ═══ LEFT SIDEBAR ═══ */}
-        <div className={css.sidebar}>
-          <div className={css.sidebarLogo}>
-            <div className={css.logoIcon}>&#9670;</div>
-            <div className={css.logoText}>
-              <span className={css.logoTitle}>STRATFIT</span>
-              <span className={css.logoSub}>Baseline Initialization</span>
-            </div>
-          </div>
-
-          <div className={css.stepList}>
-            {STEP_LABELS.map((label, i) => {
-              const n = i + 1
-              const isActive = step === n
-              const isDone = stepComplete[n as keyof typeof stepComplete]
-              return (
-                <button
-                  key={n}
-                  type="button"
-                  className={[
-                    css.stepItem,
-                    isActive ? css.stepItemActive : "",
-                    !isActive && isDone ? css.stepItemCompleted : "",
-                  ].join(" ")}
-                  onClick={() => setStep(n)}
-                >
-                  <span className={css.stepNumber}>
-                    {!isActive && isDone ? "\u2713" : n}
-                  </span>
-                  {label}
-                </button>
-              )
-            })}
-          </div>
-
-          {/* Input path toggle */}
-          <div className={css.pathToggle}>
-            {(["manual", "xero", "excel"] as InputPath[]).map((p) => (
-              <button
-                key={p} type="button"
-                className={`${css.pathToggleBtn} ${inputPath === p ? css.pathToggleBtnActive : ""}`}
-                onClick={() => handlePathClick(p)}
-              >
-                {p === "manual" ? "Manual" : p === "xero" ? "Xero" : "Excel"}
-              </button>
-            ))}
-          </div>
-
-          <div className={css.sidebarFooter}>
-            <div className={css.draftStatus}>Draft &mdash; Not Locked</div>
-          </div>
-        </div>
-
-        {/* ═══ RIGHT CONTENT ═══ */}
-        <div className={css.content}>
-          {/* Header */}
-          <div className={css.contentHeader}>
-            <h1 className={css.contentTitle}>Initialize Baseline</h1>
-            <p className={css.contentSubtitle}>
-              Enter your current financial truth to anchor scenario modelling.
-            </p>
-          </div>
-
-          {/* Metrics Strip */}
-          <div className={css.metricsStrip}>
-            <div className={css.metricItem}>
-              <span className={css.metricIcon}>&#9650;</span>
-              <span className={css.metricLabel}>Runway</span>
-              <span className={css.metricValue} style={{ color: runwayColor }}>
-                {metrics.runway.toFixed(1)} months
-              </span>
-            </div>
-            <div className={css.metricItem}>
-              <span className={css.metricLabel}>Burn Multiple</span>
-              <span className={css.metricValue}>{metrics.burnMultiple.toFixed(2)}x</span>
-            </div>
-            <div className={css.metricItem}>
-              <span className={css.metricLabel}>$ Monthly Burn</span>
-              <span className={css.metricValue}>{fmtCurrency(metrics.monthlyBurn)}</span>
-            </div>
-            <div className={css.metricItem}>
-              <span className={css.metricLabel}>Survival Probability</span>
-              <span className={css.metricValue} style={{
-                color: metrics.survivalProbability >= 60 ? "#34d399"
-                  : metrics.survivalProbability >= 30 ? "#fbbf24" : "#f87171"
-              }}>
-                {metrics.survivalProbability}%
-              </span>
-            </div>
-          </div>
-
-          {/* Step Content */}
-          <div className={css.stepContent}>
-            {step === 1 && renderStep1()}
-            {step === 2 && renderStep2()}
-            {step === 3 && renderStep3()}
-            {step === 4 && renderStep4()}
-          </div>
-
-          {/* Action Bar */}
-          <div className={css.actionBar}>
-            {step === 4 && (
-              <div className={css.legal}>
-                All projections are generated by STRATFIT&#39;s simulation engine
-                and do not constitute financial advice.
-              </div>
-            )}
-
-            {step > 1 && (
-              <button type="button" className={css.btnBack}
-                onClick={() => setStep(step - 1)}>
-                Back
-              </button>
-            )}
-
-            {step < 4 ? (
-              <button type="button" className={css.btnNext}
-                onClick={() => setStep(step + 1)}>
-                {NEXT_LABELS[step - 1]} &rarr;
-              </button>
-            ) : (
-              <button type="button" className={css.lockBtn}
-                disabled={!canLock} onClick={handleLock}>
-                Lock Baseline &amp; Enter STRATFIT
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
+      </main>
 
       {/* ═══ XERO MODAL ═══ */}
       {showXeroModal && (
-        <div className={css.modalBackdrop} onClick={() => setShowXeroModal(false)}>
-          <div className={css.modalCard} onClick={(e) => e.stopPropagation()}>
-            <span className={css.modalLogo}>&#9741;</span>
-            <h2 className={css.modalTitle}>Connect Your Xero Account</h2>
-            <p className={css.modalDesc}>
-              Automatically import your P&amp;L, balance sheet, and cash flow data
-              from Xero to populate your baseline instantly.
+        <div style={SC.modalBackdrop} onClick={() => setShowXeroModal(false)}>
+          <div className="bezel-titanium" style={SC.modalCard} onClick={(e) => e.stopPropagation()}>
+            <span style={{ fontSize: 36 }}>&#9741;</span>
+            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "rgba(226,240,255,0.9)" }}>Connect Your Xero Account</h2>
+            <p style={{ margin: 0, fontSize: 12, color: "rgba(148,180,214,0.45)", lineHeight: 1.55 }}>
+              Automatically import P&amp;L, balance sheet, and cash flow data from Xero.
             </p>
-            <button type="button" className={css.modalBtn}
-              onClick={() => { setShowXeroModal(false); setToast("Xero integration coming soon. Use manual entry or Excel import for now.") }}>
+            <button type="button" style={SC.modalBtn}
+              onClick={() => { setShowXeroModal(false); setToast("Xero integration coming soon.") }}>
               Authorize with Xero
             </button>
-            <button type="button" className={css.modalClose} onClick={() => setShowXeroModal(false)}>
-              Close
-            </button>
+            <button type="button" style={SC.modalClose} onClick={() => setShowXeroModal(false)}>Close</button>
           </div>
         </div>
       )}
 
       {/* ═══ TOAST ═══ */}
-      {toast && <div className={css.toast}>{toast}</div>}
+      {toast && <div style={SC.toast}>{toast}</div>}
+
+      <style>{`
+        @keyframes sfInitToastIn { from { opacity:0; transform:translateX(-50%) translateY(12px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+      `}</style>
     </div>
   )
+}
+
+function OutcomeCard({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+      padding: "8px 12px", borderRadius: 8,
+      background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.04)",
+    }}>
+      <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(148,180,214,0.4)" }}>{label}</span>
+      <span style={{ fontSize: 16, fontWeight: 900, fontFamily: "ui-monospace, 'JetBrains Mono', monospace", color }}>{value}</span>
+    </div>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   STYLES
+   ═══════════════════════════════════════════════════════════════════ */
+
+const FONT = "'Inter', system-ui, sans-serif"
+
+const SC: Record<string, React.CSSProperties> = {
+  page: {
+    display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden",
+    color: "rgba(226,240,255,0.85)", fontFamily: FONT,
+  },
+  powerRail: {
+    display: "flex", alignItems: "center", justifyContent: "space-between",
+    height: 56, padding: "0 20px", flexShrink: 0,
+    background: "rgba(10,15,22,0.95)", borderBottom: "1px solid rgba(34,211,238,0.15)",
+    backdropFilter: "blur(16px)",
+  },
+  powerRailLeft: {
+    display: "flex", alignItems: "center", gap: 16, minWidth: 0,
+  },
+  sysLabel: {
+    fontSize: 7, fontWeight: 900, color: "rgba(34,211,238,0.4)", letterSpacing: "0.2em", textTransform: "uppercase",
+  },
+  sysTitle: {
+    fontSize: 13, fontWeight: 900, fontStyle: "italic", color: "#22d3ee", letterSpacing: "0.04em",
+  },
+  railDivider: {
+    width: 1, height: 28, background: "rgba(255,255,255,0.08)", flexShrink: 0,
+  },
+  railTitle: {
+    fontSize: 16, fontWeight: 700, color: "rgba(226,240,255,0.9)", whiteSpace: "nowrap",
+  },
+  metricsRow: {
+    display: "flex", alignItems: "center", gap: 20, flexShrink: 0,
+  },
+  metricBlock: {
+    display: "flex", flexDirection: "column", alignItems: "flex-end",
+  },
+  metricLabel: {
+    fontSize: 7, fontWeight: 900, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(148,180,214,0.3)",
+  },
+  metricValue: {
+    fontSize: 14, fontWeight: 900, fontFamily: "ui-monospace, 'JetBrains Mono', monospace",
+  },
+
+  grid: {
+    flex: 1, display: "grid", gridTemplateColumns: "280px 1fr 260px",
+    gap: 8, padding: 8, minHeight: 0, overflow: "auto",
+  },
+  col1: { display: "flex", flexDirection: "column", gap: 8, minHeight: 0, overflow: "auto" },
+  col2: { display: "flex", flexDirection: "column", gap: 8, minHeight: 0, overflow: "auto" },
+  col3: { display: "flex", flexDirection: "column", gap: 8, minHeight: 0 },
+
+  moduleHeader: {
+    padding: "6px 14px", fontSize: 9, fontWeight: 900, letterSpacing: "0.14em", textTransform: "uppercase",
+    color: "rgba(34,211,238,0.65)",
+    background: "rgba(255,255,255,0.03)", borderBottom: "1px solid rgba(255,255,255,0.05)",
+  },
+  modBody: {
+    padding: 14, display: "flex", flexDirection: "column", gap: 12,
+  },
+
+  powerLabel: {
+    fontSize: 9, fontWeight: 900, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(100,116,139,0.6)",
+  },
+  powerValue: {
+    fontSize: 11, fontWeight: 900, fontFamily: "ui-monospace, 'JetBrains Mono', monospace",
+  },
+  powerTrack: {
+    height: 12, background: "rgba(0,0,0,0.7)", borderRadius: 6, padding: 2, overflow: "hidden",
+  },
+  powerFill: {
+    height: "100%", borderRadius: 4, minWidth: 2,
+  },
+  rangeInput: {
+    width: "100%", height: 3, appearance: "none", WebkitAppearance: "none",
+    background: "rgba(255,255,255,0.06)", borderRadius: 2, outline: "none", cursor: "pointer", marginTop: -4,
+  },
+
+  inputLabel: {
+    fontSize: 9, fontWeight: 900, color: "rgba(100,116,139,0.6)", letterSpacing: "0.06em", textTransform: "uppercase",
+  },
+  inputWrap: {
+    display: "flex", alignItems: "center", background: "rgba(0,0,0,0.5)", borderRadius: 6, overflow: "hidden",
+  },
+  inputInner: {
+    flex: 1, padding: "8px 10px", fontSize: 11, fontWeight: 700, fontFamily: FONT,
+    color: "rgba(226,240,255,0.88)", background: "transparent", border: "none", outline: "none", minWidth: 0,
+  },
+  inputAffix: {
+    padding: "0 8px", fontSize: 10, color: "rgba(148,180,214,0.3)", flexShrink: 0,
+  },
+
+  pillGrid: {
+    display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4, marginTop: 6,
+  },
+
+  toggleLabel: {
+    fontSize: 9, fontWeight: 900, color: "rgba(100,116,139,0.6)", letterSpacing: "0.02em",
+  },
+  toggleGroup: {
+    display: "inline-flex", borderRadius: 4, overflow: "hidden",
+    border: "1px solid rgba(255,255,255,0.06)",
+  },
+  toggleBtn: {
+    padding: "5px 10px", fontSize: 9, fontWeight: 700, fontFamily: FONT,
+    color: "rgba(226,240,255,0.4)", background: "transparent", border: "none",
+    cursor: "pointer", transition: "all 0.15s", letterSpacing: "0.04em",
+    borderRight: "1px solid rgba(255,255,255,0.04)",
+  },
+  toggleBtnActive: {
+    color: "#22d3ee", background: "rgba(34,211,238,0.1)",
+  },
+
+  dial: {
+    width: 100, height: 100, borderRadius: "50%",
+    display: "flex", alignItems: "center", justifyContent: "center",
+  },
+  dialInner: {
+    width: 72, height: 72, borderRadius: "50%",
+    background: "rgba(10,15,22,0.9)", border: "1px solid rgba(255,255,255,0.08)",
+    display: "flex", alignItems: "center", justifyContent: "center",
+    position: "relative",
+  },
+  dialNeedle: {
+    width: 2, height: 28, background: "#22d3ee", borderRadius: 1,
+    transformOrigin: "bottom center",
+  },
+
+  smallBtn: {
+    flex: 1, padding: "7px 8px", fontSize: 9, fontWeight: 700, letterSpacing: "0.04em",
+    fontFamily: FONT, borderRadius: 6, cursor: "pointer", transition: "all 0.15s",
+    border: "1px solid rgba(34,211,238,0.25)", background: "rgba(34,211,238,0.05)", color: "rgba(34,211,238,0.8)",
+  },
+  dropZone: {
+    display: "flex", alignItems: "center", justifyContent: "center",
+    minHeight: 48, border: "2px dashed rgba(255,255,255,0.06)", borderRadius: 8,
+    background: "rgba(255,255,255,0.01)", cursor: "pointer", transition: "all 0.2s",
+  },
+
+  modalBackdrop: {
+    position: "fixed", inset: 0, zIndex: 300,
+    display: "flex", alignItems: "center", justifyContent: "center",
+    background: "rgba(6,10,18,0.85)", backdropFilter: "blur(6px)",
+  },
+  modalCard: {
+    display: "flex", flexDirection: "column", alignItems: "center", gap: 16,
+    padding: "36px 40px", maxWidth: 400, width: "90%", textAlign: "center",
+  },
+  modalBtn: {
+    padding: "10px 28px", fontSize: 12, fontWeight: 700, letterSpacing: "0.04em",
+    fontFamily: FONT, borderRadius: 8, cursor: "pointer", transition: "all 0.2s",
+    border: "1px solid rgba(34,211,238,0.4)",
+    background: "linear-gradient(135deg, rgba(34,211,238,0.18), rgba(34,211,238,0.08))",
+    color: "#67e8f9",
+  },
+  modalClose: {
+    fontSize: 11, color: "rgba(148,180,214,0.35)", background: "none", border: "none",
+    cursor: "pointer", fontFamily: FONT, padding: "4px 8px",
+  },
+  toast: {
+    position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", zIndex: 400,
+    padding: "10px 24px", fontSize: 12, fontWeight: 600, fontFamily: FONT,
+    color: "rgba(226,240,255,0.9)", background: "rgba(16,24,40,0.92)",
+    border: "1px solid rgba(34,211,238,0.2)", borderRadius: 8,
+    backdropFilter: "blur(10px)", boxShadow: "0 8px 30px -8px rgba(0,0,0,0.4)",
+    animation: "sfInitToastIn 300ms ease-out",
+  },
 }

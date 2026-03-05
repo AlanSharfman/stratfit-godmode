@@ -11,13 +11,17 @@ import KeyboardHelpOverlay from "@/components/system/KeyboardHelpOverlay"
 import OnboardingTour from "@/components/onboarding/OnboardingTour"
 import KeyboardShortcutsBridge from "@/components/system/KeyboardShortcutsBridge"
 import CollaborationPanel from "@/components/collab/CollaborationPanel"
+import DocumentHead from "@/components/system/DocumentHead"
+import FeatureGate from "@/components/system/FeatureGate"
 import "@/styles/responsive.css"
+import "@/styles/god-mode.css"
 
 export default function App() {
   return (
     <ErrorBoundary>
       <SystemBaselineProvider>
         <BrowserRouter>
+          <DocumentHead />
           <StaleDataOverlay />
           <AppRouter />
           <QAFloatingPanel />
@@ -26,7 +30,9 @@ export default function App() {
           <KeyboardHelpOverlay />
           <OnboardingTour />
           <KeyboardShortcutsBridge />
-          <CollaborationPanel />
+          <FeatureGate flag="collaboration">
+            <CollaborationPanel />
+          </FeatureGate>
         </BrowserRouter>
       </SystemBaselineProvider>
     </ErrorBoundary>

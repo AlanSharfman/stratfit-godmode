@@ -14,7 +14,6 @@ import type { TerrainMetrics } from "@/terrain/terrainFromBaseline"
 import { deriveTerrainMetrics } from "@/terrain/terrainFromBaseline"
 import type { TimeGranularity } from "@/terrain/TimelineTicks"
 
-import { useBaselineStore } from "@/state/baselineStore"
 import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore"
 import { useSystemBaseline } from "@/system/SystemBaselineProvider"
 import { useScenarioOverridesStore } from "@/state/scenarioOverridesStore"
@@ -37,6 +36,7 @@ import { timeSimulation, buildKpiSnapshot, findFirstCliff } from "@/engine/timeS
 import ProvenanceBadge from "@/components/system/ProvenanceBadge"
 import TerrainZoneLegend from "@/components/terrain/TerrainZoneLegend"
 import TerrainHealthBar from "@/components/terrain/TerrainHealthBar"
+import TerrainZoneLabels from "@/components/terrain/TerrainZoneLabels"
 import BenchmarkPanel from "@/components/network/BenchmarkPanel"
 import styles from "./PositionOverlays.module.css"
 
@@ -75,9 +75,8 @@ export default function PositionPage() {
     return () => window.removeEventListener("sf:terrain-ripple", onRipple)
   }, [])
 
-  const baseline = useBaselineStore((s) => s.baseline)
-  const baselineHydrated = useBaselineStore((s) => s.isHydrated)
-  const hydrateBaseline = useBaselineStore((s) => s.hydrate)
+  // ── Canonical baseline: SystemBaselineProvider is the single source of truth ──
+  const { baseline: baselineV1Raw } = useSystemBaseline()
 
   const hydrateScenarios = usePhase1ScenarioStore((s) => s.hydrate)
   const scenarioStoreHydrated = usePhase1ScenarioStore((s) => s.isHydrated)
@@ -106,15 +105,10 @@ export default function PositionPage() {
     hydrateScenarios()
   }, [hydrateScenarios])
 
+  // Redirect to /initiate if no baseline is established
   useEffect(() => {
-    hydrateBaseline()
-  }, [hydrateBaseline])
-
-  useEffect(() => {
-    if (baselineHydrated && !baseline) navigate("/initiate")
-  }, [baselineHydrated, baseline, navigate])
-
-  const baselineInputs = useBaselineStore((s) => s.baselineInputs)
+    if (baselineV1Raw === null) navigate("/initiate")
+  }, [baselineV1Raw, navigate])
 
   const { overrideScenarios, activeOverrideScenarioId } = useScenarioOverridesStore(
     useShallow((s) => ({
@@ -123,11 +117,28 @@ export default function PositionPage() {
     })),
   )
 
+  // Derive flat terrain-compatible inputs from BaselineV1 so deriveTerrainMetrics works
+  const baselineFlat = useMemo(() => {
+    if (!baselineV1Raw) return null
+    const f = baselineV1Raw.financial
+    return {
+      cash:        f.cashOnHand,
+      monthlyBurn: f.monthlyBurn,
+      burnRate:    f.monthlyBurn,
+      revenue:     f.arr / 12,
+      growthRate:  f.growthRatePct,   // toFactor() handles % → decimal
+      grossMargin: f.grossMarginPct,  // toFactor() handles % → decimal
+      churnRate:   baselineV1Raw.operating.churnPct,
+      headcount:   f.headcount,
+      arpa:        baselineV1Raw.operating.acv,
+    }
+  }, [baselineV1Raw])
+
   const effectiveInputs = useMemo(() => {
-    if (!baselineInputs) return null
+    if (!baselineFlat) return null
     const active = overrideScenarios.find((s) => s.id === activeOverrideScenarioId)
-    return active ? ({ ...baselineInputs, ...active.overrides } as const) : baselineInputs
-  }, [baselineInputs, overrideScenarios, activeOverrideScenarioId])
+    return active ? ({ ...baselineFlat, ...active.overrides } as const) : baselineFlat
+  }, [baselineFlat, overrideScenarios, activeOverrideScenarioId])
 
   // ══ Terrain source-of-truth: single selector, scenario-first ══
   const scenarioTerrainRef = useRef<{ scenarioId: string; metrics: TerrainMetrics } | null>(null)
@@ -190,13 +201,10 @@ export default function PositionPage() {
     return effectiveInputs ? deriveTerrainMetrics(effectiveInputs as any) : undefined
   }, [activeScenarioId, activeScenario?.status, activeScenario?.simulationResults?.terrainMetrics, effectiveInputs])
 
-  // V1 baseline from context — fallback for KPIs only when NO scenario is active.
-  const { baseline: baselineV1 } = useSystemBaseline()
-
   const vm = useMemo(() => {
-    if (!baselineV1) return null
-    return buildPositionViewModel(baselineV1, { riskIndexFromEngine: null })
-  }, [baselineV1])
+    if (!baselineV1Raw) return null
+    return buildPositionViewModel(baselineV1Raw, { riskIndexFromEngine: null })
+  }, [baselineV1Raw])
 
   // ── Live KPIs: simulation selector (single source), baseline fallback ──
   const simKpis = useSelectSimulationKpis()
@@ -251,29 +259,8 @@ export default function PositionPage() {
     return { healthScore, healthCounts, cliff, criticalZones, survivalProbability, timeline }
   }, [liveKpis])
 
-  // Route guard (PositionRoute) already handles hydration + baseline checks.
-  // Keeping a minimal safety guard for direct renders.
-  if (!baselineHydrated) {
-    return (
-      <div style={{
-        minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
-        background: "linear-gradient(180deg, #0a0e17 0%, #0f1520 100%)",
-        color: "#e2e8f0", fontFamily: "'Inter', system-ui, sans-serif",
-      }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{
-            width: 24, height: 24, border: "2px solid rgba(34,211,238,0.3)",
-            borderTopColor: "#22d3ee", borderRadius: "50%",
-            animation: "posLoadSpin 0.8s linear infinite", margin: "0 auto 16px",
-          }} />
-          <span style={{ fontSize: 14, opacity: 0.6 }}>Hydrating stores…</span>
-          <style>{`@keyframes posLoadSpin { to { transform: rotate(360deg) } }`}</style>
-        </div>
-      </div>
-    )
-  }
-
-  if (baselineHydrated && !baseline) {
+  // Guard: no baseline → redirect handled by useEffect above, show loading in the meantime
+  if (!baselineV1Raw) {
     return (
       <div style={{
         minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
@@ -388,6 +375,7 @@ export default function PositionPage() {
               <SkyAtmosphere />
             </TerrainStage>
             <TerrainHealthBar kpis={liveKpis} revealedKpis={revealedKpis} />
+            <TerrainZoneLabels kpis={liveKpis} revealedKpis={revealedKpis} focusedKpi={focusedKpi} onFocusKpi={setFocusedKpi} />
             <TerrainZoneLegend kpis={liveKpis} revealedKpis={revealedKpis} focusedKpi={focusedKpi} onFocusKpi={setFocusedKpi} />
             <div className={styles.canvasVignette} aria-hidden="true" />
             <IdleMotionLayer viewportRef={viewportRef} />

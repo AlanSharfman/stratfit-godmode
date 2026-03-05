@@ -2,21 +2,25 @@ import { useCallback, useRef, useState } from "react"
 import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
 import { KPI_ZONE_MAP } from "@/domain/intelligence/kpiZoneMapping"
 import { KPI_GRAPH, propagateForce } from "@/engine/kpiDependencyGraph"
+import { synthesizeSpeech, hasOpenAIKey } from "@/voice/openaiTTS"
 
 export function useCascadeNarration() {
   const [isNarrating, setIsNarrating] = useState(false)
-  const utterancesRef = useRef<SpeechSynthesisUtterance[]>([])
+  const audioRef = useRef<HTMLAudioElement | null>(null)
 
   const stop = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+      audioRef.current = null
+    }
     if (typeof speechSynthesis !== "undefined") {
       speechSynthesis.cancel()
     }
-    utterancesRef.current = []
     setIsNarrating(false)
   }, [])
 
-  const narrate = useCallback((sourceKpi: KpiKey, delta: number) => {
-    if (typeof speechSynthesis === "undefined") return
+  const narrate = useCallback(async (sourceKpi: KpiKey, delta: number) => {
     stop()
 
     const { affected, hops } = propagateForce(KPI_GRAPH, sourceKpi, delta)
@@ -52,24 +56,37 @@ export function useCascadeNarration() {
 
     sentences.push("The terrain has reshaped to reflect this new reality.")
 
+    const fullText = sentences.join(" ")
     setIsNarrating(true)
-    const utterances: SpeechSynthesisUtterance[] = []
 
-    for (const text of sentences) {
-      const utt = new SpeechSynthesisUtterance(text)
-      utt.rate = 0.92
-      utt.pitch = 0.95
-      utt.volume = 0.85
-      utterances.push(utt)
+    if (hasOpenAIKey()) {
+      try {
+        const result = await synthesizeSpeech(fullText, { voice: "nova", speed: 0.92 })
+        const audio = new Audio(result.url)
+        audioRef.current = audio
+        audio.onended = () => {
+          URL.revokeObjectURL(result.url)
+          setIsNarrating(false)
+        }
+        audio.play().catch(() => setIsNarrating(false))
+        return
+      } catch (err) {
+        console.warn("[useCascadeNarration] OpenAI TTS failed, falling back:", err)
+      }
     }
 
-    utterances[utterances.length - 1].onend = () => {
+    if (typeof speechSynthesis !== "undefined") {
+      const utterances = sentences.map(text => {
+        const utt = new SpeechSynthesisUtterance(text)
+        utt.rate = 0.92
+        utt.pitch = 0.95
+        utt.volume = 0.85
+        return utt
+      })
+      utterances[utterances.length - 1].onend = () => setIsNarrating(false)
+      for (const utt of utterances) speechSynthesis.speak(utt)
+    } else {
       setIsNarrating(false)
-    }
-
-    utterancesRef.current = utterances
-    for (const utt of utterances) {
-      speechSynthesis.speak(utt)
     }
   }, [stop])
 
