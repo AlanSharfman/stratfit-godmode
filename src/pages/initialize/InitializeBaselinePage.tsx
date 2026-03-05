@@ -268,9 +268,9 @@ function StatusToggle({ label, active, onClick }: { label: string; active: boole
         fontFamily: FONT,
         cursor: "pointer",
         transition: "all 0.15s",
-        border: active ? "1px solid rgba(34,211,238,0.5)" : "1px solid rgba(148,180,214,0.1)",
-        background: active ? "rgba(34,211,238,0.1)" : "rgba(255,255,255,0.03)",
-        color: active ? "#22d3ee" : "rgba(148,180,214,0.5)",
+        border: active ? "1px solid rgba(34,211,238,0.5)" : "1px solid rgba(148,180,214,0.15)",
+        background: active ? "rgba(34,211,238,0.1)" : "rgba(255,255,255,0.04)",
+        color: active ? "#22d3ee" : "rgba(226,240,255,0.85)",
         boxShadow: active ? "0 0 10px rgba(34,211,238,0.15)" : "none",
       }}
     >
@@ -304,7 +304,7 @@ function ToggleRow<T extends string>({ label, options, value, onChange }: {
 function BinarySwitch({ label, active, onToggle }: { label: string; active: boolean; onToggle: () => void }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-      <span style={{ fontSize: 9, fontWeight: 900, color: "rgba(148,180,214,0.65)", letterSpacing: "0.02em" }}>{label}</span>
+      <span style={{ fontSize: 9, fontWeight: 900, color: "rgba(226,240,255,0.85)", letterSpacing: "0.02em" }}>{label}</span>
       <div style={{ display: "flex", padding: 2, background: "rgba(0,0,0,0.6)", borderRadius: 4, border: "1px solid rgba(255,255,255,0.08)" }}>
         <button type="button" onClick={() => { if (!active) onToggle() }} style={{
           padding: "3px 10px", fontSize: 8, fontWeight: 900, borderRadius: 3, border: "none", fontFamily: FONT,
@@ -674,7 +674,7 @@ export default function InitializeBaselinePage() {
         <div style={SC.col3}>
           <Module title="H: STRATEGIC POSTURE">
             <div style={{ ...SC.modBody, display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
-              <span style={{ fontSize: 9, fontWeight: 900, color: "rgba(34,211,238,0.5)", letterSpacing: "0.16em", textTransform: "uppercase" }}>Risk Tolerance</span>
+              <span style={{ fontSize: 9, fontWeight: 900, color: "rgba(226,240,255,0.85)", letterSpacing: "0.16em", textTransform: "uppercase" }}>Risk Tolerance</span>
 
               {/* Dial */}
               <div className="bezel-carved" style={SC.dial}>
@@ -841,7 +841,7 @@ const SC: Record<string, React.CSSProperties> = {
 
   moduleHeader: {
     padding: "6px 14px", fontSize: 9, fontWeight: 900, letterSpacing: "0.14em", textTransform: "uppercase",
-    color: "rgba(34,211,238,0.85)",
+    color: "rgba(226,240,255,0.95)",
     background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(148,180,214,0.12)",
     textShadow: "0 0 8px rgba(34,211,238,0.3)",
   },
@@ -850,7 +850,7 @@ const SC: Record<string, React.CSSProperties> = {
   },
 
   powerLabel: {
-    fontSize: 9, fontWeight: 900, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(148,180,214,0.65)",
+    fontSize: 9, fontWeight: 900, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(226,240,255,0.85)",
   },
   powerValue: {
     fontSize: 12, fontWeight: 900, fontFamily: "ui-monospace, 'JetBrains Mono', monospace",
@@ -869,7 +869,7 @@ const SC: Record<string, React.CSSProperties> = {
   },
 
   inputLabel: {
-    fontSize: 9, fontWeight: 900, color: "rgba(148,180,214,0.65)", letterSpacing: "0.06em", textTransform: "uppercase",
+    fontSize: 9, fontWeight: 900, color: "rgba(226,240,255,0.85)", letterSpacing: "0.06em", textTransform: "uppercase",
   },
   inputWrap: {
     display: "flex", alignItems: "center", background: "rgba(0,0,0,0.5)", borderRadius: 6, overflow: "hidden",
@@ -888,7 +888,7 @@ const SC: Record<string, React.CSSProperties> = {
   },
 
   toggleLabel: {
-    fontSize: 9, fontWeight: 900, color: "rgba(148,180,214,0.65)", letterSpacing: "0.02em",
+    fontSize: 9, fontWeight: 900, color: "rgba(226,240,255,0.85)", letterSpacing: "0.02em",
   },
   toggleGroup: {
     display: "inline-flex", borderRadius: 4, overflow: "hidden",
@@ -896,7 +896,7 @@ const SC: Record<string, React.CSSProperties> = {
   },
   toggleBtn: {
     padding: "5px 10px", fontSize: 9, fontWeight: 700, fontFamily: FONT,
-    color: "rgba(226,240,255,0.5)", background: "transparent", border: "none",
+    color: "rgba(226,240,255,0.75)", background: "transparent", border: "none",
     cursor: "pointer", transition: "all 0.15s", letterSpacing: "0.04em",
     borderRight: "1px solid rgba(148,180,214,0.08)",
   },
