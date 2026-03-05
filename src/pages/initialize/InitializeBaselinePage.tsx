@@ -210,21 +210,22 @@ function PowerBar({ label, value, max, unit = "", color = "cyan", onChange }: {
         <span style={SC.powerLabel}>{label}</span>
         <span style={{ ...SC.powerValue, color: isCyan ? "#22d3ee" : "#f59e0b" }}>{display}</span>
       </div>
-      <div className="bezel-carved" style={SC.powerTrack}>
+      <div className="bezel-carved" style={{ ...SC.powerTrack, position: "relative" }}>
         <div
           className={`power-fill ${isCyan ? "glow-cyan" : "glow-amber"}`}
           style={{ ...SC.powerFill, width: `${pct}%`, background: isCyan ? "#22d3ee" : "#f59e0b" }}
         />
+        {onChange && (
+          <input
+            type="range"
+            min={0} max={max} step={max > 100 ? max / 200 : 0.1}
+            value={value}
+            onChange={(e) => onChange(Number(e.target.value))}
+            className={isCyan ? "gm-range-cyan" : "gm-range-amber"}
+            style={SC.rangeInput}
+          />
+        )}
       </div>
-      {onChange && (
-        <input
-          type="range"
-          min={0} max={max} step={max > 100 ? max / 200 : 0.1}
-          value={value}
-          onChange={(e) => onChange(Number(e.target.value))}
-          style={SC.rangeInput}
-        />
-      )}
     </div>
   )
 }
@@ -766,6 +767,62 @@ export default function InitializeBaselinePage() {
 
       <style>{`
         @keyframes sfInitToastIn { from { opacity:0; transform:translateX(-50%) translateY(12px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+
+        .gm-range-cyan::-webkit-slider-thumb,
+        .gm-range-amber::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          border: 2px solid rgba(255,255,255,0.9);
+          cursor: pointer;
+          transition: box-shadow 0.15s;
+        }
+        .gm-range-cyan::-webkit-slider-thumb {
+          background: #22d3ee;
+          box-shadow: 0 0 8px rgba(34,211,238,0.6), 0 0 2px rgba(255,255,255,0.4);
+        }
+        .gm-range-amber::-webkit-slider-thumb {
+          background: #f59e0b;
+          box-shadow: 0 0 8px rgba(245,158,11,0.6), 0 0 2px rgba(255,255,255,0.4);
+        }
+        .gm-range-cyan::-webkit-slider-thumb:hover {
+          box-shadow: 0 0 14px rgba(34,211,238,0.8), 0 0 4px rgba(255,255,255,0.5);
+          transform: scale(1.15);
+        }
+        .gm-range-amber::-webkit-slider-thumb:hover {
+          box-shadow: 0 0 14px rgba(245,158,11,0.8), 0 0 4px rgba(255,255,255,0.5);
+          transform: scale(1.15);
+        }
+
+        .gm-range-cyan::-moz-range-thumb,
+        .gm-range-amber::-moz-range-thumb {
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          border: 2px solid rgba(255,255,255,0.9);
+          cursor: pointer;
+        }
+        .gm-range-cyan::-moz-range-thumb {
+          background: #22d3ee;
+          box-shadow: 0 0 8px rgba(34,211,238,0.6);
+        }
+        .gm-range-amber::-moz-range-thumb {
+          background: #f59e0b;
+          box-shadow: 0 0 8px rgba(245,158,11,0.6);
+        }
+
+        .gm-range-cyan::-webkit-slider-runnable-track,
+        .gm-range-amber::-webkit-slider-runnable-track {
+          background: transparent;
+          height: 100%;
+        }
+        .gm-range-cyan::-moz-range-track,
+        .gm-range-amber::-moz-range-track {
+          background: transparent;
+          height: 100%;
+        }
       `}</style>
     </div>
   )
@@ -864,8 +921,11 @@ const SC: Record<string, React.CSSProperties> = {
     height: "100%", borderRadius: 4, minWidth: 2,
   },
   rangeInput: {
-    width: "100%", height: 3, appearance: "none", WebkitAppearance: "none",
-    background: "rgba(255,255,255,0.06)", borderRadius: 2, outline: "none", cursor: "pointer", marginTop: -4,
+    position: "absolute" as const, top: 0, left: 0,
+    width: "100%", height: "100%",
+    appearance: "none", WebkitAppearance: "none",
+    background: "transparent", borderRadius: 6, outline: "none", cursor: "pointer",
+    margin: 0, padding: 0, zIndex: 2,
   },
 
   inputLabel: {

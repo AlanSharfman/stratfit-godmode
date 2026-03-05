@@ -36,9 +36,9 @@ interface Props {
 
 const SEGMENTS = 220
 const LERP_SPEED = 2.5
-const PEAK_HEIGHT = 28
+const PEAK_HEIGHT = 44
 const NOISE_AMP = 0.06
-const BASE_UNDULATION_AMP = 1.8
+const BASE_UNDULATION_AMP = 2.8
 const BASE_UNDULATION_FREQ = 3.2
 const HIGHLIGHT_OPACITY = 0.35
 const HIGHLIGHT_FADE = 4.0

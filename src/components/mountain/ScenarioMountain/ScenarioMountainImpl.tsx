@@ -621,10 +621,10 @@ export function ScenarioMountainImpl({
     () => ({
       position: (
         isGodMode
-          ? [0, 10, 22]
-          : [0, 6, 32 * (mode === "strategy" ? (MODE_CONFIGS.strategy.forwardCamZMult ?? 1) : 1)]
+          ? [0, 14, 26]
+          : [0, 9, 36 * (mode === "strategy" ? (MODE_CONFIGS.strategy.forwardCamZMult ?? 1) : 1)]
       ) as [number, number, number],
-      fov: isGodMode ? 36 : 38,
+      fov: isGodMode ? 38 : 40,
     }),
     [isGodMode, mode]
   );
@@ -652,8 +652,8 @@ export function ScenarioMountainImpl({
   const strategyMaxDistance = strategyDistance ? strategyDistance * 1.75 : undefined;
 
   // ── GOD MODE: Fog density linked to survival (Section 6 — Metric Linkage) ──
-  const godFogNear = isGodMode ? (25 + (1 - godModeMetrics.survivalFactor) * 15) : 40;
-  const godFogFar = isGodMode ? (70 - (1 - godModeMetrics.survivalFactor) * 20) : 100;
+  const godFogNear = isGodMode ? (30 + (1 - godModeMetrics.survivalFactor) * 18) : 50;
+  const godFogFar = isGodMode ? (85 - (1 - godModeMetrics.survivalFactor) * 22) : 120;
 
   return (
     <div

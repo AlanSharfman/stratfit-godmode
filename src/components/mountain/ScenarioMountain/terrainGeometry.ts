@@ -15,14 +15,14 @@ export const MESH_W = 50;
 export const MESH_D = 25;
 export const ISLAND_RADIUS = 22;
 
-export const BASE_SCALE = 4.5;
-export const PEAK_SCALE = 3.5;
-export const MASSIF_SCALE = 5.0;
+export const BASE_SCALE = 6.75;
+export const PEAK_SCALE = 5.25;
+export const MASSIF_SCALE = 7.5;
 export const RIDGE_SHARPNESS = 1.4;
 export const CLIFF_BOOST = 1.15;
 
-export const SOFT_CEILING = 9.0;
-export const CEILING_START = 7.0;
+export const SOFT_CEILING = 14.0;
+export const CEILING_START = 11.0;
 
 // ============================================================================
 // NOISE / GAUSSIAN HELPERS
