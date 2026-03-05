@@ -9,22 +9,24 @@
 }
 
 .bezel-titanium {
-  background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(2, 6, 23, 1));
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(145deg, rgba(20, 30, 52, 0.95), rgba(4, 10, 30, 1));
+  border: 1px solid rgba(148, 180, 214, 0.35);
   box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.05),
+    inset 0 1px 1px rgba(255, 255, 255, 0.1),
     inset 0 -1px 1px rgba(0, 0, 0, 0.8),
-    0 4px 20px rgba(0, 0, 0, 0.5);
+    0 1px 0 rgba(148, 180, 214, 0.1),
+    0 0 1px rgba(148, 180, 214, 0.2),
+    0 4px 24px rgba(0, 0, 0, 0.6);
   border-radius: 12px;
 }
 
 .bezel-carved {
-  box-shadow: inset 0 4px 8px 0 rgba(0, 0, 0, 0.8), 0 1px 0 0 rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 4px 8px 0 rgba(0, 0, 0, 0.8), 0 1px 0 0 rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(148, 180, 214, 0.25);
 }
 
-.glow-cyan { box-shadow: 0 0 15px rgba(34, 211, 238, 0.3); }
-.glow-amber { box-shadow: 0 0 15px rgba(245, 158, 11, 0.3); }
+.glow-cyan { box-shadow: 0 0 20px rgba(34, 211, 238, 0.4), 0 0 6px rgba(34, 211, 238, 0.15); }
+.glow-amber { box-shadow: 0 0 20px rgba(245, 158, 11, 0.4), 0 0 6px rgba(245, 158, 11, 0.15); }
 
 .gm-scrollbar::-webkit-scrollbar { width: 4px; }
 .gm-scrollbar::-webkit-scrollbar-track { background: transparent; }

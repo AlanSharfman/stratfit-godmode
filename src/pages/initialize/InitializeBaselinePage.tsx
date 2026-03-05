@@ -268,10 +268,10 @@ function StatusToggle({ label, active, onClick }: { label: string; active: boole
         fontFamily: FONT,
         cursor: "pointer",
         transition: "all 0.15s",
-        border: active ? "1px solid rgba(34,211,238,0.5)" : "1px solid rgba(255,255,255,0.05)",
-        background: active ? "rgba(34,211,238,0.1)" : "rgba(255,255,255,0.02)",
-        color: active ? "#22d3ee" : "rgba(100,116,139,0.5)",
-        boxShadow: active ? "0 0 10px rgba(34,211,238,0.1)" : "none",
+        border: active ? "1px solid rgba(34,211,238,0.5)" : "1px solid rgba(148,180,214,0.1)",
+        background: active ? "rgba(34,211,238,0.1)" : "rgba(255,255,255,0.03)",
+        color: active ? "#22d3ee" : "rgba(148,180,214,0.5)",
+        boxShadow: active ? "0 0 10px rgba(34,211,238,0.15)" : "none",
       }}
     >
       {label}
@@ -304,7 +304,7 @@ function ToggleRow<T extends string>({ label, options, value, onChange }: {
 function BinarySwitch({ label, active, onToggle }: { label: string; active: boolean; onToggle: () => void }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-      <span style={{ fontSize: 9, fontWeight: 900, color: "rgba(100,116,139,0.6)", letterSpacing: "0.02em" }}>{label}</span>
+      <span style={{ fontSize: 9, fontWeight: 900, color: "rgba(148,180,214,0.65)", letterSpacing: "0.02em" }}>{label}</span>
       <div style={{ display: "flex", padding: 2, background: "rgba(0,0,0,0.6)", borderRadius: 4, border: "1px solid rgba(255,255,255,0.08)" }}>
         <button type="button" onClick={() => { if (!active) onToggle() }} style={{
           padding: "3px 10px", fontSize: 8, fontWeight: 900, borderRadius: 3, border: "none", fontFamily: FONT,
@@ -776,10 +776,10 @@ function OutcomeCard({ label, value, color }: { label: string; value: string; co
     <div style={{
       display: "flex", alignItems: "center", justifyContent: "space-between",
       padding: "8px 12px", borderRadius: 8,
-      background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.04)",
+      background: "rgba(0,0,0,0.35)", border: "1px solid rgba(148,180,214,0.1)",
     }}>
-      <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(148,180,214,0.4)" }}>{label}</span>
-      <span style={{ fontSize: 16, fontWeight: 900, fontFamily: "ui-monospace, 'JetBrains Mono', monospace", color }}>{value}</span>
+      <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(148,180,214,0.6)" }}>{label}</span>
+      <span style={{ fontSize: 16, fontWeight: 900, fontFamily: "ui-monospace, 'JetBrains Mono', monospace", color, textShadow: `0 0 12px ${color}` }}>{value}</span>
     </div>
   )
 }
@@ -798,17 +798,18 @@ const SC: Record<string, React.CSSProperties> = {
   powerRail: {
     display: "flex", alignItems: "center", justifyContent: "space-between",
     height: 56, padding: "0 20px", flexShrink: 0,
-    background: "rgba(10,15,22,0.95)", borderBottom: "1px solid rgba(34,211,238,0.15)",
+    background: "rgba(10,15,22,0.95)", borderBottom: "1px solid rgba(34,211,238,0.25)",
     backdropFilter: "blur(16px)",
   },
   powerRailLeft: {
     display: "flex", alignItems: "center", gap: 16, minWidth: 0,
   },
   sysLabel: {
-    fontSize: 7, fontWeight: 900, color: "rgba(34,211,238,0.4)", letterSpacing: "0.2em", textTransform: "uppercase",
+    fontSize: 7, fontWeight: 900, color: "rgba(34,211,238,0.6)", letterSpacing: "0.2em", textTransform: "uppercase",
   },
   sysTitle: {
-    fontSize: 13, fontWeight: 900, fontStyle: "italic", color: "#22d3ee", letterSpacing: "0.04em",
+    fontSize: 13, fontWeight: 900, fontStyle: "italic", color: "#67e8f9", letterSpacing: "0.04em",
+    textShadow: "0 0 14px rgba(34,211,238,0.5)",
   },
   railDivider: {
     width: 1, height: 28, background: "rgba(255,255,255,0.08)", flexShrink: 0,
@@ -823,37 +824,41 @@ const SC: Record<string, React.CSSProperties> = {
     display: "flex", flexDirection: "column", alignItems: "flex-end",
   },
   metricLabel: {
-    fontSize: 7, fontWeight: 900, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(148,180,214,0.3)",
+    fontSize: 7, fontWeight: 900, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(148,180,214,0.55)",
   },
   metricValue: {
-    fontSize: 14, fontWeight: 900, fontFamily: "ui-monospace, 'JetBrains Mono', monospace",
+    fontSize: 15, fontWeight: 900, fontFamily: "ui-monospace, 'JetBrains Mono', monospace",
+    textShadow: "0 0 12px currentColor",
   },
 
   grid: {
     flex: 1, display: "grid", gridTemplateColumns: "280px 1fr 260px",
-    gap: 8, padding: 8, minHeight: 0, overflow: "auto",
+    gap: 16, padding: 16, minHeight: 0, overflow: "auto",
   },
-  col1: { display: "flex", flexDirection: "column", gap: 8, minHeight: 0, overflow: "auto" },
-  col2: { display: "flex", flexDirection: "column", gap: 8, minHeight: 0, overflow: "auto" },
-  col3: { display: "flex", flexDirection: "column", gap: 8, minHeight: 0 },
+  col1: { display: "flex", flexDirection: "column", gap: 14, minHeight: 0, overflow: "auto" },
+  col2: { display: "flex", flexDirection: "column", gap: 14, minHeight: 0, overflow: "auto" },
+  col3: { display: "flex", flexDirection: "column", gap: 14, minHeight: 0 },
 
   moduleHeader: {
     padding: "6px 14px", fontSize: 9, fontWeight: 900, letterSpacing: "0.14em", textTransform: "uppercase",
-    color: "rgba(34,211,238,0.65)",
-    background: "rgba(255,255,255,0.03)", borderBottom: "1px solid rgba(255,255,255,0.05)",
+    color: "rgba(34,211,238,0.85)",
+    background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(148,180,214,0.12)",
+    textShadow: "0 0 8px rgba(34,211,238,0.3)",
   },
   modBody: {
     padding: 14, display: "flex", flexDirection: "column", gap: 12,
   },
 
   powerLabel: {
-    fontSize: 9, fontWeight: 900, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(100,116,139,0.6)",
+    fontSize: 9, fontWeight: 900, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(148,180,214,0.65)",
   },
   powerValue: {
-    fontSize: 11, fontWeight: 900, fontFamily: "ui-monospace, 'JetBrains Mono', monospace",
+    fontSize: 12, fontWeight: 900, fontFamily: "ui-monospace, 'JetBrains Mono', monospace",
+    textShadow: "0 0 10px currentColor",
   },
   powerTrack: {
     height: 12, background: "rgba(0,0,0,0.7)", borderRadius: 6, padding: 2, overflow: "hidden",
+    border: "1px solid rgba(148,180,214,0.08)",
   },
   powerFill: {
     height: "100%", borderRadius: 4, minWidth: 2,
@@ -864,17 +869,18 @@ const SC: Record<string, React.CSSProperties> = {
   },
 
   inputLabel: {
-    fontSize: 9, fontWeight: 900, color: "rgba(100,116,139,0.6)", letterSpacing: "0.06em", textTransform: "uppercase",
+    fontSize: 9, fontWeight: 900, color: "rgba(148,180,214,0.65)", letterSpacing: "0.06em", textTransform: "uppercase",
   },
   inputWrap: {
     display: "flex", alignItems: "center", background: "rgba(0,0,0,0.5)", borderRadius: 6, overflow: "hidden",
+    border: "1px solid rgba(148,180,214,0.1)",
   },
   inputInner: {
-    flex: 1, padding: "8px 10px", fontSize: 11, fontWeight: 700, fontFamily: FONT,
-    color: "rgba(226,240,255,0.88)", background: "transparent", border: "none", outline: "none", minWidth: 0,
+    flex: 1, padding: "8px 10px", fontSize: 12, fontWeight: 700, fontFamily: FONT,
+    color: "rgba(226,240,255,0.95)", background: "transparent", border: "none", outline: "none", minWidth: 0,
   },
   inputAffix: {
-    padding: "0 8px", fontSize: 10, color: "rgba(148,180,214,0.3)", flexShrink: 0,
+    padding: "0 8px", fontSize: 10, color: "rgba(148,180,214,0.45)", flexShrink: 0,
   },
 
   pillGrid: {
@@ -882,17 +888,17 @@ const SC: Record<string, React.CSSProperties> = {
   },
 
   toggleLabel: {
-    fontSize: 9, fontWeight: 900, color: "rgba(100,116,139,0.6)", letterSpacing: "0.02em",
+    fontSize: 9, fontWeight: 900, color: "rgba(148,180,214,0.65)", letterSpacing: "0.02em",
   },
   toggleGroup: {
     display: "inline-flex", borderRadius: 4, overflow: "hidden",
-    border: "1px solid rgba(255,255,255,0.06)",
+    border: "1px solid rgba(148,180,214,0.12)",
   },
   toggleBtn: {
     padding: "5px 10px", fontSize: 9, fontWeight: 700, fontFamily: FONT,
-    color: "rgba(226,240,255,0.4)", background: "transparent", border: "none",
+    color: "rgba(226,240,255,0.5)", background: "transparent", border: "none",
     cursor: "pointer", transition: "all 0.15s", letterSpacing: "0.04em",
-    borderRight: "1px solid rgba(255,255,255,0.04)",
+    borderRight: "1px solid rgba(148,180,214,0.08)",
   },
   toggleBtnActive: {
     color: "#22d3ee", background: "rgba(34,211,238,0.1)",
@@ -904,9 +910,10 @@ const SC: Record<string, React.CSSProperties> = {
   },
   dialInner: {
     width: 72, height: 72, borderRadius: "50%",
-    background: "rgba(10,15,22,0.9)", border: "1px solid rgba(255,255,255,0.08)",
+    background: "rgba(10,15,22,0.9)", border: "1px solid rgba(148,180,214,0.16)",
     display: "flex", alignItems: "center", justifyContent: "center",
     position: "relative",
+    boxShadow: "inset 0 2px 8px rgba(0,0,0,0.6), 0 0 12px rgba(34,211,238,0.08)",
   },
   dialNeedle: {
     width: 2, height: 28, background: "#22d3ee", borderRadius: 1,

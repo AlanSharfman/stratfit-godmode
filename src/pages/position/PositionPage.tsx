@@ -221,7 +221,7 @@ export default function PositionPage() {
 
   // Auto-rotation: faster during build, near-still after all revealed
   const autoRotateSpeed = useMemo(
-    () => revealedKpis.size >= 10 ? 0.05 : (revealedKpis.size > 0 ? 0.4 : 0),
+    () => revealedKpis.size >= 12 ? 0.05 : (revealedKpis.size > 0 ? 0.4 : 0),
     [revealedKpis.size],
   )
 

@@ -308,6 +308,45 @@ function GrossMarginWidget() {
   );
 }
 
+function HeadcountWidget() {
+  return (
+    <div className={styles.widget}>
+      <svg width="44" height="44" viewBox="0 0 28 28" fill="none">
+        <circle cx="10" cy="10" r="3.5" fill="rgba(168,85,247,0.15)" stroke="rgba(168,85,247,0.4)" strokeWidth="1">
+          <animate attributeName="opacity" values="0.8;0.5;0.8" dur="3s" repeatCount="indefinite" />
+        </circle>
+        <circle cx="18" cy="10" r="3.5" fill="rgba(168,85,247,0.12)" stroke="rgba(168,85,247,0.35)" strokeWidth="1">
+          <animate attributeName="opacity" values="0.6;0.4;0.6" dur="3.5s" repeatCount="indefinite" />
+        </circle>
+        <path d="M4 24 Q4 18 10 18 Q14 18 14 21" fill="rgba(168,85,247,0.1)" stroke="rgba(168,85,247,0.3)" strokeWidth="1" />
+        <path d="M24 24 Q24 18 18 18 Q14 18 14 21" fill="rgba(168,85,247,0.1)" stroke="rgba(168,85,247,0.3)" strokeWidth="1" />
+        <circle cx="14" cy="21" r="1.5" fill="rgba(168,85,247,0.5)">
+          <animate attributeName="r" values="1.5;2.2;1.5" dur="2.5s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.5;0.2;0.5" dur="2.5s" repeatCount="indefinite" />
+        </circle>
+      </svg>
+    </div>
+  );
+}
+
+function NrrWidget() {
+  return (
+    <div className={styles.widget}>
+      <svg width="44" height="44" viewBox="0 0 28 28" fill="none">
+        <rect x="4" y="8" width="20" height="12" rx="3" fill="rgba(34,211,238,0.08)" stroke="rgba(34,211,238,0.2)" strokeWidth="1" />
+        <path d="M8 17 L12 11 L16 14 L20 9" stroke="rgba(34,211,238,0.55)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none">
+          <animate attributeName="opacity" values="0.55;0.3;0.55" dur="3s" repeatCount="indefinite" />
+        </path>
+        <circle cx="20" cy="9" r="1.8" fill="rgba(34,211,238,0.4)">
+          <animate attributeName="r" values="1.8;2.5;1.8" dur="2s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.4;0.15;0.4" dur="2s" repeatCount="indefinite" />
+        </circle>
+        <path d="M18 8 L20 6 L22 8" stroke="rgba(34,211,238,0.5)" strokeWidth="1" strokeLinecap="round" fill="none" />
+      </svg>
+    </div>
+  );
+}
+
 /** Hero Risk Widget — larger radar dial with tone-mapped ring */
 function HeroRiskWidget({ tone }: { tone: RiskTone }) {
   const ringColor =
@@ -569,6 +608,28 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, on
       sub: "Revenue / employee",
     },
     {
+      key: "headcount" as KpiKey,
+      labelCls: styles.labelEfficiency,
+      label: "Headcount",
+      getValue: (kk) => {
+        const hc = kk.headcount ?? 0
+        return hc > 0 ? `${Math.round(hc)}` : "—"
+      },
+      widget: <HeadcountWidget />,
+      sub: "Total team",
+    },
+    {
+      key: "nrr" as KpiKey,
+      labelCls: styles.labelPerf,
+      label: "NRR",
+      getValue: (kk) => {
+        const n = kk.nrrPct ?? 0
+        return n > 0 ? `${n.toFixed(0)}%` : "—"
+      },
+      widget: <NrrWidget />,
+      sub: "Net revenue retention",
+    },
+    {
       key: "enterpriseValue" as KpiKey,
       labelCls: styles.labelValuation,
       label: "Enterprise Value",
@@ -585,8 +646,8 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, on
 
   const SECTIONS = useMemo(() => [
     { header: "Liquidity", keys: ["cash", "runway"] as KpiKey[] },
-    { header: "Growth Engine", keys: ["growth", "arr", "revenue"] as KpiKey[] },
-    { header: "Efficiency", keys: ["burn", "churn", "grossMargin", "efficiency"] as KpiKey[] },
+    { header: "Growth Engine", keys: ["growth", "arr", "revenue", "nrr"] as KpiKey[] },
+    { header: "Efficiency", keys: ["burn", "churn", "grossMargin", "headcount", "efficiency"] as KpiKey[] },
     { header: "Valuation", keys: ["enterpriseValue"] as KpiKey[] },
   ], []);
 
