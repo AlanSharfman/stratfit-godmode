@@ -36,9 +36,9 @@ interface Props {
 
 const SEGMENTS = 220
 const LERP_SPEED = 2.5
-const PEAK_HEIGHT = 44
-const NOISE_AMP = 0.06
-const BASE_UNDULATION_AMP = 2.8
+const PEAK_HEIGHT = 52
+const NOISE_AMP = 0.08
+const BASE_UNDULATION_AMP = 3.0
 const BASE_UNDULATION_FREQ = 3.2
 const HIGHLIGHT_OPACITY = 0.35
 const HIGHLIGHT_FADE = 4.0
@@ -170,7 +170,7 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
           if (weight > 0) {
             // Shape: bell curve along Z (depth) for mountain profile
             const zCenter = 0.5
-            const zSpread = 0.35
+            const zSpread = 0.48
             const zDist = Math.abs(nz - zCenter)
             const zFalloff = Math.max(0, 1 - (zDist / zSpread) ** 2)
 

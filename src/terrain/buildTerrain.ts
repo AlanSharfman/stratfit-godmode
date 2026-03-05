@@ -130,16 +130,16 @@ function getSeedModel(seed: number, params: typeof TERRAIN_CONSTANTS): SeedModel
     const peaks = Array.from({ length: 5 }).map(() => {
         const px = lerp(-params.width * 0.28, params.width * 0.28, rand());
         const pz = lerp(-params.depth * 0.18, params.depth * 0.18, rand());
-        const amp = lerp(9, 22, rand());
-        const spread = lerp(10, 22, rand());
+        const amp = lerp(16, 38, rand());
+        const spread = lerp(14, 28, rand());
         return { px, pz, amp, spread };
     });
 
     const ridgeAngle = lerp(-0.6, 0.6, rand());
     const ridgeDir = new THREE.Vector2(Math.cos(ridgeAngle), Math.sin(ridgeAngle)).normalize();
     const ridgeCenter = new THREE.Vector2(lerp(-8, 8, rand()), lerp(-6, 6, rand()));
-    const ridgeAmp = lerp(5, 10, rand());
-    const ridgeWidth = lerp(10, 18, rand());
+    const ridgeAmp = lerp(9, 18, rand());
+    const ridgeWidth = lerp(14, 24, rand());
 
     const model: SeedModel = { peaks, ridgeDir, ridgeCenter, ridgeAmp, ridgeWidth, seed };
     SEED_MODEL_CACHE.set(seed, model);

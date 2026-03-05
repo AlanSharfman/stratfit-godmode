@@ -15,11 +15,11 @@ export const MESH_W = 50;
 export const MESH_D = 25;
 export const ISLAND_RADIUS = 22;
 
-export const BASE_SCALE = 6.75;
-export const PEAK_SCALE = 5.25;
+export const BASE_SCALE = 7.0;
+export const PEAK_SCALE = 5.5;
 export const MASSIF_SCALE = 7.5;
 export const RIDGE_SHARPNESS = 1.4;
-export const CLIFF_BOOST = 1.15;
+export const CLIFF_BOOST = 1.2;
 
 export const SOFT_CEILING = 14.0;
 export const CEILING_START = 11.0;
@@ -70,12 +70,12 @@ export interface MassifPeak {
 }
 
 export const MASSIF_PEAKS: MassifPeak[] = [
-  { x: 0, z: -2, amplitude: 1.5, sigmaX: 2.8, sigmaZ: 2.4 },
-  { x: -10, z: -1, amplitude: 1.2, sigmaX: 3.0, sigmaZ: 2.6 },
-  { x: 11, z: -1.5, amplitude: 1.1, sigmaX: 2.8, sigmaZ: 2.5 },
-  { x: -3, z: 3, amplitude: 0.85, sigmaX: 3.5, sigmaZ: 3.0 },
-  { x: -16, z: 2, amplitude: 0.6, sigmaX: 4.0, sigmaZ: 3.5 },
-  { x: 17, z: 1, amplitude: 0.55, sigmaX: 3.8, sigmaZ: 3.2 },
+  { x: 0, z: -2, amplitude: 1.5, sigmaX: 3.6, sigmaZ: 3.2 },
+  { x: -10, z: -1, amplitude: 1.2, sigmaX: 3.8, sigmaZ: 3.4 },
+  { x: 11, z: -1.5, amplitude: 1.1, sigmaX: 3.6, sigmaZ: 3.2 },
+  { x: -3, z: 3, amplitude: 0.85, sigmaX: 4.4, sigmaZ: 3.8 },
+  { x: -16, z: 2, amplitude: 0.6, sigmaX: 5.0, sigmaZ: 4.4 },
+  { x: 17, z: 1, amplitude: 0.55, sigmaX: 4.8, sigmaZ: 4.0 },
 ];
 
 // ============================================================================
