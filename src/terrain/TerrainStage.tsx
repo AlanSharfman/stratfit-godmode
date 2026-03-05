@@ -38,11 +38,6 @@ import TerrainCompass from "@/terrain/TerrainCompass";
 import TerrainIntelligence from "@/terrain/TerrainIntelligence";
 import { POSITION_PRESET } from "@/scene/camera/terrainCameraPresets";
 
-function readCssVar(varName: string, fallback: string): string {
-  if (typeof window === "undefined") return fallback;
-  const v = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
-  return v || fallback;
-}
 
 type TerrainStageProps = {
   granularity?: TimeGranularity
@@ -111,10 +106,7 @@ export default function TerrainStage({
     setControls(instance);
   }, [setControls]);
 
-  const [fogColor, setFogColor] = useState("#040810");
-  useEffect(() => {
-    setFogColor(readCssVar("--color-bg-void", "#040810"));
-  }, []);
+  const [fogColor] = useState("#1E293B");
 
   useEffect(() => {
     if (terrainReady) return;
@@ -147,7 +139,7 @@ export default function TerrainStage({
           camera.lookAt(...effectivePreset.target);
           camera.updateProjectionMatrix();
         }
-        gl.setClearColor(fogColor, 0);
+        gl.setClearColor("#020617", 1);
         gl.toneMappingExposure = 1.0;
       }}
     >
@@ -171,7 +163,7 @@ export default function TerrainStage({
         autoRotateSpeed={autoRotateSpeed}
       />
 
-      <fog attach="fog" args={[fogColor, 700, 4200]} />
+      <fogExp2 attach="fog" args={[fogColor, 0.002]} />
 
       <ambientLight intensity={0.38} />
       <directionalLight position={[150, 220, 100]} intensity={1.25} color="#DFFAEE" castShadow={false} />

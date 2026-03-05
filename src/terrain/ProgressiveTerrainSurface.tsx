@@ -46,15 +46,15 @@ interface Props {
 const SEGMENTS = 220
 const LERP_SPEED = 2.5
 
-const BASELINE_RIDGE_HEIGHT = 26
+const BASELINE_RIDGE_HEIGHT = 34
 const BASELINE_RIDGE_WIDTH = 0.22
 const BASELINE_PEAK_COUNT = 11
-const BASELINE_PEAK_AMP_MIN = 8
-const BASELINE_PEAK_AMP_MAX = 30
+const BASELINE_PEAK_AMP_MIN = 10
+const BASELINE_PEAK_AMP_MAX = 39
 const BASELINE_PEAK_SPREAD_MIN = 0.06
 const BASELINE_PEAK_SPREAD_MAX = 0.20
 
-const KPI_PEAK_HEIGHT = 42
+const KPI_PEAK_HEIGHT = 55
 const NOISE_AMP = 0.10
 
 const MAX_SLOPE = 0.48
@@ -182,12 +182,12 @@ function buildSeedPeaks(seed: number): SeedPeak[] {
   }
 
   // Depressions / valleys — negative amplitude Gaussians carve basins
-  const valleyCount = 3 + Math.floor(rand() * 4)
+  const valleyCount = 3 + Math.floor(rand() * 5)
   for (let i = 0; i < valleyCount; i++) {
     peaks.push({
       x: 0.10 + rand() * 0.80,
       z: 0.10 + rand() * 0.80,
-      amp: -(3 + rand() * 8),
+      amp: -(4 + rand() * 10),
       spread: 0.08 + rand() * 0.14,
     })
   }
@@ -262,8 +262,8 @@ function baselineTerrainHeight(
   // Broad terrain undulation — wide gentle valleys and rises
   const valleyAmp = 0.5 + t.valleyDepth
   const broadWave =
-    Math.sin(nx * Math.PI * 1.3 * freqScale + seed * 0.02) * 4.5 * valleyAmp +
-    Math.cos(nz * Math.PI * 1.8 * freqScale - seed * 0.015) * 3.5 * valleyAmp
+    Math.sin(nx * Math.PI * 1.3 * freqScale + seed * 0.02) * 5.4 * valleyAmp +
+    Math.cos(nz * Math.PI * 1.8 * freqScale - seed * 0.015) * 4.2 * valleyAmp
 
   // Edge falloff — gradual taper so terrain blends into background
   const edgeFade = Math.min(

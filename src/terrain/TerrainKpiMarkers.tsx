@@ -34,6 +34,11 @@ const VERT = /* glsl */ `
   }
 `
 
+const BAND_CENTER = 0.5
+const BAND_HALF_SRC = 0.08
+const BAND_HALF_DST = 0.16
+const CUBE_PUSH = 0.06
+
 const FRAG = /* glsl */ `
   uniform sampler2D uMap;
   uniform vec3 uTint;
@@ -42,22 +47,45 @@ const FRAG = /* glsl */ `
   varying vec2 vUv;
 
   void main() {
-    vec4 tex = texture2D(uMap, vUv);
+    // Remap V to stretch the neon band region and push cubes apart
+    float bandCenter = ${BAND_CENTER.toFixed(2)};
+    float bandHalfSrc = ${BAND_HALF_SRC.toFixed(3)};
+    float bandHalfDst = ${BAND_HALF_DST.toFixed(3)};
+    float cubePush = ${CUBE_PUSH.toFixed(3)};
+
+    float v = vUv.y;
+    float remapped;
+    if (v < bandCenter - bandHalfDst) {
+      // Top cube region — compress and shift up
+      float t = v / (bandCenter - bandHalfDst);
+      remapped = t * (bandCenter - bandHalfSrc) - cubePush;
+    } else if (v > bandCenter + bandHalfDst) {
+      // Bottom cube region — compress and shift down
+      float t = (v - (bandCenter + bandHalfDst)) / (1.0 - (bandCenter + bandHalfDst));
+      remapped = (bandCenter + bandHalfSrc) + t * (1.0 - (bandCenter + bandHalfSrc)) + cubePush;
+    } else {
+      // Band region — stretch from bandHalfSrc to bandHalfDst
+      float t = (v - (bandCenter - bandHalfDst)) / (bandHalfDst * 2.0);
+      remapped = (bandCenter - bandHalfSrc) + t * (bandHalfSrc * 2.0);
+    }
+
+    vec2 uv2 = vec2(vUv.x, clamp(remapped, 0.0, 1.0));
+    vec4 tex = texture2D(uMap, uv2);
     if (tex.a < 0.05) discard;
 
     float gb = tex.g + tex.b;
     float rRatio = tex.r / max(gb, 0.001);
-    float cyanness = smoothstep(1.1, 1.5, gb) * smoothstep(0.25, 0.08, rRatio);
+    float cyanness = smoothstep(1.0, 1.4, gb) * smoothstep(0.30, 0.08, rRatio);
 
     float brightness = max(tex.r, max(tex.g, tex.b));
-    float brightEdge = smoothstep(0.75, 0.90, brightness) * step(tex.r * 2.0, gb) * 0.7;
+    float brightEdge = smoothstep(0.70, 0.85, brightness) * step(tex.r * 2.0, gb) * 0.8;
     float bandMask = clamp(max(cyanness, brightEdge), 0.0, 1.0);
 
     float bandLum = dot(tex.rgb, vec3(0.299, 0.587, 0.114));
-    vec3 tintedBand = uTint * (bandLum * 2.4 + 0.7 + uGlowStrength * 0.5);
+    vec3 tintedBand = uTint * (bandLum * 2.8 + 0.9 + uGlowStrength * 0.6);
 
     vec3 result = mix(tex.rgb, tintedBand, bandMask);
-    result += uTint * bandMask * (0.25 + uGlowStrength * 0.4);
+    result += uTint * bandMask * (0.35 + uGlowStrength * 0.5);
 
     gl_FragColor = vec4(result, tex.a * uOpacity);
   }

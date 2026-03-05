@@ -4,9 +4,9 @@
  */
 export const TERRAIN_CONSTANTS = {
     /** PlaneGeometry width (X axis) */
-    width: 560,
+    width: 420,
     /** PlaneGeometry depth (Z axis after rotation) */
-    depth: 360,
+    depth: 270,
     /** Grid resolution (segments + 1 vertices per axis) */
     segments: 220,
     /** Raw height multiplier applied to heightModel output */

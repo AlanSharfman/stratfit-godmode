@@ -334,6 +334,93 @@ function BinarySwitch({ label, active, onToggle }: { label: string; active: bool
   )
 }
 
+function GaugeKnob({ angle }: { angle: number }) {
+  const SIZE = 140
+  const CX = SIZE / 2
+  const CY = SIZE / 2
+  const R_OUTER = 62
+  const R_INNER = 48
+  const R_NEEDLE = 42
+
+  const arcStart = -135
+  const arcEnd = 135
+  const arcRange = arcEnd - arcStart
+
+  const normalised = (angle + 45) / 90
+  const sweepAngle = arcStart + normalised * arcRange
+  const sweepRad = (sweepAngle * Math.PI) / 180
+  const needleRad = (sweepAngle * Math.PI) / 180
+
+  const arcPath = (startDeg: number, endDeg: number, r: number) => {
+    const s = (startDeg * Math.PI) / 180
+    const e = (endDeg * Math.PI) / 180
+    const x1 = CX + r * Math.cos(s)
+    const y1 = CY + r * Math.sin(s)
+    const x2 = CX + r * Math.cos(e)
+    const y2 = CY + r * Math.sin(e)
+    const large = Math.abs(endDeg - startDeg) > 180 ? 1 : 0
+    return `M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}`
+  }
+
+  const ticks = []
+  for (let i = 0; i <= 10; i++) {
+    const deg = arcStart + (i / 10) * arcRange
+    const rad = (deg * Math.PI) / 180
+    const isMajor = i % 5 === 0
+    const r1 = isMajor ? R_OUTER - 2 : R_OUTER - 1
+    const r2 = isMajor ? R_OUTER - 10 : R_OUTER - 6
+    ticks.push(
+      <line key={i}
+        x1={CX + r1 * Math.cos(rad)} y1={CY + r1 * Math.sin(rad)}
+        x2={CX + r2 * Math.cos(rad)} y2={CY + r2 * Math.sin(rad)}
+        stroke={isMajor ? "#8FB4D9" : "#1E3A5F"} strokeWidth={isMajor ? 1.5 : 1} strokeLinecap="round"
+      />
+    )
+  }
+
+  const needleTipX = CX + R_NEEDLE * Math.cos(needleRad)
+  const needleTipY = CY + R_NEEDLE * Math.sin(needleRad)
+  const dotX = CX + (R_OUTER - 5) * Math.cos(sweepRad)
+  const dotY = CY + (R_OUTER - 5) * Math.sin(sweepRad)
+
+  const pctText = `${Math.round(normalised * 100)}%`
+
+  return (
+    <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ flexShrink: 0 }}>
+      <defs>
+        <radialGradient id="knobBg" cx="45%" cy="40%">
+          <stop offset="0%" stopColor="#0F2035" />
+          <stop offset="100%" stopColor="#060D18" />
+        </radialGradient>
+        <filter id="knobGlow">
+          <feGaussianBlur stdDeviation="3" result="blur" />
+          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+      </defs>
+
+      <circle cx={CX} cy={CY} r={R_OUTER + 4} fill="none" stroke="#1E3A5F" strokeWidth={1.5} />
+      <circle cx={CX} cy={CY} r={R_OUTER} fill="#0A1620" />
+      <circle cx={CX} cy={CY} r={R_INNER} fill="url(#knobBg)" stroke="#1E3A5F" strokeWidth={1} />
+
+      <path d={arcPath(arcStart, arcEnd, R_OUTER - 5)} fill="none" stroke="#1E3A5F" strokeWidth={3} strokeLinecap="round" />
+      <path d={arcPath(arcStart, sweepAngle, R_OUTER - 5)} fill="none" stroke="#22D3EE" strokeWidth={3} strokeLinecap="round" filter="url(#knobGlow)" />
+
+      {ticks}
+
+      <line x1={CX} y1={CY} x2={needleTipX} y2={needleTipY}
+        stroke="#22D3EE" strokeWidth={2.5} strokeLinecap="round" filter="url(#knobGlow)" />
+      <circle cx={CX} cy={CY} r={5} fill="#0A1620" stroke="#22D3EE" strokeWidth={1.5} />
+      <circle cx={dotX} cy={dotY} r={3} fill="#22D3EE" filter="url(#knobGlow)" />
+
+      <text x={CX} y={CY + 22} textAnchor="middle" fontSize={11} fontWeight={700}
+        fontFamily="ui-monospace, 'JetBrains Mono', monospace"
+        fill="#22D3EE" style={{ textShadow: "0 0 8px rgba(34,211,238,0.5)" }}>
+        {pctText}
+      </text>
+    </svg>
+  )
+}
+
 /* ═══════════════════════════════════════════════════════════════════
    MAIN COMPONENT
    ═══════════════════════════════════════════════════════════════════ */
@@ -749,11 +836,7 @@ export default function InitializeBaselinePage() {
             <div style={{ ...SC.modBody, display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
               <span style={{ fontSize: 10, fontWeight: 600, color: "#E6F1FF", letterSpacing: "0.08em", textTransform: "uppercase" }}>Risk Tolerance</span>
 
-              <div style={SC.dial}>
-                <div style={SC.dialInner}>
-                  <div style={{ ...SC.dialNeedle, "--needle-angle": `${needleAngle}deg` } as React.CSSProperties} />
-                </div>
-              </div>
+              <GaugeKnob angle={needleAngle} />
 
               <div style={{ display: "flex", gap: 0, width: "100%", borderRadius: 8, overflow: "hidden", border: "1px solid #1E3A5F" }}>
                 {(["Conservative", "Balanced", "Aggressive"] as RiskTolerance[]).map((r) => (
@@ -767,11 +850,14 @@ export default function InitializeBaselinePage() {
                 ))}
               </div>
 
-              <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 10, borderTop: "1px solid #1E3A5F", paddingTop: 12 }}>
-                <BinarySwitch label="External Capital Required?" active={form.accessToCapital === "Strong"} onToggle={() => update("accessToCapital", form.accessToCapital === "Strong" ? "Moderate" : "Strong")} />
-                <BinarySwitch label="Focus on Runway?" active={form.priorityBalance < 40} onToggle={() => update("priorityBalance", form.priorityBalance < 40 ? 60 : 20)} />
-                <BinarySwitch label="Survival vs Expansion?" active={form.priorityBalance > 50} onToggle={() => update("priorityBalance", form.priorityBalance > 50 ? 30 : 70)} />
-                <BinarySwitch label="Growth-at-all-Costs?" active={form.priorityBalance > 75} onToggle={() => update("priorityBalance", form.priorityBalance > 75 ? 50 : 90)} />
+              <div style={{ width: "100%", marginTop: 4 }}>
+                <span style={{ fontSize: 10, fontWeight: 600, color: "#22D3EE", letterSpacing: "0.04em" }}>Your suggestions:</span>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+                  <BinarySwitch label="External Capital Required?" active={form.accessToCapital === "Strong"} onToggle={() => update("accessToCapital", form.accessToCapital === "Strong" ? "Moderate" : "Strong")} />
+                  <BinarySwitch label="Focus on Runway?" active={form.priorityBalance < 40} onToggle={() => update("priorityBalance", form.priorityBalance < 40 ? 60 : 20)} />
+                  <BinarySwitch label="Survival vs Expansion?" active={form.priorityBalance > 50} onToggle={() => update("priorityBalance", form.priorityBalance > 50 ? 30 : 70)} />
+                  <BinarySwitch label="Growth-at-all-Costs?" active={form.priorityBalance > 75} onToggle={() => update("priorityBalance", form.priorityBalance > 75 ? 50 : 90)} />
+                </div>
               </div>
             </div>
           </Module>
@@ -1053,26 +1139,6 @@ const SC: Record<string, React.CSSProperties> = {
     fontWeight: 700,
   },
 
-  dial: {
-    width: 120, height: 120, borderRadius: "50%",
-    display: "flex", alignItems: "center", justifyContent: "center",
-    background: "#0A1C2E",
-    border: "1px solid #1E3A5F",
-    boxShadow: "0 0 0 3px rgba(30,58,95,0.2), inset 0 2px 8px rgba(0,0,0,0.4)",
-  },
-  dialInner: {
-    width: 80, height: 80, borderRadius: "50%",
-    background: "#07182A",
-    border: "1px solid #1E3A5F",
-    display: "flex", alignItems: "center", justifyContent: "center",
-    position: "relative",
-    boxShadow: "inset 0 2px 8px rgba(0,0,0,0.5), 0 0 14px rgba(34,211,238,0.06)",
-  },
-  dialNeedle: {
-    width: 2, height: 30, background: "#22d3ee", borderRadius: 1,
-    transformOrigin: "bottom center",
-    boxShadow: "0 0 6px rgba(34,211,238,0.5)",
-  },
 
   smallBtn: {
     flex: 1, padding: "8px 10px", fontSize: 10, fontWeight: 600, letterSpacing: "0.04em",
