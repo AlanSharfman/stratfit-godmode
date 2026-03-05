@@ -329,11 +329,63 @@ function BinarySwitch({ label, active, onToggle }: { label: string; active: bool
    MAIN COMPONENT
    ═══════════════════════════════════════════════════════════════════ */
 
+const FORM_STORAGE_KEY = "stratfit:initiate-form"
+
+function saveFormToStorage(f: FormState): void {
+  try { window.localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(f)) } catch { /* quota */ }
+}
+
+function loadFormFromStorage(): FormState | null {
+  try {
+    const raw = window.localStorage.getItem(FORM_STORAGE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Partial<FormState>
+    return { ...INITIAL, ...parsed }
+  } catch { return null }
+}
+
+function hydrateFormFromBaseline(b: BaselineV1): FormState {
+  return {
+    ...INITIAL,
+    contactName: b.company.founderName ?? "",
+    contactEmail: b.company.contactEmail ?? "",
+    companyName: b.company.legalName ?? "",
+    industry: b.company.industry ?? "",
+    stage: "",
+    cashOnHand: b.financial.cashOnHand,
+    monthlyNetBurn: b.financial.monthlyBurn,
+    debtOutstanding: b.capital.totalDebt,
+    debtInterestRate: b.capital.interestRatePct,
+    currentARR: b.financial.arr,
+    monthlyGrowthPct: b.financial.growthRatePct,
+    grossMarginPct: b.financial.grossMarginPct,
+    avgDealSize: b.operating.acv,
+    monthlyChurnPct: b.operating.churnPct,
+    netRevenueRetentionPct: b.financial.nrrPct,
+    headcount: b.financial.headcount,
+    avgFullyLoadedCost: b.financial.avgFullyLoadedCost,
+    salesMarketingSpend: b.financial.salesMarketingSpend,
+    rdSpend: b.financial.rdSpend,
+    gaSpend: b.financial.gaSpend,
+    cac: b.customerEngine.cac,
+    salesRampTime: b.operating.salesCycleMonths,
+    accessToCapital: b.posture.raiseIntent === "Yes" ? "Strong" : "Moderate",
+    priorityBalance: b.posture.focus === "Growth" ? 70 : 40,
+  }
+}
+
+function loadInitialForm(baseline: BaselineV1 | null): FormState {
+  const fromStorage = loadFormFromStorage()
+  if (fromStorage) return fromStorage
+  if (baseline) return hydrateFormFromBaseline(baseline)
+  return { ...INITIAL }
+}
+
 export default function InitializeBaselinePage() {
   const navigate = useNavigate()
-  const { setBaseline } = useSystemBaseline()
+  const { baseline, setBaseline } = useSystemBaseline()
 
-  const [form, setForm] = useState<FormState>({ ...INITIAL })
+  const [form, setForm] = useState<FormState>(() => loadInitialForm(baseline))
   const [inputPath, setInputPath] = useState<InputPath>("manual")
   const [showXeroModal, setShowXeroModal] = useState(false)
   const [uploadMsg, setUploadMsg] = useState<{ type: "success" | "error"; text: string } | null>(null)
@@ -345,7 +397,11 @@ export default function InitializeBaselinePage() {
 
   const update = useCallback(
     <K extends keyof FormState>(key: K, value: FormState[K]) => {
-      setForm((prev) => ({ ...prev, [key]: value }))
+      setForm((prev) => {
+        const next = { ...prev, [key]: value }
+        saveFormToStorage(next)
+        return next
+      })
     }, [],
   )
 
@@ -446,7 +502,11 @@ export default function InitializeBaselinePage() {
       if (typeof text !== "string") { setUploadMsg({ type: "error", text: "Could not read file." }); return }
       const parsed = parseCSVToForm(text)
       if (!parsed || Object.keys(parsed).length === 0) { setUploadMsg({ type: "error", text: "No matching columns found." }); return }
-      setForm((prev) => ({ ...prev, ...parsed }))
+      setForm((prev) => {
+        const next = { ...prev, ...parsed }
+        saveFormToStorage(next)
+        return next
+      })
       setUploadMsg({ type: "success", text: `Imported ${Object.keys(parsed).length} fields.` })
       setToast("Data imported successfully.")
     }

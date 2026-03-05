@@ -55,12 +55,13 @@ export const KPI_ZONE_MAP: Record<KpiKey, ZoneDef> = {
   enterpriseValue:  { xStart: 0.917, xEnd: 1.000, label: "Value Summit",      stationName: "Summit Pinnacle" },
 }
 
-/** Height multiplier per health level — drives progressive terrain elevation */
+/** Height multiplier per health level — drives progressive terrain elevation.
+    Negative values create valleys/troughs for weak KPIs. */
 export const HEALTH_ELEVATION: Record<HealthLevel, number> = {
   strong:   1.0,
-  healthy:  0.72,
-  watch:    0.42,
-  critical: 0.15,
+  healthy:  0.55,
+  watch:   -0.15,
+  critical:-0.55,
 }
 
 export function getHealthLevel(key: KpiKey, kpis: PositionKpis): HealthLevel {
@@ -152,6 +153,26 @@ const HEALTH_COLORS: Record<HealthLevel, HealthColor> = {
 
 export function getHealthColor(level: HealthLevel): HealthColor {
   return HEALTH_COLORS[level]
+}
+
+/**
+ * Per-KPI colour identity — drives terrain marker inner glow, zone label pills,
+ * KPI card active accent, and any reporting highlights.
+ * Each KPI has a unique colour for instant visual recognition.
+ */
+export const KPI_CATEGORY_COLORS: Record<KpiKey, { hex: string; r: number; g: number; b: number }> = {
+  cash:            { hex: "#34d399", r: 0.204, g: 0.827, b: 0.600 },   // emerald (liquidity as-is)
+  runway:          { hex: "#3b82f6", r: 0.231, g: 0.510, b: 0.965 },   // blue
+  growth:          { hex: "#f0f0f0", r: 0.941, g: 0.941, b: 0.941 },   // white
+  arr:             { hex: "#f59e0b", r: 0.961, g: 0.620, b: 0.043 },   // amber
+  revenue:         { hex: "#eab308", r: 0.918, g: 0.702, b: 0.031 },   // yellow
+  burn:            { hex: "#a855f7", r: 0.659, g: 0.333, b: 0.969 },   // purple
+  churn:           { hex: "#2dd4bf", r: 0.176, g: 0.831, b: 0.749 },   // turquoise
+  grossMargin:     { hex: "#22d3ee", r: 0.133, g: 0.827, b: 0.933 },   // cyan
+  headcount:       { hex: "#7dd3fc", r: 0.490, g: 0.827, b: 0.988 },   // light blue
+  nrr:             { hex: "#c0c0c0", r: 0.753, g: 0.753, b: 0.753 },   // silver
+  efficiency:      { hex: "#c4a882", r: 0.769, g: 0.659, b: 0.510 },   // light brown
+  enterpriseValue: { hex: "#1e7eaa", r: 0.118, g: 0.494, b: 0.667 },   // dark azure
 }
 
 export const KPI_STRESS_PROMPTS: Record<KpiKey, string> = {

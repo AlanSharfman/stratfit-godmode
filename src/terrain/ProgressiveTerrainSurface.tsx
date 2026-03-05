@@ -15,6 +15,7 @@ import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
 import { KPI_KEYS, KPI_ZONE_MAP, HEALTH_ELEVATION, getHealthLevel, getHealthColor } from "@/domain/intelligence/kpiZoneMapping"
 import type { PositionKpis } from "@/pages/position/overlays/positionState"
 import type { PropagationResult } from "@/engine/kpiDependencyGraph"
+import type { TerrainTuningParams } from "@/terrain/terrainTuning"
 
 export type ProgressiveTerrainHandle = {
   getHeightAt: (worldX: number, worldZ: number) => number
@@ -33,6 +34,7 @@ interface Props {
   kpis: PositionKpis | null
   focusedKpi: KpiKey | null
   cascadeImpulse?: CascadeImpulse | null
+  tuning?: TerrainTuningParams | null
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -42,16 +44,24 @@ interface Props {
 const SEGMENTS = 220
 const LERP_SPEED = 2.5
 
-const BASELINE_RIDGE_HEIGHT = 14
-const BASELINE_RIDGE_WIDTH = 0.15
+const BASELINE_RIDGE_HEIGHT = 28
+const BASELINE_RIDGE_WIDTH = 0.18
 const BASELINE_PEAK_COUNT = 7
-const BASELINE_PEAK_AMP_MIN = 4
-const BASELINE_PEAK_AMP_MAX = 12
-const BASELINE_PEAK_SPREAD_MIN = 0.06
-const BASELINE_PEAK_SPREAD_MAX = 0.14
+const BASELINE_PEAK_AMP_MIN = 10
+const BASELINE_PEAK_AMP_MAX = 28
+const BASELINE_PEAK_SPREAD_MIN = 0.07
+const BASELINE_PEAK_SPREAD_MAX = 0.16
 
-const KPI_PEAK_HEIGHT = 35
-const NOISE_AMP = 0.08
+const KPI_PEAK_HEIGHT = 45
+const NOISE_AMP = 0.10
+
+const MAX_SLOPE = 0.65
+const SLOPE_CLAMP_PASSES = 3
+const BROAD_SMOOTH_PASSES = 2
+const BROAD_SMOOTH_STRENGTH = 0.12
+const DETAIL_SMOOTH_PASSES = 1
+const DETAIL_SMOOTH_THRESHOLD = 1.8
+const KPI_BLEND_WIDTH = 0.065
 
 const HIGHLIGHT_OPACITY = 0.35
 const HIGHLIGHT_FADE = 4.0
@@ -122,37 +132,58 @@ function buildSeedPeaks(seed: number): SeedPeak[] {
    Produces a realistic mountain range from seed alone.
    ═══════════════════════════════════════════════════════════════════════════ */
 
+interface TuningOverrides {
+  elevationScale: number
+  ridgeIntensity: number
+  valleyDepth: number
+  roughness: number
+  peakSoftness: number
+  noiseFrequency: number
+  microDetail: number
+}
+
+const NEUTRAL_TUNING: TuningOverrides = {
+  elevationScale: 1, ridgeIntensity: 0.5, valleyDepth: 0.5,
+  roughness: 0.5, peakSoftness: 0.5, noiseFrequency: 1, microDetail: 0.35,
+}
+
 function baselineTerrainHeight(
   nx: number,
   nz: number,
   seed: number,
   peaks: SeedPeak[],
+  t: TuningOverrides = NEUTRAL_TUNING,
 ): number {
+  const freqScale = 0.5 + t.noiseFrequency * 0.8
+
   // Central ridge running along X at Z = 0.5
   const ridgeDist = nz - 0.5
   const ridgeProfile = Math.exp(
     -(ridgeDist * ridgeDist) / (BASELINE_RIDGE_WIDTH * BASELINE_RIDGE_WIDTH),
   )
-  const ridgeUndulation = 0.65 + 0.35 * Math.sin(nx * Math.PI * 3.0 + seed * 0.13)
-  const ridge = BASELINE_RIDGE_HEIGHT * ridgeProfile * ridgeUndulation
+  const ridgeUndulation = 0.65 + 0.35 * Math.sin(nx * Math.PI * 3.0 * freqScale + seed * 0.13)
+  const ridge = BASELINE_RIDGE_HEIGHT * ridgeProfile * ridgeUndulation * (t.ridgeIntensity * 2)
 
-  // Seed-driven peaks (Gaussian bumps)
+  // Seed-driven peaks (Gaussian bumps) — softened by peakSoftness
   let peakContrib = 0
+  const peakDamp = 1.0 - t.peakSoftness * 0.45
   for (const p of peaks) {
     const dx = nx - p.x
     const dz = nz - p.z
     const d2 = (dx * dx + dz * dz) / (p.spread * p.spread)
-    peakContrib += p.amp * Math.exp(-d2)
+    peakContrib += p.amp * Math.exp(-d2) * peakDamp
   }
 
-  // Multi-octave FBM detail
-  const detailNoise = fbmNoise(nx * 6, nz * 6, seed, 5) * 3.5
-  const microNoise = fbmNoise(nx * 14, nz * 14, seed + 37, 3) * 1.2
+  // Multi-octave FBM detail — adds natural roughness
+  const roughAmp = 0.4 + t.roughness * 1.2
+  const detailNoise = fbmNoise(nx * 6 * freqScale, nz * 6 * freqScale, seed, 5) * 5.0 * roughAmp
+  const microNoise = fbmNoise(nx * 14 * freqScale, nz * 14 * freqScale, seed + 37, 3) * 2.0 * (t.microDetail * 2.8)
 
-  // Broad low-frequency terrain shaping
+  // Broad low-frequency terrain shaping — drives valleys and rises
+  const valleyAmp = 0.5 + t.valleyDepth
   const broadWave =
-    Math.sin(nx * Math.PI * 1.5 + seed * 0.02) * 2.5 +
-    Math.cos(nz * Math.PI * 2.0 - seed * 0.015) * 2.0
+    Math.sin(nx * Math.PI * 1.5 * freqScale + seed * 0.02) * 5.0 * valleyAmp +
+    Math.cos(nz * Math.PI * 2.0 * freqScale - seed * 0.015) * 4.0 * valleyAmp
 
   // Edge falloff — terrain tapers at boundaries
   const edgeFade = Math.min(
@@ -162,8 +193,230 @@ function baselineTerrainHeight(
     smoothstep(1, 0.9, nz),
   )
 
-  const raw = ridge + peakContrib + detailNoise + microNoise + broadWave
-  return Math.max(0, raw * edgeFade)
+  const raw = (ridge + peakContrib + detailNoise + microNoise + broadWave) * t.elevationScale
+  return raw * edgeFade - 2.0
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Heightfield Stabilization Pipeline
+   All operations on Float32Array BEFORE mesh generation.
+
+   Pipeline order:
+     1. Iterative slope clamp (bidirectional, multi-pass until stable)
+     2. Pass A — broad Laplacian smoothing (removes large discontinuities)
+     3. Pass B — edge-preserving smoothing (keeps ridges, softens noise)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function stabilizeHeightfield(hf: Float32Array, vpr: number): void {
+  const count = hf.length
+
+  // ── Step 1: Iterative slope clamp (hard constraint) ──────────────────
+  // Sweep forward then backward each pass so clamp propagates both ways.
+  // Iterate until no violations remain or max passes reached.
+  for (let pass = 0; pass < SLOPE_CLAMP_PASSES; pass++) {
+    let violations = 0
+
+    // Forward sweep (top-left → bottom-right)
+    for (let row = 0; row < vpr; row++) {
+      for (let col = 0; col < vpr; col++) {
+        const i = row * vpr + col
+        // Clamp vs left neighbour
+        if (col > 0) {
+          const left = hf[i - 1]
+          const diff = hf[i] - left
+          if (Math.abs(diff) > MAX_SLOPE) {
+            hf[i] = left + Math.sign(diff) * MAX_SLOPE
+            violations++
+          }
+        }
+        // Clamp vs top neighbour
+        if (row > 0) {
+          const above = hf[i - vpr]
+          const diff = hf[i] - above
+          if (Math.abs(diff) > MAX_SLOPE) {
+            hf[i] = above + Math.sign(diff) * MAX_SLOPE
+            violations++
+          }
+        }
+      }
+    }
+
+    // Backward sweep (bottom-right → top-left)
+    for (let row = vpr - 1; row >= 0; row--) {
+      for (let col = vpr - 1; col >= 0; col--) {
+        const i = row * vpr + col
+        if (col < vpr - 1) {
+          const right = hf[i + 1]
+          const diff = hf[i] - right
+          if (Math.abs(diff) > MAX_SLOPE) {
+            hf[i] = right + Math.sign(diff) * MAX_SLOPE
+            violations++
+          }
+        }
+        if (row < vpr - 1) {
+          const below = hf[i + vpr]
+          const diff = hf[i] - below
+          if (Math.abs(diff) > MAX_SLOPE) {
+            hf[i] = below + Math.sign(diff) * MAX_SLOPE
+            violations++
+          }
+        }
+      }
+    }
+
+    // Also clamp diagonals (8-connected) for thorough coverage
+    for (let row = 1; row < vpr - 1; row++) {
+      for (let col = 1; col < vpr - 1; col++) {
+        const i = row * vpr + col
+        const diag = MAX_SLOPE * 1.414
+        const corners = [
+          i - vpr - 1, i - vpr + 1,
+          i + vpr - 1, i + vpr + 1,
+        ]
+        for (const ni of corners) {
+          const diff = hf[i] - hf[ni]
+          if (Math.abs(diff) > diag) {
+            hf[i] = hf[ni] + Math.sign(diff) * diag
+            violations++
+          }
+        }
+      }
+    }
+
+    if (violations === 0) break
+  }
+
+  // ── Step 2: Pass A — broad Laplacian smoothing ───────────────────────
+  const tmp = new Float32Array(count)
+  for (let pass = 0; pass < BROAD_SMOOTH_PASSES; pass++) {
+    tmp.set(hf)
+    for (let row = 1; row < vpr - 1; row++) {
+      for (let col = 1; col < vpr - 1; col++) {
+        const i = row * vpr + col
+        const avg4 = (tmp[i - 1] + tmp[i + 1] + tmp[i - vpr] + tmp[i + vpr]) * 0.25
+        hf[i] = tmp[i] * (1 - BROAD_SMOOTH_STRENGTH) + avg4 * BROAD_SMOOTH_STRENGTH
+      }
+    }
+  }
+
+  // ── Step 3: Pass B — edge-preserving smoothing ───────────────────────
+  // Strong smooth where curvature is high (discontinuities), weak where
+  // surface is already smooth (preserves ridges and valleys).
+  for (let pass = 0; pass < DETAIL_SMOOTH_PASSES; pass++) {
+    tmp.set(hf)
+    for (let row = 1; row < vpr - 1; row++) {
+      for (let col = 1; col < vpr - 1; col++) {
+        const i = row * vpr + col
+        const c = tmp[i]
+        const avg4 = (tmp[i - 1] + tmp[i + 1] + tmp[i - vpr] + tmp[i + vpr]) * 0.25
+        const curvature = Math.abs(c - avg4)
+        // High curvature (cliff-like) → aggressive smooth
+        // Low curvature (gentle slope/ridge) → near-zero smooth
+        const s = curvature > DETAIL_SMOOTH_THRESHOLD
+          ? 0.35
+          : curvature > 0.4 ? 0.12 : 0.02
+        hf[i] = c * (1 - s) + avg4 * s
+      }
+    }
+  }
+}
+
+/**
+ * Build a fully stabilized heightfield combining baseline terrain + KPI zone overlays.
+ * Returns a Float32Array of vertex heights ready to be written to geometry.
+ */
+function buildStabilizedHeightfield(
+  seed: number,
+  seedPeaks: SeedPeak[],
+  kpis: PositionKpis | null,
+  tuning?: TerrainTuningParams | null,
+): Float32Array {
+  const vpr = SEGMENTS + 1
+  const count = vpr * vpr
+  const hf = new Float32Array(count)
+
+  const t: TuningOverrides = tuning ? {
+    elevationScale: tuning.elevationScale,
+    ridgeIntensity: tuning.ridgeIntensity,
+    valleyDepth: tuning.valleyDepth,
+    roughness: tuning.terrainRoughness,
+    peakSoftness: tuning.peakSoftness,
+    noiseFrequency: tuning.noiseFrequency,
+    microDetail: tuning.microDetailStrength,
+  } : NEUTRAL_TUNING
+
+  // Phase 1: raw baseline heights
+  for (let row = 0; row < vpr; row++) {
+    for (let col = 0; col < vpr; col++) {
+      const i = row * vpr + col
+      const nx = col / SEGMENTS
+      const nz = row / SEGMENTS
+      hf[i] = baselineTerrainHeight(nx, nz, seed, seedPeaks, t)
+    }
+  }
+
+  // Phase 2: KPI zone elevation overlay with wide seam blending
+  if (kpis) {
+    const zoneElevations = new Map<KpiKey, number>()
+    for (const key of KPI_KEYS) {
+      zoneElevations.set(key, HEALTH_ELEVATION[getHealthLevel(key, kpis)])
+    }
+
+    // Build mountain-feature mask: how much KPI overlay affects each vertex
+    // Uses wide smoothstep blending at zone boundaries to prevent seams
+    for (let row = 0; row < vpr; row++) {
+      for (let col = 0; col < vpr; col++) {
+        const i = row * vpr + col
+        const nx = col / SEGMENTS
+        const nz = row / SEGMENTS
+
+        let kpiHeight = 0
+        let totalWeight = 0
+
+        for (const key of KPI_KEYS) {
+          const elevFactor = zoneElevations.get(key)!
+          const zone = KPI_ZONE_MAP[key]
+
+          // Wide blend across zone boundaries — prevents curtain ridges
+          let weight = 0
+          if (nx >= zone.xStart && nx <= zone.xEnd) {
+            weight = 1.0
+            const dLeft = nx - zone.xStart
+            const dRight = zone.xEnd - nx
+            if (dLeft < KPI_BLEND_WIDTH) weight *= smoothstep(0, KPI_BLEND_WIDTH, dLeft)
+            if (dRight < KPI_BLEND_WIDTH) weight *= smoothstep(0, KPI_BLEND_WIDTH, dRight)
+          } else {
+            const dToZone = nx < zone.xStart
+              ? zone.xStart - nx
+              : nx - zone.xEnd
+            if (dToZone < KPI_BLEND_WIDTH) {
+              weight = smoothstep(KPI_BLEND_WIDTH, 0, dToZone)
+            }
+          }
+
+          if (weight > 0) {
+            const zCenter = 0.5
+            const zSpread = 0.48
+            const zDist = Math.abs(nz - zCenter)
+            const zFalloff = smoothstep(1, 0, zDist / zSpread)
+
+            const noise = pseudoNoise(nx * 20, nz * 20, seed + col) * NOISE_AMP * KPI_PEAK_HEIGHT
+            kpiHeight += (elevFactor * KPI_PEAK_HEIGHT * zFalloff + noise) * weight
+            totalWeight += weight
+          }
+        }
+
+        if (totalWeight > 0) {
+          hf[i] += kpiHeight / Math.max(totalWeight, 1)
+        }
+      }
+    }
+  }
+
+  // Phase 3: stabilize the COMBINED heightfield (slope clamp + multi-scale smooth)
+  stabilizeHeightfield(hf, vpr)
+
+  return hf
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -171,7 +424,7 @@ function baselineTerrainHeight(
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
-  function ProgressiveTerrainSurface({ revealedKpis, kpis, focusedKpi, cascadeImpulse }, ref) {
+  function ProgressiveTerrainSurface({ revealedKpis, kpis, focusedKpi, cascadeImpulse, tuning }, ref) {
     const solidRef = useRef<THREE.Mesh>(null)
     const latticeRef = useRef<THREE.Mesh>(null)
     const highlightRef = useRef<THREE.Mesh>(null)
@@ -185,7 +438,14 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
     const seed = useMemo(() => createSeed(seedStr), [seedStr])
     const seedPeaks = useMemo(() => buildSeedPeaks(seed), [seed])
 
-    // Build geometry with baseline terrain (never flat)
+    // Stabilized heightfield: baseline + KPI zones, slope-clamped and smoothed.
+    // This is the SINGLE source of truth for all vertex heights.
+    const stabilizedHF = useMemo(
+      () => buildStabilizedHeightfield(seed, seedPeaks, kpis, tuning),
+      [seed, seedPeaks, kpis, tuning],
+    )
+
+    // Build geometry — write stabilized heightfield directly to mesh
     const geometry = useMemo(() => {
       const geo = new THREE.PlaneGeometry(
         TERRAIN_CONSTANTS.width,
@@ -194,87 +454,16 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
         SEGMENTS,
       )
       const pos = geo.attributes.position as THREE.BufferAttribute
-      const vertsPerRow = SEGMENTS + 1
       for (let i = 0; i < pos.count; i++) {
-        const col = i % vertsPerRow
-        const row = Math.floor(i / vertsPerRow)
-        const nx = col / SEGMENTS
-        const nz = row / SEGMENTS
-        pos.setZ(i, baselineTerrainHeight(nx, nz, seed, seedPeaks))
+        pos.setZ(i, stabilizedHF[i])
       }
       geo.computeVertexNormals()
       geo.computeBoundingSphere()
       return geo
-    }, [seed, seedPeaks])
+    }, [stabilizedHF])
 
-    // Target heights — baseline + KPI zone modulation
-    const targetHeights = useMemo(() => {
-      const pos = geometry.attributes.position as THREE.BufferAttribute
-      const count = pos.count
-      const targets = new Float32Array(count)
-      const vertsPerRow = SEGMENTS + 1
-
-      // Precompute zone elevations for revealed KPIs
-      const zoneElevations = new Map<KpiKey, number>()
-      for (const key of KPI_KEYS) {
-        if (!kpis || !revealedKpis.has(key)) continue
-        const health = getHealthLevel(key, kpis)
-        zoneElevations.set(key, HEALTH_ELEVATION[health])
-      }
-
-      for (let i = 0; i < count; i++) {
-        const col = i % vertsPerRow
-        const row = Math.floor(i / vertsPerRow)
-        const nx = col / SEGMENTS
-        const nz = row / SEGMENTS
-
-        const baseH = baselineTerrainHeight(nx, nz, seed, seedPeaks)
-
-        // Accumulate KPI-driven elevation for this vertex
-        let kpiHeight = 0
-        let totalWeight = 0
-
-        for (const key of KPI_KEYS) {
-          const elevFactor = zoneElevations.get(key)
-          if (elevFactor === undefined) continue
-
-          const zone = KPI_ZONE_MAP[key]
-          const blendWidth = 0.04
-
-          let weight = 0
-          if (nx >= zone.xStart && nx <= zone.xEnd) {
-            weight = 1.0
-            const dLeft = nx - zone.xStart
-            const dRight = zone.xEnd - nx
-            if (dLeft < blendWidth) weight *= smoothstep(0, blendWidth, dLeft)
-            if (dRight < blendWidth) weight *= smoothstep(0, blendWidth, dRight)
-          } else {
-            const dToZone = nx < zone.xStart
-              ? zone.xStart - nx
-              : nx - zone.xEnd
-            if (dToZone < blendWidth) {
-              weight = smoothstep(blendWidth, 0, dToZone)
-            }
-          }
-
-          if (weight > 0) {
-            const zCenter = 0.5
-            const zSpread = 0.48
-            const zDist = Math.abs(nz - zCenter)
-            const zFalloff = Math.max(0, 1 - (zDist / zSpread) ** 2)
-
-            const noise = pseudoNoise(nx * 20, nz * 20, seed + col) * NOISE_AMP * KPI_PEAK_HEIGHT
-            kpiHeight += (elevFactor * KPI_PEAK_HEIGHT * zFalloff + noise) * weight
-            totalWeight += weight
-          }
-        }
-
-        const kpiContrib = totalWeight > 0 ? kpiHeight / Math.max(totalWeight, 1) : 0
-        targets[i] = baseH + kpiContrib
-      }
-
-      return targets
-    }, [geometry, revealedKpis, kpis, seed, seedPeaks])
+    // Target heights = stabilized heightfield (already clean, no further processing needed)
+    const targetHeights = stabilizedHF
 
     // Highlight geometry for focused KPI zone
     const highlightGeo = useMemo(() => {

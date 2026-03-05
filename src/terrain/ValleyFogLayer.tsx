@@ -18,7 +18,7 @@ interface Props {
 const PARTICLES_PER_ZONE = 12
 const FOG_Y_BASE = -6
 const DRIFT_SPEED = 0.08
-const PEAK_HEIGHT = 35
+const PEAK_HEIGHT = 45
 
 const ValleyFogLayer: React.FC<Props> = memo(({ revealedKpis, kpis, thresholdElevation = 12 }) => {
   const groupRef = useRef<THREE.Group>(null)

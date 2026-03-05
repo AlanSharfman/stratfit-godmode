@@ -24,9 +24,9 @@ export interface CameraPreset {
  * pulled back for complete coverage of peaks, ridges and valleys.
  */
 export const POSITION_PRESET: CameraPreset = {
-  pos: [0, 290, 750],
-  target: [0, -8, 0],
-  fov: 52,
+  pos: [35, 280, 740],
+  target: [0, -10, 0],
+  fov: 50,
 }
 
 /**
@@ -74,9 +74,9 @@ export const COMMAND_PRESET: CameraPreset = {
  * and KPI-driven station elevations.
  */
 export const POSITION_PROGRESSIVE_PRESET: CameraPreset = {
-  pos: [0, 300, 780],
-  target: [0, -10, 0],
-  fov: 52,
+  pos: [30, 290, 770],
+  target: [0, -12, 0],
+  fov: 50,
 }
 
 /** All presets keyed by page context */

@@ -24,6 +24,7 @@ import TerrainHeatmapLayer from "@/terrain/layers/TerrainHeatmapLayer";
 import TerrainZoneHighlight from "@/terrain/layers/TerrainZoneHighlight";
 import ProgressiveTerrainSurface from "@/terrain/ProgressiveTerrainSurface";
 import type { ProgressiveTerrainHandle } from "@/terrain/ProgressiveTerrainSurface";
+import type { TerrainTuningParams } from "@/terrain/terrainTuning";
 import HealthRidgePath from "@/terrain/HealthRidgePath";
 import WaterLinePlane from "@/terrain/WaterLinePlane";
 import ValleyFogLayer from "@/terrain/ValleyFogLayer";
@@ -32,6 +33,9 @@ import type { PositionKpis } from "@/pages/position/overlays/positionState";
 import type { CascadeImpulse } from "@/terrain/ProgressiveTerrainSurface";
 import DependencyLines from "@/terrain/DependencyLines";
 import GhostTerrainLayer from "@/terrain/GhostTerrainLayer";
+import TerrainKpiMarkers from "@/terrain/TerrainKpiMarkers";
+import TerrainCompass from "@/terrain/TerrainCompass";
+import TerrainIntelligence from "@/terrain/TerrainIntelligence";
 import { POSITION_PRESET } from "@/scene/camera/terrainCameraPresets";
 
 function readCssVar(varName: string, fallback: string): string {
@@ -62,6 +66,8 @@ type TerrainStageProps = {
   cascadeImpulse?: CascadeImpulse | null
   showDependencyLines?: boolean
   ghostKpis?: PositionKpis | null
+  showKpiMarkers?: boolean
+  tuning?: TerrainTuningParams | null
   children?: ReactNode
 }
 
@@ -87,6 +93,8 @@ export default function TerrainStage({
   cascadeImpulse,
   showDependencyLines = false,
   ghostKpis = null,
+  showKpiMarkers = true,
+  tuning = null,
   children,
 }: TerrainStageProps) {
   const terrainRef = useRef<TerrainSurfaceHandle>(null!);
@@ -163,13 +171,16 @@ export default function TerrainStage({
         autoRotateSpeed={autoRotateSpeed}
       />
 
-      <fog attach="fog" args={[fogColor, 500, 2800]} />
+      <fog attach="fog" args={[fogColor, 400, 2200]} />
 
-      <ambientLight intensity={0.35} />
-      <directionalLight position={[120, 180, 120]} intensity={1.40} color="#DFFAEE" />
-      <directionalLight position={[-80, 120, -60]} intensity={0.55} color="#6ef0ff" />
+      <ambientLight intensity={0.30} />
+      <directionalLight position={[150, 220, 100]} intensity={1.50} color="#DFFAEE" castShadow={false} />
+      <directionalLight position={[-100, 160, -80]} intensity={0.50} color="#6ef0ff" />
+      <directionalLight position={[0, 80, 200]} intensity={0.25} color="#a0d8ff" />
+      <hemisphereLight args={["#1a2a40", "#0a0e14", 0.3]} />
 
       <HorizonBand />
+      <TerrainCompass />
 
       <Suspense fallback={null}>
         {progressive && revealedKpis ? (
@@ -180,6 +191,7 @@ export default function TerrainStage({
               kpis={zoneKpis}
               focusedKpi={focusedKpi}
               cascadeImpulse={cascadeImpulse}
+              tuning={tuning}
             />
             {showDependencyLines && (
               <DependencyLines
@@ -204,6 +216,14 @@ export default function TerrainStage({
                 kpis={ghostKpis}
               />
             )}
+            <TerrainIntelligence terrainRef={progressiveRef} />
+            <TerrainKpiMarkers
+              terrainRef={progressiveRef}
+              focusedKpi={focusedKpi}
+              kpis={zoneKpis}
+              revealedKpis={revealedKpis ?? new Set()}
+              visible={showKpiMarkers}
+            />
           </>
         ) : (
           <>

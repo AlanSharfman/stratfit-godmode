@@ -1,7 +1,7 @@
 import React, { useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
-import { KPI_KEYS, KPI_ZONE_MAP, getHealthLevel, getHealthColor, type HealthColor } from "@/domain/intelligence/kpiZoneMapping"
+import { KPI_KEYS, KPI_ZONE_MAP, KPI_CATEGORY_COLORS } from "@/domain/intelligence/kpiZoneMapping"
 import type { PositionKpis } from "@/pages/position/overlays/positionState"
 
 interface Props {
@@ -10,10 +10,6 @@ interface Props {
   focusedKpi: KpiKey | null
   onFocusKpi?: (kpi: KpiKey | null) => void
   visible?: boolean
-}
-
-function colorToCss(c: HealthColor): string {
-  return `rgb(${Math.round(c.r * 255)}, ${Math.round(c.g * 255)}, ${Math.round(c.b * 255)})`
 }
 
 const ZONE_ICONS: Record<KpiKey, string> = {
@@ -28,10 +24,9 @@ export default React.memo(function TerrainZoneLabels({ kpis, revealedKpis, focus
     if (!kpis || revealedKpis.size === 0) return []
     return KPI_KEYS.filter(k => revealedKpis.has(k)).map(kpi => {
       const zone = KPI_ZONE_MAP[kpi]
-      const health = getHealthLevel(kpi, kpis)
-      const color = colorToCss(getHealthColor(health))
+      const color = KPI_CATEGORY_COLORS[kpi].hex
       const xCenter = (zone.xStart + zone.xEnd) / 2
-      return { kpi, label: zone.label, health, color, xCenter, icon: ZONE_ICONS[kpi] }
+      return { kpi, label: zone.label, color, xCenter, icon: ZONE_ICONS[kpi] }
     })
   }, [kpis, revealedKpis])
 

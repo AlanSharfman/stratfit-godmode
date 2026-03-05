@@ -9,7 +9,7 @@ import { useSystemBaseline } from "@/system/SystemBaselineProvider"
 import { baselineSeedString, createSeed } from "@/terrain/seed"
 
 const SEGMENTS = TERRAIN_CONSTANTS.segments
-const PEAK_HEIGHT = 35
+const PEAK_HEIGHT = 45
 const LERP_SPEED = 1.8
 
 interface Props {

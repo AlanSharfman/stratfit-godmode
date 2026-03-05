@@ -61,6 +61,7 @@ export function buildTerrain(_size: number, seed: number, reliefScalar: number =
         pos.setZ(i, h);
     }
 
+    slopeClampGeometry(pos, segments);
     geo.computeVertexNormals();
     geo.computeBoundingSphere();
     return geo;
@@ -104,9 +105,63 @@ export function buildTerrainWithMetrics(
         pos.setZ(i, h);
     }
 
+    slopeClampGeometry(pos, segments);
     geo.computeVertexNormals();
     geo.computeBoundingSphere();
     return geo;
+}
+
+const BT_MAX_SLOPE = 0.7;
+const BT_CLAMP_PASSES = 2;
+
+function slopeClampGeometry(pos: THREE.BufferAttribute, segments: number): void {
+    const vpr = segments + 1;
+    for (let pass = 0; pass < BT_CLAMP_PASSES; pass++) {
+        let violations = 0;
+        for (let row = 0; row < vpr; row++) {
+            for (let col = 0; col < vpr; col++) {
+                const i = row * vpr + col;
+                if (col > 0) {
+                    const left = pos.getZ(i - 1);
+                    const diff = pos.getZ(i) - left;
+                    if (Math.abs(diff) > BT_MAX_SLOPE) {
+                        pos.setZ(i, left + Math.sign(diff) * BT_MAX_SLOPE);
+                        violations++;
+                    }
+                }
+                if (row > 0) {
+                    const above = pos.getZ(i - vpr);
+                    const diff = pos.getZ(i) - above;
+                    if (Math.abs(diff) > BT_MAX_SLOPE) {
+                        pos.setZ(i, above + Math.sign(diff) * BT_MAX_SLOPE);
+                        violations++;
+                    }
+                }
+            }
+        }
+        for (let row = vpr - 1; row >= 0; row--) {
+            for (let col = vpr - 1; col >= 0; col--) {
+                const i = row * vpr + col;
+                if (col < vpr - 1) {
+                    const right = pos.getZ(i + 1);
+                    const diff = pos.getZ(i) - right;
+                    if (Math.abs(diff) > BT_MAX_SLOPE) {
+                        pos.setZ(i, right + Math.sign(diff) * BT_MAX_SLOPE);
+                        violations++;
+                    }
+                }
+                if (row < vpr - 1) {
+                    const below = pos.getZ(i + vpr);
+                    const diff = pos.getZ(i) - below;
+                    if (Math.abs(diff) > BT_MAX_SLOPE) {
+                        pos.setZ(i, below + Math.sign(diff) * BT_MAX_SLOPE);
+                        violations++;
+                    }
+                }
+            }
+        }
+        if (violations === 0) break;
+    }
 }
 
 type Peak = { px: number; pz: number; amp: number; spread: number };

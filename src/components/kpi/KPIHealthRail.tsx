@@ -8,9 +8,8 @@
 import React, { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { PositionKpis } from "@/pages/position/overlays/positionState";
-import { useSelectSimulationKpis } from "@/selectors/simulationKpiSelector";
 import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping";
-import { KPI_ZONE_MAP, KPI_STRESS_PROMPTS } from "@/domain/intelligence/kpiZoneMapping";
+import { KPI_ZONE_MAP, KPI_STRESS_PROMPTS, KPI_CATEGORY_COLORS } from "@/domain/intelligence/kpiZoneMapping";
 import { getKpiCommentary } from "@/domain/intelligence/kpiCommentary";
 import styles from "./KPIHealthRail.module.css";
 
@@ -416,7 +415,6 @@ export interface KPIHealthRailProps {
 
 interface KpiCardDef {
   key: KpiKey;
-  labelCls: string;
   label: string;
   getValue: (k: PositionKpis) => string;
   widget: React.ReactNode;
@@ -444,14 +442,16 @@ function KpiCard({
   onStressTest: (key: KpiKey) => void;
 }) {
   const zone = KPI_ZONE_MAP[def.key];
+  const kpiColor = KPI_CATEGORY_COLORS[def.key].hex;
   return (
     <div
       className={`${styles.card} ${isActive ? styles.cardActive : ""}`}
       onMouseEnter={() => onHover(def.key)}
       onMouseLeave={() => onHover(null)}
       data-kpi={def.key}
+      style={{ "--kpi-color": kpiColor } as React.CSSProperties}
     >
-      <div className={`${styles.label} ${def.labelCls}`}>
+      <div className={styles.label} style={{ color: kpiColor }}>
         {def.label}
         {isRevealed && (
           <span style={{ marginLeft: 6, fontSize: 10, opacity: 0.5, color: "#34d399" }} aria-label="Revealed">✓</span>
@@ -478,8 +478,9 @@ function KpiCard({
 }
 
 const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, onFocusKpi, revealedKpis }) => {
-  const simKpis = useSelectSimulationKpis();
-  const k = simKpis ?? kpis;
+  // HARD RULE: always use the KPIs prop passed from the parent (baseline-derived).
+  // Never override with simulation KPIs — the box values must match Initiate inputs.
+  const k = kpis;
   const navigate = useNavigate();
   const railRef = useRef<HTMLDivElement>(null);
 
@@ -534,7 +535,6 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, on
   const CARDS: KpiCardDef[] = useMemo(() => [
     {
       key: "cash" as KpiKey,
-      labelCls: styles.labelCapital,
       label: "Cash",
       getValue: (kk) => `$${fmtMoney(kk.cashOnHand)}`,
       widget: <CashWidget />,
@@ -542,7 +542,6 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, on
     },
     {
       key: "runway" as KpiKey,
-      labelCls: styles.labelCapital,
       label: "Runway",
       getValue: (kk) => Number.isFinite(kk.runwayMonths) ? `${kk.runwayMonths.toFixed(1)}m` : "—",
       widget: <RunwayWidget />,
@@ -550,7 +549,6 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, on
     },
     {
       key: "growth" as KpiKey,
-      labelCls: styles.labelPerf,
       label: "Growth Rate",
       getValue: (kk) => `${(kk.growthRatePct ?? 0).toFixed(1)}%`,
       widget: <GrowthWidget />,
@@ -558,7 +556,6 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, on
     },
     {
       key: "arr" as KpiKey,
-      labelCls: styles.labelPerf,
       label: "ARR",
       getValue: (kk) => `$${fmtMoney(kk.arr)}`,
       widget: <ArrWidget />,
@@ -566,7 +563,6 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, on
     },
     {
       key: "revenue" as KpiKey,
-      labelCls: styles.labelPerf,
       label: "Revenue",
       getValue: (kk) => `$${fmtMoney(kk.revenueMonthly)}`,
       widget: <RevenueWidget />,
@@ -574,7 +570,6 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, on
     },
     {
       key: "burn" as KpiKey,
-      labelCls: styles.labelEfficiency,
       label: "Burn",
       getValue: (kk) => `$${fmtMoney(kk.burnMonthly)}`,
       widget: <BurnWidget />,
@@ -582,7 +577,6 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, on
     },
     {
       key: "churn" as KpiKey,
-      labelCls: styles.labelEfficiency,
       label: "Churn",
       getValue: (kk) => `${(kk.churnPct ?? 0).toFixed(1)}%`,
       widget: <ChurnWidget />,
@@ -590,7 +584,6 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, on
     },
     {
       key: "grossMargin" as KpiKey,
-      labelCls: styles.labelEfficiency,
       label: "Gross Margin",
       getValue: (kk) => fmtPct(kk.grossMarginPct),
       widget: <GrossMarginWidget />,
@@ -598,7 +591,6 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, on
     },
     {
       key: "efficiency" as KpiKey,
-      labelCls: styles.labelEfficiency,
       label: "Efficiency",
       getValue: (kk) => {
         const eff = kk.efficiencyRatio ?? 0
@@ -609,7 +601,6 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, on
     },
     {
       key: "headcount" as KpiKey,
-      labelCls: styles.labelEfficiency,
       label: "Headcount",
       getValue: (kk) => {
         const hc = kk.headcount ?? 0
@@ -620,7 +611,6 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, on
     },
     {
       key: "nrr" as KpiKey,
-      labelCls: styles.labelPerf,
       label: "NRR",
       getValue: (kk) => {
         const n = kk.nrrPct ?? 0
@@ -631,7 +621,6 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, on
     },
     {
       key: "enterpriseValue" as KpiKey,
-      labelCls: styles.labelValuation,
       label: "Enterprise Value",
       getValue: (kk) => kk.valuationEstimate > 0 ? `$${fmtMoney(kk.valuationEstimate)}` : "$ —",
       widget: <ValuationWidget />,

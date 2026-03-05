@@ -23,7 +23,6 @@ import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
 import PositionExecSummary from "@/components/position/PositionExecSummary"
 import SystemProbabilityNotice from "@/components/system/ProbabilityNotice"
 import { selectTerrainMetrics } from "@/selectors/terrainSelectors"
-import { useSelectSimulationKpis } from "@/selectors/simulationKpiSelector"
 import IdleMotionLayer from "./IdleMotionLayer"
 import {
   buildPositionViewModel,
@@ -47,16 +46,11 @@ export default function PositionPage() {
   const [terrainTuning, setTerrainTuning] = useState<TerrainTuningParams>({ ...DEFAULT_TUNING })
   const viewportRef = useRef<HTMLDivElement>(null)
   const [focusedKpi, setFocusedKpi] = useState<KpiKey | null>(null)
-  const [revealedKpis, setRevealedKpis] = useState<Set<KpiKey>>(new Set())
+  const [revealedKpis] = useState<Set<KpiKey>>(() => new Set(ALL_KPI_KEYS))
+  const [showKpiMarkers, setShowKpiMarkers] = useState(true)
+  const [audioEnabled, setAudioEnabled] = useState(false)
 
-  // Add focused KPI to revealed set (audio wired below after liveKpis)
   const prevFocusedRef = useRef<KpiKey | null>(null)
-  useEffect(() => {
-    if (focusedKpi && !revealedKpis.has(focusedKpi)) {
-      setRevealedKpis((prev) => new Set(prev).add(focusedKpi))
-    }
-    prevFocusedRef.current = focusedKpi
-  }, [focusedKpi])
 
   // ── ResizeObserver: update Three.js renderer when right rail expands/collapses ──
   useEffect(() => {
@@ -206,17 +200,21 @@ export default function PositionPage() {
     return buildPositionViewModel(baselineV1Raw, { riskIndexFromEngine: null })
   }, [baselineV1Raw])
 
-  // ── Live KPIs: simulation selector (single source), baseline fallback ──
-  const simKpis = useSelectSimulationKpis()
-  const liveKpis = useMemo(() => simKpis ?? vm?.kpis ?? null, [simKpis, vm?.kpis])
+  // ── Live KPIs: HARD RULE — always derived from baseline (Initiate inputs).
+  // KPI box values must always correspond 1-to-1 with the Initiate page entries.
+  // Simulation results drive terrain shape and scenarios, NOT the KPI display.
+  const liveKpis = useMemo(() => vm?.kpis ?? null, [vm?.kpis])
 
-  // KPI zone audio: auto-narrate when a new zone is revealed
   const { speak: speakKpi, stop: stopKpi } = useKpiAudio(liveKpis)
   useEffect(() => {
-    if (focusedKpi && prevFocusedRef.current !== focusedKpi) {
+    if (audioEnabled && focusedKpi && prevFocusedRef.current !== focusedKpi) {
       speakKpi(focusedKpi)
     }
-  }, [focusedKpi, speakKpi])
+    prevFocusedRef.current = focusedKpi
+  }, [focusedKpi, speakKpi, audioEnabled])
+  useEffect(() => {
+    if (!audioEnabled) stopKpi()
+  }, [audioEnabled, stopKpi])
   useEffect(() => () => { stopKpi() }, [stopKpi])
 
   // Auto-rotation: faster during build, near-still after all revealed
@@ -353,7 +351,9 @@ export default function PositionPage() {
               cameraPreset={POSITION_PROGRESSIVE_PRESET}
               autoRotateSpeed={autoRotateSpeed}
               showDependencyLines
+              showKpiMarkers={showKpiMarkers}
               hideMarkers
+              tuning={terrainTuning}
               terrainMetrics={{
                 ...(terrainMetrics ?? {
                   elevationScale: 1,
@@ -384,6 +384,53 @@ export default function PositionPage() {
               <div key={rippleKey} className={styles.terrainRipple} aria-hidden="true" />
             )}
             <TerrainTuningPanel params={terrainTuning} onChange={setTerrainTuning} />
+            <button
+              onClick={() => setShowKpiMarkers(v => !v)}
+              title={showKpiMarkers ? "Hide KPI markers" : "Show KPI markers"}
+              style={{
+                position: "absolute", top: 16, right: 60, zIndex: 100,
+                width: 36, height: 36, borderRadius: 8,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                background: showKpiMarkers ? "rgba(34,211,238,0.12)" : "rgba(14,22,36,0.72)",
+                backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+                border: `1px solid ${showKpiMarkers ? "rgba(34,211,238,0.35)" : "rgba(100,180,255,0.15)"}`,
+                color: showKpiMarkers ? "#22d3ee" : "#6BB8FF",
+                cursor: "pointer", fontSize: 14, outline: "none", padding: 0,
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+            </button>
+            <button
+              onClick={() => setAudioEnabled(v => !v)}
+              title={audioEnabled ? "Mute voice narration" : "Enable voice narration"}
+              style={{
+                position: "absolute", top: 16, right: 104, zIndex: 100,
+                width: 36, height: 36, borderRadius: 8,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                background: audioEnabled ? "rgba(34,211,238,0.12)" : "rgba(14,22,36,0.72)",
+                backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+                border: `1px solid ${audioEnabled ? "rgba(34,211,238,0.35)" : "rgba(100,180,255,0.15)"}`,
+                color: audioEnabled ? "#22d3ee" : "#6BB8FF",
+                cursor: "pointer", fontSize: 14, outline: "none", padding: 0,
+              }}
+            >
+              {audioEnabled ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <line x1="23" y1="9" x2="17" y2="15" />
+                  <line x1="17" y1="9" x2="23" y2="15" />
+                </svg>
+              )}
+            </button>
             <TerrainNavWidget />
           </div>
         </div>

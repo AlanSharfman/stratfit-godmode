@@ -100,32 +100,33 @@ export function selectPositionKpis(
   const burnMonthly = simulationKpis.monthlyBurn
   const cashOnHand = simulationKpis.cash
   const revenueMonthly = simulationKpis.revenue
-  const grossMarginPct = simulationKpis.grossMargin
 
-  // Runway: from engine or derived
+  // grossMargin/growthRate/churnRate may be stored as decimals (0–1) or percentages (0–100).
+  // Normalise: if value <= 1, treat as decimal and multiply by 100 to get percentage.
+  const toPercent = (v: number) => Math.abs(v) <= 1 && v !== 0 ? v * 100 : v
+  const grossMarginPct = toPercent(simulationKpis.grossMargin)
+
   const runwayMonths = simulationKpis.runway != null && Number.isFinite(simulationKpis.runway)
     ? simulationKpis.runway
     : (burnMonthly > 0 ? cashOnHand / burnMonthly : 999)
 
-  // EBITDA monthly: gross profit − implied opex (approximate from burn - gross profit remainder)
   const grossProfitMonthly = revenueMonthly * Math.min(grossMarginPct / 100, 1)
   const ebitdaMonthly = grossProfitMonthly - (burnMonthly - grossProfitMonthly > 0 ? burnMonthly - grossProfitMonthly : 0)
 
-  // Risk index — prefer explicit override (engine-computed), fall back to canonical selector
   const riskIndex = typeof riskScoreOverride === "number" ? riskScoreOverride : selectRiskScore(simulationKpis)
 
-  // Survival score: same blend as buildPositionViewModel
   const survivalScore = clamp01(Math.round((riskIndex * 0.6) + (Math.min(runwayMonths, 24) / 24) * 40), 0, 100)
 
-  // Valuation: sourced from engine, not UI heuristic (zeroed until engine provides it)
-  const valuationEstimate = 0
+  // Valuation heuristic: ARR × growth-implied revenue multiple (standard SaaS methodology)
+  const growthRatePct = toPercent(simulationKpis.growthRate ?? 0)
+  const growthMultiple = Math.max(1, Math.min(20, 3 + (growthRatePct / 10)))
+  const valuationEstimate = arr > 0 ? arr * growthMultiple : 0
 
-  const growthRatePct = simulationKpis.growthRate ?? 0
-  const churnPct = simulationKpis.churnRate ?? 0
+  const churnPct = toPercent(simulationKpis.churnRate ?? 0)
   const headcount = simulationKpis.headcount ?? 1
   const efficiencyRatio = headcount > 0 ? (revenueMonthly * 12) / headcount : 0
 
-  const nrrPct = (simulationKpis as any).nrrPct ?? 100
+  const nrrPct = (simulationKpis as any).nrrPct ?? (churnPct > 0 ? Math.max(60, 100 - churnPct * 0.8) : 100)
 
   return {
     arr,
