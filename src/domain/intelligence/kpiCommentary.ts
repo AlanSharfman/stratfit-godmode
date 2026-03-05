@@ -138,8 +138,6 @@ const COMMENTARY: Record<KpiKey, (k: PositionKpis) => string> = {
   churn:           churnCommentary,
   grossMargin:     grossMarginCommentary,
   headcount:       headcountCommentary,
-  nrr:             nrrCommentary,
-  efficiency:      efficiencyCommentary,
   enterpriseValue: valuationCommentary,
 }
 

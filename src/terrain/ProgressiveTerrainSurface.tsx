@@ -11,8 +11,9 @@ import { useRenderFlagsStore } from "@/state/renderFlagsStore"
 import { baselineSeedString, createSeed } from "@/terrain/seed"
 import { TERRAIN_CONSTANTS } from "@/terrain/terrainConstants"
 import { createTerrainSolidMaterial, createTerrainWireMaterial } from "@/terrain/terrainMaterials"
+import TerrainTrees from "@/terrain/TerrainTrees"
 import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
-import { KPI_KEYS, KPI_ZONE_MAP, HEALTH_ELEVATION, getHealthLevel, getHealthColor } from "@/domain/intelligence/kpiZoneMapping"
+import { KPI_KEYS, KPI_ZONE_MAP, HEALTH_ELEVATION, getHealthLevel, getHealthColor, PRIMARY_KPI_KEYS, PRIMARY_ANCHOR_POSITIONS } from "@/domain/intelligence/kpiZoneMapping"
 import type { PositionKpis } from "@/pages/position/overlays/positionState"
 import type { PropagationResult } from "@/engine/kpiDependencyGraph"
 import type { TerrainTuningParams } from "@/terrain/terrainTuning"
@@ -22,6 +23,7 @@ export type ProgressiveTerrainHandle = {
   seed: number
   solidMesh: THREE.Mesh | null
   latticeMesh: THREE.Mesh | null
+  heightfield: Float32Array | null
 }
 
 export interface CascadeImpulse {
@@ -44,24 +46,24 @@ interface Props {
 const SEGMENTS = 220
 const LERP_SPEED = 2.5
 
-const BASELINE_RIDGE_HEIGHT = 28
-const BASELINE_RIDGE_WIDTH = 0.18
-const BASELINE_PEAK_COUNT = 7
-const BASELINE_PEAK_AMP_MIN = 10
-const BASELINE_PEAK_AMP_MAX = 28
-const BASELINE_PEAK_SPREAD_MIN = 0.07
-const BASELINE_PEAK_SPREAD_MAX = 0.16
+const BASELINE_RIDGE_HEIGHT = 26
+const BASELINE_RIDGE_WIDTH = 0.22
+const BASELINE_PEAK_COUNT = 11
+const BASELINE_PEAK_AMP_MIN = 8
+const BASELINE_PEAK_AMP_MAX = 30
+const BASELINE_PEAK_SPREAD_MIN = 0.06
+const BASELINE_PEAK_SPREAD_MAX = 0.20
 
-const KPI_PEAK_HEIGHT = 45
+const KPI_PEAK_HEIGHT = 42
 const NOISE_AMP = 0.10
 
-const MAX_SLOPE = 0.65
-const SLOPE_CLAMP_PASSES = 3
-const BROAD_SMOOTH_PASSES = 2
-const BROAD_SMOOTH_STRENGTH = 0.12
-const DETAIL_SMOOTH_PASSES = 1
-const DETAIL_SMOOTH_THRESHOLD = 1.8
-const KPI_BLEND_WIDTH = 0.065
+const MAX_SLOPE = 0.48
+const SLOPE_CLAMP_PASSES = 4
+const BROAD_SMOOTH_PASSES = 3
+const BROAD_SMOOTH_STRENGTH = 0.18
+const DETAIL_SMOOTH_PASSES = 2
+const DETAIL_SMOOTH_THRESHOLD = 1.2
+const KPI_BLEND_WIDTH = 0.075
 
 const HIGHLIGHT_OPACITY = 0.35
 const HIGHLIGHT_FADE = 4.0
@@ -87,16 +89,42 @@ function pseudoNoise(x: number, z: number, seed: number): number {
   return s - Math.floor(s)
 }
 
+function valueNoise(x: number, z: number, seed: number): number {
+  const ix = Math.floor(x), iz = Math.floor(z)
+  const fx = x - ix, fz = z - iz
+  const u = fx * fx * (3 - 2 * fx), v = fz * fz * (3 - 2 * fz)
+  const a = pseudoNoise(ix, iz, seed)
+  const b = pseudoNoise(ix + 1, iz, seed)
+  const c = pseudoNoise(ix, iz + 1, seed)
+  const d = pseudoNoise(ix + 1, iz + 1, seed)
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v
+}
+
 function fbmNoise(x: number, z: number, seed: number, octaves = 4): number {
   let value = 0
   let amplitude = 1
   let frequency = 1
   let maxAmp = 0
   for (let i = 0; i < octaves; i++) {
-    value += (pseudoNoise(x * frequency, z * frequency, seed + i * 97.13) * 2 - 1) * amplitude
+    value += (valueNoise(x * frequency, z * frequency, seed + i * 97.13) * 2 - 1) * amplitude
     maxAmp += amplitude
-    amplitude *= 0.45
-    frequency *= 2.1
+    amplitude *= 0.48
+    frequency *= 2.05
+  }
+  return value / maxAmp
+}
+
+function ridgedNoise(x: number, z: number, seed: number, octaves = 4): number {
+  let value = 0
+  let amplitude = 1
+  let frequency = 1
+  let maxAmp = 0
+  for (let i = 0; i < octaves; i++) {
+    const n = valueNoise(x * frequency, z * frequency, seed + i * 131.7)
+    value += (1 - Math.abs(n * 2 - 1)) * amplitude
+    maxAmp += amplitude
+    amplitude *= 0.5
+    frequency *= 2.2
   }
   return value / maxAmp
 }
@@ -119,12 +147,52 @@ interface SeedPeak {
 
 function buildSeedPeaks(seed: number): SeedPeak[] {
   const rand = mulberry32(seed)
-  return Array.from({ length: BASELINE_PEAK_COUNT }, () => ({
-    x: 0.1 + rand() * 0.8,
-    z: 0.15 + rand() * 0.7,
-    amp: BASELINE_PEAK_AMP_MIN + rand() * (BASELINE_PEAK_AMP_MAX - BASELINE_PEAK_AMP_MIN),
-    spread: BASELINE_PEAK_SPREAD_MIN + rand() * (BASELINE_PEAK_SPREAD_MAX - BASELINE_PEAK_SPREAD_MIN),
-  }))
+  const peaks: SeedPeak[] = []
+
+  // Primary peaks — the main mountain massifs
+  for (let i = 0; i < BASELINE_PEAK_COUNT; i++) {
+    const x = 0.08 + rand() * 0.84
+    const z = 0.12 + rand() * 0.76
+    const amp = BASELINE_PEAK_AMP_MIN + rand() * (BASELINE_PEAK_AMP_MAX - BASELINE_PEAK_AMP_MIN)
+    const spread = BASELINE_PEAK_SPREAD_MIN + rand() * (BASELINE_PEAK_SPREAD_MAX - BASELINE_PEAK_SPREAD_MIN)
+    peaks.push({ x, z, amp, spread })
+
+    // Companion foothills near primary peaks
+    if (rand() > 0.35) {
+      const footX = x + (rand() - 0.5) * 0.16
+      const footZ = z + (rand() - 0.5) * 0.16
+      peaks.push({
+        x: Math.max(0.04, Math.min(0.96, footX)),
+        z: Math.max(0.04, Math.min(0.96, footZ)),
+        amp: amp * (0.2 + rand() * 0.35),
+        spread: spread * (1.4 + rand() * 0.9),
+      })
+    }
+  }
+
+  // Scattered small hillocks — random minor bumps across the landscape
+  const hillockCount = 8 + Math.floor(rand() * 6)
+  for (let i = 0; i < hillockCount; i++) {
+    peaks.push({
+      x: 0.03 + rand() * 0.94,
+      z: 0.03 + rand() * 0.94,
+      amp: 2 + rand() * 7,
+      spread: 0.04 + rand() * 0.10,
+    })
+  }
+
+  // Depressions / valleys — negative amplitude Gaussians carve basins
+  const valleyCount = 3 + Math.floor(rand() * 4)
+  for (let i = 0; i < valleyCount; i++) {
+    peaks.push({
+      x: 0.10 + rand() * 0.80,
+      z: 0.10 + rand() * 0.80,
+      amp: -(3 + rand() * 8),
+      spread: 0.08 + rand() * 0.14,
+    })
+  }
+
+  return peaks
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -156,15 +224,24 @@ function baselineTerrainHeight(
 ): number {
   const freqScale = 0.5 + t.noiseFrequency * 0.8
 
-  // Central ridge running along X at Z = 0.5
-  const ridgeDist = nz - 0.5
+  // Main spine ridge running along X near Z = 0.5 with gentle wander
+  const ridgeCenter = 0.5 + Math.sin(nx * Math.PI * 2.5 + seed * 0.07) * 0.06
+  const ridgeDist = nz - ridgeCenter
   const ridgeProfile = Math.exp(
     -(ridgeDist * ridgeDist) / (BASELINE_RIDGE_WIDTH * BASELINE_RIDGE_WIDTH),
   )
-  const ridgeUndulation = 0.65 + 0.35 * Math.sin(nx * Math.PI * 3.0 * freqScale + seed * 0.13)
+  const ridgeUndulation = 0.55 + 0.45 * Math.sin(nx * Math.PI * 3.0 * freqScale + seed * 0.13)
   const ridge = BASELINE_RIDGE_HEIGHT * ridgeProfile * ridgeUndulation * (t.ridgeIntensity * 2)
 
-  // Seed-driven peaks (Gaussian bumps) — softened by peakSoftness
+  // Secondary spur ridges branching from the spine
+  const spur1Dist = nz - (0.35 + Math.sin(nx * Math.PI * 4 + seed * 1.3) * 0.05)
+  const spur1 = 8 * Math.exp(-(spur1Dist * spur1Dist) / 0.025) *
+    smoothstep(0.2, 0.45, nx) * smoothstep(0.8, 0.55, nx) * t.ridgeIntensity * 2
+  const spur2Dist = nz - (0.65 + Math.cos(nx * Math.PI * 3.5 + seed * 0.9) * 0.04)
+  const spur2 = 6 * Math.exp(-(spur2Dist * spur2Dist) / 0.02) *
+    smoothstep(0.3, 0.55, nx) * smoothstep(0.9, 0.65, nx) * t.ridgeIntensity * 2
+
+  // Seed-driven peaks (Gaussian bumps) with natural overlap
   let peakContrib = 0
   const peakDamp = 1.0 - t.peakSoftness * 0.45
   for (const p of peaks) {
@@ -174,26 +251,29 @@ function baselineTerrainHeight(
     peakContrib += p.amp * Math.exp(-d2) * peakDamp
   }
 
-  // Multi-octave FBM detail — adds natural roughness
-  const roughAmp = 0.4 + t.roughness * 1.2
-  const detailNoise = fbmNoise(nx * 6 * freqScale, nz * 6 * freqScale, seed, 5) * 5.0 * roughAmp
-  const microNoise = fbmNoise(nx * 14 * freqScale, nz * 14 * freqScale, seed + 37, 3) * 2.0 * (t.microDetail * 2.8)
+  // Ridged noise for realistic craggy ridgeline features
+  const ridgedDetail = ridgedNoise(nx * 5 * freqScale, nz * 5 * freqScale, seed + 7, 4) * 6.0 * (0.3 + t.roughness * 0.8)
 
-  // Broad low-frequency terrain shaping — drives valleys and rises
+  // FBM for general terrain texture
+  const roughAmp = 0.3 + t.roughness * 1.0
+  const detailNoise = fbmNoise(nx * 7 * freqScale, nz * 7 * freqScale, seed, 5) * 4.0 * roughAmp
+  const microNoise = fbmNoise(nx * 16 * freqScale, nz * 16 * freqScale, seed + 37, 3) * 1.5 * (t.microDetail * 2.5)
+
+  // Broad terrain undulation — wide gentle valleys and rises
   const valleyAmp = 0.5 + t.valleyDepth
   const broadWave =
-    Math.sin(nx * Math.PI * 1.5 * freqScale + seed * 0.02) * 5.0 * valleyAmp +
-    Math.cos(nz * Math.PI * 2.0 * freqScale - seed * 0.015) * 4.0 * valleyAmp
+    Math.sin(nx * Math.PI * 1.3 * freqScale + seed * 0.02) * 4.5 * valleyAmp +
+    Math.cos(nz * Math.PI * 1.8 * freqScale - seed * 0.015) * 3.5 * valleyAmp
 
-  // Edge falloff — terrain tapers at boundaries
+  // Edge falloff — gradual taper so terrain blends into background
   const edgeFade = Math.min(
-    smoothstep(0, 0.1, nx),
-    smoothstep(1, 0.9, nx),
-    smoothstep(0, 0.1, nz),
-    smoothstep(1, 0.9, nz),
+    smoothstep(0, 0.22, nx),
+    smoothstep(1, 0.78, nx),
+    smoothstep(0, 0.16, nz),
+    smoothstep(1, 0.84, nz),
   )
 
-  const raw = (ridge + peakContrib + detailNoise + microNoise + broadWave) * t.elevationScale
+  const raw = (ridge + spur1 + spur2 + peakContrib + ridgedDetail + detailNoise + microNoise + broadWave) * t.elevationScale
   return raw * edgeFade - 2.0
 }
 
@@ -310,12 +390,42 @@ function stabilizeHeightfield(hf: Float32Array, vpr: number): void {
         const c = tmp[i]
         const avg4 = (tmp[i - 1] + tmp[i + 1] + tmp[i - vpr] + tmp[i + vpr]) * 0.25
         const curvature = Math.abs(c - avg4)
-        // High curvature (cliff-like) → aggressive smooth
-        // Low curvature (gentle slope/ridge) → near-zero smooth
         const s = curvature > DETAIL_SMOOTH_THRESHOLD
           ? 0.35
           : curvature > 0.4 ? 0.12 : 0.02
         hf[i] = c * (1 - s) + avg4 * s
+      }
+    }
+  }
+
+  // ── Step 4: Peak and valley rounding ─────────────────────────────────
+  // Redistribute single-vertex extrema so peaks/troughs have natural mass.
+  // Uses a 3×3 neighbourhood: if centre is a local max/min that exceeds
+  // neighbours by more than a threshold, blend it toward the average.
+  const PEAK_ROUND_THRESHOLD = 1.6
+  const PEAK_ROUND_STRENGTH = 0.3
+  tmp.set(hf)
+  for (let row = 1; row < vpr - 1; row++) {
+    for (let col = 1; col < vpr - 1; col++) {
+      const i = row * vpr + col
+      const c = tmp[i]
+      const n = [
+        tmp[i - 1], tmp[i + 1], tmp[i - vpr], tmp[i + vpr],
+        tmp[i - vpr - 1], tmp[i - vpr + 1], tmp[i + vpr - 1], tmp[i + vpr + 1],
+      ]
+      let nMax = -Infinity, nMin = Infinity, nSum = 0
+      for (let k = 0; k < 8; k++) {
+        if (n[k] > nMax) nMax = n[k]
+        if (n[k] < nMin) nMin = n[k]
+        nSum += n[k]
+      }
+      const nAvg = nSum / 8
+      const excessAbove = c - nMax
+      const excessBelow = nMin - c
+      if (excessAbove > PEAK_ROUND_THRESHOLD) {
+        hf[i] = c * (1 - PEAK_ROUND_STRENGTH) + nAvg * PEAK_ROUND_STRENGTH
+      } else if (excessBelow > PEAK_ROUND_THRESHOLD) {
+        hf[i] = c * (1 - PEAK_ROUND_STRENGTH) + nAvg * PEAK_ROUND_STRENGTH
       }
     }
   }
@@ -355,59 +465,44 @@ function buildStabilizedHeightfield(
     }
   }
 
-  // Phase 2: KPI zone elevation overlay with wide seam blending
+  // Phase 2: 6-anchor KPI elevation model
+  // Each primary KPI acts as a terrain anchor with Gaussian falloff.
+  // Healthy anchors raise the terrain (peaks/ridges), critical anchors lower it (valleys).
+  // Gaussians overlap naturally, producing smooth cubic-like transitions.
   if (kpis) {
-    const zoneElevations = new Map<KpiKey, number>()
-    for (const key of KPI_KEYS) {
-      zoneElevations.set(key, HEALTH_ELEVATION[getHealthLevel(key, kpis)])
+    const anchors: { cx: number; spread: number; elev: number }[] = []
+    for (const key of PRIMARY_KPI_KEYS) {
+      const pos = PRIMARY_ANCHOR_POSITIONS.get(key)
+      if (!pos) continue
+      const healthElev = HEALTH_ELEVATION[getHealthLevel(key, kpis)]
+      anchors.push({ cx: pos.cx, spread: pos.spread, elev: healthElev })
     }
 
-    // Build mountain-feature mask: how much KPI overlay affects each vertex
-    // Uses wide smoothstep blending at zone boundaries to prevent seams
     for (let row = 0; row < vpr; row++) {
       for (let col = 0; col < vpr; col++) {
         const i = row * vpr + col
         const nx = col / SEGMENTS
         const nz = row / SEGMENTS
 
-        let kpiHeight = 0
+        // Z-axis falloff: full influence at centre, fades toward front/back edges
+        const zDist = Math.abs(nz - 0.5)
+        const zFalloff = smoothstep(1, 0, zDist / 0.48)
+
+        let totalHeight = 0
         let totalWeight = 0
 
-        for (const key of KPI_KEYS) {
-          const elevFactor = zoneElevations.get(key)!
-          const zone = KPI_ZONE_MAP[key]
+        for (const a of anchors) {
+          const dx = nx - a.cx
+          const gWeight = Math.exp(-(dx * dx) / (a.spread * a.spread))
+          if (gWeight < 0.005) continue
 
-          // Wide blend across zone boundaries — prevents curtain ridges
-          let weight = 0
-          if (nx >= zone.xStart && nx <= zone.xEnd) {
-            weight = 1.0
-            const dLeft = nx - zone.xStart
-            const dRight = zone.xEnd - nx
-            if (dLeft < KPI_BLEND_WIDTH) weight *= smoothstep(0, KPI_BLEND_WIDTH, dLeft)
-            if (dRight < KPI_BLEND_WIDTH) weight *= smoothstep(0, KPI_BLEND_WIDTH, dRight)
-          } else {
-            const dToZone = nx < zone.xStart
-              ? zone.xStart - nx
-              : nx - zone.xEnd
-            if (dToZone < KPI_BLEND_WIDTH) {
-              weight = smoothstep(KPI_BLEND_WIDTH, 0, dToZone)
-            }
-          }
-
-          if (weight > 0) {
-            const zCenter = 0.5
-            const zSpread = 0.48
-            const zDist = Math.abs(nz - zCenter)
-            const zFalloff = smoothstep(1, 0, zDist / zSpread)
-
-            const noise = pseudoNoise(nx * 20, nz * 20, seed + col) * NOISE_AMP * KPI_PEAK_HEIGHT
-            kpiHeight += (elevFactor * KPI_PEAK_HEIGHT * zFalloff + noise) * weight
-            totalWeight += weight
-          }
+          const noise = pseudoNoise(nx * 20, nz * 20, seed + col) * NOISE_AMP * KPI_PEAK_HEIGHT
+          totalHeight += (a.elev * KPI_PEAK_HEIGHT * zFalloff + noise) * gWeight
+          totalWeight += gWeight
         }
 
         if (totalWeight > 0) {
-          hf[i] += kpiHeight / Math.max(totalWeight, 1)
+          hf[i] += totalHeight / totalWeight
         }
       }
     }
@@ -415,6 +510,17 @@ function buildStabilizedHeightfield(
 
   // Phase 3: stabilize the COMBINED heightfield (slope clamp + multi-scale smooth)
   stabilizeHeightfield(hf, vpr)
+
+  // Phase 4: micro surface noise — breaks up perfectly smooth faces
+  // Amplitude is tiny (max ±0.15) so peak/valley positions are unchanged.
+  const MICRO_SURFACE_AMP = 0.15
+  for (let row = 0; row < vpr; row++) {
+    for (let col = 0; col < vpr; col++) {
+      const i = row * vpr + col
+      const n = valueNoise(col * 0.8, row * 0.8, seed + 4217) * 2 - 1
+      hf[i] += n * MICRO_SURFACE_AMP
+    }
+  }
 
   return hf
 }
@@ -465,16 +571,18 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
     // Target heights = stabilized heightfield (already clean, no further processing needed)
     const targetHeights = stabilizedHF
 
-    // Highlight geometry for focused KPI zone
+    // Highlight geometry for focused KPI anchor region
     const highlightGeo = useMemo(() => {
       if (!focusedKpi || !kpis) return null
 
-      const zone = KPI_ZONE_MAP[focusedKpi]
+      const anchor = PRIMARY_ANCHOR_POSITIONS.get(focusedKpi)
       const health = getHealthLevel(focusedKpi, kpis)
       const color = getHealthColor(health)
       const pos = geometry.attributes.position as THREE.BufferAttribute
       const count = pos.count
       const vertsPerRow = SEGMENTS + 1
+      const aCx = anchor?.cx ?? 0.5
+      const aSpread = anchor?.spread ?? 0.11
 
       const geo = new THREE.PlaneGeometry(
         TERRAIN_CONSTANTS.width,
@@ -495,14 +603,9 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
 
         if (h < 0.2) continue
 
-        let zoneFactor = 0
-        const edgeFade = 0.03
-        const dLeft = nx - zone.xStart
-        const dRight = zone.xEnd - nx
-        if (dLeft >= 0 && dRight >= 0) {
-          zoneFactor = Math.min(dLeft / edgeFade, dRight / edgeFade, 1.0)
-        }
-        if (zoneFactor <= 0) continue
+        const dx = nx - aCx
+        const zoneFactor = Math.exp(-(dx * dx) / (aSpread * aSpread))
+        if (zoneFactor < 0.05) continue
 
         const heightFactor = Math.min(1, h / 5)
         const intensity = heightFactor * zoneFactor
@@ -621,6 +724,7 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
       seed,
       solidMesh: solidRef.current,
       latticeMesh: latticeRef.current,
+      heightfield: stabilizedHF,
       getHeightAt: (worldX: number, worldZ: number) => {
         const geomX = worldX / 3.0
         const geomZ = worldZ / 2.6
@@ -635,7 +739,7 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
         const h = pos.getZ(idx) ?? 0
         return h * 2.8 + TERRAIN_CONSTANTS.yOffset
       },
-    }), [seed, geometry])
+    }), [seed, geometry, stabilizedHF])
 
     return (
       <>
@@ -676,6 +780,12 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
             />
           </mesh>
         )}
+
+        <TerrainTrees
+          terrainRef={ref as React.RefObject<ProgressiveTerrainHandle>}
+          heightfield={stabilizedHF}
+          seed={seed}
+        />
       </>
     )
   },

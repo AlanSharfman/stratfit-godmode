@@ -5,11 +5,12 @@
   overflow: hidden;
 }
 
-/* ── Command Bar ── */
+/* ── Command Console ── */
 .commandBar {
-  padding: 16px 24px;
-  background: rgba(4, 8, 16, 0.8);
-  border-bottom: 1px solid rgba(34, 211, 238, 0.06);
+  width: 92%;
+  max-width: 1500px;
+  margin: 20px auto 22px;
+  padding: 0;
   display: flex;
   align-items: center;
   gap: 14px;
@@ -18,24 +19,34 @@
 
 .commandInput {
   flex: 1;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(34, 211, 238, 0.12);
-  border-radius: 10px;
-  padding: 14px 20px;
-  color: rgba(200, 220, 240, 0.95);
+  height: 56px;
+  background: #0A1F33;
+  border: 1px solid #1F4A75;
+  border-radius: 12px;
+  padding: 0 20px 0 48px;
+  color: #E6F1FF;
   font-size: 15px;
   font-family: 'Inter', system-ui, sans-serif;
   font-weight: 400;
   outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  transition: background 0.15s, border-color 0.2s, box-shadow 0.2s;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2338BDF8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='4 17 10 11 4 5'/%3E%3Cline x1='12' y1='19' x2='20' y2='19'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 16px center;
+  background-size: 18px 18px;
+}
+
+.commandInput:hover {
+  background: #0D2740;
 }
 
 .commandInput:focus {
-  border-color: rgba(34, 211, 238, 0.35);
-  box-shadow: 0 0 24px rgba(34, 211, 238, 0.08), inset 0 0 12px rgba(34, 211, 238, 0.03);
+  border-color: #38BDF8;
+  box-shadow: 0 0 0 1px #38BDF8, 0 0 20px rgba(56, 189, 248, 0.35);
 }
 
-.commandInput::placeholder { color: rgba(200, 220, 240, 0.25); }
+.commandInput::placeholder { color: #8FB4D9; }
 
 .injectBtn {
   padding: 14px 28px;

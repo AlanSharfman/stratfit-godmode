@@ -16,14 +16,12 @@ export type KpiKey =
   | "churn"
   | "grossMargin"
   | "headcount"
-  | "nrr"
-  | "efficiency"
   | "enterpriseValue"
 
-/** Ordered array of all 12 KPI keys — defines terrain zone order left → right */
+/** Ordered array of all 10 KPI keys — defines terrain zone order left → right */
 export const KPI_KEYS: readonly KpiKey[] = [
   "cash", "runway", "growth", "arr", "revenue", "burn",
-  "churn", "grossMargin", "headcount", "nrr", "efficiency", "enterpriseValue",
+  "churn", "grossMargin", "headcount", "enterpriseValue",
 ] as const
 
 export type HealthLevel = "critical" | "watch" | "healthy" | "strong"
@@ -41,18 +39,16 @@ export interface ZoneDef {
 }
 
 export const KPI_ZONE_MAP: Record<KpiKey, ZoneDef> = {
-  cash:             { xStart: 0.000, xEnd: 0.083, label: "Liquidity Zone",    stationName: "Liquidity Basin" },
-  runway:           { xStart: 0.083, xEnd: 0.167, label: "Runway Horizon",    stationName: "Horizon Shelf" },
-  growth:           { xStart: 0.167, xEnd: 0.250, label: "Growth Gradient",   stationName: "Ascent Ridge" },
-  arr:              { xStart: 0.250, xEnd: 0.333, label: "Revenue Engine",    stationName: "Revenue Spine" },
-  revenue:          { xStart: 0.333, xEnd: 0.417, label: "Revenue Flow",      stationName: "Flow Saddle" },
-  burn:             { xStart: 0.417, xEnd: 0.500, label: "Burn Zone",         stationName: "Furnace Couloir" },
-  churn:            { xStart: 0.500, xEnd: 0.583, label: "Retention Wall",    stationName: "Retention Buttress" },
-  grossMargin:      { xStart: 0.583, xEnd: 0.667, label: "Margin Ridge",      stationName: "Margin Arête" },
-  headcount:        { xStart: 0.667, xEnd: 0.750, label: "Talent Basin",      stationName: "Talent Terrace" },
-  nrr:              { xStart: 0.750, xEnd: 0.833, label: "Expansion Ridge",   stationName: "Expansion Spur" },
-  efficiency:       { xStart: 0.833, xEnd: 0.917, label: "Leverage Plateau",  stationName: "Efficiency Col" },
-  enterpriseValue:  { xStart: 0.917, xEnd: 1.000, label: "Value Summit",      stationName: "Summit Pinnacle" },
+  cash:             { xStart: 0.00, xEnd: 0.10, label: "Liquidity Zone",    stationName: "Liquidity Basin" },
+  runway:           { xStart: 0.10, xEnd: 0.20, label: "Runway Horizon",    stationName: "Horizon Shelf" },
+  growth:           { xStart: 0.20, xEnd: 0.30, label: "Growth Gradient",   stationName: "Ascent Ridge" },
+  arr:              { xStart: 0.30, xEnd: 0.40, label: "Revenue Engine",    stationName: "Revenue Spine" },
+  revenue:          { xStart: 0.40, xEnd: 0.50, label: "Revenue Flow",      stationName: "Flow Saddle" },
+  burn:             { xStart: 0.50, xEnd: 0.60, label: "Burn Zone",         stationName: "Furnace Couloir" },
+  churn:            { xStart: 0.60, xEnd: 0.70, label: "Retention Wall",    stationName: "Retention Buttress" },
+  grossMargin:      { xStart: 0.70, xEnd: 0.80, label: "Margin Ridge",      stationName: "Margin Arête" },
+  headcount:        { xStart: 0.80, xEnd: 0.90, label: "Talent Basin",      stationName: "Talent Terrace" },
+  enterpriseValue:  { xStart: 0.90, xEnd: 1.00, label: "Value Summit",      stationName: "Summit Pinnacle" },
 }
 
 /** Height multiplier per health level — drives progressive terrain elevation.
@@ -115,20 +111,6 @@ export function getHealthLevel(key: KpiKey, kpis: PositionKpis): HealthLevel {
       if (hc < 50) return "healthy"
       return "strong"
     }
-    case "nrr": {
-      const n = kpis.nrrPct ?? 100
-      if (n < 80) return "critical"
-      if (n < 100) return "watch"
-      if (n < 120) return "healthy"
-      return "strong"
-    }
-    case "efficiency": {
-      const eff = kpis.efficiencyRatio ?? 0
-      if (eff < 0.3) return "critical"
-      if (eff < 0.6) return "watch"
-      if (eff < 1.0) return "healthy"
-      return "strong"
-    }
     case "enterpriseValue":
       if (kpis.valuationEstimate < 1_000_000) return "watch"
       if (kpis.valuationEstimate < 5_000_000) return "healthy"
@@ -170,10 +152,51 @@ export const KPI_CATEGORY_COLORS: Record<KpiKey, { hex: string; r: number; g: nu
   churn:           { hex: "#2dd4bf", r: 0.176, g: 0.831, b: 0.749 },   // turquoise
   grossMargin:     { hex: "#22d3ee", r: 0.133, g: 0.827, b: 0.933 },   // cyan
   headcount:       { hex: "#7dd3fc", r: 0.490, g: 0.827, b: 0.988 },   // light blue
-  nrr:             { hex: "#c0c0c0", r: 0.753, g: 0.753, b: 0.753 },   // silver
-  efficiency:      { hex: "#c4a882", r: 0.769, g: 0.659, b: 0.510 },   // light brown
   enterpriseValue: { hex: "#1e7eaa", r: 0.118, g: 0.494, b: 0.667 },   // dark azure
 }
+
+/* ─────────────────────────────────────────────────────────────────
+   PRIMARY / SECONDARY KPI HIERARCHY
+   Single source of truth for Position UI display grouping.
+   • Primary KPIs appear in the top bar and left rail as first-class cards.
+   • Secondary KPIs are accessible via drilldown from their parent primary.
+   To promote/demote a KPI, move its key between these two structures.
+   ───────────────────────────────────────────────────────────────── */
+
+export interface PrimaryKpiDef {
+  key: KpiKey
+  label: string
+  secondaries: { key: KpiKey; label: string }[]
+}
+
+export const PRIMARY_KPI_HIERARCHY: PrimaryKpiDef[] = [
+  { key: "cash",            label: "Liquidity",  secondaries: [] },
+  { key: "runway",          label: "Runway",     secondaries: [] },
+  { key: "growth",          label: "Growth",     secondaries: [{ key: "arr", label: "ARR" }] },
+  { key: "revenue",         label: "Revenue",    secondaries: [{ key: "grossMargin", label: "Gross Margin" }] },
+  { key: "burn",            label: "Burn",       secondaries: [{ key: "churn", label: "Retention" }, { key: "headcount", label: "Talent" }] },
+  { key: "enterpriseValue", label: "Value",      secondaries: [] },
+]
+
+export const PRIMARY_KPI_KEYS: readonly KpiKey[] =
+  PRIMARY_KPI_HIERARCHY.map(p => p.key)
+
+export const SECONDARY_KPI_KEYS: readonly KpiKey[] =
+  PRIMARY_KPI_HIERARCHY.flatMap(p => p.secondaries.map(s => s.key))
+
+/**
+ * Terrain anchor positions for the 6 primary KPIs.
+ * cx = normalised X centre (0–1), spread = Gaussian sigma.
+ * Used by terrain heightfield generation and KPI marker placement.
+ */
+export const PRIMARY_ANCHOR_POSITIONS = new Map<KpiKey, { cx: number; spread: number }>([
+  ["cash",            { cx: 0.08, spread: 0.11 }],
+  ["runway",          { cx: 0.25, spread: 0.11 }],
+  ["growth",          { cx: 0.42, spread: 0.11 }],
+  ["revenue",         { cx: 0.58, spread: 0.11 }],
+  ["burn",            { cx: 0.75, spread: 0.11 }],
+  ["enterpriseValue", { cx: 0.92, spread: 0.11 }],
+])
 
 export const KPI_STRESS_PROMPTS: Record<KpiKey, string> = {
   cash:             "What happens if we raise additional capital?",
@@ -185,7 +208,5 @@ export const KPI_STRESS_PROMPTS: Record<KpiKey, string> = {
   churn:            "What if we reduce churn rate to below 2% monthly?",
   grossMargin:      "What if we improve gross margin to 75%?",
   headcount:        "What if we hire 5 more people this quarter?",
-  nrr:              "What if net revenue retention reaches 120%?",
-  efficiency:       "What if we improve revenue-per-employee by 40%?",
   enterpriseValue:  "How does a capital raise impact our enterprise value?",
 }

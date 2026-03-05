@@ -180,7 +180,7 @@ export function getZoneStripData(kpis: PositionKpis): Array<{
     { key: "burn", label: "Burn" },
     { key: "churn", label: "Churn" },
     { key: "grossMargin", label: "Margin" },
-    { key: "efficiency", label: "Efficiency" },
+    { key: "headcount", label: "Headcount" },
     { key: "enterpriseValue", label: "Value" },
   ]
   return keys.map(({ key, label }) => ({

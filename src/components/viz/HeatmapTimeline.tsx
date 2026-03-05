@@ -21,8 +21,7 @@ const HEALTH_COLORS = {
 const KPI_TO_SNAPSHOT: Record<KpiKey, string> = {
   cash: "cash", runway: "runway", growth: "growth", arr: "arr",
   revenue: "revenue", burn: "burn", churn: "churn",
-  grossMargin: "grossMargin", headcount: "headcount", nrr: "nrr",
-  efficiency: "efficiency", enterpriseValue: "enterpriseValue",
+  grossMargin: "grossMargin", headcount: "headcount", enterpriseValue: "enterpriseValue",
 }
 
 function snapshotToKpis(snap: Record<string, number>): PositionKpis {
@@ -36,8 +35,8 @@ function snapshotToKpis(snap: Record<string, number>): PositionKpis {
     churnPct: snap.churn ?? 0,
     grossMarginPct: snap.grossMargin ?? 0,
     headcount: snap.headcount ?? 0,
-    nrrPct: snap.nrr ?? 100,
-    efficiencyRatio: snap.efficiency ?? 0,
+    nrrPct: 100,
+    efficiencyRatio: 0,
     valuationEstimate: snap.enterpriseValue ?? 0,
     ebitdaMonthly: 0,
     riskIndex: 50,
@@ -52,7 +51,7 @@ export default React.memo(function HeatmapTimeline({ kpis, months = 12, compact 
       growthRatePct: kpis.growthRatePct, arr: kpis.arr,
       revenueMonthly: kpis.revenueMonthly, burnMonthly: kpis.burnMonthly,
       churnPct: kpis.churnPct, grossMarginPct: kpis.grossMarginPct,
-      efficiencyRatio: kpis.efficiencyRatio, enterpriseValue: kpis.valuationEstimate,
+      headcount: kpis.headcount, enterpriseValue: kpis.valuationEstimate,
     })
     return timeSimulation(snapshot, { direct: {}, monthlyGrowthRates: { cash: -0.02, burn: 0.01, churn: 0.003 } }, months)
   }, [kpis, months])

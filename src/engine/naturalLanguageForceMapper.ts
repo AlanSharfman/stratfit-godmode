@@ -20,7 +20,7 @@ const KEYWORD_RULES: KeywordRule[] = [
   { patterns: [/lose\s+.*biggest\s+client/i, /lose\s+.*largest\s+customer/i, /biggest\s+client\s+leaves/i], forces: { revenue: -30_000, arr: -360_000, churn: 8, growth: -10 }, reasoning: "Major client loss: significant revenue impact, churn spike, growth deceleration" },
   { patterns: [/lose\s+.*(\d+)%?\s+.*revenue/i, /revenue\s+drops?\s+(\d+)/i], forces: {}, reasoning: "Revenue decline detected" },
   { patterns: [/double\s+.*marketing/i, /2x\s+marketing/i], forces: { burn: 25_000, growth: 15, revenue: 20_000 }, reasoning: "Marketing spend doubled: increased burn offset by growth acceleration" },
-  { patterns: [/cut\s+burn/i, /reduce\s+spend/i, /cut\s+costs?/i, /reduce\s+burn/i], forces: { burn: -30_000, growth: -5, efficiency: 0.1 }, reasoning: "Cost reduction: lower burn improves runway, modest growth impact" },
+  { patterns: [/cut\s+burn/i, /reduce\s+spend/i, /cut\s+costs?/i, /reduce\s+burn/i], forces: { burn: -30_000, growth: -5 }, reasoning: "Cost reduction: lower burn improves runway, modest growth impact" },
   { patterns: [/hire\s+(\d+)/i, /add\s+(\d+)\s+people/i], forces: {}, reasoning: "Hiring detected" },
   { patterns: [/raise\s+prices?/i, /increase\s+prices?/i, /price\s+increase/i], forces: { revenue: 15_000, churn: 2, grossMargin: 5 }, reasoning: "Price increase: higher ARPU with churn risk" },
   { patterns: [/lower\s+prices?/i, /decrease\s+prices?/i, /discount/i], forces: { revenue: -10_000, growth: 8, churn: -2 }, reasoning: "Price reduction: volume play, lower churn" },
@@ -30,12 +30,12 @@ const KEYWORD_RULES: KeywordRule[] = [
   { patterns: [/recession/i, /downturn/i, /economic\s+crisis/i, /market\s+crash/i], forces: { growth: -15, revenue: -20_000, churn: 5, enterpriseValue: -500_000 }, reasoning: "Economic downturn: broad pressure across growth, revenue, retention" },
   { patterns: [/competitor\s+.*dies/i, /competitor\s+.*exits/i, /competitor\s+.*fails/i, /competitor\s+.*shuts?\s*down/i], forces: { growth: 15, revenue: 25_000, churn: -3 }, reasoning: "Competitor exit: market share opportunity" },
   { patterns: [/run\s+out\s+of\s+money/i, /cash\s+runs?\s+out/i, /zero\s+cash/i], forces: { cash: -500_000, runway: -6 }, reasoning: "Cash crisis scenario" },
-  { patterns: [/pivot/i, /change\s+direction/i, /new\s+product/i], forces: { burn: 20_000, growth: -10, revenue: -15_000, efficiency: -0.1 }, reasoning: "Pivot: short-term disruption across all metrics" },
-  { patterns: [/automate/i, /ai\s+.*support/i, /implement\s+ai/i], forces: { burn: -5_000, efficiency: 0.12, churn: -1 }, reasoning: "Automation investment: cost reduction, efficiency gains" },
+  { patterns: [/pivot/i, /change\s+direction/i, /new\s+product/i], forces: { burn: 20_000, growth: -10, revenue: -15_000 }, reasoning: "Pivot: short-term disruption across all metrics" },
+  { patterns: [/automate/i, /ai\s+.*support/i, /implement\s+ai/i], forces: { burn: -5_000, churn: -1 }, reasoning: "Automation investment: cost reduction, efficiency gains" },
   { patterns: [/freemium/i, /free\s+tier/i, /free\s+plan/i], forces: { growth: 20, burn: 5_000, churn: 3, grossMargin: -8 }, reasoning: "Freemium model: massive top-of-funnel, conversion challenge" },
   { patterns: [/partnership/i, /partner\s+with/i, /distribution\s+deal/i], forces: { growth: 12, revenue: 20_000, grossMargin: -3 }, reasoning: "Strategic partnership: channel growth with margin share" },
   { patterns: [/viral/i, /goes?\s+viral/i, /blow\s+up/i], forces: { growth: 40, burn: 10_000 }, reasoning: "Viral growth: demand spike requiring rapid scaling" },
-  { patterns: [/lay\s*off/i, /fire\s+.*staff/i, /reduce\s+headcount/i, /cut\s+team/i], forces: { burn: -40_000, growth: -10, efficiency: -0.1, headcount: -5 }, reasoning: "Layoffs: significant cost reduction with velocity impact" },
+  { patterns: [/lay\s*off/i, /fire\s+.*staff/i, /reduce\s+headcount/i, /cut\s+team/i], forces: { burn: -40_000, growth: -10, headcount: -5 }, reasoning: "Layoffs: significant cost reduction with velocity impact" },
 ]
 
 function extractAmount(text: string): number | null {
@@ -113,7 +113,6 @@ export function parseNaturalLanguage(query: string): ParsedIntent {
           const count = parseInt(match[1])
           forces.burn = count * 12_000
           forces.growth = count * 3
-          forces.efficiency = count * 0.02
           forces.headcount = count
         }
 

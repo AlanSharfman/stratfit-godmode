@@ -27,8 +27,6 @@ const KPI_DISPLAY: Record<KpiKey, { label: string; fmt: (k: PositionKpis) => str
   churn: { label: "Churn Rate", fmt: (k) => `${k.churnPct.toFixed(1)}%` },
   grossMargin: { label: "Gross Margin", fmt: (k) => `${k.grossMarginPct.toFixed(1)}%` },
   headcount: { label: "Headcount", fmt: (k) => `${k.headcount}` },
-  nrr: { label: "Net Revenue Retention", fmt: (k) => `${k.nrrPct.toFixed(0)}%` },
-  efficiency: { label: "Efficiency", fmt: (k) => `${k.efficiencyRatio.toFixed(2)}` },
   enterpriseValue: { label: "Enterprise Value", fmt: (k) => k.valuationEstimate ? `$${(k.valuationEstimate / 1000).toFixed(0)}K` : "N/A" },
 }
 
@@ -83,7 +81,7 @@ export default function BoardroomPage() {
       growthRatePct: liveKpis.growthRatePct, arr: liveKpis.arr,
       revenueMonthly: liveKpis.revenueMonthly, burnMonthly: liveKpis.burnMonthly,
       churnPct: liveKpis.churnPct, grossMarginPct: liveKpis.grossMarginPct,
-      efficiencyRatio: liveKpis.efficiencyRatio, enterpriseValue: liveKpis.valuationEstimate,
+      headcount: liveKpis.headcount, enterpriseValue: liveKpis.valuationEstimate,
     })
     const timeline = timeSimulation(snapshot, { direct: {} }, 12)
     const cliff = findFirstCliff(timeline)

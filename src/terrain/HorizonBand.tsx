@@ -43,7 +43,6 @@ export default function HorizonBand({
     }
   }, [mat])
 
-  // Always face camera (billboard in yaw only) — update each frame
   useFrame(() => {
     const g = groupRef.current
     if (!g) return

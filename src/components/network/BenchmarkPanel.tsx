@@ -18,7 +18,6 @@ const STAGE_OPTIONS: { value: CompanyStage; label: string }[] = [
 ]
 
 function fmtVal(v: number, kpi: string): string {
-  if (kpi === "efficiency") return v.toFixed(2)
   if (kpi === "growth" || kpi === "churn" || kpi === "grossMargin") return `${v.toFixed(1)}%`
   if (kpi === "runway") return `${v.toFixed(0)} mo`
   if (v >= 1_000_000_000) return `$${(v / 1_000_000_000).toFixed(1)}B`

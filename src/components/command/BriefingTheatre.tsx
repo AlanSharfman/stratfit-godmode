@@ -21,8 +21,7 @@ function buildInputsFromKpis(kpis: PositionKpis): BriefingInputs {
     growthRatePct: kpis.growthRatePct, arr: kpis.arr,
     revenueMonthly: kpis.revenueMonthly, burnMonthly: kpis.burnMonthly,
     churnPct: kpis.churnPct, grossMarginPct: kpis.grossMarginPct,
-    headcount: kpis.headcount, nrrPct: kpis.nrrPct,
-    efficiencyRatio: kpis.efficiencyRatio, enterpriseValue: kpis.valuationEstimate,
+    headcount: kpis.headcount, enterpriseValue: kpis.valuationEstimate,
   })
   const timeline = timeSimulation(snap, { direct: {} }, 12)
   const cliff = findFirstCliff(timeline)

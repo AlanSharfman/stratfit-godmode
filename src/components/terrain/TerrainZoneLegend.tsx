@@ -1,11 +1,7 @@
 import React, { useCallback, useMemo, useState } from "react"
 import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
-import { KPI_KEYS, KPI_ZONE_MAP, getHealthLevel, getHealthColor, type HealthColor } from "@/domain/intelligence/kpiZoneMapping"
+import { KPI_KEYS, KPI_ZONE_MAP, KPI_CATEGORY_COLORS, getHealthLevel } from "@/domain/intelligence/kpiZoneMapping"
 import type { PositionKpis } from "@/pages/position/overlays/positionState"
-
-function colorToCss(c: HealthColor): string {
-  return `rgb(${Math.round(c.r * 255)}, ${Math.round(c.g * 255)}, ${Math.round(c.b * 255)})`
-}
 
 interface Props {
   kpis: PositionKpis | null
@@ -23,8 +19,8 @@ export default React.memo(function TerrainZoneLegend({ kpis, revealedKpis, focus
   const zones = useMemo(() => {
     if (!kpis || revealedKpis.size === 0) return []
     return KPI_KEYS.filter((k) => revealedKpis.has(k)).map((kpi) => {
+      const color = KPI_CATEGORY_COLORS[kpi].hex
       const health = getHealthLevel(kpi, kpis)
-      const color = colorToCss(getHealthColor(health))
       return { kpi, label: KPI_ZONE_MAP[kpi].label, health, color }
     })
   }, [kpis, revealedKpis])

@@ -9,7 +9,7 @@ import React, { memo, useCallback, useEffect, useId, useMemo, useRef, useState }
 import { useNavigate } from "react-router-dom";
 import type { PositionKpis } from "@/pages/position/overlays/positionState";
 import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping";
-import { KPI_ZONE_MAP, KPI_STRESS_PROMPTS, KPI_CATEGORY_COLORS } from "@/domain/intelligence/kpiZoneMapping";
+import { KPI_ZONE_MAP, KPI_STRESS_PROMPTS, KPI_CATEGORY_COLORS, PRIMARY_KPI_HIERARCHY } from "@/domain/intelligence/kpiZoneMapping";
 import { getKpiCommentary } from "@/domain/intelligence/kpiCommentary";
 import styles from "./KPIHealthRail.module.css";
 
@@ -269,27 +269,6 @@ function ChurnWidget() {
   );
 }
 
-/** Efficiency Widget — gear/ratio gauge */
-function EfficiencyWidget() {
-  return (
-    <div className={styles.widget}>
-      <svg width="44" height="44" viewBox="0 0 28 28" fill="none">
-        <circle cx="14" cy="14" r="10" fill="none" stroke="rgba(96,165,250,0.12)" strokeWidth="1.5" />
-        <circle cx="14" cy="14" r="6" fill="none" stroke="rgba(96,165,250,0.25)" strokeWidth="1.5" strokeDasharray="4,3">
-          <animateTransform attributeName="transform" type="rotate" from="0 14 14" to="360 14 14" dur="6s" repeatCount="indefinite" />
-        </circle>
-        <circle cx="14" cy="14" r="2.5" fill="rgba(96,165,250,0.20)">
-          <animate attributeName="r" values="2.5;3;2.5" dur="2s" repeatCount="indefinite" />
-        </circle>
-        <line x1="14" y1="4" x2="14" y2="8" stroke="rgba(96,165,250,0.3)" strokeWidth="1.5" strokeLinecap="round" />
-        <line x1="14" y1="20" x2="14" y2="24" stroke="rgba(96,165,250,0.3)" strokeWidth="1.5" strokeLinecap="round" />
-        <line x1="4" y1="14" x2="8" y2="14" stroke="rgba(96,165,250,0.3)" strokeWidth="1.5" strokeLinecap="round" />
-        <line x1="20" y1="14" x2="24" y2="14" stroke="rgba(96,165,250,0.3)" strokeWidth="1.5" strokeLinecap="round" />
-      </svg>
-    </div>
-  );
-}
-
 /** Gross Margin mini widget — percentage donut (indigo) */
 function GrossMarginWidget() {
   return (
@@ -323,24 +302,6 @@ function HeadcountWidget() {
           <animate attributeName="r" values="1.5;2.2;1.5" dur="2.5s" repeatCount="indefinite" />
           <animate attributeName="opacity" values="0.5;0.2;0.5" dur="2.5s" repeatCount="indefinite" />
         </circle>
-      </svg>
-    </div>
-  );
-}
-
-function NrrWidget() {
-  return (
-    <div className={styles.widget}>
-      <svg width="44" height="44" viewBox="0 0 28 28" fill="none">
-        <rect x="4" y="8" width="20" height="12" rx="3" fill="rgba(34,211,238,0.08)" stroke="rgba(34,211,238,0.2)" strokeWidth="1" />
-        <path d="M8 17 L12 11 L16 14 L20 9" stroke="rgba(34,211,238,0.55)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none">
-          <animate attributeName="opacity" values="0.55;0.3;0.55" dur="3s" repeatCount="indefinite" />
-        </path>
-        <circle cx="20" cy="9" r="1.8" fill="rgba(34,211,238,0.4)">
-          <animate attributeName="r" values="1.8;2.5;1.8" dur="2s" repeatCount="indefinite" />
-          <animate attributeName="opacity" values="0.4;0.15;0.4" dur="2s" repeatCount="indefinite" />
-        </circle>
-        <path d="M18 8 L20 6 L22 8" stroke="rgba(34,211,238,0.5)" strokeWidth="1" strokeLinecap="round" fill="none" />
       </svg>
     </div>
   );
@@ -478,11 +439,10 @@ function KpiCard({
 }
 
 const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, onFocusKpi, revealedKpis }) => {
-  // HARD RULE: always use the KPIs prop passed from the parent (baseline-derived).
-  // Never override with simulation KPIs — the box values must match Initiate inputs.
   const k = kpis;
   const navigate = useNavigate();
   const railRef = useRef<HTMLDivElement>(null);
+  const [expandedPrimary, setExpandedPrimary] = useState<KpiKey | null>(null);
 
   const riskTone = useMemo<RiskTone>(
     () => deriveRiskTone(k?.riskIndex ?? 0),
@@ -510,7 +470,6 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, on
     [k],
   );
 
-  // Scroll-based focus via IntersectionObserver
   useEffect(() => {
     if (!railRef.current || !onFocusKpi) return;
     const cards = railRef.current.querySelectorAll<HTMLElement>("[data-kpi]");
@@ -535,21 +494,21 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, on
   const CARDS: KpiCardDef[] = useMemo(() => [
     {
       key: "cash" as KpiKey,
-      label: "Cash",
+      label: "Liquidity",
       getValue: (kk) => `$${fmtMoney(kk.cashOnHand)}`,
       widget: <CashWidget />,
-      sub: "On hand",
+      sub: "Cash on hand",
     },
     {
       key: "runway" as KpiKey,
       label: "Runway",
       getValue: (kk) => Number.isFinite(kk.runwayMonths) ? `${kk.runwayMonths.toFixed(1)}m` : "—",
       widget: <RunwayWidget />,
-      sub: "Stability probability",
+      sub: "Months remaining",
     },
     {
       key: "growth" as KpiKey,
-      label: "Growth Rate",
+      label: "Growth",
       getValue: (kk) => `${(kk.growthRatePct ?? 0).toFixed(1)}%`,
       widget: <GrowthWidget />,
       sub: "Month-over-month",
@@ -577,10 +536,10 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, on
     },
     {
       key: "churn" as KpiKey,
-      label: "Churn",
+      label: "Retention",
       getValue: (kk) => `${(kk.churnPct ?? 0).toFixed(1)}%`,
       widget: <ChurnWidget />,
-      sub: "Monthly rate",
+      sub: "Monthly churn rate",
     },
     {
       key: "grossMargin" as KpiKey,
@@ -590,18 +549,8 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, on
       sub: "Of revenue",
     },
     {
-      key: "efficiency" as KpiKey,
-      label: "Efficiency",
-      getValue: (kk) => {
-        const eff = kk.efficiencyRatio ?? 0
-        return eff >= 1_000_000 ? `$${(eff / 1_000_000).toFixed(1)}M` : eff >= 1_000 ? `$${(eff / 1_000).toFixed(0)}K` : `$${Math.round(eff)}`
-      },
-      widget: <EfficiencyWidget />,
-      sub: "Revenue / employee",
-    },
-    {
       key: "headcount" as KpiKey,
-      label: "Headcount",
+      label: "Talent",
       getValue: (kk) => {
         const hc = kk.headcount ?? 0
         return hc > 0 ? `${Math.round(hc)}` : "—"
@@ -610,18 +559,8 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, on
       sub: "Total team",
     },
     {
-      key: "nrr" as KpiKey,
-      label: "NRR",
-      getValue: (kk) => {
-        const n = kk.nrrPct ?? 0
-        return n > 0 ? `${n.toFixed(0)}%` : "—"
-      },
-      widget: <NrrWidget />,
-      sub: "Net revenue retention",
-    },
-    {
       key: "enterpriseValue" as KpiKey,
-      label: "Enterprise Value",
+      label: "Value",
       getValue: (kk) => kk.valuationEstimate > 0 ? `$${fmtMoney(kk.valuationEstimate)}` : "$ —",
       widget: <ValuationWidget />,
       sub: (kk) => kk.valuationEstimate > 0 ? "Revenue multiple" : "Awaiting ARR data",
@@ -633,45 +572,87 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, on
     },
   ], []);
 
-  const SECTIONS = useMemo(() => [
-    { header: "Liquidity", keys: ["cash", "runway"] as KpiKey[] },
-    { header: "Growth Engine", keys: ["growth", "arr", "revenue", "nrr"] as KpiKey[] },
-    { header: "Efficiency", keys: ["burn", "churn", "grossMargin", "headcount", "efficiency"] as KpiKey[] },
-    { header: "Valuation", keys: ["enterpriseValue"] as KpiKey[] },
-  ], []);
-
   const cardMap = useMemo(() => {
     const m = new Map<string, KpiCardDef>();
     for (const c of CARDS) m.set(c.key, c);
     return m;
   }, [CARDS]);
 
+  const handlePrimaryClick = useCallback((key: KpiKey) => {
+    setExpandedPrimary(prev => prev === key ? null : key);
+    onFocusKpi?.(key);
+  }, [onFocusKpi]);
+
   return (
     <div className={styles.rail} ref={railRef}>
-      {SECTIONS.map((sec) => (
-        <section key={sec.header} className={styles.section}>
-          <h3 className={styles.sectionHeader}>{sec.header}</h3>
-          <div className={styles.cardStack}>
-            {sec.keys.map((key) => {
-              const def = cardMap.get(key);
-              if (!def) return null;
-              return (
-                <KpiCard
-                  key={key}
-                  def={def}
-                  k={k}
-                  riskTone={riskTone}
-                  isActive={focusedKpi === key}
-                  isRevealed={revealedKpis?.has(key) ?? false}
-                  commentary={getCommentary(key)}
-                  onHover={handleHover}
-                  onStressTest={handleStressTest}
-                />
-              );
-            })}
+      {PRIMARY_KPI_HIERARCHY.map((primary) => {
+        const def = cardMap.get(primary.key);
+        if (!def) return null;
+        const isExpanded = expandedPrimary === primary.key;
+        const hasSecondaries = primary.secondaries.length > 0;
+
+        return (
+          <div key={primary.key} className={styles.section}>
+            <div
+              onClick={() => handlePrimaryClick(primary.key)}
+              style={{ cursor: "pointer" }}
+            >
+              <KpiCard
+                def={def}
+                k={k}
+                riskTone={riskTone}
+                isActive={focusedKpi === primary.key}
+                isRevealed={revealedKpis?.has(primary.key) ?? false}
+                commentary={getCommentary(primary.key)}
+                onHover={handleHover}
+                onStressTest={handleStressTest}
+              />
+            </div>
+
+            {hasSecondaries && (
+              <div
+                className={styles.secondaryPanel}
+                style={{
+                  maxHeight: isExpanded ? `${primary.secondaries.length * 80 + 32}px` : "0",
+                  opacity: isExpanded ? 1 : 0,
+                  overflow: "hidden",
+                  transition: "max-height 250ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms ease-out",
+                }}
+              >
+                <div className={styles.secondaryHeader}>
+                  {primary.label} — Diagnostics
+                  <button
+                    className={styles.secondaryClose}
+                    onClick={(e) => { e.stopPropagation(); setExpandedPrimary(null); }}
+                    aria-label="Close diagnostics"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className={styles.cardStack}>
+                  {primary.secondaries.map((sec) => {
+                    const secDef = cardMap.get(sec.key);
+                    if (!secDef) return null;
+                    return (
+                      <KpiCard
+                        key={sec.key}
+                        def={secDef}
+                        k={k}
+                        riskTone={riskTone}
+                        isActive={focusedKpi === sec.key}
+                        isRevealed={revealedKpis?.has(sec.key) ?? false}
+                        commentary={getCommentary(sec.key)}
+                        onHover={handleHover}
+                        onStressTest={handleStressTest}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
-        </section>
-      ))}
+        );
+      })}
     </div>
   );
 });

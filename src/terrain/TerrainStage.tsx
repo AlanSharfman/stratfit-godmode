@@ -81,9 +81,9 @@ export default function TerrainStage({
   zoneKpis = null,
   minAzimuthAngle = -Infinity,
   maxAzimuthAngle = Infinity,
-  minPolarAngle: minPolar = 0.758,
-  maxPolarAngle: maxPolar = 1.456,
-  rotateSpeed = 0.8,
+  minPolarAngle: minPolar = 0.65,
+  maxPolarAngle: maxPolar = 1.35,
+  rotateSpeed = 0.6,
   renderWhenReady,
   hideMarkers = false,
   progressive = false,
@@ -164,20 +164,22 @@ export default function TerrainStage({
         minAzimuthAngle={minAzimuthAngle}
         maxAzimuthAngle={maxAzimuthAngle}
         rotateSpeed={rotateSpeed}
-        minDistance={250}
-        maxDistance={900}
+        minDistance={200}
+        maxDistance={1000}
         target={effectivePreset.target}
         autoRotate={autoRotateSpeed > 0}
         autoRotateSpeed={autoRotateSpeed}
       />
 
-      <fog attach="fog" args={[fogColor, 400, 2200]} />
+      <fog attach="fog" args={[fogColor, 700, 4200]} />
 
-      <ambientLight intensity={0.30} />
-      <directionalLight position={[150, 220, 100]} intensity={1.50} color="#DFFAEE" castShadow={false} />
-      <directionalLight position={[-100, 160, -80]} intensity={0.50} color="#6ef0ff" />
-      <directionalLight position={[0, 80, 200]} intensity={0.25} color="#a0d8ff" />
-      <hemisphereLight args={["#1a2a40", "#0a0e14", 0.3]} />
+      <ambientLight intensity={0.38} />
+      <directionalLight position={[150, 220, 100]} intensity={1.25} color="#DFFAEE" castShadow={false} />
+      <directionalLight position={[-100, 160, -80]} intensity={0.55} color="#6ef0ff" />
+      <directionalLight position={[0, 80, 200]} intensity={0.30} color="#a0d8ff" />
+      {/* Low-angle rim light — grazes ridges for silhouette separation */}
+      <directionalLight position={[-200, 30, -100]} intensity={0.20} color="#7dd3fc" />
+      <hemisphereLight args={["#1e3050", "#101828", 0.42]} />
 
       <HorizonBand />
       <TerrainCompass />

@@ -36,7 +36,6 @@ function formatForce(kpi: KpiKey, v: number): string {
     return `${sign}$${abs}`
   }
   if (["churn", "growth", "grossMargin"].includes(kpi)) return `${v > 0 ? "+" : ""}${v}%`
-  if (kpi === "efficiency") return `${v > 0 ? "+" : ""}${v}`
   return `${v > 0 ? "+" : ""}${v}`
 }
 

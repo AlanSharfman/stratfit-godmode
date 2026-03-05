@@ -80,8 +80,6 @@ const KPI_VALUE_GETTERS: Record<KpiKey, (k: PositionKpis) => number> = {
   churn: (k) => k.churnPct,
   grossMargin: (k) => k.grossMarginPct,
   headcount: (k) => k.headcount,
-  nrr: (k) => k.nrrPct,
-  efficiency: (k) => k.efficiencyRatio,
   enterpriseValue: (k) => k.valuationEstimate || 0,
 }
 

@@ -34,8 +34,7 @@ interface StackedScenario {
 const KPI_LABELS: Record<KpiKey, string> = {
   cash: "Cash", runway: "Runway", growth: "Growth", arr: "ARR",
   revenue: "Revenue", burn: "Burn", churn: "Churn",
-  grossMargin: "Margin", headcount: "Team", nrr: "NRR",
-  efficiency: "Efficiency", enterpriseValue: "EV",
+  grossMargin: "Margin", headcount: "Team", enterpriseValue: "EV",
 }
 
 function formatDelta(kpi: KpiKey, v: number): string {
@@ -45,9 +44,8 @@ function formatDelta(kpi: KpiKey, v: number): string {
     if (abs >= 1e3) return `${v > 0 ? "+" : "-"}$${(abs / 1e3).toFixed(0)}K`
     return `${v > 0 ? "+" : "-"}$${abs.toFixed(0)}`
   }
-  if (["churn", "growth", "grossMargin", "nrr"].includes(kpi)) return `${v > 0 ? "+" : ""}${v.toFixed(1)}%`
+  if (["churn", "growth", "grossMargin"].includes(kpi)) return `${v > 0 ? "+" : ""}${v.toFixed(1)}%`
   if (kpi === "headcount") return `${v > 0 ? "+" : ""}${Math.round(v)}`
-  if (kpi === "efficiency") return `${v > 0 ? "+" : ""}${v.toFixed(2)}`
   if (kpi === "runway") return `${v > 0 ? "+" : ""}${v.toFixed(1)} mo`
   return `${v > 0 ? "+" : ""}${v}`
 }
@@ -85,12 +83,11 @@ export default function WhatIfPage() {
 
   const placeholder = useTypewriterHint({
     phrases: [
-      "What if we lose our biggest client?",
-      "What if we raise prices 20%?",
-      "What if we hire 3 sales reps?",
-      "What if we raise a Series A?",
-      "What if churn doubles overnight?",
-      "What if we cut burn to reach profitability?",
+      "Ask STRATFIT to simulate a decision...",
+      "Increase marketing spend 20%",
+      "Reduce burn rate by 15%",
+      "Compare revenue growth scenarios",
+      "Simulate hiring 5 engineers",
     ],
   })
 
@@ -134,8 +131,7 @@ export default function WhatIfPage() {
       growthRatePct: baseKpis.growthRatePct, arr: baseKpis.arr,
       revenueMonthly: baseKpis.revenueMonthly, burnMonthly: baseKpis.burnMonthly,
       churnPct: baseKpis.churnPct, grossMarginPct: baseKpis.grossMarginPct,
-      headcount: baseKpis.headcount, nrrPct: baseKpis.nrrPct,
-      efficiencyRatio: baseKpis.efficiencyRatio, enterpriseValue: baseKpis.valuationEstimate,
+      headcount: baseKpis.headcount, enterpriseValue: baseKpis.valuationEstimate,
     })
     return timeSimulation(snapshot, { direct: cumulativeForces }, 24)
   }, [baseKpis, stack, cumulativeForces])
@@ -154,8 +150,8 @@ export default function WhatIfPage() {
       revenueMonthly: s.revenue, survivalScore: baseKpis.survivalScore,
       grossMarginPct: s.grossMargin, valuationEstimate: s.enterpriseValue,
       growthRatePct: s.growth, churnPct: s.churn,
-      headcount: s.headcount, nrrPct: s.nrr,
-      efficiencyRatio: s.efficiency,
+      headcount: s.headcount, nrrPct: baseKpis.nrrPct,
+      efficiencyRatio: baseKpis.efficiencyRatio,
     }
   }, [timeline, timelineMonth, baseKpis])
 

@@ -1,11 +1,7 @@
 import React, { useMemo } from "react"
 import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
-import { KPI_KEYS, KPI_ZONE_MAP, getHealthLevel, getHealthColor, type HealthColor } from "@/domain/intelligence/kpiZoneMapping"
+import { KPI_ZONE_MAP, KPI_CATEGORY_COLORS, PRIMARY_KPI_KEYS } from "@/domain/intelligence/kpiZoneMapping"
 import type { PositionKpis } from "@/pages/position/overlays/positionState"
-
-function colorToCss(c: HealthColor): string {
-  return `rgb(${Math.round(c.r * 255)}, ${Math.round(c.g * 255)}, ${Math.round(c.b * 255)})`
-}
 
 interface Props {
   kpis: PositionKpis | null
@@ -15,10 +11,9 @@ interface Props {
 export default React.memo(function TerrainHealthBar({ kpis, revealedKpis }: Props) {
   const zones = useMemo(() => {
     if (!kpis || revealedKpis.size === 0) return []
-    return KPI_KEYS.filter((k) => revealedKpis.has(k)).map((kpi) => {
-      const health = getHealthLevel(kpi, kpis)
-      const color = colorToCss(getHealthColor(health))
-      return { kpi, label: KPI_ZONE_MAP[kpi].label, health, color }
+    return PRIMARY_KPI_KEYS.filter((k) => revealedKpis.has(k)).map((kpi) => {
+      const color = KPI_CATEGORY_COLORS[kpi].hex
+      return { kpi, label: KPI_ZONE_MAP[kpi].label, color }
     })
   }, [kpis, revealedKpis])
 
@@ -35,8 +30,8 @@ export default React.memo(function TerrainHealthBar({ kpis, revealedKpis }: Prop
       boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
       backdropFilter: "blur(10px)",
     }}>
-      {zones.map(({ kpi, label, color, health }) => (
-        <div key={kpi} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, minWidth: 52 }} title={`${label}: ${health}`}>
+      {zones.map(({ kpi, label, color }) => (
+        <div key={kpi} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, minWidth: 52 }} title={label}>
           <div style={{
             width: 40, height: 8, borderRadius: 4,
             background: color,

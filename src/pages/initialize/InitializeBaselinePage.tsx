@@ -185,7 +185,15 @@ function parseCSVToForm(text: string): Partial<FormState> | null {
 
 function Module({ title, children, style }: { title: string; children: React.ReactNode; style?: React.CSSProperties }) {
   return (
-    <section className="bezel-titanium" style={{ display: "flex", flexDirection: "column", overflow: "hidden", ...style }}>
+    <section style={{
+      display: "flex", flexDirection: "column", overflow: "hidden",
+      background: "#07182A",
+      border: "1px solid #1E3A5F",
+      borderRadius: 14,
+      boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
+      ...style,
+    }}>
+      <div style={{ height: 2, background: "#22D3EE", borderRadius: "14px 14px 0 0", flexShrink: 0 }} />
       <header style={SC.moduleHeader}>{title}</header>
       <div style={{ flex: 1, minHeight: 0 }}>{children}</div>
     </section>
@@ -204,16 +212,17 @@ function PowerBar({ label, value, max, unit = "", color = "cyan", onChange }: {
     : value >= 1_000 ? `$${(value / 1e3).toFixed(0)}K`
     : `${value.toLocaleString()}`
 
+  const trackColor = isCyan ? "#22D3EE" : "#f59e0b"
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
         <span style={SC.powerLabel}>{label}</span>
-        <span style={{ ...SC.powerValue, color: isCyan ? "#22d3ee" : "#f59e0b" }}>{display}</span>
+        <span style={{ ...SC.powerValue, color: trackColor }}>{display}</span>
       </div>
-      <div className="bezel-carved" style={{ ...SC.powerTrack, position: "relative" }}>
+      <div style={{ ...SC.powerTrack, position: "relative" }}>
         <div
-          className={`power-fill ${isCyan ? "glow-cyan" : "glow-amber"}`}
-          style={{ ...SC.powerFill, width: `${pct}%`, background: isCyan ? "#22d3ee" : "#f59e0b" }}
+          style={{ ...SC.powerFill, width: `${pct}%`, background: trackColor, boxShadow: `0 0 8px ${trackColor}66` }}
         />
         {onChange && (
           <input
@@ -260,19 +269,19 @@ function StatusToggle({ label, active, onClick }: { label: string; active: boole
       type="button"
       onClick={onClick}
       style={{
-        padding: "6px 0",
+        padding: "7px 0",
         borderRadius: 8,
-        fontSize: 9,
-        fontWeight: 900,
-        letterSpacing: "0.12em",
+        fontSize: 10,
+        fontWeight: 600,
+        letterSpacing: "0.06em",
         textTransform: "uppercase",
         fontFamily: FONT,
         cursor: "pointer",
         transition: "all 0.15s",
-        border: active ? "1px solid rgba(34,211,238,0.5)" : "1px solid rgba(148,180,214,0.15)",
-        background: active ? "rgba(34,211,238,0.1)" : "rgba(255,255,255,0.04)",
-        color: active ? "#22d3ee" : "rgba(226,240,255,0.85)",
-        boxShadow: active ? "0 0 10px rgba(34,211,238,0.15)" : "none",
+        border: active ? "1px solid #22D3EE" : "1px solid #1E3A5F",
+        background: active ? "#22D3EE" : "#0B243A",
+        color: active ? "#04121F" : "#8FB4D9",
+        boxShadow: active ? "0 0 10px rgba(34,211,238,0.3)" : "none",
       }}
     >
       {label}
@@ -305,20 +314,20 @@ function ToggleRow<T extends string>({ label, options, value, onChange }: {
 function BinarySwitch({ label, active, onToggle }: { label: string; active: boolean; onToggle: () => void }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-      <span style={{ fontSize: 9, fontWeight: 900, color: "rgba(226,240,255,0.85)", letterSpacing: "0.02em" }}>{label}</span>
-      <div style={{ display: "flex", padding: 2, background: "rgba(0,0,0,0.6)", borderRadius: 4, border: "1px solid rgba(255,255,255,0.08)" }}>
+      <span style={{ fontSize: 10, fontWeight: 500, color: "#E6F1FF", letterSpacing: "0.02em" }}>{label}</span>
+      <div style={{ display: "flex", padding: 2, background: "#0A1C2E", borderRadius: 6, border: "1px solid #1E3A5F" }}>
         <button type="button" onClick={() => { if (!active) onToggle() }} style={{
-          padding: "3px 10px", fontSize: 8, fontWeight: 900, borderRadius: 3, border: "none", fontFamily: FONT,
+          padding: "4px 12px", fontSize: 9, fontWeight: 700, borderRadius: 4, border: "none", fontFamily: FONT,
           cursor: "pointer", transition: "all 0.15s",
-          background: active ? "#22d3ee" : "transparent",
-          color: active ? "#020617" : "rgba(100,116,139,0.4)",
-          boxShadow: active ? "0 0 10px rgba(34,211,238,0.3)" : "none",
+          background: active ? "#22D3EE" : "transparent",
+          color: active ? "#04121F" : "#8FB4D9",
+          boxShadow: active ? "0 0 8px rgba(34,211,238,0.3)" : "none",
         }}>Yes</button>
         <button type="button" onClick={() => { if (active) onToggle() }} style={{
-          padding: "3px 10px", fontSize: 8, fontWeight: 900, borderRadius: 3, border: "none", fontFamily: FONT,
+          padding: "4px 12px", fontSize: 9, fontWeight: 700, borderRadius: 4, border: "none", fontFamily: FONT,
           cursor: "pointer", transition: "all 0.15s",
-          background: !active ? "rgba(30,41,59,0.8)" : "transparent",
-          color: !active ? "rgba(148,163,184,0.7)" : "rgba(100,116,139,0.4)",
+          background: !active ? "#0B243A" : "transparent",
+          color: !active ? "#8FB4D9" : "#8FB4D9",
         }}>No</button>
       </div>
     </div>
@@ -544,7 +553,7 @@ export default function InitializeBaselinePage() {
           </div>
           <span style={SC.railDivider} />
           <div style={SC.railTitle}>Initialize Baseline</div>
-          <span style={{ fontSize: 11, color: "rgba(148,180,214,0.35)", letterSpacing: "0.02em" }}>Enter your current financial truth to anchor scenario modelling.</span>
+          <span style={{ fontSize: 11, color: "#8FB4D9", letterSpacing: "0.02em" }}>Enter your current financial truth to anchor scenario modelling.</span>
         </div>
         <div style={SC.metricsRow}>
           <div style={SC.metricBlock}>
@@ -573,55 +582,38 @@ export default function InitializeBaselinePage() {
       {/* ═══ TACTICAL GRID ═══ */}
       <main style={SC.grid} className="gm-scrollbar">
 
-        {/* ── COLUMN 1: Identity & Input Method & Velocity ── */}
+        {/* ── COLUMN 1: Identity, Data Input, Execution Velocity ── */}
         <div style={SC.col1}>
-          <Module title="A: IDENTITY & CONTACT">
+          <Module title="MODULE A: IDENTITY & CONTACT">
             <div style={SC.modBody}>
-              <TacticalInput label="Your Name" value={form.contactName} placeholder="Enter name"
+              <TacticalInput label="Your Name" value={form.contactName} placeholder="Your Name"
                 onChange={(v) => update("contactName", v)} />
-              <TacticalInput label="Email" value={form.contactEmail} placeholder="email@company.com"
+              <TacticalInput label="Email Address" value={form.contactEmail} placeholder="Email Address"
                 onChange={(v) => update("contactEmail", v)} />
-              <TacticalInput label="Company Name" value={form.companyName} placeholder="Acme Inc."
+              <TacticalInput label="Company Name" value={form.companyName} placeholder="Company Name"
                 onChange={(v) => update("companyName", v)} />
-
-              <div style={{ marginTop: 4 }}>
-                <span style={SC.inputLabel}>Stage</span>
-                <div style={SC.pillGrid}>
-                  {STAGES.map((s) => (
-                    <StatusToggle key={s} label={s} active={form.stage === s} onClick={() => update("stage", s)} />
-                  ))}
-                </div>
-              </div>
-              <div style={{ marginTop: 4 }}>
-                <span style={SC.inputLabel}>Industry</span>
-                <div style={SC.pillGrid}>
-                  {INDUSTRIES.map((ind) => (
-                    <StatusToggle key={ind} label={ind} active={form.industry === ind} onClick={() => update("industry", ind)} />
-                  ))}
-                </div>
-              </div>
             </div>
           </Module>
 
-          <Module title="B: DATA INPUT METHOD">
+          <Module title="MODULE B: DATA INPUT METHOD">
             <div style={SC.modBody}>
               {(["manual", "xero", "excel"] as InputPath[]).map((p) => (
                 <button
                   key={p} type="button"
                   onClick={() => { setInputPath(p); if (p === "xero") setShowXeroModal(true) }}
-                  className={inputPath === p ? "glow-cyan" : ""}
                   style={{
                     width: "100%",
-                    padding: inputPath === p ? "18px 12px" : "12px",
+                    padding: "14px 12px",
                     borderRadius: 8,
-                    fontSize: 10, fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase",
+                    fontSize: 11, fontWeight: 600, letterSpacing: "0.06em",
                     fontFamily: FONT, cursor: "pointer", transition: "all 0.15s",
-                    border: inputPath === p ? "1px solid rgba(34,211,238,0.4)" : "1px solid rgba(255,255,255,0.05)",
-                    background: inputPath === p ? "rgba(34,211,238,0.06)" : "rgba(255,255,255,0.02)",
-                    color: inputPath === p ? "#22d3ee" : "rgba(100,116,139,0.4)",
+                    border: inputPath === p ? "1px solid #22D3EE" : "1px solid #1E3A5F",
+                    background: inputPath === p ? "#22D3EE" : "#0B243A",
+                    color: inputPath === p ? "#04121F" : "#8FB4D9",
+                    boxShadow: inputPath === p ? "0 0 12px rgba(34,211,238,0.25)" : "none",
                   }}
                 >
-                  {p === "manual" ? "Manual Entry" : p === "xero" ? "Connect Xero" : "Import Excel"}
+                  {p === "manual" ? "Manual Entry" : p === "xero" ? "Connect Bank" : "Import Excel"}
                 </button>
               ))}
 
@@ -633,13 +625,13 @@ export default function InitializeBaselinePage() {
                     <input ref={fileInputRef} type="file" accept=".csv,.xlsx,.xls" style={{ display: "none" }} onChange={onFileChange} />
                   </div>
                   <div
-                    style={{ ...SC.dropZone, borderColor: dragOver ? "rgba(34,211,238,0.4)" : "rgba(255,255,255,0.06)" }}
+                    style={{ ...SC.dropZone, borderColor: dragOver ? "#22D3EE" : "#1E3A5F" }}
                     onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
                     onDragLeave={() => setDragOver(false)}
                     onDrop={onDrop}
                     onClick={() => fileInputRef.current?.click()}
                   >
-                    <span style={{ fontSize: 10, color: "rgba(148,180,214,0.3)" }}>
+                    <span style={{ fontSize: 10, color: "#8FB4D9" }}>
                       {dragOver ? "Drop file here" : "Or drag CSV here"}
                     </span>
                   </div>
@@ -651,7 +643,7 @@ export default function InitializeBaselinePage() {
             </div>
           </Module>
 
-          <Module title="D: EXECUTION VELOCITY">
+          <Module title="MODULE D: EXECUTION VELOCITY">
             <div style={SC.modBody}>
               <ToggleRow label="Hiring Velocity" options={["Low", "Medium", "High"] as HiringVelocity[]}
                 value={form.hiringVelocity} onChange={(v) => update("hiringVelocity", v)} />
@@ -665,57 +657,58 @@ export default function InitializeBaselinePage() {
           </Module>
         </div>
 
-        {/* ── COLUMN 2: Financial Engines ── */}
+        {/* ── COLUMN 2: Stage & Industry, Liquidity, Cost Structure ── */}
         <div style={SC.col2}>
-          <Module title="E: LIQUIDITY & FUNDING">
-            <div style={{ ...SC.modBody, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <Module title="MODULE C: STAGE & INDUSTRY">
+            <div style={SC.modBody}>
+              <div>
+                <span style={SC.inputLabel}>Stage</span>
+                <div style={SC.pillGrid}>
+                  {STAGES.map((s) => (
+                    <StatusToggle key={s} label={s} active={form.stage === s} onClick={() => update("stage", s)} />
+                  ))}
+                </div>
+              </div>
+              <div style={{ marginTop: 8 }}>
+                <span style={SC.inputLabel}>Industry</span>
+                <div style={SC.pillGrid}>
+                  {INDUSTRIES.map((ind) => (
+                    <StatusToggle key={ind} label={ind} active={form.industry === ind} onClick={() => update("industry", ind)} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </Module>
+
+          <Module title="MODULE E: LIQUIDITY & FUNDING">
+            <div style={SC.modBody}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                 <PowerBar label="Cash on Hand" value={form.cashOnHand} max={5_000_000} color="cyan"
                   onChange={(v) => update("cashOnHand", Math.round(v))} />
                 <PowerBar label="Monthly Net Burn" value={form.monthlyNetBurn} max={500_000} color="amber"
                   onChange={(v) => update("monthlyNetBurn", Math.round(v))} />
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                <TacticalInput label="Debt Outstanding" value={form.debtOutstanding} prefix="$"
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 8 }}>
+                <TacticalInput label="Funding Amount" value={form.debtOutstanding} prefix="$"
                   onChange={(v) => update("debtOutstanding", Number(v) || 0)} />
                 <TacticalInput label="Interest Rate" value={form.debtInterestRate} suffix="%"
                   onChange={(v) => update("debtInterestRate", Number(v) || 0)} />
                 <TacticalInput label="Fundraising Window" value={form.fundraisingWindow} suffix="months"
                   onChange={(v) => update("fundraisingWindow", Number(v) || 0)} />
-                <ToggleRow label="Capital Access" options={["Moderate", "Strong"] as AccessToCapital[]}
-                  value={form.accessToCapital} onChange={(v) => update("accessToCapital", v)} />
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  <span style={SC.inputLabel}>Debt Facility</span>
+                  <ToggleRow label="" options={["Fixed", "Variable"] as BurnFlexibility[]}
+                    value={form.burnFlexibility} onChange={(v) => update("burnFlexibility", v)} />
+                </div>
               </div>
             </div>
           </Module>
 
-          <Module title="F: REVENUE ENGINE">
-            <div style={{ ...SC.modBody, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                <PowerBar label="Current ARR" value={form.currentARR} max={10_000_000} color="cyan"
-                  onChange={(v) => update("currentARR", Math.round(v))} />
-                <PowerBar label="Monthly Growth" value={form.monthlyGrowthPct} max={30} unit="%" color="cyan"
-                  onChange={(v) => update("monthlyGrowthPct", Math.round(v * 10) / 10)} />
-                <PowerBar label="Gross Margin" value={form.grossMarginPct} max={100} unit="%" color="cyan"
-                  onChange={(v) => update("grossMarginPct", Math.round(v * 10) / 10)} />
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                <TacticalInput label="Avg Deal Size (ACV)" value={form.avgDealSize} prefix="$"
-                  onChange={(v) => update("avgDealSize", Number(v) || 0)} />
-                <PowerBar label="Monthly Churn" value={form.monthlyChurnPct} max={15} unit="%" color="amber"
-                  onChange={(v) => update("monthlyChurnPct", Math.round(v * 10) / 10)} />
-                <PowerBar label="Sales Efficiency" value={form.salesEfficiency} max={3} unit="x" color="cyan"
-                  onChange={(v) => update("salesEfficiency", Math.round(v * 10) / 10)} />
-                <PowerBar label="Net Revenue Retention" value={form.netRevenueRetentionPct} max={200} unit="%" color="cyan"
-                  onChange={(v) => update("netRevenueRetentionPct", Math.round(v))} />
-              </div>
-            </div>
-          </Module>
-
-          <Module title="G: COST STRUCTURE">
-            <div style={{ ...SC.modBody, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+          <Module title="MODULE G: COST STRUCTURE">
+            <div style={{ ...SC.modBody, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <TacticalInput label="Headcount" value={form.headcount}
                 onChange={(v) => update("headcount", Number(v) || 0)} />
-              <TacticalInput label="Avg Loaded Cost" value={form.avgFullyLoadedCost} prefix="$"
+              <TacticalInput label="Avg Fully Loaded Cost" value={form.avgFullyLoadedCost} prefix="$"
                 onChange={(v) => update("avgFullyLoadedCost", Number(v) || 0)} />
               <TacticalInput label="Sales & Marketing" value={form.salesMarketingSpend} prefix="$"
                 onChange={(v) => update("salesMarketingSpend", Number(v) || 0)} />
@@ -731,46 +724,63 @@ export default function InitializeBaselinePage() {
           </Module>
         </div>
 
-        {/* ── COLUMN 3: Strategic Posture & Dynamic Outcome Rail ── */}
+        {/* ── COLUMN 3: Revenue Engine, Strategic Posture, Outcome Rail ── */}
         <div style={SC.col3}>
-          <Module title="H: STRATEGIC POSTURE">
-            <div style={{ ...SC.modBody, display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
-              <span style={{ fontSize: 9, fontWeight: 900, color: "rgba(226,240,255,0.85)", letterSpacing: "0.16em", textTransform: "uppercase" }}>Risk Tolerance</span>
+          <Module title="MODULE F: REVENUE ENGINE">
+            <div style={SC.modBody}>
+              <PowerBar label="Current ARR" value={form.currentARR} max={10_000_000} color="cyan"
+                onChange={(v) => update("currentARR", Math.round(v))} />
+              <PowerBar label="Monthly Growth %" value={form.monthlyGrowthPct} max={30} unit="%" color="cyan"
+                onChange={(v) => update("monthlyGrowthPct", Math.round(v * 10) / 10)} />
+              <PowerBar label="Gross Margin %" value={form.grossMarginPct} max={100} unit="%" color="cyan"
+                onChange={(v) => update("grossMarginPct", Math.round(v * 10) / 10)} />
+              <TacticalInput label="Avg Contract (Years)" value={form.avgDealSize} prefix="$"
+                onChange={(v) => update("avgDealSize", Number(v) || 0)} />
+              <PowerBar label="Monthly Churn %" value={form.monthlyChurnPct} max={15} unit="%" color="amber"
+                onChange={(v) => update("monthlyChurnPct", Math.round(v * 10) / 10)} />
+              <PowerBar label="Sales Efficiency" value={form.salesEfficiency} max={3} unit="x" color="cyan"
+                onChange={(v) => update("salesEfficiency", Math.round(v * 10) / 10)} />
+              <PowerBar label="Net Revenue Retention" value={form.netRevenueRetentionPct} max={200} unit="%" color="cyan"
+                onChange={(v) => update("netRevenueRetentionPct", Math.round(v))} />
+            </div>
+          </Module>
 
-              {/* Dial */}
-              <div className="bezel-carved" style={SC.dial}>
+          <Module title="MODULE H: STRATEGIC POSTURE">
+            <div style={{ ...SC.modBody, display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+              <span style={{ fontSize: 10, fontWeight: 600, color: "#E6F1FF", letterSpacing: "0.08em", textTransform: "uppercase" }}>Risk Tolerance</span>
+
+              <div style={SC.dial}>
                 <div style={SC.dialInner}>
-                  <div className="gm-needle glow-cyan" style={{ ...SC.dialNeedle, "--needle-angle": `${needleAngle}deg` } as React.CSSProperties} />
+                  <div style={{ ...SC.dialNeedle, "--needle-angle": `${needleAngle}deg` } as React.CSSProperties} />
                 </div>
               </div>
 
-              <div style={{ display: "flex", gap: 0, width: "100%" }}>
+              <div style={{ display: "flex", gap: 0, width: "100%", borderRadius: 8, overflow: "hidden", border: "1px solid #1E3A5F" }}>
                 {(["Conservative", "Balanced", "Aggressive"] as RiskTolerance[]).map((r) => (
                   <button key={r} type="button" onClick={() => update("riskTolerance", r)} style={{
-                    flex: 1, padding: "6px 0", fontSize: 8, fontWeight: 900, letterSpacing: "0.08em",
+                    flex: 1, padding: "8px 0", fontSize: 9, fontWeight: 600, letterSpacing: "0.06em",
                     textTransform: "uppercase", fontFamily: FONT, cursor: "pointer", transition: "all 0.15s",
-                    border: "none", borderRadius: 0,
-                    background: form.riskTolerance === r ? "rgba(34,211,238,0.1)" : "transparent",
-                    color: form.riskTolerance === r ? "#22d3ee" : "rgba(100,116,139,0.4)",
-                    borderBottom: form.riskTolerance === r ? "2px solid #22d3ee" : "2px solid transparent",
+                    border: "none",
+                    background: form.riskTolerance === r ? "#22D3EE" : "#0B243A",
+                    color: form.riskTolerance === r ? "#04121F" : "#8FB4D9",
                   }}>{r}</button>
                 ))}
               </div>
 
-              <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 10, borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: 12 }}>
+              <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 10, borderTop: "1px solid #1E3A5F", paddingTop: 12 }}>
                 <BinarySwitch label="External Capital Required?" active={form.accessToCapital === "Strong"} onToggle={() => update("accessToCapital", form.accessToCapital === "Strong" ? "Moderate" : "Strong")} />
                 <BinarySwitch label="Focus on Runway?" active={form.priorityBalance < 40} onToggle={() => update("priorityBalance", form.priorityBalance < 40 ? 60 : 20)} />
+                <BinarySwitch label="Survival vs Expansion?" active={form.priorityBalance > 50} onToggle={() => update("priorityBalance", form.priorityBalance > 50 ? 30 : 70)} />
                 <BinarySwitch label="Growth-at-all-Costs?" active={form.priorityBalance > 75} onToggle={() => update("priorityBalance", form.priorityBalance > 75 ? 50 : 90)} />
               </div>
             </div>
           </Module>
 
-          {/* Dynamic Outcome Rail */}
           <Module title="DYNAMIC OUTCOME RAIL" style={{ flex: 1 }}>
-            <div style={{ ...SC.modBody, display: "flex", flexDirection: "column", gap: 10 }} className="gm-scrollbar">
-              <OutcomeCard label="ARR" value={fmtCurrency(form.currentARR)} color="#22d3ee" />
-              <OutcomeCard label="Growth" value={`${form.monthlyGrowthPct.toFixed(1)}%`} color="#22d3ee" />
-              <OutcomeCard label="Avg Contract" value={fmtCurrency(form.avgDealSize)} color="#22d3ee" />
+            <div style={{ ...SC.modBody, display: "flex", flexDirection: "column", gap: 8 }} className="gm-scrollbar">
+              <OutcomeCard label="ARR" value={fmtCurrency(form.currentARR)} color="#22D3EE" />
+              <OutcomeCard label="Growth" value={`${form.monthlyGrowthPct.toFixed(1)}%`} color="#22D3EE" />
+              <OutcomeCard label="Avg Contract" value={fmtCurrency(form.avgDealSize)} color="#22D3EE" />
               <OutcomeCard label="Gross Margin" value={`${form.grossMarginPct.toFixed(1)}%`} color="#34d399" />
               <OutcomeCard label="Churn" value={`${form.monthlyChurnPct.toFixed(1)}%`} color="#f59e0b" />
               <OutcomeCard label="NRR" value={`${form.netRevenueRetentionPct}%`} color={form.netRevenueRetentionPct >= 100 ? "#34d399" : "#f87171"} />
@@ -779,44 +789,40 @@ export default function InitializeBaselinePage() {
                 color={metrics.operatingProfit >= 0 ? "#34d399" : "#f87171"} />
             </div>
           </Module>
-
-          {/* Lock Button — Chrome Bejewelled CTA */}
-          <button
-            type="button"
-            onClick={handleLock}
-            disabled={!canLock || isLocking}
-            className={isLocking ? "" : "gm-lock-idle"}
-            style={{
-              position: "relative",
-              height: 56,
-              borderRadius: 10,
-              border: isLocking ? "1.5px solid rgba(239,68,68,0.4)" : "1.5px solid rgba(34,211,238,0.35)",
-              background: isLocking
-                ? "linear-gradient(180deg, rgba(239,68,68,0.12) 0%, rgba(239,68,68,0.06) 100%)"
-                : "linear-gradient(180deg, rgba(18,28,48,0.95) 0%, rgba(8,14,28,0.98) 100%)",
-              color: isLocking ? "#f87171" : "#22d3ee",
-              fontSize: 11, fontWeight: 900, letterSpacing: "0.22em", textTransform: "uppercase",
-              fontFamily: FONT, cursor: canLock ? "pointer" : "default",
-              opacity: canLock ? 1 : 0.35,
-              transition: "all 0.3s",
-              flexShrink: 0,
-              boxShadow: isLocking
-                ? "inset 0 1px 0 rgba(239,68,68,0.08), 0 2px 8px rgba(0,0,0,0.3)"
-                : "0 0 0 1px rgba(255,255,255,0.03), 0 0 0 3px rgba(34,211,238,0.05), inset 0 1px 0 rgba(200,220,245,0.06), inset 0 -1px 0 rgba(0,0,0,0.2), 0 4px 16px rgba(0,0,0,0.35), 0 0 20px rgba(34,211,238,0.06)",
-            }}
-          >
-            {isLocking ? "CALCULATING VECTORS..." : "LOCK BASELINE & ENTER STRATFIT"}
-          </button>
         </div>
       </main>
+
+      {/* ═══ LOCK BUTTON — FIXED BOTTOM ═══ */}
+      <div style={{ padding: "12px 24px", flexShrink: 0, display: "flex", justifyContent: "flex-end", maxWidth: 1600, margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
+        <button
+          type="button"
+          onClick={handleLock}
+          disabled={!canLock || isLocking}
+          style={{
+            height: 46,
+            padding: "0 40px",
+            borderRadius: 10,
+            border: "none",
+            background: isLocking ? "#f87171" : "#22D3EE",
+            color: "#04121F",
+            fontSize: 12, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase",
+            fontFamily: FONT, cursor: canLock ? "pointer" : "default",
+            opacity: canLock ? 1 : 0.35,
+            transition: "all 0.2s",
+            boxShadow: "0 0 20px rgba(34,211,238,0.3), 0 4px 12px rgba(0,0,0,0.3)",
+          }}
+        >
+          {isLocking ? "CALCULATING VECTORS..." : "LOCK BASELINE & ENTER STRATFIT"}
+        </button>
+      </div>
 
       {/* ═══ XERO MODAL ═══ */}
       {showXeroModal && (
         <div style={SC.modalBackdrop} onClick={() => setShowXeroModal(false)}>
-          <div className="bezel-titanium" style={SC.modalCard} onClick={(e) => e.stopPropagation()}>
+          <div style={SC.modalCard} onClick={(e) => e.stopPropagation()}>
             <span style={{ fontSize: 36 }}>&#9741;</span>
-            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "rgba(226,240,255,0.9)" }}>Connect Your Xero Account</h2>
-            <p style={{ margin: 0, fontSize: 12, color: "rgba(148,180,214,0.45)", lineHeight: 1.55 }}>
+            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "#E6F1FF" }}>Connect Your Xero Account</h2>
+            <p style={{ margin: 0, fontSize: 12, color: "#8FB4D9", lineHeight: 1.55 }}>
               Automatically import P&amp;L, balance sheet, and cash flow data from Xero.
             </p>
             <button type="button" style={SC.modalBtn}
@@ -841,25 +847,25 @@ export default function InitializeBaselinePage() {
           width: 14px;
           height: 14px;
           border-radius: 50%;
-          border: 2px solid rgba(255,255,255,0.9);
+          border: none;
           cursor: pointer;
           transition: box-shadow 0.15s;
         }
         .gm-range-cyan::-webkit-slider-thumb {
-          background: #22d3ee;
-          box-shadow: 0 0 8px rgba(34,211,238,0.6), 0 0 2px rgba(255,255,255,0.4);
+          background: #22D3EE;
+          box-shadow: 0 0 10px rgba(34,211,238,0.6);
         }
         .gm-range-amber::-webkit-slider-thumb {
           background: #f59e0b;
-          box-shadow: 0 0 8px rgba(245,158,11,0.6), 0 0 2px rgba(255,255,255,0.4);
+          box-shadow: 0 0 10px rgba(245,158,11,0.6);
         }
         .gm-range-cyan::-webkit-slider-thumb:hover {
-          box-shadow: 0 0 14px rgba(34,211,238,0.8), 0 0 4px rgba(255,255,255,0.5);
-          transform: scale(1.15);
+          box-shadow: 0 0 16px rgba(34,211,238,0.8);
+          transform: scale(1.2);
         }
         .gm-range-amber::-webkit-slider-thumb:hover {
-          box-shadow: 0 0 14px rgba(245,158,11,0.8), 0 0 4px rgba(255,255,255,0.5);
-          transform: scale(1.15);
+          box-shadow: 0 0 16px rgba(245,158,11,0.8);
+          transform: scale(1.2);
         }
 
         .gm-range-cyan::-moz-range-thumb,
@@ -867,16 +873,16 @@ export default function InitializeBaselinePage() {
           width: 14px;
           height: 14px;
           border-radius: 50%;
-          border: 2px solid rgba(255,255,255,0.9);
+          border: none;
           cursor: pointer;
         }
         .gm-range-cyan::-moz-range-thumb {
-          background: #22d3ee;
-          box-shadow: 0 0 8px rgba(34,211,238,0.6);
+          background: #22D3EE;
+          box-shadow: 0 0 10px rgba(34,211,238,0.6);
         }
         .gm-range-amber::-moz-range-thumb {
           background: #f59e0b;
-          box-shadow: 0 0 8px rgba(245,158,11,0.6);
+          box-shadow: 0 0 10px rgba(245,158,11,0.6);
         }
 
         .gm-range-cyan::-webkit-slider-runnable-track,
@@ -899,12 +905,11 @@ function OutcomeCard({ label, value, color }: { label: string; value: string; co
     <div style={{
       display: "flex", alignItems: "center", justifyContent: "space-between",
       padding: "10px 14px", borderRadius: 8,
-      background: "linear-gradient(180deg, rgba(16,22,36,0.85) 0%, rgba(8,12,22,0.9) 100%)",
-      border: "1.5px solid rgba(148,175,210,0.1)",
-      boxShadow: "0 0 0 1px rgba(255,255,255,0.02), inset 0 1px 0 rgba(200,220,245,0.04), inset 0 -1px 0 rgba(0,0,0,0.15), 0 2px 6px rgba(0,0,0,0.2)",
+      background: "#0A1C2E",
+      border: "1px solid #1E3A5F",
     }}>
-      <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(148,180,214,0.5)" }}>{label}</span>
-      <span style={{ fontSize: 17, fontWeight: 900, fontFamily: "ui-monospace, 'JetBrains Mono', monospace", color, textShadow: `0 0 14px ${color}` }}>{value}</span>
+      <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#8FB4D9" }}>{label}</span>
+      <span style={{ fontSize: 16, fontWeight: 800, fontFamily: "ui-monospace, 'JetBrains Mono', monospace", color, textShadow: `0 0 10px ${color}` }}>{value}</span>
     </div>
   )
 }
@@ -919,153 +924,149 @@ const SC: Record<string, React.CSSProperties> = {
   page: {
     position: "relative",
     display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden",
-    color: "rgba(226,240,255,0.85)", fontFamily: FONT,
-    background: "linear-gradient(168deg, #0D1626 0%, #0A111F 35%, #060A14 100%)",
+    color: "#E6F1FF", fontFamily: FONT,
+    background: "#020617",
   },
   powerRail: {
     display: "flex", alignItems: "center", justifyContent: "space-between",
-    height: 60, padding: "0 24px", flexShrink: 0,
-    background: "linear-gradient(180deg, rgba(14,20,34,0.98) 0%, rgba(8,12,22,0.96) 100%)",
-    borderBottom: "1.5px solid rgba(148,175,210,0.14)",
-    backdropFilter: "blur(16px)",
-    boxShadow: "0 2px 16px rgba(0,0,0,0.4), inset 0 -1px 0 rgba(0,0,0,0.3), inset 0 1px 0 rgba(200,220,245,0.04)",
+    height: 56, padding: "0 28px", flexShrink: 0,
+    background: "#07182A",
+    borderBottom: "1px solid #1E3A5F",
+    boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
     zIndex: 5,
   },
   powerRailLeft: {
     display: "flex", alignItems: "center", gap: 18, minWidth: 0,
   },
   sysLabel: {
-    fontSize: 7, fontWeight: 900, color: "rgba(34,211,238,0.5)", letterSpacing: "0.22em", textTransform: "uppercase",
+    fontSize: 8, fontWeight: 700, color: "#22D3EE", letterSpacing: "0.18em", textTransform: "uppercase",
   },
   sysTitle: {
-    fontSize: 14, fontWeight: 900, fontStyle: "italic", color: "#67e8f9", letterSpacing: "0.06em",
-    textShadow: "0 0 18px rgba(34,211,238,0.4)",
+    fontSize: 14, fontWeight: 800, fontStyle: "italic", color: "#22D3EE", letterSpacing: "0.06em",
+    textShadow: "0 0 14px rgba(34,211,238,0.3)",
   },
   railDivider: {
-    width: 1, height: 30, background: "linear-gradient(180deg, transparent 0%, rgba(148,175,210,0.15) 30%, rgba(34,211,238,0.1) 50%, rgba(148,175,210,0.15) 70%, transparent 100%)", flexShrink: 0,
+    width: 1, height: 28, background: "#1E3A5F", flexShrink: 0,
   },
   railTitle: {
-    fontSize: 17, fontWeight: 700, color: "rgba(226,240,255,0.92)", whiteSpace: "nowrap", letterSpacing: "0.02em",
+    fontSize: 16, fontWeight: 700, color: "#E6F1FF", whiteSpace: "nowrap", letterSpacing: "0.02em",
   },
   metricsRow: {
     display: "flex", alignItems: "center", gap: 24, flexShrink: 0,
   },
   metricBlock: {
     display: "flex", flexDirection: "column", alignItems: "flex-end",
-    padding: "4px 12px",
-    borderRadius: 6,
-    background: "rgba(0,0,0,0.2)",
-    border: "1px solid rgba(148,175,210,0.06)",
+    padding: "6px 14px",
+    borderRadius: 8,
+    background: "#0A1C2E",
+    border: "1px solid #1E3A5F",
   },
   metricLabel: {
-    fontSize: 7, fontWeight: 900, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(148,180,214,0.45)",
+    fontSize: 8, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#8FB4D9",
   },
   metricValue: {
-    fontSize: 16, fontWeight: 900, fontFamily: "ui-monospace, 'JetBrains Mono', monospace",
-    textShadow: "0 0 14px currentColor",
+    fontSize: 15, fontWeight: 800, fontFamily: "ui-monospace, 'JetBrains Mono', monospace",
+    textShadow: "0 0 12px currentColor",
   },
 
   grid: {
-    flex: 1, display: "grid", gridTemplateColumns: "280px 1fr 272px",
-    gap: 14, padding: "14px 18px", minHeight: 0, overflow: "auto",
+    flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
+    gap: 24, padding: "18px 24px", minHeight: 0, overflow: "auto",
+    maxWidth: 1600, margin: "0 auto", width: "100%", boxSizing: "border-box",
     zIndex: 1,
   },
-  col1: { display: "flex", flexDirection: "column", gap: 12, minHeight: 0, overflow: "auto" },
-  col2: { display: "flex", flexDirection: "column", gap: 12, minHeight: 0, overflow: "auto" },
-  col3: { display: "flex", flexDirection: "column", gap: 12, minHeight: 0 },
+  col1: { display: "flex", flexDirection: "column", gap: 20, minHeight: 0, overflow: "auto" },
+  col2: { display: "flex", flexDirection: "column", gap: 20, minHeight: 0, overflow: "auto" },
+  col3: { display: "flex", flexDirection: "column", gap: 20, minHeight: 0 },
 
   moduleHeader: {
     position: "relative",
-    padding: "8px 16px", fontSize: 9, fontWeight: 900, letterSpacing: "0.16em", textTransform: "uppercase",
-    color: "rgba(200,215,235,0.8)",
-    background: "linear-gradient(180deg, rgba(30,38,56,0.4) 0%, rgba(0,0,0,0.15) 100%)",
-    borderBottom: "1px solid rgba(148,175,210,0.1)",
-    boxShadow: "inset 0 1px 0 rgba(200,220,245,0.04), 0 1px 0 rgba(0,0,0,0.2)",
+    padding: "10px 20px", fontSize: 13, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase",
+    color: "#8FB4D9",
+    background: "transparent",
+    borderBottom: "1px solid rgba(31,74,117,0.3)",
+    marginBottom: 0,
   },
   modBody: {
-    padding: 16, display: "flex", flexDirection: "column", gap: 14,
+    padding: "18px 20px", display: "flex", flexDirection: "column", gap: 14,
   },
 
   powerLabel: {
-    fontSize: 9, fontWeight: 900, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(200,215,235,0.75)",
+    fontSize: 10, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#8FB4D9",
   },
   powerValue: {
-    fontSize: 13, fontWeight: 900, fontFamily: "ui-monospace, 'JetBrains Mono', monospace",
-    textShadow: "0 0 12px currentColor",
+    fontSize: 13, fontWeight: 700, fontFamily: "ui-monospace, 'JetBrains Mono', monospace",
+    textShadow: "0 0 10px currentColor",
   },
   powerTrack: {
-    height: 14, borderRadius: 7, padding: 2, overflow: "hidden",
-    background: "linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(6,10,20,0.6) 100%)",
-    border: "1px solid rgba(148,175,210,0.08)",
-    boxShadow: "inset 0 1px 3px rgba(0,0,0,0.5), 0 1px 0 rgba(200,220,245,0.04)",
+    height: 6, borderRadius: 3, overflow: "hidden",
+    background: "#0F2A44",
   },
   powerFill: {
-    height: "100%", borderRadius: 5, minWidth: 2,
+    height: "100%", borderRadius: 3, minWidth: 2,
   },
   rangeInput: {
-    position: "absolute" as const, top: 0, left: 0,
-    width: "100%", height: "100%",
+    position: "absolute" as const, top: -4, left: 0,
+    width: "100%", height: 14,
     appearance: "none", WebkitAppearance: "none",
-    background: "transparent", borderRadius: 7, outline: "none", cursor: "pointer",
+    background: "transparent", borderRadius: 3, outline: "none", cursor: "pointer",
     margin: 0, padding: 0, zIndex: 2,
   },
 
   inputLabel: {
-    fontSize: 9, fontWeight: 900, color: "rgba(200,215,235,0.7)", letterSpacing: "0.06em", textTransform: "uppercase",
+    fontSize: 10, fontWeight: 600, color: "#8FB4D9", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 2,
   },
   inputWrap: {
     display: "flex", alignItems: "center", overflow: "hidden",
-    background: "linear-gradient(180deg, rgba(6,10,20,0.5) 0%, rgba(10,14,26,0.35) 100%)",
-    borderRadius: 7,
-    border: "1.5px solid rgba(148,175,210,0.12)",
-    boxShadow: "inset 0 1px 3px rgba(0,0,0,0.3), 0 1px 0 rgba(200,220,245,0.04), 0 0 0 1px rgba(120,140,170,0.03)",
+    background: "#0A1C2E",
+    borderRadius: 8,
+    border: "1px solid #1E3A5F",
     transition: "border-color 160ms ease, box-shadow 160ms ease",
   },
   inputInner: {
-    flex: 1, padding: "9px 12px", fontSize: 13, fontWeight: 600, fontFamily: FONT,
-    color: "rgba(230,240,255,0.95)", background: "transparent", border: "none", outline: "none", minWidth: 0,
+    flex: 1, height: 36, padding: "0 10px", fontSize: 13, fontWeight: 500, fontFamily: FONT,
+    color: "#E6F1FF", background: "transparent", border: "none", outline: "none", minWidth: 0,
   },
   inputAffix: {
-    padding: "0 10px", fontSize: 11, color: "rgba(148,180,214,0.4)", flexShrink: 0, fontWeight: 500,
+    padding: "0 10px", fontSize: 11, color: "#8FB4D9", flexShrink: 0, fontWeight: 500,
   },
 
   pillGrid: {
-    display: "grid", gridTemplateColumns: "1fr 1fr", gap: 5, marginTop: 6,
+    display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginTop: 6,
   },
 
   toggleLabel: {
-    fontSize: 9, fontWeight: 900, color: "rgba(200,215,235,0.75)", letterSpacing: "0.02em",
+    fontSize: 10, fontWeight: 600, color: "#8FB4D9", letterSpacing: "0.02em",
   },
   toggleGroup: {
-    display: "inline-flex", borderRadius: 6, overflow: "hidden",
-    border: "1px solid rgba(148,175,210,0.12)",
-    boxShadow: "0 0 0 1px rgba(120,140,170,0.03)",
+    display: "inline-flex", borderRadius: 8, overflow: "hidden",
+    border: "1px solid #1E3A5F",
   },
   toggleBtn: {
-    padding: "6px 12px", fontSize: 9, fontWeight: 700, fontFamily: FONT,
-    color: "rgba(200,215,235,0.55)", background: "rgba(0,0,0,0.2)", border: "none",
+    padding: "7px 14px", fontSize: 10, fontWeight: 600, fontFamily: FONT,
+    color: "#8FB4D9", background: "#0B243A", border: "none",
     cursor: "pointer", transition: "all 0.15s", letterSpacing: "0.04em",
-    borderRight: "1px solid rgba(148,175,210,0.06)",
+    borderRight: "1px solid #1E3A5F",
   },
   toggleBtnActive: {
-    color: "#22d3ee", background: "rgba(34,211,238,0.1)",
-    boxShadow: "inset 0 0 8px rgba(34,211,238,0.06)",
+    color: "#04121F", background: "#22D3EE",
+    fontWeight: 700,
   },
 
   dial: {
-    width: 110, height: 110, borderRadius: "50%",
+    width: 120, height: 120, borderRadius: "50%",
     display: "flex", alignItems: "center", justifyContent: "center",
-    background: "linear-gradient(145deg, rgba(30,36,52,0.6) 0%, rgba(10,14,26,0.8) 100%)",
-    border: "1.5px solid rgba(148,175,210,0.12)",
-    boxShadow: "0 0 0 3px rgba(120,140,170,0.04), 0 0 0 5px rgba(60,70,90,0.03), inset 0 2px 6px rgba(0,0,0,0.4)",
+    background: "#0A1C2E",
+    border: "1px solid #1E3A5F",
+    boxShadow: "0 0 0 3px rgba(30,58,95,0.2), inset 0 2px 8px rgba(0,0,0,0.4)",
   },
   dialInner: {
-    width: 76, height: 76, borderRadius: "50%",
-    background: "radial-gradient(ellipse at 40% 30%, rgba(18,24,38,0.95) 0%, rgba(6,10,18,0.98) 100%)",
-    border: "1px solid rgba(148,175,210,0.14)",
+    width: 80, height: 80, borderRadius: "50%",
+    background: "#07182A",
+    border: "1px solid #1E3A5F",
     display: "flex", alignItems: "center", justifyContent: "center",
     position: "relative",
-    boxShadow: "inset 0 2px 8px rgba(0,0,0,0.6), inset 0 0 12px rgba(34,211,238,0.03), 0 0 16px rgba(34,211,238,0.06)",
+    boxShadow: "inset 0 2px 8px rgba(0,0,0,0.5), 0 0 14px rgba(34,211,238,0.06)",
   },
   dialNeedle: {
     width: 2, height: 30, background: "#22d3ee", borderRadius: 1,
@@ -1074,46 +1075,46 @@ const SC: Record<string, React.CSSProperties> = {
   },
 
   smallBtn: {
-    flex: 1, padding: "8px 10px", fontSize: 9, fontWeight: 700, letterSpacing: "0.04em",
-    fontFamily: FONT, borderRadius: 7, cursor: "pointer", transition: "all 0.15s",
-    border: "1.5px solid rgba(34,211,238,0.2)", background: "rgba(34,211,238,0.04)", color: "rgba(34,211,238,0.75)",
-    boxShadow: "0 0 0 1px rgba(34,211,238,0.03)",
+    flex: 1, padding: "8px 10px", fontSize: 10, fontWeight: 600, letterSpacing: "0.04em",
+    fontFamily: FONT, borderRadius: 8, cursor: "pointer", transition: "all 0.15s",
+    border: "1px solid #1E3A5F", background: "#0B243A", color: "#22D3EE",
   },
   dropZone: {
     display: "flex", alignItems: "center", justifyContent: "center",
-    minHeight: 52, border: "2px dashed rgba(148,175,210,0.08)", borderRadius: 8,
-    background: "rgba(0,0,0,0.15)", cursor: "pointer", transition: "all 0.2s",
+    minHeight: 52, border: "2px dashed #1E3A5F", borderRadius: 8,
+    background: "#0A1C2E", cursor: "pointer", transition: "all 0.2s",
   },
 
   modalBackdrop: {
     position: "fixed", inset: 0, zIndex: 300,
     display: "flex", alignItems: "center", justifyContent: "center",
-    background: "rgba(4,8,16,0.88)", backdropFilter: "blur(8px)",
+    background: "rgba(2,6,23,0.9)", backdropFilter: "blur(8px)",
   },
   modalCard: {
     display: "flex", flexDirection: "column", alignItems: "center", gap: 18,
     padding: "40px 44px", maxWidth: 420, width: "90%", textAlign: "center",
+    background: "#07182A", border: "1px solid #1E3A5F", borderRadius: 14,
+    boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
   },
   modalBtn: {
     padding: "11px 30px", fontSize: 12, fontWeight: 700, letterSpacing: "0.04em",
     fontFamily: FONT, borderRadius: 8, cursor: "pointer", transition: "all 0.2s",
-    border: "1.5px solid rgba(34,211,238,0.3)",
-    background: "linear-gradient(135deg, rgba(34,211,238,0.15), rgba(34,211,238,0.06))",
-    color: "#67e8f9",
-    boxShadow: "0 0 0 1px rgba(34,211,238,0.04), 0 2px 8px rgba(0,0,0,0.3)",
+    border: "none",
+    background: "#22D3EE",
+    color: "#04121F",
+    boxShadow: "0 0 14px rgba(34,211,238,0.3)",
   },
   modalClose: {
-    fontSize: 11, color: "rgba(148,180,214,0.35)", background: "none", border: "none",
+    fontSize: 11, color: "#8FB4D9", background: "none", border: "none",
     cursor: "pointer", fontFamily: FONT, padding: "6px 10px",
   },
   toast: {
     position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", zIndex: 400,
     padding: "12px 28px", fontSize: 12, fontWeight: 600, fontFamily: FONT,
-    color: "rgba(226,240,255,0.9)",
-    background: "linear-gradient(180deg, rgba(18,24,40,0.94) 0%, rgba(10,14,26,0.96) 100%)",
-    border: "1.5px solid rgba(148,175,210,0.14)", borderRadius: 8,
-    backdropFilter: "blur(12px)",
-    boxShadow: "0 0 0 1px rgba(255,255,255,0.04), 0 0 0 3px rgba(120,140,170,0.05), 0 8px 30px -8px rgba(0,0,0,0.5)",
+    color: "#E6F1FF",
+    background: "#07182A",
+    border: "1px solid #1E3A5F", borderRadius: 10,
+    boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
     animation: "sfInitToastIn 300ms ease-out",
   },
 }

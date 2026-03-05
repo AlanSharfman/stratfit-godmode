@@ -24,8 +24,6 @@ const CRITICAL_THRESHOLDS: Partial<Record<KpiKey, { low?: number; high?: number 
   churn: { high: 15 },
   grossMargin: { low: 30 },
   headcount: { low: 2 },
-  nrr: { low: 70 },
-  efficiency: { low: 0.3 },
 }
 
 const WATCH_THRESHOLDS: Partial<Record<KpiKey, { low?: number; high?: number }>> = {
@@ -36,8 +34,6 @@ const WATCH_THRESHOLDS: Partial<Record<KpiKey, { low?: number; high?: number }>>
   grossMargin: { low: 50 },
   growth: { low: 5 },
   headcount: { low: 5 },
-  nrr: { low: 90 },
-  efficiency: { low: 0.5 },
 }
 
 function checkThreshold(
@@ -157,8 +153,6 @@ export function buildKpiSnapshot(kpis: {
   churnPct?: number
   grossMarginPct?: number
   headcount?: number
-  nrrPct?: number
-  efficiencyRatio?: number
   enterpriseValue?: number
 }): KpiSnapshot {
   return {
@@ -171,8 +165,6 @@ export function buildKpiSnapshot(kpis: {
     churn: kpis.churnPct ?? 0,
     grossMargin: kpis.grossMarginPct ?? 0,
     headcount: kpis.headcount ?? 0,
-    nrr: kpis.nrrPct ?? 100,
-    efficiency: kpis.efficiencyRatio ?? 0,
     enterpriseValue: kpis.enterpriseValue ?? 0,
   }
 }

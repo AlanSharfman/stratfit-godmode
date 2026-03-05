@@ -28,8 +28,6 @@ const SLIDERS: SliderConfig[] = [
   { kpi: "cash", label: "Cash Injection", min: -500000, max: 5000000, step: 50000, unit: "$" },
   { kpi: "grossMargin", label: "Gross Margin", min: -20, max: 20, step: 1, unit: "%" },
   { kpi: "headcount", label: "Headcount Change", min: -20, max: 30, step: 1, unit: "" },
-  { kpi: "nrr", label: "Net Revenue Retention", min: -30, max: 40, step: 1, unit: "%" },
-  { kpi: "efficiency", label: "Efficiency", min: -0.3, max: 0.5, step: 0.05, unit: "" },
 ]
 
 function formatSliderValue(value: number, unit: string): string {
@@ -72,8 +70,7 @@ export default function StudioPage() {
     const kpiFieldMap: Record<KpiKey, keyof PositionKpis> = {
       cash: "cashOnHand", runway: "runwayMonths", growth: "growthRatePct", arr: "arr",
       revenue: "revenueMonthly", burn: "burnMonthly", churn: "churnPct",
-      grossMargin: "grossMarginPct", headcount: "headcount", nrr: "nrrPct",
-      efficiency: "efficiencyRatio", enterpriseValue: "valuationEstimate",
+      grossMargin: "grossMarginPct", headcount: "headcount", enterpriseValue: "valuationEstimate",
     }
 
     const result = { ...baseKpis }

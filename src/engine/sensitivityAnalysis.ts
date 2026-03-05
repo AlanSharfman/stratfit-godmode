@@ -25,8 +25,6 @@ const KPI_LABELS: Record<KpiKey, string> = {
   churn: "Churn Rate",
   grossMargin: "Gross Margin",
   headcount: "Headcount",
-  nrr: "Net Revenue Retention",
-  efficiency: "Operational Efficiency",
   enterpriseValue: "Enterprise Value",
 }
 
@@ -40,8 +38,6 @@ const IMPROVEMENT_HEADLINES: Record<KpiKey, string> = {
   churn: "Reduce customer churn",
   grossMargin: "Improve gross margin",
   headcount: "Optimise team composition",
-  nrr: "Improve net revenue retention",
-  efficiency: "Increase operational efficiency",
   enterpriseValue: "Grow enterprise value",
 }
 
@@ -55,8 +51,6 @@ const DIFFICULTY_MAP: Record<KpiKey, "low" | "medium" | "high"> = {
   runway: "low",
   arr: "high",
   headcount: "medium",
-  nrr: "high",
-  efficiency: "medium",
   enterpriseValue: "high",
 }
 
@@ -64,11 +58,9 @@ const HORIZON_MAP: Record<KpiKey, "now" | "30d" | "90d"> = {
   burn: "now",
   runway: "now",
   cash: "now",
-  efficiency: "30d",
   churn: "30d",
   grossMargin: "30d",
   headcount: "30d",
-  nrr: "90d",
   revenue: "90d",
   growth: "90d",
   arr: "90d",
@@ -78,12 +70,10 @@ const HORIZON_MAP: Record<KpiKey, "now" | "30d" | "90d"> = {
 const EFFORT_MAP: Record<KpiKey, number> = {
   burn: 2,
   runway: 2,
-  efficiency: 4,
   cash: 5,
   churn: 6,
   grossMargin: 5,
   headcount: 5,
-  nrr: 7,
   revenue: 7,
   growth: 8,
   arr: 8,

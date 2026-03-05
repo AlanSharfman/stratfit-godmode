@@ -21,8 +21,6 @@ const KPI_VALUE_MAP: Record<KpiKey, { label: string; fmt: (k: PositionKpis) => s
   churn: { label: "Churn Rate (%)", fmt: (k) => k.churnPct.toFixed(1), raw: (k) => k.churnPct },
   grossMargin: { label: "Gross Margin (%)", fmt: (k) => k.grossMarginPct.toFixed(1), raw: (k) => k.grossMarginPct },
   headcount: { label: "Headcount", fmt: (k) => `${k.headcount}`, raw: (k) => k.headcount },
-  nrr: { label: "Net Revenue Retention (%)", fmt: (k) => k.nrrPct.toFixed(1), raw: (k) => k.nrrPct },
-  efficiency: { label: "Efficiency Ratio", fmt: (k) => k.efficiencyRatio.toFixed(2), raw: (k) => k.efficiencyRatio },
   enterpriseValue: { label: "Enterprise Value", fmt: (k) => k.valuationEstimate ? `$${k.valuationEstimate.toLocaleString()}` : "N/A", raw: (k) => k.valuationEstimate || 0 },
 }
 

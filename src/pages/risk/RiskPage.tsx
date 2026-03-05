@@ -53,7 +53,7 @@ function computeRiskDecomposition(kpis: PositionKpis): RiskCategory[] {
     {
       key: "execution",
       label: "Execution Risk",
-      score: Math.round((healthScore("efficiency") + healthScore("growth")) / 2),
+      score: healthScore("growth"),
       trend: kpis.efficiencyRatio < 0.5 ? "worsening" : kpis.efficiencyRatio > 1 ? "improving" : "stable",
       drivers: [
         kpis.efficiencyRatio < 0.5 ? "Efficiency ratio below threshold" : "Operational efficiency healthy",
@@ -73,7 +73,7 @@ function computeRiskDecomposition(kpis: PositionKpis): RiskCategory[] {
     {
       key: "competitive",
       label: "Competitive Risk",
-      score: Math.round((healthScore("grossMargin") + healthScore("growth") + healthScore("efficiency")) / 3),
+      score: Math.round((healthScore("grossMargin") + healthScore("growth")) / 2),
       trend: "stable",
       drivers: [
         "Competitive positioning inferred from margin and growth",
@@ -101,8 +101,8 @@ function computeStressImpact(kpis: PositionKpis, template: ScenarioTemplate): { 
   const kpiFieldMap: Record<KpiKey, keyof PositionKpis> = {
     cash: "cashOnHand", runway: "runwayMonths", growth: "growthRatePct", arr: "arr",
     revenue: "revenueMonthly", burn: "burnMonthly", churn: "churnPct",
-    grossMargin: "grossMarginPct", headcount: "headcount", nrr: "nrrPct",
-    efficiency: "efficiencyRatio", enterpriseValue: "valuationEstimate",
+    grossMargin: "grossMarginPct", headcount: "headcount",
+    enterpriseValue: "valuationEstimate",
   }
 
   const result = { ...kpis }

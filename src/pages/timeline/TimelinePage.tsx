@@ -35,8 +35,7 @@ const CASE_CONFIGS: Record<CaseType, { label: string; color: string; growthRates
 const KPI_LABELS: Record<KpiKey, string> = {
   cash: "Cash", runway: "Runway", growth: "Growth", arr: "ARR",
   revenue: "Revenue", burn: "Burn", churn: "Churn",
-  grossMargin: "Margin", headcount: "Team", nrr: "NRR",
-  efficiency: "Efficiency", enterpriseValue: "EV",
+  grossMargin: "Margin", headcount: "Team", enterpriseValue: "EV",
 }
 
 function snapshotToPosition(s: KpiSnapshot, base: PositionKpis): PositionKpis {
@@ -48,8 +47,8 @@ function snapshotToPosition(s: KpiSnapshot, base: PositionKpis): PositionKpis {
     revenueMonthly: s.revenue, survivalScore: base.survivalScore,
     grossMarginPct: s.grossMargin, valuationEstimate: s.enterpriseValue,
     growthRatePct: s.growth, churnPct: s.churn,
-    headcount: s.headcount, nrrPct: s.nrr,
-    efficiencyRatio: s.efficiency,
+    headcount: s.headcount, nrrPct: base.nrrPct,
+    efficiencyRatio: base.efficiencyRatio,
   }
 }
 
@@ -72,8 +71,7 @@ export default function TimelinePage() {
       growthRatePct: baseKpis.growthRatePct, arr: baseKpis.arr,
       revenueMonthly: baseKpis.revenueMonthly, burnMonthly: baseKpis.burnMonthly,
       churnPct: baseKpis.churnPct, grossMarginPct: baseKpis.grossMarginPct,
-      headcount: baseKpis.headcount, nrrPct: baseKpis.nrrPct,
-      efficiencyRatio: baseKpis.efficiencyRatio, enterpriseValue: baseKpis.valuationEstimate,
+      headcount: baseKpis.headcount, enterpriseValue: baseKpis.valuationEstimate,
     })
   }, [baseKpis])
 

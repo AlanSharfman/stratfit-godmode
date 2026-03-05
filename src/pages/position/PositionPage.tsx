@@ -241,7 +241,7 @@ export default function PositionPage() {
       growthRatePct: liveKpis.growthRatePct, arr: liveKpis.arr,
       revenueMonthly: liveKpis.revenueMonthly, burnMonthly: liveKpis.burnMonthly,
       churnPct: liveKpis.churnPct, grossMarginPct: liveKpis.grossMarginPct,
-      efficiencyRatio: liveKpis.efficiencyRatio, enterpriseValue: liveKpis.valuationEstimate,
+      headcount: liveKpis.headcount, enterpriseValue: liveKpis.valuationEstimate,
     })
     const timeline = timeSimulation(snapshot, { direct: {}, monthlyGrowthRates: { cash: -0.02, burn: 0.01, churn: 0.005 } }, 12)
     const cliff = findFirstCliff(timeline)

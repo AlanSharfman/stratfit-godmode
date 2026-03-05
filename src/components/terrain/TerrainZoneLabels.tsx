@@ -1,7 +1,7 @@
 import React, { useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
-import { KPI_KEYS, KPI_ZONE_MAP, KPI_CATEGORY_COLORS } from "@/domain/intelligence/kpiZoneMapping"
+import { KPI_ZONE_MAP, KPI_CATEGORY_COLORS, PRIMARY_KPI_KEYS, SECONDARY_KPI_KEYS } from "@/domain/intelligence/kpiZoneMapping"
 import type { PositionKpis } from "@/pages/position/overlays/positionState"
 
 interface Props {
@@ -15,20 +15,23 @@ interface Props {
 const ZONE_ICONS: Record<KpiKey, string> = {
   cash: "◈", runway: "⏳", growth: "↗", arr: "₿",
   revenue: "⚡", burn: "🔥", churn: "↺",
-  grossMargin: "△", headcount: "⊕", nrr: "⇈",
-  efficiency: "⚙", enterpriseValue: "◆",
+  grossMargin: "△", headcount: "⊕", enterpriseValue: "◆",
 }
 
 export default React.memo(function TerrainZoneLabels({ kpis, revealedKpis, focusedKpi, onFocusKpi, visible = true }: Props) {
   const zones = useMemo(() => {
     if (!kpis || revealedKpis.size === 0) return []
-    return KPI_KEYS.filter(k => revealedKpis.has(k)).map(kpi => {
+    const isSecondaryFocused = focusedKpi && SECONDARY_KPI_KEYS.includes(focusedKpi)
+    const visibleKeys = isSecondaryFocused
+      ? [...PRIMARY_KPI_KEYS, ...SECONDARY_KPI_KEYS.filter(k => k === focusedKpi)]
+      : [...PRIMARY_KPI_KEYS]
+    return visibleKeys.filter(k => revealedKpis.has(k)).map(kpi => {
       const zone = KPI_ZONE_MAP[kpi]
       const color = KPI_CATEGORY_COLORS[kpi].hex
       const xCenter = (zone.xStart + zone.xEnd) / 2
       return { kpi, label: zone.label, color, xCenter, icon: ZONE_ICONS[kpi] }
     })
-  }, [kpis, revealedKpis])
+  }, [kpis, revealedKpis, focusedKpi])
 
   if (!visible || zones.length === 0) return null
 
