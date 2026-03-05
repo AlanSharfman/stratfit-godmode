@@ -57,7 +57,7 @@ export default function WelcomePage() {
       <div style={S.voidBg} />
 
       <div style={S.terrainLayer}>
-        <TerrainStage lockCamera pathsEnabled={false} terrainMetrics={WELCOME_METRICS} autoRotateSpeed={0.08} cameraPreset={WELCOME_PRESET}>
+        <TerrainStage lockCamera terrainMetrics={WELCOME_METRICS} autoRotateSpeed={0.08} cameraPreset={WELCOME_PRESET}>
           <CameraCompositionRig preset={WELCOME_PRESET} />
           <SkyAtmosphere />
         </TerrainStage>

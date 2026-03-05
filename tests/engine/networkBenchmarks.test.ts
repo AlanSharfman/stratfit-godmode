@@ -71,7 +71,7 @@ describe("compareToBenchmarks", () => {
 
   it("returns a comparison for every KPI", () => {
     const results = compareToBenchmarks(kpis, "seed")
-    expect(results).toHaveLength(10)
+    expect(results).toHaveLength(12)
   })
 
   it("each comparison has valid fields", () => {
@@ -87,7 +87,7 @@ describe("compareToBenchmarks", () => {
 
   it("auto-detects stage when not provided", () => {
     const results = compareToBenchmarks(kpis)
-    expect(results).toHaveLength(10)
+    expect(results).toHaveLength(12)
     // With ARR 240K and cash 800K, should detect as seed
     expect(results[0]).toBeDefined()
   })

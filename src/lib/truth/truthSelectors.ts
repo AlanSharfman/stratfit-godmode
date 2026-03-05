@@ -74,12 +74,12 @@ export function getQualityScore(er: EngineResult): number {
   return clamp01(score);
 }
 
-export type QualityBand = "green" | "yellow" | "red";
+export type QualityBand = "green" | "amber" | "red";
 
 export function getQualityBand(score: number): QualityBand {
   if (!Number.isFinite(score)) return "red";
   if (score >= 0.7) return "green";
-  if (score >= 0.4) return "yellow";
+  if (score >= 0.4) return "amber";
   return "red";
 }
 

@@ -472,7 +472,7 @@ export default function InitializeBaselinePage() {
   const needleAngle = form.riskTolerance === "Conservative" ? -45 : form.riskTolerance === "Aggressive" ? 45 : 0
 
   return (
-    <div className="bg-hex-grid" style={SC.page}>
+    <div className="bg-hex-grid bg-grain bg-vignette" style={SC.page}>
       <PortalNav />
 
       {/* ═══ POWER RAIL — TOP BAR ═══ */}
@@ -484,7 +484,7 @@ export default function InitializeBaselinePage() {
           </div>
           <span style={SC.railDivider} />
           <div style={SC.railTitle}>Initialize Baseline</div>
-          <span style={{ fontSize: 11, color: "rgba(148,180,214,0.35)" }}>Enter your current financial truth to anchor scenario modelling.</span>
+          <span style={{ fontSize: 11, color: "rgba(148,180,214,0.35)", letterSpacing: "0.02em" }}>Enter your current financial truth to anchor scenario modelling.</span>
         </div>
         <div style={SC.metricsRow}>
           <div style={SC.metricBlock}>
@@ -720,23 +720,29 @@ export default function InitializeBaselinePage() {
             </div>
           </Module>
 
-          {/* Lock Button */}
+          {/* Lock Button — Chrome Bejewelled CTA */}
           <button
             type="button"
             onClick={handleLock}
             disabled={!canLock || isLocking}
-            className={isLocking ? "" : "gm-lock-idle glow-cyan"}
+            className={isLocking ? "" : "gm-lock-idle"}
             style={{
-              height: 52,
+              position: "relative",
+              height: 56,
               borderRadius: 10,
-              border: isLocking ? "2px solid rgba(239,68,68,0.5)" : "2px solid rgba(34,211,238,0.4)",
-              background: isLocking ? "rgba(239,68,68,0.15)" : "rgba(15,23,42,0.9)",
+              border: isLocking ? "1.5px solid rgba(239,68,68,0.4)" : "1.5px solid rgba(34,211,238,0.35)",
+              background: isLocking
+                ? "linear-gradient(180deg, rgba(239,68,68,0.12) 0%, rgba(239,68,68,0.06) 100%)"
+                : "linear-gradient(180deg, rgba(18,28,48,0.95) 0%, rgba(8,14,28,0.98) 100%)",
               color: isLocking ? "#f87171" : "#22d3ee",
-              fontSize: 11, fontWeight: 900, letterSpacing: "0.2em", textTransform: "uppercase",
+              fontSize: 11, fontWeight: 900, letterSpacing: "0.22em", textTransform: "uppercase",
               fontFamily: FONT, cursor: canLock ? "pointer" : "default",
               opacity: canLock ? 1 : 0.35,
               transition: "all 0.3s",
               flexShrink: 0,
+              boxShadow: isLocking
+                ? "inset 0 1px 0 rgba(239,68,68,0.08), 0 2px 8px rgba(0,0,0,0.3)"
+                : "0 0 0 1px rgba(255,255,255,0.03), 0 0 0 3px rgba(34,211,238,0.05), inset 0 1px 0 rgba(200,220,245,0.06), inset 0 -1px 0 rgba(0,0,0,0.2), 0 4px 16px rgba(0,0,0,0.35), 0 0 20px rgba(34,211,238,0.06)",
             }}
           >
             {isLocking ? "CALCULATING VECTORS..." : "LOCK BASELINE & ENTER STRATFIT"}
@@ -832,11 +838,13 @@ function OutcomeCard({ label, value, color }: { label: string; value: string; co
   return (
     <div style={{
       display: "flex", alignItems: "center", justifyContent: "space-between",
-      padding: "8px 12px", borderRadius: 8,
-      background: "rgba(0,0,0,0.35)", border: "1px solid rgba(148,180,214,0.1)",
+      padding: "10px 14px", borderRadius: 8,
+      background: "linear-gradient(180deg, rgba(16,22,36,0.85) 0%, rgba(8,12,22,0.9) 100%)",
+      border: "1.5px solid rgba(148,175,210,0.1)",
+      boxShadow: "0 0 0 1px rgba(255,255,255,0.02), inset 0 1px 0 rgba(200,220,245,0.04), inset 0 -1px 0 rgba(0,0,0,0.15), 0 2px 6px rgba(0,0,0,0.2)",
     }}>
-      <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(148,180,214,0.6)" }}>{label}</span>
-      <span style={{ fontSize: 16, fontWeight: 900, fontFamily: "ui-monospace, 'JetBrains Mono', monospace", color, textShadow: `0 0 12px ${color}` }}>{value}</span>
+      <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(148,180,214,0.5)" }}>{label}</span>
+      <span style={{ fontSize: 17, fontWeight: 900, fontFamily: "ui-monospace, 'JetBrains Mono', monospace", color, textShadow: `0 0 14px ${color}` }}>{value}</span>
     </div>
   )
 }
@@ -849,174 +857,203 @@ const FONT = "'Inter', system-ui, sans-serif"
 
 const SC: Record<string, React.CSSProperties> = {
   page: {
+    position: "relative",
     display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden",
     color: "rgba(226,240,255,0.85)", fontFamily: FONT,
+    background: "linear-gradient(168deg, #0D1626 0%, #0A111F 35%, #060A14 100%)",
   },
   powerRail: {
     display: "flex", alignItems: "center", justifyContent: "space-between",
-    height: 56, padding: "0 20px", flexShrink: 0,
-    background: "rgba(10,15,22,0.95)", borderBottom: "1px solid rgba(34,211,238,0.25)",
+    height: 60, padding: "0 24px", flexShrink: 0,
+    background: "linear-gradient(180deg, rgba(14,20,34,0.98) 0%, rgba(8,12,22,0.96) 100%)",
+    borderBottom: "1.5px solid rgba(148,175,210,0.14)",
     backdropFilter: "blur(16px)",
+    boxShadow: "0 2px 16px rgba(0,0,0,0.4), inset 0 -1px 0 rgba(0,0,0,0.3), inset 0 1px 0 rgba(200,220,245,0.04)",
+    zIndex: 5,
   },
   powerRailLeft: {
-    display: "flex", alignItems: "center", gap: 16, minWidth: 0,
+    display: "flex", alignItems: "center", gap: 18, minWidth: 0,
   },
   sysLabel: {
-    fontSize: 7, fontWeight: 900, color: "rgba(34,211,238,0.6)", letterSpacing: "0.2em", textTransform: "uppercase",
+    fontSize: 7, fontWeight: 900, color: "rgba(34,211,238,0.5)", letterSpacing: "0.22em", textTransform: "uppercase",
   },
   sysTitle: {
-    fontSize: 13, fontWeight: 900, fontStyle: "italic", color: "#67e8f9", letterSpacing: "0.04em",
-    textShadow: "0 0 14px rgba(34,211,238,0.5)",
+    fontSize: 14, fontWeight: 900, fontStyle: "italic", color: "#67e8f9", letterSpacing: "0.06em",
+    textShadow: "0 0 18px rgba(34,211,238,0.4)",
   },
   railDivider: {
-    width: 1, height: 28, background: "rgba(255,255,255,0.08)", flexShrink: 0,
+    width: 1, height: 30, background: "linear-gradient(180deg, transparent 0%, rgba(148,175,210,0.15) 30%, rgba(34,211,238,0.1) 50%, rgba(148,175,210,0.15) 70%, transparent 100%)", flexShrink: 0,
   },
   railTitle: {
-    fontSize: 16, fontWeight: 700, color: "rgba(226,240,255,0.9)", whiteSpace: "nowrap",
+    fontSize: 17, fontWeight: 700, color: "rgba(226,240,255,0.92)", whiteSpace: "nowrap", letterSpacing: "0.02em",
   },
   metricsRow: {
-    display: "flex", alignItems: "center", gap: 20, flexShrink: 0,
+    display: "flex", alignItems: "center", gap: 24, flexShrink: 0,
   },
   metricBlock: {
     display: "flex", flexDirection: "column", alignItems: "flex-end",
+    padding: "4px 12px",
+    borderRadius: 6,
+    background: "rgba(0,0,0,0.2)",
+    border: "1px solid rgba(148,175,210,0.06)",
   },
   metricLabel: {
-    fontSize: 7, fontWeight: 900, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(148,180,214,0.55)",
+    fontSize: 7, fontWeight: 900, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(148,180,214,0.45)",
   },
   metricValue: {
-    fontSize: 15, fontWeight: 900, fontFamily: "ui-monospace, 'JetBrains Mono', monospace",
-    textShadow: "0 0 12px currentColor",
+    fontSize: 16, fontWeight: 900, fontFamily: "ui-monospace, 'JetBrains Mono', monospace",
+    textShadow: "0 0 14px currentColor",
   },
 
   grid: {
-    flex: 1, display: "grid", gridTemplateColumns: "280px 1fr 260px",
-    gap: 16, padding: 16, minHeight: 0, overflow: "auto",
+    flex: 1, display: "grid", gridTemplateColumns: "280px 1fr 272px",
+    gap: 14, padding: "14px 18px", minHeight: 0, overflow: "auto",
+    zIndex: 1,
   },
-  col1: { display: "flex", flexDirection: "column", gap: 14, minHeight: 0, overflow: "auto" },
-  col2: { display: "flex", flexDirection: "column", gap: 14, minHeight: 0, overflow: "auto" },
-  col3: { display: "flex", flexDirection: "column", gap: 14, minHeight: 0 },
+  col1: { display: "flex", flexDirection: "column", gap: 12, minHeight: 0, overflow: "auto" },
+  col2: { display: "flex", flexDirection: "column", gap: 12, minHeight: 0, overflow: "auto" },
+  col3: { display: "flex", flexDirection: "column", gap: 12, minHeight: 0 },
 
   moduleHeader: {
-    padding: "6px 14px", fontSize: 9, fontWeight: 900, letterSpacing: "0.14em", textTransform: "uppercase",
-    color: "rgba(226,240,255,0.95)",
-    background: "rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(148,180,214,0.12)",
-    textShadow: "0 0 8px rgba(34,211,238,0.3)",
+    position: "relative",
+    padding: "8px 16px", fontSize: 9, fontWeight: 900, letterSpacing: "0.16em", textTransform: "uppercase",
+    color: "rgba(200,215,235,0.8)",
+    background: "linear-gradient(180deg, rgba(30,38,56,0.4) 0%, rgba(0,0,0,0.15) 100%)",
+    borderBottom: "1px solid rgba(148,175,210,0.1)",
+    boxShadow: "inset 0 1px 0 rgba(200,220,245,0.04), 0 1px 0 rgba(0,0,0,0.2)",
   },
   modBody: {
-    padding: 14, display: "flex", flexDirection: "column", gap: 12,
+    padding: 16, display: "flex", flexDirection: "column", gap: 14,
   },
 
   powerLabel: {
-    fontSize: 9, fontWeight: 900, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(226,240,255,0.85)",
+    fontSize: 9, fontWeight: 900, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(200,215,235,0.75)",
   },
   powerValue: {
-    fontSize: 12, fontWeight: 900, fontFamily: "ui-monospace, 'JetBrains Mono', monospace",
-    textShadow: "0 0 10px currentColor",
+    fontSize: 13, fontWeight: 900, fontFamily: "ui-monospace, 'JetBrains Mono', monospace",
+    textShadow: "0 0 12px currentColor",
   },
   powerTrack: {
-    height: 12, background: "rgba(0,0,0,0.7)", borderRadius: 6, padding: 2, overflow: "hidden",
-    border: "1px solid rgba(148,180,214,0.08)",
+    height: 14, borderRadius: 7, padding: 2, overflow: "hidden",
+    background: "linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(6,10,20,0.6) 100%)",
+    border: "1px solid rgba(148,175,210,0.08)",
+    boxShadow: "inset 0 1px 3px rgba(0,0,0,0.5), 0 1px 0 rgba(200,220,245,0.04)",
   },
   powerFill: {
-    height: "100%", borderRadius: 4, minWidth: 2,
+    height: "100%", borderRadius: 5, minWidth: 2,
   },
   rangeInput: {
     position: "absolute" as const, top: 0, left: 0,
     width: "100%", height: "100%",
     appearance: "none", WebkitAppearance: "none",
-    background: "transparent", borderRadius: 6, outline: "none", cursor: "pointer",
+    background: "transparent", borderRadius: 7, outline: "none", cursor: "pointer",
     margin: 0, padding: 0, zIndex: 2,
   },
 
   inputLabel: {
-    fontSize: 9, fontWeight: 900, color: "rgba(226,240,255,0.85)", letterSpacing: "0.06em", textTransform: "uppercase",
+    fontSize: 9, fontWeight: 900, color: "rgba(200,215,235,0.7)", letterSpacing: "0.06em", textTransform: "uppercase",
   },
   inputWrap: {
-    display: "flex", alignItems: "center", background: "rgba(0,0,0,0.5)", borderRadius: 6, overflow: "hidden",
-    border: "1px solid rgba(148,180,214,0.1)",
+    display: "flex", alignItems: "center", overflow: "hidden",
+    background: "linear-gradient(180deg, rgba(6,10,20,0.5) 0%, rgba(10,14,26,0.35) 100%)",
+    borderRadius: 7,
+    border: "1.5px solid rgba(148,175,210,0.12)",
+    boxShadow: "inset 0 1px 3px rgba(0,0,0,0.3), 0 1px 0 rgba(200,220,245,0.04), 0 0 0 1px rgba(120,140,170,0.03)",
+    transition: "border-color 160ms ease, box-shadow 160ms ease",
   },
   inputInner: {
-    flex: 1, padding: "8px 10px", fontSize: 12, fontWeight: 700, fontFamily: FONT,
-    color: "rgba(226,240,255,0.95)", background: "transparent", border: "none", outline: "none", minWidth: 0,
+    flex: 1, padding: "9px 12px", fontSize: 13, fontWeight: 600, fontFamily: FONT,
+    color: "rgba(230,240,255,0.95)", background: "transparent", border: "none", outline: "none", minWidth: 0,
   },
   inputAffix: {
-    padding: "0 8px", fontSize: 10, color: "rgba(148,180,214,0.45)", flexShrink: 0,
+    padding: "0 10px", fontSize: 11, color: "rgba(148,180,214,0.4)", flexShrink: 0, fontWeight: 500,
   },
 
   pillGrid: {
-    display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4, marginTop: 6,
+    display: "grid", gridTemplateColumns: "1fr 1fr", gap: 5, marginTop: 6,
   },
 
   toggleLabel: {
-    fontSize: 9, fontWeight: 900, color: "rgba(226,240,255,0.85)", letterSpacing: "0.02em",
+    fontSize: 9, fontWeight: 900, color: "rgba(200,215,235,0.75)", letterSpacing: "0.02em",
   },
   toggleGroup: {
-    display: "inline-flex", borderRadius: 4, overflow: "hidden",
-    border: "1px solid rgba(148,180,214,0.12)",
+    display: "inline-flex", borderRadius: 6, overflow: "hidden",
+    border: "1px solid rgba(148,175,210,0.12)",
+    boxShadow: "0 0 0 1px rgba(120,140,170,0.03)",
   },
   toggleBtn: {
-    padding: "5px 10px", fontSize: 9, fontWeight: 700, fontFamily: FONT,
-    color: "rgba(226,240,255,0.75)", background: "transparent", border: "none",
+    padding: "6px 12px", fontSize: 9, fontWeight: 700, fontFamily: FONT,
+    color: "rgba(200,215,235,0.55)", background: "rgba(0,0,0,0.2)", border: "none",
     cursor: "pointer", transition: "all 0.15s", letterSpacing: "0.04em",
-    borderRight: "1px solid rgba(148,180,214,0.08)",
+    borderRight: "1px solid rgba(148,175,210,0.06)",
   },
   toggleBtnActive: {
     color: "#22d3ee", background: "rgba(34,211,238,0.1)",
+    boxShadow: "inset 0 0 8px rgba(34,211,238,0.06)",
   },
 
   dial: {
-    width: 100, height: 100, borderRadius: "50%",
+    width: 110, height: 110, borderRadius: "50%",
     display: "flex", alignItems: "center", justifyContent: "center",
+    background: "linear-gradient(145deg, rgba(30,36,52,0.6) 0%, rgba(10,14,26,0.8) 100%)",
+    border: "1.5px solid rgba(148,175,210,0.12)",
+    boxShadow: "0 0 0 3px rgba(120,140,170,0.04), 0 0 0 5px rgba(60,70,90,0.03), inset 0 2px 6px rgba(0,0,0,0.4)",
   },
   dialInner: {
-    width: 72, height: 72, borderRadius: "50%",
-    background: "rgba(10,15,22,0.9)", border: "1px solid rgba(148,180,214,0.16)",
+    width: 76, height: 76, borderRadius: "50%",
+    background: "radial-gradient(ellipse at 40% 30%, rgba(18,24,38,0.95) 0%, rgba(6,10,18,0.98) 100%)",
+    border: "1px solid rgba(148,175,210,0.14)",
     display: "flex", alignItems: "center", justifyContent: "center",
     position: "relative",
-    boxShadow: "inset 0 2px 8px rgba(0,0,0,0.6), 0 0 12px rgba(34,211,238,0.08)",
+    boxShadow: "inset 0 2px 8px rgba(0,0,0,0.6), inset 0 0 12px rgba(34,211,238,0.03), 0 0 16px rgba(34,211,238,0.06)",
   },
   dialNeedle: {
-    width: 2, height: 28, background: "#22d3ee", borderRadius: 1,
+    width: 2, height: 30, background: "#22d3ee", borderRadius: 1,
     transformOrigin: "bottom center",
+    boxShadow: "0 0 6px rgba(34,211,238,0.5)",
   },
 
   smallBtn: {
-    flex: 1, padding: "7px 8px", fontSize: 9, fontWeight: 700, letterSpacing: "0.04em",
-    fontFamily: FONT, borderRadius: 6, cursor: "pointer", transition: "all 0.15s",
-    border: "1px solid rgba(34,211,238,0.25)", background: "rgba(34,211,238,0.05)", color: "rgba(34,211,238,0.8)",
+    flex: 1, padding: "8px 10px", fontSize: 9, fontWeight: 700, letterSpacing: "0.04em",
+    fontFamily: FONT, borderRadius: 7, cursor: "pointer", transition: "all 0.15s",
+    border: "1.5px solid rgba(34,211,238,0.2)", background: "rgba(34,211,238,0.04)", color: "rgba(34,211,238,0.75)",
+    boxShadow: "0 0 0 1px rgba(34,211,238,0.03)",
   },
   dropZone: {
     display: "flex", alignItems: "center", justifyContent: "center",
-    minHeight: 48, border: "2px dashed rgba(255,255,255,0.06)", borderRadius: 8,
-    background: "rgba(255,255,255,0.01)", cursor: "pointer", transition: "all 0.2s",
+    minHeight: 52, border: "2px dashed rgba(148,175,210,0.08)", borderRadius: 8,
+    background: "rgba(0,0,0,0.15)", cursor: "pointer", transition: "all 0.2s",
   },
 
   modalBackdrop: {
     position: "fixed", inset: 0, zIndex: 300,
     display: "flex", alignItems: "center", justifyContent: "center",
-    background: "rgba(6,10,18,0.85)", backdropFilter: "blur(6px)",
+    background: "rgba(4,8,16,0.88)", backdropFilter: "blur(8px)",
   },
   modalCard: {
-    display: "flex", flexDirection: "column", alignItems: "center", gap: 16,
-    padding: "36px 40px", maxWidth: 400, width: "90%", textAlign: "center",
+    display: "flex", flexDirection: "column", alignItems: "center", gap: 18,
+    padding: "40px 44px", maxWidth: 420, width: "90%", textAlign: "center",
   },
   modalBtn: {
-    padding: "10px 28px", fontSize: 12, fontWeight: 700, letterSpacing: "0.04em",
+    padding: "11px 30px", fontSize: 12, fontWeight: 700, letterSpacing: "0.04em",
     fontFamily: FONT, borderRadius: 8, cursor: "pointer", transition: "all 0.2s",
-    border: "1px solid rgba(34,211,238,0.4)",
-    background: "linear-gradient(135deg, rgba(34,211,238,0.18), rgba(34,211,238,0.08))",
+    border: "1.5px solid rgba(34,211,238,0.3)",
+    background: "linear-gradient(135deg, rgba(34,211,238,0.15), rgba(34,211,238,0.06))",
     color: "#67e8f9",
+    boxShadow: "0 0 0 1px rgba(34,211,238,0.04), 0 2px 8px rgba(0,0,0,0.3)",
   },
   modalClose: {
     fontSize: 11, color: "rgba(148,180,214,0.35)", background: "none", border: "none",
-    cursor: "pointer", fontFamily: FONT, padding: "4px 8px",
+    cursor: "pointer", fontFamily: FONT, padding: "6px 10px",
   },
   toast: {
-    position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", zIndex: 400,
-    padding: "10px 24px", fontSize: 12, fontWeight: 600, fontFamily: FONT,
-    color: "rgba(226,240,255,0.9)", background: "rgba(16,24,40,0.92)",
-    border: "1px solid rgba(34,211,238,0.2)", borderRadius: 8,
-    backdropFilter: "blur(10px)", boxShadow: "0 8px 30px -8px rgba(0,0,0,0.4)",
+    position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", zIndex: 400,
+    padding: "12px 28px", fontSize: 12, fontWeight: 600, fontFamily: FONT,
+    color: "rgba(226,240,255,0.9)",
+    background: "linear-gradient(180deg, rgba(18,24,40,0.94) 0%, rgba(10,14,26,0.96) 100%)",
+    border: "1.5px solid rgba(148,175,210,0.14)", borderRadius: 8,
+    backdropFilter: "blur(12px)",
+    boxShadow: "0 0 0 1px rgba(255,255,255,0.04), 0 0 0 3px rgba(120,140,170,0.05), 0 8px 30px -8px rgba(0,0,0,0.5)",
     animation: "sfInitToastIn 300ms ease-out",
   },
 }

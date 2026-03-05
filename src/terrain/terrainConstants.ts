@@ -8,7 +8,7 @@ export const TERRAIN_CONSTANTS = {
     /** PlaneGeometry depth (Z axis after rotation) */
     depth: 360,
     /** Grid resolution (segments + 1 vertices per axis) */
-    segments: 120,
+    segments: 220,
     /** Raw height multiplier applied to heightModel output */
     heightScale: 95,
     /** Secondary scale factor for terrain mode */

@@ -11,13 +11,6 @@ import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
 import { KPI_KEYS, KPI_ZONE_MAP, getHealthLevel, type HealthLevel } from "@/domain/intelligence/kpiZoneMapping"
 import { computeActionRecommendations } from "@/engine/sensitivityAnalysis"
 
-const KPI_LABELS: Record<KpiKey, string> = {
-  cash: "Cash", runway: "Runway", growth: "Growth", arr: "ARR",
-  revenue: "Revenue", burn: "Burn", churn: "Churn",
-  grossMargin: "Margin", headcount: "Team", nrr: "NRR",
-  efficiency: "Efficiency", enterpriseValue: "EV",
-}
-
 function generateWeeklyQuestions(kpis: PositionKpis): string[] {
   const qs: string[] = []
   if (kpis.churnPct > 5) qs.push("What if we invest in reducing churn by 50%?")

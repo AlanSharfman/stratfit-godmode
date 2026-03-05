@@ -1,6 +1,8 @@
 // src/domain/intelligence/kpiZoneMapping.ts
-// Maps KPI keys to terrain zones (normalized X ranges) and health color logic.
-// 10 KPIs — evenly distributed across the terrain X-axis.
+// Maps KPI keys to Terrain Stations — named geographic positions on the
+// mountain that correspond 1-to-1 with KPI boxes.  Each station's
+// elevation reflects the health of its associated KPI.
+// 12 KPIs — evenly distributed across the terrain X-axis.
 
 import type { PositionKpis } from "@/pages/position/overlays/positionState"
 
@@ -29,22 +31,28 @@ export type HealthLevel = "critical" | "watch" | "healthy" | "strong"
 export interface ZoneDef {
   xStart: number
   xEnd: number
+  /** Display label for the zone (used in legends / overlays) */
   label: string
+  /**
+   * Geographic station name — the named feature on the mountain
+   * that links back to the corresponding KPI box.
+   */
+  stationName: string
 }
 
 export const KPI_ZONE_MAP: Record<KpiKey, ZoneDef> = {
-  cash:             { xStart: 0.000, xEnd: 0.083, label: "Liquidity Zone" },
-  runway:           { xStart: 0.083, xEnd: 0.167, label: "Runway Horizon" },
-  growth:           { xStart: 0.167, xEnd: 0.250, label: "Growth Gradient" },
-  arr:              { xStart: 0.250, xEnd: 0.333, label: "Revenue Engine" },
-  revenue:          { xStart: 0.333, xEnd: 0.417, label: "Revenue Flow" },
-  burn:             { xStart: 0.417, xEnd: 0.500, label: "Burn Zone" },
-  churn:            { xStart: 0.500, xEnd: 0.583, label: "Retention Wall" },
-  grossMargin:      { xStart: 0.583, xEnd: 0.667, label: "Margin Ridge" },
-  headcount:        { xStart: 0.667, xEnd: 0.750, label: "Talent Basin" },
-  nrr:              { xStart: 0.750, xEnd: 0.833, label: "Expansion Ridge" },
-  efficiency:       { xStart: 0.833, xEnd: 0.917, label: "Leverage Plateau" },
-  enterpriseValue:  { xStart: 0.917, xEnd: 1.000, label: "Value Summit" },
+  cash:             { xStart: 0.000, xEnd: 0.083, label: "Liquidity Zone",    stationName: "Liquidity Basin" },
+  runway:           { xStart: 0.083, xEnd: 0.167, label: "Runway Horizon",    stationName: "Horizon Shelf" },
+  growth:           { xStart: 0.167, xEnd: 0.250, label: "Growth Gradient",   stationName: "Ascent Ridge" },
+  arr:              { xStart: 0.250, xEnd: 0.333, label: "Revenue Engine",    stationName: "Revenue Spine" },
+  revenue:          { xStart: 0.333, xEnd: 0.417, label: "Revenue Flow",      stationName: "Flow Saddle" },
+  burn:             { xStart: 0.417, xEnd: 0.500, label: "Burn Zone",         stationName: "Furnace Couloir" },
+  churn:            { xStart: 0.500, xEnd: 0.583, label: "Retention Wall",    stationName: "Retention Buttress" },
+  grossMargin:      { xStart: 0.583, xEnd: 0.667, label: "Margin Ridge",      stationName: "Margin Arête" },
+  headcount:        { xStart: 0.667, xEnd: 0.750, label: "Talent Basin",      stationName: "Talent Terrace" },
+  nrr:              { xStart: 0.750, xEnd: 0.833, label: "Expansion Ridge",   stationName: "Expansion Spur" },
+  efficiency:       { xStart: 0.833, xEnd: 0.917, label: "Leverage Plateau",  stationName: "Efficiency Col" },
+  enterpriseValue:  { xStart: 0.917, xEnd: 1.000, label: "Value Summit",      stationName: "Summit Pinnacle" },
 }
 
 /** Height multiplier per health level — drives progressive terrain elevation */

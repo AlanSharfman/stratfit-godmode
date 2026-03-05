@@ -28,14 +28,14 @@ function makeKpis(overrides: Partial<PositionKpis> = {}): PositionKpis {
 }
 
 describe("KPI_KEYS", () => {
-  it("has exactly 10 KPIs", () => {
-    expect(KPI_KEYS).toHaveLength(10)
+  it("has exactly 12 KPIs", () => {
+    expect(KPI_KEYS).toHaveLength(12)
   })
 
   it("contains all expected keys", () => {
     const expected = [
-      "cash", "runway", "growth", "arr", "revenue",
-      "burn", "churn", "grossMargin", "efficiency", "enterpriseValue",
+      "cash", "runway", "growth", "arr", "revenue", "burn",
+      "churn", "grossMargin", "headcount", "nrr", "efficiency", "enterpriseValue",
     ]
     for (const k of expected) {
       expect(KPI_KEYS).toContain(k)
@@ -44,10 +44,11 @@ describe("KPI_KEYS", () => {
 })
 
 describe("KPI_ZONE_MAP", () => {
-  it("maps every KPI key to a zone", () => {
+  it("maps every KPI key to a zone with label and stationName", () => {
     for (const key of KPI_KEYS) {
       expect(KPI_ZONE_MAP[key]).toBeDefined()
       expect(KPI_ZONE_MAP[key].label).toBeTruthy()
+      expect(KPI_ZONE_MAP[key].stationName).toBeTruthy()
     }
   })
 

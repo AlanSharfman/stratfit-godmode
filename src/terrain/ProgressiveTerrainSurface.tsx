@@ -1,6 +1,7 @@
 // src/terrain/ProgressiveTerrainSurface.tsx
-// Flat-to-mountain animated terrain driven by revealed KPI zones.
-// Each zone's elevation is determined by its KPI health level.
+// Baseline-to-summit animated terrain driven by revealed KPI Terrain Stations.
+// Always renders realistic mountainous terrain; KPI health modulates zone
+// elevation on top of the baseline — the terrain is NEVER flat.
 
 import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from "react"
 import * as THREE from "three"
@@ -34,17 +35,42 @@ interface Props {
   cascadeImpulse?: CascadeImpulse | null
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   Constants
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 const SEGMENTS = 220
 const LERP_SPEED = 2.5
-const PEAK_HEIGHT = 52
+
+const BASELINE_RIDGE_HEIGHT = 14
+const BASELINE_RIDGE_WIDTH = 0.15
+const BASELINE_PEAK_COUNT = 7
+const BASELINE_PEAK_AMP_MIN = 4
+const BASELINE_PEAK_AMP_MAX = 12
+const BASELINE_PEAK_SPREAD_MIN = 0.06
+const BASELINE_PEAK_SPREAD_MAX = 0.14
+
+const KPI_PEAK_HEIGHT = 35
 const NOISE_AMP = 0.08
-const BASE_UNDULATION_AMP = 3.0
-const BASE_UNDULATION_FREQ = 3.2
+
 const HIGHLIGHT_OPACITY = 0.35
 const HIGHLIGHT_FADE = 4.0
 const CASCADE_DELAY_PER_HOP = 0.15
 const CASCADE_PULSE_DURATION = 0.8
 const CASCADE_PULSE_AMP = 3.5
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Noise & math utilities
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function mulberry32(a: number) {
+  return function () {
+    let t = (a += 0x6d2b79f5)
+    t = Math.imul(t ^ (t >>> 15), t | 1)
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
 
 function pseudoNoise(x: number, z: number, seed: number): number {
   const s = Math.sin(x * 12.9898 + z * 78.233 + seed * 43758.5453) * 43758.5453
@@ -65,21 +91,84 @@ function fbmNoise(x: number, z: number, seed: number, octaves = 4): number {
   return value / maxAmp
 }
 
-function baseUndulation(nx: number, nz: number, seed: number): number {
-  const edgeFade = Math.min(
-    smoothstep(0, 0.08, nx),
-    smoothstep(1, 0.92, nx),
-    smoothstep(0, 0.1, nz),
-    smoothstep(1, 0.9, nz),
-  )
-  const n = fbmNoise(nx * BASE_UNDULATION_FREQ, nz * BASE_UNDULATION_FREQ, seed)
-  return Math.max(0, n * 0.5 + 0.3) * BASE_UNDULATION_AMP * edgeFade
-}
-
 function smoothstep(edge0: number, edge1: number, x: number): number {
   const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)))
   return t * t * (3 - 2 * t)
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Seed-driven peak placement
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+interface SeedPeak {
+  x: number
+  z: number
+  amp: number
+  spread: number
+}
+
+function buildSeedPeaks(seed: number): SeedPeak[] {
+  const rand = mulberry32(seed)
+  return Array.from({ length: BASELINE_PEAK_COUNT }, () => ({
+    x: 0.1 + rand() * 0.8,
+    z: 0.15 + rand() * 0.7,
+    amp: BASELINE_PEAK_AMP_MIN + rand() * (BASELINE_PEAK_AMP_MAX - BASELINE_PEAK_AMP_MIN),
+    spread: BASELINE_PEAK_SPREAD_MIN + rand() * (BASELINE_PEAK_SPREAD_MAX - BASELINE_PEAK_SPREAD_MIN),
+  }))
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Baseline terrain height — always mountainous, never flat.
+   Produces a realistic mountain range from seed alone.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function baselineTerrainHeight(
+  nx: number,
+  nz: number,
+  seed: number,
+  peaks: SeedPeak[],
+): number {
+  // Central ridge running along X at Z = 0.5
+  const ridgeDist = nz - 0.5
+  const ridgeProfile = Math.exp(
+    -(ridgeDist * ridgeDist) / (BASELINE_RIDGE_WIDTH * BASELINE_RIDGE_WIDTH),
+  )
+  const ridgeUndulation = 0.65 + 0.35 * Math.sin(nx * Math.PI * 3.0 + seed * 0.13)
+  const ridge = BASELINE_RIDGE_HEIGHT * ridgeProfile * ridgeUndulation
+
+  // Seed-driven peaks (Gaussian bumps)
+  let peakContrib = 0
+  for (const p of peaks) {
+    const dx = nx - p.x
+    const dz = nz - p.z
+    const d2 = (dx * dx + dz * dz) / (p.spread * p.spread)
+    peakContrib += p.amp * Math.exp(-d2)
+  }
+
+  // Multi-octave FBM detail
+  const detailNoise = fbmNoise(nx * 6, nz * 6, seed, 5) * 3.5
+  const microNoise = fbmNoise(nx * 14, nz * 14, seed + 37, 3) * 1.2
+
+  // Broad low-frequency terrain shaping
+  const broadWave =
+    Math.sin(nx * Math.PI * 1.5 + seed * 0.02) * 2.5 +
+    Math.cos(nz * Math.PI * 2.0 - seed * 0.015) * 2.0
+
+  // Edge falloff — terrain tapers at boundaries
+  const edgeFade = Math.min(
+    smoothstep(0, 0.1, nx),
+    smoothstep(1, 0.9, nx),
+    smoothstep(0, 0.1, nz),
+    smoothstep(1, 0.9, nz),
+  )
+
+  const raw = ridge + peakContrib + detailNoise + microNoise + broadWave
+  return Math.max(0, raw * edgeFade)
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Component
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
   function ProgressiveTerrainSurface({ revealedKpis, kpis, focusedKpi, cascadeImpulse }, ref) {
@@ -88,15 +177,15 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
     const highlightRef = useRef<THREE.Mesh>(null)
     const highlightMatRef = useRef<THREE.MeshBasicMaterial>(null)
     const highlightOpacity = useRef(0)
-    const cascadeTimeRef = useRef(0)
 
     const { baseline } = useSystemBaseline()
     const showGrid = useRenderFlagsStore((s) => s.showGrid)
     const baselineAny = baseline as any
     const seedStr = useMemo(() => baselineSeedString(baselineAny), [baselineAny])
     const seed = useMemo(() => createSeed(seedStr), [seedStr])
+    const seedPeaks = useMemo(() => buildSeedPeaks(seed), [seed])
 
-    // Build a flat PlaneGeometry
+    // Build geometry with baseline terrain (never flat)
     const geometry = useMemo(() => {
       const geo = new THREE.PlaneGeometry(
         TERRAIN_CONSTANTS.width,
@@ -104,32 +193,33 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
         SEGMENTS,
         SEGMENTS,
       )
-      // Start flat — all Z = 0
       const pos = geo.attributes.position as THREE.BufferAttribute
+      const vertsPerRow = SEGMENTS + 1
       for (let i = 0; i < pos.count; i++) {
-        pos.setZ(i, 0)
+        const col = i % vertsPerRow
+        const row = Math.floor(i / vertsPerRow)
+        const nx = col / SEGMENTS
+        const nz = row / SEGMENTS
+        pos.setZ(i, baselineTerrainHeight(nx, nz, seed, seedPeaks))
       }
       geo.computeVertexNormals()
       geo.computeBoundingSphere()
       return geo
-    }, [])
+    }, [seed, seedPeaks])
 
-    // Target heights array — recomputed when revealedKpis or kpis change
+    // Target heights — baseline + KPI zone modulation
     const targetHeights = useMemo(() => {
       const pos = geometry.attributes.position as THREE.BufferAttribute
       const count = pos.count
       const targets = new Float32Array(count)
-
-      if (!kpis) return targets
-
       const vertsPerRow = SEGMENTS + 1
 
-      // Precompute zone elevations
+      // Precompute zone elevations for revealed KPIs
       const zoneElevations = new Map<KpiKey, number>()
       for (const key of KPI_KEYS) {
-        if (!revealedKpis.has(key)) continue
+        if (!kpis || !revealedKpis.has(key)) continue
         const health = getHealthLevel(key, kpis)
-        zoneElevations.set(key, HEALTH_ELEVATION[health] * PEAK_HEIGHT)
+        zoneElevations.set(key, HEALTH_ELEVATION[health])
       }
 
       for (let i = 0; i < count; i++) {
@@ -138,13 +228,15 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
         const nx = col / SEGMENTS
         const nz = row / SEGMENTS
 
-        // Determine which zone(s) this vertex belongs to
+        const baseH = baselineTerrainHeight(nx, nz, seed, seedPeaks)
+
+        // Accumulate KPI-driven elevation for this vertex
+        let kpiHeight = 0
         let totalWeight = 0
-        let weightedHeight = 0
 
         for (const key of KPI_KEYS) {
-          const elev = zoneElevations.get(key)
-          if (elev === undefined) continue
+          const elevFactor = zoneElevations.get(key)
+          if (elevFactor === undefined) continue
 
           const zone = KPI_ZONE_MAP[key]
           const blendWidth = 0.04
@@ -152,13 +244,11 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
           let weight = 0
           if (nx >= zone.xStart && nx <= zone.xEnd) {
             weight = 1.0
-            // Smooth blend at edges
             const dLeft = nx - zone.xStart
             const dRight = zone.xEnd - nx
             if (dLeft < blendWidth) weight *= smoothstep(0, blendWidth, dLeft)
             if (dRight < blendWidth) weight *= smoothstep(0, blendWidth, dRight)
           } else {
-            // Blend into adjacent zones
             const dToZone = nx < zone.xStart
               ? zone.xStart - nx
               : nx - zone.xEnd
@@ -168,27 +258,23 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
           }
 
           if (weight > 0) {
-            // Shape: bell curve along Z (depth) for mountain profile
             const zCenter = 0.5
             const zSpread = 0.48
             const zDist = Math.abs(nz - zCenter)
             const zFalloff = Math.max(0, 1 - (zDist / zSpread) ** 2)
 
-            // Noise for organic texture
-            const noise = pseudoNoise(nx * 20, nz * 20, seed + col) * NOISE_AMP * elev
-
-            const h = (elev * zFalloff + noise) * weight
-            weightedHeight += h
+            const noise = pseudoNoise(nx * 20, nz * 20, seed + col) * NOISE_AMP * KPI_PEAK_HEIGHT
+            kpiHeight += (elevFactor * KPI_PEAK_HEIGHT * zFalloff + noise) * weight
             totalWeight += weight
           }
         }
 
-        const base = baseUndulation(nx, nz, seed)
-        targets[i] = totalWeight > 0 ? weightedHeight / Math.max(totalWeight, 1) + base : base
+        const kpiContrib = totalWeight > 0 ? kpiHeight / Math.max(totalWeight, 1) : 0
+        targets[i] = baseH + kpiContrib
       }
 
       return targets
-    }, [geometry, revealedKpis, kpis, seed])
+    }, [geometry, revealedKpis, kpis, seed, seedPeaks])
 
     // Highlight geometry for focused KPI zone
     const highlightGeo = useMemo(() => {
@@ -208,7 +294,6 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
         SEGMENTS,
       )
       const hPos = geo.attributes.position as THREE.BufferAttribute
-      // Copy current heights from animated geometry
       for (let i = 0; i < count; i++) {
         hPos.setZ(i, pos.getZ(i))
       }
@@ -219,7 +304,7 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
         const nx = col / SEGMENTS
         const h = pos.getZ(i)
 
-        if (h < 0.5) continue // skip flat vertices
+        if (h < 0.2) continue
 
         let zoneFactor = 0
         const edgeFade = 0.03
@@ -350,7 +435,6 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
       getHeightAt: (worldX: number, worldZ: number) => {
         const geomX = worldX / 3.0
         const geomZ = worldZ / 2.6
-        // Find nearest vertex
         const halfW = TERRAIN_CONSTANTS.width / 2
         const halfD = TERRAIN_CONSTANTS.depth / 2
         const col = Math.round(((geomX + halfW) / TERRAIN_CONSTANTS.width) * SEGMENTS)

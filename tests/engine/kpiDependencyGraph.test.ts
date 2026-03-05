@@ -9,8 +9,8 @@ import {
 import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
 
 describe("KPI_GRAPH structure", () => {
-  it("has 10 nodes matching KPI_KEYS", () => {
-    expect(KPI_GRAPH.nodes).toHaveLength(10)
+  it("has 12 nodes matching KPI_KEYS", () => {
+    expect(KPI_GRAPH.nodes).toHaveLength(12)
     expect(KPI_GRAPH.nodes).toContain("cash")
     expect(KPI_GRAPH.nodes).toContain("enterpriseValue")
   })

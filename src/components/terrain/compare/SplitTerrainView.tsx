@@ -46,9 +46,7 @@ const SplitTerrainView: React.FC<SplitTerrainViewProps> = memo(
         </div>
         <div style={S.viewport}>
           <TerrainStage
-            pathsEnabled={false}
             terrainMetrics={{ ...DEFAULT_METRICS, ...metricsA }}
-            overrideEvents={eventsA}
             minAzimuthAngle={-AZIMUTH_LIMIT}
             maxAzimuthAngle={AZIMUTH_LIMIT}
             minPolarAngle={Math.max(0.3, POLAR_CENTER - POLAR_LIMIT)}
@@ -73,9 +71,7 @@ const SplitTerrainView: React.FC<SplitTerrainViewProps> = memo(
         </div>
         <div style={S.viewport}>
           <TerrainStage
-            pathsEnabled={false}
             terrainMetrics={{ ...DEFAULT_METRICS, ...metricsB }}
-            overrideEvents={eventsB}
             colorVariant="green"
             minAzimuthAngle={-AZIMUTH_LIMIT}
             maxAzimuthAngle={AZIMUTH_LIMIT}

@@ -142,8 +142,6 @@ export default function BoardroomPage() {
     return <PageShell><div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(200,220,240,0.3)", fontSize: 14 }}>Complete initiation to generate board pack</div></PageShell>
   }
 
-  const S = styles
-
   return (
     <PageShell>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "auto" }}>
@@ -310,4 +308,3 @@ function RiskBadge({ label, level }: { label: string; level: "critical" | "watch
   )
 }
 
-const styles = {} // unused but prevents dead ref

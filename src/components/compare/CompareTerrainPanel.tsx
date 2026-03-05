@@ -75,9 +75,7 @@ const CompareTerrainPanel: React.FC<CompareTerrainPanelProps> = memo(
         {/* ── TERRAIN CANVAS ── */}
         <div style={S.canvas}>
           <TerrainStage
-            pathsEnabled={false}
             terrainMetrics={{ ...DEFAULT_METRICS, ...terrainMetrics }}
-            overrideEvents={events}
             colorVariant={colorVariant}
             minAzimuthAngle={-AZIMUTH_LIMIT}
             maxAzimuthAngle={AZIMUTH_LIMIT}

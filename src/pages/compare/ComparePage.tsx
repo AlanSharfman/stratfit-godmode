@@ -53,7 +53,7 @@ export default function ComparePage() {
   // ── Q&A panel state ──
   const [showQA, setShowQA] = useState(false)
   // ── Ultimate mode (Executive Briefing) ──
-  const [compareMode, setCompareMode] = useState<"standard" | "ultimate">("standard")
+  const [compareMode, setCompareMode] = useState<"standard" | "ultimate" | "optimal">("standard")
   const [briefingActive, setBriefingActive] = useState(false)
   const [briefingPlan, setBriefingPlan] = useState<BriefingPlan | null>(null)
   const [briefingState, setBriefingState] = useState<IntelligenceState>("idle")
@@ -299,101 +299,105 @@ export default function ComparePage() {
 
         <nav style={S.headerNav}>
           <NavLink to={ROUTES.INITIATE} style={S.navItem}>Initiate</NavLink>
-          <span style={S.navDivider} aria-hidden="true" />
           <NavLink to={ROUTES.POSITION} style={S.navItem}>Position</NavLink>
-          <span style={S.navDivider} aria-hidden="true" />
           <NavLink to={ROUTES.WHAT_IF} style={S.navItem}>What If</NavLink>
-          <span style={S.navDivider} aria-hidden="true" />
           <NavLink to={ROUTES.ACTIONS} style={S.navItem}>Actions</NavLink>
-          <span style={S.navDivider} aria-hidden="true" />
           <NavLink to={ROUTES.COMPARE} style={({ isActive }) => isActive ? S.navItemActive : S.navItem}>Compare</NavLink>
-          <span style={S.navDivider} aria-hidden="true" />
           <NavLink to={ROUTES.BOARDROOM} style={S.navItem}>Boardroom</NavLink>
         </nav>
 
         <div style={S.headerRight}>
-          {/* Standard ↔ Ultimate ↔ vs Optimal toggle */}
-          <div style={S.modeToggle}>
-            <button
-              type="button"
-              onClick={() => { setCompareMode("standard"); setBriefingActive(false) }}
-              style={compareMode === "standard" ? S.modeBtnActive : S.modeBtn}
-              disabled={isBriefingPlaying}
-            >Standard</button>
-            <button
-              type="button"
-              onClick={() => setCompareMode("ultimate")}
-              style={compareMode === "ultimate" ? S.modeBtnUltimateActive : S.modeBtn}
-              disabled={isBriefingPlaying}
-            >Ultimate</button>
-            <button
-              type="button"
-              onClick={() => setCompareMode("optimal" as any)}
-              style={(compareMode as string) === "optimal" ? { ...S.modeBtnUltimateActive, color: "#22d3ee", background: "rgba(34,211,238,0.12)" } : S.modeBtn}
-              disabled={isBriefingPlaying}
-            >vs Optimal</button>
-          </div>
-
-          {/* Split ↔ Ghost toggle */}
-          <div style={S.viewToggle}>
-            <button
-              type="button"
-              onClick={() => setViewMode("split")}
-              style={viewMode === "split" ? S.viewBtnActive : S.viewBtn}
-              title="Split — side-by-side terrains"
-            >Split</button>
-            <button
-              type="button"
-              onClick={() => setViewMode("ghost")}
-              style={viewMode === "ghost" ? S.viewBtnActive : S.viewBtn}
-              title="Ghost — overlay terrains"
-            >Ghost</button>
-          </div>
-
-          {/* 2/3 toggle */}
-          <div style={S.countToggle}>
-            <button
-              type="button"
-              onClick={() => setCompareCount(2)}
-              style={compareCount === 2 ? S.countBtnActive : S.countBtn}
-            >2</button>
-            <button
-              type="button"
-              onClick={() => setCompareCount(3)}
-              style={compareCount === 3 ? S.countBtnActive : S.countBtn}
-            >3</button>
-          </div>
-
-          {/* Swap (2-mode) / Rotate (3-mode) — only in split view; ghost bar has its own */}
           {!isGhost && (
             is3Mode ? (
-              <button type="button" onClick={rotate} style={S.swapBtn} title="Rotate A→B→C→A">↻</button>
+              <button type="button" onClick={rotate} style={S.swapBtn} title="Rotate A→B→C→A">↻ Rotate</button>
             ) : (
-              <button type="button" onClick={swap} style={S.swapBtn} title="Swap A ↔ B">⇄</button>
+              <button type="button" onClick={swap} style={S.swapBtn} title="Swap A ↔ B">⇄ Swap</button>
             )
           )}
         </div>
       </header>
 
-      {/* ── Headline strip ── */}
-      <div style={S.headlineStrip}>
-        <span style={S.headlineText}>{headline}</span>
-        {isGhost && !isBriefingPlaying && (
-          <span style={S.headlineBadge}>GHOST OVERLAY</span>
-        )}
-        {isUltimate && !isBriefingPlaying && (
-          <button
-            type="button"
-            onClick={handleGenerateBriefing}
-            style={S.generateBtn}
-            disabled={!pairKpisL || !pairKpisR}
-          >
-            ◈ Generate Executive Briefing
-          </button>
-        )}
-        {isBriefingPlaying && (
-          <span style={S.briefingBadge}>EXECUTIVE BRIEFING</span>
-        )}
+      {/* ═══ CONTROL BAR ═══ */}
+      <div style={S.controlBar}>
+        <div style={S.controlGroup}>
+          <span style={S.controlLabel}>Mode</span>
+          <div style={S.modeToggle}>
+            <button
+              type="button"
+              onClick={() => { setCompareMode("standard"); setBriefingActive(false) }}
+              style={compareMode === "standard" ? S.ctrlBtnActive : S.ctrlBtn}
+              disabled={isBriefingPlaying}
+            >Standard</button>
+            <button
+              type="button"
+              onClick={() => setCompareMode("ultimate")}
+              style={compareMode === "ultimate" ? S.ctrlBtnUltimate : S.ctrlBtn}
+              disabled={isBriefingPlaying}
+            >Ultimate</button>
+            <button
+              type="button"
+              onClick={() => setCompareMode("optimal")}
+              style={compareMode === "optimal" ? S.ctrlBtnOptimal : S.ctrlBtn}
+              disabled={isBriefingPlaying}
+            >vs Optimal</button>
+          </div>
+        </div>
+
+        <div style={S.controlGroup}>
+          <span style={S.controlLabel}>View</span>
+          <div style={S.modeToggle}>
+            <button
+              type="button"
+              onClick={() => setViewMode("split")}
+              style={viewMode === "split" ? S.ctrlBtnActive : S.ctrlBtn}
+              title="Split — side-by-side terrains"
+            >Split</button>
+            <button
+              type="button"
+              onClick={() => setViewMode("ghost")}
+              style={viewMode === "ghost" ? S.ctrlBtnActive : S.ctrlBtn}
+              title="Ghost — overlay terrains"
+            >Ghost</button>
+          </div>
+        </div>
+
+        <div style={S.controlGroup}>
+          <span style={S.controlLabel}>Scenarios</span>
+          <div style={S.modeToggle}>
+            <button
+              type="button"
+              onClick={() => setCompareCount(2)}
+              style={compareCount === 2 ? S.ctrlBtnActive : S.ctrlBtn}
+            >2-Way</button>
+            <button
+              type="button"
+              onClick={() => setCompareCount(3)}
+              style={compareCount === 3 ? S.ctrlBtnActive : S.ctrlBtn}
+            >3-Way</button>
+          </div>
+        </div>
+
+        <div style={S.controlSpacer} />
+
+        <div style={S.headlineArea}>
+          <span style={S.headlineText}>{headline}</span>
+          {isGhost && !isBriefingPlaying && (
+            <span style={S.headlineBadge}>GHOST OVERLAY</span>
+          )}
+          {isUltimate && !isBriefingPlaying && (
+            <button
+              type="button"
+              onClick={handleGenerateBriefing}
+              style={S.generateBtn}
+              disabled={!pairKpisL || !pairKpisR}
+            >
+              Generate Executive Briefing
+            </button>
+          )}
+          {isBriefingPlaying && (
+            <span style={S.briefingBadge}>EXECUTIVE BRIEFING</span>
+          )}
+        </div>
       </div>
 
       {/* ═══ MAIN GRID: Terrain (60%) + Analytics (40%) ═══ */}
@@ -422,7 +426,7 @@ export default function ComparePage() {
             />
           )}
 
-          {(compareMode as string) === "optimal" ? (
+          {compareMode === "optimal" ? (
             <OptimalCompareView />
           ) : (
             <CompareTerrainArea
@@ -597,9 +601,9 @@ const S: Record<string, React.CSSProperties> = {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    minHeight: 48,
-    padding: "0 16px",
-    background: "rgba(0,0,0,0.5)",
+    minHeight: 52,
+    padding: "0 24px",
+    background: "rgba(0,0,0,0.6)",
     backdropFilter: "blur(12px)",
     borderBottom: GLASS_BORDER,
     flexShrink: 0,
@@ -609,7 +613,8 @@ const S: Record<string, React.CSSProperties> = {
   headerLeft: {
     display: "flex",
     alignItems: "center",
-    gap: 10,
+    gap: 12,
+    flexShrink: 0,
   },
 
   logoLink: {
@@ -620,14 +625,14 @@ const S: Record<string, React.CSSProperties> = {
   },
 
   logoText: {
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: 900,
-    letterSpacing: "2px",
+    letterSpacing: "2.5px",
     color: "#fff",
   },
 
   logoSub: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: 700,
     letterSpacing: "0.2em",
     color: CYAN,
@@ -636,236 +641,207 @@ const S: Record<string, React.CSSProperties> = {
   headerNav: {
     display: "flex",
     alignItems: "center",
-    gap: 10,
-    flexWrap: "wrap" as const,
+    gap: 6,
   },
 
   navItem: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: 500,
-    letterSpacing: "0.06em",
+    letterSpacing: "0.04em",
     textTransform: "uppercase" as const,
     textDecoration: "none",
-    color: "rgba(255,255,255,0.6)",
-    transition: "color 0.2s",
+    color: "rgba(255,255,255,0.5)",
+    padding: "8px 14px",
+    borderRadius: 6,
+    transition: "color 0.2s, background 0.2s",
   },
 
   navItemActive: {
-    fontSize: 12,
-    fontWeight: 600,
-    letterSpacing: "0.06em",
+    fontSize: 13,
+    fontWeight: 700,
+    letterSpacing: "0.04em",
     textTransform: "uppercase" as const,
     textDecoration: "none",
     color: CYAN,
-  },
-
-  navDivider: {
-    display: "inline-block",
-    width: 1,
-    height: 16,
-    background: "rgba(255, 255, 255, 0.12)",
-    flexShrink: 0,
+    padding: "8px 14px",
+    borderRadius: 6,
+    background: "rgba(34,211,238,0.08)",
   },
 
   headerRight: {
     display: "flex",
     alignItems: "center",
     gap: 8,
-  },
-
-  /* ── Split/Ghost view toggle ── */
-  viewToggle: {
-    display: "flex",
-    gap: 0,
-    borderRadius: 4,
-    overflow: "hidden",
-    border: GLASS_BORDER,
-  },
-
-  viewBtn: {
-    padding: "4px 10px",
-    border: "none",
-    background: "rgba(0,0,0,0.3)",
-    color: "rgba(148,180,214,0.5)",
-    fontSize: 10,
-    fontWeight: 600,
-    fontFamily: FONT,
-    cursor: "pointer",
-    letterSpacing: "0.06em",
-    transition: "background 200ms ease, color 200ms ease",
-    textTransform: "uppercase" as const,
-  },
-
-  viewBtnActive: {
-    padding: "4px 10px",
-    border: "none",
-    background: "rgba(34,211,238,0.12)",
-    color: CYAN,
-    fontSize: 10,
-    fontWeight: 800,
-    fontFamily: FONT,
-    cursor: "pointer",
-    letterSpacing: "0.06em",
-    textTransform: "uppercase" as const,
-  },
-
-  countToggle: {
-    display: "flex",
-    gap: 0,
-    borderRadius: 4,
-    overflow: "hidden",
-    border: GLASS_BORDER,
-  },
-
-  countBtn: {
-    padding: "4px 12px",
-    border: "none",
-    background: "rgba(0,0,0,0.3)",
-    color: "rgba(148,180,214,0.5)",
-    fontSize: 11,
-    fontWeight: 700,
-    fontFamily: FONT,
-    cursor: "pointer",
-    letterSpacing: "0.06em",
-    transition: "background 200ms ease, color 200ms ease",
-  },
-
-  countBtnActive: {
-    padding: "4px 12px",
-    border: "none",
-    background: "rgba(34,211,238,0.12)",
-    color: CYAN,
-    fontSize: 11,
-    fontWeight: 800,
-    fontFamily: FONT,
-    cursor: "pointer",
-    letterSpacing: "0.06em",
+    flexShrink: 0,
   },
 
   swapBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 4,
+    padding: "6px 14px",
+    borderRadius: 6,
     border: `1px solid ${CYAN_DIM}`,
     background: "rgba(34,211,238,0.06)",
     color: CYAN,
-    fontSize: 14,
+    fontSize: 12,
+    fontWeight: 600,
     cursor: "pointer",
     fontFamily: FONT,
     display: "flex",
     alignItems: "center",
-    justifyContent: "center",
+    gap: 4,
     transition: "background 200ms ease",
   },
 
-  headlineStrip: {
-    padding: "6px 20px",
-    background: "rgba(0,0,0,0.3)",
+  /* ── Control Bar ── */
+  controlBar: {
+    display: "flex",
+    alignItems: "center",
+    gap: 20,
+    padding: "8px 24px",
+    background: "rgba(0,0,0,0.35)",
     borderBottom: "1px solid rgba(255,255,255,0.04)",
+    flexShrink: 0,
+    zIndex: 9,
+  },
+
+  controlGroup: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+  },
+
+  controlLabel: {
+    fontSize: 10,
+    fontWeight: 600,
+    letterSpacing: "0.1em",
+    textTransform: "uppercase" as const,
+    color: "rgba(148,180,214,0.4)",
+    fontFamily: FONT,
     flexShrink: 0,
   },
 
-  headlineText: {
-    fontSize: 11,
-    fontWeight: 500,
-    color: "rgba(148,180,214,0.55)",
-    fontFamily: FONT,
-    letterSpacing: "0.02em",
-  },
-
-  headlineBadge: {
-    fontSize: 8,
-    fontWeight: 800,
-    letterSpacing: "0.16em",
-    color: "rgba(129,140,248,0.7)",
-    background: "rgba(129,140,248,0.08)",
-    padding: "2px 8px",
-    borderRadius: 3,
-    marginLeft: 12,
-    textTransform: "uppercase" as const,
-  },
-
-  briefingBadge: {
-    fontSize: 8,
-    fontWeight: 800,
-    letterSpacing: "0.16em",
-    color: "rgba(16,185,129,0.85)",
-    background: "rgba(16,185,129,0.1)",
-    padding: "2px 8px",
-    borderRadius: 3,
-    marginLeft: 12,
-    textTransform: "uppercase" as const,
-  },
-
-  generateBtn: {
-    marginLeft: 12,
-    padding: "4px 12px",
-    borderRadius: 4,
-    border: "1px solid rgba(16,185,129,0.2)",
-    background: "rgba(16,185,129,0.08)",
-    color: "rgba(16,185,129,0.85)",
-    fontSize: 9,
-    fontWeight: 700,
-    fontFamily: FONT,
-    cursor: "pointer",
-    letterSpacing: "0.06em",
-    textTransform: "uppercase" as const,
-    transition: "background 200ms ease",
-  },
+  controlSpacer: { flex: 1 },
 
   modeToggle: {
     display: "flex",
     gap: 0,
-    borderRadius: 4,
+    borderRadius: 6,
     overflow: "hidden",
     border: GLASS_BORDER,
   },
 
-  modeBtn: {
-    padding: "4px 10px",
+  ctrlBtn: {
+    padding: "7px 16px",
     border: "none",
     background: "rgba(0,0,0,0.3)",
     color: "rgba(148,180,214,0.5)",
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: 600,
     fontFamily: FONT,
     cursor: "pointer",
-    letterSpacing: "0.06em",
+    letterSpacing: "0.04em",
     transition: "background 200ms ease, color 200ms ease",
-    textTransform: "uppercase" as const,
   },
 
-  modeBtnActive: {
-    padding: "4px 10px",
+  ctrlBtnActive: {
+    padding: "7px 16px",
     border: "none",
     background: "rgba(34,211,238,0.12)",
     color: CYAN,
-    fontSize: 10,
-    fontWeight: 800,
+    fontSize: 12,
+    fontWeight: 700,
     fontFamily: FONT,
     cursor: "pointer",
-    letterSpacing: "0.06em",
-    textTransform: "uppercase" as const,
+    letterSpacing: "0.04em",
   },
 
-  modeBtnUltimateActive: {
-    padding: "4px 10px",
+  ctrlBtnUltimate: {
+    padding: "7px 16px",
     border: "none",
     background: "rgba(16,185,129,0.12)",
     color: "rgba(16,185,129,0.9)",
-    fontSize: 10,
-    fontWeight: 800,
+    fontSize: 12,
+    fontWeight: 700,
     fontFamily: FONT,
     cursor: "pointer",
-    letterSpacing: "0.06em",
-    textTransform: "uppercase" as const,
+    letterSpacing: "0.04em",
   },
 
-  /* ── Command Grid ── */
+  ctrlBtnOptimal: {
+    padding: "7px 16px",
+    border: "none",
+    background: "rgba(34,211,238,0.12)",
+    color: "#22d3ee",
+    fontSize: 12,
+    fontWeight: 700,
+    fontFamily: FONT,
+    cursor: "pointer",
+    letterSpacing: "0.04em",
+  },
+
+  headlineArea: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    flexShrink: 1,
+    minWidth: 0,
+  },
+
+  headlineText: {
+    fontSize: 12,
+    fontWeight: 500,
+    color: "rgba(148,180,214,0.55)",
+    fontFamily: FONT,
+    letterSpacing: "0.02em",
+    whiteSpace: "nowrap" as const,
+    overflow: "hidden",
+    textOverflow: "ellipsis" as const,
+  },
+
+  headlineBadge: {
+    fontSize: 9,
+    fontWeight: 800,
+    letterSpacing: "0.14em",
+    color: "rgba(129,140,248,0.7)",
+    background: "rgba(129,140,248,0.08)",
+    padding: "3px 10px",
+    borderRadius: 4,
+    textTransform: "uppercase" as const,
+    flexShrink: 0,
+  },
+
+  briefingBadge: {
+    fontSize: 9,
+    fontWeight: 800,
+    letterSpacing: "0.14em",
+    color: "rgba(16,185,129,0.85)",
+    background: "rgba(16,185,129,0.1)",
+    padding: "3px 10px",
+    borderRadius: 4,
+    textTransform: "uppercase" as const,
+    flexShrink: 0,
+  },
+
+  generateBtn: {
+    padding: "6px 16px",
+    borderRadius: 6,
+    border: "1px solid rgba(16,185,129,0.25)",
+    background: "rgba(16,185,129,0.08)",
+    color: "rgba(16,185,129,0.9)",
+    fontSize: 11,
+    fontWeight: 700,
+    fontFamily: FONT,
+    cursor: "pointer",
+    letterSpacing: "0.04em",
+    transition: "background 200ms ease",
+    flexShrink: 0,
+    whiteSpace: "nowrap" as const,
+  },
+
+  /* ── Command Grid — mountain dominant ── */
   commandGrid: {
     flex: 1,
     display: "grid",
-    gridTemplateRows: "3fr auto 2fr",
+    gridTemplateRows: "1fr auto minmax(160px, 0.35fr)",
     minHeight: 0,
     overflow: "hidden",
     gap: 2,
@@ -910,31 +886,22 @@ const S: Record<string, React.CSSProperties> = {
   qaBtn: {
     display: "flex",
     alignItems: "center",
-    gap: 5,
-    padding: "5px 10px",
-    borderRadius: 5,
+    gap: 6,
+    padding: "6px 14px",
+    borderRadius: 6,
     border: "1px solid rgba(34,211,238,0.12)",
     background: "rgba(34,211,238,0.04)",
-    color: "rgba(34,211,238,0.6)",
-    fontSize: 9,
+    color: "rgba(34,211,238,0.7)",
+    fontSize: 11,
     fontWeight: 600,
     fontFamily: FONT,
     cursor: "pointer",
     letterSpacing: "0.04em",
     transition: "background 180ms ease, color 180ms ease",
-    textTransform: "uppercase" as const,
   },
 
   qaBtnIcon: {
-    fontSize: 11,
-  },
-
-  commandStrip: {
-    position: "absolute",
-    bottom: 24,
-    left: "50%",
-    transform: "translateX(-50%)",
-    zIndex: 6,
+    fontSize: 12,
   },
 
   /* ── Legal ── */

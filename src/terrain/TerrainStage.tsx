@@ -63,14 +63,6 @@ type TerrainStageProps = {
   showDependencyLines?: boolean
   ghostKpis?: PositionKpis | null
   children?: ReactNode
-  /** @deprecated Accepted for back-compat; no longer rendered. */
-  pathsEnabled?: boolean
-  /** @deprecated Accepted for back-compat; signal layers removed. */
-  overrideEvents?: any[]
-  /** @deprecated Accepted for back-compat; signal layers removed. */
-  focusedEvent?: any
-  /** @deprecated Accepted for back-compat; signal layers removed. */
-  signals?: any[]
 }
 
 export default function TerrainStage({
@@ -96,10 +88,6 @@ export default function TerrainStage({
   showDependencyLines = false,
   ghostKpis = null,
   children,
-  pathsEnabled: _pathsEnabled,
-  overrideEvents: _overrideEvents,
-  focusedEvent: _focusedEvent,
-  signals: _signals,
 }: TerrainStageProps) {
   const terrainRef = useRef<TerrainSurfaceHandle>(null!);
   const progressiveRef = useRef<ProgressiveTerrainHandle>(null!);
@@ -226,8 +214,8 @@ export default function TerrainStage({
         )}
         {terrainReady && (
           <>
-            <TimelineRuler terrainRef={terrainRef} />
-            {renderWhenReady?.(terrainRef)}
+            <TimelineRuler terrainRef={progressive ? progressiveRef as unknown as React.RefObject<TerrainSurfaceHandle> : terrainRef} />
+            {renderWhenReady?.(progressive ? progressiveRef as unknown as React.RefObject<TerrainSurfaceHandle> : terrainRef)}
           </>
         )}
       </Suspense>

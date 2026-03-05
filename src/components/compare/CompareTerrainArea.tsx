@@ -175,9 +175,7 @@ const CompareTerrainArea: React.FC<CompareTerrainAreaProps> = memo(
         {/* Single Canvas with primary terrain + ghost overlays */}
         <div style={S.ghostCanvas}>
           <TerrainStage
-            pathsEnabled={false}
             terrainMetrics={metricsA}
-            overrideEvents={eventsA}
             minAzimuthAngle={-AZIMUTH_LIMIT}
             maxAzimuthAngle={AZIMUTH_LIMIT}
             minPolarAngle={Math.max(0.3, POLAR_CENTER - POLAR_LIMIT)}

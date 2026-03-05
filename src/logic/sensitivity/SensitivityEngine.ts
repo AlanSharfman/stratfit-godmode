@@ -16,6 +16,7 @@ import {
   type SimulationConfig,
   type SingleSimulationResult,
 } from "@/logic/monteCarloEngine";
+import { DEFAULT_EV_MULTIPLE } from "@/logic/engineConstants";
 
 // ============================================================================
 // TYPES
@@ -142,8 +143,7 @@ export function computeElasticity({
 }: ComputeElasticityInput): ElasticityResult[] {
   // Baseline batch
   const base = runBatch(baseLevers, config, runs);
-  const evMultiple = 3.5;
-  const baseEV = base.medianARR * evMultiple;
+  const baseEV = base.medianARR * DEFAULT_EV_MULTIPLE;
 
   const results: ElasticityResult[] = [];
 
@@ -156,7 +156,7 @@ export function computeElasticity({
     const down = runBatch(downLevers, config, runs);
 
     const dSurvival = up.survivalRate - down.survivalRate;
-    const dEV = up.medianARR * evMultiple - down.medianARR * evMultiple;
+    const dEV = up.medianARR * DEFAULT_EV_MULTIPLE - down.medianARR * DEFAULT_EV_MULTIPLE;
     const dRunway = up.medianRunway - down.medianRunway;
 
     const magnitude = Math.abs(dSurvival) + Math.abs(dEV / Math.max(baseEV, 1)) * 0.5 + Math.abs(dRunway / Math.max(base.medianRunway, 1)) * 0.3;
@@ -213,7 +213,7 @@ export function computeTornado({
   perturbationPercent = PERTURBATION_PCT,
   runs = SENSITIVITY_RUNS,
 }: ComputeTornadoInput): TornadoBar[] {
-  const evMultiple = 3.5;
+  const evMultiple = DEFAULT_EV_MULTIPLE;
   const bars: TornadoBar[] = [];
 
   for (const v of SENSITIVITY_VARS) {
@@ -253,7 +253,7 @@ export function computeSensitivityProfile(
     return { computed: false, reason: "Levers or simulation config not available." };
   }
 
-  const evMultiple = 3.5;
+  const evMultiple = DEFAULT_EV_MULTIPLE;
   const base = runBatch(baseLevers, config, runs);
   const baseEV = base.medianARR * evMultiple;
 
@@ -359,7 +359,7 @@ export function computeShockPropagation({
   };
 
   const stats = runBatch(shockedLevers, config, runs);
-  const evMultiple = 3.5;
+  const evMultiple = DEFAULT_EV_MULTIPLE;
   const medianEV = stats.medianARR * evMultiple;
 
   let classification: ShockResult["classification"];

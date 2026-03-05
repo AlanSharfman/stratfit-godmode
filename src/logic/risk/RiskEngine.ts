@@ -13,6 +13,7 @@ import type {
   MonteCarloResult,
   SensitivityFactor,
 } from "@/logic/monteCarloEngine";
+import { DEFAULT_EV_MULTIPLE } from "@/logic/engineConstants";
 
 // ============================================================================
 // OUTPUT TYPES
@@ -60,7 +61,7 @@ export interface RiskEngineInput {
 // ============================================================================
 
 export function computeRiskProfile(input: RiskEngineInput): RiskResult {
-  const { monteCarloResult, evMultiple = 3.5 } = input;
+  const { monteCarloResult, evMultiple = DEFAULT_EV_MULTIPLE } = input;
 
   if (!monteCarloResult) {
     if (typeof console !== "undefined") {

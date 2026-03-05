@@ -24,9 +24,9 @@ export interface CameraPreset {
  * pulled back for complete coverage of peaks, ridges and valleys.
  */
 export const POSITION_PRESET: CameraPreset = {
-  pos: [0, 260, 700],
-  target: [0, 0, 0],
-  fov: 50,
+  pos: [0, 290, 750],
+  target: [0, -8, 0],
+  fov: 52,
 }
 
 /**
@@ -70,12 +70,13 @@ export const COMMAND_PRESET: CameraPreset = {
 
 /**
  * Progressive Terrain Build — elevated, centered, wide.
- * Captures mountain growth from a full panoramic position.
+ * Captures the full mountain range including baseline massif
+ * and KPI-driven station elevations.
  */
 export const POSITION_PROGRESSIVE_PRESET: CameraPreset = {
-  pos: [0, 260, 700],
-  target: [0, 0, 0],
-  fov: 50,
+  pos: [0, 300, 780],
+  target: [0, -10, 0],
+  fov: 52,
 }
 
 /** All presets keyed by page context */

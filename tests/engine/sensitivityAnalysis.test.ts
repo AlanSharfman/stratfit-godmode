@@ -59,7 +59,7 @@ describe("computeActionRecommendations", () => {
 
   it("returns fewer if topN exceeds node count", () => {
     const recs = computeActionRecommendations(makeKpis(), 20)
-    expect(recs.length).toBeLessThanOrEqual(10) // only 10 KPIs
+    expect(recs.length).toBeLessThanOrEqual(12)
   })
 })
 

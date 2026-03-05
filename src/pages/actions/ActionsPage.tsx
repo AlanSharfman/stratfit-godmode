@@ -10,7 +10,7 @@ import { POSITION_PROGRESSIVE_PRESET } from "@/scene/camera/terrainCameraPresets
 import { KPI_KEYS } from "@/domain/intelligence/kpiZoneMapping"
 import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
 import { KPI_GRAPH, propagateForce } from "@/engine/kpiDependencyGraph"
-import { computeActionRecommendations, getKpiLabel, type ActionRecommendation } from "@/engine/sensitivityAnalysis"
+import { computeActionRecommendations, type ActionRecommendation } from "@/engine/sensitivityAnalysis"
 import { useKpiAudio } from "@/hooks/useKpiAudio"
 import MiniTerrainSilhouette from "@/components/actions/MiniTerrainSilhouette"
 import styles from "./ActionsPage.module.css"
@@ -64,7 +64,7 @@ export default function ActionsPage() {
 
   const [selectedAction, setSelectedAction] = useState<ActionRecommendation | null>(null)
   const revealedKpis = useMemo(() => new Set(KPI_KEYS), [])
-  const { speak, stop, isPlaying, currentKpi } = useKpiAudio(liveKpis)
+  const { speak, stop, isPlaying } = useKpiAudio(liveKpis)
 
   const handleNarrate = () => {
     if (!recommendations.length) return

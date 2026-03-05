@@ -43,6 +43,7 @@ interface Insights {
   drivers: InsightItem[]
   risk: string
   riskTarget?: HighlightTarget
+  pathToAchievement: InsightItem[]
   nextInvestigation: InsightItem[]
 }
 
@@ -59,6 +60,7 @@ function generateInsights(
       executive: "Select two scenarios with completed simulations to generate delta insights.",
       drivers: [{ id: "d-wait", text: "Awaiting scenario data…" }],
       risk: "No risk differential available without completed simulations.",
+      pathToAchievement: [{ id: "p-wait", text: "Complete at least two scenario simulations to see actionable steps." }],
       nextInvestigation: [{ id: "n-wait", text: "Complete at least two scenario simulations to enable comparison intelligence." }],
     }
   }
@@ -141,6 +143,66 @@ function generateInsights(
     riskTarget = CANONICAL_TARGETS.runwayHorizon
   }
 
+  // ── Path to Achievement — actionable steps to reach the target terrain ──
+  const pathToAchievement: InsightItem[] = []
+  const better = bIsBetter ? labelB : labelA
+  const weaker = bIsBetter ? labelA : labelB
+
+  if (Math.abs(revDelta) > 0) {
+    const revTarget = Math.max(kpisA.revenue, kpisB.revenue)
+    pathToAchievement.push({
+      id: "p-rev",
+      text: `Reach ${fmtCurrency(revTarget)}/mo revenue — ${Math.abs(revPct) > 10 ? "requires accelerating pipeline conversion and expanding deal size by " + Math.abs(revPct).toFixed(0) + "%" : "achievable through incremental pipeline growth and pricing optimisation"}.`,
+      target: CANONICAL_TARGETS.revenueGrowth,
+    })
+  }
+
+  if (Math.abs(burnDelta) > 0) {
+    const targetBurn = Math.min(kpisA.monthlyBurn, kpisB.monthlyBurn)
+    if (targetBurn > 0) {
+      pathToAchievement.push({
+        id: "p-burn",
+        text: `Reduce monthly burn to ${fmtCurrency(targetBurn)} — prioritise highest-ROI spend, defer non-critical hires, and renegotiate vendor contracts.`,
+        target: CANONICAL_TARGETS.burnEfficiency,
+      })
+    }
+  }
+
+  if (Math.abs(marginDelta) > 1) {
+    const targetMargin = Math.max(kpisA.grossMargin ?? 0, kpisB.grossMargin ?? 0)
+    pathToAchievement.push({
+      id: "p-margin",
+      text: `Improve gross margin to ${(targetMargin * 100).toFixed(0)}% — optimise COGS through automation, renegotiate supplier terms, and improve pricing discipline.`,
+    })
+  }
+
+  if (Math.abs(churnDelta) > 0.005) {
+    const targetChurn = Math.min(kpisA.churnRate ?? 0, kpisB.churnRate ?? 0)
+    pathToAchievement.push({
+      id: "p-churn",
+      text: `Drive churn below ${(targetChurn * 100).toFixed(1)}% — invest in onboarding, proactive health scoring, and expansion plays to offset at-risk accounts.`,
+      target: CANONICAL_TARGETS.demandVolatility,
+    })
+  }
+
+  if (runwayDelta !== 0) {
+    const targetRunway = Math.max(runwayA, runwayB)
+    if (targetRunway < 999) {
+      pathToAchievement.push({
+        id: "p-runway",
+        text: `Extend runway to ${Math.round(targetRunway)} months — balance growth investment with capital preservation to widen the survival corridor.`,
+        target: CANONICAL_TARGETS.runwayHorizon,
+      })
+    }
+  }
+
+  if (pathToAchievement.length === 0) {
+    pathToAchievement.push({
+      id: "p-maintain",
+      text: `Maintain current trajectory — both scenarios produce similar terrain profiles. Focus on execution consistency and operational discipline.`,
+    })
+  }
+
   // ── Next investigation ──
   const nextInvestigation: InsightItem[] = []
   if (Math.abs(revPct) > 15) {
@@ -182,7 +244,7 @@ function generateInsights(
     nextInvestigation.push({ id: "n-3rd", text: "Consider adding a third scenario to test an alternative strategic path." })
   }
 
-  return { executive, drivers, risk, riskTarget, nextInvestigation }
+  return { executive, drivers, risk, riskTarget, pathToAchievement, nextInvestigation }
 }
 
 function fmtCurrency(v: number): string {
@@ -294,6 +356,31 @@ const CompareInsightPanel: React.FC<CompareInsightPanelProps> = memo(({
           </p>
         </section>
 
+        {/* Path to Achievement */}
+        <section style={S.section}>
+          <h4 style={S.sectionHeadAccent}>Path to Achievement</h4>
+          <p style={S.pathIntro}>What you need to do to reach this mountain position:</p>
+          <ul style={S.list}>
+            {insights.pathToAchievement.map((p) => (
+              <li
+                key={p.id}
+                style={{
+                  ...S.listItem,
+                  ...(p.target ? S.listItemHoverable : {}),
+                  ...(hoveredId === p.id ? S.listItemHovered : {}),
+                }}
+                onMouseEnter={() => handleItemEnter(p)}
+                onMouseLeave={clearHighlight}
+                onClick={() => fireHighlight(p)}
+              >
+                <span style={S.bulletAccent}>{p.target ? "◆" : "▹"}</span>
+                <span style={S.bodyText}>{p.text}</span>
+                {p.target && <span style={S.linkIcon}>⌖</span>}
+              </li>
+            ))}
+          </ul>
+        </section>
+
         {/* Next */}
         <section style={S.section}>
           <h4 style={S.sectionHead}>Next Signals to Examine</h4>
@@ -398,6 +485,34 @@ const S: Record<string, React.CSSProperties> = {
     fontFamily: FONT,
     margin: "0 0 6px",
     padding: 0,
+  },
+
+  sectionHeadAccent: {
+    fontSize: 10,
+    fontWeight: 800,
+    letterSpacing: "0.1em",
+    textTransform: "uppercase" as const,
+    color: "rgba(16,185,129,0.75)",
+    fontFamily: FONT,
+    margin: "0 0 4px",
+    padding: 0,
+  },
+
+  pathIntro: {
+    fontSize: 10,
+    fontWeight: 500,
+    color: "rgba(148,180,214,0.45)",
+    fontFamily: FONT,
+    lineHeight: 1.4,
+    margin: "0 0 8px",
+    fontStyle: "italic" as const,
+  },
+
+  bulletAccent: {
+    fontSize: 9,
+    color: "rgba(16,185,129,0.6)",
+    flexShrink: 0,
+    marginTop: 2,
   },
 
   bodyText: {
