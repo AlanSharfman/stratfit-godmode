@@ -63,7 +63,7 @@ export interface CompareTerrainAreaProps {
 }
 
 /* ── Ghost tint palette (no orange per spec) ── */
-const GHOST_B = { tint: 0x0c3828, emissive: 0x0a3020 } // emerald
+const GHOST_B = { tint: 0x808890, emissive: 0x606870 } // white/silver
 const GHOST_C = { tint: 0x1a2050, emissive: 0x161840 } // indigo
 
 const AZIMUTH_LIMIT = Math.PI / 4
@@ -114,10 +114,10 @@ const CompareTerrainArea: React.FC<CompareTerrainAreaProps> = memo(
           />
           <CompareTerrainPanel
             slot="B"
-            dotColor="rgba(34,197,94,0.7)"
+            dotColor="rgba(220,230,245,0.8)"
             terrainMetrics={metricsB}
             events={eventsB}
-            colorVariant="green"
+            colorVariant="white"
             selectedId={selectedBId}
             scenarioOptions={scenarioOptions}
             onSelectScenario={onSelectB}
@@ -155,7 +155,7 @@ const CompareTerrainArea: React.FC<CompareTerrainAreaProps> = memo(
             <span style={S.legendLabel}>PRIMARY (A)</span>
           </div>
           <div style={S.legendItem}>
-            <span style={{ ...S.legendDot, background: "rgba(34,197,94,0.6)" }} />
+            <span style={{ ...S.legendDot, background: "rgba(220,230,245,0.7)" }} />
             <span style={{
               ...S.legendLabel,
               opacity: activePair === "AB" || activePair === "BC" ? 1 : 0.5,

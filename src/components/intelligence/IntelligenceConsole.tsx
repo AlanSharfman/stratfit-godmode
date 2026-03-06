@@ -12,6 +12,8 @@ const TYPEWRITER_MS = 30
 const COLLAPSE_AFTER_MS = 8000
 const CYAN = "#22d3ee"
 
+let _sessionDismissed = false
+
 const S = {
   wrapper: {
     position: "fixed" as const,
@@ -125,9 +127,18 @@ const IntelligenceConsole: React.FC<Props> = memo(({ insightText, delay = 1000 }
     setTypedLen(0)
   }, [insightText])
 
-  // Slide-in after delay
+  // Slide-in after delay — skip if already dismissed this session
   useEffect(() => {
-    const timer = setTimeout(() => setPanelOpen(true), delay)
+    if (_sessionDismissed) {
+      console.debug("[INTEL-POPUP-DEBUG] skipped auto-open — already dismissed this session")
+      setCollapsed(true)
+      return
+    }
+    console.debug("[INTEL-POPUP-DEBUG] scheduling auto-open in", delay, "ms")
+    const timer = setTimeout(() => {
+      console.debug("[INTEL-POPUP-DEBUG] auto-opening panel")
+      setPanelOpen(true)
+    }, delay)
     return () => clearTimeout(timer)
   }, [delay])
 
@@ -156,6 +167,8 @@ const IntelligenceConsole: React.FC<Props> = memo(({ insightText, delay = 1000 }
   useEffect(() => {
     if (!panelOpen || collapsed) return
     collapseTimerRef.current = setTimeout(() => {
+      console.debug("[INTEL-POPUP-DEBUG] auto-collapse after", COLLAPSE_AFTER_MS, "ms")
+      _sessionDismissed = true
       setCollapsed(true)
       setPanelOpen(false)
     }, COLLAPSE_AFTER_MS)
@@ -172,6 +185,8 @@ const IntelligenceConsole: React.FC<Props> = memo(({ insightText, delay = 1000 }
   }, [])
 
   const handleClose = useCallback(() => {
+    console.debug("[INTEL-POPUP-DEBUG] user dismissed panel")
+    _sessionDismissed = true
     setCollapsed(true)
     setPanelOpen(false)
   }, [])

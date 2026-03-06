@@ -40,6 +40,14 @@ const ALTITUDE_FROST: AltitudePalette = {
   peak:      [0.520, 0.570, 0.650],
 }
 
+const ALTITUDE_WHITE: AltitudePalette = {
+  valley:    [0.220, 0.240, 0.280],   // #384047  cool grey
+  lowSlope:  [0.380, 0.400, 0.440],   // #616670
+  rock:      [0.540, 0.570, 0.610],   // #8a919c
+  highRidge: [0.720, 0.750, 0.790],   // #b8bfc9
+  peak:      [0.880, 0.910, 0.940],   // #e0e8f0  near-white
+}
+
 const v3 = (c: Vec3) => `vec3(${c[0].toFixed(3)}, ${c[1].toFixed(3)}, ${c[2].toFixed(3)})`
 
 function altitudeFragmentGLSL(p: AltitudePalette): string {
@@ -132,7 +140,7 @@ export function createTerrainSolidMaterial() {
    Variant terrain material (compare page A/B sides)
    ═══════════════════════════════════════════════════════════════════════ */
 
-export type TerrainColorVariant = "default" | "green" | "frost"
+export type TerrainColorVariant = "default" | "green" | "frost" | "white"
 
 const VARIANT_PROPS: Record<TerrainColorVariant, {
   color: number; emissive: number; emissiveIntensity: number; palette: AltitudePalette
@@ -140,6 +148,7 @@ const VARIANT_PROPS: Record<TerrainColorVariant, {
   default: { color: 0x091a2e, emissive: 0x061220, emissiveIntensity: 0.30, palette: ALTITUDE_DEFAULT },
   green:   { color: 0x0d1a14, emissive: 0x081210, emissiveIntensity: 0.28, palette: ALTITUDE_GREEN },
   frost:   { color: 0x121621, emissive: 0x0c1018, emissiveIntensity: 0.28, palette: ALTITUDE_FROST },
+  white:   { color: 0x384047, emissive: 0x1a1e24, emissiveIntensity: 0.20, palette: ALTITUDE_WHITE },
 }
 
 export function createTerrainSolidMaterialVariant(variant: TerrainColorVariant) {
