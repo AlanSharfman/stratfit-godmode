@@ -218,16 +218,15 @@ export default function TerrainStage({
 
       <CameraSafetyGuard controlsRef={controlsRef} limits={GOD_VIEW_CONTROLS} />
 
-      {/* fog disabled — mountain background shows through transparent canvas */}
-
       {cinematicLighting ? (
         <>
-          <ambientLight intensity={0.16} color="#061828" />
-          <directionalLight position={[180, 380, 140]} intensity={2.2} color="#4fc3f7" castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-camera-near={0.5} shadow-camera-far={600} shadow-camera-left={-250} shadow-camera-right={250} shadow-camera-top={250} shadow-camera-bottom={-250} shadow-bias={-0.0004} />
-          <directionalLight position={[-130, 220, -50]} intensity={0.22} color="#2690b8" />
-          <directionalLight position={[0, 60, 260]} intensity={0.14} color="#4a98b8" />
-          <directionalLight position={[-200, 20, -140]} intensity={0.08} color="#2e7898" />
-          <hemisphereLight args={["#2e90b0", "#010610", 0.24]} />
+          <ambientLight intensity={0.55} color="#0a2540" />
+          <directionalLight position={[120, 200, 120]} intensity={1.2} color="#4fc3f7" castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-camera-near={0.5} shadow-camera-far={600} shadow-camera-left={-250} shadow-camera-right={250} shadow-camera-top={250} shadow-camera-bottom={-250} shadow-bias={-0.0004} />
+          <directionalLight position={[-100, 160, -40]} intensity={0.35} color="#1f95d4" />
+          <directionalLight position={[0, 80, 200]} intensity={0.22} color="#1573a6" />
+          <directionalLight position={[-160, 30, -120]} intensity={0.12} color="#0e4c73" />
+          <hemisphereLight args={["#1f95d4", "#040c18", 0.35]} />
+          <fogExp2 attach="fog" args={[0x081421, 0.002]} />
         </>
       ) : (
         <>

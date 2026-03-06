@@ -17,11 +17,11 @@ interface AltitudePalette {
 }
 
 const ALTITUDE_DEFAULT: AltitudePalette = {
-  valley:    [0.027, 0.161, 0.239],   // #07293D  deep navy
-  lowSlope:  [0.035, 0.200, 0.298],   // #093340  dark azure
-  rock:      [0.043, 0.239, 0.361],   // #0B3D5C  deep azure (base)
-  highRidge: [0.118, 0.435, 0.565],   // #1E6F90  mid azure
-  peak:      [0.310, 0.765, 0.969],   // #4FC3F7  ice blue
+  valley:    [0.027, 0.106, 0.180],   // #071B2E  valley shadow
+  lowSlope:  [0.055, 0.298, 0.451],   // #0E4C73  mid terrain
+  rock:      [0.082, 0.451, 0.651],   // #1573A6  upper ridge
+  highRidge: [0.122, 0.584, 0.831],   // #1F95D4  highlight ridge
+  peak:      [0.310, 0.765, 0.969],   // #4FC3F7  ice blue peak
 }
 
 const ALTITUDE_GREEN: AltitudePalette = {
@@ -79,33 +79,33 @@ diffuseColor.rgb = mix(diffuseColor.rgb, _peak, _snowMask * 0.42);
 
 float _valleyAO = (1.0 - _hNorm) * (1.0 - _slopeF);
 float _creaseAO = _slopeF * (1.0 - _hNorm);
-float _ao = max(_valleyAO * 0.72, _creaseAO * 0.45);
-diffuseColor.rgb *= mix(1.0, 0.42, _ao);
+float _ao = max(_valleyAO * 0.55, _creaseAO * 0.30);
+diffuseColor.rgb *= mix(1.0, 0.58, _ao);
 
-float _crevasse = _slopeF * (1.0 - _hNorm) * smoothstep(0.20, 0.50, vSlope);
-diffuseColor.rgb *= mix(1.0, 0.48, _crevasse);
+float _crevasse = _slopeF * (1.0 - _hNorm) * smoothstep(0.25, 0.55, vSlope);
+diffuseColor.rgb *= mix(1.0, 0.65, _crevasse);
 
 vec3 _wNorm = normalize(vWorldNormal);
-vec3 _keyDir = normalize(vec3(180.0, 380.0, 140.0));
+vec3 _keyDir = normalize(vec3(120.0, 200.0, 120.0));
 float _nDotL = dot(_wNorm, _keyDir);
 float _shadowFace = smoothstep(-0.05, 0.35, -_nDotL);
-diffuseColor.rgb *= mix(1.0, 0.68, _shadowFace * 0.55);
+diffuseColor.rgb *= mix(1.0, 0.72, _shadowFace * 0.45);
 
 vec3 _viewDir = normalize(cameraPosition - vWorldPos);
 vec3 _halfVec = normalize(_viewDir + _keyDir);
 float _nDotH = max(dot(_wNorm, _halfVec), 0.0);
-float _spec = pow(_nDotH, 52.0);
-float _litFace = smoothstep(0.0, 0.35, _nDotL);
-float _ridgeGate = smoothstep(0.38, 0.72, _hNorm);
-float _shimmer = _spec * _litFace * _ridgeGate * 0.20;
-diffuseColor.rgb += vec3(0.035, 0.110, 0.185) * _shimmer;
+float _spec = pow(_nDotH, 64.0);
+float _litFace = smoothstep(0.0, 0.30, _nDotL);
+float _ridgeGate = smoothstep(0.35, 0.68, _hNorm);
+float _shimmer = _spec * _litFace * _ridgeGate * 0.16;
+diffuseColor.rgb += vec3(0.030, 0.095, 0.165) * _shimmer;
 
-float _basinMask = smoothstep(0.14, 0.0, _hNorm);
-diffuseColor.rgb *= mix(1.0, 0.72, _basinMask);
-float _basinFresnel = pow(1.0 - abs(dot(_wNorm, _viewDir)), 3.5);
-diffuseColor.rgb += vec3(0.008, 0.035, 0.065) * _basinFresnel * _basinMask * 0.14;
-float _basinEdge = smoothstep(0.0, 0.10, _hNorm) * smoothstep(0.22, 0.10, _hNorm);
-diffuseColor.rgb += vec3(0.004, 0.018, 0.035) * _basinEdge;
+float _basinMask = smoothstep(0.12, 0.0, _hNorm);
+diffuseColor.rgb *= mix(1.0, 0.78, _basinMask);
+float _basinFresnel = pow(1.0 - abs(dot(_wNorm, _viewDir)), 4.0);
+diffuseColor.rgb += vec3(0.006, 0.028, 0.055) * _basinFresnel * _basinMask * 0.12;
+float _basinEdge = smoothstep(0.0, 0.08, _hNorm) * smoothstep(0.20, 0.08, _hNorm);
+diffuseColor.rgb += vec3(0.003, 0.014, 0.028) * _basinEdge;
 
 float _viewDot = abs(dot(_wNorm, vec3(0.0, 0.0, 1.0)));
 float _rim = pow(1.0 - _viewDot, 3.0) * 0.14 * _hNorm;
@@ -131,13 +131,13 @@ const FRAGMENT_VARYINGS = VERTEX_VARYINGS
 
 export function createTerrainSolidMaterial() {
   const mat = new THREE.MeshStandardMaterial({
-    color: 0x07293d,
-    emissive: new THREE.Color(0x020a14),
-    emissiveIntensity: 0.10,
+    color: 0x071b2e,
+    emissive: new THREE.Color(0x040e1a),
+    emissiveIntensity: 0.16,
     transparent: false,
     opacity: 1.0,
-    roughness: 0.88,
-    metalness: 0.03,
+    roughness: 0.78,
+    metalness: 0.04,
     flatShading: false,
     depthWrite: true,
     polygonOffset: true,
@@ -167,7 +167,7 @@ export type TerrainColorVariant = "default" | "green" | "frost" | "white"
 const VARIANT_PROPS: Record<TerrainColorVariant, {
   color: number; emissive: number; emissiveIntensity: number; palette: AltitudePalette
 }> = {
-  default: { color: 0x07293d, emissive: 0x030f1a, emissiveIntensity: 0.14, palette: ALTITUDE_DEFAULT },
+  default: { color: 0x071b2e, emissive: 0x040e1a, emissiveIntensity: 0.16, palette: ALTITUDE_DEFAULT },
   green:   { color: 0x0d1a14, emissive: 0x081210, emissiveIntensity: 0.28, palette: ALTITUDE_GREEN },
   frost:   { color: 0x121621, emissive: 0x0c1018, emissiveIntensity: 0.28, palette: ALTITUDE_FROST },
   white:   { color: 0x384047, emissive: 0x1a1e24, emissiveIntensity: 0.20, palette: ALTITUDE_WHITE },

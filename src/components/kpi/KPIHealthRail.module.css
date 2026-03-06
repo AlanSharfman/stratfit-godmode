@@ -6,10 +6,10 @@
 
 /* ── PHASE 1: Design Tokens ── */
 .rail {
-  --sf-bg: rgba(10, 14, 20, 0.92);
-  --sf-card-bg: linear-gradient(175deg, rgba(18, 26, 38, 0.96), rgba(8, 12, 20, 0.94));
-  --sf-border: rgba(200, 215, 230, 0.28);
-  --sf-border-strong: rgba(200, 215, 230, 0.50);
+  --sf-bg: rgba(10, 22, 38, 0.65);
+  --sf-card-bg: linear-gradient(175deg, rgba(12, 24, 40, 0.72), rgba(8, 16, 28, 0.68));
+  --sf-border: rgba(120, 180, 255, 0.18);
+  --sf-border-strong: rgba(120, 180, 255, 0.35);
   --sf-cyan: rgba(34, 211, 238, 0.90);
   --sf-cyan-dim: rgba(34, 211, 238, 0.65);
   --sf-emerald: rgba(52, 211, 153, 0.85);
@@ -25,24 +25,14 @@
   --sf-radius: 14px;
   --sf-card-pad: 12px 14px;
   --sf-shadow:
-    /* Step 1 — inner bright edge */
-    0 0 0 1px rgba(200, 220, 245, 0.18),
-    /* Step 2 — dark channel */
-    0 0 0 2.5px rgba(6, 10, 16, 0.92),
-    /* Step 3 — outer bright ring */
-    0 0 0 3.5px rgba(180, 210, 240, 0.16),
-    /* Step 4 — dark outer */
-    0 0 0 5px rgba(6, 10, 16, 0.80),
-    /* Inner lighting */
-    inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.30),
-    /* Depth */
-    0 6px 22px rgba(0, 0, 0, 0.50);
+    0 10px 25px rgba(0, 0, 0, 0.35),
+    0 0 12px rgba(0, 170, 255, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
   --sf-bezel:
-    inset 0 0 0 1px rgba(200, 220, 245, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.28),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.30),
-    inset 0 0 10px rgba(34, 211, 238, 0.06);
+    inset 0 0 0 1px rgba(120, 180, 255, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 0 8px rgba(0, 170, 255, 0.04);
 
   display: flex;
   flex-direction: column;
@@ -136,31 +126,24 @@
   position: absolute;
   inset: 0;
   border-radius: var(--sf-radius);
-  box-shadow:
-    var(--sf-bezel),
-    0 0 0 1px rgba(200, 220, 245, 0.14),
-    0 0 0 2px rgba(6, 10, 16, 0.92),
-    0 0 0 3px rgba(180, 210, 240, 0.12),
-    0 0 0 4px rgba(6, 10, 16, 0.85),
-    0 0 0 5px rgba(160, 195, 230, 0.08);
+  box-shadow: var(--sf-bezel);
   pointer-events: none;
   z-index: 1;
 }
 
-/* Top specular highlight — bright polished titanium reflection */
 .card::after {
   content: "";
   position: absolute;
   top: 0;
-  left: 4%;
-  right: 4%;
-  height: 1.5px;
+  left: 8%;
+  right: 8%;
+  height: 1px;
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(200, 220, 245, 0.40) 15%,
-    rgba(255, 255, 255, 0.55) 50%,
-    rgba(200, 220, 245, 0.40) 85%,
+    rgba(120, 180, 255, 0.18) 20%,
+    rgba(200, 220, 245, 0.28) 50%,
+    rgba(120, 180, 255, 0.18) 80%,
     transparent 100%
   );
   pointer-events: none;
@@ -172,10 +155,9 @@
     transform: translateY(-2px) translateZ(0);
     border-color: var(--sf-border-strong);
     box-shadow:
-      var(--sf-shadow),
-      0 0 20px var(--sf-glow-cyan),
-      0 0 6px rgba(34, 211, 238, 0.06),
-      0 8px 24px rgba(0, 0, 0, 0.35);
+      0 12px 28px rgba(0, 0, 0, 0.45),
+      0 0 14px rgba(0, 170, 255, 0.10),
+      inset 0 1px 0 rgba(255, 255, 255, 0.10);
   }
 }
 
@@ -239,19 +221,18 @@
   align-items: center;
   justify-content: center;
   margin: 2px 0 1px;
-  min-height: 18px;
+  min-height: 22px;
   flex: 1;
   position: relative;
-  opacity: 0.82; /* Phase 5: dim widgets so numbers remain primary */
+  opacity: 0.92;
 }
 
-/* Soft glow halo behind each widget */
 .widget::before {
   content: "";
   position: absolute;
-  inset: -4px;
+  inset: -6px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(100, 200, 255, 0.04) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(100, 200, 255, 0.06) 0%, transparent 65%);
   pointer-events: none;
 }
 
@@ -411,10 +392,9 @@
 .cardActive {
   border-color: var(--kpi-color, var(--sf-cyan)) !important;
   box-shadow:
-    var(--sf-shadow),
-    0 0 18px color-mix(in srgb, var(--kpi-color, var(--sf-cyan)) 30%, transparent),
-    0 0 40px color-mix(in srgb, var(--kpi-color, var(--sf-cyan)) 10%, transparent),
-    inset 0 0 12px color-mix(in srgb, var(--kpi-color, var(--sf-cyan)) 6%, transparent),
+    0 12px 28px rgba(0, 0, 0, 0.45),
+    0 0 16px color-mix(in srgb, var(--kpi-color, var(--sf-cyan)) 20%, transparent),
+    inset 0 0 10px color-mix(in srgb, var(--kpi-color, var(--sf-cyan)) 5%, transparent),
     inset 3px 0 0 0 var(--kpi-color, var(--sf-cyan));
   transform: translateY(-2px) translateZ(0);
 }
