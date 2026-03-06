@@ -101,7 +101,7 @@ function computeStressImpact(kpis: PositionKpis, template: ScenarioTemplate): { 
   const kpiFieldMap: Record<KpiKey, keyof PositionKpis> = {
     cash: "cashOnHand", runway: "runwayMonths", growth: "growthRatePct", arr: "arr",
     revenue: "revenueMonthly", burn: "burnMonthly", churn: "churnPct",
-    grossMargin: "grossMarginPct", headcount: "headcount",
+    grossMargin: "grossMarginPct", headcount: "headcount", nrr: "nrrPct", efficiency: "efficiencyRatio",
     enterpriseValue: "valuationEstimate",
   }
 

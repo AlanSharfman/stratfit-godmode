@@ -33,6 +33,8 @@ const KPI_DISPLAY: Record<KpiKey, { label: string; fmt: (k: PositionKpis) => str
   churn: { label: "Churn Rate", fmt: (k) => `${k.churnPct.toFixed(1)}%` },
   grossMargin: { label: "Gross Margin", fmt: (k) => `${k.grossMarginPct.toFixed(1)}%` },
   headcount: { label: "Headcount", fmt: (k) => `${k.headcount}` },
+  nrr: { label: "NRR", fmt: (k) => `${k.nrrPct.toFixed(0)}%` },
+  efficiency: { label: "Revenue / Employee", fmt: (k) => `$${(k.efficiencyRatio / 1000).toFixed(0)}K` },
   enterpriseValue: { label: "Enterprise Value", fmt: (k) => k.valuationEstimate ? `$${(k.valuationEstimate / 1000).toFixed(0)}K` : "N/A" },
 }
 

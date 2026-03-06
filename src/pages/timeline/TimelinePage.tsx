@@ -35,7 +35,7 @@ const CASE_CONFIGS: Record<CaseType, { label: string; color: string; growthRates
 const KPI_LABELS: Record<KpiKey, string> = {
   cash: "Cash", runway: "Runway", growth: "Growth", arr: "ARR",
   revenue: "Revenue", burn: "Burn", churn: "Churn",
-  grossMargin: "Margin", headcount: "Team", enterpriseValue: "EV",
+  grossMargin: "Margin", headcount: "Team", nrr: "NRR", efficiency: "Efficiency", enterpriseValue: "EV",
 }
 
 function snapshotToPosition(s: KpiSnapshot, base: PositionKpis): PositionKpis {

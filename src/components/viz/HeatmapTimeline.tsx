@@ -21,7 +21,7 @@ const HEALTH_COLORS = {
 const KPI_TO_SNAPSHOT: Record<KpiKey, string> = {
   cash: "cash", runway: "runway", growth: "growth", arr: "arr",
   revenue: "revenue", burn: "burn", churn: "churn",
-  grossMargin: "grossMargin", headcount: "headcount", enterpriseValue: "enterpriseValue",
+  grossMargin: "grossMargin", headcount: "headcount", nrr: "nrr", efficiency: "efficiency", enterpriseValue: "enterpriseValue",
 }
 
 function snapshotToKpis(snap: Record<string, number>): PositionKpis {
@@ -35,8 +35,8 @@ function snapshotToKpis(snap: Record<string, number>): PositionKpis {
     churnPct: snap.churn ?? 0,
     grossMarginPct: snap.grossMargin ?? 0,
     headcount: snap.headcount ?? 0,
-    nrrPct: 100,
-    efficiencyRatio: 0,
+    nrrPct: snap.nrr ?? 100,
+    efficiencyRatio: snap.efficiency ?? 0,
     valuationEstimate: snap.enterpriseValue ?? 0,
     ebitdaMonthly: 0,
     riskIndex: 50,

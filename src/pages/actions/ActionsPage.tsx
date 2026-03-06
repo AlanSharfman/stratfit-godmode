@@ -28,6 +28,8 @@ function computeAfterKpis(current: PositionKpis, kpi: KpiKey): PositionKpis {
     churn: "churnPct",
     grossMargin: "grossMarginPct",
     headcount: "headcount",
+    nrr: "nrrPct",
+    efficiency: "efficiencyRatio",
     enterpriseValue: "valuationEstimate",
   }
   for (const [k, delta] of affected) {

@@ -30,6 +30,8 @@ const HOVER_COLORS: Record<KpiKey, string> = {
   churn:           "#2dd4bf",
   grossMargin:     "#22d3ee",
   headcount:       "#7dd3fc",
+  nrr:             "#2dd4bf",
+  efficiency:      "#f59e0b",
   enterpriseValue: "#eab308",
 }
 
@@ -91,6 +93,18 @@ const ZONE_INTEL: Record<KpiKey, Record<HealthLevel, string>> = {
     watch:    "Small team — every hire has outsized velocity impact.",
     healthy:  "Team supports multi-stream execution.",
     strong:   "Deep talent pool — organisational leverage is structural.",
+  },
+  nrr: {
+    critical: "Net contraction — existing customers are shrinking the base.",
+    watch:    "Expansion ridge unstable — retention and upsell need work.",
+    healthy:  "Healthy expansion dynamics — customer base is compounding.",
+    strong:   "Exceptional NRR — installed base is a structural growth engine.",
+  },
+  efficiency: {
+    critical: "Low revenue per employee — leverage is not yet scaling.",
+    watch:    "Efficiency improving but still under pressure.",
+    healthy:  "Solid operational leverage across the delivery system.",
+    strong:   "Exceptional efficiency — each head adds strong economic output.",
   },
   enterpriseValue: {
     critical: "Value summit still forming — growth and margin are key.",

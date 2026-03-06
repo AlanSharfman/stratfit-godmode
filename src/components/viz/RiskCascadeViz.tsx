@@ -26,6 +26,8 @@ const POSITIONS: Record<KpiKey, { x: number; y: number }> = {
   churn: { x: 300, y: 130 },
   grossMargin: { x: 420, y: 130 },
   headcount: { x: 60, y: 220 },
+  nrr: { x: 180, y: 220 },
+  efficiency: { x: 300, y: 220 },
   enterpriseValue: { x: 420, y: 220 },
 }
 

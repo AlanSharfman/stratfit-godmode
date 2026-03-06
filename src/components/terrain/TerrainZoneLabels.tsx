@@ -21,7 +21,7 @@ interface Props {
 const ZONE_ICONS: Record<KpiKey, string> = {
   cash: "◈", runway: "⏳", growth: "↗", arr: "₿",
   revenue: "⚡", burn: "🔥", churn: "↺",
-  grossMargin: "△", headcount: "⊕", enterpriseValue: "◆",
+  grossMargin: "△", headcount: "⊕", nrr: "⟲", efficiency: "▣", enterpriseValue: "◆",
 }
 
 export default React.memo(function TerrainZoneLabels({ kpis, revealedKpis, focusedKpi, onFocusKpi, onClickKpi, visible = true }: Props) {

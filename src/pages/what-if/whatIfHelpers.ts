@@ -12,7 +12,7 @@ export interface StackedScenario {
 export const KPI_LABELS: Record<KpiKey, string> = {
   cash: "Cash", runway: "Runway", growth: "Growth", arr: "ARR",
   revenue: "Revenue", burn: "Burn", churn: "Churn",
-  grossMargin: "Margin", headcount: "Team", enterpriseValue: "EV",
+  grossMargin: "Margin", headcount: "Team", nrr: "NRR", efficiency: "Efficiency", enterpriseValue: "EV",
 }
 
 export function formatDelta(kpi: KpiKey, v: number): string {
