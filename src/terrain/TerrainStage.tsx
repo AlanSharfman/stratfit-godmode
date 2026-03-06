@@ -3,7 +3,7 @@
 // Single Canvas host for terrain rendering.
 // Progressive terrain for Position, seed-based for Compare/other pages.
 
-import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import type { ReactNode } from "react";
 import { Canvas } from "@react-three/fiber";
@@ -21,7 +21,6 @@ import HorizonBand from "@/terrain/HorizonBand";
 import type { MetricsInput } from "@/terrain/buildTerrain";
 import { useTerrainControls } from "@/terrain/useTerrainControls";
 import TerrainHeatmapLayer from "@/terrain/layers/TerrainHeatmapLayer";
-import TerrainZoneHighlight from "@/terrain/layers/TerrainZoneHighlight";
 import ProgressiveTerrainSurface from "@/terrain/ProgressiveTerrainSurface";
 import type { ProgressiveTerrainHandle } from "@/terrain/ProgressiveTerrainSurface";
 import type { TerrainTuningParams } from "@/terrain/terrainTuning";
@@ -144,7 +143,7 @@ export default function TerrainStage({
   const terrainRef = useRef<TerrainSurfaceHandle>(null!);
   const progressiveRef = useRef<ProgressiveTerrainHandle>(null!);
   const controlsRef = useRef<OrbitControlsImpl>(null);
-  const [terrainReady, setTerrainReady] = useState(false);
+  const [terrainReady] = useState(true);
   const effectivePreset = cameraPreset ?? POSITION_PRESET;
 
   const { baseline } = useSystemBaseline();
@@ -154,26 +153,6 @@ export default function TerrainStage({
     (controlsRef as React.MutableRefObject<OrbitControlsImpl | null>).current = instance;
     setControls(instance);
   }, [setControls]);
-
-
-  useEffect(() => {
-    if (terrainReady) return;
-    let cancelled = false;
-    let raf: number;
-    function check() {
-      if (cancelled) return;
-      if (terrainRef.current || progressiveRef.current) {
-        setTerrainReady(true);
-        return;
-      }
-      raf = requestAnimationFrame(check);
-    }
-    check();
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(raf);
-    };
-  }, [terrainReady]);
 
   return (
     <Canvas
@@ -242,8 +221,7 @@ export default function TerrainStage({
       {!transparentBackground && <HorizonBand />}
       <TerrainCompass />
 
-      <Suspense fallback={null}>
-        {progressive && revealedKpis ? (
+      {progressive && revealedKpis ? (
           <>
             <ProgressiveTerrainSurface
               ref={progressiveRef}
@@ -320,16 +298,11 @@ export default function TerrainStage({
           <>
             <TerrainSurface ref={terrainRef} terrainMetrics={terrainMetrics} colorVariant={colorVariant} />
             <TerrainHeatmapLayer enabled={heatmapEnabled} terrainMetrics={terrainMetrics} />
-            <TerrainZoneHighlight focusedKpi={focusedKpi} kpis={zoneKpis} terrainMetrics={terrainMetrics} />
+            {/* TerrainZoneHighlight removed — terrain colour stays constant; KPIs affect markers only */}
           </>
         )}
-        {terrainReady && (
-          <>
-            <TimelineRuler terrainRef={progressive ? progressiveRef as unknown as React.RefObject<TerrainSurfaceHandle> : terrainRef} />
-            {renderWhenReady?.(progressive ? progressiveRef as unknown as React.RefObject<TerrainSurfaceHandle> : terrainRef)}
-          </>
-        )}
-      </Suspense>
+      <TimelineRuler terrainRef={progressive ? progressiveRef as unknown as React.RefObject<TerrainSurfaceHandle> : terrainRef} />
+      {renderWhenReady?.(progressive ? progressiveRef as unknown as React.RefObject<TerrainSurfaceHandle> : terrainRef)}
 
       {children}
     </Canvas>

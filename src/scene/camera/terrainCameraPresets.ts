@@ -110,9 +110,9 @@ export const HERO_VIEW_CONTROLS: CameraControlsConfig = {
  * ~22° downward pitch, FOV 52° for natural perspective.
  */
 export const POSITION_PROGRESSIVE_PRESET: CameraPreset = {
-  pos: [0, 200, 490],
-  target: [0, 45, 0],
-  fov: 54,
+  pos: [0, 220, 560],
+  target: [0, 40, 0],
+  fov: 56,
 }
 
 /** All presets keyed by page context */

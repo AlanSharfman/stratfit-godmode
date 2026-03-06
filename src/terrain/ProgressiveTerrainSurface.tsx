@@ -14,7 +14,7 @@ import { TERRAIN_CONSTANTS, TERRAIN_WORLD_SCALE } from "@/terrain/terrainConstan
 import { createTerrainSolidMaterial, createTerrainWireMaterial } from "@/terrain/terrainMaterials"
 import TerrainTrees from "@/terrain/TerrainTrees"
 import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
-import { KPI_KEYS, KPI_ZONE_MAP, HEALTH_ELEVATION, getHealthLevel, getHealthColor, PRIMARY_KPI_KEYS, PRIMARY_ANCHOR_POSITIONS } from "@/domain/intelligence/kpiZoneMapping"
+import { KPI_KEYS, KPI_ZONE_MAP, HEALTH_ELEVATION, PRIMARY_KPI_KEYS } from "@/domain/intelligence/kpiZoneMapping"
 import type { PositionKpis } from "@/pages/position/overlays/positionState"
 import type { PropagationResult } from "@/engine/kpiDependencyGraph"
 import type { TerrainTuningParams } from "@/terrain/terrainTuning"
@@ -56,10 +56,8 @@ interface Props {
    Constants
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const DEFAULT_LERP_SPEED = 2.5
+const DEFAULT_LERP_SPEED = 20
 
-const HIGHLIGHT_OPACITY = 0.35
-const HIGHLIGHT_FADE = 4.0
 const CASCADE_DELAY_PER_HOP = 0.15
 const CASCADE_PULSE_DURATION = 0.8
 const CASCADE_PULSE_AMP = 3.5
@@ -72,9 +70,6 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
   function ProgressiveTerrainSurface({ revealedKpis, kpis, focusedKpi, cascadeImpulse, tuning, morphSpeed = DEFAULT_LERP_SPEED }, ref) {
     const solidRef = useRef<THREE.Mesh>(null)
     const latticeRef = useRef<THREE.Mesh>(null)
-    const highlightRef = useRef<THREE.Mesh>(null)
-    const highlightMatRef = useRef<THREE.MeshBasicMaterial>(null)
-    const highlightOpacity = useRef(0)
 
     const { baseline } = useSystemBaseline()
     const showGrid = useRenderFlagsStore((s) => s.showGrid)
@@ -98,49 +93,6 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
 
     // Target heights = stabilized heightfield (already clean, no further processing needed)
     const targetHeights = stabilizedHF
-
-    // Highlight geometry for focused KPI anchor region
-    const highlightGeo = useMemo(() => {
-      if (!focusedKpi || !kpis) return null
-
-      const anchor = PRIMARY_ANCHOR_POSITIONS.get(focusedKpi)
-      const health = getHealthLevel(focusedKpi, kpis)
-      const color = getHealthColor(health)
-      const pos = geometry.attributes.position as THREE.BufferAttribute
-      const count = pos.count
-      const vertsPerRow = SEGMENTS + 1
-      const aCx = anchor?.cx ?? 0.5
-      const aSpread = anchor?.spread ?? 0.11
-
-      const hfCopy = new Float32Array(count)
-      for (let i = 0; i < count; i++) hfCopy[i] = pos.getZ(i)
-      const geo = createTerrainGeometry({ segments: SEGMENTS, heightfield: hfCopy })
-      const hPos = geo.attributes.position as THREE.BufferAttribute
-
-      const colors = new Float32Array(count * 3)
-      for (let i = 0; i < count; i++) {
-        const col = i % vertsPerRow
-        const nx = col / SEGMENTS
-        const h = pos.getZ(i)
-
-        if (h < 0.2) continue
-
-        const dx = nx - aCx
-        const zoneFactor = Math.exp(-(dx * dx) / (aSpread * aSpread))
-        if (zoneFactor < 0.05) continue
-
-        const heightFactor = Math.min(1, h / 5)
-        const intensity = heightFactor * zoneFactor
-
-        colors[i * 3] = color.r * intensity
-        colors[i * 3 + 1] = color.g * intensity
-        colors[i * 3 + 2] = color.b * intensity
-      }
-
-      geo.setAttribute("color", new THREE.BufferAttribute(colors, 3))
-      geo.computeVertexNormals()
-      return geo
-    }, [focusedKpi, kpis, geometry])
 
     // Precompute cascade pulse offsets per zone for quick lookup
     const cascadeZonePulse = useRef(new Map<KpiKey, number>())
@@ -199,28 +151,6 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
         geometry.computeVertexNormals()
       }
 
-      // Update highlight geometry heights to match
-      if (highlightGeo && highlightRef.current) {
-        const hPos = highlightGeo.attributes.position as THREE.BufferAttribute
-        for (let i = 0; i < count; i++) {
-          hPos.setZ(i, pos.getZ(i))
-        }
-        hPos.needsUpdate = true
-        highlightGeo.computeVertexNormals()
-      }
-
-      // Fade highlight opacity
-      const targetOp = focusedKpi ? HIGHLIGHT_OPACITY : 0
-      const curOp = highlightOpacity.current
-      const opDiff = targetOp - curOp
-      if (Math.abs(opDiff) > 0.001) {
-        highlightOpacity.current += opDiff * Math.min(1, delta * HIGHLIGHT_FADE)
-      } else {
-        highlightOpacity.current = targetOp
-      }
-      if (highlightMatRef.current) {
-        highlightMatRef.current.opacity = highlightOpacity.current
-      }
     })
 
     // Materials
@@ -229,18 +159,17 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
     useEffect(() => () => solidMat.dispose(), [solidMat])
     useEffect(() => () => wireMat.dispose(), [wireMat])
     useEffect(() => () => { geometry.dispose() }, [geometry])
-    useEffect(() => () => { highlightGeo?.dispose() }, [highlightGeo])
 
     // Transform — same as TerrainSurface
     useEffect(() => {
-      for (const r of [solidRef, latticeRef, highlightRef]) {
+      for (const r of [solidRef, latticeRef]) {
         if (!r.current) continue
         r.current.rotation.x = -Math.PI / 2
         r.current.position.set(0, TERRAIN_CONSTANTS.yOffset, 0)
         r.current.scale.set(TERRAIN_WORLD_SCALE.x, TERRAIN_WORLD_SCALE.y, TERRAIN_WORLD_SCALE.z)
         r.current.frustumCulled = false
       }
-    }, [highlightGeo])
+    }, [geometry])
 
     useImperativeHandle(ref, () => ({
       seed,
@@ -282,28 +211,7 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
           </mesh>
         )}
 
-        {highlightGeo && (
-          <mesh
-            ref={highlightRef}
-            geometry={highlightGeo}
-            renderOrder={6}
-            name="progressive-zone-highlight"
-          >
-            <meshBasicMaterial
-              ref={highlightMatRef}
-              vertexColors
-              transparent
-              opacity={0}
-              depthWrite={false}
-              depthTest
-              side={THREE.DoubleSide}
-              polygonOffset
-              polygonOffsetFactor={-2}
-              polygonOffsetUnits={-2}
-              toneMapped={false}
-            />
-          </mesh>
-        )}
+        {/* KPI zone highlight overlay removed — terrain colour stays constant */}
 
         <TerrainTrees
           terrainRef={ref as React.RefObject<ProgressiveTerrainHandle>}
