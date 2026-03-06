@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useRef, useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { useSystemBaseline } from "@/system/SystemBaselineProvider"
 import type { BaselineV1 } from "@/onboard/baseline"
+import { CommandCenterSliderRow, type CommandCenterSliderTooltip } from "@/components/ui/CommandCenterSliderDeck"
 import PortalNav from "@/components/nav/PortalNav"
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -71,6 +72,57 @@ const INITIAL: FormState = {
 
 const STAGES = ["Ideation", "Startup", "Early Growth", "Growth", "High Growth", "Scale", "Exit Ready"]
 const INDUSTRIES = ["SaaS", "Fintech", "HealthTech", "EdTech", "E-Commerce", "AI / ML", "DevTools", "Marketplace", "Hardware", "Other"]
+
+const INITIATE_SLIDER_TOOLTIPS: Record<string, CommandCenterSliderTooltip> = {
+  cashOnHand: {
+    description: "Current liquidity available to absorb burn, shocks, and execution delays.",
+    impact: "Higher = more runway and stronger near-term resilience.",
+  },
+  monthlyNetBurn: {
+    description: "Net monthly cash consumption after gross profit and operating spend.",
+    impact: "Higher = faster runway compression and more financing pressure.",
+  },
+  annualCapex: {
+    description: "Annual investment in infrastructure, equipment, or other long-lived operating assets.",
+    impact: "Higher = more upfront spend and less short-term cash flexibility.",
+  },
+  capexIntensityPct: {
+    description: "Share of revenue being reinvested into capital expenditure requirements.",
+    impact: "Higher = heavier reinvestment burden on current cash generation.",
+  },
+  currentARR: {
+    description: "Current annual recurring revenue baseline used across the STRATFIT engine.",
+    impact: "Higher = stronger revenue base and more room to absorb volatility.",
+  },
+  monthlyGrowthPct: {
+    description: "Current recurring revenue growth rate feeding the baseline trajectory.",
+    impact: "Higher = faster momentum, stronger valuation lift, and higher expectations.",
+  },
+  grossMarginPct: {
+    description: "Gross profit retained after direct delivery costs and cost of service.",
+    impact: "Higher = better efficiency and more operating leverage.",
+  },
+  monthlyChurnPct: {
+    description: "Rate at which customers or revenue leave the system each month.",
+    impact: "Higher = weaker retention and lower quality of growth.",
+  },
+  salesEfficiency: {
+    description: "Efficiency of turning go-to-market spend into incremental recurring revenue.",
+    impact: "Higher = stronger conversion of spend into scalable growth.",
+  },
+  netRevenueRetentionPct: {
+    description: "Revenue retained and expanded from the existing customer base over time.",
+    impact: "Higher = expansion-led growth and a healthier underlying engine.",
+  },
+  salesRampTime: {
+    description: "Time required for new sales capacity to reach productive performance.",
+    impact: "Higher = slower payback and longer time to convert hiring into revenue.",
+  },
+  engineeringVelocity: {
+    description: "Time required to turn product effort into shipped roadmap progress.",
+    impact: "Higher = slower delivery cadence and more execution drag.",
+  },
+}
 
 /* ── Helpers ── */
 
@@ -218,11 +270,9 @@ function Module({ title, children, style }: { title: string; children: React.Rea
   )
 }
 
-function PowerBar({ label, value, max, unit = "", color = "cyan", onChange }: {
-  label: string; value: number; max: number; unit?: string; color?: "cyan" | "amber"; onChange?: (v: number) => void
+function PowerBar({ id, label, value, max, unit = "", onChange }: {
+  id: keyof typeof INITIATE_SLIDER_TOOLTIPS; label: string; value: number; max: number; unit?: string; onChange?: (v: number) => void
 }) {
-  const pct = Math.min(100, Math.max(0, (value / max) * 100))
-  const isCyan = color === "cyan"
   const display = unit === "%" ? `${value.toFixed(1)}${unit}`
     : unit === "x" ? `${value.toFixed(1)}${unit}`
     : unit ? `${value.toLocaleString()}${unit}`
@@ -230,30 +280,20 @@ function PowerBar({ label, value, max, unit = "", color = "cyan", onChange }: {
     : value >= 1_000 ? `$${(value / 1e3).toFixed(0)}K`
     : `${value.toLocaleString()}`
 
-  const trackColor = isCyan ? "#22D3EE" : "#f59e0b"
-
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <span style={SC.powerLabel}>{label}</span>
-        <span style={{ ...SC.powerValue, color: trackColor }}>{display}</span>
-      </div>
-      <div style={{ ...SC.powerTrack, position: "relative" }}>
-        <div
-          style={{ ...SC.powerFill, width: `${pct}%`, background: trackColor, boxShadow: `0 0 8px ${trackColor}66` }}
-        />
-        {onChange && (
-          <input
-            type="range"
-            min={0} max={max} step={max > 100 ? max / 200 : 0.1}
-            value={value}
-            onChange={(e) => onChange(Number(e.target.value))}
-            className={isCyan ? "gm-range-cyan" : "gm-range-amber"}
-            style={SC.rangeInput}
-          />
-        )}
-      </div>
-    </div>
+    <CommandCenterSliderRow
+      slider={{
+        id,
+        label,
+        value,
+        min: 0,
+        max,
+        step: max > 100 ? Math.max(1, max / 200) : unit === "x" ? 0.1 : 0.1,
+        format: () => display,
+        tooltip: INITIATE_SLIDER_TOOLTIPS[id],
+      }}
+      onChange={(nextValue) => onChange?.(nextValue)}
+    />
   )
 }
 
@@ -909,9 +949,9 @@ export default function InitializeBaselinePage() {
           {/* ── LIQUIDITY PANEL ── */}
           <Module title="LIQUIDITY & FUNDING">
             <div style={SC.modBody}>
-              <PowerBar label="Cash on Hand" value={form.cashOnHand} max={5_000_000} color="cyan"
+              <PowerBar id="cashOnHand" label="Cash on Hand" value={form.cashOnHand} max={5_000_000}
                 onChange={(v) => update("cashOnHand", Math.round(v))} />
-              <PowerBar label="Monthly Net Burn" value={form.monthlyNetBurn} max={500_000} color="amber"
+              <PowerBar id="monthlyNetBurn" label="Monthly Net Burn" value={form.monthlyNetBurn} max={500_000}
                 onChange={(v) => update("monthlyNetBurn", Math.round(v))} />
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 8 }}>
                 <TacticalInput label="Funding / Debt" value={form.debtOutstanding} prefix="$"
@@ -921,9 +961,9 @@ export default function InitializeBaselinePage() {
                 <TacticalInput label="Fundraising Window" value={form.fundraisingWindow} suffix="months"
                   onChange={(v) => update("fundraisingWindow", Number(v) || 0)} />
               </div>
-              <PowerBar label="Annual CAPEX" value={form.annualCapex} max={2_000_000} color="amber"
+              <PowerBar id="annualCapex" label="Annual CAPEX" value={form.annualCapex} max={2_000_000}
                 onChange={(v) => update("annualCapex", Math.round(v))} />
-              <PowerBar label="CAPEX as % of Revenue" value={form.capexIntensityPct} max={50} unit="%" color="amber"
+              <PowerBar id="capexIntensityPct" label="CAPEX as % of Revenue" value={form.capexIntensityPct} max={50} unit="%"
                 onChange={(v) => update("capexIntensityPct", Math.round(v * 10) / 10)} />
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <TacticalInput label="AR Days" value={form.arDays} suffix="days"
@@ -937,19 +977,19 @@ export default function InitializeBaselinePage() {
           {/* ── REVENUE PANEL ── */}
           <Module title="REVENUE ENGINE">
             <div style={SC.modBody}>
-              <PowerBar label="Current ARR" value={form.currentARR} max={10_000_000} color="cyan"
+              <PowerBar id="currentARR" label="Current ARR" value={form.currentARR} max={10_000_000}
                 onChange={(v) => update("currentARR", Math.round(v))} />
-              <PowerBar label="Monthly Growth %" value={form.monthlyGrowthPct} max={30} unit="%" color="cyan"
+              <PowerBar id="monthlyGrowthPct" label="Monthly Growth %" value={form.monthlyGrowthPct} max={30} unit="%"
                 onChange={(v) => update("monthlyGrowthPct", Math.round(v * 10) / 10)} />
-              <PowerBar label="Gross Margin %" value={form.grossMarginPct} max={100} unit="%" color="cyan"
+              <PowerBar id="grossMarginPct" label="Gross Margin %" value={form.grossMarginPct} max={100} unit="%"
                 onChange={(v) => update("grossMarginPct", Math.round(v * 10) / 10)} />
               <TacticalInput label="Avg Contract Value" value={form.avgDealSize} prefix="$"
                 onChange={(v) => update("avgDealSize", Number(v) || 0)} />
-              <PowerBar label="Monthly Churn %" value={form.monthlyChurnPct} max={15} unit="%" color="amber"
+              <PowerBar id="monthlyChurnPct" label="Monthly Churn %" value={form.monthlyChurnPct} max={15} unit="%"
                 onChange={(v) => update("monthlyChurnPct", Math.round(v * 10) / 10)} />
-              <PowerBar label="Sales Efficiency" value={form.salesEfficiency} max={3} unit="x" color="cyan"
+              <PowerBar id="salesEfficiency" label="Sales Efficiency" value={form.salesEfficiency} max={3} unit="x"
                 onChange={(v) => update("salesEfficiency", Math.round(v * 10) / 10)} />
-              <PowerBar label="Net Revenue Retention" value={form.netRevenueRetentionPct} max={200} unit="%" color="cyan"
+              <PowerBar id="netRevenueRetentionPct" label="Net Revenue Retention" value={form.netRevenueRetentionPct} max={200} unit="%"
                 onChange={(v) => update("netRevenueRetentionPct", Math.round(v))} />
             </div>
           </Module>
@@ -961,9 +1001,9 @@ export default function InitializeBaselinePage() {
             <div style={SC.modBody}>
               <ToggleRow label="Hiring Velocity" options={["Low", "Medium", "High"] as HiringVelocity[]}
                 value={form.hiringVelocity} onChange={(v) => update("hiringVelocity", v)} />
-              <PowerBar label="Sales Ramp Time" value={form.salesRampTime} max={12} unit=" mo" color="cyan"
+              <PowerBar id="salesRampTime" label="Sales Ramp Time" value={form.salesRampTime} max={12} unit=" mo"
                 onChange={(v) => update("salesRampTime", Math.round(v))} />
-              <PowerBar label="Engineering Velocity" value={form.engineeringVelocity} max={12} unit=" mo" color="cyan"
+              <PowerBar id="engineeringVelocity" label="Engineering Velocity" value={form.engineeringVelocity} max={12} unit=" mo"
                 onChange={(v) => update("engineeringVelocity", Math.round(v))} />
               <ToggleRow label="Burn Flexibility" options={["Fixed", "Variable"] as BurnFlexibility[]}
                 value={form.burnFlexibility} onChange={(v) => update("burnFlexibility", v)} />
