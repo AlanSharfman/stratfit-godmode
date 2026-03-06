@@ -1,5 +1,5 @@
 import React, { useMemo } from "react"
-import { NavLink, useLocation } from "react-router-dom"
+import { NavLink, Link, useLocation } from "react-router-dom"
 import { motion } from "framer-motion"
 import { ROUTES } from "@/routes/routeContract"
 import ProfileSwitcher from "@/components/persistence/ProfileSwitcher"
@@ -92,6 +92,14 @@ export default function PageShell({ children, rightSlot }: Props) {
       </header>
 
       <div style={S.body}>{children}</div>
+
+      <footer style={S.footer}>
+        <Link to="/legal/terms" style={S.footerLink}>Terms</Link>
+        <span style={S.footerDot}>·</span>
+        <Link to="/legal/privacy" style={S.footerLink}>Privacy</Link>
+        <span style={S.footerDot}>·</span>
+        <span style={S.footerMuted}>Probabilistic decision support only</span>
+      </footer>
       <AppVersionFooter />
     </div>
   )
@@ -216,5 +224,30 @@ const S: Record<string, React.CSSProperties> = {
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
+  },
+  footer: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    padding: "10px 20px",
+    borderTop: "1px solid rgba(54,226,255,0.06)",
+    flexShrink: 0,
+  },
+  footerLink: {
+    fontSize: 10,
+    fontWeight: 600,
+    letterSpacing: "0.06em",
+    color: "rgba(34,211,238,0.4)",
+    textDecoration: "none",
+  },
+  footerDot: {
+    fontSize: 10,
+    color: "rgba(200,220,240,0.15)",
+  },
+  footerMuted: {
+    fontSize: 10,
+    color: "rgba(200,220,240,0.2)",
+    letterSpacing: "0.02em",
   },
 }

@@ -16,6 +16,8 @@ const StudioPage = lazy(() => import("@/pages/studio/StudioPage"))
 const ValuationPage = lazy(() => import("@/pages/modules/StrategicModulesPage"))
 const BoardroomPage = lazy(() => import("@/pages/boardroom/BoardroomPage"))
 const PulsePage = lazy(() => import("@/pages/pulse/PulsePage"))
+const TermsPage = lazy(() => import("@/pages/legal/TermsPage"))
+const PrivacyPage = lazy(() => import("@/pages/legal/PrivacyPage"))
 
 function PageLoader() {
   return (
@@ -68,6 +70,8 @@ function AnimatedRoutes() {
           <Route path="/valuation" element={<ValuationPage />} />
           <Route path="/boardroom" element={<BoardroomPage />} />
           <Route path="/pulse" element={<PulsePage />} />
+          <Route path="/legal/terms" element={<TermsPage />} />
+          <Route path="/legal/privacy" element={<PrivacyPage />} />
 
           {/* Compat redirects */}
           <Route path="/initialize" element={<Navigate to="/initiate" replace />} />

@@ -18,6 +18,8 @@ import ScenarioTimelineSlider from "@/components/scenarios/ScenarioTimelineSlide
 import { useScenarioTimeline } from "@/hooks/useScenarioTimeline"
 import { useScenarioTimelineStore } from "@/state/scenarioTimelineStore"
 import { buildScenarioTimeline } from "@/engine/buildScenarioTimeline"
+import ProbabilitySummaryCard from "@/components/probability/ProbabilitySummaryCard"
+import SimulationDisclaimerBar from "@/components/legal/SimulationDisclaimerBar"
 
 type BoardMode = "cinematic" | "report" | "briefing"
 
@@ -270,10 +272,29 @@ export default function BoardroomPage() {
               ))}
             </Section>
 
+            {/* Probability Overview */}
+            <Section title="Probability Overview">
+              <ProbabilitySummaryCard
+                metrics={[
+                  { label: "Survival Probability", value: outlook?.cliff ? `${Math.max(5, Math.round(100 - (12 - outlook.cliff.month) * 8))}%` : "High" },
+                  { label: "Runway Risk", value: outlook?.cliff ? `Month ${outlook.cliff.month}` : "Low" },
+                  { label: "EBITDA Positive Probability", value: "—" }, // TODO: wire from Monte Carlo
+                  { label: "Revenue Target Probability", value: "—" }, // TODO: wire from Monte Carlo
+                ]}
+                simulationCount={1000}
+                modelConfidence="Medium"
+                dataCompleteness={liveKpis ? "Complete" : "Partial"}
+              />
+            </Section>
+
             {/* Confidence */}
             <Section title="Confidence">
               <Narrative>This assessment is based on baseline data provided during initiation. Confidence increases with richer input data and simulation calibration.</Narrative>
             </Section>
+
+            <div style={{ marginBottom: 16 }}>
+              <SimulationDisclaimerBar variant="default" />
+            </div>
 
             <button onClick={handleDownload} style={{
               display: "block", width: "100%", marginTop: 32, padding: "16px 0",

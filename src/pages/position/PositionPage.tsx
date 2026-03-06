@@ -39,6 +39,8 @@ import TerrainZoneLegend from "@/components/terrain/TerrainZoneLegend"
 import TerrainHealthBar from "@/components/terrain/TerrainHealthBar"
 import TerrainZoneLabels from "@/components/terrain/TerrainZoneLabels"
 import BenchmarkPanel from "@/components/network/BenchmarkPanel"
+import ProbabilitySummaryCard from "@/components/probability/ProbabilitySummaryCard"
+import SimulationDisclaimerBar from "@/components/legal/SimulationDisclaimerBar"
 import styles from "./PositionOverlays.module.css"
 
 /* ─── Laser Beam Overlay ─── */
@@ -685,6 +687,25 @@ export default function PositionPage() {
               {/* Network Intelligence - Benchmark */}
               <div style={{ marginTop: 20, padding: "14px", background: "rgba(15,25,45,0.5)", border: "1px solid rgba(34,211,238,0.06)", borderRadius: 8 }}>
                 <BenchmarkPanel kpis={liveKpis!} compact />
+              </div>
+
+              {/* Probability Overview */}
+              <div style={{ marginTop: 20 }}>
+                <ProbabilitySummaryCard
+                  metrics={[
+                    { label: "Survival Probability", value: `${positionIntel.survivalProbability}%`, probability: positionIntel.survivalProbability },
+                    { label: "Runway Risk", value: positionIntel.cliff ? `Month ${positionIntel.cliff.month}` : "Low", probability: positionIntel.cliff ? Math.max(10, 100 - positionIntel.survivalProbability) : 15 },
+                    { label: "EBITDA Positive Probability", value: "—" }, // TODO: wire from Monte Carlo
+                    { label: "Revenue Target Probability", value: "—" }, // TODO: wire from Monte Carlo
+                  ]}
+                  simulationCount={1000}
+                  modelConfidence={positionIntel.healthScore >= 60 ? "High" : positionIntel.healthScore >= 35 ? "Medium" : "Low"}
+                  dataCompleteness={liveKpis ? "Complete" : "Partial"}
+                />
+              </div>
+
+              <div style={{ marginTop: 12 }}>
+                <SimulationDisclaimerBar variant="compact" />
               </div>
 
               {/* What-If CTA */}

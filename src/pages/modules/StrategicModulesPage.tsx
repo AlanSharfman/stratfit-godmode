@@ -1,4 +1,5 @@
 import PageShell from "@/components/nav/PageShell"
+import SimulationDisclaimerBar from "@/components/legal/SimulationDisclaimerBar"
 
 const MODULES = [
   {
@@ -77,6 +78,10 @@ export default function StrategicModulesPage() {
           These modules extend the STRATFIT terrain intelligence system with
           deeper probabilistic analysis. They will be activated progressively.
         </p>
+
+        <div style={{ width: "100%", maxWidth: 960, marginTop: 24 }}>
+          <SimulationDisclaimerBar variant="compact" />
+        </div>
       </div>
     </PageShell>
   )

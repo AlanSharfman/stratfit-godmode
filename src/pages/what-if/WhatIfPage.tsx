@@ -49,6 +49,8 @@ import CommandConsole from "@/components/command/CommandConsole"
 import styles from "./WhatIfPage.module.css"
 import { type StackedScenario, KPI_LABELS, formatDelta, buildNarrative } from "./whatIfHelpers"
 import WhatIfDebugPanel from "./WhatIfDebugPanel"
+import ProbabilitySummaryCard from "@/components/probability/ProbabilitySummaryCard"
+import SimulationDisclaimerBar from "@/components/legal/SimulationDisclaimerBar"
 
 export default function WhatIfPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -524,8 +526,27 @@ export default function WhatIfPage() {
           </div>
         )}
 
-        <div className={styles.disclaimer}>
-          Directional strategic guidance only · Simulation-based interpretation · Not financial, legal, or investment advice
+        {/* Probability Overview */}
+        {stack.length > 0 && baseKpis && (
+          <div style={{ padding: "0 24px", marginTop: 16 }}>
+            <ProbabilitySummaryCard
+              metrics={[
+                { label: "Survival Probability", value: "—" }, // TODO: wire from scenario Monte Carlo
+                { label: "Runway Risk", value: "—" }, // TODO: wire from scenario Monte Carlo
+                { label: "Revenue Target Probability", value: "—" }, // TODO: wire from scenario Monte Carlo
+                { label: "Enterprise Value Target Probability", value: "—" }, // TODO: wire from scenario Monte Carlo
+              ]}
+              simulationCount={1000}
+              modelConfidence={overallConfidence ?? undefined}
+              dataCompleteness={baseKpis ? "Complete" : "Partial"}
+            />
+          </div>
+        )}
+
+        {/* Disclaimers */}
+        <div style={{ padding: "0 24px", marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+          <SimulationDisclaimerBar variant="default" />
+          {aiAnswer && <SimulationDisclaimerBar variant="ai" />}
         </div>
       </div>
 
