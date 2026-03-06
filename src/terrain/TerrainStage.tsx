@@ -47,6 +47,7 @@ import { POSITION_PRESET, GOD_VIEW_CONTROLS } from "@/scene/camera/terrainCamera
 import CameraDriftSystem from "@/terrain/CameraDriftSystem";
 import type { DriftMode } from "@/scene/camera/cameraDriftConfig";
 import TerrainDeltaOverlay from "@/terrain/TerrainDeltaOverlay";
+import CameraSafetyGuard from "@/terrain/CameraSafetyGuard";
 
 
 type TerrainStageProps = {
@@ -210,14 +211,16 @@ export default function TerrainStage({
         <CameraDriftSystem controlsRef={controlsRef} mode={driftMode} />
       )}
 
-      <fogExp2 attach="fog" args={[fogColor, 0.0009]} />
+      <CameraSafetyGuard controlsRef={controlsRef} limits={GOD_VIEW_CONTROLS} />
 
-      <ambientLight intensity={0.35} color="#6a7ca5" />
-      <directionalLight position={[80, 120, 60]} intensity={1.2} color="#dfe9ff" castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-camera-near={0.5} shadow-camera-far={500} shadow-camera-left={-200} shadow-camera-right={200} shadow-camera-top={200} shadow-camera-bottom={-200} />
-      <directionalLight position={[-100, 160, -80]} intensity={0.55} color="#6ef0ff" />
-      <directionalLight position={[0, 80, 200]} intensity={0.35} color="#a0d8ff" />
-      <directionalLight position={[-200, 30, -100]} intensity={0.22} color="#7dd3fc" />
-      <hemisphereLight args={["#3a5880", "#1c2a40", 0.40]} />
+      <fogExp2 attach="fog" args={["#071425", 0.0012]} />
+
+      <ambientLight intensity={0.7} color="#0a1a2f" />
+      <directionalLight position={[200, 300, 200]} intensity={1.4} color="#6bdcff" castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-camera-near={0.5} shadow-camera-far={500} shadow-camera-left={-200} shadow-camera-right={200} shadow-camera-top={200} shadow-camera-bottom={-200} />
+      <directionalLight position={[-100, 180, -80]} intensity={0.65} color="#6ef0ff" />
+      <directionalLight position={[0, 100, 220]} intensity={0.40} color="#a0d8ff" />
+      <directionalLight position={[-200, 40, -100]} intensity={0.28} color="#7dd3fc" />
+      <hemisphereLight args={["#66e3ff", "#050b14", 0.6]} />
 
       <HorizonBand />
       <TerrainCompass />

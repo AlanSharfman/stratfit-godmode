@@ -1,12 +1,13 @@
 .root {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 16px 20px;
-  background: linear-gradient(145deg, rgba(14,34,56,0.85), rgba(10,28,46,0.9));
-  border: 1px solid rgba(34,211,238,0.08);
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  gap: 10px;
+  padding: 18px 22px;
+  background: rgba(10,25,45,0.8);
+  border: 1px solid rgba(80,220,255,0.4);
+  border-radius: 10px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.35), 0 0 20px rgba(0,180,255,0.08);
+  backdrop-filter: blur(12px);
 }
 
 .header {
@@ -31,53 +32,59 @@
 
 .input {
   flex: 1;
-  height: 42px;
-  background: rgba(10,22,38,0.95);
-  border: 1px solid rgba(31,74,117,0.4);
+  height: 48px;
+  background: rgba(8,18,35,0.95);
+  border: 1px solid rgba(80,220,255,0.25);
   border-radius: 10px;
-  padding: 0 16px;
+  padding: 0 18px;
   color: #E6F1FF;
-  font-size: 13px;
+  font-size: 15px;
   font-family: 'Inter', system-ui, sans-serif;
   font-weight: 400;
+  letter-spacing: 0.02em;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .input:focus {
-  border-color: #22D3EE;
-  box-shadow: 0 0 0 1px #22D3EE, 0 0 16px rgba(34,211,238,0.2);
+  border-color: #36e2ff;
+  box-shadow: 0 0 0 1px #36e2ff, 0 0 20px rgba(54,226,255,0.25);
 }
 
 .input::placeholder {
-  color: rgba(143,180,217,0.35);
+  color: rgba(143,180,217,0.3);
   font-style: normal;
+  font-size: 14px;
 }
 
 .runBtn {
-  height: 42px;
-  padding: 0 24px;
-  background: linear-gradient(135deg, rgba(34,211,238,0.18) 0%, rgba(34,211,238,0.08) 100%);
-  border: 1px solid rgba(34,211,238,0.35);
+  padding: 14px 28px;
+  background: linear-gradient(90deg, #2ce3ff, #00bcd4);
+  border: none;
   border-radius: 10px;
-  color: #22D3EE;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  color: #00161e;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s;
   white-space: nowrap;
+  box-shadow: 0 0 25px rgba(0,200,255,0.65);
 }
 
 .runBtn:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(34,211,238,0.3) 0%, rgba(34,211,238,0.12) 100%);
-  border-color: rgba(34,211,238,0.6);
+  transform: scale(1.05);
+}
+
+.runBtn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .runBtn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .pillRow {

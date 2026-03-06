@@ -1,3 +1,4 @@
+// ORPHANED COMPONENT — not mounted anywhere. Safe to delete.
 import React, { memo } from "react"
 import type { NetworkInsight } from "@/stores/scenarioLibraryStore"
 

@@ -1,12 +1,19 @@
 // src/state/scenarioStore.ts
 // ═══════════════════════════════════════════════════════════════════════════
-// @deprecated — LEGACY STORE. Do NOT use for new features.
+// @deprecated — LEGACY STORE. SCHEDULED FOR REMOVAL.
 //
-// All routed pages (Position, Studio, Compare, Decision) now use
-// phase1ScenarioStore exclusively. This store is retained only for
-// non-routed legacy components.
+// DO NOT ADD NEW IMPORTS TO THIS FILE.
 //
-// CANONICAL STORE: src/state/phase1ScenarioStore.ts
+// Canonical scenario state:
+//   - Simulation pipeline → phase1ScenarioStore.ts
+//   - What-If engine runs → store/scenarioRunStore.ts
+//   - Timeline playback  → scenarioTimelineStore.ts
+//
+// This store is retained ONLY for non-routed legacy components that
+// have not yet been migrated. Every import of this store is tech debt.
+//
+// BRIDGE: activeScenarioId changes are forwarded to scenarioRunStore
+// so both stores stay in sync during the migration period.
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { create } from 'zustand';
@@ -15,6 +22,20 @@ import { emitCompute } from '@/engine/computeTelemetry';
 import { deriveKPIs, type DerivedKPIs } from '@/logic/objectiveEngine';
 import { loadBaseline } from '@/onboard/baseline';
 import { safeLocalStoragePersist } from './safePersistStorage';
+import { useScenarioRunStore } from '@/store/scenarioRunStore';
+
+let _deprecationWarned = false;
+function warnDeprecation() {
+  if (_deprecationWarned || typeof import.meta === "undefined") return
+  if (!import.meta.env?.DEV) return
+  _deprecationWarned = true
+  console.warn(
+    "[STRATFIT] scenarioStore is deprecated. " +
+    "Use phase1ScenarioStore (simulation pipeline) or " +
+    "scenarioRunStore (What-If engine) instead. " +
+    "See src/state/scenarioStore.ts header for migration guide."
+  )
+}
 
 type ObjectiveState = {
   targetARR: number;
@@ -331,6 +352,7 @@ interface ScenarioState {
   calculateDelta: (scenarioA: Scenario, scenarioB: Scenario) => ScenarioDelta;
 }
 
+/** @deprecated Use usePhase1ScenarioStore or useScenarioRunStore instead */
 export const useScenarioStore = create<ScenarioState>()(
   persist(
     (set, get) => ({
@@ -363,7 +385,11 @@ export const useScenarioStore = create<ScenarioState>()(
       
       setHoveredKpiIndex: (index) => set({ hoveredKpiIndex: index }),
       setDataPoints: (points) => set({ dataPoints: points }),
-      setScenario: (id) => set({ activeScenarioId: id as ScenarioId, scenario: id as ScenarioId }),
+      setScenario: (id) => {
+        set({ activeScenarioId: id as ScenarioId, scenario: id as ScenarioId })
+        // Bridge: sync active scenario to canonical store
+        useScenarioRunStore.getState().setActiveScenario(id)
+      },
       setEngineResult: (scenarioId, result) => set((state) => ({
         engineResults: { ...state.engineResults, [scenarioId]: result }
       })),
@@ -607,6 +633,9 @@ export const useScenarioStore = create<ScenarioState>()(
     }
   )
 );
+
+// Fire deprecation warning once on first state change (dev only)
+useScenarioStore.subscribe(() => { warnDeprecation() })
 
 // Type exports
 export type ViewMode = 'terrain' | 'data';

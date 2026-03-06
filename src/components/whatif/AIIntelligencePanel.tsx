@@ -87,7 +87,6 @@ export default function AIIntelligencePanel({
                   <span className={styles.driverKpi}>{imp.kpi}</span>
                   <span className={`${styles.driverDelta} ${imp.direction === "up" ? styles.deltaUp : imp.direction === "down" ? styles.deltaDown : styles.deltaFlat}`}>
                     {imp.direction === "flat" ? "—" : `${imp.direction === "up" ? "↑" : "↓"} ${imp.magnitude ?? ""}`}
-                    {imp.delta_value != null && ` ${imp.delta_value}${imp.delta_unit ?? ""}`}
                   </span>
                 </div>
               ))}

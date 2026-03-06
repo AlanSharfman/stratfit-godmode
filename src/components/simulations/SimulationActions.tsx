@@ -21,9 +21,8 @@ export default function SimulationActions({ variant = 'full', className = '' }: 
   const savedCount = useSavedSimulationsStore((s) => s.simulations.length);
   const baseline = useSavedSimulationsStore((s) => s.simulations.find(s => s.isBaseline));
   
-  const handleSaved = (id: string) => {
-    // Could trigger a toast notification here
-    console.log('Simulation saved:', id);
+  const handleSaved = (_id: string) => {
+    // TODO: trigger toast notification
   };
   
   if (variant === 'icon-only') {

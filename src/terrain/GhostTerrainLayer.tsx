@@ -5,6 +5,7 @@ import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
 import { KPI_KEYS, KPI_ZONE_MAP, HEALTH_ELEVATION, getHealthLevel } from "@/domain/intelligence/kpiZoneMapping"
 import type { PositionKpis } from "@/pages/position/overlays/positionState"
 import { TERRAIN_CONSTANTS } from "@/terrain/terrainConstants"
+import { createTerrainGeometry } from "@/terrain/createTerrainGeometry"
 import { useSystemBaseline } from "@/system/SystemBaselineProvider"
 import { baselineSeedString, createSeed } from "@/terrain/seed"
 
@@ -25,20 +26,10 @@ export default function GhostTerrainLayer({ revealedKpis, kpis }: Props) {
   const seedStr = useMemo(() => baselineSeedString(baselineAny), [baselineAny])
   const seed = useMemo(() => createSeed(seedStr), [seedStr])
 
-  const geometry = useMemo(() => {
-    const geo = new THREE.PlaneGeometry(
-      TERRAIN_CONSTANTS.width,
-      TERRAIN_CONSTANTS.depth,
-      SEGMENTS,
-      SEGMENTS,
-    )
-    const pos = geo.attributes.position as THREE.BufferAttribute
-    for (let i = 0; i < pos.count; i++) {
-      pos.setZ(i, 0)
-    }
-    geo.computeVertexNormals()
-    return geo
-  }, [])
+  const geometry = useMemo(
+    () => createTerrainGeometry({ segments: SEGMENTS }),
+    [],
+  )
 
   const material = useMemo(() => {
     return new THREE.MeshBasicMaterial({

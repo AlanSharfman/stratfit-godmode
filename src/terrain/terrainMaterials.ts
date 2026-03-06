@@ -17,11 +17,11 @@ interface AltitudePalette {
 }
 
 const ALTITUDE_DEFAULT: AltitudePalette = {
-  valley:    [0.059, 0.090, 0.141],   // #0f1724
-  lowSlope:  [0.110, 0.141, 0.204],   // #1c2434
-  rock:      [0.165, 0.200, 0.275],   // #2a3346
-  highRidge: [0.290, 0.333, 0.408],   // #4a5568
-  peak:      [0.478, 0.525, 0.596],   // #7a8698
+  valley:    [0.035, 0.102, 0.180],   // #091a2e  deep azure
+  lowSlope:  [0.059, 0.180, 0.314],   // #0f2e50
+  rock:      [0.094, 0.290, 0.471],   // #184a78
+  highRidge: [0.157, 0.439, 0.659],   // #2870a8
+  peak:      [0.290, 0.620, 0.816],   // #4a9ed0  bright azure
 }
 
 const ALTITUDE_GREEN: AltitudePalette = {
@@ -64,7 +64,7 @@ vec3 _rockFace = _altCol * 1.15 + vec3(0.020, 0.020, 0.030);
 diffuseColor.rgb = mix(diffuseColor.rgb, _rockFace, _slopeF * 0.40);
 
 float _ridgeMask = _hNorm * (1.0 - _slopeF) * smoothstep(0.40, 0.75, _hNorm);
-diffuseColor.rgb += vec3(0.020, 0.040, 0.070) * _ridgeMask * 1.2;
+diffuseColor.rgb += vec3(0.015, 0.050, 0.090) * _ridgeMask * 1.2;
 
 float _snowMask = smoothstep(0.75, 0.95, _hNorm) * (1.0 - _slopeF);
 diffuseColor.rgb = mix(diffuseColor.rgb, _peak, _snowMask * 0.35);
@@ -79,9 +79,9 @@ diffuseColor.rgb *= mix(1.0, 0.75, _crevasse);
 
 float _viewDot = abs(dot(normalize(vWorldNormal), vec3(0.0, 0.0, 1.0)));
 float _rim = pow(1.0 - _viewDot, 2.5) * 0.12 * _hNorm;
-diffuseColor.rgb += vec3(0.012, 0.035, 0.072) * _rim;
+diffuseColor.rgb += vec3(0.010, 0.045, 0.090) * _rim;
 
-diffuseColor.rgb += vec3(0.006, 0.018, 0.042) * _hNorm;`
+diffuseColor.rgb += vec3(0.005, 0.022, 0.050) * _hNorm;`
 }
 
 const VERTEX_VARYINGS =
@@ -101,8 +101,8 @@ const FRAGMENT_VARYINGS = VERTEX_VARYINGS
 
 export function createTerrainSolidMaterial() {
   const mat = new THREE.MeshStandardMaterial({
-    color: 0x0f1724,
-    emissive: new THREE.Color(0x080e18),
+    color: 0x091a2e,
+    emissive: new THREE.Color(0x061220),
     emissiveIntensity: 0.30,
     transparent: false,
     opacity: 1.0,
@@ -137,7 +137,7 @@ export type TerrainColorVariant = "default" | "green" | "frost"
 const VARIANT_PROPS: Record<TerrainColorVariant, {
   color: number; emissive: number; emissiveIntensity: number; palette: AltitudePalette
 }> = {
-  default: { color: 0x0f1724, emissive: 0x080e18, emissiveIntensity: 0.30, palette: ALTITUDE_DEFAULT },
+  default: { color: 0x091a2e, emissive: 0x061220, emissiveIntensity: 0.30, palette: ALTITUDE_DEFAULT },
   green:   { color: 0x0d1a14, emissive: 0x081210, emissiveIntensity: 0.28, palette: ALTITUDE_GREEN },
   frost:   { color: 0x121621, emissive: 0x0c1018, emissiveIntensity: 0.28, palette: ALTITUDE_FROST },
 }

@@ -5,6 +5,7 @@ import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
 import { KPI_KEYS, KPI_ZONE_MAP, HEALTH_ELEVATION, getHealthLevel } from "@/domain/intelligence/kpiZoneMapping"
 import type { PositionKpis } from "@/pages/position/overlays/positionState"
 import { TERRAIN_CONSTANTS } from "@/terrain/terrainConstants"
+import { createTerrainGeometry } from "@/terrain/createTerrainGeometry"
 import { useSystemBaseline } from "@/system/SystemBaselineProvider"
 import { baselineSeedString, createSeed } from "@/terrain/seed"
 
@@ -115,12 +116,7 @@ export default function TerrainDeltaOverlay({
   const seed = useMemo(() => createSeed(seedStr), [seedStr])
 
   const geometry = useMemo(() => {
-    const geo = new THREE.PlaneGeometry(
-      TERRAIN_CONSTANTS.width,
-      TERRAIN_CONSTANTS.depth,
-      SEGMENTS,
-      SEGMENTS,
-    )
+    const geo = createTerrainGeometry({ segments: SEGMENTS })
     const pos = geo.attributes.position as THREE.BufferAttribute
     const count = pos.count
 
@@ -130,14 +126,12 @@ export default function TerrainDeltaOverlay({
     geo.setAttribute("deltaAlpha", new THREE.BufferAttribute(alphas, 1))
 
     for (let i = 0; i < count; i++) {
-      pos.setZ(i, 0)
       colors[i * 3] = NEUTRAL_COLOR.r
       colors[i * 3 + 1] = NEUTRAL_COLOR.g
       colors[i * 3 + 2] = NEUTRAL_COLOR.b
       alphas[i] = 0
     }
 
-    geo.computeVertexNormals()
     return geo
   }, [])
 

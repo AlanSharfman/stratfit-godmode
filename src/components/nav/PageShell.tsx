@@ -13,14 +13,10 @@ import { buildPositionViewModel } from "@/pages/position/overlays/positionState"
 const NAV_ITEMS = [
   { to: ROUTES.POSITION,   label: "Position" },
   { to: ROUTES.WHAT_IF,    label: "What If" },
-  { to: ROUTES.ACTIONS,    label: "Actions" },
-  { to: ROUTES.TIMELINE,   label: "Timeline" },
-  { to: ROUTES.RISK,       label: "Risk" },
   { to: ROUTES.COMPARE,    label: "Compare" },
-  { to: ROUTES.STUDIO,     label: "Studio" },
+  { to: ROUTES.RISK,       label: "Risk" },
   { to: ROUTES.VALUATION,  label: "Valuation" },
   { to: ROUTES.BOARDROOM,  label: "Boardroom" },
-  { to: ROUTES.PULSE,      label: "Pulse" },
 ]
 
 interface Props {

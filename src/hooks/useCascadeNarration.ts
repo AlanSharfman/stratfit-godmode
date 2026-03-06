@@ -2,17 +2,16 @@ import { useCallback, useRef, useState } from "react"
 import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
 import { KPI_ZONE_MAP } from "@/domain/intelligence/kpiZoneMapping"
 import { KPI_GRAPH, propagateForce } from "@/engine/kpiDependencyGraph"
-import { synthesizeSpeech, hasOpenAIKey } from "@/voice/openaiTTS"
+import { streamingSpeech, hasOpenAIKey, type StreamingTTSHandle } from "@/voice/openaiTTS"
 
 export function useCascadeNarration() {
   const [isNarrating, setIsNarrating] = useState(false)
-  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const handleRef = useRef<StreamingTTSHandle | null>(null)
 
   const stop = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current.currentTime = 0
-      audioRef.current = null
+    if (handleRef.current) {
+      handleRef.current.cancel()
+      handleRef.current = null
     }
     if (typeof speechSynthesis !== "undefined") {
       speechSynthesis.cancel()
@@ -61,17 +60,18 @@ export function useCascadeNarration() {
 
     if (hasOpenAIKey()) {
       try {
-        const result = await synthesizeSpeech(fullText, { voice: "nova", speed: 0.92 })
-        const audio = new Audio(result.url)
-        audioRef.current = audio
-        audio.onended = () => {
-          URL.revokeObjectURL(result.url)
-          setIsNarrating(false)
-        }
-        audio.play().catch(() => setIsNarrating(false))
+        const handle = streamingSpeech(
+          fullText,
+          { voice: "nova", speed: 0.92 },
+          (state) => {
+            if (state === "idle" || state === "error") setIsNarrating(false)
+          },
+        )
+        handleRef.current = handle
+        await handle.done
         return
       } catch (err) {
-        console.warn("[useCascadeNarration] OpenAI TTS failed, falling back:", err)
+        console.warn("[useCascadeNarration] Streaming TTS failed, falling back:", err)
       }
     }
 

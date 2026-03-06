@@ -4,7 +4,7 @@
 // Clean topographic wireframe — no 3D dependency.
 
 import React, { useMemo } from "react";
-import ErrorBoundary from "@/components/ErrorBoundary";
+import ErrorBoundary from "@/components/system/ErrorBoundary";
 
 // ============================================================================
 // WEBGL DETECTION

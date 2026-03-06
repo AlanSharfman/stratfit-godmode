@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { terrainHeightMode } from "@/config/featureFlags";
 import { TERRAIN_CONSTANTS } from "./terrainConstants";
+import { createTerrainGeometry } from "./createTerrainGeometry";
 import type { TerrainMetrics } from "./terrainFromBaseline";
 import type { MetricsAtX } from "./timeSeriesTerrainMetrics";
 
@@ -35,22 +36,11 @@ export function sampleTerrainHeight(
  */
 export function buildTerrain(_size: number, seed: number, reliefScalar: number = 1.0) {
     const segments = TERRAIN_CONSTANTS.segments;
-    const geo = new THREE.PlaneGeometry(
-        TERRAIN_CONSTANTS.width,
-        TERRAIN_CONSTANTS.depth,
-        segments,
-        segments,
-    );
+    const geo = createTerrainGeometry({ segments });
 
-    if (terrainHeightMode === "neutral") {
-        geo.computeVertexNormals();
-        geo.computeBoundingSphere();
-        return geo;
-    }
+    if (terrainHeightMode === "neutral") return geo;
 
     const pos = geo.attributes.position as THREE.BufferAttribute;
-
-    // Seed model is cached; avoid re-deriving peaks/ridge per vertex.
     const model = getSeedModel(seed, TERRAIN_CONSTANTS);
 
     for (let i = 0; i < pos.count; i++) {
@@ -75,18 +65,9 @@ export function buildTerrainWithMetrics(
     metrics?: MetricsInput,
 ) {
     const segments = TERRAIN_CONSTANTS.segments;
-    const geo = new THREE.PlaneGeometry(
-        TERRAIN_CONSTANTS.width,
-        TERRAIN_CONSTANTS.depth,
-        segments,
-        segments,
-    );
+    const geo = createTerrainGeometry({ segments });
 
-    if (terrainHeightMode === "neutral") {
-        geo.computeVertexNormals();
-        geo.computeBoundingSphere();
-        return geo;
-    }
+    if (terrainHeightMode === "neutral") return geo;
 
     const pos = geo.attributes.position as THREE.BufferAttribute;
     const model = getSeedModel(seed, TERRAIN_CONSTANTS);

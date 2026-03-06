@@ -79,7 +79,7 @@ export default function StrategicMoveConsole({
           onClick={onSubmit}
           disabled={!query.trim() || loading}
         >
-          {loading ? "Simulating..." : "Simulate Scenario"}
+          {loading ? "Simulating..." : "Run Simulation"}
         </button>
 
         {showSuggestions && suggestions.length > 0 && (

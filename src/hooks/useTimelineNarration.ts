@@ -1,17 +1,16 @@
 import { useCallback, useRef, useState } from "react"
-import { synthesizeSpeech, hasOpenAIKey } from "@/voice/openaiTTS"
+import { streamingSpeech, hasOpenAIKey, type StreamingTTSHandle } from "@/voice/openaiTTS"
 import type { ScenarioTimeline } from "@/state/scenarioTimelineStore"
 import { buildTimelineNarration } from "@/engine/buildScenarioTimeline"
 
 export function useTimelineNarration() {
   const [isNarrating, setIsNarrating] = useState(false)
-  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const handleRef = useRef<StreamingTTSHandle | null>(null)
 
   const stop = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current.currentTime = 0
-      audioRef.current = null
+    if (handleRef.current) {
+      handleRef.current.cancel()
+      handleRef.current = null
     }
     if (typeof speechSynthesis !== "undefined") {
       speechSynthesis.cancel()
@@ -29,18 +28,15 @@ export function useTimelineNarration() {
 
     if (hasOpenAIKey()) {
       try {
-        const result = await synthesizeSpeech(text, { voice: "nova", speed: 0.92 })
-        const audio = new Audio(result.url)
-        audioRef.current = audio
-        audio.onended = () => {
-          URL.revokeObjectURL(result.url)
-          setIsNarrating(false)
-        }
-        audio.onerror = () => {
-          URL.revokeObjectURL(result.url)
-          setIsNarrating(false)
-        }
-        audio.play().catch(() => setIsNarrating(false))
+        const handle = streamingSpeech(
+          text,
+          { voice: "nova", speed: 0.92 },
+          (state) => {
+            if (state === "idle" || state === "error") setIsNarrating(false)
+          },
+        )
+        handleRef.current = handle
+        await handle.done
         return
       } catch {
         // fall through to browser TTS

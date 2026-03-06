@@ -28,8 +28,6 @@ export interface WhatIfKpiImpact {
   kpi: WhatIfKpiLabel
   direction: WhatIfDirection
   magnitude?: WhatIfMagnitude
-  delta_value?: number
-  delta_unit?: string
   confidence: WhatIfConfidence
   terrain_feature: WhatIfTerrainFeature
 }
@@ -120,8 +118,6 @@ export const WHATIF_JSON_SCHEMA = {
           kpi: { type: "string", enum: ["Liquidity", "Runway", "Growth", "Revenue", "Burn", "Value"] },
           direction: { type: "string", enum: ["up", "down", "flat"] },
           magnitude: { type: "string", enum: ["small", "medium", "large"] },
-          delta_value: { type: "number" },
-          delta_unit: { type: "string" },
           confidence: { type: "string", enum: ["low", "medium", "high"] },
           terrain_feature: { type: "string", enum: ["peak", "valley", "ridge", "basin", "plateau"] },
         },

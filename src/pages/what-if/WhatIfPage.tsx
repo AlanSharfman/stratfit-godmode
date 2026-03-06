@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react"
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useSearchParams } from "react-router-dom"
 import { AnimatePresence } from "framer-motion"
 
@@ -34,8 +34,7 @@ import {
 } from "@/engine/safety"
 import {
   askWhatIf, hasWhatIfApiKey, whatIfAnswerToTemplate,
-  getWhatIfLog, clearWhatIfLog, subscribeWhatIfLog,
-  type WhatIfAnswer, type WhatIfTerrainOverlay, type WhatIfLogEntry,
+  type WhatIfAnswer, type WhatIfTerrainOverlay,
 } from "@/engine/whatif"
 import {
   useScenarioLibraryStore,
@@ -48,50 +47,8 @@ import StrategicMoveConsole from "@/components/whatif/StrategicMoveConsole"
 import AIIntelligencePanel from "@/components/whatif/AIIntelligencePanel"
 import CommandConsole from "@/components/command/CommandConsole"
 import styles from "./WhatIfPage.module.css"
-
-/* ═══════════════════════════════════════════════
-   Constants & Helpers
-   ═══════════════════════════════════════════════ */
-
-interface StackedScenario {
-  id: string
-  question: string
-  template: ScenarioTemplate
-  forces: Partial<Record<KpiKey, number>>
-}
-
-const KPI_LABELS: Record<KpiKey, string> = {
-  cash: "Cash", runway: "Runway", growth: "Growth", arr: "ARR",
-  revenue: "Revenue", burn: "Burn", churn: "Churn",
-  grossMargin: "Margin", headcount: "Team", enterpriseValue: "EV",
-}
-
-function formatDelta(kpi: KpiKey, v: number): string {
-  const abs = Math.abs(v)
-  if (["cash", "revenue", "burn", "arr", "enterpriseValue"].includes(kpi)) {
-    if (abs >= 1e6) return `${v > 0 ? "+" : "-"}$${(abs / 1e6).toFixed(1)}M`
-    if (abs >= 1e3) return `${v > 0 ? "+" : "-"}$${(abs / 1e3).toFixed(0)}K`
-    return `${v > 0 ? "+" : "-"}$${abs.toFixed(0)}`
-  }
-  if (["churn", "growth", "grossMargin"].includes(kpi)) return `${v > 0 ? "+" : ""}${v.toFixed(1)}%`
-  if (kpi === "headcount") return `${v > 0 ? "+" : ""}${Math.round(v)}`
-  if (kpi === "runway") return `${v > 0 ? "+" : ""}${v.toFixed(1)} mo`
-  return `${v > 0 ? "+" : ""}${v}`
-}
-
-function buildNarrative(template: ScenarioTemplate, propagated: Map<KpiKey, number>): string {
-  const top = Array.from(propagated.entries())
-    .filter(([k]) => !Object.keys(template.forces).includes(k))
-    .sort(([, a], [, b]) => Math.abs(b) - Math.abs(a))
-    .slice(0, 4)
-  if (top.length === 0) return `"${template.question}" — direct impact only, no downstream cascade detected.`
-  const parts = top.map(([k, d]) => `${KPI_ZONE_MAP[k].label} ${d > 0 ? "rises" : "falls"}`)
-  return `"${template.question}" ripples through the mountain: ${parts.join(", ")}. The terrain is reshaping to show the cascading reality.`
-}
-
-/* ═══════════════════════════════════════════════
-   Main Component
-   ═══════════════════════════════════════════════ */
+import { type StackedScenario, KPI_LABELS, formatDelta, buildNarrative } from "./whatIfHelpers"
+import WhatIfDebugPanel from "./WhatIfDebugPanel"
 
 export default function WhatIfPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -105,6 +62,7 @@ export default function WhatIfPage() {
   const [showDebugPanel, setShowDebugPanel] = useState(false)
   const [lastCascadeSource, setLastCascadeSource] = useState<{ kpi: KpiKey; delta: number } | null>(null)
   const [aiLoading, setAiLoading] = useState(false)
+  const [simFlash, setSimFlash] = useState(false)
   const [aiAnswer, setAiAnswer] = useState<WhatIfAnswer | null>(null)
   const [aiOverlays, setAiOverlays] = useState<WhatIfTerrainOverlay[]>([])
   const { narrate: narrateCascade, stop: stopNarration, isNarrating } = useCascadeNarration()
@@ -205,6 +163,8 @@ export default function WhatIfPage() {
       }
     }
     setCascadeImpulse({ propagation: { affected: allAffected, hops: allHops }, startTime: performance.now() / 1000 })
+    setSimFlash(true)
+    setTimeout(() => setSimFlash(false), 2000)
     setNarrative(buildNarrative(template, allAffected))
     const firstForce = Object.entries(template.forces)[0] as [KpiKey, number] | undefined
     if (firstForce) {
@@ -426,7 +386,7 @@ export default function WhatIfPage() {
         </div>
 
         {/* ═══ CENTER — 3D Terrain Viewport ═══ */}
-        <div className={styles.terrainSection}>
+        <div className={`${styles.terrainSection}${simFlash ? ` ${styles.simActive}` : ""}`}>
           <TerrainStage
             progressive
             revealedKpis={revealedKpis}
@@ -579,80 +539,5 @@ export default function WhatIfPage() {
 
       <CommandConsole onSubmit={handleCommandConsole} loading={aiLoading} />
     </PageShell>
-  )
-}
-
-/* ═══════════════════════════════════════════════
-   Debug Panel
-   ═══════════════════════════════════════════════ */
-
-function WhatIfDebugPanel() {
-  const log = useSyncExternalStore(subscribeWhatIfLog, getWhatIfLog)
-
-  return (
-    <div className={styles.debugPanel}>
-      <div className={styles.debugHeader}>
-        <span>What-If Debug Log ({log.length} entries)</span>
-        <button onClick={clearWhatIfLog} className={styles.debugClearBtn}>Clear</button>
-      </div>
-      <div className={styles.debugScroll}>
-        {log.length === 0 && (
-          <div style={{ padding: 16, color: "rgba(200,220,240,0.3)", fontSize: 11, textAlign: "center" }}>
-            No what-if calls recorded yet.
-          </div>
-        )}
-        {[...log].reverse().map((entry) => (
-          <WhatIfDebugEntry key={entry.id} entry={entry} />
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function WhatIfDebugEntry({ entry }: { entry: WhatIfLogEntry }) {
-  const [expanded, setExpanded] = useState(false)
-
-  return (
-    <div className={styles.debugEntry}>
-      <div className={styles.debugEntryHeader} onClick={() => setExpanded((v) => !v)}>
-        <span className={entry.parseSuccess ? styles.debugSuccess : styles.debugFail}>
-          {entry.parseSuccess ? "OK" : "FAIL"}
-        </span>
-        <span className={styles.debugQuestion}>{entry.question}</span>
-        <span className={styles.debugMeta}>
-          {entry.latencyMs.toFixed(0)}ms · {entry.model} · retry {entry.retryCount}
-          {entry.tokenUsage && ` · ${entry.tokenUsage.total_tokens ?? "?"} tok`}
-        </span>
-        <span style={{ fontSize: 10, opacity: 0.3 }}>{expanded ? "▲" : "▼"}</span>
-      </div>
-      {expanded && (
-        <div className={styles.debugBody}>
-          <div className={styles.debugSection}>
-            <div className={styles.debugSectionTitle}>System Prompt</div>
-            <pre className={styles.debugPre}>{entry.systemPrompt}</pre>
-          </div>
-          <div className={styles.debugSection}>
-            <div className={styles.debugSectionTitle}>User Message</div>
-            <pre className={styles.debugPre}>{entry.userMessage}</pre>
-          </div>
-          <div className={styles.debugSection}>
-            <div className={styles.debugSectionTitle}>Raw Response</div>
-            <pre className={styles.debugPre}>{entry.rawResponse ?? "(null)"}</pre>
-          </div>
-          {entry.parseErrors.length > 0 && (
-            <div className={styles.debugSection}>
-              <div className={styles.debugSectionTitle} style={{ color: "#f87171" }}>Errors</div>
-              <pre className={styles.debugPre} style={{ color: "#f87171" }}>{entry.parseErrors.join("\n")}</pre>
-            </div>
-          )}
-          {entry.parsedAnswer && (
-            <div className={styles.debugSection}>
-              <div className={styles.debugSectionTitle}>Parsed Answer</div>
-              <pre className={styles.debugPre}>{JSON.stringify(entry.parsedAnswer, null, 2)}</pre>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
   )
 }

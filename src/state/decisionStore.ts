@@ -7,96 +7,18 @@ import { persist } from 'zustand/middleware';
 import { emitCompute } from '@/engine/computeTelemetry';
 import { safeLocalStoragePersist } from './safePersistStorage';
 
-// ============================================================================
-// TYPES
-// ============================================================================
+import type {
+  Decision,
+  DecisionCategory,
+  DecisionPriority,
+  DecisionSnapshot,
+  DecisionStatus,
+} from './decisionTypes';
 
-export type DecisionPriority = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
-export type DecisionStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'DEFERRED';
-export type DecisionCategory = 'growth' | 'cost' | 'product' | 'team' | 'funding' | 'market';
-export type ImpactType = 'survival' | 'growth' | 'efficiency' | 'risk';
+import { PRIORITY_WEIGHTS, RISK_TO_DECISION_CATEGORY } from './decisionConstants';
 
-export interface Decision {
-  id: string;
-  title: string;
-  description: string;
-  category: DecisionCategory;
-  priority: DecisionPriority;
-  status: DecisionStatus;
-  
-  // Impact metrics
-  impact: {
-    type: ImpactType;
-    magnitude: number; // 0-100
-    timeframe: 'immediate' | 'short-term' | 'medium-term' | 'long-term';
-  };
-  
-  // Dependencies and trade-offs
-  dependencies: string[];
-  tradeoffs: string[];
-  
-  // Recommendations
-  recommendation: 'DO_NOW' | 'PLAN' | 'MONITOR' | 'AVOID';
-  confidence: number; // 0-100
-  
-  // Tracking
-  dueDate?: string;
-  completedAt?: string;
-  notes?: string;
-  
-  // Source
-  source: 'AI' | 'USER' | 'SYSTEM';
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface DecisionSnapshot {
-  decisions: Decision[];
-  summary: {
-    totalDecisions: number;
-    criticalCount: number;
-    pendingCount: number;
-    completedCount: number;
-    topPriority: Decision | null;
-  };
-  insights: {
-    survivalActions: number;
-    growthActions: number;
-    efficiencyActions: number;
-    riskActions: number;
-  };
-  generatedAt: Date;
-}
-
-// ============================================================================
-// CONSTANTS
-// ============================================================================
-
-const CATEGORY_LABELS: Record<DecisionCategory, string> = {
-  growth: 'Growth',
-  cost: 'Cost Management',
-  product: 'Product',
-  team: 'Team & Hiring',
-  funding: 'Funding',
-  market: 'Market Strategy',
-};
-
-const PRIORITY_WEIGHTS: Record<DecisionPriority, number> = {
-  CRITICAL: 4,
-  HIGH: 3,
-  MEDIUM: 2,
-  LOW: 1,
-};
-
-// Map risk categories to decision categories
-const RISK_TO_DECISION_CATEGORY: Record<string, DecisionCategory> = {
-  runway: 'cost',
-  market: 'market',
-  execution: 'team',
-  competition: 'market',
-  funding: 'funding',
-  churn: 'growth',
-};
+export * from './decisionTypes';
+export * from './decisionConstants';
 
 // Generate unique ID
 const generateId = () => `dec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -633,4 +555,3 @@ export const useSelectedDecision = () => {
 };
 
 export default useDecisionStore;
-

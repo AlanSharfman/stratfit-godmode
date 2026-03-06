@@ -66,6 +66,29 @@
   border: 1px solid rgba(34,211,238,0.2);
 }
 
+/* ═══ Simulation Cinematic Flash ═══ */
+
+.terrainSection::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0;
+  background: radial-gradient(ellipse at center, rgba(44,227,255,0.12) 0%, transparent 70%);
+}
+
+.terrainSection.simActive::after {
+  animation: simFlash 1.8s ease-out forwards;
+}
+
+@keyframes simFlash {
+  0%   { opacity: 0; }
+  8%   { opacity: 1; }
+  40%  { opacity: 0.5; }
+  100% { opacity: 0; }
+}
+
 /* ═══ ACTION SECTION — 3-column grid ═══ */
 
 .actionSection {
@@ -106,11 +129,12 @@
 .interpretationEmpty {
   display: flex;
   flex-direction: column;
-  padding: 16px 20px;
-  background: linear-gradient(145deg, rgba(14,34,56,0.85), rgba(10,28,46,0.9));
-  border: 1px solid rgba(34,211,238,0.08);
+  padding: 18px 22px;
+  background: rgba(8,20,38,0.8);
+  border: 1px solid rgba(70,220,255,0.25);
   border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.35), 0 0 12px rgba(0,180,255,0.05);
+  backdrop-filter: blur(12px);
   min-height: 120px;
 }
 
@@ -143,32 +167,40 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 16px;
-  background: rgba(12,20,34,0.85);
-  border: 1px solid rgba(34,211,238,0.06);
+  padding: 10px 16px;
+  background: rgba(8,18,35,0.85);
+  border: 1px solid rgba(54,226,255,0.1);
   border-radius: 8px;
+  backdrop-filter: blur(8px);
+  animation: narrativeFadeIn 0.3s ease-out;
+}
+
+@keyframes narrativeFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .narrativeText {
   flex: 1;
-  font-size: 11px;
-  color: rgba(200,220,240,0.45);
+  font-size: 12px;
+  color: rgba(200,220,240,0.55);
   line-height: 1.5;
 }
 
 .loadingDot {
   display: inline-block;
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  background: #22D3EE;
-  animation: aiPulse 1s ease-in-out infinite;
+  background: #2ce3ff;
+  animation: aiPulse 1.2s ease-in-out infinite;
   flex-shrink: 0;
+  box-shadow: 0 0 8px rgba(44,227,255,0.5);
 }
 
 @keyframes aiPulse {
-  0%, 100% { opacity: 0.3; transform: scale(0.8); }
-  50% { opacity: 1; transform: scale(1.2); }
+  0%, 100% { opacity: 0.3; transform: scale(0.8); box-shadow: 0 0 4px rgba(44,227,255,0.3); }
+  50% { opacity: 1; transform: scale(1.2); box-shadow: 0 0 14px rgba(44,227,255,0.7); }
 }
 
 /* ═══ BOTTOM — Vertical Impact Chain ═══ */
@@ -235,13 +267,27 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 3px;
   width: 100%;
-  max-width: 400px;
-  padding: 8px 16px;
-  background: rgba(15,25,45,0.6);
-  border: 1px solid rgba(34,211,238,0.06);
-  border-radius: 8px;
+  max-width: 420px;
+  padding: 10px 18px;
+  background: rgba(8,20,40,0.75);
+  border: 1px solid rgba(54,226,255,0.2);
+  border-radius: 10px;
+  box-shadow: 0 0 12px rgba(0,180,255,0.08);
+  backdrop-filter: blur(8px);
+  animation: nodeGlowIn 0.5s ease-out both;
+}
+
+.chainNode:nth-child(1) { animation-delay: 0.0s; }
+.chainNode:nth-child(3) { animation-delay: 0.1s; }
+.chainNode:nth-child(5) { animation-delay: 0.2s; }
+.chainNode:nth-child(7) { animation-delay: 0.3s; }
+.chainNode:nth-child(9) { animation-delay: 0.4s; }
+
+@keyframes nodeGlowIn {
+  0% { opacity: 0; transform: translateY(8px); box-shadow: 0 0 0 rgba(0,180,255,0); }
+  100% { opacity: 1; transform: translateY(0); box-shadow: 0 0 12px rgba(0,180,255,0.08); }
 }
 
 .chainNodeType {
@@ -249,30 +295,37 @@
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(34,211,238,0.35);
+  color: rgba(54,226,255,0.5);
 }
 
 .chainNodeLabel {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  color: rgba(200,220,240,0.85);
+  color: rgba(200,220,240,0.9);
   text-align: center;
   line-height: 1.3;
 }
 
 .chainNodeValue {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   font-family: ui-monospace, 'JetBrains Mono', monospace;
+  text-shadow: 0 0 6px currentColor;
 }
 
 .chainArrow {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 24px;
-  color: rgba(34,211,238,0.25);
-  font-size: 14px;
+  height: 28px;
+  color: rgba(54,226,255,0.35);
+  font-size: 16px;
+  animation: arrowPulse 2s ease-in-out infinite;
+}
+
+@keyframes arrowPulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
 }
 
 /* ═══ Disclaimer ═══ */

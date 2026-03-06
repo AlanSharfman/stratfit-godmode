@@ -63,9 +63,7 @@ export function parseScenarioIntent(answer: WhatIfAnswer): ScenarioIntelligence 
     : confidenceCounts.low / total >= 0.5 ? "low"
     : "medium"
 
-  const hasSimulationData = answer.kpi_impacts.some(
-    (imp) => imp.delta_value !== undefined && imp.delta_value !== null,
-  )
+  const hasSimulationData = false
 
   return {
     headline,

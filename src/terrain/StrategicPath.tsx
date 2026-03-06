@@ -36,24 +36,24 @@ export interface StrategicPathProps {
   visible?: boolean
 }
 
-const PATH_Y_LIFT = 0.8
-const TUBE_RADIUS = 0.45
-const TUBE_RADIAL_SEGMENTS = 6
-const CURVE_SAMPLES = 100
-const PULSE_SPEED = 0.25
-const PULSE_RADIUS = 1.2
+const PATH_Y_LIFT = 1.2
+const TUBE_RADIUS = 0.6
+const TUBE_RADIAL_SEGMENTS = 8
+const CURVE_SAMPLES = 120
+const PULSE_SPEED = 0.2
+const PULSE_RADIUS = 1.6
 
-const NODE_RADIUS = 1.0
-const NODE_SEGMENTS = 12
-const NODE_Y_EXTRA = 0.3
+const NODE_RADIUS = 1.3
+const NODE_SEGMENTS = 16
+const NODE_Y_EXTRA = 0.4
 
-const HALF_WORLD_W = (TERRAIN_CONSTANTS.width * 3.0) / 2
+const HALF_WORLD_W = (TERRAIN_CONSTANTS.width * 0.9) / 2
 const PATH_Z_WORLD = 0
 
-const PATH_COLOR = new THREE.Color("#6CD4FF")
-const GLOW_COLOR = new THREE.Color("#6CD4FF")
-const NODE_COLOR = new THREE.Color("#6CD4FF")
-const PULSE_COLOR = new THREE.Color("#FFFFFF")
+const PATH_COLOR = new THREE.Color("#ffd166")
+const GLOW_COLOR = new THREE.Color("#ffd166")
+const NODE_COLOR = new THREE.Color("#ffd166")
+const PULSE_COLOR = new THREE.Color("#fffbe6")
 
 /* ═══════════════════════════════════════════════════════════════════════
    Utility: compute a "strategic score" for a KPI snapshot, which
@@ -75,8 +75,13 @@ function strategicScore(kpis: PositionKpis): number {
    Path geometry builder
    ═══════════════════════════════════════════════════════════════════════ */
 
+const DASH_SIZE = 4
+const GAP_SIZE = 1
+const DASH_SCROLL_SPEED = 8
+
 interface PathResult {
   tubeGeo: THREE.TubeGeometry
+  dashGeo: THREE.BufferGeometry
   nodePositions: { pos: THREE.Vector3; label: string }[]
   curvePoints: THREE.Vector3[]
 }
@@ -124,7 +129,11 @@ function buildPathGeometry(
   const finalCurve = new THREE.CatmullRomCurve3(terrainCorrected, false, "catmullrom", 0.3)
   const tubeGeo = new THREE.TubeGeometry(finalCurve, CURVE_SAMPLES, TUBE_RADIUS, TUBE_RADIAL_SEGMENTS, false)
 
-  return { tubeGeo, nodePositions, curvePoints: terrainCorrected }
+  const dashGeo = new THREE.BufferGeometry().setFromPoints(
+    finalCurve.getPoints(CURVE_SAMPLES),
+  )
+
+  return { tubeGeo, dashGeo, nodePositions, curvePoints: terrainCorrected }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -145,6 +154,7 @@ const StrategicPath: React.FC<StrategicPathProps> = memo(({
   visible = true,
 }) => {
   const meshRef = useRef<THREE.Mesh>(null)
+  const dashLineRef = useRef<THREE.Line>(null)
   const pulseRef = useRef<THREE.Mesh>(null)
   const progressRef = useRef(0)
   const pathColor = useMemo(() => color ? new THREE.Color(color) : PATH_COLOR, [color])
@@ -155,6 +165,24 @@ const StrategicPath: React.FC<StrategicPathProps> = memo(({
     if (!terrain) return null
     return buildPathGeometry(slices, terrain)
   }, [terrainRef, slices, visible])
+
+  const dashLine = useMemo(() => {
+    if (!pathData) return null
+    const geo = pathData.dashGeo
+    const mat = new THREE.LineDashedMaterial({
+      color: 0xffd166,
+      dashSize: DASH_SIZE,
+      gapSize: GAP_SIZE,
+      transparent: true,
+      opacity: 0.6,
+      depthWrite: false,
+    })
+    const line = new THREE.Line(geo, mat)
+    line.computeLineDistances()
+    line.renderOrder = 15
+    line.name = "strategic-path-dash"
+    return line
+  }, [pathData])
 
   useFrame((_, delta) => {
     if (!pathData || !pulseRef.current) return
@@ -175,6 +203,11 @@ const StrategicPath: React.FC<StrategicPathProps> = memo(({
         mat.opacity = 0.7 + Math.sin(progressRef.current * Math.PI * 4) * 0.08
       }
     }
+
+    if (dashLineRef.current) {
+      const mat = dashLineRef.current.material as THREE.LineDashedMaterial & { dashOffset: number }
+      mat.dashOffset -= delta * DASH_SCROLL_SPEED
+    }
   })
 
   if (!pathData || !visible) return null
@@ -191,7 +224,7 @@ const StrategicPath: React.FC<StrategicPathProps> = memo(({
         <meshBasicMaterial
           color={pathColor}
           transparent
-          opacity={0.75}
+          opacity={0.85}
           depthWrite={false}
           toneMapped={false}
         />
@@ -201,13 +234,13 @@ const StrategicPath: React.FC<StrategicPathProps> = memo(({
       <mesh
         geometry={pathData.tubeGeo}
         renderOrder={11}
-        scale={[1.5, 1.5, 1.5]}
+        scale={[2.0, 2.0, 2.0]}
         name="strategic-path-glow"
       >
         <meshBasicMaterial
           color={GLOW_COLOR}
           transparent
-          opacity={0.08}
+          opacity={0.15}
           depthWrite={false}
           toneMapped={false}
           side={THREE.BackSide}
@@ -226,12 +259,15 @@ const StrategicPath: React.FC<StrategicPathProps> = memo(({
           <meshBasicMaterial
             color={NODE_COLOR}
             transparent
-            opacity={0.65}
+            opacity={0.8}
             depthWrite={false}
             toneMapped={false}
           />
         </mesh>
       ))}
+
+      {/* Animated dashed line overlay */}
+      {dashLine && <primitive ref={dashLineRef} object={dashLine} />}
 
       {/* Moving pulse */}
       <mesh
@@ -243,7 +279,7 @@ const StrategicPath: React.FC<StrategicPathProps> = memo(({
         <meshBasicMaterial
           color={PULSE_COLOR}
           transparent
-          opacity={0.3}
+          opacity={0.45}
           depthWrite={false}
           toneMapped={false}
         />

@@ -1,3 +1,4 @@
+// ORPHANED COMPONENT — not mounted anywhere. Safe to delete.
 // src/components/studio/SimulationPlayback.tsx
 // ═══════════════════════════════════════════════════════════════════════════
 // STRATFIT — Simulation Playback Controls

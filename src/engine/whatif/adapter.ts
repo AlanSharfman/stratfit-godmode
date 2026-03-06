@@ -26,10 +26,6 @@ function impactToForceValue(impact: WhatIfKpiImpact): number {
   const kpi = LABEL_TO_KPI[impact.kpi]
   if (!kpi) return 0
 
-  if (impact.delta_value !== undefined && impact.delta_value !== null) {
-    return impact.direction === "down" ? -Math.abs(impact.delta_value) : Math.abs(impact.delta_value)
-  }
-
   const scale = MAGNITUDE_SCALE[impact.magnitude ?? "medium"] ?? 0.6
   const sign = impact.direction === "down" ? -1 : impact.direction === "flat" ? 0 : 1
 

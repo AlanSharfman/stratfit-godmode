@@ -41,23 +41,24 @@ function persistOverrides(flags: FeatureFlags) {
 
 const envDefaults: FeatureFlags = {
   collaboration: readEnvFlag("VITE_FF_COLLABORATION", false),
-  aiForceMapper: readEnvFlag("VITE_FF_AI_FORCE_MAPPER", false),
+  aiForceMapper: false, // PERMANENTLY DISABLED — AI must never produce KPI deltas
   webhooks: readEnvFlag("VITE_FF_WEBHOOKS", false),
   networkIntelligence: readEnvFlag("VITE_FF_NETWORK_INTELLIGENCE", true),
 }
 
 const localOverrides = readLocalOverrides()
-const initialFlags: FeatureFlags = { ...envDefaults, ...localOverrides }
+const initialFlags: FeatureFlags = { ...envDefaults, ...localOverrides, aiForceMapper: false }
 
 export const useFeatureFlags = create<FeatureFlagsState>((set, get) => ({
   ...initialFlags,
 
   setFlag: (key, value) => {
+    if (key === "aiForceMapper") return // permanently disabled
     set({ [key]: value })
     const state = get()
     persistOverrides({
       collaboration: state.collaboration,
-      aiForceMapper: state.aiForceMapper,
+      aiForceMapper: false,
       webhooks: state.webhooks,
       networkIntelligence: state.networkIntelligence,
     })

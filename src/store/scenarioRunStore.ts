@@ -1,3 +1,13 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// STRATFIT — Scenario Run Registry (What-If Engine)
+//
+// CANONICAL STORE for What-If scenario runs and their deterministic
+// engine results. Each ScenarioRun stores the untransformed engine output.
+//
+// Companion stores:
+//   - phase1ScenarioStore  → simulation pipeline & Position/Compare pages
+//   - scenarioTimelineStore → timeline playback state
+// ═══════════════════════════════════════════════════════════════════════════
 import { create } from "zustand"
 import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
 import type { ScenarioCategory } from "@/engine/scenarioTemplates"

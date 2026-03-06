@@ -2,142 +2,29 @@
 // STRATFIT — Monte Carlo Simulation Engine
 // 10,000 Futures. One Truth.
 
-export interface LeverState {
-  demandStrength: number;
-  pricingPower: number;
-  expansionVelocity: number;
-  costDiscipline: number;
-  hiringIntensity: number;
-  operatingDrag: number;
-  marketVolatility: number;
-  executionRisk: number;
-  fundingPressure: number;
-}
+export * from "./monteCarloTypes";
+export * from "./monteCarloStats";
 
-export interface SimulationConfig {
-  iterations: number;
-  timeHorizonMonths: number;
-  startingCash: number;
-  startingARR: number;
-  monthlyBurn: number;
-}
+import type {
+  LeverState,
+  SimulationConfig,
+  SingleSimulationResult,
+  MonthlySnapshot,
+  MonteCarloResult,
+  SensitivityFactor,
+} from "./monteCarloTypes";
 
-export interface SingleSimulationResult {
-  id: number;
-  monthlySnapshots: MonthlySnapshot[];
-  finalARR: number;
-  finalCash: number;
-  finalRunway: number;
-  survivalMonths: number;
-  didSurvive: boolean;
-  didAchieveTarget: boolean;
-  peakARR: number;
-  lowestCash: number;
-}
+import {
+  gaussianRandom,
+  clamp,
+  calculateDistributionStats,
+  calculatePercentiles,
+  createHistogram,
+  calculateConfidenceBands,
+} from "./monteCarloStats";
 
-export interface MonthlySnapshot {
-  month: number;
-  arr: number;
-  cash: number;
-  burn: number;
-  runway: number;
-  growthRate: number;
-}
-
-export interface MonteCarloResult {
-  // Meta
-  iterations: number;
-  timeHorizonMonths: number;
-  executionTimeMs: number;
-  
-  // Survival Analysis
-  survivalRate: number;
-  survivalByMonth: number[];
-  medianSurvivalMonths: number;
-  
-  // ARR Distribution
-  arrDistribution: DistributionStats;
-  arrHistogram: HistogramBucket[];
-  arrPercentiles: PercentileSet;
-  arrConfidenceBands: ConfidenceBand[];
-  
-  // Cash Distribution
-  cashDistribution: DistributionStats;
-  cashPercentiles: PercentileSet;
-  
-  // Runway Distribution
-  runwayDistribution: DistributionStats;
-  runwayPercentiles: PercentileSet;
-  
-  // Scenario Snapshots
-  bestCase: SingleSimulationResult;
-  worstCase: SingleSimulationResult;
-  medianCase: SingleSimulationResult;
-  
-  // Sensitivity Analysis
-  sensitivityFactors: SensitivityFactor[];
-  
-  // All Simulations (for detailed analysis)
-  allSimulations: SingleSimulationResult[];
-}
-
-export interface DistributionStats {
-  mean: number;
-  median: number;
-  stdDev: number;
-  min: number;
-  max: number;
-  skewness: number;
-}
-
-export interface PercentileSet {
-  p5: number;
-  p10: number;
-  p25: number;
-  p50: number;
-  p75: number;
-  p90: number;
-  p95: number;
-}
-
-export interface HistogramBucket {
-  min: number;
-  max: number;
-  count: number;
-  frequency: number;
-}
-
-export interface ConfidenceBand {
-  month: number;
-  p10: number;
-  p25: number;
-  p50: number;
-  p75: number;
-  p90: number;
-}
-
-export interface SensitivityFactor {
-  lever: keyof LeverState;
-  label: string;
-  impact: number; // -1 to 1, correlation with outcome
-  direction: 'positive' | 'negative';
-}
-
-// ============================================================================
-// RANDOM NUMBER GENERATION
-// ============================================================================
-
-function gaussianRandom(mean: number = 0, stdDev: number = 1): number {
-  // Box-Muller transform for normal distribution
-  const u1 = Math.random();
-  const u2 = Math.random();
-  const z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
-  return z0 * stdDev + mean;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
+import { emitCompute } from "@/engine/computeTelemetry";
+import { engineActivity } from "@/state/engineActivityStore";
 
 // ============================================================================
 // SIMULATION LOGIC
@@ -247,110 +134,8 @@ export function runSingleSimulation(
 }
 
 // ============================================================================
-// STATISTICS FUNCTIONS
+// SENSITIVITY ANALYSIS
 // ============================================================================
-
-function calculateDistributionStats(values: number[]): DistributionStats {
-  const sorted = [...values].sort((a, b) => a - b);
-  const n = sorted.length;
-  
-  const sum = sorted.reduce((a, b) => a + b, 0);
-  const mean = sum / n;
-  
-  const squaredDiffs = sorted.map(v => Math.pow(v - mean, 2));
-  const variance = squaredDiffs.reduce((a, b) => a + b, 0) / n;
-  const stdDev = Math.sqrt(variance);
-  
-  const median = n % 2 === 0 
-    ? (sorted[n/2 - 1] + sorted[n/2]) / 2 
-    : sorted[Math.floor(n/2)];
-  
-  // Skewness
-  const cubedDiffs = sorted.map(v => Math.pow((v - mean) / stdDev, 3));
-  const skewness = cubedDiffs.reduce((a, b) => a + b, 0) / n;
-  
-  return {
-    mean,
-    median,
-    stdDev,
-    min: sorted[0],
-    max: sorted[n - 1],
-    skewness,
-  };
-}
-
-function calculatePercentiles(values: number[]): PercentileSet {
-  const sorted = [...values].sort((a, b) => a - b);
-  const n = sorted.length;
-  
-  const getPercentile = (p: number) => {
-    const index = Math.floor((p / 100) * n);
-    return sorted[Math.min(index, n - 1)];
-  };
-  
-  return {
-    p5: getPercentile(5),
-    p10: getPercentile(10),
-    p25: getPercentile(25),
-    p50: getPercentile(50),
-    p75: getPercentile(75),
-    p90: getPercentile(90),
-    p95: getPercentile(95),
-  };
-}
-
-function createHistogram(values: number[], bucketCount: number = 20): HistogramBucket[] {
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = max - min;
-  const bucketSize = range / bucketCount;
-  
-  const buckets: HistogramBucket[] = [];
-  
-  for (let i = 0; i < bucketCount; i++) {
-    const bucketMin = min + i * bucketSize;
-    const bucketMax = min + (i + 1) * bucketSize;
-    const count = values.filter(v => v >= bucketMin && v < bucketMax).length;
-    
-    buckets.push({
-      min: bucketMin,
-      max: bucketMax,
-      count,
-      frequency: count / values.length,
-    });
-  }
-  
-  return buckets;
-}
-
-function calculateConfidenceBands(
-  simulations: SingleSimulationResult[],
-  timeHorizon: number
-): ConfidenceBand[] {
-  const bands: ConfidenceBand[] = [];
-  
-  for (let month = 1; month <= timeHorizon; month++) {
-    const arrValues = simulations
-      .filter(s => s.monthlySnapshots.length >= month)
-      .map(s => s.monthlySnapshots[month - 1].arr);
-    
-    if (arrValues.length === 0) continue;
-    
-    const sorted = arrValues.sort((a, b) => a - b);
-    const n = sorted.length;
-    
-    bands.push({
-      month,
-      p10: sorted[Math.floor(n * 0.1)],
-      p25: sorted[Math.floor(n * 0.25)],
-      p50: sorted[Math.floor(n * 0.5)],
-      p75: sorted[Math.floor(n * 0.75)],
-      p90: sorted[Math.floor(n * 0.9)],
-    });
-  }
-  
-  return bands;
-}
 
 function calculateSensitivity(
   levers: LeverState,
@@ -393,9 +178,6 @@ function calculateSensitivity(
 // ============================================================================
 // MAIN SIMULATION FUNCTION
 // ============================================================================
-
-import { emitCompute } from "@/engine/computeTelemetry";
-import { engineActivity } from "@/state/engineActivityStore";
 
 // Throttle interval for activity updates (iterations)
 const ACTIVITY_UPDATE_INTERVAL = 250;

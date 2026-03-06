@@ -24,15 +24,15 @@ interface Props {
   visible: boolean
 }
 
-const MARKER_LIFT = 18
-const HOVER_LIFT = 26
-const STEM_HEIGHT = 14
-const ORB_RADIUS = 1.6
-const HALO_INNER = ORB_RADIUS + 0.3
-const HALO_OUTER = ORB_RADIUS + 1.2
-const STEM_RADIUS = 0.04
+const MARKER_LIFT = 20
+const HOVER_LIFT = 30
+const STEM_HEIGHT = 18
+const ORB_RADIUS = 2.8
+const HALO_INNER = ORB_RADIUS + 0.4
+const HALO_OUTER = ORB_RADIUS + 2.0
+const STEM_RADIUS = 0.06
 const PULSE_SPEED = 1.4
-const LABEL_OFFSET_Y = ORB_RADIUS + 2.8
+const LABEL_OFFSET_Y = ORB_RADIUS + 3.4
 
 const FOCUSED_SCALE = 1.25
 const STORY_INITIAL_DELAY = 1.0
@@ -63,7 +63,7 @@ export default function TerrainKpiMarkers({
       const anchor = PRIMARY_ANCHOR_POSITIONS.get(key)
       const color = KPI_CATEGORY_COLORS[key]
       const cx = anchor?.cx ?? 0.5
-      const worldX = (cx - 0.5) * TERRAIN_CONSTANTS.width * 3.0
+      const worldX = (cx - 0.5) * TERRAIN_CONSTANTS.width * 0.9
       return { key, worldX, color, storyIndex: idx }
     })
   }, [kpis, revealedKpis, visible])
@@ -185,12 +185,12 @@ function SignalBeacon({
 
     if (orbRef.current) {
       const mat = orbRef.current.material as THREE.MeshStandardMaterial
-      mat.emissiveIntensity = 0.6 + pulse * (isFocused ? 0.8 : 0.35)
+      mat.emissiveIntensity = 0.8 + pulse * (isFocused ? 1.0 : 0.5)
     }
 
     if (haloRef.current) {
       const mat = haloRef.current.material as THREE.MeshBasicMaterial
-      mat.opacity = 0.12 + pulse * 0.08 + storyEnvelope * 0.15
+      mat.opacity = 0.18 + pulse * 0.12 + storyEnvelope * 0.2
     }
 
     if (isFocused && !hasProjected.current && onFocusedMarkerScreen) {
@@ -277,7 +277,7 @@ function SignalBeacon({
         />
       </mesh>
 
-      {/* Label — intelligence overlay tag */}
+      {/* Label — holographic intelligence panel */}
       <Html
         position={[0, LABEL_OFFSET_Y, 0]}
         center
@@ -286,19 +286,20 @@ function SignalBeacon({
         <div
           ref={labelRef}
           style={{
-            fontSize: 9,
+            fontSize: 12,
             fontWeight: 700,
-            letterSpacing: "0.1em",
+            letterSpacing: "0.04em",
             textTransform: "uppercase",
-            padding: "3px 10px",
-            borderRadius: 4,
-            background: "rgba(6,12,20,0.88)",
-            border: `1px solid ${color.hex}40`,
-            color: color.hex,
-            boxShadow: `0 0 10px ${color.hex}20, 0 3px 12px rgba(0,0,0,0.5)`,
-            backdropFilter: "blur(10px)",
+            padding: "6px 10px",
+            borderRadius: 8,
+            background: "rgba(8,22,40,0.85)",
+            border: "1px solid #36e2ff",
+            color: "#b6f2ff",
+            boxShadow: "0 0 18px rgba(0,200,255,0.45)",
+            backdropFilter: "blur(6px)",
             fontFamily: "'Inter', system-ui, sans-serif",
             userSelect: "none",
+            transition: "box-shadow 0.3s, border-color 0.3s",
           }}
         >
           {label}

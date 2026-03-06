@@ -1,12 +1,14 @@
 // src/features/intelligence/ttsEngine.ts
-// STRATFIT — TTS Engine (OpenAI Nova + browser fallback)
+// STRATFIT — TTS Engine (OpenAI streaming chunks + browser fallback)
 //
-// Prefers OpenAI TTS (Nova voice) for natural cinematic narration.
-// Falls back to browser SpeechSynthesis when no API key is configured.
+// Uses chunked streaming: text is split at sentence boundaries (~150 words
+// per chunk), all chunks are requested in parallel, and playback starts as
+// soon as chunk 1 arrives. This reduces perceived latency from ~4-8s
+// (full blob) to ~1-2s (first chunk round-trip).
 
-import { synthesizeSpeech, hasOpenAIKey } from "@/voice/openaiTTS"
+import { streamingSpeech, hasOpenAIKey, type StreamingTTSHandle } from "@/voice/openaiTTS"
 
-let currentAudio: HTMLAudioElement | null = null
+let currentHandle: StreamingTTSHandle | null = null
 
 export function ttsAvailable(): boolean {
   return hasOpenAIKey() || (typeof window !== "undefined" && "speechSynthesis" in window)
@@ -17,17 +19,13 @@ export async function ttsSpeak(text: string): Promise<void> {
 
   if (hasOpenAIKey()) {
     try {
-      const result = await synthesizeSpeech(text, { voice: "nova", speed: 0.9 })
-      const audio = new Audio(result.url)
-      currentAudio = audio
-      audio.onended = () => {
-        URL.revokeObjectURL(result.url)
-        currentAudio = null
-      }
-      audio.play().catch(() => {})
+      const handle = streamingSpeech(text, { voice: "nova", speed: 0.9 })
+      currentHandle = handle
+      await handle.done
+      currentHandle = null
       return
     } catch (err) {
-      console.warn("[ttsEngine] OpenAI TTS failed, falling back to browser:", err)
+      console.warn("[ttsEngine] OpenAI streaming TTS failed, falling back to browser:", err)
     }
   }
 
@@ -55,10 +53,9 @@ export async function ttsSpeak(text: string): Promise<void> {
 }
 
 export function ttsCancel(): void {
-  if (currentAudio) {
-    currentAudio.pause()
-    currentAudio.currentTime = 0
-    currentAudio = null
+  if (currentHandle) {
+    currentHandle.cancel()
+    currentHandle = null
   }
   if (typeof window !== "undefined" && "speechSynthesis" in window) {
     window.speechSynthesis.cancel()

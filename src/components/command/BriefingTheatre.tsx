@@ -6,7 +6,7 @@ import type { PositionKpis } from "@/pages/position/overlays/positionState"
 import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
 import { KPI_KEYS, getHealthLevel } from "@/domain/intelligence/kpiZoneMapping"
 import { timeSimulation, buildKpiSnapshot, findFirstCliff } from "@/engine/timeSimulation"
-import { synthesizeSpeech, hasOpenAIKey } from "@/voice/openaiTTS"
+import { streamingSpeech, hasOpenAIKey, type StreamingTTSHandle } from "@/voice/openaiTTS"
 
 interface BriefingTheatreProps {
   kpis: PositionKpis
@@ -82,49 +82,37 @@ export default function BriefingTheatre({ kpis, onClose }: BriefingTheatreProps)
   const [progress, setProgress] = useState(0)
   const [voiceLoading, setVoiceLoading] = useState(false)
   const timerRef = useRef<number>(0)
-  const audioRef = useRef<HTMLAudioElement | null>(null)
-  const audioCacheRef = useRef<Map<number, { audio: HTMLAudioElement; url: string }>>(new Map())
+  const ttsHandleRef = useRef<StreamingTTSHandle | null>(null)
 
   const section = briefing.sections[activeSection]
 
   const stopAudio = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current.currentTime = 0
-      audioRef.current = null
+    if (ttsHandleRef.current) {
+      ttsHandleRef.current.cancel()
+      ttsHandleRef.current = null
     }
     if (typeof window !== "undefined" && window.speechSynthesis) {
       window.speechSynthesis.cancel()
     }
+    setVoiceLoading(false)
   }, [])
 
-  const speakSection = useCallback(async (sec: BriefingSection, sectionIdx?: number) => {
+  const speakSection = useCallback(async (sec: BriefingSection, _sectionIdx?: number) => {
     stopAudio()
     const text = sec.lines.join(" ")
-    const idx = sectionIdx ?? 0
-
-    const cached = audioCacheRef.current.get(idx)
-    if (cached) {
-      cached.audio.currentTime = 0
-      cached.audio.play().catch(() => {})
-      audioRef.current = cached.audio
-      return
-    }
 
     if (hasOpenAIKey()) {
       setVoiceLoading(true)
-      try {
-        const result = await synthesizeSpeech(text, { voice: "nova", speed: 0.92 })
-        const audio = new Audio(result.url)
-        audioCacheRef.current.set(idx, { audio, url: result.url })
-        audioRef.current = audio
-        audio.play().catch(() => {})
-        setVoiceLoading(false)
-        return
-      } catch (err) {
-        console.warn("[BriefingTheatre] OpenAI TTS failed, falling back:", err)
-        setVoiceLoading(false)
-      }
+      const handle = streamingSpeech(
+        text,
+        { voice: "nova", speed: 0.92 },
+        (state) => {
+          if (state === "playing") setVoiceLoading(false)
+          else if (state === "idle" || state === "error") setVoiceLoading(false)
+        },
+      )
+      ttsHandleRef.current = handle
+      return
     }
 
     if (typeof window !== "undefined" && window.speechSynthesis) {
@@ -184,11 +172,6 @@ export default function BriefingTheatre({ kpis, onClose }: BriefingTheatreProps)
     return () => {
       stopAudio()
       clearInterval(timerRef.current)
-      for (const { audio, url } of audioCacheRef.current.values()) {
-        audio.pause()
-        URL.revokeObjectURL(url)
-      }
-      audioCacheRef.current.clear()
     }
   }, [stopAudio])
 
