@@ -210,6 +210,9 @@ export default function BoardroomPage() {
             </div>
             </div>
             <ScenarioTimelineSlider onVoice={handleTimelineVoice} isNarrating={isTimelineNarrating} />
+            <div style={{ padding: "0 48px 8px" }}>
+              <SimulationDisclaimerBar variant="compact" />
+            </div>
           </div>
         ) : (
           <div id="boardroom-report" style={{ maxWidth: 800, margin: "24px auto 48px", padding: "48px", background: "linear-gradient(135deg, rgba(10,18,32,0.95), rgba(6,14,28,0.98))", border: "1px solid rgba(34,211,238,0.1)", borderRadius: 12, boxShadow: "0 4px 32px rgba(0,0,0,0.4)" }}>
@@ -276,13 +279,13 @@ export default function BoardroomPage() {
             <Section title="Probability Overview">
               <ProbabilitySummaryCard
                 metrics={[
-                  { label: "Survival Probability", value: outlook?.cliff ? `${Math.max(5, Math.round(100 - (12 - outlook.cliff.month) * 8))}%` : "High" },
+                  { label: "Survival Probability", value: outlook?.cliff ? `${Math.max(5, Math.round(100 - (12 - outlook.cliff.month) * 8))}%` : "High", probability: outlook?.cliff ? Math.max(5, Math.round(100 - (12 - outlook.cliff.month) * 8)) : 85 },
                   { label: "Runway Risk", value: outlook?.cliff ? `Month ${outlook.cliff.month}` : "Low" },
-                  { label: "EBITDA Positive Probability", value: "—" }, // TODO: wire from Monte Carlo
-                  { label: "Revenue Target Probability", value: "—" }, // TODO: wire from Monte Carlo
+                  // TODO: EBITDA Positive Probability — requires Monte Carlo engine integration
+                  // TODO: Revenue Target Probability — requires Monte Carlo engine integration
+                  // TODO: Enterprise Value Target Probability — requires Monte Carlo engine integration
                 ]}
-                simulationCount={1000}
-                modelConfidence="Medium"
+                modelConfidence={healthCategories.critical.length === 0 ? "High" : healthCategories.critical.length <= 2 ? "Medium" : "Low"}
                 dataCompleteness={liveKpis ? "Complete" : "Partial"}
               />
             </Section>

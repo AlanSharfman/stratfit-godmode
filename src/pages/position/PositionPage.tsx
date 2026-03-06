@@ -41,6 +41,7 @@ import TerrainZoneLabels from "@/components/terrain/TerrainZoneLabels"
 import BenchmarkPanel from "@/components/network/BenchmarkPanel"
 import ProbabilitySummaryCard from "@/components/probability/ProbabilitySummaryCard"
 import SimulationDisclaimerBar from "@/components/legal/SimulationDisclaimerBar"
+import { useSimulationEngineStore } from "@/state/simulationEngineStore"
 import styles from "./PositionOverlays.module.css"
 
 /* ─── Laser Beam Overlay ─── */
@@ -188,6 +189,7 @@ function KpiLaserOverlay({ kpi, markerPos, viewportRef }: {
 
 export default function PositionPage() {
   const navigate = useNavigate()
+  const simRunCount = useSimulationEngineStore((s) => s.runCount)
   const [granularity] = useState<TimeGranularity>("quarter")
   const [rippleKey, setRippleKey] = useState(0)
   const [terrainTuning, setTerrainTuning] = useState<TerrainTuningParams>({ ...DEFAULT_TUNING })
@@ -435,7 +437,14 @@ export default function PositionPage() {
       ? Math.max(5, Math.round(100 - (12 - cliff.month) * 8))
       : healthScore > 60 ? Math.min(95, healthScore + 10) : Math.max(30, healthScore)
 
-    return { healthScore, healthCounts, cliff, criticalZones, survivalProbability, timeline }
+    const filledKpis = [
+      liveKpis.cashOnHand, liveKpis.runwayMonths, liveKpis.arr,
+      liveKpis.revenueMonthly, liveKpis.burnMonthly, liveKpis.grossMarginPct,
+      liveKpis.growthRatePct, liveKpis.churnPct, liveKpis.headcount, liveKpis.valuationEstimate,
+    ]
+    const dataCompletenessPct = Math.round((filledKpis.filter((v) => v != null && v !== 0).length / filledKpis.length) * 100)
+
+    return { healthScore, healthCounts, cliff, criticalZones, survivalProbability, timeline, dataCompletenessPct }
   }, [liveKpis])
 
   // Guard: no baseline → redirect handled by useEffect above, show loading in the meantime
@@ -695,12 +704,12 @@ export default function PositionPage() {
                   metrics={[
                     { label: "Survival Probability", value: `${positionIntel.survivalProbability}%`, probability: positionIntel.survivalProbability },
                     { label: "Runway Risk", value: positionIntel.cliff ? `Month ${positionIntel.cliff.month}` : "Low", probability: positionIntel.cliff ? Math.max(10, 100 - positionIntel.survivalProbability) : 15 },
-                    { label: "EBITDA Positive Probability", value: "—" }, // TODO: wire from Monte Carlo
-                    { label: "Revenue Target Probability", value: "—" }, // TODO: wire from Monte Carlo
+                    // TODO: EBITDA Positive Probability — requires Monte Carlo engine
+                    // TODO: Enterprise Value Target Probability — requires Monte Carlo engine
                   ]}
-                  simulationCount={1000}
+                  simulationCount={simRunCount > 0 ? simRunCount : undefined}
                   modelConfidence={positionIntel.healthScore >= 60 ? "High" : positionIntel.healthScore >= 35 ? "Medium" : "Low"}
-                  dataCompleteness={liveKpis ? "Complete" : "Partial"}
+                  dataCompleteness={`${positionIntel.dataCompletenessPct}%`}
                 />
               </div>
 

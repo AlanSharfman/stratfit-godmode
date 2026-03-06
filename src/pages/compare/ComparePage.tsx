@@ -30,6 +30,7 @@ import CompareInsightPanel from "@/components/compare/CompareInsightPanel"
 import { type ScenarioOption } from "@/components/compare/CompareScenarioSelect"
 import ProbabilityNotice from "@/components/legal/ProbabilityNotice"
 import SimulationDisclaimerBar from "@/components/legal/SimulationDisclaimerBar"
+import ProbabilitySummaryCard from "@/components/probability/ProbabilitySummaryCard"
 import ProvenanceBadge from "@/components/system/ProvenanceBadge"
 import SimulationStatusWidget from "@/components/system/SimulationStatusWidget"
 import SimulationRunOverlay from "@/components/system/SimulationRunOverlay"
@@ -550,6 +551,21 @@ export default function ComparePage() {
               activePair={activePair}
               onHighlight={setHighlight}
             />
+
+            {/* Probability Overview */}
+            {pairKpisL && pairKpisR && (
+              <div style={{ padding: "6px 8px 0" }}>
+                <ProbabilitySummaryCard
+                  metrics={[
+                    { label: "Scenarios Compared", value: is3Mode ? "3-Way" : "2-Way" },
+                    { label: "Data Completeness", value: baseline ? "Complete" : "Partial" },
+                    // TODO: Survival Probability delta — requires Monte Carlo per-scenario
+                    // TODO: Revenue Target Probability — requires Monte Carlo per-scenario
+                  ]}
+                  modelConfidence={compareIntel.analysis ? "Medium" : undefined}
+                />
+              </div>
+            )}
 
             {/* Q&A trigger + Probability notice */}
             <div style={S.insightFooter}>

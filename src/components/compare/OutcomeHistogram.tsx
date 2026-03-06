@@ -27,19 +27,22 @@ function fmtMoney(x: number) {
   return `$${x.toFixed(1)}M`
 }
 
-function generateFinalValue(scenario: Scenario, seed: number, steps: number, startValue: number): number {
+function generatePath(scenario: Scenario, seed: number, steps: number, startValue: number): number[] {
   const rand = seededRandom(seed)
-  let value = startValue
-  
+  const path: number[] = [startValue]
+  const drift = ((scenario.revenueGrowth - 1) / steps) * 1.5 +
+                ((scenario.marketExpansion - 1) / steps) * 0.8
+  const vol = scenario.operationalRisk * 0.06
   for (let t = 1; t < steps; t++) {
-    const drift = ((scenario.revenueGrowth - 1) / steps) * 1.5 +
-                  ((scenario.marketExpansion - 1) / steps) * 0.8
-    const vol = scenario.operationalRisk * 0.06
     const shock = (rand() - 0.5) * 2 * vol
-    value = Math.max(0.5, value * (1 + drift + shock))
+    path.push(Math.max(0.5, path[t - 1] * (1 + drift + shock)))
   }
-  
-  return value
+  return path
+}
+
+/** @deprecated Use generatePath — kept for reference */
+function generateFinalValue(scenario: Scenario, seed: number, steps: number, startValue: number): number {
+  return generatePath(scenario, seed, steps, startValue)[steps - 1]
 }
 
 function computeHistogram(values: number[], bins: number, min: number, max: number): number[] {
@@ -64,17 +67,24 @@ export function OutcomeHistogram({ baseline, exploration, timeline, setTimeline 
   const NUM_SIMS = 10_000
   const BINS = 40
 
-  // Generate final values at current timeline
-  const { valuesA, valuesB, histA, histB, binMin, binMax, statsA, statsB } = useMemo(() => {
-    const currentSteps = Math.max(2, Math.round(timeline * (STEPS - 1)) + 1)
-    
-    const vA: number[] = []
-    const vB: number[] = []
-    
+  // Pre-generate full paths once per scenario change (expensive — 10k × STEPS ticks).
+  // Timeline changes only slice these cached paths, avoiding full re-simulation.
+  const { pathsA, pathsB } = useMemo(() => {
+    const pA: number[][] = []
+    const pB: number[][] = []
     for (let i = 0; i < NUM_SIMS; i++) {
-      vA.push(generateFinalValue(baseline, 10000 + i * 7, currentSteps, START_VALUE))
-      vB.push(generateFinalValue(exploration, 50000 + i * 7, currentSteps, START_VALUE))
+      pA.push(generatePath(baseline, 10000 + i * 7, STEPS, START_VALUE))
+      pB.push(generatePath(exploration, 50000 + i * 7, STEPS, START_VALUE))
     }
+    return { pathsA: pA, pathsB: pB }
+  }, [baseline, exploration])
+
+  // Slice paths at the current timeline position — cheap, runs on every timeline change.
+  const { valuesA, valuesB, histA, histB, binMin, binMax, statsA, statsB } = useMemo(() => {
+    const stepIdx = Math.max(1, Math.round(timeline * (STEPS - 1)))
+    
+    const vA = pathsA.map(p => p[Math.min(stepIdx, p.length - 1)])
+    const vB = pathsB.map(p => p[Math.min(stepIdx, p.length - 1)])
     
     const allValues = [...vA, ...vB]
     const min = Math.min(...allValues) * 0.9
@@ -102,7 +112,7 @@ export function OutcomeHistogram({ baseline, exploration, timeline, setTimeline 
     }
     
     return { valuesA: vA, valuesB: vB, histA: hA, histB: hB, binMin: min, binMax: max, statsA: sA, statsB: sB }
-  }, [baseline, exploration, timeline])
+  }, [pathsA, pathsB, timeline])
 
   // P(B > A)
   const probBWins = useMemo(() => {

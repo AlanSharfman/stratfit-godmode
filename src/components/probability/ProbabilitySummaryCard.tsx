@@ -1,24 +1,38 @@
 import React from "react"
 import ProbabilityBandPill from "./ProbabilityBandPill"
+import DistributionRangeRow from "./DistributionRangeRow"
 
-export interface ProbabilityMetric {
+export type ProbabilityMetric = {
   label: string
   value: string
   probability?: number
 }
 
-interface Props {
+export type DistributionRange = {
+  label: string
+  p10: string
+  p50: string
+  p90: string
+}
+
+type Props = {
   metrics: ProbabilityMetric[]
+  ranges?: DistributionRange[]
   simulationCount?: number
   modelConfidence?: string
   dataCompleteness?: string
+  title?: string
+  subtitle?: string
 }
 
 export default function ProbabilitySummaryCard({
   metrics,
+  ranges = [],
   simulationCount,
   modelConfidence,
   dataCompleteness,
+  title = "Probability Overview",
+  subtitle = "Scenario outcomes are modelled as probability ranges, not guaranteed results.",
 }: Props) {
   return (
     <section
@@ -29,70 +43,82 @@ export default function ProbabilitySummaryCard({
         backdropFilter: "blur(10px)",
         borderRadius: 16,
         padding: 18,
-        fontFamily: "'Inter', system-ui, sans-serif",
       }}
     >
       <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(34,211,238,0.5)", marginBottom: 6 }}>
-          Probability Overview
-        </div>
-        <div style={{ color: "rgba(220,240,255,0.60)", fontSize: 12, lineHeight: 1.5 }}>
-          Scenario outcomes are modelled as probability ranges, not guaranteed results.
+        <div style={{ color: "#dff8ff", fontSize: 18, fontWeight: 600 }}>{title}</div>
+        <div style={{ color: "rgba(220,240,255,0.76)", fontSize: 13, marginTop: 4 }}>
+          {subtitle}
         </div>
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-          gap: 10,
-        }}
-      >
-        {metrics.map((metric) => (
-          <div
-            key={metric.label}
-            style={{
-              border: "1px solid rgba(54, 226, 255, 0.14)",
-              borderRadius: 10,
-              padding: "10px 12px",
-              background: "rgba(8, 20, 38, 0.52)",
-            }}
-          >
-            <div style={{ color: "rgba(220,240,255,0.55)", fontSize: 10, fontWeight: 600, letterSpacing: "0.04em" }}>
-              {metric.label}
-            </div>
-            <div style={{ color: "#dff8ff", fontSize: 18, fontWeight: 700, marginTop: 4 }}>
-              {metric.value}
-            </div>
-            {typeof metric.probability === "number" && (
-              <div style={{ marginTop: 6 }}>
-                <ProbabilityBandPill value={metric.probability} compact />
+      {!!metrics.length && (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+            gap: 12,
+          }}
+        >
+          {metrics.map((metric) => (
+            <div
+              key={metric.label}
+              style={{
+                border: "1px solid rgba(54, 226, 255, 0.16)",
+                borderRadius: 12,
+                padding: "12px 14px",
+                background: "rgba(8, 20, 38, 0.52)",
+              }}
+            >
+              <div style={{ color: "rgba(220,240,255,0.68)", fontSize: 12 }}>{metric.label}</div>
+              <div style={{ color: "#dff8ff", fontSize: 18, fontWeight: 700, marginTop: 4 }}>
+                {metric.value}
               </div>
-            )}
-          </div>
-        ))}
-      </div>
+              {typeof metric.probability === "number" && (
+                <div style={{ marginTop: 8 }}>
+                  <ProbabilityBandPill value={metric.probability} compact />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!!ranges.length && (
+        <div
+          style={{
+            marginTop: metrics.length ? 14 : 0,
+            display: "grid",
+            gap: 10,
+          }}
+        >
+          {ranges.map((range) => (
+            <DistributionRangeRow
+              key={range.label}
+              label={range.label}
+              p10={range.p10}
+              p50={range.p50}
+              p90={range.p90}
+            />
+          ))}
+        </div>
+      )}
 
       <div
         style={{
-          marginTop: 12,
+          marginTop: 14,
           display: "flex",
           gap: 16,
           flexWrap: "wrap",
-          color: "rgba(220,240,255,0.45)",
-          fontSize: 11,
-          letterSpacing: "0.02em",
+          color: "rgba(220,240,255,0.76)",
+          fontSize: 12,
         }}
       >
         {typeof simulationCount === "number" && (
-          <span>Simulations: <strong style={{ color: "rgba(220,240,255,0.65)" }}>{simulationCount.toLocaleString()}</strong></span>
+          <span>Simulations Run: {simulationCount.toLocaleString()}</span>
         )}
-        {modelConfidence && (
-          <span>Confidence: <strong style={{ color: "rgba(220,240,255,0.65)" }}>{modelConfidence}</strong></span>
-        )}
-        {dataCompleteness && (
-          <span>Data: <strong style={{ color: "rgba(220,240,255,0.65)" }}>{dataCompleteness}</strong></span>
-        )}
+        {modelConfidence && <span>Model Confidence: {modelConfidence}</span>}
+        {dataCompleteness && <span>Data Completeness: {dataCompleteness}</span>}
       </div>
     </section>
   )

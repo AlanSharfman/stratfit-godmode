@@ -46,7 +46,6 @@ const CompareTerrainPanel: React.FC<CompareTerrainPanelProps> = memo(
     slot,
     dotColor = "rgba(148,180,214,0.5)",
     terrainMetrics,
-    events,
     colorVariant,
     selectedId,
     scenarioOptions,

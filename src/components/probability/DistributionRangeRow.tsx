@@ -1,6 +1,6 @@
 import React from "react"
 
-interface Props {
+type Props = {
   label: string
   p10: string
   p50: string
@@ -15,12 +15,9 @@ export default function DistributionRangeRow({ label, p10, p50, p90 }: Props) {
         background: "rgba(8, 20, 38, 0.58)",
         borderRadius: 12,
         padding: "12px 14px",
-        fontFamily: "'Inter', system-ui, sans-serif",
       }}
     >
-      <div style={{ color: "#dff8ff", fontWeight: 600, fontSize: 13, marginBottom: 8 }}>
-        {label}
-      </div>
+      <div style={{ color: "#dff8ff", fontWeight: 600, marginBottom: 8 }}>{label}</div>
       <div
         style={{
           display: "grid",
@@ -28,20 +25,18 @@ export default function DistributionRangeRow({ label, p10, p50, p90 }: Props) {
           gap: 10,
         }}
       >
-        {[
-          { band: "P10", val: p10 },
-          { band: "P50", val: p50 },
-          { band: "P90", val: p90 },
-        ].map((d) => (
-          <div key={d.band}>
-            <div style={{ color: "rgba(220,240,255,0.50)", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em" }}>
-              {d.band}
-            </div>
-            <div style={{ color: "#aef6ff", fontWeight: 600, fontSize: 14, marginTop: 2 }}>
-              {d.val}
-            </div>
-          </div>
-        ))}
+        <div>
+          <div style={{ color: "rgba(220,240,255,0.62)", fontSize: 11 }}>P10</div>
+          <div style={{ color: "#aef6ff", fontWeight: 600 }}>{p10}</div>
+        </div>
+        <div>
+          <div style={{ color: "rgba(220,240,255,0.62)", fontSize: 11 }}>P50</div>
+          <div style={{ color: "#aef6ff", fontWeight: 600 }}>{p50}</div>
+        </div>
+        <div>
+          <div style={{ color: "rgba(220,240,255,0.62)", fontSize: 11 }}>P90</div>
+          <div style={{ color: "#aef6ff", fontWeight: 600 }}>{p90}</div>
+        </div>
       </div>
     </div>
   )

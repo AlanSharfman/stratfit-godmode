@@ -174,9 +174,9 @@ function generateInterventions(
  * AIInterventionSuggestions component
  * Displays AI-powered intervention recommendations based on trajectory analysis
  */
-export default function AIInterventionSuggestions() {
+export default function AIInterventionSuggestions({ zones: zonesProp }: { zones?: RiskZone[] }) {
   const { insights } = useTrajectoryStore();
-  const zones: RiskZone[] = [];
+  const zones: RiskZone[] = zonesProp ?? [];
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<InterventionCategory | "all">("all");
 

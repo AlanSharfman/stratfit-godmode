@@ -220,7 +220,7 @@ export default function CompareKpiOverlay() {
         {baselineKpis.evP50 === null && scenarioKpis.evP50 === null && (
           <div style={{ marginTop: 10, fontSize: 12, opacity: 0.7 }}>
             KPIs are null because `selectKpisFromResults()` is not yet bound to your canonical KPI builder.
-            Wire the `TODO_CANONICAL` block in `src/simulation/kpiSelectors.ts`.
+            Wire the `TODO_CANONICAL` block in `@/simulation/engineKpiSelectors`.
           </div>
         )}
       </div>

@@ -20,11 +20,19 @@ import type { LeverSchema } from "@/config/decisionLeverSchemas"
 export function formatLeverValue(val: number, lever: LeverSchema): string {
   const sign = val > 0 ? "+" : ""
   switch (lever.unit) {
-    case "%":  return `${sign}${val}%`
-    case "mo": return `${val}mo`
-    case "$M": return `$${val}M`
-    case "x":  return `${val.toFixed(1)}x`
-    default:   return `${sign}${val}`
+    case "%":
+      return `${sign}${val}%`
+    case "mo":
+      return `${val}mo`
+    case "$M": {
+      const currencySign = val > 0 ? "+" : val < 0 ? "-" : ""
+      const magnitude = Math.abs(val)
+      return `${currencySign}$${magnitude}M`
+    }
+    case "x":
+      return `${val.toFixed(1)}x`
+    default:
+      return `${sign}${val}`
   }
 }
 

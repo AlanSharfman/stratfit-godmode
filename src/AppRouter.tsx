@@ -19,38 +19,6 @@ const PulsePage = lazy(() => import("@/pages/pulse/PulsePage"))
 const TermsPage = lazy(() => import("@/pages/legal/TermsPage"))
 const PrivacyPage = lazy(() => import("@/pages/legal/PrivacyPage"))
 
-function PageLoader() {
-  return (
-    <div style={{
-      minHeight: "100vh",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      background: "#0B1520",
-    }}>
-      <div style={{ textAlign: "center" }}>
-        <div style={{
-          width: 20, height: 20,
-          border: "2px solid rgba(34,211,238,0.15)",
-          borderTopColor: "rgba(34,211,238,0.7)",
-          borderRadius: "50%",
-          animation: "routeLoadSpin 0.7s linear infinite",
-          margin: "0 auto 14px",
-        }} />
-        <div style={{
-          fontSize: 11, fontWeight: 600,
-          letterSpacing: "0.14em", textTransform: "uppercase",
-          color: "rgba(200,220,240,0.25)",
-          fontFamily: "'Inter', system-ui, sans-serif",
-        }}>
-          Loading
-        </div>
-        <style>{`@keyframes routeLoadSpin { to { transform: rotate(360deg) } }`}</style>
-      </div>
-    </div>
-  )
-}
-
 function AnimatedRoutes() {
   const location = useLocation()
 

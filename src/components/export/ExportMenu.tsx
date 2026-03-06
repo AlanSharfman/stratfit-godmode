@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react"
+import React, { useCallback, useEffect, useRef, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import type { PositionKpis } from "@/pages/position/overlays/positionState"
 import { exportKpisCSV, exportKpisJSON, exportAsCSV, copyToClipboard } from "@/engine/dataExport"
@@ -10,6 +10,11 @@ interface ExportMenuProps {
 export default function ExportMenu({ kpis }: ExportMenuProps) {
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => {
+    if (copiedTimerRef.current !== null) clearTimeout(copiedTimerRef.current)
+  }, [])
 
   const handleCSV = useCallback(() => {
     if (!kpis) return
@@ -29,7 +34,8 @@ export default function ExportMenu({ kpis }: ExportMenuProps) {
     const ok = await copyToClipboard(csv)
     if (ok) {
       setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      if (copiedTimerRef.current !== null) clearTimeout(copiedTimerRef.current)
+      copiedTimerRef.current = setTimeout(() => setCopied(false), 2000)
     }
     setOpen(false)
   }, [kpis])

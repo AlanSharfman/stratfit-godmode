@@ -487,6 +487,11 @@ export default function WhatIfPage() {
               onFollowUp={handleFollowUp}
               formatDelta={formatDelta}
             />
+            {aiAnswer && (
+              <div style={{ marginTop: 8 }}>
+                <SimulationDisclaimerBar variant="ai" />
+              </div>
+            )}
           </div>
         </div>
 
@@ -526,17 +531,17 @@ export default function WhatIfPage() {
           </div>
         )}
 
-        {/* Probability Overview */}
+        {/* Probability Overview — shown after simulation with real metadata only */}
         {stack.length > 0 && baseKpis && (
           <div style={{ padding: "0 24px", marginTop: 16 }}>
             <ProbabilitySummaryCard
               metrics={[
-                { label: "Survival Probability", value: "—" }, // TODO: wire from scenario Monte Carlo
-                { label: "Runway Risk", value: "—" }, // TODO: wire from scenario Monte Carlo
-                { label: "Revenue Target Probability", value: "—" }, // TODO: wire from scenario Monte Carlo
-                { label: "Enterprise Value Target Probability", value: "—" }, // TODO: wire from scenario Monte Carlo
+                { label: "Scenario Confidence", value: overallConfidence === "high" ? "High" : overallConfidence === "medium" ? "Medium" : overallConfidence === "low" ? "Low" : "—" },
+                { label: "Decisions Stacked", value: `${stack.length}` },
+                // TODO: Survival Probability — requires scenario-level Monte Carlo
+                // TODO: Revenue Target Probability — requires scenario-level Monte Carlo
+                // TODO: Enterprise Value Target Probability — requires scenario-level Monte Carlo
               ]}
-              simulationCount={1000}
               modelConfidence={overallConfidence ?? undefined}
               dataCompleteness={baseKpis ? "Complete" : "Partial"}
             />

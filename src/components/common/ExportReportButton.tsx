@@ -38,8 +38,24 @@ export default function ExportReportButton({
   const hasSimulated = useSimulationStore(s => s.hasSimulated);
   const levers = useLeverStore(s => s.levers);
   const baseline = useScenarioStore(s => s.baseline);
-  const riskSnapshot: any = null;
-  const valuationSnapshot: any = null;
+  // Safe default snapshots so report template sections (e.g. riskSnapshot.factors.map())
+  // don't throw when no live store data is available.
+  const _emptyArray: any[] = [];
+  const emptyArrayProxy: any = new Proxy(_emptyArray, {
+    get(target, prop) {
+      if (prop in target) return (target as any)[prop];
+      if (prop === 'map' || prop === 'filter' || prop === 'reduce' || prop === 'forEach' || prop === 'flatMap') {
+        return (..._args: any[]) => [];
+      }
+      return undefined;
+    },
+  });
+
+  const riskSnapshot: any = { factors: emptyArrayProxy };
+
+  const valuationSnapshot: any = new Proxy({}, {
+    get() { return emptyArrayProxy; },
+  });
   
   // Generate report HTML
   const generateReportHTML = () => {
