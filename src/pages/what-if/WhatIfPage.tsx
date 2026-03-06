@@ -33,7 +33,7 @@ import {
   type SimulationResult,
 } from "@/engine/safety"
 import {
-  askWhatIf, hasWhatIfApiKey, whatIfAnswerToTemplate,
+  askWhatIf, hasWhatIfApiKey,
   type WhatIfAnswer, type WhatIfTerrainOverlay,
 } from "@/engine/whatif"
 import {
@@ -379,9 +379,9 @@ export default function WhatIfPage() {
 
         {/* ═══ TOP — Page Header ═══ */}
         <div className={styles.pageHeader}>
-          <h1 className={styles.pageTitle}>What-If Scenario Engine</h1>
+          <h1 className={styles.pageTitle}>Strategic Scenario Engine</h1>
           <p className={styles.pageSubtitle}>
-            Simulate strategic decisions and observe how they reshape the business terrain.
+            Model strategic decisions and see how they reshape your business.
           </p>
         </div>
 
@@ -433,7 +433,7 @@ export default function WhatIfPage() {
                   STRATFIT will structure your scenario before simulation.
                 </div>
                 <div className={styles.interpretationEmptyText}>
-                  Enter a strategic move to see the interpretation.
+                  Enter a scenario above to see how STRATFIT structures it.
                 </div>
               </div>
             )}
@@ -458,7 +458,7 @@ export default function WhatIfPage() {
               <div className={styles.narrativeBar}>
                 {aiLoading && <span className={styles.loadingDot} />}
                 <span className={styles.narrativeText}>
-                  {aiLoading ? "Analysing scenario outcomes..." : narrative}
+                  {aiLoading ? "Processing simulation..." : narrative}
                 </span>
               </div>
             )}
@@ -492,7 +492,7 @@ export default function WhatIfPage() {
         {showImpactChain && chainNodes.length > 0 && (
           <div className={styles.impactSection}>
             <div className={styles.impactHeader}>
-              <span className={styles.impactTitle}>Impact Propagation Chain</span>
+              <span className={styles.impactTitle}>Decision Impact Chain</span>
               <button
                 className={styles.impactToggle}
                 onClick={() => setShowImpactChain(false)}

@@ -60,7 +60,7 @@ export default function StrategicMoveConsole({
   return (
     <div className={styles.root}>
       <div className={styles.header}>
-        <span className={styles.headerLabel}>Strategic Scenario Input</span>
+        <span className={styles.headerLabel}>Scenario Command</span>
       </div>
 
       <div className={styles.inputRow} style={{ position: "relative" }}>
@@ -72,7 +72,7 @@ export default function StrategicMoveConsole({
           onFocus={() => setShowSuggestions(true)}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
           onKeyDown={handleKeyDown}
-          placeholder="Describe the strategic move you want STRATFIT to simulate."
+          placeholder="What strategic move do you want to simulate?"
         />
         <button
           className={styles.runBtn}
@@ -99,7 +99,7 @@ export default function StrategicMoveConsole({
       </div>
 
       <div className={styles.pillRow}>
-        <span className={styles.pillLabel}>Assist</span>
+        <span className={styles.pillLabel}>Quick scenarios</span>
         {PROMPT_ASSIST.map((pill) => (
           <button
             key={pill.category}

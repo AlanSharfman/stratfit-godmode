@@ -82,7 +82,7 @@
 }
 
 .runBtn:disabled {
-  opacity: 0.3;
+  opacity: 0.45;
   cursor: not-allowed;
   box-shadow: none;
 }

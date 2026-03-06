@@ -36,9 +36,9 @@ export default function AIIntelligencePanel({
         <div className={styles.header}>
           <span className={styles.headerLabel}>Strategic Intelligence</span>
         </div>
-        <div className={styles.subtitle}>Interpretation of deterministic simulation outputs.</div>
+        <div className={styles.subtitle}>AI-powered analysis of simulation results.</div>
         <div className={styles.empty}>
-          Simulate a scenario to activate the intelligence panel.
+          Run a simulation to generate strategic intelligence.
         </div>
       </div>
     )
@@ -51,8 +51,8 @@ export default function AIIntelligencePanel({
           <span className={styles.headerLabel}>Strategic Intelligence</span>
           <span className={styles.loadingDot} />
         </div>
-        <div className={styles.subtitle}>Interpretation of deterministic simulation outputs.</div>
-        <div className={styles.loadingText}>Analysing scenario outcomes...</div>
+        <div className={styles.subtitle}>AI-powered analysis of simulation results.</div>
+        <div className={styles.loadingText}>Processing simulation...</div>
       </div>
     )
   }

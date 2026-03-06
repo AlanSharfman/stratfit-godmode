@@ -235,7 +235,7 @@ const S: Record<string, React.CSSProperties> = {
     maxHeight: "35vh",
     overflowY: "auto",
     background: "linear-gradient(135deg, rgba(10,16,28,0.92) 0%, rgba(8,12,22,0.96) 100%)",
-    border: "1px solid rgba(80,140,255,0.22)",
+    border: "1px solid rgba(70,220,255,0.22)",
     borderRadius: 10,
     boxShadow: "0 4px 24px rgba(0,0,0,0.35), 0 0 18px rgba(40,120,255,0.06)",
     padding: "0",

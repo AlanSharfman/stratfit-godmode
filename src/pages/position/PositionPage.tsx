@@ -33,7 +33,6 @@ import { useKpiAudio } from "@/hooks/useKpiAudio"
 import { KPI_KEYS as ALL_KPI_KEYS, getHealthLevel, KPI_ZONE_MAP } from "@/domain/intelligence/kpiZoneMapping"
 import { timeSimulation, buildKpiSnapshot, findFirstCliff } from "@/engine/timeSimulation"
 import ProvenanceBadge from "@/components/system/ProvenanceBadge"
-import CommandConsole from "@/components/command/CommandConsole"
 import IntelligenceConsole from "@/components/intelligence/IntelligenceConsole"
 import { getExecutiveSummary } from "@/domain/intelligence/kpiCommentary"
 import TerrainZoneLegend from "@/components/terrain/TerrainZoneLegend"
@@ -224,10 +223,6 @@ export default function PositionPage() {
     if (laserKpi) return
     setFocusedKpi(kpi)
   }, [laserKpi])
-
-  const handleCommand = useCallback((command: string) => {
-    navigate(`${ROUTES.WHAT_IF}?q=${encodeURIComponent(command)}`)
-  }, [navigate])
 
   useEffect(() => () => clearTimeout(laserTimerRef.current), [])
 
@@ -691,6 +686,65 @@ export default function PositionPage() {
               <div style={{ marginTop: 20, padding: "14px", background: "rgba(15,25,45,0.5)", border: "1px solid rgba(34,211,238,0.06)", borderRadius: 8 }}>
                 <BenchmarkPanel kpis={liveKpis!} compact />
               </div>
+
+              {/* What-If CTA */}
+              <div
+                style={{
+                  marginTop: 24,
+                  padding: "22px 20px",
+                  background: "rgba(8, 20, 38, 0.82)",
+                  border: "1px solid rgba(54, 226, 255, 0.28)",
+                  boxShadow: "0 0 24px rgba(0, 200, 255, 0.16)",
+                  backdropFilter: "blur(10px)",
+                  borderRadius: 16,
+                }}
+              >
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(34,211,238,0.45)", marginBottom: 10 }}>
+                  Strategic Simulation
+                </div>
+                <div style={{ fontSize: 18, fontWeight: 600, color: "#dff8ff", lineHeight: 1.3, marginBottom: 8 }}>
+                  Test a Strategic Move
+                </div>
+                <div style={{ fontSize: 14, lineHeight: 1.5, color: "rgba(220, 240, 255, 0.82)", marginBottom: 18 }}>
+                  Simulate a business decision using the What-If engine and see how the terrain responds before you commit.
+                </div>
+                <button
+                  onClick={() => navigate(ROUTES.WHAT_IF)}
+                  style={{
+                    width: "100%",
+                    padding: "12px 18px",
+                    background: "linear-gradient(90deg, #2ce3ff, #00bcd4)",
+                    color: "#06202b",
+                    fontWeight: 700,
+                    fontSize: 13,
+                    letterSpacing: "0.04em",
+                    border: "none",
+                    borderRadius: 10,
+                    cursor: "pointer",
+                    boxShadow: "0 0 18px rgba(0, 200, 255, 0.35)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    fontFamily: "'Inter', system-ui, sans-serif",
+                    transition: "transform 0.2s, box-shadow 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "scale(1.03)"
+                    e.currentTarget.style.boxShadow = "0 0 28px rgba(0, 200, 255, 0.5)"
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "scale(1)"
+                    e.currentTarget.style.boxShadow = "0 0 18px rgba(0, 200, 255, 0.35)"
+                  }}
+                >
+                  Open What-If Simulator
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12h14" />
+                    <path d="m12 5 7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -707,7 +761,6 @@ export default function PositionPage() {
       </div>
       <SystemProbabilityNotice />
 
-      <CommandConsole onSubmit={handleCommand} />
       {intelligenceText && <IntelligenceConsole insightText={intelligenceText} />}
     </div>
   )
