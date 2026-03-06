@@ -91,7 +91,26 @@ function extractRiskSignals(b: BaselineV1): RiskSignal[] {
     const econRisk = clamp01(unitEconRisk * 0.4 + nrrRisk * 0.35 + paybackRisk * 0.25);
     signals.push({ center: 0.85, amplitude: econRisk, sharpness: 45 });
 
-    // ── 7. Regulatory / compliance tail risk (t ≈ 0.95) ─────────────────
+    // ── 7. CAPEX intensity risk (t ≈ 0.38) ──────────────────────────────
+    // High CAPEX intensity drains cash faster, amplifying burn/runway risk
+    if (b.investment) {
+        const capexIntensity = clamp01(b.investment.capexIntensityPct / 50);
+        const capexToArr = b.financial.arr > 0
+            ? clamp01(b.investment.annualCapex / b.financial.arr)
+            : 0.5;
+        const capexRisk = clamp01(capexIntensity * 0.55 + capexToArr * 0.45);
+        signals.push({ center: 0.38, amplitude: capexRisk, sharpness: 50 });
+    }
+
+    // ── 8. Working capital cycle risk (t ≈ 0.48) ─────────────────────
+    // Wide AR-AP gap ties up cash, reducing effective liquidity
+    if (b.investment) {
+        const netWcDays = Math.max(0, b.investment.arDays - b.investment.apDays);
+        const wcRisk = clamp01(netWcDays / 90);
+        signals.push({ center: 0.48, amplitude: wcRisk, sharpness: 45 });
+    }
+
+    // ── 9. Regulatory / compliance tail risk (t ≈ 0.95) ─────────────────
     const regRisk = triToNum(b.operating.regulatoryExposure);
     signals.push({ center: 0.95, amplitude: regRisk * 0.7, sharpness: 60 });
 

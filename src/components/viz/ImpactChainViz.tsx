@@ -98,7 +98,7 @@ export default React.memo(function ImpactChainViz({ sourceKpi, delta, kpis, onCl
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.4, ease: EASE }}
       style={{
-        background: "linear-gradient(145deg, rgba(10,18,32,0.98), rgba(4,8,16,0.99))",
+        background: "linear-gradient(145deg, rgba(10,18,32,0.98), rgba(12,20,34,0.99))",
         border: "1px solid rgba(34,211,238,0.12)",
         borderRadius: 12, overflow: "hidden",
         boxShadow: "0 12px 48px rgba(0,0,0,0.6), 0 0 32px rgba(34,211,238,0.04)",

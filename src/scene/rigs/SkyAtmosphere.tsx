@@ -11,9 +11,9 @@ export default function SkyAtmosphere() {
   return (
     <Sky
       distance={4500}
-      sunPosition={[0, -0.15, -1]}
-      turbidity={20}
-      rayleigh={0.1}
+      sunPosition={[0, -0.08, -1]}
+      turbidity={12}
+      rayleigh={0.25}
       mieCoefficient={0.005}
       mieDirectionalG={0.7}
       inclination={0}

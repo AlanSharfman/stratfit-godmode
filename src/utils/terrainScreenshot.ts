@@ -3,7 +3,7 @@
 // Captures the active terrain canvas as a branded PNG.
 
 const WATERMARK_HEIGHT = 40
-const WATERMARK_BG = "rgba(4, 8, 16, 0.85)"
+const WATERMARK_BG = "rgba(12, 20, 34, 0.85)"
 const BRAND_COLOR = "#22d3ee"
 const FONT = "600 11px 'Inter', system-ui, sans-serif"
 
@@ -54,7 +54,7 @@ export async function captureTerrainPng(): Promise<Blob | null> {
   const ctx = offscreen.getContext("2d")
   if (!ctx) return null
 
-  ctx.fillStyle = "#040810"
+  ctx.fillStyle = "#0B1520"
   ctx.fillRect(0, 0, w, h)
   ctx.drawImage(sourceCanvas, 0, 0)
   drawWatermark(ctx, w, h - 0)

@@ -39,7 +39,7 @@ export default React.memo(function TerrainZoneLegend({ kpis, revealedKpis, focus
         onClick={toggleCollapsed}
         style={{
           display: "flex", alignItems: "center", gap: 6,
-          background: "rgba(4,8,16,0.88)", border: "1px solid rgba(34,211,238,0.1)",
+          background: "rgba(12,20,34,0.88)", border: "1px solid rgba(34,211,238,0.1)",
           borderRadius: collapsed ? 6 : "6px 6px 0 0", padding: "6px 10px",
           cursor: "pointer", color: "rgba(34,211,238,0.5)", fontSize: 9,
           fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase",
@@ -56,7 +56,7 @@ export default React.memo(function TerrainZoneLegend({ kpis, revealedKpis, focus
 
       {!collapsed && (
         <div style={{
-          background: "rgba(4,8,16,0.88)", border: "1px solid rgba(34,211,238,0.1)",
+          background: "rgba(12,20,34,0.88)", border: "1px solid rgba(34,211,238,0.1)",
           borderTop: "none", borderRadius: "0 0 6px 6px",
           padding: "4px 0",
           width: compact ? 170 : 200,
@@ -67,26 +67,31 @@ export default React.memo(function TerrainZoneLegend({ kpis, revealedKpis, focus
             return (
               <div
                 key={kpi}
+                onClick={() => onFocusKpi?.(isFocused ? null : kpi)}
                 onMouseEnter={() => onFocusKpi?.(kpi)}
-                onMouseLeave={clearFocus}
+                onMouseLeave={() => { if (!isFocused) clearFocus() }}
                 style={{
                   display: "flex", alignItems: "center", gap: 8,
                   padding: compact ? "4px 10px" : "5px 10px",
                   cursor: onFocusKpi ? "pointer" : "default",
-                  background: isFocused ? "rgba(34,211,238,0.06)" : "transparent",
-                  transition: "background 0.15s",
+                  background: isFocused ? `${color}18` : "transparent",
+                  transition: "background 0.2s, box-shadow 0.2s",
+                  boxShadow: isFocused ? `inset 0 0 8px ${color}22` : "none",
                 }}
               >
                 <span style={{
                   width: 8, height: 8, borderRadius: "50%",
                   background: color, flexShrink: 0,
-                  boxShadow: isFocused ? `0 0 6px ${color}` : "none",
+                  boxShadow: isFocused ? `0 0 8px ${color}, 0 0 3px ${color}` : "none",
+                  transition: "box-shadow 0.2s",
                 }} />
                 <span style={{
                   fontSize: compact ? 9 : 10, fontWeight: 600,
-                  color: isFocused ? "rgba(200,220,240,0.9)" : "rgba(200,220,240,0.5)",
+                  color: isFocused ? "#E6F1FF" : "rgba(200,220,240,0.5)",
                   letterSpacing: "0.03em", flex: 1,
                   fontFamily: "'Inter', system-ui, sans-serif",
+                  textShadow: isFocused ? `0 0 6px ${color}` : "none",
+                  transition: "color 0.2s, text-shadow 0.2s",
                 }}>
                   {label}
                 </span>
@@ -94,6 +99,7 @@ export default React.memo(function TerrainZoneLegend({ kpis, revealedKpis, focus
                   fontSize: 8, fontWeight: 700,
                   color, textTransform: "uppercase",
                   letterSpacing: "0.08em",
+                  textShadow: isFocused ? `0 0 6px ${color}` : "none",
                 }}>
                   {health}
                 </span>

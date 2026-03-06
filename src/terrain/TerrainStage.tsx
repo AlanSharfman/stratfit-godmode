@@ -36,7 +36,7 @@ import GhostTerrainLayer from "@/terrain/GhostTerrainLayer";
 import TerrainKpiMarkers from "@/terrain/TerrainKpiMarkers";
 import TerrainCompass from "@/terrain/TerrainCompass";
 import TerrainIntelligence from "@/terrain/TerrainIntelligence";
-import { POSITION_PRESET } from "@/scene/camera/terrainCameraPresets";
+import { POSITION_PRESET, GOD_VIEW_CONTROLS } from "@/scene/camera/terrainCameraPresets";
 
 
 type TerrainStageProps = {
@@ -46,6 +46,9 @@ type TerrainStageProps = {
   colorVariant?: TerrainColorVariant
   heatmapEnabled?: boolean
   focusedKpi?: KpiKey | null
+  onFocusKpi?: (kpi: KpiKey | null) => void
+  onClickKpi?: (kpi: KpiKey | null) => void
+  onFocusedMarkerScreen?: (pos: { x: number; y: number } | null) => void
   zoneKpis?: PositionKpis | null
   minAzimuthAngle?: number
   maxAzimuthAngle?: number
@@ -73,12 +76,15 @@ export default function TerrainStage({
   colorVariant,
   heatmapEnabled = false,
   focusedKpi = null,
+  onFocusKpi,
+  onClickKpi,
+  onFocusedMarkerScreen,
   zoneKpis = null,
   minAzimuthAngle = -Infinity,
   maxAzimuthAngle = Infinity,
-  minPolarAngle: minPolar = 0.65,
-  maxPolarAngle: maxPolar = 1.35,
-  rotateSpeed = 0.6,
+  minPolarAngle: minPolar = GOD_VIEW_CONTROLS.minPolarAngle,
+  maxPolarAngle: maxPolar = GOD_VIEW_CONTROLS.maxPolarAngle,
+  rotateSpeed = GOD_VIEW_CONTROLS.rotateSpeed,
   renderWhenReady,
   hideMarkers = false,
   progressive = false,
@@ -106,7 +112,7 @@ export default function TerrainStage({
     setControls(instance);
   }, [setControls]);
 
-  const [fogColor] = useState("#1E293B");
+  const [fogColor] = useState("#263A52");
 
   useEffect(() => {
     if (terrainReady) return;
@@ -139,8 +145,8 @@ export default function TerrainStage({
           camera.lookAt(...effectivePreset.target);
           camera.updateProjectionMatrix();
         }
-        gl.setClearColor("#020617", 1);
-        gl.toneMappingExposure = 1.0;
+        gl.setClearColor("#0C1A2E", 1);
+        gl.toneMappingExposure = 1.4;
       }}
     >
       <OrbitControls
@@ -150,14 +156,14 @@ export default function TerrainStage({
         enablePan={false}
         enableZoom={!lockCamera}
         enableDamping
-        dampingFactor={0.12}
+        dampingFactor={GOD_VIEW_CONTROLS.dampingFactor}
         minPolarAngle={minPolar}
         maxPolarAngle={maxPolar}
         minAzimuthAngle={minAzimuthAngle}
         maxAzimuthAngle={maxAzimuthAngle}
         rotateSpeed={rotateSpeed}
-        minDistance={200}
-        maxDistance={1000}
+        minDistance={GOD_VIEW_CONTROLS.minDistance}
+        maxDistance={GOD_VIEW_CONTROLS.maxDistance}
         target={effectivePreset.target}
         autoRotate={autoRotateSpeed > 0}
         autoRotateSpeed={autoRotateSpeed}
@@ -165,13 +171,12 @@ export default function TerrainStage({
 
       <fogExp2 attach="fog" args={[fogColor, 0.002]} />
 
-      <ambientLight intensity={0.38} />
-      <directionalLight position={[150, 220, 100]} intensity={1.25} color="#DFFAEE" castShadow={false} />
-      <directionalLight position={[-100, 160, -80]} intensity={0.55} color="#6ef0ff" />
-      <directionalLight position={[0, 80, 200]} intensity={0.30} color="#a0d8ff" />
-      {/* Low-angle rim light — grazes ridges for silhouette separation */}
-      <directionalLight position={[-200, 30, -100]} intensity={0.20} color="#7dd3fc" />
-      <hemisphereLight args={["#1e3050", "#101828", 0.42]} />
+      <ambientLight intensity={0.75} />
+      <directionalLight position={[150, 220, 100]} intensity={1.80} color="#E8FAFE" castShadow={false} />
+      <directionalLight position={[-100, 160, -80]} intensity={0.90} color="#6ef0ff" />
+      <directionalLight position={[0, 80, 200]} intensity={0.55} color="#a0d8ff" />
+      <directionalLight position={[-200, 30, -100]} intensity={0.38} color="#7dd3fc" />
+      <hemisphereLight args={["#3a5880", "#1c2a40", 0.70]} />
 
       <HorizonBand />
       <TerrainCompass />
@@ -214,6 +219,9 @@ export default function TerrainStage({
             <TerrainKpiMarkers
               terrainRef={progressiveRef}
               focusedKpi={focusedKpi}
+              onFocusKpi={onFocusKpi}
+              onClickKpi={onClickKpi}
+              onFocusedMarkerScreen={onFocusedMarkerScreen}
               kpis={zoneKpis}
               revealedKpis={revealedKpis ?? new Set()}
               visible={showKpiMarkers}

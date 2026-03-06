@@ -10,7 +10,7 @@ export const TERRAIN_CONSTANTS = {
     /** Grid resolution (segments + 1 vertices per axis) */
     segments: 220,
     /** Raw height multiplier applied to heightModel output */
-    heightScale: 95,
+    heightScale: 110,
     /** Secondary scale factor for terrain mode */
     heightFactor: 0.35,
     /** Y offset after rotation to center terrain */

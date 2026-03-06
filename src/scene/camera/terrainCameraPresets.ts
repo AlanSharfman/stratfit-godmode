@@ -18,60 +18,71 @@ export interface CameraPreset {
   fov: number
 }
 
+export interface CameraControlsConfig {
+  minDistance: number
+  maxDistance: number
+  minPolarAngle: number
+  maxPolarAngle: number
+  dampingFactor: number
+  rotateSpeed: number
+}
+
 /**
- * GOD MODE — Optimal panoramic view.
+ * GOD VIEW — Canonical wide-angle panoramic camera.
+ *
+ * Locked as the default for Position + Compare.
+ * Shows full terrain, all KPI markers, and undulations.
  *
  * Camera geometry (terrain = 560w × 360d):
- *   • Pulled back to Z ≈ 620, high enough (Y ≈ 220) for full coverage
- *     but low enough to see ridge silhouettes against the horizon.
- *   • Slight X offset (+40) breaks symmetry for cinematic composition.
- *   • Target offset Y = +8 lifts the gaze slightly above centre so
- *     peaks sit in the upper third and valleys anchor the lower frame.
- *   • FOV 48° — tight enough for depth compression (mountains feel
- *     stacked and dramatic) without clipping at the edges.
- *   • Polar range 0.65–1.35 rad lets the user sweep from near-overhead
- *     (map view) down to a dramatic horizon skim.
+ *   • Y/Z ratio ~0.39 gives a ~21° elevation — high enough for
+ *     full terrain coverage, low enough for ridge silhouettes.
+ *   • Slight X offset (+38) breaks symmetry for cinematic composition.
+ *   • Target Y = +35 lifts gaze so peaks sit in upper third.
+ *   • FOV 47° — tight depth compression for dramatic stacked mountains.
  */
-export const POSITION_PRESET: CameraPreset = {
-  pos: [35, 195, 600],
-  target: [0, 12, 0],
-  fov: 46,
+export const GOD_VIEW_PRESET: CameraPreset = {
+  pos: [38, 250, 640],
+  target: [0, 35, 0],
+  fov: 47,
 }
+
+/** Controls config shared by Position + Compare (pairs with GOD_VIEW_PRESET). */
+export const GOD_VIEW_CONTROLS: CameraControlsConfig = {
+  minDistance: 200,
+  maxDistance: 1000,
+  minPolarAngle: 0.35,
+  maxPolarAngle: 1.57,
+  dampingFactor: 0.08,
+  rotateSpeed: 1.4,
+}
+
+export const POSITION_PRESET: CameraPreset = GOD_VIEW_PRESET
 
 export const STUDIO_PRESET: CameraPreset = {
-  pos: [25, 190, 580],
-  target: [0, 8, 0],
-  fov: 46,
+  pos: [28, 240, 620],
+  target: [0, 30, 0],
+  fov: 47,
 }
 
-export const COMPARE_PRESET: CameraPreset = {
-  pos: [0, 210, 630],
-  target: [0, 8, 0],
-  fov: 46,
-}
+export const COMPARE_PRESET: CameraPreset = GOD_VIEW_PRESET
 
 export const WELCOME_PRESET: CameraPreset = {
-  pos: [45, 185, 570],
-  target: [0, 14, 0],
-  fov: 48,
+  pos: [45, 235, 610],
+  target: [0, 38, 0],
+  fov: 49,
 }
 
 export const COMMAND_PRESET: CameraPreset = {
-  pos: [45, 185, 570],
-  target: [0, 14, 0],
-  fov: 48,
+  pos: [45, 235, 610],
+  target: [0, 38, 0],
+  fov: 49,
 }
 
 /**
  * Progressive Terrain Build — the primary Position page view.
- * Matches POSITION_PRESET for seamless transition when
- * terrain populates.
+ * Uses GOD_VIEW_PRESET for seamless transition when terrain populates.
  */
-export const POSITION_PROGRESSIVE_PRESET: CameraPreset = {
-  pos: [35, 195, 600],
-  target: [0, 12, 0],
-  fov: 46,
-}
+export const POSITION_PROGRESSIVE_PRESET: CameraPreset = GOD_VIEW_PRESET
 
 /** All presets keyed by page context */
 export const CAMERA_PRESETS = {

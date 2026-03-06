@@ -84,7 +84,7 @@ export default function ValuationPage() {
     <PageShell>
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
         {/* Left: Valuation metrics */}
-        <div style={{ width: 380, flexShrink: 0, overflow: "auto", padding: "24px 20px", background: "rgba(4,8,16,0.5)", borderRight: "1px solid rgba(34,211,238,0.04)" }}>
+        <div style={{ width: 380, flexShrink: 0, overflow: "auto", padding: "24px 20px", background: "rgba(12,20,34,0.5)", borderRight: "1px solid rgba(34,211,238,0.04)" }}>
           {/* EV headline */}
           <div style={{ textAlign: "center", marginBottom: 32 }}>
             <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(34,211,238,0.45)", marginBottom: 8 }}>Enterprise Value (Base Case)</div>
@@ -148,7 +148,7 @@ export default function ValuationPage() {
           <div style={{
             position: "absolute", top: 10, left: 14, zIndex: 10, fontSize: 9, fontWeight: 700,
             letterSpacing: "0.14em", textTransform: "uppercase", padding: "4px 10px", borderRadius: 4,
-            background: "rgba(4,8,16,0.85)", color: "rgba(34,211,238,0.5)", border: "1px solid rgba(34,211,238,0.1)",
+            background: "rgba(12,20,34,0.85)", color: "rgba(34,211,238,0.5)", border: "1px solid rgba(34,211,238,0.1)",
           }}>
             Investor Lens
           </div>

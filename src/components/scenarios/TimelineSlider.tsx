@@ -11,7 +11,7 @@ const S: Record<string, React.CSSProperties> = {
   root: {
     position: "relative",
     padding: "12px 24px 20px",
-    background: "linear-gradient(180deg, rgba(4,8,16,0.9) 0%, rgba(6,12,24,0.95) 100%)",
+    background: "linear-gradient(180deg, rgba(12,20,34,0.9) 0%, rgba(6,12,24,0.95) 100%)",
     borderTop: "1px solid rgba(34,211,238,0.08)",
   },
   row: {

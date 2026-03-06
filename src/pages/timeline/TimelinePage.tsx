@@ -112,7 +112,7 @@ export default function TimelinePage() {
     <PageShell>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {/* Case selector */}
-        <div style={{ display: "flex", justifyContent: "center", padding: "14px 0", gap: 0, background: "rgba(4,8,16,0.7)", borderBottom: "1px solid rgba(34,211,238,0.06)" }}>
+        <div style={{ display: "flex", justifyContent: "center", padding: "14px 0", gap: 0, background: "rgba(12,20,34,0.7)", borderBottom: "1px solid rgba(34,211,238,0.06)" }}>
           {(Object.entries(CASE_CONFIGS) as [CaseType, typeof CASE_CONFIGS.bear][]).map(([key, config]) => (
             <button
               key={key}
@@ -138,7 +138,7 @@ export default function TimelinePage() {
             <div style={{
               position: "absolute", top: 10, left: 14, zIndex: 10, fontSize: 9, fontWeight: 700,
               letterSpacing: "0.14em", textTransform: "uppercase", padding: "4px 10px", borderRadius: 4,
-              background: "rgba(4,8,16,0.85)", color: CASE_CONFIGS[selectedCase].color,
+              background: "rgba(12,20,34,0.85)", color: CASE_CONFIGS[selectedCase].color,
               border: `1px solid ${CASE_CONFIGS[selectedCase].color}30`,
             }}>
               {CASE_CONFIGS[selectedCase].label} · Month {month}
@@ -161,7 +161,7 @@ export default function TimelinePage() {
           </div>
 
           {/* Spark line panel */}
-          <div style={{ width: 260, flexShrink: 0, overflow: "auto", padding: "16px 14px", background: "rgba(4,8,16,0.5)", borderLeft: "1px solid rgba(34,211,238,0.04)" }}>
+          <div style={{ width: 260, flexShrink: 0, overflow: "auto", padding: "16px 14px", background: "rgba(12,20,34,0.5)", borderLeft: "1px solid rgba(34,211,238,0.04)" }}>
             <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(34,211,238,0.45)", marginBottom: 14 }}>
               KPI Trajectories
             </div>
@@ -215,7 +215,7 @@ export default function TimelinePage() {
         </div>
 
         {/* Timeline scrub */}
-        <div style={{ padding: "12px 24px 18px", background: "rgba(4,8,16,0.9)", borderTop: "1px solid rgba(34,211,238,0.06)" }}>
+        <div style={{ padding: "12px 24px 18px", background: "rgba(12,20,34,0.9)", borderTop: "1px solid rgba(34,211,238,0.06)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(34,211,238,0.4)", whiteSpace: "nowrap" }}>PROJECTION</span>
             <div style={{ flex: 1, position: "relative", height: 28, display: "flex", alignItems: "center" }}>

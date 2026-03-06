@@ -83,7 +83,7 @@ const S: Record<string, React.CSSProperties> = {
   overlay: {
     position: "fixed",
     inset: 0,
-    background: "rgba(4,8,16,0.7)",
+    background: "rgba(12,20,34,0.7)",
     zIndex: 2000,
     display: "flex",
     alignItems: "center",

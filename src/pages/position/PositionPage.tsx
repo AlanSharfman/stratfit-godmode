@@ -39,6 +39,149 @@ import TerrainZoneLabels from "@/components/terrain/TerrainZoneLabels"
 import BenchmarkPanel from "@/components/network/BenchmarkPanel"
 import styles from "./PositionOverlays.module.css"
 
+/* ─── Laser Beam Overlay ─── */
+const LASER_DASH_KEYFRAMES = `
+@keyframes sf-laser-march {
+  to { stroke-dashoffset: -40; }
+}
+@keyframes sf-laser-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+`
+
+let _laserStyleInjected = false
+function ensureLaserStyles() {
+  if (_laserStyleInjected) return
+  _laserStyleInjected = true
+  const s = document.createElement("style")
+  s.textContent = LASER_DASH_KEYFRAMES
+  document.head.appendChild(s)
+}
+
+function KpiLaserOverlay({ kpi, markerPos, viewportRef }: {
+  kpi: KpiKey
+  markerPos: { x: number; y: number }
+  viewportRef: React.RefObject<HTMLDivElement | null>
+}) {
+  const [pillPos, setPillPos] = React.useState<{ x: number; y: number } | null>(null)
+
+  React.useEffect(() => {
+    ensureLaserStyles()
+  }, [])
+
+  React.useEffect(() => {
+    const vpEl = viewportRef.current
+    if (!vpEl) return
+    const pillEl = vpEl.querySelector(`[data-kpi-pill="${kpi}"]`) as HTMLElement | null
+    if (!pillEl) return
+    const vpRect = vpEl.getBoundingClientRect()
+    const pillRect = pillEl.getBoundingClientRect()
+    setPillPos({
+      x: pillRect.left + pillRect.width / 2 - vpRect.left,
+      y: pillRect.top + pillRect.height / 2 - vpRect.top,
+    })
+  }, [kpi, viewportRef])
+
+  if (!pillPos) return null
+
+  const sx = pillPos.x
+  const sy = pillPos.y
+  const tx = markerPos.x
+  const ty = markerPos.y
+  const dx = tx - sx
+  const dy = ty - sy
+  const len = Math.sqrt(dx * dx + dy * dy)
+
+  return (
+    <svg
+      style={{
+        position: "absolute", inset: 0, width: "100%", height: "100%",
+        zIndex: 20, pointerEvents: "none",
+        animation: "sf-laser-fade-in 0.15s ease-out both",
+      }}
+    >
+      <defs>
+        <filter id="sf-laser-glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="6" result="b1" />
+          <feGaussianBlur stdDeviation="2" in="SourceGraphic" result="b2" />
+          <feMerge>
+            <feMergeNode in="b1" />
+            <feMergeNode in="b2" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+        <filter id="sf-laser-flare" x="-100%" y="-100%" width="300%" height="300%">
+          <feGaussianBlur stdDeviation="10" result="b" />
+          <feMerge>
+            <feMergeNode in="b" />
+            <feMergeNode in="b" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+        <linearGradient id="sf-laser-grad" x1={sx} y1={sy} x2={tx} y2={ty} gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#22D3EE" stopOpacity="0.3" />
+          <stop offset="10%" stopColor="#22D3EE" stopOpacity="1" />
+          <stop offset="90%" stopColor="#67E8F9" stopOpacity="1" />
+          <stop offset="100%" stopColor="#22D3EE" stopOpacity="0.5" />
+        </linearGradient>
+      </defs>
+
+      {/* Wide outer glow */}
+      <line x1={sx} y1={sy} x2={tx} y2={ty}
+        stroke="#22D3EE" strokeWidth={8} opacity={0.18}
+        filter="url(#sf-laser-glow)" />
+
+      {/* Mid glow */}
+      <line x1={sx} y1={sy} x2={tx} y2={ty}
+        stroke="#22D3EE" strokeWidth={4} opacity={0.45}
+        filter="url(#sf-laser-glow)" />
+
+      {/* Core beam */}
+      <line x1={sx} y1={sy} x2={tx} y2={ty}
+        stroke="url(#sf-laser-grad)" strokeWidth={2.5}
+        filter="url(#sf-laser-glow)" />
+
+      {/* White-hot center */}
+      <line x1={sx} y1={sy} x2={tx} y2={ty}
+        stroke="#ECFEFF" strokeWidth={1} opacity={0.85} />
+
+      {/* Animated energy pulse dashes */}
+      <line x1={sx} y1={sy} x2={tx} y2={ty}
+        stroke="#67E8F9" strokeWidth={2}
+        strokeDasharray="6 14"
+        style={{ animation: "sf-laser-march 0.4s linear infinite" }}
+        opacity={0.7} />
+
+      {/* Source flare (pill) */}
+      <circle cx={sx} cy={sy} r={8} fill="#22D3EE" opacity={0.35} filter="url(#sf-laser-flare)" />
+      <circle cx={sx} cy={sy} r={4} fill="#ECFEFF" opacity={0.6} />
+
+      {/* Target flare (marker) */}
+      <circle cx={tx} cy={ty} r={12} fill="#22D3EE" opacity={0.4} filter="url(#sf-laser-flare)" />
+      <circle cx={tx} cy={ty} r={5} fill="#ECFEFF" opacity={0.7} />
+
+      {/* Arrowhead at target */}
+      <polygon
+        points={(() => {
+          if (len < 1) return "0,0 0,0 0,0"
+          const nx = dx / len
+          const ny = dy / len
+          const px = -ny
+          const py = nx
+          const tipX = tx
+          const tipY = ty
+          const backX = tx - nx * 14
+          const backY = ty - ny * 14
+          return `${tipX},${tipY} ${backX + px * 7},${backY + py * 7} ${backX - px * 7},${backY - py * 7}`
+        })()}
+        fill="#22D3EE" opacity={0.9}
+        filter="url(#sf-laser-glow)"
+      />
+    </svg>
+  )
+}
+
 export default function PositionPage() {
   const navigate = useNavigate()
   const [granularity] = useState<TimeGranularity>("quarter")
@@ -51,6 +194,35 @@ export default function PositionPage() {
   const [audioEnabled, setAudioEnabled] = useState(false)
 
   const prevFocusedRef = useRef<KpiKey | null>(null)
+
+  // ── Laser beam state ──
+  const [laserKpi, setLaserKpi] = useState<KpiKey | null>(null)
+  const [markerScreenPos, setMarkerScreenPos] = useState<{ x: number; y: number } | null>(null)
+  const laserTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+
+  const handleClickKpi = useCallback((kpi: KpiKey | null) => {
+    clearTimeout(laserTimerRef.current)
+    if (kpi) {
+      setLaserKpi(kpi)
+      setFocusedKpi(kpi)
+      laserTimerRef.current = setTimeout(() => {
+        setLaserKpi(null)
+        setFocusedKpi(null)
+        setMarkerScreenPos(null)
+      }, 2500)
+    } else {
+      setLaserKpi(null)
+      setFocusedKpi(null)
+      setMarkerScreenPos(null)
+    }
+  }, [])
+
+  const handleHoverKpi = useCallback((kpi: KpiKey | null) => {
+    if (laserKpi) return
+    setFocusedKpi(kpi)
+  }, [laserKpi])
+
+  useEffect(() => () => clearTimeout(laserTimerRef.current), [])
 
   // ── ResizeObserver: update Three.js renderer when right rail expands/collapses ──
   useEffect(() => {
@@ -321,7 +493,7 @@ export default function PositionPage() {
           <PositionExecSummary kpis={liveKpis} revealedCount={revealedKpis.size} />
 
           <div className={styles.kpiRailDock} aria-label="KPI Health Rail">
-            <KPIHealthRail kpis={liveKpis} focusedKpi={focusedKpi} onFocusKpi={setFocusedKpi} revealedKpis={revealedKpis} />
+            <KPIHealthRail kpis={liveKpis} focusedKpi={focusedKpi} onFocusKpi={handleHoverKpi} revealedKpis={revealedKpis} />
           </div>
         </div>
 
@@ -346,6 +518,9 @@ export default function PositionPage() {
               progressive
               revealedKpis={revealedKpis}
               focusedKpi={focusedKpi}
+              onFocusKpi={handleHoverKpi}
+              onClickKpi={handleClickKpi}
+              onFocusedMarkerScreen={setMarkerScreenPos}
               zoneKpis={liveKpis}
               heatmapEnabled={false}
               cameraPreset={POSITION_PROGRESSIVE_PRESET}
@@ -375,8 +550,11 @@ export default function PositionPage() {
               <SkyAtmosphere />
             </TerrainStage>
             <TerrainHealthBar kpis={liveKpis} revealedKpis={revealedKpis} />
-            <TerrainZoneLabels kpis={liveKpis} revealedKpis={revealedKpis} focusedKpi={focusedKpi} onFocusKpi={setFocusedKpi} />
-            <TerrainZoneLegend kpis={liveKpis} revealedKpis={revealedKpis} focusedKpi={focusedKpi} onFocusKpi={setFocusedKpi} />
+            <TerrainZoneLabels kpis={liveKpis} revealedKpis={revealedKpis} focusedKpi={focusedKpi} onFocusKpi={handleHoverKpi} onClickKpi={handleClickKpi} />
+            <TerrainZoneLegend kpis={liveKpis} revealedKpis={revealedKpis} focusedKpi={focusedKpi} onFocusKpi={handleHoverKpi} />
+            {laserKpi && markerScreenPos && (
+              <KpiLaserOverlay kpi={laserKpi} markerPos={markerScreenPos} viewportRef={viewportRef} />
+            )}
             <div className={styles.canvasVignette} aria-hidden="true" />
             <IdleMotionLayer viewportRef={viewportRef} />
             <div className={styles.filmGrain} aria-hidden="true" />

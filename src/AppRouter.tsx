@@ -24,7 +24,7 @@ function PageLoader() {
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      background: "#040810",
+      background: "#0B1520",
     }}>
       <div style={{ textAlign: "center" }}>
         <div style={{

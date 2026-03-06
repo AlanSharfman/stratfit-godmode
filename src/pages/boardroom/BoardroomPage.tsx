@@ -129,7 +129,7 @@ export default function BoardroomPage() {
         button { display: none !important; }
       }
     `
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>STRATFIT Board Pack — ${new Date().toLocaleDateString()}</title><style>body{font-family:Inter,system-ui,sans-serif;background:#040810;color:#c8dcf0;padding:48px;max-width:800px;margin:0 auto}h1{font-weight:200;letter-spacing:0.15em;text-transform:uppercase}h3{font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#22d3ee80}hr{border:none;border-top:1px solid rgba(34,211,238,0.08);margin:24px 0}${printStyles}</style></head><body>${el.innerHTML}<script>window.onload=()=>window.print()<\/script></body></html>`
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>STRATFIT Board Pack — ${new Date().toLocaleDateString()}</title><style>body{font-family:Inter,system-ui,sans-serif;background:#0B1520;color:#c8dcf0;padding:48px;max-width:800px;margin:0 auto}h1{font-weight:200;letter-spacing:0.15em;text-transform:uppercase}h3{font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#22d3ee80}hr{border:none;border-top:1px solid rgba(34,211,238,0.08);margin:24px 0}${printStyles}</style></head><body>${el.innerHTML}<script>window.onload=()=>window.print()<\/script></body></html>`
     const blob = new Blob([html], { type: "text/html" })
     const url = URL.createObjectURL(blob)
     window.open(url, "_blank")
@@ -144,7 +144,7 @@ export default function BoardroomPage() {
     <PageShell>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "auto" }}>
         {/* Mode Toggle */}
-        <div style={{ display: "flex", justifyContent: "center", padding: "16px 0", gap: 0, background: "rgba(4,8,16,0.7)", borderBottom: "1px solid rgba(34,211,238,0.06)" }}>
+        <div style={{ display: "flex", justifyContent: "center", padding: "16px 0", gap: 0, background: "rgba(12,20,34,0.7)", borderBottom: "1px solid rgba(34,211,238,0.06)" }}>
           {(["cinematic", "briefing", "report"] as BoardMode[]).map((m) => (
             <button key={m} onClick={() => setMode(m)} style={{
               padding: "10px 32px", background: mode === m ? "rgba(34,211,238,0.08)" : "transparent",
@@ -171,7 +171,7 @@ export default function BoardroomPage() {
               zoneKpis={liveKpis} cameraPreset={POSITION_PROGRESSIVE_PRESET}
               autoRotateSpeed={isRevealing ? 0.5 : 0.2} hideMarkers heatmapEnabled={false}
             ><SkyAtmosphere /></TerrainStage>
-            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "32px 48px", background: "linear-gradient(transparent 0%, rgba(4,8,16,0.92) 100%)", zIndex: 5 }}>
+            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "32px 48px", background: "linear-gradient(transparent 0%, rgba(12,20,34,0.92) 100%)", zIndex: 5 }}>
               <div style={{ fontSize: 16, fontWeight: 300, lineHeight: 1.7, color: "rgba(200,220,240,0.8)", maxWidth: 700 }}>{narrativeText}</div>
               <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
                 {!isRevealing ? (

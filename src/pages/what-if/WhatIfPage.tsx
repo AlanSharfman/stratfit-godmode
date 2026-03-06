@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from "react"
+import React, { useCallback, useMemo, useRef, useState, useSyncExternalStore } from "react"
 import { AnimatePresence } from "framer-motion"
 
 import PageShell from "@/components/nav/PageShell"
@@ -22,6 +22,11 @@ import ScenarioLibrary from "@/components/persistence/ScenarioLibrary"
 import ScenarioGallery from "@/components/scenarios/ScenarioGallery"
 import { usePersistenceStore } from "@/stores/persistenceStore"
 import { parseNaturalLanguage } from "@/engine/naturalLanguageForceMapper"
+import {
+  askWhatIf, hasWhatIfApiKey, whatIfAnswerToTemplate,
+  getWhatIfLog, clearWhatIfLog, subscribeWhatIfLog,
+  type WhatIfAnswer, type WhatIfTerrainOverlay, type WhatIfLogEntry,
+} from "@/engine/whatif"
 import styles from "./WhatIfPage.module.css"
 
 interface StackedScenario {
@@ -69,7 +74,11 @@ export default function WhatIfPage() {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [showImpactChain, setShowImpactChain] = useState(false)
   const [showGallery, setShowGallery] = useState(false)
+  const [showDebugPanel, setShowDebugPanel] = useState(false)
   const [lastCascadeSource, setLastCascadeSource] = useState<{ kpi: KpiKey; delta: number } | null>(null)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiAnswer, setAiAnswer] = useState<WhatIfAnswer | null>(null)
+  const [aiOverlays, setAiOverlays] = useState<WhatIfTerrainOverlay[]>([])
   const { narrate: narrateCascade, stop: stopNarration, isNarrating } = useCascadeNarration()
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -190,33 +199,67 @@ export default function WhatIfPage() {
     setTimeout(() => setCascadeImpulse(null), 3000)
   }, [])
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
     if (!query.trim()) return
 
+    // 1. Exact template match — instant, no API call
     const match = SCENARIO_TEMPLATES.find((t) =>
       t.question.toLowerCase().includes(query.toLowerCase()) || query.toLowerCase().includes(t.question.toLowerCase().slice(0, 20))
     )
-    if (match) { injectScenario(match); return }
-    if (suggestions.length > 0) { injectScenario(suggestions[0]); return }
+    if (match) { injectScenario(match); setAiAnswer(null); return }
+    if (suggestions.length > 0) { injectScenario(suggestions[0]); setAiAnswer(null); return }
 
-    const parsed = parseNaturalLanguage(query)
-    if (parsed.confidence > 0 && Object.keys(parsed.forces).length > 0) {
-      const syntheticTemplate: ScenarioTemplate = {
-        id: `nlp-${Date.now()}`,
-        question: query,
-        category: "market",
-        forces: parsed.forces,
-        description: parsed.reasoning,
-      }
-      injectScenario(syntheticTemplate)
-      if (parsed.confidence < 0.5) {
-        setNarrative(`Low confidence interpretation: ${parsed.reasoning}. Try rephrasing for better accuracy.`)
+    // 2. OpenAI path — structured answer + terrain forces
+    if (hasWhatIfApiKey()) {
+      setAiLoading(true)
+      setAiAnswer(null)
+      setAiOverlays([])
+      setNarrative("Simulating...")
+      try {
+        const result = await askWhatIf({
+          question: query,
+          context: { baseline: baseline as any, kpis: baseKpis },
+        })
+        const answer = result.answer
+        setAiAnswer(answer)
+        setAiOverlays(answer.terrain_overlays ?? [])
+        setNarrative(answer.summary)
+
+        if (answer.intent !== "data_missing" && answer.kpi_impacts.length > 0) {
+          const template = whatIfAnswerToTemplate(answer, query)
+          injectScenario(template)
+        }
+      } catch {
+        setNarrative("OpenAI request failed. Falling back to local analysis.")
+        fallbackToNLP()
+      } finally {
+        setAiLoading(false)
       }
       return
     }
 
-    setNarrative("Could not interpret that scenario. Try phrasing as a specific business decision, e.g. \"What if we lose our biggest client?\"")
-  }, [query, suggestions, injectScenario])
+    // 3. Local NLP fallback — no API key
+    fallbackToNLP()
+
+    function fallbackToNLP() {
+      const parsed = parseNaturalLanguage(query)
+      if (parsed.confidence > 0 && Object.keys(parsed.forces).length > 0) {
+        const syntheticTemplate: ScenarioTemplate = {
+          id: `nlp-${Date.now()}`,
+          question: query,
+          category: "market",
+          forces: parsed.forces,
+          description: parsed.reasoning,
+        }
+        injectScenario(syntheticTemplate)
+        if (parsed.confidence < 0.5) {
+          setNarrative(`Low confidence interpretation: ${parsed.reasoning}. Try rephrasing for better accuracy.`)
+        }
+        return
+      }
+      setNarrative("Could not interpret that scenario. Try phrasing as a specific business decision, e.g. \"What if we lose our biggest client?\"")
+    }
+  }, [query, suggestions, injectScenario, baseline, baseKpis])
 
   const undoLast = useCallback(() => {
     setStack((prev) => prev.slice(0, -1))
@@ -293,6 +336,14 @@ export default function WhatIfPage() {
             style={{ background: "rgba(167,139,250,0.12)", color: "rgba(167,139,250,0.9)", borderColor: "rgba(167,139,250,0.2)" }}
           >
             Browse Scenarios
+          </button>
+          <button
+            className={styles.injectBtn}
+            onClick={() => setShowDebugPanel((v) => !v)}
+            style={{ background: "rgba(200,220,240,0.04)", color: "rgba(200,220,240,0.3)", borderColor: "rgba(200,220,240,0.08)", fontSize: 10, padding: "10px 14px" }}
+            title="Debug Log"
+          >
+            {showDebugPanel ? "Hide Log" : "Debug"}
           </button>
 
           {showSuggestions && suggestions.length > 0 && (
@@ -391,9 +442,12 @@ export default function WhatIfPage() {
               </div>
             </div>
 
-            {narrative && (
+            {(narrative || aiLoading) && (
               <div className={styles.narrativeBar}>
-                <span className={styles.narrativeText}>{narrative}</span>
+                {aiLoading && <span className={styles.aiLoadingDot} />}
+                <span className={styles.narrativeText}>
+                  {aiLoading ? "Simulating scenario with AI..." : narrative}
+                </span>
                 {lastCascadeSource && (
                   <>
                     <button
@@ -423,7 +477,7 @@ export default function WhatIfPage() {
 
             {showImpactChain && lastCascadeSource && (
               <div style={{
-                background: "rgba(4,8,16,0.85)", border: "1px solid rgba(34,211,238,0.08)",
+                background: "rgba(12,20,34,0.85)", border: "1px solid rgba(34,211,238,0.08)",
                 borderRadius: 8, padding: "12px 8px", marginTop: 4,
               }}>
                 <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(34,211,238,0.4)", marginBottom: 8, paddingLeft: 8 }}>
@@ -447,13 +501,95 @@ export default function WhatIfPage() {
             )}
           </div>
 
-          {/* Right: Cumulative Impact */}
+          {/* Right: Cumulative Impact + AI Answer */}
           <div className={styles.impactPanel}>
-            {stack.length === 0 ? (
-              <div className={styles.emptyImpact}>
-                The impact panel shows the cumulative effect of all stacked decisions on every KPI zone.
+            {aiAnswer && (
+              <div className={styles.aiAnswerSection}>
+                <div className={styles.panelTitle} style={{ color: "rgba(34,211,238,0.7)" }}>
+                  AI Analysis
+                  <span style={{ fontSize: 8, fontWeight: 400, opacity: 0.5, marginLeft: 6 }}>
+                    {aiAnswer.intent}
+                  </span>
+                </div>
+                <div className={styles.aiSummary}>{aiAnswer.summary}</div>
+
+                {aiAnswer.assumptions && aiAnswer.assumptions.length > 0 && (
+                  <div className={styles.aiAssumptions}>
+                    {aiAnswer.assumptions.map((a, i) => (
+                      <div key={i} className={styles.aiAssumptionItem}>• {a}</div>
+                    ))}
+                  </div>
+                )}
+
+                {aiAnswer.missing_inputs && aiAnswer.missing_inputs.length > 0 && (
+                  <div className={styles.aiMissing}>
+                    <div className={styles.cascadeTitle}>Missing Data</div>
+                    {aiAnswer.missing_inputs.map((m, i) => (
+                      <div key={i} className={styles.aiMissingItem}>
+                        <span style={{ fontWeight: 600 }}>{m.field}</span>: {m.reason}
+                        {m.example && <span style={{ opacity: 0.4 }}> (e.g. {m.example})</span>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {aiAnswer.kpi_impacts.length > 0 && (
+                  <div style={{ marginTop: 10 }}>
+                    <div className={styles.cascadeTitle}>KPI Impacts</div>
+                    {aiAnswer.kpi_impacts.map((imp, i) => (
+                      <div key={i} className={styles.impactRow}>
+                        <span className={styles.impactKpi}>
+                          {imp.kpi}
+                          {imp.confidence !== "high" && (
+                            <span style={{ fontSize: 8, opacity: 0.4, marginLeft: 4 }}>
+                              {imp.confidence}
+                            </span>
+                          )}
+                        </span>
+                        <span className={`${styles.impactDelta} ${imp.direction === "up" ? styles.impactPositive : imp.direction === "down" ? styles.impactNegative : ""}`}>
+                          {imp.direction === "flat" ? "—" : `${imp.direction === "up" ? "↑" : "↓"} ${imp.magnitude ?? ""}`}
+                          {imp.delta_value != null && ` ${imp.delta_value}${imp.delta_unit ?? ""}`}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {aiAnswer.recommended_simulation?.should_run && (
+                  <div className={styles.aiSimRecommendation}>
+                    <span style={{ fontSize: 9, fontWeight: 700, color: "#f59e0b", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                      Simulation Recommended
+                    </span>
+                    <div style={{ fontSize: 11, color: "rgba(200,220,240,0.6)", marginTop: 4 }}>
+                      {aiAnswer.recommended_simulation.reason}
+                    </div>
+                  </div>
+                )}
+
+                {aiAnswer.next_questions && aiAnswer.next_questions.length > 0 && (
+                  <div style={{ marginTop: 10, borderTop: "1px solid rgba(255,255,255,0.04)", paddingTop: 8 }}>
+                    <div className={styles.cascadeTitle}>Try Next</div>
+                    {aiAnswer.next_questions.map((q, i) => (
+                      <button
+                        key={i}
+                        className={styles.nextQuestionBtn}
+                        onClick={() => { setQuery(q); inputRef.current?.focus() }}
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
-            ) : (
+            )}
+
+            {stack.length === 0 && !aiAnswer ? (
+              <div className={styles.emptyImpact}>
+                {hasWhatIfApiKey()
+                  ? "Ask a question above. AI will analyse your scenario and show structured KPI impacts."
+                  : "The impact panel shows the cumulative effect of all stacked decisions on every KPI zone."}
+              </div>
+            ) : stack.length > 0 && (
               <>
                 <div className={styles.panelTitle}>Net Impact</div>
                 {Array.from(cumulativePropagation.entries())
@@ -492,6 +628,111 @@ export default function WhatIfPage() {
           <ScenarioGallery onSelect={injectScenario} onClose={() => setShowGallery(false)} />
         )}
       </AnimatePresence>
+
+      {/* AI Terrain Overlays — floating labels for impacted KPI zones */}
+      {aiOverlays.length > 0 && (
+        <div className={styles.terrainOverlays}>
+          {aiOverlays.map((ov, i) => (
+            <div
+              key={`${ov.kpi}-${i}`}
+              className={styles.overlayChip}
+              style={{
+                borderColor: ov.color,
+                boxShadow: `0 0 ${12 * ov.glowIntensity}px ${ov.color}${Math.round(ov.glowIntensity * 255).toString(16).padStart(2, "0")}`,
+                color: ov.color,
+              }}
+            >
+              <span className={styles.overlayDot} style={{ background: ov.color }} />
+              {ov.label}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Debug Panel */}
+      {showDebugPanel && <WhatIfDebugPanel />}
     </PageShell>
+  )
+}
+
+// ── Debug Panel Component ──
+
+function WhatIfDebugPanel() {
+  const log = useSyncExternalStore(subscribeWhatIfLog, getWhatIfLog)
+
+  return (
+    <div className={styles.debugPanel}>
+      <div className={styles.debugHeader}>
+        <span>What-If Debug Log ({log.length} entries)</span>
+        <button onClick={clearWhatIfLog} className={styles.debugClearBtn}>Clear</button>
+      </div>
+      <div className={styles.debugScroll}>
+        {log.length === 0 && (
+          <div style={{ padding: 16, color: "rgba(200,220,240,0.3)", fontSize: 11, textAlign: "center" }}>
+            No what-if calls recorded yet. Ask a question to see logs here.
+          </div>
+        )}
+        {[...log].reverse().map((entry) => (
+          <WhatIfDebugEntry key={entry.id} entry={entry} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function WhatIfDebugEntry({ entry }: { entry: WhatIfLogEntry }) {
+  const [expanded, setExpanded] = useState(false)
+
+  return (
+    <div className={styles.debugEntry}>
+      <div className={styles.debugEntryHeader} onClick={() => setExpanded((v) => !v)}>
+        <span className={entry.parseSuccess ? styles.debugSuccess : styles.debugFail}>
+          {entry.parseSuccess ? "OK" : "FAIL"}
+        </span>
+        <span className={styles.debugQuestion}>{entry.question}</span>
+        <span className={styles.debugMeta}>
+          {entry.latencyMs.toFixed(0)}ms · {entry.model} · retry {entry.retryCount}
+          {entry.tokenUsage && ` · ${entry.tokenUsage.total_tokens ?? "?"} tok`}
+        </span>
+        <span style={{ fontSize: 10, opacity: 0.3 }}>{expanded ? "▲" : "▼"}</span>
+      </div>
+      {expanded && (
+        <div className={styles.debugBody}>
+          <div className={styles.debugSection}>
+            <div className={styles.debugSectionTitle}>System Prompt</div>
+            <pre className={styles.debugPre}>{entry.systemPrompt}</pre>
+          </div>
+          <div className={styles.debugSection}>
+            <div className={styles.debugSectionTitle}>User Message</div>
+            <pre className={styles.debugPre}>{entry.userMessage}</pre>
+          </div>
+          <div className={styles.debugSection}>
+            <div className={styles.debugSectionTitle}>Raw Response</div>
+            <pre className={styles.debugPre}>{entry.rawResponse ?? "(null)"}</pre>
+          </div>
+          {entry.parseErrors.length > 0 && (
+            <div className={styles.debugSection}>
+              <div className={styles.debugSectionTitle} style={{ color: "#f87171" }}>Errors</div>
+              <pre className={styles.debugPre} style={{ color: "#f87171" }}>{entry.parseErrors.join("\n")}</pre>
+            </div>
+          )}
+          {entry.parsedAnswer && (
+            <div className={styles.debugSection}>
+              <div className={styles.debugSectionTitle}>Parsed Answer</div>
+              <pre className={styles.debugPre}>{JSON.stringify(entry.parsedAnswer, null, 2)}</pre>
+            </div>
+          )}
+          <div className={styles.debugSection}>
+            <div className={styles.debugSectionTitle}>Meta</div>
+            <pre className={styles.debugPre}>{JSON.stringify({
+              id: entry.id,
+              timestamp: new Date(entry.timestamp).toISOString(),
+              promptVersion: entry.promptVersion,
+              tokenUsage: entry.tokenUsage,
+            }, null, 2)}</pre>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }

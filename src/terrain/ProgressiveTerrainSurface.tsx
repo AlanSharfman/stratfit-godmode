@@ -46,23 +46,23 @@ interface Props {
 const SEGMENTS = 220
 const LERP_SPEED = 2.5
 
-const BASELINE_RIDGE_HEIGHT = 34
-const BASELINE_RIDGE_WIDTH = 0.22
-const BASELINE_PEAK_COUNT = 11
-const BASELINE_PEAK_AMP_MIN = 10
-const BASELINE_PEAK_AMP_MAX = 39
+const BASELINE_RIDGE_HEIGHT = 40
+const BASELINE_RIDGE_WIDTH = 0.18
+const BASELINE_PEAK_COUNT = 13
+const BASELINE_PEAK_AMP_MIN = 14
+const BASELINE_PEAK_AMP_MAX = 48
 const BASELINE_PEAK_SPREAD_MIN = 0.06
 const BASELINE_PEAK_SPREAD_MAX = 0.20
 
-const KPI_PEAK_HEIGHT = 55
-const NOISE_AMP = 0.10
+const KPI_PEAK_HEIGHT = 62
+const NOISE_AMP = 0.12
 
-const MAX_SLOPE = 0.48
-const SLOPE_CLAMP_PASSES = 4
-const BROAD_SMOOTH_PASSES = 3
-const BROAD_SMOOTH_STRENGTH = 0.18
-const DETAIL_SMOOTH_PASSES = 2
-const DETAIL_SMOOTH_THRESHOLD = 1.2
+const MAX_SLOPE = 0.55
+const SLOPE_CLAMP_PASSES = 3
+const BROAD_SMOOTH_PASSES = 2
+const BROAD_SMOOTH_STRENGTH = 0.13
+const DETAIL_SMOOTH_PASSES = 1
+const DETAIL_SMOOTH_THRESHOLD = 1.6
 const KPI_BLEND_WIDTH = 0.075
 
 const HIGHLIGHT_OPACITY = 0.35
@@ -188,7 +188,7 @@ function buildSeedPeaks(seed: number): SeedPeak[] {
       x: 0.10 + rand() * 0.80,
       z: 0.10 + rand() * 0.80,
       amp: -(4 + rand() * 10),
-      spread: 0.08 + rand() * 0.14,
+      spread: 0.09 + rand() * 0.16,
     })
   }
 
@@ -259,11 +259,11 @@ function baselineTerrainHeight(
   const detailNoise = fbmNoise(nx * 7 * freqScale, nz * 7 * freqScale, seed, 5) * 4.0 * roughAmp
   const microNoise = fbmNoise(nx * 16 * freqScale, nz * 16 * freqScale, seed + 37, 3) * 1.5 * (t.microDetail * 2.5)
 
-  // Broad terrain undulation — wide gentle valleys and rises
+  // Broad terrain undulation — wide dramatic valleys and rises
   const valleyAmp = 0.5 + t.valleyDepth
   const broadWave =
-    Math.sin(nx * Math.PI * 1.3 * freqScale + seed * 0.02) * 5.4 * valleyAmp +
-    Math.cos(nz * Math.PI * 1.8 * freqScale - seed * 0.015) * 4.2 * valleyAmp
+    Math.sin(nx * Math.PI * 1.3 * freqScale + seed * 0.02) * 5.8 * valleyAmp +
+    Math.cos(nz * Math.PI * 1.8 * freqScale - seed * 0.015) * 4.5 * valleyAmp
 
   // Edge falloff — gradual taper so terrain blends into background
   const edgeFade = Math.min(
@@ -511,14 +511,13 @@ function buildStabilizedHeightfield(
   // Phase 3: stabilize the COMBINED heightfield (slope clamp + multi-scale smooth)
   stabilizeHeightfield(hf, vpr)
 
-  // Phase 4: micro surface noise — breaks up perfectly smooth faces
-  // Amplitude is tiny (max ±0.15) so peak/valley positions are unchanged.
-  const MICRO_SURFACE_AMP = 0.15
+  // Phase 4: multi-scale surface noise — natural roughness at two frequencies
   for (let row = 0; row < vpr; row++) {
     for (let col = 0; col < vpr; col++) {
       const i = row * vpr + col
-      const n = valueNoise(col * 0.8, row * 0.8, seed + 4217) * 2 - 1
-      hf[i] += n * MICRO_SURFACE_AMP
+      const n1 = valueNoise(col * 0.8, row * 0.8, seed + 4217) * 2 - 1
+      const n2 = valueNoise(col * 2.5, row * 2.5, seed + 7731) * 2 - 1
+      hf[i] += n1 * 0.25 + n2 * 0.12
     }
   }
 

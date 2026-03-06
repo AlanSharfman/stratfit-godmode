@@ -104,8 +104,8 @@ export default function PageShell({ children, rightSlot }: Props) {
 const S: Record<string, React.CSSProperties> = {
   root: {
     minHeight: "100vh",
-    background: "#040810",
-    color: "rgba(200, 220, 240, 0.85)",
+    background: "#0B1520",
+    color: "rgba(210, 228, 245, 0.92)",
     fontFamily: "'Inter', system-ui, sans-serif",
     display: "flex",
     flexDirection: "column",
@@ -116,9 +116,9 @@ const S: Record<string, React.CSSProperties> = {
     gap: 0,
     padding: "0 20px",
     height: 58,
-    background: "linear-gradient(180deg, rgba(8,16,28,0.98) 0%, rgba(4,8,16,0.99) 100%)",
-    borderBottom: "1px solid rgba(34,211,238,0.14)",
-    boxShadow: "0 2px 20px rgba(0,0,0,0.6)",
+    background: "linear-gradient(180deg, rgba(14,24,40,0.98) 0%, rgba(10,18,30,0.99) 100%)",
+    borderBottom: "1px solid rgba(34,211,238,0.18)",
+    boxShadow: "0 2px 20px rgba(0,0,0,0.4)",
     flexShrink: 0,
     zIndex: 20,
     position: "relative" as const,

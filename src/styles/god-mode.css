@@ -7,7 +7,7 @@
 /* ── Background: deep void with micro hex grid ── */
 .bg-hex-grid {
   background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 0l17.32 10v20L20 40 2.68 30V10z' fill-rule='evenodd' stroke='%2322d3ee' stroke-width='0.5' fill='none' opacity='0.025'/%3E%3C/svg%3E");
-  background-color: #020617;
+  background-color: #0A1424;
   background-size: 40px 40px;
 }
 

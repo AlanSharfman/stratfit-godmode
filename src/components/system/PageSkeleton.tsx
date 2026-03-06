@@ -6,7 +6,7 @@ export default function PageSkeleton() {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "#040810",
+      background: "#0B1520",
       fontFamily: "'Inter', system-ui, sans-serif",
       display: "flex",
       flexDirection: "column",

@@ -12,7 +12,7 @@ const S: Record<string, React.CSSProperties> = {
     display: "flex",
     height: "100%",
     gap: 2,
-    background: "#020408",
+    background: "#0A1220",
   },
   panel: {
     flex: 1,
@@ -30,7 +30,7 @@ const S: Record<string, React.CSSProperties> = {
     textTransform: "uppercase" as const,
     padding: "5px 12px",
     borderRadius: 4,
-    background: "rgba(4,8,16,0.8)",
+    background: "rgba(12,20,34,0.8)",
     backdropFilter: "blur(8px)",
   },
   labelCurrent: {
@@ -47,7 +47,7 @@ const S: Record<string, React.CSSProperties> = {
     left: 0,
     right: 0,
     padding: "20px 24px",
-    background: "linear-gradient(transparent 0%, rgba(4,8,16,0.85) 100%)",
+    background: "linear-gradient(transparent 0%, rgba(12,20,34,0.85) 100%)",
     zIndex: 10,
     fontSize: 13,
     lineHeight: 1.6,

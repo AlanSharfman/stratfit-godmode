@@ -8,8 +8,8 @@
   overflow: hidden;
 
   /* Position-page tokens — near-black with cold blue undertone */
-  --color-bg-void: #040810;
-  --color-bg-deep: #030610;
+  --color-bg-void: #0B1520;
+  --color-bg-deep: #091320;
   --color-bg-surface: #050D16;
 
   /* ─────────────────────────────────────────────────────────────
@@ -37,15 +37,15 @@
   --sf-sans: Inter, system-ui, sans-serif;
 
   /* Atmosphere tuning variables — near-black stage */
-  --atmo-top: rgba(4, 8, 16, 1);
+  --atmo-top: rgba(12, 20, 34, 1);
   --atmo-mid: rgba(8, 14, 22, 1);
   --atmo-horizon: rgba(100, 160, 200, 0.08);
-  --atmo-strength: 0.60;
-  --haze-deep: 0.10;
-  --haze-horizon: 0.12;
-  --vignette-strength: 0.50;
-  --vignette-top-boost: 0.25;
-  --spotlight-strength: 0.06;
+  --atmo-strength: 0.35;
+  --haze-deep: 0.06;
+  --haze-horizon: 0.08;
+  --vignette-strength: 0.30;
+  --vignette-top-boost: 0.15;
+  --spotlight-strength: 0.08;
   --spot-x: 50%;
   --spot-y: 50%;
   --spot-radius: 55%;
@@ -587,14 +587,77 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  border-radius: 16px;
+  border-radius: 14px;
   margin: 22px 8px 8px -7px;
   pointer-events: auto;
-  background: linear-gradient(180deg, rgba(5,12,20,0.95) 0%, rgba(2,6,12,1) 100%);
-  border: 1px solid #1E3A5F;
+  background: linear-gradient(180deg, rgba(5,12,20,0.97) 0%, rgba(2,6,12,1) 100%);
+  border: 2px solid transparent;
+  border-image: linear-gradient(
+    180deg,
+    rgba(180,210,240,0.50) 0%,
+    rgba(120,170,220,0.35) 20%,
+    rgba(60,100,160,0.20) 50%,
+    rgba(120,170,220,0.35) 80%,
+    rgba(180,210,240,0.50) 100%
+  ) 1;
   box-shadow:
-    inset 0 0 14px rgba(0,0,0,0.6),
-    0 0 18px rgba(34,211,238,0.12);
+    /* Inner depth */
+    inset 0 0 20px rgba(0,0,0,0.7),
+    inset 0 0 6px rgba(34,211,238,0.06),
+    /* Step 1 — dark channel */
+    0 0 0 1px rgba(6,10,16,0.95),
+    /* Step 2 — bright titanium ring */
+    0 0 0 2.5px rgba(180,210,240,0.35),
+    /* Step 3 — dark channel */
+    0 0 0 4px rgba(6,10,16,0.90),
+    /* Step 4 — outer titanium ring */
+    0 0 0 5.5px rgba(160,195,230,0.22),
+    /* Step 5 — dark outer edge */
+    0 0 0 7px rgba(6,10,16,0.80),
+    /* Cyan ambient glow */
+    0 0 28px rgba(34,211,238,0.10),
+    /* Depth shadow */
+    0 8px 32px rgba(0,0,0,0.5);
+}
+
+/* Top specular highlight on terrain bezel */
+.terrainViewport::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(200,220,245,0.45) 20%,
+    rgba(255,255,255,0.60) 50%,
+    rgba(200,220,245,0.45) 80%,
+    transparent 100%
+  );
+  z-index: 30;
+  pointer-events: none;
+}
+
+/* Bottom specular highlight on terrain bezel */
+.terrainViewport::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 15%;
+  right: 15%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(160,195,230,0.25) 25%,
+    rgba(200,220,245,0.35) 50%,
+    rgba(160,195,230,0.25) 75%,
+    transparent 100%
+  );
+  z-index: 30;
+  pointer-events: none;
 }
 
 /* ── Right column — Controls Rail (Tuning, Toggles, Diagnostics) ── */
@@ -603,22 +666,38 @@
   grid-row: 1;
   position: relative;
   height: 100%;
-  /* Allow insight panel to slide out over terrain — no clipping */
-  overflow: visible;
+  overflow: auto;
   padding: 14px 10px 10px;
   pointer-events: auto;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  background: linear-gradient(
+  margin: 22px 10px 8px 0;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(5,12,20,0.95) 0%, rgba(2,6,12,0.98) 100%);
+  border: 2px solid transparent;
+  border-image: linear-gradient(
     180deg,
-    rgba(0, 0, 0, 0.58) 0%,
-    rgba(0, 0, 0, 0.44) 50%,
-    rgba(0, 0, 0, 0.32) 100%
-  );
+    rgba(180,210,240,0.50) 0%,
+    rgba(120,170,220,0.35) 20%,
+    rgba(60,100,160,0.20) 50%,
+    rgba(120,170,220,0.35) 80%,
+    rgba(180,210,240,0.50) 100%
+  ) 1;
+  box-shadow:
+    inset 0 0 16px rgba(0,0,0,0.6),
+    inset 0 0 4px rgba(34,211,238,0.04),
+    0 0 0 1px rgba(6,10,16,0.95),
+    0 0 0 2.5px rgba(180,210,240,0.35),
+    0 0 0 4px rgba(6,10,16,0.90),
+    0 0 0 5.5px rgba(160,195,230,0.22),
+    0 0 0 7px rgba(6,10,16,0.80),
+    0 0 24px rgba(34,211,238,0.08),
+    0 6px 28px rgba(0,0,0,0.45);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  border-left: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100,180,255,0.18) transparent;
 }
 
 /* Right rail section wrapper */
@@ -741,7 +820,7 @@
   40%  { border-color: rgba(0, 255, 255, 0.22); box-shadow: 0 0 0 1px rgba(0, 255, 255, 0.1), 0 0 22px rgba(0, 255, 255, 0.06), 0 24px 64px rgba(0, 0, 0, 0.35); }
   55%  { border-color: rgba(0, 255, 255, 0.55); box-shadow: 0 0 0 1.5px rgba(0, 255, 255, 0.3), 0 0 30px rgba(0, 255, 255, 0.14), 0 0 60px rgba(0, 255, 255, 0.07), 0 24px 64px rgba(0, 0, 0, 0.35); }
   75%  { border-color: rgba(0, 255, 255, 0.30); box-shadow: 0 0 0 1px rgba(0, 255, 255, 0.12), 0 0 24px rgba(0, 255, 255, 0.06), 0 24px 64px rgba(0, 0, 0, 0.35); }
-  100% { border-color: rgba(0, 255, 255, 0.20); box-shadow: 0 0 0 1px rgba(0, 255, 255, 0.12), 0 0 0 3px rgba(4, 8, 16, 0.95), 0 0 0 4px rgba(0, 255, 255, 0.06), 0 0 14px rgba(0, 255, 255, 0.04), 0 16px 48px rgba(0, 0, 0, 0.5); }
+  100% { border-color: rgba(0, 255, 255, 0.20); box-shadow: 0 0 0 1px rgba(0, 255, 255, 0.12), 0 0 0 3px rgba(12, 20, 34, 0.95), 0 0 0 4px rgba(0, 255, 255, 0.06), 0 0 14px rgba(0, 255, 255, 0.04), 0 16px 48px rgba(0, 0, 0, 0.5); }
 }
 
 /* Ambient breathing glow after strobe settles */
@@ -905,7 +984,7 @@
     border-color: rgba(0, 255, 255, 0.20);
     box-shadow:
       0 0 0 1px rgba(0, 255, 255, 0.12),
-      0 0 0 3px rgba(4, 8, 16, 0.95),
+      0 0 0 3px rgba(12, 20, 34, 0.95),
       0 0 0 4px rgba(0, 255, 255, 0.06),
       0 0 14px rgba(0, 255, 255, 0.04),
       0 0 30px rgba(0, 255, 255, 0.02),
@@ -915,7 +994,7 @@
     border-color: rgba(0, 255, 255, 0.32);
     box-shadow:
       0 0 0 1px rgba(0, 255, 255, 0.18),
-      0 0 0 3px rgba(4, 8, 16, 0.95),
+      0 0 0 3px rgba(12, 20, 34, 0.95),
       0 0 0 4px rgba(0, 255, 255, 0.10),
       0 0 22px rgba(0, 255, 255, 0.07),
       0 0 44px rgba(0, 255, 255, 0.04),
@@ -968,10 +1047,10 @@
   box-shadow:
     /* Outer bezel ring — bright chrome */
     0 0 0 1.5px rgba(0, 255, 255, 0.35),
-    0 0 0 3px rgba(4, 8, 16, 0.9),
+    0 0 0 3px rgba(12, 20, 34, 0.9),
     /* Inner bezel ring — secondary shine */
     0 0 0 4px rgba(0, 255, 255, 0.15),
-    0 0 0 5.5px rgba(4, 8, 16, 0.8),
+    0 0 0 5.5px rgba(12, 20, 34, 0.8),
     /* Ambient glow */
     0 0 18px rgba(0, 255, 255, 0.08),
     0 4px 16px rgba(0, 0, 0, 0.35),
@@ -996,9 +1075,9 @@
     linear-gradient(165deg, rgba(0, 255, 255, 0.18) 0%, rgba(99, 102, 241, 0.12) 100%);
   box-shadow:
     0 0 0 1.5px rgba(0, 255, 255, 0.55),
-    0 0 0 3px rgba(4, 8, 16, 0.9),
+    0 0 0 3px rgba(12, 20, 34, 0.9),
     0 0 0 4px rgba(0, 255, 255, 0.3),
-    0 0 0 5.5px rgba(4, 8, 16, 0.8),
+    0 0 0 5.5px rgba(12, 20, 34, 0.8),
     0 0 28px rgba(0, 255, 255, 0.14),
     0 4px 20px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.12);
@@ -1024,9 +1103,9 @@
   0%, 100% {
     box-shadow:
       0 0 0 1.5px rgba(0, 255, 255, 0.35),
-      0 0 0 3px rgba(4, 8, 16, 0.9),
+      0 0 0 3px rgba(12, 20, 34, 0.9),
       0 0 0 4px rgba(0, 255, 255, 0.15),
-      0 0 0 5.5px rgba(4, 8, 16, 0.8),
+      0 0 0 5.5px rgba(12, 20, 34, 0.8),
       0 0 18px rgba(0, 255, 255, 0.08),
       0 4px 16px rgba(0, 0, 0, 0.35),
       inset 0 1px 0 rgba(255, 255, 255, 0.08);
@@ -1034,9 +1113,9 @@
   50% {
     box-shadow:
       0 0 0 1.5px rgba(0, 255, 255, 0.5),
-      0 0 0 3px rgba(4, 8, 16, 0.9),
+      0 0 0 3px rgba(12, 20, 34, 0.9),
       0 0 0 4px rgba(0, 255, 255, 0.25),
-      0 0 0 5.5px rgba(4, 8, 16, 0.8),
+      0 0 0 5.5px rgba(12, 20, 34, 0.8),
       0 0 26px rgba(0, 255, 255, 0.14),
       0 4px 16px rgba(0, 0, 0, 0.35),
       inset 0 1px 0 rgba(255, 255, 255, 0.12);

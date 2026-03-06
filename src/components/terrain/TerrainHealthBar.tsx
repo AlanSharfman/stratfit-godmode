@@ -24,7 +24,7 @@ export default React.memo(function TerrainHealthBar({ kpis, revealedKpis }: Prop
       position: "absolute",
       top: 12, left: "50%", transform: "translateX(-50%)",
       zIndex: 15, display: "flex", gap: 6,
-      background: "rgba(4,8,16,0.82)",
+      background: "rgba(12,20,34,0.82)",
       borderRadius: 14, padding: "12px 22px",
       border: "1px solid rgba(34,211,238,0.12)",
       boxShadow: "0 4px 24px rgba(0,0,0,0.5)",

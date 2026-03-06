@@ -65,7 +65,7 @@ export default function PulsePage() {
     <PageShell>
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
         {/* Left: Weekly digest */}
-        <div style={{ width: 380, flexShrink: 0, overflow: "auto", padding: "24px 20px", background: "rgba(4,8,16,0.5)", borderRight: "1px solid rgba(34,211,238,0.04)" }}>
+        <div style={{ width: 380, flexShrink: 0, overflow: "auto", padding: "24px 20px", background: "rgba(12,20,34,0.5)", borderRight: "1px solid rgba(34,211,238,0.04)" }}>
           {/* Week header */}
           <div style={{ textAlign: "center", marginBottom: 28 }}>
             <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(34,211,238,0.45)", marginBottom: 6 }}>Weekly Pulse</div>
@@ -125,7 +125,7 @@ export default function PulsePage() {
           <div style={{
             position: "absolute", top: 10, left: 14, zIndex: 10, fontSize: 9, fontWeight: 700,
             letterSpacing: "0.14em", textTransform: "uppercase", padding: "4px 10px", borderRadius: 4,
-            background: "rgba(4,8,16,0.85)", color: toneColors[overallTone],
+            background: "rgba(12,20,34,0.85)", color: toneColors[overallTone],
             border: `1px solid ${toneColors[overallTone]}30`,
           }}>
             This Week's Terrain

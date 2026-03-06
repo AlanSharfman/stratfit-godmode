@@ -3,9 +3,9 @@
   display: flex;
   align-items: center;
   padding: 0 24px;
-  background: rgba(5, 10, 20, 0.75);
+  background: rgba(12, 20, 34, 0.80);
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   z-index: 50;
 }
 

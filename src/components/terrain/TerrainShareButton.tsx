@@ -109,7 +109,7 @@ const S: Record<string, React.CSSProperties> = {
     height: 32,
     borderRadius: 8,
     border: "1px solid rgba(34,211,238,0.15)",
-    background: "rgba(4, 8, 16, 0.7)",
+    background: "rgba(12, 20, 34, 0.7)",
     backdropFilter: "blur(12px)",
     color: CYAN,
     display: "flex",

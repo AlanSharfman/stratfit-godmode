@@ -155,7 +155,7 @@ export default function RiskPage() {
     <PageShell>
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
         {/* Left: Risk decomposition */}
-        <div style={{ width: 340, flexShrink: 0, overflow: "auto", padding: "20px 16px", background: "rgba(4,8,16,0.5)", borderRight: "1px solid rgba(34,211,238,0.04)" }}>
+        <div style={{ width: 340, flexShrink: 0, overflow: "auto", padding: "20px 16px", background: "rgba(12,20,34,0.5)", borderRight: "1px solid rgba(34,211,238,0.04)" }}>
           {/* Overall score */}
           <div style={{ textAlign: "center", marginBottom: 24 }}>
             <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(34,211,238,0.45)", marginBottom: 8 }}>Overall Health Score</div>
@@ -217,7 +217,7 @@ export default function RiskPage() {
           <div style={{
             position: "absolute", top: 10, left: 14, zIndex: 10, fontSize: 9, fontWeight: 700,
             letterSpacing: "0.14em", textTransform: "uppercase", padding: "4px 10px", borderRadius: 4,
-            background: "rgba(4,8,16,0.85)", border: "1px solid rgba(200,220,240,0.08)",
+            background: "rgba(12,20,34,0.85)", border: "1px solid rgba(200,220,240,0.08)",
             color: activeStress ? (activeStress.severity === "terminal" ? "#f87171" : activeStress.severity === "critical" ? "#fbbf24" : "#34d399") : "rgba(200,220,240,0.45)",
           }}>
             {activeStress ? `STRESS: ${activeStress.label.toUpperCase()}` : "CURRENT TERRAIN"}
@@ -239,7 +239,7 @@ export default function RiskPage() {
         </div>
 
         {/* Right: Stress tests */}
-        <div style={{ width: 300, flexShrink: 0, overflow: "auto", padding: "20px 16px", background: "rgba(4,8,16,0.5)", borderLeft: "1px solid rgba(34,211,238,0.04)" }}>
+        <div style={{ width: 300, flexShrink: 0, overflow: "auto", padding: "20px 16px", background: "rgba(12,20,34,0.5)", borderLeft: "1px solid rgba(34,211,238,0.04)" }}>
           <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(34,211,238,0.45)", marginBottom: 14 }}>
             Auto Stress-Test
           </div>

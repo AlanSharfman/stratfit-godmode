@@ -28,7 +28,7 @@ export default class ErrorBoundary extends Component<Props, State> {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#040810",
+          background: "#0B1520",
           fontFamily: "'Inter', system-ui, sans-serif",
           color: "rgba(200,220,240,0.85)",
         }}>

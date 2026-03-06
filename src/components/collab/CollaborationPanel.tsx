@@ -35,7 +35,7 @@ export default function CollaborationPanel() {
           <span style={{
             position: "absolute", top: -2, right: -2,
             width: 12, height: 12, borderRadius: "50%",
-            background: "#34d399", border: "2px solid #040810",
+            background: "#34d399", border: "2px solid #0B1520",
             fontSize: 7, color: "#000", fontWeight: 700,
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>

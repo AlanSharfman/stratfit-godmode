@@ -50,6 +50,10 @@ interface FormState {
   riskTolerance: RiskTolerance
   targetGrowthBand: number
   priorityBalance: number
+  annualCapex: number
+  capexIntensityPct: number
+  arDays: number
+  apDays: number
 }
 
 const INITIAL: FormState = {
@@ -62,6 +66,7 @@ const INITIAL: FormState = {
   rdSpend: 80_000, gaSpend: 30_000, cogsPct: 45_000, cac: 8_000,
   hiringVelocity: "Medium", salesRampTime: 4, engineeringVelocity: 4, burnFlexibility: "Variable",
   riskTolerance: "Balanced", targetGrowthBand: 4, priorityBalance: 50,
+  annualCapex: 120_000, capexIntensityPct: 10, arDays: 45, apDays: 30,
 }
 
 const STAGES = ["Ideation", "Startup", "Early Growth", "Growth", "High Growth", "Scale", "Exit Ready"]
@@ -76,9 +81,14 @@ function fmtCurrency(v: number): string {
 }
 
 function computeMetrics(f: FormState) {
-  const runway = f.monthlyNetBurn > 0 ? f.cashOnHand / f.monthlyNetBurn : 0
-  const monthlyRevGrowth = (f.monthlyGrowthPct / 100) * (f.currentARR / 12)
-  const burnMultiple = monthlyRevGrowth > 0 ? f.monthlyNetBurn / monthlyRevGrowth : 0
+  const monthlyCapex = f.annualCapex / 12
+  const effectiveBurn = f.monthlyNetBurn + monthlyCapex
+  const monthlyRevenue = f.currentARR / 12
+  const wcCashTied = Math.max(0, f.arDays - f.apDays) / 30 * monthlyRevenue
+  const effectiveCash = Math.max(0, f.cashOnHand - wcCashTied)
+  const runway = effectiveBurn > 0 ? effectiveCash / effectiveBurn : 0
+  const monthlyRevGrowth = (f.monthlyGrowthPct / 100) * monthlyRevenue
+  const burnMultiple = monthlyRevGrowth > 0 ? effectiveBurn / monthlyRevGrowth : 0
   let prob = 0
   if (runway >= 24) prob = 80
   else if (runway >= 18) prob = 65
@@ -88,14 +98,16 @@ function computeMetrics(f: FormState) {
   if (f.monthlyGrowthPct > 5) prob += 8
   if (f.netRevenueRetentionPct > 100) prob += 7
   if (f.monthlyChurnPct < 3) prob += 5
-  prob = Math.min(100, prob)
-  const totalCost = f.headcount * f.avgFullyLoadedCost + f.salesMarketingSpend + f.rdSpend + f.gaSpend
+  if (f.capexIntensityPct > 25) prob -= 5
+  if ((f.arDays - f.apDays) > 60) prob -= 4
+  prob = Math.min(100, Math.max(0, prob))
+  const totalCost = f.headcount * f.avgFullyLoadedCost + f.salesMarketingSpend + f.rdSpend + f.gaSpend + f.annualCapex
   const operatingProfit = f.currentARR - totalCost
   const revenuePerHead = f.headcount > 0 ? Math.round(f.currentARR / f.headcount) : 0
   return {
     runway: Number.isFinite(runway) ? runway : 0,
     burnMultiple: Number.isFinite(burnMultiple) ? burnMultiple : 0,
-    monthlyBurn: f.monthlyNetBurn,
+    monthlyBurn: effectiveBurn,
     survivalProbability: prob,
     operatingProfit,
     revenuePerHead,
@@ -137,6 +149,10 @@ const CSV_FIELD_MAP: Array<{ key: keyof FormState; label: string; example: strin
   { key: "riskTolerance", label: "Risk Tolerance (Conservative/Balanced/Aggressive)", example: "Balanced" },
   { key: "targetGrowthBand", label: "Target Growth Band (months)", example: "4" },
   { key: "priorityBalance", label: "Priority Balance (0=Survival, 100=Expansion)", example: "50" },
+  { key: "annualCapex", label: "Annual CAPEX ($)", example: "120000" },
+  { key: "capexIntensityPct", label: "CAPEX Intensity (% of Revenue)", example: "10" },
+  { key: "arDays", label: "Accounts Receivable Days", example: "45" },
+  { key: "apDays", label: "Accounts Payable Days", example: "30" },
 ]
 
 function generateCSVTemplate(): string {
@@ -164,6 +180,7 @@ function parseCSVToForm(text: string): Partial<FormState> | null {
     "headcount", "avgFullyLoadedCost", "salesMarketingSpend", "rdSpend",
     "gaSpend", "cogsPct", "cac", "salesRampTime", "engineeringVelocity",
     "targetGrowthBand", "priorityBalance",
+    "annualCapex", "capexIntensityPct", "arDays", "apDays",
   ]
   for (const field of CSV_FIELD_MAP) {
     const idx = headers.findIndex((h) => h.toLowerCase() === field.label.toLowerCase())
@@ -187,7 +204,7 @@ function Module({ title, children, style }: { title: string; children: React.Rea
   return (
     <section style={{
       display: "flex", flexDirection: "column", overflow: "hidden",
-      background: "#07182A",
+      background: "#0E2238",
       border: "1px solid #1E3A5F",
       borderRadius: 14,
       boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
@@ -279,7 +296,7 @@ function StatusToggle({ label, active, onClick }: { label: string; active: boole
         cursor: "pointer",
         transition: "all 0.15s",
         border: active ? "1px solid #22D3EE" : "1px solid #1E3A5F",
-        background: active ? "#22D3EE" : "#0B243A",
+        background: active ? "#22D3EE" : "#122E48",
         color: active ? "#04121F" : "#8FB4D9",
         boxShadow: active ? "0 0 10px rgba(34,211,238,0.3)" : "none",
       }}
@@ -326,7 +343,7 @@ function BinarySwitch({ label, active, onToggle }: { label: string; active: bool
         <button type="button" onClick={() => { if (active) onToggle() }} style={{
           padding: "4px 12px", fontSize: 9, fontWeight: 700, borderRadius: 4, border: "none", fontFamily: FONT,
           cursor: "pointer", transition: "all 0.15s",
-          background: !active ? "#0B243A" : "transparent",
+          background: !active ? "#122E48" : "transparent",
           color: !active ? "#8FB4D9" : "#8FB4D9",
         }}>No</button>
       </div>
@@ -335,12 +352,15 @@ function BinarySwitch({ label, active, onToggle }: { label: string; active: bool
 }
 
 function GaugeKnob({ angle }: { angle: number }) {
-  const SIZE = 140
+  const SIZE = 180
   const CX = SIZE / 2
   const CY = SIZE / 2
-  const R_OUTER = 62
-  const R_INNER = 48
-  const R_NEEDLE = 42
+
+  const R_PLATE = 82
+  const R_CHROME = 68
+  const R_GRIP = 60
+  const R_CAP = 34
+  const R_INDICATOR = 52
 
   const arcStart = -135
   const arcEnd = 135
@@ -348,7 +368,6 @@ function GaugeKnob({ angle }: { angle: number }) {
 
   const normalised = (angle + 45) / 90
   const sweepAngle = arcStart + normalised * arcRange
-  const sweepRad = (sweepAngle * Math.PI) / 180
   const needleRad = (sweepAngle * Math.PI) / 180
 
   const arcPath = (startDeg: number, endDeg: number, r: number) => {
@@ -362,59 +381,192 @@ function GaugeKnob({ angle }: { angle: number }) {
     return `M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}`
   }
 
-  const ticks = []
-  for (let i = 0; i <= 10; i++) {
-    const deg = arcStart + (i / 10) * arcRange
+  const KNURL_COUNT = 48
+  const knurls = []
+  for (let i = 0; i < KNURL_COUNT; i++) {
+    const deg = (i / KNURL_COUNT) * 360
     const rad = (deg * Math.PI) / 180
-    const isMajor = i % 5 === 0
-    const r1 = isMajor ? R_OUTER - 2 : R_OUTER - 1
-    const r2 = isMajor ? R_OUTER - 10 : R_OUTER - 6
-    ticks.push(
-      <line key={i}
+    const r1 = R_GRIP + 1
+    const r2 = R_GRIP - 3
+    knurls.push(
+      <line key={`k${i}`}
         x1={CX + r1 * Math.cos(rad)} y1={CY + r1 * Math.sin(rad)}
         x2={CX + r2 * Math.cos(rad)} y2={CY + r2 * Math.sin(rad)}
-        stroke={isMajor ? "#8FB4D9" : "#1E3A5F"} strokeWidth={isMajor ? 1.5 : 1} strokeLinecap="round"
+        stroke="rgba(140,175,210,0.12)" strokeWidth={1} strokeLinecap="round"
       />
     )
   }
 
-  const needleTipX = CX + R_NEEDLE * Math.cos(needleRad)
-  const needleTipY = CY + R_NEEDLE * Math.sin(needleRad)
-  const dotX = CX + (R_OUTER - 5) * Math.cos(sweepRad)
-  const dotY = CY + (R_OUTER - 5) * Math.sin(sweepRad)
+  const TICK_COUNT = 21
+  const ticks = []
+  const labels: React.ReactNode[] = []
+  for (let i = 0; i <= TICK_COUNT; i++) {
+    const deg = arcStart + (i / TICK_COUNT) * arcRange
+    const rad = (deg * Math.PI) / 180
+    const isMajor = i % 7 === 0
+    const isMid = i % 7 !== 0 && i % 3 === 0
+    const r1 = R_PLATE - 2
+    const r2 = isMajor ? R_PLATE - 14 : isMid ? R_PLATE - 10 : R_PLATE - 7
+    const color = isMajor ? "#8FB4D9" : isMid ? "#4A6A8A" : "#1E3A5F"
+    const w = isMajor ? 2 : 1
+    ticks.push(
+      <line key={`t${i}`}
+        x1={CX + r1 * Math.cos(rad)} y1={CY + r1 * Math.sin(rad)}
+        x2={CX + r2 * Math.cos(rad)} y2={CY + r2 * Math.sin(rad)}
+        stroke={color} strokeWidth={w} strokeLinecap="round"
+      />
+    )
+    if (isMajor) {
+      const lr = R_PLATE + 8
+      const val = Math.round((i / TICK_COUNT) * 100)
+      labels.push(
+        <text key={`l${i}`}
+          x={CX + lr * Math.cos(rad)} y={CY + lr * Math.sin(rad) + 3}
+          textAnchor="middle" fontSize={8} fontWeight={600}
+          fontFamily="ui-monospace, 'JetBrains Mono', monospace"
+          fill="#4A6A8A"
+        >
+          {val}
+        </text>
+      )
+    }
+  }
+
+  const indicatorTipX = CX + R_INDICATOR * Math.cos(needleRad)
+  const indicatorTipY = CY + R_INDICATOR * Math.sin(needleRad)
+  const indicatorBaseX1 = CX + 3 * Math.cos(needleRad + Math.PI / 2)
+  const indicatorBaseY1 = CY + 3 * Math.sin(needleRad + Math.PI / 2)
+  const indicatorBaseX2 = CX + 3 * Math.cos(needleRad - Math.PI / 2)
+  const indicatorBaseY2 = CY + 3 * Math.sin(needleRad - Math.PI / 2)
+
+  const dotR = R_GRIP - 5
+  const dotX = CX + dotR * Math.cos(needleRad)
+  const dotY = CY + dotR * Math.sin(needleRad)
 
   const pctText = `${Math.round(normalised * 100)}%`
 
   return (
     <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ flexShrink: 0 }}>
       <defs>
-        <radialGradient id="knobBg" cx="45%" cy="40%">
-          <stop offset="0%" stopColor="#0F2035" />
-          <stop offset="100%" stopColor="#060D18" />
+        {/* Backplate metallic gradient */}
+        <radialGradient id="gk-plate" cx="42%" cy="38%">
+          <stop offset="0%" stopColor="#1A2A3E" />
+          <stop offset="60%" stopColor="#0C1824" />
+          <stop offset="100%" stopColor="#060C14" />
         </radialGradient>
-        <filter id="knobGlow">
-          <feGaussianBlur stdDeviation="3" result="blur" />
-          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+
+        {/* Chrome bezel ring gradient */}
+        <linearGradient id="gk-chrome" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#5A7A9A" />
+          <stop offset="25%" stopColor="#2A3E52" />
+          <stop offset="50%" stopColor="#1A2A3E" />
+          <stop offset="75%" stopColor="#2A3E52" />
+          <stop offset="100%" stopColor="#4A6A8A" />
+        </linearGradient>
+
+        {/* Brushed-metal knob body */}
+        <radialGradient id="gk-body" cx="40%" cy="35%">
+          <stop offset="0%" stopColor="#2A4058" />
+          <stop offset="40%" stopColor="#1A2E44" />
+          <stop offset="80%" stopColor="#0E1C2C" />
+          <stop offset="100%" stopColor="#081420" />
+        </radialGradient>
+
+        {/* Cap dome highlight */}
+        <radialGradient id="gk-cap" cx="40%" cy="32%">
+          <stop offset="0%" stopColor="#2E4A64" />
+          <stop offset="50%" stopColor="#162838" />
+          <stop offset="100%" stopColor="#0A1620" />
+        </radialGradient>
+
+        {/* Specular highlight on the cap */}
+        <radialGradient id="gk-spec" cx="38%" cy="28%">
+          <stop offset="0%" stopColor="rgba(180,210,240,0.30)" />
+          <stop offset="100%" stopColor="rgba(180,210,240,0)" />
+        </radialGradient>
+
+        {/* Cyan glow filter */}
+        <filter id="gk-glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="4" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+
+        {/* Soft shadow under the knob */}
+        <filter id="gk-shadow" x="-20%" y="-10%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="6" />
+        </filter>
+
+        {/* Active arc glow */}
+        <filter id="gk-arc-glow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="3" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
         </filter>
       </defs>
 
-      <circle cx={CX} cy={CY} r={R_OUTER + 4} fill="none" stroke="#1E3A5F" strokeWidth={1.5} />
-      <circle cx={CX} cy={CY} r={R_OUTER} fill="#0A1620" />
-      <circle cx={CX} cy={CY} r={R_INNER} fill="url(#knobBg)" stroke="#1E3A5F" strokeWidth={1} />
+      {/* Drop shadow */}
+      <circle cx={CX} cy={CY + 3} r={R_PLATE + 2} fill="rgba(0,0,0,0.5)" filter="url(#gk-shadow)" />
 
-      <path d={arcPath(arcStart, arcEnd, R_OUTER - 5)} fill="none" stroke="#1E3A5F" strokeWidth={3} strokeLinecap="round" />
-      <path d={arcPath(arcStart, sweepAngle, R_OUTER - 5)} fill="none" stroke="#22D3EE" strokeWidth={3} strokeLinecap="round" filter="url(#knobGlow)" />
+      {/* Scale labels */}
+      {labels}
 
+      {/* Backplate */}
+      <circle cx={CX} cy={CY} r={R_PLATE} fill="url(#gk-plate)" />
+      <circle cx={CX} cy={CY} r={R_PLATE} fill="none" stroke="#1A2A3E" strokeWidth={2} />
+      <circle cx={CX} cy={CY} r={R_PLATE - 1} fill="none" stroke="rgba(100,140,180,0.08)" strokeWidth={0.5} />
+
+      {/* Scale arc — background track */}
+      <path d={arcPath(arcStart, arcEnd, R_PLATE - 8)} fill="none" stroke="#0C1824" strokeWidth={5} strokeLinecap="round" />
+      <path d={arcPath(arcStart, arcEnd, R_PLATE - 8)} fill="none" stroke="#1A2A3E" strokeWidth={3} strokeLinecap="round" />
+
+      {/* Scale arc — active sweep (cyan) */}
+      <path d={arcPath(arcStart, sweepAngle, R_PLATE - 8)} fill="none" stroke="#22D3EE" strokeWidth={3} strokeLinecap="round" opacity={0.4} filter="url(#gk-arc-glow)" />
+      <path d={arcPath(arcStart, sweepAngle, R_PLATE - 8)} fill="none" stroke="#22D3EE" strokeWidth={2} strokeLinecap="round" />
+
+      {/* Tick marks */}
       {ticks}
 
-      <line x1={CX} y1={CY} x2={needleTipX} y2={needleTipY}
-        stroke="#22D3EE" strokeWidth={2.5} strokeLinecap="round" filter="url(#knobGlow)" />
-      <circle cx={CX} cy={CY} r={5} fill="#0A1620" stroke="#22D3EE" strokeWidth={1.5} />
-      <circle cx={dotX} cy={dotY} r={3} fill="#22D3EE" filter="url(#knobGlow)" />
+      {/* Chrome bezel ring */}
+      <circle cx={CX} cy={CY} r={R_CHROME} fill="none" stroke="url(#gk-chrome)" strokeWidth={3} />
+      <circle cx={CX} cy={CY} r={R_CHROME - 1.5} fill="none" stroke="rgba(100,140,180,0.06)" strokeWidth={0.5} />
+      <circle cx={CX} cy={CY} r={R_CHROME + 1.5} fill="none" stroke="rgba(0,0,0,0.3)" strokeWidth={0.5} />
 
-      <text x={CX} y={CY + 22} textAnchor="middle" fontSize={11} fontWeight={700}
+      {/* Knob body — brushed metal */}
+      <circle cx={CX} cy={CY} r={R_GRIP} fill="url(#gk-body)" />
+
+      {/* Knurling texture */}
+      {knurls}
+
+      {/* Inner groove rings for machined look */}
+      <circle cx={CX} cy={CY} r={R_GRIP - 6} fill="none" stroke="rgba(80,120,160,0.07)" strokeWidth={0.5} />
+      <circle cx={CX} cy={CY} r={R_GRIP - 8} fill="none" stroke="rgba(0,0,0,0.15)" strokeWidth={0.5} />
+
+      {/* Cap dome */}
+      <circle cx={CX} cy={CY} r={R_CAP} fill="url(#gk-cap)" />
+      <circle cx={CX} cy={CY} r={R_CAP} fill="none" stroke="rgba(80,120,160,0.15)" strokeWidth={1} />
+
+      {/* Specular highlight on cap */}
+      <ellipse cx={CX - 6} cy={CY - 8} rx={18} ry={12} fill="url(#gk-spec)" />
+
+      {/* Indicator line — triangular pointer */}
+      <polygon
+        points={`${indicatorTipX},${indicatorTipY} ${indicatorBaseX1},${indicatorBaseY1} ${indicatorBaseX2},${indicatorBaseY2}`}
+        fill="#22D3EE" filter="url(#gk-glow)"
+      />
+
+      {/* Indicator dot on knob body edge */}
+      <circle cx={dotX} cy={dotY} r={3} fill="#22D3EE" filter="url(#gk-glow)" />
+
+      {/* Center hub screw */}
+      <circle cx={CX} cy={CY} r={6} fill="#0C1824" stroke="rgba(80,120,160,0.18)" strokeWidth={1} />
+      <circle cx={CX} cy={CY} r={3} fill="rgba(30,58,95,0.5)" />
+      {/* Cross-head screw slot */}
+      <line x1={CX - 2.5} y1={CY} x2={CX + 2.5} y2={CY} stroke="rgba(0,0,0,0.4)" strokeWidth={1} strokeLinecap="round" />
+      <line x1={CX} y1={CY - 2.5} x2={CX} y2={CY + 2.5} stroke="rgba(0,0,0,0.4)" strokeWidth={1} strokeLinecap="round" />
+
+      {/* Percentage readout */}
+      <text x={CX} y={CY + R_CAP + 14} textAnchor="middle" fontSize={12} fontWeight={700}
         fontFamily="ui-monospace, 'JetBrains Mono', monospace"
-        fill="#22D3EE" style={{ textShadow: "0 0 8px rgba(34,211,238,0.5)" }}>
+        fill="#22D3EE" filter="url(#gk-glow)">
         {pctText}
       </text>
     </svg>
@@ -467,6 +619,10 @@ function hydrateFormFromBaseline(b: BaselineV1): FormState {
     salesRampTime: b.operating.salesCycleMonths,
     accessToCapital: b.posture.raiseIntent === "Yes" ? "Strong" : "Moderate",
     priorityBalance: b.posture.focus === "Growth" ? 70 : 40,
+    annualCapex: b.investment?.annualCapex ?? INITIAL.annualCapex,
+    capexIntensityPct: b.investment?.capexIntensityPct ?? INITIAL.capexIntensityPct,
+    arDays: b.investment?.arDays ?? INITIAL.arDays,
+    apDays: b.investment?.apDays ?? INITIAL.apDays,
   }
 }
 
@@ -579,10 +735,16 @@ export default function InitializeBaselinePage() {
         primaryConstraint: "Cash runway",
         fastestDownside: "Customer churn",
       },
+      investment: {
+        annualCapex: form.annualCapex,
+        capexIntensityPct: form.capexIntensityPct,
+        arDays: form.arDays,
+        apDays: form.apDays,
+      },
     }
 
     setBaseline(baseline)
-    setTimeout(() => navigate("/position", { replace: true }), 800)
+    navigate("/position", { replace: true })
   }, [form, setBaseline, navigate])
 
   const handleDownloadTemplate = useCallback(() => {
@@ -695,12 +857,12 @@ export default function InitializeBaselinePage() {
                     fontSize: 11, fontWeight: 600, letterSpacing: "0.06em",
                     fontFamily: FONT, cursor: "pointer", transition: "all 0.15s",
                     border: inputPath === p ? "1px solid #22D3EE" : "1px solid #1E3A5F",
-                    background: inputPath === p ? "#22D3EE" : "#0B243A",
+                    background: inputPath === p ? "#22D3EE" : "#122E48",
                     color: inputPath === p ? "#04121F" : "#8FB4D9",
                     boxShadow: inputPath === p ? "0 0 12px rgba(34,211,238,0.25)" : "none",
                   }}
                 >
-                  {p === "manual" ? "Manual Entry" : p === "xero" ? "Connect Bank" : "Import Excel"}
+                  {p === "manual" ? "Manual Entry" : p === "xero" ? "Connect to Xero" : "Import Excel"}
                 </button>
               ))}
 
@@ -844,7 +1006,7 @@ export default function InitializeBaselinePage() {
                     flex: 1, padding: "8px 0", fontSize: 9, fontWeight: 600, letterSpacing: "0.06em",
                     textTransform: "uppercase", fontFamily: FONT, cursor: "pointer", transition: "all 0.15s",
                     border: "none",
-                    background: form.riskTolerance === r ? "#22D3EE" : "#0B243A",
+                    background: form.riskTolerance === r ? "#22D3EE" : "#122E48",
                     color: form.riskTolerance === r ? "#04121F" : "#8FB4D9",
                   }}>{r}</button>
                 ))}
@@ -862,8 +1024,26 @@ export default function InitializeBaselinePage() {
             </div>
           </Module>
 
+          <Module title="MODULE I: INVESTMENT & WORKING CAPITAL">
+            <div style={SC.modBody}>
+              <PowerBar label="Annual Capital Expenditure" value={form.annualCapex} max={2_000_000} color="amber"
+                onChange={(v) => update("annualCapex", Math.round(v))} />
+              <PowerBar label="CAPEX as % of Revenue" value={form.capexIntensityPct} max={50} unit="%" color="amber"
+                onChange={(v) => update("capexIntensityPct", Math.round(v * 10) / 10)} />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 4 }}>
+                <TacticalInput label="Accounts Receivable Days" value={form.arDays} suffix="days"
+                  onChange={(v) => update("arDays", Number(v) || 0)} />
+                <TacticalInput label="Accounts Payable Days" value={form.apDays} suffix="days"
+                  onChange={(v) => update("apDays", Number(v) || 0)} />
+              </div>
+            </div>
+          </Module>
+        </div>
+
+        {/* ── COLUMN 4: Dynamic Outcome Rail ── */}
+        <div style={SC.col4}>
           <Module title="DYNAMIC OUTCOME RAIL" style={{ flex: 1 }}>
-            <div style={{ ...SC.modBody, display: "flex", flexDirection: "column", gap: 8 }} className="gm-scrollbar">
+            <div style={{ ...SC.modBody, display: "flex", flexDirection: "column", gap: 10 }} className="gm-scrollbar">
               <OutcomeCard label="ARR" value={fmtCurrency(form.currentARR)} color="#22D3EE" />
               <OutcomeCard label="Growth" value={`${form.monthlyGrowthPct.toFixed(1)}%`} color="#22D3EE" />
               <OutcomeCard label="Avg Contract" value={fmtCurrency(form.avgDealSize)} color="#22D3EE" />
@@ -878,27 +1058,30 @@ export default function InitializeBaselinePage() {
         </div>
       </main>
 
-      {/* ═══ LOCK BUTTON — FIXED BOTTOM ═══ */}
-      <div style={{ padding: "12px 24px", flexShrink: 0, display: "flex", justifyContent: "flex-end", maxWidth: 1600, margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
+      {/* ═══ SAVE BUTTON — HORIZONTAL BOTTOM BAR ═══ */}
+      <div style={{ padding: "14px 28px 18px", flexShrink: 0, display: "flex", justifyContent: "center", maxWidth: 1800, margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
         <button
           type="button"
           onClick={handleLock}
           disabled={!canLock || isLocking}
           style={{
-            height: 46,
-            padding: "0 40px",
-            borderRadius: 10,
+            width: "100%",
+            maxWidth: 520,
+            height: 54,
+            padding: "0 48px",
+            borderRadius: 12,
             border: "none",
-            background: isLocking ? "#f87171" : "#22D3EE",
+            background: isLocking ? "#f87171" : "linear-gradient(90deg, #0EA5C9 0%, #22D3EE 50%, #0EA5C9 100%)",
             color: "#04121F",
-            fontSize: 12, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase",
+            fontSize: 15, fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase",
             fontFamily: FONT, cursor: canLock ? "pointer" : "default",
             opacity: canLock ? 1 : 0.35,
             transition: "all 0.2s",
-            boxShadow: "0 0 20px rgba(34,211,238,0.3), 0 4px 12px rgba(0,0,0,0.3)",
+            boxShadow: "0 0 28px rgba(34,211,238,0.35), 0 4px 16px rgba(0,0,0,0.35)",
+            whiteSpace: "nowrap",
           }}
         >
-          {isLocking ? "CALCULATING VECTORS..." : "LOCK BASELINE & ENTER STRATFIT"}
+          {isLocking ? "CALCULATING VECTORS..." : "SAVE AND ENTER STRATFIT"}
         </button>
       </div>
 
@@ -1016,7 +1199,7 @@ const SC: Record<string, React.CSSProperties> = {
   powerRail: {
     display: "flex", alignItems: "center", justifyContent: "space-between",
     height: 56, padding: "0 28px", flexShrink: 0,
-    background: "#07182A",
+    background: "#0E2238",
     borderBottom: "1px solid #1E3A5F",
     boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
     zIndex: 5,
@@ -1056,14 +1239,15 @@ const SC: Record<string, React.CSSProperties> = {
   },
 
   grid: {
-    flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
-    gap: 24, padding: "18px 24px", minHeight: 0, overflow: "auto",
-    maxWidth: 1600, margin: "0 auto", width: "100%", boxSizing: "border-box",
+    flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr 1fr 260px",
+    gap: "28px 32px", padding: "34px 28px 18px", minHeight: 0, overflow: "auto",
+    maxWidth: 1800, margin: "0 auto", width: "100%", boxSizing: "border-box",
     zIndex: 1,
   },
-  col1: { display: "flex", flexDirection: "column", gap: 20, minHeight: 0, overflow: "auto" },
-  col2: { display: "flex", flexDirection: "column", gap: 20, minHeight: 0, overflow: "auto" },
-  col3: { display: "flex", flexDirection: "column", gap: 20, minHeight: 0 },
+  col1: { display: "flex", flexDirection: "column", gap: 26, minHeight: 0, overflow: "auto" },
+  col2: { display: "flex", flexDirection: "column", gap: 26, minHeight: 0, overflow: "auto" },
+  col3: { display: "flex", flexDirection: "column", gap: 26, minHeight: 0 },
+  col4: { display: "flex", flexDirection: "column", gap: 0, minHeight: 0 } as React.CSSProperties,
 
   moduleHeader: {
     position: "relative",
@@ -1130,7 +1314,7 @@ const SC: Record<string, React.CSSProperties> = {
   },
   toggleBtn: {
     padding: "7px 14px", fontSize: 10, fontWeight: 600, fontFamily: FONT,
-    color: "#8FB4D9", background: "#0B243A", border: "none",
+    color: "#8FB4D9", background: "#122E48", border: "none",
     cursor: "pointer", transition: "all 0.15s", letterSpacing: "0.04em",
     borderRight: "1px solid #1E3A5F",
   },
@@ -1143,7 +1327,7 @@ const SC: Record<string, React.CSSProperties> = {
   smallBtn: {
     flex: 1, padding: "8px 10px", fontSize: 10, fontWeight: 600, letterSpacing: "0.04em",
     fontFamily: FONT, borderRadius: 8, cursor: "pointer", transition: "all 0.15s",
-    border: "1px solid #1E3A5F", background: "#0B243A", color: "#22D3EE",
+    border: "1px solid #1E3A5F", background: "#122E48", color: "#22D3EE",
   },
   dropZone: {
     display: "flex", alignItems: "center", justifyContent: "center",
@@ -1159,7 +1343,7 @@ const SC: Record<string, React.CSSProperties> = {
   modalCard: {
     display: "flex", flexDirection: "column", alignItems: "center", gap: 18,
     padding: "40px 44px", maxWidth: 420, width: "90%", textAlign: "center",
-    background: "#07182A", border: "1px solid #1E3A5F", borderRadius: 14,
+    background: "#0E2238", border: "1px solid #1E3A5F", borderRadius: 14,
     boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
   },
   modalBtn: {
@@ -1178,7 +1362,7 @@ const SC: Record<string, React.CSSProperties> = {
     position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", zIndex: 400,
     padding: "12px 28px", fontSize: 12, fontWeight: 600, fontFamily: FONT,
     color: "#E6F1FF",
-    background: "#07182A",
+    background: "#0E2238",
     border: "1px solid #1E3A5F", borderRadius: 10,
     boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
     animation: "sfInitToastIn 300ms ease-out",

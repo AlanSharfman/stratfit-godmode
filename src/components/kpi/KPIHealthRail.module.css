@@ -7,32 +7,42 @@
 /* ── PHASE 1: Design Tokens ── */
 .rail {
   --sf-bg: rgba(10, 14, 20, 0.92);
-  --sf-card-bg: linear-gradient(175deg, rgba(16, 22, 30, 0.94), rgba(10, 14, 20, 0.90));
-  --sf-border: rgba(200, 215, 230, 0.12);
-  --sf-border-strong: rgba(200, 215, 230, 0.24);
-  --sf-cyan: rgba(34, 211, 238, 0.85);
-  --sf-cyan-dim: rgba(34, 211, 238, 0.55);
+  --sf-card-bg: linear-gradient(175deg, rgba(18, 26, 38, 0.96), rgba(8, 12, 20, 0.94));
+  --sf-border: rgba(200, 215, 230, 0.28);
+  --sf-border-strong: rgba(200, 215, 230, 0.50);
+  --sf-cyan: rgba(34, 211, 238, 0.90);
+  --sf-cyan-dim: rgba(34, 211, 238, 0.65);
   --sf-emerald: rgba(52, 211, 153, 0.85);
   --sf-indigo: rgba(129, 140, 248, 0.85);
   --sf-lime: rgba(163, 230, 53, 0.80);
   --sf-lime-dim: rgba(163, 230, 53, 0.45);
   --sf-risk-red: rgba(248, 113, 113, 0.85);
   --sf-blue: rgba(96, 165, 250, 0.85);
-  --sf-text: rgba(230, 248, 255, 0.96);
-  --sf-text-dim: rgba(148, 180, 214, 0.55);
-  --sf-glow-cyan: rgba(34, 211, 238, 0.08);
+  --sf-text: rgba(230, 248, 255, 0.98);
+  --sf-text-dim: rgba(175, 205, 235, 0.82);
+  --sf-glow-cyan: rgba(34, 211, 238, 0.14);
   --sf-glow-lime: rgba(163, 230, 53, 0.06);
   --sf-radius: 14px;
-  --sf-card-pad: 10px 12px;
+  --sf-card-pad: 12px 14px;
   --sf-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.12),
-    0 4px 14px rgba(0, 0, 0, 0.35);
+    /* Step 1 — inner bright edge */
+    0 0 0 1px rgba(200, 220, 245, 0.18),
+    /* Step 2 — dark channel */
+    0 0 0 2.5px rgba(6, 10, 16, 0.92),
+    /* Step 3 — outer bright ring */
+    0 0 0 3.5px rgba(180, 210, 240, 0.16),
+    /* Step 4 — dark outer */
+    0 0 0 5px rgba(6, 10, 16, 0.80),
+    /* Inner lighting */
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.30),
+    /* Depth */
+    0 6px 22px rgba(0, 0, 0, 0.50);
   --sf-bezel:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.07),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.18);
+    inset 0 0 0 1px rgba(200, 220, 245, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.30),
+    inset 0 0 10px rgba(34, 211, 238, 0.06);
 
   display: flex;
   flex-direction: column;
@@ -89,7 +99,7 @@
 .cardStack {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 16px;
 }
 
 /* ── PHASE 3: KPI Card — premium jewel glass ── */
@@ -120,7 +130,7 @@
   transform: translateZ(0);
 }
 
-/* Inner highlight bevel — shiny machined chrome edge */
+/* Stepped bezel — concentric titanium rings for machined depth */
 .card::before {
   content: "";
   position: absolute;
@@ -128,25 +138,29 @@
   border-radius: var(--sf-radius);
   box-shadow:
     var(--sf-bezel),
-    0 0 0 0.5px rgba(200, 220, 245, 0.05);
+    0 0 0 1px rgba(200, 220, 245, 0.14),
+    0 0 0 2px rgba(6, 10, 16, 0.92),
+    0 0 0 3px rgba(180, 210, 240, 0.12),
+    0 0 0 4px rgba(6, 10, 16, 0.85),
+    0 0 0 5px rgba(160, 195, 230, 0.08);
   pointer-events: none;
   z-index: 1;
 }
 
-/* Top specular highlight — polished metal reflection strip */
+/* Top specular highlight — bright polished titanium reflection */
 .card::after {
   content: "";
   position: absolute;
   top: 0;
-  left: 8%;
-  right: 8%;
-  height: 1px;
+  left: 4%;
+  right: 4%;
+  height: 1.5px;
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(200, 220, 245, 0.18) 20%,
-    rgba(255, 255, 255, 0.22) 50%,
-    rgba(200, 220, 245, 0.18) 80%,
+    rgba(200, 220, 245, 0.40) 15%,
+    rgba(255, 255, 255, 0.55) 50%,
+    rgba(200, 220, 245, 0.40) 85%,
     transparent 100%
   );
   pointer-events: none;
@@ -159,8 +173,9 @@
     border-color: var(--sf-border-strong);
     box-shadow:
       var(--sf-shadow),
-      0 0 16px var(--sf-glow-cyan),
-      0 6px 20px rgba(0, 0, 0, 0.25);
+      0 0 20px var(--sf-glow-cyan),
+      0 0 6px rgba(34, 211, 238, 0.06),
+      0 8px 24px rgba(0, 0, 0, 0.35);
   }
 }
 
@@ -203,7 +218,8 @@
 /* ── Sub-label ── */
 .sub {
   font-family: 'Inter', system-ui, sans-serif;
-  font-size: 8px;
+  font-size: 9px;
+  font-weight: 600;
   color: var(--sf-text-dim);
   text-align: center;
   text-transform: uppercase;

@@ -117,7 +117,7 @@ export default function StudioPage() {
     <PageShell>
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
         {/* Left: Force sliders */}
-        <div style={{ width: 320, flexShrink: 0, overflow: "auto", padding: "20px 16px", background: "rgba(4,8,16,0.5)", borderRight: "1px solid rgba(34,211,238,0.04)" }}>
+        <div style={{ width: 320, flexShrink: 0, overflow: "auto", padding: "20px 16px", background: "rgba(12,20,34,0.5)", borderRight: "1px solid rgba(34,211,238,0.04)" }}>
           <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(34,211,238,0.45)", marginBottom: 6 }}>Manual Force Builder</div>
           <div style={{ fontSize: 11, color: "rgba(200,220,240,0.25)", marginBottom: 20, lineHeight: 1.5 }}>
             Drag a slider. Watch the terrain respond instantly. Every force propagates through the dependency graph.
@@ -177,7 +177,7 @@ export default function StudioPage() {
           <div style={{
             position: "absolute", top: 10, left: 14, zIndex: 10, fontSize: 9, fontWeight: 700,
             letterSpacing: "0.14em", textTransform: "uppercase", padding: "4px 10px", borderRadius: 4,
-            background: "rgba(4,8,16,0.85)",
+            background: "rgba(12,20,34,0.85)",
             color: hasChanges ? "#22d3ee" : "rgba(200,220,240,0.4)",
             border: `1px solid ${hasChanges ? "rgba(34,211,238,0.2)" : "rgba(200,220,240,0.08)"}`,
           }}>
@@ -200,7 +200,7 @@ export default function StudioPage() {
         </div>
 
         {/* Right: Health changes */}
-        <div style={{ width: 260, flexShrink: 0, overflow: "auto", padding: "20px 14px", background: "rgba(4,8,16,0.5)", borderLeft: "1px solid rgba(34,211,238,0.04)" }}>
+        <div style={{ width: 260, flexShrink: 0, overflow: "auto", padding: "20px 14px", background: "rgba(12,20,34,0.5)", borderLeft: "1px solid rgba(34,211,238,0.04)" }}>
           <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(34,211,238,0.45)", marginBottom: 14 }}>Zone Health</div>
           {healthChanges.map(({ kpi, before, after, changed }) => {
             const colorMap: Record<string, string> = { critical: "#f87171", watch: "#fbbf24", healthy: "#22d3ee", strong: "#34d399" }
