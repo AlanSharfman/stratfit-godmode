@@ -8,12 +8,7 @@
 
 import type { BaselineV1 } from "@/onboard/baseline"
 import type { PositionKpis } from "@/pages/position/overlays/positionState"
-import { getHealthLevel, KPI_ZONE_MAP, type KpiKey } from "@/domain/intelligence/kpiZoneMapping"
-
-const KPI_KEYS: KpiKey[] = [
-  "cash", "runway", "growth", "arr", "revenue",
-  "burn", "churn", "grossMargin", "headcount", "enterpriseValue",
-]
+import { getHealthLevel, KPI_KEYS, KPI_ZONE_MAP } from "@/domain/intelligence/kpiZoneMapping"
 
 export type CompanyStage =
   | "pre-revenue"

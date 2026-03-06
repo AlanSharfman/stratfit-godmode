@@ -17,7 +17,7 @@ import * as THREE from "three";
 import { useSystemBaseline } from "@/system/SystemBaselineProvider";
 import { baselineReliefScalar, baselineSeedString, createSeed } from "@/terrain/seed";
 import { buildTerrainWithMetrics } from "@/terrain/buildTerrain";
-import { TERRAIN_CONSTANTS } from "@/terrain/terrainConstants";
+import { TERRAIN_CONSTANTS, TERRAIN_WORLD_SCALE } from "@/terrain/terrainConstants";
 import type { MetricsInput } from "@/terrain/buildTerrain";
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -105,8 +105,8 @@ const TerrainHeatmapLayer: React.FC<TerrainHeatmapLayerProps> = memo(
     useEffect(() => {
       if (!meshRef.current) return;
       meshRef.current.rotation.x = -Math.PI / 2;
-      meshRef.current.position.set(0, -6, 0);
-      meshRef.current.scale.set(3.0, 2.8, 2.6);
+      meshRef.current.position.set(0, TERRAIN_CONSTANTS.yOffset, 0);
+      meshRef.current.scale.set(TERRAIN_WORLD_SCALE.x, TERRAIN_WORLD_SCALE.y, TERRAIN_WORLD_SCALE.z);
       meshRef.current.frustumCulled = false;
     }, [heatGeo]);
 

@@ -9,14 +9,12 @@ import type { PositionKpis } from "@/pages/position/overlays/positionState"
 import type { ScenarioRunEngineResult } from "@/store/scenarioRunStore"
 import {
   getHealthLevel,
+  KPI_KEYS,
   KPI_ZONE_MAP,
   type KpiKey,
 } from "@/domain/intelligence/kpiZoneMapping"
 
-const DISPLAY_KPI_KEYS: KpiKey[] = [
-  "cash", "runway", "growth", "arr", "revenue",
-  "burn", "churn", "grossMargin", "headcount", "enterpriseValue",
-]
+const DISPLAY_KPI_KEYS: readonly KpiKey[] = KPI_KEYS
 
 function healthToFeature(health: string): string {
   switch (health) {

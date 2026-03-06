@@ -10,7 +10,7 @@ import { useSystemBaseline } from "@/system/SystemBaselineProvider"
 import { useRenderFlagsStore } from "@/state/renderFlagsStore"
 import { createTerrainGeometry } from "@/terrain/createTerrainGeometry"
 import { baselineSeedString, createSeed } from "@/terrain/seed"
-import { TERRAIN_CONSTANTS } from "@/terrain/terrainConstants"
+import { TERRAIN_CONSTANTS, TERRAIN_WORLD_SCALE } from "@/terrain/terrainConstants"
 import { createTerrainSolidMaterial, createTerrainWireMaterial } from "@/terrain/terrainMaterials"
 import TerrainTrees from "@/terrain/TerrainTrees"
 import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
@@ -236,8 +236,8 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
       for (const r of [solidRef, latticeRef, highlightRef]) {
         if (!r.current) continue
         r.current.rotation.x = -Math.PI / 2
-        r.current.position.set(0, -6, 0)
-        r.current.scale.set(3.0, 2.8, 2.6)
+        r.current.position.set(0, TERRAIN_CONSTANTS.yOffset, 0)
+        r.current.scale.set(TERRAIN_WORLD_SCALE.x, TERRAIN_WORLD_SCALE.y, TERRAIN_WORLD_SCALE.z)
         r.current.frustumCulled = false
       }
     }, [highlightGeo])
@@ -248,8 +248,8 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
       latticeMesh: latticeRef.current,
       heightfield: stabilizedHF,
       getHeightAt: (worldX: number, worldZ: number) => {
-        const geomX = worldX / 3.0
-        const geomZ = worldZ / 2.6
+        const geomX = worldX / TERRAIN_WORLD_SCALE.x
+        const geomZ = worldZ / TERRAIN_WORLD_SCALE.z
         const halfW = TERRAIN_CONSTANTS.width / 2
         const halfD = TERRAIN_CONSTANTS.depth / 2
         const col = Math.round(((geomX + halfW) / TERRAIN_CONSTANTS.width) * SEGMENTS)
@@ -259,7 +259,7 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
         const idx = clampedRow * (SEGMENTS + 1) + clampedCol
         const pos = geometry.attributes.position as THREE.BufferAttribute
         const h = pos.getZ(idx) ?? 0
-        return h * 2.8 + TERRAIN_CONSTANTS.yOffset
+        return h * TERRAIN_WORLD_SCALE.y + TERRAIN_CONSTANTS.yOffset
       },
     }), [seed, geometry, stabilizedHF])
 

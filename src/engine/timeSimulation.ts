@@ -141,6 +141,22 @@ export function findFirstCliff(timeline: TimelineState[]): TippingPoint | null {
 }
 
 /**
+ * Derive a deterministic survival probability from a simulation timeline.
+ * Based on the fraction of the horizon where no critical KPI thresholds are breached.
+ * Returns an integer 0–100.
+ */
+export function deriveSurvivalProbability(timeline: TimelineState[]): number {
+  if (timeline.length === 0) return 0
+  const horizon = timeline.length
+  let viableMonths = 0
+  for (const state of timeline) {
+    const hasCritical = state.tippingPoints.some((tp) => tp.threshold === "critical")
+    if (!hasCritical && state.kpis.cash > 0) viableMonths++
+  }
+  return Math.round((viableMonths / horizon) * 100)
+}
+
+/**
  * Build a default KPI snapshot from baseline numbers.
  */
 export function buildKpiSnapshot(kpis: {

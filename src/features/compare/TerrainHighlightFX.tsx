@@ -142,8 +142,6 @@ export default function TerrainHighlightFX({
     }
   }
 
-  if (!pos || !enabled) return null
-
   // Y position: place slightly above the terrain surface
   const y = 4
 
@@ -153,6 +151,8 @@ export default function TerrainHighlightFX({
     [[0, rayOriginY - y, 0], [0, 0, 0]],
     [rayOriginY, y]
   )
+
+  if (!pos || !enabled) return null
 
   return (
     <group position={[pos.x, y, pos.z]} name="terrain-highlight-fx">

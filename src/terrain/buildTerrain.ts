@@ -92,7 +92,7 @@ export function buildTerrainWithMetrics(
     return geo;
 }
 
-const BT_MAX_SLOPE = 0.7;
+const BT_MAX_SLOPE = 2.2;
 const BT_CLAMP_PASSES = 2;
 
 function slopeClampGeometry(pos: THREE.BufferAttribute, segments: number): void {
@@ -194,8 +194,8 @@ function heightfieldAtWorld(
 }
 
 /** Strategic-vs-procedural weighting — strategic form dominates */
-const BT_STRATEGIC_WEIGHT = 0.68;
-const BT_PROCEDURAL_WEIGHT = 0.32;
+const BT_STRATEGIC_WEIGHT = 0.80;
+const BT_PROCEDURAL_WEIGHT = 0.20;
 
 /**
  * Strategic skeleton from TerrainMetrics.
@@ -309,7 +309,6 @@ function proceduralRealismLayer(
     );
     h *= lerp(0.35, 1.0, edge);
 
-    h *= 0.85;
     h = Math.max(-2.0, h);
     const powExp = lerp(1.15, 1.0, peakSoftness);
     h = Math.pow(Math.max(0, h), powExp) + Math.min(0, h);

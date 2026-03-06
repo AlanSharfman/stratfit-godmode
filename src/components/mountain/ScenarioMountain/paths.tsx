@@ -67,7 +67,7 @@ export function StrategicPath({
 
       return new THREE.Vector3(worldX, worldY, worldZ);
     });
-  }, [solverPath, config, dataPoints]);
+  }, [solverPath, dataPoints]);
 
   const curvePoints = useMemo(() => {
     if (points.length < 2) return points;
@@ -202,7 +202,7 @@ export function MilestoneOrbs({
       const i = Math.max(0, Math.min(pts.length - 1, Math.round(t * (pts.length - 1))));
       return { pos: pts[i], type: typeOrder[idx] };
     });
-  }, [solverPath, mode]);
+  }, [solverPath, mode, dataPoints]);
 
   if (mode === "ghost") return null;
 

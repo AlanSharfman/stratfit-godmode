@@ -55,16 +55,28 @@ function CashWidget() {
   return (
     <div className={styles.widget}>
       <svg width="44" height="44" viewBox="0 0 28 28" fill="none">
-        <ellipse cx="14" cy="20" rx="10" ry="3" fill="rgba(52,211,153,0.12)" stroke="rgba(52,211,153,0.35)" strokeWidth="1">
-          <animate attributeName="opacity" values="0.8;0.5;0.8" dur="2.5s" repeatCount="indefinite" />
-        </ellipse>
-        <ellipse cx="14" cy="16" rx="10" ry="3" fill="rgba(52,211,153,0.10)" stroke="rgba(52,211,153,0.3)" strokeWidth="1" />
-        <ellipse cx="14" cy="12" rx="10" ry="3" fill="rgba(52,211,153,0.08)" stroke="rgba(52,211,153,0.25)" strokeWidth="1" />
-        <ellipse cx="14" cy="8" rx="10" ry="3" fill="rgba(52,211,153,0.06)" stroke="rgba(52,211,153,0.2)" strokeWidth="1" />
+        <g>
+          <animateTransform attributeName="transform" type="translate" values="0,0;0,-1.5;0,0" dur="3s" repeatCount="indefinite" />
+          <ellipse cx="14" cy="20" rx="10" ry="3" fill="rgba(52,211,153,0.12)" stroke="rgba(52,211,153,0.35)" strokeWidth="1">
+            <animate attributeName="ry" values="3;3.5;3" dur="3s" repeatCount="indefinite" />
+          </ellipse>
+          <ellipse cx="14" cy="16" rx="10" ry="3" fill="rgba(52,211,153,0.10)" stroke="rgba(52,211,153,0.3)" strokeWidth="1">
+            <animate attributeName="cy" values="16;14.5;16" dur="3s" repeatCount="indefinite" />
+          </ellipse>
+          <ellipse cx="14" cy="12" rx="10" ry="3" fill="rgba(52,211,153,0.08)" stroke="rgba(52,211,153,0.25)" strokeWidth="1">
+            <animate attributeName="cy" values="12;10;12" dur="3s" repeatCount="indefinite" />
+          </ellipse>
+          <ellipse cx="14" cy="8" rx="10" ry="3" fill="rgba(52,211,153,0.06)" stroke="rgba(52,211,153,0.2)" strokeWidth="1">
+            <animate attributeName="cy" values="8;5.5;8" dur="3s" repeatCount="indefinite" />
+          </ellipse>
+        </g>
         <text x="14" y="17" textAnchor="middle" fontSize="9" fontWeight="700" fill="rgba(52,211,153,0.7)" fontFamily="Inter, sans-serif">
           $
-          <animate attributeName="opacity" values="0.7;0.4;0.7" dur="3s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.7;0.3;0.7" dur="2s" repeatCount="indefinite" />
         </text>
+        <circle cx="14" cy="14" r="12" fill="none" stroke="rgba(52,211,153,0.12)" strokeWidth="0.5" strokeDasharray="4,6">
+          <animateTransform attributeName="transform" type="rotate" from="0 14 14" to="360 14 14" dur="12s" repeatCount="indefinite" />
+        </circle>
       </svg>
     </div>
   );
@@ -101,11 +113,17 @@ function RevenueWidget() {
         {bars.map((h, i) => (
           <rect key={i} x={i * 8 + 1} y={22 - h * 20} width="5" height={h * 20} rx="1.5"
             fill={`rgba(96, 165, 250, ${0.3 + h * 0.55})`}>
-            <animate attributeName="height" values={`${h * 20};${h * 20 + 2};${h * 20}`} dur={`${2 + i * 0.3}s`} repeatCount="indefinite" />
-            <animate attributeName="y" values={`${22 - h * 20};${20 - h * 20};${22 - h * 20}`} dur={`${2 + i * 0.3}s`} repeatCount="indefinite" />
+            <animate attributeName="height" values={`${h * 20};${h * 20 + 5};${h * 20 - 1};${h * 20}`} dur={`${1.8 + i * 0.2}s`} repeatCount="indefinite" />
+            <animate attributeName="y" values={`${22 - h * 20};${17 - h * 20};${23 - h * 20};${22 - h * 20}`} dur={`${1.8 + i * 0.2}s`} repeatCount="indefinite" />
           </rect>
         ))}
-        <line x1="3" y1="18" x2="53" y2="4" stroke="rgba(96,165,250,0.4)" strokeWidth="1" strokeDasharray="2,2" />
+        <line x1="3" y1="18" x2="53" y2="4" stroke="rgba(96,165,250,0.4)" strokeWidth="1" strokeDasharray="2,2">
+          <animate attributeName="stroke-dashoffset" values="0;-20" dur="3s" repeatCount="indefinite" />
+        </line>
+        <circle r="1.3" fill="rgba(96,165,250,0.7)">
+          <animateMotion dur="4s" repeatCount="indefinite" path="M3,18 L53,4" />
+          <animate attributeName="opacity" values="0;0.7;0.7;0" dur="4s" repeatCount="indefinite" />
+        </circle>
       </svg>
     </div>
   );
@@ -187,100 +205,136 @@ function ArrWidget() {
 }
 
 function BurnWidget() {
-  const bars = [0.5, 0.8, 1.0, 0.65, 0.4];
   return (
     <div className={styles.widget}>
-      <div className={styles.burnBars}>
-        {bars.map((h, i) => (
-          <div key={i} className={styles.burnBar} style={{ height: `${h * 18}px`, animationDelay: `${i * 0.12}s` }} />
+      <svg width="44" height="44" viewBox="0 0 28 28" fill="none">
+        {[0.5, 0.8, 1.0, 0.65, 0.4].map((h, i) => (
+          <rect key={i} x={2 + i * 5} y={26 - h * 22} width="3.5" height={h * 22} rx="1.2"
+            fill={`rgba(251,146,60,${0.25 + h * 0.45})`}>
+            <animate attributeName="height" values={`${h * 22};${h * 22 + 4};${h * 22}`} dur={`${1.5 + i * 0.25}s`} repeatCount="indefinite" />
+            <animate attributeName="y" values={`${26 - h * 22};${22 - h * 22};${26 - h * 22}`} dur={`${1.5 + i * 0.25}s`} repeatCount="indefinite" />
+          </rect>
         ))}
-      </div>
+        <circle cx="14" cy="4" r="1.5" fill="rgba(251,146,60,0.5)">
+          <animate attributeName="cy" values="4;2;4" dur="1.2s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.6;0.15;0.6" dur="1.2s" repeatCount="indefinite" />
+        </circle>
+        <circle cx="10" cy="6" r="1" fill="rgba(251,146,60,0.3)">
+          <animate attributeName="cy" values="6;3;6" dur="1.8s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.4;0;0.4" dur="1.8s" repeatCount="indefinite" />
+        </circle>
+      </svg>
     </div>
   );
 }
 
-/** Valuation Widget — ascending diamond / value gauge (lime palette) */
 function ValuationWidget() {
   return (
     <div className={styles.widget}>
       <svg width="44" height="44" viewBox="0 0 32 32" fill="none">
-        {/* Base rings */}
-        <circle cx="16" cy="16" r="14" fill="none" stroke="rgba(163,230,53,0.10)" strokeWidth="1" />
-        <circle cx="16" cy="16" r="10" fill="none" stroke="rgba(163,230,53,0.08)" strokeWidth="0.8" />
-        {/* Diamond */}
-        <path d="M16 4 L24 14 L16 28 L8 14 Z" fill="rgba(163,230,53,0.06)" stroke="rgba(163,230,53,0.32)" strokeWidth="1" strokeLinejoin="round">
-          <animate attributeName="opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite" />
-        </path>
-        {/* Inner diamond */}
-        <path d="M16 9 L20 14 L16 22 L12 14 Z" fill="rgba(163,230,53,0.10)" stroke="rgba(163,230,53,0.22)" strokeWidth="0.8" strokeLinejoin="round" />
-        {/* Center dot */}
-        <circle cx="16" cy="14" r="2" fill="rgba(163,230,53,0.40)">
-          <animate attributeName="r" values="2;3;2" dur="2s" repeatCount="indefinite" />
-          <animate attributeName="opacity" values="0.5;0.2;0.5" dur="2s" repeatCount="indefinite" />
+        <circle cx="16" cy="16" r="14" fill="none" stroke="rgba(163,230,53,0.10)" strokeWidth="1" strokeDasharray="5,4">
+          <animateTransform attributeName="transform" type="rotate" from="0 16 16" to="360 16 16" dur="20s" repeatCount="indefinite" />
         </circle>
-        {/* Ascending ticks */}
-        <line x1="6" y1="22" x2="6" y2="18" stroke="rgba(163,230,53,0.14)" strokeWidth="0.8" strokeLinecap="round">
-          <animate attributeName="opacity" values="0.15;0.4;0.15" dur="2.5s" repeatCount="indefinite" />
-        </line>
-        <line x1="26" y1="22" x2="26" y2="16" stroke="rgba(163,230,53,0.14)" strokeWidth="0.8" strokeLinecap="round">
-          <animate attributeName="opacity" values="0.4;0.15;0.4" dur="2.5s" repeatCount="indefinite" />
-        </line>
+        <circle cx="16" cy="16" r="10" fill="none" stroke="rgba(163,230,53,0.08)" strokeWidth="0.8" strokeDasharray="3,5">
+          <animateTransform attributeName="transform" type="rotate" from="360 16 16" to="0 16 16" dur="14s" repeatCount="indefinite" />
+        </circle>
+        <g>
+          <animateTransform attributeName="transform" type="translate" values="0,0;0,-2;0,0" dur="4s" repeatCount="indefinite" />
+          <path d="M16 4 L24 14 L16 28 L8 14 Z" fill="rgba(163,230,53,0.06)" stroke="rgba(163,230,53,0.32)" strokeWidth="1" strokeLinejoin="round">
+            <animate attributeName="opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite" />
+          </path>
+          <path d="M16 9 L20 14 L16 22 L12 14 Z" fill="rgba(163,230,53,0.10)" stroke="rgba(163,230,53,0.22)" strokeWidth="0.8" strokeLinejoin="round" />
+        </g>
+        <circle cx="16" cy="14" r="2" fill="rgba(163,230,53,0.40)">
+          <animate attributeName="r" values="2;3.5;2" dur="2s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.5;0.15;0.5" dur="2s" repeatCount="indefinite" />
+        </circle>
+        <circle r="1.2" fill="rgba(163,230,53,0.35)">
+          <animateMotion dur="6s" repeatCount="indefinite" path="M16,2 A14,14 0 1,1 15.99,2" />
+          <animate attributeName="opacity" values="0.4;0.15;0.4" dur="3s" repeatCount="indefinite" />
+        </circle>
       </svg>
     </div>
   );
 }
 
-/** Growth Rate Widget — ascending trend arrow */
 function GrowthWidget() {
   return (
     <div className={styles.widget}>
       <svg width="44" height="44" viewBox="0 0 28 28" fill="none">
-        <path d="M4 24 L10 18 L16 20 L22 10 L26 6" stroke="rgba(52,211,153,0.5)" strokeWidth="2" strokeLinecap="round" fill="none">
-          <animate attributeName="strokeDashoffset" from="60" to="0" dur="1.2s" fill="freeze" />
+        <path d="M4 24 L10 18 L16 20 L22 10 L26 6" stroke="rgba(52,211,153,0.5)" strokeWidth="2" strokeLinecap="round" fill="none" strokeDasharray="60" strokeDashoffset="60">
+          <animate attributeName="stroke-dashoffset" values="60;0;0;60" dur="4s" repeatCount="indefinite" />
         </path>
-        <polygon points="22,4 28,8 24,10" fill="rgba(52,211,153,0.4)">
-          <animate attributeName="opacity" values="0.3;0.7;0.3" dur="2s" repeatCount="indefinite" />
-        </polygon>
+        <g>
+          <animateTransform attributeName="transform" type="translate" values="0,0;-1,-2;0,0" dur="2.5s" repeatCount="indefinite" />
+          <polygon points="22,4 28,8 24,10" fill="rgba(52,211,153,0.4)">
+            <animate attributeName="opacity" values="0.3;0.8;0.3" dur="2s" repeatCount="indefinite" />
+          </polygon>
+        </g>
+        <circle r="1.5" fill="rgba(52,211,153,0.6)">
+          <animateMotion dur="3s" repeatCount="indefinite" path="M4,24 L10,18 L16,20 L22,10 L26,6" />
+          <animate attributeName="opacity" values="0;0.8;0.8;0" dur="3s" repeatCount="indefinite" />
+        </circle>
         <circle cx="26" cy="6" r="2" fill="rgba(52,211,153,0.5)">
-          <animate attributeName="r" values="2;3;2" dur="1.8s" repeatCount="indefinite" />
+          <animate attributeName="r" values="2;4;2" dur="1.8s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.5;0.15;0.5" dur="1.8s" repeatCount="indefinite" />
         </circle>
       </svg>
     </div>
   );
 }
 
-/** Churn Widget — funnel with leak */
 function ChurnWidget() {
   return (
     <div className={styles.widget}>
       <svg width="44" height="44" viewBox="0 0 28 28" fill="none">
-        <path d="M6 4 L22 4 L18 14 L10 14 Z" fill="rgba(239,68,68,0.08)" stroke="rgba(239,68,68,0.30)" strokeWidth="1" />
-        <path d="M10 14 L12 24 L16 24 L18 14" fill="rgba(239,68,68,0.06)" stroke="rgba(239,68,68,0.25)" strokeWidth="1" />
-        <circle cx="20" cy="18" r="1.5" fill="rgba(239,68,68,0.4)">
-          <animate attributeName="cy" values="18;24;18" dur="2s" repeatCount="indefinite" />
-          <animate attributeName="opacity" values="0.5;0;0.5" dur="2s" repeatCount="indefinite" />
+        <g>
+          <animateTransform attributeName="transform" type="rotate" values="-1 14 14;1 14 14;-1 14 14" dur="4s" repeatCount="indefinite" />
+          <path d="M6 4 L22 4 L18 14 L10 14 Z" fill="rgba(239,68,68,0.08)" stroke="rgba(239,68,68,0.30)" strokeWidth="1" />
+          <path d="M10 14 L12 24 L16 24 L18 14" fill="rgba(239,68,68,0.06)" stroke="rgba(239,68,68,0.25)" strokeWidth="1" />
+        </g>
+        <circle cx="19" cy="16" r="1.5" fill="rgba(239,68,68,0.5)">
+          <animate attributeName="cy" values="16;26" dur="1.6s" repeatCount="indefinite" />
+          <animate attributeName="cx" values="19;21" dur="1.6s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.6;0" dur="1.6s" repeatCount="indefinite" />
         </circle>
-        <circle cx="22" cy="20" r="1" fill="rgba(239,68,68,0.3)">
-          <animate attributeName="cy" values="20;26;20" dur="2.5s" repeatCount="indefinite" />
-          <animate attributeName="opacity" values="0.4;0;0.4" dur="2.5s" repeatCount="indefinite" />
+        <circle cx="20" cy="18" r="1" fill="rgba(239,68,68,0.4)">
+          <animate attributeName="cy" values="18;28" dur="2s" begin="0.5s" repeatCount="indefinite" />
+          <animate attributeName="cx" values="20;23" dur="2s" begin="0.5s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.5;0" dur="2s" begin="0.5s" repeatCount="indefinite" />
+        </circle>
+        <circle cx="17" cy="17" r="0.8" fill="rgba(239,68,68,0.35)">
+          <animate attributeName="cy" values="17;27" dur="2.3s" begin="1s" repeatCount="indefinite" />
+          <animate attributeName="cx" values="17;15" dur="2.3s" begin="1s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.4;0" dur="2.3s" begin="1s" repeatCount="indefinite" />
         </circle>
       </svg>
     </div>
   );
 }
 
-/** Gross Margin mini widget — percentage donut (indigo) */
 function GrossMarginWidget() {
   return (
     <div className={styles.widget}>
       <svg width="44" height="44" viewBox="0 0 28 28" fill="none">
+        <circle cx="14" cy="14" r="12" fill="none" stroke="rgba(129,140,248,0.07)" strokeWidth="0.5" strokeDasharray="3,5">
+          <animateTransform attributeName="transform" type="rotate" from="0 14 14" to="360 14 14" dur="16s" repeatCount="indefinite" />
+        </circle>
         <circle cx="14" cy="14" r="10" fill="none" stroke="rgba(129,140,248,0.12)" strokeWidth="2" />
         <circle cx="14" cy="14" r="10" fill="none" stroke="rgba(129,140,248,0.45)" strokeWidth="2"
           strokeDasharray="62.8" strokeDashoffset="31.4" strokeLinecap="round"
           transform="rotate(-90 14 14)">
-          <animate attributeName="strokeDashoffset" values="31.4;25;31.4" dur="4s" repeatCount="indefinite" />
+          <animateTransform attributeName="transform" type="rotate" from="-90 14 14" to="270 14 14" dur="10s" repeatCount="indefinite" />
+          <animate attributeName="stroke-dashoffset" values="31.4;20;31.4" dur="4s" repeatCount="indefinite" />
         </circle>
-        <text x="14" y="17" textAnchor="middle" fontSize="8" fontWeight="700" fill="rgba(129,140,248,0.6)" fontFamily="Inter, sans-serif">%</text>
+        <circle r="1" fill="rgba(129,140,248,0.4)">
+          <animateMotion dur="5s" repeatCount="indefinite" path="M14,4 A10,10 0 1,1 13.99,4" />
+          <animate attributeName="opacity" values="0.5;0.2;0.5" dur="2.5s" repeatCount="indefinite" />
+        </circle>
+        <text x="14" y="17" textAnchor="middle" fontSize="8" fontWeight="700" fill="rgba(129,140,248,0.6)" fontFamily="Inter, sans-serif">
+          %
+          <animate attributeName="opacity" values="0.6;0.3;0.6" dur="3s" repeatCount="indefinite" />
+        </text>
       </svg>
     </div>
   );
@@ -290,17 +344,22 @@ function HeadcountWidget() {
   return (
     <div className={styles.widget}>
       <svg width="44" height="44" viewBox="0 0 28 28" fill="none">
-        <circle cx="10" cy="10" r="3.5" fill="rgba(168,85,247,0.15)" stroke="rgba(168,85,247,0.4)" strokeWidth="1">
-          <animate attributeName="opacity" values="0.8;0.5;0.8" dur="3s" repeatCount="indefinite" />
-        </circle>
-        <circle cx="18" cy="10" r="3.5" fill="rgba(168,85,247,0.12)" stroke="rgba(168,85,247,0.35)" strokeWidth="1">
-          <animate attributeName="opacity" values="0.6;0.4;0.6" dur="3.5s" repeatCount="indefinite" />
-        </circle>
-        <path d="M4 24 Q4 18 10 18 Q14 18 14 21" fill="rgba(168,85,247,0.1)" stroke="rgba(168,85,247,0.3)" strokeWidth="1" />
-        <path d="M24 24 Q24 18 18 18 Q14 18 14 21" fill="rgba(168,85,247,0.1)" stroke="rgba(168,85,247,0.3)" strokeWidth="1" />
+        <g>
+          <animateTransform attributeName="transform" type="translate" values="0,0;0,-1;0,0" dur="2.8s" repeatCount="indefinite" />
+          <circle cx="10" cy="10" r="3.5" fill="rgba(168,85,247,0.15)" stroke="rgba(168,85,247,0.4)" strokeWidth="1" />
+          <path d="M4 24 Q4 18 10 18 Q14 18 14 21" fill="rgba(168,85,247,0.1)" stroke="rgba(168,85,247,0.3)" strokeWidth="1" />
+        </g>
+        <g>
+          <animateTransform attributeName="transform" type="translate" values="0,0;0,-1.2;0,0" dur="3.2s" begin="0.4s" repeatCount="indefinite" />
+          <circle cx="18" cy="10" r="3.5" fill="rgba(168,85,247,0.12)" stroke="rgba(168,85,247,0.35)" strokeWidth="1" />
+          <path d="M24 24 Q24 18 18 18 Q14 18 14 21" fill="rgba(168,85,247,0.1)" stroke="rgba(168,85,247,0.3)" strokeWidth="1" />
+        </g>
         <circle cx="14" cy="21" r="1.5" fill="rgba(168,85,247,0.5)">
-          <animate attributeName="r" values="1.5;2.2;1.5" dur="2.5s" repeatCount="indefinite" />
-          <animate attributeName="opacity" values="0.5;0.2;0.5" dur="2.5s" repeatCount="indefinite" />
+          <animate attributeName="r" values="1.5;3;1.5" dur="2.5s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.5;0.1;0.5" dur="2.5s" repeatCount="indefinite" />
+        </circle>
+        <circle cx="14" cy="14" r="12" fill="none" stroke="rgba(168,85,247,0.08)" strokeWidth="0.5" strokeDasharray="2,6">
+          <animateTransform attributeName="transform" type="rotate" from="0 14 14" to="-360 14 14" dur="18s" repeatCount="indefinite" />
         </circle>
       </svg>
     </div>

@@ -31,7 +31,7 @@ const KEYWORD_RULES: KeywordRule[] = [
   { patterns: [/competitor\s+.*dies/i, /competitor\s+.*exits/i, /competitor\s+.*fails/i, /competitor\s+.*shuts?\s*down/i], forces: { growth: 15, revenue: 25_000, churn: -3 }, reasoning: "Competitor exit: market share opportunity" },
   { patterns: [/run\s+out\s+of\s+money/i, /cash\s+runs?\s+out/i, /zero\s+cash/i], forces: { cash: -500_000, runway: -6 }, reasoning: "Cash crisis scenario" },
   { patterns: [/pivot/i, /change\s+direction/i, /new\s+product/i], forces: { burn: 20_000, growth: -10, revenue: -15_000 }, reasoning: "Pivot: short-term disruption across all metrics" },
-  { patterns: [/automate/i, /ai\s+.*support/i, /implement\s+ai/i], forces: { burn: -5_000, churn: -1 }, reasoning: "Automation investment: cost reduction, efficiency gains" },
+  { patterns: [/automate/i, /ai\s+.*support/i, /implement\s+ai/i], forces: { burn: -5_000, churn: -1, efficiency: 0.2 }, reasoning: "Automation investment: cost reduction, efficiency gains" },
   { patterns: [/freemium/i, /free\s+tier/i, /free\s+plan/i], forces: { growth: 20, burn: 5_000, churn: 3, grossMargin: -8 }, reasoning: "Freemium model: massive top-of-funnel, conversion challenge" },
   { patterns: [/partnership/i, /partner\s+with/i, /distribution\s+deal/i], forces: { growth: 12, revenue: 20_000, grossMargin: -3 }, reasoning: "Strategic partnership: channel growth with margin share" },
   { patterns: [/viral/i, /goes?\s+viral/i, /blow\s+up/i], forces: { growth: 40, burn: 10_000 }, reasoning: "Viral growth: demand spike requiring rapid scaling" },
@@ -55,6 +55,19 @@ function extractPercentage(text: string): number | null {
   return parseFloat(match[1])
 }
 
+const TEMPLATE_STOPWORDS = new Set([
+  "what",
+  "when",
+  "where",
+  "which",
+  "will",
+  "would",
+  "could",
+  "should",
+  "implement",
+  "scenario",
+])
+
 function fuzzyMatchTemplate(query: string): ScenarioTemplate | null {
   const q = query.toLowerCase()
   let best: ScenarioTemplate | null = null
@@ -64,11 +77,11 @@ function fuzzyMatchTemplate(query: string): ScenarioTemplate | null {
     const words = t.question.toLowerCase().split(/\s+/)
     let score = 0
     for (const w of words) {
-      if (w.length > 3 && q.includes(w)) score += 1
+      if (w.length > 3 && !TEMPLATE_STOPWORDS.has(w) && q.includes(w)) score += 1
     }
     const descWords = t.description.toLowerCase().split(/\s+/)
     for (const w of descWords) {
-      if (w.length > 3 && q.includes(w)) score += 0.5
+      if (w.length > 3 && !TEMPLATE_STOPWORDS.has(w) && q.includes(w)) score += 0.5
     }
     if (score > bestScore) {
       bestScore = score

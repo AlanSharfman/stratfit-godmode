@@ -38,7 +38,6 @@ export function useReducedMotion(fpsThreshold = 40): boolean {
     if (reduced) return // already suppressed by OS pref
 
     let raf: number
-    let interval: ReturnType<typeof setInterval>
 
     function tick() {
       fpsRef.current.frames++
@@ -46,7 +45,7 @@ export function useReducedMotion(fpsThreshold = 40): boolean {
     }
     raf = requestAnimationFrame(tick)
 
-    interval = setInterval(() => {
+    const interval = window.setInterval(() => {
       const now = performance.now()
       const elapsed = (now - fpsRef.current.last) / 1000
       if (elapsed > 0) {

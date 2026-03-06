@@ -26,7 +26,7 @@ const SLIDERS: Array<{
   max: number
   step: number
 }> = [
-  { key: "elevationScale",      label: "Elevation Scale",  min: 0, max: 2, step: 0.01 },
+  { key: "elevationScale",      label: "Elevation Scale",  min: 0, max: 5, step: 0.01 },
   { key: "ridgeIntensity",      label: "Ridge Intensity",  min: 0, max: 1, step: 0.01 },
   { key: "valleyDepth",         label: "Valley Depth",     min: 0, max: 1, step: 0.01 },
   { key: "terrainRoughness",    label: "Roughness",        min: 0, max: 1, step: 0.01 },

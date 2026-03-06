@@ -26,7 +26,7 @@ export function buildTimeSeriesMetricsFn(
     const evNorm = pt.enterpriseValue / peakEV
     const revNorm = pt.revenue / peakRev
     return {
-      elevationScale: 0.3 + evNorm * 0.7,
+      elevationScale: 0.8 + evNorm * 2.2,
       roughness: 0.2 + pt.riskIndex * 0.6,
       ridgeIntensity: Math.min(1, revNorm * 0.8),
       volatility: pt.riskIndex,

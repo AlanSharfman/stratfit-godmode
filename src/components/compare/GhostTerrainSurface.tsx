@@ -69,7 +69,7 @@ function createGhostMaterial(
       .replace(
         "#include <color_fragment>",
         `#include <color_fragment>
-float _hao = clamp((vHeight + 8.0) / 33.0, 0.0, 1.0);
+float _hao = clamp((vHeight + 8.0) / 200.0, 0.0, 1.0);
 diffuseColor.rgb *= mix(0.6, 1.2, _hao);`,
       )
   }

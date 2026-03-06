@@ -39,7 +39,7 @@ export function selectTimelineTerrainMetrics(
   const revNorm = peakRevenue > 0 ? point.revenue / peakRevenue : 0.5;
 
   return {
-    elevationScale: 0.3 + evNorm * 0.7,             // 0.3 → 1.0
+    elevationScale: 0.8 + evNorm * 2.2,             // 0.8 → 3.0
     roughness: 0.2 + point.riskIndex * 0.6,          // 0.2 → 0.8
     ridgeIntensity: Math.min(1, revNorm * 0.8),      // 0 → 0.8
     volatility: point.riskIndex,                     // 0 → 1

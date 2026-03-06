@@ -35,14 +35,14 @@ const OVERLAY_STYLE: React.CSSProperties = {
 }
 
 const SimulationProofOverlay: React.FC<Props> = memo(({ scenario, baselineSnapshotId }) => {
-  // Only render in DEV
-  if (!import.meta.env.DEV) return null
-  if (!scenario?.simulationResults?.completedAt) return null
-
-  const sim = scenario.simulationResults
+  const isDev = import.meta.env.DEV
+  const sim = scenario?.simulationResults ?? null
+  const completedAt = sim?.completedAt ?? null
 
   const proof = useMemo(() => {
-    const runId = String(sim.completedAt)
+    if (!isDev || !scenario || !sim || !completedAt) return null
+
+    const runId = String(completedAt)
     const configHash = stableHash({
       decision: scenario.decision,
       id: scenario.id,
@@ -52,7 +52,10 @@ const SimulationProofOverlay: React.FC<Props> = memo(({ scenario, baselineSnapsh
     const stress = selectStressProbability(sim.kpis)
 
     return { runId, configHash, resultsHash, stress }
-  }, [sim.completedAt]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isDev, scenario, sim, completedAt])
+
+  // Only render in DEV with completed simulation
+  if (!isDev || !completedAt || !proof) return null
 
   return (
     <div style={OVERLAY_STYLE} aria-hidden="true" data-testid="sim-proof-overlay">

@@ -146,7 +146,7 @@ export default function InsightTetherOverlay({
       clearTimeout(startTimer)
       cancelAnimationFrame(rafRef.current)
     }
-  }, [enabled, focusWorldPosition, projectToScreen, getAnchorPos]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [enabled, focusWorldPosition, projectToScreen, getAnchorPos])
 
   if (!enabled || !focusWorldPosition) return null
 

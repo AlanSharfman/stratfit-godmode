@@ -182,7 +182,7 @@ interface RawEvent {
 
 function applyAntiSpam(raw: RawEvent[]): RawEvent[] {
   // 1) Drop low severity
-  let events = raw.filter((e) => e.severity >= MIN_SEVERITY)
+  const events = raw.filter((e) => e.severity >= MIN_SEVERITY)
 
   // 2) Sort by priority then month
   events.sort((a, b) => {
@@ -271,12 +271,9 @@ export function generateSimulationEvents(
     if (spike || cliff || sustained) {
       const sev = clamp01((dr - 0.05) / 0.10) * clamp01((r[t] - 0.55) / 0.35)
 
-      let pImpact: number
-      if (series.probSurvival && t >= 1) {
-        pImpact = clamp01((series.probSurvival[t - 1] - series.probSurvival[t]) / 0.10)
-      } else {
-        pImpact = clamp01(dr / 0.12)
-      }
+      const pImpact = series.probSurvival && t >= 1
+        ? clamp01((series.probSurvival[t - 1] - series.probSurvival[t]) / 0.10)
+        : clamp01(dr / 0.12)
 
       rawEvents.push({
         type: "risk_spike",
@@ -304,9 +301,8 @@ export function generateSimulationEvents(
       const sevComp = clamp01((-drw - 1) / 4)
       const sev = Math.max(sevWarn, sevComp, critical ? 0.9 : 0)
 
-      let pImpact: number
       // No pCashOut series — use runway-based fallback
-      pImpact = clamp01((6 - rw[t]) / 6)
+      const pImpact = clamp01((6 - rw[t]) / 6)
 
       rawEvents.push({
         type: "liquidity_stress",
@@ -358,12 +354,9 @@ export function generateSimulationEvents(
       const sevDn = clamp01((-a[t] - 0.02) / 0.08)
       const sev = Math.max(sevUp, sevDn)
 
-      let pImpact: number
-      if (gBase) {
-        pImpact = clamp01((g[t] - gBase[t]) / 0.05)
-      } else {
-        pImpact = clamp01(Math.abs(a[t]) / 0.10)
-      }
+      const pImpact = gBase
+        ? clamp01((g[t] - gBase[t]) / 0.05)
+        : clamp01(Math.abs(a[t]) / 0.10)
 
       rawEvents.push({
         type: "growth_inflection",

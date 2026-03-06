@@ -68,7 +68,7 @@ export const SCENARIO_TEMPLATES: ScenarioTemplate[] = [
   { id: "automate-ops", question: "Automate manual operations", category: "efficiency", forces: { burn: -12_000 }, description: "Tooling investment to reduce headcount needs" },
   { id: "improve-onboarding", question: "Redesign customer onboarding", category: "efficiency", forces: { burn: 5_000, churn: -4 }, description: "Better first experience reduces early churn" },
   { id: "consolidate-tools", question: "Consolidate SaaS tools", category: "efficiency", forces: { burn: -8_000 }, description: "Reduce tool sprawl and overhead" },
-  { id: "implement-ai", question: "Implement AI for customer support", category: "efficiency", forces: { burn: -5_000, churn: -1 }, description: "AI-powered support reduces cost per ticket" },
+  { id: "implement-ai", question: "Implement AI for customer support", category: "efficiency", forces: { burn: -5_000, churn: -1, efficiency: 0.2 }, description: "AI-powered support reduces cost per ticket" },
   { id: "tech-debt", question: "Invest in reducing tech debt", category: "efficiency", forces: { burn: 8_000, growth: -3 }, description: "Short-term velocity hit for long-term gains" },
   { id: "switch-cloud", question: "Migrate to cheaper cloud infrastructure", category: "efficiency", forces: { burn: -15_000, grossMargin: 4 }, description: "Infrastructure cost optimization" },
 

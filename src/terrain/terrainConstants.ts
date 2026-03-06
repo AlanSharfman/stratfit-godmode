@@ -21,4 +21,14 @@ export const TERRAIN_CONSTANTS = {
     ridgeSharpness: 1.25,
 } as const;
 
+/**
+ * Canonical world-space terrain transform.
+ * Keep X/Z framing stable and only adjust Y to correct mountain height.
+ */
+export const TERRAIN_WORLD_SCALE = {
+    x: 3.0,
+    y: 5.0,
+    z: 2.6,
+} as const;
+
 export type TerrainConstants = typeof TERRAIN_CONSTANTS;

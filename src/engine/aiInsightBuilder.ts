@@ -82,7 +82,7 @@ function buildExecutiveSummary(input: AIInsightInput): string {
   else riskPhrase = "Simulation indicates material stress across multiple dimensions."
 
   return (
-    `Simulation indicates that implementing \"${decisionClip}\" ${revDir} revenue trajectory and ${burnDir} burn intensity, ` +
+    `Simulation indicates that implementing "${decisionClip}" ${revDir} revenue trajectory and ${burnDir} burn intensity, ` +
     `resulting in ${runwayStr} under the modelled scenario. ${riskPhrase}`
   )
 }

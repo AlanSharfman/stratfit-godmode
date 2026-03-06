@@ -47,14 +47,11 @@ const TerrainSignalSystem: React.FC<Props> = memo(({ terrainRef }) => {
   const engineResults = useStudioTimelineStore((s) => s.engineResults);
   const currentStep = useStudioTimelineStore((s) => s.currentStep);
   const isPlaying = useStudioTimelineStore((s) => s.isPlaying);
-  const timeline = useStudioTimelineStore((s) => s.timeline);
   const controls = useTerrainControls((s) => s.controls);
 
-  // No timeline → nothing to render
-  if (!engineResults || engineResults.timeline.length < 2) return null;
-
-  const engineTimeline = engineResults.timeline;
-  const peakEV = engineResults.summary.peakEV;
+  const hasTimeline = !!engineResults && engineResults.timeline.length >= 2;
+  const engineTimeline = engineResults?.timeline ?? [];
+  const peakEV = engineResults?.summary.peakEV ?? 0;
 
   // Detect event beacons
   const beacons = useMemo(
@@ -98,7 +95,7 @@ const TerrainSignalSystem: React.FC<Props> = memo(({ terrainRef }) => {
   }, [highlightedBeacon, controls]);
 
   useFrame((_, delta) => {
-    if (!controls || !isBlending.current) return;
+    if (!hasTimeline || !controls || !isBlending.current) return;
 
     if (highlightedBeacon && originalTargetRef.current) {
       // Compute beacon world position
@@ -125,6 +122,9 @@ const TerrainSignalSystem: React.FC<Props> = memo(({ terrainRef }) => {
       }
     }
   });
+
+  // No timeline → nothing to render
+  if (!hasTimeline) return null;
 
   return (
     <>

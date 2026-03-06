@@ -52,7 +52,7 @@ const v3 = (c: Vec3) => `vec3(${c[0].toFixed(3)}, ${c[1].toFixed(3)}, ${c[2].toF
 
 function altitudeFragmentGLSL(p: AltitudePalette): string {
   return `#include <color_fragment>
-float _hNorm = clamp((vHeight + 8.0) / 60.0, 0.0, 1.0);
+float _hNorm = clamp((vHeight + 8.0) / 160.0, 0.0, 1.0);
 
 vec3 _valley    = ${v3(p.valley)};
 vec3 _lowSlope  = ${v3(p.lowSlope)};
@@ -71,25 +71,25 @@ float _slopeF = smoothstep(0.12, 0.55, vSlope);
 vec3 _rockFace = _altCol * 1.15 + vec3(0.020, 0.020, 0.030);
 diffuseColor.rgb = mix(diffuseColor.rgb, _rockFace, _slopeF * 0.40);
 
-float _ridgeMask = _hNorm * (1.0 - _slopeF) * smoothstep(0.40, 0.75, _hNorm);
-diffuseColor.rgb += vec3(0.015, 0.050, 0.090) * _ridgeMask * 1.2;
+float _ridgeMask = _hNorm * (1.0 - _slopeF) * smoothstep(0.35, 0.70, _hNorm);
+diffuseColor.rgb += vec3(0.020, 0.065, 0.110) * _ridgeMask * 1.4;
 
 float _snowMask = smoothstep(0.75, 0.95, _hNorm) * (1.0 - _slopeF);
 diffuseColor.rgb = mix(diffuseColor.rgb, _peak, _snowMask * 0.35);
 
 float _valleyAO = (1.0 - _hNorm) * (1.0 - _slopeF);
 float _creaseAO = _slopeF * (1.0 - _hNorm);
-float _ao = max(_valleyAO * 0.45, _creaseAO * 0.25);
-diffuseColor.rgb *= mix(1.0, 0.68, _ao);
+float _ao = max(_valleyAO * 0.60, _creaseAO * 0.35);
+diffuseColor.rgb *= mix(1.0, 0.55, _ao);
 
-float _crevasse = _slopeF * (1.0 - _hNorm) * smoothstep(0.3, 0.6, vSlope);
-diffuseColor.rgb *= mix(1.0, 0.75, _crevasse);
+float _crevasse = _slopeF * (1.0 - _hNorm) * smoothstep(0.25, 0.55, vSlope);
+diffuseColor.rgb *= mix(1.0, 0.62, _crevasse);
 
 float _viewDot = abs(dot(normalize(vWorldNormal), vec3(0.0, 0.0, 1.0)));
 float _rim = pow(1.0 - _viewDot, 2.5) * 0.12 * _hNorm;
 diffuseColor.rgb += vec3(0.010, 0.045, 0.090) * _rim;
 
-diffuseColor.rgb += vec3(0.005, 0.022, 0.050) * _hNorm;`
+diffuseColor.rgb += vec3(0.003, 0.014, 0.032) * _hNorm;`
 }
 
 const VERTEX_VARYINGS =
@@ -110,12 +110,12 @@ const FRAGMENT_VARYINGS = VERTEX_VARYINGS
 export function createTerrainSolidMaterial() {
   const mat = new THREE.MeshStandardMaterial({
     color: 0x091a2e,
-    emissive: new THREE.Color(0x061220),
-    emissiveIntensity: 0.30,
+    emissive: new THREE.Color(0x040c18),
+    emissiveIntensity: 0.18,
     transparent: false,
     opacity: 1.0,
-    roughness: 0.9,
-    metalness: 0.0,
+    roughness: 0.82,
+    metalness: 0.06,
     flatShading: false,
     depthWrite: true,
     polygonOffset: true,

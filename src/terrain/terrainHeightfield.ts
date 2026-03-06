@@ -13,30 +13,30 @@ import type { TerrainTuningParams } from "@/terrain/terrainTuning"
 
 export const SEGMENTS = 220
 
-const BASELINE_RIDGE_HEIGHT = 40
+const BASELINE_RIDGE_HEIGHT = 110
 const BASELINE_RIDGE_WIDTH = 0.18
 const BASELINE_PEAK_COUNT = 13
-const BASELINE_PEAK_AMP_MIN = 14
-const BASELINE_PEAK_AMP_MAX = 48
+const BASELINE_PEAK_AMP_MIN = 38
+const BASELINE_PEAK_AMP_MAX = 130
 const BASELINE_PEAK_SPREAD_MIN = 0.06
 const BASELINE_PEAK_SPREAD_MAX = 0.20
 
-const KPI_PEAK_HEIGHT = 62
+const KPI_PEAK_HEIGHT = 140
 const NOISE_AMP = 0.12
 
 /** Strategic-vs-procedural weighting — skeleton dominates the mountain form */
-const STRATEGIC_WEIGHT = 0.68
-const PROCEDURAL_WEIGHT = 0.32
+const STRATEGIC_WEIGHT = 0.80
+const PROCEDURAL_WEIGHT = 0.20
 
-const MAX_SLOPE = 0.55
-const SLOPE_CLAMP_PASSES = 3
-const BROAD_SMOOTH_PASSES = 2
-const BROAD_SMOOTH_STRENGTH = 0.13
+const MAX_SLOPE = 2.2
+const SLOPE_CLAMP_PASSES = 2
+const BROAD_SMOOTH_PASSES = 1
+const BROAD_SMOOTH_STRENGTH = 0.06
 const DETAIL_SMOOTH_PASSES = 1
-const DETAIL_SMOOTH_THRESHOLD = 1.6
+const DETAIL_SMOOTH_THRESHOLD = 3.5
 const KPI_BLEND_WIDTH = 0.075
 
-const SKELETON_PEAK_HEIGHT = 85
+const SKELETON_PEAK_HEIGHT = 240
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Seed-driven peak placement
@@ -388,8 +388,8 @@ export function stabilizeHeightfield(hf: Float32Array, vpr: number): void {
   // Redistribute single-vertex extrema so peaks/troughs have natural mass.
   // Uses a 3×3 neighbourhood: if centre is a local max/min that exceeds
   // neighbours by more than a threshold, blend it toward the average.
-  const PEAK_ROUND_THRESHOLD = 1.6
-  const PEAK_ROUND_STRENGTH = 0.3
+  const PEAK_ROUND_THRESHOLD = 6.0
+  const PEAK_ROUND_STRENGTH = 0.15
   tmp.set(hf)
   for (let row = 1; row < vpr - 1; row++) {
     for (let col = 1; col < vpr - 1; col++) {

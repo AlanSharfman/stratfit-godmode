@@ -13,7 +13,7 @@ import { KPI_KEYS, KPI_ZONE_MAP } from "@/domain/intelligence/kpiZoneMapping"
 import { KPI_GRAPH, propagateForce } from "@/engine/kpiDependencyGraph"
 import type { CascadeImpulse } from "@/terrain/ProgressiveTerrainSurface"
 import { SCENARIO_TEMPLATES, type ScenarioTemplate } from "@/engine/scenarioTemplates"
-import { timeSimulation, buildKpiSnapshot, type TimelineState } from "@/engine/timeSimulation"
+import { timeSimulation, buildKpiSnapshot, findFirstCliff, deriveSurvivalProbability, type TimelineState } from "@/engine/timeSimulation"
 import ScenarioTimelineSlider from "@/components/scenarios/ScenarioTimelineSlider"
 import { useScenarioTimeline } from "@/hooks/useScenarioTimeline"
 import ImpactChain from "@/components/cascade/ImpactChain"
@@ -346,6 +346,42 @@ export default function WhatIfPage() {
     return "low" as const
   }, [aiAnswer])
 
+  const probabilityOverview = useMemo(() => {
+    if (!baseKpis || timeline.length === 0) return null
+
+    const cliff = findFirstCliff(timeline)
+    const survivalProbability = deriveSurvivalProbability(timeline)
+
+    const fields = [
+      baseKpis.cashOnHand,
+      baseKpis.runwayMonths,
+      baseKpis.arr,
+      baseKpis.revenueMonthly,
+      baseKpis.burnMonthly,
+      baseKpis.grossMarginPct,
+      baseKpis.growthRatePct,
+      baseKpis.churnPct,
+      baseKpis.headcount,
+      baseKpis.valuationEstimate,
+    ]
+    const dataCompleteness = `${Math.round((fields.filter((value) => value != null && value !== 0).length / fields.length) * 100)}%`
+
+    return {
+      survivalProbability,
+      runwayRiskLabel: cliff ? `Month ${cliff.month}` : "Low",
+      runwayRiskProbability: cliff ? Math.max(10, 100 - survivalProbability) : 15,
+      modelConfidence:
+        overallConfidence === "high"
+          ? "High"
+          : overallConfidence === "medium"
+            ? "Medium"
+            : overallConfidence === "low"
+              ? "Low"
+              : undefined,
+      dataCompleteness,
+    }
+  }, [baseKpis, timeline, overallConfidence])
+
   const chainNodes = useMemo(() => {
     if (!lastCascadeSource || stack.length === 0) return []
     const latest = stack[stack.length - 1]
@@ -531,19 +567,27 @@ export default function WhatIfPage() {
           </div>
         )}
 
-        {/* Probability Overview — shown after simulation with real metadata only */}
-        {stack.length > 0 && baseKpis && (
+        {/* Probability Overview */}
+        {stack.length > 0 && probabilityOverview && (
           <div style={{ padding: "0 24px", marginTop: 16 }}>
             <ProbabilitySummaryCard
               metrics={[
-                { label: "Scenario Confidence", value: overallConfidence === "high" ? "High" : overallConfidence === "medium" ? "Medium" : overallConfidence === "low" ? "Low" : "—" },
-                { label: "Decisions Stacked", value: `${stack.length}` },
-                // TODO: Survival Probability — requires scenario-level Monte Carlo
-                // TODO: Revenue Target Probability — requires scenario-level Monte Carlo
-                // TODO: Enterprise Value Target Probability — requires scenario-level Monte Carlo
+                {
+                  label: "Survival Probability",
+                  value: `${probabilityOverview.survivalProbability}%`,
+                  probability: probabilityOverview.survivalProbability,
+                },
+                {
+                  label: "Runway Risk",
+                  value: probabilityOverview.runwayRiskLabel,
+                  probability: probabilityOverview.runwayRiskProbability,
+                },
+                // TODO: EBITDA Positive Probability — requires Monte Carlo engine integration
+                // TODO: Revenue Target Probability — requires Monte Carlo engine integration
+                // TODO: Enterprise Value Target Probability — requires Monte Carlo engine integration
               ]}
-              modelConfidence={overallConfidence ?? undefined}
-              dataCompleteness={baseKpis ? "Complete" : "Partial"}
+              modelConfidence={probabilityOverview.modelConfidence}
+              dataCompleteness={probabilityOverview.dataCompleteness}
             />
           </div>
         )}

@@ -16,12 +16,14 @@ export type KpiKey =
   | "churn"
   | "grossMargin"
   | "headcount"
+  | "nrr"
+  | "efficiency"
   | "enterpriseValue"
 
-/** Ordered array of all 10 KPI keys — defines terrain zone order left → right */
+/** Ordered array of all 12 KPI keys — defines terrain zone order left → right */
 export const KPI_KEYS: readonly KpiKey[] = [
   "cash", "runway", "growth", "arr", "revenue", "burn",
-  "churn", "grossMargin", "headcount", "enterpriseValue",
+  "churn", "grossMargin", "headcount", "nrr", "efficiency", "enterpriseValue",
 ] as const
 
 export type HealthLevel = "critical" | "watch" | "healthy" | "strong"
@@ -39,16 +41,18 @@ export interface ZoneDef {
 }
 
 export const KPI_ZONE_MAP: Record<KpiKey, ZoneDef> = {
-  cash:             { xStart: 0.00, xEnd: 0.10, label: "Liquidity Zone",    stationName: "Liquidity Basin" },
-  runway:           { xStart: 0.10, xEnd: 0.20, label: "Runway Horizon",    stationName: "Horizon Shelf" },
-  growth:           { xStart: 0.20, xEnd: 0.30, label: "Growth Gradient",   stationName: "Ascent Ridge" },
-  arr:              { xStart: 0.30, xEnd: 0.40, label: "Revenue Engine",    stationName: "Revenue Spine" },
-  revenue:          { xStart: 0.40, xEnd: 0.50, label: "Revenue Flow",      stationName: "Flow Saddle" },
-  burn:             { xStart: 0.50, xEnd: 0.60, label: "Burn Zone",         stationName: "Furnace Couloir" },
-  churn:            { xStart: 0.60, xEnd: 0.70, label: "Retention Wall",    stationName: "Retention Buttress" },
-  grossMargin:      { xStart: 0.70, xEnd: 0.80, label: "Margin Ridge",      stationName: "Margin Arête" },
-  headcount:        { xStart: 0.80, xEnd: 0.90, label: "Talent Basin",      stationName: "Talent Terrace" },
-  enterpriseValue:  { xStart: 0.90, xEnd: 1.00, label: "Value Summit",      stationName: "Summit Pinnacle" },
+  cash:             { xStart: 0.00,              xEnd: 0.08333333333333333, label: "Liquidity Zone",     stationName: "Liquidity Basin" },
+  runway:           { xStart: 0.08333333333333333, xEnd: 0.16666666666666666, label: "Runway Horizon",     stationName: "Horizon Shelf" },
+  growth:           { xStart: 0.16666666666666666, xEnd: 0.25,              label: "Growth Gradient",    stationName: "Ascent Ridge" },
+  arr:              { xStart: 0.25,              xEnd: 0.3333333333333333,  label: "Revenue Engine",     stationName: "Revenue Spine" },
+  revenue:          { xStart: 0.3333333333333333, xEnd: 0.41666666666666663, label: "Revenue Flow",       stationName: "Flow Saddle" },
+  burn:             { xStart: 0.41666666666666663, xEnd: 0.5,               label: "Burn Zone",          stationName: "Furnace Couloir" },
+  churn:            { xStart: 0.5,               xEnd: 0.5833333333333334,  label: "Retention Wall",     stationName: "Retention Buttress" },
+  grossMargin:      { xStart: 0.5833333333333334, xEnd: 0.6666666666666667, label: "Margin Ridge",       stationName: "Margin Arête" },
+  headcount:        { xStart: 0.6666666666666667, xEnd: 0.75,               label: "Talent Basin",       stationName: "Talent Terrace" },
+  nrr:              { xStart: 0.75,              xEnd: 0.8333333333333334,  label: "Expansion Ramp",     stationName: "Expansion Rampart" },
+  efficiency:       { xStart: 0.8333333333333334, xEnd: 0.9166666666666667, label: "Efficiency Channel", stationName: "Efficiency Channel" },
+  enterpriseValue:  { xStart: 0.9166666666666667, xEnd: 1.0,                label: "Value Summit",       stationName: "Summit Pinnacle" },
 }
 
 /** Height multiplier per health level — drives progressive terrain elevation.
@@ -111,6 +115,20 @@ export function getHealthLevel(key: KpiKey, kpis: PositionKpis): HealthLevel {
       if (hc < 50) return "healthy"
       return "strong"
     }
+    case "nrr": {
+      const nrr = kpis.nrrPct ?? 0
+      if (nrr < 80) return "critical"
+      if (nrr < 95) return "watch"
+      if (nrr < 110) return "healthy"
+      return "strong"
+    }
+    case "efficiency": {
+      const eff = kpis.efficiencyRatio ?? 0
+      if (eff < 0.3) return "critical"
+      if (eff < 0.6) return "watch"
+      if (eff < 1.0) return "healthy"
+      return "strong"
+    }
     case "enterpriseValue":
       if (kpis.valuationEstimate < 1_000_000) return "watch"
       if (kpis.valuationEstimate < 5_000_000) return "healthy"
@@ -152,6 +170,8 @@ export const KPI_CATEGORY_COLORS: Record<KpiKey, { hex: string; r: number; g: nu
   churn:           { hex: "#2dd4bf", r: 0.176, g: 0.831, b: 0.749 },   // turquoise
   grossMargin:     { hex: "#22d3ee", r: 0.133, g: 0.827, b: 0.933 },   // cyan
   headcount:       { hex: "#7dd3fc", r: 0.490, g: 0.827, b: 0.988 },   // light blue
+  nrr:             { hex: "#2dd4bf", r: 0.176, g: 0.831, b: 0.749 },   // reuse turquoise (retention/expansion)
+  efficiency:      { hex: "#f59e0b", r: 0.961, g: 0.620, b: 0.043 },   // reuse amber (efficiency)
   enterpriseValue: { hex: "#1e7eaa", r: 0.118, g: 0.494, b: 0.667 },   // dark azure
 }
 
@@ -208,5 +228,7 @@ export const KPI_STRESS_PROMPTS: Record<KpiKey, string> = {
   churn:            "What if we reduce churn rate to below 2% monthly?",
   grossMargin:      "What if we improve gross margin to 75%?",
   headcount:        "What if we hire 5 more people this quarter?",
+  nrr:              "What if we improve net revenue retention (NRR) to 110%?",
+  efficiency:       "What if we improve CAC efficiency and operating leverage by 20%?",
   enterpriseValue:  "How does a capital raise impact our enterprise value?",
 }

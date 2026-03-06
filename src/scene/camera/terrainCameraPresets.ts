@@ -105,10 +105,15 @@ export const HERO_VIEW_CONTROLS: CameraControlsConfig = {
 }
 
 /**
- * Progressive Terrain Build — the primary Position page view.
- * Uses GOD_VIEW_PRESET for seamless transition when terrain populates.
+ * Progressive Terrain Build — cinematic landscape composition.
+ * Terrain occupies bottom ~60-65% of frame, background mountain visible above horizon.
+ * ~22° downward pitch, FOV 52° for natural perspective.
  */
-export const POSITION_PROGRESSIVE_PRESET: CameraPreset = GOD_VIEW_PRESET
+export const POSITION_PROGRESSIVE_PRESET: CameraPreset = {
+  pos: [0, 180, 420],
+  target: [0, 60, 0],
+  fov: 52,
+}
 
 /** All presets keyed by page context */
 export const CAMERA_PRESETS = {

@@ -5,7 +5,7 @@
 import React, { memo, useMemo, useRef } from "react"
 import * as THREE from "three"
 import { useFrame } from "@react-three/fiber"
-import { TERRAIN_CONSTANTS } from "@/terrain/terrainConstants"
+import { TERRAIN_CONSTANTS, TERRAIN_WORLD_SCALE } from "@/terrain/terrainConstants"
 
 interface Props {
   visible: boolean
@@ -23,14 +23,14 @@ const WaterLinePlane: React.FC<Props> = memo(({ visible, thresholdY = DEFAULT_TH
 
   const planeGeo = useMemo(() => {
     return new THREE.PlaneGeometry(
-      TERRAIN_CONSTANTS.width * 3.0,
-      TERRAIN_CONSTANTS.depth * 2.6,
+      TERRAIN_CONSTANTS.width * TERRAIN_WORLD_SCALE.x,
+      TERRAIN_CONSTANTS.depth * TERRAIN_WORLD_SCALE.z,
     )
   }, [])
 
   const edgeGeo = useMemo(() => {
-    const hw = (TERRAIN_CONSTANTS.width * 3.0) / 2
-    const hd = (TERRAIN_CONSTANTS.depth * 2.6) / 2
+    const hw = (TERRAIN_CONSTANTS.width * TERRAIN_WORLD_SCALE.x) / 2
+    const hd = (TERRAIN_CONSTANTS.depth * TERRAIN_WORLD_SCALE.z) / 2
     const pts = [
       new THREE.Vector3(-hw, 0, -hd),
       new THREE.Vector3(hw, 0, -hd),
@@ -56,7 +56,7 @@ const WaterLinePlane: React.FC<Props> = memo(({ visible, thresholdY = DEFAULT_TH
     }
   })
 
-  const worldY = thresholdY * 2.8 + TERRAIN_CONSTANTS.yOffset
+  const worldY = thresholdY * TERRAIN_WORLD_SCALE.y + TERRAIN_CONSTANTS.yOffset
 
   return (
     <group position={[0, worldY, 0]}>

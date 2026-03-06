@@ -97,7 +97,7 @@ export default function CameraDriftSystem({
     const phaseZ = 0.382
 
     let dx = Math.sin(elapsed * cycleRad * phaseX) * cfg.horizontal * fadeIn
-    let dy = Math.sin(elapsed * cycleRad * phaseY) * cfg.vertical * fadeIn
+    const dy = Math.sin(elapsed * cycleRad * phaseY) * cfg.vertical * fadeIn
     let dz = Math.cos(elapsed * cycleRad * phaseZ) * cfg.depth * fadeIn
 
     const dtx = Math.sin(elapsed * cycleRad * 0.75) * cfg.lookAtHorizontal * fadeIn

@@ -41,7 +41,13 @@ console.log(`  Base URL: ${baseUrl}\n`);
 
 const browser = await puppeteer.launch({
   headless: "new",
-  args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"],
+  args: [
+    "--no-sandbox",
+    "--disable-setuid-sandbox",
+    "--ignore-gpu-blocklist",
+    "--enable-webgl",
+    "--use-gl=swiftshader",
+  ],
 });
 
 const page = await browser.newPage();
@@ -81,7 +87,7 @@ for (const route of ROUTES) {
     }
 
     if (route.expectText) {
-      const bodyText = await page.evaluate(() => document.body?.innerText || "");
+      const bodyText = await page.evaluate(() => globalThis.document?.body?.innerText || "");
       if (!bodyText.includes(route.expectText)) {
         errors.push({ kind: "missing_text", text: `${route.name}: expected "${route.expectText}" not found` });
       }
@@ -100,8 +106,8 @@ try {
 
   // Check that the root element rendered
   const hasRoot = await page.evaluate(() => {
-    const root = document.getElementById("root");
-    return root && root.children.length > 0;
+    const root = globalThis.document?.getElementById("root");
+    return !!root && root.children.length > 0;
   });
 
   if (hasRoot) {
@@ -120,13 +126,13 @@ console.log("\n  Phase 3: PWA checks");
 
 try {
   const hasManifest = await page.evaluate(() => {
-    const link = document.querySelector('link[rel="manifest"]');
+    const link = globalThis.document?.querySelector('link[rel="manifest"]');
     return !!link;
   });
   process.stdout.write(`    ${hasManifest ? "✓" : "✗"} Manifest link present\n`);
 
   const hasThemeColor = await page.evaluate(() => {
-    const meta = document.querySelector('meta[name="theme-color"]');
+    const meta = globalThis.document?.querySelector('meta[name="theme-color"]');
     return !!meta;
   });
   process.stdout.write(`    ${hasThemeColor ? "✓" : "✗"} Theme color meta tag\n`);
@@ -146,12 +152,20 @@ const redirectTests = [
 for (const { from, to } of redirectTests) {
   try {
     await page.goto(new URL(from, baseUrl).toString(), { waitUntil: "domcontentloaded", timeout: 15_000 });
-    const finalUrl = new URL(page.url());
-    if (finalUrl.pathname === to) {
+
+    // SPA redirects can occur after initial load; wait for the final route.
+    await page.waitForFunction(
+      (expected) => globalThis.location?.pathname === expected,
+      { timeout: 5_000 },
+      to,
+    )
+
+    const finalPath = new URL(page.url()).pathname
+    if (finalPath === to) {
       process.stdout.write(`    ✓ ${from} → ${to}\n`);
     } else {
-      process.stdout.write(`    ✗ ${from} → ${finalUrl.pathname} (expected ${to})\n`);
-      errors.push({ kind: "redirect_fail", text: `${from} landed on ${finalUrl.pathname}` });
+      process.stdout.write(`    ✗ ${from} → ${finalPath} (expected ${to})\n`);
+      errors.push({ kind: "redirect_fail", text: `${from} landed on ${finalPath}` });
     }
   } catch (err) {
     process.stdout.write(`    ✗ ${from} redirect failed: ${err.message}\n`);

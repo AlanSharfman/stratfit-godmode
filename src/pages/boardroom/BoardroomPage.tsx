@@ -12,7 +12,7 @@ import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
 import { KPI_KEYS, KPI_ZONE_MAP, getHealthLevel } from "@/domain/intelligence/kpiZoneMapping"
 import { getExecutiveSummary, getKpiCommentary } from "@/domain/intelligence/kpiCommentary"
 import { computeActionRecommendations } from "@/engine/sensitivityAnalysis"
-import { timeSimulation, buildKpiSnapshot, findFirstCliff } from "@/engine/timeSimulation"
+import { timeSimulation, buildKpiSnapshot, findFirstCliff, deriveSurvivalProbability } from "@/engine/timeSimulation"
 import { useKpiAudio } from "@/hooks/useKpiAudio"
 import ScenarioTimelineSlider from "@/components/scenarios/ScenarioTimelineSlider"
 import { useScenarioTimeline } from "@/hooks/useScenarioTimeline"
@@ -106,12 +106,13 @@ export default function BoardroomPage() {
     })
     const timeline = timeSimulation(snapshot, { direct: {} }, 12)
     const cliff = findFirstCliff(timeline)
+    const survivalProbability = deriveSurvivalProbability(timeline)
     const m12 = timeline[timeline.length - 1]
     let text = cliff
       ? `At current trajectory, ${KPI_ZONE_MAP[cliff.kpi].label} reaches critical at month ${cliff.month}.`
       : "No critical tipping points in the 12-month horizon."
     if (m12) text += ` Projected month 12: Cash $${(m12.kpis.cash / 1000).toFixed(0)}K, Runway ${m12.kpis.runway.toFixed(1)} months.`
-    return { text, cliff, m12Kpis: m12?.kpis ?? null }
+    return { text, cliff, survivalProbability, m12Kpis: m12?.kpis ?? null }
   }, [liveKpis])
 
   const startCinematic = useCallback(() => {
@@ -150,7 +151,7 @@ export default function BoardroomPage() {
         button { display: none !important; }
       }
     `
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>STRATFIT Board Pack — ${new Date().toLocaleDateString()}</title><style>body{font-family:Inter,system-ui,sans-serif;background:#0B1520;color:#c8dcf0;padding:48px;max-width:800px;margin:0 auto}h1{font-weight:200;letter-spacing:0.15em;text-transform:uppercase}h3{font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#22d3ee80}hr{border:none;border-top:1px solid rgba(34,211,238,0.08);margin:24px 0}${printStyles}</style></head><body>${el.innerHTML}<script>window.onload=()=>window.print()<\/script></body></html>`
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>STRATFIT Board Pack — ${new Date().toLocaleDateString()}</title><style>body{font-family:Inter,system-ui,sans-serif;background:#0B1520;color:#c8dcf0;padding:48px;max-width:800px;margin:0 auto}h1{font-weight:200;letter-spacing:0.15em;text-transform:uppercase}h3{font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#22d3ee80}hr{border:none;border-top:1px solid rgba(34,211,238,0.08);margin:24px 0}${printStyles}</style></head><body>${el.innerHTML}<script>window.onload=()=>window.print()</script></body></html>`
     const blob = new Blob([html], { type: "text/html" })
     const url = URL.createObjectURL(blob)
     window.open(url, "_blank")
@@ -279,7 +280,7 @@ export default function BoardroomPage() {
             <Section title="Probability Overview">
               <ProbabilitySummaryCard
                 metrics={[
-                  { label: "Survival Probability", value: outlook?.cliff ? `${Math.max(5, Math.round(100 - (12 - outlook.cliff.month) * 8))}%` : "High", probability: outlook?.cliff ? Math.max(5, Math.round(100 - (12 - outlook.cliff.month) * 8)) : 85 },
+                  { label: "Survival Probability", value: `${outlook?.survivalProbability ?? 0}%`, probability: outlook?.survivalProbability ?? 0 },
                   { label: "Runway Risk", value: outlook?.cliff ? `Month ${outlook.cliff.month}` : "Low" },
                   // TODO: EBITDA Positive Probability — requires Monte Carlo engine integration
                   // TODO: Revenue Target Probability — requires Monte Carlo engine integration

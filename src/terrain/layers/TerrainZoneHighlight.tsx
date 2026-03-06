@@ -11,6 +11,7 @@ import type { MetricsInput } from "@/terrain/buildTerrain"
 import type { KpiKey, HealthColor } from "@/domain/intelligence/kpiZoneMapping"
 import { KPI_ZONE_MAP, getHealthLevel, getHealthColor } from "@/domain/intelligence/kpiZoneMapping"
 import type { PositionKpis } from "@/pages/position/overlays/positionState"
+import { TERRAIN_WORLD_SCALE } from "@/terrain/terrainConstants"
 
 interface TerrainZoneHighlightProps {
   focusedKpi: KpiKey | null
@@ -28,7 +29,7 @@ const TerrainZoneHighlight: React.FC<TerrainZoneHighlightProps> = memo(
     const targetOpacityRef = useRef(0)
 
     const { baseline } = useSystemBaseline()
-    const baselineAny = baseline as any // eslint-disable-line @typescript-eslint/no-explicit-any
+    const baselineAny = baseline as any
 
     const seedStr = useMemo(() => baselineSeedString(baselineAny), [baselineAny])
     const seed = useMemo(() => createSeed(seedStr), [seedStr])
@@ -107,7 +108,7 @@ const TerrainZoneHighlight: React.FC<TerrainZoneHighlightProps> = memo(
       if (!meshRef.current) return
       meshRef.current.rotation.x = -Math.PI / 2
       meshRef.current.position.set(0, -6, 0)
-      meshRef.current.scale.set(3.0, 2.8, 2.6)
+      meshRef.current.scale.set(TERRAIN_WORLD_SCALE.x, TERRAIN_WORLD_SCALE.y, TERRAIN_WORLD_SCALE.z)
       meshRef.current.frustumCulled = false
     }, [zoneGeo])
 

@@ -5,7 +5,6 @@ import { useShallow } from "zustand/react/shallow"
 import { ROUTES } from "@/routes/routeContract"
 
 import TerrainStage from "@/terrain/TerrainStage"
-import SkyAtmosphere from "@/scene/rigs/SkyAtmosphere"
 import TerrainTuningPanel from "@/terrain/TerrainTuningPanel"
 import TerrainNavWidget from "@/terrain/TerrainNavWidget"
 import { DEFAULT_TUNING } from "@/terrain/terrainTuning"
@@ -31,7 +30,7 @@ import {
 import { POSITION_PROGRESSIVE_PRESET } from "@/scene/camera/terrainCameraPresets"
 import { useKpiAudio } from "@/hooks/useKpiAudio"
 import { KPI_KEYS as ALL_KPI_KEYS, getHealthLevel, KPI_ZONE_MAP } from "@/domain/intelligence/kpiZoneMapping"
-import { timeSimulation, buildKpiSnapshot, findFirstCliff } from "@/engine/timeSimulation"
+import { timeSimulation, buildKpiSnapshot, findFirstCliff, deriveSurvivalProbability } from "@/engine/timeSimulation"
 import ProvenanceBadge from "@/components/system/ProvenanceBadge"
 import IntelligenceConsole from "@/components/intelligence/IntelligenceConsole"
 import { getExecutiveSummary } from "@/domain/intelligence/kpiCommentary"
@@ -433,9 +432,7 @@ export default function PositionPage() {
       .filter((k) => getHealthLevel(k, liveKpis) === "critical")
       .map((k) => KPI_ZONE_MAP[k].label)
 
-    const survivalProbability = cliff
-      ? Math.max(5, Math.round(100 - (12 - cliff.month) * 8))
-      : healthScore > 60 ? Math.min(95, healthScore + 10) : Math.max(30, healthScore)
+    const survivalProbability = deriveSurvivalProbability(timeline)
 
     const filledKpis = [
       liveKpis.cashOnHand, liveKpis.runwayMonths, liveKpis.arr,
@@ -481,15 +478,8 @@ export default function PositionPage() {
   return (
     <div className={styles.page}>
 
-      {/* ═══ LAYER 1: Deep navy canvas backdrop ═══ */}
-      <div className={styles.canvasLayer} />
-
-      {/* ═══ ATMOSPHERE LAYERS — 2-layer haze + peak spotlight + refined vignette ═══ */}
-      <div className={styles.atmoSky} aria-hidden="true" />
-      <div className={styles.atmoHazeDeep} aria-hidden="true" />
-      <div className={styles.atmoHazeHorizon} aria-hidden="true" />
-      <div className={styles.atmoSpotlight} aria-hidden="true" />
-      <div className={styles.atmoVignette} aria-hidden="true" />
+      {/* Atmospheric depth veil — pushes JPEG mountain visually behind live terrain */}
+      <div className={styles.bgDepthVeil} aria-hidden="true" />
 
       {/* ═══ LAYER 2: God Mode 3-column instrument grid ═══ */}
       <div className={styles.uiLayer}>
@@ -534,6 +524,8 @@ export default function PositionPage() {
           <div ref={viewportRef} className={styles.terrainViewport} aria-label="Position terrain" style={{ position: "relative" }}>
             <TerrainStage
               progressive
+              transparentBackground
+              cinematicLighting
               revealedKpis={revealedKpis}
               focusedKpi={focusedKpi}
               onFocusKpi={handleHoverKpi}
@@ -565,9 +557,7 @@ export default function PositionPage() {
               } satisfies TerrainMetrics}
               granularity={granularity}
               driftMode="micro"
-            >
-              <SkyAtmosphere />
-            </TerrainStage>
+            />
             <TerrainHealthBar kpis={liveKpis} revealedKpis={revealedKpis} />
             <TerrainZoneLabels kpis={liveKpis} revealedKpis={revealedKpis} focusedKpi={focusedKpi} onFocusKpi={handleHoverKpi} onClickKpi={handleClickKpi} />
             <TerrainZoneLegend kpis={liveKpis} revealedKpis={revealedKpis} focusedKpi={focusedKpi} onFocusKpi={handleHoverKpi} />

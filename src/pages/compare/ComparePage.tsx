@@ -43,6 +43,7 @@ import { useCompareIntelligence } from "@/hooks/useCompareIntelligence"
 import { useVoiceBriefingStore } from "@/store/voiceBriefingStore"
 import { buildPositionViewModel } from "@/pages/position/overlays/positionState"
 import { getExecutiveSummary } from "@/domain/intelligence/kpiCommentary"
+import { buildKpiSnapshot, findFirstCliff, timeSimulation, deriveSurvivalProbability } from "@/engine/timeSimulation"
 import CompareQueryPanel from "@/features/compare/CompareQueryPanel"
 import BriefingDirector from "@/features/intelligence/BriefingDirector"
 import { generateInvestorPlanStub } from "@/features/intelligence/generateInvestorPlanStub"
@@ -141,7 +142,6 @@ export default function ComparePage() {
     if (qN === "2") setCompareCount(2)
     else if (qN === "3") setCompareCount(3)
     // Only on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // ── Sync store → query params ──
@@ -188,7 +188,7 @@ export default function ComparePage() {
   const scenarioC = useMemo(() => (cId ? scenarios.find((s) => s.id === cId) ?? null : null), [cId, scenarios])
 
   // ── Terrain metrics derivation helper ──
-  function deriveMetrics(scenario: typeof scenarioA): TerrainMetrics {
+  const deriveMetrics = useCallback((scenario: typeof scenarioA): TerrainMetrics => {
     if (scenario?.simulationResults?.terrainMetrics) {
       const em = scenario.simulationResults.terrainMetrics
       return {
@@ -206,11 +206,11 @@ export default function ComparePage() {
     }
     if (baselineInputs) return deriveTerrainMetrics(baselineInputs as any)
     return { elevationScale: 1, roughness: 1, liquidityDepth: 1, growthSlope: 0, volatility: 0 }
-  }
+  }, [baselineInputs])
 
-  const metricsA = useMemo(() => deriveMetrics(scenarioA), [scenarioA, baselineInputs])
-  const metricsB = useMemo(() => deriveMetrics(scenarioB), [scenarioB, baselineInputs])
-  const metricsC = useMemo(() => deriveMetrics(scenarioC), [scenarioC, baselineInputs])
+  const metricsA = useMemo(() => deriveMetrics(scenarioA), [scenarioA, deriveMetrics])
+  const metricsB = useMemo(() => deriveMetrics(scenarioB), [scenarioB, deriveMetrics])
+  const metricsC = useMemo(() => deriveMetrics(scenarioC), [scenarioC, deriveMetrics])
 
   // ── Events ──
   const eventsA = useMemo<TerrainEvent[]>(() => scenarioA?.simulationResults?.events ?? [], [scenarioA])
@@ -218,7 +218,7 @@ export default function ComparePage() {
   const eventsC = useMemo<TerrainEvent[]>(() => scenarioC?.simulationResults?.events ?? [], [scenarioC])
 
   // ── KPIs ──
-  function deriveKpis(scenario: typeof scenarioA): SimulationKpis | null {
+  const deriveKpis = useCallback((scenario: typeof scenarioA): SimulationKpis | null => {
     if (scenario?.simulationResults?.kpis) return scenario.simulationResults.kpis
     if (!scenario && baseline) {
       const f = baseline.financial
@@ -238,11 +238,11 @@ export default function ComparePage() {
       }
     }
     return null
-  }
+  }, [baseline])
 
-  const kpisA = useMemo(() => deriveKpis(scenarioA), [scenarioA, baseline])
-  const kpisB = useMemo(() => deriveKpis(scenarioB), [scenarioB, baseline])
-  const kpisC = useMemo(() => deriveKpis(scenarioC), [scenarioC, baseline])
+  const kpisA = useMemo(() => deriveKpis(scenarioA), [scenarioA, deriveKpis])
+  const kpisB = useMemo(() => deriveKpis(scenarioB), [scenarioB, deriveKpis])
+  const kpisC = useMemo(() => deriveKpis(scenarioC), [scenarioC, deriveKpis])
 
   // ── Labels ──
   const labelA = aId === null ? "Baseline" : (scenarioA?.decision ?? "Scenario").slice(0, 20)
@@ -276,6 +276,46 @@ export default function ComparePage() {
     const dir = revR >= revL ? "higher" : "lower"
     return `${pairLabelR} projects ${Math.abs(Number(pct))}% ${dir} revenue than ${pairLabelL}.`
   }, [pairKpisL, pairKpisR, pairLabelL, pairLabelR])
+
+  const probabilityOverview = useMemo(() => {
+    if (!pairKpisR) return null
+
+    const snapshot = buildKpiSnapshot({
+      cashBalance: pairKpisR.cash,
+      runwayMonths: pairKpisR.runway ?? 0,
+      growthRatePct: pairKpisR.growthRate * 100,
+      arr: pairKpisR.revenue * 12,
+      revenueMonthly: pairKpisR.revenue,
+      burnMonthly: pairKpisR.monthlyBurn,
+      churnPct: pairKpisR.churnRate * 100,
+      grossMarginPct: pairKpisR.grossMargin * 100,
+      headcount: pairKpisR.headcount,
+    })
+    const timeline = timeSimulation(snapshot, { direct: {} }, 12)
+    const cliff = findFirstCliff(timeline)
+    const survivalProbability = deriveSurvivalProbability(timeline)
+
+    const fields = [
+      pairKpisR.cash,
+      pairKpisR.monthlyBurn,
+      pairKpisR.revenue,
+      pairKpisR.grossMargin,
+      pairKpisR.growthRate,
+      pairKpisR.churnRate,
+      pairKpisR.headcount,
+      pairKpisR.arpa,
+      pairKpisR.runway,
+    ]
+    const dataCompleteness = `${Math.round((fields.filter((value) => value != null && value !== 0).length / fields.length) * 100)}%`
+
+    return {
+      subjectLabel: pairLabelR,
+      survivalProbability,
+      runwayRiskLabel: cliff ? `${pairLabelR}: Month ${cliff.month}` : `${pairLabelR}: Low`,
+      runwayRiskProbability: cliff ? Math.max(10, 100 - survivalProbability) : 15,
+      dataCompleteness,
+    }
+  }, [pairKpisR, pairLabelR])
 
   // ── Available pairs ──
   const availablePairs: ComparePair[] = is3Mode ? ["AB", "AC", "BC"] : ["AB"]
@@ -553,16 +593,26 @@ export default function ComparePage() {
             />
 
             {/* Probability Overview */}
-            {pairKpisL && pairKpisR && (
+            {probabilityOverview && (
               <div style={{ padding: "6px 8px 0" }}>
                 <ProbabilitySummaryCard
+                  title="Comparison Probability Overview"
+                  subtitle="Compare probabilistic outcomes across scenarios."
                   metrics={[
-                    { label: "Scenarios Compared", value: is3Mode ? "3-Way" : "2-Way" },
-                    { label: "Data Completeness", value: baseline ? "Complete" : "Partial" },
-                    // TODO: Survival Probability delta — requires Monte Carlo per-scenario
+                    {
+                      label: "Survival Probability",
+                      value: `${probabilityOverview.subjectLabel}: ${probabilityOverview.survivalProbability}%`,
+                      probability: probabilityOverview.survivalProbability,
+                    },
+                    {
+                      label: "Runway Risk",
+                      value: probabilityOverview.runwayRiskLabel,
+                      probability: probabilityOverview.runwayRiskProbability,
+                    },
                     // TODO: Revenue Target Probability — requires Monte Carlo per-scenario
+                    // TODO: Enterprise Value Target Probability — requires Monte Carlo per-scenario
                   ]}
-                  modelConfidence={compareIntel.analysis ? "Medium" : undefined}
+                  dataCompleteness={probabilityOverview.dataCompleteness}
                 />
               </div>
             )}

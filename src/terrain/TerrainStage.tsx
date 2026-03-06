@@ -83,6 +83,10 @@ type TerrainStageProps = {
   driftMode?: DriftMode
   /** Baseline KPIs for delta overlay (green/red terrain diff) */
   deltaBaselineKpis?: PositionKpis | null
+  /** When true, removes HorizonBand so the HTML background shows through the canvas */
+  transparentBackground?: boolean
+  /** When true, uses cinematic key-light-dominant lighting for premium terrain rendering */
+  cinematicLighting?: boolean
   children?: ReactNode
 }
 
@@ -133,6 +137,8 @@ export default function TerrainStage({
   strategicPathSlices = null,
   driftMode = "off",
   deltaBaselineKpis = null,
+  transparentBackground = false,
+  cinematicLighting = false,
   children,
 }: TerrainStageProps) {
   const terrainRef = useRef<TerrainSurfaceHandle>(null!);
@@ -149,7 +155,6 @@ export default function TerrainStage({
     setControls(instance);
   }, [setControls]);
 
-  const [fogColor] = useState("#0b1220");
 
   useEffect(() => {
     if (terrainReady) return;
@@ -183,7 +188,7 @@ export default function TerrainStage({
           camera.lookAt(...effectivePreset.target);
           camera.updateProjectionMatrix();
         }
-        gl.setClearColor("#060b16", 1);
+        gl.setClearColor("#060b16", 0);
         gl.toneMappingExposure = 1.4;
       }}
     >
@@ -213,16 +218,29 @@ export default function TerrainStage({
 
       <CameraSafetyGuard controlsRef={controlsRef} limits={GOD_VIEW_CONTROLS} />
 
-      <fogExp2 attach="fog" args={["#071425", 0.0012]} />
+      {/* fog disabled — mountain background shows through transparent canvas */}
 
-      <ambientLight intensity={0.7} color="#0a1a2f" />
-      <directionalLight position={[200, 300, 200]} intensity={1.4} color="#6bdcff" castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-camera-near={0.5} shadow-camera-far={500} shadow-camera-left={-200} shadow-camera-right={200} shadow-camera-top={200} shadow-camera-bottom={-200} />
-      <directionalLight position={[-100, 180, -80]} intensity={0.65} color="#6ef0ff" />
-      <directionalLight position={[0, 100, 220]} intensity={0.40} color="#a0d8ff" />
-      <directionalLight position={[-200, 40, -100]} intensity={0.28} color="#7dd3fc" />
-      <hemisphereLight args={["#66e3ff", "#050b14", 0.6]} />
+      {cinematicLighting ? (
+        <>
+          <ambientLight intensity={0.25} color="#0a1a2f" />
+          <directionalLight position={[180, 360, 160]} intensity={1.8} color="#6bdcff" castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-camera-near={0.5} shadow-camera-far={600} shadow-camera-left={-250} shadow-camera-right={250} shadow-camera-top={250} shadow-camera-bottom={-250} shadow-bias={-0.0004} />
+          <directionalLight position={[-120, 200, -60]} intensity={0.35} color="#4ac8e8" />
+          <directionalLight position={[0, 80, 240]} intensity={0.20} color="#7cc0e0" />
+          <directionalLight position={[-200, 30, -120]} intensity={0.12} color="#5aa8d0" />
+          <hemisphereLight args={["#4ac8e8", "#020810", 0.35]} />
+        </>
+      ) : (
+        <>
+          <ambientLight intensity={0.7} color="#0a1a2f" />
+          <directionalLight position={[200, 300, 200]} intensity={1.4} color="#6bdcff" castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-camera-near={0.5} shadow-camera-far={500} shadow-camera-left={-200} shadow-camera-right={200} shadow-camera-top={200} shadow-camera-bottom={-200} />
+          <directionalLight position={[-100, 180, -80]} intensity={0.65} color="#6ef0ff" />
+          <directionalLight position={[0, 100, 220]} intensity={0.40} color="#a0d8ff" />
+          <directionalLight position={[-200, 40, -100]} intensity={0.28} color="#7dd3fc" />
+          <hemisphereLight args={["#66e3ff", "#050b14", 0.6]} />
+        </>
+      )}
 
-      <HorizonBand />
+      {!transparentBackground && <HorizonBand />}
       <TerrainCompass />
 
       <Suspense fallback={null}>

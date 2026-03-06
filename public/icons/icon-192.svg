@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
-  <rect width="192" height="192" rx="32" fill="#040810"/>
-  <polygon points="96,30 150,140 42,140" fill="none" stroke="#22d3ee" stroke-width="3" opacity="0.8"/>
-  <polygon points="96,55 135,130 57,130" fill="rgba(34,211,238,0.08)" stroke="#22d3ee" stroke-width="1.5" opacity="0.5"/>
-  <text x="96" y="170" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="14" font-weight="700" letter-spacing="3" fill="rgba(34,211,238,0.7)">STRATFIT</text>
-</svg>
