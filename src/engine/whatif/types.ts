@@ -69,7 +69,12 @@ export interface WhatIfCitation {
 
 export interface WhatIfAnswer {
   intent: WhatIfIntent
+  headline?: string
   summary: string
+  terrain_interpretation?: string
+  short_term_effect?: string
+  long_term_effect?: string
+  impact_chain?: string[]
   assumptions?: string[]
   missing_inputs?: WhatIfMissingInput[]
   kpi_impacts: WhatIfKpiImpact[]
@@ -86,7 +91,12 @@ export const WHATIF_JSON_SCHEMA = {
   additionalProperties: false,
   properties: {
     intent: { type: "string", enum: ["explain", "simulate_change", "compare", "forecast", "data_missing"] },
-    summary: { type: "string", description: "1–3 sentences, investor-grade" },
+    headline: { type: "string", description: "One-line strategic summary, 10–15 words, investor-grade" },
+    summary: { type: "string", description: "2–3 sentences, investor-grade strategic explanation" },
+    terrain_interpretation: { type: "string", description: "How the mountain reshapes, using terrain vocabulary" },
+    short_term_effect: { type: "string", description: "What happens in 0–3 months" },
+    long_term_effect: { type: "string", description: "What structural shift occurs at 6–12 months" },
+    impact_chain: { type: "array", items: { type: "string" }, description: "3–5 causal steps from decision to terrain change" },
     assumptions: { type: "array", items: { type: "string" } },
     missing_inputs: {
       type: "array",
@@ -171,7 +181,7 @@ export const WHATIF_JSON_SCHEMA = {
       },
     },
   },
-  required: ["intent", "summary", "kpi_impacts", "terrain_overlays"],
+  required: ["intent", "headline", "summary", "terrain_interpretation", "short_term_effect", "long_term_effect", "impact_chain", "kpi_impacts", "terrain_overlays"],
 } as const
 
 // ── Validator (manual type-guard — no Zod dep needed) ──
@@ -202,8 +212,18 @@ export function validateWhatIfAnswer(raw: unknown): ValidateResult {
 
   if (typeof r.intent !== "string" || !VALID_INTENTS.has(r.intent))
     errors.push(`Invalid intent: ${r.intent}`)
+  if (typeof r.headline !== "string" || r.headline.length === 0)
+    errors.push("Missing or empty headline")
   if (typeof r.summary !== "string" || r.summary.length === 0)
     errors.push("Missing or empty summary")
+  if (typeof r.terrain_interpretation !== "string")
+    errors.push("Missing terrain_interpretation")
+  if (typeof r.short_term_effect !== "string")
+    errors.push("Missing short_term_effect")
+  if (typeof r.long_term_effect !== "string")
+    errors.push("Missing long_term_effect")
+  if (!Array.isArray(r.impact_chain))
+    errors.push("impact_chain must be an array")
 
   if (!Array.isArray(r.kpi_impacts))
     errors.push("kpi_impacts must be an array")
@@ -265,7 +285,12 @@ export function validateWhatIfAnswer(raw: unknown): ValidateResult {
 export function safeErrorAnswer(message?: string): WhatIfAnswer {
   return {
     intent: "data_missing",
+    headline: "Insufficient data to analyse scenario",
     summary: message ?? "I couldn't produce a valid structured answer. Please re-ask or simplify your question.",
+    terrain_interpretation: "The terrain cannot be assessed without sufficient context.",
+    short_term_effect: "",
+    long_term_effect: "",
+    impact_chain: [],
     kpi_impacts: [],
     terrain_overlays: [],
     next_questions: [

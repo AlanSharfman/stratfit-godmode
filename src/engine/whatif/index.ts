@@ -10,3 +10,24 @@ export type {
   ValidateResult,
 } from "./types"
 export { validateWhatIfAnswer, safeErrorAnswer } from "./types"
+
+// ── New modular architecture ──
+export { STRATFIT_SYSTEM_PROMPT } from "./prompts/stratfitSystemPrompt"
+export { buildDeveloperPrompt } from "./prompts/stratfitDeveloperPrompt"
+export {
+  buildStratfitContext,
+  formatContextAsMessage,
+  type StratfitContext,
+  type CompanyStage,
+  type ScenarioContext,
+} from "./utils/buildStratfitContext"
+export {
+  parseScenarioIntent,
+  type ScenarioIntelligence,
+  type AffectedZone,
+} from "./utils/parseScenarioIntent"
+export {
+  STRATFIT_COMPARE_PROMPT,
+  COMPARE_JSON_SCHEMA,
+  type CompareAnalysis,
+} from "./prompts/stratfitComparePrompt"

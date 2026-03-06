@@ -14,6 +14,10 @@ import { getExecutiveSummary, getKpiCommentary } from "@/domain/intelligence/kpi
 import { computeActionRecommendations } from "@/engine/sensitivityAnalysis"
 import { timeSimulation, buildKpiSnapshot, findFirstCliff } from "@/engine/timeSimulation"
 import { useKpiAudio } from "@/hooks/useKpiAudio"
+import ScenarioTimelineSlider from "@/components/scenarios/ScenarioTimelineSlider"
+import { useScenarioTimeline } from "@/hooks/useScenarioTimeline"
+import { useScenarioTimelineStore } from "@/state/scenarioTimelineStore"
+import { buildScenarioTimeline } from "@/engine/buildScenarioTimeline"
 
 type BoardMode = "cinematic" | "report" | "briefing"
 
@@ -59,6 +63,21 @@ export default function BoardroomPage() {
   const revealTimerRef = useRef<number | null>(null)
 
   const fullRevealed = useMemo(() => new Set(KPI_KEYS), [])
+
+  const {
+    timeline: boardTimeline,
+    activeKpis: timelineKpis,
+    handleVoice: handleTimelineVoice,
+    isNarrating: isTimelineNarrating,
+  } = useScenarioTimeline(liveKpis)
+  const setTimelineStore = useScenarioTimelineStore((s) => s.setTimeline)
+
+  useEffect(() => {
+    if (!liveKpis) return
+    const tl = buildScenarioTimeline(liveKpis, {}, "Board Outlook")
+    setTimelineStore(tl)
+  }, [liveKpis, setTimelineStore])
+
   const recommendations = useMemo(() => liveKpis ? computeActionRecommendations(liveKpis, 3) : [], [liveKpis])
   const boardQuestions = useMemo(() => liveKpis ? generateBoardQuestions(liveKpis) : [], [liveKpis])
 
@@ -164,14 +183,16 @@ export default function BoardroomPage() {
         </AnimatePresence>
 
         {mode === "cinematic" ? (
-          <div style={{ flex: 1, position: "relative", minHeight: 500 }}>
-            <TerrainStage
-              progressive revealedKpis={revealedKpis}
-              focusedKpi={revealIndex > 0 && revealIndex <= KPI_KEYS.length ? KPI_KEYS[revealIndex - 1] : null}
-              zoneKpis={liveKpis} cameraPreset={POSITION_PROGRESSIVE_PRESET}
-              autoRotateSpeed={isRevealing ? 0.5 : 0.2} hideMarkers heatmapEnabled={false}
-            ><SkyAtmosphere /></TerrainStage>
-            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "32px 48px", background: "linear-gradient(transparent 0%, rgba(12,20,34,0.92) 100%)", zIndex: 5 }}>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 500 }}>
+            <div style={{ flex: 1, position: "relative" }}>
+              <TerrainStage
+                progressive revealedKpis={revealedKpis}
+                focusedKpi={revealIndex > 0 && revealIndex <= KPI_KEYS.length ? KPI_KEYS[revealIndex - 1] : null}
+                zoneKpis={timelineKpis ?? liveKpis} cameraPreset={POSITION_PROGRESSIVE_PRESET}
+                autoRotateSpeed={isRevealing ? 0.5 : 0.2} hideMarkers heatmapEnabled={false}
+                driftMode="cinematic"
+              ><SkyAtmosphere /></TerrainStage>
+              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "32px 48px", background: "linear-gradient(transparent 0%, rgba(12,20,34,0.92) 100%)", zIndex: 5 }}>
               <div style={{ fontSize: 16, fontWeight: 300, lineHeight: 1.7, color: "rgba(200,220,240,0.8)", maxWidth: 700 }}>{narrativeText}</div>
               <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
                 {!isRevealing ? (
@@ -185,6 +206,8 @@ export default function BoardroomPage() {
                 )}
               </div>
             </div>
+            </div>
+            <ScenarioTimelineSlider onVoice={handleTimelineVoice} isNarrating={isTimelineNarrating} />
           </div>
         ) : (
           <div id="boardroom-report" style={{ maxWidth: 800, margin: "24px auto 48px", padding: "48px", background: "linear-gradient(135deg, rgba(10,18,32,0.95), rgba(6,14,28,0.98))", border: "1px solid rgba(34,211,238,0.1)", borderRadius: 12, boxShadow: "0 4px 32px rgba(0,0,0,0.4)" }}>

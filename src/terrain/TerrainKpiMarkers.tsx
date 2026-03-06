@@ -1,8 +1,14 @@
-import React, { useEffect, useMemo, useRef } from "react"
+import React, { useCallback, useEffect, useMemo, useRef } from "react"
 import * as THREE from "three"
-import { useFrame, useLoader, useThree } from "@react-three/fiber"
+import { useFrame, useThree } from "@react-three/fiber"
+import { Html } from "@react-three/drei"
 import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
-import { PRIMARY_KPI_KEYS, PRIMARY_ANCHOR_POSITIONS, KPI_CATEGORY_COLORS } from "@/domain/intelligence/kpiZoneMapping"
+import {
+  PRIMARY_KPI_KEYS,
+  PRIMARY_ANCHOR_POSITIONS,
+  KPI_CATEGORY_COLORS,
+  KPI_ZONE_MAP,
+} from "@/domain/intelligence/kpiZoneMapping"
 import type { PositionKpis } from "@/pages/position/overlays/positionState"
 import type { ProgressiveTerrainHandle } from "./ProgressiveTerrainSurface"
 import { TERRAIN_CONSTANTS } from "./terrainConstants"
@@ -18,158 +24,42 @@ interface Props {
   visible: boolean
 }
 
-const CUBE_SIZE = 14
-const CUBE_DEPTH = 6
-const NEON_HEIGHT = 5
-const LOGO_FACE_INSET = 0.05
+const MARKER_LIFT = 18
+const HOVER_LIFT = 26
+const STEM_HEIGHT = 14
+const ORB_RADIUS = 1.6
+const HALO_INNER = ORB_RADIUS + 0.3
+const HALO_OUTER = ORB_RADIUS + 1.2
+const STEM_RADIUS = 0.04
+const PULSE_SPEED = 1.4
+const LABEL_OFFSET_Y = ORB_RADIUS + 2.8
 
-const FOCUSED_SCALE = 1.35
-const STORYLINE_SCALE = 1.18
-
-const REST_Y_LIFT = 22
-const HOVER_Y_LIFT = 30
-const STORYLINE_Y_LIFT = 26
-const TERRAIN_SURFACE_LIFT = 0.25
-
+const FOCUSED_SCALE = 1.25
 const STORY_INITIAL_DELAY = 1.0
 const STORY_PER_KPI = 1.1
 
-const VERT = /* glsl */ `
-  varying vec2 vUv;
-  void main() {
-    vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`
-
-const FRAG = /* glsl */ `
-  uniform sampler2D uMap;
-  uniform vec3 uTint;
-  uniform float uOpacity;
-  uniform float uGlowStrength;
-  varying vec2 vUv;
-
-  void main() {
-    vec4 tex = texture2D(uMap, vUv);
-    if (tex.a < 0.05) discard;
-
-    float gb = tex.g + tex.b;
-    float rRatio = tex.r / max(gb, 0.001);
-    float cyanness = smoothstep(0.8, 1.3, gb) * smoothstep(0.35, 0.10, rRatio);
-
-    float brightness = max(tex.r, max(tex.g, tex.b));
-    float brightEdge = smoothstep(0.55, 0.80, brightness) * step(tex.r * 1.8, gb) * 0.9;
-    float bandMask = clamp(max(cyanness, brightEdge), 0.0, 1.0);
-
-    float bandLum = dot(tex.rgb, vec3(0.299, 0.587, 0.114));
-    vec3 tintedBand = uTint * (bandLum * 3.2 + 1.1 + uGlowStrength * 0.8);
-
-    vec3 result = mix(tex.rgb, tintedBand, bandMask);
-    result += uTint * bandMask * (0.45 + uGlowStrength * 0.6);
-
-    vec3 boosted = result * 1.4 + 0.08;
-    gl_FragColor = vec4(boosted, tex.a * uOpacity);
-  }
-`
-
-/* ── Shared geometries (created once, reused by all markers) ── */
-let _cubeGeo: THREE.BoxGeometry | null = null
-let _neonGeo: THREE.BoxGeometry | null = null
-let _logoGeo: THREE.PlaneGeometry | null = null
-
-function getCubeGeo() {
-  if (!_cubeGeo) _cubeGeo = new THREE.BoxGeometry(CUBE_SIZE, CUBE_SIZE, CUBE_DEPTH)
-  return _cubeGeo
-}
-function getNeonGeo() {
-  if (!_neonGeo) _neonGeo = new THREE.BoxGeometry(CUBE_SIZE + 1.5, NEON_HEIGHT, CUBE_DEPTH + 1.5)
-  return _neonGeo
-}
-let _logoAspect = 0
-function getLogoGeo(aspect: number) {
-  const w = CUBE_SIZE * 0.88
-  if (!_logoGeo || Math.abs(_logoAspect - aspect) > 0.01) {
-    _logoGeo?.dispose()
-    _logoGeo = new THREE.PlaneGeometry(w * aspect, w)
-    _logoAspect = aspect
-  }
-  return _logoGeo
+const MARKER_LABELS: Partial<Record<KpiKey, string>> = {
+  cash: "Liquidity Basin",
+  runway: "Runway Horizon",
+  growth: "Growth Gradient",
+  revenue: "Revenue Flow",
+  burn: "Burn Zone",
+  enterpriseValue: "Value Summit",
 }
 
-/* ── Materials ── */
-function createLogoMaterial(texture: THREE.Texture, tint: THREE.Color): THREE.ShaderMaterial {
-  return new THREE.ShaderMaterial({
-    uniforms: {
-      uMap: { value: texture },
-      uTint: { value: tint },
-      uOpacity: { value: 1.0 },
-      uGlowStrength: { value: 0.0 },
-    },
-    vertexShader: VERT,
-    fragmentShader: FRAG,
-    transparent: true,
-    depthTest: true,
-    depthWrite: false,
-    side: THREE.DoubleSide,
-    polygonOffset: true,
-    polygonOffsetFactor: -2,
-    polygonOffsetUnits: -2,
-  })
-}
-
-function createCubeMaterial(): THREE.MeshStandardMaterial {
-  return new THREE.MeshStandardMaterial({
-    color: 0x2a3a55,
-    emissive: 0x3a506e,
-    emissiveIntensity: 0.45,
-    roughness: 0.35,
-    metalness: 0.65,
-    transparent: false,
-    depthWrite: true,
-  })
-}
-
-function createNeonMaterial(color: THREE.Color): THREE.MeshStandardMaterial {
-  return new THREE.MeshStandardMaterial({
-    color,
-    emissive: color,
-    emissiveIntensity: 2.2,
-    roughness: 0.15,
-    metalness: 0.1,
-    transparent: true,
-    opacity: 0.95,
-    depthWrite: true,
-  })
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   MAIN COMPONENT
-   ═══════════════════════════════════════════════════════════════ */
-
-export default function TerrainKpiMarkers({ terrainRef, focusedKpi, onFocusKpi, onClickKpi, onFocusedMarkerScreen, kpis, revealedKpis, visible }: Props) {
-  const texture = useLoader(THREE.TextureLoader, "/stratfit-logo.png")
-
-  useMemo(() => {
-    texture.minFilter = THREE.LinearMipmapLinearFilter
-    texture.magFilter = THREE.LinearFilter
-    texture.anisotropy = 16
-    texture.colorSpace = THREE.SRGBColorSpace
-    texture.premultiplyAlpha = false
-    texture.generateMipmaps = true
-    texture.needsUpdate = true
-  }, [texture])
-
-  const aspect = useMemo(() => {
-    if (texture.image) {
-      const img = texture.image as HTMLImageElement
-      return img.width && img.height ? img.width / img.height : 1
-    }
-    return 1
-  }, [texture])
-
+export default function TerrainKpiMarkers({
+  terrainRef,
+  focusedKpi,
+  onFocusKpi,
+  onClickKpi,
+  onFocusedMarkerScreen,
+  kpis,
+  revealedKpis,
+  visible,
+}: Props) {
   const markers = useMemo(() => {
     if (!kpis || !visible) return []
-    return PRIMARY_KPI_KEYS.filter(k => revealedKpis.has(k)).map((key, idx) => {
+    return PRIMARY_KPI_KEYS.filter((k) => revealedKpis.has(k)).map((key, idx) => {
       const anchor = PRIMARY_ANCHOR_POSITIONS.get(key)
       const color = KPI_CATEGORY_COLORS[key]
       const cx = anchor?.cx ?? 0.5
@@ -197,8 +87,8 @@ export default function TerrainKpiMarkers({ terrainRef, focusedKpi, onFocusKpi, 
 
   return (
     <group name="kpi-terrain-markers">
-      {markers.map(m => (
-        <KpiBeaconMarker
+      {markers.map((m) => (
+        <SignalBeacon
           key={m.key}
           kpiKey={m.key}
           worldX={m.worldX}
@@ -210,8 +100,6 @@ export default function TerrainKpiMarkers({ terrainRef, focusedKpi, onFocusKpi, 
           storyIndex={m.storyIndex}
           storylineClockStart={storylineClockStart}
           terrainRef={terrainRef}
-          texture={texture}
-          aspect={aspect}
         />
       ))}
     </group>
@@ -219,10 +107,22 @@ export default function TerrainKpiMarkers({ terrainRef, focusedKpi, onFocusKpi, 
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   3D BEACON MARKER — True 3D cube with neon sandwich
+   SIGNAL BEACON — Slim stem + orb + halo ring + Html label
+   Premium institutional marker, no logo, no sprite textures.
    ═══════════════════════════════════════════════════════════════ */
 
-function KpiBeaconMarker({ kpiKey, worldX, color, isFocused, onFocusKpi, onClickKpi, onFocusedMarkerScreen, storyIndex, storylineClockStart, terrainRef, texture, aspect }: {
+function SignalBeacon({
+  kpiKey,
+  worldX,
+  color,
+  isFocused,
+  onFocusKpi,
+  onClickKpi,
+  onFocusedMarkerScreen,
+  storyIndex,
+  storylineClockStart,
+  terrainRef,
+}: {
   kpiKey: KpiKey
   worldX: number
   color: { hex: string; r: number; g: number; b: number }
@@ -233,39 +133,20 @@ function KpiBeaconMarker({ kpiKey, worldX, color, isFocused, onFocusKpi, onClick
   storyIndex: number
   storylineClockStart: React.MutableRefObject<number>
   terrainRef: React.RefObject<ProgressiveTerrainHandle>
-  texture: THREE.Texture
-  aspect: number
 }) {
   const groupRef = useRef<THREE.Group>(null)
-  const topCubeRef = useRef<THREE.Mesh>(null)
-  const bottomCubeRef = useRef<THREE.Mesh>(null)
-  const neonRef = useRef<THREE.Mesh>(null)
-  const logoRef = useRef<THREE.Mesh>(null)
+  const orbRef = useRef<THREE.Mesh>(null)
+  const haloRef = useRef<THREE.Mesh>(null)
+  const labelRef = useRef<HTMLDivElement>(null)
   const hasProjected = useRef(false)
   const { camera, gl } = useThree()
 
   const tintColor = useMemo(() => new THREE.Color(color.r, color.g, color.b), [color])
-  const logoMat = useMemo(() => createLogoMaterial(texture, tintColor), [texture, tintColor])
-  const topCubeMat = useMemo(() => createCubeMaterial(), [])
-  const bottomCubeMat = useMemo(() => createCubeMaterial(), [])
-  const neonMat = useMemo(() => createNeonMaterial(tintColor), [tintColor])
-
-  const cubeGeo = useMemo(() => getCubeGeo(), [])
-  const neonGeo = useMemo(() => getNeonGeo(), [])
-  const logoGeo = useMemo(() => getLogoGeo(aspect), [aspect])
-
-  const halfCube = CUBE_SIZE / 2
-  const halfNeon = NEON_HEIGHT / 2
-
-  useEffect(() => () => {
-    logoMat.dispose()
-    topCubeMat.dispose()
-    bottomCubeMat.dispose()
-    neonMat.dispose()
-  }, [logoMat, topCubeMat, bottomCubeMat, neonMat])
+  const label = MARKER_LABELS[kpiKey] ?? KPI_ZONE_MAP[kpiKey]?.stationName ?? kpiKey
 
   useFrame(({ clock }) => {
-    if (!groupRef.current || !terrainRef.current) return
+    const g = groupRef.current
+    if (!g || !terrainRef.current) return
 
     if (storylineClockStart.current < 0) {
       storylineClockStart.current = clock.elapsedTime
@@ -277,57 +158,44 @@ function KpiBeaconMarker({ kpiKey, worldX, color, isFocused, onFocusKpi, onClick
     const isStoryActive = localT >= 0 && localT < 1 && !isFocused
     const storyEnvelope = isStoryActive ? Math.sin(localT * Math.PI) : 0
 
-    const h = terrainRef.current.getHeightAt(worldX, 0)
-    const bob = Math.sin(clock.elapsedTime * 1.2 + worldX * 0.01) * 0.4
+    const terrainH = terrainRef.current.getHeightAt(worldX, 0)
+    const t = clock.elapsedTime
+    const pulse = 0.5 + 0.5 * Math.sin(t * PULSE_SPEED + worldX * 0.02)
 
     let yLift: number
     let scale: number
-    let glow: number
 
     if (isFocused) {
-      yLift = HOVER_Y_LIFT
+      yLift = HOVER_LIFT
       scale = FOCUSED_SCALE
-      glow = 1.0
     } else if (storyEnvelope > 0.01) {
-      yLift = REST_Y_LIFT + (STORYLINE_Y_LIFT - REST_Y_LIFT) * storyEnvelope
-      scale = 1.0 + (STORYLINE_SCALE - 1.0) * storyEnvelope
-      glow = storyEnvelope
+      yLift = MARKER_LIFT + (HOVER_LIFT - MARKER_LIFT) * storyEnvelope * 0.4
+      scale = 1.0 + (FOCUSED_SCALE - 1.0) * storyEnvelope * 0.5
     } else {
-      yLift = REST_Y_LIFT
+      yLift = MARKER_LIFT
       scale = 1.0
-      glow = 0
     }
 
-    const worldY = h + yLift + bob + TERRAIN_SURFACE_LIFT
-    groupRef.current.position.set(worldX, worldY, 0)
-    groupRef.current.scale.setScalar(scale)
+    const markerY = terrainH + yLift
+    g.position.set(worldX, markerY, 0)
 
-    // Strobe the neon band when focused (clicked)
-    if (isFocused) {
-      const strobe = 0.55 + 0.45 * Math.sin(clock.elapsedTime * 12.0)
-      neonMat.emissiveIntensity = 2.2 + strobe * 3.0
-      neonMat.opacity = 0.75 + strobe * 0.25
-    } else {
-      neonMat.emissiveIntensity = 2.2 + glow * 1.5
-      neonMat.opacity = 0.95
+    const d = camera.position.distanceTo(g.position)
+    const distScale = THREE.MathUtils.clamp(d * 0.016, 0.7, 2.2) * scale
+    g.scale.setScalar(distScale)
+
+    if (orbRef.current) {
+      const mat = orbRef.current.material as THREE.MeshStandardMaterial
+      mat.emissiveIntensity = 0.6 + pulse * (isFocused ? 0.8 : 0.35)
     }
 
-    // Cube brightness reacts to glow/focus
-    const cubeEmissive = 0.45 + glow * 0.4
-    topCubeMat.emissiveIntensity = cubeEmissive
-    bottomCubeMat.emissiveIntensity = cubeEmissive
-
-    // Logo face always looks at camera
-    if (logoRef.current) {
-      logoRef.current.lookAt(camera.position)
-      logoMat.uniforms.uGlowStrength.value = glow
-      logoMat.uniforms.uOpacity.value = 1.0
+    if (haloRef.current) {
+      const mat = haloRef.current.material as THREE.MeshBasicMaterial
+      mat.opacity = 0.12 + pulse * 0.08 + storyEnvelope * 0.15
     }
 
-    // Project focused marker to screen space (once per focus)
     if (isFocused && !hasProjected.current && onFocusedMarkerScreen) {
       hasProjected.current = true
-      const v = new THREE.Vector3(worldX, worldY, 0)
+      const v = new THREE.Vector3(worldX, markerY, 0)
       v.project(camera)
       const cw = gl.domElement.clientWidth
       const ch = gl.domElement.clientHeight
@@ -342,18 +210,21 @@ function KpiBeaconMarker({ kpiKey, worldX, color, isFocused, onFocusKpi, onClick
     }
   })
 
-  const handleClick = React.useCallback((e: { stopPropagation?: () => void }) => {
-    e.stopPropagation?.()
-    const target = isFocused ? null : kpiKey
-    onClickKpi?.(target)
-    onFocusKpi?.(target)
-  }, [onClickKpi, onFocusKpi, kpiKey, isFocused])
+  const handleClick = useCallback(
+    (e: { stopPropagation?: () => void }) => {
+      e.stopPropagation?.()
+      const target = isFocused ? null : kpiKey
+      onClickKpi?.(target)
+      onFocusKpi?.(target)
+    },
+    [onClickKpi, onFocusKpi, kpiKey, isFocused],
+  )
 
-  const handlePointerOver = React.useCallback(() => {
+  const handlePointerOver = useCallback(() => {
     document.body.style.cursor = "pointer"
   }, [])
 
-  const handlePointerOut = React.useCallback(() => {
+  const handlePointerOut = useCallback(() => {
     document.body.style.cursor = ""
   }, [])
 
@@ -365,42 +236,74 @@ function KpiBeaconMarker({ kpiKey, worldX, color, isFocused, onFocusKpi, onClick
       onPointerOver={handlePointerOver}
       onPointerOut={handlePointerOut}
     >
-      {/* Top cube block — bright metallic */}
-      <mesh
-        ref={topCubeRef}
-        geometry={cubeGeo}
-        material={topCubeMat}
-        position={[0, halfNeon + halfCube, 0]}
-        renderOrder={10}
-      />
-
-      {/* Neon sandwich band — emissive KPI-colored, strobes on click */}
-      <mesh
-        ref={neonRef}
-        geometry={neonGeo}
-        material={neonMat}
-        position={[0, 0, 0]}
-        renderOrder={11}
-      />
-
-      {/* Bottom cube block — bright metallic */}
-      <mesh
-        ref={bottomCubeRef}
-        geometry={cubeGeo}
-        material={bottomCubeMat}
-        position={[0, -(halfNeon + halfCube), 0]}
-        renderOrder={10}
-      />
-
-      {/* Logo face plate — camera-facing, sits on front of top cube */}
-      <mesh
-        ref={logoRef}
-        geometry={logoGeo}
-        position={[0, halfNeon + halfCube, CUBE_DEPTH / 2 + LOGO_FACE_INSET]}
-        renderOrder={14}
-      >
-        <primitive object={logoMat} attach="material" />
+      {/* Stem — slim vertical line from terrain to orb */}
+      <mesh position={[0, -STEM_HEIGHT / 2, 0]}>
+        <cylinderGeometry args={[STEM_RADIUS, STEM_RADIUS, STEM_HEIGHT, 6]} />
+        <meshStandardMaterial
+          color={tintColor}
+          emissive={tintColor}
+          emissiveIntensity={0.3}
+          transparent
+          opacity={0.45}
+          depthTest
+          depthWrite={false}
+        />
       </mesh>
+
+      {/* Orb — signal head */}
+      <mesh ref={orbRef} renderOrder={200}>
+        <sphereGeometry args={[ORB_RADIUS, 20, 20]} />
+        <meshStandardMaterial
+          color={tintColor}
+          emissive={tintColor}
+          emissiveIntensity={0.6}
+          metalness={0.25}
+          roughness={0.2}
+          depthTest
+          depthWrite={false}
+        />
+      </mesh>
+
+      {/* Halo ring — horizontal accent ring around orb */}
+      <mesh ref={haloRef} rotation={[Math.PI / 2, 0, 0]} renderOrder={199}>
+        <ringGeometry args={[HALO_INNER, HALO_OUTER, 32]} />
+        <meshBasicMaterial
+          color={tintColor}
+          transparent
+          opacity={0.15}
+          side={THREE.DoubleSide}
+          depthTest
+          depthWrite={false}
+        />
+      </mesh>
+
+      {/* Label — intelligence overlay tag */}
+      <Html
+        position={[0, LABEL_OFFSET_Y, 0]}
+        center
+        style={{ pointerEvents: "none", whiteSpace: "nowrap" }}
+      >
+        <div
+          ref={labelRef}
+          style={{
+            fontSize: 9,
+            fontWeight: 700,
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            padding: "3px 10px",
+            borderRadius: 4,
+            background: "rgba(6,12,20,0.88)",
+            border: `1px solid ${color.hex}40`,
+            color: color.hex,
+            boxShadow: `0 0 10px ${color.hex}20, 0 3px 12px rgba(0,0,0,0.5)`,
+            backdropFilter: "blur(10px)",
+            fontFamily: "'Inter', system-ui, sans-serif",
+            userSelect: "none",
+          }}
+        >
+          {label}
+        </div>
+      </Html>
     </group>
   )
 }

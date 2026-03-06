@@ -212,6 +212,130 @@ function heightfieldAtWorld(
     return heightfieldFromModel(worldX, worldZ, model, params, metrics);
 }
 
+/** Strategic-vs-procedural weighting — strategic form dominates */
+const BT_STRATEGIC_WEIGHT = 0.68;
+const BT_PROCEDURAL_WEIGHT = 0.32;
+
+/**
+ * Strategic skeleton from TerrainMetrics.
+ * elevationScale drives peak height, growthSlope drives ridge,
+ * liquidityDepth drives valley depth, roughness drives erosion.
+ */
+function strategicSkeletonFromMetrics(
+    x: number,
+    z: number,
+    model: SeedModel,
+    params: typeof TERRAIN_CONSTANTS,
+    metrics: TerrainMetrics,
+): number {
+    const elevationScale = clampRange(metrics.elevationScale, 0.35, 3.0);
+    const growthSlope = clampRange(metrics.growthSlope, 0, 2.0);
+    const liquidityDepth = clampRange(metrics.liquidityDepth, 0, 2.0);
+    const volatility = clampRange(metrics.volatility, 0, 2.0);
+
+    const halfW = params.width * 0.5;
+    const halfD = params.depth * 0.5;
+    const nx = (x + halfW) / params.width;
+    const nz = (z + halfD) / params.depth;
+
+    // Summit peak — position and height driven by elevationScale (enterprise value)
+    const summitCx = model.ridgeCenter.x;
+    const summitCz = model.ridgeCenter.y;
+    const sdx = x - summitCx;
+    const sdz = z - summitCz;
+    const summitDist2 = (sdx * sdx + sdz * sdz) / (model.ridgeWidth * model.ridgeWidth * 4);
+    const summit = model.ridgeAmp * elevationScale * 2.0 * Math.exp(-summitDist2);
+
+    // Growth ridge — main spine whose prominence scales with growthSlope
+    const ridgeCz = model.ridgeCenter.y + Math.sin(x * 0.04 + model.seed * 0.03) * 3.0;
+    const ridgeDist = z - ridgeCz;
+    const ridgeProfile = Math.exp(-(ridgeDist * ridgeDist) / (model.ridgeWidth * model.ridgeWidth));
+    const ridge = model.ridgeAmp * (0.5 + growthSlope * 1.2) * ridgeProfile;
+
+    // Liquidity valley — deepens when liquidityDepth is low (< 1.0 = stressed)
+    const valleyStrength = Math.max(0, 1.0 - liquidityDepth) * 12.0;
+    const valleyPos = 0.25;
+    const vdx = nx - valleyPos;
+    const valleyProfile = Math.exp(-(vdx * vdx) / 0.02);
+    const valley = -valleyStrength * valleyProfile;
+
+    // Stability modulation — high volatility fragments the terrain
+    const instability = volatility > 0.5
+        ? (volatility - 0.5) * 4.0 * Math.sin(x * 0.15 + z * 0.12 + model.seed) * 0.5
+        : 0;
+
+    // Edge falloff
+    const edge = smoothstep(
+        0.0, 1.0,
+        1.0 - Math.max(Math.abs(x) / halfW, Math.abs(z) / halfD),
+    );
+
+    return (summit + ridge + valley + instability) * lerp(0.3, 1.0, edge);
+}
+
+/** Procedural realism layer — texture and naturalism only */
+function proceduralRealismLayer(
+    x: number,
+    z: number,
+    model: SeedModel,
+    params: typeof TERRAIN_CONSTANTS,
+    metrics?: TerrainMetrics,
+): number {
+    const roughness = clampRange(metrics?.roughness ?? 1, 0.25, 3.0);
+    const noiseFreq = clampRange(metrics?.noiseFrequency ?? 1.0, 0.01, 3);
+    const microDetail = clampRange(metrics?.microDetailStrength ?? 0.3, 0, 1);
+    const valleyDepth = clampRange(metrics?.valleyDepth ?? 0.45, 0, 1);
+    const peakSoftness = clampRange(metrics?.peakSoftness ?? 0.6, 0, 1);
+    const elevationScale = clampRange(metrics?.elevationScale ?? 1, 0.35, 3.0);
+    const ridgeIntensity = clampRange(metrics?.ridgeIntensity ?? 0.5, 0, 1);
+
+    const u1 = Math.sin(x * 0.07 * noiseFreq + model.seed * 0.001) * 1.2;
+    const u2 = Math.cos(z * 0.06 * noiseFreq - model.seed * 0.001) * 1.0;
+    const u3 = Math.sin(x * 0.03 * noiseFreq + z * 0.04 * noiseFreq) * 1.4;
+    const baseNoise = u1 + u2 + u3;
+
+    const macroNoise =
+        Math.sin(x * 0.012 * noiseFreq + model.seed * 0.002) *
+        Math.cos(z * 0.01 * noiseFreq - model.seed * 0.002);
+    const macroShaped = macroNoise < 0
+        ? macroNoise * (1 + valleyDepth * 2)
+        : macroNoise;
+
+    let h = baseNoise * 1.2 * roughness + macroShaped * 6.0 * elevationScale;
+
+    const peakDamp = lerp(1.0, 0.55, peakSoftness);
+    for (const p of model.peaks) {
+        const dx = x - p.px;
+        const dz = z - p.pz;
+        const d2 = (dx * dx + dz * dz) / (p.spread * p.spread);
+        h += p.amp * elevationScale * Math.exp(-d2) * peakDamp;
+    }
+
+    const vx = x - model.ridgeCenter.x;
+    const vz = z - model.ridgeCenter.y;
+    const cross = Math.abs(vx * model.ridgeDir.y - vz * model.ridgeDir.x);
+    const ridgeShape = Math.exp(-(cross * cross) / (model.ridgeWidth * model.ridgeWidth));
+    h += model.ridgeAmp * elevationScale * ridgeShape * 3.5 * (ridgeIntensity * 2);
+
+    const microNoise =
+        Math.sin(x * 0.18 * noiseFreq + 97.1) * 0.8 +
+        Math.cos(z * 0.22 * noiseFreq + 113.5) * 0.6;
+    h += microNoise * microDetail * 2.5;
+
+    const edge = smoothstep(
+        0.0, 1.0,
+        1.0 - Math.max(Math.abs(x) / (params.width * 0.5), Math.abs(z) / (params.depth * 0.5)),
+    );
+    h *= lerp(0.35, 1.0, edge);
+
+    h *= 0.85;
+    h = Math.max(-2.0, h);
+    const powExp = lerp(1.15, 1.0, peakSoftness);
+    h = Math.pow(Math.max(0, h), powExp) + Math.min(0, h);
+
+    return h;
+}
+
 function heightfieldFromModel(
     x: number,
     z: number,
@@ -219,74 +343,14 @@ function heightfieldFromModel(
     params: typeof TERRAIN_CONSTANTS,
     metrics?: TerrainMetrics,
 ): number {
-    const elevationScale = clampRange(metrics?.elevationScale ?? 1, 0.35, 3.0);
-    const roughness = clampRange(metrics?.roughness ?? 1, 0.25, 3.0);
+    const procedural = proceduralRealismLayer(x, z, model, params, metrics);
 
-    // ── Tuning panel overrides (default to neutral when absent) ──
-    const ridgeIntensity = clampRange(metrics?.ridgeIntensity ?? 0.5, 0, 1);
-    const valleyDepth = clampRange(metrics?.valleyDepth ?? 0.45, 0, 1);
-    const peakSoftness = clampRange(metrics?.peakSoftness ?? 0.6, 0, 1);
-    const noiseFreq = clampRange(metrics?.noiseFrequency ?? 1.0, 0.01, 3);
-    const microDetail = clampRange(metrics?.microDetailStrength ?? 0.3, 0, 1);
-
-    // 1) Broad undulation (cheap pseudo-noise) — frequency-scaled
-    const u1 = Math.sin(x * 0.07 * noiseFreq + model.seed * 0.001) * 1.2;
-    const u2 = Math.cos(z * 0.06 * noiseFreq - model.seed * 0.001) * 1.0;
-    const u3 = Math.sin(x * 0.03 * noiseFreq + z * 0.04 * noiseFreq) * 1.4;
-    const baseNoise = u1 + u2 + u3;
-
-    // Macro lift/valley shaping (low-frequency)
-    const macroNoise =
-        Math.sin(x * 0.012 * noiseFreq + model.seed * 0.002) *
-        Math.cos(z * 0.01 * noiseFreq - model.seed * 0.002);
-
-    // Valley amplification — negative macro regions are deepened
-    const macroShaped = macroNoise < 0
-        ? macroNoise * (1 + valleyDepth * 2)
-        : macroNoise;
-
-    let h = baseNoise * 1.2 * roughness + macroShaped * 6.0 * elevationScale;
-
-    // 2) Mountain peaks (Gaussian bumps) — softened by peakSoftness
-    for (const p of model.peaks) {
-        const dx = x - p.px;
-        const dz = z - p.pz;
-        const d2 = (dx * dx + dz * dz) / (p.spread * p.spread);
-        const peakH = p.amp * elevationScale * Math.exp(-d2);
-        // Peak softness: power-compress the gaussian contribution
-        h += peakH * lerp(1.0, 0.55, peakSoftness);
+    if (metrics) {
+        const skeleton = strategicSkeletonFromMetrics(x, z, model, params, metrics);
+        return skeleton * BT_STRATEGIC_WEIGHT + procedural * BT_PROCEDURAL_WEIGHT;
     }
 
-    // 3) Main ridge (distance-to-line falloff) — scaled by ridgeIntensity
-    const vx = x - model.ridgeCenter.x;
-    const vz = z - model.ridgeCenter.y;
-    const cross = Math.abs(vx * model.ridgeDir.y - vz * model.ridgeDir.x);
-    const ridgeShape = Math.exp(-(cross * cross) / (model.ridgeWidth * model.ridgeWidth));
-    h += model.ridgeAmp * elevationScale * ridgeShape * 3.5 * (ridgeIntensity * 2);
-
-    // 3b) Micro terrain detail — high-frequency, low-amplitude
-    const microNoise =
-        Math.sin(x * 0.18 * noiseFreq + 97.1) * 0.8 +
-        Math.cos(z * 0.22 * noiseFreq + 113.5) * 0.6;
-    h += microNoise * microDetail * 2.5;
-
-    // 4) Edge falloff so edges don't look like a table
-    const edge = smoothstep(
-        0.0,
-        1.0,
-        1.0 -
-        Math.max(Math.abs(x) / (params.width * 0.5), Math.abs(z) / (params.depth * 0.5)),
-    );
-    h *= lerp(0.35, 1.0, edge);
-
-    // 5) Clamp + shape
-    h *= 0.85;
-    h = Math.max(-2.0, h);
-    // Peak softness also smooths the final power curve
-    const powExp = lerp(1.15, 1.0, peakSoftness);
-    h = Math.pow(Math.max(0, h), powExp) + Math.min(0, h);
-
-    return h;
+    return procedural;
 }
 
 function lerp(a: number, b: number, t: number) {

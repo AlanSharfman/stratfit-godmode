@@ -122,6 +122,7 @@ export default function OptimalCompareView() {
           autoRotateSpeed={0.2}
           hideMarkers
           heatmapEnabled={false}
+          driftMode="micro"
         >
           <SkyAtmosphere />
         </TerrainStage>
@@ -139,6 +140,7 @@ export default function OptimalCompareView() {
           autoRotateSpeed={0.2}
           hideMarkers
           heatmapEnabled={false}
+          driftMode="micro"
         >
           <SkyAtmosphere />
         </TerrainStage>

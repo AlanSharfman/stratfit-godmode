@@ -3,7 +3,7 @@
 // Single Canvas host for terrain rendering.
 // Progressive terrain for Position, seed-based for Compare/other pages.
 
-import React, { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import type { ReactNode } from "react";
 import { Canvas } from "@react-three/fiber";
@@ -36,7 +36,17 @@ import GhostTerrainLayer from "@/terrain/GhostTerrainLayer";
 import TerrainKpiMarkers from "@/terrain/TerrainKpiMarkers";
 import TerrainCompass from "@/terrain/TerrainCompass";
 import TerrainIntelligence from "@/terrain/TerrainIntelligence";
+import RiskWeatherSystem from "@/terrain/riskWeather/RiskWeatherSystem";
+import OpportunitySignalLayer from "@/terrain/opportunities/OpportunitySignalLayer";
+import TerrainHoverIntelligence from "@/terrain/TerrainHoverIntelligence";
+import StrategicPath from "@/terrain/StrategicPath";
+import ConfidenceEnvelope from "@/terrain/ConfidenceEnvelope";
+import { buildConfidenceBands } from "@/terrain/buildConfidenceBands";
+import type { TimeSlice } from "@/state/scenarioTimelineStore";
 import { POSITION_PRESET, GOD_VIEW_CONTROLS } from "@/scene/camera/terrainCameraPresets";
+import CameraDriftSystem from "@/terrain/CameraDriftSystem";
+import type { DriftMode } from "@/scene/camera/cameraDriftConfig";
+import TerrainDeltaOverlay from "@/terrain/TerrainDeltaOverlay";
 
 
 type TerrainStageProps = {
@@ -66,7 +76,30 @@ type TerrainStageProps = {
   ghostKpis?: PositionKpis | null
   showKpiMarkers?: boolean
   tuning?: TerrainTuningParams | null
+  /** Timeline slices for the strategic path trajectory */
+  strategicPathSlices?: TimeSlice[] | null
+  /** Camera drift mode: "micro" (subtle), "cinematic" (boardroom), or "off" */
+  driftMode?: DriftMode
+  /** Baseline KPIs for delta overlay (green/red terrain diff) */
+  deltaBaselineKpis?: PositionKpis | null
   children?: ReactNode
+}
+
+function EnvelopeFromSlices({
+  terrainRef,
+  slices,
+}: {
+  terrainRef: React.RefObject<ProgressiveTerrainHandle | null>
+  slices: TimeSlice[]
+}) {
+  const bands = useMemo(() => buildConfidenceBands(slices), [slices])
+  return (
+    <ConfidenceEnvelope
+      terrainRef={terrainRef}
+      p25Slices={bands.p25}
+      p75Slices={bands.p75}
+    />
+  )
 }
 
 export default function TerrainStage({
@@ -96,6 +129,9 @@ export default function TerrainStage({
   ghostKpis = null,
   showKpiMarkers = true,
   tuning = null,
+  strategicPathSlices = null,
+  driftMode = "off",
+  deltaBaselineKpis = null,
   children,
 }: TerrainStageProps) {
   const terrainRef = useRef<TerrainSurfaceHandle>(null!);
@@ -112,7 +148,7 @@ export default function TerrainStage({
     setControls(instance);
   }, [setControls]);
 
-  const [fogColor] = useState("#263A52");
+  const [fogColor] = useState("#0b1220");
 
   useEffect(() => {
     if (terrainReady) return;
@@ -139,13 +175,14 @@ export default function TerrainStage({
       dpr={[1, 2]}
       camera={{ position: effectivePreset.pos as unknown as [number, number, number], fov: effectivePreset.fov, near: 0.1, far: 5000 }}
       gl={{ antialias: true, alpha: true }}
+      shadows
       onCreated={({ camera, gl }) => {
         if (!lockCamera) {
           camera.position.set(...effectivePreset.pos);
           camera.lookAt(...effectivePreset.target);
           camera.updateProjectionMatrix();
         }
-        gl.setClearColor("#0C1A2E", 1);
+        gl.setClearColor("#060b16", 1);
         gl.toneMappingExposure = 1.4;
       }}
     >
@@ -169,14 +206,18 @@ export default function TerrainStage({
         autoRotateSpeed={autoRotateSpeed}
       />
 
-      <fogExp2 attach="fog" args={[fogColor, 0.002]} />
+      {driftMode !== "off" && !lockCamera && (
+        <CameraDriftSystem controlsRef={controlsRef} mode={driftMode} />
+      )}
 
-      <ambientLight intensity={0.75} />
-      <directionalLight position={[150, 220, 100]} intensity={1.80} color="#E8FAFE" castShadow={false} />
-      <directionalLight position={[-100, 160, -80]} intensity={0.90} color="#6ef0ff" />
-      <directionalLight position={[0, 80, 200]} intensity={0.55} color="#a0d8ff" />
-      <directionalLight position={[-200, 30, -100]} intensity={0.38} color="#7dd3fc" />
-      <hemisphereLight args={["#3a5880", "#1c2a40", 0.70]} />
+      <fogExp2 attach="fog" args={[fogColor, 0.0009]} />
+
+      <ambientLight intensity={0.35} color="#6a7ca5" />
+      <directionalLight position={[80, 120, 60]} intensity={1.2} color="#dfe9ff" castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-camera-near={0.5} shadow-camera-far={500} shadow-camera-left={-200} shadow-camera-right={200} shadow-camera-top={200} shadow-camera-bottom={-200} />
+      <directionalLight position={[-100, 160, -80]} intensity={0.55} color="#6ef0ff" />
+      <directionalLight position={[0, 80, 200]} intensity={0.35} color="#a0d8ff" />
+      <directionalLight position={[-200, 30, -100]} intensity={0.22} color="#7dd3fc" />
+      <hemisphereLight args={["#3a5880", "#1c2a40", 0.40]} />
 
       <HorizonBand />
       <TerrainCompass />
@@ -204,15 +245,35 @@ export default function TerrainStage({
               revealedKpis={revealedKpis}
               kpis={zoneKpis}
             />
+            {strategicPathSlices && strategicPathSlices.length >= 2 && (
+              <>
+                <StrategicPath
+                  terrainRef={progressiveRef}
+                  slices={strategicPathSlices}
+                />
+                <EnvelopeFromSlices
+                  terrainRef={progressiveRef}
+                  slices={strategicPathSlices}
+                />
+              </>
+            )}
             <WaterLinePlane visible={revealedKpis.size > 0} />
             <ValleyFogLayer
               revealedKpis={revealedKpis}
               kpis={zoneKpis}
             />
+            <RiskWeatherSystem kpis={zoneKpis} />
             {ghostKpis && (
               <GhostTerrainLayer
                 revealedKpis={revealedKpis}
                 kpis={ghostKpis}
+              />
+            )}
+            {deltaBaselineKpis && zoneKpis && (
+              <TerrainDeltaOverlay
+                revealedKpis={revealedKpis}
+                baselineKpis={deltaBaselineKpis}
+                scenarioKpis={zoneKpis}
               />
             )}
             <TerrainIntelligence terrainRef={progressiveRef} />
@@ -225,6 +286,14 @@ export default function TerrainStage({
               kpis={zoneKpis}
               revealedKpis={revealedKpis ?? new Set()}
               visible={showKpiMarkers}
+            />
+            <OpportunitySignalLayer
+              kpis={zoneKpis}
+              terrainRef={progressiveRef}
+            />
+            <TerrainHoverIntelligence
+              terrainRef={progressiveRef}
+              kpis={zoneKpis}
             />
           </>
         ) : (

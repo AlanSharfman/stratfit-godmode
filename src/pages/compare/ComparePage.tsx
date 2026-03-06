@@ -14,7 +14,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import React, { useCallback, useEffect, useMemo, useState } from "react"
-import { Link, NavLink, useSearchParams } from "react-router-dom"
+import { Link, NavLink, useNavigate, useSearchParams } from "react-router-dom"
 
 import { ROUTES } from "@/routes/routeContract"
 import { useCanonicalBaseline } from "@/state/useCanonicalBaseline"
@@ -34,6 +34,13 @@ import SimulationStatusWidget from "@/components/system/SimulationStatusWidget"
 import SimulationRunOverlay from "@/components/system/SimulationRunOverlay"
 import SimulationPipelineWidget from "@/components/system/SimulationPipelineWidget"
 import SystemProbabilityNotice from "@/components/system/ProbabilityNotice"
+import CommandConsole from "@/components/command/CommandConsole"
+import ScenarioIntelligencePanel from "@/components/intelligence/ScenarioIntelligencePanel"
+import IntelligenceConsole from "@/components/intelligence/IntelligenceConsole"
+import { useCompareIntelligence } from "@/hooks/useCompareIntelligence"
+import { useVoiceBriefingStore } from "@/store/voiceBriefingStore"
+import { buildPositionViewModel } from "@/pages/position/overlays/positionState"
+import { getExecutiveSummary } from "@/domain/intelligence/kpiCommentary"
 import CompareQueryPanel from "@/features/compare/CompareQueryPanel"
 import BriefingDirector from "@/features/intelligence/BriefingDirector"
 import { generateInvestorPlanStub } from "@/features/intelligence/generateInvestorPlanStub"
@@ -42,11 +49,35 @@ import type { IntelligenceState } from "@/features/intelligence/intelligenceStat
 import type { HighlightState } from "@/features/compare/highlightContract"
 import type { TerrainEvent } from "@/domain/events/terrainEventTypes"
 import TimelineSyncStrip from "@/components/timeline/TimelineSyncStrip"
+import ScenarioTimelineSlider from "@/components/scenarios/ScenarioTimelineSlider"
+import { useScenarioTimelineStore } from "@/state/scenarioTimelineStore"
 
 /* ── Component ───────────────────────────────────────────── */
 
+const TERRAIN_GLOW_STYLE_ID = "sf-terrain-voice-glow-kf"
+function ensureTerrainGlowKeyframes() {
+  if (typeof document === "undefined") return
+  if (document.getElementById(TERRAIN_GLOW_STYLE_ID)) return
+  const s = document.createElement("style")
+  s.id = TERRAIN_GLOW_STYLE_ID
+  s.textContent = `
+    @keyframes sf-terrain-voice-glow {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+  `
+  document.head.appendChild(s)
+}
+
 export default function ComparePage() {
+  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
+
+  useEffect(() => ensureTerrainGlowKeyframes(), [])
+
+  const handleCommand = useCallback((command: string) => {
+    navigate(`${ROUTES.WHAT_IF}?q=${encodeURIComponent(command)}`)
+  }, [navigate])
 
   // ── Highlight state (insight → terrain linking) ──
   const [highlight, setHighlight] = useState<HighlightState>({})
@@ -59,6 +90,13 @@ export default function ComparePage() {
   const [briefingState, setBriefingState] = useState<IntelligenceState>("idle")
 
   const baseline = useCanonicalBaseline()
+
+  const intelligenceText = useMemo(() => {
+    if (!baseline) return ""
+    const kpis = buildPositionViewModel(baseline as any).kpis
+    return getExecutiveSummary(kpis).narrative
+  }, [baseline])
+
   // Derive flat terrain inputs from BaselineV1
   const baselineInputs = useMemo(() => {
     if (!baseline) return null
@@ -215,6 +253,14 @@ export default function ComparePage() {
     if (activePair === "BC") return { pairKpisL: kpisB, pairKpisR: kpisC, pairLabelL: labelB, pairLabelR: labelC }
     return { pairKpisL: kpisA, pairKpisR: kpisB, pairLabelL: labelA, pairLabelR: labelB }
   }, [activePair, kpisA, kpisB, kpisC, labelA, labelB, labelC])
+
+  // ── AI Compare Intelligence ──
+  const compareIntel = useCompareIntelligence(pairKpisL, pairKpisR, pairLabelL, pairLabelR)
+  const isVoiceSpeaking = useVoiceBriefingStore((s) => s.isSpeaking)
+
+  const handleApplyRecommended = useCallback((scenarioLabel: string) => {
+    navigate(`${ROUTES.WHAT_IF}?q=${encodeURIComponent(scenarioLabel)}`)
+  }, [navigate])
 
   // ── Command Centre Auto-Evaluate ──
   const activeSimResults = scenarioB?.simulationResults ?? scenarioA?.simulationResults ?? null
@@ -407,7 +453,22 @@ export default function ComparePage() {
       }}>
 
         {/* ── TOP: Terrain Area ── */}
-        <div style={S.terrainRow}>
+        <div style={{ ...S.terrainRow, position: "relative" as const }}>
+          {/* Voice briefing terrain glow overlay */}
+          {isVoiceSpeaking && (
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                zIndex: 10,
+                pointerEvents: "none",
+                background: "radial-gradient(ellipse at 50% 30%, rgba(108,198,255,0.08) 0%, transparent 70%)",
+                boxShadow: "inset 0 0 60px rgba(108,198,255,0.06)",
+                borderRadius: "inherit",
+                animation: "sf-terrain-voice-glow 3s ease-in-out infinite",
+              }}
+            />
+          )}
           {/* Ghost mode: compact header bar above canvas */}
           {isGhost && (
             <CompareGhostHeaderBar
@@ -456,6 +517,7 @@ export default function ComparePage() {
 
         {/* ── TIMELINE SYNC STRIP ── */}
         <TimelineSyncStrip mode="all" showGenerate />
+        <CompareScenarioTimeline />
 
         {/* ── BOTTOM: Analytics (hidden during briefing) ── */}
         <div style={{
@@ -536,6 +598,16 @@ export default function ComparePage() {
         All projections, probabilities and scenario outcomes are generated by STRATFIT's Monte Carlo simulation engine and do not constitute financial advice.
       </div>
       <SystemProbabilityNotice />
+
+      <CommandConsole onSubmit={handleCommand} />
+      {intelligenceText && <IntelligenceConsole insightText={intelligenceText} />}
+
+      <ScenarioIntelligencePanel
+        analysis={compareIntel.analysis}
+        loading={compareIntel.loading}
+        error={compareIntel.error}
+        onApplyScenario={handleApplyRecommended}
+      />
     </div>
   )
 }
@@ -918,4 +990,10 @@ const S: Record<string, React.CSSProperties> = {
     pointerEvents: "none" as const,
     zIndex: 5,
   },
+}
+
+function CompareScenarioTimeline() {
+  const timeline = useScenarioTimelineStore((s) => s.timeline)
+  if (!timeline) return null
+  return <ScenarioTimelineSlider />
 }

@@ -204,13 +204,14 @@ function Module({ title, children, style }: { title: string; children: React.Rea
   return (
     <section style={{
       display: "flex", flexDirection: "column", overflow: "hidden",
-      background: "#0E2238",
-      border: "1px solid #1E3A5F",
-      borderRadius: 14,
-      boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
+      background: "linear-gradient(145deg, rgba(14,34,56,0.95), rgba(10,28,46,0.98))",
+      border: "1px solid rgba(34,211,238,0.12)",
+      borderRadius: 12,
+      boxShadow: "0 1px 0 rgba(34,211,238,0.06) inset, 0 -1px 0 rgba(0,0,0,0.3) inset, 0 8px 32px rgba(0,0,0,0.5), 0 0 1px rgba(34,211,238,0.15)",
+      backdropFilter: "blur(8px)",
       ...style,
     }}>
-      <div style={{ height: 2, background: "#22D3EE", borderRadius: "14px 14px 0 0", flexShrink: 0 }} />
+      <div style={{ height: 2, background: "linear-gradient(90deg, transparent 0%, #22D3EE 30%, #22D3EE 70%, transparent 100%)", borderRadius: "12px 12px 0 0", flexShrink: 0 }} />
       <header style={SC.moduleHeader}>{title}</header>
       <div style={{ flex: 1, minHeight: 0 }}>{children}</div>
     </section>
@@ -828,12 +829,14 @@ export default function InitializeBaselinePage() {
         </div>
       </header>
 
-      {/* ═══ TACTICAL GRID ═══ */}
+      {/* ═══ INSTRUMENT PANEL GRID ═══ */}
       <main style={SC.grid} className="gm-scrollbar">
+        <div style={SC.panelGrid} className="gm-scrollbar">
 
-        {/* ── COLUMN 1: Identity, Data Input, Execution Velocity ── */}
-        <div style={SC.col1}>
-          <Module title="MODULE A: IDENTITY & CONTACT">
+          {/* ═══ ROW 1 ═══ */}
+
+          {/* ── IDENTITY PANEL ── */}
+          <Module title="IDENTITY & CONTACT">
             <div style={SC.modBody}>
               <TacticalInput label="Your Name" value={form.contactName} placeholder="Your Name"
                 onChange={(v) => update("contactName", v)} />
@@ -841,30 +844,41 @@ export default function InitializeBaselinePage() {
                 onChange={(v) => update("contactEmail", v)} />
               <TacticalInput label="Company Name" value={form.companyName} placeholder="Company Name"
                 onChange={(v) => update("companyName", v)} />
-            </div>
-          </Module>
+              <div>
+                <span style={SC.inputLabel}>Stage</span>
+                <div style={SC.pillGrid}>
+                  {STAGES.map((s) => (
+                    <StatusToggle key={s} label={s} active={form.stage === s} onClick={() => update("stage", s)} />
+                  ))}
+                </div>
+              </div>
+              <div style={{ marginTop: 4 }}>
+                <span style={SC.inputLabel}>Industry</span>
+                <div style={SC.pillGrid}>
+                  {INDUSTRIES.map((ind) => (
+                    <StatusToggle key={ind} label={ind} active={form.industry === ind} onClick={() => update("industry", ind)} />
+                  ))}
+                </div>
+              </div>
 
-          <Module title="MODULE B: DATA INPUT METHOD">
-            <div style={SC.modBody}>
-              {(["manual", "xero", "excel"] as InputPath[]).map((p) => (
-                <button
-                  key={p} type="button"
-                  onClick={() => { setInputPath(p); if (p === "xero") setShowXeroModal(true) }}
-                  style={{
-                    width: "100%",
-                    padding: "14px 12px",
-                    borderRadius: 8,
-                    fontSize: 11, fontWeight: 600, letterSpacing: "0.06em",
-                    fontFamily: FONT, cursor: "pointer", transition: "all 0.15s",
-                    border: inputPath === p ? "1px solid #22D3EE" : "1px solid #1E3A5F",
-                    background: inputPath === p ? "#22D3EE" : "#122E48",
-                    color: inputPath === p ? "#04121F" : "#8FB4D9",
-                    boxShadow: inputPath === p ? "0 0 12px rgba(34,211,238,0.25)" : "none",
-                  }}
-                >
-                  {p === "manual" ? "Manual Entry" : p === "xero" ? "Connect to Xero" : "Import Excel"}
-                </button>
-              ))}
+              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                {(["manual", "xero", "excel"] as InputPath[]).map((p) => (
+                  <button key={p} type="button"
+                    onClick={() => { setInputPath(p); if (p === "xero") setShowXeroModal(true) }}
+                    style={{
+                      flex: 1, padding: "10px 8px", borderRadius: 8,
+                      fontSize: 10, fontWeight: 600, letterSpacing: "0.06em",
+                      fontFamily: FONT, cursor: "pointer", transition: "all 0.15s",
+                      border: inputPath === p ? "1px solid #22D3EE" : "1px solid #1E3A5F",
+                      background: inputPath === p ? "#22D3EE" : "#122E48",
+                      color: inputPath === p ? "#04121F" : "#8FB4D9",
+                      boxShadow: inputPath === p ? "0 0 12px rgba(34,211,238,0.25)" : "none",
+                    }}
+                  >
+                    {p === "manual" ? "Manual" : p === "xero" ? "Xero" : "Excel"}
+                  </button>
+                ))}
+              </div>
 
               {inputPath === "excel" && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
@@ -892,11 +906,62 @@ export default function InitializeBaselinePage() {
             </div>
           </Module>
 
-          <Module title="MODULE D: EXECUTION VELOCITY">
+          {/* ── LIQUIDITY PANEL ── */}
+          <Module title="LIQUIDITY & FUNDING">
+            <div style={SC.modBody}>
+              <PowerBar label="Cash on Hand" value={form.cashOnHand} max={5_000_000} color="cyan"
+                onChange={(v) => update("cashOnHand", Math.round(v))} />
+              <PowerBar label="Monthly Net Burn" value={form.monthlyNetBurn} max={500_000} color="amber"
+                onChange={(v) => update("monthlyNetBurn", Math.round(v))} />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 8 }}>
+                <TacticalInput label="Funding / Debt" value={form.debtOutstanding} prefix="$"
+                  onChange={(v) => update("debtOutstanding", Number(v) || 0)} />
+                <TacticalInput label="Interest Rate" value={form.debtInterestRate} suffix="%"
+                  onChange={(v) => update("debtInterestRate", Number(v) || 0)} />
+                <TacticalInput label="Fundraising Window" value={form.fundraisingWindow} suffix="months"
+                  onChange={(v) => update("fundraisingWindow", Number(v) || 0)} />
+              </div>
+              <PowerBar label="Annual CAPEX" value={form.annualCapex} max={2_000_000} color="amber"
+                onChange={(v) => update("annualCapex", Math.round(v))} />
+              <PowerBar label="CAPEX as % of Revenue" value={form.capexIntensityPct} max={50} unit="%" color="amber"
+                onChange={(v) => update("capexIntensityPct", Math.round(v * 10) / 10)} />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <TacticalInput label="AR Days" value={form.arDays} suffix="days"
+                  onChange={(v) => update("arDays", Number(v) || 0)} />
+                <TacticalInput label="AP Days" value={form.apDays} suffix="days"
+                  onChange={(v) => update("apDays", Number(v) || 0)} />
+              </div>
+            </div>
+          </Module>
+
+          {/* ── REVENUE PANEL ── */}
+          <Module title="REVENUE ENGINE">
+            <div style={SC.modBody}>
+              <PowerBar label="Current ARR" value={form.currentARR} max={10_000_000} color="cyan"
+                onChange={(v) => update("currentARR", Math.round(v))} />
+              <PowerBar label="Monthly Growth %" value={form.monthlyGrowthPct} max={30} unit="%" color="cyan"
+                onChange={(v) => update("monthlyGrowthPct", Math.round(v * 10) / 10)} />
+              <PowerBar label="Gross Margin %" value={form.grossMarginPct} max={100} unit="%" color="cyan"
+                onChange={(v) => update("grossMarginPct", Math.round(v * 10) / 10)} />
+              <TacticalInput label="Avg Contract Value" value={form.avgDealSize} prefix="$"
+                onChange={(v) => update("avgDealSize", Number(v) || 0)} />
+              <PowerBar label="Monthly Churn %" value={form.monthlyChurnPct} max={15} unit="%" color="amber"
+                onChange={(v) => update("monthlyChurnPct", Math.round(v * 10) / 10)} />
+              <PowerBar label="Sales Efficiency" value={form.salesEfficiency} max={3} unit="x" color="cyan"
+                onChange={(v) => update("salesEfficiency", Math.round(v * 10) / 10)} />
+              <PowerBar label="Net Revenue Retention" value={form.netRevenueRetentionPct} max={200} unit="%" color="cyan"
+                onChange={(v) => update("netRevenueRetentionPct", Math.round(v))} />
+            </div>
+          </Module>
+
+          {/* ═══ ROW 2 ═══ */}
+
+          {/* ── OPERATING PANEL ── */}
+          <Module title="OPERATING & VELOCITY">
             <div style={SC.modBody}>
               <ToggleRow label="Hiring Velocity" options={["Low", "Medium", "High"] as HiringVelocity[]}
                 value={form.hiringVelocity} onChange={(v) => update("hiringVelocity", v)} />
-              <PowerBar label="Sales Ramp" value={form.salesRampTime} max={12} unit=" mo" color="cyan"
+              <PowerBar label="Sales Ramp Time" value={form.salesRampTime} max={12} unit=" mo" color="cyan"
                 onChange={(v) => update("salesRampTime", Math.round(v))} />
               <PowerBar label="Engineering Velocity" value={form.engineeringVelocity} max={12} unit=" mo" color="cyan"
                 onChange={(v) => update("engineeringVelocity", Math.round(v))} />
@@ -904,60 +969,13 @@ export default function InitializeBaselinePage() {
                 value={form.burnFlexibility} onChange={(v) => update("burnFlexibility", v)} />
             </div>
           </Module>
-        </div>
 
-        {/* ── COLUMN 2: Stage & Industry, Liquidity, Cost Structure ── */}
-        <div style={SC.col2}>
-          <Module title="MODULE C: STAGE & INDUSTRY">
-            <div style={SC.modBody}>
-              <div>
-                <span style={SC.inputLabel}>Stage</span>
-                <div style={SC.pillGrid}>
-                  {STAGES.map((s) => (
-                    <StatusToggle key={s} label={s} active={form.stage === s} onClick={() => update("stage", s)} />
-                  ))}
-                </div>
-              </div>
-              <div style={{ marginTop: 8 }}>
-                <span style={SC.inputLabel}>Industry</span>
-                <div style={SC.pillGrid}>
-                  {INDUSTRIES.map((ind) => (
-                    <StatusToggle key={ind} label={ind} active={form.industry === ind} onClick={() => update("industry", ind)} />
-                  ))}
-                </div>
-              </div>
-            </div>
-          </Module>
-
-          <Module title="MODULE E: LIQUIDITY & FUNDING">
-            <div style={SC.modBody}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                <PowerBar label="Cash on Hand" value={form.cashOnHand} max={5_000_000} color="cyan"
-                  onChange={(v) => update("cashOnHand", Math.round(v))} />
-                <PowerBar label="Monthly Net Burn" value={form.monthlyNetBurn} max={500_000} color="amber"
-                  onChange={(v) => update("monthlyNetBurn", Math.round(v))} />
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 8 }}>
-                <TacticalInput label="Funding Amount" value={form.debtOutstanding} prefix="$"
-                  onChange={(v) => update("debtOutstanding", Number(v) || 0)} />
-                <TacticalInput label="Interest Rate" value={form.debtInterestRate} suffix="%"
-                  onChange={(v) => update("debtInterestRate", Number(v) || 0)} />
-                <TacticalInput label="Fundraising Window" value={form.fundraisingWindow} suffix="months"
-                  onChange={(v) => update("fundraisingWindow", Number(v) || 0)} />
-                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  <span style={SC.inputLabel}>Debt Facility</span>
-                  <ToggleRow label="" options={["Fixed", "Variable"] as BurnFlexibility[]}
-                    value={form.burnFlexibility} onChange={(v) => update("burnFlexibility", v)} />
-                </div>
-              </div>
-            </div>
-          </Module>
-
-          <Module title="MODULE G: COST STRUCTURE">
-            <div style={{ ...SC.modBody, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          {/* ── COST PANEL ── */}
+          <Module title="COST STRUCTURE">
+            <div style={{ ...SC.modBody, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               <TacticalInput label="Headcount" value={form.headcount}
                 onChange={(v) => update("headcount", Number(v) || 0)} />
-              <TacticalInput label="Avg Fully Loaded Cost" value={form.avgFullyLoadedCost} prefix="$"
+              <TacticalInput label="Fully Loaded Cost" value={form.avgFullyLoadedCost} prefix="$"
                 onChange={(v) => update("avgFullyLoadedCost", Number(v) || 0)} />
               <TacticalInput label="Sales & Marketing" value={form.salesMarketingSpend} prefix="$"
                 onChange={(v) => update("salesMarketingSpend", Number(v) || 0)} />
@@ -971,30 +989,9 @@ export default function InitializeBaselinePage() {
                 onChange={(v) => update("cac", Number(v) || 0)} />
             </div>
           </Module>
-        </div>
 
-        {/* ── COLUMN 3: Revenue Engine, Strategic Posture, Outcome Rail ── */}
-        <div style={SC.col3}>
-          <Module title="MODULE F: REVENUE ENGINE">
-            <div style={SC.modBody}>
-              <PowerBar label="Current ARR" value={form.currentARR} max={10_000_000} color="cyan"
-                onChange={(v) => update("currentARR", Math.round(v))} />
-              <PowerBar label="Monthly Growth %" value={form.monthlyGrowthPct} max={30} unit="%" color="cyan"
-                onChange={(v) => update("monthlyGrowthPct", Math.round(v * 10) / 10)} />
-              <PowerBar label="Gross Margin %" value={form.grossMarginPct} max={100} unit="%" color="cyan"
-                onChange={(v) => update("grossMarginPct", Math.round(v * 10) / 10)} />
-              <TacticalInput label="Avg Contract (Years)" value={form.avgDealSize} prefix="$"
-                onChange={(v) => update("avgDealSize", Number(v) || 0)} />
-              <PowerBar label="Monthly Churn %" value={form.monthlyChurnPct} max={15} unit="%" color="amber"
-                onChange={(v) => update("monthlyChurnPct", Math.round(v * 10) / 10)} />
-              <PowerBar label="Sales Efficiency" value={form.salesEfficiency} max={3} unit="x" color="cyan"
-                onChange={(v) => update("salesEfficiency", Math.round(v * 10) / 10)} />
-              <PowerBar label="Net Revenue Retention" value={form.netRevenueRetentionPct} max={200} unit="%" color="cyan"
-                onChange={(v) => update("netRevenueRetentionPct", Math.round(v))} />
-            </div>
-          </Module>
-
-          <Module title="MODULE H: STRATEGIC POSTURE">
+          {/* ── STRATEGY PANEL ── */}
+          <Module title="STRATEGIC POSTURE">
             <div style={{ ...SC.modBody, display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
               <span style={{ fontSize: 10, fontWeight: 600, color: "#E6F1FF", letterSpacing: "0.08em", textTransform: "uppercase" }}>Risk Tolerance</span>
 
@@ -1013,8 +1010,7 @@ export default function InitializeBaselinePage() {
               </div>
 
               <div style={{ width: "100%", marginTop: 4 }}>
-                <span style={{ fontSize: 10, fontWeight: 600, color: "#22D3EE", letterSpacing: "0.04em" }}>Your suggestions:</span>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   <BinarySwitch label="External Capital Required?" active={form.accessToCapital === "Strong"} onToggle={() => update("accessToCapital", form.accessToCapital === "Strong" ? "Moderate" : "Strong")} />
                   <BinarySwitch label="Focus on Runway?" active={form.priorityBalance < 40} onToggle={() => update("priorityBalance", form.priorityBalance < 40 ? 60 : 20)} />
                   <BinarySwitch label="Survival vs Expansion?" active={form.priorityBalance > 50} onToggle={() => update("priorityBalance", form.priorityBalance > 50 ? 30 : 70)} />
@@ -1024,64 +1020,58 @@ export default function InitializeBaselinePage() {
             </div>
           </Module>
 
-          <Module title="MODULE I: INVESTMENT & WORKING CAPITAL">
-            <div style={SC.modBody}>
-              <PowerBar label="Annual Capital Expenditure" value={form.annualCapex} max={2_000_000} color="amber"
-                onChange={(v) => update("annualCapex", Math.round(v))} />
-              <PowerBar label="CAPEX as % of Revenue" value={form.capexIntensityPct} max={50} unit="%" color="amber"
-                onChange={(v) => update("capexIntensityPct", Math.round(v * 10) / 10)} />
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 4 }}>
-                <TacticalInput label="Accounts Receivable Days" value={form.arDays} suffix="days"
-                  onChange={(v) => update("arDays", Number(v) || 0)} />
-                <TacticalInput label="Accounts Payable Days" value={form.apDays} suffix="days"
-                  onChange={(v) => update("apDays", Number(v) || 0)} />
-              </div>
-            </div>
-          </Module>
         </div>
 
-        {/* ── COLUMN 4: Dynamic Outcome Rail ── */}
-        <div style={SC.col4}>
-          <Module title="DYNAMIC OUTCOME RAIL" style={{ flex: 1 }}>
-            <div style={{ ...SC.modBody, display: "flex", flexDirection: "column", gap: 10 }} className="gm-scrollbar">
-              <OutcomeCard label="ARR" value={fmtCurrency(form.currentARR)} color="#22D3EE" />
-              <OutcomeCard label="Growth" value={`${form.monthlyGrowthPct.toFixed(1)}%`} color="#22D3EE" />
-              <OutcomeCard label="Avg Contract" value={fmtCurrency(form.avgDealSize)} color="#22D3EE" />
-              <OutcomeCard label="Gross Margin" value={`${form.grossMarginPct.toFixed(1)}%`} color="#34d399" />
-              <OutcomeCard label="Churn" value={`${form.monthlyChurnPct.toFixed(1)}%`} color="#f59e0b" />
-              <OutcomeCard label="NRR" value={`${form.netRevenueRetentionPct}%`} color={form.netRevenueRetentionPct >= 100 ? "#34d399" : "#f87171"} />
-              <OutcomeCard label="Rev/Employee" value={fmtCurrency(metrics.revenuePerHead)} color="#a78bfa" />
-              <OutcomeCard label="Op. Profit" value={`${metrics.operatingProfit < 0 ? "-" : ""}${fmtCurrency(Math.abs(metrics.operatingProfit))}`}
-                color={metrics.operatingProfit >= 0 ? "#34d399" : "#f87171"} />
-            </div>
-          </Module>
+        {/* ═══ DYNAMIC OUTCOME RAIL ═══ */}
+        <div style={SC.outcomeRail} className="gm-scrollbar">
+          <div style={{ padding: "0 20px 12px", borderBottom: "1px solid rgba(31,74,117,0.3)" }}>
+            <div style={{ height: 2, background: "linear-gradient(90deg, transparent 0%, #a78bfa 50%, transparent 100%)", borderRadius: 2, marginBottom: 10 }} />
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#a78bfa" }}>Dynamic Outcome Rail</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "14px 16px", flex: 1, overflow: "auto" }}>
+            <OutcomeCard label="Runway" value={`${metrics.runway.toFixed(1)} mo`} color={runwayColor} />
+            <OutcomeCard label="ARR" value={fmtCurrency(form.currentARR)} color="#22D3EE" />
+            <OutcomeCard label="Growth" value={`${form.monthlyGrowthPct.toFixed(1)}%`} color="#22D3EE" />
+            <OutcomeCard label="Burn Multiple" value={`${metrics.burnMultiple.toFixed(2)}x`} color="#22D3EE" />
+            <OutcomeCard label="Survival Prob." value={`${metrics.survivalProbability}%`} color={survivalColor} />
+            <div style={{ height: 1, background: "rgba(31,74,117,0.3)", margin: "4px 0" }} />
+            <OutcomeCard label="Gross Margin" value={`${form.grossMarginPct.toFixed(1)}%`} color="#34d399" />
+            <OutcomeCard label="NRR" value={`${form.netRevenueRetentionPct}%`} color={form.netRevenueRetentionPct >= 100 ? "#34d399" : "#f87171"} />
+            <OutcomeCard label="Churn" value={`${form.monthlyChurnPct.toFixed(1)}%`} color="#f59e0b" />
+            <OutcomeCard label="Rev/Employee" value={fmtCurrency(metrics.revenuePerHead)} color="#a78bfa" />
+            <OutcomeCard label="Op. Profit" value={`${metrics.operatingProfit < 0 ? "-" : ""}${fmtCurrency(Math.abs(metrics.operatingProfit))}`}
+              color={metrics.operatingProfit >= 0 ? "#34d399" : "#f87171"} />
+          </div>
         </div>
       </main>
 
-      {/* ═══ SAVE BUTTON — HORIZONTAL BOTTOM BAR ═══ */}
-      <div style={{ padding: "14px 28px 18px", flexShrink: 0, display: "flex", justifyContent: "center", maxWidth: 1800, margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
+      {/* ═══ CTA — LOCK BASELINE ═══ */}
+      <div style={{ padding: "16px 28px 22px", flexShrink: 0, display: "flex", justifyContent: "center", maxWidth: 1800, margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
         <button
           type="button"
           onClick={handleLock}
           disabled={!canLock || isLocking}
+          className="sf-cta-glow"
           style={{
             width: "100%",
-            maxWidth: 520,
-            height: 54,
-            padding: "0 48px",
+            maxWidth: 620,
+            height: 60,
+            padding: "0 56px",
             borderRadius: 12,
-            border: "none",
-            background: isLocking ? "#f87171" : "linear-gradient(90deg, #0EA5C9 0%, #22D3EE 50%, #0EA5C9 100%)",
+            border: "1px solid rgba(34,211,238,0.3)",
+            background: isLocking
+              ? "linear-gradient(90deg, #b91c1c 0%, #f87171 50%, #b91c1c 100%)"
+              : "linear-gradient(90deg, #0891B2 0%, #22D3EE 35%, #67E8F9 50%, #22D3EE 65%, #0891B2 100%)",
             color: "#04121F",
-            fontSize: 15, fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase",
+            fontSize: 16, fontWeight: 800, letterSpacing: "0.18em", textTransform: "uppercase",
             fontFamily: FONT, cursor: canLock ? "pointer" : "default",
             opacity: canLock ? 1 : 0.35,
-            transition: "all 0.2s",
-            boxShadow: "0 0 28px rgba(34,211,238,0.35), 0 4px 16px rgba(0,0,0,0.35)",
+            transition: "all 0.25s",
+            boxShadow: "0 0 40px rgba(34,211,238,0.4), 0 0 80px rgba(34,211,238,0.15), 0 4px 20px rgba(0,0,0,0.4)",
             whiteSpace: "nowrap",
           }}
         >
-          {isLocking ? "CALCULATING VECTORS..." : "SAVE AND ENTER STRATFIT"}
+          {isLocking ? "CALCULATING VECTORS..." : "LOCK BASELINE & ENTER STRATFIT"}
         </button>
       </div>
 
@@ -1108,13 +1098,15 @@ export default function InitializeBaselinePage() {
 
       <style>{`
         @keyframes sfInitToastIn { from { opacity:0; transform:translateX(-50%) translateY(12px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+        @keyframes sfCtaPulse { 0%,100% { box-shadow: 0 0 40px rgba(34,211,238,0.4), 0 0 80px rgba(34,211,238,0.15), 0 4px 20px rgba(0,0,0,0.4); } 50% { box-shadow: 0 0 50px rgba(34,211,238,0.55), 0 0 100px rgba(34,211,238,0.2), 0 4px 24px rgba(0,0,0,0.4); } }
+        .sf-cta-glow:not(:disabled):hover { animation: sfCtaPulse 1.5s ease-in-out infinite; }
 
         .gm-range-cyan::-webkit-slider-thumb,
         .gm-range-amber::-webkit-slider-thumb {
           -webkit-appearance: none;
           appearance: none;
-          width: 14px;
-          height: 14px;
+          width: 16px;
+          height: 16px;
           border-radius: 50%;
           border: none;
           cursor: pointer;
@@ -1139,8 +1131,8 @@ export default function InitializeBaselinePage() {
 
         .gm-range-cyan::-moz-range-thumb,
         .gm-range-amber::-moz-range-thumb {
-          width: 14px;
-          height: 14px;
+          width: 16px;
+          height: 16px;
           border-radius: 50%;
           border: none;
           cursor: pointer;
@@ -1174,11 +1166,13 @@ function OutcomeCard({ label, value, color }: { label: string; value: string; co
     <div style={{
       display: "flex", alignItems: "center", justifyContent: "space-between",
       padding: "10px 14px", borderRadius: 8,
-      background: "#0A1C2E",
-      border: "1px solid #1E3A5F",
+      background: "rgba(10,28,46,0.7)",
+      border: "1px solid rgba(30,58,95,0.6)",
+      boxShadow: `0 0 1px ${color}22 inset, 0 2px 8px rgba(0,0,0,0.25)`,
+      transition: "box-shadow 0.2s, border-color 0.2s",
     }}>
       <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#8FB4D9" }}>{label}</span>
-      <span style={{ fontSize: 16, fontWeight: 800, fontFamily: "ui-monospace, 'JetBrains Mono', monospace", color, textShadow: `0 0 10px ${color}` }}>{value}</span>
+      <span style={{ fontSize: 16, fontWeight: 800, fontFamily: "ui-monospace, 'JetBrains Mono', monospace", color, textShadow: `0 0 12px ${color}88` }}>{value}</span>
     </div>
   )
 }
@@ -1239,26 +1233,31 @@ const SC: Record<string, React.CSSProperties> = {
   },
 
   grid: {
-    flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr 1fr 260px",
-    gap: "28px 32px", padding: "34px 28px 18px", minHeight: 0, overflow: "auto",
+    flex: 1, display: "grid", gridTemplateColumns: "1fr 280px",
+    gap: 0, padding: "0 28px 0", minHeight: 0, overflow: "hidden",
     maxWidth: 1800, margin: "0 auto", width: "100%", boxSizing: "border-box",
     zIndex: 1,
   },
-  col1: { display: "flex", flexDirection: "column", gap: 26, minHeight: 0, overflow: "auto" },
-  col2: { display: "flex", flexDirection: "column", gap: 26, minHeight: 0, overflow: "auto" },
-  col3: { display: "flex", flexDirection: "column", gap: 26, minHeight: 0 },
-  col4: { display: "flex", flexDirection: "column", gap: 0, minHeight: 0 } as React.CSSProperties,
+  panelGrid: {
+    display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
+    gap: 40, padding: "36px 40px 28px 0", minHeight: 0, overflow: "auto",
+  },
+  outcomeRail: {
+    display: "flex", flexDirection: "column", gap: 0,
+    padding: "36px 0 28px 0", minHeight: 0, overflow: "auto",
+    borderLeft: "1px solid #1E3A5F",
+  },
 
   moduleHeader: {
     position: "relative",
-    padding: "10px 20px", fontSize: 13, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase",
+    padding: "12px 32px", fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
     color: "#8FB4D9",
-    background: "transparent",
-    borderBottom: "1px solid rgba(31,74,117,0.3)",
+    background: "rgba(6,18,31,0.4)",
+    borderBottom: "1px solid rgba(31,74,117,0.25)",
     marginBottom: 0,
   },
   modBody: {
-    padding: "18px 20px", display: "flex", flexDirection: "column", gap: 14,
+    padding: "24px 32px 28px", display: "flex", flexDirection: "column", gap: 16,
   },
 
   powerLabel: {
@@ -1269,17 +1268,18 @@ const SC: Record<string, React.CSSProperties> = {
     textShadow: "0 0 10px currentColor",
   },
   powerTrack: {
-    height: 6, borderRadius: 3, overflow: "hidden",
+    height: 8, borderRadius: 4, overflow: "hidden",
     background: "#0F2A44",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.4) inset",
   },
   powerFill: {
-    height: "100%", borderRadius: 3, minWidth: 2,
+    height: "100%", borderRadius: 4, minWidth: 2,
   },
   rangeInput: {
     position: "absolute" as const, top: -4, left: 0,
-    width: "100%", height: 14,
+    width: "100%", height: 16,
     appearance: "none", WebkitAppearance: "none",
-    background: "transparent", borderRadius: 3, outline: "none", cursor: "pointer",
+    background: "transparent", borderRadius: 4, outline: "none", cursor: "pointer",
     margin: 0, padding: 0, zIndex: 2,
   },
 

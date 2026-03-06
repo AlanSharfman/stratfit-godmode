@@ -46,6 +46,8 @@ interface Props {
   focusedKpi: KpiKey | null
   cascadeImpulse?: CascadeImpulse | null
   tuning?: TerrainTuningParams | null
+  /** Vertex lerp speed — lower = slower, more cinematic morph. Default 2.5 */
+  morphSpeed?: number
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -53,7 +55,7 @@ interface Props {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const SEGMENTS = 220
-const LERP_SPEED = 2.5
+const DEFAULT_LERP_SPEED = 2.5
 
 const BASELINE_RIDGE_HEIGHT = 40
 const BASELINE_RIDGE_WIDTH = 0.18
@@ -65,6 +67,10 @@ const BASELINE_PEAK_SPREAD_MAX = 0.20
 
 const KPI_PEAK_HEIGHT = 62
 const NOISE_AMP = 0.12
+
+/** Strategic-vs-procedural weighting — skeleton dominates the mountain form */
+const STRATEGIC_WEIGHT = 0.68
+const PROCEDURAL_WEIGHT = 0.32
 
 const MAX_SLOPE = 0.55
 const SLOPE_CLAMP_PASSES = 3
@@ -205,8 +211,92 @@ function buildSeedPeaks(seed: number): SeedPeak[] {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Baseline terrain height — always mountainous, never flat.
-   Produces a realistic mountain range from seed alone.
+   Strategic Skeleton — KPI-driven core mountain form.
+   This defines WHERE the summit, ridge, valley, and erosion zones exist.
+   The skeleton is the primary shape; procedural noise only adds realism.
+
+   Mapping:
+     Enterprise Value  → dominant peak height
+     Growth            → main ridge strength & extension
+     Liquidity (cash)  → valley basin depth
+     Runway            → terrain stability / smoothness
+     Revenue           → slope steepness / elevation continuity
+     Burn              → erosion / weakening / fragmentation
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+const SKELETON_PEAK_HEIGHT = 85
+
+function generateStrategicSkeleton(
+  nx: number,
+  nz: number,
+  kpis: PositionKpis,
+  seed: number,
+): number {
+  const anchors: { cx: number; spread: number; elev: number; key: string }[] = []
+  for (const key of PRIMARY_KPI_KEYS) {
+    const pos = PRIMARY_ANCHOR_POSITIONS.get(key)
+    if (!pos) continue
+    const healthElev = HEALTH_ELEVATION[getHealthLevel(key, kpis)]
+    anchors.push({ cx: pos.cx, spread: pos.spread, elev: healthElev, key })
+  }
+
+  const zCenter = 0.5
+  const zDist = Math.abs(nz - zCenter)
+  const zFalloff = smoothstep(1, 0, zDist / 0.46)
+
+  let totalHeight = 0
+  let totalWeight = 0
+
+  for (const a of anchors) {
+    const dx = nx - a.cx
+    const gWeight = Math.exp(-(dx * dx) / (a.spread * a.spread))
+    if (gWeight < 0.003) continue
+
+    let anchorH = a.elev * SKELETON_PEAK_HEIGHT * zFalloff
+
+    if (a.key === "enterpriseValue" && a.elev > 0) {
+      const peakSharpness = 1.0 + a.elev * 0.4
+      anchorH *= peakSharpness
+    }
+
+    if (a.key === "growth" && a.elev > 0) {
+      const ridgeExt = 1.0 + 0.3 * Math.sin(nx * Math.PI * 4 + seed * 0.05)
+      anchorH *= ridgeExt
+    }
+
+    if (a.key === "burn" && a.elev < 0) {
+      const erosionNoise = pseudoNoise(nx * 30, nz * 30, seed + 991) * 0.4
+      anchorH *= (1.0 + erosionNoise)
+    }
+
+    totalHeight += anchorH * gWeight
+    totalWeight += gWeight
+  }
+
+  if (totalWeight < 0.001) return 0
+
+  let h = totalHeight / totalWeight
+
+  const spineCenter = zCenter + Math.sin(nx * Math.PI * 2.2 + seed * 0.05) * 0.04
+  const spineDist = nz - spineCenter
+  const spineProfile = Math.exp(-(spineDist * spineDist) / (0.14 * 0.14))
+  const avgElev = anchors.reduce((s, a) => s + a.elev, 0) / anchors.length
+  h += spineProfile * Math.max(avgElev, 0.15) * SKELETON_PEAK_HEIGHT * 0.35
+
+  const edgeFade = Math.min(
+    smoothstep(0, 0.18, nx),
+    smoothstep(1, 0.82, nx),
+    smoothstep(0, 0.14, nz),
+    smoothstep(1, 0.86, nz),
+  )
+
+  return h * edgeFade
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Baseline terrain height — procedural realism layer.
+   Provides natural texture, asymmetry, ridge roughness, and surface detail.
+   Must NOT decide the core mountain meaning — only supports naturalism.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 interface TuningOverrides {
@@ -464,55 +554,22 @@ function buildStabilizedHeightfield(
     microDetail: tuning.microDetailStrength,
   } : NEUTRAL_TUNING
 
-  // Phase 1: raw baseline heights
+  // Phase 1: Strategic skeleton (primary shape) + procedural realism (texture)
+  // The skeleton defines where peaks, ridges, valleys, and erosion exist.
+  // The procedural layer adds naturalism and surface texture only.
   for (let row = 0; row < vpr; row++) {
     for (let col = 0; col < vpr; col++) {
       const i = row * vpr + col
       const nx = col / SEGMENTS
       const nz = row / SEGMENTS
-      hf[i] = baselineTerrainHeight(nx, nz, seed, seedPeaks, t)
-    }
-  }
 
-  // Phase 2: 6-anchor KPI elevation model
-  // Each primary KPI acts as a terrain anchor with Gaussian falloff.
-  // Healthy anchors raise the terrain (peaks/ridges), critical anchors lower it (valleys).
-  // Gaussians overlap naturally, producing smooth cubic-like transitions.
-  if (kpis) {
-    const anchors: { cx: number; spread: number; elev: number }[] = []
-    for (const key of PRIMARY_KPI_KEYS) {
-      const pos = PRIMARY_ANCHOR_POSITIONS.get(key)
-      if (!pos) continue
-      const healthElev = HEALTH_ELEVATION[getHealthLevel(key, kpis)]
-      anchors.push({ cx: pos.cx, spread: pos.spread, elev: healthElev })
-    }
+      const procedural = baselineTerrainHeight(nx, nz, seed, seedPeaks, t)
 
-    for (let row = 0; row < vpr; row++) {
-      for (let col = 0; col < vpr; col++) {
-        const i = row * vpr + col
-        const nx = col / SEGMENTS
-        const nz = row / SEGMENTS
-
-        // Z-axis falloff: full influence at centre, fades toward front/back edges
-        const zDist = Math.abs(nz - 0.5)
-        const zFalloff = smoothstep(1, 0, zDist / 0.48)
-
-        let totalHeight = 0
-        let totalWeight = 0
-
-        for (const a of anchors) {
-          const dx = nx - a.cx
-          const gWeight = Math.exp(-(dx * dx) / (a.spread * a.spread))
-          if (gWeight < 0.005) continue
-
-          const noise = pseudoNoise(nx * 20, nz * 20, seed + col) * NOISE_AMP * KPI_PEAK_HEIGHT
-          totalHeight += (a.elev * KPI_PEAK_HEIGHT * zFalloff + noise) * gWeight
-          totalWeight += gWeight
-        }
-
-        if (totalWeight > 0) {
-          hf[i] += totalHeight / totalWeight
-        }
+      if (kpis) {
+        const skeleton = generateStrategicSkeleton(nx, nz, kpis, seed)
+        hf[i] = skeleton * STRATEGIC_WEIGHT + procedural * PROCEDURAL_WEIGHT
+      } else {
+        hf[i] = procedural
       }
     }
   }
@@ -538,7 +595,7 @@ function buildStabilizedHeightfield(
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
-  function ProgressiveTerrainSurface({ revealedKpis, kpis, focusedKpi, cascadeImpulse, tuning }, ref) {
+  function ProgressiveTerrainSurface({ revealedKpis, kpis, focusedKpi, cascadeImpulse, tuning, morphSpeed = DEFAULT_LERP_SPEED }, ref) {
     const solidRef = useRef<THREE.Mesh>(null)
     const latticeRef = useRef<THREE.Mesh>(null)
     const highlightRef = useRef<THREE.Mesh>(null)
@@ -675,7 +732,7 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
         const target = targetHeights[i] + cascadeOffset
         const diff = target - current
         if (Math.abs(diff) > 0.01) {
-          pos.setZ(i, current + diff * Math.min(1, delta * LERP_SPEED))
+          pos.setZ(i, current + diff * Math.min(1, delta * morphSpeed))
           changed = true
         }
       }
@@ -756,6 +813,8 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
           geometry={geometry}
           renderOrder={0}
           name="progressive-terrain-surface"
+          receiveShadow
+          castShadow
         >
           <primitive object={solidMat} attach="material" />
         </mesh>

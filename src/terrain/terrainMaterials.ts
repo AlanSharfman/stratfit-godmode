@@ -1,14 +1,114 @@
 import * as THREE from "three"
 
+/* ═══════════════════════════════════════════════════════════════════════
+   Altitude colour bands — absolute terrain colours blended by height.
+   Scene lights (directional, hemisphere, ambient) provide the blue/teal
+   atmosphere tint; these bands define the intrinsic surface colour.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+type Vec3 = [number, number, number]
+
+interface AltitudePalette {
+  valley: Vec3
+  lowSlope: Vec3
+  rock: Vec3
+  highRidge: Vec3
+  peak: Vec3
+}
+
+const ALTITUDE_DEFAULT: AltitudePalette = {
+  valley:    [0.059, 0.090, 0.141],   // #0f1724
+  lowSlope:  [0.110, 0.141, 0.204],   // #1c2434
+  rock:      [0.165, 0.200, 0.275],   // #2a3346
+  highRidge: [0.290, 0.333, 0.408],   // #4a5568
+  peak:      [0.478, 0.525, 0.596],   // #7a8698
+}
+
+const ALTITUDE_GREEN: AltitudePalette = {
+  valley:    [0.050, 0.100, 0.080],   // dark teal
+  lowSlope:  [0.080, 0.150, 0.120],
+  rock:      [0.130, 0.200, 0.175],
+  highRidge: [0.220, 0.320, 0.280],
+  peak:      [0.400, 0.540, 0.470],
+}
+
+const ALTITUDE_FROST: AltitudePalette = {
+  valley:    [0.070, 0.085, 0.130],   // cold steel blue
+  lowSlope:  [0.120, 0.140, 0.200],
+  rock:      [0.180, 0.205, 0.280],
+  highRidge: [0.310, 0.350, 0.430],
+  peak:      [0.520, 0.570, 0.650],
+}
+
+const v3 = (c: Vec3) => `vec3(${c[0].toFixed(3)}, ${c[1].toFixed(3)}, ${c[2].toFixed(3)})`
+
+function altitudeFragmentGLSL(p: AltitudePalette): string {
+  return `#include <color_fragment>
+float _hNorm = clamp((vHeight + 8.0) / 60.0, 0.0, 1.0);
+
+vec3 _valley    = ${v3(p.valley)};
+vec3 _lowSlope  = ${v3(p.lowSlope)};
+vec3 _rock      = ${v3(p.rock)};
+vec3 _highRidge = ${v3(p.highRidge)};
+vec3 _peak      = ${v3(p.peak)};
+
+vec3 _altCol = mix(_valley, _lowSlope, smoothstep(0.1, 0.3, _hNorm));
+_altCol = mix(_altCol, _rock, smoothstep(0.3, 0.5, _hNorm));
+_altCol = mix(_altCol, _highRidge, smoothstep(0.5, 0.75, _hNorm));
+_altCol = mix(_altCol, _peak, smoothstep(0.75, 1.0, _hNorm));
+
+diffuseColor.rgb = _altCol;
+
+float _slopeF = smoothstep(0.12, 0.55, vSlope);
+vec3 _rockFace = _altCol * 1.15 + vec3(0.020, 0.020, 0.030);
+diffuseColor.rgb = mix(diffuseColor.rgb, _rockFace, _slopeF * 0.40);
+
+float _ridgeMask = _hNorm * (1.0 - _slopeF) * smoothstep(0.40, 0.75, _hNorm);
+diffuseColor.rgb += vec3(0.020, 0.040, 0.070) * _ridgeMask * 1.2;
+
+float _snowMask = smoothstep(0.75, 0.95, _hNorm) * (1.0 - _slopeF);
+diffuseColor.rgb = mix(diffuseColor.rgb, _peak, _snowMask * 0.35);
+
+float _valleyAO = (1.0 - _hNorm) * (1.0 - _slopeF);
+float _creaseAO = _slopeF * (1.0 - _hNorm);
+float _ao = max(_valleyAO * 0.45, _creaseAO * 0.25);
+diffuseColor.rgb *= mix(1.0, 0.68, _ao);
+
+float _crevasse = _slopeF * (1.0 - _hNorm) * smoothstep(0.3, 0.6, vSlope);
+diffuseColor.rgb *= mix(1.0, 0.75, _crevasse);
+
+float _viewDot = abs(dot(normalize(vWorldNormal), vec3(0.0, 0.0, 1.0)));
+float _rim = pow(1.0 - _viewDot, 2.5) * 0.12 * _hNorm;
+diffuseColor.rgb += vec3(0.012, 0.035, 0.072) * _rim;
+
+diffuseColor.rgb += vec3(0.006, 0.018, 0.042) * _hNorm;`
+}
+
+const VERTEX_VARYINGS =
+  "varying float vHeight;\nvarying vec3 vWorldNormal;\nvarying float vSlope;\nvarying vec3 vWorldPos;"
+
+const VERTEX_BODY = `#include <begin_vertex>
+vHeight = position.z;
+vWorldNormal = normalize(normalMatrix * normal);
+vSlope = 1.0 - abs(normal.z);
+vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;`
+
+const FRAGMENT_VARYINGS = VERTEX_VARYINGS
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Main terrain solid material (progressive + seed-based)
+   ═══════════════════════════════════════════════════════════════════════ */
+
 export function createTerrainSolidMaterial() {
   const mat = new THREE.MeshStandardMaterial({
-    color: 0x245888,
-    emissive: new THREE.Color(0x184878),
-    emissiveIntensity: 0.95,
+    color: 0x0f1724,
+    emissive: new THREE.Color(0x080e18),
+    emissiveIntensity: 0.30,
     transparent: false,
     opacity: 1.0,
-    roughness: 0.42,
-    metalness: 0.22,
+    roughness: 0.9,
+    metalness: 0.0,
+    flatShading: false,
     depthWrite: true,
     polygonOffset: true,
     polygonOffsetFactor: 1,
@@ -17,100 +117,42 @@ export function createTerrainSolidMaterial() {
 
   mat.onBeforeCompile = (shader) => {
     shader.vertexShader = shader.vertexShader
-      .replace(
-        "#include <common>",
-        "#include <common>\nvarying float vHeight;\nvarying vec3 vWorldNormal;\nvarying float vSlope;\nvarying vec3 vWorldPos;",
-      )
-      .replace(
-        "#include <begin_vertex>",
-        `#include <begin_vertex>
-vHeight = position.z;
-vWorldNormal = normalize(normalMatrix * normal);
-vSlope = 1.0 - abs(normal.z);
-vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;`,
-      )
+      .replace("#include <common>", `#include <common>\n${VERTEX_VARYINGS}`)
+      .replace("#include <begin_vertex>", VERTEX_BODY)
 
     shader.fragmentShader = shader.fragmentShader
-      .replace(
-        "#include <common>",
-        "#include <common>\nvarying float vHeight;\nvarying vec3 vWorldNormal;\nvarying float vSlope;\nvarying vec3 vWorldPos;",
-      )
-      .replace(
-        "#include <color_fragment>",
-        `#include <color_fragment>
-float _hNorm = clamp((vHeight + 8.0) / 60.0, 0.0, 1.0);
-
-// Four-tone height gradient (deep shadow → base → mid → icy peak)
-vec3 _base = diffuseColor.rgb;
-vec3 _deepCol = _base * 0.55;
-vec3 _lowCol  = _base * 0.85;
-vec3 _midCol  = _base * 1.30 + vec3(0.015, 0.035, 0.060);
-vec3 _highCol = _base * 1.70 + vec3(0.045, 0.10, 0.18);
-
-float _t1 = smoothstep(0.0, 0.15, _hNorm);
-float _t2 = smoothstep(0.15, 0.45, _hNorm);
-float _t3 = smoothstep(0.45, 1.0, _hNorm);
-diffuseColor.rgb = mix(mix(mix(_deepCol, _lowCol, _t1), _midCol, _t2), _highCol, _t3);
-
-// Slope-based exposed rock face — steep faces get brighter, rougher look
-float _slopeF = smoothstep(0.12, 0.55, vSlope);
-vec3 _rockColor = diffuseColor.rgb * 1.35 + vec3(0.025, 0.040, 0.065);
-diffuseColor.rgb = mix(diffuseColor.rgb, _rockColor, _slopeF * 0.40);
-
-// Ridge-line highlight: high + relatively flat = exposed ridge crests
-float _ridgeMask = _hNorm * (1.0 - _slopeF) * smoothstep(0.40, 0.75, _hNorm);
-diffuseColor.rgb += vec3(0.035, 0.090, 0.16) * _ridgeMask * 1.3;
-
-// Snow/ice dusting on high flat surfaces
-float _snowMask = smoothstep(0.65, 0.85, _hNorm) * (1.0 - _slopeF);
-diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb + vec3(0.08, 0.14, 0.22), _snowMask * 0.55);
-
-// Ambient occlusion: sheltered valleys + creases (gentler darkening)
-float _valleyAO = (1.0 - _hNorm) * (1.0 - _slopeF);
-float _creaseAO = _slopeF * (1.0 - _hNorm);
-float _ao = max(_valleyAO * 0.40, _creaseAO * 0.22);
-diffuseColor.rgb *= mix(1.0, 0.72, _ao);
-
-// Crevasse darkening — subtle shadow in steep low areas
-float _crevasse = _slopeF * (1.0 - _hNorm) * smoothstep(0.3, 0.6, vSlope);
-diffuseColor.rgb *= mix(1.0, 0.78, _crevasse);
-
-// Fresnel rim: grazing angles on ridges get edge glow (atmosphere scatter)
-float _viewDot = abs(dot(normalize(vWorldNormal), vec3(0.0, 0.0, 1.0)));
-float _rim = pow(1.0 - _viewDot, 2.5) * 0.14 * _hNorm;
-diffuseColor.rgb += vec3(0.018, 0.060, 0.12) * _rim;
-
-// Atmospheric haze on peaks — icy blue tint
-diffuseColor.rgb += vec3(0.010, 0.038, 0.070) * _hNorm;`,
-      )
+      .replace("#include <common>", `#include <common>\n${FRAGMENT_VARYINGS}`)
+      .replace("#include <color_fragment>", altitudeFragmentGLSL(ALTITUDE_DEFAULT))
   }
 
   return mat
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   Variant terrain material (compare page A/B sides)
+   ═══════════════════════════════════════════════════════════════════════ */
+
 export type TerrainColorVariant = "default" | "green" | "frost"
 
-/**
- * Create a terrain solid material with an optional color variant.
- * - default: deep navy/teal (position page)
- * - green: emerald/jade tint (compare B-side)
- * - frost: cool white/silver (alternate compare)
- */
+const VARIANT_PROPS: Record<TerrainColorVariant, {
+  color: number; emissive: number; emissiveIntensity: number; palette: AltitudePalette
+}> = {
+  default: { color: 0x0f1724, emissive: 0x080e18, emissiveIntensity: 0.30, palette: ALTITUDE_DEFAULT },
+  green:   { color: 0x0d1a14, emissive: 0x081210, emissiveIntensity: 0.28, palette: ALTITUDE_GREEN },
+  frost:   { color: 0x121621, emissive: 0x0c1018, emissiveIntensity: 0.28, palette: ALTITUDE_FROST },
+}
+
 export function createTerrainSolidMaterialVariant(variant: TerrainColorVariant) {
-  const palettes: Record<TerrainColorVariant, { color: number; emissive: number; emissiveIntensity: number; aoLow: number; aoHigh: number; tint: [number, number, number] }> = {
-    default: { color: 0x184068, emissive: 0x123858, emissiveIntensity: 0.80, aoLow: 0.85, aoHigh: 1.9, tint: [0.008, 0.030, 0.06] },
-    green:   { color: 0x144838, emissive: 0x124030, emissiveIntensity: 0.75, aoLow: 0.82, aoHigh: 1.7, tint: [0.008, 0.050, 0.020] },
-    frost:   { color: 0x344860, emissive: 0x284058, emissiveIntensity: 0.65, aoLow: 0.88, aoHigh: 2.0, tint: [0.030, 0.035, 0.040] },
-  }
-  const p = palettes[variant]
+  const p = VARIANT_PROPS[variant]
   const mat = new THREE.MeshStandardMaterial({
     color: p.color,
     emissive: new THREE.Color(p.emissive),
     emissiveIntensity: p.emissiveIntensity,
     transparent: false,
     opacity: 1.0,
-    roughness: 0.62,
-    metalness: 0.12,
+    roughness: 0.9,
+    metalness: 0.0,
+    flatShading: false,
     depthWrite: true,
     polygonOffset: true,
     polygonOffsetFactor: 1,
@@ -119,45 +161,20 @@ export function createTerrainSolidMaterialVariant(variant: TerrainColorVariant) 
 
   mat.onBeforeCompile = (shader) => {
     shader.vertexShader = shader.vertexShader
-      .replace(
-        "#include <common>",
-        "#include <common>\nvarying float vHeight;\nvarying float vSlope;",
-      )
-      .replace(
-        "#include <begin_vertex>",
-        `#include <begin_vertex>
-vHeight = position.z;
-vSlope = 1.0 - abs(normal.z);`,
-      )
+      .replace("#include <common>", `#include <common>\n${VERTEX_VARYINGS}`)
+      .replace("#include <begin_vertex>", VERTEX_BODY)
 
     shader.fragmentShader = shader.fragmentShader
-      .replace(
-        "#include <common>",
-        "#include <common>\nvarying float vHeight;\nvarying float vSlope;",
-      )
-      .replace(
-        "#include <color_fragment>",
-        `#include <color_fragment>
-float _hNorm = clamp((vHeight + 8.0) / 42.0, 0.0, 1.0);
-vec3 _base = diffuseColor.rgb;
-vec3 _lowCol  = _base * ${p.aoLow.toFixed(2)};
-vec3 _midCol  = _base * ${((p.aoLow + p.aoHigh) * 0.5).toFixed(2)} + vec3(${(p.tint[0] * 0.5).toFixed(4)}, ${(p.tint[1] * 0.5).toFixed(4)}, ${(p.tint[2] * 0.5).toFixed(4)});
-vec3 _highCol = _base * ${p.aoHigh.toFixed(1)} + vec3(${p.tint[0].toFixed(3)}, ${p.tint[1].toFixed(3)}, ${p.tint[2].toFixed(3)});
-diffuseColor.rgb = _hNorm < 0.35
-  ? mix(_lowCol, _midCol, smoothstep(0.0, 0.35, _hNorm))
-  : mix(_midCol, _highCol, smoothstep(0.35, 1.0, _hNorm));
-float _slopeF = smoothstep(0.15, 0.65, vSlope);
-diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 1.25 + vec3(0.015, 0.025, 0.035), _slopeF * 0.35);
-float _ridgeMask = _hNorm * (1.0 - _slopeF) * smoothstep(0.45, 0.8, _hNorm);
-diffuseColor.rgb += vec3(${p.tint[0].toFixed(3)}, ${p.tint[1].toFixed(3)}, ${p.tint[2].toFixed(3)}) * _ridgeMask;
-float _vAO = (1.0 - _hNorm) * (1.0 - _slopeF);
-float _cAO = _slopeF * (1.0 - _hNorm);
-diffuseColor.rgb *= mix(1.0, 0.70, max(_vAO * 0.50, _cAO * 0.28));`,
-      )
+      .replace("#include <common>", `#include <common>\n${FRAGMENT_VARYINGS}`)
+      .replace("#include <color_fragment>", altitudeFragmentGLSL(p.palette))
   }
 
   return mat
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Wire/lattice overlay material
+   ═══════════════════════════════════════════════════════════════════════ */
 
 export function createTerrainWireMaterial() {
   return new THREE.MeshStandardMaterial({
