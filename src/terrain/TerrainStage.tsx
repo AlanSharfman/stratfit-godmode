@@ -24,23 +24,11 @@ import TerrainHeatmapLayer from "@/terrain/layers/TerrainHeatmapLayer";
 import ProgressiveTerrainSurface from "@/terrain/ProgressiveTerrainSurface";
 import type { ProgressiveTerrainHandle } from "@/terrain/ProgressiveTerrainSurface";
 import type { TerrainTuningParams } from "@/terrain/terrainTuning";
-import HealthRidgePath from "@/terrain/HealthRidgePath";
-import WaterLinePlane from "@/terrain/WaterLinePlane";
-import ValleyFogLayer from "@/terrain/ValleyFogLayer";
 import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping";
 import type { PositionKpis } from "@/pages/position/overlays/positionState";
 import type { CascadeImpulse } from "@/terrain/ProgressiveTerrainSurface";
-import DependencyLines from "@/terrain/DependencyLines";
-import GhostTerrainLayer from "@/terrain/GhostTerrainLayer";
 import TerrainKpiMarkers from "@/terrain/TerrainKpiMarkers";
 import TerrainCompass from "@/terrain/TerrainCompass";
-import TerrainIntelligence from "@/terrain/TerrainIntelligence";
-import RiskWeatherSystem from "@/terrain/riskWeather/RiskWeatherSystem";
-import OpportunitySignalLayer from "@/terrain/opportunities/OpportunitySignalLayer";
-import TerrainHoverIntelligence from "@/terrain/TerrainHoverIntelligence";
-import StrategicPath from "@/terrain/StrategicPath";
-import ConfidenceEnvelope from "@/terrain/ConfidenceEnvelope";
-import { buildConfidenceBands } from "@/terrain/buildConfidenceBands";
 import type { TimeSlice } from "@/state/scenarioTimelineStore";
 import { POSITION_PRESET, GOD_VIEW_CONTROLS } from "@/scene/camera/terrainCameraPresets";
 import CameraDriftSystem from "@/terrain/CameraDriftSystem";
@@ -87,23 +75,6 @@ type TerrainStageProps = {
   /** When true, uses cinematic key-light-dominant lighting for premium terrain rendering */
   cinematicLighting?: boolean
   children?: ReactNode
-}
-
-function EnvelopeFromSlices({
-  terrainRef,
-  slices,
-}: {
-  terrainRef: React.RefObject<ProgressiveTerrainHandle | null>
-  slices: TimeSlice[]
-}) {
-  const bands = useMemo(() => buildConfidenceBands(slices), [slices])
-  return (
-    <ConfidenceEnvelope
-      terrainRef={terrainRef}
-      p25Slices={bands.p25}
-      p75Slices={bands.p75}
-    />
-  )
 }
 
 export default function TerrainStage({
@@ -199,13 +170,13 @@ export default function TerrainStage({
 
       {cinematicLighting ? (
         <>
-          <ambientLight intensity={0.55} color="#0a2540" />
-          <directionalLight position={[120, 200, 120]} intensity={1.2} color="#4fc3f7" castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-camera-near={0.5} shadow-camera-far={600} shadow-camera-left={-250} shadow-camera-right={250} shadow-camera-top={250} shadow-camera-bottom={-250} shadow-bias={-0.0004} />
-          <directionalLight position={[-100, 160, -40]} intensity={0.35} color="#1f95d4" />
-          <directionalLight position={[0, 80, 200]} intensity={0.22} color="#1573a6" />
-          <directionalLight position={[-160, 30, -120]} intensity={0.12} color="#0e4c73" />
-          <hemisphereLight args={["#1f95d4", "#040c18", 0.35]} />
-          <fogExp2 attach="fog" args={[0x081421, 0.002]} />
+          <ambientLight intensity={0.70} color="#1a4a6a" />
+          <directionalLight position={[120, 200, 120]} intensity={1.6} color="#5ad0ff" castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-camera-near={0.5} shadow-camera-far={600} shadow-camera-left={-250} shadow-camera-right={250} shadow-camera-top={250} shadow-camera-bottom={-250} shadow-bias={-0.0004} />
+          <directionalLight position={[-100, 160, -40]} intensity={0.50} color="#3aafee" />
+          <directionalLight position={[0, 80, 200]} intensity={0.35} color="#2090cc" />
+          <directionalLight position={[-160, 30, -120]} intensity={0.20} color="#1570a0" />
+          <hemisphereLight args={["#3aafee", "#081828", 0.50]} />
+          <fogExp2 attach="fog" args={[0x081828, 0.0012]} />
         </>
       ) : (
         <>
@@ -231,50 +202,6 @@ export default function TerrainStage({
               cascadeImpulse={cascadeImpulse}
               tuning={tuning}
             />
-            {showDependencyLines && (
-              <DependencyLines
-                focusedKpi={focusedKpi}
-                kpis={zoneKpis}
-                terrainRef={progressiveRef}
-              />
-            )}
-            <HealthRidgePath
-              terrainRef={progressiveRef}
-              revealedKpis={revealedKpis}
-              kpis={zoneKpis}
-            />
-            {strategicPathSlices && strategicPathSlices.length >= 2 && (
-              <>
-                <StrategicPath
-                  terrainRef={progressiveRef}
-                  slices={strategicPathSlices}
-                />
-                <EnvelopeFromSlices
-                  terrainRef={progressiveRef}
-                  slices={strategicPathSlices}
-                />
-              </>
-            )}
-            <WaterLinePlane visible={revealedKpis.size > 0} />
-            <ValleyFogLayer
-              revealedKpis={revealedKpis}
-              kpis={zoneKpis}
-            />
-            <RiskWeatherSystem kpis={zoneKpis} />
-            {ghostKpis && (
-              <GhostTerrainLayer
-                revealedKpis={revealedKpis}
-                kpis={ghostKpis}
-              />
-            )}
-            {deltaBaselineKpis && zoneKpis && (
-              <TerrainDeltaOverlay
-                revealedKpis={revealedKpis}
-                baselineKpis={deltaBaselineKpis}
-                scenarioKpis={zoneKpis}
-              />
-            )}
-            <TerrainIntelligence terrainRef={progressiveRef} />
             <TerrainKpiMarkers
               terrainRef={progressiveRef}
               focusedKpi={focusedKpi}
@@ -284,14 +211,6 @@ export default function TerrainStage({
               kpis={zoneKpis}
               revealedKpis={revealedKpis ?? new Set()}
               visible={showKpiMarkers}
-            />
-            <OpportunitySignalLayer
-              kpis={zoneKpis}
-              terrainRef={progressiveRef}
-            />
-            <TerrainHoverIntelligence
-              terrainRef={progressiveRef}
-              kpis={zoneKpis}
             />
           </>
         ) : (

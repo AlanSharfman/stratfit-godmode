@@ -13,7 +13,12 @@ export default function PositionRoute() {
 
   if (!scenarioHydrated) {
     return (
-      <div style={{ padding: 24, color: "#e2e8f0", fontFamily: "'Inter', system-ui, sans-serif" }}>
+      <div style={{
+        position: "fixed", inset: 0,
+        background: "#060b16",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        color: "#2a5a80", fontFamily: "'Inter', system-ui, sans-serif", fontSize: 14,
+      }}>
         Loading&#8230;
       </div>
     )

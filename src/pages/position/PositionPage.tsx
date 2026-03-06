@@ -781,7 +781,6 @@ export default function PositionPage() {
       </div>
       <SystemProbabilityNotice />
 
-      {intelligenceText && <IntelligenceConsole insightText={intelligenceText} />}
     </div>
   )
 }

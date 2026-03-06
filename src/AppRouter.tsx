@@ -42,7 +42,7 @@ function AppRoutes() {
       <Route path="/briefing" element={<Navigate to="/boardroom" replace />} />
       <Route path="/command" element={<Navigate to="/actions" replace />} />
 
-      <Route path="*" element={<Navigate to="/initiate" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }
