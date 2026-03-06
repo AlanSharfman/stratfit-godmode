@@ -15,26 +15,8 @@ const TTS_VOICE = "nova"; // Warm, engaging American female
 const TTS_SPEED = 0.95; // Slightly slower for documentary feel
 const TTS_FORMAT = "mp3";
 
-/** Resolve OpenAI API key from env or localStorage (same pattern as openaiScenarioQa) */
-function getApiKey(): string | null {
-  // Vite statically replaces import.meta.env.VITE_* at build time
-  const fromEnv = import.meta.env.VITE_OPENAI_API_KEY as string | undefined;
-  if (fromEnv && fromEnv.trim()) {
-    console.log("[openaiTTS] API key resolved from env var (length:", fromEnv.trim().length, ")");
-    return fromEnv.trim();
-  }
-  try {
-    const fromLs = window.localStorage.getItem("OPENAI_API_KEY");
-    if (fromLs && fromLs.trim()) {
-      console.log("[openaiTTS] API key resolved from localStorage (length:", fromLs.trim().length, ")");
-      return fromLs.trim();
-    }
-  } catch {
-    // ignore
-  }
-  console.warn("[openaiTTS] No API key found — checked VITE_OPENAI_API_KEY env and localStorage.OPENAI_API_KEY");
-  return null;
-}
+import { getOpenAIApiKey, hasOpenAIApiKey } from "@/lib/openai/apiKey";
+const getApiKey = getOpenAIApiKey;
 
 export interface TTSOptions {
   /** Override voice (default: "nova") */
@@ -97,5 +79,5 @@ export async function synthesizeSpeech(
 
 /** Check if an OpenAI API key is available */
 export function hasOpenAIKey(): boolean {
-  return getApiKey() !== null;
+  return hasOpenAIApiKey();
 }

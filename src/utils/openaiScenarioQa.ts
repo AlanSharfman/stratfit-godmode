@@ -18,19 +18,8 @@ type AskArgs = {
   compareToBase: boolean;
 };
 
-function getApiKey(): string | null {
-  // Prefer Vite env. Optional localStorage override for dev.
-  // - VITE_OPENAI_API_KEY="..." (recommended for local dev only)
-  // - localStorage.OPENAI_API_KEY="..." (optional)
-  const fromEnv = import.meta.env.VITE_OPENAI_API_KEY as string | undefined;
-  if (fromEnv && fromEnv.trim()) return fromEnv.trim();
-  try {
-    const fromLs = window.localStorage.getItem("OPENAI_API_KEY");
-    return fromLs && fromLs.trim() ? fromLs.trim() : null;
-  } catch {
-    return null;
-  }
-}
+import { getOpenAIApiKey } from "@/lib/openai/apiKey";
+const getApiKey = getOpenAIApiKey;
 
 function extractText(payload: any): string | null {
   // Responses API shape

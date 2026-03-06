@@ -12,17 +12,11 @@ const MODEL = "gpt-4o-mini"
 const TEMPERATURE = 0.15
 const MAX_RETRIES = 1
 
-function getApiKey(): string | null {
-  const fromEnv = import.meta.env.VITE_OPENAI_API_KEY as string | undefined
-  if (fromEnv?.trim()) return fromEnv.trim()
-  try {
-    const fromLs = window.localStorage.getItem("OPENAI_API_KEY")
-    return fromLs?.trim() || null
-  } catch { return null }
-}
+import { getOpenAIApiKey, hasOpenAIApiKey } from "@/lib/openai/apiKey"
+const getApiKey = getOpenAIApiKey
 
 export function hasWhatIfApiKey(): boolean {
-  return getApiKey() !== null
+  return hasOpenAIApiKey()
 }
 
 function extractText(payload: any): string | null {

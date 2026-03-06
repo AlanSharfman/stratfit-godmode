@@ -163,12 +163,12 @@ export function createTerrainWireMaterial() {
   return new THREE.MeshStandardMaterial({
     color: 0x22d3ee,
     emissive: 0x0e7490,
-    emissiveIntensity: 0.55,
+    emissiveIntensity: 0.9,
     wireframe: true,
     transparent: true,
-    opacity: 0.38,
-    roughness: 0.70,
-    metalness: 0.10,
+    opacity: 0.72,
+    roughness: 0.50,
+    metalness: 0.18,
     depthWrite: false,
     depthTest: true,
   })

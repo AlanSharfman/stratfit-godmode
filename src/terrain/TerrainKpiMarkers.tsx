@@ -85,9 +85,14 @@ function getNeonGeo() {
   if (!_neonGeo) _neonGeo = new THREE.BoxGeometry(CUBE_SIZE + 1.5, NEON_HEIGHT, CUBE_DEPTH + 1.5)
   return _neonGeo
 }
+let _logoAspect = 0
 function getLogoGeo(aspect: number) {
   const w = CUBE_SIZE * 0.88
-  if (!_logoGeo) _logoGeo = new THREE.PlaneGeometry(w * aspect, w)
+  if (!_logoGeo || Math.abs(_logoAspect - aspect) > 0.01) {
+    _logoGeo?.dispose()
+    _logoGeo = new THREE.PlaneGeometry(w * aspect, w)
+    _logoAspect = aspect
+  }
   return _logoGeo
 }
 
