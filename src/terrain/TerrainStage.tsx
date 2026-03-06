@@ -222,12 +222,12 @@ export default function TerrainStage({
 
       {cinematicLighting ? (
         <>
-          <ambientLight intensity={0.25} color="#0a1a2f" />
-          <directionalLight position={[180, 360, 160]} intensity={1.8} color="#6bdcff" castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-camera-near={0.5} shadow-camera-far={600} shadow-camera-left={-250} shadow-camera-right={250} shadow-camera-top={250} shadow-camera-bottom={-250} shadow-bias={-0.0004} />
-          <directionalLight position={[-120, 200, -60]} intensity={0.35} color="#4ac8e8" />
-          <directionalLight position={[0, 80, 240]} intensity={0.20} color="#7cc0e0" />
-          <directionalLight position={[-200, 30, -120]} intensity={0.12} color="#5aa8d0" />
-          <hemisphereLight args={["#4ac8e8", "#020810", 0.35]} />
+          <ambientLight intensity={0.16} color="#061828" />
+          <directionalLight position={[180, 380, 140]} intensity={2.2} color="#4fc3f7" castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-camera-near={0.5} shadow-camera-far={600} shadow-camera-left={-250} shadow-camera-right={250} shadow-camera-top={250} shadow-camera-bottom={-250} shadow-bias={-0.0004} />
+          <directionalLight position={[-130, 220, -50]} intensity={0.22} color="#2690b8" />
+          <directionalLight position={[0, 60, 260]} intensity={0.14} color="#4a98b8" />
+          <directionalLight position={[-200, 20, -140]} intensity={0.08} color="#2e7898" />
+          <hemisphereLight args={["#2e90b0", "#010610", 0.24]} />
         </>
       ) : (
         <>

@@ -17,11 +17,11 @@ interface AltitudePalette {
 }
 
 const ALTITUDE_DEFAULT: AltitudePalette = {
-  valley:    [0.035, 0.102, 0.180],   // #091a2e  deep azure
-  lowSlope:  [0.059, 0.180, 0.314],   // #0f2e50
-  rock:      [0.094, 0.290, 0.471],   // #184a78
-  highRidge: [0.157, 0.439, 0.659],   // #2870a8
-  peak:      [0.290, 0.620, 0.816],   // #4a9ed0  bright azure
+  valley:    [0.027, 0.161, 0.239],   // #07293D  deep navy
+  lowSlope:  [0.035, 0.200, 0.298],   // #093340  dark azure
+  rock:      [0.043, 0.239, 0.361],   // #0B3D5C  deep azure (base)
+  highRidge: [0.118, 0.435, 0.565],   // #1E6F90  mid azure
+  peak:      [0.310, 0.765, 0.969],   // #4FC3F7  ice blue
 }
 
 const ALTITUDE_GREEN: AltitudePalette = {
@@ -71,25 +71,47 @@ float _slopeF = smoothstep(0.12, 0.55, vSlope);
 vec3 _rockFace = _altCol * 1.15 + vec3(0.020, 0.020, 0.030);
 diffuseColor.rgb = mix(diffuseColor.rgb, _rockFace, _slopeF * 0.40);
 
-float _ridgeMask = _hNorm * (1.0 - _slopeF) * smoothstep(0.35, 0.70, _hNorm);
-diffuseColor.rgb += vec3(0.020, 0.065, 0.110) * _ridgeMask * 1.4;
+float _ridgeMask = _hNorm * (1.0 - _slopeF) * smoothstep(0.30, 0.65, _hNorm);
+diffuseColor.rgb += vec3(0.025, 0.080, 0.130) * _ridgeMask * 1.6;
 
-float _snowMask = smoothstep(0.75, 0.95, _hNorm) * (1.0 - _slopeF);
-diffuseColor.rgb = mix(diffuseColor.rgb, _peak, _snowMask * 0.35);
+float _snowMask = smoothstep(0.72, 0.92, _hNorm) * (1.0 - _slopeF);
+diffuseColor.rgb = mix(diffuseColor.rgb, _peak, _snowMask * 0.42);
 
 float _valleyAO = (1.0 - _hNorm) * (1.0 - _slopeF);
 float _creaseAO = _slopeF * (1.0 - _hNorm);
-float _ao = max(_valleyAO * 0.60, _creaseAO * 0.35);
-diffuseColor.rgb *= mix(1.0, 0.55, _ao);
+float _ao = max(_valleyAO * 0.72, _creaseAO * 0.45);
+diffuseColor.rgb *= mix(1.0, 0.42, _ao);
 
-float _crevasse = _slopeF * (1.0 - _hNorm) * smoothstep(0.25, 0.55, vSlope);
-diffuseColor.rgb *= mix(1.0, 0.62, _crevasse);
+float _crevasse = _slopeF * (1.0 - _hNorm) * smoothstep(0.20, 0.50, vSlope);
+diffuseColor.rgb *= mix(1.0, 0.48, _crevasse);
 
-float _viewDot = abs(dot(normalize(vWorldNormal), vec3(0.0, 0.0, 1.0)));
-float _rim = pow(1.0 - _viewDot, 2.5) * 0.12 * _hNorm;
-diffuseColor.rgb += vec3(0.010, 0.045, 0.090) * _rim;
+vec3 _wNorm = normalize(vWorldNormal);
+vec3 _keyDir = normalize(vec3(180.0, 380.0, 140.0));
+float _nDotL = dot(_wNorm, _keyDir);
+float _shadowFace = smoothstep(-0.05, 0.35, -_nDotL);
+diffuseColor.rgb *= mix(1.0, 0.68, _shadowFace * 0.55);
 
-diffuseColor.rgb += vec3(0.003, 0.014, 0.032) * _hNorm;`
+vec3 _viewDir = normalize(cameraPosition - vWorldPos);
+vec3 _halfVec = normalize(_viewDir + _keyDir);
+float _nDotH = max(dot(_wNorm, _halfVec), 0.0);
+float _spec = pow(_nDotH, 52.0);
+float _litFace = smoothstep(0.0, 0.35, _nDotL);
+float _ridgeGate = smoothstep(0.38, 0.72, _hNorm);
+float _shimmer = _spec * _litFace * _ridgeGate * 0.20;
+diffuseColor.rgb += vec3(0.035, 0.110, 0.185) * _shimmer;
+
+float _basinMask = smoothstep(0.14, 0.0, _hNorm);
+diffuseColor.rgb *= mix(1.0, 0.72, _basinMask);
+float _basinFresnel = pow(1.0 - abs(dot(_wNorm, _viewDir)), 3.5);
+diffuseColor.rgb += vec3(0.008, 0.035, 0.065) * _basinFresnel * _basinMask * 0.14;
+float _basinEdge = smoothstep(0.0, 0.10, _hNorm) * smoothstep(0.22, 0.10, _hNorm);
+diffuseColor.rgb += vec3(0.004, 0.018, 0.035) * _basinEdge;
+
+float _viewDot = abs(dot(_wNorm, vec3(0.0, 0.0, 1.0)));
+float _rim = pow(1.0 - _viewDot, 3.0) * 0.14 * _hNorm;
+diffuseColor.rgb += vec3(0.010, 0.048, 0.090) * _rim;
+
+diffuseColor.rgb += vec3(0.001, 0.008, 0.020) * _hNorm;`
 }
 
 const VERTEX_VARYINGS =
@@ -109,13 +131,13 @@ const FRAGMENT_VARYINGS = VERTEX_VARYINGS
 
 export function createTerrainSolidMaterial() {
   const mat = new THREE.MeshStandardMaterial({
-    color: 0x091a2e,
-    emissive: new THREE.Color(0x040c18),
-    emissiveIntensity: 0.18,
+    color: 0x07293d,
+    emissive: new THREE.Color(0x020a14),
+    emissiveIntensity: 0.10,
     transparent: false,
     opacity: 1.0,
-    roughness: 0.82,
-    metalness: 0.06,
+    roughness: 0.88,
+    metalness: 0.03,
     flatShading: false,
     depthWrite: true,
     polygonOffset: true,
@@ -145,7 +167,7 @@ export type TerrainColorVariant = "default" | "green" | "frost" | "white"
 const VARIANT_PROPS: Record<TerrainColorVariant, {
   color: number; emissive: number; emissiveIntensity: number; palette: AltitudePalette
 }> = {
-  default: { color: 0x091a2e, emissive: 0x061220, emissiveIntensity: 0.30, palette: ALTITUDE_DEFAULT },
+  default: { color: 0x07293d, emissive: 0x030f1a, emissiveIntensity: 0.14, palette: ALTITUDE_DEFAULT },
   green:   { color: 0x0d1a14, emissive: 0x081210, emissiveIntensity: 0.28, palette: ALTITUDE_GREEN },
   frost:   { color: 0x121621, emissive: 0x0c1018, emissiveIntensity: 0.28, palette: ALTITUDE_FROST },
   white:   { color: 0x384047, emissive: 0x1a1e24, emissiveIntensity: 0.20, palette: ALTITUDE_WHITE },
@@ -187,14 +209,14 @@ export function createTerrainSolidMaterialVariant(variant: TerrainColorVariant) 
 
 export function createTerrainWireMaterial() {
   return new THREE.MeshStandardMaterial({
-    color: 0x22d3ee,
-    emissive: 0x0e7490,
-    emissiveIntensity: 0.9,
+    color: 0x1a9ec8,
+    emissive: 0x0a5a78,
+    emissiveIntensity: 0.55,
     wireframe: true,
     transparent: true,
-    opacity: 0.72,
-    roughness: 0.50,
-    metalness: 0.18,
+    opacity: 0.48,
+    roughness: 0.60,
+    metalness: 0.10,
     depthWrite: false,
     depthTest: true,
   })
