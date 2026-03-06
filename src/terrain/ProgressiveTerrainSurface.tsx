@@ -17,6 +17,15 @@ import { KPI_KEYS, KPI_ZONE_MAP, HEALTH_ELEVATION, getHealthLevel, getHealthColo
 import type { PositionKpis } from "@/pages/position/overlays/positionState"
 import type { PropagationResult } from "@/engine/kpiDependencyGraph"
 import type { TerrainTuningParams } from "@/terrain/terrainTuning"
+import {
+  generateLandscapeHeight,
+  buildLandscapePeaks,
+  stabilizeHeightfield as sharedStabilizeHeightfield,
+  pseudoNoise as sharedPseudoNoise,
+  valueNoise as sharedValueNoise,
+  smoothstep as sharedSmoothstep,
+  type LandscapePeak,
+} from "@/engine/terrain/generateLandscapeHeight"
 
 export type ProgressiveTerrainHandle = {
   getHeightAt: (worldX: number, worldZ: number) => number
