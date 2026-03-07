@@ -255,7 +255,7 @@ function parseCSVToForm(text: string): Partial<FormState> | null {
 function Module({ title, children, style }: { title: string; children: React.ReactNode; style?: React.CSSProperties }) {
   return (
     <section style={{
-      display: "flex", flexDirection: "column", overflow: "hidden",
+      display: "flex", flexDirection: "column",
       background: "linear-gradient(145deg, rgba(14,34,56,0.95), rgba(10,28,46,0.98))",
       border: "1px solid rgba(34,211,238,0.12)",
       borderRadius: 12,
@@ -265,7 +265,7 @@ function Module({ title, children, style }: { title: string; children: React.Rea
     }}>
       <div style={{ height: 2, background: "linear-gradient(90deg, transparent 0%, #22D3EE 30%, #22D3EE 70%, transparent 100%)", borderRadius: "12px 12px 0 0", flexShrink: 0 }} />
       <header style={SC.moduleHeader}>{title}</header>
-      <div style={{ flex: 1, minHeight: 0 }}>{children}</div>
+      <div style={{ flex: 1, padding: "0 0 16px" }}>{children}</div>
     </section>
   )
 }

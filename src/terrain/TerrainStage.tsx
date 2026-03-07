@@ -125,9 +125,11 @@ export default function TerrainStage({
     setControls(instance);
   }, [setControls]);
 
+  const brightnessCss = tuning?.brightness != null ? `brightness(${tuning.brightness})` : undefined
+
   return (
     <Canvas
-      style={{ position: "absolute", inset: 0, zIndex: 0 }}
+      style={{ position: "absolute", inset: 0, zIndex: 0, filter: brightnessCss }}
       dpr={[1, 2]}
       camera={{ position: effectivePreset.pos as unknown as [number, number, number], fov: effectivePreset.fov, near: 0.1, far: 5000 }}
       gl={{ antialias: true, alpha: true }}

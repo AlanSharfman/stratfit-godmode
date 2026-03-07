@@ -14,6 +14,7 @@ export type TerrainTuningParams = {
   peakSoftness: number        // 0–1
   noiseFrequency: number      // 0–3
   microDetailStrength: number // 0–1
+  brightness: number          // 0.2–2.0  CSS filter brightness multiplier
 }
 
 export const DEFAULT_TUNING: TerrainTuningParams = {
@@ -24,4 +25,5 @@ export const DEFAULT_TUNING: TerrainTuningParams = {
   peakSoftness: 0.40,
   noiseFrequency: 0.85,
   microDetailStrength: 0.35,
+  brightness: 1.0,
 }
