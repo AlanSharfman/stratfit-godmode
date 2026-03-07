@@ -5,7 +5,7 @@
 // UI-only — no store/selector/simulation changes
 // ═══════════════════════════════════════════════════════════════════════════
 
-import React, { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import React, { memo, useCallback, useId, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { PositionKpis } from "@/pages/position/overlays/positionState";
 import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping";
@@ -574,7 +574,6 @@ function KpiCard({
   isActive,
   isRevealed,
   commentary,
-  onHover,
   onStressTest,
 }: {
   def: KpiCardDef;
@@ -583,7 +582,6 @@ function KpiCard({
   isActive: boolean;
   isRevealed: boolean;
   commentary: string;
-  onHover: (key: KpiKey | null) => void;
   onStressTest: (key: KpiKey) => void;
 }) {
   const zone = KPI_ZONE_MAP[def.key];
@@ -591,8 +589,6 @@ function KpiCard({
   return (
     <div
       className={`${styles.card} ${isActive ? styles.cardActive : ""}`}
-      onMouseEnter={() => onHover(def.key)}
-      onMouseLeave={() => onHover(null)}
       data-kpi={def.key}
       style={{ "--kpi-color": kpiColor } as React.CSSProperties}
     >
@@ -626,16 +622,10 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, re
   const k = kpis;
   const navigate = useNavigate();
   const railRef = useRef<HTMLDivElement>(null);
-  const [expandedPrimary, setExpandedPrimary] = useState<KpiKey | null>(null);
 
   const riskTone = useMemo<RiskTone>(
     () => deriveRiskTone(k?.riskIndex ?? 0),
     [k?.riskIndex],
-  );
-
-  const handleHover = useCallback(
-    (_key: KpiKey | null) => { /* output-only — no interaction */ },
-    [],
   );
 
   const handleStressTest = useCallback(
@@ -741,77 +731,23 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, re
     return m;
   }, [CARDS]);
 
-  const handlePrimaryClick = useCallback((key: KpiKey) => {
-    setExpandedPrimary(prev => prev === key ? null : key);
-  }, []);
-
   return (
     <div className={styles.rail} ref={railRef}>
       {PRIMARY_KPI_HIERARCHY.map((primary) => {
         const def = cardMap.get(primary.key);
         if (!def) return null;
-        const isExpanded = expandedPrimary === primary.key;
-        const hasSecondaries = primary.secondaries.length > 0;
 
         return (
           <div key={primary.key} className={styles.section}>
-            <div
-              onClick={() => handlePrimaryClick(primary.key)}
-              style={{ cursor: "pointer" }}
-            >
-              <KpiCard
-                def={def}
-                k={k}
-                riskTone={riskTone}
-                isActive={focusedKpi === primary.key}
-                isRevealed={revealedKpis?.has(primary.key) ?? false}
-                commentary={getCommentary(primary.key)}
-                onHover={handleHover}
-                onStressTest={handleStressTest}
-              />
-            </div>
-
-            {hasSecondaries && (
-              <div
-                className={styles.secondaryPanel}
-                style={{
-                  maxHeight: isExpanded ? `${primary.secondaries.length * 80 + 32}px` : "0",
-                  opacity: isExpanded ? 1 : 0,
-                  overflow: "hidden",
-                  transition: "max-height 250ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms ease-out",
-                }}
-              >
-                <div className={styles.secondaryHeader}>
-                  {primary.label} — Diagnostics
-                  <button
-                    className={styles.secondaryClose}
-                    onClick={(e) => { e.stopPropagation(); setExpandedPrimary(null); }}
-                    aria-label="Close diagnostics"
-                  >
-                    ✕
-                  </button>
-                </div>
-                <div className={styles.cardStack}>
-                  {primary.secondaries.map((sec) => {
-                    const secDef = cardMap.get(sec.key);
-                    if (!secDef) return null;
-                    return (
-                      <KpiCard
-                        key={sec.key}
-                        def={secDef}
-                        k={k}
-                        riskTone={riskTone}
-                        isActive={focusedKpi === sec.key}
-                        isRevealed={revealedKpis?.has(sec.key) ?? false}
-                        commentary={getCommentary(sec.key)}
-                        onHover={handleHover}
-                        onStressTest={handleStressTest}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+            <KpiCard
+              def={def}
+              k={k}
+              riskTone={riskTone}
+              isActive={focusedKpi === primary.key}
+              isRevealed={revealedKpis?.has(primary.key) ?? false}
+              commentary={getCommentary(primary.key)}
+              onStressTest={handleStressTest}
+            />
           </div>
         );
       })}

@@ -42,7 +42,7 @@ export interface CameraControlsConfig {
  *     scene breathing room without losing dramatic depth.
  */
 export const GOD_VIEW_PRESET: CameraPreset = {
-  pos: [33, 297, 814],
+  pos: [30, 270, 740],
   target: [0, 30, 0],
   fov: 50,
 }
@@ -50,11 +50,11 @@ export const GOD_VIEW_PRESET: CameraPreset = {
 /** Controls config shared by Position + Compare (pairs with GOD_VIEW_PRESET). */
 export const GOD_VIEW_CONTROLS: CameraControlsConfig = {
   minDistance: 250,
-  maxDistance: 1800,
+  maxDistance: 1100,
   minPolarAngle: 0.30,
   maxPolarAngle: 1.50,
-  dampingFactor: 0.06,
-  rotateSpeed: 0.35,
+  dampingFactor: 0.08,
+  rotateSpeed: 1.2,
 }
 
 export const POSITION_PRESET: CameraPreset = GOD_VIEW_PRESET
@@ -110,9 +110,9 @@ export const HERO_VIEW_CONTROLS: CameraControlsConfig = {
  * ~22° downward pitch, FOV 52° for natural perspective.
  */
 export const POSITION_PROGRESSIVE_PRESET: CameraPreset = {
-  pos: [0, 420, 1350],
-  target: [0, 10, -40],
-  fov: 50,
+  pos: [0, 350, 1050],
+  target: [0, 20, 0],
+  fov: 52,
 }
 
 /** All presets keyed by page context */
