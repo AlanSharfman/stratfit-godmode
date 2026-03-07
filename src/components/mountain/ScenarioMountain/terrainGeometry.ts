@@ -36,9 +36,15 @@ export function noise2(x: number, z: number): number {
 }
 
 export function ridgeNoise(x: number, z: number): number {
-  const base = Math.sin(x * 0.5) * Math.cos(z * 0.3);
-  const detail = Math.abs(Math.sin(x * 2.5 + z * 1.5)) * 0.35;
-  return base * 0.15 + detail * 0.2;
+  // base: large undulation — reduced influence so phase doesn't create left/right bias
+  const base    = Math.sin(x * 0.5) * Math.cos(z * 0.3);
+  // ridgeA: ↗ erosion channels (original direction)
+  const ridgeA  = Math.abs(Math.sin(x * 2.5 + z * 1.5)) * 0.35;
+  // ridgeB: ↘ cross-cut channels — fills the valleys ridgeA misses, distributes evenly
+  const ridgeB  = Math.abs(Math.sin(x * 2.3 - z * 1.8)) * 0.30;
+  // scree: fine high-freq debris consistent across both sides
+  const scree   = Math.abs(Math.sin(x * 4.7 + z * 0.6)) * 0.18;
+  return base * 0.08 + ridgeA * 0.15 + ridgeB * 0.12 + scree * 0.06;
 }
 
 export function gaussian1(x: number, c: number, s: number): number {
@@ -70,12 +76,16 @@ export interface MassifPeak {
 }
 
 export const MASSIF_PEAKS: MassifPeak[] = [
-  { x: 0, z: -2, amplitude: 1.5, sigmaX: 3.6, sigmaZ: 3.2 },
-  { x: -10, z: -1, amplitude: 1.2, sigmaX: 3.8, sigmaZ: 3.4 },
-  { x: 11, z: -1.5, amplitude: 1.1, sigmaX: 3.6, sigmaZ: 3.2 },
-  { x: -3, z: 3, amplitude: 0.85, sigmaX: 4.4, sigmaZ: 3.8 },
-  { x: -16, z: 2, amplitude: 0.6, sigmaX: 5.0, sigmaZ: 4.4 },
-  { x: 17, z: 1, amplitude: 0.55, sigmaX: 4.8, sigmaZ: 4.0 },
+  { x: 0,   z: -2,   amplitude: 1.5,  sigmaX: 3.6, sigmaZ: 3.2 },
+  { x: -10, z: -1,   amplitude: 1.2,  sigmaX: 3.8, sigmaZ: 3.4 },
+  { x: 11,  z: -1.5, amplitude: 1.1,  sigmaX: 3.6, sigmaZ: 3.2 },
+  { x: -3,  z:  3,   amplitude: 0.85, sigmaX: 4.4, sigmaZ: 3.8 },
+  { x: -16, z:  2,   amplitude: 0.6,  sigmaX: 5.0, sigmaZ: 4.4 },
+  { x: 17,  z:  1,   amplitude: 0.55, sigmaX: 4.8, sigmaZ: 4.0 },
+  // Near-centre spur on camera-left — mirrors the x=-3 secondary ridge on camera-right.
+  // Placed at x=5 where ridgeNoise base is positive (sin(2.5)≈+0.60) so it naturally
+  // acquires erosion channels and rugged texture matching the right side.
+  { x: 5,   z: -1.5, amplitude: 0.85, sigmaX: 3.0, sigmaZ: 2.6 },
 ];
 
 // ============================================================================
