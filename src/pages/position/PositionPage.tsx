@@ -42,6 +42,7 @@ import { useSimulationEngineStore } from "@/state/simulationEngineStore"
 import { useTerrainLensStore } from "@/state/terrainLensStore"
 import TerrainLensLaser from "@/components/terrain/TerrainLensLaser"
 import TerrainInsightCard from "@/components/terrain/TerrainInsightCard"
+import TerrainLensHint from "@/components/terrain/TerrainLensHint"
 import styles from "./PositionOverlays.module.css"
 
 export default function PositionPage() {
@@ -390,6 +391,7 @@ export default function PositionPage() {
               driftMode="oscillate"
             />
             <TerrainZoneLabels kpis={liveKpis} revealedKpis={revealedKpis} focusedKpi={focusedKpi} onClickKpi={(kpi) => { if (kpi) toggleLens(kpi) }} />
+            <TerrainLensHint />
             <TerrainZoneLegend kpis={liveKpis} revealedKpis={revealedKpis} focusedKpi={focusedKpi} />
             {focusedKpi && markerScreenPos && (
               <TerrainLensLaser kpi={focusedKpi} markerPos={markerScreenPos} viewportRef={viewportRef} />
