@@ -43,8 +43,8 @@ import {
   GRID_W, GRID_D, MESH_W, MESH_D, ISLAND_RADIUS,
   BASE_SCALE, PEAK_SCALE, MASSIF_SCALE, RIDGE_SHARPNESS, CLIFF_BOOST,
   SOFT_CEILING, CEILING_START,
-  noise2, ridgeNoise, gaussian1, gaussian2, applySoftCeiling,
-  type MassifPeak, MASSIF_PEAKS,
+  noise2, ridgeNoise, ridgeLayer, gaussian1, gaussian2, applySoftCeiling,
+  type MassifPeak, MASSIF_PEAKS, ridgeSpineHeight, erosionHeight,
 } from "./terrainGeometry";
 import AtmosphericHaze from "./AtmosphericHaze";
 import {
@@ -180,28 +180,39 @@ const Terrain: React.FC<TerrainProps> = ({
         }
       }
 
-      let h = ridge * BASE_SCALE;
+      // Layer 1: MACRO
+      let macro = ridge * BASE_SCALE;
 
       for (const m of MASSIF_PEAKS) {
         const g = gaussian2(x - m.x, z - m.z, m.sigmaX, m.sigmaZ);
-        h += g * m.amplitude * MASSIF_SCALE;
+        macro += g * m.amplitude * MASSIF_SCALE;
       }
+
+      // Structural ridge spines connecting peaks
+      macro += ridgeSpineHeight(x, z) * MASSIF_SCALE;
 
       for (const p of peakModel.peaks) {
         const idx = clamp01(p.index / 6);
         const peakX = lerp(-wHalf, wHalf, idx);
-        h += gaussian2(x - peakX, z + 1.5, 0.8 + p.sigma * 0.8, 0.7 + p.sigma * 0.8) * p.amplitude * PEAK_SCALE;
+        macro += gaussian2(x - peakX, z + 1.5, 0.8 + p.sigma * 0.8, 0.7 + p.sigma * 0.8) * p.amplitude * PEAK_SCALE;
       }
 
-      const rugged = ridgeNoise(x, z);
-      h += rugged * (0.3 + h * 0.08);
+      // Layer 2: RIDGE STRUCTURE sculpt — carves valleys, lifts crests
+      const ridgeMod = ridgeLayer(x, z);
+      let h = macro * (0.80 + ridgeMod * 0.40);
+
+      // Layer 3: MICRO DETAIL
+      h += ridgeNoise(x, z) * (0.18 + h * 0.03);
+
+      // Left-face erosion (positive X)
+      h += erosionHeight(x, z);
 
       const dist = Math.sqrt(x * x + z * z * 1.4);
-      const mask = Math.max(0, 1 - Math.pow(dist / ISLAND_RADIUS, 2.0));
+      const mask = Math.max(0, 1 - Math.pow(dist / ISLAND_RADIUS, 2.5));
 
-      const n = noise2(x, z) * 0.2;
+      const n = noise2(x, z) * 0.25;
 
-      const cliff = Math.pow(mask, 0.45) * CLIFF_BOOST;
+      const cliff = Math.pow(mask, 0.40) * CLIFF_BOOST;
       let finalH = Math.max(0, (h + n) * mask * cliff);
       finalH = applySoftCeiling(finalH);
 
@@ -455,6 +466,22 @@ export interface ScenarioMountainProps {
   structuralHeatScore?: number;
 }
 
+function CameraDebugExpose() {
+  const { camera, controls } = useThree((state: any) => ({
+    camera: state.camera,
+    controls: (state as any).controls,
+  }))
+
+  useEffect(() => {
+    ;(window as any).__STRATFIT_CAMERA__ = camera
+    ;(window as any).__STRATFIT_CONTROLS__ = controls
+    console.log('STRATFIT camera exposed', camera)
+    console.log('STRATFIT controls exposed', controls)
+  }, [camera, controls])
+
+  return null
+}
+
 export function ScenarioMountainImpl({
   scenario,
   dataPoints,
@@ -621,10 +648,10 @@ export function ScenarioMountainImpl({
     () => ({
       position: (
         isGodMode
-          ? [0, 10, 22]
+          ? [0, 16, 31]
           : [0, 6, 32 * (mode === "strategy" ? (MODE_CONFIGS.strategy.forwardCamZMult ?? 1) : 1)]
       ) as [number, number, number],
-      fov: isGodMode ? 36 : 38,
+      fov: isGodMode ? 34 : 38,
     }),
     [isGodMode, mode]
   );
@@ -698,6 +725,7 @@ export function ScenarioMountainImpl({
         }}
       >
         <Suspense fallback={null}>
+        <CameraDebugExpose />
         {/* Scene clear + fog (Baseline can opt into transparentScene for photo-backed stages) */}
         {!transparentScene && <color attach="background" args={[isGodMode ? '#0a0f16' : '#081828']} />}
         {mode === "strategy" ? (

@@ -85,13 +85,13 @@ export function buildPeakModel(args: {
   const peaks: PeakInstruction[] = [];
 
   // ---- Signature "massif" backbone (always-on, makes it feel like a mountain even at flat dp)
-  // VERY STRONG baseline to prevent any visible drop when levers are released
+  // Tighter sigmas create distinct summit spikes rather than a single broad dome.
   peaks.push(
-    { index: 3.1, amplitude: 0.55, sigma: 2.5, tag: "signature" },
-    { index: 2.0, amplitude: 0.38, sigma: 2.0, tag: "signature" },
-    { index: 4.3, amplitude: 0.38, sigma: 2.0, tag: "signature" },
-    { index: 1.0, amplitude: 0.25, sigma: 1.6, tag: "signature" },
-    { index: 5.2, amplitude: 0.25, sigma: 1.6, tag: "signature" }
+    { index: 3.1, amplitude: 0.55, sigma: 1.6, tag: "signature" },
+    { index: 2.0, amplitude: 0.38, sigma: 1.2, tag: "signature" },
+    { index: 4.3, amplitude: 0.38, sigma: 1.2, tag: "signature" },
+    { index: 1.0, amplitude: 0.25, sigma: 1.0, tag: "signature" },
+    { index: 5.2, amplitude: 0.25, sigma: 1.0, tag: "signature" }
   );
 
   // ---- Primary: hovered/clicked KPI emphasis
