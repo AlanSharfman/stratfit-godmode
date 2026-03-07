@@ -40,11 +40,11 @@
   --atmo-top: rgba(12, 20, 34, 1);
   --atmo-mid: rgba(8, 14, 22, 1);
   --atmo-horizon: rgba(100, 160, 200, 0.08);
-  --atmo-strength: 0.35;
-  --haze-deep: 0.06;
-  --haze-horizon: 0.08;
-  --vignette-strength: 0.30;
-  --vignette-top-boost: 0.15;
+  --atmo-strength: 0.18;
+  --haze-deep: 0.03;
+  --haze-horizon: 0.04;
+  --vignette-strength: 0.18;
+  --vignette-top-boost: 0.08;
   --spotlight-strength: 0.08;
   --spot-x: 50%;
   --spot-y: 50%;
@@ -88,7 +88,7 @@
   height: 100vh;
   z-index: 0;
   pointer-events: none;
-  background: rgba(8, 16, 32, 0.55);
+  background: rgba(8, 16, 32, 0.25);
 }
 
 /* ── Atmosphere Layer A: Sky Gradient — moody top → soft horizon (exponential falloff) ── */
