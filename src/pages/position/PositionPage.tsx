@@ -41,6 +41,7 @@ import SimulationDisclaimerBar from "@/components/legal/SimulationDisclaimerBar"
 import { useSimulationEngineStore } from "@/state/simulationEngineStore"
 import { useTerrainLensStore } from "@/state/terrainLensStore"
 import TerrainLensLaser from "@/components/terrain/TerrainLensLaser"
+import TerrainInsightCard from "@/components/terrain/TerrainInsightCard"
 import styles from "./PositionOverlays.module.css"
 
 export default function PositionPage() {
@@ -392,6 +393,9 @@ export default function PositionPage() {
             <TerrainZoneLegend kpis={liveKpis} revealedKpis={revealedKpis} focusedKpi={focusedKpi} />
             {focusedKpi && markerScreenPos && (
               <TerrainLensLaser kpi={focusedKpi} markerPos={markerScreenPos} viewportRef={viewportRef} />
+            )}
+            {focusedKpi && markerScreenPos && liveKpis && (
+              <TerrainInsightCard kpi={focusedKpi} kpis={liveKpis} markerPos={markerScreenPos} />
             )}
             <div className={styles.canvasVignette} aria-hidden="true" />
             <IdleMotionLayer viewportRef={viewportRef} />
