@@ -60,16 +60,16 @@ vec3 _rock      = ${v3(p.rock)};
 vec3 _highRidge = ${v3(p.highRidge)};
 vec3 _peak      = ${v3(p.peak)};
 
-vec3 _altCol = mix(_valley, _lowSlope, smoothstep(0.1, 0.3, _hNorm));
-_altCol = mix(_altCol, _rock, smoothstep(0.3, 0.5, _hNorm));
-_altCol = mix(_altCol, _highRidge, smoothstep(0.5, 0.75, _hNorm));
-_altCol = mix(_altCol, _peak, smoothstep(0.75, 1.0, _hNorm));
+vec3 _altCol = mix(_valley, _lowSlope, smoothstep(0.12, 0.24, _hNorm));
+_altCol = mix(_altCol, _rock, smoothstep(0.32, 0.46, _hNorm));
+_altCol = mix(_altCol, _highRidge, smoothstep(0.52, 0.68, _hNorm));
+_altCol = mix(_altCol, _peak, smoothstep(0.76, 0.90, _hNorm));
 
 diffuseColor.rgb = _altCol;
 
 float _slopeF = smoothstep(0.12, 0.55, vSlope);
 vec3 _rockFace = _altCol * 1.15 + vec3(0.020, 0.020, 0.030);
-diffuseColor.rgb = mix(diffuseColor.rgb, _rockFace, _slopeF * 0.40);
+diffuseColor.rgb = mix(diffuseColor.rgb, _rockFace, _slopeF * 0.58);
 
 float _ridgeMask = _hNorm * (1.0 - _slopeF) * smoothstep(0.30, 0.65, _hNorm);
 diffuseColor.rgb += vec3(0.025, 0.080, 0.130) * _ridgeMask * 1.6;
@@ -89,15 +89,15 @@ vec3 _wNorm = normalize(vWorldNormal);
 vec3 _keyDir = normalize(vec3(120.0, 200.0, 120.0));
 float _nDotL = dot(_wNorm, _keyDir);
 float _shadowFace = smoothstep(-0.05, 0.35, -_nDotL);
-diffuseColor.rgb *= mix(1.0, 0.88, _shadowFace * 0.25);
+diffuseColor.rgb *= mix(1.0, 0.80, _shadowFace * 0.50);
 
 vec3 _viewDir = normalize(cameraPosition - vWorldPos);
 vec3 _halfVec = normalize(_viewDir + _keyDir);
 float _nDotH = max(dot(_wNorm, _halfVec), 0.0);
-float _spec = pow(_nDotH, 48.0);
+float _spec = pow(_nDotH, 160.0);
 float _litFace = smoothstep(0.0, 0.30, _nDotL);
 float _ridgeGate = smoothstep(0.30, 0.65, _hNorm);
-float _shimmer = _spec * _litFace * _ridgeGate * 0.24;
+float _shimmer = _spec * _litFace * _ridgeGate * 0.55;
 diffuseColor.rgb += vec3(0.040, 0.125, 0.210) * _shimmer;
 
 float _basinMask = smoothstep(0.12, 0.0, _hNorm);

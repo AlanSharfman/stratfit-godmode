@@ -179,7 +179,7 @@ export default function TerrainStage({
           <directionalLight position={[0, 80, 200]} intensity={0.48} color="#2090cc" />
           <directionalLight position={[-160, 30, -120]} intensity={0.32} color="#1570a0" />
           <hemisphereLight args={["#3aafee", "#081828", 0.65]} />
-          <fogExp2 attach="fog" args={[0x081828, 0.0012]} />
+          <fogExp2 attach="fog" args={[0x081828, 0.00045]} />
         </>
       ) : (
         <>

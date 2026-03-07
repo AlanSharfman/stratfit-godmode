@@ -14,7 +14,7 @@ import type { TerrainTuningParams } from "@/terrain/terrainTuning"
 export const SEGMENTS = 220
 
 const BASELINE_RIDGE_HEIGHT = 110
-const BASELINE_RIDGE_WIDTH = 0.18
+const BASELINE_RIDGE_WIDTH = 0.13
 const BASELINE_PEAK_COUNT = 13
 const BASELINE_PEAK_AMP_MIN = 38
 const BASELINE_PEAK_AMP_MAX = 130
@@ -28,12 +28,12 @@ const NOISE_AMP = 0.12
 const STRATEGIC_WEIGHT = 0.80
 const PROCEDURAL_WEIGHT = 0.20
 
-const MAX_SLOPE = 2.2
+const MAX_SLOPE = 2.8
 const SLOPE_CLAMP_PASSES = 2
 const BROAD_SMOOTH_PASSES = 1
 const BROAD_SMOOTH_STRENGTH = 0.06
 const DETAIL_SMOOTH_PASSES = 1
-const DETAIL_SMOOTH_THRESHOLD = 3.5
+const DETAIL_SMOOTH_THRESHOLD = 6.0
 const KPI_BLEND_WIDTH = 0.075
 
 const SKELETON_PEAK_HEIGHT = 240
@@ -378,8 +378,8 @@ export function stabilizeHeightfield(hf: Float32Array, vpr: number): void {
         const avg4 = (tmp[i - 1] + tmp[i + 1] + tmp[i - vpr] + tmp[i + vpr]) * 0.25
         const curvature = Math.abs(c - avg4)
         const s = curvature > DETAIL_SMOOTH_THRESHOLD
-          ? 0.35
-          : curvature > 0.4 ? 0.12 : 0.02
+          ? 0.22
+          : curvature > 0.4 ? 0.06 : 0.01
         hf[i] = c * (1 - s) + avg4 * s
       }
     }
