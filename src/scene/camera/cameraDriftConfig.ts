@@ -25,7 +25,18 @@ export interface CinematicDriftConfig extends DriftConfig {
   rotationDegrees: number
 }
 
-export type DriftMode = "micro" | "cinematic" | "off"
+export interface OscillateDriftConfig {
+  /** Full oscillation cycle in seconds (left→center→right→center) */
+  cycle: number
+  /** Azimuthal sweep amplitude in radians (±) */
+  amplitude: number
+  /** Lerp rate per frame (0–1) — higher = less lag */
+  lerpRate: number
+  /** Seconds to wait after interaction before resuming */
+  cooldownSeconds: number
+}
+
+export type DriftMode = "micro" | "cinematic" | "oscillate" | "off"
 
 export const MICRO_DRIFT: DriftConfig = {
   horizontal: 1.0,
@@ -48,6 +59,14 @@ export const CINEMATIC_DRIFT: CinematicDriftConfig = {
   cooldownSeconds: 3,
   lerpRate: 0.010,
   rotationDegrees: 4,
+}
+
+/** Smooth sinusoidal left-right oscillation — ±15% azimuth, 24s full cycle */
+export const OSCILLATE_DRIFT: OscillateDriftConfig = {
+  cycle: 24,
+  amplitude: Math.PI * 0.15,
+  lerpRate: 0.015,
+  cooldownSeconds: 4,
 }
 
 export const CAMERA_DRIFT_CONFIG = {

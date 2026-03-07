@@ -538,7 +538,7 @@ export default function PositionPage() {
               zoneKpis={liveKpis}
               heatmapEnabled={false}
               cameraPreset={POSITION_PROGRESSIVE_PRESET}
-              autoRotateSpeed={autoRotateSpeed}
+              autoRotateSpeed={0}
               showDependencyLines
               showKpiMarkers={showKpiMarkers}
               hideMarkers
@@ -560,7 +560,7 @@ export default function PositionPage() {
                 roughness: terrainTuning.terrainRoughness * 2 * (terrainMetrics?.roughness ?? 1),
               } satisfies TerrainMetrics}
               granularity={granularity}
-              driftMode="micro"
+              driftMode="oscillate"
             />
             <TerrainHealthBar kpis={liveKpis} revealedKpis={revealedKpis} />
             <TerrainZoneLabels kpis={liveKpis} revealedKpis={revealedKpis} focusedKpi={focusedKpi} onFocusKpi={handleHoverKpi} onClickKpi={handleClickKpi} />

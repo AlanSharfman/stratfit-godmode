@@ -8,12 +8,17 @@ import { useRef, useEffect } from "react"
 import { useFrame, useThree } from "@react-three/fiber"
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib"
 import type { DriftMode } from "@/scene/camera/cameraDriftConfig"
-import { MICRO_DRIFT, CINEMATIC_DRIFT } from "@/scene/camera/cameraDriftConfig"
-import type { DriftConfig, CinematicDriftConfig } from "@/scene/camera/cameraDriftConfig"
+import { MICRO_DRIFT, CINEMATIC_DRIFT, OSCILLATE_DRIFT } from "@/scene/camera/cameraDriftConfig"
+import type { DriftConfig, CinematicDriftConfig, OscillateDriftConfig } from "@/scene/camera/cameraDriftConfig"
 
 function getConfig(mode: DriftMode): (DriftConfig & Partial<CinematicDriftConfig>) | null {
   if (mode === "micro") return MICRO_DRIFT
   if (mode === "cinematic") return CINEMATIC_DRIFT
+  return null
+}
+
+function getOscillateConfig(mode: DriftMode): OscillateDriftConfig | null {
+  if (mode === "oscillate") return OSCILLATE_DRIFT
   return null
 }
 
@@ -48,20 +53,10 @@ export default function CameraDriftSystem({
   }, [mode])
 
   useFrame(() => {
-    const cfg = getConfig(mode)
-    if (!cfg) return
-
     const controls = controlsRef.current
     if (!controls) return
 
     const now = performance.now()
-
-    if (!basePos.current) {
-      basePos.current = [camera.position.x, camera.position.y, camera.position.z]
-      const t = controls.target
-      baseTarget.current = [t.x, t.y, t.z]
-      startMs.current = now
-    }
 
     const interacting = !!(controls as unknown as Record<string, unknown>)._isDragging
     const isZooming = !!(controls as unknown as Record<string, unknown>)._isZooming
@@ -74,6 +69,56 @@ export default function CameraDriftSystem({
 
     if (wasInteracting.current) {
       wasInteracting.current = false
+      basePos.current = [camera.position.x, camera.position.y, camera.position.z]
+      const t = controls.target
+      baseTarget.current = [t.x, t.y, t.z]
+      startMs.current = now
+    }
+
+    // ── Oscillate mode: smooth sinusoidal azimuth sweep ──
+    const oscCfg = getOscillateConfig(mode)
+    if (oscCfg) {
+      if (!basePos.current) {
+        basePos.current = [camera.position.x, camera.position.y, camera.position.z]
+        const t = controls.target
+        baseTarget.current = [t.x, t.y, t.z]
+        startMs.current = now
+      }
+
+      const cooldownMs = oscCfg.cooldownSeconds * 1000
+      const sinceInteract = now - lastInteractMs.current
+      if (sinceInteract < cooldownMs) return
+
+      const fadeIn = Math.min(1, (sinceInteract - cooldownMs) / 3000)
+
+      const elapsed = (now - startMs.current) / 1000
+      const phase = (elapsed / oscCfg.cycle) * TWO_PI
+      const azOffset = Math.sin(phase) * oscCfg.amplitude * fadeIn
+
+      const [bx, , bz] = basePos.current
+      const [tx, ty, tz] = baseTarget.current!
+
+      const dx = bx - tx
+      const dz = bz - tz
+      const dist = Math.sqrt(dx * dx + dz * dz)
+      const baseAngle = Math.atan2(dx, dz)
+
+      const goalAngle = baseAngle + azOffset
+      const goalX = tx + Math.sin(goalAngle) * dist
+      const goalZ = tz + Math.cos(goalAngle) * dist
+
+      camera.position.x += (goalX - camera.position.x) * oscCfg.lerpRate
+      camera.position.z += (goalZ - camera.position.z) * oscCfg.lerpRate
+
+      controls.update()
+      return
+    }
+
+    // ── Micro / Cinematic drift ──
+    const cfg = getConfig(mode)
+    if (!cfg) return
+
+    if (!basePos.current) {
       basePos.current = [camera.position.x, camera.position.y, camera.position.z]
       const t = controls.target
       baseTarget.current = [t.x, t.y, t.z]
