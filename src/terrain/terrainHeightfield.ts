@@ -21,9 +21,6 @@ const BASELINE_PEAK_AMP_MAX = 130
 const BASELINE_PEAK_SPREAD_MIN = 0.06
 const BASELINE_PEAK_SPREAD_MAX = 0.20
 
-const KPI_PEAK_HEIGHT = 140
-const NOISE_AMP = 0.12
-
 /** Strategic-vs-procedural weighting — skeleton dominates the mountain form */
 const STRATEGIC_WEIGHT = 0.80
 const PROCEDURAL_WEIGHT = 0.20
@@ -34,7 +31,6 @@ const BROAD_SMOOTH_PASSES = 1
 const BROAD_SMOOTH_STRENGTH = 0.06
 const DETAIL_SMOOTH_PASSES = 1
 const DETAIL_SMOOTH_THRESHOLD = 6.0
-const KPI_BLEND_WIDTH = 0.075
 
 const SKELETON_PEAK_HEIGHT = 240
 
@@ -462,10 +458,10 @@ export function buildStabilizedHeightfield(
     }
   }
 
-  // Phase 3: stabilize the COMBINED heightfield (slope clamp + multi-scale smooth)
+  // Phase 2: stabilize the COMBINED heightfield (slope clamp + multi-scale smooth)
   stabilizeHeightfield(hf, vpr)
 
-  // Phase 4: multi-scale surface noise — scales with roughness so upper slider range is visible
+  // Phase 3: multi-scale surface noise — scales with roughness so upper slider range is visible
   const surfaceRoughScale = 0.18 + t.roughness * 2.0
   for (let row = 0; row < vpr; row++) {
     for (let col = 0; col < vpr; col++) {
@@ -476,7 +472,7 @@ export function buildStabilizedHeightfield(
     }
   }
 
-  // Phase 5: Valley corridor smooth — suppresses the broadWave cos(nz·π·1.8) ripple bands
+  // Phase 4: Valley corridor smooth — suppresses the broadWave cos(nz·π·1.8) ripple bands
   // that appear as stacked contour lines in the Liquidity→Revenue corridor (nx 0.20–0.50).
   // Slope-weighted Laplacian: flat valley floor gets maximum smoothing; steep mountain
   // faces get near-zero so peak silhouettes are completely preserved.
