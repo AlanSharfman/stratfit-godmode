@@ -17,11 +17,11 @@ interface AltitudePalette {
 }
 
 const ALTITUDE_DEFAULT: AltitudePalette = {
-  valley:    [0.080, 0.260, 0.400],   // #144266  brighter deep azure
-  lowSlope:  [0.120, 0.440, 0.630],   // #1F70A1  brighter mid azure
-  rock:      [0.160, 0.580, 0.800],   // #2994CC  brighter azure slope
-  highRidge: [0.220, 0.720, 0.940],   // #38B8F0  brighter azure ridge
-  peak:      [0.400, 0.830, 1.000],   // #66D4FF  bright ice blue peak
+  valley:    [0.110, 0.320, 0.480],   // #1C5279  vivid deep azure
+  lowSlope:  [0.155, 0.500, 0.700],   // #2780B3  vivid mid azure
+  rock:      [0.200, 0.640, 0.860],   // #33A3DB  vivid azure slope
+  highRidge: [0.270, 0.770, 0.960],   // #45C4F5  vivid bright ridge
+  peak:      [0.450, 0.870, 1.000],   // #73DEFF  luminous ice peak
 }
 
 const ALTITUDE_GREEN: AltitudePalette = {
@@ -79,17 +79,17 @@ diffuseColor.rgb = mix(diffuseColor.rgb, _peak, _snowMask * 0.42);
 
 float _valleyAO = (1.0 - _hNorm) * (1.0 - _slopeF);
 float _creaseAO = _slopeF * (1.0 - _hNorm);
-float _ao = max(_valleyAO * 0.30, _creaseAO * 0.15);
-diffuseColor.rgb *= mix(1.0, 0.80, _ao);
+float _ao = max(_valleyAO * 0.20, _creaseAO * 0.10);
+diffuseColor.rgb *= mix(1.0, 0.85, _ao);
 
 float _crevasse = _slopeF * (1.0 - _hNorm) * smoothstep(0.25, 0.55, vSlope);
-diffuseColor.rgb *= mix(1.0, 0.85, _crevasse);
+diffuseColor.rgb *= mix(1.0, 0.90, _crevasse);
 
 vec3 _wNorm = normalize(vWorldNormal);
 vec3 _keyDir = normalize(vec3(120.0, 200.0, 120.0));
 float _nDotL = dot(_wNorm, _keyDir);
 float _shadowFace = smoothstep(-0.05, 0.35, -_nDotL);
-diffuseColor.rgb *= mix(1.0, 0.80, _shadowFace * 0.50);
+diffuseColor.rgb *= mix(1.0, 0.85, _shadowFace * 0.40);
 
 vec3 _viewDir = normalize(cameraPosition - vWorldPos);
 vec3 _halfVec = normalize(_viewDir + _keyDir);
@@ -131,13 +131,13 @@ const FRAGMENT_VARYINGS = VERTEX_VARYINGS
 
 export function createTerrainSolidMaterial() {
   const mat = new THREE.MeshStandardMaterial({
-    color: 0x1a6090,
-    emissive: new THREE.Color(0x0e4060),
-    emissiveIntensity: 0.30,
+    color: 0x2080b0,
+    emissive: new THREE.Color(0x145878),
+    emissiveIntensity: 0.35,
     transparent: false,
     opacity: 1.0,
-    roughness: 0.72,
-    metalness: 0.04,
+    roughness: 0.68,
+    metalness: 0.05,
     flatShading: false,
     depthWrite: true,
     polygonOffset: true,

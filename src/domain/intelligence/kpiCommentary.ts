@@ -147,7 +147,7 @@ export function getKpiCommentary(key: KpiKey, kpis: PositionKpis): string {
   return COMMENTARY[key]?.(kpis) ?? ""
 }
 
-export function getExecutiveSummary(kpis: PositionKpis, revealedCount = 10): {
+export function getExecutiveSummary(kpis: PositionKpis, revealedCount = 12): {
   label: string
   tone: "critical" | "challenging" | "stable" | "strong"
   narrative: string
@@ -161,16 +161,6 @@ export function getExecutiveSummary(kpis: PositionKpis, revealedCount = 10): {
   else if (sp < 50 || rw < 8) { label = "CHALLENGING"; tone = "challenging" }
   else if (sp < 75 || rw < 14) { label = "STABLE"; tone = "stable" }
   else { label = "STRONG"; tone = "strong" }
-
-  if (revealedCount < 12) {
-    return {
-      label: `${revealedCount}/12`,
-      tone,
-      narrative: revealedCount === 0
-        ? "Focus each KPI below to reveal its terrain zone and build the mountain of your business."
-        : `${revealedCount} of 12 zones revealed. Continue exploring to complete your position terrain.`,
-    }
-  }
 
   const strengths: string[] = []
   const risks: string[] = []

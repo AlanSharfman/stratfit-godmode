@@ -99,6 +99,11 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
     // Precompute cascade pulse offsets per zone for quick lookup
     const cascadeZonePulse = useRef(new Map<KpiKey, number>())
 
+    const normalsTimer = useRef(0)
+    const morphSettled = useRef(false)
+
+    useEffect(() => { morphSettled.current = false }, [stabilizedHF])
+
     // Animate vertex heights toward targets + cascade pulses
     useFrame((state, delta) => {
       const pos = geometry.attributes.position as THREE.BufferAttribute
@@ -121,6 +126,8 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
           }
         }
       }
+
+      if (morphSettled.current && cascadeZonePulse.current.size === 0) return
 
       for (let i = 0; i < count; i++) {
         const col = i % vertsPerRow
@@ -150,7 +157,15 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
 
       if (changed) {
         pos.needsUpdate = true
+        normalsTimer.current += delta
+        if (normalsTimer.current > 0.1) {
+          geometry.computeVertexNormals()
+          normalsTimer.current = 0
+        }
+        morphSettled.current = false
+      } else if (!morphSettled.current) {
         geometry.computeVertexNormals()
+        morphSettled.current = true
       }
 
     })

@@ -39,14 +39,14 @@ export interface OscillateDriftConfig {
 export type DriftMode = "micro" | "cinematic" | "oscillate" | "off"
 
 export const MICRO_DRIFT: DriftConfig = {
-  horizontal: 1.0,
-  vertical: 0.3,
-  depth: 0.6,
-  cycle: 16,
-  lookAtHorizontal: 0.3,
-  lookAtVertical: 0.15,
-  cooldownSeconds: 6,
-  lerpRate: 0.008,
+  horizontal: 0.4,
+  vertical: 0.12,
+  depth: 0.25,
+  cycle: 28,
+  lookAtHorizontal: 0.08,
+  lookAtVertical: 0.04,
+  cooldownSeconds: 8,
+  lerpRate: 0.003,
 }
 
 export const CINEMATIC_DRIFT: CinematicDriftConfig = {
@@ -61,12 +61,12 @@ export const CINEMATIC_DRIFT: CinematicDriftConfig = {
   rotationDegrees: 4,
 }
 
-/** Smooth sinusoidal left-right oscillation — ±15% azimuth, 24s full cycle */
+/** Smooth sinusoidal left-right oscillation — slow and cinematic */
 export const OSCILLATE_DRIFT: OscillateDriftConfig = {
-  cycle: 24,
-  amplitude: Math.PI * 0.15,
-  lerpRate: 0.015,
-  cooldownSeconds: 4,
+  cycle: 55,
+  amplitude: Math.PI * 0.06,
+  lerpRate: 0.005,
+  cooldownSeconds: 5,
 }
 
 export const CAMERA_DRIFT_CONFIG = {

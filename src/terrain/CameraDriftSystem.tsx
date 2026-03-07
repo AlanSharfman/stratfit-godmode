@@ -40,6 +40,7 @@ export default function CameraDriftSystem({
   const baseTarget = useRef<[number, number, number] | null>(null)
   const startMs = useRef(performance.now())
   const lastInteractMs = useRef(0)
+  const lastFrameMs = useRef(0)
   const wasInteracting = useRef(false)
   const prevMode = useRef<DriftMode>(mode)
 
@@ -75,7 +76,7 @@ export default function CameraDriftSystem({
       startMs.current = now
     }
 
-    // ── Oscillate mode: smooth sinusoidal azimuth sweep ──
+    // ── Oscillate mode: ultra-smooth sinusoidal azimuth sweep ──
     const oscCfg = getOscillateConfig(mode)
     if (oscCfg) {
       if (!basePos.current) {
@@ -89,14 +90,15 @@ export default function CameraDriftSystem({
       const sinceInteract = now - lastInteractMs.current
       if (sinceInteract < cooldownMs) return
 
-      const fadeIn = Math.min(1, (sinceInteract - cooldownMs) / 3000)
+      const fadeIn = Math.min(1, (sinceInteract - cooldownMs) / 6000)
+      const smoothFade = fadeIn * fadeIn * (3 - 2 * fadeIn)
 
       const elapsed = (now - startMs.current) / 1000
       const phase = (elapsed / oscCfg.cycle) * TWO_PI
-      const azOffset = Math.sin(phase) * oscCfg.amplitude * fadeIn
+      const azOffset = Math.sin(phase) * oscCfg.amplitude * smoothFade
 
       const [bx, , bz] = basePos.current
-      const [tx, ty, tz] = baseTarget.current!
+      const [tx, , tz] = baseTarget.current!
 
       const dx = bx - tx
       const dz = bz - tz
@@ -107,8 +109,11 @@ export default function CameraDriftSystem({
       const goalX = tx + Math.sin(goalAngle) * dist
       const goalZ = tz + Math.cos(goalAngle) * dist
 
-      camera.position.x += (goalX - camera.position.x) * oscCfg.lerpRate
-      camera.position.z += (goalZ - camera.position.z) * oscCfg.lerpRate
+      const frameLerp = 1 - Math.pow(1 - oscCfg.lerpRate, 60 / 1000 * (now - (lastFrameMs.current || now - 16)))
+      lastFrameMs.current = now
+
+      camera.position.x += (goalX - camera.position.x) * frameLerp
+      camera.position.z += (goalZ - camera.position.z) * frameLerp
 
       controls.update()
       return

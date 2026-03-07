@@ -25,7 +25,7 @@ const TONE_COLORS: Record<string, { border: string; bg: string; badge: string }>
   strong:      { border: "rgba(52,211,153,0.55)",  bg: "rgba(52,211,153,0.06)", badge: "#34d399" },
 }
 
-const PositionExecSummary: React.FC<Props> = memo(({ kpis, revealedCount = 10 }) => {
+const PositionExecSummary: React.FC<Props> = memo(({ kpis, revealedCount = 12 }) => {
   const [expanded, setExpanded] = useState(false)
 
   if (!kpis) return null
