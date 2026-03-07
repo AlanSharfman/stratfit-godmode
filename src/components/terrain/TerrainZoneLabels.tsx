@@ -72,15 +72,13 @@ export default React.memo(function TerrainZoneLabels({ kpis, revealedKpis, focus
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 4 }}
                 transition={{ delay: i * 0.03, duration: 0.25 }}
-                onClick={() => { onClickKpi?.(isFocused ? null : z.kpi); onFocusKpi?.(isFocused ? null : z.kpi) }}
-                onMouseEnter={() => onFocusKpi?.(z.kpi)}
-                onMouseLeave={() => { if (!isFocused) onFocusKpi?.(null) }}
+                onClick={() => { onClickKpi?.(isFocused ? null : z.kpi) }}
                 style={{
                   display: "flex", flexDirection: "column", alignItems: "center",
                   gap: 5, padding: "9px 11px", borderRadius: 8,
                   background: isFocused ? `rgba(${hexToRgb(z.color)},0.15)` : "rgba(255,255,255,0.02)",
                   border: isFocused ? `1px solid ${z.color}55` : "1px solid rgba(255,255,255,0.03)",
-                  cursor: onFocusKpi ? "pointer" : "default",
+                  cursor: "pointer",
                   transition: "background 0.25s, border 0.25s, box-shadow 0.25s",
                   minWidth: 46,
                   boxShadow: isFocused

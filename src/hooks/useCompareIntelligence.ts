@@ -13,7 +13,7 @@ import {
   COMPARE_JSON_SCHEMA,
   type CompareAnalysis,
 } from "@/engine/whatif"
-import { getOpenAIApiKey, hasOpenAIApiKey } from "@/lib/openai/apiKey"
+import { getOpenAIApiKey, hasOpenAIApiKey, getOpenAIChatEndpoint } from "@/lib/openai/apiKey"
 
 interface UseCompareIntelligenceResult {
   analysis: CompareAnalysis | null
@@ -95,7 +95,7 @@ export function useCompareIntelligence(
 
     try {
       const apiKey = getOpenAIApiKey()!
-      const res = await fetch("https://api.openai.com/v1/responses", {
+      const res = await fetch(getOpenAIChatEndpoint(), {
         method: "POST",
         headers: {
           Authorization: `Bearer ${apiKey}`,

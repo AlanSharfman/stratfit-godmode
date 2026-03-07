@@ -213,11 +213,8 @@ function SignalBeacon({
   const handleClick = useCallback(
     (e: { stopPropagation?: () => void }) => {
       e.stopPropagation?.()
-      const target = isFocused ? null : kpiKey
-      onClickKpi?.(target)
-      onFocusKpi?.(target)
     },
-    [onClickKpi, onFocusKpi, kpiKey, isFocused],
+    [],
   )
 
   const handlePointerOver = useCallback(() => {

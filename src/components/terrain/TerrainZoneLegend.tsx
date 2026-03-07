@@ -7,14 +7,12 @@ interface Props {
   kpis: PositionKpis | null
   revealedKpis: Set<KpiKey>
   focusedKpi: KpiKey | null
-  onFocusKpi?: (kpi: KpiKey | null) => void
   compact?: boolean
 }
 
-export default React.memo(function TerrainZoneLegend({ kpis, revealedKpis, focusedKpi, onFocusKpi, compact = false }: Props) {
+export default React.memo(function TerrainZoneLegend({ kpis, revealedKpis, focusedKpi, compact = false }: Props) {
   const [collapsed, setCollapsed] = useState(false)
   const toggleCollapsed = useCallback(() => setCollapsed((v) => !v), [])
-  const clearFocus = useCallback(() => onFocusKpi?.(null), [onFocusKpi])
 
   const zones = useMemo(() => {
     if (!kpis || revealedKpis.size === 0) return []
@@ -67,13 +65,9 @@ export default React.memo(function TerrainZoneLegend({ kpis, revealedKpis, focus
             return (
               <div
                 key={kpi}
-                onClick={() => onFocusKpi?.(isFocused ? null : kpi)}
-                onMouseEnter={() => onFocusKpi?.(kpi)}
-                onMouseLeave={() => { if (!isFocused) clearFocus() }}
                 style={{
                   display: "flex", alignItems: "center", gap: 8,
                   padding: compact ? "4px 10px" : "5px 10px",
-                  cursor: onFocusKpi ? "pointer" : "default",
                   background: isFocused ? `${color}18` : "transparent",
                   transition: "background 0.2s, box-shadow 0.2s",
                   boxShadow: isFocused ? `inset 0 0 8px ${color}22` : "none",

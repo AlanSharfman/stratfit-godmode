@@ -94,7 +94,7 @@ export function useVoiceBriefing(
     lastHashRef.current = hash
     autoTriggeredRef.current = true
 
-    const timer = setTimeout(() => startStreaming(analysis), 800)
+    const timer = setTimeout(() => startStreaming(analysis), 200)
     return () => clearTimeout(timer)
   }, [analysis, typewriterDone, autoPlay, startStreaming])
 

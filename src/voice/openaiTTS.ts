@@ -9,14 +9,14 @@
 // Model: "tts-1" for low latency (tts-1-hd available for higher quality)
 // ═══════════════════════════════════════════════════════════════════════════
 
-const TTS_ENDPOINT = "https://api.openai.com/v1/audio/speech";
 const TTS_MODEL = "tts-1";
-const TTS_VOICE = "nova"; // Warm, engaging American female
-const TTS_SPEED = 0.95; // Slightly slower for documentary feel
+const TTS_VOICE = "nova";
+const TTS_SPEED = 0.95;
 const TTS_FORMAT = "mp3";
 
-import { getOpenAIApiKey, hasOpenAIApiKey } from "@/lib/openai/apiKey";
+import { getOpenAIApiKey, hasOpenAIApiKey, getOpenAITTSEndpoint } from "@/lib/openai/apiKey";
 const getApiKey = getOpenAIApiKey;
+const getTTSEndpoint = getOpenAITTSEndpoint;
 
 export interface TTSOptions {
   /** Override voice (default: "nova") */
@@ -58,7 +58,7 @@ export async function synthesizeSpeech(
     response_format: TTS_FORMAT,
   };
 
-  const res = await fetch(TTS_ENDPOINT, {
+  const res = await fetch(getTTSEndpoint(), {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -151,9 +151,10 @@ export function streamingSpeech(
     onStateChange?.("loading");
 
     // Fire all chunk requests in parallel for maximum preload
+    const ttsUrl = getTTSEndpoint();
     const fetchPromises = chunks.map((chunk) => {
       if (cancelled) return Promise.resolve(null);
-      return fetch(TTS_ENDPOINT, {
+      return fetch(ttsUrl, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${apiKey}`,

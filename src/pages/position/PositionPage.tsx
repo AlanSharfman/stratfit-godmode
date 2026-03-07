@@ -42,11 +42,7 @@ import { useSimulationEngineStore } from "@/state/simulationEngineStore"
 import { useTerrainLensStore } from "@/state/terrainLensStore"
 import TerrainLensLaser from "@/components/terrain/TerrainLensLaser"
 import styles from "./PositionOverlays.module.css"
-      <circle cx={sx} cy={sy} r={8} fill="#22D3EE" opacity={0.35} filter="url(#sf-laser-flare)" />
-      <circle cx={sx} cy={sy} r={4} fill="#ECFEFF" opacity={0.6} />
 
-      {/* Target flare (marker) */}
-      <circle cx={tx} cy={ty} r={12} fill="#22D3EE" opacity={0.4} filter="url(#sf-laser-flare)" />
 export default function PositionPage() {
   const navigate = useNavigate()
   const simRunCount = useSimulationEngineStore((s) => s.runCount)
@@ -54,41 +50,15 @@ export default function PositionPage() {
   const [rippleKey, setRippleKey] = useState(0)
   const [terrainTuning, setTerrainTuning] = useState<TerrainTuningParams>({ ...DEFAULT_TUNING })
   const viewportRef = useRef<HTMLDivElement>(null)
-  const [focusedKpi, setFocusedKpi] = useState<KpiKey | null>(null)
   const [revealedKpis] = useState<Set<KpiKey>>(() => new Set(ALL_KPI_KEYS))
   const [showKpiMarkers, setShowKpiMarkers] = useState(true)
   const [audioEnabled, setAudioEnabled] = useState(false)
 
-  const prevFocusedRef = useRef<KpiKey | null>(null)
-
-  // ── Laser beam state ──
-  const [laserKpi, setLaserKpi] = useState<KpiKey | null>(null)
+  // ── Terrain Lens store (single source of truth for terrain interaction) ──
+  const { activeLens: focusedKpi, toggleLens } = useTerrainLensStore()
   const [markerScreenPos, setMarkerScreenPos] = useState<{ x: number; y: number } | null>(null)
-  const laserTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
-  const handleClickKpi = useCallback((kpi: KpiKey | null) => {
-    clearTimeout(laserTimerRef.current)
-    if (kpi) {
-      setLaserKpi(kpi)
-      setFocusedKpi(kpi)
-      laserTimerRef.current = setTimeout(() => {
-        setLaserKpi(null)
-        setFocusedKpi(null)
-        setMarkerScreenPos(null)
-      }, 2500)
-    } else {
-      setLaserKpi(null)
-      setFocusedKpi(null)
-      setMarkerScreenPos(null)
-    }
-  }, [])
-
-  const handleHoverKpi = useCallback((kpi: KpiKey | null) => {
-    if (laserKpi) return
-    setFocusedKpi(kpi)
-  }, [laserKpi])
-
-  useEffect(() => () => clearTimeout(laserTimerRef.current), [])
+  const prevFocusedRef = useRef<KpiKey | null>(null)
 
   // ── ResizeObserver: update Three.js renderer when right rail expands/collapses ──
   useEffect(() => {
@@ -246,16 +216,18 @@ export default function PositionPage() {
   }, [liveKpis])
 
   const { speak: speakKpi, stop: stopKpi } = useKpiAudio(liveKpis)
+  const speakTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   useEffect(() => {
+    clearTimeout(speakTimerRef.current)
     if (audioEnabled && focusedKpi && prevFocusedRef.current !== focusedKpi) {
-      speakKpi(focusedKpi)
+      speakTimerRef.current = setTimeout(() => speakKpi(focusedKpi), 350)
     }
     prevFocusedRef.current = focusedKpi
   }, [focusedKpi, speakKpi, audioEnabled])
   useEffect(() => {
-    if (!audioEnabled) stopKpi()
+    if (!audioEnabled) { clearTimeout(speakTimerRef.current); stopKpi() }
   }, [audioEnabled, stopKpi])
-  useEffect(() => () => { stopKpi() }, [stopKpi])
+  useEffect(() => () => { clearTimeout(speakTimerRef.current); stopKpi() }, [stopKpi])
 
   // Auto-rotation: faster during build, near-still after all revealed
   const autoRotateSpeed = useMemo(
@@ -361,7 +333,7 @@ export default function PositionPage() {
           {/* Intelligence Executive Summary removed per user request */}
 
           <div className={styles.kpiRailDock} aria-label="KPI Health Rail">
-            <KPIHealthRail kpis={liveKpis} focusedKpi={focusedKpi} onFocusKpi={handleHoverKpi} revealedKpis={revealedKpis} />
+            <KPIHealthRail kpis={liveKpis} focusedKpi={focusedKpi} revealedKpis={revealedKpis} />
           </div>
         </div>
 
@@ -389,8 +361,6 @@ export default function PositionPage() {
               colorVariant={positionIntel?.terrainVariant ?? "default"}
               revealedKpis={revealedKpis}
               focusedKpi={focusedKpi}
-              onFocusKpi={handleHoverKpi}
-              onClickKpi={handleClickKpi}
               onFocusedMarkerScreen={setMarkerScreenPos}
               zoneKpis={liveKpis}
               heatmapEnabled={false}
@@ -418,11 +388,10 @@ export default function PositionPage() {
               granularity={granularity}
               driftMode="oscillate"
             />
-            <TerrainHealthBar kpis={liveKpis} revealedKpis={revealedKpis} />
-            <TerrainZoneLabels kpis={liveKpis} revealedKpis={revealedKpis} focusedKpi={focusedKpi} onFocusKpi={handleHoverKpi} onClickKpi={handleClickKpi} />
-            <TerrainZoneLegend kpis={liveKpis} revealedKpis={revealedKpis} focusedKpi={focusedKpi} onFocusKpi={handleHoverKpi} />
-            {laserKpi && markerScreenPos && (
-              <KpiLaserOverlay kpi={laserKpi} markerPos={markerScreenPos} viewportRef={viewportRef} />
+            <TerrainZoneLabels kpis={liveKpis} revealedKpis={revealedKpis} focusedKpi={focusedKpi} onClickKpi={(kpi) => { if (kpi) toggleLens(kpi) }} />
+            <TerrainZoneLegend kpis={liveKpis} revealedKpis={revealedKpis} focusedKpi={focusedKpi} />
+            {focusedKpi && markerScreenPos && (
+              <TerrainLensLaser kpi={focusedKpi} markerPos={markerScreenPos} viewportRef={viewportRef} />
             )}
             <div className={styles.canvasVignette} aria-hidden="true" />
             <IdleMotionLayer viewportRef={viewportRef} />

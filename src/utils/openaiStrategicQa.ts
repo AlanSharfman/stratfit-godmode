@@ -46,7 +46,7 @@ export type StrategicQaPromptInput = {
   strategicQuestions: Array<{ id: StrategicQuestionId; question: string }>; // 0–2
 };
 
-import { getOpenAIApiKey } from "@/lib/openai/apiKey";
+import { getOpenAIApiKey, getOpenAIChatEndpoint } from "@/lib/openai/apiKey";
 const getApiKey = getOpenAIApiKey;
 
 function extractText(payload: any): string | null {
@@ -253,7 +253,7 @@ export async function askStrategicQuestionsOpenAI(args: {
   };
 
   try {
-    const res = await fetch("https://api.openai.com/v1/responses", {
+    const res = await fetch(getOpenAIChatEndpoint(), {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,

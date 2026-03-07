@@ -35,7 +35,7 @@ import ProvenanceBadge from "@/components/system/ProvenanceBadge"
 import SimulationStatusWidget from "@/components/system/SimulationStatusWidget"
 import SimulationRunOverlay from "@/components/system/SimulationRunOverlay"
 import SimulationPipelineWidget from "@/components/system/SimulationPipelineWidget"
-import SystemProbabilityNotice from "@/components/system/ProbabilityNotice"
+// SystemProbabilityNotice removed — using ProbabilityNotice from legal instead
 import CommandConsole from "@/components/command/CommandConsole"
 import ScenarioIntelligencePanel from "@/components/intelligence/ScenarioIntelligencePanel"
 import IntelligenceConsole from "@/components/intelligence/IntelligenceConsole"
@@ -640,7 +640,7 @@ export default function ComparePage() {
         plan={briefingPlan}
         onComplete={handleBriefingComplete}
         onStateChange={handleBriefingStateChange}
-        ttsEnabled={false}
+        ttsEnabled
       />
 
       {/* ── Q&A Modal ── */}

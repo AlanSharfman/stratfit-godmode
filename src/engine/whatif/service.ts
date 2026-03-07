@@ -12,7 +12,7 @@ const MODEL = "gpt-4o-mini"
 const TEMPERATURE = 0.15
 const MAX_RETRIES = 1
 
-import { getOpenAIApiKey, hasOpenAIApiKey } from "@/lib/openai/apiKey"
+import { getOpenAIApiKey, hasOpenAIApiKey, getOpenAIChatEndpoint } from "@/lib/openai/apiKey"
 const getApiKey = getOpenAIApiKey
 
 export function hasWhatIfApiKey(): boolean {
@@ -128,7 +128,7 @@ export async function askWhatIf(args: AskWhatIfArgs): Promise<AskWhatIfResult> {
     }
 
     try {
-      const res = await fetch("https://api.openai.com/v1/responses", {
+      const res = await fetch(getOpenAIChatEndpoint(), {
         method: "POST",
         headers: {
           Authorization: `Bearer ${apiKey}`,
