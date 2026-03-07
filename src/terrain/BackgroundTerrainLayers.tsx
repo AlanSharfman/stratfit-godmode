@@ -24,9 +24,9 @@ export default function BackgroundTerrainLayers() {
         scale: [1.55, 2.65, 1.25],
         position: [-260, -20, -280],
         rotationX: -Math.PI / 2,
-        opacity: 0.18,
-        emissiveIntensity: 0.10,
-        wireOpacity: 0.06,
+        opacity: 0.40,
+        emissiveIntensity: 0.25,
+        wireOpacity: 0.14,
       },
 
       // Mid-left mass (fills left-mid band)
@@ -36,9 +36,9 @@ export default function BackgroundTerrainLayers() {
         scale: [1.35, 2.45, 1.20],
         position: [-120, -19, -230],
         rotationX: -Math.PI / 2,
-        opacity: 0.16,
-        emissiveIntensity: 0.09,
-        wireOpacity: 0.055,
+        opacity: 0.36,
+        emissiveIntensity: 0.22,
+        wireOpacity: 0.12,
       },
 
       // Center distant plateau (fills top-center emptiness)
@@ -48,9 +48,9 @@ export default function BackgroundTerrainLayers() {
         scale: [1.75, 2.85, 1.35],
         position: [40, -19, -260],
         rotationX: -Math.PI / 2,
-        opacity: 0.15,
-        emissiveIntensity: 0.085,
-        wireOpacity: 0.05,
+        opacity: 0.34,
+        emissiveIntensity: 0.20,
+        wireOpacity: 0.11,
       },
 
       // Mid-right shelf (fills top-right emptiness)
@@ -60,9 +60,9 @@ export default function BackgroundTerrainLayers() {
         scale: [1.45, 2.55, 1.20],
         position: [220, -21, -285],
         rotationX: -Math.PI / 2,
-        opacity: 0.14,
-        emissiveIntensity: 0.08,
-        wireOpacity: 0.045,
+        opacity: 0.32,
+        emissiveIntensity: 0.18,
+        wireOpacity: 0.10,
       },
 
       // Far right ridge (fills far-right horizon)
@@ -72,9 +72,9 @@ export default function BackgroundTerrainLayers() {
         scale: [1.65, 2.75, 1.30],
         position: [360, -22, -340],
         rotationX: -Math.PI / 2,
-        opacity: 0.12,
-        emissiveIntensity: 0.075,
-        wireOpacity: 0.04,
+        opacity: 0.28,
+        emissiveIntensity: 0.16,
+        wireOpacity: 0.09,
       },
 
       // Near-back band (adds depth just behind main terrain without competing)
@@ -84,9 +84,9 @@ export default function BackgroundTerrainLayers() {
         scale: [1.25, 2.10, 1.10],
         position: [0, -18, -150],
         rotationX: -Math.PI / 2,
-        opacity: 0.10,
-        emissiveIntensity: 0.07,
-        wireOpacity: 0.035,
+        opacity: 0.26,
+        emissiveIntensity: 0.15,
+        wireOpacity: 0.08,
       },
 
       // Low-left foreground silhouette (fills your big bottom-left emptiness)
@@ -97,9 +97,9 @@ export default function BackgroundTerrainLayers() {
         scale: [1.20, 1.95, 1.05],
         position: [-320, -24, -90],
         rotationX: -Math.PI / 2,
-        opacity: 0.09,
-        emissiveIntensity: 0.065,
-        wireOpacity: 0.03,
+        opacity: 0.22,
+        emissiveIntensity: 0.14,
+        wireOpacity: 0.07,
       },
     ],
     []
@@ -134,16 +134,16 @@ export default function BackgroundTerrainLayers() {
           {/* Solid silhouette */}
           <mesh geometry={geoms[i]} frustumCulled={false} renderOrder={-50}>
             <meshStandardMaterial
-              color={0x07121b}
-              emissive={0x071423}
+              color={0x0e2438}
+              emissive={0x0c2a42}
               emissiveIntensity={l.emissiveIntensity}
               transparent
               opacity={l.opacity}
-              roughness={0.95}
-              metalness={0.02}
+              roughness={0.85}
+              metalness={0.05}
               depthWrite={false}
               depthTest
-              fog
+              fog={false}
             />
           </mesh>
 
@@ -152,15 +152,15 @@ export default function BackgroundTerrainLayers() {
             <meshStandardMaterial
               color={0x7dd3fc}
               emissive={0x38bdf8}
-              emissiveIntensity={0.18}
+              emissiveIntensity={0.30}
               wireframe
               transparent
               opacity={l.wireOpacity}
-              roughness={0.9}
-              metalness={0.05}
+              roughness={0.8}
+              metalness={0.08}
               depthWrite={false}
               depthTest
-              fog
+              fog={false}
             />
           </mesh>
         </group>
