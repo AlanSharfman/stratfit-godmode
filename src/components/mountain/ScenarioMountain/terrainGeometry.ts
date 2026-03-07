@@ -36,15 +36,15 @@ export function noise2(x: number, z: number): number {
 }
 
 export function ridgeNoise(x: number, z: number): number {
-  // base: large undulation — reduced influence so phase doesn't create left/right bias
-  const base    = Math.sin(x * 0.5) * Math.cos(z * 0.3);
-  // ridgeA: ↗ erosion channels (original direction)
-  const ridgeA  = Math.abs(Math.sin(x * 2.5 + z * 1.5)) * 0.35;
-  // ridgeB: ↘ cross-cut channels — fills the valleys ridgeA misses, distributes evenly
-  const ridgeB  = Math.abs(Math.sin(x * 2.3 - z * 1.8)) * 0.30;
-  // scree: fine high-freq debris consistent across both sides
-  const scree   = Math.abs(Math.sin(x * 4.7 + z * 0.6)) * 0.18;
-  return base * 0.08 + ridgeA * 0.15 + ridgeB * 0.12 + scree * 0.06;
+  // ALL terms use Math.abs — eliminates the phase-dependent sign flip that was
+  // making sin(x*0.5) negative at the camera-left massif (x≈11, sin(5.5)≈−0.71)
+  // while positive at camera-right (x≈−10, sin(−5)≈+0.96), causing left-side
+  // smoothness. Math.abs folds each wave into always-positive ridge crests.
+  const fold   = Math.abs(Math.sin(x * 0.55 + z * 0.2));   // large folded ridges
+  const ridgeA = Math.abs(Math.sin(x * 2.5  + z * 1.5));   // ↗ erosion gullies
+  const ridgeB = Math.abs(Math.sin(x * 2.3  - z * 1.8));   // ↘ cross-cut gullies
+  const scree  = Math.abs(Math.sin(x * 4.7  + z * 0.6));   // fine-grain debris
+  return fold * 0.08 + ridgeA * 0.09 + ridgeB * 0.07 + scree * 0.03;
 }
 
 export function gaussian1(x: number, c: number, s: number): number {
