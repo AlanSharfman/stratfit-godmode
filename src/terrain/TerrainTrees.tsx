@@ -1,6 +1,6 @@
 import { useMemo, useRef, useEffect } from "react"
 import * as THREE from "three"
-import type { ProgressiveTerrainHandle } from "@/terrain/ProgressiveTerrainSurface"
+import { useFrame } from "@react-three/fiber"
 import { TERRAIN_CONSTANTS } from "@/terrain/terrainConstants"
 
 const TREE_COUNT = 55
@@ -26,7 +26,6 @@ function mulberry32(a: number) {
 
 interface TreePlacement {
   x: number
-  y: number
   z: number
   scale: number
 }
@@ -57,23 +56,22 @@ function computePlacements(heightfield: Float32Array, seed: number): TreePlaceme
     const geomX = (col / SEGMENTS - 0.5) * TERRAIN_CONSTANTS.width
     const geomY = (row / SEGMENTS - 0.5) * TERRAIN_CONSTANTS.depth
     const worldX = geomX * 3.0
-    const worldY = -6 + h * 2.8
     const worldZ = -geomY * 2.6
 
     const scale = 0.6 + rand() * 0.6
-    placements.push({ x: worldX, y: worldY, z: worldZ, scale })
+    placements.push({ x: worldX, z: worldZ, scale })
   }
 
   return placements
 }
 
 interface TerrainTreesProps {
-  terrainRef: React.RefObject<ProgressiveTerrainHandle | null>
   heightfield: Float32Array
   seed: number
+  getHeightAt: (worldX: number, worldZ: number) => number
 }
 
-export default function TerrainTrees({ heightfield, seed }: TerrainTreesProps) {
+export default function TerrainTrees({ heightfield, seed, getHeightAt }: TerrainTreesProps) {
   const trunkRef = useRef<THREE.InstancedMesh>(null)
   const canopyRef = useRef<THREE.InstancedMesh>(null)
 
@@ -84,7 +82,8 @@ export default function TerrainTrees({ heightfield, seed }: TerrainTreesProps) {
     const dummy = new THREE.Object3D()
     for (let i = 0; i < placements.length; i++) {
       const p = placements[i]
-      dummy.position.set(p.x, p.y, p.z)
+      const terrainY = getHeightAt(p.x, p.z)
+      dummy.position.set(p.x, terrainY, p.z)
       dummy.scale.setScalar(p.scale)
       dummy.updateMatrix()
       trunkRef.current.setMatrixAt(i, dummy.matrix)
@@ -95,7 +94,30 @@ export default function TerrainTrees({ heightfield, seed }: TerrainTreesProps) {
     }
     trunkRef.current.instanceMatrix.needsUpdate = true
     canopyRef.current.instanceMatrix.needsUpdate = true
-  }, [placements])
+  }, [placements, getHeightAt])
+
+  useFrame(() => {
+    if (!trunkRef.current || !canopyRef.current) return
+    const dummy = new THREE.Object3D()
+    let changed = false
+    for (let i = 0; i < placements.length; i++) {
+      const p = placements[i]
+      const terrainY = getHeightAt(p.x, p.z)
+      dummy.position.set(p.x, terrainY, p.z)
+      dummy.scale.setScalar(p.scale)
+      dummy.updateMatrix()
+      trunkRef.current.setMatrixAt(i, dummy.matrix)
+
+      dummy.position.y += TRUNK_HEIGHT * p.scale * 0.5
+      dummy.updateMatrix()
+      canopyRef.current.setMatrixAt(i, dummy.matrix)
+      changed = true
+    }
+    if (changed) {
+      trunkRef.current.instanceMatrix.needsUpdate = true
+      canopyRef.current.instanceMatrix.needsUpdate = true
+    }
+  })
 
   if (placements.length === 0) return null
 

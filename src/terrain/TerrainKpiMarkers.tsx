@@ -94,6 +94,7 @@ export default function TerrainKpiMarkers({
           worldX={m.worldX}
           color={m.color}
           isFocused={focusedKpi === m.key}
+          isDimmed={focusedKpi !== null && focusedKpi !== m.key}
           onFocusKpi={onFocusKpi}
           onClickKpi={onClickKpi}
           onFocusedMarkerScreen={onFocusedMarkerScreen}
@@ -116,6 +117,7 @@ function SignalBeacon({
   worldX,
   color,
   isFocused,
+  isDimmed = false,
   onFocusKpi,
   onClickKpi,
   onFocusedMarkerScreen,
@@ -127,6 +129,7 @@ function SignalBeacon({
   worldX: number
   color: { hex: string; r: number; g: number; b: number }
   isFocused: boolean
+  isDimmed?: boolean
   onFocusKpi?: (kpi: KpiKey | null) => void
   onClickKpi?: (kpi: KpiKey | null) => void
   onFocusedMarkerScreen?: (pos: { x: number; y: number } | null) => void
@@ -138,7 +141,7 @@ function SignalBeacon({
   const orbRef = useRef<THREE.Mesh>(null)
   const haloRef = useRef<THREE.Mesh>(null)
   const labelRef = useRef<HTMLDivElement>(null)
-  const hasProjected = useRef(false)
+  const wasFocusedRef = useRef(false)
   const { camera, gl } = useThree()
 
   const tintColor = useMemo(() => new THREE.Color(color.r, color.g, color.b), [color])
@@ -183,18 +186,23 @@ function SignalBeacon({
     const distScale = THREE.MathUtils.clamp(d * 0.016, 0.7, 2.2) * scale
     g.scale.setScalar(distScale)
 
+    // Dim factor: when a lens is active and this isn't the focused marker
+    const dimFactor = isDimmed ? 0.25 : 1.0
+
     if (orbRef.current) {
       const mat = orbRef.current.material as THREE.MeshStandardMaterial
-      mat.emissiveIntensity = 0.8 + pulse * (isFocused ? 1.0 : 0.5)
+      mat.emissiveIntensity = (0.8 + pulse * (isFocused ? 1.0 : 0.5)) * dimFactor
+      mat.opacity = dimFactor < 1 ? 0.35 : 1.0
+      mat.transparent = true
     }
 
     if (haloRef.current) {
       const mat = haloRef.current.material as THREE.MeshBasicMaterial
-      mat.opacity = 0.18 + pulse * 0.12 + storyEnvelope * 0.2
+      mat.opacity = (0.18 + pulse * 0.12 + storyEnvelope * 0.2) * dimFactor
     }
 
-    if (isFocused && !hasProjected.current && onFocusedMarkerScreen) {
-      hasProjected.current = true
+    if (isFocused && onFocusedMarkerScreen) {
+      wasFocusedRef.current = true
       const v = new THREE.Vector3(worldX, markerY, 0)
       v.project(camera)
       const cw = gl.domElement.clientWidth
@@ -204,8 +212,8 @@ function SignalBeacon({
         y: (-v.y + 1) / 2 * ch,
       })
     }
-    if (!isFocused && hasProjected.current) {
-      hasProjected.current = false
+    if (!isFocused && wasFocusedRef.current) {
+      wasFocusedRef.current = false
       onFocusedMarkerScreen?.(null)
     }
   })
@@ -241,7 +249,7 @@ function SignalBeacon({
           emissive={tintColor}
           emissiveIntensity={0.3}
           transparent
-          opacity={0.45}
+          opacity={isDimmed ? 0.12 : 0.45}
           depthTest
           depthWrite={false}
         />
@@ -296,7 +304,8 @@ function SignalBeacon({
             backdropFilter: "blur(6px)",
             fontFamily: "'Inter', system-ui, sans-serif",
             userSelect: "none",
-            transition: "box-shadow 0.3s, border-color 0.3s",
+            transition: "box-shadow 0.3s, border-color 0.3s, opacity 0.3s",
+            opacity: isDimmed ? 0.2 : 1,
           }}
         >
           {label}

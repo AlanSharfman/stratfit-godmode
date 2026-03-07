@@ -6,9 +6,10 @@ import TerrainStage from "@/terrain/TerrainStage"
 import CameraCompositionRig from "@/scene/camera/CameraCompositionRig"
 import SkyAtmosphere from "@/scene/rigs/SkyAtmosphere"
 import { WELCOME_PRESET } from "@/scene/camera/terrainCameraPresets"
-import { useBaselineStore } from "@/state/baselineStore"
 import { DEMO_COMPANY } from "@/data/demoCompany"
 import type { TerrainMetrics } from "@/terrain/terrainFromBaseline"
+import { useSystemBaseline } from "@/system/SystemBaselineProvider"
+import type { BaselineV1 } from "@/onboard/baseline"
 
 const WELCOME_METRICS: TerrainMetrics = {
   elevationScale: 1.15,
@@ -20,6 +21,79 @@ const WELCOME_METRICS: TerrainMetrics = {
 }
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1]
+
+function demoCompanyToBaseline(): BaselineV1 {
+  const monthlyRevenue = Math.max(0, Number(DEMO_COMPANY.revenue) || 0)
+  const arr = monthlyRevenue * 12
+  const monthlyBurn = Math.max(0, Number(DEMO_COMPANY.monthlyBurn) || 0)
+  const headcount = Math.max(0, Number(DEMO_COMPANY.headcount) || 0)
+  const arpa = Math.max(0, Number(DEMO_COMPANY.arpa) || 0)
+
+  return {
+    version: 1,
+    company: {
+      legalName: "Acme Analytics",
+      industry: DEMO_COMPANY.stage ?? "seed",
+      businessModel: "B2B SaaS",
+      primaryMarket: "SMB",
+      founderName: "Demo Founder",
+      contactEmail: "demo@stratfit.local",
+      contactPhone: "",
+      jurisdiction: "US",
+    },
+    financial: {
+      arr,
+      growthRatePct: Math.max(0, Number(DEMO_COMPANY.growthRate) || 0),
+      grossMarginPct: Math.max(0, Number(DEMO_COMPANY.grossMargin) || 0),
+      revenueConcentrationPct: 0,
+      monthlyBurn,
+      payroll: monthlyBurn * 0.65,
+      headcount,
+      cashOnHand: Math.max(0, Number(DEMO_COMPANY.cash) || 0),
+      nrrPct: 108,
+      avgFullyLoadedCost: headcount > 0 ? (monthlyBurn * 0.65) / headcount : 0,
+      salesMarketingSpend: monthlyBurn * 0.18,
+      rdSpend: monthlyBurn * 0.12,
+      gaSpend: monthlyBurn * 0.05,
+    },
+    capital: {
+      totalDebt: 0,
+      interestRatePct: 0,
+      monthlyDebtService: 0,
+      lastRaiseAmount: 0,
+      lastRaiseDateISO: null,
+      equityRaisedToDate: 0,
+    },
+    operating: {
+      churnPct: Math.max(0, Number(DEMO_COMPANY.churnRate) || 0),
+      salesCycleMonths: 3,
+      acv: arpa,
+      keyPersonDependency: "Medium",
+      customerConcentrationRisk: "Low",
+      regulatoryExposure: "Low",
+      activeCustomers: arpa > 0 ? Math.max(1, Math.round(arr / arpa)) : 0,
+    },
+    customerEngine: {
+      cac: arpa > 0 ? arpa * 1.6 : 0,
+      ltv: arpa > 0 ? arpa * 10 : 0,
+      paybackPeriodMonths: 10,
+      expansionRatePct: 8,
+    },
+    posture: {
+      focus: "Growth",
+      raiseIntent: "Uncertain",
+      horizonMonths: 24,
+      primaryConstraint: "Cash runway",
+      fastestDownside: "Customer churn",
+    },
+    investment: {
+      annualCapex: 0,
+      capexIntensityPct: 0,
+      arDays: 30,
+      apDays: 30,
+    },
+  }
+}
 
 function stagger(i: number) {
   return { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, transition: { delay: 0.3 + i * 0.12, duration: 0.7, ease: EASE } }
@@ -45,10 +119,10 @@ function AnimatedCounter({ target, suffix = "" }: { target: number; suffix?: str
 
 export default function WelcomePage() {
   const navigate = useNavigate()
-  const setBaseline = useBaselineStore((s) => s.setBaseline)
+  const { setBaseline } = useSystemBaseline()
 
   const handleDemo = useCallback(() => {
-    setBaseline(DEMO_COMPANY)
+    setBaseline(demoCompanyToBaseline())
     navigate(ROUTES.POSITION)
   }, [setBaseline, navigate])
 

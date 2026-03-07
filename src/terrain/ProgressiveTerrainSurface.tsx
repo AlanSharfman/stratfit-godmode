@@ -3,7 +3,7 @@
 // Always renders realistic mountainous terrain; KPI health modulates zone
 // elevation on top of the baseline — the terrain is NEVER flat.
 
-import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from "react"
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef } from "react"
 import * as THREE from "three"
 import { useFrame } from "@react-three/fiber"
 import { useSystemBaseline } from "@/system/SystemBaselineProvider"
@@ -193,26 +193,28 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
       }
     }, [geometry])
 
+    const getHeightAt = useCallback((worldX: number, worldZ: number) => {
+      const geomX = worldX / TERRAIN_WORLD_SCALE.x
+      const geomZ = worldZ / TERRAIN_WORLD_SCALE.z
+      const halfW = TERRAIN_CONSTANTS.width / 2
+      const halfD = TERRAIN_CONSTANTS.depth / 2
+      const col = Math.round(((geomX + halfW) / TERRAIN_CONSTANTS.width) * SEGMENTS)
+      const row = Math.round(((geomZ + halfD) / TERRAIN_CONSTANTS.depth) * SEGMENTS)
+      const clampedCol = Math.max(0, Math.min(SEGMENTS, col))
+      const clampedRow = Math.max(0, Math.min(SEGMENTS, row))
+      const idx = clampedRow * (SEGMENTS + 1) + clampedCol
+      const pos = geometry.attributes.position as THREE.BufferAttribute
+      const h = pos.getZ(idx) ?? 0
+      return h * TERRAIN_WORLD_SCALE.y + TERRAIN_CONSTANTS.yOffset
+    }, [geometry])
+
     useImperativeHandle(ref, () => ({
       seed,
       solidMesh: solidRef.current,
       latticeMesh: latticeRef.current,
       heightfield: stabilizedHF,
-      getHeightAt: (worldX: number, worldZ: number) => {
-        const geomX = worldX / TERRAIN_WORLD_SCALE.x
-        const geomZ = worldZ / TERRAIN_WORLD_SCALE.z
-        const halfW = TERRAIN_CONSTANTS.width / 2
-        const halfD = TERRAIN_CONSTANTS.depth / 2
-        const col = Math.round(((geomX + halfW) / TERRAIN_CONSTANTS.width) * SEGMENTS)
-        const row = Math.round(((geomZ + halfD) / TERRAIN_CONSTANTS.depth) * SEGMENTS)
-        const clampedCol = Math.max(0, Math.min(SEGMENTS, col))
-        const clampedRow = Math.max(0, Math.min(SEGMENTS, row))
-        const idx = clampedRow * (SEGMENTS + 1) + clampedCol
-        const pos = geometry.attributes.position as THREE.BufferAttribute
-        const h = pos.getZ(idx) ?? 0
-        return h * TERRAIN_WORLD_SCALE.y + TERRAIN_CONSTANTS.yOffset
-      },
-    }), [seed, geometry, stabilizedHF])
+      getHeightAt,
+    }), [seed, stabilizedHF, getHeightAt])
 
     return (
       <>
@@ -236,9 +238,9 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
         {/* KPI zone highlight overlay removed — terrain colour stays constant */}
 
         <TerrainTrees
-          terrainRef={ref as React.RefObject<ProgressiveTerrainHandle>}
           heightfield={stabilizedHF}
           seed={seed}
+          getHeightAt={getHeightAt}
         />
       </>
     )

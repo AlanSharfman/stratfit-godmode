@@ -2,6 +2,7 @@
 import { create } from "zustand"
 import type { Baseline } from "@/types/baseline"
 import { BASELINE_STORAGE_KEY } from "@/onboard/baseline"
+const LEGACY_BASELINE_STORAGE_KEY = "stratfit.baseline.legacy-flat"
 
 /**
  * TEMP legacy-compatible input shape used by older pages/components.
@@ -64,10 +65,10 @@ export function deriveRiskProfile(runwayMonths: number): RiskSeverity {
 function persistBaseline(baseline: Baseline | null) {
   try {
     if (!baseline) {
-      localStorage.removeItem(BASELINE_STORAGE_KEY)
+      localStorage.removeItem(LEGACY_BASELINE_STORAGE_KEY)
       return
     }
-    localStorage.setItem(BASELINE_STORAGE_KEY, JSON.stringify(baseline))
+    localStorage.setItem(LEGACY_BASELINE_STORAGE_KEY, JSON.stringify(baseline))
   } catch {
     // ignore storage errors (private mode, quota, etc.)
   }
@@ -187,7 +188,10 @@ export const useBaselineStore = create<BaselineState>((set, get) => ({
   hydrate: () => {
     const raw = (() => {
       try {
-        return localStorage.getItem(BASELINE_STORAGE_KEY)
+        return (
+          localStorage.getItem(LEGACY_BASELINE_STORAGE_KEY)
+          ?? localStorage.getItem(BASELINE_STORAGE_KEY)
+        )
       } catch {
         return null
       }

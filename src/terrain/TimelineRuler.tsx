@@ -3,15 +3,16 @@
 // Uses studio timeline engine data when available, otherwise falls back to
 // a baseline-derived or default 24-month horizon.
 
-import React, { useMemo } from "react"
+import React, { useMemo, useRef } from "react"
+import * as THREE from "three"
 import { Html } from "@react-three/drei"
+import { useFrame } from "@react-three/fiber"
 import { TERRAIN_CONSTANTS } from "@/terrain/terrainConstants"
 import { useStudioTimelineStore } from "@/stores/studioTimelineStore"
 import { useBaselineStore } from "@/state/baselineStore"
-import type { TerrainSurfaceHandle } from "@/terrain/TerrainSurface"
 
 type Props = {
-  terrainRef: React.RefObject<TerrainSurfaceHandle>
+  terrainRef: React.RefObject<{ getHeightAt: (worldX: number, worldZ: number) => number } | null>
   visible?: boolean
 }
 
@@ -63,56 +64,85 @@ export default function TimelineRuler({ terrainRef, visible = true }: Props) {
   return (
     <group name="timeline-ruler">
       {ticks.map(({ month, worldX }) => {
-        const terrain = terrainRef.current
-        const baseY = terrain ? terrain.getHeightAt(worldX, Z_OFFSET) : -6
-        const y0 = baseY + 0.3
-        const y1 = y0 + TICK_HEIGHT
-
         return (
-          <group key={month} position={[worldX, 0, Z_OFFSET]}>
-            {/* Vertical tick line */}
-            <line>
-              <bufferGeometry>
-                <bufferAttribute
-                  attach="attributes-position"
-                  args={[new Float32Array([0, y0, 0, 0, y1, 0]), 3]}
-                  count={2}
-                />
-              </bufferGeometry>
-              <lineBasicMaterial
-                color={TICK_COLOR}
-                transparent
-                opacity={0.5}
-                depthWrite={false}
-              />
-            </line>
-
-            {/* Month label */}
-            <Html
-              position={[0, y1 + 0.8, 0]}
-              center
-              distanceFactor={120}
-              style={{ pointerEvents: "none" }}
-            >
-              <span
-                style={{
-                  color: TICK_COLOR,
-                  fontSize: 10,
-                  fontWeight: 600,
-                  fontFamily: "monospace",
-                  letterSpacing: "0.05em",
-                  textTransform: "uppercase",
-                  opacity: 0.75,
-                  whiteSpace: "nowrap",
-                  textShadow: "0 0 6px rgba(0,224,255,0.4)",
-                }}
-              >
-                M{month}
-              </span>
-            </Html>
-          </group>
+          <TimelineTick key={month} terrainRef={terrainRef} month={month} worldX={worldX} />
         )
       })}
+    </group>
+  )
+}
+
+function TimelineTick({
+  terrainRef,
+  month,
+  worldX,
+}: {
+  terrainRef: React.RefObject<{ getHeightAt: (worldX: number, worldZ: number) => number } | null>
+  month: number
+  worldX: number
+}) {
+  const lineGeomRef = useRef<THREE.BufferGeometry>(null)
+  const labelGroupRef = useRef<THREE.Group>(null)
+
+  useFrame(() => {
+    const terrain = terrainRef.current
+    const lineGeom = lineGeomRef.current
+    if (!terrain || !lineGeom) return
+
+    const baseY = terrain.getHeightAt(worldX, Z_OFFSET)
+    const y0 = baseY + 0.3
+    const y1 = y0 + TICK_HEIGHT
+    const positions = lineGeom.attributes.position as THREE.BufferAttribute
+    positions.setXYZ(0, 0, y0, 0)
+    positions.setXYZ(1, 0, y1, 0)
+    positions.needsUpdate = true
+
+    if (labelGroupRef.current) {
+      labelGroupRef.current.position.set(0, y1 + 0.8, 0)
+    }
+  })
+
+  return (
+    <group position={[worldX, 0, Z_OFFSET]}>
+      <line>
+        <bufferGeometry ref={lineGeomRef}>
+          <bufferAttribute
+            attach="attributes-position"
+            args={[new Float32Array([0, 0, 0, 0, TICK_HEIGHT, 0]), 3]}
+            count={2}
+          />
+        </bufferGeometry>
+        <lineBasicMaterial
+          color={TICK_COLOR}
+          transparent
+          opacity={0.5}
+          depthWrite={false}
+        />
+      </line>
+
+      <group ref={labelGroupRef}>
+        <Html
+          center
+          distanceFactor={120}
+          style={{ pointerEvents: "none" }}
+        >
+          <span
+            style={{
+              color: TICK_COLOR,
+              fontSize: 10,
+              fontWeight: 600,
+              fontFamily: "monospace",
+              letterSpacing: "0.05em",
+              textTransform: "uppercase",
+              opacity: 0.75,
+              whiteSpace: "nowrap",
+              textShadow: "0 0 6px rgba(0,224,255,0.4)",
+            }}
+          >
+            M{month}
+          </span>
+        </Html>
+      </group>
     </group>
   )
 }

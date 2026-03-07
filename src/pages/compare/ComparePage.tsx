@@ -191,17 +191,19 @@ export default function ComparePage() {
   const deriveMetrics = useCallback((scenario: typeof scenarioA): TerrainMetrics => {
     if (scenario?.simulationResults?.terrainMetrics) {
       const em = scenario.simulationResults.terrainMetrics
+      const scenarioKpis = scenario.simulationResults.kpis
+      const scenarioCash = Number(scenarioKpis?.cash) || 0
+      const scenarioBurn = Number(scenarioKpis?.monthlyBurn) || 0
+      const scenarioGrowth = Number(scenarioKpis?.growthRate) || 0
       return {
         elevationScale: em.elevationScale,
         roughness: em.roughness,
         ridgeIntensity: em.ridgeIntensity,
         volatility: em.volatility,
-        liquidityDepth: baselineInputs
-          ? Math.min(((Number(baselineInputs.cash) || 0) / (Number(baselineInputs.burnRate) || Number(baselineInputs.monthlyBurn) || 1)) / 12, 2)
+        liquidityDepth: scenarioBurn > 0
+          ? Math.min((scenarioCash / scenarioBurn) / 12, 2)
           : 1,
-        growthSlope: baselineInputs
-          ? (Math.abs(Number(baselineInputs.growthRate) || 0) <= 1 ? Number(baselineInputs.growthRate) || 0 : (Number(baselineInputs.growthRate) || 0) / 100)
-          : 0,
+        growthSlope: Math.abs(scenarioGrowth) <= 1 ? scenarioGrowth : scenarioGrowth / 100,
       }
     }
     if (baselineInputs) return deriveTerrainMetrics(baselineInputs as any)
