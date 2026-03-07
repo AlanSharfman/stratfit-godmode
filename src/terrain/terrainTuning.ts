@@ -18,12 +18,12 @@ export type TerrainTuningParams = {
 }
 
 export const DEFAULT_TUNING: TerrainTuningParams = {
-  elevationScale: 2.2,
-  ridgeIntensity: 0.62,
-  valleyDepth: 0.52,
-  terrainRoughness: 0.45,
-  peakSoftness: 0.40,
+  elevationScale: 1.35,
+  ridgeIntensity: 0.60,
+  valleyDepth: 0.61,
+  terrainRoughness: 0.12,
+  peakSoftness: 0.46,
   noiseFrequency: 0.85,
   microDetailStrength: 0.35,
-  brightness: 1.0,
+  brightness: 1.07,
 }

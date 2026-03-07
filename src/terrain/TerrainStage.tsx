@@ -35,8 +35,6 @@ import CameraDriftSystem from "@/terrain/CameraDriftSystem";
 import type { DriftMode } from "@/scene/camera/cameraDriftConfig";
 import TerrainDeltaOverlay from "@/terrain/TerrainDeltaOverlay";
 import CameraSafetyGuard from "@/terrain/CameraSafetyGuard";
-import DependencyLines from "@/terrain/DependencyLines";
-import StrategicPath from "@/terrain/StrategicPath";
 
 
 type TerrainStageProps = {
@@ -110,7 +108,7 @@ export default function TerrainStage({
   driftMode = "off",
   deltaBaselineKpis = null,
   transparentBackground = false,
-  cinematicLighting = true,
+  cinematicLighting = false,
   children,
 }: TerrainStageProps) {
   const terrainRef = useRef<TerrainSurfaceHandle>(null!);
@@ -174,17 +172,14 @@ export default function TerrainStage({
 
       {cinematicLighting ? (
         <>
-          {/* Cinematic rig — Position page: key-light dominant from upper-left/front for strong slope contrast */}
-          <ambientLight intensity={0.68} color="#0e2e48" />
-          {/* Key light — upper-left/front: casts across ridges from camera-left, shadow valleys */}
-          <directionalLight position={[-220, 300, 80]} intensity={1.75} color="#60d8ff" castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-camera-near={0.5} shadow-camera-far={700} shadow-camera-left={-300} shadow-camera-right={300} shadow-camera-top={300} shadow-camera-bottom={-300} shadow-bias={-0.0004} />
-          {/* Warm secondary fill from upper-right — lifts shadow floor without flattening */}
-          <directionalLight position={[180, 200, 60]} intensity={0.55} color="#2a90cc" />
-          {/* Soft back fill to prevent crushed blacks at terrain base */}
-          <directionalLight position={[0, 60, 240]} intensity={0.30} color="#1870a8" />
-          {/* Deep side fill — subtle sculpting on far-side slopes */}
-          <directionalLight position={[-120, 40, -100]} intensity={0.18} color="#1060880" />
-          <hemisphereLight args={["#2a9ad8", "#050f1c", 0.42]} />
+          {/* Cinematic rig — Position page: boosted ambient + fills to lift shadow floor */}
+          <ambientLight intensity={1.10} color="#1a4a6a" />
+          <directionalLight position={[120, 200, 120]} intensity={1.4} color="#5ad0ff" castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-camera-near={0.5} shadow-camera-far={600} shadow-camera-left={-250} shadow-camera-right={250} shadow-camera-top={250} shadow-camera-bottom={-250} shadow-bias={-0.0004} />
+          <directionalLight position={[-100, 160, -40]} intensity={0.70} color="#3aafee" />
+          <directionalLight position={[0, 80, 200]} intensity={0.48} color="#2090cc" />
+          <directionalLight position={[-160, 30, -120]} intensity={0.32} color="#1570a0" />
+          <hemisphereLight args={["#3aafee", "#081828", 0.65]} />
+          <fogExp2 attach="fog" args={[0x081828, 0.00045]} />
         </>
       ) : (
         <>
@@ -222,28 +217,6 @@ export default function TerrainStage({
               revealedKpis={revealedKpis ?? new Set()}
               visible={showKpiMarkers}
             />
-            {showDependencyLines && focusedKpi && zoneKpis && (
-              <DependencyLines
-                terrainRef={progressiveRef}
-                focusedKpi={focusedKpi}
-                kpis={zoneKpis}
-              />
-            )}
-            {strategicPathSlices && strategicPathSlices.length >= 2 && (
-              <StrategicPath
-                terrainRef={progressiveRef}
-                slices={strategicPathSlices}
-                visible
-              />
-            )}
-            {deltaBaselineKpis && zoneKpis && (
-              <TerrainDeltaOverlay
-                revealedKpis={revealedKpis}
-                baselineKpis={deltaBaselineKpis}
-                scenarioKpis={zoneKpis}
-                visible
-              />
-            )}
           </>
         ) : (
           <>

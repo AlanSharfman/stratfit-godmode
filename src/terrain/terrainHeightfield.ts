@@ -476,5 +476,42 @@ export function buildStabilizedHeightfield(
     }
   }
 
+  // Phase 5: Valley corridor smooth — suppresses the broadWave cos(nz·π·1.8) ripple bands
+  // that appear as stacked contour lines in the Liquidity→Revenue corridor (nx 0.20–0.50).
+  // Slope-weighted Laplacian: flat valley floor gets maximum smoothing; steep mountain
+  // faces get near-zero so peak silhouettes are completely preserved.
+  {
+    const tmp5 = new Float32Array(vpr * vpr)
+    const cellW = 420 / SEGMENTS
+    const cellD = 270 / SEGMENTS
+    const hApprox = 110
+    const PASSES = 6
+    for (let pass = 0; pass < PASSES; pass++) {
+      tmp5.set(hf)
+      for (let row = 1; row < vpr - 1; row++) {
+        for (let col = 1; col < vpr - 1; col++) {
+          const nx = col / SEGMENTS
+          const corridorBlend =
+            smoothstep(0.20, 0.30, nx) * smoothstep(0.52, 0.42, nx)
+          if (corridorBlend <= 0.001) continue
+
+          const i = row * vpr + col
+          const hL  = tmp5[Math.max(col - 1, 0)       + row * vpr]
+          const hR  = tmp5[Math.min(col + 1, vpr - 1) + row * vpr]
+          const hUp = tmp5[col + Math.max(row - 1, 0)       * vpr]
+          const hDw = tmp5[col + Math.min(row + 1, vpr - 1) * vpr]
+          const gx5 = ((hR  - hL)  / (2 * cellW)) * hApprox
+          const gz5 = ((hDw - hUp) / (2 * cellD)) * hApprox
+          const slope5 = 1 - 1 / Math.sqrt(1 + gx5 * gx5 + gz5 * gz5)
+          // Flat → full smoothing; steep face → zero (silhouette safe)
+          const flatness = 1 - smoothstep(0.0, 0.42, slope5)
+          const avg4 = (tmp5[i - 1] + tmp5[i + 1] + tmp5[i - vpr] + tmp5[i + vpr]) * 0.25
+          hf[i] = tmp5[i] * (1 - 0.45 * corridorBlend * flatness) +
+                  avg4   * (      0.45 * corridorBlend * flatness)
+        }
+      }
+    }
+  }
+
   return hf
 }

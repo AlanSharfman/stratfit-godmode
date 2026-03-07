@@ -28,23 +28,22 @@ export interface CameraControlsConfig {
 }
 
 /**
- * GOD VIEW — Canonical wide-angle panoramic camera.
+ * GOD VIEW — Cinematic landscape camera.
  *
- * Locked as the default for Position + Compare.
- * Shows full terrain, all KPI markers, and undulations.
+ * Low, close, wide-angle — viewer feels located inside the valley
+ * looking toward the peaks rather than hovering above a dashboard.
  *
- * Camera geometry (terrain = 560w × 360d):
- *   • Y/Z ratio ~0.36 gives a ~20° elevation — high enough for
- *     full terrain coverage, low enough for ridge silhouettes.
- *   • Slight X offset (+30) breaks symmetry for cinematic composition.
- *   • Target Y = +30 lifts gaze so peaks sit in upper third.
- *   • FOV 50° — wider field for better marker readability and
- *     scene breathing room without losing dramatic depth.
+ * Camera geometry (terrain = 420w × 270d, peaks ~110–240h):
+ *   • Y=55 / Z=165 places the camera just outside the front terrain
+ *     edge at near-ground level — immersive valley perspective.
+ *   • Target (0, 10, 0) = looking slightly downward ~15° so the
+ *     valley floor is visible in the lower frame, peaks dominate upper.
+ *   • FOV 62° — wider than before to capture foreground terrain.
  */
 export const GOD_VIEW_PRESET: CameraPreset = {
-  pos: [30, 270, 740],
-  target: [0, 30, 0],
-  fov: 50,
+  pos: [0, 55, 165],
+  target: [0, 10, 0],
+  fov: 62,
 }
 
 /** Controls config shared by Position + Compare (pairs with GOD_VIEW_PRESET). */
@@ -106,14 +105,13 @@ export const HERO_VIEW_CONTROLS: CameraControlsConfig = {
 
 /**
  * Progressive Terrain Build — cinematic landscape composition.
- * Slightly elevated and pulled back for fuller foreground coverage and more
- * sky/background mountain framing above the horizon line.
- * ~23° downward pitch, FOV 50° for tighter cinematic compression.
+ * Terrain occupies bottom ~60-65% of frame, background mountain visible above horizon.
+ * ~22° downward pitch, FOV 52° for natural perspective.
  */
 export const POSITION_PROGRESSIVE_PRESET: CameraPreset = {
-  pos: [0, 430, 1210],
-  target: [0, 8, 0],
-  fov: 50,
+  pos: [0, 350, 1050],
+  target: [0, 20, 0],
+  fov: 52,
 }
 
 /** All presets keyed by page context */
