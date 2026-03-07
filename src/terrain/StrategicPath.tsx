@@ -9,7 +9,7 @@
  * Do NOT render on PositionPage.
  */
 
-import React, { memo, useMemo, useRef } from "react"
+import React, { memo, useEffect, useMemo, useRef, useState } from "react"
 import * as THREE from "three"
 import { useFrame } from "@react-three/fiber"
 import { TERRAIN_CONSTANTS } from "@/terrain/terrainConstants"
@@ -54,6 +54,7 @@ const PATH_COLOR = new THREE.Color("#ffd166")
 const GLOW_COLOR = new THREE.Color("#ffd166")
 const NODE_COLOR = new THREE.Color("#ffd166")
 const PULSE_COLOR = new THREE.Color("#fffbe6")
+const REBUILD_INTERVAL_MS = 80
 
 /* ═══════════════════════════════════════════════════════════════════════
    Utility: compute a "strategic score" for a KPI snapshot, which
@@ -157,14 +158,27 @@ const StrategicPath: React.FC<StrategicPathProps> = memo(({
   const dashLineRef = useRef<THREE.Line>(null)
   const pulseRef = useRef<THREE.Mesh>(null)
   const progressRef = useRef(0)
+  const rebuildTimerRef = useRef(0)
   const pathColor = useMemo(() => color ? new THREE.Color(color) : PATH_COLOR, [color])
 
-  const pathData = useMemo(() => {
-    if (!visible || slices.length < 2) return null
+  const [pathData, setPathData] = useState<PathResult | null>(null)
+
+  useEffect(() => {
+    if (!visible || slices.length < 2) {
+      setPathData(null)
+      return
+    }
     const terrain = terrainRef.current
-    if (!terrain) return null
-    return buildPathGeometry(slices, terrain)
+    if (!terrain) return
+    setPathData(buildPathGeometry(slices, terrain))
   }, [terrainRef, slices, visible])
+
+  useEffect(() => {
+    return () => {
+      pathData?.tubeGeo.dispose()
+      pathData?.dashGeo.dispose()
+    }
+  }, [pathData])
 
   const dashLine = useMemo(() => {
     if (!pathData) return null
@@ -185,6 +199,16 @@ const StrategicPath: React.FC<StrategicPathProps> = memo(({
   }, [pathData])
 
   useFrame((_, delta) => {
+    rebuildTimerRef.current += delta * 1000
+    if (rebuildTimerRef.current >= REBUILD_INTERVAL_MS && visible && slices.length >= 2 && terrainRef.current) {
+      rebuildTimerRef.current = 0
+      setPathData((prev) => {
+        prev?.tubeGeo.dispose()
+        prev?.dashGeo.dispose()
+        return buildPathGeometry(slices, terrainRef.current!)
+      })
+    }
+
     if (!pathData || !pulseRef.current) return
 
     progressRef.current += delta * PULSE_SPEED

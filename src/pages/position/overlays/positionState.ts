@@ -130,16 +130,16 @@ function bulletsForState(b: BaselineV1, k: PositionKpis): string[] {
   const churn  = safeNum(b.operating.churnPct, 0)
   const nrr    = safeNum(b.financial.nrrPct, 0)
   const bullets: string[] = []
-  if (k.runwayMonths < 6)       bullets.push("Runway is compressed — liquidity actions required.")
-  else if (k.runwayMonths < 12) bullets.push("Runway is under 12 months — capital timing becomes critical.")
-  else                          bullets.push("Liquidity is currently supportive of execution horizon.")
-  if (growth >= 25 && nrr >= 100) bullets.push("Growth is strong with expansion support (NRR ≥ 100%).")
-  else if (growth >= 20)          bullets.push("Growth is positive — monitor retention and efficiency.")
-  else                            bullets.push("Growth is modest — focus on core engine strengthening.")
-  if (gm < 50)      bullets.push("Gross margin is constrained — pricing / COGS leverage likely.")
-  else              bullets.push("Gross margin is within workable band for scaling.")
-  if (churn >= 5)   bullets.push("Churn is elevated — retention risk signal present.")
-  else              bullets.push("Churn is within controlled range.")
+  if (k.runwayMonths < 6)       bullets.push("Runway is tight — buy time and focus fast.")
+  else if (k.runwayMonths < 12) bullets.push("Runway is under 12 months — make the next stretch count.")
+  else                          bullets.push("Runway gives you room to build, not just react.")
+  if (growth >= 25 && nrr >= 100) bullets.push("Growth is working and customers are helping it compound.")
+  else if (growth >= 20)          bullets.push("Growth is moving — now make sure retention keeps up.")
+  else                            bullets.push("Growth is still soft — the core engine needs strengthening.")
+  if (gm < 50)      bullets.push("Margins are thin — scaling now could get expensive.")
+  else              bullets.push("Margins are in a workable range for scaling.")
+  if (churn >= 5)   bullets.push("Churn is high enough to slow the whole story down.")
+  else              bullets.push("Churn looks controlled for now.")
   return bullets.slice(0, 3)
 }
 
@@ -153,10 +153,10 @@ function buildDiagnostics(b: BaselineV1, k: PositionKpis): DiagnosticCardVM[] {
   const liquidity: DiagnosticCardVM = {
     key: "liquidity", title: "Liquidity Health", tone: liqTone,
     text: k.runwayMonths >= 18
-      ? "Runway supports strategic execution without immediate capital pressure."
+      ? "You have enough runway to build with intent, not panic."
       : k.runwayMonths >= 12
-        ? "Runway is tightening — funding window discipline advised."
-        : "Runway is short — prioritise liquidity actions and de-risk timeline.",
+        ? "You still have time, but the window is tightening."
+        : "Runway is short — extend it and reduce surprise risk fast.",
     metricLine: `Runway: ${Number.isFinite(k.runwayMonths) ? k.runwayMonths.toFixed(1) : "—"} months`,
   }
 
@@ -164,10 +164,10 @@ function buildDiagnostics(b: BaselineV1, k: PositionKpis): DiagnosticCardVM[] {
   const growthQuality: DiagnosticCardVM = {
     key: "growthQuality", title: "Growth Quality", tone: growthTone,
     text: growth >= 25 && nrr >= 100
-      ? "Expansion-led growth signal present; scaling posture is credible."
+      ? "Growth has real pull behind it and looks scalable."
       : growth >= 15
-        ? "Growth present; ensure retention + margin remain supportive."
-        : "Growth is soft; strengthen acquisition and retention drivers.",
+        ? "Growth is there, but retention and margin need to back it up."
+        : "Growth is soft; fix the engine before pushing harder.",
     metricLine: `Growth: ${growth.toFixed(1)}% · NRR: ${nrr.toFixed(0)}%`,
   }
 
@@ -178,10 +178,10 @@ function buildDiagnostics(b: BaselineV1, k: PositionKpis): DiagnosticCardVM[] {
   const costPressure: DiagnosticCardVM = {
     key: "costPressure", title: "Cost Pressure", tone: costTone,
     text: payrollShare <= 0.45
-      ? "Cost base appears flexible relative to burn profile."
+      ? "The cost base still looks flexible."
       : payrollShare <= 0.65
-        ? "Cost structure is becoming less flexible — monitor hiring and fixed commitments."
-        : "Cost structure is rigid — high fixed load relative to burn.",
+        ? "Costs are getting stickier — be careful what you lock in."
+        : "The cost structure is heavy and harder to move than it should be.",
     metricLine: `Payroll/Burn: ${(payrollShare * 100).toFixed(0)}% · Burn: ${burn.toFixed(0)}/mo`,
   }
 
@@ -195,16 +195,16 @@ function buildDiagnostics(b: BaselineV1, k: PositionKpis): DiagnosticCardVM[] {
   const capitalEfficiency: DiagnosticCardVM = {
     key: "capitalEfficiency", title: "Capital Efficiency", tone: capTone,
     text: capTone === "strong"
-      ? "Unit economics support scaling; reinvestment posture credible."
+      ? "The economics support scaling with confidence."
       : capTone === "watch"
-        ? "Economics workable; improve payback and retention leverage."
-        : "Efficiency is strained; tighten acquisition spend and improve conversion/retention.",
+        ? "The economics are workable, but there is room to sharpen them."
+        : "Efficiency is strained; tighten spend and improve conversion and retention.",
     metricLine: `Payback: ${payback ? payback.toFixed(0) : "—"}m · LTV/CAC: ${ltvCac ? ltvCac.toFixed(1) : "—"}`,
   }
 
   if (gm < 45 && churn >= 5 && growthQuality.tone !== "strong") {
     growthQuality.tone = "risk"
-    growthQuality.text = "Growth signal is weak under margin + retention pressure."
+    growthQuality.text = "Growth looks weak once margin and retention pressure are factored in."
   }
 
   return [liquidity, growthQuality, costPressure, capitalEfficiency]

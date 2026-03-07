@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+
+if [ "$STRATFIT_SKIP_PREPUSH" = "1" ]; then
+  echo "Skipping pre-push tests (STRATFIT_SKIP_PREPUSH=1)."
+  exit 0
+fi
+
+echo "Running test suite..."
+npm test || exit 1

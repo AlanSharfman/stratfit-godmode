@@ -131,7 +131,7 @@ const getStrategicVerdict = (scenarioA: ScenarioData, scenarioB: ScenarioData): 
   if (arrDelta < -10 && survivalDelta > 15) {
     return {
       verdict: "DEFENSIVE RETREAT",
-      color: "#3b82f6",
+      color: "#F59E0B",
       analysis: `Trading ${Math.abs(arrDelta).toFixed(0)}% ARR for ${survivalDelta.toFixed(0)} points of survival.`,
       recommendation: "Acceptable for bridge periods. Set a 6-month review trigger."
     };

@@ -455,7 +455,7 @@ export const METRIC_CATEGORIES = {
   revenue: { label: 'Revenue', icon: '💰', color: '#10b981' },
   growth: { label: 'Growth', icon: '📈', color: '#22d3ee' },
   efficiency: { label: 'Efficiency', icon: '⚡', color: '#fbbf24' },
-  retention: { label: 'Retention', icon: '🔄', color: '#a855f7' },
+  retention: { label: 'Retention', icon: '🔄', color: '#F87171' },
   funding: { label: 'Funding & Cash', icon: '🏦', color: '#f97316' },
   valuation: { label: 'Valuation', icon: '💎', color: '#ec4899' },
   operations: { label: 'Operations', icon: '⚙️', color: '#64748b' },

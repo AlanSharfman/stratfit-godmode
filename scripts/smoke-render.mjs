@@ -6,7 +6,7 @@ const BASE_URL = process.env.SMOKE_URL || "http://localhost:5173";
 
 // Only routes that are expected to render a Three/WebGL <canvas>.
 // (Other routes may be DOM-only and should not participate in the single-canvas check.)
-const routes = ["/position", "/studio", "/scenarios"];
+const routes = ["/position", "/studio", "/what-if"];
 
 async function run() {
     const browser = await puppeteer.launch();

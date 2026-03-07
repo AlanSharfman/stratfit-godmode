@@ -135,6 +135,7 @@ export default function OptimalCompareView() {
           progressive
           revealedKpis={revealedKpis}
           zoneKpis={optimalKpis}
+          colorVariant="frost"
           focusedKpi={null}
           cameraPreset={POSITION_PROGRESSIVE_PRESET}
           autoRotateSpeed={0.2}

@@ -40,19 +40,30 @@ export interface ZoneDef {
   stationName: string
 }
 
+// Primary KPIs own one sixth each (0→1), evenly covering the full terrain width.
+// Secondary KPIs are nested inside their parent's sixth so the heightfield
+// generation and marker placement both align to the same grid.
 export const KPI_ZONE_MAP: Record<KpiKey, ZoneDef> = {
-  cash:             { xStart: 0.00,              xEnd: 0.08333333333333333, label: "Liquidity Zone",     stationName: "Liquidity Basin" },
-  runway:           { xStart: 0.08333333333333333, xEnd: 0.16666666666666666, label: "Runway Horizon",     stationName: "Horizon Shelf" },
-  growth:           { xStart: 0.16666666666666666, xEnd: 0.25,              label: "Growth Gradient",    stationName: "Ascent Ridge" },
-  arr:              { xStart: 0.25,              xEnd: 0.3333333333333333,  label: "Revenue Engine",     stationName: "Revenue Spine" },
-  revenue:          { xStart: 0.3333333333333333, xEnd: 0.41666666666666663, label: "Revenue Flow",       stationName: "Flow Saddle" },
-  burn:             { xStart: 0.41666666666666663, xEnd: 0.5,               label: "Burn Zone",          stationName: "Furnace Couloir" },
-  churn:            { xStart: 0.5,               xEnd: 0.5833333333333334,  label: "Retention Wall",     stationName: "Retention Buttress" },
-  grossMargin:      { xStart: 0.5833333333333334, xEnd: 0.6666666666666667, label: "Margin Ridge",       stationName: "Margin Arête" },
-  headcount:        { xStart: 0.6666666666666667, xEnd: 0.75,               label: "Talent Basin",       stationName: "Talent Terrace" },
-  nrr:              { xStart: 0.75,              xEnd: 0.8333333333333334,  label: "Expansion Ramp",     stationName: "Expansion Rampart" },
-  efficiency:       { xStart: 0.8333333333333334, xEnd: 0.9166666666666667, label: "Efficiency Channel", stationName: "Efficiency Channel" },
-  enterpriseValue:  { xStart: 0.9166666666666667, xEnd: 1.0,                label: "Value Summit",       stationName: "Summit Pinnacle" },
+  // ── Primary: sixth 1 ── cash / Liquidity (0.000 → 0.167)
+  cash:             { xStart: 0.000, xEnd: 0.167, label: "Liquidity Zone",     stationName: "Liquidity Basin" },
+  // ── Primary: sixth 2 ── runway (0.167 → 0.333)
+  runway:           { xStart: 0.167, xEnd: 0.333, label: "Runway Horizon",     stationName: "Horizon Shelf" },
+  // ── Primary: sixth 3 ── growth (0.333 → 0.500)
+  growth:           { xStart: 0.333, xEnd: 0.500, label: "Growth Gradient",    stationName: "Ascent Ridge" },
+  // ── Primary: sixth 4 ── revenue (0.500 → 0.667)
+  revenue:          { xStart: 0.500, xEnd: 0.667, label: "Revenue Flow",       stationName: "Flow Saddle" },
+  // ── Primary: sixth 5 ── burn (0.667 → 0.833)
+  burn:             { xStart: 0.667, xEnd: 0.833, label: "Burn Zone",          stationName: "Furnace Couloir" },
+  // ── Primary: sixth 6 ── enterpriseValue (0.833 → 1.000)
+  enterpriseValue:  { xStart: 0.833, xEnd: 1.000, label: "Value Summit",       stationName: "Summit Pinnacle" },
+
+  // ── Secondaries nested inside their parent's sixth ──
+  arr:              { xStart: 0.333, xEnd: 0.417, label: "Revenue Engine",     stationName: "Revenue Spine" },
+  churn:            { xStart: 0.667, xEnd: 0.722, label: "Retention Wall",     stationName: "Retention Buttress" },
+  grossMargin:      { xStart: 0.500, xEnd: 0.583, label: "Margin Ridge",       stationName: "Margin Arête" },
+  headcount:        { xStart: 0.722, xEnd: 0.778, label: "Talent Basin",       stationName: "Talent Terrace" },
+  nrr:              { xStart: 0.583, xEnd: 0.625, label: "Expansion Ramp",     stationName: "Expansion Rampart" },
+  efficiency:       { xStart: 0.778, xEnd: 0.833, label: "Efficiency Channel", stationName: "Efficiency Channel" },
 }
 
 /** Height multiplier per health level — drives progressive terrain elevation.
@@ -161,18 +172,18 @@ export function getHealthColor(level: HealthLevel): HealthColor {
  * Each KPI has a unique colour for instant visual recognition.
  */
 export const KPI_CATEGORY_COLORS: Record<KpiKey, { hex: string; r: number; g: number; b: number }> = {
-  cash:            { hex: "#34d399", r: 0.204, g: 0.827, b: 0.600 },   // emerald (liquidity as-is)
-  runway:          { hex: "#3b82f6", r: 0.231, g: 0.510, b: 0.965 },   // blue
-  growth:          { hex: "#f0f0f0", r: 0.941, g: 0.941, b: 0.941 },   // white
-  arr:             { hex: "#f59e0b", r: 0.961, g: 0.620, b: 0.043 },   // amber
-  revenue:         { hex: "#eab308", r: 0.918, g: 0.702, b: 0.031 },   // yellow
-  burn:            { hex: "#a855f7", r: 0.659, g: 0.333, b: 0.969 },   // purple
-  churn:           { hex: "#2dd4bf", r: 0.176, g: 0.831, b: 0.749 },   // turquoise
-  grossMargin:     { hex: "#22d3ee", r: 0.133, g: 0.827, b: 0.933 },   // cyan
-  headcount:       { hex: "#7dd3fc", r: 0.490, g: 0.827, b: 0.988 },   // light blue
-  nrr:             { hex: "#2dd4bf", r: 0.176, g: 0.831, b: 0.749 },   // reuse turquoise (retention/expansion)
-  efficiency:      { hex: "#f59e0b", r: 0.961, g: 0.620, b: 0.043 },   // reuse amber (efficiency)
-  enterpriseValue: { hex: "#1e7eaa", r: 0.118, g: 0.494, b: 0.667 },   // dark azure
+  cash:            { hex: "#34D399", r: 0.204, g: 0.827, b: 0.600 },   // emerald — Liquidity
+  runway:          { hex: "#F59E0B", r: 0.961, g: 0.620, b: 0.043 },   // amber — Runway (NOT blue)
+  growth:          { hex: "#F0F0F0", r: 0.941, g: 0.941, b: 0.941 },   // white — Growth
+  arr:             { hex: "#F59E0B", r: 0.961, g: 0.620, b: 0.043 },   // amber — ARR
+  revenue:         { hex: "#FBBF24", r: 0.984, g: 0.749, b: 0.141 },   // gold — Revenue
+  burn:            { hex: "#EF4444", r: 0.937, g: 0.267, b: 0.267 },   // red — Burn (NOT purple)
+  churn:           { hex: "#F87171", r: 0.973, g: 0.443, b: 0.443 },   // light red — Churn/Retention
+  grossMargin:     { hex: "#22D3EE", r: 0.133, g: 0.827, b: 0.933 },   // cyan — Gross Margin
+  headcount:       { hex: "#7DD3FC", r: 0.490, g: 0.827, b: 0.988 },   // light blue — Headcount/Talent
+  nrr:             { hex: "#2DD4BF", r: 0.176, g: 0.831, b: 0.749 },   // turquoise — NRR
+  efficiency:      { hex: "#F59E0B", r: 0.961, g: 0.620, b: 0.043 },   // amber — Efficiency
+  enterpriseValue: { hex: "#22D3EE", r: 0.133, g: 0.827, b: 0.933 },   // cyan — Value (NOT dark azure)
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -209,13 +220,14 @@ export const SECONDARY_KPI_KEYS: readonly KpiKey[] =
  * cx = normalised X centre (0–1), spread = Gaussian sigma.
  * Used by terrain heightfield generation and KPI marker placement.
  */
+// cx = centre of each primary's sixth: 0.083, 0.250, 0.417, 0.583, 0.750, 0.917
 export const PRIMARY_ANCHOR_POSITIONS = new Map<KpiKey, { cx: number; spread: number }>([
-  ["cash",            { cx: 0.08, spread: 0.11 }],
-  ["runway",          { cx: 0.25, spread: 0.11 }],
-  ["growth",          { cx: 0.42, spread: 0.11 }],
-  ["revenue",         { cx: 0.58, spread: 0.11 }],
-  ["burn",            { cx: 0.75, spread: 0.11 }],
-  ["enterpriseValue", { cx: 0.92, spread: 0.11 }],
+  ["cash",            { cx: 0.083, spread: 0.14 }],
+  ["runway",          { cx: 0.250, spread: 0.14 }],
+  ["growth",          { cx: 0.417, spread: 0.14 }],
+  ["revenue",         { cx: 0.583, spread: 0.14 }],
+  ["burn",            { cx: 0.750, spread: 0.14 }],
+  ["enterpriseValue", { cx: 0.917, spread: 0.14 }],
 ])
 
 export const KPI_STRESS_PROMPTS: Record<KpiKey, string> = {

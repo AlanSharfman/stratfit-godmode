@@ -699,23 +699,31 @@ export function ScenarioMountainImpl({
       >
         <Suspense fallback={null}>
         {/* Scene clear + fog (Baseline can opt into transparentScene for photo-backed stages) */}
-        {!transparentScene && <color attach="background" args={[isGodMode ? '#0a0f16' : '#122038']} />}
+        {!transparentScene && <color attach="background" args={[isGodMode ? '#0a0f16' : '#081828']} />}
         {mode === "strategy" ? (
           <fog attach="fog" args={[config.fogColor ?? "#0b1020", config.fogNear ?? 18, config.fogFar ?? 90]} />
         ) : !transparentScene ? (
-          <fog attach="fog" args={[isGodMode ? '#0a0f16' : '#122038', godFogNear, godFogFar]} />
+          <fog attach="fog" args={[isGodMode ? '#0a0f16' : '#081828', godFogNear, godFogFar]} />
         ) : null}
-        
-        <ambientLight intensity={mode === "strategy" ? 0.50 : 0.45} />
+
+        <ambientLight intensity={mode === "strategy" ? 0.95 : 1.0} color="#1a4a6a" />
         <directionalLight
           position={[6, 10, 6]}
-          intensity={mode === "strategy" ? 1.15 : 1.05}
+          intensity={mode === "strategy" ? 1.35 : 1.3}
+          color="#5ad0ff"
           castShadow
         />
         <directionalLight
           position={[-4, 6, -4]}
-          intensity={mode === "strategy" ? 0.90 : 0.35}
+          intensity={mode === "strategy" ? 0.72 : 0.62}
+          color="#3aafee"
         />
+        <directionalLight
+          position={[0, 4, 8]}
+          intensity={0.34}
+          color="#2090cc"
+        />
+        <hemisphereLight args={["#3aafee", "#081828", 0.52]} />
 
         {instrumentMode ? (
           <>

@@ -57,11 +57,11 @@ function generateInsights(
 ): Insights {
   if (!kpisA || !kpisB) {
     return {
-      executive: "Select two scenarios with completed simulations to generate delta insights.",
+      executive: "Select two completed scenarios to see which path looks stronger.",
       drivers: [{ id: "d-wait", text: "Awaiting scenario data…" }],
-      risk: "No risk differential available without completed simulations.",
-      pathToAchievement: [{ id: "p-wait", text: "Complete at least two scenario simulations to see actionable steps." }],
-      nextInvestigation: [{ id: "n-wait", text: "Complete at least two scenario simulations to enable comparison intelligence." }],
+      risk: "There is no useful risk read until both scenarios have finished simulating.",
+      pathToAchievement: [{ id: "p-wait", text: "Run at least two scenarios to see practical next steps." }],
+      nextInvestigation: [{ id: "n-wait", text: "Finish two scenarios to unlock comparison intelligence." }],
     }
   }
 
@@ -84,11 +84,11 @@ function generateInsights(
   // ── Executive summary ──
   let executive: string
   if (Math.abs(revPct) < 2 && Math.abs(riskDelta) < 5) {
-    executive = `${labelA} and ${labelB} produce broadly similar outcomes. Revenue variance is ${Math.abs(revPct).toFixed(1)}% with negligible risk differential (${Math.abs(riskDelta).toFixed(0)}pts). Decision should be driven by strategic positioning rather than financial delta.`
+    executive = `${labelA} and ${labelB} land in almost the same place. Revenue is only ${Math.abs(revPct).toFixed(1)}% apart and risk barely moves, so the real question is which path feels more aligned with how you want to build.`
   } else if (bIsBetter) {
-    executive = `${labelB} projects ${Math.abs(revPct).toFixed(1)}% higher revenue with ${riskDelta > 3 ? "elevated" : riskDelta < -3 ? "reduced" : "comparable"} risk. ${cashDelta > 0 ? "Cash position strengthens, supporting the growth thesis." : "Cash position weakens — growth comes at a capital cost."}`
+    executive = `${labelB} comes out ahead with ${Math.abs(revPct).toFixed(1)}% more revenue and ${riskDelta > 3 ? "more" : riskDelta < -3 ? "less" : "similar"} risk. ${cashDelta > 0 ? "It also leaves you with a stronger cash position." : "The trade-off is that it burns more of your cushion."}`
   } else {
-    executive = `${labelA} outperforms on revenue by ${Math.abs(revPct).toFixed(1)}%. ${labelB} ${riskDelta < -3 ? "offers lower structural risk, creating a risk-return trade-off" : "does not materially reduce risk, weakening the case for the revenue sacrifice"}.`
+    executive = `${labelA} wins on revenue by ${Math.abs(revPct).toFixed(1)}%. ${labelB} ${riskDelta < -3 ? "is safer, so this becomes a growth-versus-safety call" : "does not buy enough extra safety to justify giving up the upside"}.`
   }
 
   // ── Key drivers (with terrain targets) ──
@@ -96,50 +96,50 @@ function generateInsights(
   if (Math.abs(revDelta) > 0) {
     drivers.push({
       id: "d-rev",
-      text: `Revenue ${revDelta > 0 ? "increases" : "decreases"} by ${fmtCurrency(Math.abs(revDelta))} (${Math.abs(revPct).toFixed(1)}%) — ${Math.abs(revPct) > 20 ? "material shift in top-line trajectory" : "incremental variance"}.`,
+      text: `Revenue ${revDelta > 0 ? "moves up" : "drops"} by ${fmtCurrency(Math.abs(revDelta))} (${Math.abs(revPct).toFixed(1)}%) — ${Math.abs(revPct) > 20 ? "a real change in the company story" : "a smaller but still noticeable shift"}.`,
       target: CANONICAL_TARGETS.revenueGrowth,
     })
   }
   if (Math.abs(burnDelta) > 0) {
     drivers.push({
       id: "d-burn",
-      text: `Burn rate ${burnDelta > 0 ? "increases" : "decreases"} by ${fmtCurrency(Math.abs(burnDelta))}/mo${burnDelta > 0 ? ", compressing operational flexibility" : ", improving capital efficiency"}.`,
+      text: `Burn ${burnDelta > 0 ? "goes up" : "comes down"} by ${fmtCurrency(Math.abs(burnDelta))}/mo${burnDelta > 0 ? ", which gives you less room for error" : ", which buys you more breathing room"}.`,
       target: CANONICAL_TARGETS.burnEfficiency,
     })
   }
   if (Math.abs(marginDelta) > 1) {
     drivers.push({
       id: "d-margin",
-      text: `Gross margin ${marginDelta > 0 ? "improves" : "declines"} by ${Math.abs(marginDelta).toFixed(1)}pp — ${Math.abs(marginDelta) > 5 ? "structural unit-economics shift" : "moderate movement"}.`,
+      text: `Gross margin ${marginDelta > 0 ? "improves" : "falls"} by ${Math.abs(marginDelta).toFixed(1)}pp — ${Math.abs(marginDelta) > 5 ? "enough to change how scalable the model feels" : "a moderate move, but worth watching"}.`,
       target: CANONICAL_TARGETS.revenueGrowth,
     })
   }
   if (Math.abs(growthDelta) > 0.01) {
     drivers.push({
       id: "d-growth",
-      text: `Growth rate delta of ${(growthDelta * 100).toFixed(1)}pp — ${Math.abs(growthDelta) > 0.05 ? "step-change in trajectory" : "incremental adjustment"}.`,
+      text: `Growth changes by ${(growthDelta * 100).toFixed(1)}pp — ${Math.abs(growthDelta) > 0.05 ? "this meaningfully changes the pace of the climb" : "it's a smaller adjustment, but still directionally important"}.`,
       target: CANONICAL_TARGETS.revenueGrowth,
     })
   }
   if (Math.abs(churnDelta) > 0.005) {
     drivers.push({
       id: "d-churn",
-      text: `Churn ${churnDelta > 0 ? "increases" : "decreases"} by ${Math.abs(churnDelta * 100).toFixed(1)}pp — ${Math.abs(churnDelta) > 0.02 ? "retention signal requires attention" : "watchable but manageable"}.`,
+      text: `Churn ${churnDelta > 0 ? "gets worse" : "improves"} by ${Math.abs(churnDelta * 100).toFixed(1)}pp — ${Math.abs(churnDelta) > 0.02 ? "retention becomes a real founder issue here" : "nothing fatal, but worth keeping an eye on"}.`,
       target: CANONICAL_TARGETS.demandVolatility,
     })
   }
-  if (drivers.length === 0) drivers.push({ id: "d-none", text: "No material structural drivers identified between scenarios." })
+  if (drivers.length === 0) drivers.push({ id: "d-none", text: "Neither scenario changes the shape enough to create a clear winner." })
 
   // ── Risk commentary ──
   let risk: string
   let riskTarget: HighlightTarget | undefined
   if (Math.abs(riskDelta) < 3) {
-    risk = `Risk profiles are broadly equivalent (${riskA.toFixed(0)} vs ${riskB.toFixed(0)}). Neither scenario materially changes the company's structural risk exposure. Probability of capital exhaustion remains within the same confidence band.`
+    risk = `Risk is basically the same in both paths (${riskA.toFixed(0)} vs ${riskB.toFixed(0)}). Neither option really changes how exposed the company feels.`
   } else if (riskDelta > 0) {
-    risk = `${labelB} increases structural risk by ${riskDelta.toFixed(0)}pts (${riskA.toFixed(0)}→${riskB.toFixed(0)}). ${riskDelta > 15 ? "This is a significant escalation — probability of runway exhaustion increases meaningfully. Capital planning should be revisited." : "Elevated but manageable if offset by growth returns. Monitor monthly burn-to-revenue ratio."}`
+    risk = `${labelB} raises risk by ${riskDelta.toFixed(0)}pts (${riskA.toFixed(0)}→${riskB.toFixed(0)}). ${riskDelta > 15 ? "That is a meaningful jump, so you would want a stronger buffer and a clearer plan before committing." : "It's a manageable increase if the upside is worth it, but you should watch burn closely."}`
     riskTarget = CANONICAL_TARGETS.fundingRisk
   } else {
-    risk = `${labelB} reduces structural risk by ${Math.abs(riskDelta).toFixed(0)}pts (${riskA.toFixed(0)}→${riskB.toFixed(0)}). ${Math.abs(riskDelta) > 15 ? "Material de-risking — this meaningfully widens the survival corridor." : "Directionally positive. Survival probability improves modestly."}`
+    risk = `${labelB} lowers risk by ${Math.abs(riskDelta).toFixed(0)}pts (${riskA.toFixed(0)}→${riskB.toFixed(0)}). ${Math.abs(riskDelta) > 15 ? "That is real de-risking and gives the company more room to operate." : "It is a modest improvement, but still a healthier position."}`
     riskTarget = CANONICAL_TARGETS.runwayHorizon
   }
 
@@ -152,7 +152,7 @@ function generateInsights(
     const revTarget = Math.max(kpisA.revenue, kpisB.revenue)
     pathToAchievement.push({
       id: "p-rev",
-      text: `Reach ${fmtCurrency(revTarget)}/mo revenue — ${Math.abs(revPct) > 10 ? "requires accelerating pipeline conversion and expanding deal size by " + Math.abs(revPct).toFixed(0) + "%" : "achievable through incremental pipeline growth and pricing optimisation"}.`,
+      text: `Get to ${fmtCurrency(revTarget)}/mo revenue — ${Math.abs(revPct) > 10 ? "that likely means improving conversion and pushing deal size harder" : "you can likely get there through steadier pipeline growth and better pricing"}.`,
       target: CANONICAL_TARGETS.revenueGrowth,
     })
   }
@@ -162,7 +162,7 @@ function generateInsights(
     if (targetBurn > 0) {
       pathToAchievement.push({
         id: "p-burn",
-        text: `Reduce monthly burn to ${fmtCurrency(targetBurn)} — prioritise highest-ROI spend, defer non-critical hires, and renegotiate vendor contracts.`,
+        text: `Bring burn down to ${fmtCurrency(targetBurn)} — protect the highest-leverage spend, slow non-critical hiring, and cut anything that is not moving the company forward.`,
         target: CANONICAL_TARGETS.burnEfficiency,
       })
     }
@@ -172,7 +172,7 @@ function generateInsights(
     const targetMargin = Math.max(kpisA.grossMargin ?? 0, kpisB.grossMargin ?? 0)
     pathToAchievement.push({
       id: "p-margin",
-      text: `Improve gross margin to ${(targetMargin * 100).toFixed(0)}% — optimise COGS through automation, renegotiate supplier terms, and improve pricing discipline.`,
+      text: `Push gross margin toward ${(targetMargin * 100).toFixed(0)}% — improve pricing, reduce delivery cost, and make the model easier to scale.`,
     })
   }
 

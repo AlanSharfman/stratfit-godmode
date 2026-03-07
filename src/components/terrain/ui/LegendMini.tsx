@@ -12,7 +12,7 @@ import React from "react"
 const ITEMS: { color: string; label: string }[] = [
   { color: "#00E0FF", label: "P50 Path" },
   { color: "#22d3ee", label: "Signals" },
-  { color: "#3b82f6", label: "Elevation" },
+  { color: "#22D3EE", label: "Elevation" },
   { color: "#67e8f9", label: "Timeline" },
 ]
 

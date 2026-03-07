@@ -79,25 +79,25 @@ diffuseColor.rgb = mix(diffuseColor.rgb, _peak, _snowMask * 0.42);
 
 float _valleyAO = (1.0 - _hNorm) * (1.0 - _slopeF);
 float _creaseAO = _slopeF * (1.0 - _hNorm);
-float _ao = max(_valleyAO * 0.20, _creaseAO * 0.10);
-diffuseColor.rgb *= mix(1.0, 0.85, _ao);
+float _ao = max(_valleyAO * 0.28, _creaseAO * 0.18);
+diffuseColor.rgb *= mix(1.0, 0.80, _ao);
 
 float _crevasse = _slopeF * (1.0 - _hNorm) * smoothstep(0.25, 0.55, vSlope);
 diffuseColor.rgb *= mix(1.0, 0.90, _crevasse);
 
 vec3 _wNorm = normalize(vWorldNormal);
-vec3 _keyDir = normalize(vec3(120.0, 200.0, 120.0));
+vec3 _keyDir = normalize(vec3(-220.0, 300.0, 80.0));
 float _nDotL = dot(_wNorm, _keyDir);
 float _shadowFace = smoothstep(-0.05, 0.35, -_nDotL);
-diffuseColor.rgb *= mix(1.0, 0.85, _shadowFace * 0.40);
+diffuseColor.rgb *= mix(1.0, 0.78, _shadowFace * 0.60);
 
 vec3 _viewDir = normalize(cameraPosition - vWorldPos);
 vec3 _halfVec = normalize(_viewDir + _keyDir);
 float _nDotH = max(dot(_wNorm, _halfVec), 0.0);
-float _spec = pow(_nDotH, 160.0);
+float _spec = pow(_nDotH, 120.0);
 float _litFace = smoothstep(0.0, 0.30, _nDotL);
 float _ridgeGate = smoothstep(0.30, 0.65, _hNorm);
-float _shimmer = _spec * _litFace * _ridgeGate * 0.55;
+float _shimmer = _spec * _litFace * _ridgeGate * 0.80;
 diffuseColor.rgb += vec3(0.040, 0.125, 0.210) * _shimmer;
 
 float _basinMask = smoothstep(0.12, 0.0, _hNorm);
@@ -131,13 +131,13 @@ const FRAGMENT_VARYINGS = VERTEX_VARYINGS
 
 export function createTerrainSolidMaterial() {
   const mat = new THREE.MeshStandardMaterial({
-    color: 0x2080b0,
-    emissive: new THREE.Color(0x145878),
-    emissiveIntensity: 0.35,
+    color: 0x1a6090,
+    emissive: new THREE.Color(0x0d3850),
+    emissiveIntensity: 0.22,
     transparent: false,
     opacity: 1.0,
-    roughness: 0.68,
-    metalness: 0.05,
+    roughness: 0.72,
+    metalness: 0.04,
     flatShading: false,
     depthWrite: true,
     polygonOffset: true,
@@ -210,11 +210,11 @@ export function createTerrainSolidMaterialVariant(variant: TerrainColorVariant) 
 export function createTerrainWireMaterial() {
   return new THREE.MeshStandardMaterial({
     color: 0x1a9ec8,
-    emissive: 0x0a5a78,
-    emissiveIntensity: 0.55,
+    emissive: 0x063a52,
+    emissiveIntensity: 0.35,
     wireframe: true,
     transparent: true,
-    opacity: 0.48,
+    opacity: 0.28,
     roughness: 0.60,
     metalness: 0.10,
     depthWrite: false,

@@ -62,9 +62,9 @@ export interface CompareTerrainAreaProps {
   briefingPlan?: BriefingPlan | null
 }
 
-/* ── Ghost tint palette (no orange per spec) ── */
-const GHOST_B = { tint: 0x808890, emissive: 0x606870 } // white/silver
-const GHOST_C = { tint: 0x1a2050, emissive: 0x161840 } // indigo
+/* ── Ghost tint palette: A stays default, B/C go brighter/cooler ── */
+const GHOST_B = { tint: 0xdfe8f4, emissive: 0xa8c4df } // white / silver-blue
+const GHOST_C = { tint: 0xb8e6ff, emissive: 0x6fc7f5 } // lighter blue
 
 const AZIMUTH_LIMIT = Math.PI / 4
 const POLAR_CENTER = 1.107
@@ -117,7 +117,7 @@ const CompareTerrainArea: React.FC<CompareTerrainAreaProps> = memo(
             dotColor="rgba(220,230,245,0.8)"
             terrainMetrics={metricsB}
             events={eventsB}
-            colorVariant="white"
+            colorVariant={selectedBId ? "white" : "default"}
             selectedId={selectedBId}
             scenarioOptions={scenarioOptions}
             onSelectScenario={onSelectB}
@@ -128,7 +128,7 @@ const CompareTerrainArea: React.FC<CompareTerrainAreaProps> = memo(
               dotColor="rgba(168,85,247,0.7)"
               terrainMetrics={metricsC}
               events={eventsC}
-              colorVariant="frost"
+              colorVariant={selectedCId ? "frost" : "default"}
               selectedId={selectedCId}
               scenarioOptions={scenarioOptions}
               onSelectScenario={onSelectC}

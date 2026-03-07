@@ -7,10 +7,12 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b --pretty false",
+    "typecheck:staged": "node scripts/typecheck-staged.mjs",
     "lint": "eslint .",
     "test": "vitest run",
     "preview": "vite preview",
     "smoke": "node scripts/smoke.mjs",
+    "smoke:ci": "node scripts/smoke-ci.mjs",
     "smoke:render": "node scripts/smoke-render.mjs",
     "smoke:e2e": "node scripts/smoke-e2e.mjs",
     "prepare": "husky"

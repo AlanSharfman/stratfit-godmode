@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate, Link, NavLink } from "react-router-dom"
 import { useShallow } from "zustand/react/shallow"
 
@@ -33,17 +33,28 @@ import { KPI_KEYS as ALL_KPI_KEYS, getHealthLevel, KPI_ZONE_MAP } from "@/domain
 import { timeSimulation, buildKpiSnapshot, findFirstCliff, deriveSurvivalProbability } from "@/engine/timeSimulation"
 import ProvenanceBadge from "@/components/system/ProvenanceBadge"
 import { getExecutiveSummary } from "@/domain/intelligence/kpiCommentary"
-import TerrainZoneLegend from "@/components/terrain/TerrainZoneLegend"
 import TerrainZoneLabels from "@/components/terrain/TerrainZoneLabels"
 import BenchmarkPanel from "@/components/network/BenchmarkPanel"
 import ProbabilitySummaryCard from "@/components/probability/ProbabilitySummaryCard"
 import SimulationDisclaimerBar from "@/components/legal/SimulationDisclaimerBar"
+import PositionIntelligenceConsole, { type PositionProbabilityOverview } from "@/components/position/PositionIntelligenceConsole"
 import { useSimulationEngineStore } from "@/state/simulationEngineStore"
 import { useTerrainLensStore } from "@/state/terrainLensStore"
 import TerrainLensLaser from "@/components/terrain/TerrainLensLaser"
 import TerrainInsightCard from "@/components/terrain/TerrainInsightCard"
 import TerrainLensHint from "@/components/terrain/TerrainLensHint"
 import styles from "./PositionOverlays.module.css"
+
+const POSITION_AZIMUTH_LIMIT = Math.PI / 9
+const POSITION_POLAR_RANGE = Math.PI / 72
+const POSITION_POLAR_CENTER = Math.acos(
+  (POSITION_PROGRESSIVE_PRESET.pos[1] - POSITION_PROGRESSIVE_PRESET.target[1]) /
+  Math.hypot(
+    POSITION_PROGRESSIVE_PRESET.pos[0] - POSITION_PROGRESSIVE_PRESET.target[0],
+    POSITION_PROGRESSIVE_PRESET.pos[1] - POSITION_PROGRESSIVE_PRESET.target[1],
+    POSITION_PROGRESSIVE_PRESET.pos[2] - POSITION_PROGRESSIVE_PRESET.target[2],
+  ),
+)
 
 export default function PositionPage() {
   const navigate = useNavigate()
@@ -56,11 +67,48 @@ export default function PositionPage() {
   const [showKpiMarkers, setShowKpiMarkers] = useState(true)
   const [audioEnabled, setAudioEnabled] = useState(false)
 
-  // ── Terrain Lens store (single source of truth for terrain interaction) ──
+  // ── Terrain Lens store (click-toggle for insight card only) ──
   const { activeLens: focusedKpi, toggleLens } = useTerrainLensStore()
+
+  // ── Hover state — laser is ONLY driven by hover, never by click-toggle ──
+  const [hoveredKpi, setHoveredKpi] = useState<KpiKey | null>(null)
   const [markerScreenPos, setMarkerScreenPos] = useState<{ x: number; y: number } | null>(null)
 
+  // Cache last known screen position per KPI so re-hovering is instant
+  const markerPosCache = useRef<Map<KpiKey, { x: number; y: number }>>(new Map())
+
+  // Laser only shows while cursor is actively over a KPI — no fallback to click-toggle
+  const activeLaserKpi = hoveredKpi
+
   const prevFocusedRef = useRef<KpiKey | null>(null)
+
+  // When the hovered KPI changes: immediately use cached position (no frame delay),
+  // or clear the position when nothing is hovered.
+  useEffect(() => {
+    if (hoveredKpi) {
+      const cached = markerPosCache.current.get(hoveredKpi)
+      if (cached) setMarkerScreenPos(cached)
+      // If not cached yet, markerScreenPos stays as-is until the 3D beacon projects
+    } else {
+      setMarkerScreenPos(null)
+    }
+  }, [hoveredKpi])
+
+  const handleFocusedMarkerScreen = useCallback((pos: { x: number; y: number } | null) => {
+    if (pos) {
+      // Cache per-KPI so next hover on same KPI is instant
+      if (hoveredKpi) markerPosCache.current.set(hoveredKpi, pos)
+      setMarkerScreenPos(pos)
+    } else {
+      // Only clear if nothing is hovered — don't clear while switching between KPIs
+      if (!hoveredKpi) setMarkerScreenPos(null)
+    }
+  }, [hoveredKpi])
+
+  // Safety net: if cursor leaves the viewport entirely, clear hover state
+  const handleViewportMouseLeave = useCallback(() => {
+    setHoveredKpi(null)
+  }, [])
 
   // ── ResizeObserver: update Three.js renderer when right rail expands/collapses ──
   useEffect(() => {
@@ -231,6 +279,12 @@ export default function PositionPage() {
   }, [audioEnabled, stopKpi])
   useEffect(() => () => { clearTimeout(speakTimerRef.current); stopKpi() }, [stopKpi])
 
+  useEffect(() => {
+    if (!focusedKpi) {
+      setMarkerScreenPos(null)
+    }
+  }, [focusedKpi])
+
   // Auto-rotation: faster during build, near-still after all revealed
   const autoRotateSpeed = useMemo(
     () => revealedKpis.size >= 12 ? 0.05 : (revealedKpis.size > 0 ? 0.4 : 0),
@@ -278,6 +332,87 @@ export default function PositionPage() {
 
     return { healthScore, healthCounts, cliff, criticalZones, survivalProbability, timeline, dataCompletenessPct, terrainVariant }
   }, [liveKpis])
+
+  const positionProbability = useMemo<PositionProbabilityOverview | null>(() => {
+    const simulationKpis = activeScenario?.simulationResults?.kpis
+
+    const snapshot = simulationKpis
+      ? buildKpiSnapshot({
+          cashBalance: simulationKpis.cash,
+          runwayMonths: simulationKpis.runway ?? 0,
+          growthRatePct: simulationKpis.growthRate,
+          arr: simulationKpis.revenue * 12,
+          revenueMonthly: simulationKpis.revenue,
+          burnMonthly: simulationKpis.monthlyBurn,
+          churnPct: simulationKpis.churnRate,
+          grossMarginPct: simulationKpis.grossMargin,
+          headcount: simulationKpis.headcount,
+          enterpriseValue: simulationKpis.revenue * 12 * 8,
+        })
+      : liveKpis
+        ? buildKpiSnapshot({
+            cashBalance: liveKpis.cashOnHand,
+            runwayMonths: liveKpis.runwayMonths,
+            growthRatePct: liveKpis.growthRatePct,
+            arr: liveKpis.arr,
+            revenueMonthly: liveKpis.revenueMonthly,
+            burnMonthly: liveKpis.burnMonthly,
+            churnPct: liveKpis.churnPct,
+            grossMarginPct: liveKpis.grossMarginPct,
+            headcount: liveKpis.headcount,
+            enterpriseValue: liveKpis.valuationEstimate,
+          })
+        : null
+
+    if (!snapshot) return null
+
+    const timeline = timeSimulation(snapshot, { direct: {}, monthlyGrowthRates: { cash: -0.02, burn: 0.01, churn: 0.005 } }, 12)
+    const cliff = findFirstCliff(timeline)
+    const survivalProbability = deriveSurvivalProbability(timeline)
+
+    const completenessFields = simulationKpis
+      ? [
+          simulationKpis.cash,
+          simulationKpis.runway,
+          simulationKpis.revenue,
+          simulationKpis.monthlyBurn,
+          simulationKpis.grossMargin,
+          simulationKpis.growthRate,
+          simulationKpis.churnRate,
+          simulationKpis.headcount,
+          simulationKpis.arpa,
+        ]
+      : liveKpis
+        ? [
+            liveKpis.cashOnHand,
+            liveKpis.runwayMonths,
+            liveKpis.arr,
+            liveKpis.revenueMonthly,
+            liveKpis.burnMonthly,
+            liveKpis.grossMarginPct,
+            liveKpis.growthRatePct,
+            liveKpis.churnPct,
+            liveKpis.headcount,
+            liveKpis.valuationEstimate,
+          ]
+        : []
+
+    const dataCompletenessPct = completenessFields.length > 0
+      ? Math.round((completenessFields.filter((value) => value != null && value !== 0).length / completenessFields.length) * 100)
+      : 0
+
+    return {
+      survivalProbability,
+      cliff,
+      runwayRiskLabel: cliff ? `Month ${cliff.month}` : "Contained",
+      runwayRiskProbability: cliff ? Math.max(10, 100 - survivalProbability) : 15,
+      modelConfidence: dataCompletenessPct >= 85 ? "High" : dataCompletenessPct >= 60 ? "Medium" : "Low",
+      dataCompletenessPct,
+      subtitle: simulationKpis
+        ? "Aligned to the active scenario simulation currently shaping the Position terrain."
+        : "Aligned to the current baseline position because no active scenario results are available yet.",
+    }
+  }, [activeScenario?.simulationResults?.kpis, liveKpis])
 
   // Guard: no baseline → redirect handled by useEffect above, show loading in the meantime
   if (!baselineV1Raw) {
@@ -355,15 +490,21 @@ export default function PositionPage() {
           </nav>
 
           {/* Terrain canvas — fills available space */}
-          <div ref={viewportRef} className={styles.terrainViewport} aria-label="Position terrain" style={{ position: "relative" }}>
+          <div ref={viewportRef} className={styles.terrainViewport} aria-label="Position terrain" style={{ position: "relative" }} onMouseLeave={handleViewportMouseLeave}>
             <TerrainStage
               progressive
               transparentBackground
               cinematicLighting
               colorVariant={positionIntel?.terrainVariant ?? "default"}
               revealedKpis={revealedKpis}
-              focusedKpi={focusedKpi}
-              onFocusedMarkerScreen={setMarkerScreenPos}
+              focusedKpi={activeLaserKpi}
+              onFocusKpi={setHoveredKpi}
+              minAzimuthAngle={-POSITION_AZIMUTH_LIMIT}
+              maxAzimuthAngle={POSITION_AZIMUTH_LIMIT}
+              minPolarAngle={POSITION_POLAR_CENTER - POSITION_POLAR_RANGE}
+              maxPolarAngle={POSITION_POLAR_CENTER + POSITION_POLAR_RANGE}
+              rotateSpeed={0.55}
+              onFocusedMarkerScreen={handleFocusedMarkerScreen}
               zoneKpis={liveKpis}
               heatmapEnabled={false}
               cameraPreset={POSITION_PROGRESSIVE_PRESET}
@@ -390,11 +531,18 @@ export default function PositionPage() {
               granularity={granularity}
               driftMode="oscillate"
             />
-            <TerrainZoneLabels kpis={liveKpis} revealedKpis={revealedKpis} focusedKpi={focusedKpi} onClickKpi={(kpi) => { if (kpi) toggleLens(kpi) }} />
+            <TerrainZoneLabels kpis={liveKpis} revealedKpis={revealedKpis} focusedKpi={focusedKpi} hoveredKpi={hoveredKpi} onFocusKpi={setHoveredKpi} onClickKpi={(kpi) => {
+              if (kpi) {
+                toggleLens(kpi)
+                return
+              }
+              if (focusedKpi) {
+                toggleLens(focusedKpi)
+              }
+            }} />
             <TerrainLensHint />
-            <TerrainZoneLegend kpis={liveKpis} revealedKpis={revealedKpis} focusedKpi={focusedKpi} />
-            {focusedKpi && markerScreenPos && (
-              <TerrainLensLaser kpi={focusedKpi} markerPos={markerScreenPos} viewportRef={viewportRef} />
+            {activeLaserKpi && markerScreenPos && (
+              <TerrainLensLaser kpi={activeLaserKpi} markerPos={markerScreenPos} viewportRef={viewportRef} />
             )}
             {focusedKpi && markerScreenPos && liveKpis && (
               <TerrainInsightCard kpi={focusedKpi} kpis={liveKpis} markerPos={markerScreenPos} />
@@ -461,146 +609,14 @@ export default function PositionPage() {
             RIGHT RAIL — Actions Panel (placeholder)
             ══════════════════════════════════════════════════ */}
         <div className={styles.rightCol}>
-          {positionIntel && (
-            <div style={{ padding: "20px 16px", fontFamily: "'Inter', system-ui, sans-serif" }}>
-              {/* Health Pulse */}
-              <div style={{ textAlign: "center", marginBottom: 24 }}>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(34,211,238,0.45)", marginBottom: 8 }}>Health Pulse</div>
-                <div style={{
-                  fontSize: 44, fontWeight: 200, letterSpacing: "-0.02em",
-                  color: positionIntel.healthScore >= 70 ? "#34d399" : positionIntel.healthScore >= 40 ? "#fbbf24" : "#f87171",
-                }}>{positionIntel.healthScore}</div>
-                <div style={{ fontSize: 10, color: "rgba(200,220,240,0.35)", marginTop: 2 }}>/ 100</div>
-                <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 12 }}>
-                  <span style={{ fontSize: 10, color: "#34d399" }}>{positionIntel.healthCounts.strong} strong</span>
-                  <span style={{ fontSize: 10, color: "#fbbf24" }}>{positionIntel.healthCounts.watch} watch</span>
-                  <span style={{ fontSize: 10, color: "#f87171" }}>{positionIntel.healthCounts.critical} critical</span>
-                </div>
-              </div>
-
-              {/* Survival Probability */}
-              <div style={{ padding: "14px", background: "rgba(15,25,45,0.5)", border: "1px solid rgba(34,211,238,0.06)", borderRadius: 8, marginBottom: 16, textAlign: "center" }}>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(34,211,238,0.4)", marginBottom: 6 }}>12-Month Survival</div>
-                <div style={{
-                  fontSize: 32, fontWeight: 300,
-                  color: positionIntel.survivalProbability >= 70 ? "#34d399" : positionIntel.survivalProbability >= 40 ? "#fbbf24" : "#f87171",
-                }}>{positionIntel.survivalProbability}%</div>
-                <div style={{ fontSize: 10, color: "rgba(200,220,240,0.3)", marginTop: 4 }}>probability of sustained operation</div>
-              </div>
-
-              {/* Cliff Detector */}
-              <div style={{ padding: "14px", background: "rgba(15,25,45,0.5)", border: `1px solid ${positionIntel.cliff ? "rgba(248,113,113,0.15)" : "rgba(34,211,238,0.06)"}`, borderRadius: 8, marginBottom: 16 }}>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: positionIntel.cliff ? "#f87171" : "rgba(34,211,238,0.4)", marginBottom: 6 }}>Cliff Detector</div>
-                {positionIntel.cliff ? (
-                  <>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#f87171", marginBottom: 4 }}>
-                      Month {positionIntel.cliff.month}: {KPI_ZONE_MAP[positionIntel.cliff.kpi].label}
-                    </div>
-                    <div style={{ fontSize: 11, color: "rgba(200,220,240,0.4)", lineHeight: 1.5 }}>
-                      At current trajectory, {KPI_ZONE_MAP[positionIntel.cliff.kpi].label.toLowerCase()} hits critical threshold in {positionIntel.cliff.month} month{positionIntel.cliff.month !== 1 ? "s" : ""}.
-                    </div>
-                  </>
-                ) : (
-                  <div style={{ fontSize: 12, color: "#34d399" }}>No critical cliffs detected in 12-month projection</div>
-                )}
-              </div>
-
-              {/* Critical Zones */}
-              {positionIntel.criticalZones.length > 0 && (
-                <div style={{ padding: "14px", background: "rgba(15,25,45,0.5)", border: "1px solid rgba(248,113,113,0.1)", borderRadius: 8 }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#f87171", marginBottom: 8 }}>Zones Requiring Attention</div>
-                  {positionIntel.criticalZones.map((z) => (
-                    <div key={z} style={{ padding: "6px 0", fontSize: 12, color: "rgba(200,220,240,0.6)", borderBottom: "1px solid rgba(255,255,255,0.03)", display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#f87171", flexShrink: 0 }} />
-                      {z}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Network Intelligence - Benchmark */}
-              <div style={{ marginTop: 20, padding: "14px", background: "rgba(15,25,45,0.5)", border: "1px solid rgba(34,211,238,0.06)", borderRadius: 8 }}>
-                <BenchmarkPanel kpis={liveKpis!} compact />
-              </div>
-
-              {/* Probability Overview */}
-              <div style={{ marginTop: 20 }}>
-                <ProbabilitySummaryCard
-                  metrics={[
-                    { label: "Survival Probability", value: `${positionIntel.survivalProbability}%`, probability: positionIntel.survivalProbability },
-                    { label: "Runway Risk", value: positionIntel.cliff ? `Month ${positionIntel.cliff.month}` : "Low", probability: positionIntel.cliff ? Math.max(10, 100 - positionIntel.survivalProbability) : 15 },
-                    // TODO: EBITDA Positive Probability — requires Monte Carlo engine
-                    // TODO: Enterprise Value Target Probability — requires Monte Carlo engine
-                  ]}
-                  simulationCount={simRunCount > 0 ? simRunCount : undefined}
-                  modelConfidence={positionIntel.healthScore >= 60 ? "High" : positionIntel.healthScore >= 35 ? "Medium" : "Low"}
-                  dataCompleteness={`${positionIntel.dataCompletenessPct}%`}
-                />
-              </div>
-
-              <div style={{ marginTop: 12 }}>
-                <SimulationDisclaimerBar variant="compact" />
-              </div>
-
-              {/* What-If CTA */}
-              <div
-                style={{
-                  marginTop: 24,
-                  padding: "22px 20px",
-                  background: "rgba(8, 20, 38, 0.82)",
-                  border: "1px solid rgba(54, 226, 255, 0.28)",
-                  boxShadow: "0 0 24px rgba(0, 200, 255, 0.16)",
-                  backdropFilter: "blur(10px)",
-                  borderRadius: 16,
-                }}
-              >
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(34,211,238,0.45)", marginBottom: 10 }}>
-                  Strategic Simulation
-                </div>
-                <div style={{ fontSize: 18, fontWeight: 600, color: "#dff8ff", lineHeight: 1.3, marginBottom: 8 }}>
-                  Test a Strategic Move
-                </div>
-                <div style={{ fontSize: 14, lineHeight: 1.5, color: "rgba(220, 240, 255, 0.82)", marginBottom: 18 }}>
-                  Simulate a business decision using the What-If engine and see how the terrain responds before you commit.
-                </div>
-                <button
-                  onClick={() => navigate(ROUTES.WHAT_IF)}
-                  style={{
-                    width: "100%",
-                    padding: "12px 18px",
-                    background: "linear-gradient(90deg, #2ce3ff, #00bcd4)",
-                    color: "#06202b",
-                    fontWeight: 700,
-                    fontSize: 13,
-                    letterSpacing: "0.04em",
-                    border: "none",
-                    borderRadius: 10,
-                    cursor: "pointer",
-                    boxShadow: "0 0 18px rgba(0, 200, 255, 0.35)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 8,
-                    fontFamily: "'Inter', system-ui, sans-serif",
-                    transition: "transform 0.2s, box-shadow 0.2s",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "scale(1.03)"
-                    e.currentTarget.style.boxShadow = "0 0 28px rgba(0, 200, 255, 0.5)"
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "scale(1)"
-                    e.currentTarget.style.boxShadow = "0 0 18px rgba(0, 200, 255, 0.35)"
-                  }}
-                >
-                  Open What-If Simulator
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M5 12h14" />
-                    <path d="m12 5 7 7-7 7" />
-                  </svg>
-                </button>
-              </div>
-            </div>
+          {positionIntel && liveKpis && (
+            <PositionIntelligenceConsole
+              kpis={liveKpis}
+              intel={positionIntel}
+              probability={positionProbability ?? undefined}
+              simRunCount={simRunCount > 0 ? simRunCount : undefined}
+              onOpenWhatIf={() => navigate(ROUTES.WHAT_IF)}
+            />
           )}
         </div>
       </div>

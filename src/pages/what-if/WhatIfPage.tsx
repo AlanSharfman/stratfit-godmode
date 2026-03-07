@@ -9,7 +9,7 @@ import { POSITION_PROGRESSIVE_PRESET } from "@/scene/camera/terrainCameraPresets
 import { useSystemBaseline } from "@/system/SystemBaselineProvider"
 import { buildPositionViewModel, type PositionKpis } from "@/pages/position/overlays/positionState"
 import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
-import { KPI_KEYS, KPI_ZONE_MAP } from "@/domain/intelligence/kpiZoneMapping"
+import { KPI_KEYS, KPI_ZONE_MAP, getHealthLevel } from "@/domain/intelligence/kpiZoneMapping"
 import { KPI_GRAPH, propagateForce } from "@/engine/kpiDependencyGraph"
 import type { CascadeImpulse } from "@/terrain/ProgressiveTerrainSurface"
 import { SCENARIO_TEMPLATES, type ScenarioTemplate } from "@/engine/scenarioTemplates"
@@ -140,6 +140,25 @@ export default function WhatIfPage() {
       efficiencyRatio: baseKpis.efficiencyRatio,
     }
   }, [timeline, timelineMonth, baseKpis])
+
+  const terrainDisplayKpis = timelineKpis ?? projectedKpis ?? baseKpis
+
+  const terrainVariant = useMemo(() => {
+    if (!terrainDisplayKpis) return "default" as const
+
+    const healthCounts = { strong: 0, watch: 0, critical: 0 }
+    for (const key of KPI_KEYS) {
+      const health = getHealthLevel(key, terrainDisplayKpis)
+      if (health === "strong") healthCounts.strong++
+      else if (health === "critical") healthCounts.critical++
+      else healthCounts.watch++
+    }
+
+    const healthScore = Math.round(((healthCounts.strong * 10 + healthCounts.watch * 5) / (KPI_KEYS.length * 10)) * 100)
+    if (healthScore >= 68) return "white" as const
+    if (healthScore >= 42) return "frost" as const
+    return "default" as const
+  }, [terrainDisplayKpis])
 
   /* ═══ Scenario Injection ═══ */
 
@@ -429,7 +448,8 @@ export default function WhatIfPage() {
             progressive
             revealedKpis={revealedKpis}
             focusedKpi={null}
-            zoneKpis={timelineKpis ?? projectedKpis ?? baseKpis}
+            colorVariant={terrainVariant}
+            zoneKpis={terrainDisplayKpis}
             ghostKpis={stack.length > 0 ? baseKpis : null}
             cameraPreset={POSITION_PROGRESSIVE_PRESET}
             autoRotateSpeed={0.15}

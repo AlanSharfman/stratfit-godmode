@@ -205,7 +205,8 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
       const idx = clampedRow * (SEGMENTS + 1) + clampedCol
       const pos = geometry.attributes.position as THREE.BufferAttribute
       const h = pos.getZ(idx) ?? 0
-      return h * TERRAIN_WORLD_SCALE.y + TERRAIN_CONSTANTS.yOffset
+      // The mesh has rotation.x = -PI/2 so geometry Z maps to world Y via scale.z, not scale.y
+      return h * TERRAIN_WORLD_SCALE.z + TERRAIN_CONSTANTS.yOffset
     }, [geometry])
 
     useImperativeHandle(ref, () => ({

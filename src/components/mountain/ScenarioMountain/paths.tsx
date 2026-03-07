@@ -208,9 +208,9 @@ export function MilestoneOrbs({
 
   const typeColors: Record<string, string> = {
     revenue: "#10b981",
-    team: "#3b82f6",
+    team: "#F59E0B",
     product: "#f59e0b",
-    funding: "#a855f7",
+    funding: "#EF4444",
     risk: "#ef4444",
   };
 

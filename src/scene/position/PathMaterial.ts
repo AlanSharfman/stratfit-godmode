@@ -9,7 +9,7 @@ export const whitePathMaterial = new THREE.MeshStandardMaterial({
 });
 
 export const trajectoryMaterial = new THREE.LineBasicMaterial({
-  color: "#3b82f6",
+  color: "#22D3EE",
   transparent: true,
   opacity: 0.65,
 });

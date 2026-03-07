@@ -34,4 +34,8 @@ export const useDiagnosticsStore = create<State & Actions>((set, get) => ({
 export function diag(level: DiagLevel, topic: string, msg: string, data?: any) {
     // Always record even when overlay disabled (flight recorder)
     useDiagnosticsStore.getState().log(level, topic, msg, data);
+    if (import.meta.env.DEV) {
+        const fn = level === "error" ? console.error : level === "warn" ? console.warn : console.info;
+        fn(`[diag:${topic}] ${msg}`, data ?? "");
+    }
 }

@@ -9,8 +9,9 @@
  * Do NOT render on PositionPage.
  */
 
-import React, { memo, useMemo } from "react"
+import React, { memo, useEffect, useRef, useState } from "react"
 import * as THREE from "three"
+import { useFrame } from "@react-three/fiber"
 import { TERRAIN_CONSTANTS } from "@/terrain/terrainConstants"
 import type { PositionKpis } from "@/pages/position/overlays/positionState"
 import type { ProgressiveTerrainHandle } from "./ProgressiveTerrainSurface"
@@ -35,6 +36,7 @@ const HALF_WORLD_W = (TERRAIN_CONSTANTS.width * 3.0) / 2
 const PATH_Z_WORLD = 0
 
 const ENVELOPE_COLOR = new THREE.Color("#6CD4FF")
+const REBUILD_INTERVAL_MS = 100
 
 function strategicScore(kpis: PositionKpis): number {
   let total = 0
@@ -124,17 +126,49 @@ const ConfidenceEnvelope: React.FC<ConfidenceEnvelopeProps> = memo(({
   p75Slices,
   visible = true,
 }) => {
-  const ribbonGeo = useMemo(() => {
-    if (!visible || p25Slices.length < 2 || p75Slices.length < 2) return null
-    const terrain = terrainRef.current
-    if (!terrain) return null
+  const [ribbonGeo, setRibbonGeo] = useState<THREE.BufferGeometry | null>(null)
+  const rebuildTimerRef = useRef(0)
 
-    const lowerCurve = buildBandCurve(p25Slices, terrain)
-    const upperCurve = buildBandCurve(p75Slices, terrain)
-    if (!lowerCurve || !upperCurve) return null
-
-    return buildRibbonGeometry(lowerCurve, upperCurve)
+  useEffect(() => {
+    if (!visible || p25Slices.length < 2 || p75Slices.length < 2 || !terrainRef.current) {
+      setRibbonGeo(null)
+      return
+    }
+    const lowerCurve = buildBandCurve(p25Slices, terrainRef.current)
+    const upperCurve = buildBandCurve(p75Slices, terrainRef.current)
+    if (!lowerCurve || !upperCurve) {
+      setRibbonGeo(null)
+      return
+    }
+    setRibbonGeo(buildRibbonGeometry(lowerCurve, upperCurve))
   }, [terrainRef, p25Slices, p75Slices, visible])
+
+  useEffect(() => {
+    return () => {
+      ribbonGeo?.dispose()
+    }
+  }, [ribbonGeo])
+
+  useFrame((_, delta) => {
+    rebuildTimerRef.current += delta * 1000
+    if (
+      rebuildTimerRef.current < REBUILD_INTERVAL_MS ||
+      !visible ||
+      p25Slices.length < 2 ||
+      p75Slices.length < 2 ||
+      !terrainRef.current
+    ) return
+
+    rebuildTimerRef.current = 0
+    const lowerCurve = buildBandCurve(p25Slices, terrainRef.current)
+    const upperCurve = buildBandCurve(p75Slices, terrainRef.current)
+    if (!lowerCurve || !upperCurve) return
+
+    setRibbonGeo((prev) => {
+      prev?.dispose()
+      return buildRibbonGeometry(lowerCurve, upperCurve)
+    })
+  })
 
   if (!ribbonGeo || !visible) return null
 

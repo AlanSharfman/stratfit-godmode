@@ -70,7 +70,7 @@ export default function TerrainLensLaser({ kpi, markerPos, viewportRef }: Props)
       style={{
         position: "absolute", inset: 0, width: "100%", height: "100%",
         zIndex: 20, pointerEvents: "none",
-        animation: "sf-laser-fade-in 0.15s ease-out both",
+        animation: "sf-laser-fade-in 0.08s ease-out both",
       }}
     >
       <defs>

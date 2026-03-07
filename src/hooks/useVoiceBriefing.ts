@@ -24,16 +24,16 @@ export interface UseVoiceBriefingResult {
 
 function buildNarrationScript(a: CompareAnalysis): string {
   return [
-    "Strategic analysis complete.",
+    "Founder read complete.",
     "",
-    `The strongest scenario is ${a.recommended_scenario}.`,
+    `The best bet right now is ${a.recommended_scenario}.`,
     "",
     a.headline,
     "",
-    `Peak height: ${a.why_this_wins.peak_height}.`,
-    `Ridge strength: ${a.why_this_wins.ridge_strength}.`,
-    `Valley depth: ${a.why_this_wins.valley_depth}.`,
-    `Terrain stability: ${a.why_this_wins.terrain_stability}.`,
+    `Why it wins: ${a.why_this_wins.peak_height}.`,
+    `Momentum signal: ${a.why_this_wins.ridge_strength}.`,
+    `Risk underneath: ${a.why_this_wins.valley_depth}.`,
+    `How steady it feels: ${a.why_this_wins.terrain_stability}.`,
     "",
     a.strategic_insight,
   ].join("\n")

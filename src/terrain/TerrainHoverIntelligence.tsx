@@ -22,11 +22,11 @@ const TOOLTIP_Y_LIFT = 18
 
 const HOVER_COLORS: Record<KpiKey, string> = {
   cash:            "#34d399",
-  runway:          "#3b82f6",
+  runway:          "#F59E0B",
   growth:          "#ef4444",
   arr:             "#f59e0b",
   revenue:         "#22d3ee",
-  burn:            "#a855f7",
+  burn:            "#EF4444",
   churn:           "#2dd4bf",
   grossMargin:     "#22d3ee",
   headcount:       "#7dd3fc",
