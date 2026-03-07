@@ -238,10 +238,11 @@ export function baselineTerrainHeight(
   }
 
   // Ridged noise for realistic craggy ridgeline features
-  const ridgedDetail = ridgedNoise(nx * 5 * freqScale, nz * 5 * freqScale, seed + 7, 4) * 6.0 * (0.3 + t.roughness * 0.8)
+  // Quadratic curve: lower half is subtle, upper half is dramatically craggy
+  const ridgedDetail = ridgedNoise(nx * 5 * freqScale, nz * 5 * freqScale, seed + 7, 4) * 6.0 * (t.roughness * t.roughness * 3.2 + 0.08)
 
-  // FBM for general terrain texture
-  const roughAmp = 0.3 + t.roughness * 1.0
+  // FBM for general terrain texture — quadratic for same reason
+  const roughAmp = t.roughness * t.roughness * 2.8 + 0.12
   const detailNoise = fbmNoise(nx * 7 * freqScale, nz * 7 * freqScale, seed, 5) * 4.0 * roughAmp
   const microNoise = fbmNoise(nx * 16 * freqScale, nz * 16 * freqScale, seed + 37, 3) * 1.5 * (t.microDetail * 2.5)
 
@@ -464,13 +465,14 @@ export function buildStabilizedHeightfield(
   // Phase 3: stabilize the COMBINED heightfield (slope clamp + multi-scale smooth)
   stabilizeHeightfield(hf, vpr)
 
-  // Phase 4: multi-scale surface noise — natural roughness at two frequencies
+  // Phase 4: multi-scale surface noise — scales with roughness so upper slider range is visible
+  const surfaceRoughScale = 0.18 + t.roughness * 2.0
   for (let row = 0; row < vpr; row++) {
     for (let col = 0; col < vpr; col++) {
       const i = row * vpr + col
       const n1 = valueNoise(col * 0.8, row * 0.8, seed + 4217) * 2 - 1
       const n2 = valueNoise(col * 2.5, row * 2.5, seed + 7731) * 2 - 1
-      hf[i] += n1 * 0.25 + n2 * 0.12
+      hf[i] += (n1 * 0.25 + n2 * 0.12) * surfaceRoughScale
     }
   }
 
