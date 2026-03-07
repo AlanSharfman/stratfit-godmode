@@ -11,7 +11,8 @@ import { useRenderFlagsStore } from "@/state/renderFlagsStore"
 import { createTerrainGeometry } from "@/terrain/createTerrainGeometry"
 import { baselineSeedString, createSeed } from "@/terrain/seed"
 import { TERRAIN_CONSTANTS, TERRAIN_WORLD_SCALE } from "@/terrain/terrainConstants"
-import { createTerrainSolidMaterial, createTerrainWireMaterial } from "@/terrain/terrainMaterials"
+import { createTerrainSolidMaterial, createTerrainSolidMaterialVariant, createTerrainWireMaterial } from "@/terrain/terrainMaterials"
+import type { TerrainColorVariant } from "@/terrain/terrainMaterials"
 import TerrainTrees from "@/terrain/TerrainTrees"
 import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
 import { KPI_KEYS, KPI_ZONE_MAP, HEALTH_ELEVATION, PRIMARY_KPI_KEYS } from "@/domain/intelligence/kpiZoneMapping"
@@ -50,6 +51,7 @@ interface Props {
   tuning?: TerrainTuningParams | null
   /** Vertex lerp speed — lower = slower, more cinematic morph. Default 2.5 */
   morphSpeed?: number
+  colorVariant?: TerrainColorVariant
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -67,7 +69,7 @@ const CASCADE_PULSE_AMP = 3.5
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
-  function ProgressiveTerrainSurface({ revealedKpis, kpis, focusedKpi, cascadeImpulse, tuning, morphSpeed = DEFAULT_LERP_SPEED }, ref) {
+  function ProgressiveTerrainSurface({ revealedKpis, kpis, focusedKpi, cascadeImpulse, tuning, morphSpeed = DEFAULT_LERP_SPEED, colorVariant }, ref) {
     const solidRef = useRef<THREE.Mesh>(null)
     const latticeRef = useRef<THREE.Mesh>(null)
 
@@ -154,7 +156,12 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
     })
 
     // Materials
-    const solidMat = useMemo(() => createTerrainSolidMaterial(), [])
+    const solidMat = useMemo(
+      () => colorVariant && colorVariant !== "default"
+        ? createTerrainSolidMaterialVariant(colorVariant)
+        : createTerrainSolidMaterial(),
+      [colorVariant],
+    )
     const wireMat = useMemo(() => createTerrainWireMaterial(), [])
     useEffect(() => () => solidMat.dispose(), [solidMat])
     useEffect(() => () => wireMat.dispose(), [wireMat])

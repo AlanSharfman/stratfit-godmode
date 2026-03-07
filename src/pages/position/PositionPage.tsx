@@ -441,7 +441,10 @@ export default function PositionPage() {
     ]
     const dataCompletenessPct = Math.round((filledKpis.filter((v) => v != null && v !== 0).length / filledKpis.length) * 100)
 
-    return { healthScore, healthCounts, cliff, criticalZones, survivalProbability, timeline, dataCompletenessPct }
+    const terrainVariant: import("@/terrain/terrainMaterials").TerrainColorVariant =
+      healthScore >= 68 ? "white" : healthScore >= 42 ? "frost" : "default"
+
+    return { healthScore, healthCounts, cliff, criticalZones, survivalProbability, timeline, dataCompletenessPct, terrainVariant }
   }, [liveKpis])
 
   // Guard: no baseline → redirect handled by useEffect above, show loading in the meantime
@@ -526,6 +529,7 @@ export default function PositionPage() {
               progressive
               transparentBackground
               cinematicLighting
+              colorVariant={positionIntel?.terrainVariant ?? "default"}
               revealedKpis={revealedKpis}
               focusedKpi={focusedKpi}
               onFocusKpi={handleHoverKpi}

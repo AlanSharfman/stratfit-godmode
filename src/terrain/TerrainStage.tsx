@@ -201,6 +201,7 @@ export default function TerrainStage({
               focusedKpi={focusedKpi}
               cascadeImpulse={cascadeImpulse}
               tuning={tuning}
+              colorVariant={colorVariant}
             />
             <TerrainKpiMarkers
               terrainRef={progressiveRef}
