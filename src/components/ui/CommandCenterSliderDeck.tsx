@@ -81,7 +81,6 @@ export const CommandCenterSliderRow = memo(function CommandCenterSliderRow({
             <span className={styles.valueMain}>{valueParts.main}</span>
             {valueParts.suffix ? <span className={styles.valueSub}>{valueParts.suffix}</span> : null}
           </div>
-          <span className={styles.valueUnderline} />
         </div>
       </div>
 
@@ -104,12 +103,6 @@ export const CommandCenterSliderRow = memo(function CommandCenterSliderRow({
           onEnd={onEnd}
           highlightColor={accentColor}
         />
-      </div>
-
-      <div className={styles.scale}>
-        <span>Low</span>
-        <span>Neutral</span>
-        <span>High</span>
       </div>
     </div>
   )
