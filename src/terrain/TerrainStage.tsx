@@ -170,22 +170,24 @@ export default function TerrainStage({
 
       {cinematicLighting ? (
         <>
-          <ambientLight intensity={0.70} color="#1a4a6a" />
-          <directionalLight position={[120, 200, 120]} intensity={1.6} color="#5ad0ff" castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-camera-near={0.5} shadow-camera-far={600} shadow-camera-left={-250} shadow-camera-right={250} shadow-camera-top={250} shadow-camera-bottom={-250} shadow-bias={-0.0004} />
-          <directionalLight position={[-100, 160, -40]} intensity={0.50} color="#3aafee" />
-          <directionalLight position={[0, 80, 200]} intensity={0.35} color="#2090cc" />
-          <directionalLight position={[-160, 30, -120]} intensity={0.20} color="#1570a0" />
-          <hemisphereLight args={["#3aafee", "#081828", 0.50]} />
+          {/* Cinematic rig — Position page: boosted ambient + fills to lift shadow floor */}
+          <ambientLight intensity={1.10} color="#1a4a6a" />
+          <directionalLight position={[120, 200, 120]} intensity={1.4} color="#5ad0ff" castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-camera-near={0.5} shadow-camera-far={600} shadow-camera-left={-250} shadow-camera-right={250} shadow-camera-top={250} shadow-camera-bottom={-250} shadow-bias={-0.0004} />
+          <directionalLight position={[-100, 160, -40]} intensity={0.70} color="#3aafee" />
+          <directionalLight position={[0, 80, 200]} intensity={0.48} color="#2090cc" />
+          <directionalLight position={[-160, 30, -120]} intensity={0.32} color="#1570a0" />
+          <hemisphereLight args={["#3aafee", "#081828", 0.65]} />
           <fogExp2 attach="fog" args={[0x081828, 0.0012]} />
         </>
       ) : (
         <>
-          <ambientLight intensity={0.7} color="#0a1a2f" />
-          <directionalLight position={[200, 300, 200]} intensity={1.4} color="#6bdcff" castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-camera-near={0.5} shadow-camera-far={500} shadow-camera-left={-200} shadow-camera-right={200} shadow-camera-top={200} shadow-camera-bottom={-200} />
-          <directionalLight position={[-100, 180, -80]} intensity={0.65} color="#6ef0ff" />
-          <directionalLight position={[0, 100, 220]} intensity={0.40} color="#a0d8ff" />
-          <directionalLight position={[-200, 40, -100]} intensity={0.28} color="#7dd3fc" />
-          <hemisphereLight args={["#66e3ff", "#050b14", 0.6]} />
+          {/* Standard rig — What-If page: reduced fills & hemisphere to prevent wash-out */}
+          <ambientLight intensity={0.5} color="#0a1a2f" />
+          <directionalLight position={[200, 300, 200]} intensity={1.05} color="#6bdcff" castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-camera-near={0.5} shadow-camera-far={500} shadow-camera-left={-200} shadow-camera-right={200} shadow-camera-top={200} shadow-camera-bottom={-200} />
+          <directionalLight position={[-100, 180, -80]} intensity={0.42} color="#6ef0ff" />
+          <directionalLight position={[0, 100, 220]} intensity={0.26} color="#a0d8ff" />
+          <directionalLight position={[-200, 40, -100]} intensity={0.18} color="#7dd3fc" />
+          <hemisphereLight args={["#66e3ff", "#050b14", 0.40]} />
         </>
       )}
 
