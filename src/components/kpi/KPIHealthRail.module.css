@@ -397,6 +397,20 @@
     inset 0 0 10px color-mix(in srgb, var(--kpi-color, var(--sf-cyan)) 5%, transparent),
     inset 3px 0 0 0 var(--kpi-color, var(--sf-cyan));
   transform: translateY(-2px) translateZ(0);
+  animation: sf-lens-pulse 2s ease-in-out infinite;
+}
+
+@keyframes sf-lens-pulse {
+  0%, 100% { box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.45),
+    0 0 16px color-mix(in srgb, var(--kpi-color, var(--sf-cyan)) 20%, transparent),
+    inset 0 0 10px color-mix(in srgb, var(--kpi-color, var(--sf-cyan)) 5%, transparent),
+    inset 3px 0 0 0 var(--kpi-color, var(--sf-cyan)); }
+  50% { box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.45),
+    0 0 28px color-mix(in srgb, var(--kpi-color, var(--sf-cyan)) 35%, transparent),
+    inset 0 0 16px color-mix(in srgb, var(--kpi-color, var(--sf-cyan)) 10%, transparent),
+    inset 3px 0 0 0 var(--kpi-color, var(--sf-cyan)); }
 }
 
 /* ── AI commentary expansion ── */

@@ -622,7 +622,7 @@ function KpiCard({
   );
 }
 
-const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, onFocusKpi, revealedKpis }) => {
+const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, revealedKpis }) => {
   const k = kpis;
   const navigate = useNavigate();
   const railRef = useRef<HTMLDivElement>(null);
@@ -634,8 +634,8 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, on
   );
 
   const handleHover = useCallback(
-    (key: KpiKey | null) => { onFocusKpi?.(key); },
-    [onFocusKpi],
+    (_key: KpiKey | null) => { /* output-only — no interaction */ },
+    [],
   );
 
   const handleStressTest = useCallback(
@@ -653,27 +653,6 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, on
     },
     [k],
   );
-
-  useEffect(() => {
-    if (!railRef.current || !onFocusKpi) return;
-    const cards = railRef.current.querySelectorAll<HTMLElement>("[data-kpi]");
-    if (!cards.length) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting && entry.intersectionRatio > 0.6) {
-            const key = (entry.target as HTMLElement).dataset.kpi as KpiKey;
-            if (key) onFocusKpi(key);
-          }
-        }
-      },
-      { root: railRef.current, threshold: [0.6] },
-    );
-
-    cards.forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
-  }, [onFocusKpi]);
 
   const CARDS: KpiCardDef[] = useMemo(() => [
     {
@@ -764,8 +743,7 @@ const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, on
 
   const handlePrimaryClick = useCallback((key: KpiKey) => {
     setExpandedPrimary(prev => prev === key ? null : key);
-    onFocusKpi?.(key);
-  }, [onFocusKpi]);
+  }, []);
 
   return (
     <div className={styles.rail} ref={railRef}>
