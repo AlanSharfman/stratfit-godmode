@@ -42,7 +42,7 @@ export interface CameraControlsConfig {
  *     scene breathing room without losing dramatic depth.
  */
 export const GOD_VIEW_PRESET: CameraPreset = {
-  pos: [30, 270, 740],
+  pos: [33, 297, 814],
   target: [0, 30, 0],
   fov: 50,
 }
