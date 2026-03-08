@@ -35,7 +35,6 @@ import CameraDriftSystem from "@/terrain/CameraDriftSystem";
 import type { DriftMode } from "@/scene/camera/cameraDriftConfig";
 import TerrainDeltaOverlay from "@/terrain/TerrainDeltaOverlay";
 import CameraSafetyGuard from "@/terrain/CameraSafetyGuard";
-import BackgroundTerrainLayers from "@/terrain/BackgroundTerrainLayers";
 
 
 type TerrainStageProps = {
@@ -206,7 +205,6 @@ export default function TerrainStage({
       )}
 
       {!transparentBackground && <HorizonBand />}
-      <BackgroundTerrainLayers />
       <TerrainCompass />
 
       {progressive && revealedKpis ? (
