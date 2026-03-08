@@ -104,12 +104,16 @@ export const HERO_VIEW_CONTROLS: CameraControlsConfig = {
 }
 
 /**
- * Progressive Terrain Build — cinematic landscape composition.
- * Terrain occupies bottom ~60-65% of frame, background mountain visible above horizon.
- * ~22° downward pitch, FOV 52° for natural perspective.
+ * Progressive Terrain Build — default landscape composition.
+ *
+ * Camera geometry (terrain = 420w × 270d, world scale x3/z2.6):
+  *   • Y=99 / Z=1108 ≈ phi 1.50 rad (86°) — near-horizontal landscape angle;
+ *     mountains fill the upper frame, foreground terrain reads as depth.
+ *   • Confirmed from live nav widget readout at the correct user view.
+ *   • FOV 52° — standard compression, keeps KPI markers readable.
  */
 export const POSITION_PROGRESSIVE_PRESET: CameraPreset = {
-  pos: [0, 350, 1050],
+  pos: [0, 99, 1108],
   target: [0, 20, 0],
   fov: 52,
 }

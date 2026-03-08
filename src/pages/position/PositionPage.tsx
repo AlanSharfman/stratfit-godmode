@@ -46,15 +46,11 @@ import TerrainLensHint from "@/components/terrain/TerrainLensHint"
 import styles from "./PositionOverlays.module.css"
 
 const POSITION_AZIMUTH_LIMIT = Math.PI / 9
-const POSITION_POLAR_RANGE = Math.PI / 72
-const POSITION_POLAR_CENTER = Math.acos(
-  (POSITION_PROGRESSIVE_PRESET.pos[1] - POSITION_PROGRESSIVE_PRESET.target[1]) /
-  Math.hypot(
-    POSITION_PROGRESSIVE_PRESET.pos[0] - POSITION_PROGRESSIVE_PRESET.target[0],
-    POSITION_PROGRESSIVE_PRESET.pos[1] - POSITION_PROGRESSIVE_PRESET.target[1],
-    POSITION_PROGRESSIVE_PRESET.pos[2] - POSITION_PROGRESSIVE_PRESET.target[2],
-  ),
-)
+// Polar limits: fixed range giving ~15° up and ~15° down from the preset angle.
+// Previously computed as ±π/72 (±2.5°) which was too tight — the preferred view
+// was always at the bottom of the allowed range, requiring manual correction.
+const POSITION_MIN_POLAR = 1.09  // ~62° from vertical — moderate top-down view
+const POSITION_MAX_POLAR = 1.62  // ~93° from vertical — near-horizontal landscape
 
 export default function PositionPage() {
   const navigate = useNavigate()
@@ -501,8 +497,8 @@ export default function PositionPage() {
               onFocusKpi={setHoveredKpi}
               minAzimuthAngle={-POSITION_AZIMUTH_LIMIT}
               maxAzimuthAngle={POSITION_AZIMUTH_LIMIT}
-              minPolarAngle={POSITION_POLAR_CENTER - POSITION_POLAR_RANGE}
-              maxPolarAngle={POSITION_POLAR_CENTER + POSITION_POLAR_RANGE}
+              minPolarAngle={POSITION_MIN_POLAR}
+              maxPolarAngle={POSITION_MAX_POLAR}
               rotateSpeed={0.55}
               onFocusedMarkerScreen={handleFocusedMarkerScreen}
               zoneKpis={liveKpis}
