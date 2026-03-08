@@ -5,7 +5,7 @@ import { LIVE_NAV } from "@/nav/liveNav"
 import { ROUTE_CONTRACT } from "@/routes/routeContract"
 
 export function validateRoutingContract(): void {
-  const navPaths = LIVE_NAV.map((n) => n.path)
+  const navPaths = LIVE_NAV.map((n) => n.to)
 
   const missing = navPaths.filter(
     (p) => !(ROUTE_CONTRACT as readonly string[]).includes(p),

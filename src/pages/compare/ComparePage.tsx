@@ -17,6 +17,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { Link, NavLink, useNavigate, useSearchParams } from "react-router-dom"
 
 import { ROUTES } from "@/routes/routeContract"
+import { LIVE_NAV } from "@/nav/liveNav"
 import { useCanonicalBaseline } from "@/state/useCanonicalBaseline"
 import { usePhase1ScenarioStore, type SimulationKpis } from "@/state/phase1ScenarioStore"
 import { useCompareStore, type ComparePair, type CompareViewMode } from "@/store/compareStore"
@@ -380,6 +381,7 @@ export default function ComparePage() {
 
       {/* ═══ HEADER ═══ */}
       <header style={S.header}>
+        {/* ── Left: Logo ── */}
         <div style={S.headerLeft}>
           <Link to={ROUTES.POSITION} style={S.logoLink}>
             <span style={S.logoText}>STRATFIT</span>
@@ -387,15 +389,20 @@ export default function ComparePage() {
           </Link>
         </div>
 
+        {/* ── Center: Nav (genuinely centered via grid) ── */}
         <nav style={S.headerNav}>
-          <NavLink to={ROUTES.INITIATE} style={S.navItem}>Initiate</NavLink>
-          <NavLink to={ROUTES.POSITION} style={S.navItem}>Position</NavLink>
-          <NavLink to={ROUTES.WHAT_IF} style={S.navItem}>What If</NavLink>
-          <NavLink to={ROUTES.ACTIONS} style={S.navItem}>Actions</NavLink>
-          <NavLink to={ROUTES.COMPARE} style={({ isActive }) => isActive ? S.navItemActive : S.navItem}>Compare</NavLink>
-          <NavLink to={ROUTES.BOARDROOM} style={S.navItem}>Boardroom</NavLink>
+          {LIVE_NAV.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              style={({ isActive }) => isActive ? S.navItemActive : S.navItem}
+            >
+              {item.label}
+            </NavLink>
+          ))}
         </nav>
 
+        {/* ── Right: Actions ── */}
         <div style={S.headerRight}>
           {!isGhost && (
             is3Mode ? (
@@ -738,9 +745,9 @@ const S: Record<string, React.CSSProperties> = {
 
   /* ── Header ── */
   header: {
-    display: "flex",
+    display: "grid",
+    gridTemplateColumns: "1fr auto 1fr",
     alignItems: "center",
-    justifyContent: "space-between",
     minHeight: 52,
     padding: "0 24px",
     background: "rgba(0,0,0,0.6)",
@@ -754,7 +761,7 @@ const S: Record<string, React.CSSProperties> = {
     display: "flex",
     alignItems: "center",
     gap: 12,
-    flexShrink: 0,
+    justifyContent: "flex-start",
   },
 
   logoLink: {
@@ -811,8 +818,8 @@ const S: Record<string, React.CSSProperties> = {
   headerRight: {
     display: "flex",
     alignItems: "center",
+    justifyContent: "flex-end",
     gap: 8,
-    flexShrink: 0,
   },
 
   swapBtn: {

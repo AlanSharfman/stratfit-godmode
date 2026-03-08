@@ -18,8 +18,8 @@ export default function AppHeader() {
         <nav className={styles.nav} aria-label="Primary navigation">
           {LIVE_NAV.map((item) => (
             <NavLink
-              key={item.path}
-              to={item.path}
+              key={item.to}
+              to={item.to}
               className={({ isActive }) =>
                 isActive ? `${styles.link} ${styles.active}` : styles.link
               }

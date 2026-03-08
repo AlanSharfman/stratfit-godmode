@@ -3,6 +3,7 @@ import { useNavigate, Link, NavLink } from "react-router-dom"
 import { useShallow } from "zustand/react/shallow"
 
 import { ROUTES } from "@/routes/routeContract"
+import { LIVE_NAV } from "@/nav/liveNav"
 
 import TerrainStage from "@/terrain/TerrainStage"
 import TerrainTuningPanel from "@/terrain/TerrainTuningPanel"
@@ -476,13 +477,15 @@ export default function PositionPage() {
         <div className={styles.centreCol}>
           {/* Top nav row */}
           <nav className={styles.pageNav} aria-label="Primary navigation">
-            <NavLink to={ROUTES.INITIATE} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Initiate</NavLink>
-            <NavLink to={ROUTES.POSITION} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Position</NavLink>
-            <NavLink to={ROUTES.WHAT_IF} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>What If</NavLink>
-            <NavLink to={ROUTES.ACTIONS} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Actions</NavLink>
-            <NavLink to={ROUTES.TIMELINE} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Timeline</NavLink>
-            <NavLink to={ROUTES.RISK} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Risk</NavLink>
-            <NavLink to={ROUTES.COMPARE} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Compare</NavLink>
+            {LIVE_NAV.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}
+              >
+                {item.label}
+              </NavLink>
+            ))}
           </nav>
 
           {/* Terrain canvas — fills available space */}

@@ -1,18 +1,25 @@
-// CANONICAL: single source of truth for top-level navigation.
-// All consumers import from "@/nav/liveNav".
-// The validator at "@/system/validateRoutingContract" checks these paths
-// against the ROUTE_CONTRACT at startup.
+// src/nav/liveNav.ts
+// ═══════════════════════════════════════════════════════════════════════════
+// STRATFIT — Single canonical navigation config.
+//
+// ALL navbar components derive their items from this array.
+// No page or component may define its own nav item list.
+//
+// To add, remove, or reorder items: edit ONLY this file.
+// ═══════════════════════════════════════════════════════════════════════════
+
+import { ROUTES } from "@/routes/routeContract"
 
 export type NavItem = {
   label: string
-  path: string
+  to: string
 }
 
 export const LIVE_NAV: NavItem[] = [
-  { label: "Position",   path: "/position" },
-  { label: "Decision",   path: "/decision" },
-  { label: "Studio",     path: "/studio" },
-  { label: "Compare",    path: "/compare" },
-  { label: "Risk",       path: "/risk" },
-  { label: "Valuation",  path: "/valuation" },
+  { label: "Position",  to: ROUTES.POSITION  },
+  { label: "Decision",  to: ROUTES.WHAT_IF   }, // /decision alias redirects here; canonical path used for active-state correctness
+  { label: "Studio",    to: ROUTES.STUDIO    },
+  { label: "Compare",   to: ROUTES.COMPARE   },
+  { label: "Risk",      to: ROUTES.RISK      },
+  { label: "Valuation", to: ROUTES.VALUATION },
 ]

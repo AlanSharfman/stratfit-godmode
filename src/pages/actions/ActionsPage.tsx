@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react"
 import { NavLink, Link } from "react-router-dom"
 
 import { ROUTES } from "@/routes/routeContract"
+import { LIVE_NAV } from "@/nav/liveNav"
 import { useSystemBaseline } from "@/system/SystemBaselineProvider"
 import { buildPositionViewModel, type PositionKpis } from "@/pages/position/overlays/positionState"
 import TerrainStage from "@/terrain/TerrainStage"
@@ -77,19 +78,15 @@ export default function ActionsPage() {
       <header className={styles.header}>
         <span className={styles.logo}>STRATFIT</span>
         <nav className={styles.nav}>
-          <NavLink to={ROUTES.INITIATE} className={styles.navItem}>Initiate</NavLink>
-          <span className={styles.navDivider} />
-          <NavLink to={ROUTES.POSITION} className={styles.navItem}>Position</NavLink>
-          <span className={styles.navDivider} />
-          <NavLink to={ROUTES.WHAT_IF} className={styles.navItem}>What If</NavLink>
-          <span className={styles.navDivider} />
-          <NavLink to={ROUTES.ACTIONS} className={({ isActive }) => isActive ? styles.navItemActive : styles.navItem}>Actions</NavLink>
-          <span className={styles.navDivider} />
-          <NavLink to={ROUTES.TIMELINE} className={styles.navItem}>Timeline</NavLink>
-          <span className={styles.navDivider} />
-          <NavLink to={ROUTES.RISK} className={styles.navItem}>Risk</NavLink>
-          <span className={styles.navDivider} />
-          <NavLink to={ROUTES.COMPARE} className={styles.navItem}>Compare</NavLink>
+          {LIVE_NAV.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) => isActive ? styles.navItemActive : styles.navItem}
+            >
+              {item.label}
+            </NavLink>
+          ))}
         </nav>
         <button
           onClick={handleNarrate}

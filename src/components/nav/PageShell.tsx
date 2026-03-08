@@ -2,6 +2,7 @@ import React, { useMemo } from "react"
 import { NavLink, Link, useLocation } from "react-router-dom"
 import { motion } from "framer-motion"
 import { ROUTES } from "@/routes/routeContract"
+import { LIVE_NAV } from "@/nav/liveNav"
 import ProfileSwitcher from "@/components/persistence/ProfileSwitcher"
 import ExportMenu from "@/components/export/ExportMenu"
 import TerrainShareButton from "@/components/terrain/TerrainShareButton"
@@ -9,15 +10,6 @@ import VoiceSettingsPanel from "@/components/settings/VoiceSettingsPanel"
 import AppVersionFooter from "@/components/system/AppVersionFooter"
 import { useSystemBaseline } from "@/system/SystemBaselineProvider"
 import { buildPositionViewModel } from "@/pages/position/overlays/positionState"
-
-const NAV_ITEMS = [
-  { to: ROUTES.POSITION,   label: "Position" },
-  { to: ROUTES.WHAT_IF,    label: "What If" },
-  { to: ROUTES.COMPARE,    label: "Compare" },
-  { to: ROUTES.RISK,       label: "Risk" },
-  { to: ROUTES.VALUATION,  label: "Valuation" },
-  { to: ROUTES.BOARDROOM,  label: "Boardroom" },
-]
 
 interface Props {
   children: React.ReactNode
@@ -31,33 +23,28 @@ export default function PageShell({ children, rightSlot }: Props) {
 
   return (
     <div style={S.root}>
+      {/*
+        3-column grid header:
+          col 1 (1fr) — logo/brand, left-aligned
+          col 2 (auto) — nav items, genuinely centered in viewport
+          col 3 (1fr) — right actions, right-aligned
+        The center column is always viewport-centered regardless of left/right widths.
+      */}
       <header style={S.header}>
-        {/* Logo + wordmark */}
-        <NavLink to={ROUTES.INITIATE} style={S.logoWrap}>
-          {/* Icon mark */}
-          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" style={{ flexShrink: 0 }}>
-            <polygon
-              points="11,2 20,18 2,18"
-              fill="none"
-              stroke="#22d3ee"
-              strokeWidth="1.6"
-              strokeLinejoin="round"
-            />
-            <polygon
-              points="11,6 17,17 5,17"
-              fill="rgba(34,211,238,0.15)"
-              stroke="none"
-            />
-          </svg>
-          <span style={S.logoText}>STRATFIT</span>
-        </NavLink>
+        {/* ── Left: Logo ── */}
+        <div style={S.headerLeft}>
+          <NavLink to={ROUTES.INITIATE} style={S.logoWrap}>
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" style={{ flexShrink: 0 }}>
+              <polygon points="11,2 20,18 2,18" fill="none" stroke="#22d3ee" strokeWidth="1.6" strokeLinejoin="round" />
+              <polygon points="11,6 17,17 5,17" fill="rgba(34,211,238,0.15)" stroke="none" />
+            </svg>
+            <span style={S.logoText}>STRATFIT</span>
+          </NavLink>
+        </div>
 
-        {/* Separator */}
-        <span style={S.logoSep} />
-
-        {/* Main nav */}
+        {/* ── Center: Nav items ── */}
         <nav style={S.nav}>
-          {NAV_ITEMS.map((item) => {
+          {LIVE_NAV.map((item) => {
             const isActive = location.pathname === item.to
             return (
               <NavLink
@@ -78,8 +65,8 @@ export default function PageShell({ children, rightSlot }: Props) {
           })}
         </nav>
 
-        {/* Right actions */}
-        <div style={S.rightActions}>
+        {/* ── Right: Actions ── */}
+        <div style={S.headerRight}>
           <span style={S.kbdHint} title="Open command palette">
             <kbd style={S.kbd}>Ctrl</kbd><kbd style={S.kbd}>K</kbd>
           </span>
@@ -115,9 +102,9 @@ const S: Record<string, React.CSSProperties> = {
     flexDirection: "column",
   },
   header: {
-    display: "flex",
+    display: "grid",
+    gridTemplateColumns: "1fr auto 1fr",
     alignItems: "center",
-    gap: 0,
     padding: "0 20px",
     height: 58,
     background: "linear-gradient(180deg, rgba(14,24,40,0.98) 0%, rgba(10,18,30,0.99) 100%)",
@@ -127,13 +114,17 @@ const S: Record<string, React.CSSProperties> = {
     zIndex: 20,
     position: "relative" as const,
   },
+  headerLeft: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "flex-start",
+  },
   logoWrap: {
     display: "flex",
     alignItems: "center",
     gap: 9,
     textDecoration: "none",
     flexShrink: 0,
-    marginRight: 4,
   },
   logoText: {
     fontSize: 15,
@@ -143,20 +134,10 @@ const S: Record<string, React.CSSProperties> = {
     color: "#ffffff",
     fontFamily: "'Inter', system-ui, sans-serif",
   },
-  logoSep: {
-    width: 1,
-    height: 24,
-    background: "rgba(34,211,238,0.15)",
-    flexShrink: 0,
-    margin: "0 16px",
-  },
   nav: {
     display: "flex",
     alignItems: "center",
-    flex: 1,
     gap: 2,
-    minWidth: 0,
-    overflow: "visible",
   },
   link: {
     position: "relative" as const,
@@ -195,12 +176,11 @@ const S: Record<string, React.CSSProperties> = {
     background: "#22d3ee",
     boxShadow: "0 0 10px rgba(34,211,238,0.5)",
   },
-  rightActions: {
+  headerRight: {
     display: "flex",
     alignItems: "center",
+    justifyContent: "flex-end",
     gap: 10,
-    flexShrink: 0,
-    marginLeft: 12,
   },
   kbdHint: {
     display: "flex",
