@@ -1,5 +1,5 @@
-import React, { Suspense } from "react"
-import { Routes, Route, Navigate, useLocation } from "react-router-dom"
+import React from "react"
+import { Routes, Route, Navigate } from "react-router-dom"
 
 import WelcomePage from "@/pages/welcome/WelcomePage"
 import InitializeBaselinePage from "@/pages/initialize/InitializeBaselinePage"
@@ -16,10 +16,8 @@ import TermsPage from "@/pages/legal/TermsPage"
 import PrivacyPage from "@/pages/legal/PrivacyPage"
 
 function AppRoutes() {
-  const location = useLocation()
-
   return (
-    <Routes location={location}>
+    <Routes>
       <Route path="/" element={<WelcomePage />} />
       <Route path="/initiate" element={<InitializeBaselinePage />} />
       <Route path="/position" element={<PositionRoute />} />
