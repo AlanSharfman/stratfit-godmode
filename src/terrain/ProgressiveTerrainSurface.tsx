@@ -89,42 +89,35 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
     )
 
     // ── Persistent geometry ────────────────────────────────────────────────
-    // Created ONCE. Never recreated on KPI changes.
-    // Vertex Z positions are written directly by the lerp loop every frame.
-    // This eliminates the React-rerender jitter caused by geometry swapping.
+    // Created ONCE, pre-populated with current stabilizedHF at mount time.
+    // No flat frame: geometry starts at correct heights on the very first render.
+    // Deps array is intentionally empty — subsequent KPI changes go through the lerp loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const geometry = useMemo(
-      () => createTerrainGeometry({ segments: SEGMENTS, heightfield: null }),
+      () => createTerrainGeometry({ segments: SEGMENTS, heightfield: stabilizedHF }),
       [],
     )
     useEffect(() => () => { geometry.dispose() }, [geometry])
 
-    // Animated heights — the live Z values currently written into the geometry.
-    // Separate from the geometry buffer so we can read/write efficiently.
-    const animHeights = useRef(new Float32Array((SEGMENTS + 1) * (SEGMENTS + 1)))
+    // Animated heights — lazy-initialised once from the same stabilizedHF the geometry uses.
+    // Avoids a Float32Array allocation on every re-render; subsequent lerp writes here.
+    const animHeights = useRef<Float32Array | null>(null)
+    if (animHeights.current === null) animHeights.current = new Float32Array(stabilizedHF)
 
-    // Target heights ref — updated when KPIs change; lerp drives geometry toward it.
+    // Target ref — updated when KPIs change; lerp drives geometry toward it.
     const targetHF = useRef<Float32Array>(stabilizedHF)
-    const morphInit = useRef(false)
 
-    useEffect(() => {
-      targetHF.current = stabilizedHF
-      morphSettled.current = false
-      if (!morphInit.current) {
-        // First mount: snap geometry to target immediately — no animation from flat terrain.
-        animHeights.current = new Float32Array(stabilizedHF)
-        const pos = geometry.attributes.position as THREE.BufferAttribute
-        for (let i = 0; i < stabilizedHF.length; i++) pos.setZ(i, stabilizedHF[i])
-        pos.needsUpdate = true
-        geometry.computeVertexNormals()
-        morphInit.current = true
-        morphSettled.current = true
-      }
-    }, [stabilizedHF, geometry])
+    // Start settled — geometry already holds correct heights, no animation needed.
+    const morphSettled = useRef(true)
 
     // Cascade pulse offsets per zone for quick lookup
     const cascadeZonePulse = useRef(new Map<KpiKey, number>())
 
-    const morphSettled = useRef(false)
+    // When KPIs/baseline change: only update target. Lerp handles the transition.
+    useEffect(() => {
+      targetHF.current = stabilizedHF
+      morphSettled.current = false
+    }, [stabilizedHF])
 
     // ── Morph animation loop ──────────────────────────────────────────────
     // Lerps animHeights toward targetHF every frame.
@@ -154,6 +147,7 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
       }
 
       if (morphSettled.current && cascadeZonePulse.current.size === 0) return
+      if (!animHeights.current) return
 
       for (let i = 0; i < count; i++) {
         const col = i % vertsPerRow
@@ -228,7 +222,7 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
       const clampedRow = Math.max(0, Math.min(SEGMENTS, row))
       const idx = clampedRow * (SEGMENTS + 1) + clampedCol
       // Read from animHeights (live animated buffer) — markers follow the morph
-      const h = animHeights.current[idx] ?? 0
+      const h = animHeights.current?.[idx] ?? 0
       return h * TERRAIN_WORLD_SCALE.z + TERRAIN_CONSTANTS.yOffset
     }, [])
 
