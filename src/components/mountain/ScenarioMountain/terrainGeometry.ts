@@ -117,9 +117,9 @@ export interface MassifPeak {
 // as one dominant summit + supporting ridgeline network.
 export const MASSIF_PEAKS: MassifPeak[] = [
   // ── Primary summit (Liquidity Basin cliff face)
-  { x:  0,   z: -1.5, amplitude: 1.8,  sigmaX: 1.3,  sigmaZ: 1.1 },
+  { x:  0,   z: -1.5, amplitude: 1.5,  sigmaX: 1.3,  sigmaZ: 1.1 },
   // ── Left wing secondary ridge (camera-right)
-  { x: -10,  z: -0.5, amplitude: 1.3,  sigmaX: 1.6,  sigmaZ: 1.4 },
+  { x: -10,  z: -0.5, amplitude: 1.05, sigmaX: 1.6,  sigmaZ: 1.4 },
   // ── Right wing secondary ridge (camera-left)
   { x:  11,  z: -1.0, amplitude: 1.0,  sigmaX: 2.4,  sigmaZ: 2.0 },
   // ── Near-centre camera-right spur
