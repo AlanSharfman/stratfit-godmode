@@ -1,19 +1,19 @@
 import React, { useState, useMemo } from "react";
 import { useTrajectoryStore } from "@/state/trajectoryStore";
-import { useRiskWeatherStore } from "@/state/riskWeatherStore";
 import {
   generateExecutiveReport,
   formatReportAsMarkdown,
   type ExecutiveReport,
+  type RiskZone,
 } from "@/engine/reports/scenarioReportGenerator";
 
 /**
  * ScenarioReportPanel provides executive scenario report generation
  * and export functionality.
  */
-export default function ScenarioReportPanel() {
+export default function ScenarioReportPanel({ zones: zonesProp }: { zones?: RiskZone[] }) {
   const { scenarioVectors: vectors, insights } = useTrajectoryStore();
-  const { zones } = useRiskWeatherStore();
+  const zones: RiskZone[] = zonesProp ?? [];
   const [report, setReport] = useState<ExecutiveReport | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 

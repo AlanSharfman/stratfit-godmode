@@ -73,7 +73,7 @@ export function useRowTypewriter(
   useEffect(() => {
     // Reset when rows array changes
     reset()
-  }, [rows.length, rows.join("\x00"), reset]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [rows.length, rows.join("\x00"), reset])
 
   useEffect(() => {
     if (!start || rows.length === 0) {
@@ -161,7 +161,7 @@ export function useRowTypewriter(
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
     }
-  }, [start, charDelayMs, rowPauseMs, rows.length]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [start, charDelayMs, rowPauseMs, rows.length])
 
   return { renderedRows, isDone, reset }
 }

@@ -28,24 +28,17 @@ export function logDecisionFlow(
   switch (event) {
     case "createScenario":
       console.group(`${PREFIX} 🎯 DECISION SUBMITTED — ${ts}`);
-      console.log("scenarioId:", payload.scenarioId);
-      console.log("decision:", payload.decision);
-      console.log("identity:", payload.identity);
-      console.log("baselineId:", payload.baselineId);
+
       console.groupEnd();
       break;
 
     case "simulationComplete":
       console.group(`${PREFIX} ⚡ SIMULATION COMPLETE — ${ts}`);
-      console.log("scenarioId:", payload.scenarioId);
-      console.log("decision:", payload.decision);
-      console.log("identity:", payload.identity);
-      console.log("engineResults:", payload.engineResults);
-      console.log("linkage: decision → scenarioInputs → engineResults ✓");
+
       console.groupEnd();
       break;
 
     default:
-      console.log(`${PREFIX} ${event}`, payload);
+
   }
 }

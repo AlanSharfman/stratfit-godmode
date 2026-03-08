@@ -55,15 +55,13 @@ import { buildScenarioDeltaLedger } from "@/logic/scenarioDeltaLedger";
 import type { TrafficLight } from "@/logic/spiderFitness";
 import styles from "./ScenarioDeltaSnapshot.module.css";
 
-// Convert truth selector band to TrafficLight type
-function toTrafficLight(band: "green" | "yellow" | "red"): TrafficLight {
-  return band === "yellow" ? "amber" : band;
+function toTrafficLight(band: "green" | "amber" | "red"): TrafficLight {
+  return band;
 }
 
-// Quality band label mapping
-function qualityBandLabel(band: "green" | "yellow" | "red"): string {
+function qualityBandLabel(band: "green" | "amber" | "red"): string {
   if (band === "green") return "GREEN";
-  if (band === "yellow") return "WATCH";
+  if (band === "amber") return "WATCH";
   return "RED";
 }
 
@@ -301,7 +299,7 @@ export default function ScenarioDeltaSnapshot() {
     const b = spiderBaseAxes.map((a: any) => Number(a.v01 ?? a.value01 ?? a.value ?? 0).toFixed(3)).join(",");
     const s = spiderScenarioAxes.map((a: any) => Number(a.v01 ?? a.value01 ?? a.value ?? 0).toFixed(3)).join(",");
     const sig = `${scenarioKey} | B[${b}] S[${s}]`;
-    console.log("[IG][VAR_RADAR_SIG]", sig);
+
     return sig;
   }, [spiderBaseAxes, spiderScenarioAxes, scenarioKey]);
 

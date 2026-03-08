@@ -2,6 +2,7 @@
 import { create } from "zustand"
 import type { Baseline } from "@/types/baseline"
 import { BASELINE_STORAGE_KEY } from "@/onboard/baseline"
+const LEGACY_BASELINE_STORAGE_KEY = "stratfit.baseline.legacy-flat"
 
 /**
  * TEMP legacy-compatible input shape used by older pages/components.
@@ -10,7 +11,7 @@ import { BASELINE_STORAGE_KEY } from "@/onboard/baseline"
 export type RiskSeverity = "low" | "medium" | "high" | "unknown"
 
 export type BaselineInputs = {
-  // Canonical Phase 1 fields (8)
+  // Canonical Phase 1 fields (8 numeric + optional stage)
   cash: number
   monthlyBurn: number
   revenue: number
@@ -19,6 +20,7 @@ export type BaselineInputs = {
   churnRate: number
   headcount: number
   arpa: number
+  stage?: string
 
   // TEMP legacy aliases (shim)
   runwayMonths?: number
@@ -63,10 +65,10 @@ export function deriveRiskProfile(runwayMonths: number): RiskSeverity {
 function persistBaseline(baseline: Baseline | null) {
   try {
     if (!baseline) {
-      localStorage.removeItem(BASELINE_STORAGE_KEY)
+      localStorage.removeItem(LEGACY_BASELINE_STORAGE_KEY)
       return
     }
-    localStorage.setItem(BASELINE_STORAGE_KEY, JSON.stringify(baseline))
+    localStorage.setItem(LEGACY_BASELINE_STORAGE_KEY, JSON.stringify(baseline))
   } catch {
     // ignore storage errors (private mode, quota, etc.)
   }
@@ -75,20 +77,30 @@ function persistBaseline(baseline: Baseline | null) {
 function safeParseBaseline(raw: string | null): Baseline | null {
   if (!raw) return null
   try {
-    const obj = JSON.parse(raw) as Partial<Baseline>
-    // Validate 8 numeric fields exist (Phase 1 contract)
+    const obj = JSON.parse(raw) as any
+    // Handle BaselineV1 (nested format written by InitializeBaselinePage)
+    if (obj?.version === 1 && obj?.financial) {
+      const f = obj.financial
+      const o = obj.operating ?? {}
+      return {
+        cash:        Number(f.cashOnHand)    || 0,
+        monthlyBurn: Number(f.monthlyBurn)   || 0,
+        revenue:     (Number(f.arr) || 0) / 12,
+        grossMargin: (Number(f.grossMarginPct) || 0) / 100,
+        growthRate:  (Number(f.growthRatePct)  || 0) / 100,
+        churnRate:   (Number(o.churnPct)       || 0) / 100,
+        headcount:   Number(f.headcount)     || 0,
+        arpa:        Number(o.acv)           || 0,
+        stage:       obj.company?.industry   || undefined,
+      }
+    }
+    // Legacy flat format
     const required: (keyof Baseline)[] = [
-      "cash",
-      "monthlyBurn",
-      "revenue",
-      "grossMargin",
-      "growthRate",
-      "churnRate",
-      "headcount",
-      "arpa",
+      "cash", "monthlyBurn", "revenue", "grossMargin",
+      "growthRate", "churnRate", "headcount", "arpa",
     ]
     for (const k of required) {
-      const v = (obj as any)[k]
+      const v = obj[k]
       if (typeof v !== "number" || !Number.isFinite(v)) return null
     }
     return obj as Baseline
@@ -113,7 +125,7 @@ export const DEFAULT_INPUTS: BaselineInputs = {
 }
 
 function inputsToBaseline(inputs: BaselineInputs): Baseline {
-  return {
+  const b: Baseline = {
     cash: clampNumber(inputs.cash),
     monthlyBurn: clampNumber(inputs.monthlyBurn),
     revenue: clampNumber(inputs.revenue),
@@ -123,6 +135,8 @@ function inputsToBaseline(inputs: BaselineInputs): Baseline {
     headcount: clampNumber(inputs.headcount),
     arpa: clampNumber(inputs.arpa),
   }
+  if (inputs.stage) b.stage = inputs.stage
+  return b
 }
 
 function baselineToInputs(baseline: Baseline | null): BaselineInputs {
@@ -174,7 +188,10 @@ export const useBaselineStore = create<BaselineState>((set, get) => ({
   hydrate: () => {
     const raw = (() => {
       try {
-        return localStorage.getItem(BASELINE_STORAGE_KEY)
+        return (
+          localStorage.getItem(LEGACY_BASELINE_STORAGE_KEY)
+          ?? localStorage.getItem(BASELINE_STORAGE_KEY)
+        )
       } catch {
         return null
       }

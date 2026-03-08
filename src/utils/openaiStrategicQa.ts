@@ -46,16 +46,8 @@ export type StrategicQaPromptInput = {
   strategicQuestions: Array<{ id: StrategicQuestionId; question: string }>; // 0–2
 };
 
-function getApiKey(): string | null {
-  const fromEnv = (import.meta as any)?.env?.VITE_OPENAI_API_KEY as string | undefined;
-  if (fromEnv && fromEnv.trim()) return fromEnv.trim();
-  try {
-    const fromLs = window.localStorage.getItem("OPENAI_API_KEY");
-    return fromLs && fromLs.trim() ? fromLs.trim() : null;
-  } catch {
-    return null;
-  }
-}
+import { getOpenAIApiKey, getOpenAIChatEndpoint } from "@/lib/openai/apiKey";
+const getApiKey = getOpenAIApiKey;
 
 function extractText(payload: any): string | null {
   if (typeof payload?.output_text === "string") return payload.output_text;
@@ -261,7 +253,7 @@ export async function askStrategicQuestionsOpenAI(args: {
   };
 
   try {
-    const res = await fetch("https://api.openai.com/v1/responses", {
+    const res = await fetch(getOpenAIChatEndpoint(), {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,

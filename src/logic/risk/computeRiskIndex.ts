@@ -280,6 +280,16 @@ export function buildTransmissionNodes(
  *   varianceDispersion = (p75 − p25) / p50  (from baseline ARR)
  *   debtSensitivity    = survival drop per leverage unit (proxy)
  */
+const STAGE_RISK_MODIFIER: Record<string, number> = {
+  ideation: 0.15,
+  startup: 0.10,
+  "early-growth": 0,
+  growth: -0.05,
+  "high-growth": -0.10,
+  scale: -0.12,
+  "exit-ready": -0.08,
+};
+
 export function computeRiskIndex(input: {
   baselineSurvival: number;
   shockedSurvival: number;
@@ -289,6 +299,7 @@ export function computeRiskIndex(input: {
   arrP50: number;
   arrP75: number;
   leverDebtExposure?: number;    // 0–100 (funding pressure lever)
+  stage?: string;
 }): RiskIndexResult {
   const {
     baselineSurvival,
@@ -299,6 +310,7 @@ export function computeRiskIndex(input: {
     arrP50,
     arrP75,
     leverDebtExposure = 0,
+    stage,
   } = input;
 
   // 1. Survival Elasticity (0–1)
@@ -321,12 +333,15 @@ export function computeRiskIndex(input: {
     1
   );
 
-  // Composite (weighted blend, 0–1)
+  const stageMod = stage ? (STAGE_RISK_MODIFIER[stage] ?? 0) : 0;
+
+  // Composite (weighted blend, 0–1) with lifecycle stage modifier
   const score = clamp(
     survivalElasticity * 0.35 +
       runwayElasticity * 0.25 +
       (varianceDispersion / 2) * 0.25 +
-      debtSensitivity * 0.15,
+      debtSensitivity * 0.15 +
+      stageMod,
     0,
     1
   );

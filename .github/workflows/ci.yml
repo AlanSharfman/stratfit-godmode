@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+  smoke:
+    runs-on: ubuntu-latest
+    needs: quality
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build app
+        run: npm run build
+
+      - name: Start preview and run terrain smoke tests
+        shell: bash
+        run: |
+          npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/stratfit-preview.log 2>&1 &
+          PREVIEW_PID=$!
+          trap "kill $PREVIEW_PID" EXIT
+
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173 >/dev/null; then
+              break
+            fi
+            sleep 2
+          done
+
+          curl -fsS http://127.0.0.1:4173 >/dev/null
+          SMOKE_URL=http://127.0.0.1:4173 npm run smoke:render
+          npm run smoke:ci -- http://127.0.0.1:4173

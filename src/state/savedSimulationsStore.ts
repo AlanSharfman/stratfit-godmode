@@ -1,6 +1,14 @@
 // src/state/savedSimulationsStore.ts
-// STRATFIT — Saved Simulations Store
-// Persists user-saved simulations for later comparison
+// ═══════════════════════════════════════════════════════════════════════════
+// @deprecated — LEGACY STORE. SCHEDULED FOR REMOVAL.
+//
+// DO NOT ADD NEW IMPORTS TO THIS FILE.
+//
+// Save/load functionality should migrate to scenarioRunStore or
+// phase1ScenarioStore. This store depends on types from the deprecated
+// scenarioStore and is only consumed by LoadSimulationPanel and
+// SimulationActions — both legacy components.
+// ═══════════════════════════════════════════════════════════════════════════
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -76,6 +84,7 @@ const generateId = () => `sim_${Date.now()}_${Math.random().toString(36).substr(
 // STORE
 // ============================================================================
 
+/** @deprecated Use usePhase1ScenarioStore or useScenarioRunStore instead */
 export const useSavedSimulationsStore = create<SavedSimulationsState>()(
   persist(
     (set, get) => ({

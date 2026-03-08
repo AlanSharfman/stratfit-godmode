@@ -89,4 +89,11 @@ export interface BaselineV1 {
     primaryConstraint: PrimaryConstraint;
     fastestDownside: FastestDownside;
   };
+
+  investment?: {
+    annualCapex: number;
+    capexIntensityPct: number;
+    arDays: number;
+    apDays: number;
+  };
 }

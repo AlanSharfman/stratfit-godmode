@@ -81,7 +81,7 @@ export function engineResultToMountainForces(er: EngineResult | null): number[] 
   const riskScore = getRiskScore(er);
   const riskSafety = invNorm(riskScore, 0, 100);
   
-  // DEBUG: Log risk values
+
 
   return [
     norm(get("arrNext12"), 0, 10_000_000),            // 0: Revenue (0-10M)

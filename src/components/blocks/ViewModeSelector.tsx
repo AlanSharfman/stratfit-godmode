@@ -40,7 +40,6 @@ export default function ViewModeSelector({
                 aria-selected={isActive}
                 className={`${styles.tab} ${isActive ? styles.tabActive : ""}`}
                 onClick={() => {
-                  console.log('🖱️ ViewModeSelector clicked:', m.id);
                   onChange(m.id);
                 }}
               >

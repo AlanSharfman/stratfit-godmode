@@ -1,46 +1,29 @@
-// Flat array used by validateRoutingContract — must include every path in LIVE_NAV.
 export const ROUTE_CONTRACT = [
-  "/position",
-  "/compass",
-  "/studio",
-  "/compare",
-  "/insights",
-  "/risk",
-  "/valuation",
-  "/coming-features",
-  "/assessment",
-  "/roadmap",
-  "/initialize",
   "/initiate",
-  "/decision",
+  "/position",
+  "/what-if",
+  "/actions",
+  "/timeline",
+  "/risk",
+  "/compare",
+  "/studio",
+  "/valuation",
+  "/boardroom",
+  "/pulse",
 ] as const
 
 export const ROUTES = {
-  // Core tabs
+  INITIATE: "/initiate",
   POSITION: "/position",
-  COMPASS: "/compass",
-  STUDIO: "/studio",
-  COMPARE: "/compare",
-  INSIGHTS: "/insights",
-  ASSESSMENT: "/assessment",
-  ROADMAP: "/roadmap",
-
-  // Restore rich modules (already implemented)
-  INITIALIZE: "/initialize",
-  INITIATE: "/initiate", // alias -> /initialize
-  DECISION: "/decision",
-
-  BASELINE: "/baseline",
-  OBJECTIVES: "/objectives",
+  WHAT_IF: "/what-if",
+  ACTIONS: "/actions",
+  TIMELINE: "/timeline",
   RISK: "/risk",
+  COMPARE: "/compare",
+  STUDIO: "/studio",
   VALUATION: "/valuation",
-  COMING_FEATURES: "/coming-features",
-  SIMULATE: "/simulate",
-  IMPACT: "/impact",
-  STRATEGY_STUDIO: "/strategy-studio",
-
-  // legacy / gated
-  ADVANCED: "/advanced",
+  BOARDROOM: "/boardroom",
+  PULSE: "/pulse",
 } as const
 
 export type AppRoute = (typeof ROUTES)[keyof typeof ROUTES]

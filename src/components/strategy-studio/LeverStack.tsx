@@ -1,3 +1,4 @@
+// ORPHANED COMPONENT — not mounted anywhere. Safe to delete.
 // src/components/strategy-studio/LeverStack.tsx
 // ═══════════════════════════════════════════════════════════════════════════
 // STRATFIT — Lever Stack 2.0 (Structured Domain Groups)

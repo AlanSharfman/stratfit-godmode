@@ -250,10 +250,18 @@ export function buildBaselineModel(baseline: BaselineV1, survivalBaselinePct: nu
   const cash = baseline.financial.cashOnHand || 0;
   const arr = baseline.financial.arr || 0;
 
-  const runwayMonths = monthlyBurn > 0 ? cash / monthlyBurn : 999;
+  const monthlyCapex = (baseline.investment?.annualCapex ?? 0) / 12;
+  const effectiveBurn = monthlyBurn + monthlyCapex;
+
+  const monthlyRevenue = arr / 12;
+  const wcCashTied = baseline.investment
+    ? Math.max(0, baseline.investment.arDays - baseline.investment.apDays) / 30 * monthlyRevenue
+    : 0;
+  const effectiveCash = Math.max(0, cash - wcCashTied);
+
+  const runwayMonths = effectiveBurn > 0 ? effectiveCash / effectiveBurn : 999;
   const monthlyArr = arr / 12;
-  // Burn ratio = monthly burn / monthly ARR (higher is worse)
-  const burnRatio = monthlyArr > 0 ? monthlyBurn / monthlyArr : 10;
+  const burnRatio = monthlyArr > 0 ? effectiveBurn / monthlyArr : 10;
 
   return {
     baseline,

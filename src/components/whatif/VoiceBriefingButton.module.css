@@ -1,0 +1,60 @@
+.root {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: none;
+  border: 1px solid rgba(34,211,238,0.2);
+  border-radius: 8px;
+  color: #22D3EE;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+
+.root:hover {
+  border-color: rgba(34,211,238,0.4);
+  background: rgba(34,211,238,0.06);
+}
+
+.rootActive {
+  composes: root;
+  color: #f87171;
+  border-color: rgba(248,113,113,0.3);
+}
+
+.rootActive:hover {
+  border-color: rgba(248,113,113,0.5);
+  background: rgba(248,113,113,0.06);
+}
+
+.icon {
+  font-size: 8px;
+  flex-shrink: 0;
+}
+
+.label {
+  white-space: nowrap;
+}
+
+.pulse {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f87171;
+  transform: translateY(-50%);
+  animation: briefingPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes briefingPulse {
+  0%, 100% { opacity: 0.4; transform: translateY(-50%) scale(0.8); }
+  50% { opacity: 1; transform: translateY(-50%) scale(1.3); }
+}

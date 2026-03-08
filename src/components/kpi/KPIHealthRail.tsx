@@ -5,8 +5,12 @@
 // UI-only — no store/selector/simulation changes
 // ═══════════════════════════════════════════════════════════════════════════
 
-import React, { memo, useId, useMemo, useState } from "react";
+import React, { memo, useCallback, useId, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import type { PositionKpis } from "@/pages/position/overlays/positionState";
+import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping";
+import { KPI_ZONE_MAP, KPI_STRESS_PROMPTS, KPI_CATEGORY_COLORS, PRIMARY_KPI_HIERARCHY } from "@/domain/intelligence/kpiZoneMapping";
+import { getKpiCommentary } from "@/domain/intelligence/kpiCommentary";
 import styles from "./KPIHealthRail.module.css";
 
 /* ── Formatting helpers (identical to prior KPIOverlay) ── */
@@ -50,17 +54,38 @@ function riskToneLabel(tone: RiskTone): string {
 function CashWidget() {
   return (
     <div className={styles.widget}>
-      <svg width="44" height="44" viewBox="0 0 28 28" fill="none">
-        <ellipse cx="14" cy="20" rx="10" ry="3" fill="rgba(52,211,153,0.12)" stroke="rgba(52,211,153,0.35)" strokeWidth="1">
-          <animate attributeName="opacity" values="0.8;0.5;0.8" dur="2.5s" repeatCount="indefinite" />
-        </ellipse>
-        <ellipse cx="14" cy="16" rx="10" ry="3" fill="rgba(52,211,153,0.10)" stroke="rgba(52,211,153,0.3)" strokeWidth="1" />
-        <ellipse cx="14" cy="12" rx="10" ry="3" fill="rgba(52,211,153,0.08)" stroke="rgba(52,211,153,0.25)" strokeWidth="1" />
-        <ellipse cx="14" cy="8" rx="10" ry="3" fill="rgba(52,211,153,0.06)" stroke="rgba(52,211,153,0.2)" strokeWidth="1" />
-        <text x="14" y="17" textAnchor="middle" fontSize="9" fontWeight="700" fill="rgba(52,211,153,0.7)" fontFamily="Inter, sans-serif">
+      <svg width="48" height="48" viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="16" r="14.5" fill="none" stroke="rgba(52,211,153,0.08)" strokeWidth="0.4" strokeDasharray="3,5">
+          <animateTransform attributeName="transform" type="rotate" from="0 16 16" to="360 16 16" dur="24s" repeatCount="indefinite" />
+        </circle>
+        <circle cx="16" cy="16" r="12" fill="none" stroke="rgba(52,211,153,0.06)" strokeWidth="0.4" strokeDasharray="2,4">
+          <animateTransform attributeName="transform" type="rotate" from="360 16 16" to="0 16 16" dur="18s" repeatCount="indefinite" />
+        </circle>
+        <g>
+          <animateTransform attributeName="transform" type="translate" values="0,0;0,-1.8;0,0" dur="3.2s" repeatCount="indefinite" />
+          {[20, 16.5, 13, 9.5].map((cy, i) => (
+            <ellipse key={i} cx="16" cy={cy} rx="8" ry="2.8" fill={`rgba(52,211,153,${0.04 + i * 0.03})`} stroke={`rgba(52,211,153,${0.18 + i * 0.06})`} strokeWidth="0.8">
+              <animate attributeName="ry" values="2.8;3.4;2.8" dur={`${3.2 - i * 0.15}s`} repeatCount="indefinite" />
+              <animate attributeName="rx" values="8;8.6;8" dur={`${3.2 - i * 0.15}s`} repeatCount="indefinite" />
+            </ellipse>
+          ))}
+        </g>
+        <circle cx="16" cy="16" r="4" fill="rgba(52,211,153,0.06)">
+          <animate attributeName="r" values="4;5.5;4" dur="2.4s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.08;0.02;0.08" dur="2.4s" repeatCount="indefinite" />
+        </circle>
+        <text x="16" y="18.5" textAnchor="middle" fontSize="8" fontWeight="700" fill="rgba(52,211,153,0.65)" fontFamily="Inter, sans-serif">
           $
-          <animate attributeName="opacity" values="0.7;0.4;0.7" dur="3s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.65;0.25;0.65" dur="2.2s" repeatCount="indefinite" />
         </text>
+        <circle r="1" fill="rgba(52,211,153,0.3)">
+          <animateMotion dur="8s" repeatCount="indefinite" path="M16,1.5 A14.5,14.5 0 1,1 15.99,1.5" />
+          <animate attributeName="opacity" values="0.35;0.1;0.35" dur="4s" repeatCount="indefinite" />
+        </circle>
+        <circle r="0.7" fill="rgba(52,211,153,0.25)">
+          <animateMotion dur="8s" begin="-4s" repeatCount="indefinite" path="M16,1.5 A14.5,14.5 0 1,1 15.99,1.5" />
+          <animate attributeName="opacity" values="0.25;0.05;0.25" dur="4s" repeatCount="indefinite" />
+        </circle>
       </svg>
     </div>
   );
@@ -69,20 +94,35 @@ function CashWidget() {
 function RunwayWidget() {
   return (
     <div className={styles.widget}>
-      <svg width="44" height="44" viewBox="0 0 28 28">
-        <circle cx="14" cy="14" r="11" fill="none" stroke="rgba(34,211,238,0.15)" strokeWidth="2" />
-        <circle cx="14" cy="14" r="11" fill="none" stroke="#22d3ee" strokeWidth="2"
-          strokeDasharray="69.1" strokeDashoffset="17" strokeLinecap="round"
-          transform="rotate(-90 14 14)">
-          <animateTransform attributeName="transform" type="rotate" from="-90 14 14" to="270 14 14" dur="8s" repeatCount="indefinite" />
+      <svg width="48" height="48" viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="16" r="14.5" fill="none" stroke="rgba(34,211,238,0.06)" strokeWidth="0.4" strokeDasharray="2,6">
+          <animateTransform attributeName="transform" type="rotate" from="0 16 16" to="360 16 16" dur="30s" repeatCount="indefinite" />
         </circle>
-        <circle cx="14" cy="3" r="2" fill="#22d3ee" opacity="0.8">
-          <animateTransform attributeName="transform" type="rotate" from="0 14 14" to="360 14 14" dur="8s" repeatCount="indefinite" />
-          <animate attributeName="opacity" values="0.8;0.3;0.8" dur="2s" repeatCount="indefinite" />
+        <circle cx="16" cy="16" r="12" fill="none" stroke="rgba(34,211,238,0.12)" strokeWidth="1.5" />
+        <circle cx="16" cy="16" r="12" fill="none" stroke="rgba(34,211,238,0.50)" strokeWidth="1.8"
+          strokeDasharray="75.4" strokeDashoffset="18" strokeLinecap="round" transform="rotate(-90 16 16)">
+          <animateTransform attributeName="transform" type="rotate" from="-90 16 16" to="270 16 16" dur="7s" repeatCount="indefinite" />
         </circle>
-        <circle cx="14" cy="14" r="3" fill="rgba(34,211,238,0.12)">
-          <animate attributeName="r" values="3;4;3" dur="2.5s" repeatCount="indefinite" />
-          <animate attributeName="opacity" values="0.4;0.15;0.4" dur="2.5s" repeatCount="indefinite" />
+        <circle cx="16" cy="16" r="8" fill="none" stroke="rgba(34,211,238,0.08)" strokeWidth="0.6" strokeDasharray="4,3">
+          <animateTransform attributeName="transform" type="rotate" from="360 16 16" to="0 16 16" dur="12s" repeatCount="indefinite" />
+        </circle>
+        <line x1="16" y1="16" x2="16" y2="5" stroke="rgba(34,211,238,0.25)" strokeWidth="0.8" strokeLinecap="round">
+          <animateTransform attributeName="transform" type="rotate" from="0 16 16" to="360 16 16" dur="5s" repeatCount="indefinite" />
+        </line>
+        <circle cx="16" cy="4" r="1.6" fill="rgba(34,211,238,0.6)">
+          <animateTransform attributeName="transform" type="rotate" from="0 16 16" to="360 16 16" dur="7s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.6;0.2;0.6" dur="1.8s" repeatCount="indefinite" />
+        </circle>
+        <circle r="0.8" fill="rgba(34,211,238,0.35)">
+          <animateMotion dur="7s" begin="-3.5s" repeatCount="indefinite" path="M16,4 A12,12 0 1,1 15.99,4" />
+          <animate attributeName="opacity" values="0.35;0.08;0.35" dur="3.5s" repeatCount="indefinite" />
+        </circle>
+        <circle cx="16" cy="16" r="3" fill="rgba(34,211,238,0.10)">
+          <animate attributeName="r" values="3;4.5;3" dur="2.2s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.12;0.03;0.12" dur="2.2s" repeatCount="indefinite" />
+        </circle>
+        <circle cx="16" cy="16" r="1.2" fill="rgba(34,211,238,0.4)">
+          <animate attributeName="r" values="1.2;1.8;1.2" dur="1.6s" repeatCount="indefinite" />
         </circle>
       </svg>
     </div>
@@ -90,18 +130,38 @@ function RunwayWidget() {
 }
 
 function RevenueWidget() {
-  const bars = [0.35, 0.5, 0.45, 0.7, 0.65, 0.85, 1.0];
+  const bars = [0.30, 0.48, 0.42, 0.65, 0.58, 0.80, 0.92];
   return (
     <div className={styles.widget}>
-      <svg width="72" height="28" viewBox="0 0 56 22" fill="none">
-        {bars.map((h, i) => (
-          <rect key={i} x={i * 8 + 1} y={22 - h * 20} width="5" height={h * 20} rx="1.5"
-            fill={`rgba(96, 165, 250, ${0.3 + h * 0.55})`}>
-            <animate attributeName="height" values={`${h * 20};${h * 20 + 2};${h * 20}`} dur={`${2 + i * 0.3}s`} repeatCount="indefinite" />
-            <animate attributeName="y" values={`${22 - h * 20};${20 - h * 20};${22 - h * 20}`} dur={`${2 + i * 0.3}s`} repeatCount="indefinite" />
-          </rect>
-        ))}
-        <line x1="3" y1="18" x2="53" y2="4" stroke="rgba(96,165,250,0.4)" strokeWidth="1" strokeDasharray="2,2" />
+      <svg width="72" height="32" viewBox="0 0 60 26" fill="none">
+        {bars.map((h, i) => {
+          const bh = h * 22;
+          return (
+            <g key={i}>
+              <rect x={i * 8 + 2} y={24 - bh} width="5.5" height={bh} rx="1.5"
+                fill={`rgba(96,165,250,${0.22 + h * 0.48})`}>
+                <animate attributeName="height" values={`${bh};${bh + 4};${bh - 1.5};${bh}`} dur={`${2 + i * 0.18}s`} repeatCount="indefinite" />
+                <animate attributeName="y" values={`${24 - bh};${20 - bh};${25.5 - bh};${24 - bh}`} dur={`${2 + i * 0.18}s`} repeatCount="indefinite" />
+              </rect>
+              <rect x={i * 8 + 2} y={24 - bh} width="5.5" height="1.5" rx="0.75"
+                fill={`rgba(96,165,250,${0.15 + h * 0.3})`}>
+                <animate attributeName="y" values={`${24 - bh};${20 - bh};${25.5 - bh};${24 - bh}`} dur={`${2 + i * 0.18}s`} repeatCount="indefinite" />
+                <animate attributeName="opacity" values="0.5;0.8;0.4;0.5" dur={`${2 + i * 0.18}s`} repeatCount="indefinite" />
+              </rect>
+            </g>
+          );
+        })}
+        <polyline points="4,21 12,17.5 20,18.5 28,13 36,14.5 44,8 56,4" fill="none" stroke="rgba(96,165,250,0.35)" strokeWidth="0.8" strokeDasharray="3,2">
+          <animate attributeName="stroke-dashoffset" values="0;-25" dur="2.5s" repeatCount="indefinite" />
+        </polyline>
+        <circle r="1.4" fill="rgba(96,165,250,0.65)">
+          <animateMotion dur="3.5s" repeatCount="indefinite" path="M4,21 L12,17.5 L20,18.5 L28,13 L36,14.5 L44,8 L56,4" />
+          <animate attributeName="opacity" values="0;0.7;0.7;0" dur="3.5s" repeatCount="indefinite" />
+        </circle>
+        <circle r="3" fill="rgba(96,165,250,0.08)">
+          <animateMotion dur="3.5s" repeatCount="indefinite" path="M4,21 L12,17.5 L20,18.5 L28,13 L36,14.5 L44,8 L56,4" />
+          <animate attributeName="opacity" values="0;0.12;0.12;0" dur="3.5s" repeatCount="indefinite" />
+        </circle>
       </svg>
     </div>
   );
@@ -183,67 +243,229 @@ function ArrWidget() {
 }
 
 function BurnWidget() {
-  const bars = [0.5, 0.8, 1.0, 0.65, 0.4];
   return (
     <div className={styles.widget}>
-      <div className={styles.burnBars}>
-        {bars.map((h, i) => (
-          <div key={i} className={styles.burnBar} style={{ height: `${h * 18}px`, animationDelay: `${i * 0.12}s` }} />
+      <svg width="48" height="48" viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="16" r="14.5" fill="none" stroke="rgba(251,146,60,0.06)" strokeWidth="0.4" strokeDasharray="2,5">
+          <animateTransform attributeName="transform" type="rotate" from="0 16 16" to="-360 16 16" dur="22s" repeatCount="indefinite" />
+        </circle>
+        {[0.45, 0.75, 1.0, 0.60, 0.35].map((h, i) => {
+          const bh = h * 20;
+          return (
+            <rect key={i} x={3 + i * 5.2} y={28 - bh} width="4" height={bh} rx="1.4"
+              fill={`rgba(251,146,60,${0.20 + h * 0.42})`}>
+              <animate attributeName="height" values={`${bh};${bh + 4.5};${bh - 1};${bh}`} dur={`${1.6 + i * 0.22}s`} repeatCount="indefinite" />
+              <animate attributeName="y" values={`${28 - bh};${23.5 - bh};${29 - bh};${28 - bh}`} dur={`${1.6 + i * 0.22}s`} repeatCount="indefinite" />
+            </rect>
+          );
+        })}
+        {[{ cx: 8, d: 1.4, dur: "1.8s", begin: "0s" }, { cx: 14, d: 1.8, dur: "1.4s", begin: "0.3s" }, { cx: 16, d: 1.2, dur: "2.0s", begin: "0.6s" }, { cx: 20, d: 1.0, dur: "1.6s", begin: "0.9s" }].map((p, i) => (
+          <circle key={i} cx={p.cx} cy="8" r={p.d} fill={`rgba(251,146,60,${0.3 + i * 0.08})`}>
+            <animate attributeName="cy" values="10;2;10" dur={p.dur} begin={p.begin} repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0.5;0;0.5" dur={p.dur} begin={p.begin} repeatCount="indefinite" />
+            <animate attributeName="r" values={`${p.d};${p.d * 0.3};${p.d}`} dur={p.dur} begin={p.begin} repeatCount="indefinite" />
+          </circle>
         ))}
-      </div>
+        <line x1="4" y1="28" x2="28" y2="28" stroke="rgba(251,146,60,0.15)" strokeWidth="0.5">
+          <animate attributeName="opacity" values="0.15;0.30;0.15" dur="2s" repeatCount="indefinite" />
+        </line>
+      </svg>
     </div>
   );
 }
 
-/** Valuation Widget — ascending diamond / value gauge (lime palette) */
 function ValuationWidget() {
   return (
     <div className={styles.widget}>
-      <svg width="44" height="44" viewBox="0 0 32 32" fill="none">
-        {/* Base rings */}
-        <circle cx="16" cy="16" r="14" fill="none" stroke="rgba(163,230,53,0.10)" strokeWidth="1" />
-        <circle cx="16" cy="16" r="10" fill="none" stroke="rgba(163,230,53,0.08)" strokeWidth="0.8" />
-        {/* Diamond */}
-        <path d="M16 4 L24 14 L16 28 L8 14 Z" fill="rgba(163,230,53,0.06)" stroke="rgba(163,230,53,0.32)" strokeWidth="1" strokeLinejoin="round">
-          <animate attributeName="opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite" />
-        </path>
-        {/* Inner diamond */}
-        <path d="M16 9 L20 14 L16 22 L12 14 Z" fill="rgba(163,230,53,0.10)" stroke="rgba(163,230,53,0.22)" strokeWidth="0.8" strokeLinejoin="round" />
-        {/* Center dot */}
-        <circle cx="16" cy="14" r="2" fill="rgba(163,230,53,0.40)">
-          <animate attributeName="r" values="2;3;2" dur="2s" repeatCount="indefinite" />
-          <animate attributeName="opacity" values="0.5;0.2;0.5" dur="2s" repeatCount="indefinite" />
+      <svg width="48" height="48" viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="16" r="14.5" fill="none" stroke="rgba(163,230,53,0.07)" strokeWidth="0.4" strokeDasharray="4,5">
+          <animateTransform attributeName="transform" type="rotate" from="0 16 16" to="360 16 16" dur="26s" repeatCount="indefinite" />
         </circle>
-        {/* Ascending ticks */}
-        <line x1="6" y1="22" x2="6" y2="18" stroke="rgba(163,230,53,0.14)" strokeWidth="0.8" strokeLinecap="round">
-          <animate attributeName="opacity" values="0.15;0.4;0.15" dur="2.5s" repeatCount="indefinite" />
-        </line>
-        <line x1="26" y1="22" x2="26" y2="16" stroke="rgba(163,230,53,0.14)" strokeWidth="0.8" strokeLinecap="round">
-          <animate attributeName="opacity" values="0.4;0.15;0.4" dur="2.5s" repeatCount="indefinite" />
-        </line>
+        <circle cx="16" cy="16" r="11" fill="none" stroke="rgba(163,230,53,0.05)" strokeWidth="0.4" strokeDasharray="2,4">
+          <animateTransform attributeName="transform" type="rotate" from="360 16 16" to="0 16 16" dur="16s" repeatCount="indefinite" />
+        </circle>
+        <g>
+          <animateTransform attributeName="transform" type="translate" values="0,0;0,-2.2;0,0" dur="4.2s" repeatCount="indefinite" />
+          <path d="M16 3 L25 14 L16 29 L7 14 Z" fill="rgba(163,230,53,0.05)" stroke="rgba(163,230,53,0.28)" strokeWidth="0.8" strokeLinejoin="round">
+            <animate attributeName="opacity" values="0.6;1;0.6" dur="3.2s" repeatCount="indefinite" />
+          </path>
+          <path d="M16 8 L21 14 L16 23 L11 14 Z" fill="rgba(163,230,53,0.08)" stroke="rgba(163,230,53,0.18)" strokeWidth="0.6" strokeLinejoin="round">
+            <animateTransform attributeName="transform" type="rotate" values="0 16 15.5;3 16 15.5;0 16 15.5;-3 16 15.5;0 16 15.5" dur="6s" repeatCount="indefinite" />
+          </path>
+          <line x1="16" y1="3" x2="16" y2="29" stroke="rgba(163,230,53,0.10)" strokeWidth="0.3">
+            <animate attributeName="opacity" values="0.1;0.25;0.1" dur="3.2s" repeatCount="indefinite" />
+          </line>
+          <line x1="7" y1="14" x2="25" y2="14" stroke="rgba(163,230,53,0.10)" strokeWidth="0.3">
+            <animate attributeName="opacity" values="0.1;0.25;0.1" dur="3.2s" begin="1.6s" repeatCount="indefinite" />
+          </line>
+        </g>
+        <circle cx="16" cy="14" r="2.2" fill="rgba(163,230,53,0.30)">
+          <animate attributeName="r" values="2.2;3.8;2.2" dur="2.2s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.35;0.08;0.35" dur="2.2s" repeatCount="indefinite" />
+        </circle>
+        <circle r="1" fill="rgba(163,230,53,0.30)">
+          <animateMotion dur="7s" repeatCount="indefinite" path="M16,1.5 A14.5,14.5 0 1,1 15.99,1.5" />
+          <animate attributeName="opacity" values="0.35;0.1;0.35" dur="3.5s" repeatCount="indefinite" />
+        </circle>
+        <circle r="0.7" fill="rgba(163,230,53,0.20)">
+          <animateMotion dur="7s" begin="-3.5s" repeatCount="indefinite" path="M16,1.5 A14.5,14.5 0 1,1 15.99,1.5" />
+          <animate attributeName="opacity" values="0.20;0.05;0.20" dur="3.5s" repeatCount="indefinite" />
+        </circle>
       </svg>
     </div>
   );
 }
 
-/** Gross Margin mini widget — percentage donut (indigo) */
+function GrowthWidget() {
+  return (
+    <div className={styles.widget}>
+      <svg width="48" height="48" viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="16" r="14.5" fill="none" stroke="rgba(52,211,153,0.06)" strokeWidth="0.4" strokeDasharray="3,6">
+          <animateTransform attributeName="transform" type="rotate" from="0 16 16" to="360 16 16" dur="28s" repeatCount="indefinite" />
+        </circle>
+        <path d="M4 28 L10 22 L16 24 L22 14 L28 8 L30 4" stroke="rgba(52,211,153,0.40)" strokeWidth="1.8" strokeLinecap="round" fill="none" strokeDasharray="70" strokeDashoffset="70">
+          <animate attributeName="stroke-dashoffset" values="70;0;0;70" dur="4.5s" repeatCount="indefinite" />
+        </path>
+        <path d="M4 28 L10 22 L16 24 L22 14 L28 8 L30 4 L30 32 L4 32 Z" fill="rgba(52,211,153,0.04)">
+          <animate attributeName="opacity" values="0;0.06;0.06;0" dur="4.5s" repeatCount="indefinite" />
+        </path>
+        <g>
+          <animateTransform attributeName="transform" type="translate" values="0,0;-0.8,-1.5;0,0" dur="2.8s" repeatCount="indefinite" />
+          <polygon points="26,2 31,7 28,9" fill="rgba(52,211,153,0.35)">
+            <animate attributeName="opacity" values="0.25;0.7;0.25" dur="2.2s" repeatCount="indefinite" />
+          </polygon>
+        </g>
+        <circle r="1.6" fill="rgba(52,211,153,0.55)">
+          <animateMotion dur="3.5s" repeatCount="indefinite" path="M4,28 L10,22 L16,24 L22,14 L28,8 L30,4" />
+          <animate attributeName="opacity" values="0;0.7;0.7;0" dur="3.5s" repeatCount="indefinite" />
+        </circle>
+        <circle r="4" fill="rgba(52,211,153,0.06)">
+          <animateMotion dur="3.5s" repeatCount="indefinite" path="M4,28 L10,22 L16,24 L22,14 L28,8 L30,4" />
+          <animate attributeName="opacity" values="0;0.08;0.08;0" dur="3.5s" repeatCount="indefinite" />
+        </circle>
+        <circle cx="30" cy="4" r="2.2" fill="rgba(52,211,153,0.40)">
+          <animate attributeName="r" values="2.2;4.5;2.2" dur="2s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.40;0.08;0.40" dur="2s" repeatCount="indefinite" />
+        </circle>
+      </svg>
+    </div>
+  );
+}
+
+function ChurnWidget() {
+  return (
+    <div className={styles.widget}>
+      <svg width="48" height="48" viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="16" r="14.5" fill="none" stroke="rgba(239,68,68,0.06)" strokeWidth="0.4" strokeDasharray="2,5">
+          <animateTransform attributeName="transform" type="rotate" from="0 16 16" to="-360 16 16" dur="20s" repeatCount="indefinite" />
+        </circle>
+        <g>
+          <animateTransform attributeName="transform" type="rotate" values="-1.5 16 14;1.5 16 14;-1.5 16 14" dur="4.5s" repeatCount="indefinite" />
+          <path d="M6 4 L26 4 L22 15 L10 15 Z" fill="rgba(239,68,68,0.06)" stroke="rgba(239,68,68,0.25)" strokeWidth="0.8" strokeLinejoin="round" />
+          <path d="M10 15 L12.5 26 L19.5 26 L22 15" fill="rgba(239,68,68,0.04)" stroke="rgba(239,68,68,0.20)" strokeWidth="0.8" strokeLinejoin="round" />
+          <line x1="16" y1="4" x2="16" y2="26" stroke="rgba(239,68,68,0.08)" strokeWidth="0.3" strokeDasharray="1,2">
+            <animate attributeName="opacity" values="0.08;0.20;0.08" dur="3s" repeatCount="indefinite" />
+          </line>
+        </g>
+        {[
+          { cx: 18, cy: 16, r: 1.4, dur: "1.5s", begin: "0s", dx: 2.5 },
+          { cx: 20, cy: 17, r: 1.0, dur: "1.9s", begin: "0.4s", dx: 3.5 },
+          { cx: 15, cy: 16.5, r: 0.8, dur: "2.2s", begin: "0.8s", dx: -2.5 },
+          { cx: 13, cy: 17, r: 1.1, dur: "1.7s", begin: "1.2s", dx: -3 },
+          { cx: 17, cy: 18, r: 0.6, dur: "2.4s", begin: "0.2s", dx: 1.5 },
+        ].map((p, i) => (
+          <circle key={i} cx={p.cx} cy={p.cy} r={p.r} fill={`rgba(239,68,68,${0.35 + i * 0.05})`}>
+            <animate attributeName="cy" values={`${p.cy};${p.cy + 12}`} dur={p.dur} begin={p.begin} repeatCount="indefinite" />
+            <animate attributeName="cx" values={`${p.cx};${p.cx + p.dx}`} dur={p.dur} begin={p.begin} repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0.5;0" dur={p.dur} begin={p.begin} repeatCount="indefinite" />
+            <animate attributeName="r" values={`${p.r};${p.r * 0.4}`} dur={p.dur} begin={p.begin} repeatCount="indefinite" />
+          </circle>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
 function GrossMarginWidget() {
   return (
     <div className={styles.widget}>
-      <svg width="44" height="44" viewBox="0 0 28 28" fill="none">
-        <circle cx="14" cy="14" r="10" fill="none" stroke="rgba(129,140,248,0.12)" strokeWidth="2" />
-        <circle cx="14" cy="14" r="10" fill="none" stroke="rgba(129,140,248,0.45)" strokeWidth="2"
-          strokeDasharray="62.8" strokeDashoffset="31.4" strokeLinecap="round"
-          transform="rotate(-90 14 14)">
-          <animate attributeName="strokeDashoffset" values="31.4;25;31.4" dur="4s" repeatCount="indefinite" />
+      <svg width="48" height="48" viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="16" r="14.5" fill="none" stroke="rgba(129,140,248,0.05)" strokeWidth="0.4" strokeDasharray="3,6">
+          <animateTransform attributeName="transform" type="rotate" from="0 16 16" to="360 16 16" dur="22s" repeatCount="indefinite" />
         </circle>
-        <text x="14" y="17" textAnchor="middle" fontSize="8" fontWeight="700" fill="rgba(129,140,248,0.6)" fontFamily="Inter, sans-serif">%</text>
+        <circle cx="16" cy="16" r="11.5" fill="none" stroke="rgba(129,140,248,0.10)" strokeWidth="1.4" />
+        <circle cx="16" cy="16" r="11.5" fill="none" stroke="rgba(129,140,248,0.42)" strokeWidth="1.8"
+          strokeDasharray="72.3" strokeDashoffset="36" strokeLinecap="round" transform="rotate(-90 16 16)">
+          <animateTransform attributeName="transform" type="rotate" from="-90 16 16" to="270 16 16" dur="9s" repeatCount="indefinite" />
+          <animate attributeName="stroke-dashoffset" values="36;22;36" dur="4.5s" repeatCount="indefinite" />
+        </circle>
+        <circle cx="16" cy="16" r="7.5" fill="none" stroke="rgba(129,140,248,0.06)" strokeWidth="0.5" strokeDasharray="2,3">
+          <animateTransform attributeName="transform" type="rotate" from="360 16 16" to="0 16 16" dur="14s" repeatCount="indefinite" />
+        </circle>
+        <circle r="1.1" fill="rgba(129,140,248,0.40)">
+          <animateMotion dur="6s" repeatCount="indefinite" path="M16,4.5 A11.5,11.5 0 1,1 15.99,4.5" />
+          <animate attributeName="opacity" values="0.45;0.12;0.45" dur="3s" repeatCount="indefinite" />
+        </circle>
+        <circle r="0.7" fill="rgba(129,140,248,0.25)">
+          <animateMotion dur="6s" begin="-3s" repeatCount="indefinite" path="M16,4.5 A11.5,11.5 0 1,1 15.99,4.5" />
+          <animate attributeName="opacity" values="0.25;0.06;0.25" dur="3s" repeatCount="indefinite" />
+        </circle>
+        <circle cx="16" cy="16" r="3.5" fill="rgba(129,140,248,0.05)">
+          <animate attributeName="r" values="3.5;5;3.5" dur="2.5s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.06;0.02;0.06" dur="2.5s" repeatCount="indefinite" />
+        </circle>
+        <text x="16" y="19" textAnchor="middle" fontSize="7.5" fontWeight="700" fill="rgba(129,140,248,0.55)" fontFamily="Inter, sans-serif">
+          %
+          <animate attributeName="opacity" values="0.55;0.22;0.55" dur="2.8s" repeatCount="indefinite" />
+        </text>
       </svg>
     </div>
   );
 }
 
-/** Hero Risk Widget — larger radar dial with tone-mapped ring */
+function HeadcountWidget() {
+  return (
+    <div className={styles.widget}>
+      <svg width="48" height="48" viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="16" r="14.5" fill="none" stroke="rgba(168,85,247,0.06)" strokeWidth="0.4" strokeDasharray="2,5">
+          <animateTransform attributeName="transform" type="rotate" from="0 16 16" to="-360 16 16" dur="24s" repeatCount="indefinite" />
+        </circle>
+        <circle cx="16" cy="16" r="10.5" fill="none" stroke="rgba(168,85,247,0.05)" strokeWidth="0.3" strokeDasharray="3,4">
+          <animateTransform attributeName="transform" type="rotate" from="360 16 16" to="0 16 16" dur="16s" repeatCount="indefinite" />
+        </circle>
+        <g>
+          <animateTransform attributeName="transform" type="translate" values="0,0;0,-1.2;0,0" dur="3s" repeatCount="indefinite" />
+          <circle cx="10" cy="10" r="3.2" fill="rgba(168,85,247,0.10)" stroke="rgba(168,85,247,0.30)" strokeWidth="0.8" />
+          <path d="M4 25 Q4 19 10 19 Q14.5 19 14.5 22" fill="rgba(168,85,247,0.06)" stroke="rgba(168,85,247,0.22)" strokeWidth="0.8" />
+        </g>
+        <g>
+          <animateTransform attributeName="transform" type="translate" values="0,0;0,-1.5;0,0" dur="3.4s" begin="0.5s" repeatCount="indefinite" />
+          <circle cx="22" cy="10" r="3.2" fill="rgba(168,85,247,0.08)" stroke="rgba(168,85,247,0.26)" strokeWidth="0.8" />
+          <path d="M28 25 Q28 19 22 19 Q17.5 19 17.5 22" fill="rgba(168,85,247,0.06)" stroke="rgba(168,85,247,0.22)" strokeWidth="0.8" />
+        </g>
+        <line x1="10" y1="14" x2="22" y2="14" stroke="rgba(168,85,247,0.12)" strokeWidth="0.4" strokeDasharray="2,2">
+          <animate attributeName="stroke-dashoffset" values="0;-8" dur="2s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.12;0.25;0.12" dur="3s" repeatCount="indefinite" />
+        </line>
+        <line x1="10" y1="19" x2="16" y2="22" stroke="rgba(168,85,247,0.10)" strokeWidth="0.3" strokeDasharray="1.5,2">
+          <animate attributeName="stroke-dashoffset" values="0;-7" dur="2.4s" repeatCount="indefinite" />
+        </line>
+        <line x1="22" y1="19" x2="16" y2="22" stroke="rgba(168,85,247,0.10)" strokeWidth="0.3" strokeDasharray="1.5,2">
+          <animate attributeName="stroke-dashoffset" values="0;-7" dur="2.4s" begin="0.6s" repeatCount="indefinite" />
+        </line>
+        <circle cx="16" cy="22" r="1.8" fill="rgba(168,85,247,0.35)">
+          <animate attributeName="r" values="1.8;3.2;1.8" dur="2.6s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.35;0.08;0.35" dur="2.6s" repeatCount="indefinite" />
+        </circle>
+        <circle r="0.8" fill="rgba(168,85,247,0.28)">
+          <animateMotion dur="5s" repeatCount="indefinite" path="M10,10 L22,10 L16,22 Z" />
+          <animate attributeName="opacity" values="0.30;0.08;0.30" dur="2.5s" repeatCount="indefinite" />
+        </circle>
+      </svg>
+    </div>
+  );
+}
+
 function HeroRiskWidget({ tone }: { tone: RiskTone }) {
   const ringColor =
     tone === "stable" ? "rgba(52,211,153,0.35)" :
@@ -251,48 +473,74 @@ function HeroRiskWidget({ tone }: { tone: RiskTone }) {
     "rgba(34,211,238,0.35)";
 
   const ringBg =
-    tone === "stable" ? "rgba(52,211,153,0.08)" :
-    tone === "critical" ? "rgba(239,68,68,0.08)" :
-    "rgba(34,211,238,0.08)";
+    tone === "stable" ? "rgba(52,211,153,0.07)" :
+    tone === "critical" ? "rgba(239,68,68,0.07)" :
+    "rgba(34,211,238,0.07)";
 
   const sweepColor =
-    tone === "stable" ? "rgba(52,211,153,0.35)" :
-    tone === "critical" ? "rgba(239,68,68,0.40)" :
-    "rgba(34,211,238,0.35)";
-
-  const centerColor =
     tone === "stable" ? "rgba(52,211,153,0.30)" :
     tone === "critical" ? "rgba(239,68,68,0.35)" :
     "rgba(34,211,238,0.30)";
 
+  const centerColor =
+    tone === "stable" ? "rgba(52,211,153,0.28)" :
+    tone === "critical" ? "rgba(239,68,68,0.32)" :
+    "rgba(34,211,238,0.28)";
+
+  const faintColor =
+    tone === "stable" ? "rgba(52,211,153,0.04)" :
+    tone === "critical" ? "rgba(239,68,68,0.04)" :
+    "rgba(34,211,238,0.04)";
+
   return (
     <div className={styles.widget}>
-      <svg width="44" height="44" viewBox="0 0 32 32">
-        {/* Concentric rings */}
-        <circle cx="16" cy="16" r="14" fill="none" stroke={ringBg} strokeWidth="1.2" />
-        <circle cx="16" cy="16" r="10" fill="none" stroke={ringBg} strokeWidth="1" />
-        <circle cx="16" cy="16" r="6" fill="none" stroke={ringBg} strokeWidth="0.8" />
-        {/* Outer ring — thicker, tone-mapped */}
-        <circle cx="16" cy="16" r="14" fill="none" stroke={ringColor} strokeWidth="2.5"
-          strokeDasharray="88" strokeDashoffset="22" strokeLinecap="round"
+      <svg width="48" height="48" viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="16" r="14.5" fill="none" stroke={faintColor} strokeWidth="0.4" strokeDasharray="2,5">
+          <animateTransform attributeName="transform" type="rotate" from="0 16 16" to="360 16 16" dur="30s" repeatCount="indefinite" />
+        </circle>
+        <circle cx="16" cy="16" r="13.5" fill="none" stroke={ringBg} strokeWidth="1" />
+        <circle cx="16" cy="16" r="10" fill="none" stroke={ringBg} strokeWidth="0.8" />
+        <circle cx="16" cy="16" r="6.5" fill="none" stroke={ringBg} strokeWidth="0.6" />
+        <circle cx="16" cy="16" r="3" fill="none" stroke={ringBg} strokeWidth="0.4" />
+        <line x1="2" y1="16" x2="30" y2="16" stroke={ringBg} strokeWidth="0.3" />
+        <line x1="16" y1="2" x2="16" y2="30" stroke={ringBg} strokeWidth="0.3" />
+        <line x1="5.5" y1="5.5" x2="26.5" y2="26.5" stroke={faintColor} strokeWidth="0.3" />
+        <line x1="26.5" y1="5.5" x2="5.5" y2="26.5" stroke={faintColor} strokeWidth="0.3" />
+        <circle cx="16" cy="16" r="13.5" fill="none" stroke={ringColor} strokeWidth="2"
+          strokeDasharray="84.8" strokeDashoffset="21" strokeLinecap="round"
           transform="rotate(-90 16 16)">
-          <animate attributeName="strokeDashoffset" values="22;0;22" dur="6s" repeatCount="indefinite" />
+          <animate attributeName="stroke-dashoffset" values="21;0;21" dur="6.5s" repeatCount="indefinite" />
         </circle>
-        {/* Sweep line */}
-        <line x1="16" y1="16" x2="16" y2="2" stroke={sweepColor} strokeWidth="1.5" strokeLinecap="round">
-          <animateTransform attributeName="transform" type="rotate" from="0 16 16" to="360 16 16" dur="4s" repeatCount="indefinite" />
+        <circle cx="16" cy="16" r="10" fill="none" stroke={sweepColor} strokeWidth="0.6"
+          strokeDasharray="62.8" strokeDashoffset="47" strokeLinecap="round"
+          transform="rotate(90 16 16)">
+          <animateTransform attributeName="transform" type="rotate" from="90 16 16" to="450 16 16" dur="9s" repeatCount="indefinite" />
+        </circle>
+        <line x1="16" y1="16" x2="16" y2="2.5" stroke={sweepColor} strokeWidth="1.2" strokeLinecap="round">
+          <animateTransform attributeName="transform" type="rotate" from="0 16 16" to="360 16 16" dur="3.8s" repeatCount="indefinite" />
         </line>
-        {/* Center pulse */}
-        <circle cx="16" cy="16" r="2.5" fill={centerColor}>
-          <animate attributeName="r" values="2.5;3.5;2.5" dur="1.8s" repeatCount="indefinite" />
-          <animate attributeName="opacity" values="0.5;0.2;0.5" dur="1.8s" repeatCount="indefinite" />
+        <path d="M16,16 L14,3 A13.5,13.5 0 0,1 18,3 Z" fill={sweepColor} opacity="0.12">
+          <animateTransform attributeName="transform" type="rotate" from="0 16 16" to="360 16 16" dur="3.8s" repeatCount="indefinite" />
+        </path>
+        <circle cx="16" cy="16" r="2" fill={centerColor}>
+          <animate attributeName="r" values="2;3;2" dur="1.6s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.40;0.15;0.40" dur="1.6s" repeatCount="indefinite" />
         </circle>
-        {/* Detection blips */}
-        <circle cx="22" cy="8" r="1.5" fill={sweepColor} opacity="0">
-          <animate attributeName="opacity" values="0;0.7;0" dur="4s" begin="1s" repeatCount="indefinite" />
-        </circle>
-        <circle cx="9" cy="21" r="1.2" fill={sweepColor} opacity="0">
-          <animate attributeName="opacity" values="0;0.5;0" dur="4s" begin="2.5s" repeatCount="indefinite" />
+        {[
+          { cx: 22, cy: 8, r: 1.3, begin: "0.8s" },
+          { cx: 9, cy: 21, r: 1.0, begin: "2.2s" },
+          { cx: 24, cy: 18, r: 0.8, begin: "1.5s" },
+          { cx: 11, cy: 9, r: 0.9, begin: "3.0s" },
+          { cx: 20, cy: 24, r: 0.7, begin: "0.3s" },
+        ].map((blip, i) => (
+          <circle key={i} cx={blip.cx} cy={blip.cy} r={blip.r} fill={sweepColor} opacity="0">
+            <animate attributeName="opacity" values="0;0.60;0.60;0" dur="3.8s" begin={blip.begin} repeatCount="indefinite" />
+            <animate attributeName="r" values={`${blip.r};${blip.r * 1.8};${blip.r}`} dur="3.8s" begin={blip.begin} repeatCount="indefinite" />
+          </circle>
+        ))}
+        <circle r="0.6" fill={sweepColor}>
+          <animateMotion dur="6s" repeatCount="indefinite" path="M16,2.5 A13.5,13.5 0 1,1 15.99,2.5" />
+          <animate attributeName="opacity" values="0.28;0.06;0.28" dur="3s" repeatCount="indefinite" />
         </circle>
       </svg>
     </div>
@@ -305,117 +553,204 @@ function HeroRiskWidget({ tone }: { tone: RiskTone }) {
 
 export interface KPIHealthRailProps {
   kpis: PositionKpis | null;
+  focusedKpi?: KpiKey | null;
+  onFocusKpi?: (key: KpiKey | null) => void;
+  revealedKpis?: Set<KpiKey>;
 }
 
-const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis }) => {
+interface KpiCardDef {
+  key: KpiKey;
+  label: string;
+  getValue: (k: PositionKpis) => string;
+  widget: React.ReactNode;
+  sub: string | ((k: PositionKpis) => string);
+  extra?: (k: PositionKpis, riskTone: RiskTone) => React.ReactNode;
+}
+
+function KpiCard({
+  def,
+  k,
+  riskTone,
+  isActive,
+  isRevealed,
+  commentary,
+  onStressTest,
+}: {
+  def: KpiCardDef;
+  k: PositionKpis | null;
+  riskTone: RiskTone;
+  isActive: boolean;
+  isRevealed: boolean;
+  commentary: string;
+  onStressTest: (key: KpiKey) => void;
+}) {
+  const zone = KPI_ZONE_MAP[def.key];
+  const kpiColor = KPI_CATEGORY_COLORS[def.key].hex;
+  return (
+    <div
+      className={`${styles.card} ${isActive ? styles.cardActive : ""}`}
+      data-kpi={def.key}
+      style={{ "--kpi-color": kpiColor } as React.CSSProperties}
+    >
+      <div className={styles.label} style={{ color: kpiColor }}>
+        {def.label}
+        {isRevealed && (
+          <span style={{ marginLeft: 6, fontSize: 10, opacity: 0.5, color: "#34d399" }} aria-label="Revealed">✓</span>
+        )}
+      </div>
+      <div className={styles.value}>{k ? def.getValue(k) : "—"}</div>
+      {def.widget}
+      <div className={styles.sub}>{typeof def.sub === "function" ? (k ? def.sub(k) : "") : def.sub}</div>
+      {def.extra?.(k!, riskTone)}
+      <div className={`${styles.zoneLabel} ${isActive ? styles.zoneLabelVisible : ""}`}>
+        {zone.label}
+      </div>
+      <div className={`${styles.commentary} ${isActive ? styles.commentaryVisible : ""}`}>
+        {commentary}
+      </div>
+      <button
+        className={`${styles.stressBtn} ${isActive ? styles.stressBtnVisible : ""}`}
+        onClick={(e) => { e.stopPropagation(); onStressTest(def.key); }}
+      >
+        ⚡ Stress-Test This
+      </button>
+    </div>
+  );
+}
+
+const KPIHealthRail: React.FC<KPIHealthRailProps> = memo(({ kpis, focusedKpi, revealedKpis }) => {
   const k = kpis;
+  const navigate = useNavigate();
+  const railRef = useRef<HTMLDivElement>(null);
 
   const riskTone = useMemo<RiskTone>(
     () => deriveRiskTone(k?.riskIndex ?? 0),
     [k?.riskIndex],
   );
 
+  const handleStressTest = useCallback(
+    (key: KpiKey) => {
+      const prompt = KPI_STRESS_PROMPTS[key];
+      navigate("/decision", { state: { prefillPrompt: prompt } });
+    },
+    [navigate],
+  );
+
+  const getCommentary = useCallback(
+    (key: KpiKey): string => {
+      if (!k) return "";
+      return getKpiCommentary(key, k);
+    },
+    [k],
+  );
+
+  const CARDS: KpiCardDef[] = useMemo(() => [
+    {
+      key: "cash" as KpiKey,
+      label: "Liquidity",
+      getValue: (kk) => `$${fmtMoney(kk.cashOnHand)}`,
+      widget: <CashWidget />,
+      sub: "Cash on hand",
+    },
+    {
+      key: "runway" as KpiKey,
+      label: "Runway",
+      getValue: (kk) => Number.isFinite(kk.runwayMonths) ? `${kk.runwayMonths.toFixed(1)}m` : "—",
+      widget: <RunwayWidget />,
+      sub: "Months remaining",
+    },
+    {
+      key: "growth" as KpiKey,
+      label: "Growth",
+      getValue: (kk) => `${(kk.growthRatePct ?? 0).toFixed(1)}%`,
+      widget: <GrowthWidget />,
+      sub: "Month-over-month",
+    },
+    {
+      key: "arr" as KpiKey,
+      label: "ARR",
+      getValue: (kk) => `$${fmtMoney(kk.arr)}`,
+      widget: <ArrWidget />,
+      sub: "Annual run rate",
+    },
+    {
+      key: "revenue" as KpiKey,
+      label: "Revenue",
+      getValue: (kk) => `$${fmtMoney(kk.revenueMonthly)}`,
+      widget: <RevenueWidget />,
+      sub: "Monthly",
+    },
+    {
+      key: "burn" as KpiKey,
+      label: "Burn",
+      getValue: (kk) => `$${fmtMoney(kk.burnMonthly)}`,
+      widget: <BurnWidget />,
+      sub: "Monthly",
+    },
+    {
+      key: "churn" as KpiKey,
+      label: "Retention",
+      getValue: (kk) => `${(kk.churnPct ?? 0).toFixed(1)}%`,
+      widget: <ChurnWidget />,
+      sub: "Monthly churn rate",
+    },
+    {
+      key: "grossMargin" as KpiKey,
+      label: "Gross Margin",
+      getValue: (kk) => fmtPct(kk.grossMarginPct),
+      widget: <GrossMarginWidget />,
+      sub: "Of revenue",
+    },
+    {
+      key: "headcount" as KpiKey,
+      label: "Talent",
+      getValue: (kk) => {
+        const hc = kk.headcount ?? 0
+        return hc > 0 ? `${Math.round(hc)}` : "—"
+      },
+      widget: <HeadcountWidget />,
+      sub: "Total team",
+    },
+    {
+      key: "enterpriseValue" as KpiKey,
+      label: "Value",
+      getValue: (kk) => kk.valuationEstimate > 0 ? `$${fmtMoney(kk.valuationEstimate)}` : "$ —",
+      widget: <ValuationWidget />,
+      sub: (kk) => kk.valuationEstimate > 0 ? "Revenue multiple" : "Awaiting ARR data",
+      extra: (kk, _rt) => kk ? (
+        <span className={styles.probBadge} data-tone={deriveRiskTone(kk.riskIndex)}>
+          {fmtPct(kk.riskIndex)} probability
+        </span>
+      ) : null,
+    },
+  ], []);
+
+  const cardMap = useMemo(() => {
+    const m = new Map<string, KpiCardDef>();
+    for (const c of CARDS) m.set(c.key, c);
+    return m;
+  }, [CARDS]);
+
   return (
-    <div className={styles.rail}>
+    <div className={styles.rail} ref={railRef}>
+      {PRIMARY_KPI_HIERARCHY.map((primary) => {
+        const def = cardMap.get(primary.key);
+        if (!def) return null;
 
-      {/* ── 1. LIQUIDITY ── */}
-      <section className={styles.section}>
-        <h3 className={styles.sectionHeader}>Liquidity</h3>
-        <div className={styles.cardStack}>
-          {/* Cash */}
-          <div className={styles.card}>
-            <div className={`${styles.label} ${styles.labelCapital}`}>Cash</div>
-            <div className={styles.value}>{k ? `$${fmtMoney(k.cashOnHand)}` : "$0"}</div>
-            <CashWidget />
-            <div className={styles.sub}>On hand</div>
+        return (
+          <div key={primary.key} className={styles.section}>
+            <KpiCard
+              def={def}
+              k={k}
+              riskTone={riskTone}
+              isActive={focusedKpi === primary.key}
+              isRevealed={revealedKpis?.has(primary.key) ?? false}
+              commentary={getCommentary(primary.key)}
+              onStressTest={handleStressTest}
+            />
           </div>
-          {/* Runway */}
-          <div className={styles.card}>
-            <div className={`${styles.label} ${styles.labelCapital}`}>Runway</div>
-            <div className={styles.value}>
-              {k ? (Number.isFinite(k.runwayMonths) ? `${k.runwayMonths.toFixed(1)}m` : "—") : "999.0m"}
-            </div>
-            <RunwayWidget />
-            <div className={styles.sub}>Stability probability</div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── 2. REVENUE ENGINE ── */}
-      <section className={styles.section}>
-        <h3 className={styles.sectionHeader}>Revenue Engine</h3>
-        <div className={styles.cardStack}>
-          {/* ARR */}
-          <div className={styles.card}>
-            <div className={`${styles.label} ${styles.labelPerf}`}>ARR</div>
-            <div className={styles.value}>{k ? `$${fmtMoney(k.arr)}` : "$0"}</div>
-            <ArrWidget />
-            <div className={styles.sub}>Annual run rate</div>
-          </div>
-          {/* Revenue */}
-          <div className={styles.card}>
-            <div className={`${styles.label} ${styles.labelPerf}`}>Revenue</div>
-            <div className={styles.value}>{k ? `$${fmtMoney(k.revenueMonthly)}` : "$0"}</div>
-            <RevenueWidget />
-            <div className={styles.sub}>Monthly</div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── 3. EFFICIENCY ── */}
-      <section className={styles.section}>
-        <h3 className={styles.sectionHeader}>Efficiency</h3>
-        <div className={styles.cardStack}>
-          {/* Burn */}
-          <div className={styles.card}>
-            <div className={`${styles.label} ${styles.labelEfficiency}`}>Burn</div>
-            <div className={styles.value}>{k ? `$${fmtMoney(k.burnMonthly)}` : "$0"}</div>
-            <BurnWidget />
-            <div className={styles.sub}>Monthly</div>
-          </div>
-          {/* Gross Margin */}
-          <div className={styles.card}>
-            <div className={`${styles.label} ${styles.labelEfficiency}`}>Gross Margin</div>
-            <div className={styles.value}>{k ? `${fmtPct(k.grossMarginPct)}` : "—"}</div>
-            <GrossMarginWidget />
-            <div className={styles.sub}>Of revenue</div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── 4. VALUATION ── */}
-      <section className={styles.section}>
-        <h3 className={styles.sectionHeader}>Valuation</h3>
-        <div className={styles.cardStack}>
-          <div className={styles.card}>
-            <div className={`${styles.label} ${styles.labelValuation}`}>Enterprise Value</div>
-            <div className={styles.value}>{k && k.valuationEstimate > 0 ? `$${fmtMoney(k.valuationEstimate)}` : "$ —"}</div>
-            {k && (
-              <span className={styles.probBadge} data-tone={deriveRiskTone(k.riskIndex)}>
-                {fmtPct(k.riskIndex)} probability
-              </span>
-            )}
-            <ValuationWidget />
-            <div className={styles.sub}>{k && k.valuationEstimate > 0 ? "Revenue multiple" : "Awaiting ARR data"}</div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── 5. SURVIVAL PROBABILITY ── */}
-      <section className={styles.section}>
-        <h3 className={styles.sectionHeader}>Survival Probability</h3>
-        <div className={styles.cardStack}>
-          <div className={styles.card}>
-            <div className={`${styles.label} ${styles.labelRisk}`}>Survival Probability</div>
-            <div className={styles.value}>{k ? k.riskIndex.toFixed(0) : "85"}</div>
-            <HeroRiskWidget tone={riskTone} />
-            <span className={styles.riskTag} data-tone={riskTone}>
-              {riskToneLabel(riskTone)} • liquidity pressure
-            </span>
-          </div>
-        </div>
-      </section>
-
+        );
+      })}
     </div>
   );
 });

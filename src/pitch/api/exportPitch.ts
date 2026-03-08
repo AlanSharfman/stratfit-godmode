@@ -197,7 +197,7 @@ export async function exportPitch(): Promise<string> {
 
   await browser.close();
 
-  console.log(`✅ Investor deck exported to: ${outPath}`);
+
 
   return `/${filename}`;
 }
@@ -205,7 +205,7 @@ export async function exportPitch(): Promise<string> {
 // CLI runner (for direct execution)
 if (require.main === module) {
   exportPitch()
-    .then((url) => console.log(`PDF available at: ${url}`))
+    .then((url) => {})
     .catch((err) => console.error("Export failed:", err));
 }
 

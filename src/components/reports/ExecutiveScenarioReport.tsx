@@ -77,8 +77,7 @@ export default function ExecutiveScenarioReport() {
       .join("\n\n---\n\n");
 
     navigator.clipboard.writeText(text).then(() => {
-      // Could trigger a toast notification here
-      console.log("Report copied to clipboard");
+      // TODO: trigger toast notification
     });
   }, [reportSections]);
 

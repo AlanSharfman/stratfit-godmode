@@ -98,7 +98,6 @@ export const useCinematicRevealStore = create<CinematicRevealState>((set, get) =
     // Guard: don't re-trigger for same runId or if already playing
     if (runId === revealRunId || isPlaying) return
     if (import.meta.env.DEV) {
-      console.log(`[CinematicReveal] START sequence runId=${runId}`)
     }
     set({
       revealPhase: "micro_settle",
@@ -111,7 +110,6 @@ export const useCinematicRevealStore = create<CinematicRevealState>((set, get) =
 
   setPhase: (phase: RevealPhase) => {
     if (import.meta.env.DEV) {
-      console.log(`[CinematicReveal] Phase → ${phase}`)
     }
     const isTerminal = phase === "restore" || phase === "idle"
     set({

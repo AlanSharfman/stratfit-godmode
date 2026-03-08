@@ -1,78 +1,103 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { useNavigate, Link, NavLink } from "react-router-dom"
-import { useShallow } from "zustand/react/shallow"
+import { useNavigate } from "react-router-dom"
+import PageShell from "@/components/nav/PageShell"
 
 import { ROUTES } from "@/routes/routeContract"
 
 import TerrainStage from "@/terrain/TerrainStage"
-import CameraCompositionRig from "@/pages/position-v2/rigs/CameraCompositionRig"
-import TerrainBreathRig from "@/pages/position-v2/rigs/TerrainBreathRig"
-import SkyAtmosphere from "@/pages/position-v2/rigs/SkyAtmosphere"
-import TerrainTuningPanel from "@/terrain/v2/TerrainTuningPanel"
 import TerrainNavWidget from "@/terrain/TerrainNavWidget"
-import { DEFAULT_TUNING } from "@/terrain/v2/TerrainSurfaceV2"
-import type { TerrainTuningParams } from "@/terrain/v2/TerrainSurfaceV2"
-import type { TerrainMetrics } from "@/terrain/terrainFromBaseline"
-import { deriveTerrainMetrics } from "@/terrain/terrainFromBaseline"
+import { DEFAULT_TUNING } from "@/terrain/terrainTuning"
 import type { TimeGranularity } from "@/terrain/TimelineTicks"
 
-// Legacy scenarioStore removed — MVP reads from phase1ScenarioStore only
-import { useBaselineStore } from "@/state/baselineStore"
 import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore"
 import { useSystemBaseline } from "@/system/SystemBaselineProvider"
-import { useScenarioOverridesStore } from "@/state/scenarioOverridesStore"
-import { useViewTogglesStore } from "@/state/viewTogglesStore"
-import { useRenderFlagsStore } from "@/state/renderFlagsStore"
-import { useSemanticBalance, DEFAULT_SHL_WEIGHTS } from "@/render/shl"
-import type { SemanticLayerKey } from "@/render/shl"
 
-import CommandCentrePanel from "@/components/diagnostics/CommandCentrePanel"
-import IntelligencePanel from "@/components/insight/IntelligencePanel"
-import CommandGlassPanel from "@/components/intelligence/CommandGlassPanel"
-import { useIntelligencePresentation } from "@/hooks/useIntelligencePresentation"
-import SimulationContextHUD from "@/components/position/SimulationContextHUD"
-import {
-  classifyQuestion,
-  QuestionCategory,
-} from "@/domain/question/questionClassifier"
-import { buildQuestionContext } from "@/domain/question/questionContext"
-import { buildScenarioADraft } from "@/domain/scenario/scenarioDraft"
-import { studioSessionStore } from "@/state/studioSessionStore"
 import KPIHealthRail from "@/components/kpi/KPIHealthRail"
-import ScenarioContextPanel from "@/components/scenario/ScenarioContextPanel"
-import { selectKpis, selectPositionKpis } from "@/selectors/kpiSelectors"
-import { selectTerrainMetrics } from "@/selectors/terrainSelectors"
-import { selectRiskScore } from "@/selectors/riskSelectors"
-// ExecutiveNarrativeCard removed — intelligence rendered via IntelligencePanel
-import TimeScaleControl from "./overlays/TimeScaleControl"
+import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
+import PositionExecSummary from "@/components/position/PositionExecSummary"
+import SystemProbabilityNotice from "@/components/system/ProbabilityNotice"
 import IdleMotionLayer from "./IdleMotionLayer"
-import HorizonPulse from "@/components/terrain/overlays/HorizonPulse"
-import { useReducedMotion } from "@/hooks/useReducedMotion"
-import SimulationProofOverlay from "@/components/dev/SimulationProofOverlay"
 import {
   buildPositionViewModel,
 } from "./overlays/positionState"
 
+import { POSITION_PROGRESSIVE_PRESET } from "@/scene/camera/terrainCameraPresets"
+import { useKpiAudio } from "@/hooks/useKpiAudio"
+import { KPI_KEYS as ALL_KPI_KEYS, getHealthLevel, KPI_ZONE_MAP } from "@/domain/intelligence/kpiZoneMapping"
+import { timeSimulation, buildKpiSnapshot, findFirstCliff, deriveSurvivalProbability } from "@/engine/timeSimulation"
+import ProvenanceBadge from "@/components/system/ProvenanceBadge"
+import { getExecutiveSummary } from "@/domain/intelligence/kpiCommentary"
+import TerrainZoneLabels from "@/components/terrain/TerrainZoneLabels"
+import BenchmarkPanel from "@/components/network/BenchmarkPanel"
+import ProbabilitySummaryCard from "@/components/probability/ProbabilitySummaryCard"
+import SimulationDisclaimerBar from "@/components/legal/SimulationDisclaimerBar"
+import PositionIntelligenceConsole, { type PositionProbabilityOverview } from "@/components/position/PositionIntelligenceConsole"
+import { useSimulationEngineStore } from "@/state/simulationEngineStore"
+import { useTerrainLensStore } from "@/state/terrainLensStore"
+import TerrainLensLaser from "@/components/terrain/TerrainLensLaser"
+import TerrainInsightCard from "@/components/terrain/TerrainInsightCard"
+import TerrainLensHint from "@/components/terrain/TerrainLensHint"
 import styles from "./PositionOverlays.module.css"
 
-// Diagnostics panel is togglable via close button
-
-/** Treat an SHL weight > 0 as "on" */
-function shlIsOn(weight: number): boolean {
-  return weight > 0
-}
+const POSITION_AZIMUTH_LIMIT = Math.PI / 9
+// Polar limits: fixed range giving ~15° up and ~15° down from the preset angle.
+// Previously computed as ±π/72 (±2.5°) which was too tight — the preferred view
+// was always at the bottom of the allowed range, requiring manual correction.
+const POSITION_MIN_POLAR = 1.09  // ~62° from vertical — moderate top-down view
+const POSITION_MAX_POLAR = 1.62  // ~93° from vertical — near-horizontal landscape
 
 export default function PositionPage() {
   const navigate = useNavigate()
-  const [granularity, setGranularity] = useState<TimeGranularity>("quarter")
+  const simRunCount = useSimulationEngineStore((s) => s.runCount)
+  const [granularity] = useState<TimeGranularity>("quarter")
   const [rippleKey, setRippleKey] = useState(0)
-  const [commandCentreOpen, setCommandCentreOpen] = useState(true)
-  const [intelligenceOpen, setIntelligenceOpen] = useState(false)
-  const [terrainTuning, setTerrainTuning] = useState<TerrainTuningParams>({ ...DEFAULT_TUNING })
   const viewportRef = useRef<HTMLDivElement>(null)
-  const insightScrollRef = useRef<HTMLDivElement>(null)
-  const autoScrollRef = useRef<number | null>(null)
-  const reducedMotion = useReducedMotion()
+  const [revealedKpis] = useState<Set<KpiKey>>(() => new Set(ALL_KPI_KEYS))
+  const [showKpiMarkers, setShowKpiMarkers] = useState(true)
+  const [audioEnabled, setAudioEnabled] = useState(false)
+
+  // ── Terrain Lens store (click-toggle for insight card only) ──
+  const { activeLens: focusedKpi, toggleLens } = useTerrainLensStore()
+
+  // ── Hover state — laser is ONLY driven by hover, never by click-toggle ──
+  const [hoveredKpi, setHoveredKpi] = useState<KpiKey | null>(null)
+  const [markerScreenPos, setMarkerScreenPos] = useState<{ x: number; y: number } | null>(null)
+
+  // Cache last known screen position per KPI so re-hovering is instant
+  const markerPosCache = useRef<Map<KpiKey, { x: number; y: number }>>(new Map())
+
+  // Laser only shows while cursor is actively over a KPI — no fallback to click-toggle
+  const activeLaserKpi = hoveredKpi
+
+  const prevFocusedRef = useRef<KpiKey | null>(null)
+
+  // When the hovered KPI changes: immediately use cached position (no frame delay),
+  // or clear the position when nothing is hovered.
+  useEffect(() => {
+    if (hoveredKpi) {
+      const cached = markerPosCache.current.get(hoveredKpi)
+      if (cached) setMarkerScreenPos(cached)
+      // If not cached yet, markerScreenPos stays as-is until the 3D beacon projects
+    } else {
+      setMarkerScreenPos(null)
+    }
+  }, [hoveredKpi])
+
+  const handleFocusedMarkerScreen = useCallback((pos: { x: number; y: number } | null) => {
+    if (pos) {
+      // Cache per-KPI so next hover on same KPI is instant
+      if (hoveredKpi) markerPosCache.current.set(hoveredKpi, pos)
+      setMarkerScreenPos(pos)
+    } else {
+      // Only clear if nothing is hovered — don't clear while switching between KPIs
+      if (!hoveredKpi) setMarkerScreenPos(null)
+    }
+  }, [hoveredKpi])
+
+  // Safety net: if cursor leaves the viewport entirely, clear hover state
+  const handleViewportMouseLeave = useCallback(() => {
+    setHoveredKpi(null)
+  }, [])
 
   // ── ResizeObserver: update Three.js renderer when right rail expands/collapses ──
   useEffect(() => {
@@ -91,26 +116,8 @@ export default function PositionPage() {
     return () => window.removeEventListener("sf:terrain-ripple", onRipple)
   }, [])
 
-  const handleQuestionSubmit = useCallback((question: string) => {
-    const category: QuestionCategory = classifyQuestion(question)
-    const qc = buildQuestionContext(question, category)
-    const scenarioDraft = buildScenarioADraft(qc)
-
-    // STEP 14: Seed canonical store BEFORE navigation (deterministic runtime)
-    studioSessionStore.seed({
-      questionContext: qc,
-      scenarioA: scenarioDraft,
-    })
-
-    // Keep navState as fallback only
-    navigate("/studio", {
-      state: { questionContext: qc, scenarioDraft },
-    })
-  }, [navigate])
-
-  const baseline = useBaselineStore((s) => s.baseline)
-  const baselineHydrated = useBaselineStore((s) => s.isHydrated)
-  const hydrateBaseline = useBaselineStore((s) => s.hydrate)
+  // ── Canonical baseline: SystemBaselineProvider is the single source of truth ──
+  const { baseline: baselineV1Raw } = useSystemBaseline()
 
   const hydrateScenarios = usePhase1ScenarioStore((s) => s.hydrate)
   const scenarioStoreHydrated = usePhase1ScenarioStore((s) => s.isHydrated)
@@ -123,103 +130,6 @@ export default function PositionPage() {
     [scenarios, activeScenarioId],
   )
 
-  // ── Cinematic intelligence presentation state machine ──
-  const simulationCompletedAt = activeScenario?.simulationResults?.completedAt ?? null
-  const presentation = useIntelligencePresentation({ completedAt: simulationCompletedAt })
-
-  // Auto-open insights panel — 5s after simulation completes (let terrain render)
-  // Auto-close after 20s of being open
-  const lastAutoOpenRef = useRef<number | null>(null)
-  const autoCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  // Clear auto-close timer
-  const clearAutoClose = useCallback(() => {
-    if (autoCloseTimerRef.current) {
-      clearTimeout(autoCloseTimerRef.current)
-      autoCloseTimerRef.current = null
-    }
-  }, [])
-
-  useEffect(() => {
-    if (simulationCompletedAt != null && simulationCompletedAt !== lastAutoOpenRef.current) {
-      lastAutoOpenRef.current = simulationCompletedAt
-      // Wait 5s for terrain to settle before revealing insights
-      const openTimer = setTimeout(() => {
-        setIntelligenceOpen(true)
-        // Auto-close after 20s
-        clearAutoClose()
-        autoCloseTimerRef.current = setTimeout(() => {
-          setIntelligenceOpen(false)
-        }, 20_000)
-      }, 5_000)
-      return () => clearTimeout(openTimer)
-    }
-  }, [simulationCompletedAt, clearAutoClose])
-
-  // If user manually opens, start 25s auto-close; if user manually closes, cancel it
-  useEffect(() => {
-    if (!intelligenceOpen) {
-      clearAutoClose()
-      // Stop auto-scroll
-      if (autoScrollRef.current) {
-        cancelAnimationFrame(autoScrollRef.current)
-        autoScrollRef.current = null
-      }
-    }
-    return () => clearAutoClose()
-  }, [intelligenceOpen, clearAutoClose])
-
-  // ── Auto-scroll insight content — perfectly steady to the end ──
-  useEffect(() => {
-    if (!intelligenceOpen) return
-    const el = insightScrollRef.current
-    if (!el) return
-    // Start after slide begins (2.5s in)
-    const startDelay = setTimeout(() => {
-      let lastTime = 0
-      const PX_PER_MS = 0.04 // constant scroll speed
-      function tick(time: number) {
-        if (!lastTime) { lastTime = time }
-        const rawDt = time - lastTime
-        lastTime = time
-        // Cap dt to 32ms (1 frame @30fps) — prevents jumps from tab blur
-        const dt = Math.min(rawDt, 32)
-        if (el) {
-          const maxScroll = el.scrollHeight - el.clientHeight
-          if (maxScroll > 0 && el.scrollTop < maxScroll) {
-            el.scrollTop = Math.min(el.scrollTop + PX_PER_MS * dt, maxScroll)
-          }
-          // Keep ticking until we reach the very end
-          if (el.scrollTop < maxScroll) {
-            autoScrollRef.current = requestAnimationFrame(tick)
-          }
-        }
-      }
-      autoScrollRef.current = requestAnimationFrame(tick)
-    }, 2500)
-    return () => {
-      clearTimeout(startDelay)
-      if (autoScrollRef.current) {
-        cancelAnimationFrame(autoScrollRef.current)
-        autoScrollRef.current = null
-      }
-    }
-  }, [intelligenceOpen])
-
-  // ── Intelligence panel keyboard shortcut (I key) ──
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "i" || e.key === "I") {
-        const tag = (e.target as HTMLElement)?.tagName
-        if (tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable) return
-        e.preventDefault()
-        setIntelligenceOpen((prev) => !prev)
-      }
-    }
-    window.addEventListener("keydown", onKeyDown)
-    return () => window.removeEventListener("keydown", onKeyDown)
-  }, [])
-
   // Auto-run simulation if activeScenario is still in "draft"
   const lastSimRunRef = useRef<string | null>(null)
 
@@ -227,7 +137,7 @@ export default function PositionPage() {
     if (!scenarioStoreHydrated || !activeScenarioId) return
     const active = scenarios.find((s) => s.id === activeScenarioId)
     if (!active || active.status !== "draft") return
-    if (lastSimRunRef.current === active.id) return // already triggered
+    if (lastSimRunRef.current === active.id) return
     lastSimRunRef.current = active.id
     runSimulation(active.id)
   }, [scenarioStoreHydrated, activeScenarioId, scenarios, runSimulation])
@@ -236,338 +146,223 @@ export default function PositionPage() {
     hydrateScenarios()
   }, [hydrateScenarios])
 
-  // Always hydrate baseline — terrain pipeline needs real values.
-  // Scenario-first priority in the terrain memo prevents baseline from
-  // overwriting locked scenario metrics.
-  useEffect(() => {
-    hydrateBaseline()
-  }, [hydrateBaseline])
+  // Redirect handled by PositionRoute — no duplicate navigate here
 
-  useEffect(() => {
-    if (scenarioStoreHydrated && !activeScenarioId) navigate("/decision")
-  }, [scenarioStoreHydrated, activeScenarioId, navigate])
-
-  useEffect(() => {
-    if (baselineHydrated && !baseline) navigate("/initiate")
-  }, [baselineHydrated, baseline, navigate])
-
-  const baselineInputs = useBaselineStore((s) => s.baselineInputs)
-
-  const { overrideScenarios, activeOverrideScenarioId } = useScenarioOverridesStore(
-    useShallow((s) => ({
-      overrideScenarios: s.scenarios,
-      activeOverrideScenarioId: s.activeScenarioId,
-    })),
-  )
-
-  const effectiveInputs = useMemo(() => {
-    if (!baselineInputs) return null
-    const active = overrideScenarios.find((s) => s.id === activeOverrideScenarioId)
-    return active ? ({ ...baselineInputs, ...active.overrides } as const) : baselineInputs
-  }, [baselineInputs, overrideScenarios, activeOverrideScenarioId])
-
-  // ══ Terrain source-of-truth: single selector, scenario-first ══
-  //
-  // Once a scenario completes, derived metrics are LOCKED in a ref keyed
-  // by scenarioId.  Subsequent renders (baseline rehydration, store sync,
-  // override changes) hit PRIORITY 1 and return the locked value instantly.
-  // Only a NEW activeScenarioId clears the lock.
-  const scenarioTerrainRef = useRef<{ scenarioId: string; metrics: TerrainMetrics } | null>(null)
-
-  const terrainMetrics = useMemo(() => {
-    // PRIORITY 1: Already locked for this scenario → stable, no recompute
-    if (activeScenarioId && scenarioTerrainRef.current?.scenarioId === activeScenarioId) {
-      return scenarioTerrainRef.current.metrics
-    }
-
-    // PRIORITY 2: Scenario has terrain data (running OR complete) → derive via selector & lock
-    const terrainData = selectTerrainMetrics(activeScenario?.simulationResults ?? null)
-    const hasMultipliers =
-      activeScenarioId &&
-      (activeScenario?.status === "running" || activeScenario?.status === "complete") &&
-      terrainData?.multipliers &&
-      effectiveInputs
-
-    if (hasMultipliers) {
-      const m = terrainData!.multipliers
-      const baseBurn = Number(effectiveInputs!.burnRate) || Number(effectiveInputs!.monthlyBurn) || 0
-      const morphed = {
-        ...effectiveInputs!,
-        cash:        (Number(effectiveInputs!.cash) || 0) * m.cash,
-        burnRate:    baseBurn * m.burn,
-        monthlyBurn: baseBurn * m.burn,
-        growthRate:  (Number(effectiveInputs!.growthRate) || 0) * m.growth,
-      }
-      const metrics = Object.freeze(deriveTerrainMetrics(morphed as any))
-      scenarioTerrainRef.current = { scenarioId: activeScenarioId!, metrics }
-      return metrics
-    }
-
-    // PRIORITY 3: No scenario with multipliers → derive from raw baseline
-    return effectiveInputs ? deriveTerrainMetrics(effectiveInputs as any) : undefined
-  }, [activeScenarioId, activeScenario?.status, activeScenario?.simulationResults?.terrain, effectiveInputs])
-
-  // DEV: log terrain source + selector proof + runId consistency once per scenario transition
-  useEffect(() => {
-    if (import.meta.env.DEV) {
-      const simResults = activeScenario?.simulationResults ?? null
-      const terrainData = selectTerrainMetrics(simResults)
-      const simKpis = selectKpis(simResults?.kpis ?? null)
-      const risk = selectRiskScore(simResults?.kpis ?? null)
-      const runId = simResults?.completedAt ?? null
-
-      // Quick hash for verification (djb2)
-      const quickHash = (obj: unknown): string => {
-        const s = JSON.stringify(obj)
-        let h = 5381
-        for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0
-        return (h >>> 0).toString(16).padStart(8, "0")
-      }
-
-      console.group("[PositionPage] Simulation pipeline verification")
-      console.log("runId:", runId)
-      console.log("scenarioConfig hash:", quickHash({ decision: activeScenario?.decision, id: activeScenarioId }))
-      console.log("engineResults hash:", quickHash(simResults))
-      console.log("KPI snapshot hash:", quickHash(simKpis))
-      console.log("TERRAIN SOURCE:",
-        scenarioTerrainRef.current?.scenarioId === activeScenarioId ? "SCENARIO" : "BASELINE",
-        activeScenarioId ? `(scenario ${activeScenarioId.slice(0, 8)})` : "(no scenario)",
-      )
-      console.log("TERRAIN METRICS (selector):", terrainData)
-      console.log("SELECTED KPIS:", simKpis)
-      console.log("RISK SCORE (selector):", risk)
-      console.log("TERRAIN METRICS (resolved):", terrainMetrics)
-      console.groupEnd()
-    }
-  }, [activeScenarioId, activeScenario?.status, activeScenario?.simulationResults, terrainMetrics])
-
-  // V1 baseline from context — only used for legacy left-rail KPI overlay.
-  // Will be replaced by Phase1 scenario KPI data in a future phase.
-  const { baseline: baselineV1 } = useSystemBaseline()
 
   const vm = useMemo(() => {
-    if (!baselineV1) return null
-    return buildPositionViewModel(baselineV1, { riskIndexFromEngine: null })
-  }, [baselineV1])
+    if (!baselineV1Raw) return null
+    return buildPositionViewModel(baselineV1Raw, { riskIndexFromEngine: null })
+  }, [baselineV1Raw])
 
-  // ── Live KPIs: simulation results when available, baseline fallback ──
-  const liveKpis = useMemo(() => {
-    if (activeScenario?.status === "complete" && activeScenario.simulationResults?.kpis) {
-      const riskScore = selectRiskScore(activeScenario.simulationResults.kpis)
-      return selectPositionKpis(activeScenario.simulationResults.kpis, riskScore)
+  // ── Live KPIs: HARD RULE — always derived from baseline (Initiate inputs).
+  // KPI box values must always correspond 1-to-1 with the Initiate page entries.
+  // Simulation results drive terrain shape and scenarios, NOT the KPI display.
+  const liveKpis = useMemo(() => vm?.kpis ?? null, [vm?.kpis])
+
+  // ── Terrain zone KPIs: read ONLY from simulationResults.projections ──────
+  // Maps simulation output to the five terrain zone drivers:
+  //   liquidity      → cashProjection     (cash health zone elevation)
+  //   revenueEngine  → revenueProjection  (revenue ridge height)
+  //   profitability  → ebitdaProjection   (profitability zone shape)
+  //   riskPressure   → riskIndex          (risk basin depth)
+  //   enterpriseValue→ enterpriseValueEstimate (value peak height)
+  //
+  // Falls back to liveKpis (baseline-only) when no active simulation exists.
+  // Terrain updates automatically whenever activeScenario projections change.
+  const effectiveZoneKpis = useMemo(() => {
+    if (!liveKpis) return null
+    const projections = activeScenario?.simulationResults?.projections
+    if (!projections) return liveKpis
+
+    // Use the p50 (base-case) series at month 0 as current terrain state.
+    const p50 = projections.probabilityBands.p50
+    const liquidity      = (p50.cash[0]    ?? projections.cashProjection[0])    ?? liveKpis.cashOnHand
+    const revenueEngine  = (p50.revenue[0] ?? projections.revenueProjection[0]) ?? liveKpis.revenueMonthly
+    const profitability  = (p50.ebitda[0]  ?? projections.ebitdaProjection[0])  ?? liveKpis.ebitdaMonthly
+    const riskPressure   = projections.riskIndex                                 ?? liveKpis.riskIndex
+    const enterpriseValue= projections.enterpriseValueEstimate                   ?? liveKpis.valuationEstimate
+
+    // Derive burn from gross margin and EBITDA: burn = rev×gm - ebitda
+    const gm   = liveKpis.grossMarginPct / 100
+    const burn = Math.max(0, revenueEngine * gm - profitability)
+
+    // Derive growth from 12-month revenue trajectory if projection data is available
+    const rev0  = projections.revenueProjection[0]
+    const rev12 = projections.revenueProjection[12]
+    const growthRatePct = (rev0 && rev12 && rev0 > 0)
+      ? Math.max(0, Math.round(((rev12 - rev0) / rev0) * 100))
+      : liveKpis.growthRatePct
+
+    return {
+      ...liveKpis,
+      cashOnHand:         liquidity,
+      revenueMonthly:     revenueEngine,
+      arr:                revenueEngine * 12,
+      ebitdaMonthly:      profitability,
+      burnMonthly:        burn,
+      runwayMonths:       projections.runwayMonths ?? (burn > 0 ? liquidity / burn : liveKpis.runwayMonths),
+      riskIndex:          riskPressure,
+      valuationEstimate:  enterpriseValue,
+      growthRatePct,
     }
-    return vm?.kpis ?? null
-  }, [
-    activeScenario?.status,
-    activeScenario?.simulationResults?.kpis,
-    vm?.kpis,
-  ])
+  }, [liveKpis, activeScenario?.simulationResults?.projections])
 
-  // DEV: KPI wiring proof — confirms liveKpis source switches on simulation complete
+  const intelligenceText = useMemo(() => {
+    if (!liveKpis) return ""
+    return getExecutiveSummary(liveKpis).narrative
+  }, [liveKpis])
+
+  const { speak: speakKpi, stop: stopKpi } = useKpiAudio(liveKpis)
+  const speakTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   useEffect(() => {
-    if (!import.meta.env.DEV) return
-    const source = (activeScenario?.status === "complete" && activeScenario.simulationResults?.kpis)
-      ? "SIMULATION"
-      : "BASELINE"
-    console.log(
-      `[KPI-Rail] source=${source} runId=${activeScenario?.simulationResults?.completedAt ?? "none"} runway=${liveKpis?.runwayMonths ?? "—"}`,
-    )
-  }, [liveKpis, activeScenario?.status, activeScenario?.simulationResults])
-
-  const terrainSignals = useMemo(() => {
-    const byKey = new Map((vm?.diagnostics ?? []).map((d) => [d.key, d]))
-    const order = ["capitalEfficiency", "growthQuality", "liquidity", "costPressure"] as const
-    return order
-      .map((k) => byKey.get(k))
-      .filter(Boolean)
-      .map((d) => ({
-        key: d!.key,
-        label: d!.title,
-        tone: d!.tone,
-        detail: d!.text,
-        metricLine: d!.metricLine,
-      }))
-  }, [vm])
-
-  // ── Render flags store ──
-  const renderFlags = useRenderFlagsStore()
-
-  // ── SHL weights (semantic highlight layer) ──
-  const shlWeights = useSemanticBalance((s) => s.weights)
-  const setWeight = useSemanticBalance((s) => s.setWeight)
-
-  // ── View toggles ──
-  const heatmapEnabled = useViewTogglesStore((s) => s.heatmapEnabled)
-  const toggleHeatmap = useViewTogglesStore((s) => s.toggleHeatmap)
-
-  // ── LIVE DEMO / VIDEO state ──
-  const [videoActive, setVideoActive] = useState(false)
-  const videoEverOpened = useRef(false)
-  const [videoPulsing, setVideoPulsing] = useState(true)
-
-  // Pulse cycle: 10s on → 10s off, repeat. Stops permanently once opened.
+    clearTimeout(speakTimerRef.current)
+    if (audioEnabled && focusedKpi && prevFocusedRef.current !== focusedKpi) {
+      speakTimerRef.current = setTimeout(() => speakKpi(focusedKpi), 350)
+    }
+    prevFocusedRef.current = focusedKpi
+  }, [focusedKpi, speakKpi, audioEnabled])
   useEffect(() => {
-    if (videoEverOpened.current) {
-      setVideoPulsing(false)
-      return
-    }
-    let mounted = true
-    const cycle = () => {
-      if (!mounted || videoEverOpened.current) return
-      setVideoPulsing(true)
-      const onTimer = setTimeout(() => {
-        if (!mounted || videoEverOpened.current) return
-        setVideoPulsing(false)
-        const offTimer = setTimeout(() => {
-          if (!mounted || videoEverOpened.current) return
-          cycle()
-        }, 10_000)
-        return () => clearTimeout(offTimer)
-      }, 10_000)
-      return () => clearTimeout(onTimer)
-    }
-    cycle()
-    return () => { mounted = false }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    if (!audioEnabled) { clearTimeout(speakTimerRef.current); stopKpi() }
+  }, [audioEnabled, stopKpi])
+  useEffect(() => () => { clearTimeout(speakTimerRef.current); stopKpi() }, [stopKpi])
 
-  const handleVideoToggle = useCallback(() => {
-    const next = !videoActive
-    setVideoActive(next)
-    if (next) {
-      videoEverOpened.current = true
-      setVideoPulsing(false)
+  useEffect(() => {
+    if (!focusedKpi) {
+      setMarkerScreenPos(null)
     }
-  }, [videoActive])
+  }, [focusedKpi])
 
-  // ── Auto-activation: once per simulation run, only turns ON, respects manual overrides ──
-  // Tracks which layers the user has manually toggled off after auto-enable.
-  const userTouchedRef = useRef<Set<string>>(new Set())
-  const lastAutoRunRef = useRef<number | null>(null)
-
-  // Wrap toggle handlers to record manual user touches
-  const makeTrackedToggle = useCallback(
-    (id: string, baseFn: () => void) => () => {
-      userTouchedRef.current.add(id)
-      baseFn()
-    },
-    [],
+  // Auto-rotation: faster during build, near-still after all revealed
+  const autoRotateSpeed = useMemo(
+    () => revealedKpis.size >= 12 ? 0.05 : (revealedKpis.size > 0 ? 0.4 : 0),
+    [revealedKpis.size],
   )
 
-  const makeTrackedShlToggle = useCallback(
-    (id: string, key: SemanticLayerKey) => (next: boolean) => {
-      userTouchedRef.current.add(id)
-      setWeight(key, next ? DEFAULT_SHL_WEIGHTS[key] : 0)
-    },
-    [setWeight],
-  )
+  // ── Position Intelligence: cliff detector, health pulse, survival ──
+  const positionIntel = useMemo(() => {
+    if (!liveKpis) return null
 
-  const trackedToggleHeatmap = useCallback(() => {
-    userTouchedRef.current.add("heatMap")
-    toggleHeatmap()
-  }, [toggleHeatmap])
-
-  // Auto-activation effect — fires once per completed simulation run
-  useEffect(() => {
-    if (!activeScenario || activeScenario.status !== "complete") return
-    const completedAt = activeScenario.simulationResults?.completedAt
-    if (!completedAt) return
-    if (lastAutoRunRef.current === completedAt) return // already processed
-    lastAutoRunRef.current = completedAt
-
-    const simKpisRaw = activeScenario.simulationResults?.kpis
-    if (!simKpisRaw) return
-
-    // Read KPIs through canonical selector — selector-only access contract
-    const autoKpis = selectKpis(simKpisRaw)
-    const touched = userTouchedRef.current
-
-    // Auto-enable Heat Map when risk is elevated
-    // Signals: runway < 12 months OR vm risk tone
-    const runway = autoKpis?.runwayMonths ?? null
-    const runwayLow = runway !== null && runway < 12
-    if (runwayLow && !touched.has("heatMap") && !heatmapEnabled) {
-      toggleHeatmap()
+    const healthCounts = { strong: 0, watch: 0, critical: 0 }
+    for (const k of ALL_KPI_KEYS) {
+      const h = getHealthLevel(k, liveKpis)
+      if (h === "strong") healthCounts.strong++
+      else if (h === "critical") healthCounts.critical++
+      else healthCounts.watch++
     }
+    const healthScore = Math.round(((healthCounts.strong * 10 + healthCounts.watch * 5) / (ALL_KPI_KEYS.length * 10)) * 100)
 
-    // Auto-enable Risk Field when downside dominates
-    if (runwayLow && !touched.has("riskField") && !shlIsOn(shlWeights.risk)) {
-      setWeight("risk", DEFAULT_SHL_WEIGHTS.risk)
+    const snapshot = buildKpiSnapshot({
+      cashBalance: liveKpis.cashOnHand, runwayMonths: liveKpis.runwayMonths,
+      growthRatePct: liveKpis.growthRatePct, arr: liveKpis.arr,
+      revenueMonthly: liveKpis.revenueMonthly, burnMonthly: liveKpis.burnMonthly,
+      churnPct: liveKpis.churnPct, grossMarginPct: liveKpis.grossMarginPct,
+      headcount: liveKpis.headcount, enterpriseValue: liveKpis.valuationEstimate,
+    })
+    const timeline = timeSimulation(snapshot, { direct: {}, monthlyGrowthRates: { cash: -0.02, burn: 0.01, churn: 0.005 } }, 12)
+    const cliff = findFirstCliff(timeline)
+
+    const criticalZones = ALL_KPI_KEYS
+      .filter((k) => getHealthLevel(k, liveKpis) === "critical")
+      .map((k) => KPI_ZONE_MAP[k].label)
+
+    const survivalProbability = deriveSurvivalProbability(timeline)
+
+    const filledKpis = [
+      liveKpis.cashOnHand, liveKpis.runwayMonths, liveKpis.arr,
+      liveKpis.revenueMonthly, liveKpis.burnMonthly, liveKpis.grossMarginPct,
+      liveKpis.growthRatePct, liveKpis.churnPct, liveKpis.headcount, liveKpis.valuationEstimate,
+    ]
+    const dataCompletenessPct = Math.round((filledKpis.filter((v) => v != null && v !== 0).length / filledKpis.length) * 100)
+
+    const terrainVariant: import("@/terrain/terrainMaterials").TerrainColorVariant =
+      healthScore >= 68 ? "white" : healthScore >= 42 ? "frost" : "default"
+
+    return { healthScore, healthCounts, cliff, criticalZones, survivalProbability, timeline, dataCompletenessPct, terrainVariant }
+  }, [liveKpis])
+
+  const positionProbability = useMemo<PositionProbabilityOverview | null>(() => {
+    const simulationKpis = activeScenario?.simulationResults?.kpis
+
+    const snapshot = simulationKpis
+      ? buildKpiSnapshot({
+          cashBalance: simulationKpis.cash,
+          runwayMonths: simulationKpis.runway ?? 0,
+          growthRatePct: simulationKpis.growthRate,
+          arr: simulationKpis.revenue * 12,
+          revenueMonthly: simulationKpis.revenue,
+          burnMonthly: simulationKpis.monthlyBurn,
+          churnPct: simulationKpis.churnRate,
+          grossMarginPct: simulationKpis.grossMargin,
+          headcount: simulationKpis.headcount,
+          enterpriseValue: simulationKpis.revenue * 12 * 8,
+        })
+      : liveKpis
+        ? buildKpiSnapshot({
+            cashBalance: liveKpis.cashOnHand,
+            runwayMonths: liveKpis.runwayMonths,
+            growthRatePct: liveKpis.growthRatePct,
+            arr: liveKpis.arr,
+            revenueMonthly: liveKpis.revenueMonthly,
+            burnMonthly: liveKpis.burnMonthly,
+            churnPct: liveKpis.churnPct,
+            grossMarginPct: liveKpis.grossMarginPct,
+            headcount: liveKpis.headcount,
+            enterpriseValue: liveKpis.valuationEstimate,
+          })
+        : null
+
+    if (!snapshot) return null
+
+    const timeline = timeSimulation(snapshot, { direct: {}, monthlyGrowthRates: { cash: -0.02, burn: 0.01, churn: 0.005 } }, 12)
+    const cliff = findFirstCliff(timeline)
+    const survivalProbability = deriveSurvivalProbability(timeline)
+
+    const completenessFields = simulationKpis
+      ? [
+          simulationKpis.cash,
+          simulationKpis.runway,
+          simulationKpis.revenue,
+          simulationKpis.monthlyBurn,
+          simulationKpis.grossMargin,
+          simulationKpis.growthRate,
+          simulationKpis.churnRate,
+          simulationKpis.headcount,
+          simulationKpis.arpa,
+        ]
+      : liveKpis
+        ? [
+            liveKpis.cashOnHand,
+            liveKpis.runwayMonths,
+            liveKpis.arr,
+            liveKpis.revenueMonthly,
+            liveKpis.burnMonthly,
+            liveKpis.grossMarginPct,
+            liveKpis.growthRatePct,
+            liveKpis.churnPct,
+            liveKpis.headcount,
+            liveKpis.valuationEstimate,
+          ]
+        : []
+
+    const dataCompletenessPct = completenessFields.length > 0
+      ? Math.round((completenessFields.filter((value) => value != null && value !== 0).length / completenessFields.length) * 100)
+      : 0
+
+    return {
+      survivalProbability,
+      cliff,
+      runwayRiskLabel: cliff ? `Month ${cliff.month}` : "Contained",
+      runwayRiskProbability: cliff ? Math.max(10, 100 - survivalProbability) : 15,
+      modelConfidence: dataCompletenessPct >= 85 ? "High" : dataCompletenessPct >= 60 ? "Medium" : "Low",
+      dataCompletenessPct,
+      subtitle: simulationKpis
+        ? "Aligned to the active scenario simulation currently shaping the Position terrain."
+        : "Aligned to the current baseline position because no active scenario results are available yet.",
     }
+  }, [activeScenario?.simulationResults?.kpis, liveKpis])
 
-    // Auto-enable Diverge when scenario spread exists (scenario completed = spread available)
-    if (!touched.has("diverge") && !shlIsOn(shlWeights.divergence)) {
-      setWeight("divergence", DEFAULT_SHL_WEIGHTS.divergence)
-    }
-
-    // Auto-enable Confidence when data completeness is Low
-    if (vm && vm.confidenceBand === "Low" && !touched.has("confidence") && !shlIsOn(shlWeights.confidence)) {
-      setWeight("confidence", DEFAULT_SHL_WEIGHTS.confidence)
-    }
-  }, [
-    activeScenario?.status,
-    activeScenario?.simulationResults?.completedAt,
-    activeScenario?.simulationResults?.kpis,
-    vm?.confidenceBand,
-  ]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Diagnostic Groups (MODE / PRIMARY INSIGHT / SECONDARY) ──
-  const diagnosticGroups = [
-    {
-      heading: "MODE",
-      items: [
-        {
-          id: "liveVideo",
-          label: "VIDEO",
-          value: videoActive,
-          onChange: handleVideoToggle,
-          className: videoActive ? "videoOn" : (videoPulsing ? "videoPulse" : "videoItem"),
-        },
-      ],
-    },
-    {
-      heading: "PRIMARY INSIGHT",
-      items: [
-        { id: "heatMap", label: "Heat Map", value: heatmapEnabled, onChange: trackedToggleHeatmap },
-        { id: "riskField", label: "Risk Field", value: shlIsOn(shlWeights.risk), onChange: makeTrackedShlToggle("riskField", "risk") },
-        { id: "confidence", label: "Confidence", value: shlIsOn(shlWeights.confidence), onChange: makeTrackedShlToggle("confidence", "confidence") },
-      ],
-    },
-    {
-      heading: "SECONDARY",
-      items: [
-        { id: "markers", label: "Markers", value: renderFlags.showMarkers, onChange: makeTrackedToggle("markers", () => renderFlags.toggle("showMarkers")) },
-        { id: "flow", label: "Flow", value: shlIsOn(shlWeights.flow), onChange: makeTrackedShlToggle("flow", "flow") },
-        { id: "diverge", label: "Diverge", value: shlIsOn(shlWeights.divergence), onChange: makeTrackedShlToggle("diverge", "divergence") },
-        { id: "envelope", label: "Envelope", value: renderFlags.showEnvelope, onChange: makeTrackedToggle("envelope", () => renderFlags.toggle("showEnvelope")) },
-        { id: "annotations", label: "Annotations", value: renderFlags.showAnnotations, onChange: makeTrackedToggle("annotations", () => renderFlags.toggle("showAnnotations")) },
-        { id: "heat", label: "Heat", value: shlIsOn(shlWeights.heat), onChange: makeTrackedShlToggle("heat", "heat") },
-        { id: "resonance", label: "Resonance", value: shlIsOn(shlWeights.resonance), onChange: makeTrackedShlToggle("resonance", "resonance") },
-        { id: "topo", label: "Topo", value: shlIsOn(shlWeights.topography), onChange: makeTrackedShlToggle("topo", "topography") },
-      ],
-    },
-  ]
-
-  if (!scenarioStoreHydrated || !baselineHydrated) {
-    return (
-      <div style={{
-        minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
-        background: "linear-gradient(180deg, #0a0e17 0%, #0f1520 100%)",
-        color: "#e2e8f0", fontFamily: "'Inter', system-ui, sans-serif",
-      }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{
-            width: 24, height: 24, border: "2px solid rgba(34,211,238,0.3)",
-            borderTopColor: "#22d3ee", borderRadius: "50%",
-            animation: "posLoadSpin 0.8s linear infinite", margin: "0 auto 16px",
-          }} />
-          <span style={{ fontSize: 14, opacity: 0.6 }}>Hydrating stores\u2026</span>
-          <style>{`@keyframes posLoadSpin { to { transform: rotate(360deg) } }`}</style>
-        </div>
-      </div>
-    )
-  }
-
-  if (baselineHydrated && !baseline) {
+  // Guard: no baseline → redirect handled by useEffect above, show loading in the meantime
+  if (!baselineV1Raw) {
     return (
       <div style={{
         minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
@@ -575,7 +370,7 @@ export default function PositionPage() {
         color: "#e2e8f0", fontFamily: "'Inter', system-ui, sans-serif",
       }}>
         <div style={{ textAlign: "center", maxWidth: 400 }}>
-          <div style={{ fontSize: 40, marginBottom: 16 }}>\u25B3</div>
+          <div style={{ fontSize: 40, marginBottom: 16 }}>△</div>
           <h2 style={{ margin: "0 0 12px", fontSize: 22, fontWeight: 600, color: "#fff" }}>Baseline Required</h2>
           <p style={{ opacity: 0.5, fontSize: 14, lineHeight: 1.5, marginBottom: 24 }}>
             Complete the Initiate step to establish your company baseline before viewing Position.
@@ -590,30 +385,19 @@ export default function PositionPage() {
               boxShadow: "0 2px 12px rgba(34,211,238,0.15)",
             }}
           >
-            Go to Initiate \u2192
+            Go to Initiate →
           </button>
         </div>
       </div>
     )
   }
 
-  if (!activeScenarioId || !activeScenario) {
-    return <div style={{ padding: 24 }}>No active scenario — redirecting\u2026</div>
-  }
-
   return (
+    <PageShell>
     <div className={styles.page}>
 
-
-      {/* ═══ LAYER 1: Deep navy canvas backdrop ═══ */}
-      <div className={styles.canvasLayer} />
-
-      {/* ═══ ATMOSPHERE LAYERS — 2-layer haze + peak spotlight + refined vignette ═══ */}
-      <div className={styles.atmoSky} aria-hidden="true" />
-      <div className={styles.atmoHazeDeep} aria-hidden="true" />
-      <div className={styles.atmoHazeHorizon} aria-hidden="true" />
-      <div className={styles.atmoSpotlight} aria-hidden="true" />
-      <div className={styles.atmoVignette} aria-hidden="true" />
+      {/* Atmospheric depth veil — pushes JPEG mountain visually behind live terrain */}
+      <div className={styles.bgDepthVeil} aria-hidden="true" />
 
       {/* ═══ LAYER 2: God Mode 3-column instrument grid ═══ */}
       <div className={styles.uiLayer}>
@@ -622,18 +406,8 @@ export default function PositionPage() {
             LEFT RAIL — Intelligence Panel (KPIs + Briefing)
             ══════════════════════════════════════════════════ */}
         <div className={styles.leftCol}>
-          {/* Logo lockup */}
-          <Link to={ROUTES.POSITION} className={styles.logoLockup}>
-            <img src="/stratfit-logo.png" alt="STRATFIT" className={styles.logoImg} />
-            <div>
-              <div className={styles.logoName}>STRATFIT</div>
-              <div className={styles.logoSub}>SCENARIO INTELLIGENCE</div>
-            </div>
-          </Link>
-
-          {/* KPI instruments — grouped health rail */}
           <div className={styles.kpiRailDock} aria-label="KPI Health Rail">
-            <KPIHealthRail kpis={liveKpis} />
+            <KPIHealthRail kpis={liveKpis} focusedKpi={focusedKpi} revealedKpis={revealedKpis} />
           </div>
         </div>
 
@@ -641,183 +415,133 @@ export default function PositionPage() {
             CENTER — Terrain Canvas (dominant, immersive)
             ══════════════════════════════════════════════════ */}
         <div className={styles.centreCol}>
-          {/* Top nav row */}
-          <nav className={styles.pageNav} aria-label="Primary navigation">
-            <NavLink to={ROUTES.INITIATE} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Initiate</NavLink>
-            <NavLink to="/decision" className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Decision</NavLink>
-            <NavLink to={ROUTES.POSITION} className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}>Position</NavLink>
-            <span className={styles.pageNavItem} style={{ opacity: 0.25, cursor: "default", pointerEvents: "none" }}>More coming soon</span>
-          </nav>
-
           {/* Terrain canvas — fills available space */}
-          <div ref={viewportRef} className={styles.terrainViewport} aria-label="Position terrain" style={{ position: "relative" }}>
+          <div ref={viewportRef} className={styles.terrainViewport} aria-label="Position terrain" style={{ position: "relative" }} onMouseLeave={handleViewportMouseLeave}>
             <TerrainStage
-              lockCamera={true}
-              pathsEnabled={false}
-              terrainMetrics={{
-                ...(terrainMetrics ?? {
-                  elevationScale: 1,
-                  roughness: 1,
-                  liquidityDepth: 1,
-                  growthSlope: 0,
-                  volatility: 0,
-                }),
-                // Live tuning overrides
-                ridgeIntensity: terrainTuning.ridgeIntensity,
-                valleyDepth: terrainTuning.valleyDepth,
-                peakSoftness: terrainTuning.peakSoftness,
-                noiseFrequency: terrainTuning.noiseFrequency,
-                microDetailStrength: terrainTuning.microDetailStrength,
-                elevationScale: terrainTuning.elevationScale * (terrainMetrics?.elevationScale ?? 1),
-                roughness: terrainTuning.terrainRoughness * 2 * (terrainMetrics?.roughness ?? 1),
-              } satisfies TerrainMetrics}
+              progressive
+              transparentBackground
+              cinematicLighting
+              colorVariant={positionIntel?.terrainVariant ?? "default"}
+              revealedKpis={revealedKpis}
+              focusedKpi={activeLaserKpi}
+              onFocusKpi={setHoveredKpi}
+              minAzimuthAngle={-POSITION_AZIMUTH_LIMIT}
+              maxAzimuthAngle={POSITION_AZIMUTH_LIMIT}
+              minPolarAngle={POSITION_MIN_POLAR}
+              maxPolarAngle={POSITION_MAX_POLAR}
+              rotateSpeed={0.55}
+              onFocusedMarkerScreen={handleFocusedMarkerScreen}
+              zoneKpis={effectiveZoneKpis}
+              heatmapEnabled={false}
+              cameraPreset={POSITION_PROGRESSIVE_PRESET}
+              autoRotateSpeed={0}
+              showKpiMarkers={showKpiMarkers}
+              hideMarkers
+              tuning={DEFAULT_TUNING}
               granularity={granularity}
-              signals={terrainSignals}
-            >
-              <CameraCompositionRig />
-              <SkyAtmosphere />
-            </TerrainStage>
+              driftMode="oscillate"
+            />
+            <TerrainZoneLabels kpis={liveKpis} revealedKpis={revealedKpis} focusedKpi={focusedKpi} hoveredKpi={hoveredKpi} onFocusKpi={setHoveredKpi} onClickKpi={(kpi) => {
+              if (kpi) {
+                toggleLens(kpi)
+                return
+              }
+              if (focusedKpi) {
+                toggleLens(focusedKpi)
+              }
+            }} />
+            <TerrainLensHint />
+            {activeLaserKpi && markerScreenPos && (
+              <TerrainLensLaser kpi={activeLaserKpi} markerPos={markerScreenPos} viewportRef={viewportRef} />
+            )}
+            {focusedKpi && markerScreenPos && liveKpis && (
+              <TerrainInsightCard kpi={focusedKpi} kpis={liveKpis} markerPos={markerScreenPos} />
+            )}
             <div className={styles.canvasVignette} aria-hidden="true" />
             <IdleMotionLayer viewportRef={viewportRef} />
             <div className={styles.filmGrain} aria-hidden="true" />
             {rippleKey > 0 && (
               <div key={rippleKey} className={styles.terrainRipple} aria-hidden="true" />
             )}
-            {/* Terrain tuning gear — overlay inside viewport */}
-            <TerrainTuningPanel params={terrainTuning} onChange={setTerrainTuning} />
-            {/* Terrain navigation D-pad — bottom-right of viewport */}
+            <button
+              onClick={() => setShowKpiMarkers(v => !v)}
+              title={showKpiMarkers ? "Hide KPI markers" : "Show KPI markers"}
+              style={{
+                position: "absolute", top: 16, right: 60, zIndex: 100,
+                width: 36, height: 36, borderRadius: 8,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                background: showKpiMarkers ? "rgba(34,211,238,0.12)" : "rgba(14,22,36,0.72)",
+                backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+                border: `1px solid ${showKpiMarkers ? "rgba(34,211,238,0.35)" : "rgba(100,180,255,0.15)"}`,
+                color: showKpiMarkers ? "#22d3ee" : "#6BB8FF",
+                cursor: "pointer", fontSize: 14, outline: "none", padding: 0,
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+            </button>
+            <button
+              onClick={() => setAudioEnabled(v => !v)}
+              title={audioEnabled ? "Mute voice narration" : "Enable voice narration"}
+              style={{
+                position: "absolute", top: 16, right: 104, zIndex: 100,
+                width: 36, height: 36, borderRadius: 8,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                background: audioEnabled ? "rgba(34,211,238,0.12)" : "rgba(14,22,36,0.72)",
+                backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+                border: `1px solid ${audioEnabled ? "rgba(34,211,238,0.35)" : "rgba(100,180,255,0.15)"}`,
+                color: audioEnabled ? "#22d3ee" : "#6BB8FF",
+                cursor: "pointer", fontSize: 14, outline: "none", padding: 0,
+              }}
+            >
+              {audioEnabled ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <line x1="23" y1="9" x2="17" y2="15" />
+                  <line x1="17" y1="9" x2="23" y2="15" />
+                </svg>
+              )}
+            </button>
             <TerrainNavWidget />
-            {/* ── HUD: Simulation context pill — transparent glass matching insight overlay ── */}
-            <SimulationContextHUD
-              riskTone={vm?.stateTone ?? "watch"}
-              riskLabel={vm?.state ?? "Assessing"}
-              simulationStatus={activeScenario?.status ?? "draft"}
-              completedAt={activeScenario?.simulationResults?.completedAt ?? null}
-              insightText={vm?.bullets?.[0] ?? ""}
-              runKey={activeScenario?.simulationResults?.completedAt ?? null}
-            />
-            {/* ── Horizon Pulse — simulation completion flash ── */}
-            <HorizonPulse
-              triggerKey={activeScenario?.simulationResults?.completedAt ?? null}
-              disabled={reducedMotion}
-            />
-            {/* DEV: Simulation proof overlay — hidden for demo */}
-            {/* <SimulationProofOverlay
-              scenario={activeScenario ?? null}
-              baselineSnapshotId={baseline ? `bl_${typeof baseline === "object" ? "active" : "none"}` : null}
-            /> */}
-
           </div>
         </div>
 
         {/* ══════════════════════════════════════════════════
-            RIGHT RAIL — Controls (Tuning, Toggles, Diagnostics)
+            RIGHT RAIL — Actions Panel (placeholder)
             ══════════════════════════════════════════════════ */}
         <div className={styles.rightCol}>
-          {/* Command Centre — above fold */}
-          <div className={styles.commandCentreDock} aria-label="Command Centre">
-            {commandCentreOpen ? (
-              <CommandCentrePanel
-                groups={diagnosticGroups}
-                title="Command Centre"
-                onClose={() => setCommandCentreOpen(false)}
-              />
-            ) : (
-              <button
-                type="button"
-                className={styles.collapseToggle}
-                onClick={() => setCommandCentreOpen(true)}
-              >
-                <span>Command Centre</span>
-                <span className={styles.chevron}>&#9656;</span>
-              </button>
-            )}
-          </div>
-
-          {/* Scenario Context + Cinematic Insights */}
-          <div
-            className={styles.baselineIntelDock}
-            aria-label="Scenario Insights"
-          >
-              <ScenarioContextPanel />
-              {/* Simulation running effect — while simulation is in progress */}
-              {activeScenario?.status === "running" && (
-                <div className={styles.simRunning}>
-                  <div className={styles.simRunningLabel}>Simulating scenario</div>
-                  <div className={styles.simRunningDots}>
-                    <span /><span /><span />
-                  </div>
-                </div>
-              )}
-              {/* INSIGHTS toggle — only when not running and not open */}
-              {activeScenario?.status !== "running" && !intelligenceOpen && (
-                <button
-                  type="button"
-                  className={styles.intelToggle}
-                  onClick={() => {
-                    setIntelligenceOpen(true)
-                    // Start auto-close on manual open
-                    clearAutoClose()
-                    autoCloseTimerRef.current = setTimeout(() => {
-                      setIntelligenceOpen(false)
-                  }, 20_000)
-                  }}
-                >
-                {/* Bejeweled insight diamond icon */}
-                <span className={styles.insightIcon} aria-hidden="true">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L3 9L12 22L21 9L12 2Z" fill="url(#gemFill)" stroke="url(#gemStroke)" strokeWidth="1.5" />
-                    <path d="M3 9H21" stroke="rgba(255,255,255,0.25)" strokeWidth="0.8" />
-                    <path d="M12 2L8 9L12 22L16 9L12 2Z" fill="rgba(255,255,255,0.08)" />
-                    <defs>
-                      <linearGradient id="gemFill" x1="12" y1="2" x2="12" y2="22">
-                        <stop offset="0%" stopColor="rgba(0,255,255,0.35)" />
-                        <stop offset="100%" stopColor="rgba(99,102,241,0.2)" />
-                      </linearGradient>
-                      <linearGradient id="gemStroke" x1="3" y1="2" x2="21" y2="22">
-                        <stop offset="0%" stopColor="rgba(0,255,255,0.8)" />
-                        <stop offset="100%" stopColor="rgba(99,102,241,0.6)" />
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                </span>
-                <span>INSIGHTS</span>
-                <span className={styles.kbdHint}>I</span>
-              </button>
-            )}
-          </div>
+          {positionIntel && liveKpis && (
+            <PositionIntelligenceConsole
+              kpis={liveKpis}
+              intel={positionIntel}
+              probability={positionProbability ?? undefined}
+              simRunCount={simRunCount > 0 ? simRunCount : undefined}
+              onOpenWhatIf={() => navigate(ROUTES.WHAT_IF)}
+            />
+          )}
         </div>
       </div>
 
-      {/* ══════════════════════════════════════════════════
-          INTELLIGENCE OVERLAY — Transparent glass on terrain
-          Renders as fixed overlay, separate from right rail
-          ══════════════════════════════════════════════════ */}
-      {intelligenceOpen && (
-        <div className={styles.insightOverlay} aria-label="Intelligence Overlay">
-          <div ref={insightScrollRef} className={styles.insightScrollWrap}>
-            <CommandGlassPanel
-              phase={presentation.phase}
-              onTypewriterComplete={presentation.requestSettle}
-            />
-          </div>
-          {/* Close button — bottom of overlay */}
-          <button
-            type="button"
-            className={styles.intelCollapseBtn}
-            onClick={() => setIntelligenceOpen(false)}
-            aria-label="Dismiss insights (I)"
-          >
-            <span>Dismiss</span>
-            <span className={styles.kbdHint}>I</span>
-          </button>
-        </div>
-      )}
+      {/* Provenance badge */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 16px 4px' }}>
+        <ProvenanceBadge />
+      </div>
 
       {/* Legal disclaimer */}
       <div className={styles.legalDisclaimer}>
         All projections, probabilities and scenario outcomes are generated by STRATFIT's Monte Carlo simulation engine and do not constitute financial advice. Results are illustrative and based on user-supplied inputs. Past performance is not indicative of future results.
       </div>
+      <SystemProbabilityNotice />
+
     </div>
+    </PageShell>
   )
 }

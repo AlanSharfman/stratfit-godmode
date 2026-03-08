@@ -5,10 +5,12 @@ import { useNarrativeStore } from "@/state/narrativeStore"
 import { useRenderFlagsStore } from "@/state/renderFlagsStore"
 
 import type { TerrainMetrics } from "@/terrain/terrainFromBaseline"
+import type { MetricsInput } from "@/terrain/buildTerrain"
 import { baselineReliefScalar, baselineSeedString, createSeed } from "@/terrain/seed"
-import { TERRAIN_CONSTANTS } from "@/terrain/terrainConstants"
+import { TERRAIN_CONSTANTS, TERRAIN_WORLD_SCALE } from "@/terrain/terrainConstants"
 import { buildTerrainWithMetrics, sampleTerrainHeight } from "@/terrain/buildTerrain"
-import { createTerrainSolidMaterial, createTerrainWireMaterial } from "@/terrain/terrainMaterials"
+import { createTerrainSolidMaterial, createTerrainSolidMaterialVariant, createTerrainWireMaterial } from "@/terrain/terrainMaterials"
+import type { TerrainColorVariant } from "@/terrain/terrainMaterials"
 
 export type TerrainSurfaceHandle = {
   getHeightAt: (worldX: number, worldZ: number) => number
@@ -18,11 +20,13 @@ export type TerrainSurfaceHandle = {
 }
 
 type Props = {
-  terrainMetrics?: TerrainMetrics
+  terrainMetrics?: MetricsInput
+  /** Color variant for the terrain surface (used by Compare B-side) */
+  colorVariant?: TerrainColorVariant
 }
 
 const TerrainSurface = forwardRef<TerrainSurfaceHandle, Props>(function TerrainSurface(
-  { terrainMetrics },
+  { terrainMetrics, colorVariant },
   ref
 ) {
   const solidRef = useRef<THREE.Mesh>(null)
@@ -50,7 +54,12 @@ const TerrainSurface = forwardRef<TerrainSurfaceHandle, Props>(function TerrainS
     }
   }, [geometry])
 
-  const solidMat = useMemo(() => createTerrainSolidMaterial(), [])
+  const solidMat = useMemo(
+    () => colorVariant && colorVariant !== "default"
+      ? createTerrainSolidMaterialVariant(colorVariant)
+      : createTerrainSolidMaterial(),
+    [colorVariant],
+  )
   const wireMat = useMemo(() => createTerrainWireMaterial(), [])
 
   useEffect(() => () => solidMat.dispose(), [solidMat])
@@ -61,8 +70,8 @@ const TerrainSurface = forwardRef<TerrainSurfaceHandle, Props>(function TerrainS
     for (const r of [solidRef, latticeRef]) {
       if (!r.current) continue
       r.current.rotation.x = -Math.PI / 2
-      r.current.position.set(0, -6, 0)
-      r.current.scale.set(3.0, 2.8, 2.6)
+      r.current.position.set(0, TERRAIN_CONSTANTS.yOffset, 0)
+      r.current.scale.set(TERRAIN_WORLD_SCALE.x, TERRAIN_WORLD_SCALE.y, TERRAIN_WORLD_SCALE.z)
       r.current.frustumCulled = false
     }
   }, [])
@@ -74,9 +83,16 @@ const TerrainSurface = forwardRef<TerrainSurfaceHandle, Props>(function TerrainS
       solidMesh: solidRef.current,
       latticeMesh: latticeRef.current,
       getHeightAt: (worldX: number, worldZ: number) => {
-        const y = sampleTerrainHeight(worldX, worldZ, seed, TERRAIN_CONSTANTS, terrainMetrics)
+        // The terrain mesh uses the canonical TERRAIN_WORLD_SCALE in world space.
+        // getHeightAt accepts world XZ and must return world Y.
+        // Step 1: convert world → geometry space (inverse mesh XZ scale)
+        const geomX = worldX / TERRAIN_WORLD_SCALE.x
+        const geomZ = worldZ / TERRAIN_WORLD_SCALE.z
+        // Step 2: sample raw geometry height
         const y0 = TERRAIN_CONSTANTS.yOffset
-        return (y - y0) * relief + y0
+        const sampled = sampleTerrainHeight(geomX, geomZ, seed, TERRAIN_CONSTANTS, terrainMetrics)
+        // Step 3: convert geometry height → world Y using the canonical terrain Y scale.
+        return (sampled - y0) * relief * TERRAIN_WORLD_SCALE.y + y0
       },
     }),
     [seed, relief, terrainMetrics]
@@ -90,6 +106,8 @@ const TerrainSurface = forwardRef<TerrainSurfaceHandle, Props>(function TerrainS
         geometry={geometry}
         renderOrder={0}
         name="terrain-surface"
+        receiveShadow
+        castShadow
         onClick={(e) => {
           e.stopPropagation()
           clearSelected()

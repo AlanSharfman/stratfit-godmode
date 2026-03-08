@@ -3,14 +3,12 @@ export const UI_NAV_CONTRACT_VERSION = "v1" as const
 export const UI_NAV_ITEMS = [
   { key: "initiate", label: "INITIATE", href: "/initiate" },
   { key: "position", label: "POSITION", href: "/position" },
+  { key: "decision", label: "DECISION", href: "/decision" },
   { key: "studio", label: "STUDIO", href: "/studio" },
   { key: "compare", label: "COMPARE", href: "/compare" },
-  { key: "insights", label: "INSIGHTS", href: "/insights" },
   { key: "risk", label: "RISK", href: "/risk" },
   { key: "valuation", label: "VALUATION", href: "/valuation" },
-  { key: "assessment", label: "ASSESSMENT", href: "/assessment" },
-  { key: "roadmap", label: "ROADMAP", href: "/roadmap" },
-  { key: "coming", label: "COMING FEATURES", href: "/coming-features" },
+  { key: "command", label: "COMMAND CENTRE", href: "/command" },
 ] as const
 
 export type UiNavKey = (typeof UI_NAV_ITEMS)[number]["key"]

@@ -58,16 +58,31 @@ const DecisionCardGrid: React.FC<DecisionCardGridProps> = memo(({
             disabled={disabled}
             tabIndex={0}
           >
-            <div className={styles.cardDot}>
-              {isSelected && <div className={styles.cardDotInner} />}
+            {/* Icon badge */}
+            <div
+              className={styles.cardIcon}
+              style={{
+                color: isSelected ? dt.accent : undefined,
+                borderColor: isSelected ? `${dt.accent}40` : undefined,
+                boxShadow: isSelected ? `0 0 14px ${dt.accent}25, inset 0 0 12px ${dt.accent}10` : undefined,
+              }}
+            >
+              {dt.icon}
             </div>
             <div className={styles.cardContent}>
               <div className={styles.cardLabel}>{dt.label}</div>
               <div className={styles.cardDesc}>{dt.description}</div>
             </div>
-            {isSelected && (
-              <div className={styles.cardCheck} aria-hidden="true">✓</div>
-            )}
+            {/* Selection indicator */}
+            <div className={styles.cardIndicator}>
+              {isSelected ? (
+                <div className={styles.cardCheckmark}>✓</div>
+              ) : (
+                <div className={styles.cardDot} />
+              )}
+            </div>
+            {/* Top accent bar on selected */}
+            {isSelected && <div className={styles.cardAccentBar} style={{ background: `linear-gradient(90deg, ${dt.accent}60 0%, ${dt.accent}00 100%)` }} />}
           </button>
         )
       })}

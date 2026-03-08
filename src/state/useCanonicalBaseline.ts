@@ -1,5 +1,7 @@
-import { useBaselineStore } from "@/state/baselineStore"
+import { useSystemBaseline } from "@/system/SystemBaselineProvider"
 
+/** Returns the canonical BaselineV1 (null if not yet established). */
 export function useCanonicalBaseline() {
-  return useBaselineStore((s) => s.baseline)
+  const { baseline } = useSystemBaseline()
+  return baseline
 }

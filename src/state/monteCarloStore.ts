@@ -36,7 +36,7 @@ export const useMonteCarloStore = create<MonteCarloState>((set, get) => ({
   // Default configuration
   config: {
     particleCount: 500,
-    simulationRuns: 1000,
+    simulationRuns: 10_000,
     confidenceInterval: 0.95,
     volatilityFactor: 0.15,
   },

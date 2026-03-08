@@ -30,6 +30,7 @@ import type {
   LeverState,
   SimulationConfig,
 } from "@/logic/monteCarloEngine";
+import { DEFAULT_EV_MULTIPLE } from "@/logic/engineConstants";
 
 import {
   computeRiskProfile,
@@ -121,7 +122,7 @@ export interface StrategyInputs {
 }
 
 export interface MethodConfig {
-  evMultiple?: number;               // default 3.5
+  evMultiple?: number;
   sensitivityRuns?: number;          // default 200
   shockBaselineIntensity?: number;   // default 0
   parameterStabilityScore?: number;  // default 0.75
@@ -152,7 +153,7 @@ export function runSystemAnalysis(input: RunSystemAnalysisInput): SystemAnalysis
   } = input;
 
   const {
-    evMultiple = 3.5,
+    evMultiple = DEFAULT_EV_MULTIPLE,
     sensitivityRuns = 200,
     shockBaselineIntensity = 0,
     parameterStabilityScore = 0.75,

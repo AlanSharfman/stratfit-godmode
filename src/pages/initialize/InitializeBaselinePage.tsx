@@ -1,47 +1,37 @@
-import React, { useCallback, useMemo, useState } from "react"
+import React, { useCallback, useMemo, useRef, useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { useBaselineStore } from "@/state/baselineStore"
-import ConsoleFrame from "@/layout/ConsoleFrame"
-import css from "./IngressConsole.module.css"
+import { useSystemBaseline } from "@/system/SystemBaselineProvider"
+import type { BaselineV1 } from "@/onboard/baseline"
+import { CommandCenterSliderRow, type CommandCenterSliderTooltip } from "@/components/ui/CommandCenterSliderDeck"
+import PageShell from "@/components/nav/PageShell"
+import { usePhase1ScenarioStore, type SimulationKpis } from "@/state/phase1ScenarioStore"
+import { runSimulation } from "@/engine/simulationService"
 
 /* ═══════════════════════════════════════════════════════════════════
-   FEATURE FLAG — V2 Dense Instrument Console
-   Set localStorage key sf_initiate_v2 = "1" to enable V2.
-   Default: legacy.
-   ═══════════════════════════════════════════════════════════════════ */
-const USE_INITIATE_V2 =
-  typeof window !== "undefined" &&
-  window.localStorage.getItem("sf_initiate_v2") === "1"
+   STRATFIT — Initiate Command Center (God Mode Single-Page HUD)
 
-// Lazy-load V2 to keep legacy bundle untouched
-const InitializeBaselineConsoleV2 = React.lazy(
-  () => import("./InitializeBaselineV2"),
-)
-
-/* ═══════════════════════════════════════════════════════════════════
-   TYPES
+   Single-page tactical grid. Machined bezel modules.
+   All 8 data modules visible at once with live outcome rail.
    ═══════════════════════════════════════════════════════════════════ */
 
 type AccessToCapital = "Moderate" | "Strong"
 type HiringVelocity = "Low" | "Medium" | "High"
 type BurnFlexibility = "Fixed" | "Variable"
 type RiskTolerance = "Conservative" | "Balanced" | "Aggressive"
-type WizardStep = 1 | 2 | 3 | 4
+type InputPath = "manual" | "xero" | "excel"
 
 interface FormState {
-  /* Step 1 — Identity & Context */
+  contactName: string
+  contactEmail: string
   companyName: string
   industry: string
   stage: string
-
-  /* Step 2 — Financial Position */
   cashOnHand: number
   monthlyNetBurn: number
   debtOutstanding: number
   debtInterestRate: number
   fundraisingWindow: number
   accessToCapital: AccessToCapital
-
   currentARR: number
   monthlyGrowthPct: number
   grossMarginPct: number
@@ -49,96 +39,110 @@ interface FormState {
   monthlyChurnPct: number
   salesEfficiency: number
   netRevenueRetentionPct: number
-
   headcount: number
   avgFullyLoadedCost: number
   salesMarketingSpend: number
   rdSpend: number
   gaSpend: number
   cogsPct: number
-
-  /* Customer Unit Economics */
   cac: number
-
-  /* Step 3 — Operating Structure */
   hiringVelocity: HiringVelocity
   salesRampTime: number
   engineeringVelocity: number
   burnFlexibility: BurnFlexibility
-
-  /* Step 4 — Strategic Intent */
   riskTolerance: RiskTolerance
   targetGrowthBand: number
   priorityBalance: number
+  annualCapex: number
+  capexIntensityPct: number
+  arDays: number
+  apDays: number
 }
-
-/* ═══════════════════════════════════════════════════════════════════
-   DEFAULTS
-   ═══════════════════════════════════════════════════════════════════ */
 
 const INITIAL: FormState = {
-  companyName: "",
-  industry: "",
-  stage: "",
-
-  cashOnHand: 500_000,
-  monthlyNetBurn: 75_000,
-  debtOutstanding: 0,
-  debtInterestRate: 0,
-  fundraisingWindow: 6,
-  accessToCapital: "Moderate",
-
-  currentARR: 1_200_000,
-  monthlyGrowthPct: 8,
-  grossMarginPct: 70,
-  avgDealSize: 3_200,
-  monthlyChurnPct: 3,
-  salesEfficiency: 1.0,
-  netRevenueRetentionPct: 110,
-
-  headcount: 18,
-  avgFullyLoadedCost: 140_000,
-  salesMarketingSpend: 60_000,
-  rdSpend: 80_000,
-  gaSpend: 30_000,
-  cogsPct: 45_000,
-  cac: 8_000,
-
-  hiringVelocity: "Medium",
-  salesRampTime: 4,
-  engineeringVelocity: 4,
-  burnFlexibility: "Variable",
-
-  riskTolerance: "Balanced",
-  targetGrowthBand: 4,
-  priorityBalance: 50,
+  contactName: "", contactEmail: "", companyName: "", industry: "", stage: "",
+  cashOnHand: 500_000, monthlyNetBurn: 75_000, debtOutstanding: 0, debtInterestRate: 0,
+  fundraisingWindow: 6, accessToCapital: "Moderate",
+  currentARR: 1_200_000, monthlyGrowthPct: 8, grossMarginPct: 70, avgDealSize: 3_200,
+  monthlyChurnPct: 3, salesEfficiency: 1.0, netRevenueRetentionPct: 110,
+  headcount: 18, avgFullyLoadedCost: 140_000, salesMarketingSpend: 60_000,
+  rdSpend: 80_000, gaSpend: 30_000, cogsPct: 45_000, cac: 8_000,
+  hiringVelocity: "Medium", salesRampTime: 4, engineeringVelocity: 4, burnFlexibility: "Variable",
+  riskTolerance: "Balanced", targetGrowthBand: 4, priorityBalance: 50,
+  annualCapex: 120_000, capexIntensityPct: 10, arDays: 45, apDays: 30,
 }
 
-/* ═══════════════════════════════════════════════════════════════════
-   HELPERS
-   ═══════════════════════════════════════════════════════════════════ */
+const STAGES = ["Ideation", "Startup", "Early Growth", "Growth", "High Growth", "Scale", "Exit Ready"]
+const INDUSTRIES = ["SaaS", "Fintech", "HealthTech", "EdTech", "E-Commerce", "AI / ML", "DevTools", "Marketplace", "Hardware", "Other"]
+
+const INITIATE_SLIDER_TOOLTIPS: Record<string, CommandCenterSliderTooltip> = {
+  cashOnHand: {
+    description: "Current liquidity available to absorb burn, shocks, and execution delays.",
+    impact: "Higher = more runway and stronger near-term resilience.",
+  },
+  monthlyNetBurn: {
+    description: "Net monthly cash consumption after gross profit and operating spend.",
+    impact: "Higher = faster runway compression and more financing pressure.",
+  },
+  annualCapex: {
+    description: "Annual investment in infrastructure, equipment, or other long-lived operating assets.",
+    impact: "Higher = more upfront spend and less short-term cash flexibility.",
+  },
+  capexIntensityPct: {
+    description: "Share of revenue being reinvested into capital expenditure requirements.",
+    impact: "Higher = heavier reinvestment burden on current cash generation.",
+  },
+  currentARR: {
+    description: "Current annual recurring revenue baseline used across the STRATFIT engine.",
+    impact: "Higher = stronger revenue base and more room to absorb volatility.",
+  },
+  monthlyGrowthPct: {
+    description: "Current recurring revenue growth rate feeding the baseline trajectory.",
+    impact: "Higher = faster momentum, stronger valuation lift, and higher expectations.",
+  },
+  grossMarginPct: {
+    description: "Gross profit retained after direct delivery costs and cost of service.",
+    impact: "Higher = better efficiency and more operating leverage.",
+  },
+  monthlyChurnPct: {
+    description: "Rate at which customers or revenue leave the system each month.",
+    impact: "Higher = weaker retention and lower quality of growth.",
+  },
+  salesEfficiency: {
+    description: "Efficiency of turning go-to-market spend into incremental recurring revenue.",
+    impact: "Higher = stronger conversion of spend into scalable growth.",
+  },
+  netRevenueRetentionPct: {
+    description: "Revenue retained and expanded from the existing customer base over time.",
+    impact: "Higher = expansion-led growth and a healthier underlying engine.",
+  },
+  salesRampTime: {
+    description: "Time required for new sales capacity to reach productive performance.",
+    impact: "Higher = slower payback and longer time to convert hiring into revenue.",
+  },
+  engineeringVelocity: {
+    description: "Time required to turn product effort into shipped roadmap progress.",
+    impact: "Higher = slower delivery cadence and more execution drag.",
+  },
+}
+
+/* ── Helpers ── */
 
 function fmtCurrency(v: number): string {
   if (Math.abs(v) >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`
+  if (Math.abs(v) >= 1_000) return `$${(Math.abs(v) / 1_000).toFixed(0)}K`
   return `$${Math.round(Math.abs(v)).toLocaleString()}`
 }
 
-function sliderFill(value: number, min: number, max: number): React.CSSProperties {
-  const pct = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100))
-  return {
-    background: `linear-gradient(90deg, #065f73 0%, #0e7490 ${pct * 0.3}%, #22d3ee ${pct * 0.7}%, #67e8f9 ${pct}%, rgba(255,255,255,0.04) ${pct}%, rgba(255,255,255,0.04) 100%)`,
-    boxShadow: pct > 3
-      ? `0 0 ${6 + pct * 0.12}px rgba(34,211,238,${0.18 + pct * 0.004}), 0 0 ${2 + pct * 0.06}px rgba(103,232,249,${0.10 + pct * 0.002}), inset 0 1px 2px rgba(0,0,0,0.35)`
-      : 'inset 0 1px 2px rgba(0,0,0,0.35)',
-  }
-}
-
 function computeMetrics(f: FormState) {
-  const runway = f.monthlyNetBurn > 0 ? f.cashOnHand / f.monthlyNetBurn : 0
-  const monthlyRevGrowth = (f.monthlyGrowthPct / 100) * (f.currentARR / 12)
-  const burnMultiple =
-    monthlyRevGrowth > 0 ? f.monthlyNetBurn / monthlyRevGrowth : 0
-
+  const monthlyCapex = f.annualCapex / 12
+  const effectiveBurn = f.monthlyNetBurn + monthlyCapex
+  const monthlyRevenue = f.currentARR / 12
+  const wcCashTied = Math.max(0, f.arDays - f.apDays) / 30 * monthlyRevenue
+  const effectiveCash = Math.max(0, f.cashOnHand - wcCashTied)
+  const runway = effectiveBurn > 0 ? effectiveCash / effectiveBurn : 0
+  const monthlyRevGrowth = (f.monthlyGrowthPct / 100) * monthlyRevenue
+  const burnMultiple = monthlyRevGrowth > 0 ? effectiveBurn / monthlyRevGrowth : 0
   let prob = 0
   if (runway >= 24) prob = 80
   else if (runway >= 18) prob = 65
@@ -148,1014 +152,1298 @@ function computeMetrics(f: FormState) {
   if (f.monthlyGrowthPct > 5) prob += 8
   if (f.netRevenueRetentionPct > 100) prob += 7
   if (f.monthlyChurnPct < 3) prob += 5
-  prob = Math.min(100, prob)
-
+  if (f.capexIntensityPct > 25) prob -= 5
+  if ((f.arDays - f.apDays) > 60) prob -= 4
+  prob = Math.min(100, Math.max(0, prob))
+  const totalCost = f.headcount * f.avgFullyLoadedCost + f.salesMarketingSpend + f.rdSpend + f.gaSpend + f.annualCapex
+  const operatingProfit = f.currentARR - totalCost
+  const revenuePerHead = f.headcount > 0 ? Math.round(f.currentARR / f.headcount) : 0
   return {
     runway: Number.isFinite(runway) ? runway : 0,
     burnMultiple: Number.isFinite(burnMultiple) ? burnMultiple : 0,
-    monthlyBurn: f.monthlyNetBurn,
+    monthlyBurn: effectiveBurn,
     survivalProbability: prob,
+    operatingProfit,
+    revenuePerHead,
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════════
-   WIZARD CONFIG
-   ═══════════════════════════════════════════════════════════════════ */
+/* ── CSV helpers ── */
 
-const WIZARD_STEPS: { num: WizardStep; label: string }[] = [
-  { num: 1, label: "Identity & Context" },
-  { num: 2, label: "Financial Position" },
-  { num: 3, label: "Operating Structure" },
-  { num: 4, label: "Strategic Intent" },
+const CSV_FIELD_MAP: Array<{ key: keyof FormState; label: string; example: string }> = [
+  { key: "contactName", label: "Contact Name", example: "Jane Doe" },
+  { key: "contactEmail", label: "Email", example: "jane@acme.com" },
+  { key: "companyName", label: "Company Name", example: "Acme Inc" },
+  { key: "industry", label: "Industry", example: "SaaS" },
+  { key: "stage", label: "Stage", example: "Early Growth" },
+  { key: "cashOnHand", label: "Cash on Hand ($)", example: "500000" },
+  { key: "monthlyNetBurn", label: "Monthly Net Burn ($)", example: "75000" },
+  { key: "debtOutstanding", label: "Debt Outstanding ($)", example: "0" },
+  { key: "debtInterestRate", label: "Debt Interest Rate (%)", example: "0" },
+  { key: "fundraisingWindow", label: "Fundraising Window (months)", example: "6" },
+  { key: "accessToCapital", label: "Access to Capital (Moderate/Strong)", example: "Moderate" },
+  { key: "currentARR", label: "Current ARR ($)", example: "1200000" },
+  { key: "monthlyGrowthPct", label: "Monthly Growth (%)", example: "8" },
+  { key: "grossMarginPct", label: "Gross Margin (%)", example: "70" },
+  { key: "avgDealSize", label: "Average Deal Size / ACV ($)", example: "3200" },
+  { key: "monthlyChurnPct", label: "Monthly Churn (%)", example: "3" },
+  { key: "salesEfficiency", label: "Sales Efficiency (x)", example: "1.0" },
+  { key: "netRevenueRetentionPct", label: "Net Revenue Retention (%)", example: "110" },
+  { key: "headcount", label: "Headcount", example: "18" },
+  { key: "avgFullyLoadedCost", label: "Avg Fully Loaded Cost ($)", example: "140000" },
+  { key: "salesMarketingSpend", label: "Sales & Marketing Spend ($)", example: "60000" },
+  { key: "rdSpend", label: "R&D Spend ($)", example: "80000" },
+  { key: "gaSpend", label: "G&A Spend ($)", example: "30000" },
+  { key: "cogsPct", label: "COGS ($)", example: "45000" },
+  { key: "cac", label: "CAC ($)", example: "8000" },
+  { key: "hiringVelocity", label: "Hiring Velocity (Low/Medium/High)", example: "Medium" },
+  { key: "salesRampTime", label: "Sales Ramp Time (months)", example: "4" },
+  { key: "engineeringVelocity", label: "Engineering Velocity (months)", example: "4" },
+  { key: "burnFlexibility", label: "Burn Flexibility (Fixed/Variable)", example: "Variable" },
+  { key: "riskTolerance", label: "Risk Tolerance (Conservative/Balanced/Aggressive)", example: "Balanced" },
+  { key: "targetGrowthBand", label: "Target Growth Band (months)", example: "4" },
+  { key: "priorityBalance", label: "Priority Balance (0=Survival, 100=Expansion)", example: "50" },
+  { key: "annualCapex", label: "Annual CAPEX ($)", example: "120000" },
+  { key: "capexIntensityPct", label: "CAPEX Intensity (% of Revenue)", example: "10" },
+  { key: "arDays", label: "Accounts Receivable Days", example: "45" },
+  { key: "apDays", label: "Accounts Payable Days", example: "30" },
 ]
 
-const STAGES = [
-  "Pre-Seed", "Seed", "Series A", "Series B", "Series C+", "Growth", "Bootstrapped",
-]
-const INDUSTRIES = [
-  "SaaS", "Fintech", "HealthTech", "EdTech", "E-Commerce",
-  "AI / ML", "DevTools", "Marketplace", "Hardware", "Other",
-]
-
-/* ═══════════════════════════════════════════════════════════════════
-   SUB-COMPONENTS
-   ═══════════════════════════════════════════════════════════════════ */
-
-interface SliderRowProps {
-  label: string
-  value: number
-  min: number
-  max: number
-  step: number
-  format: (v: number) => string
-  onChange: (v: number) => void
-  showScale?: boolean
+function generateCSVTemplate(): string {
+  return CSV_FIELD_MAP.map((f) => f.label).join(",") + "\n" + CSV_FIELD_MAP.map((f) => f.example).join(",")
 }
 
-function SliderRow({
-  label, value, min, max, step, format, onChange, showScale = true,
-}: SliderRowProps) {
+function downloadCSV(filename: string, content: string) {
+  const blob = new Blob([content], { type: "text/csv;charset=utf-8;" })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement("a")
+  a.href = url; a.download = filename; a.click()
+  URL.revokeObjectURL(url)
+}
+
+function parseCSVToForm(text: string): Partial<FormState> | null {
+  const lines = text.trim().split(/\r?\n/).filter(Boolean)
+  if (lines.length < 2) return null
+  const headers = lines[0].split(",").map((h) => h.trim())
+  const values = lines[1].split(",").map((v) => v.trim())
+  const result: Record<string, unknown> = {}
+  const numericKeys: Array<keyof FormState> = [
+    "cashOnHand", "monthlyNetBurn", "debtOutstanding", "debtInterestRate",
+    "fundraisingWindow", "currentARR", "monthlyGrowthPct", "grossMarginPct",
+    "avgDealSize", "monthlyChurnPct", "salesEfficiency", "netRevenueRetentionPct",
+    "headcount", "avgFullyLoadedCost", "salesMarketingSpend", "rdSpend",
+    "gaSpend", "cogsPct", "cac", "salesRampTime", "engineeringVelocity",
+    "targetGrowthBand", "priorityBalance",
+    "annualCapex", "capexIntensityPct", "arDays", "apDays",
+  ]
+  for (const field of CSV_FIELD_MAP) {
+    const idx = headers.findIndex((h) => h.toLowerCase() === field.label.toLowerCase())
+    if (idx === -1 || !values[idx]) continue
+    const raw = values[idx]
+    if (numericKeys.includes(field.key)) {
+      const n = Number(raw.replace(/[$,%]/g, ""))
+      if (!Number.isNaN(n)) result[field.key] = n
+    } else {
+      result[field.key] = raw
+    }
+  }
+  return result as Partial<FormState>
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   TACTICAL SUB-COMPONENTS
+   ═══════════════════════════════════════════════════════════════════ */
+
+function Module({ title, children, style }: { title: string; children: React.ReactNode; style?: React.CSSProperties }) {
   return (
-    <div className={css.sliderRow}>
-      <div className={css.sliderHeader}>
-        <span className={css.sliderLabel}>{label}</span>
-        <span className={css.sliderInfoIcon}>i</span>
-      </div>
-      <div className={css.sliderBody}>
-        <div className={css.sliderControl}>
-          <input
-            type="range"
-            className={css.sliderInput}
-            min={min}
-            max={max}
-            step={step}
-            value={value}
-            style={sliderFill(value, min, max)}
-            onChange={(e) => onChange(Number(e.target.value))}
-          />
-          {showScale && (
-            <div className={css.sliderScale}>
-              <span>LOW</span>
-              <span>NEUTRAL</span>
-              <span>HIGH</span>
-            </div>
-          )}
-        </div>
-        <div className={css.sliderValueWrap}>
-          <span className={css.sliderValue}>{format(value)}</span>
-          <span className={css.sliderValueBar} />
-        </div>
-      </div>
-    </div>
+    <section style={{
+      display: "flex", flexDirection: "column",
+      background: "linear-gradient(145deg, rgba(14,34,56,0.95), rgba(10,28,46,0.98))",
+      border: "1px solid rgba(34,211,238,0.12)",
+      borderRadius: 12,
+      boxShadow: "0 1px 0 rgba(34,211,238,0.06) inset, 0 -1px 0 rgba(0,0,0,0.3) inset, 0 8px 32px rgba(0,0,0,0.5), 0 0 1px rgba(34,211,238,0.15)",
+      backdropFilter: "blur(8px)",
+      ...style,
+    }}>
+      <div style={{ height: 2, background: "linear-gradient(90deg, transparent 0%, #22D3EE 30%, #22D3EE 70%, transparent 100%)", borderRadius: "12px 12px 0 0", flexShrink: 0 }} />
+      <header style={SC.moduleHeader}>{title}</header>
+      <div style={{ flex: 1, padding: "0 0 16px" }}>{children}</div>
+    </section>
   )
 }
 
-interface InputRowProps {
-  label: string
-  value: number | string
-  prefix?: string
-  suffix?: string
-  type?: string
-  placeholder?: string
-  onChange: (v: string) => void
+function PowerBar({ id, label, value, max, unit = "", onChange }: {
+  id: keyof typeof INITIATE_SLIDER_TOOLTIPS; label: string; value: number; max: number; unit?: string; onChange?: (v: number) => void
+}) {
+  const display = unit === "%" ? `${value.toFixed(1)}${unit}`
+    : unit === "x" ? `${value.toFixed(1)}${unit}`
+    : unit ? `${value.toLocaleString()}${unit}`
+    : value >= 1_000_000 ? `$${(value / 1e6).toFixed(1)}M`
+    : value >= 1_000 ? `$${(value / 1e3).toFixed(0)}K`
+    : `${value.toLocaleString()}`
+
+  return (
+    <CommandCenterSliderRow
+      slider={{
+        id,
+        label,
+        value,
+        min: 0,
+        max,
+        step: max > 100 ? Math.max(1, max / 200) : unit === "x" ? 0.1 : 0.1,
+        format: () => display,
+        tooltip: INITIATE_SLIDER_TOOLTIPS[id],
+      }}
+      onChange={(nextValue) => onChange?.(nextValue)}
+    />
+  )
 }
 
-function InputRow({
-  label, value, prefix, suffix, type = "number", placeholder, onChange,
-}: InputRowProps) {
+function TacticalInput({ label, value, prefix, suffix, placeholder, onChange }: {
+  label: string; value?: string | number; prefix?: string; suffix?: string
+  placeholder?: string; onChange?: (v: string) => void
+}) {
+  const display = typeof value === "number" ? value.toLocaleString() : value ?? ""
   return (
-    <div className={css.inputRow}>
-      <span className={css.inputLabel}>{label}</span>
-      <div className={css.inputFieldWrap}>
-        {prefix && <span className={css.inputPrefix}>{prefix}</span>}
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <label style={SC.inputLabel}>{label}</label>
+      <div className="bezel-carved" style={SC.inputWrap}>
+        {prefix && <span style={SC.inputAffix}>{prefix}</span>}
         <input
-          className={css.inputField}
-          type={type}
-          value={value}
+          style={SC.inputInner}
+          type="text"
+          inputMode="numeric"
+          value={display}
           placeholder={placeholder}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => onChange?.(e.target.value.replace(/,/g, ""))}
         />
-        {suffix && <span className={css.inputSuffix}>{suffix}</span>}
+        {suffix && <span style={SC.inputAffix}>{suffix}</span>}
       </div>
     </div>
   )
 }
 
-interface ToggleGroupProps<T extends string> {
-  options: T[]
-  value: T
-  onChange: (v: T) => void
+function StatusToggle({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        padding: "7px 0",
+        borderRadius: 8,
+        fontSize: 10,
+        fontWeight: 600,
+        letterSpacing: "0.06em",
+        textTransform: "uppercase",
+        fontFamily: FONT,
+        cursor: "pointer",
+        transition: "all 0.15s",
+        border: active ? "1px solid #22D3EE" : "1px solid #1E3A5F",
+        background: active ? "#22D3EE" : "#122E48",
+        color: active ? "#04121F" : "#8FB4D9",
+        boxShadow: active ? "0 0 10px rgba(34,211,238,0.3)" : "none",
+      }}
+    >
+      {label}
+    </button>
+  )
 }
 
-function ToggleGroup<T extends string>({
-  options, value, onChange,
-}: ToggleGroupProps<T>) {
+function ToggleRow<T extends string>({ label, options, value, onChange }: {
+  label: string; options: T[]; value: T; onChange: (v: T) => void
+}) {
   return (
-    <div className={css.toggleGroup}>
-      {options.map((opt) => (
-        <button
-          key={opt}
-          type="button"
-          className={`${css.toggleOption} ${value === opt ? css.toggleOptionActive : ""}`}
-          onClick={() => onChange(opt)}
-        >
-          {opt}
-        </button>
-      ))}
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+      <span style={SC.toggleLabel}>{label}</span>
+      <div style={SC.toggleGroup}>
+        {options.map((opt) => (
+          <button
+            key={opt} type="button"
+            onClick={() => onChange(opt)}
+            style={{
+              ...SC.toggleBtn,
+              ...(value === opt ? SC.toggleBtnActive : {}),
+            }}
+          >{opt}</button>
+        ))}
+      </div>
     </div>
   )
 }
 
-/* ═══════════════════════════════════════════════════════════════════
-   DEFAULT EXPORT — Feature Flag Router
-   ═══════════════════════════════════════════════════════════════════ */
+function BinarySwitch({ label, active, onToggle }: { label: string; active: boolean; onToggle: () => void }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+      <span style={{ fontSize: 10, fontWeight: 500, color: "#E6F1FF", letterSpacing: "0.02em" }}>{label}</span>
+      <div style={{ display: "flex", padding: 2, background: "#0A1C2E", borderRadius: 6, border: "1px solid #1E3A5F" }}>
+        <button type="button" onClick={() => { if (!active) onToggle() }} style={{
+          padding: "4px 12px", fontSize: 9, fontWeight: 700, borderRadius: 4, border: "none", fontFamily: FONT,
+          cursor: "pointer", transition: "all 0.15s",
+          background: active ? "#22D3EE" : "transparent",
+          color: active ? "#04121F" : "#8FB4D9",
+          boxShadow: active ? "0 0 8px rgba(34,211,238,0.3)" : "none",
+        }}>Yes</button>
+        <button type="button" onClick={() => { if (active) onToggle() }} style={{
+          padding: "4px 12px", fontSize: 9, fontWeight: 700, borderRadius: 4, border: "none", fontFamily: FONT,
+          cursor: "pointer", transition: "all 0.15s",
+          background: !active ? "#122E48" : "transparent",
+          color: !active ? "#8FB4D9" : "#8FB4D9",
+        }}>No</button>
+      </div>
+    </div>
+  )
+}
 
-export default function InitializeBaselinePage() {
-  if (USE_INITIATE_V2) {
-    return (
-      <React.Suspense
-        fallback={
-          <div
-            style={{
-              minHeight: "100vh",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "#040710",
-              color: "rgba(255,255,255,0.3)",
-              fontFamily: "Inter, system-ui, sans-serif",
-              fontSize: 13,
-              letterSpacing: "0.08em",
-            }}
-          >
-            LOADING CONSOLE…
-          </div>
-        }
-      >
-        <InitializeBaselineConsoleV2 />
-      </React.Suspense>
+function GaugeKnob({ angle }: { angle: number }) {
+  const SIZE = 180
+  const CX = SIZE / 2
+  const CY = SIZE / 2
+
+  const R_PLATE = 82
+  const R_CHROME = 68
+  const R_GRIP = 60
+  const R_CAP = 34
+  const R_INDICATOR = 52
+
+  const arcStart = -135
+  const arcEnd = 135
+  const arcRange = arcEnd - arcStart
+
+  const normalised = (angle + 45) / 90
+  const sweepAngle = arcStart + normalised * arcRange
+  const needleRad = (sweepAngle * Math.PI) / 180
+
+  const arcPath = (startDeg: number, endDeg: number, r: number) => {
+    const s = (startDeg * Math.PI) / 180
+    const e = (endDeg * Math.PI) / 180
+    const x1 = CX + r * Math.cos(s)
+    const y1 = CY + r * Math.sin(s)
+    const x2 = CX + r * Math.cos(e)
+    const y2 = CY + r * Math.sin(e)
+    const large = Math.abs(endDeg - startDeg) > 180 ? 1 : 0
+    return `M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}`
+  }
+
+  const KNURL_COUNT = 48
+  const knurls = []
+  for (let i = 0; i < KNURL_COUNT; i++) {
+    const deg = (i / KNURL_COUNT) * 360
+    const rad = (deg * Math.PI) / 180
+    const r1 = R_GRIP + 1
+    const r2 = R_GRIP - 3
+    knurls.push(
+      <line key={`k${i}`}
+        x1={CX + r1 * Math.cos(rad)} y1={CY + r1 * Math.sin(rad)}
+        x2={CX + r2 * Math.cos(rad)} y2={CY + r2 * Math.sin(rad)}
+        stroke="rgba(140,175,210,0.12)" strokeWidth={1} strokeLinecap="round"
+      />
     )
   }
-  return <InitializeBaselineLegacy />
+
+  const TICK_COUNT = 21
+  const ticks = []
+  const labels: React.ReactNode[] = []
+  for (let i = 0; i <= TICK_COUNT; i++) {
+    const deg = arcStart + (i / TICK_COUNT) * arcRange
+    const rad = (deg * Math.PI) / 180
+    const isMajor = i % 7 === 0
+    const isMid = i % 7 !== 0 && i % 3 === 0
+    const r1 = R_PLATE - 2
+    const r2 = isMajor ? R_PLATE - 14 : isMid ? R_PLATE - 10 : R_PLATE - 7
+    const color = isMajor ? "#8FB4D9" : isMid ? "#4A6A8A" : "#1E3A5F"
+    const w = isMajor ? 2 : 1
+    ticks.push(
+      <line key={`t${i}`}
+        x1={CX + r1 * Math.cos(rad)} y1={CY + r1 * Math.sin(rad)}
+        x2={CX + r2 * Math.cos(rad)} y2={CY + r2 * Math.sin(rad)}
+        stroke={color} strokeWidth={w} strokeLinecap="round"
+      />
+    )
+    if (isMajor) {
+      const lr = R_PLATE + 8
+      const val = Math.round((i / TICK_COUNT) * 100)
+      labels.push(
+        <text key={`l${i}`}
+          x={CX + lr * Math.cos(rad)} y={CY + lr * Math.sin(rad) + 3}
+          textAnchor="middle" fontSize={8} fontWeight={600}
+          fontFamily="ui-monospace, 'JetBrains Mono', monospace"
+          fill="#4A6A8A"
+        >
+          {val}
+        </text>
+      )
+    }
+  }
+
+  const indicatorTipX = CX + R_INDICATOR * Math.cos(needleRad)
+  const indicatorTipY = CY + R_INDICATOR * Math.sin(needleRad)
+  const indicatorBaseX1 = CX + 3 * Math.cos(needleRad + Math.PI / 2)
+  const indicatorBaseY1 = CY + 3 * Math.sin(needleRad + Math.PI / 2)
+  const indicatorBaseX2 = CX + 3 * Math.cos(needleRad - Math.PI / 2)
+  const indicatorBaseY2 = CY + 3 * Math.sin(needleRad - Math.PI / 2)
+
+  const dotR = R_GRIP - 5
+  const dotX = CX + dotR * Math.cos(needleRad)
+  const dotY = CY + dotR * Math.sin(needleRad)
+
+  const pctText = `${Math.round(normalised * 100)}%`
+
+  return (
+    <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ flexShrink: 0 }}>
+      <defs>
+        {/* Backplate metallic gradient */}
+        <radialGradient id="gk-plate" cx="42%" cy="38%">
+          <stop offset="0%" stopColor="#1A2A3E" />
+          <stop offset="60%" stopColor="#0C1824" />
+          <stop offset="100%" stopColor="#060C14" />
+        </radialGradient>
+
+        {/* Chrome bezel ring gradient */}
+        <linearGradient id="gk-chrome" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#5A7A9A" />
+          <stop offset="25%" stopColor="#2A3E52" />
+          <stop offset="50%" stopColor="#1A2A3E" />
+          <stop offset="75%" stopColor="#2A3E52" />
+          <stop offset="100%" stopColor="#4A6A8A" />
+        </linearGradient>
+
+        {/* Brushed-metal knob body */}
+        <radialGradient id="gk-body" cx="40%" cy="35%">
+          <stop offset="0%" stopColor="#2A4058" />
+          <stop offset="40%" stopColor="#1A2E44" />
+          <stop offset="80%" stopColor="#0E1C2C" />
+          <stop offset="100%" stopColor="#081420" />
+        </radialGradient>
+
+        {/* Cap dome highlight */}
+        <radialGradient id="gk-cap" cx="40%" cy="32%">
+          <stop offset="0%" stopColor="#2E4A64" />
+          <stop offset="50%" stopColor="#162838" />
+          <stop offset="100%" stopColor="#0A1620" />
+        </radialGradient>
+
+        {/* Specular highlight on the cap */}
+        <radialGradient id="gk-spec" cx="38%" cy="28%">
+          <stop offset="0%" stopColor="rgba(180,210,240,0.30)" />
+          <stop offset="100%" stopColor="rgba(180,210,240,0)" />
+        </radialGradient>
+
+        {/* Cyan glow filter */}
+        <filter id="gk-glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="4" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+
+        {/* Soft shadow under the knob */}
+        <filter id="gk-shadow" x="-20%" y="-10%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="6" />
+        </filter>
+
+        {/* Active arc glow */}
+        <filter id="gk-arc-glow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="3" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+      </defs>
+
+      {/* Drop shadow */}
+      <circle cx={CX} cy={CY + 3} r={R_PLATE + 2} fill="rgba(0,0,0,0.5)" filter="url(#gk-shadow)" />
+
+      {/* Scale labels */}
+      {labels}
+
+      {/* Backplate */}
+      <circle cx={CX} cy={CY} r={R_PLATE} fill="url(#gk-plate)" />
+      <circle cx={CX} cy={CY} r={R_PLATE} fill="none" stroke="#1A2A3E" strokeWidth={2} />
+      <circle cx={CX} cy={CY} r={R_PLATE - 1} fill="none" stroke="rgba(100,140,180,0.08)" strokeWidth={0.5} />
+
+      {/* Scale arc — background track */}
+      <path d={arcPath(arcStart, arcEnd, R_PLATE - 8)} fill="none" stroke="#0C1824" strokeWidth={5} strokeLinecap="round" />
+      <path d={arcPath(arcStart, arcEnd, R_PLATE - 8)} fill="none" stroke="#1A2A3E" strokeWidth={3} strokeLinecap="round" />
+
+      {/* Scale arc — active sweep (cyan) */}
+      <path d={arcPath(arcStart, sweepAngle, R_PLATE - 8)} fill="none" stroke="#22D3EE" strokeWidth={3} strokeLinecap="round" opacity={0.4} filter="url(#gk-arc-glow)" />
+      <path d={arcPath(arcStart, sweepAngle, R_PLATE - 8)} fill="none" stroke="#22D3EE" strokeWidth={2} strokeLinecap="round" />
+
+      {/* Tick marks */}
+      {ticks}
+
+      {/* Chrome bezel ring */}
+      <circle cx={CX} cy={CY} r={R_CHROME} fill="none" stroke="url(#gk-chrome)" strokeWidth={3} />
+      <circle cx={CX} cy={CY} r={R_CHROME - 1.5} fill="none" stroke="rgba(100,140,180,0.06)" strokeWidth={0.5} />
+      <circle cx={CX} cy={CY} r={R_CHROME + 1.5} fill="none" stroke="rgba(0,0,0,0.3)" strokeWidth={0.5} />
+
+      {/* Knob body — brushed metal */}
+      <circle cx={CX} cy={CY} r={R_GRIP} fill="url(#gk-body)" />
+
+      {/* Knurling texture */}
+      {knurls}
+
+      {/* Inner groove rings for machined look */}
+      <circle cx={CX} cy={CY} r={R_GRIP - 6} fill="none" stroke="rgba(80,120,160,0.07)" strokeWidth={0.5} />
+      <circle cx={CX} cy={CY} r={R_GRIP - 8} fill="none" stroke="rgba(0,0,0,0.15)" strokeWidth={0.5} />
+
+      {/* Cap dome */}
+      <circle cx={CX} cy={CY} r={R_CAP} fill="url(#gk-cap)" />
+      <circle cx={CX} cy={CY} r={R_CAP} fill="none" stroke="rgba(80,120,160,0.15)" strokeWidth={1} />
+
+      {/* Specular highlight on cap */}
+      <ellipse cx={CX - 6} cy={CY - 8} rx={18} ry={12} fill="url(#gk-spec)" />
+
+      {/* Indicator line — triangular pointer */}
+      <polygon
+        points={`${indicatorTipX},${indicatorTipY} ${indicatorBaseX1},${indicatorBaseY1} ${indicatorBaseX2},${indicatorBaseY2}`}
+        fill="#22D3EE" filter="url(#gk-glow)"
+      />
+
+      {/* Indicator dot on knob body edge */}
+      <circle cx={dotX} cy={dotY} r={3} fill="#22D3EE" filter="url(#gk-glow)" />
+
+      {/* Center hub screw */}
+      <circle cx={CX} cy={CY} r={6} fill="#0C1824" stroke="rgba(80,120,160,0.18)" strokeWidth={1} />
+      <circle cx={CX} cy={CY} r={3} fill="rgba(30,58,95,0.5)" />
+      {/* Cross-head screw slot */}
+      <line x1={CX - 2.5} y1={CY} x2={CX + 2.5} y2={CY} stroke="rgba(0,0,0,0.4)" strokeWidth={1} strokeLinecap="round" />
+      <line x1={CX} y1={CY - 2.5} x2={CX} y2={CY + 2.5} stroke="rgba(0,0,0,0.4)" strokeWidth={1} strokeLinecap="round" />
+
+      {/* Percentage readout */}
+      <text x={CX} y={CY + R_CAP + 14} textAnchor="middle" fontSize={12} fontWeight={700}
+        fontFamily="ui-monospace, 'JetBrains Mono', monospace"
+        fill="#22D3EE" filter="url(#gk-glow)">
+        {pctText}
+      </text>
+    </svg>
+  )
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   LEGACY COMPONENT
+   MAIN COMPONENT
    ═══════════════════════════════════════════════════════════════════ */
 
-function InitializeBaselineLegacy() {
-  const navigate = useNavigate()
-  const setBaseline = useBaselineStore((s) => s.setBaseline)
+const FORM_STORAGE_KEY = "stratfit:initiate-form"
 
-  const [form, setForm] = useState<FormState>({ ...INITIAL })
-  const [activeStep, setActiveStep] = useState<WizardStep>(2)
-  const [costExpanded, setCostExpanded] = useState(true)
+function saveFormToStorage(f: FormState): void {
+  try { window.localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(f)) } catch { /* quota */ }
+}
+
+function loadFormFromStorage(): FormState | null {
+  try {
+    const raw = window.localStorage.getItem(FORM_STORAGE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Partial<FormState>
+    return { ...INITIAL, ...parsed }
+  } catch { return null }
+}
+
+function hydrateFormFromBaseline(b: BaselineV1): FormState {
+  return {
+    ...INITIAL,
+    contactName: b.company.founderName ?? "",
+    contactEmail: b.company.contactEmail ?? "",
+    companyName: b.company.legalName ?? "",
+    industry: b.company.industry ?? "",
+    stage: "",
+    cashOnHand: b.financial.cashOnHand,
+    monthlyNetBurn: b.financial.monthlyBurn,
+    debtOutstanding: b.capital.totalDebt,
+    debtInterestRate: b.capital.interestRatePct,
+    currentARR: b.financial.arr,
+    monthlyGrowthPct: b.financial.growthRatePct,
+    grossMarginPct: b.financial.grossMarginPct,
+    avgDealSize: b.operating.acv,
+    monthlyChurnPct: b.operating.churnPct,
+    netRevenueRetentionPct: b.financial.nrrPct,
+    headcount: b.financial.headcount,
+    avgFullyLoadedCost: b.financial.avgFullyLoadedCost,
+    salesMarketingSpend: b.financial.salesMarketingSpend,
+    rdSpend: b.financial.rdSpend,
+    gaSpend: b.financial.gaSpend,
+    cac: b.customerEngine.cac,
+    salesRampTime: b.operating.salesCycleMonths,
+    accessToCapital: b.posture.raiseIntent === "Yes" ? "Strong" : "Moderate",
+    priorityBalance: b.posture.focus === "Growth" ? 70 : 40,
+    annualCapex: b.investment?.annualCapex ?? INITIAL.annualCapex,
+    capexIntensityPct: b.investment?.capexIntensityPct ?? INITIAL.capexIntensityPct,
+    arDays: b.investment?.arDays ?? INITIAL.arDays,
+    apDays: b.investment?.apDays ?? INITIAL.apDays,
+  }
+}
+
+function loadInitialForm(baseline: BaselineV1 | null): FormState {
+  const fromStorage = loadFormFromStorage()
+  if (fromStorage) return fromStorage
+  if (baseline) return hydrateFormFromBaseline(baseline)
+  return { ...INITIAL }
+}
+
+export default function InitializeBaselinePage() {
+  const navigate = useNavigate()
+  const { baseline, setBaseline } = useSystemBaseline()
+
+  const [form, setForm] = useState<FormState>(() => loadInitialForm(baseline))
+  const [inputPath, setInputPath] = useState<InputPath>("manual")
+  const [showXeroModal, setShowXeroModal] = useState(false)
+  const [uploadMsg, setUploadMsg] = useState<{ type: "success" | "error"; text: string } | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
+  const [dragOver, setDragOver] = useState(false)
+  const [isLocking, setIsLocking] = useState(false)
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const update = useCallback(
     <K extends keyof FormState>(key: K, value: FormState[K]) => {
-      setForm((prev) => ({ ...prev, [key]: value }))
-    },
-    [],
+      setForm((prev) => {
+        const next = { ...prev, [key]: value }
+        saveFormToStorage(next)
+        return next
+      })
+    }, [],
   )
 
   const metrics = useMemo(() => computeMetrics(form), [form])
 
-  const revenuePerEmployee =
-    form.headcount > 0 ? Math.round(form.currentARR / form.headcount) : 0
-  const totalCost =
-    form.headcount * form.avgFullyLoadedCost +
-    form.salesMarketingSpend +
-    form.rdSpend +
-    form.gaSpend
-  const operatingProfit = form.currentARR - totalCost
+  useEffect(() => {
+    if (!toast) return
+    const t = setTimeout(() => setToast(null), 3000)
+    return () => clearTimeout(t)
+  }, [toast])
 
-  /* ── Customer unit economics (derived) ── */
-  const monthlyChurnDecimal = form.monthlyChurnPct / 100
-  const ltv =
-    monthlyChurnDecimal > 0
-      ? (form.avgDealSize * (form.grossMarginPct / 100)) / monthlyChurnDecimal
-      : 0
-  const ltvCacRatio = form.cac > 0 ? ltv / form.cac : 0
-  const cacPaybackMonths =
-    form.avgDealSize > 0 && form.grossMarginPct > 0
-      ? form.cac / ((form.avgDealSize / 12) * (form.grossMarginPct / 100))
-      : 0
-  const grossProfit = (form.currentARR / 12) * (form.grossMarginPct / 100)
+  const canLock = form.companyName.trim().length > 0 && form.cashOnHand > 0
 
   const handleLock = useCallback(() => {
-    setBaseline({
-      cash: form.cashOnHand,
-      monthlyBurn: form.monthlyNetBurn,
-      revenue: form.currentARR / 12,
-      grossMargin: form.grossMarginPct / 100,
-      growthRate: form.monthlyGrowthPct / 100,
-      churnRate: form.monthlyChurnPct / 100,
-      headcount: form.headcount,
-      arpa: form.avgDealSize || 1500,
+    setIsLocking(true)
+
+    const baseline: BaselineV1 = {
+      version: 1,
+      company: {
+        legalName: form.companyName.trim() || "My Company",
+        industry: form.industry || "SaaS",
+        businessModel: "SaaS",
+        primaryMarket: "B2B",
+        founderName: form.contactName || "",
+        contactEmail: form.contactEmail || "",
+        contactPhone: "",
+        jurisdiction: "",
+      },
+      financial: {
+        arr: form.currentARR,
+        growthRatePct: form.monthlyGrowthPct,
+        grossMarginPct: form.grossMarginPct,
+        revenueConcentrationPct: 0,
+        monthlyBurn: form.monthlyNetBurn,
+        payroll: form.headcount * (form.avgFullyLoadedCost / 12),
+        headcount: form.headcount,
+        cashOnHand: form.cashOnHand,
+        nrrPct: form.netRevenueRetentionPct,
+        avgFullyLoadedCost: form.avgFullyLoadedCost,
+        salesMarketingSpend: form.salesMarketingSpend,
+        rdSpend: form.rdSpend,
+        gaSpend: form.gaSpend,
+      },
+      capital: {
+        totalDebt: form.debtOutstanding,
+        interestRatePct: form.debtInterestRate,
+        monthlyDebtService: 0,
+        lastRaiseAmount: 0,
+        lastRaiseDateISO: null,
+        equityRaisedToDate: 0,
+      },
+      operating: {
+        churnPct: form.monthlyChurnPct,
+        salesCycleMonths: form.salesRampTime,
+        acv: form.avgDealSize,
+        keyPersonDependency: "Medium",
+        customerConcentrationRisk: "Medium",
+        regulatoryExposure: "Low",
+        activeCustomers: form.currentARR > 0 && form.avgDealSize > 0
+          ? Math.round(form.currentARR / form.avgDealSize)
+          : 0,
+      },
+      customerEngine: {
+        cac: form.cac,
+        ltv: form.avgDealSize > 0 && form.monthlyChurnPct > 0
+          ? form.avgDealSize / (form.monthlyChurnPct / 100)
+          : 0,
+        paybackPeriodMonths: form.cac > 0 && form.avgDealSize > 0
+          ? Math.round(form.cac / (form.avgDealSize / 12))
+          : 0,
+        expansionRatePct: form.netRevenueRetentionPct > 100
+          ? form.netRevenueRetentionPct - 100
+          : 0,
+      },
+      posture: {
+        focus: form.priorityBalance > 60 ? "Growth" : "Stabilise",
+        raiseIntent: form.accessToCapital === "Strong" ? "Yes" : "Uncertain",
+        horizonMonths: 24,
+        primaryConstraint: "Cash runway",
+        fastestDownside: "Customer churn",
+      },
+      investment: {
+        annualCapex: form.annualCapex,
+        capexIntensityPct: form.capexIntensityPct,
+        arDays: form.arDays,
+        apDays: form.apDays,
+      },
+    }
+
+    setBaseline(baseline)
+
+    // Create a baseline projection scenario so Position/Compare/Boardroom have
+    // pre-computed p10/p50/p90 projections available without any active scenario.
+    // The scenario ID is stable per lock — re-locking updates the same record.
+    const baselineScenarioId = "baseline-projection"
+    const baselineKpis: SimulationKpis = {
+      cash:        baseline.financial.cashOnHand,
+      monthlyBurn: baseline.financial.monthlyBurn,
+      revenue:     baseline.financial.arr / 12,
+      grossMargin: baseline.financial.grossMarginPct / 100,
+      growthRate:  baseline.financial.growthRatePct  / 100,
+      churnRate:   baseline.operating.churnPct       / 100,
+      headcount:   baseline.financial.headcount,
+      arpa:        baseline.operating.acv,
+      runway:      baseline.financial.monthlyBurn > 0
+        ? baseline.financial.cashOnHand / baseline.financial.monthlyBurn
+        : null,
+    }
+    usePhase1ScenarioStore.getState().upsertScenario({
+      id:        baselineScenarioId,
+      createdAt: Date.now(),
+      decision:  "Baseline configuration",
+      status:    "complete",
+      simulationResults: {
+        completedAt:   Date.now(),
+        horizonMonths: 24,
+        summary:       "Baseline projections",
+        kpis:          baselineKpis,
+        terrain: {
+          seed:        0,
+          multipliers: { cash: 1, burn: 1, growth: 1 },
+        },
+      },
     })
-    navigate("/decision", { replace: true })
-  }, [form, navigate, setBaseline])
+    runSimulation(baselineScenarioId)
 
-  const canGoNext = activeStep < 4
-  const canGoBack = activeStep > 1
+    navigate("/position", { replace: true })
+  }, [form, setBaseline, navigate])
 
-  /* ══════════════════ RENDER ══════════════════ */
+  const handleDownloadTemplate = useCallback(() => {
+    downloadCSV("stratfit-baseline-template.csv", generateCSVTemplate())
+    setToast("Template downloaded — fill in your data and upload it back.")
+  }, [])
+
+  const handleFileUpload = useCallback((file: File) => {
+    setUploadMsg(null)
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const text = e.target?.result
+      if (typeof text !== "string") { setUploadMsg({ type: "error", text: "Could not read file." }); return }
+      const parsed = parseCSVToForm(text)
+      if (!parsed || Object.keys(parsed).length === 0) { setUploadMsg({ type: "error", text: "No matching columns found." }); return }
+      setForm((prev) => {
+        const next = { ...prev, ...parsed }
+        saveFormToStorage(next)
+        return next
+      })
+      setUploadMsg({ type: "success", text: `Imported ${Object.keys(parsed).length} fields.` })
+      setToast("Data imported successfully.")
+    }
+    reader.onerror = () => setUploadMsg({ type: "error", text: "File read error." })
+    reader.readAsText(file)
+  }, [])
+
+  const onFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) handleFileUpload(file)
+    e.target.value = ""
+  }, [handleFileUpload])
+
+  const onDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault(); setDragOver(false)
+    const file = e.dataTransfer.files?.[0]
+    if (file) handleFileUpload(file)
+  }, [handleFileUpload])
+
+  const runwayColor = metrics.runway < 6 ? "#6E5BFF" : metrics.runway < 12 ? "#9DB7D1" : "#B7FF3C"
+  const survivalColor = metrics.survivalProbability >= 60 ? "#B7FF3C" : metrics.survivalProbability >= 30 ? "#9DB7D1" : "#6E5BFF"
+
+  const needleAngle = form.riskTolerance === "Conservative" ? -45 : form.riskTolerance === "Aggressive" ? 45 : 0
 
   return (
-    <ConsoleFrame>
-      <div className={css.consoleLayout} data-sf-initiate="legacy">
+    <PageShell>
+    <div className="bg-hex-grid bg-grain bg-vignette" style={SC.page}>
 
-        {/* ═══════════ LEFT SIDEBAR — System Nav Rail ═══════════ */}
-        <aside className={css.sidebar}>
-          <div className={css.sidebarHeader}>
-            <div className={css.sidebarLogo}>
-              <img
-                src="/stratfit-logo.png"
-                alt="STRATFIT"
-                className={css.sidebarLogoImg}
-              />
-              <span className={css.sidebarLogoText}>STRATFIT</span>
-            </div>
+      {/* ═══ POWER RAIL — TOP BAR ═══ */}
+      <header className="glow-cyan" style={SC.powerRail}>
+        <div style={SC.powerRailLeft}>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <span style={SC.sysLabel}>INIT_SYSTEM</span>
+            <span style={SC.sysTitle}>STRATFIT GOD MODE</span>
           </div>
-
-          <nav className={css.wizardNav}>
-            {WIZARD_STEPS.map((step) => (
-              <button
-                key={step.num}
-                type="button"
-                className={`${css.wizardStep} ${activeStep === step.num ? css.wizardStepActive : ""} ${activeStep > step.num ? css.wizardStepDone : ""}`}
-                onClick={() => setActiveStep(step.num)}
-              >
-                <span className={css.wizardStepNum}>
-                  {activeStep > step.num ? "\u2713" : step.num}
-                </span>
-                <span className={css.wizardStepLabel}>{step.label}</span>
-              </button>
-            ))}
-          </nav>
-        </aside>
-
-        {/* ═══════════ MAIN INSTRUMENT AREA ═══════════ */}
-        <main className={css.instrumentArea}>
-          {/* ── Instrument Header ── */}
-          <header className={css.instrumentHeader}>
-            <h1 className={css.instrumentTitle}>INITIALIZE BASELINE</h1>
-            <p className={css.instrumentSubtitle}>
-              Enter your current financial truth to anchor scenario modeling.
-            </p>
-          </header>
-
-          {/* ── Metrics Readout Strip ── */}
-          <div className={css.metricsStrip}>
-            <div className={css.metricItem}>
-              <span className={css.metricIcon}>
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M7 1v5l3.5 2" stroke="rgba(34,211,238,0.65)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-                  <circle cx="7" cy="7" r="5.5" stroke="rgba(34,211,238,0.35)" strokeWidth="1.2" opacity="0.5"/>
-                </svg>
-              </span>
-              <span
-                className={css.metricValue}
-                style={{
-                  color:
-                    metrics.runway < 6
-                      ? "#f87171"
-                      : metrics.runway < 12
-                        ? "#fbbf24"
-                        : "rgba(255,255,255,0.92)",
-                }}
-              >
-                {metrics.runway.toFixed(1)}
-              </span>
-              <span className={css.metricUnit}>months</span>
-            </div>
-
-            <div className={css.metricItem}>
-              <span className={css.metricLabel}>BURN MULTIPLE</span>
-              <span className={css.metricValue}>
-                {metrics.burnMultiple.toFixed(2)} x
-              </span>
-            </div>
-
-            <div className={css.metricItem}>
-              <span className={css.metricLabel}>$ MONTHLY BURN</span>
-              <span className={css.metricValue}>
-                {fmtCurrency(metrics.monthlyBurn)}
-              </span>
-            </div>
-
-            <div className={css.metricItem}>
-              <span className={css.metricLabel}>SURVIVAL PROBABILITY</span>
-              <span className={css.metricValue}>
-                {metrics.survivalProbability} %
-              </span>
-            </div>
-
-            <div className={css.metricItem}>
-              <span className={css.metricLabel}>GROSS MARGIN</span>
-              <span className={css.metricValue}>
-                {form.grossMarginPct.toFixed(0)} %
-              </span>
-            </div>
-
-            <div className={css.metricItem}>
-              <span className={css.metricLabel}>LTV / CAC</span>
-              <span
-                className={css.metricValue}
-                style={{
-                  color:
-                    ltvCacRatio >= 3
-                      ? "#34d399"
-                      : ltvCacRatio >= 1
-                        ? "#fbbf24"
-                        : "#f87171",
-                }}
-              >
-                {ltvCacRatio > 0 ? `${ltvCacRatio.toFixed(1)}x` : "—"}
-              </span>
-            </div>
+          <span style={SC.railDivider} />
+          <div style={SC.railTitle}>Initialize Baseline</div>
+          <span style={{ fontSize: 11, color: "#8FB4D9", letterSpacing: "0.02em" }}>Enter your current financial truth to anchor scenario modelling.</span>
+        </div>
+        <div style={SC.metricsRow}>
+          <div style={SC.metricBlock}>
+            <span style={SC.metricLabel}>RUNWAY</span>
+            <span style={{ ...SC.metricValue, color: runwayColor }}>{metrics.runway.toFixed(1)} MO</span>
           </div>
+          <div style={SC.metricBlock}>
+            <span style={SC.metricLabel}>BURN_MULT</span>
+            <span style={{ ...SC.metricValue, color: "#22d3ee" }}>{metrics.burnMultiple.toFixed(2)}x</span>
+          </div>
+          <div style={SC.metricBlock}>
+            <span style={SC.metricLabel}>$ BURN</span>
+            <span style={{ ...SC.metricValue, color: "#6E5BFF" }}>{fmtCurrency(metrics.monthlyBurn)}</span>
+          </div>
+          <div style={SC.metricBlock}>
+            <span style={SC.metricLabel}>SURVIVAL</span>
+            <span style={{ ...SC.metricValue, color: survivalColor }}>{metrics.survivalProbability}%</span>
+          </div>
+          <div style={SC.metricBlock}>
+            <span style={SC.metricLabel}>SIMULATIONS</span>
+            <span style={{ ...SC.metricValue, color: "rgba(167,139,250,0.9)" }}>10,000</span>
+          </div>
+        </div>
+      </header>
 
-          {/* ═══════════════════════════════════════════════════════
-              STEP 1 — Identity & Context
-              ═══════════════════════════════════════════════════════ */}
-          {activeStep === 1 && (
-            <div className={css.stepContent}>
-              <div className={css.singlePanel}>
-                <h3 className={css.panelTitle}>IDENTITY &amp; CONTEXT</h3>
-                <div className={css.identityGrid}>
-                  <label className={css.identityLabel}>
-                    <span className={css.identityLabelText}>Company Name</span>
-                    <input
-                      className={css.identityInput}
-                      type="text"
-                      placeholder="e.g. Acme Inc."
-                      value={form.companyName}
-                      onChange={(e) => update("companyName", e.target.value)}
-                    />
-                  </label>
-                  <label className={css.identityLabel}>
-                    <span className={css.identityLabelText}>Industry</span>
-                    <select
-                      className={css.identitySelect}
-                      value={form.industry}
-                      onChange={(e) => update("industry", e.target.value)}
-                    >
-                      <option value="">Select industry…</option>
-                      {INDUSTRIES.map((i) => (
-                        <option key={i} value={i}>{i}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className={css.identityLabel}>
-                    <span className={css.identityLabelText}>Stage</span>
-                    <select
-                      className={css.identitySelect}
-                      value={form.stage}
-                      onChange={(e) => update("stage", e.target.value)}
-                    >
-                      <option value="">Select stage…</option>
-                      {STAGES.map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
-                    </select>
-                  </label>
+      {/* ═══ INSTRUMENT PANEL GRID ═══ */}
+      <main style={SC.grid} className="gm-scrollbar">
+        <div style={SC.panelGrid} className="gm-scrollbar">
+
+          {/* ═══ ROW 1 ═══ */}
+
+          {/* ── IDENTITY PANEL ── */}
+          <Module title="IDENTITY & CONTACT">
+            <div style={SC.modBody}>
+              <TacticalInput label="Your Name" value={form.contactName} placeholder="Your Name"
+                onChange={(v) => update("contactName", v)} />
+              <TacticalInput label="Email Address" value={form.contactEmail} placeholder="Email Address"
+                onChange={(v) => update("contactEmail", v)} />
+              <TacticalInput label="Company Name" value={form.companyName} placeholder="Company Name"
+                onChange={(v) => update("companyName", v)} />
+              <div>
+                <span style={SC.inputLabel}>Stage</span>
+                <div style={SC.pillGrid}>
+                  {STAGES.map((s) => (
+                    <StatusToggle key={s} label={s} active={form.stage === s} onClick={() => update("stage", s)} />
+                  ))}
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* ═══════════════════════════════════════════════════════
-              STEP 2 — Financial Position
-              ═══════════════════════════════════════════════════════ */}
-          {activeStep === 2 && (
-            <div className={css.stepContent}>
-              <div className={css.panelGrid}>
-
-                {/* ── LIQUIDITY & CAPITAL STRUCTURE ── */}
-                <div className={css.sectionPanel}>
-                  <span className={css.panelStatusDot} />
-                  <h3 className={css.panelTitle}>LIQUIDITY &amp; CAPITAL STRUCTURE</h3>
-
-                  <SliderRow
-                    label="Cash on Hand"
-                    value={form.cashOnHand}
-                    min={0} max={5_000_000} step={10_000}
-                    format={fmtCurrency}
-                    onChange={(v) => update("cashOnHand", v)}
-                  />
-                  <SliderRow
-                    label="Monthly Net Burn"
-                    value={form.monthlyNetBurn}
-                    min={0} max={500_000} step={1_000}
-                    format={fmtCurrency}
-                    onChange={(v) => update("monthlyNetBurn", v)}
-                  />
-
-                  <div className={css.panelDivider} />
-
-                  <InputRow
-                    label="Debt Outstanding"
-                    value={form.debtOutstanding}
-                    prefix="$"
-                    onChange={(v) => update("debtOutstanding", Number(v) || 0)}
-                  />
-                  <InputRow
-                    label="Interest Rate"
-                    value={form.debtInterestRate}
-                    suffix="%"
-                    onChange={(v) => update("debtInterestRate", Number(v) || 0)}
-                  />
-
-                  <div className={css.inputRow}>
-                    <span className={css.inputLabel}>Fundraising Window</span>
-                    <div className={css.incrGroup}>
-                      <button
-                        type="button"
-                        className={css.incrBtn}
-                        onClick={() =>
-                          update(
-                            "fundraisingWindow",
-                            Math.max(0, form.fundraisingWindow - 1),
-                          )
-                        }
-                      >
-                        &minus;
-                      </button>
-                      <span className={css.incrValue}>
-                        {form.fundraisingWindow} months
-                      </span>
-                      <button
-                        type="button"
-                        className={css.incrBtn}
-                        onClick={() =>
-                          update("fundraisingWindow", form.fundraisingWindow + 1)
-                        }
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className={css.inputRow}>
-                    <span className={css.inputLabel}>Access to Capital</span>
-                    <ToggleGroup
-                      options={["Moderate", "Strong"] as AccessToCapital[]}
-                      value={form.accessToCapital}
-                      onChange={(v) => update("accessToCapital", v)}
-                    />
-                  </div>
-
-                  <div className={css.panelDivider} />
-                  <div className={css.derivedRow}>
-                    <span className={css.derivedLabel}>&#8901; Runway</span>
-                    <span className={css.derivedValue}>
-                      {metrics.runway.toFixed(1)} months
-                      &nbsp;&nbsp;{metrics.burnMultiple.toFixed(1)}x
-                    </span>
-                  </div>
-                  {form.debtOutstanding > 0 && (
-                    <div className={css.derivedRow}>
-                      <span className={css.derivedLabel}>
-                        &#8901; Monthly Interest Burden
-                      </span>
-                      <span className={css.derivedValue}>
-                        {fmtCurrency(
-                          (form.debtOutstanding * (form.debtInterestRate / 100)) / 12,
-                        )}
-                      </span>
-                    </div>
-                  )}
+              <div style={{ marginTop: 4 }}>
+                <span style={SC.inputLabel}>Industry</span>
+                <div style={SC.pillGrid}>
+                  {INDUSTRIES.map((ind) => (
+                    <StatusToggle key={ind} label={ind} active={form.industry === ind} onClick={() => update("industry", ind)} />
+                  ))}
                 </div>
+              </div>
 
-                {/* ── REVENUE ENGINE ── */}
-                <div className={css.sectionPanel}>
-                  <span className={css.panelStatusDot} />
-                  <h3 className={css.panelTitle}>REVENUE ENGINE</h3>
-
-                  <SliderRow
-                    label="Current ARR"
-                    value={form.currentARR}
-                    min={0} max={10_000_000} step={10_000}
-                    format={fmtCurrency}
-                    onChange={(v) => update("currentARR", v)}
-                  />
-                  <SliderRow
-                    label="Monthly Growth %"
-                    value={form.monthlyGrowthPct}
-                    min={0} max={30} step={0.1}
-                    format={(v) => `${v.toFixed(1)}%`}
-                    onChange={(v) => update("monthlyGrowthPct", v)}
-                  />
-                  <SliderRow
-                    label="Gross Margin %"
-                    value={form.grossMarginPct}
-                    min={0} max={100} step={0.5}
-                    format={(v) => `${v.toFixed(1)}%`}
-                    onChange={(v) => update("grossMarginPct", v)}
-                  />
-                  <InputRow
-                    label="Average Deal Size (ACV)"
-                    value={form.avgDealSize}
-                    prefix="$"
-                    onChange={(v) => update("avgDealSize", Number(v) || 0)}
-                  />
-                  <SliderRow
-                    label="Monthly Churn %"
-                    value={form.monthlyChurnPct}
-                    min={0} max={15} step={0.1}
-                    format={(v) => `${v.toFixed(1)}%`}
-                    onChange={(v) => update("monthlyChurnPct", v)}
-                  />
-                  <SliderRow
-                    label="Sales Efficiency"
-                    value={form.salesEfficiency}
-                    min={0} max={3} step={0.1}
-                    format={(v) => `${v.toFixed(1)}x`}
-                    onChange={(v) => update("salesEfficiency", v)}
-                  />
-                  <SliderRow
-                    label="Net Revenue Retention %"
-                    value={form.netRevenueRetentionPct}
-                    min={50} max={200} step={1}
-                    format={(v) => `${v}%`}
-                    onChange={(v) => update("netRevenueRetentionPct", v)}
-                  />
-                </div>
-
-                {/* ── COST STRUCTURE ── */}
-                <div className={css.sectionPanel}>
-                  <span className={css.panelStatusDot} />
-                  <button
-                    type="button"
-                    className={css.panelTitleBtn}
-                    onClick={() => setCostExpanded((p) => !p)}
+              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                {(["manual", "xero", "excel"] as InputPath[]).map((p) => (
+                  <button key={p} type="button"
+                    onClick={() => { setInputPath(p); if (p === "xero") setShowXeroModal(true) }}
+                    style={{
+                      flex: 1, padding: "10px 8px", borderRadius: 8,
+                      fontSize: 10, fontWeight: 600, letterSpacing: "0.06em",
+                      fontFamily: FONT, cursor: "pointer", transition: "all 0.15s",
+                      border: inputPath === p ? "1px solid #22D3EE" : "1px solid #1E3A5F",
+                      background: inputPath === p ? "#22D3EE" : "#122E48",
+                      color: inputPath === p ? "#04121F" : "#8FB4D9",
+                      boxShadow: inputPath === p ? "0 0 12px rgba(34,211,238,0.25)" : "none",
+                    }}
                   >
-                    <h3 className={css.panelTitle}>COST STRUCTURE</h3>
-                    <span
-                      className={css.expandChevron}
-                      style={{
-                        transform: costExpanded ? "rotate(180deg)" : "rotate(0)",
-                      }}
-                    >
-                      &#9660;
-                    </span>
+                    {p === "manual" ? "Manual" : p === "xero" ? "Xero" : "Excel"}
                   </button>
+                ))}
+              </div>
 
-                  {costExpanded && (
-                    <>
-                      <InputRow
-                        label="Headcount"
-                        value={form.headcount}
-                        onChange={(v) => update("headcount", Number(v) || 0)}
-                      />
-                      <InputRow
-                        label="Avg Fully Loaded Cost"
-                        value={form.avgFullyLoadedCost}
-                        prefix="$"
-                        onChange={(v) =>
-                          update("avgFullyLoadedCost", Number(v) || 0)
-                        }
-                      />
-                      <InputRow
-                        label="Sales & Marketing Spend"
-                        value={form.salesMarketingSpend}
-                        prefix="$"
-                        onChange={(v) =>
-                          update("salesMarketingSpend", Number(v) || 0)
-                        }
-                      />
-                      <InputRow
-                        label="R&D Spend"
-                        value={form.rdSpend}
-                        prefix="$"
-                        onChange={(v) => update("rdSpend", Number(v) || 0)}
-                      />
-                      <InputRow
-                        label="G&A Spend"
-                        value={form.gaSpend}
-                        prefix="$"
-                        onChange={(v) => update("gaSpend", Number(v) || 0)}
-                      />
-
-                      <div className={css.panelDivider} />
-
-                      <div className={css.derivedRow}>
-                        <span className={css.derivedLabel}>
-                          Revenue / Employee
-                        </span>
-                        <span className={css.derivedValue}>
-                          {fmtCurrency(revenuePerEmployee)}
-                        </span>
-                      </div>
-                      <div className={css.derivedRow}>
-                        <span className={css.derivedLabel}>
-                          Revenue and Operating Profit
-                        </span>
-                        <span
-                          className={css.derivedValue}
-                          style={{
-                            color:
-                              operatingProfit >= 0 ? "#34d399" : "#f87171",
-                          }}
-                        >
-                          {operatingProfit < 0 ? "-" : ""}
-                          {fmtCurrency(Math.abs(operatingProfit))}
-                        </span>
-                      </div>
-                    </>
+              {inputPath === "excel" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button type="button" onClick={handleDownloadTemplate} style={SC.smallBtn}>Download Template</button>
+                    <button type="button" onClick={() => fileInputRef.current?.click()} style={SC.smallBtn}>Upload File</button>
+                    <input ref={fileInputRef} type="file" accept=".csv,.xlsx,.xls" style={{ display: "none" }} onChange={onFileChange} />
+                  </div>
+                  <div
+                    style={{ ...SC.dropZone, borderColor: dragOver ? "#22D3EE" : "#1E3A5F" }}
+                    onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+                    onDragLeave={() => setDragOver(false)}
+                    onDrop={onDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <span style={{ fontSize: 10, color: "#8FB4D9" }}>
+                      {dragOver ? "Drop file here" : "Or drag CSV here"}
+                    </span>
+                  </div>
+                  {uploadMsg && (
+                    <span style={{ fontSize: 10, color: uploadMsg.type === "success" ? "#B7FF3C" : "#6E5BFF" }}>{uploadMsg.text}</span>
                   )}
                 </div>
-
-                {/* ── BURN METRICS ── */}
-                <div className={css.sectionPanel}>
-                  <span className={css.panelStatusDot} />
-                  <h3 className={css.panelTitle}>BURN METRICS</h3>
-
-                  <SliderRow
-                    label="Revenue per Employee"
-                    value={revenuePerEmployee}
-                    min={0} max={200_000} step={1_000}
-                    format={fmtCurrency}
-                    onChange={() => {}}
-                    showScale={false}
-                  />
-
-                  <div className={css.panelDivider} />
-
-                  <div className={css.derivedRow}>
-                    <span className={css.derivedLabel}>
-                      &#8901; Burn Multiple
-                    </span>
-                    <span className={css.derivedValue}>
-                      {metrics.burnMultiple.toFixed(1)}x
-                    </span>
-                  </div>
-                  <div className={css.derivedRow}>
-                    <span className={css.derivedLabel}>
-                      &#8901; Derived Monthly Burn
-                    </span>
-                    <span className={css.derivedValue}>
-                      {fmtCurrency(metrics.monthlyBurn)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ═══════════════════════════════════════════════════════
-              STEP 3 — Operating Structure
-              ═══════════════════════════════════════════════════════ */}
-          {activeStep === 3 && (
-            <div className={css.stepContent}>
-              <div className={css.panelGrid}>
-                <div className={css.sectionPanel}>
-                  <span className={css.panelStatusDot} />
-                  <h3 className={css.panelTitle}>EXECUTION VELOCITY</h3>
-
-                  <div className={css.inputRow}>
-                    <span className={css.inputLabel}>Hiring Velocity</span>
-                    <ToggleGroup
-                      options={["Low", "Medium", "High"] as HiringVelocity[]}
-                      value={form.hiringVelocity}
-                      onChange={(v) => update("hiringVelocity", v)}
-                    />
-                  </div>
-                  <SliderRow
-                    label="Sales Ramp Time"
-                    value={form.salesRampTime}
-                    min={1} max={12} step={1}
-                    format={(v) => `${v} months`}
-                    onChange={(v) => update("salesRampTime", v)}
-                    showScale={false}
-                  />
-                  <SliderRow
-                    label="Engineering Velocity"
-                    value={form.engineeringVelocity}
-                    min={1} max={12} step={1}
-                    format={(v) => `${v} months`}
-                    onChange={(v) => update("engineeringVelocity", v)}
-                    showScale={false}
-                  />
-                  <div className={css.inputRow}>
-                    <span className={css.inputLabel}>Burn Flexibility</span>
-                    <ToggleGroup
-                      options={["Fixed", "Variable"] as BurnFlexibility[]}
-                      value={form.burnFlexibility}
-                      onChange={(v) => update("burnFlexibility", v)}
-                    />
-                  </div>
-                </div>
-
-                <div className={css.sectionPanel}>
-                  <span className={css.panelStatusDot} />
-                  <h3 className={css.panelTitle}>COST &amp; COGS</h3>
-
-                  <InputRow
-                    label="Headcount"
-                    value={form.headcount}
-                    onChange={(v) => update("headcount", Number(v) || 0)}
-                  />
-                  <InputRow
-                    label="Avg Fully Loaded Cost"
-                    value={form.avgFullyLoadedCost}
-                    prefix="$"
-                    onChange={(v) =>
-                      update("avgFullyLoadedCost", Number(v) || 0)
-                    }
-                  />
-                  <InputRow
-                    label="G&A Spend"
-                    value={form.gaSpend}
-                    prefix="$"
-                    onChange={(v) => update("gaSpend", Number(v) || 0)}
-                  />
-                  <InputRow
-                    label="COGS"
-                    value={form.cogsPct}
-                    prefix="$"
-                    onChange={(v) => update("cogsPct", Number(v) || 0)}
-                  />
-
-                  <div className={css.panelDivider} />
-                  <SliderRow
-                    label="Revenue per Employee"
-                    value={revenuePerEmployee}
-                    min={0} max={200_000} step={1_000}
-                    format={fmtCurrency}
-                    onChange={() => {}}
-                    showScale={false}
-                  />
-                </div>
-
-                {/* ── CUSTOMER UNIT ECONOMICS ── */}
-                <div className={css.sectionPanel}>
-                  <span className={css.panelStatusDot} />
-                  <h3 className={css.panelTitle}>CUSTOMER UNIT ECONOMICS</h3>
-
-                  <InputRow
-                    label="CAC (Acquisition Cost)"
-                    value={form.cac}
-                    prefix="$"
-                    onChange={(v) => update("cac", Number(v) || 0)}
-                  />
-                  <SliderRow
-                    label="Gross Margin %"
-                    value={form.grossMarginPct}
-                    min={0} max={100} step={0.5}
-                    format={(v) => `${v.toFixed(1)}%`}
-                    onChange={(v) => update("grossMarginPct", v)}
-                  />
-
-                  <div className={css.panelDivider} />
-
-                  <div className={css.derivedRow}>
-                    <span className={css.derivedLabel}>
-                      &#8901; Gross Profit / mo
-                    </span>
-                    <span className={css.derivedValue}>
-                      {fmtCurrency(grossProfit)}
-                    </span>
-                  </div>
-                  <div className={css.derivedRow}>
-                    <span className={css.derivedLabel}>
-                      &#8901; LTV
-                    </span>
-                    <span className={css.derivedValue}>
-                      {ltv > 0 ? fmtCurrency(ltv) : "\u2014"}
-                    </span>
-                  </div>
-                  <div className={css.derivedRow}>
-                    <span className={css.derivedLabel}>
-                      &#8901; LTV / CAC
-                    </span>
-                    <span
-                      className={css.derivedValue}
-                      style={{
-                        color:
-                          ltvCacRatio >= 3
-                            ? "#34d399"
-                            : ltvCacRatio >= 1
-                              ? "#fbbf24"
-                              : "#f87171",
-                      }}
-                    >
-                      {ltvCacRatio > 0 ? `${ltvCacRatio.toFixed(1)}x` : "\u2014"}
-                    </span>
-                  </div>
-                  <div className={css.derivedRow}>
-                    <span className={css.derivedLabel}>
-                      &#8901; CAC Payback
-                    </span>
-                    <span className={css.derivedValue}>
-                      {cacPaybackMonths > 0
-                        ? `${cacPaybackMonths.toFixed(1)} months`
-                        : "\u2014"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ═══════════════════════════════════════════════════════
-              STEP 4 — Strategic Intent
-              ═══════════════════════════════════════════════════════ */}
-          {activeStep === 4 && (
-            <div className={css.stepContent}>
-              <div className={css.panelGrid}>
-                <div className={css.sectionPanel}>
-                  <span className={css.panelStatusDot} />
-                  <h3 className={css.panelTitle}>STRATEGIC POSTURE</h3>
-
-                  <div className={css.inputRow}>
-                    <span className={css.inputLabel}>Risk Tolerance</span>
-                    <ToggleGroup
-                      options={
-                        [
-                          "Conservative",
-                          "Balanced",
-                          "Aggressive",
-                        ] as RiskTolerance[]
-                      }
-                      value={form.riskTolerance}
-                      onChange={(v) => update("riskTolerance", v)}
-                    />
-                  </div>
-                  <SliderRow
-                    label="Target Growth Band"
-                    value={form.targetGrowthBand}
-                    min={1} max={12} step={1}
-                    format={(v) => `${v} months`}
-                    onChange={(v) => update("targetGrowthBand", v)}
-                    showScale={false}
-                  />
-
-                  <div className={css.priorityRow}>
-                    <span className={css.priorityLabel}>Priority Balance</span>
-                    <div className={css.priorityControl}>
-                      <span className={css.priorityEnd}>Survival</span>
-                      <input
-                        type="range"
-                        className={css.sliderInput}
-                        min={0} max={100} step={1}
-                        value={form.priorityBalance}
-                        style={sliderFill(form.priorityBalance, 0, 100)}
-                        onChange={(e) =>
-                          update("priorityBalance", Number(e.target.value))
-                        }
-                      />
-                      <span className={css.priorityEnd}>Expansion</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className={css.sectionPanel}>
-                  <span className={css.panelStatusDot} />
-                  <h3 className={css.panelTitle}>SUMMARY</h3>
-                  <div className={css.summaryGrid}>
-                    <div className={css.summaryItem}>
-                      <span className={css.summaryItemLabel}>Runway</span>
-                      <span className={css.summaryItemValue}>
-                        {metrics.runway.toFixed(1)} months
-                      </span>
-                    </div>
-                    <div className={css.summaryItem}>
-                      <span className={css.summaryItemLabel}>Burn Multiple</span>
-                      <span className={css.summaryItemValue}>
-                        {metrics.burnMultiple.toFixed(2)}x
-                      </span>
-                    </div>
-                    <div className={css.summaryItem}>
-                      <span className={css.summaryItemLabel}>Monthly Burn</span>
-                      <span className={css.summaryItemValue}>
-                        {fmtCurrency(metrics.monthlyBurn)}
-                      </span>
-                    </div>
-                    <div className={css.summaryItem}>
-                      <span className={css.summaryItemLabel}>Survival</span>
-                      <span className={css.summaryItemValue}>
-                        {metrics.survivalProbability}%
-                      </span>
-                    </div>
-                    <div className={css.summaryItem}>
-                      <span className={css.summaryItemLabel}>
-                        Revenue / Head
-                      </span>
-                      <span className={css.summaryItemValue}>
-                        {fmtCurrency(revenuePerEmployee)}
-                      </span>
-                    </div>
-                    <div className={css.summaryItem}>
-                      <span className={css.summaryItemLabel}>Op. Profit</span>
-                      <span
-                        className={css.summaryItemValue}
-                        style={{
-                          color:
-                            operatingProfit >= 0 ? "#34d399" : "#f87171",
-                        }}
-                      >
-                        {fmtCurrency(operatingProfit)}
-                      </span>
-                    </div>
-                    <div className={css.summaryItem}>
-                      <span className={css.summaryItemLabel}>Gross Margin</span>
-                      <span className={css.summaryItemValue}>
-                        {form.grossMarginPct.toFixed(0)}%
-                      </span>
-                    </div>
-                    <div className={css.summaryItem}>
-                      <span className={css.summaryItemLabel}>LTV / CAC</span>
-                      <span
-                        className={css.summaryItemValue}
-                        style={{
-                          color:
-                            ltvCacRatio >= 3
-                              ? "#34d399"
-                              : ltvCacRatio >= 1
-                                ? "#fbbf24"
-                                : "#f87171",
-                        }}
-                      >
-                        {ltvCacRatio > 0 ? `${ltvCacRatio.toFixed(1)}x` : "\u2014"}
-                      </span>
-                    </div>
-                    <div className={css.summaryItem}>
-                      <span className={css.summaryItemLabel}>CAC Payback</span>
-                      <span className={css.summaryItemValue}>
-                        {cacPaybackMonths > 0
-                          ? `${cacPaybackMonths.toFixed(1)} mo`
-                          : "\u2014"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ═══ CONSOLE ACTION BAR ═══ */}
-          <footer className={css.footer}>
-            <div className={css.footerStatus}>
-              <span className={css.footerDot} />
-              DRAFT &mdash; NOT LOCKED
-            </div>
-            <div className={css.footerActions}>
-              {canGoBack && (
-                <button
-                  type="button"
-                  className={css.backBtn}
-                  onClick={() =>
-                    setActiveStep((activeStep - 1) as WizardStep)
-                  }
-                >
-                  BACK
-                </button>
-              )}
-              {canGoNext ? (
-                <button
-                  type="button"
-                  className={css.lockBtn}
-                  onClick={() =>
-                    setActiveStep((activeStep + 1) as WizardStep)
-                  }
-                >
-                  NEXT &rarr;
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className={css.lockBtn}
-                  onClick={handleLock}
-                >
-                  LOCK BASELINE &amp; ENTER STRATFIT
-                </button>
               )}
             </div>
-          </footer>
-        </main>
+          </Module>
+
+          {/* ── LIQUIDITY PANEL ── */}
+          <Module title="LIQUIDITY & FUNDING">
+            <div style={SC.modBody}>
+              <PowerBar id="cashOnHand" label="Cash on Hand" value={form.cashOnHand} max={5_000_000}
+                onChange={(v) => update("cashOnHand", Math.round(v))} />
+              <PowerBar id="monthlyNetBurn" label="Monthly Net Burn" value={form.monthlyNetBurn} max={500_000}
+                onChange={(v) => update("monthlyNetBurn", Math.round(v))} />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 8 }}>
+                <TacticalInput label="Funding / Debt" value={form.debtOutstanding} prefix="$"
+                  onChange={(v) => update("debtOutstanding", Number(v) || 0)} />
+                <TacticalInput label="Interest Rate" value={form.debtInterestRate} suffix="%"
+                  onChange={(v) => update("debtInterestRate", Number(v) || 0)} />
+                <TacticalInput label="Fundraising Window" value={form.fundraisingWindow} suffix="months"
+                  onChange={(v) => update("fundraisingWindow", Number(v) || 0)} />
+              </div>
+              <PowerBar id="annualCapex" label="Annual CAPEX" value={form.annualCapex} max={2_000_000}
+                onChange={(v) => update("annualCapex", Math.round(v))} />
+              <PowerBar id="capexIntensityPct" label="CAPEX as % of Revenue" value={form.capexIntensityPct} max={50} unit="%"
+                onChange={(v) => update("capexIntensityPct", Math.round(v * 10) / 10)} />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <TacticalInput label="AR Days" value={form.arDays} suffix="days"
+                  onChange={(v) => update("arDays", Number(v) || 0)} />
+                <TacticalInput label="AP Days" value={form.apDays} suffix="days"
+                  onChange={(v) => update("apDays", Number(v) || 0)} />
+              </div>
+            </div>
+          </Module>
+
+          {/* ── REVENUE PANEL ── */}
+          <Module title="REVENUE ENGINE">
+            <div style={SC.modBody}>
+              <PowerBar id="currentARR" label="Current ARR" value={form.currentARR} max={10_000_000}
+                onChange={(v) => update("currentARR", Math.round(v))} />
+              <PowerBar id="monthlyGrowthPct" label="Monthly Growth %" value={form.monthlyGrowthPct} max={30} unit="%"
+                onChange={(v) => update("monthlyGrowthPct", Math.round(v * 10) / 10)} />
+              <PowerBar id="grossMarginPct" label="Gross Margin %" value={form.grossMarginPct} max={100} unit="%"
+                onChange={(v) => update("grossMarginPct", Math.round(v * 10) / 10)} />
+              <TacticalInput label="Avg Contract Value" value={form.avgDealSize} prefix="$"
+                onChange={(v) => update("avgDealSize", Number(v) || 0)} />
+              <PowerBar id="monthlyChurnPct" label="Monthly Churn %" value={form.monthlyChurnPct} max={15} unit="%"
+                onChange={(v) => update("monthlyChurnPct", Math.round(v * 10) / 10)} />
+              <PowerBar id="salesEfficiency" label="Sales Efficiency" value={form.salesEfficiency} max={3} unit="x"
+                onChange={(v) => update("salesEfficiency", Math.round(v * 10) / 10)} />
+              <PowerBar id="netRevenueRetentionPct" label="Net Revenue Retention" value={form.netRevenueRetentionPct} max={200} unit="%"
+                onChange={(v) => update("netRevenueRetentionPct", Math.round(v))} />
+            </div>
+          </Module>
+
+          {/* ═══ ROW 2 ═══ */}
+
+          {/* ── OPERATING PANEL ── */}
+          <Module title="OPERATING & VELOCITY">
+            <div style={SC.modBody}>
+              <ToggleRow label="Hiring Velocity" options={["Low", "Medium", "High"] as HiringVelocity[]}
+                value={form.hiringVelocity} onChange={(v) => update("hiringVelocity", v)} />
+              <PowerBar id="salesRampTime" label="Sales Ramp Time" value={form.salesRampTime} max={12} unit=" mo"
+                onChange={(v) => update("salesRampTime", Math.round(v))} />
+              <PowerBar id="engineeringVelocity" label="Engineering Velocity" value={form.engineeringVelocity} max={12} unit=" mo"
+                onChange={(v) => update("engineeringVelocity", Math.round(v))} />
+              <ToggleRow label="Burn Flexibility" options={["Fixed", "Variable"] as BurnFlexibility[]}
+                value={form.burnFlexibility} onChange={(v) => update("burnFlexibility", v)} />
+            </div>
+          </Module>
+
+          {/* ── COST PANEL ── */}
+          <Module title="COST STRUCTURE">
+            <div style={{ ...SC.modBody, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <TacticalInput label="Headcount" value={form.headcount}
+                onChange={(v) => update("headcount", Number(v) || 0)} />
+              <TacticalInput label="Fully Loaded Cost" value={form.avgFullyLoadedCost} prefix="$"
+                onChange={(v) => update("avgFullyLoadedCost", Number(v) || 0)} />
+              <TacticalInput label="Sales & Marketing" value={form.salesMarketingSpend} prefix="$"
+                onChange={(v) => update("salesMarketingSpend", Number(v) || 0)} />
+              <TacticalInput label="R&D Spend" value={form.rdSpend} prefix="$"
+                onChange={(v) => update("rdSpend", Number(v) || 0)} />
+              <TacticalInput label="G&A Spend" value={form.gaSpend} prefix="$"
+                onChange={(v) => update("gaSpend", Number(v) || 0)} />
+              <TacticalInput label="COGS" value={form.cogsPct} prefix="$"
+                onChange={(v) => update("cogsPct", Number(v) || 0)} />
+              <TacticalInput label="CAC" value={form.cac} prefix="$"
+                onChange={(v) => update("cac", Number(v) || 0)} />
+            </div>
+          </Module>
+
+          {/* ── STRATEGY PANEL ── */}
+          <Module title="STRATEGIC POSTURE">
+            <div style={{ ...SC.modBody, display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+              <span style={{ fontSize: 10, fontWeight: 600, color: "#E6F1FF", letterSpacing: "0.08em", textTransform: "uppercase" }}>Risk Tolerance</span>
+
+              <GaugeKnob angle={needleAngle} />
+
+              <div style={{ display: "flex", gap: 0, width: "100%", borderRadius: 8, overflow: "hidden", border: "1px solid #1E3A5F" }}>
+                {(["Conservative", "Balanced", "Aggressive"] as RiskTolerance[]).map((r) => (
+                  <button key={r} type="button" onClick={() => update("riskTolerance", r)} style={{
+                    flex: 1, padding: "8px 0", fontSize: 9, fontWeight: 600, letterSpacing: "0.06em",
+                    textTransform: "uppercase", fontFamily: FONT, cursor: "pointer", transition: "all 0.15s",
+                    border: "none",
+                    background: form.riskTolerance === r ? "#22D3EE" : "#122E48",
+                    color: form.riskTolerance === r ? "#04121F" : "#8FB4D9",
+                  }}>{r}</button>
+                ))}
+              </div>
+
+              <div style={{ width: "100%", marginTop: 4 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <BinarySwitch label="External Capital Required?" active={form.accessToCapital === "Strong"} onToggle={() => update("accessToCapital", form.accessToCapital === "Strong" ? "Moderate" : "Strong")} />
+                  <BinarySwitch label="Focus on Runway?" active={form.priorityBalance < 40} onToggle={() => update("priorityBalance", form.priorityBalance < 40 ? 60 : 20)} />
+                  <BinarySwitch label="Survival vs Expansion?" active={form.priorityBalance > 50} onToggle={() => update("priorityBalance", form.priorityBalance > 50 ? 30 : 70)} />
+                  <BinarySwitch label="Growth-at-all-Costs?" active={form.priorityBalance > 75} onToggle={() => update("priorityBalance", form.priorityBalance > 75 ? 50 : 90)} />
+                </div>
+              </div>
+            </div>
+          </Module>
+
+        </div>
+
+        {/* ═══ DYNAMIC OUTCOME RAIL ═══ */}
+        <div style={SC.outcomeRail} className="gm-scrollbar">
+          <div style={{ padding: "0 20px 12px", borderBottom: "1px solid rgba(31,74,117,0.3)" }}>
+            <div style={{ height: 2, background: "linear-gradient(90deg, transparent 0%, #a78bfa 50%, transparent 100%)", borderRadius: 2, marginBottom: 10 }} />
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#a78bfa" }}>Dynamic Outcome Rail</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "14px 16px", flex: 1, overflow: "auto" }}>
+            <OutcomeCard label="Runway" value={`${metrics.runway.toFixed(1)} mo`} color={runwayColor} />
+            <OutcomeCard label="ARR" value={fmtCurrency(form.currentARR)} color="#22D3EE" />
+            <OutcomeCard label="Growth" value={`${form.monthlyGrowthPct.toFixed(1)}%`} color="#22D3EE" />
+            <OutcomeCard label="Burn Multiple" value={`${metrics.burnMultiple.toFixed(2)}x`} color="#22D3EE" />
+            <OutcomeCard label="Survival Prob." value={`${metrics.survivalProbability}%`} color={survivalColor} />
+            <div style={{ height: 1, background: "rgba(31,74,117,0.3)", margin: "4px 0" }} />
+            <OutcomeCard label="Gross Margin" value={`${form.grossMarginPct.toFixed(1)}%`} color="#34d399" />
+            <OutcomeCard label="NRR" value={`${form.netRevenueRetentionPct}%`} color={form.netRevenueRetentionPct >= 100 ? "#B7FF3C" : "#6E5BFF"} />
+            <OutcomeCard label="Churn" value={`${form.monthlyChurnPct.toFixed(1)}%`} color="#9DB7D1" />
+            <OutcomeCard label="Rev/Employee" value={fmtCurrency(metrics.revenuePerHead)} color="#a78bfa" />
+            <OutcomeCard label="Op. Profit" value={`${metrics.operatingProfit < 0 ? "-" : ""}${fmtCurrency(Math.abs(metrics.operatingProfit))}`}
+              color={metrics.operatingProfit >= 0 ? "#B7FF3C" : "#6E5BFF"} />
+          </div>
+        </div>
+      </main>
+
+      {/* ═══ CTA — LOCK BASELINE ═══ */}
+      <div style={{ padding: "16px 28px 22px", flexShrink: 0, display: "flex", justifyContent: "center", maxWidth: 1800, margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
+        <button
+          type="button"
+          onClick={handleLock}
+          disabled={!canLock || isLocking}
+          className="sf-cta-glow"
+          style={{
+            width: "100%",
+            maxWidth: 620,
+            height: 60,
+            padding: "0 56px",
+            borderRadius: 12,
+            border: "1px solid rgba(34,211,238,0.3)",
+            background: isLocking
+              ? "linear-gradient(90deg, #4B3FBF 0%, #6E5BFF 50%, #4B3FBF 100%)"
+              : "linear-gradient(90deg, #0891B2 0%, #22D3EE 35%, #67E8F9 50%, #22D3EE 65%, #0891B2 100%)",
+            color: "#04121F",
+            fontSize: 16, fontWeight: 800, letterSpacing: "0.18em", textTransform: "uppercase",
+            fontFamily: FONT, cursor: canLock ? "pointer" : "default",
+            opacity: canLock ? 1 : 0.35,
+            transition: "all 0.25s",
+            boxShadow: "0 0 40px rgba(34,211,238,0.4), 0 0 80px rgba(34,211,238,0.15), 0 4px 20px rgba(0,0,0,0.4)",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {isLocking ? "CALCULATING VECTORS..." : "LOCK BASELINE & ENTER STRATFIT"}
+        </button>
       </div>
-    </ConsoleFrame>
+
+      {/* ═══ XERO MODAL ═══ */}
+      {showXeroModal && (
+        <div style={SC.modalBackdrop} onClick={() => setShowXeroModal(false)}>
+          <div style={SC.modalCard} onClick={(e) => e.stopPropagation()}>
+            <span style={{ fontSize: 36 }}>&#9741;</span>
+            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "#E6F1FF" }}>Connect Your Xero Account</h2>
+            <p style={{ margin: 0, fontSize: 12, color: "#8FB4D9", lineHeight: 1.55 }}>
+              Automatically import P&amp;L, balance sheet, and cash flow data from Xero.
+            </p>
+            <button type="button" style={SC.modalBtn}
+              onClick={() => { setShowXeroModal(false); setToast("Xero integration coming soon.") }}>
+              Authorize with Xero
+            </button>
+            <button type="button" style={SC.modalClose} onClick={() => setShowXeroModal(false)}>Close</button>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ TOAST ═══ */}
+      {toast && <div style={SC.toast}>{toast}</div>}
+
+      <style>{`
+        @keyframes sfInitToastIn { from { opacity:0; transform:translateX(-50%) translateY(12px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+        @keyframes sfCtaPulse { 0%,100% { box-shadow: 0 0 40px rgba(34,211,238,0.4), 0 0 80px rgba(34,211,238,0.15), 0 4px 20px rgba(0,0,0,0.4); } 50% { box-shadow: 0 0 50px rgba(34,211,238,0.55), 0 0 100px rgba(34,211,238,0.2), 0 4px 24px rgba(0,0,0,0.4); } }
+        .sf-cta-glow:not(:disabled):hover { animation: sfCtaPulse 1.5s ease-in-out infinite; }
+
+        .gm-range-cyan::-webkit-slider-thumb,
+        .gm-range-amber::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          border: none;
+          cursor: pointer;
+          transition: box-shadow 0.15s;
+        }
+        .gm-range-cyan::-webkit-slider-thumb {
+          background: #22D3EE;
+          box-shadow: 0 0 10px rgba(34,211,238,0.6);
+        }
+        .gm-range-amber::-webkit-slider-thumb {
+          background: #6E5BFF;
+          box-shadow: 0 0 10px rgba(110,91,255,0.6);
+        }
+        .gm-range-cyan::-webkit-slider-thumb:hover {
+          box-shadow: 0 0 16px rgba(34,211,238,0.8);
+          transform: scale(1.2);
+        }
+        .gm-range-amber::-webkit-slider-thumb:hover {
+          box-shadow: 0 0 16px rgba(110,91,255,0.8);
+          transform: scale(1.2);
+        }
+
+        .gm-range-cyan::-moz-range-thumb,
+        .gm-range-amber::-moz-range-thumb {
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          border: none;
+          cursor: pointer;
+        }
+        .gm-range-cyan::-moz-range-thumb {
+          background: #22D3EE;
+          box-shadow: 0 0 10px rgba(34,211,238,0.6);
+        }
+        .gm-range-amber::-moz-range-thumb {
+          background: #6E5BFF;
+          box-shadow: 0 0 10px rgba(110,91,255,0.6);
+        }
+
+        .gm-range-cyan::-webkit-slider-runnable-track,
+        .gm-range-amber::-webkit-slider-runnable-track {
+          background: transparent;
+          height: 100%;
+        }
+        .gm-range-cyan::-moz-range-track,
+        .gm-range-amber::-moz-range-track {
+          background: transparent;
+          height: 100%;
+        }
+      `}</style>
+    </div>
+    </PageShell>
   )
+}
+
+function OutcomeCard({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+      padding: "10px 14px", borderRadius: 8,
+      background: "rgba(10,28,46,0.7)",
+      border: "1px solid rgba(30,58,95,0.6)",
+      boxShadow: `0 0 1px ${color}22 inset, 0 2px 8px rgba(0,0,0,0.25)`,
+      transition: "box-shadow 0.2s, border-color 0.2s",
+    }}>
+      <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#8FB4D9" }}>{label}</span>
+      <span style={{ fontSize: 16, fontWeight: 800, fontFamily: "ui-monospace, 'JetBrains Mono', monospace", color, textShadow: `0 0 12px ${color}88` }}>{value}</span>
+    </div>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   STYLES
+   ═══════════════════════════════════════════════════════════════════ */
+
+const FONT = "'Inter', system-ui, sans-serif"
+
+const SC: Record<string, React.CSSProperties> = {
+  page: {
+    position: "relative",
+    display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "hidden",
+    color: "#E6F1FF", fontFamily: FONT,
+    background: "#020617",
+  },
+  powerRail: {
+    display: "flex", alignItems: "center", justifyContent: "space-between",
+    height: 56, padding: "0 28px", flexShrink: 0,
+    background: "#0E2238",
+    borderBottom: "1px solid #1E3A5F",
+    boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+    zIndex: 5,
+  },
+  powerRailLeft: {
+    display: "flex", alignItems: "center", gap: 18, minWidth: 0,
+  },
+  sysLabel: {
+    fontSize: 8, fontWeight: 700, color: "#22D3EE", letterSpacing: "0.18em", textTransform: "uppercase",
+  },
+  sysTitle: {
+    fontSize: 14, fontWeight: 800, fontStyle: "italic", color: "#22D3EE", letterSpacing: "0.06em",
+    textShadow: "0 0 14px rgba(34,211,238,0.3)",
+  },
+  railDivider: {
+    width: 1, height: 28, background: "#1E3A5F", flexShrink: 0,
+  },
+  railTitle: {
+    fontSize: 16, fontWeight: 700, color: "#E6F1FF", whiteSpace: "nowrap", letterSpacing: "0.02em",
+  },
+  metricsRow: {
+    display: "flex", alignItems: "center", gap: 24, flexShrink: 0,
+  },
+  metricBlock: {
+    display: "flex", flexDirection: "column", alignItems: "flex-end",
+    padding: "6px 14px",
+    borderRadius: 8,
+    background: "#0A1C2E",
+    border: "1px solid #1E3A5F",
+  },
+  metricLabel: {
+    fontSize: 8, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#8FB4D9",
+  },
+  metricValue: {
+    fontSize: 15, fontWeight: 800, fontFamily: "ui-monospace, 'JetBrains Mono', monospace",
+    textShadow: "0 0 12px currentColor",
+  },
+
+  grid: {
+    flex: 1, display: "grid", gridTemplateColumns: "1fr 280px",
+    gap: 0, padding: "0 28px 0", minHeight: 0, overflow: "hidden",
+    maxWidth: 1800, margin: "0 auto", width: "100%", boxSizing: "border-box",
+    zIndex: 1,
+  },
+  panelGrid: {
+    display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
+    gap: 40, padding: "36px 40px 28px 0", minHeight: 0, overflow: "auto",
+  },
+  outcomeRail: {
+    display: "flex", flexDirection: "column", gap: 0,
+    padding: "36px 0 28px 0", minHeight: 0, overflow: "auto",
+    borderLeft: "1px solid #1E3A5F",
+  },
+
+  moduleHeader: {
+    position: "relative",
+    padding: "12px 32px", fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
+    color: "#8FB4D9",
+    background: "rgba(6,18,31,0.4)",
+    borderBottom: "1px solid rgba(31,74,117,0.25)",
+    marginBottom: 0,
+  },
+  modBody: {
+    padding: "24px 32px 28px", display: "flex", flexDirection: "column", gap: 16,
+  },
+
+  powerLabel: {
+    fontSize: 10, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#8FB4D9",
+  },
+  powerValue: {
+    fontSize: 13, fontWeight: 700, fontFamily: "ui-monospace, 'JetBrains Mono', monospace",
+    textShadow: "0 0 10px currentColor",
+  },
+  powerTrack: {
+    height: 8, borderRadius: 4, overflow: "hidden",
+    background: "#0F2A44",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.4) inset",
+  },
+  powerFill: {
+    height: "100%", borderRadius: 4, minWidth: 2,
+  },
+  rangeInput: {
+    position: "absolute" as const, top: -4, left: 0,
+    width: "100%", height: 16,
+    appearance: "none", WebkitAppearance: "none",
+    background: "transparent", borderRadius: 4, outline: "none", cursor: "pointer",
+    margin: 0, padding: 0, zIndex: 2,
+  },
+
+  inputLabel: {
+    fontSize: 10, fontWeight: 600, color: "#8FB4D9", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 2,
+  },
+  inputWrap: {
+    display: "flex", alignItems: "center", overflow: "hidden",
+    background: "#0A1C2E",
+    borderRadius: 8,
+    border: "1px solid #1E3A5F",
+    transition: "border-color 160ms ease, box-shadow 160ms ease",
+  },
+  inputInner: {
+    flex: 1, height: 36, padding: "0 10px", fontSize: 13, fontWeight: 500, fontFamily: FONT,
+    color: "#E6F1FF", background: "transparent", border: "none", outline: "none", minWidth: 0,
+  },
+  inputAffix: {
+    padding: "0 10px", fontSize: 11, color: "#8FB4D9", flexShrink: 0, fontWeight: 500,
+  },
+
+  pillGrid: {
+    display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginTop: 6,
+  },
+
+  toggleLabel: {
+    fontSize: 10, fontWeight: 600, color: "#8FB4D9", letterSpacing: "0.02em",
+  },
+  toggleGroup: {
+    display: "inline-flex", borderRadius: 8, overflow: "hidden",
+    border: "1px solid #1E3A5F",
+  },
+  toggleBtn: {
+    padding: "7px 14px", fontSize: 10, fontWeight: 600, fontFamily: FONT,
+    color: "#8FB4D9", background: "#122E48", border: "none",
+    cursor: "pointer", transition: "all 0.15s", letterSpacing: "0.04em",
+    borderRight: "1px solid #1E3A5F",
+  },
+  toggleBtnActive: {
+    color: "#04121F", background: "#22D3EE",
+    fontWeight: 700,
+  },
+
+
+  smallBtn: {
+    flex: 1, padding: "8px 10px", fontSize: 10, fontWeight: 600, letterSpacing: "0.04em",
+    fontFamily: FONT, borderRadius: 8, cursor: "pointer", transition: "all 0.15s",
+    border: "1px solid #1E3A5F", background: "#122E48", color: "#22D3EE",
+  },
+  dropZone: {
+    display: "flex", alignItems: "center", justifyContent: "center",
+    minHeight: 52, border: "2px dashed #1E3A5F", borderRadius: 8,
+    background: "#0A1C2E", cursor: "pointer", transition: "all 0.2s",
+  },
+
+  modalBackdrop: {
+    position: "fixed", inset: 0, zIndex: 300,
+    display: "flex", alignItems: "center", justifyContent: "center",
+    background: "rgba(2,6,23,0.9)", backdropFilter: "blur(8px)",
+  },
+  modalCard: {
+    display: "flex", flexDirection: "column", alignItems: "center", gap: 18,
+    padding: "40px 44px", maxWidth: 420, width: "90%", textAlign: "center",
+    background: "#0E2238", border: "1px solid #1E3A5F", borderRadius: 14,
+    boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
+  },
+  modalBtn: {
+    padding: "11px 30px", fontSize: 12, fontWeight: 700, letterSpacing: "0.04em",
+    fontFamily: FONT, borderRadius: 8, cursor: "pointer", transition: "all 0.2s",
+    border: "none",
+    background: "#22D3EE",
+    color: "#04121F",
+    boxShadow: "0 0 14px rgba(34,211,238,0.3)",
+  },
+  modalClose: {
+    fontSize: 11, color: "#8FB4D9", background: "none", border: "none",
+    cursor: "pointer", fontFamily: FONT, padding: "6px 10px",
+  },
+  toast: {
+    position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", zIndex: 400,
+    padding: "12px 28px", fontSize: 12, fontWeight: 600, fontFamily: FONT,
+    color: "#E6F1FF",
+    background: "#0E2238",
+    border: "1px solid #1E3A5F", borderRadius: 10,
+    boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
+    animation: "sfInitToastIn 300ms ease-out",
+  },
 }

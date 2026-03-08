@@ -8,6 +8,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { useTerrainControls } from "./useTerrainControls";
+import { GOD_VIEW_PRESET } from "@/scene/camera/terrainCameraPresets";
 
 // ── Live camera position readout ──
 function useCameraPosition(controls: any) {
@@ -191,8 +192,11 @@ export default function TerrainNavWidget() {
   const resetView = useCallback(() => {
     if (!controls?.object || !controls?.target) return;
     const camera = controls.object as THREE.PerspectiveCamera;
-    camera.position.set(0, 155, 460);
-    camera.lookAt(controls.target);
+    const [px, py, pz] = GOD_VIEW_PRESET.pos;
+    const [tx, ty, tz] = GOD_VIEW_PRESET.target;
+    camera.position.set(px, py, pz);
+    (controls.target as THREE.Vector3).set(tx, ty, tz);
+    camera.lookAt(tx, ty, tz);
     camera.updateProjectionMatrix();
     controls.update();
   }, [controls]);
@@ -240,7 +244,7 @@ export default function TerrainNavWidget() {
         gap: 3,
         padding: "10px 8px 8px",
         borderRadius: 12,
-        background: "#0C1824",
+        background: "#333333",
         backdropFilter: "blur(14px) saturate(1.2)",
         WebkitBackdropFilter: "blur(14px) saturate(1.2)",
         border: "1px solid rgba(200, 215, 230, 0.35)",

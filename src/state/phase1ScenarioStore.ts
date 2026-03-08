@@ -1,3 +1,12 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// STRATFIT — CANONICAL Scenario Store (Phase 1)
+//
+// SINGLE SOURCE OF TRUTH for scenario state across all routed pages:
+//   /position, /studio, /compare, /decision
+//
+// All terrain metrics, simulation results, KPIs, and events MUST flow
+// through this store. Do NOT use the legacy scenarioStore for new features.
+// ═══════════════════════════════════════════════════════════════════════════
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import { useBaselineStore } from "@/state/baselineStore"
@@ -6,6 +15,12 @@ import { logDecisionFlow } from "@/dev/decisionFlowLog"
 import { selectKpis } from "@/selectors/kpiSelectors"
 import { selectRiskScore } from "@/selectors/riskSelectors"
 import { selectTerrainMetrics } from "@/selectors/terrainSelectors"
+import { useScenarioStore } from "@/state/scenarioStore"
+import type { LeverValues } from "@/domain/decision/LeverValues"
+import { normalizeLeverValues, stableStringifyLevers } from "@/domain/decision/LeverValues"
+import { applyLeversToBaseline } from "@/domain/decision/applyLevers"
+import { generateSimulationEvents } from "@/engine/analysis/generateSimulationEvents"
+import type { TerrainEvent } from "@/domain/events/terrainEventTypes"
 
 export type SimulationStatus = "draft" | "running" | "complete" | "error"
 
@@ -17,6 +32,9 @@ export type DecisionIntentType =
   | "cost_reduction"
   | "fundraising"
   | "growth_investment"
+  | "acquisition"
+  | "market_entry"
+  | "product_launch"
   | "other"
 
 export const DECISION_INTENT_OPTIONS: { value: DecisionIntentType; label: string }[] = [
@@ -25,6 +43,9 @@ export const DECISION_INTENT_OPTIONS: { value: DecisionIntentType; label: string
   { value: "cost_reduction",    label: "Reduce costs" },
   { value: "fundraising",       label: "Raise funding" },
   { value: "growth_investment", label: "Growth investment" },
+  { value: "acquisition",       label: "Acquisition" },
+  { value: "market_entry",      label: "Market entry" },
+  { value: "product_launch",    label: "Product launch" },
   { value: "other",             label: "Other" },
 ]
 
@@ -53,12 +74,30 @@ export type TerrainData = {
   multipliers: TerrainMultipliers
 }
 
+/** Engine-produced terrain shape metrics — replaces UI-side deriveTerrainMetrics */
+export type EngineTerrainMetrics = {
+  elevationScale: number
+  roughness: number
+  ridgeIntensity: number
+  volatility: number
+}
+
 export type SimulationResults = {
   completedAt: number
   horizonMonths: number
   summary: string
   kpis: SimulationKpis
   terrain: TerrainData
+  /** Engine-computed terrain metrics — canonical source for terrain shape */
+  terrainMetrics?: EngineTerrainMetrics
+  /** Engine-generated terrain events — deterministic from KPIs */
+  events?: TerrainEvent[]
+  /**
+   * Forward projections computed by simulationService.runSimulation().
+   * Position, Compare, and Boardroom READ from here — they must not
+   * recompute these values locally.
+   */
+  projections?: import("@/engine/computeSimulationProjections").SimulationProjections
 }
 
 export type Phase1Scenario = {
@@ -69,6 +108,8 @@ export type Phase1Scenario = {
   /** MVP deterministic intent classification */
   decisionIntentType?: DecisionIntentType
   decisionIntentLabel?: string
+  /** Lever values used for this scenario — persisted for Position page access */
+  leverValues?: LeverValues
   status: SimulationStatus
   simulationResults?: SimulationResults
   /** Decision identity — populated on creation */
@@ -81,6 +122,7 @@ export type CreateScenarioInput = {
   intent?: unknown
   decisionIntentType?: DecisionIntentType
   decisionIntentLabel?: string
+  leverValues?: LeverValues
 }
 
 type Phase1ScenarioState = {
@@ -94,6 +136,12 @@ type Phase1ScenarioState = {
   createScenario: (input: CreateScenarioInput) => string
   runSimulation: (scenarioId: string) => void
   addScenario: (scenario: Phase1Scenario) => void
+  /**
+   * Insert or replace a scenario by ID.
+   * Used by WhatIfPage to keep a live "session" scenario in sync with the
+   * cumulative stack state so Position, Compare, and Boardroom can all read it.
+   */
+  upsertScenario: (scenario: Phase1Scenario) => void
 }
 
 function newId() {
@@ -119,8 +167,10 @@ function hashToMultiplier(hash: number, bits: number, lo: number, hi: number): n
   return lo + frac * (hi - lo)
 }
 
-function computeTerrainData(decision: string): TerrainData {
-  const seed = hashString(decision)
+function computeTerrainData(scenarioId: string, decision: string, leverValues?: LeverValues): TerrainData {
+  // Seed from scenario_id + decision + lever values for full determinism
+  const leverStr = leverValues ? stableStringifyLevers(leverValues) : ""
+  const seed = hashString(`${scenarioId}::${decision}::${leverStr}`)
   return {
     seed,
     multipliers: {
@@ -128,6 +178,31 @@ function computeTerrainData(decision: string): TerrainData {
       burn:   hashToMultiplier(seed, 4, 0.90, 1.15),
       growth: hashToMultiplier(seed, 8, 0.85, 1.20),
     },
+  }
+}
+
+/**
+ * Derive terrain shape metrics from simulation KPIs.
+ * Produces the same shape as TerrainMetrics but from engine output,
+ * removing the need for UI-side deriveTerrainMetrics on scenario paths.
+ */
+function computeEngineTerrainMetrics(
+  kpis: SimulationKpis,
+  multipliers: TerrainMultipliers,
+): EngineTerrainMetrics {
+  const growthFactor = Math.abs(kpis.growthRate) <= 1
+    ? kpis.growthRate
+    : kpis.growthRate / 100
+  const marginFactor = Math.abs(kpis.grossMargin) <= 1
+    ? kpis.grossMargin
+    : kpis.grossMargin / 100
+  const burnPressure = kpis.revenue > 0 ? kpis.monthlyBurn / kpis.revenue : 0
+
+  return {
+    elevationScale: 1 + growthFactor * 2,
+    roughness: Math.min(burnPressure * 2, 4),
+    ridgeIntensity: Math.min(Math.abs(multipliers.growth - 1) * 5, 1),
+    volatility: Math.abs(growthFactor - marginFactor),
   }
 }
 
@@ -184,6 +259,7 @@ export const usePhase1ScenarioStore = create<Phase1ScenarioState>()(
           intent: input.intent,
           decisionIntentType: input.decisionIntentType,
           decisionIntentLabel: input.decisionIntentLabel,
+          leverValues: normalizeLeverValues(input.leverValues),
           status: "draft",
           identity,
         }
@@ -218,9 +294,12 @@ export const usePhase1ScenarioStore = create<Phase1ScenarioState>()(
           return
         }
 
-        // Compute terrain + KPIs deterministically from decision text
-        const terrain = computeTerrainData(scenario.decision)
-        const kpis = computeKpis(baseline, terrain.multipliers)
+        // Compute terrain + KPIs deterministically from scenario_id + decision text + levers
+        const levers = scenario.leverValues ?? {}
+        const adjusted = applyLeversToBaseline(baseline, levers)
+        const terrain = computeTerrainData(scenarioId, scenario.decision, levers)
+        const kpis = computeKpis(adjusted, terrain.multipliers)
+        const terrainMetrics = computeEngineTerrainMetrics(kpis, terrain.multipliers)
 
         // Set status → running, pre-store terrain so Position can morph immediately
         set((s) => ({
@@ -235,6 +314,7 @@ export const usePhase1ScenarioStore = create<Phase1ScenarioState>()(
                     summary: "",
                     kpis,
                     terrain,
+                    terrainMetrics,
                   },
                 }
               : sc
@@ -244,6 +324,14 @@ export const usePhase1ScenarioStore = create<Phase1ScenarioState>()(
         // Simulate with 1.4s delay → finalize with timestamp + summary
         setTimeout(() => {
           const completedAt = Date.now()
+          // Engine-generated events — deterministic from KPIs
+          const events = generateSimulationEvents(kpis, 24)
+          // Forward projections — p10/p50/p90 over 24 months
+          // Imported lazily to avoid circular: computeSimulationProjections does not
+          // import phase1ScenarioStore at runtime (type-only import there).
+          const { computeSimulationProjections } = require("@/engine/computeSimulationProjections") as typeof import("@/engine/computeSimulationProjections")
+          const projections = computeSimulationProjections(kpis, 24)
+
           set((s) => ({
             lastCompletedRunId: completedAt,
             scenarios: s.scenarios.map((sc) =>
@@ -257,11 +345,35 @@ export const usePhase1ScenarioStore = create<Phase1ScenarioState>()(
                       summary: `Simulation complete \u2014 ${scenario.decision.slice(0, 60)}`,
                       kpis,
                       terrain,
+                      terrainMetrics,
+                      events,
+                      projections,
                     },
                   }
                 : sc
             ),
           }))
+          // Bridge into scenarioStore.engineResults for ScenarioMountain God Mode (Compare)
+          const riskIdx = selectRiskScore(kpis)
+          const arr = kpis.revenue * 12
+          useScenarioStore.getState().setEngineResult(scenarioId, {
+            kpis: {
+              cash: { value: kpis.cash },
+              monthlyBurn: { value: kpis.monthlyBurn },
+              revenue: { value: kpis.revenue },
+              grossMargin: { value: kpis.grossMargin },
+              growthRate: { value: kpis.growthRate },
+              churnRate: { value: kpis.churnRate },
+              headcount: { value: kpis.headcount },
+              arpa: { value: kpis.arpa },
+              runway: { value: kpis.runway ?? 0 },
+              riskIndex: { value: riskIdx },
+              riskScore: { value: 100 - riskIdx },
+              enterpriseValue: { value: arr * 8 },
+              burnQuality: { value: kpis.monthlyBurn },
+            },
+          })
+
           // DEV: log decision → scenarioInputs → engineResults linkage
           logDecisionFlow("simulationComplete", {
             scenarioId,
@@ -270,15 +382,7 @@ export const usePhase1ScenarioStore = create<Phase1ScenarioState>()(
             engineResults: { kpis, terrain },
           })
 
-          // DEV: selector proof — prove selectors return correct data
-          if (import.meta.env.DEV) {
-            console.group("[phase1ScenarioStore] Selector proof")
-            console.log("ENGINE RESULTS", { kpis, terrain })
-            console.log("SELECTED KPIS", selectKpis(kpis))
-            console.log("TERRAIN METRICS", selectTerrainMetrics({ completedAt: Date.now(), horizonMonths: 24, summary: "", kpis, terrain }))
-            console.log("RISK SCORE", selectRiskScore(kpis))
-            console.groupEnd()
-          }
+
         }, 1400)
       },
 
@@ -286,6 +390,17 @@ export const usePhase1ScenarioStore = create<Phase1ScenarioState>()(
         set((s) => ({
           scenarios: [scenario, ...s.scenarios],
         }))
+      },
+
+      upsertScenario: (scenario) => {
+        set((s) => {
+          const exists = s.scenarios.some((sc) => sc.id === scenario.id)
+          return {
+            scenarios: exists
+              ? s.scenarios.map((sc) => (sc.id === scenario.id ? scenario : sc))
+              : [scenario, ...s.scenarios],
+          }
+        })
       },
     }),
     {

@@ -1,0 +1,235 @@
+/* ═══════════════════════════════════════════════
+   AI Intelligence Panel / Scenario Output Panel
+   Card style: spec-compliant STRATFIT card
+   Colour system: locked palette only
+     #EAF4FF  soft white
+     #9DB7D1  muted white
+     #21D4FD  cyan accent
+     #6E5BFF  strategic purple
+     #B7FF3C  lime positive
+     #0B1F36  panel navy
+   BANNED: red, orange, pink, amber
+   ═══════════════════════════════════════════════ */
+
+/* AIIntelligencePanel renders as a child inside ScenarioOutputPanel —
+   no outer card (no background, border, or radius). It contributes
+   content only. ScenarioOutputPanel owns the card chrome. */
+.root {
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  position: relative;
+  overflow: visible;
+}
+
+/* Header hidden — ScenarioOutputPanel owns the "Scenario Output" label */
+.header {
+  display: none;
+}
+
+.headerLabel {
+  display: none;
+}
+
+/* ─── Empty state ─── */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 0 4px;
+  position: relative;
+}
+
+.emptyTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #EAF4FF;
+  letter-spacing: 0.02em;
+}
+
+.emptyBody {
+  font-size: 13px;
+  color: rgba(157,183,209,0.55);
+  line-height: 1.65;
+  margin: 0;
+  max-width: 340px;
+}
+
+/* ─── Loading state ─── */
+.loadingDot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #21D4FD;
+  animation: pulse 1s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50%       { opacity: 1;   transform: scale(1.2); }
+}
+
+.loadingText {
+  font-size: 13px;
+  color: rgba(33,212,253,0.55);
+  font-style: italic;
+  padding: 8px 0;
+  position: relative;
+}
+
+/* ─── Result content ─── */
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+}
+
+.headline {
+  font-size: 16px;
+  font-weight: 700;
+  color: #EAF4FF;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+}
+
+.summary {
+  font-size: 13px;
+  color: rgba(157,183,209,0.75);
+  line-height: 1.65;
+}
+
+.sectionTitle {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(33,212,253,0.50);
+  margin-bottom: 6px;
+}
+
+/* ─── Key Drivers ─── */
+.driversSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.driverRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.driverRow:last-child {
+  border-bottom: none;
+}
+
+.driverKpi {
+  font-size: 12px;
+  color: rgba(157,183,209,0.70);
+}
+
+.driverDelta {
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Positive delta — lime (canonical positive color) */
+.deltaUp   { color: #B7FF3C; }
+/* Negative delta — violet (red/pink banned) */
+.deltaDown { color: #6E5BFF; }
+.deltaFlat { color: rgba(157,183,209,0.30); }
+
+/* ─── Confidence badges ─── */
+.confidenceBase {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+
+/* High — lime */
+.confidenceHigh {
+  composes: confidenceBase;
+  background: rgba(183,255,60,0.10);
+  color: #B7FF3C;
+  border: 1px solid rgba(183,255,60,0.18);
+}
+
+/* Medium — muted cyan */
+.confidenceMedium {
+  composes: confidenceBase;
+  background: rgba(33,212,253,0.08);
+  color: rgba(33,212,253,0.70);
+  border: 1px solid rgba(33,212,253,0.14);
+}
+
+/* Low — violet (red/pink banned) */
+.confidenceLow {
+  composes: confidenceBase;
+  background: rgba(110,91,255,0.10);
+  color: rgba(110,91,255,0.75);
+  border: 1px solid rgba(110,91,255,0.18);
+}
+
+/* ─── Assumptions box ─── */
+/* Orange/amber is banned — use violet instead */
+.assumptionsBox {
+  padding: 10px 14px;
+  background: rgba(110,91,255,0.06);
+  border: 1px solid rgba(110,91,255,0.12);
+  border-radius: 8px;
+}
+
+.assumption {
+  font-size: 11px;
+  color: rgba(110,91,255,0.70);
+  line-height: 1.55;
+}
+
+/* ─── Follow-up questions ─── */
+.followUpSection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.followUpBtn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 14px;
+  background: rgba(11,31,54,0.60);
+  border: 1px solid rgba(33,212,253,0.08);
+  border-radius: 8px;
+  color: rgba(157,183,209,0.55);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.followUpBtn:hover {
+  background: rgba(33,212,253,0.07);
+  border-color: rgba(33,212,253,0.22);
+  color: #21D4FD;
+}
+
+/* ─── Voice row ─── */
+.voiceRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}

@@ -79,7 +79,7 @@ export default function BaselineStoryRail() {
                                 <div
                                     style={{
                                         fontSize: 11,
-                                        fontWeight: 850,
+                                        fontWeight: 800,
                                         letterSpacing: "0.14em",
                                         color: "#E2E8F0",
                                         textTransform: "uppercase",

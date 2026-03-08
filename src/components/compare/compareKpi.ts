@@ -7,12 +7,12 @@
  *   engineResults[scenarioId].kpis (KPIMap)
  *
  * Everything routes through:
- *   src/simulation/kpiSelectors.ts
+ *   src/simulation/engineKpiSelectors.ts
  *
  * No stores. No side effects. Deterministic.
  */
 
-import type { EngineResults, KPIMap } from "@/simulation/kpiSelectors"
+import type { EngineResults, KPIMap } from "@/simulation/engineKpiSelectors"
 import {
   BASELINE_ID,
   selectKpis,
@@ -22,7 +22,7 @@ import {
   deltaPct,
   fmtDeltaAbs,
   fmtDeltaPct,
-} from "@/simulation/kpiSelectors"
+} from "@/simulation/engineKpiSelectors"
 
 export { BASELINE_ID } // re-export for Compare modules
 

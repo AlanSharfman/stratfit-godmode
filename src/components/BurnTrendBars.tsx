@@ -5,9 +5,8 @@
 import React, { useEffect, useState, useMemo } from "react";
 
 interface BurnTrendBarsProps {
-  series?: number[];  // Array of 6-8 burn values (optional, will derive if not provided)
-  value: number;      // Current burn value
-  trend?: "positive" | "negative" | "neutral"; // Trend direction (positive = burn decreasing = good)
+  series?: number[];
+  value: number;
 }
 
 // ============================================================================
@@ -37,7 +36,7 @@ function generatePlaceholderSeries(currentValue: number, length: number = 7): nu
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
-export default function BurnTrendBars({ series, value, trend = "neutral" }: BurnTrendBarsProps) {
+export default function BurnTrendBars({ series, value }: BurnTrendBarsProps) {
   const [mounted, setMounted] = useState(false);
   
   // Generate series data

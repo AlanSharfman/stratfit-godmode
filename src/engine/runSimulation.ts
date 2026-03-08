@@ -8,6 +8,7 @@ import {
   type LeverState,
   type SimulationConfig,
   type SensitivityFactor,
+  type SingleSimulationResult,
   runSingleSimulation,
 } from "@/logic/monteCarloEngine";
 import { generateVerdict, type Verdict } from "@/logic/verdictGenerator";
@@ -24,7 +25,7 @@ export interface SimulationOutput {
 
 export function runSimulation(levers: LeverState, baseline: SimulationConfig): SimulationOutput {
   const CHUNK_SIZE = 500;
-  const allSimulations: any[] = [];
+  const allSimulations: SingleSimulationResult[] = [];
 
   for (let i = 0; i < baseline.iterations; i += CHUNK_SIZE) {
     const chunkEnd = Math.min(i + CHUNK_SIZE, baseline.iterations);
@@ -41,23 +42,23 @@ export function runSimulation(levers: LeverState, baseline: SimulationConfig): S
 }
 
 function processSimulationResults(
-  allSimulations: any[],
+  allSimulations: SingleSimulationResult[],
   config: SimulationConfig,
   executionTimeMs: number
 ): MonteCarloResult {
-  const survivors = allSimulations.filter((s: any) => s.didSurvive);
+  const survivors = allSimulations.filter((s) => s.didSurvive);
   const survivalRate = survivors.length / config.iterations;
 
   const survivalByMonth: number[] = [];
   for (let month = 1; month <= config.timeHorizonMonths; month++) {
-    const survivingAtMonth = allSimulations.filter((s: any) => s.survivalMonths >= month).length;
+    const survivingAtMonth = allSimulations.filter((s) => s.survivalMonths >= month).length;
     survivalByMonth.push(survivingAtMonth / config.iterations);
   }
 
-  const finalARRs = allSimulations.map((s: any) => s.finalARR);
-  const finalCash = allSimulations.map((s: any) => s.finalCash);
-  const finalRunway = allSimulations.map((s: any) => s.finalRunway);
-  const survivalMonths = allSimulations.map((s: any) => s.survivalMonths);
+  const finalARRs = allSimulations.map((s) => s.finalARR);
+  const finalCash = allSimulations.map((s) => s.finalCash);
+  const finalRunway = allSimulations.map((s) => s.finalRunway);
+  const survivalMonths = allSimulations.map((s) => s.survivalMonths);
 
   const arrDistribution = calculateDistributionStats(finalARRs);
   const arrHistogram = createHistogram(finalARRs, 25);
@@ -72,7 +73,7 @@ function processSimulationResults(
   const medianSurvivalMonths = calculatePercentiles(survivalMonths).p50;
   const arrConfidenceBands = calculateConfidenceBands(allSimulations, config.timeHorizonMonths);
 
-  const sortedByARR = [...allSimulations].sort((a: any, b: any) => a.finalARR - b.finalARR);
+  const sortedByARR = [...allSimulations].sort((a, b) => a.finalARR - b.finalARR);
   const worstCase = sortedByARR[Math.floor(config.iterations * 0.05)];
   const medianCase = sortedByARR[Math.floor(config.iterations * 0.5)];
   const bestCase = sortedByARR[Math.floor(config.iterations * 0.95)];
@@ -159,12 +160,12 @@ function createHistogram(values: number[], bucketCount: number = 20): HistogramB
   return buckets;
 }
 
-function calculateConfidenceBands(simulations: any[], timeHorizon: number): ConfidenceBand[] {
+function calculateConfidenceBands(simulations: SingleSimulationResult[], timeHorizon: number): ConfidenceBand[] {
   const bands: ConfidenceBand[] = [];
   for (let month = 1; month <= timeHorizon; month++) {
     const arrValues = simulations
-      .filter((s: any) => s.monthlySnapshots && s.monthlySnapshots.length >= month)
-      .map((s: any) => s.monthlySnapshots[month - 1].arr);
+      .filter((s) => s.monthlySnapshots && s.monthlySnapshots.length >= month)
+      .map((s) => s.monthlySnapshots[month - 1].arr);
 
     if (arrValues.length === 0) continue;
 

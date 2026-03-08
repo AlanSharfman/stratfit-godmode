@@ -7,6 +7,15 @@ export type ScenarioIntelligence = {
   scenarioName: string;
   preparedAt: string; // ISO string
   modelVersion: string;
+  /** Live KPI values from the simulation engine — used for band derivation. Optional for backward compat. */
+  kpis?: {
+    runway: number;
+    risk: number;
+    growth: number;
+    margin: number;
+    burn: number;
+    valuation: number;
+  };
   executiveSummary: string[];
   systemState: {
     financial: string;

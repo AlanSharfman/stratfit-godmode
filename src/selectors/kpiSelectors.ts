@@ -8,6 +8,7 @@
 
 import type { SimulationKpis } from "@/state/phase1ScenarioStore"
 import type { PositionKpis } from "@/pages/position/overlays/positionState"
+import { selectRiskScore } from "@/selectors/riskSelectors"
 
 /** Flat KPI shape consumed by KPIHealthRail and other UI surfaces */
 export interface SelectedKpis {
@@ -32,9 +33,8 @@ export function selectKpis(simulationKpis: SimulationKpis | null | undefined): S
   if (!simulationKpis) return null
   const arr = simulationKpis.revenue * 12
   const growthRate = simulationKpis.growthRate
-  // Valuation: ARR × growth-implied revenue multiple (standard SaaS heuristic)
-  const multiple = Math.max(1, Math.min(20, 3 + (growthRate / 10)))
-  const valuation = arr > 0 ? arr * multiple : null
+  // Valuation: sourced from engine, not UI heuristic (zeroed until engine provides it)
+  const valuation = null
   return {
     arr,
     revenue: simulationKpis.revenue,
@@ -100,27 +100,33 @@ export function selectPositionKpis(
   const burnMonthly = simulationKpis.monthlyBurn
   const cashOnHand = simulationKpis.cash
   const revenueMonthly = simulationKpis.revenue
-  const grossMarginPct = simulationKpis.grossMargin
-  const growthRate = simulationKpis.growthRate
 
-  // Runway: from engine or derived
+  // grossMargin/growthRate/churnRate may be stored as decimals (0–1) or percentages (0–100).
+  // Normalise: if value <= 1, treat as decimal and multiply by 100 to get percentage.
+  const toPercent = (v: number) => Math.abs(v) <= 1 && v !== 0 ? v * 100 : v
+  const grossMarginPct = toPercent(simulationKpis.grossMargin)
+
   const runwayMonths = simulationKpis.runway != null && Number.isFinite(simulationKpis.runway)
     ? simulationKpis.runway
     : (burnMonthly > 0 ? cashOnHand / burnMonthly : 999)
 
-  // EBITDA monthly: gross profit − implied opex (approximate from burn - gross profit remainder)
   const grossProfitMonthly = revenueMonthly * Math.min(grossMarginPct / 100, 1)
   const ebitdaMonthly = grossProfitMonthly - (burnMonthly - grossProfitMonthly > 0 ? burnMonthly - grossProfitMonthly : 0)
 
-  // Risk index
-  const riskIndex = typeof riskScoreOverride === "number" ? riskScoreOverride : riskFromRunway(runwayMonths)
+  const riskIndex = typeof riskScoreOverride === "number" ? riskScoreOverride : selectRiskScore(simulationKpis)
 
-  // Survival score: same blend as buildPositionViewModel
   const survivalScore = clamp01(Math.round((riskIndex * 0.6) + (Math.min(runwayMonths, 24) / 24) * 40), 0, 100)
 
-  // Valuation: ARR × growth-implied multiple (same heuristic)
-  const multiple = clamp01(3 + (growthRate / 10), 1, 20)
-  const valuationEstimate = arr > 0 ? arr * multiple : 0
+  // Valuation heuristic: ARR × growth-implied revenue multiple (standard SaaS methodology)
+  const growthRatePct = toPercent(simulationKpis.growthRate ?? 0)
+  const growthMultiple = Math.max(1, Math.min(20, 3 + (growthRatePct / 10)))
+  const valuationEstimate = arr > 0 ? arr * growthMultiple : 0
+
+  const churnPct = toPercent(simulationKpis.churnRate ?? 0)
+  const headcount = simulationKpis.headcount ?? 1
+  const efficiencyRatio = headcount > 0 ? (revenueMonthly * 12) / headcount : 0
+
+  const nrrPct = (simulationKpis as any).nrrPct ?? (churnPct > 0 ? Math.max(60, 100 - churnPct * 0.8) : 100)
 
   return {
     arr,
@@ -133,20 +139,15 @@ export function selectPositionKpis(
     survivalScore,
     grossMarginPct,
     valuationEstimate,
+    growthRatePct,
+    churnPct,
+    headcount,
+    nrrPct,
+    efficiencyRatio,
   }
 }
 
 /** Clamp helper (internal) */
 function clamp01(n: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, n))
-}
-
-/** Risk from runway heuristic (matches positionState.ts) */
-function riskFromRunway(runway: number): number {
-  if (!Number.isFinite(runway)) return 60
-  if (runway >= 24) return 85
-  if (runway >= 18) return 78
-  if (runway >= 12) return 68
-  if (runway >= 6) return 52
-  return 34
 }

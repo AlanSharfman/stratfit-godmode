@@ -1,0 +1,159 @@
+/* ══════════════════════════════════════════════════════════════════════════════
+   STRATFIT — responsive.css
+   Global responsive breakpoints, print styles, reduced-motion, and
+   accessibility overrides.
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Tablet (≤ 1280px) ── */
+@media (max-width: 1280px) {
+  .sf-layout-split {
+    grid-template-columns: 1fr 300px;
+  }
+
+  .sf-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  :root {
+    --sf-panel-w: 300px;
+  }
+}
+
+/* ── Small tablet (≤ 1024px) ── */
+@media (max-width: 1024px) {
+  .sf-layout-split {
+    grid-template-columns: 1fr;
+  }
+
+  .sf-grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  :root {
+    --sf-sidebar-w: 0px;
+    --sf-panel-w: 100%;
+  }
+}
+
+/* ── Mobile landscape (≤ 768px) ── */
+@media (max-width: 768px) {
+  :root {
+    --sf-text-hero: 2rem;
+    --sf-text-3xl: 1.75rem;
+    --sf-text-2xl: 1.375rem;
+    --sf-space-6: 16px;
+    --sf-space-8: 24px;
+  }
+
+  .sf-grid-3,
+  .sf-grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .sf-container {
+    padding: 0 var(--sf-space-4);
+  }
+
+  .sf-panel {
+    border-radius: var(--sf-radius-md);
+    padding: var(--sf-space-3);
+  }
+}
+
+/* ── Mobile portrait (≤ 480px) ── */
+@media (max-width: 480px) {
+  :root {
+    --sf-text-hero: 1.5rem;
+    --sf-text-3xl: 1.375rem;
+    --sf-text-2xl: 1.125rem;
+    --sf-nav-h: 48px;
+  }
+
+  body {
+    font-size: var(--sf-text-sm);
+  }
+
+  .sf-grid-4,
+  .sf-grid-3,
+  .sf-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   Reduced Motion
+   ══════════════════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   Print Styles
+   ══════════════════════════════════════════════════════════════════════════════ */
+@media print {
+  body {
+    background: #fff;
+    color: #111;
+    font-size: 11pt;
+  }
+
+  /* Hide non-printable UI */
+  nav,
+  .sf-overlay,
+  button,
+  canvas,
+  [aria-hidden="true"] {
+    display: none !important;
+  }
+
+  .sf-panel,
+  .sf-card {
+    background: #fff;
+    border: 1px solid #ddd;
+    box-shadow: none;
+    backdrop-filter: none;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  a {
+    color: #111;
+    text-decoration: underline;
+  }
+
+  a[href]::after {
+    content: " (" attr(href) ")";
+    font-size: 9pt;
+    color: #666;
+  }
+
+  h1, h2, h3, h4 {
+    color: #000;
+    page-break-after: avoid;
+  }
+
+  @page {
+    margin: 1.5cm;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   High-contrast mode
+   ══════════════════════════════════════════════════════════════════════════════ */
+@media (forced-colors: active) {
+  .sf-panel,
+  .sf-card {
+    border: 1px solid CanvasText;
+  }
+
+  :focus-visible {
+    outline: 2px solid Highlight;
+  }
+}

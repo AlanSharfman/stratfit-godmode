@@ -140,8 +140,7 @@ export function injectTopography(
             shader.uniforms[key] = uniform;
         }
 
-        // DIAGNOSTIC: Log uniform value
-        console.log("[STM SHADER] uTopoScale:", shader.uniforms.uTopoScale?.value);
+
 
         // ── Vertex: declare STM uniforms ──
         if (!shader.vertexShader.includes("STM_UNIFORMS_DECLARED")) {

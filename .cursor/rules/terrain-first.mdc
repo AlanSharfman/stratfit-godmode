@@ -1,0 +1,86 @@
+---
+description: STRATFIT terrain-first build directive — governs how terrain is built, structured, and constrained across the codebase
+alwaysApply: true
+---
+
+# Terrain-First Build Directive
+
+STRATFIT is a strategic simulation engine. The terrain is the primary interface, not decoration.
+
+## Terrain Is Data
+
+Every terrain feature must map to a KPI influence:
+
+| Terrain Feature    | KPI Mapping              |
+|--------------------|--------------------------|
+| Peak height        | Enterprise value strength |
+| Ridge strength     | Growth momentum          |
+| Valley depth       | Liquidity pressure       |
+| Terrain stability  | Runway                   |
+| Erosion            | Burn pressure            |
+
+Geometry must derive from the KPI model. No arbitrary noise or unmapped deformation.
+
+## World vs Mountain
+
+- **Base terrain**: stable procedural environment (does not warp on scenario change)
+- **Strategic mountain**: business-structure deformation driven by KPI deltas
+
+Only the business mountain morphs. The environment stays fixed.
+
+## Visual Layer Limit
+
+Maximum **three** active visual layers at once. Valid combinations:
+
+- Terrain + Intelligence Panel
+- Terrain + Strategic Path
+- Terrain + Risk Signals
+
+Never stack markers + paths + zones + labels + overlays + panels simultaneously. Clarity overrides decoration.
+
+## Explain Every Change
+
+Terrain must never move silently. Every terrain change requires:
+
+1. AI explanation (text)
+2. Impact chain (KPI → terrain mapping)
+3. Optional voice briefing
+
+## Mountain Readability
+
+- Peaks must remain visible; valleys must remain readable
+- Height deformation must stay smooth and natural
+- Slope limits must prevent unrealistic cliffs
+- Terrain must not become twisted or chaotic
+
+## Scenario Flow
+
+All terrain deformation must pass through the simulation model:
+
+`User prompt → Intent detection → Scenario impact matrix → KPI delta → Terrain deformation → AI interpretation`
+
+Never allow terrain to change without passing through this pipeline.
+
+## Maximum Terrain Count
+
+- 1 mountain → Position page
+- 2 mountains → Scenario comparison
+- 3 mountains → Advanced comparison
+
+Never render a fourth terrain. AI intelligence belongs in panels, not additional mountains.
+
+## Atmospheric Realism
+
+Use fog, directional lighting, and horizon gradient. Do not change mountain colour dynamically unless driven by KPI state changes.
+
+## Decision Clarity
+
+Every terrain feature must answer one of:
+
+- What is happening?
+- Why is it happening?
+- What if this decision changes?
+- Which option is best?
+- What could break?
+
+If a feature does not answer one of these, it should not exist.

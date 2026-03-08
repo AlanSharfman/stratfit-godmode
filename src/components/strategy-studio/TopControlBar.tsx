@@ -1,3 +1,4 @@
+// ORPHANED COMPONENT — not mounted anywhere. Safe to delete.
 // src/components/strategy-studio/TopControlBar.tsx
 // ═══════════════════════════════════════════════════════════════════════════
 // STRATFIT — Strategy Studio 2.0 Control Bar

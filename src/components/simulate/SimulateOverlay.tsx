@@ -1,7 +1,5 @@
-'use client'
-
 import React, { useState, useEffect, useMemo } from 'react'
-import { useScenarioStore } from '@/state/scenarioStore'
+import { useScenarioStore, type SimulationSnapshot } from '@/state/scenarioStore'
 import ScenarioMountain from '@/components/mountain/ScenarioMountain'
 import { TerrainWithFallback } from '@/components/terrain/TerrainFallback2D'
 import { 
@@ -653,13 +651,51 @@ export default function DecidePage() {
   }
 
   const handleExport = () => {
-    // TODO: Implement export
-    console.log('Exporting decision...')
+    if (!chosenScenario) return
+    const s = chosenScenario
+    const sim: SimulationSnapshot | null | undefined = s.simulation
+    const rows = [
+      ['Field', 'Value'],
+      ['Scenario', s.name ?? s.id],
+      ['Committed At', decision.committedAt?.toISOString() ?? ''],
+      ['Survival Rate', sim?.survivalRate != null ? `${(sim.survivalRate * 100).toFixed(1)}%` : ''],
+      ['Median ARR', sim?.medianARR != null ? formatMoney(sim.medianARR) : ''],
+      ['Runway (months)', sim?.medianRunway ?? ''],
+    ]
+    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `stratfit-decision-${s.id ?? 'export'}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
-  const handleShare = () => {
-    // TODO: Implement share
-    console.log('Sharing decision...')
+  const handleShare = async () => {
+    if (!chosenScenario) return
+    const s = chosenScenario
+    const sim: SimulationSnapshot | null | undefined = s.simulation
+    const text = [
+      `STRATFIT — Strategic Decision`,
+      `Scenario: ${s.name ?? s.id}`,
+      sim?.survivalRate != null ? `Survival: ${(sim.survivalRate * 100).toFixed(0)}%` : null,
+      sim?.medianARR != null ? `Median ARR: ${formatMoney(sim.medianARR)}` : null,
+      sim?.medianRunway != null ? `Runway: ${sim.medianRunway} months` : null,
+    ].filter(Boolean).join('\n')
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({ title: 'STRATFIT Decision', text })
+        return
+      } catch {
+        // user cancelled or share not available — fall through to clipboard
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(text)
+    } catch {
+      // clipboard unavailable — silent fail
+    }
   }
 
   return (

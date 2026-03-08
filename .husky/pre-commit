@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+
+echo "Running lint-staged..."
+npx lint-staged || exit 1
+
+echo "Typechecking staged TypeScript files..."
+node scripts/typecheck-staged.mjs || exit 1

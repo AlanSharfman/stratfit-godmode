@@ -7,4 +7,5 @@ export type Baseline = {
   churnRate: number
   headcount: number
   arpa: number
+  stage?: string
 }

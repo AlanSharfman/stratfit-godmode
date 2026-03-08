@@ -1,3 +1,4 @@
+// ORPHANED COMPONENT — not mounted anywhere. Safe to delete.
 // src/components/strategy-studio/GhostRidgeOverlay.tsx
 // ═══════════════════════════════════════════════════════════════════════════
 // STRATFIT — Ghost Ridge Preview Overlay

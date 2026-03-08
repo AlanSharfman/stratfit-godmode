@@ -1,0 +1,130 @@
+// src/scene/camera/terrainCameraPresets.ts
+// ═══════════════════════════════════════════════════════════════════════════
+// STRATFIT — Terrain Camera Presets (God Mode)
+//
+// Single source of truth for camera positioning across all terrain views.
+// Every page that hosts a TerrainStage reads from here.
+//
+// Composition rules:
+//   - Elevated panoramic angle for full terrain coverage
+//   - Peak sits in upper third, horizon visible
+//   - Centered to capture the entire mountain shape
+//   - Consistent cross-page for spatial memory
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface CameraPreset {
+  pos: [number, number, number]
+  target: [number, number, number]
+  fov: number
+}
+
+export interface CameraControlsConfig {
+  minDistance: number
+  maxDistance: number
+  minPolarAngle: number
+  maxPolarAngle: number
+  dampingFactor: number
+  rotateSpeed: number
+}
+
+/**
+ * GOD VIEW — Cinematic landscape camera.
+ *
+ * Low, close, wide-angle — viewer feels located inside the valley
+ * looking toward the peaks rather than hovering above a dashboard.
+ *
+ * Camera geometry (terrain = 420w × 270d, peaks ~110–240h):
+ *   • Y=55 / Z=165 places the camera just outside the front terrain
+ *     edge at near-ground level — immersive valley perspective.
+ *   • Target (0, 10, 0) = looking slightly downward ~15° so the
+ *     valley floor is visible in the lower frame, peaks dominate upper.
+ *   • FOV 62° — wider than before to capture foreground terrain.
+ */
+export const GOD_VIEW_PRESET: CameraPreset = {
+  pos: [0, 55, 165],
+  target: [0, 10, 0],
+  fov: 62,
+}
+
+/** Controls config shared by Position + Compare (pairs with GOD_VIEW_PRESET). */
+export const GOD_VIEW_CONTROLS: CameraControlsConfig = {
+  minDistance: 250,
+  maxDistance: 1100,
+  minPolarAngle: 0.30,
+  maxPolarAngle: 1.50,
+  dampingFactor: 0.08,
+  rotateSpeed: 1.2,
+}
+
+export const POSITION_PRESET: CameraPreset = GOD_VIEW_PRESET
+
+export const STUDIO_PRESET: CameraPreset = {
+  pos: [28, 240, 620],
+  target: [0, 30, 0],
+  fov: 47,
+}
+
+export const COMPARE_PRESET: CameraPreset = GOD_VIEW_PRESET
+
+export const WELCOME_PRESET: CameraPreset = {
+  pos: [45, 235, 610],
+  target: [0, 38, 0],
+  fov: 49,
+}
+
+export const COMMAND_PRESET: CameraPreset = {
+  pos: [45, 235, 610],
+  target: [0, 38, 0],
+  fov: 49,
+}
+
+/**
+ * HERO VIEW — Cinematic elevated oblique angle.
+ *
+ * Camera geometry (terrain = 420w × 270d):
+ *   • ~25° elevation for dramatic ridge silhouettes.
+ *   • Diagonal X offset creates compositional asymmetry (~17°).
+ *   • Target Y = +25 so summit sits in upper third of frame.
+ *   • FOV 44° — tighter compression for cinematic depth.
+ */
+export const HERO_VIEW_PRESET: CameraPreset = {
+  pos: [160, 280, 500],
+  target: [0, 25, 0],
+  fov: 44,
+}
+
+/** Controls config for hero view — slightly tighter orbit constraints. */
+export const HERO_VIEW_CONTROLS: CameraControlsConfig = {
+  minDistance: 250,
+  maxDistance: 900,
+  minPolarAngle: 0.30,
+  maxPolarAngle: 1.45,
+  dampingFactor: 0.06,
+  rotateSpeed: 1.2,
+}
+
+/**
+ * Progressive Terrain Build — default landscape composition.
+ *
+ * Camera geometry (terrain = 420w × 270d, world scale x3/z2.6):
+  *   • Y=99 / Z=1108 ≈ phi 1.50 rad (86°) — near-horizontal landscape angle;
+ *     mountains fill the upper frame, foreground terrain reads as depth.
+ *   • Confirmed from live nav widget readout at the correct user view.
+ *   • FOV 52° — standard compression, keeps KPI markers readable.
+ */
+export const POSITION_PROGRESSIVE_PRESET: CameraPreset = {
+  pos: [0, 99, 1108],
+  target: [0, 20, 0],
+  fov: 52,
+}
+
+/** All presets keyed by page context */
+export const CAMERA_PRESETS = {
+  position: POSITION_PRESET,
+  positionProgressive: POSITION_PROGRESSIVE_PRESET,
+  studio: STUDIO_PRESET,
+  compare: COMPARE_PRESET,
+  welcome: WELCOME_PRESET,
+  command: COMMAND_PRESET,
+  hero: HERO_VIEW_PRESET,
+} as const

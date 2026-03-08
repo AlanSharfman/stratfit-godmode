@@ -5,29 +5,34 @@ import * as THREE from "three";
 
 import { clamp01 } from "./helpers";
 import { MODE_CONFIGS, type MountainMode } from "./types";
+import { sampleMountainHeight } from "./terrainSampler";
 
 // ============================================================================
 // STRATEGIC PATH + MILESTONES (lightweight overlays; no terrain rewrite)
 // ============================================================================
+
+/** Minimum height lift above terrain surface — path never renders under terrain */
+const PATH_LIFT = 0.55;
 
 export function StrategicPath({
   solverPath,
   color,
   mode,
   glowIntensity,
+  dataPoints,
 }: {
   solverPath: { riskIndex: number; enterpriseValue: number; runway: number }[];
   color: string;
   mode: MountainMode;
   glowIntensity: number;
+  dataPoints?: number[];
 }) {
   const config = MODE_CONFIGS[mode] ?? MODE_CONFIGS.default;
   const lineRef = useRef<any>(null);
   const glowRef = useRef<any>(null);
 
   // Map solverPath points into a compact, stable curve above the mountain.
-  // This is intentionally heuristic: it gives a consistent "trajectory" overlay
-  // without needing to know the terrain heightfield in world-space.
+  // Path XY is projected to terrain, Z is terrain-sampled height + offset.
   const points = useMemo(() => {
     if (!solverPath?.length) return [];
     const maxRunway = Math.max(...solverPath.map((p) => p.runway || 0), 1);
@@ -43,14 +48,26 @@ export function StrategicPath({
       const ev01 = ((p.enterpriseValue ?? 0) - minEV) / (maxEV - minEV);
       const risk01 = clamp01((p.riskIndex ?? 50) / 100);
 
-      const x = (t - 0.5) * 10; // left↔right across the scene
-      const y = -1.2 + t * 0.8; // slightly forward over time
-      const cutBoost = config.pathCutBoost ?? 1;
-      const z =
-        (0.3 + runway01 * 2.2 + ev01 * 1.2 - risk01 * 0.8) / cutBoost; // lift (deeper embed in strategy)
-      return new THREE.Vector3(x, y, z);
+      // Mesh-local coordinates (sampler uses PlaneGeometry local space)
+      const mesh_x = (t - 0.5) * 10; // left↔right
+      const mesh_y = -1.2 + t * 0.8; // forward (PlaneGeometry Y → world -Z after rotation)
+
+      // Sample terrain height (returns PlaneGeometry local Z = world Y after rotation)
+      const terrainH = sampleMountainHeight(mesh_x, mesh_y, dataPoints);
+      // Compute data-driven offset; clamp so path NEVER goes below terrain
+      const dataOffset = runway01 * 0.3 + ev01 * 0.15 - risk01 * 0.1;
+      const mesh_z = terrainH + PATH_LIFT + Math.max(0, dataOffset);
+
+      // Convert mesh-local → world via terrain group transform:
+      //   rotation [-π/2, 0, 0]: local-Z → world-Y, local-Y → world-(-Z)
+      //   position [0, -2, 0], scale [0.9, 0.9, 0.9]
+      const worldX = mesh_x * 0.9;
+      const worldY = mesh_z * 0.9 - 2;
+      const worldZ = -mesh_y * 0.9;
+
+      return new THREE.Vector3(worldX, worldY, worldZ);
     });
-  }, [solverPath, config]);
+  }, [solverPath, dataPoints]);
 
   const curvePoints = useMemo(() => {
     if (points.length < 2) return points;
@@ -80,7 +97,7 @@ export function StrategicPath({
   if (mode === "ghost" && config.pathGlow <= 0) return null;
 
   return (
-    <group>
+    <group renderOrder={100}>
       {/* Outer glow layer for depth and realism */}
       <DreiLine
         ref={glowRef}
@@ -88,7 +105,8 @@ export function StrategicPath({
         color={color}
         transparent
         opacity={0.5 * config.pathGlow * glowIntensity}
-        lineWidth={6}
+        lineWidth={8}
+        depthTest={false}
         dashed={mode === "celebration"}
         dashScale={1}
         dashSize={0.8}
@@ -101,7 +119,8 @@ export function StrategicPath({
         color={color}
         transparent
         opacity={mode === "ghost" ? 0.2 : 0.95}
-        lineWidth={3}
+        lineWidth={4}
+        depthTest={false}
         dashed={mode === "celebration"}
         dashScale={1}
         dashSize={0.8}
@@ -112,9 +131,10 @@ export function StrategicPath({
         <DreiLine
           points={curvePoints}
           color="#7dd3fc"
-          lineWidth={3 * (config.trajectoryHaloWidthMult ?? 1.8)}
+          lineWidth={3.5 * (config.trajectoryHaloWidthMult ?? 1.8)}
           transparent
           opacity={config.trajectoryHaloOpacity ?? 0.22}
+          depthTest={false}
         />
       )}
     </group>
@@ -126,11 +146,13 @@ export function MilestoneOrbs({
   mode,
   glowIntensity,
   solverPath,
+  dataPoints,
 }: {
   color: string;
   mode: MountainMode;
   glowIntensity: number;
   solverPath?: { riskIndex: number; enterpriseValue: number; runway: number }[];
+  dataPoints?: number[];
 }) {
   const config = MODE_CONFIGS[mode] ?? MODE_CONFIGS.default;
 
@@ -158,10 +180,13 @@ export function MilestoneOrbs({
       const runway01 = (p.runway ?? 0) / maxRunway;
       const ev01 = ((p.enterpriseValue ?? 0) - minEV) / (maxEV - minEV);
       const risk01 = clamp01((p.riskIndex ?? 50) / 100);
-      const x = (t - 0.5) * 10;
-      const y = -1.2 + t * 0.8;
-      const z = 0.3 + runway01 * 2.2 + ev01 * 1.2 - risk01 * 0.8;
-      return new THREE.Vector3(x, y, z);
+      const mesh_x = (t - 0.5) * 10;
+      const mesh_y = -1.2 + t * 0.8;
+      const terrainH = sampleMountainHeight(mesh_x, mesh_y, dataPoints);
+      const dataOffset = runway01 * 0.3 + ev01 * 0.15 - risk01 * 0.1;
+      const mesh_z = terrainH + PATH_LIFT + Math.max(0, dataOffset);
+      // Convert mesh-local → world (same terrain group transform as StrategicPath)
+      return new THREE.Vector3(mesh_x * 0.9, mesh_z * 0.9 - 2, -mesh_y * 0.9);
     });
 
     const typeOrder = [
@@ -177,15 +202,15 @@ export function MilestoneOrbs({
       const i = Math.max(0, Math.min(pts.length - 1, Math.round(t * (pts.length - 1))));
       return { pos: pts[i], type: typeOrder[idx] };
     });
-  }, [solverPath, mode]);
+  }, [solverPath, mode, dataPoints]);
 
   if (mode === "ghost") return null;
 
   const typeColors: Record<string, string> = {
     revenue: "#10b981",
-    team: "#3b82f6",
+    team: "#F59E0B",
     product: "#f59e0b",
-    funding: "#a855f7",
+    funding: "#EF4444",
     risk: "#ef4444",
   };
 
@@ -236,24 +261,26 @@ export function MilestoneOrb({
     <group position={position}>
       {mode === "celebration" ? (
         <mesh ref={glowRef}>
-          <sphereGeometry args={[0.15, 16, 16]} />
+          <sphereGeometry args={[0.18, 16, 16]} />
           <meshBasicMaterial
             color={color}
             transparent
             opacity={0.15 * glowMultiplier}
             depthWrite={false}
+            depthTest={false}
           />
         </mesh>
       ) : null}
       <mesh ref={meshRef}>
-        <sphereGeometry args={[0.08, 16, 16]} />
+        <sphereGeometry args={[0.1, 16, 16]} />
         <meshStandardMaterial
           color={color}
           emissive={color}
-          emissiveIntensity={glowMultiplier * glowIntensity * 0.35}
+          emissiveIntensity={glowMultiplier * glowIntensity * 0.45}
           transparent
           opacity={1}
           depthWrite={false}
+          depthTest={false}
         />
       </mesh>
       {mode === "celebration" ? (

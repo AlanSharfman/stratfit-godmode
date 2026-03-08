@@ -1,6 +1,6 @@
 import React, { useState, KeyboardEvent } from "react";
 import styles from "./QuestionInputBar.module.css";
-import { useTypewriterHint } from "@/components/command/useTypewriterHint";
+import { useTypewriterHint } from "@/hooks/useTypewriterHint";
 
 const HINTS = [
   "How much runway remains if burn increases 20%?",

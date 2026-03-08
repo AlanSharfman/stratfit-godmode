@@ -1,3 +1,4 @@
+// ORPHANED COMPONENT — not mounted anywhere. Safe to delete.
 import React from "react";
 
 export default function StrategyControlPanel() {

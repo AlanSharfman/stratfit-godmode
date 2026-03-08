@@ -4,7 +4,9 @@ export const __DEV__ =
     !!import.meta.env.DEV;
 
 export function devlog(...args: any[]) {
-    if (__DEV__) console.log(...args);
+    if (__DEV__) {
+        // console.log(...args);
+    }
 }
 
 export function deverr(...args: any[]) {

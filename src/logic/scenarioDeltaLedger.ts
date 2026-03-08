@@ -135,8 +135,8 @@ export function buildScenarioDeltaLedger(args: {
   const qualityScore = buildLedgerNumber(qBase, qSc);
 
   const qualityBand = {
-    base: String(getQualityBand(baseRes)),
-    scenario: String(getQualityBand(scRes)),
+    base: String(getQualityBand(qBase)),
+    scenario: String(getQualityBand(qSc)),
   };
 
   return {

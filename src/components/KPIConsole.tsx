@@ -303,14 +303,7 @@ function BurnInstrument({ value, state, burnAmount, cashAmount }: {
   const diff = burn - baseline;
   const threshold = baseline * 0.05; // 5% threshold for neutral
   
-  let trend: "positive" | "negative" | "neutral" = "neutral";
-  if (diff < -threshold) {
-    trend = "positive"; // Burn decreased = good = green
-  } else if (diff > threshold) {
-    trend = "negative"; // Burn increased = bad = orange
-  }
-  
-  return <BurnTrendBars value={burn} trend={trend} />;
+  return <BurnTrendBars value={burn} />;
 }
 
 // 3. RUNWAY — Cyan Bullet Chart

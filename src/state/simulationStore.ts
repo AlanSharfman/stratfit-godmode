@@ -8,6 +8,8 @@ import type { Verdict } from "@/logic/verdictGenerator"
 import { safeLocalStoragePersist } from "./safePersistStorage"
 import { runSimulationAndStore } from "@/core/bootstrap/simulationRunner"
 import { engineActivity } from "@/state/engineActivityStore"
+import { simulationEngine } from "@/state/simulationEngineStore"
+import { simulationPipeline, type PipelineStage } from "@/stores/simulationPipelineStore"
 
 // ════════════════════════════════════════════════════════════════════════════
 // SIMULATION RUN — contract shape consumed by UI (read-only)
@@ -278,12 +280,30 @@ export const useSimulationStore = create<SimulationState>()(
       startSimulation: () => {
         engineActivity.start({ iterationsTarget: 0, modelType: "MonteCarlo" })
         engineActivity.update({ stage: "SAMPLING", message: "Running simulation…" })
+        simulationEngine.start()
+        simulationEngine.setStage("monte_carlo")
+        // Pipeline: start with stages actually executed
+        const activeStages: PipelineStage[] = [
+          "baseline_ingestion", "scenario_compilation", "model_calibration",
+          "simulation_run", "probability_mapping", "terrain_synthesis",
+        ]
+        simulationPipeline.start({ activeStages, meta: {} })
+        simulationPipeline.setStage("simulation_run")
         set({ isSimulating: true, simulationStatus: "running" })
       },
 
       beginRun: ({ timeHorizonMonths, paths, seedLocked }) => {
         engineActivity.start({ iterationsTarget: paths, modelType: "MonteCarlo" })
         engineActivity.update({ stage: "SAMPLING", message: "Running simulation…" })
+        simulationEngine.start(paths)
+        simulationEngine.setStage("scenario_construction")
+        // Pipeline: start with stages actually executed
+        const activeStages: PipelineStage[] = [
+          "baseline_ingestion", "scenario_compilation", "model_calibration",
+          "simulation_run", "probability_mapping", "terrain_synthesis",
+        ]
+        simulationPipeline.start({ activeStages, meta: { paths } })
+        simulationPipeline.setStage("scenario_compilation")
         set({
           isSimulating: true,
           simulationStatus: "running",
@@ -305,6 +325,8 @@ export const useSimulationStore = create<SimulationState>()(
 
       completeRun: (result, verdict) => {
         engineActivity.complete()
+        simulationEngine.complete()
+        simulationPipeline.complete()
         const prev = get()
         const now = performance.now()
         const startedAt = prev.runMeta?.startedAt ?? now
@@ -338,6 +360,7 @@ export const useSimulationStore = create<SimulationState>()(
       failRun: (errorMessage?: string) => {
         const msg = errorMessage ?? "Simulation failed"
         engineActivity.fail(msg)
+        simulationEngine.reset()
         set({ simulationStatus: "failed", isSimulating: false })
       },
 
@@ -395,6 +418,15 @@ export const useSimulationStore = create<SimulationState>()(
           iterationsTarget: iterations,
           modelType: "MonteCarlo",
         })
+        simulationEngine.start(iterations)
+        simulationEngine.setStage("baseline_capture")
+        // Pipeline: determine which stages are actually executed
+        const pipelineStages: PipelineStage[] = [
+          "baseline_ingestion", "scenario_compilation", "model_calibration",
+          "simulation_run", "probability_mapping", "terrain_synthesis",
+        ]
+        simulationPipeline.start({ activeStages: pipelineStages, meta: { paths: iterations } })
+        simulationPipeline.setStage("baseline_ingestion")
 
         // Yield to React so queued/running renders before compute
         await new Promise<void>((resolve) => setTimeout(resolve, 0))
@@ -402,8 +434,12 @@ export const useSimulationStore = create<SimulationState>()(
         // Transition: queued -> running
         set({ simulationStatus: "running" })
         engineActivity.update({ stage: "SAMPLING", message: "Running simulation…" })
+        simulationEngine.setStage("model_calibration")
+        simulationPipeline.setStage("model_calibration")
 
         try {
+          simulationEngine.setStage("monte_carlo")
+          simulationPipeline.setStage("simulation_run")
           const output = await runSimulationAndStore({
             signal: abortController.signal,
             onProgress: (p) => {
@@ -412,6 +448,15 @@ export const useSimulationStore = create<SimulationState>()(
                 iterationsCompleted: p.iterationsCompleted,
                 message: p.message,
               })
+              // Map engine stage to pipeline stage
+              if (p.stage === "AGGREGATING") {
+                simulationEngine.setStage("probability_mapping")
+                simulationPipeline.setStage("probability_mapping")
+              }
+              if (p.stage === "FINALIZING") {
+                simulationEngine.setStage("terrain_render")
+                simulationPipeline.setStage("terrain_synthesis")
+              }
             },
           })
 
@@ -426,6 +471,8 @@ export const useSimulationStore = create<SimulationState>()(
           }
 
           engineActivity.complete()
+          simulationEngine.complete()
+          simulationPipeline.complete()
 
           // Build lightweight activeRun from output
           const run: SimulationRun = {
@@ -475,6 +522,7 @@ export const useSimulationStore = create<SimulationState>()(
 
           const msg = err instanceof Error ? err.message : "Unknown error"
           engineActivity.fail(msg)
+          simulationEngine.reset()
 
           set({
             abortController: null,
