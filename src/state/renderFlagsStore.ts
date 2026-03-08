@@ -24,7 +24,7 @@ interface RenderFlagsState extends RenderFlags {
 }
 
 const DEFAULTS: RenderFlags = {
-  showGrid: true,
+  showGrid: false,
   showMarkers: true,
   showPaths: true,
   showRiskField: true,

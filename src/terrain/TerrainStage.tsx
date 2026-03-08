@@ -35,6 +35,7 @@ import CameraDriftSystem from "@/terrain/CameraDriftSystem";
 import type { DriftMode } from "@/scene/camera/cameraDriftConfig";
 import TerrainDeltaOverlay from "@/terrain/TerrainDeltaOverlay";
 import CameraSafetyGuard from "@/terrain/CameraSafetyGuard";
+import BackgroundTerrainLayers from "@/terrain/BackgroundTerrainLayers";
 
 
 type TerrainStageProps = {
@@ -172,28 +173,42 @@ export default function TerrainStage({
 
       {cinematicLighting ? (
         <>
-          {/* Cinematic rig — Position page: boosted ambient + fills to lift shadow floor */}
-          <ambientLight intensity={1.10} color="#1a4a6a" />
-          <directionalLight position={[120, 200, 120]} intensity={1.4} color="#5ad0ff" castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-camera-near={0.5} shadow-camera-far={600} shadow-camera-left={-250} shadow-camera-right={250} shadow-camera-top={250} shadow-camera-bottom={-250} shadow-bias={-0.0004} />
-          <directionalLight position={[-100, 160, -40]} intensity={0.70} color="#3aafee" />
-          <directionalLight position={[0, 80, 200]} intensity={0.48} color="#2090cc" />
-          <directionalLight position={[-160, 30, -120]} intensity={0.32} color="#1570a0" />
-          <hemisphereLight args={["#3aafee", "#081828", 0.65]} />
-          <fogExp2 attach="fog" args={[0x081828, 0.00045]} />
+          {/* Cinematic rig — Position page
+              Key: upper-left angled light for strong shadow definition on ridges.
+              Fill: soft right-side and front fill to lift shadow floor.
+              Rim: subtle back-light that separates peaks from background.
+              Fog: atmospheric depth — foreground clear, distance fades. */}
+          <ambientLight intensity={0.85} color="#132840" />
+          <directionalLight
+            position={[-180, 320, 140]} intensity={1.55} color="#5ad0ff"
+            castShadow
+            shadow-mapSize-width={2048} shadow-mapSize-height={2048}
+            shadow-camera-near={0.5} shadow-camera-far={700}
+            shadow-camera-left={-320} shadow-camera-right={320}
+            shadow-camera-top={320} shadow-camera-bottom={-320}
+            shadow-bias={-0.0003}
+          />
+          <directionalLight position={[160, 180, 60]} intensity={0.55} color="#3aafee" />
+          <directionalLight position={[0, 60, 260]} intensity={0.38} color="#2080bb" />
+          <directionalLight position={[0, 140, -300]} intensity={0.28} color="#1a6090" />
+          <hemisphereLight args={["#2a9fd6", "#060e18", 0.55]} />
+          <fogExp2 attach="fog" args={[0x060e18, 0.00085]} />
         </>
       ) : (
         <>
-          {/* Standard rig — What-If page: reduced fills & hemisphere to prevent wash-out */}
+          {/* Standard rig — What-If / secondary pages */}
           <ambientLight intensity={0.5} color="#0a1a2f" />
           <directionalLight position={[200, 300, 200]} intensity={1.05} color="#6bdcff" castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-camera-near={0.5} shadow-camera-far={500} shadow-camera-left={-200} shadow-camera-right={200} shadow-camera-top={200} shadow-camera-bottom={-200} />
           <directionalLight position={[-100, 180, -80]} intensity={0.42} color="#6ef0ff" />
           <directionalLight position={[0, 100, 220]} intensity={0.26} color="#a0d8ff" />
           <directionalLight position={[-200, 40, -100]} intensity={0.18} color="#7dd3fc" />
           <hemisphereLight args={["#66e3ff", "#050b14", 0.40]} />
+          <fogExp2 attach="fog" args={[0x060e18, 0.00050]} />
         </>
       )}
 
       {!transparentBackground && <HorizonBand />}
+      <BackgroundTerrainLayers />
       <TerrainCompass />
 
       {progressive && revealedKpis ? (

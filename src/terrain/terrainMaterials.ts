@@ -119,7 +119,16 @@ float _atmDist = length(vWorldPos - cameraPosition);
 float _atmFactor = clamp(_atmDist / 520.0, 0.0, 1.0);
 _atmFactor = _atmFactor * _atmFactor; // quadratic: slow near, stronger far
 vec3 _atmHaze = vec3(0.030, 0.058, 0.095); // deep navy mist
-diffuseColor.rgb = mix(diffuseColor.rgb, _atmHaze, _atmFactor * 0.18);`
+diffuseColor.rgb = mix(diffuseColor.rgb, _atmHaze, _atmFactor * 0.18);
+
+// Edge proximity fade — terrain dissolves into background at mesh boundary.
+// Prevents the hard edge of the PlaneGeometry from being visible.
+// Terrain half-extents in world space: X ±630 (210*3), Z ±351 (135*2.6).
+float _eX = smoothstep(0.58, 0.96, abs(vWorldPos.x) / 630.0);
+float _eZ = smoothstep(0.52, 0.96, abs(vWorldPos.z) / 351.0);
+float _edgeBlend = max(_eX, _eZ);
+vec3 _bgFade = vec3(0.024, 0.043, 0.086);
+diffuseColor.rgb = mix(diffuseColor.rgb, _bgFade, _edgeBlend);`
 }
 
 const VERTEX_VARYINGS =

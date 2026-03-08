@@ -11,7 +11,7 @@ import type { TerrainTuningParams } from "@/terrain/terrainTuning"
    Constants
    ═══════════════════════════════════════════════════════════════════════════ */
 
-export const SEGMENTS = 220
+export const SEGMENTS = 128
 
 const BASELINE_RIDGE_HEIGHT = 110
 const BASELINE_RIDGE_WIDTH = 0.13

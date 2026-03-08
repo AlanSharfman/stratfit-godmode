@@ -9,6 +9,7 @@ import { useFrame } from "@react-three/fiber"
 import { useSystemBaseline } from "@/system/SystemBaselineProvider"
 import { useRenderFlagsStore } from "@/state/renderFlagsStore"
 import { createTerrainGeometry } from "@/terrain/createTerrainGeometry"
+import TerrainIntelligenceGrid from "@/terrain/TerrainIntelligenceGrid"
 import { baselineSeedString, createSeed } from "@/terrain/seed"
 import { TERRAIN_CONSTANTS, TERRAIN_WORLD_SCALE } from "@/terrain/terrainConstants"
 import { createTerrainSolidMaterial, createTerrainSolidMaterialVariant, createTerrainWireMaterial } from "@/terrain/terrainMaterials"
@@ -243,6 +244,8 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
           seed={seed}
           getHeightAt={getHeightAt}
         />
+
+        <TerrainIntelligenceGrid heightfield={stabilizedHF} />
       </>
     )
   },
