@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspens
 import { AnimatePresence } from "framer-motion"
 
 import PageShell from "@/components/nav/PageShell"
+import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore"
 const BriefingTheatre = lazy(() => import("@/components/command/BriefingTheatre"))
 import TerrainStage from "@/terrain/TerrainStage"
 import SkyAtmosphere from "@/scene/rigs/SkyAtmosphere"
@@ -57,7 +58,41 @@ function generateBoardQuestions(kpis: PositionKpis): string[] {
 export default function BoardroomPage() {
   const [mode, setMode] = useState<BoardMode>("cinematic")
   const { baseline } = useSystemBaseline()
-  const liveKpis = useMemo(() => baseline ? buildPositionViewModel(baseline as any).kpis : null, [baseline])
+
+  // ── Active scenario (from What If or Studio) ──────────────────────────
+  const activeScenarioId = usePhase1ScenarioStore((s) => s.activeScenarioId)
+  const scenarios        = usePhase1ScenarioStore((s) => s.scenarios)
+  const activeScenario   = useMemo(
+    () => (activeScenarioId ? scenarios.find((s) => s.id === activeScenarioId) ?? null : null),
+    [activeScenarioId, scenarios],
+  )
+
+  // ── Canonical KPI source ──────────────────────────────────────────────
+  // Priority: active scenario simulation results → baseline
+  // This ensures Boardroom reflects the current What If / Studio scenario.
+  const liveKpis = useMemo((): ReturnType<typeof buildPositionViewModel>["kpis"] | null => {
+    if (!baseline) return null
+    const baseKpis = buildPositionViewModel(baseline as any).kpis
+    const sk = activeScenario?.simulationResults?.kpis
+    if (!sk) return baseKpis
+    // Merge scenario simulation KPIs over the baseline shape.
+    // SimulationKpis uses 0-1 decimals for percentages; PositionKpis uses 0-100.
+    const pct = (v: number) => (Math.abs(v) <= 1 ? v * 100 : v)
+    return {
+      ...baseKpis,
+      cashOnHand:      sk.cash,
+      burnMonthly:     sk.monthlyBurn,
+      revenueMonthly:  sk.revenue,
+      grossMarginPct:  pct(sk.grossMargin),
+      growthRatePct:   pct(sk.growthRate),
+      churnPct:        pct(sk.churnRate),
+      headcount:       sk.headcount,
+      runwayMonths:    sk.runway ?? (sk.monthlyBurn > 0 ? sk.cash / sk.monthlyBurn : baseKpis.runwayMonths),
+      arr:             sk.revenue * 12,
+    }
+  }, [activeScenario, baseline])
+
+  const isScenarioMode = activeScenario !== null
 
   const [revealedKpis, setRevealedKpis] = useState<Set<KpiKey>>(new Set())
   const [revealIndex, setRevealIndex] = useState(0)
@@ -167,8 +202,8 @@ export default function BoardroomPage() {
   return (
     <PageShell>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "auto" }}>
-        {/* Mode Toggle */}
-        <div style={{ display: "flex", justifyContent: "center", padding: "16px 0", gap: 0, background: "rgba(12,20,34,0.7)", borderBottom: "1px solid rgba(34,211,238,0.06)" }}>
+        {/* Mode Toggle + scenario indicator */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "16px 0", gap: 0, background: "rgba(12,20,34,0.7)", borderBottom: "1px solid rgba(34,211,238,0.06)", position: "relative" }}>
           {(["cinematic", "briefing", "report"] as BoardMode[]).map((m) => (
             <button key={m} onClick={() => setMode(m)} style={{
               padding: "10px 32px", background: mode === m ? "rgba(34,211,238,0.08)" : "transparent",
@@ -176,6 +211,18 @@ export default function BoardroomPage() {
               fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer",
             }}>{m === "briefing" ? "Intelligence Brief" : m}</button>
           ))}
+          {/* Scenario source indicator — shown when board pack reflects a What If / Studio scenario */}
+          {isScenarioMode && (
+            <span style={{
+              position: "absolute", right: 20, top: "50%", transform: "translateY(-50%)",
+              fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
+              padding: "3px 10px", borderRadius: 20,
+              background: "rgba(110,91,255,0.10)", border: "1px solid rgba(110,91,255,0.28)",
+              color: "#6E5BFF",
+            }}>
+              SCENARIO: {activeScenario?.decision?.slice(0, 28) ?? "Active"}
+            </span>
+          )}
         </div>
 
         {/* Intelligence Briefing Theatre */}

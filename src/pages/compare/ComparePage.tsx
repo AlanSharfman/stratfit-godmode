@@ -220,28 +220,32 @@ export default function ComparePage() {
   const eventsB = useMemo<TerrainEvent[]>(() => scenarioB?.simulationResults?.events ?? [], [scenarioB])
   const eventsC = useMemo<TerrainEvent[]>(() => scenarioC?.simulationResults?.events ?? [], [scenarioC])
 
+  // ── Baseline KPIs via canonical view model (same path as Position + Boardroom) ──
+  // Replaces inline manual unit-conversion (/ 100) which could diverge from buildPositionViewModel.
+  const baselineSimKpis = useMemo((): SimulationKpis | null => {
+    if (!baseline) return null
+    const pk = buildPositionViewModel(baseline as any).kpis
+    return {
+      cash:        pk.cashOnHand,
+      monthlyBurn: pk.burnMonthly,
+      revenue:     pk.revenueMonthly,
+      grossMargin: pk.grossMarginPct / 100,
+      growthRate:  pk.growthRatePct  / 100,
+      churnRate:   pk.churnPct       / 100,
+      headcount:   pk.headcount,
+      arpa:        baseline.operating?.acv ?? 0,
+      runway:      pk.runwayMonths,
+    }
+  }, [baseline])
+
   // ── KPIs ──
   const deriveKpis = useCallback((scenario: typeof scenarioA): SimulationKpis | null => {
+    // Scenario slot → use simulation results
     if (scenario?.simulationResults?.kpis) return scenario.simulationResults.kpis
-    if (!scenario && baseline) {
-      const f = baseline.financial
-      const o = baseline.operating
-      const monthlyBurn = f.monthlyBurn ?? 0
-      const cash = f.cashOnHand ?? 0
-      return {
-        cash,
-        monthlyBurn,
-        revenue: (f.arr ?? 0) / 12,
-        grossMargin: (f.grossMarginPct ?? 0) / 100,
-        growthRate: (f.growthRatePct ?? 0) / 100,
-        churnRate: (o.churnPct ?? 0) / 100,
-        headcount: f.headcount ?? 0,
-        arpa: o.acv ?? 0,
-        runway: monthlyBurn > 0 ? Math.round(cash / monthlyBurn) : null,
-      }
-    }
+    // Baseline slot (null scenario) → use canonical baseline KPIs
+    if (!scenario) return baselineSimKpis
     return null
-  }, [baseline])
+  }, [baselineSimKpis])
 
   const kpisA = useMemo(() => deriveKpis(scenarioA), [scenarioA, deriveKpis])
   const kpisB = useMemo(() => deriveKpis(scenarioB), [scenarioB, deriveKpis])

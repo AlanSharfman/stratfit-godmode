@@ -130,6 +130,12 @@ type Phase1ScenarioState = {
   createScenario: (input: CreateScenarioInput) => string
   runSimulation: (scenarioId: string) => void
   addScenario: (scenario: Phase1Scenario) => void
+  /**
+   * Insert or replace a scenario by ID.
+   * Used by WhatIfPage to keep a live "session" scenario in sync with the
+   * cumulative stack state so Position, Compare, and Boardroom can all read it.
+   */
+  upsertScenario: (scenario: Phase1Scenario) => void
 }
 
 function newId() {
@@ -371,6 +377,17 @@ export const usePhase1ScenarioStore = create<Phase1ScenarioState>()(
         set((s) => ({
           scenarios: [scenario, ...s.scenarios],
         }))
+      },
+
+      upsertScenario: (scenario) => {
+        set((s) => {
+          const exists = s.scenarios.some((sc) => sc.id === scenario.id)
+          return {
+            scenarios: exists
+              ? s.scenarios.map((sc) => (sc.id === scenario.id ? scenario : sc))
+              : [scenario, ...s.scenarios],
+          }
+        })
       },
     }),
     {

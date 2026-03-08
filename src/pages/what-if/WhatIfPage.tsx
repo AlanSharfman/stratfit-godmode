@@ -8,6 +8,7 @@ import SkyAtmosphere from "@/scene/rigs/SkyAtmosphere"
 import { POSITION_PROGRESSIVE_PRESET } from "@/scene/camera/terrainCameraPresets"
 import { useSystemBaseline } from "@/system/SystemBaselineProvider"
 import { buildPositionViewModel, type PositionKpis } from "@/pages/position/overlays/positionState"
+import { usePhase1ScenarioStore, type Phase1Scenario, type SimulationKpis } from "@/state/phase1ScenarioStore"
 import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
 import { KPI_KEYS, KPI_ZONE_MAP, getHealthLevel } from "@/domain/intelligence/kpiZoneMapping"
 import { KPI_GRAPH, propagateForce } from "@/engine/kpiDependencyGraph"
@@ -78,6 +79,15 @@ export default function WhatIfPage() {
     if (!baseline) return null
     return buildPositionViewModel(baseline as any).kpis
   }, [baseline])
+
+  // ── Canonical store bridge ──────────────────────────────────────────────
+  // WhatIf stack is ephemeral (React state). This bridge writes the cumulative
+  // projected scenario into phase1ScenarioStore so Position, Compare, and
+  // Boardroom can all read a consistent active scenario without polling this page.
+  const upsertScenario   = usePhase1ScenarioStore((s) => s.upsertScenario)
+  const setActiveScenId  = usePhase1ScenarioStore((s) => s.setActiveScenarioId)
+  // Stable session ID — one per component mount (i.e. one per WhatIf visit)
+  const sessionId = useRef(`whatif-session-${Date.now()}`)
 
   const {
     timeline: scenarioTimeline,
@@ -336,7 +346,50 @@ export default function WhatIfPage() {
     setStack([]); setNarrative(""); setTimelineMonth(0)
     setAiAnswer(null); setAiOverlays([]); setLastCascadeSource(null)
     setShowImpactChain(false); clearTimeline()
-  }, [clearTimeline])
+    // Deactivate the session scenario so other pages fall back to baseline
+    setActiveScenId(null)
+  }, [clearTimeline, setActiveScenId])
+
+  // ── Write stack → canonical scenario store ─────────────────────────────
+  // Fires whenever the cumulative projected KPIs change (i.e. on every stack
+  // push/pop and every timeline slider move). Keeps phase1ScenarioStore's
+  // active scenario in sync so Position/Compare/Boardroom see current state.
+  useEffect(() => {
+    if (!projectedKpis || stack.length === 0) return
+
+    const pk = projectedKpis
+    const simKpis: SimulationKpis = {
+      cash:        pk.cashOnHand,
+      monthlyBurn: pk.burnMonthly,
+      revenue:     pk.revenueMonthly,
+      grossMargin: pk.grossMarginPct / 100,
+      growthRate:  pk.growthRatePct  / 100,
+      churnRate:   pk.churnPct       / 100,
+      headcount:   pk.headcount,
+      arpa:        baseline?.operating?.acv ?? 0,
+      runway:      pk.runwayMonths,
+    }
+
+    const scenario: Phase1Scenario = {
+      id:        sessionId.current,
+      createdAt: Date.now(),
+      decision:  stack.map((s) => s.question).join(" + "),
+      status:    "complete",
+      simulationResults: {
+        completedAt:   Date.now(),
+        horizonMonths: 24,
+        summary:       stack.map((s) => s.question).join(", "),
+        kpis:          simKpis,
+        terrain: {
+          seed: sessionId.current.split("").reduce((a, c) => ((a << 5) + a + c.charCodeAt(0)) | 0, 5381) >>> 0,
+          multipliers: { cash: 1, burn: 1, growth: 1 },
+        },
+      },
+    }
+
+    upsertScenario(scenario)
+    setActiveScenId(sessionId.current)
+  }, [projectedKpis, stack, baseline, upsertScenario, setActiveScenId])
 
   const persistSave = usePersistenceStore((s) => s.saveScenario)
   const saveScenario = useCallback(() => {
