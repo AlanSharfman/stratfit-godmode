@@ -160,7 +160,7 @@ export default function RiskPage() {
           <div style={{ textAlign: "center", marginBottom: 24 }}>
             <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(34,211,238,0.45)", marginBottom: 8 }}>Overall Health Score</div>
             <div style={{
-              fontSize: 48, fontWeight: 200, color: overallRisk > 70 ? "#34d399" : overallRisk > 45 ? "#fbbf24" : "#f87171",
+              fontSize: 48, fontWeight: 200, color: overallRisk > 70 ? "#B7FF3C" : overallRisk > 45 ? "#9DB7D1" : "#6E5BFF",
               fontVariantNumeric: "tabular-nums", lineHeight: 1,
             }}>{overallRisk}</div>
             <div style={{ fontSize: 10, color: "rgba(200,220,240,0.3)", marginTop: 4 }}>/100</div>
@@ -174,20 +174,20 @@ export default function RiskPage() {
                 <span style={{ fontSize: 12, fontWeight: 500, color: "rgba(200,220,240,0.8)" }}>{cat.label}</span>
                 <span style={{
                   fontSize: 14, fontWeight: 700, fontVariantNumeric: "tabular-nums",
-                  color: cat.score > 70 ? "#34d399" : cat.score > 45 ? "#fbbf24" : "#f87171",
+                  color: cat.score > 70 ? "#B7FF3C" : cat.score > 45 ? "#9DB7D1" : "#6E5BFF",
                 }}>{cat.score}</span>
               </div>
               {/* Bar */}
               <div style={{ height: 3, background: "rgba(255,255,255,0.04)", borderRadius: 2, marginBottom: 8 }}>
                 <div style={{
                   height: 3, borderRadius: 2, width: `${cat.score}%`, transition: "width 0.5s",
-                  background: cat.score > 70 ? "#34d399" : cat.score > 45 ? "#fbbf24" : "#f87171",
+                  background: cat.score > 70 ? "#B7FF3C" : cat.score > 45 ? "#9DB7D1" : "#6E5BFF",
                 }} />
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
                 <span style={{
                   fontSize: 9, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase",
-                  color: cat.trend === "improving" ? "#34d399" : cat.trend === "worsening" ? "#f87171" : "#fbbf24",
+                  color: cat.trend === "improving" ? "#B7FF3C" : cat.trend === "worsening" ? "#6E5BFF" : "#9DB7D1",
                 }}>
                   {cat.trend === "improving" ? "↗" : cat.trend === "worsening" ? "↘" : "→"} {cat.trend}
                 </span>
@@ -218,7 +218,7 @@ export default function RiskPage() {
             position: "absolute", top: 10, left: 14, zIndex: 10, fontSize: 9, fontWeight: 700,
             letterSpacing: "0.14em", textTransform: "uppercase", padding: "4px 10px", borderRadius: 4,
             background: "rgba(12,20,34,0.85)", border: "1px solid rgba(200,220,240,0.08)",
-            color: activeStress ? (activeStress.severity === "terminal" ? "#f87171" : activeStress.severity === "critical" ? "#fbbf24" : "#34d399") : "rgba(200,220,240,0.45)",
+            color: activeStress ? (activeStress.severity === "terminal" ? "#6E5BFF" : activeStress.severity === "critical" ? "#9DB7D1" : "#B7FF3C") : "rgba(200,220,240,0.45)",
           }}>
             {activeStress ? `STRESS: ${activeStress.label.toUpperCase()}` : "CURRENT TERRAIN"}
           </div>
@@ -265,8 +265,8 @@ export default function RiskPage() {
                 <span style={{
                   fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
                   padding: "2px 8px", borderRadius: 3,
-                  color: test.severity === "terminal" ? "#f87171" : test.severity === "critical" ? "#fbbf24" : "#34d399",
-                  background: test.severity === "terminal" ? "rgba(248,113,113,0.08)" : test.severity === "critical" ? "rgba(251,191,36,0.08)" : "rgba(52,211,153,0.08)",
+                  color: test.severity === "terminal" ? "#6E5BFF" : test.severity === "critical" ? "#9DB7D1" : "#B7FF3C",
+                  background: test.severity === "terminal" ? "rgba(110,91,255,0.08)" : test.severity === "critical" ? "rgba(157,183,209,0.06)" : "rgba(183,255,60,0.06)",
                 }}>
                   {test.severity}
                 </span>
@@ -279,7 +279,7 @@ export default function RiskPage() {
                   {Object.entries(test.template.forces).map(([k, v]) => (
                     <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "3px 0", fontSize: 10 }}>
                       <span style={{ color: "rgba(200,220,240,0.4)" }}>{KPI_ZONE_MAP[k as KpiKey]?.label ?? k}</span>
-                      <span style={{ fontWeight: 600, color: (v as number) > 0 ? "#34d399" : "#f87171" }}>
+                      <span style={{ fontWeight: 600, color: (v as number) > 0 ? "#B7FF3C" : "#6E5BFF" }}>
                         {(v as number) > 0 ? "+" : ""}{v as number}
                       </span>
                     </div>

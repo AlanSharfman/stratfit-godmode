@@ -338,7 +338,7 @@ export default function StudioPage() {
         <div style={{ width: 260, flexShrink: 0, overflow: "auto", padding: "20px 14px", background: "rgba(12,20,34,0.5)", borderLeft: "1px solid rgba(34,211,238,0.04)" }}>
           <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(34,211,238,0.45)", marginBottom: 14 }}>Zone Health</div>
           {healthChanges.map(({ kpi, before, after, changed }) => {
-            const colorMap: Record<string, string> = { critical: "#f87171", watch: "#fbbf24", healthy: "#22d3ee", strong: "#34d399" }
+            const colorMap: Record<string, string> = { critical: "#6E5BFF", watch: "#9DB7D1", healthy: "#21D4FD", strong: "#B7FF3C" }
             return (
               <div key={kpi} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
                 <span style={{ fontSize: 11, color: "rgba(200,220,240,0.5)" }}>{KPI_ZONE_MAP[kpi].label}</span>

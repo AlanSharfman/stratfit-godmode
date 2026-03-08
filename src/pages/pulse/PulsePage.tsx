@@ -54,7 +54,7 @@ export default function PulsePage() {
     return "steady"
   }, [liveKpis])
 
-  const toneColors = { critical: "#f87171", steady: "#fbbf24", strong: "#34d399", neutral: "rgba(200,220,240,0.3)" }
+  const toneColors = { critical: "#6E5BFF", steady: "#9DB7D1", strong: "#B7FF3C", neutral: "rgba(200,220,240,0.3)" }
   const toneLabels = { critical: "Urgent attention needed", steady: "Holding steady — stay focused", strong: "Strong position — maintain momentum", neutral: "" }
 
   if (!liveKpis) {
@@ -82,7 +82,7 @@ export default function PulsePage() {
               <span style={{ fontSize: 12, color: "rgba(200,220,240,0.6)" }}>{d.label}</span>
               <span style={{
                 fontSize: 11, fontWeight: 600,
-                color: d.direction === "up" ? "#34d399" : d.direction === "down" ? "#f87171" : "#fbbf24",
+                color: d.direction === "up" ? "#B7FF3C" : d.direction === "down" ? "#6E5BFF" : "#9DB7D1",
               }}>
                 {d.direction === "up" ? "↗ Strong" : d.direction === "down" ? "↘ At Risk" : "→ Stable"}
               </span>

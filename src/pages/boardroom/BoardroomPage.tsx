@@ -250,7 +250,7 @@ export default function BoardroomPage() {
               <Section title="12-Month Outlook">
                 <Narrative>{outlook.text}</Narrative>
                 {outlook.cliff && (
-                  <div style={{ marginTop: 12, padding: "8px 14px", borderRadius: 6, background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.1)", color: "#f87171", fontSize: 12 }}>
+                  <div style={{ marginTop: 12, padding: "8px 14px", borderRadius: 6, background: "rgba(110,91,255,0.06)", border: "1px solid rgba(110,91,255,0.22)", color: "#6E5BFF", fontSize: 12 }}>
                     ⚠ Tipping point: {KPI_ZONE_MAP[outlook.cliff.kpi].label} at month {outlook.cliff.month}
                   </div>
                 )}
@@ -347,7 +347,7 @@ function MetricRow({ label, value }: { label: string; value: string }) {
 }
 
 function RiskBadge({ label, level }: { label: string; level: "critical" | "watch" | "strong" }) {
-  const colors = { critical: { bg: "rgba(248,113,113,0.06)", border: "rgba(248,113,113,0.1)", text: "#f87171" }, watch: { bg: "rgba(251,191,36,0.06)", border: "rgba(251,191,36,0.1)", text: "#fbbf24" }, strong: { bg: "rgba(52,211,153,0.06)", border: "rgba(52,211,153,0.1)", text: "#34d399" } }
+  const colors = { critical: { bg: "rgba(110,91,255,0.06)", border: "rgba(110,91,255,0.22)", text: "#6E5BFF" }, watch: { bg: "rgba(157,183,209,0.05)", border: "rgba(157,183,209,0.18)", text: "#9DB7D1" }, strong: { bg: "rgba(183,255,60,0.05)", border: "rgba(183,255,60,0.18)", text: "#B7FF3C" } }
   const c = colors[level]
   return (
     <div style={{ padding: "10px 14px", marginBottom: 6, borderRadius: 6, fontSize: 12, background: c.bg, color: c.text, border: `1px solid ${c.border}` }}>

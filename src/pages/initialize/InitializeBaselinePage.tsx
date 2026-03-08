@@ -825,8 +825,8 @@ export default function InitializeBaselinePage() {
     if (file) handleFileUpload(file)
   }, [handleFileUpload])
 
-  const runwayColor = metrics.runway < 6 ? "#f87171" : metrics.runway < 12 ? "#fbbf24" : "#34d399"
-  const survivalColor = metrics.survivalProbability >= 60 ? "#34d399" : metrics.survivalProbability >= 30 ? "#fbbf24" : "#f87171"
+  const runwayColor = metrics.runway < 6 ? "#6E5BFF" : metrics.runway < 12 ? "#9DB7D1" : "#B7FF3C"
+  const survivalColor = metrics.survivalProbability >= 60 ? "#B7FF3C" : metrics.survivalProbability >= 30 ? "#9DB7D1" : "#6E5BFF"
 
   const needleAngle = form.riskTolerance === "Conservative" ? -45 : form.riskTolerance === "Aggressive" ? 45 : 0
 
@@ -856,7 +856,7 @@ export default function InitializeBaselinePage() {
           </div>
           <div style={SC.metricBlock}>
             <span style={SC.metricLabel}>$ BURN</span>
-            <span style={{ ...SC.metricValue, color: "#f59e0b" }}>{fmtCurrency(metrics.monthlyBurn)}</span>
+            <span style={{ ...SC.metricValue, color: "#6E5BFF" }}>{fmtCurrency(metrics.monthlyBurn)}</span>
           </div>
           <div style={SC.metricBlock}>
             <span style={SC.metricLabel}>SURVIVAL</span>
@@ -939,7 +939,7 @@ export default function InitializeBaselinePage() {
                     </span>
                   </div>
                   {uploadMsg && (
-                    <span style={{ fontSize: 10, color: uploadMsg.type === "success" ? "#34d399" : "#ef4444" }}>{uploadMsg.text}</span>
+                    <span style={{ fontSize: 10, color: uploadMsg.type === "success" ? "#B7FF3C" : "#6E5BFF" }}>{uploadMsg.text}</span>
                   )}
                 </div>
               )}
@@ -1076,11 +1076,11 @@ export default function InitializeBaselinePage() {
             <OutcomeCard label="Survival Prob." value={`${metrics.survivalProbability}%`} color={survivalColor} />
             <div style={{ height: 1, background: "rgba(31,74,117,0.3)", margin: "4px 0" }} />
             <OutcomeCard label="Gross Margin" value={`${form.grossMarginPct.toFixed(1)}%`} color="#34d399" />
-            <OutcomeCard label="NRR" value={`${form.netRevenueRetentionPct}%`} color={form.netRevenueRetentionPct >= 100 ? "#34d399" : "#f87171"} />
-            <OutcomeCard label="Churn" value={`${form.monthlyChurnPct.toFixed(1)}%`} color="#f59e0b" />
+            <OutcomeCard label="NRR" value={`${form.netRevenueRetentionPct}%`} color={form.netRevenueRetentionPct >= 100 ? "#B7FF3C" : "#6E5BFF"} />
+            <OutcomeCard label="Churn" value={`${form.monthlyChurnPct.toFixed(1)}%`} color="#9DB7D1" />
             <OutcomeCard label="Rev/Employee" value={fmtCurrency(metrics.revenuePerHead)} color="#a78bfa" />
             <OutcomeCard label="Op. Profit" value={`${metrics.operatingProfit < 0 ? "-" : ""}${fmtCurrency(Math.abs(metrics.operatingProfit))}`}
-              color={metrics.operatingProfit >= 0 ? "#34d399" : "#f87171"} />
+              color={metrics.operatingProfit >= 0 ? "#B7FF3C" : "#6E5BFF"} />
           </div>
         </div>
       </main>
@@ -1100,7 +1100,7 @@ export default function InitializeBaselinePage() {
             borderRadius: 12,
             border: "1px solid rgba(34,211,238,0.3)",
             background: isLocking
-              ? "linear-gradient(90deg, #b91c1c 0%, #f87171 50%, #b91c1c 100%)"
+              ? "linear-gradient(90deg, #4B3FBF 0%, #6E5BFF 50%, #4B3FBF 100%)"
               : "linear-gradient(90deg, #0891B2 0%, #22D3EE 35%, #67E8F9 50%, #22D3EE 65%, #0891B2 100%)",
             color: "#04121F",
             fontSize: 16, fontWeight: 800, letterSpacing: "0.18em", textTransform: "uppercase",
@@ -1157,15 +1157,15 @@ export default function InitializeBaselinePage() {
           box-shadow: 0 0 10px rgba(34,211,238,0.6);
         }
         .gm-range-amber::-webkit-slider-thumb {
-          background: #f59e0b;
-          box-shadow: 0 0 10px rgba(245,158,11,0.6);
+          background: #6E5BFF;
+          box-shadow: 0 0 10px rgba(110,91,255,0.6);
         }
         .gm-range-cyan::-webkit-slider-thumb:hover {
           box-shadow: 0 0 16px rgba(34,211,238,0.8);
           transform: scale(1.2);
         }
         .gm-range-amber::-webkit-slider-thumb:hover {
-          box-shadow: 0 0 16px rgba(245,158,11,0.8);
+          box-shadow: 0 0 16px rgba(110,91,255,0.8);
           transform: scale(1.2);
         }
 
@@ -1182,8 +1182,8 @@ export default function InitializeBaselinePage() {
           box-shadow: 0 0 10px rgba(34,211,238,0.6);
         }
         .gm-range-amber::-moz-range-thumb {
-          background: #f59e0b;
-          box-shadow: 0 0 10px rgba(245,158,11,0.6);
+          background: #6E5BFF;
+          box-shadow: 0 0 10px rgba(110,91,255,0.6);
         }
 
         .gm-range-cyan::-webkit-slider-runnable-track,

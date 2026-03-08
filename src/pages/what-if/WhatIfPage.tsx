@@ -416,13 +416,13 @@ export default function WhatIfPage() {
 
     return [
       { type: "Strategic Move", label: latest.question, value: "", color: "#22D3EE" },
-      { type: "Operational Change", label: sourceLabel, value: formatDelta(lastCascadeSource.kpi, lastCascadeSource.delta), color: lastCascadeSource.delta > 0 ? "#34d399" : "#f87171" },
-      { type: "Financial Impact", label: firstDownstream ? (KPI_ZONE_MAP[firstDownstream[0]]?.label ?? firstDownstream[0]) : "Cascading", value: firstDownstream ? formatDelta(firstDownstream[0], firstDownstream[1]) : "", color: firstDownstream && firstDownstream[1] > 0 ? "#34d399" : "#f87171" },
+      { type: "Operational Change", label: sourceLabel, value: formatDelta(lastCascadeSource.kpi, lastCascadeSource.delta), color: lastCascadeSource.delta > 0 ? "#B7FF3C" : "#6E5BFF" },
+      { type: "Financial Impact", label: firstDownstream ? (KPI_ZONE_MAP[firstDownstream[0]]?.label ?? firstDownstream[0]) : "Cascading", value: firstDownstream ? formatDelta(firstDownstream[0], firstDownstream[1]) : "", color: firstDownstream && firstDownstream[1] > 0 ? "#B7FF3C" : "#6E5BFF" },
       ...downstream.slice(1).map(([k, d]) => ({
         type: "KPI Delta",
         label: KPI_ZONE_MAP[k]?.label ?? k,
         value: formatDelta(k, d),
-        color: d > 0 ? "#34d399" : "#f87171",
+        color: d > 0 ? "#B7FF3C" : "#6E5BFF",
       })),
       { type: "Enterprise Outcome", label: "Terrain reshapes", value: evLabel, color: "#a78bfa" },
     ]

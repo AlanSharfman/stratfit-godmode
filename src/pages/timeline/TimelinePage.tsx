@@ -17,17 +17,17 @@ type CaseType = "bear" | "base" | "bull"
 const CASE_CONFIGS: Record<CaseType, { label: string; color: string; growthRates: Partial<Record<KpiKey, number>> }> = {
   bear: {
     label: "Bear Case",
-    color: "#f87171",
+    color: "#6E5BFF",   // strategic purple — replaces banned red
     growthRates: { revenue: -0.03, burn: 0.02, churn: 0.01, growth: -0.02, cash: -0.04 },
   },
   base: {
     label: "Base Case",
-    color: "#fbbf24",
+    color: "#9DB7D1",   // muted white — replaces banned amber
     growthRates: { revenue: 0.02, burn: 0.005, churn: -0.002, growth: 0.01, cash: -0.01 },
   },
   bull: {
     label: "Bull Case",
-    color: "#34d399",
+    color: "#B7FF3C",   // lime positive
     growthRates: { revenue: 0.08, burn: 0.01, churn: -0.01, growth: 0.03, cash: 0.02, arr: 0.06 },
   },
 }
@@ -176,7 +176,7 @@ export default function TimelinePage() {
               const points = vals.map((v, i) => `${(i / (vals.length - 1)) * w},${h - ((v - min) / range) * h}`).join(" ")
               const currentVal = vals[Math.min(month, vals.length - 1)]
               const health = projectedKpis ? getHealthLevel(kpi, projectedKpis) : "healthy"
-              const healthColor = health === "critical" ? "#f87171" : health === "watch" ? "#fbbf24" : health === "strong" ? "#34d399" : "#22d3ee"
+              const healthColor = health === "critical" ? "#6E5BFF" : health === "watch" ? "#9DB7D1" : health === "strong" ? "#B7FF3C" : "#21D4FD"
               return (
                 <div key={kpi} style={{ marginBottom: 16 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
@@ -200,8 +200,8 @@ export default function TimelinePage() {
             })}
 
             {cliff && (
-              <div style={{ marginTop: 16, padding: "10px 12px", borderRadius: 6, background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.1)", color: "#f87171", fontSize: 11, lineHeight: 1.5 }}>
-                ⚠ {KPI_ZONE_MAP[cliff.kpi].label} hits critical at month {cliff.month}
+              <div style={{ marginTop: 16, padding: "10px 12px", borderRadius: 6, background: "rgba(110,91,255,0.06)", border: "1px solid rgba(110,91,255,0.22)", color: "#6E5BFF", fontSize: 11, lineHeight: 1.5 }}>
+                ▲ {KPI_ZONE_MAP[cliff.kpi].label} hits critical at month {cliff.month}
               </div>
             )}
 
@@ -228,7 +228,7 @@ export default function TimelinePage() {
               {cliff && (
                 <div style={{
                   position: "absolute", left: `${(cliff.month / 12) * 100}%`, top: 0, bottom: 0,
-                  width: 2, background: "#f87171", borderRadius: 1, transform: "translateX(-50%)", pointerEvents: "none",
+                  width: 2, background: "#6E5BFF", borderRadius: 1, transform: "translateX(-50%)", pointerEvents: "none",
                 }} title={`Cliff: ${cliff.kpi} at month ${cliff.month}`} />
               )}
             </div>

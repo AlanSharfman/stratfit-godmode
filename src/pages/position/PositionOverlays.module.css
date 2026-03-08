@@ -613,14 +613,14 @@
   width: 100%;
 }
 
-/* Per-KPI label colours */
-.kpiRailCell:nth-child(1) .kpiLabel { color: #34d399; }  /* Cash — emerald */
-.kpiRailCell:nth-child(2) .kpiLabel { color: #22d3ee; }  /* Runway — cyan */
-.kpiRailCell:nth-child(3) .kpiLabel { color: #f87171; }  /* Burn — red */
-.kpiRailCell:nth-child(4) .kpiLabel { color: #60a5fa; }  /* Revenue — blue */
-.kpiRailCell:nth-child(5) .kpiLabel { color: #4ade80; }  /* ARR — green */
-.kpiRailCell:nth-child(6) .kpiLabel { color: #a78bfa; }  /* Momentum — purple */
-.kpiRailCell:nth-child(7) .kpiLabel { color: #f87171; }  /* Risk Score — red */
+/* Per-KPI label colours — locked palette only */
+.kpiRailCell:nth-child(1) .kpiLabel { color: #B7FF3C; }  /* Cash — lime positive */
+.kpiRailCell:nth-child(2) .kpiLabel { color: #21D4FD; }  /* Runway — cyan accent */
+.kpiRailCell:nth-child(3) .kpiLabel { color: #6E5BFF; }  /* Burn — strategic purple (pressure signal) */
+.kpiRailCell:nth-child(4) .kpiLabel { color: #4DEBFF; }  /* Revenue — electric cyan */
+.kpiRailCell:nth-child(5) .kpiLabel { color: #B7FF3C; }  /* ARR — lime positive */
+.kpiRailCell:nth-child(6) .kpiLabel { color: #6E5BFF; }  /* Momentum — strategic purple */
+.kpiRailCell:nth-child(7) .kpiLabel { color: #4B3FBF; }  /* Risk Score — deep violet (tension) */
 
 .kpiRailCell .kpiValue {
   font-size: 18px;
@@ -1596,8 +1596,8 @@
 .burnBar {
   width: 6px;
   border-radius: 2px 2px 0 0;
-  background: linear-gradient(180deg, #fb923c 0%, #ef4444 40%, #dc2626 80%, #991b1b 100%);
-  box-shadow: 0 0 8px rgba(251, 146, 60, 0.45), 0 0 3px rgba(239, 68, 68, 0.30);
+  background: linear-gradient(180deg, #6E5BFF 0%, #4B3FBF 50%, #0B1F36 100%);
+  box-shadow: 0 0 8px rgba(110,91,255,0.40), 0 0 3px rgba(75,63,191,0.25);
   animation: burnPulse 1.2s ease-in-out infinite alternate;
   transform-origin: bottom;
 }

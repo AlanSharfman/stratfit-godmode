@@ -172,7 +172,7 @@ export default function ActionsPage() {
               {/* Time horizon */}
               <div style={{ marginTop: 20, padding: "10px 12px", background: "rgba(15,25,45,0.5)", borderRadius: 8, border: "1px solid rgba(34,211,238,0.06)" }}>
                 <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(34,211,238,0.4)", marginBottom: 6 }}>Time Horizon</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: selectedAction.horizon === "now" ? "#34d399" : selectedAction.horizon === "30d" ? "#fbbf24" : "#22d3ee" }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: selectedAction.horizon === "now" ? "#B7FF3C" : selectedAction.horizon === "30d" ? "#9DB7D1" : "#21D4FD" }}>
                   {selectedAction.horizon === "now" ? "Execute This Week" : selectedAction.horizon === "30d" ? "30-Day Initiative" : "90-Day Strategic Play"}
                 </div>
               </div>
@@ -197,7 +197,7 @@ export default function ActionsPage() {
                 {recommendations.map((rec) => {
                   const x = 10 + (rec.effortScore / 10) * 220
                   const y = 230 - (rec.totalElevationGain / Math.max(...recommendations.map((r) => r.totalElevationGain), 1)) * 220
-                  const color = rec.difficulty === "low" ? "#34d399" : rec.difficulty === "medium" ? "#fbbf24" : "#f87171"
+                  const color = rec.difficulty === "low" ? "#B7FF3C" : rec.difficulty === "medium" ? "#9DB7D1" : "#6E5BFF"
                   return (
                     <g key={rec.kpi} onClick={() => setSelectedAction(rec)} style={{ cursor: "pointer" }}>
                       <circle cx={x} cy={y} r={8} fill={color} opacity={0.3} />
@@ -218,7 +218,7 @@ export default function ActionsPage() {
                   const items = recommendations.filter((r) => r.horizon === h)
                   if (items.length === 0) return null
                   const label = h === "now" ? "This Week" : h === "30d" ? "30 Days" : "90 Days"
-                  const color = h === "now" ? "#34d399" : h === "30d" ? "#fbbf24" : "#22d3ee"
+                  const color = h === "now" ? "#B7FF3C" : h === "30d" ? "#9DB7D1" : "#21D4FD"
                   return (
                     <div key={h} style={{ marginBottom: 12 }}>
                       <div style={{ fontSize: 10, fontWeight: 700, color, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>{label}</div>

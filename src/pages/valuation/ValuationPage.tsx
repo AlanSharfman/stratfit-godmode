@@ -99,18 +99,18 @@ export default function ValuationPage() {
           {/* Range */}
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 24, padding: "16px", background: "rgba(15,25,45,0.5)", borderRadius: 8, border: "1px solid rgba(34,211,238,0.04)" }}>
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 9, fontWeight: 600, color: "#f87171", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 4 }}>Bear</div>
-              <div style={{ fontSize: 18, fontWeight: 600, color: "#f87171" }}>{formatEV(valuation.bearEV)}</div>
+              <div style={{ fontSize: 9, fontWeight: 600, color: "#6E5BFF", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 4 }}>Bear</div>
+              <div style={{ fontSize: 18, fontWeight: 600, color: "#6E5BFF" }}>{formatEV(valuation.bearEV)}</div>
             </div>
             <div style={{ width: 1, background: "rgba(255,255,255,0.06)" }} />
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 9, fontWeight: 600, color: "#fbbf24", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 4 }}>Base</div>
-              <div style={{ fontSize: 18, fontWeight: 600, color: "#fbbf24" }}>{formatEV(valuation.baseEV)}</div>
+              <div style={{ fontSize: 9, fontWeight: 600, color: "#9DB7D1", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 4 }}>Base</div>
+              <div style={{ fontSize: 18, fontWeight: 600, color: "#9DB7D1" }}>{formatEV(valuation.baseEV)}</div>
             </div>
             <div style={{ width: 1, background: "rgba(255,255,255,0.06)" }} />
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 9, fontWeight: 600, color: "#34d399", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 4 }}>Bull</div>
-              <div style={{ fontSize: 18, fontWeight: 600, color: "#34d399" }}>{formatEV(valuation.bullEV)}</div>
+              <div style={{ fontSize: 9, fontWeight: 600, color: "#B7FF3C", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 4 }}>Bull</div>
+              <div style={{ fontSize: 18, fontWeight: 600, color: "#B7FF3C" }}>{formatEV(valuation.bullEV)}</div>
             </div>
           </div>
 
@@ -120,13 +120,13 @@ export default function ValuationPage() {
               <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(34,211,238,0.45)" }}>Funding Readiness</span>
               <span style={{
                 fontSize: 20, fontWeight: 700,
-                color: valuation.fundingReadiness > 70 ? "#34d399" : valuation.fundingReadiness > 40 ? "#fbbf24" : "#f87171",
+                color: valuation.fundingReadiness > 70 ? "#B7FF3C" : valuation.fundingReadiness > 40 ? "#9DB7D1" : "#6E5BFF",
               }}>{valuation.fundingReadiness}%</span>
             </div>
             <div style={{ height: 4, background: "rgba(255,255,255,0.04)", borderRadius: 2 }}>
               <div style={{
                 height: 4, borderRadius: 2, width: `${valuation.fundingReadiness}%`, transition: "width 0.5s",
-                background: valuation.fundingReadiness > 70 ? "#34d399" : valuation.fundingReadiness > 40 ? "#fbbf24" : "#f87171",
+                background: valuation.fundingReadiness > 70 ? "#B7FF3C" : valuation.fundingReadiness > 40 ? "#9DB7D1" : "#6E5BFF",
               }} />
             </div>
           </div>
