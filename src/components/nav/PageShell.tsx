@@ -138,9 +138,20 @@ const S: Record<string, React.CSSProperties> = {
     height: "100vh",
     display: "flex",
     flexDirection: "column",
-    /* Cinematic background: base navy → deep navy → dark azure depth plane */
-    background:
-      "linear-gradient(180deg, #061326 0%, #081B33 55%, #0D2A49 78%, #0A101A 100%)",
+    /*
+      Ultimate cinematic background system:
+      – base navy → deep navy vertical gradient (sky plane)
+      – dark azure mid-depth (terrain horizon band)
+      – charcoal lower plane (foreground)
+      – layered radial hazes: subtle cyan near header, violet near centre-right
+      – edge vignette via radial gradient overlay
+    */
+    background: `
+      radial-gradient(ellipse 70% 28% at 50% 0%, rgba(33,212,253,0.055) 0%, transparent 100%),
+      radial-gradient(ellipse 55% 40% at 72% 45%, rgba(110,91,255,0.045) 0%, transparent 100%),
+      radial-gradient(ellipse 100% 100% at 50% 50%, transparent 55%, rgba(0,0,0,0.55) 100%),
+      linear-gradient(180deg, #061326 0%, #081B33 42%, #0D2A49 68%, #0A101A 100%)
+    `,
     color: "#EAF4FF",
     fontFamily: "'Inter', system-ui, sans-serif",
     overflow: "hidden",

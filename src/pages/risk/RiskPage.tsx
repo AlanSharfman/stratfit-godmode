@@ -1,295 +1,282 @@
-import React, { useMemo, useState, lazy, Suspense } from "react"
+// src/pages/risk/RiskPage.tsx
+// ═══════════════════════════════════════════════════════════════════════════
+// STRATFIT — Risk Intelligence  (Premium Coming Soon Module)
+// ═══════════════════════════════════════════════════════════════════════════
 
+import React from "react"
 import PageShell from "@/components/nav/PageShell"
-import TerrainZoneLegend from "@/components/terrain/TerrainZoneLegend"
-import TerrainStage from "@/terrain/TerrainStage"
-import SkyAtmosphere from "@/scene/rigs/SkyAtmosphere"
-import { POSITION_PROGRESSIVE_PRESET } from "@/scene/camera/terrainCameraPresets"
-import { useSystemBaseline } from "@/system/SystemBaselineProvider"
-import { buildPositionViewModel, type PositionKpis } from "@/pages/position/overlays/positionState"
-import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
-import { KPI_KEYS, KPI_ZONE_MAP, getHealthLevel, type HealthLevel } from "@/domain/intelligence/kpiZoneMapping"
-import { KPI_GRAPH, propagateForce } from "@/engine/kpiDependencyGraph"
-import { SCENARIO_TEMPLATES, type ScenarioTemplate } from "@/engine/scenarioTemplates"
-const RiskCascadeViz = lazy(() => import("@/components/viz/RiskCascadeViz"))
-const AlertsDashboard = lazy(() => import("@/components/alerts/AlertsDashboard"))
 
-interface RiskCategory {
-  key: string
-  label: string
-  score: number
-  trend: "improving" | "stable" | "worsening"
-  drivers: string[]
-}
-
-function computeRiskDecomposition(kpis: PositionKpis): RiskCategory[] {
-  const h = (k: KpiKey): HealthLevel => getHealthLevel(k, kpis)
-  const healthScore = (k: KpiKey): number => {
-    const l = h(k)
-    return l === "critical" ? 15 : l === "watch" ? 40 : l === "healthy" ? 70 : 90
-  }
-
-  return [
-    {
-      key: "financial",
-      label: "Financial Risk",
-      score: Math.round((healthScore("cash") + healthScore("runway") + healthScore("burn")) / 3),
-      trend: kpis.runwayMonths < 6 ? "worsening" : kpis.runwayMonths > 18 ? "improving" : "stable",
-      drivers: [
-        kpis.runwayMonths < 6 ? "Runway critically low" : "Runway adequate",
-        kpis.burnMonthly > kpis.revenueMonthly * 1.5 ? "Burn exceeds revenue significantly" : "Burn within range",
-      ],
-    },
-    {
-      key: "concentration",
-      label: "Concentration Risk",
-      score: Math.round(healthScore("revenue") * 0.4 + healthScore("arr") * 0.3 + healthScore("churn") * 0.3),
-      trend: kpis.churnPct > 8 ? "worsening" : "stable",
-      drivers: [
-        kpis.churnPct > 8 ? "High churn increases dependency on new revenue" : "Churn within healthy range",
-        "Revenue diversification analysis requires customer-level data",
-      ],
-    },
-    {
-      key: "execution",
-      label: "Execution Risk",
-      score: healthScore("growth"),
-      trend: kpis.efficiencyRatio < 0.5 ? "worsening" : kpis.efficiencyRatio > 1 ? "improving" : "stable",
-      drivers: [
-        kpis.efficiencyRatio < 0.5 ? "Efficiency ratio below threshold" : "Operational efficiency healthy",
-        kpis.growthRatePct < 10 ? "Growth rate below target" : "Growth momentum present",
-      ],
-    },
-    {
-      key: "market",
-      label: "Market Risk",
-      score: Math.round((healthScore("growth") + healthScore("grossMargin") + healthScore("enterpriseValue")) / 3),
-      trend: kpis.growthRatePct > 20 ? "improving" : kpis.growthRatePct < 5 ? "worsening" : "stable",
-      drivers: [
-        kpis.grossMarginPct < 50 ? "Gross margin below SaaS benchmark" : "Margins healthy",
-        kpis.growthRatePct > 20 ? "Strong growth signals market fit" : "Growth rate needs acceleration",
-      ],
-    },
-    {
-      key: "competitive",
-      label: "Competitive Risk",
-      score: Math.round((healthScore("grossMargin") + healthScore("growth")) / 2),
-      trend: "stable",
-      drivers: [
-        "Competitive positioning inferred from margin and growth",
-        kpis.grossMarginPct > 65 ? "High margins suggest defensible position" : "Margin pressure may indicate competitive threats",
-      ],
-    },
-  ]
-}
-
-const STRESS_TESTS: { label: string; template: ScenarioTemplate }[] = [
-  { label: "Lose largest customer", template: SCENARIO_TEMPLATES.find((t) => t.id === "key-customer-loss")! },
-  { label: "Security breach", template: SCENARIO_TEMPLATES.find((t) => t.id === "security-breach")! },
-  { label: "Market downturn", template: SCENARIO_TEMPLATES.find((t) => t.id === "market-downturn")! },
-  { label: "Fundraising fails", template: SCENARIO_TEMPLATES.find((t) => t.id === "cash-crunch")! },
-  { label: "Co-founder departs", template: SCENARIO_TEMPLATES.find((t) => t.id === "cofounder-leaves")! },
-].filter((s) => s.template)
-
-function computeStressImpact(kpis: PositionKpis, template: ScenarioTemplate): { survivorKpis: PositionKpis; severity: "survivable" | "critical" | "terminal" } {
-  const allAffected = new Map<KpiKey, number>()
-  for (const [kpi, delta] of Object.entries(template.forces) as [KpiKey, number][]) {
-    const { affected } = propagateForce(KPI_GRAPH, kpi, delta)
-    for (const [k, d] of affected) allAffected.set(k, (allAffected.get(k) ?? 0) + d)
-  }
-
-  const kpiFieldMap: Record<KpiKey, keyof PositionKpis> = {
-    cash: "cashOnHand", runway: "runwayMonths", growth: "growthRatePct", arr: "arr",
-    revenue: "revenueMonthly", burn: "burnMonthly", churn: "churnPct",
-    grossMargin: "grossMarginPct", headcount: "headcount", nrr: "nrrPct", efficiency: "efficiencyRatio",
-    enterpriseValue: "valuationEstimate",
-  }
-
-  const result = { ...kpis }
-  for (const [k, d] of allAffected) {
-    const field = kpiFieldMap[k]
-    if (field) (result as any)[field] = (result as any)[field] + d
-  }
-
-  const criticals = KPI_KEYS.filter((k) => getHealthLevel(k, result) === "critical").length
-  const severity = criticals >= 4 ? "terminal" : criticals >= 2 ? "critical" : "survivable"
-  return { survivorKpis: result, severity }
-}
+const FEATURES = [
+  {
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+        <circle cx="10" cy="10" r="8.5" stroke="#21D4FD" strokeWidth="1.2" />
+        <path d="M10 5.5V10.5L13 13" stroke="#21D4FD" strokeWidth="1.4" strokeLinecap="round" />
+      </svg>
+    ),
+    label: "Survival probability modelling",
+    desc: "Monte Carlo simulation across thousands of paths to quantify business survival likelihood.",
+  },
+  {
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+        <polyline points="2,15 7,9 11,12 18,4" stroke="#4DEBFF" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+        <line x1="18" y1="4" x2="18" y2="8" stroke="#4DEBFF" strokeWidth="1.2" strokeLinecap="round" />
+        <line x1="14" y1="8" x2="18" y2="8" stroke="#4DEBFF" strokeWidth="1.2" strokeLinecap="round" />
+      </svg>
+    ),
+    label: "Runway collapse detection",
+    desc: "Identify the exact conditions that trigger cash depletion before they materialise.",
+  },
+  {
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+        <rect x="2" y="13" width="4" height="5" rx="1" fill="none" stroke="#6E5BFF" strokeWidth="1.2" />
+        <rect x="8" y="9" width="4" height="9" rx="1" fill="none" stroke="#6E5BFF" strokeWidth="1.2" />
+        <rect x="14" y="5" width="4" height="13" rx="1" fill="none" stroke="#6E5BFF" strokeWidth="1.2" />
+      </svg>
+    ),
+    label: "Liquidity risk forecasting",
+    desc: "Forward-looking liquidity pressure analysis mapped to terrain depth and basin formation.",
+  },
+  {
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+        <path d="M10 2L18 18H2L10 2Z" fill="none" stroke="#9DB7D1" strokeWidth="1.2" strokeLinejoin="round" />
+        <line x1="10" y1="8" x2="10" y2="13" stroke="#9DB7D1" strokeWidth="1.4" strokeLinecap="round" />
+        <circle cx="10" cy="15.5" r="0.8" fill="#9DB7D1" />
+      </svg>
+    ),
+    label: "Volatility exposure analysis",
+    desc: "Quantify structural sensitivity to market shocks, demand drops, and competitive pressures.",
+  },
+]
 
 export default function RiskPage() {
-  const [selectedStress, setSelectedStress] = useState<number | null>(null)
-
-  const { baseline } = useSystemBaseline()
-  const baseKpis = useMemo(() => {
-    if (!baseline) return null
-    return buildPositionViewModel(baseline as any).kpis
-  }, [baseline])
-
-  const revealedKpis = useMemo(() => new Set(KPI_KEYS), [])
-
-  const riskCategories = useMemo(() => {
-    if (!baseKpis) return []
-    return computeRiskDecomposition(baseKpis)
-  }, [baseKpis])
-
-  const overallRisk = useMemo(() => {
-    if (riskCategories.length === 0) return 0
-    return Math.round(riskCategories.reduce((sum, c) => sum + c.score, 0) / riskCategories.length)
-  }, [riskCategories])
-
-  const stressResults = useMemo(() => {
-    if (!baseKpis) return []
-    return STRESS_TESTS.map((test) => ({
-      ...test,
-      ...computeStressImpact(baseKpis, test.template),
-    }))
-  }, [baseKpis])
-
-  const activeStress = selectedStress !== null ? stressResults[selectedStress] : null
-
-  if (!baseKpis) {
-    return <PageShell><div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(200,220,240,0.3)", fontSize: 14 }}>Complete initiation to view risk analysis</div></PageShell>
-  }
-
   return (
     <PageShell>
-      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
-        {/* Left: Risk decomposition */}
-        <div style={{ width: 340, flexShrink: 0, overflow: "auto", padding: "20px 16px", background: "rgba(12,20,34,0.5)", borderRight: "1px solid rgba(34,211,238,0.04)" }}>
-          {/* Overall score */}
-          <div style={{ textAlign: "center", marginBottom: 24 }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(34,211,238,0.45)", marginBottom: 8 }}>Overall Health Score</div>
-            <div style={{
-              fontSize: 48, fontWeight: 200, color: overallRisk > 70 ? "#B7FF3C" : overallRisk > 45 ? "#9DB7D1" : "#6E5BFF",
-              fontVariantNumeric: "tabular-nums", lineHeight: 1,
-            }}>{overallRisk}</div>
-            <div style={{ fontSize: 10, color: "rgba(200,220,240,0.3)", marginTop: 4 }}>/100</div>
+      <div style={S.page}>
+
+        {/* Ambient depth layers behind card */}
+        <div style={S.glowLeft} aria-hidden="true" />
+        <div style={S.glowRight} aria-hidden="true" />
+
+        <div style={S.card}>
+
+          {/* Icon */}
+          <div style={S.iconRing}>
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+              <polygon
+                points="18,4 33,30 3,30"
+                fill="none"
+                stroke="#21D4FD"
+                strokeWidth="1.5"
+                strokeLinejoin="round"
+              />
+              <polygon
+                points="18,9 28.5,28 7.5,28"
+                fill="rgba(33,212,253,0.07)"
+                stroke="none"
+              />
+              <line x1="18" y1="14" x2="18" y2="22" stroke="#4DEBFF" strokeWidth="1.8" strokeLinecap="round" />
+              <circle cx="18" cy="25.5" r="1.2" fill="#4DEBFF" />
+            </svg>
           </div>
 
-          {/* Category breakdown */}
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(34,211,238,0.45)", marginBottom: 12 }}>Risk Decomposition</div>
-          {riskCategories.map((cat) => (
-            <div key={cat.key} style={{ marginBottom: 14, padding: "12px", background: "rgba(15,25,45,0.5)", borderRadius: 8, border: "1px solid rgba(34,211,238,0.04)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                <span style={{ fontSize: 12, fontWeight: 500, color: "rgba(200,220,240,0.8)" }}>{cat.label}</span>
-                <span style={{
-                  fontSize: 14, fontWeight: 700, fontVariantNumeric: "tabular-nums",
-                  color: cat.score > 70 ? "#B7FF3C" : cat.score > 45 ? "#9DB7D1" : "#6E5BFF",
-                }}>{cat.score}</span>
-              </div>
-              {/* Bar */}
-              <div style={{ height: 3, background: "rgba(255,255,255,0.04)", borderRadius: 2, marginBottom: 8 }}>
-                <div style={{
-                  height: 3, borderRadius: 2, width: `${cat.score}%`, transition: "width 0.5s",
-                  background: cat.score > 70 ? "#B7FF3C" : cat.score > 45 ? "#9DB7D1" : "#6E5BFF",
-                }} />
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                <span style={{
-                  fontSize: 9, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase",
-                  color: cat.trend === "improving" ? "#B7FF3C" : cat.trend === "worsening" ? "#6E5BFF" : "#9DB7D1",
-                }}>
-                  {cat.trend === "improving" ? "↗" : cat.trend === "worsening" ? "↘" : "→"} {cat.trend}
-                </span>
-              </div>
-              {cat.drivers.map((d, i) => (
-                <div key={i} style={{ fontSize: 10, color: "rgba(200,220,240,0.35)", lineHeight: 1.5 }}>· {d}</div>
-              ))}
-            </div>
-          ))}
-          {/* Risk Cascade Network */}
-          <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid rgba(34,211,238,0.04)" }}>
-            <Suspense fallback={null}>
-              <RiskCascadeViz kpis={baseKpis} />
-            </Suspense>
-          </div>
+          {/* Badge */}
+          <span style={S.badge}>COMING SOON</span>
 
-          {/* Alerts */}
-          <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid rgba(34,211,238,0.04)" }}>
-            <Suspense fallback={null}>
-              <AlertsDashboard kpis={baseKpis} compact />
-            </Suspense>
-          </div>
-        </div>
+          {/* Title / subtitle */}
+          <h1 style={S.title}>Risk Intelligence</h1>
+          <p style={S.subtitle}>
+            Advanced probabilistic risk analysis powered by STRATFIT simulation.
+          </p>
 
-        {/* Centre: Terrain with heat map */}
-        <div style={{ flex: 1, position: "relative" }}>
-          <div style={{
-            position: "absolute", top: 10, left: 14, zIndex: 10, fontSize: 9, fontWeight: 700,
-            letterSpacing: "0.14em", textTransform: "uppercase", padding: "4px 10px", borderRadius: 4,
-            background: "rgba(12,20,34,0.85)", border: "1px solid rgba(200,220,240,0.08)",
-            color: activeStress ? (activeStress.severity === "terminal" ? "#6E5BFF" : activeStress.severity === "critical" ? "#9DB7D1" : "#B7FF3C") : "rgba(200,220,240,0.45)",
-          }}>
-            {activeStress ? `STRESS: ${activeStress.label.toUpperCase()}` : "CURRENT TERRAIN"}
-          </div>
-          <TerrainStage
-            progressive
-            revealedKpis={revealedKpis}
-            focusedKpi={null}
-            zoneKpis={activeStress?.survivorKpis ?? baseKpis}
-            cameraPreset={POSITION_PROGRESSIVE_PRESET}
-            autoRotateSpeed={0.2}
-            showDependencyLines={false}
-            hideMarkers
-            heatmapEnabled
-          >
-            <SkyAtmosphere />
-          </TerrainStage>
-          <TerrainZoneLegend kpis={activeStress?.survivorKpis ?? baseKpis} revealedKpis={revealedKpis} focusedKpi={null} compact />
-        </div>
+          {/* Divider */}
+          <div style={S.divider} />
 
-        {/* Right: Stress tests */}
-        <div style={{ width: 300, flexShrink: 0, overflow: "auto", padding: "20px 16px", background: "rgba(12,20,34,0.5)", borderLeft: "1px solid rgba(34,211,238,0.04)" }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(34,211,238,0.45)", marginBottom: 14 }}>
-            Auto Stress-Test
-          </div>
-          <div style={{ fontSize: 11, color: "rgba(200,220,240,0.3)", marginBottom: 16, lineHeight: 1.5 }}>
-            5 worst-case scenarios run automatically. Click to see how your terrain responds to each.
-          </div>
-          {stressResults.map((test, i) => (
-            <div
-              key={test.label}
-              onClick={() => setSelectedStress(selectedStress === i ? null : i)}
-              style={{
-                padding: "14px 12px",
-                marginBottom: 8,
-                background: selectedStress === i ? "rgba(34,211,238,0.04)" : "rgba(15,25,45,0.5)",
-                border: `1px solid ${selectedStress === i ? "rgba(34,211,238,0.15)" : "rgba(34,211,238,0.04)"}`,
-                borderRadius: 8,
-                cursor: "pointer",
-                transition: "all 0.2s",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                <span style={{ fontSize: 12, fontWeight: 500, color: "rgba(200,220,240,0.8)" }}>{test.label}</span>
-                <span style={{
-                  fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
-                  padding: "2px 8px", borderRadius: 3,
-                  color: test.severity === "terminal" ? "#6E5BFF" : test.severity === "critical" ? "#9DB7D1" : "#B7FF3C",
-                  background: test.severity === "terminal" ? "rgba(110,91,255,0.08)" : test.severity === "critical" ? "rgba(157,183,209,0.06)" : "rgba(183,255,60,0.06)",
-                }}>
-                  {test.severity}
-                </span>
-              </div>
-              <div style={{ fontSize: 10, color: "rgba(200,220,240,0.35)", lineHeight: 1.5 }}>
-                {test.template.description}
-              </div>
-              {selectedStress === i && (
-                <div style={{ marginTop: 10, paddingTop: 8, borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-                  {Object.entries(test.template.forces).map(([k, v]) => (
-                    <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "3px 0", fontSize: 10 }}>
-                      <span style={{ color: "rgba(200,220,240,0.4)" }}>{KPI_ZONE_MAP[k as KpiKey]?.label ?? k}</span>
-                      <span style={{ fontWeight: 600, color: (v as number) > 0 ? "#B7FF3C" : "#6E5BFF" }}>
-                        {(v as number) > 0 ? "+" : ""}{v as number}
-                      </span>
-                    </div>
-                  ))}
+          {/* Feature list */}
+          <ul style={S.featureList}>
+            {FEATURES.map((f) => (
+              <li key={f.label} style={S.featureItem}>
+                <span style={S.featureIcon}>{f.icon}</span>
+                <div>
+                  <div style={S.featureLabel}>{f.label}</div>
+                  <div style={S.featureDesc}>{f.desc}</div>
                 </div>
-              )}
-            </div>
-          ))}
+              </li>
+            ))}
+          </ul>
+
+          {/* Footer note */}
+          <p style={S.footerNote}>
+            This module is being calibrated against live simulation data. It will activate progressively as the intelligence layer matures.
+          </p>
+
         </div>
       </div>
     </PageShell>
   )
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Styles
+   ───────────────────────────────────────────────────────────────────────── */
+const S: Record<string, React.CSSProperties> = {
+  page: {
+    flex: 1,
+    minHeight: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "32px 24px",
+    position: "relative",
+    overflow: "hidden",
+  },
+
+  /* Atmospheric depth glows */
+  glowLeft: {
+    position: "absolute",
+    top: "10%",
+    left: "-8%",
+    width: 480,
+    height: 480,
+    borderRadius: "50%",
+    background: "radial-gradient(circle, rgba(33,212,253,0.055) 0%, transparent 70%)",
+    pointerEvents: "none",
+  },
+  glowRight: {
+    position: "absolute",
+    bottom: "5%",
+    right: "-10%",
+    width: 520,
+    height: 420,
+    borderRadius: "50%",
+    background: "radial-gradient(circle, rgba(110,91,255,0.05) 0%, transparent 70%)",
+    pointerEvents: "none",
+  },
+
+  card: {
+    position: "relative",
+    width: "100%",
+    maxWidth: 560,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    padding: "48px 44px 44px",
+    background:
+      "linear-gradient(160deg, rgba(13,42,73,0.80) 0%, rgba(8,27,51,0.90) 60%, rgba(10,16,26,0.95) 100%)",
+    border: "1px solid rgba(33,212,253,0.12)",
+    borderRadius: 20,
+    boxShadow:
+      "0 0 0 1px rgba(33,212,253,0.04) inset, 0 24px 80px rgba(0,0,0,0.65), 0 0 60px rgba(33,212,253,0.04)",
+    backdropFilter: "blur(24px)",
+    WebkitBackdropFilter: "blur(24px)",
+  },
+
+  iconRing: {
+    width: 72,
+    height: 72,
+    borderRadius: "50%",
+    background: "rgba(13,42,73,0.70)",
+    border: "1px solid rgba(33,212,253,0.18)",
+    boxShadow: "0 0 28px rgba(33,212,253,0.10)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
+  },
+
+  badge: {
+    display: "inline-block",
+    padding: "4px 14px",
+    marginBottom: 18,
+    borderRadius: 20,
+    background: "rgba(33,212,253,0.07)",
+    border: "1px solid rgba(33,212,253,0.22)",
+    color: "#21D4FD",
+    fontSize: 9,
+    fontWeight: 800,
+    letterSpacing: "0.18em",
+    textTransform: "uppercase" as const,
+  },
+
+  title: {
+    fontSize: 26,
+    fontWeight: 800,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase" as const,
+    color: "#EAF4FF",
+    margin: "0 0 10px",
+    textAlign: "center",
+  },
+
+  subtitle: {
+    fontSize: 13,
+    color: "rgba(157,183,209,0.65)",
+    lineHeight: 1.65,
+    textAlign: "center",
+    margin: "0 0 4px",
+    maxWidth: 380,
+  },
+
+  divider: {
+    width: "100%",
+    height: 1,
+    background:
+      "linear-gradient(90deg, transparent 0%, rgba(33,212,253,0.15) 30%, rgba(33,212,253,0.15) 70%, transparent 100%)",
+    margin: "28px 0",
+  },
+
+  featureList: {
+    listStyle: "none",
+    padding: 0,
+    margin: 0,
+    width: "100%",
+    display: "flex",
+    flexDirection: "column",
+    gap: 18,
+  },
+
+  featureItem: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: 14,
+  },
+
+  featureIcon: {
+    flexShrink: 0,
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    background: "rgba(13,42,73,0.60)",
+    border: "1px solid rgba(33,212,253,0.08)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 1,
+  },
+
+  featureLabel: {
+    fontSize: 13,
+    fontWeight: 600,
+    color: "rgba(234,244,255,0.88)",
+    marginBottom: 3,
+    letterSpacing: "0.01em",
+  },
+
+  featureDesc: {
+    fontSize: 11,
+    color: "rgba(157,183,209,0.50)",
+    lineHeight: 1.6,
+  },
+
+  footerNote: {
+    marginTop: 32,
+    fontSize: 10,
+    color: "rgba(157,183,209,0.25)",
+    textAlign: "center",
+    lineHeight: 1.6,
+    maxWidth: 380,
+  },
 }
