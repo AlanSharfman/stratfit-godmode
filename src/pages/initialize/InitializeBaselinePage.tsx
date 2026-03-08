@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { useSystemBaseline } from "@/system/SystemBaselineProvider"
 import type { BaselineV1 } from "@/onboard/baseline"
 import { CommandCenterSliderRow, type CommandCenterSliderTooltip } from "@/components/ui/CommandCenterSliderDeck"
-import PortalNav from "@/components/nav/PortalNav"
+import PageShell from "@/components/nav/PageShell"
 
 /* ═══════════════════════════════════════════════════════════════════
    STRATFIT — Initiate Command Center (God Mode Single-Page HUD)
@@ -831,8 +831,8 @@ export default function InitializeBaselinePage() {
   const needleAngle = form.riskTolerance === "Conservative" ? -45 : form.riskTolerance === "Aggressive" ? 45 : 0
 
   return (
+    <PageShell>
     <div className="bg-hex-grid bg-grain bg-vignette" style={SC.page}>
-      <PortalNav />
 
       {/* ═══ POWER RAIL — TOP BAR ═══ */}
       <header className="glow-cyan" style={SC.powerRail}>
@@ -1198,6 +1198,7 @@ export default function InitializeBaselinePage() {
         }
       `}</style>
     </div>
+    </PageShell>
   )
 }
 
@@ -1226,7 +1227,7 @@ const FONT = "'Inter', system-ui, sans-serif"
 const SC: Record<string, React.CSSProperties> = {
   page: {
     position: "relative",
-    display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden",
+    display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "hidden",
     color: "#E6F1FF", fontFamily: FONT,
     background: "#020617",
   },

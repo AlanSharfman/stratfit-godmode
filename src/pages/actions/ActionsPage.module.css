@@ -1,31 +1,12 @@
 .root {
-  min-height: 100vh;
+  flex: 1;
+  min-height: 0;
   background: #0B1520;
   color: rgba(200, 220, 240, 0.85);
   font-family: "Inter", system-ui, sans-serif;
   display: flex;
   flex-direction: column;
 }
-
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 32px;
-  height: 52px;
-  background: linear-gradient(180deg, rgba(10, 18, 32, 0.95) 0%, rgba(6, 12, 24, 0.98) 100%);
-  border-bottom: 1px solid rgba(34, 211, 238, 0.12);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
-  flex-shrink: 0;
-  z-index: 20;
-}
-
-.logo { font-size: 11px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(34, 211, 238, 0.8); }
-.nav { display: flex; gap: 0; align-items: center; }
-.navItem { padding: 10px 16px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.4); text-decoration: none; transition: color 0.2s; }
-.navItem:hover { color: rgba(255,255,255,0.7); }
-.navItemActive { composes: navItem; color: #22d3ee; background: rgba(34,211,238,0.08); border-radius: 4px; }
-.navDivider { width: 1px; height: 16px; background: rgba(255,255,255,0.08); }
 
 .body {
   display: flex;

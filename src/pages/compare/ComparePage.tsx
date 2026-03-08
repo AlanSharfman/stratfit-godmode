@@ -14,10 +14,10 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import React, { useCallback, useEffect, useMemo, useState } from "react"
-import { Link, NavLink, useNavigate, useSearchParams } from "react-router-dom"
+import { Link, useNavigate, useSearchParams } from "react-router-dom"
 
 import { ROUTES } from "@/routes/routeContract"
-import { LIVE_NAV } from "@/nav/liveNav"
+import PageShell from "@/components/nav/PageShell"
 import { useCanonicalBaseline } from "@/state/useCanonicalBaseline"
 import { usePhase1ScenarioStore, type SimulationKpis } from "@/state/phase1ScenarioStore"
 import { useCompareStore, type ComparePair, type CompareViewMode } from "@/store/compareStore"
@@ -371,48 +371,20 @@ export default function ComparePage() {
     )
   }
 
+  const swapSlot = !isGhost ? (
+    is3Mode
+      ? <button type="button" onClick={rotate} style={S.swapBtn} title="Rotate A→B→C→A">↻ Rotate</button>
+      : <button type="button" onClick={swap}   style={S.swapBtn} title="Swap A ↔ B">⇄ Swap</button>
+  ) : null
+
   return (
+    <PageShell rightSlot={swapSlot}>
     <div style={S.page}>
 
       {/* Simulation engine overlays */}
       <SimulationStatusWidget />
       <SimulationRunOverlay />
       <SimulationPipelineWidget />
-
-      {/* ═══ HEADER ═══ */}
-      <header style={S.header}>
-        {/* ── Left: Logo ── */}
-        <div style={S.headerLeft}>
-          <Link to={ROUTES.POSITION} style={S.logoLink}>
-            <span style={S.logoText}>STRATFIT</span>
-            <span style={S.logoSub}>COMPARE</span>
-          </Link>
-        </div>
-
-        {/* ── Center: Nav (genuinely centered via grid) ── */}
-        <nav style={S.headerNav}>
-          {LIVE_NAV.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              style={({ isActive }) => isActive ? S.navItemActive : S.navItem}
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-
-        {/* ── Right: Actions ── */}
-        <div style={S.headerRight}>
-          {!isGhost && (
-            is3Mode ? (
-              <button type="button" onClick={rotate} style={S.swapBtn} title="Rotate A→B→C→A">↻ Rotate</button>
-            ) : (
-              <button type="button" onClick={swap} style={S.swapBtn} title="Swap A ↔ B">⇄ Swap</button>
-            )
-          )}
-        </div>
-      </header>
 
       {/* ═══ CONTROL BAR ═══ */}
       <div style={S.controlBar}>
@@ -684,6 +656,7 @@ export default function ComparePage() {
         onApplyScenario={handleApplyRecommended}
       />
     </div>
+    </PageShell>
   )
 }
 
@@ -701,7 +674,8 @@ const S: Record<string, React.CSSProperties> = {
   page: {
     position: "relative",
     width: "100%",
-    height: "100vh",
+    flex: 1,
+    minHeight: 0,
     overflow: "hidden",
     background: `linear-gradient(180deg, ${VOID} 0%, #0a1628 100%)`,
     fontFamily: FONT,
@@ -741,85 +715,6 @@ const S: Record<string, React.CSSProperties> = {
     fontSize: 14,
     textDecoration: "none",
     cursor: "pointer",
-  },
-
-  /* ── Header ── */
-  header: {
-    display: "grid",
-    gridTemplateColumns: "1fr auto 1fr",
-    alignItems: "center",
-    minHeight: 52,
-    padding: "0 24px",
-    background: "rgba(0,0,0,0.6)",
-    backdropFilter: "blur(12px)",
-    borderBottom: GLASS_BORDER,
-    flexShrink: 0,
-    zIndex: 10,
-  },
-
-  headerLeft: {
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-    justifyContent: "flex-start",
-  },
-
-  logoLink: {
-    display: "flex",
-    alignItems: "baseline",
-    gap: 8,
-    textDecoration: "none",
-  },
-
-  logoText: {
-    fontSize: 15,
-    fontWeight: 900,
-    letterSpacing: "2.5px",
-    color: "#fff",
-  },
-
-  logoSub: {
-    fontSize: 10,
-    fontWeight: 700,
-    letterSpacing: "0.2em",
-    color: CYAN,
-  },
-
-  headerNav: {
-    display: "flex",
-    alignItems: "center",
-    gap: 6,
-  },
-
-  navItem: {
-    fontSize: 13,
-    fontWeight: 500,
-    letterSpacing: "0.04em",
-    textTransform: "uppercase" as const,
-    textDecoration: "none",
-    color: "rgba(255,255,255,0.5)",
-    padding: "8px 14px",
-    borderRadius: 6,
-    transition: "color 0.2s, background 0.2s",
-  },
-
-  navItemActive: {
-    fontSize: 13,
-    fontWeight: 700,
-    letterSpacing: "0.04em",
-    textTransform: "uppercase" as const,
-    textDecoration: "none",
-    color: CYAN,
-    padding: "8px 14px",
-    borderRadius: 6,
-    background: "rgba(34,211,238,0.08)",
-  },
-
-  headerRight: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "flex-end",
-    gap: 8,
   },
 
   swapBtn: {

@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { useNavigate, Link, NavLink } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
+import PageShell from "@/components/nav/PageShell"
 import { useShallow } from "zustand/react/shallow"
 
 import { ROUTES } from "@/routes/routeContract"
-import { LIVE_NAV } from "@/nav/liveNav"
 
 import TerrainStage from "@/terrain/TerrainStage"
 import TerrainTuningPanel from "@/terrain/TerrainTuningPanel"
@@ -443,6 +443,7 @@ export default function PositionPage() {
   }
 
   return (
+    <PageShell>
     <div className={styles.page}>
 
       {/* Atmospheric depth veil — pushes JPEG mountain visually behind live terrain */}
@@ -455,17 +456,6 @@ export default function PositionPage() {
             LEFT RAIL — Intelligence Panel (KPIs + Briefing)
             ══════════════════════════════════════════════════ */}
         <div className={styles.leftCol}>
-          {/* Logo lockup */}
-          <Link to={ROUTES.POSITION} className={styles.logoLockup}>
-            <img src="/stratfit-logo.png" alt="STRATFIT" className={styles.logoImg} />
-            <div>
-              <div className={styles.logoName}>STRATFIT</div>
-              <div className={styles.logoSub}>SCENARIO INTELLIGENCE</div>
-            </div>
-          </Link>
-
-          {/* Intelligence Executive Summary removed per user request */}
-
           <div className={styles.kpiRailDock} aria-label="KPI Health Rail">
             <KPIHealthRail kpis={liveKpis} focusedKpi={focusedKpi} revealedKpis={revealedKpis} />
           </div>
@@ -475,19 +465,6 @@ export default function PositionPage() {
             CENTER — Terrain Canvas (dominant, immersive)
             ══════════════════════════════════════════════════ */}
         <div className={styles.centreCol}>
-          {/* Top nav row */}
-          <nav className={styles.pageNav} aria-label="Primary navigation">
-            {LIVE_NAV.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={({ isActive }) => `${styles.pageNavItem}${isActive ? " " + styles.pageNavActive : ""}`}
-              >
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
-
           {/* Terrain canvas — fills available space */}
           <div ref={viewportRef} className={styles.terrainViewport} aria-label="Position terrain" style={{ position: "relative" }} onMouseLeave={handleViewportMouseLeave}>
             <TerrainStage
@@ -632,5 +609,6 @@ export default function PositionPage() {
       <SystemProbabilityNotice />
 
     </div>
+    </PageShell>
   )
 }

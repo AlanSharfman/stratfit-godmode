@@ -1,8 +1,7 @@
 import React, { useMemo, useState } from "react"
-import { NavLink, Link } from "react-router-dom"
-
+import { Link } from "react-router-dom"
 import { ROUTES } from "@/routes/routeContract"
-import { LIVE_NAV } from "@/nav/liveNav"
+import PageShell from "@/components/nav/PageShell"
 import { useSystemBaseline } from "@/system/SystemBaselineProvider"
 import { buildPositionViewModel, type PositionKpis } from "@/pages/position/overlays/positionState"
 import TerrainStage from "@/terrain/TerrainStage"
@@ -73,32 +72,22 @@ export default function ActionsPage() {
     speak(recommendations[0].kpi)
   }
 
+  const narrateSlot = (
+    <button
+      onClick={handleNarrate}
+      style={{
+        background: "none", border: "1px solid rgba(33,212,253,0.20)", borderRadius: 6,
+        padding: "6px 14px", color: "#21D4FD", fontSize: 11, fontWeight: 600,
+        letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer",
+      }}
+    >
+      {isPlaying ? "■ Stop" : "🔊 Narrate"}
+    </button>
+  )
+
   return (
+    <PageShell rightSlot={narrateSlot}>
     <div className={styles.root}>
-      <header className={styles.header}>
-        <span className={styles.logo}>STRATFIT</span>
-        <nav className={styles.nav}>
-          {LIVE_NAV.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) => isActive ? styles.navItemActive : styles.navItem}
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-        <button
-          onClick={handleNarrate}
-          style={{
-            background: "none", border: "1px solid rgba(34,211,238,0.2)", borderRadius: 6,
-            padding: "6px 14px", color: "#22d3ee", fontSize: 11, fontWeight: 600,
-            letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer",
-          }}
-        >
-          {isPlaying ? "■ Stop" : "🔊 Narrate"}
-        </button>
-      </header>
 
       <div className={styles.body}>
         {/* Left: Ranked Actions */}
@@ -247,5 +236,6 @@ export default function ActionsPage() {
         </div>
       </div>
     </div>
+    </PageShell>
   )
 }
