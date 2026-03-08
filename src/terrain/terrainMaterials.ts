@@ -17,11 +17,11 @@ interface AltitudePalette {
 }
 
 const ALTITUDE_DEFAULT: AltitudePalette = {
-  valley:    [0.110, 0.320, 0.480],   // #1C5279  vivid deep azure
-  lowSlope:  [0.155, 0.500, 0.700],   // #2780B3  vivid mid azure
-  rock:      [0.200, 0.640, 0.860],   // #33A3DB  vivid azure slope
-  highRidge: [0.270, 0.770, 0.960],   // #45C4F5  vivid bright ridge
-  peak:      [0.450, 0.870, 1.000],   // #73DEFF  luminous ice peak
+  valley:    [0.042, 0.120, 0.230],   // deep navy — dark floor creates depth contrast
+  lowSlope:  [0.088, 0.270, 0.460],   // dark mid-blue — clear separation from valley
+  rock:      [0.155, 0.460, 0.700],   // mid azure — mid-tone slope
+  highRidge: [0.240, 0.680, 0.920],   // bright ridge blue — distinct from mid-slope
+  peak:      [0.420, 0.860, 1.000],   // luminous ice peak
 }
 
 const ALTITUDE_GREEN: AltitudePalette = {
@@ -72,7 +72,7 @@ vec3 _rockFace = _altCol * 1.15 + vec3(0.020, 0.020, 0.030);
 diffuseColor.rgb = mix(diffuseColor.rgb, _rockFace, _slopeF * 0.58);
 
 float _ridgeMask = _hNorm * (1.0 - _slopeF) * smoothstep(0.30, 0.65, _hNorm);
-diffuseColor.rgb += vec3(0.035, 0.110, 0.180) * _ridgeMask * 2.2;
+diffuseColor.rgb += vec3(0.018, 0.060, 0.105) * _ridgeMask * 1.5;
 
 float _snowMask = smoothstep(0.72, 0.92, _hNorm) * (1.0 - _slopeF);
 diffuseColor.rgb = mix(diffuseColor.rgb, _peak, _snowMask * 0.42);
@@ -124,8 +124,8 @@ diffuseColor.rgb = mix(diffuseColor.rgb, _atmHaze, _atmFactor * 0.18);
 // Edge proximity fade — only the outermost 15% of the mesh dissolves.
 // Pushed further out than before so the visible terrain body stays bright.
 // Terrain half-extents in world space: X ±630 (210*3), Z ±351 (135*2.6).
-float _eX = smoothstep(0.82, 0.99, abs(vWorldPos.x) / 630.0);
-float _eZ = smoothstep(0.78, 0.99, abs(vWorldPos.z) / 351.0);
+float _eX = smoothstep(0.88, 0.99, abs(vWorldPos.x) / 630.0);
+float _eZ = smoothstep(0.86, 0.99, abs(vWorldPos.z) / 351.0);
 float _edgeBlend = max(_eX, _eZ);
 vec3 _bgFade = vec3(0.024, 0.043, 0.086);
 diffuseColor.rgb = mix(diffuseColor.rgb, _bgFade, _edgeBlend);`
@@ -148,12 +148,12 @@ const FRAGMENT_VARYINGS = VERTEX_VARYINGS
 
 export function createTerrainSolidMaterial() {
   const mat = new THREE.MeshStandardMaterial({
-    color: 0x2a9fd8,
-    emissive: new THREE.Color(0x1a6a90),
-    emissiveIntensity: 0.50,
+    color: 0x1c72b8,
+    emissive: new THREE.Color(0x0e3d64),
+    emissiveIntensity: 0.30,
     transparent: false,
     opacity: 1.0,
-    roughness: 0.62,
+    roughness: 0.70,
     metalness: 0.05,
     flatShading: false,
     depthWrite: true,

@@ -71,8 +71,8 @@ export default function TerrainIntelligenceGrid({ heightfield }: Props) {
   const material = useMemo(
     () =>
       new THREE.LineBasicMaterial({
-        color: 0x38bdf8,   // sky-400 — sharper, more luminous than 22d3ee
-        opacity: 0.22,
+        color: 0x38bdf8,
+        opacity: 0.07,
         transparent: true,
         depthWrite: false,
       }),
