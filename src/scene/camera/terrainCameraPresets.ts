@@ -41,7 +41,7 @@ export interface CameraControlsConfig {
  *   • FOV 62° — wider than before to capture foreground terrain.
  */
 export const GOD_VIEW_PRESET: CameraPreset = {
-  pos: [-174, 233, 1060],
+  pos: [0, 55, 165],
   target: [0, 10, 0],
   fov: 62,
 }
