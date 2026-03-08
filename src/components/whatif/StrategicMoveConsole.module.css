@@ -3,10 +3,10 @@
   flex-direction: column;
   gap: 10px;
   padding: 18px 22px;
-  background: rgba(10,25,45,0.8);
-  border: 1px solid rgba(80,220,255,0.4);
+  background: rgba(11,31,54,0.80);
+  border: 1px solid rgba(33,212,253,0.22);
   border-radius: 10px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.35), 0 0 20px rgba(0,180,255,0.08);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.35), 0 0 20px rgba(33,212,253,0.06);
   backdrop-filter: blur(12px);
 }
 
@@ -33,8 +33,8 @@
 .input {
   flex: 1;
   height: 48px;
-  background: rgba(8,18,35,0.95);
-  border: 1px solid rgba(80,220,255,0.25);
+  background: rgba(6,19,38,0.95);
+  border: 1px solid rgba(33,212,253,0.18);
   border-radius: 10px;
   padding: 0 18px;
   color: #E6F1FF;
@@ -47,8 +47,8 @@
 }
 
 .input:focus {
-  border-color: #36e2ff;
-  box-shadow: 0 0 0 1px #36e2ff, 0 0 20px rgba(54,226,255,0.25);
+  border-color: #21D4FD;
+  box-shadow: 0 0 0 1px rgba(33,212,253,0.4), 0 0 20px rgba(33,212,253,0.18);
 }
 
 .input::placeholder {
@@ -59,10 +59,10 @@
 
 .runBtn {
   padding: 14px 28px;
-  background: linear-gradient(90deg, #2ce3ff, #00bcd4);
+  background: linear-gradient(90deg, #21D4FD, #4DEBFF);
   border: none;
   border-radius: 10px;
-  color: #00161e;
+  color: #061326;
   font-size: 16px;
   font-weight: 800;
   letter-spacing: 0.06em;
@@ -70,7 +70,7 @@
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
   white-space: nowrap;
-  box-shadow: 0 0 25px rgba(0,200,255,0.65);
+  box-shadow: 0 0 22px rgba(33,212,253,0.50);
 }
 
 .runBtn:hover:not(:disabled) {

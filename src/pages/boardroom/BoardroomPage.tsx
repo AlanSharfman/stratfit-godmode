@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspens
 import { AnimatePresence } from "framer-motion"
 
 import PageShell from "@/components/nav/PageShell"
-import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore"
+import { usePhase1ScenarioStore, type SimulationResults } from "@/state/phase1ScenarioStore"
+import { computeDeltas, type DeltaMetrics } from "@/engine/compareDeltas"
 const BriefingTheatre = lazy(() => import("@/components/command/BriefingTheatre"))
 import TerrainStage from "@/terrain/TerrainStage"
 import SkyAtmosphere from "@/scene/rigs/SkyAtmosphere"
@@ -94,6 +95,13 @@ export default function BoardroomPage() {
 
   const isScenarioMode = activeScenario !== null
 
+  // ── Always-baseline KPIs (for delta comparison) ──────────────────────────
+  // Separate from liveKpis so both sides of the delta are always available.
+  const baseKpis = useMemo(
+    () => (baseline ? buildPositionViewModel(baseline as any).kpis : null),
+    [baseline],
+  )
+
   const [revealedKpis, setRevealedKpis] = useState<Set<KpiKey>>(new Set())
   const [revealIndex, setRevealIndex] = useState(0)
   const [isRevealing, setIsRevealing] = useState(false)
@@ -131,6 +139,172 @@ export default function BoardroomPage() {
     }
     return { strong, watch, critical }
   }, [liveKpis])
+
+  // ── Boardroom structured payload ─────────────────────────────────────────
+  // Single source of truth for all report sections.
+  // All delta values sourced from canonical simulationResults + computeDeltas.
+  // Falls back gracefully to KPI-derived values when projections are absent.
+  const boardroomPayload = useMemo(() => {
+    if (!liveKpis || !baseKpis) return null
+
+    // ── Build simulation results for each side ──────────────────────────────
+    // Baseline: prefer the "baseline-projection" scenario (has p10/p50/p90).
+    // Fallback: synthesise a minimal SimulationResults from baseKpis.
+    const baselineProjectionScenario = scenarios.find((s) => s.id === "baseline-projection") ?? null
+    const baselineSimResults: SimulationResults | null =
+      baselineProjectionScenario?.simulationResults ?? ((): SimulationResults => ({
+        completedAt:   0,
+        horizonMonths: 24,
+        summary:       "Baseline",
+        kpis: {
+          cash:        baseKpis.cashOnHand,
+          monthlyBurn: baseKpis.burnMonthly,
+          revenue:     baseKpis.revenueMonthly,
+          grossMargin: baseKpis.grossMarginPct / 100,
+          growthRate:  baseKpis.growthRatePct  / 100,
+          churnRate:   baseKpis.churnPct       / 100,
+          headcount:   baseKpis.headcount,
+          arpa:        baseline?.operating?.acv ?? 0,
+          runway:      baseKpis.runwayMonths,
+        },
+        terrain: { seed: 0, multipliers: { cash: 1, burn: 1, growth: 1 } },
+      }))()
+
+    const scenarioSimResults = activeScenario?.simulationResults ?? null
+
+    // ── Delta engine — canonical 6 metrics, projection-sourced ─────────────
+    const deltaMetrics: DeltaMetrics | null = computeDeltas(
+      baselineSimResults,
+      scenarioSimResults ?? baselineSimResults, // compare against itself when no scenario
+    )
+
+    // ── Map DeltaMetrics → DeltaRow[] for the UI table ──────────────────────
+    type DeltaUnit = "currency" | "percent" | "months" | "score"
+    interface DeltaRow {
+      metric:        string
+      baselineValue: number
+      scenarioValue: number
+      absDelta:      number
+      pctDelta:      number | null
+      unit:          DeltaUnit
+      upIsGood:      boolean
+    }
+
+    const majorDeltas: DeltaRow[] = deltaMetrics
+      ? [
+          deltaMetrics.revenueDelta,
+          deltaMetrics.ebitdaDelta,
+          deltaMetrics.cashDelta,
+          deltaMetrics.runwayDelta,
+          deltaMetrics.riskDelta,
+          deltaMetrics.enterpriseValueDelta,
+        ].map((d) => ({
+          metric:        d.label,
+          baselineValue: d.baseline,
+          scenarioValue: d.scenario,
+          absDelta:      d.absDelta,
+          pctDelta:      d.pctDelta,
+          unit:          d.unit as DeltaUnit,
+          upIsGood:      d.upIsGood,
+        }))
+      : []
+
+    // ── Movement signals — projections first, KPI fallback ──────────────────
+    const baseProj  = baselineSimResults?.projections
+    const scenProj  = scenarioSimResults?.projections
+
+    const runwayBaseline = baseProj?.runwayMonths ?? baseKpis.runwayMonths
+    const runwayScenario = scenProj?.runwayMonths ?? liveKpis.runwayMonths
+
+    const evBaseline = baseProj?.enterpriseValueEstimate
+      ?? (baseKpis.arr * Math.max(2, Math.min(30, (baseKpis.growthRatePct / 100) * 40)))
+    const evScenario = scenProj?.enterpriseValueEstimate
+      ?? (liveKpis.arr * Math.max(2, Math.min(30, (liveKpis.growthRatePct / 100) * 40)))
+    const evPct = Math.abs(evBaseline) > 0.0001
+      ? ((evScenario - evBaseline) / Math.abs(evBaseline)) * 100
+      : 0
+
+    // ── Risk movement — health-level categorisation (unchanged) + riskDelta ─
+    const categHlth = (k: PositionKpis) => {
+      const critical: string[] = [], watch: string[] = [], strong: string[] = []
+      for (const key of KPI_KEYS) {
+        const lvl = getHealthLevel(key, k)
+        if (lvl === "strong" || lvl === "healthy") strong.push(key)
+        else if (lvl === "watch") watch.push(key)
+        else critical.push(key)
+      }
+      return { critical, watch, strong }
+    }
+    const baseHealth     = categHlth(baseKpis)
+    const scenarioHealth = categHlth(liveKpis)
+    const newCritical    = scenarioHealth.critical.filter((k) => !baseHealth.critical.includes(k))
+    const resolved       = baseHealth.critical.filter((k) => !scenarioHealth.critical.includes(k))
+
+    // ── Scenario summary — deterministic narrative from delta engine ─────────
+    // Replaces the placeholder "Simulation complete — ..." string.
+    const buildScenarioSummary = (): string | null => {
+      if (!isScenarioMode || !deltaMetrics) return null
+      const parts: string[] = []
+      const { revenueDelta: rev, runwayDelta: rwy, enterpriseValueDelta: ev, riskDelta: risk } = deltaMetrics
+      if (rev.pctDelta != null && Math.abs(rev.pctDelta) > 0.1) {
+        const dir = rev.absDelta >= 0 ? "increases" : "decreases"
+        parts.push(`Revenue ${dir} ${Math.abs(rev.pctDelta).toFixed(1)}% to ${fmtBoardVal(rev.scenario, "currency")} MRR.`)
+      }
+      if (ev.pctDelta != null && Math.abs(ev.pctDelta) > 0.1) {
+        const dir = ev.absDelta >= 0 ? "rises" : "falls"
+        parts.push(`Enterprise value ${dir} ${Math.abs(ev.pctDelta).toFixed(1)}% to ${fmtBoardVal(ev.scenario, "currency")}.`)
+      }
+      if (Math.abs(rwy.absDelta) >= 1) {
+        const dir = rwy.absDelta >= 0 ? "extends" : "compresses"
+        parts.push(`Runway ${dir} by ${Math.abs(Math.round(rwy.absDelta))}mo to ${Math.round(rwy.scenario)}mo.`)
+      }
+      if (Math.abs(risk.absDelta) >= 1) {
+        const dir = risk.absDelta >= 0 ? "improves" : "deteriorates"
+        parts.push(`Risk score ${dir} by ${Math.abs(risk.absDelta).toFixed(0)} points.`)
+      }
+      return parts.join(" ") || "Scenario simulation complete."
+    }
+
+    // ── Data completeness ────────────────────────────────────────────────────
+    const hasProjections = !!scenProj
+    const populated = majorDeltas.filter((d) => d.scenarioValue !== 0).length
+    const completeness = Math.round((populated / Math.max(majorDeltas.length, 1)) * 100)
+
+    return {
+      generatedAt:      Date.now(),
+      isScenarioMode,
+      baselineSummary:  getExecutiveSummary(baseKpis).narrative,
+      scenarioDecision: activeScenario?.decision ?? null,
+      scenarioSummary:  buildScenarioSummary(),
+      /** Canonical 6-metric deltas from the delta engine (projection-sourced). */
+      majorDeltas,
+      /** Raw DeltaMetrics object exposed for AI commentary layer. */
+      deltaMetrics,
+      riskMovement: {
+        baselineCritical: baseHealth.critical,
+        scenarioCritical: scenarioHealth.critical,
+        newCritical,
+        resolved,
+        /** Projection-sourced risk score delta (positive = improvement). */
+        riskScoreDelta: deltaMetrics?.riskDelta.absDelta ?? null,
+      },
+      runwayMovement: {
+        baseline: runwayBaseline,
+        scenario: runwayScenario,
+        delta:    runwayScenario - runwayBaseline,
+      },
+      enterpriseValueMovement: {
+        baseline: evBaseline,
+        scenario: evScenario,
+        delta:    evScenario - evBaseline,
+        pct:      evPct,
+      },
+      hasProjections,
+      dataCompleteness: `${completeness}%`,
+      /** p10/p50/p90 bands for probability cards — null when no projections. */
+      probabilityBands: scenProj?.probabilityBands ?? null,
+    }
+  }, [liveKpis, baseKpis, isScenarioMode, activeScenario, scenarios, baseline])
 
   const outlook = useMemo(() => {
     if (!liveKpis) return null
@@ -285,6 +459,98 @@ export default function BoardroomPage() {
               ))}
             </Section>
 
+            {/* Scenario Under Review — only when a scenario is active */}
+            {boardroomPayload?.isScenarioMode && boardroomPayload.scenarioDecision && (
+              <Section title="Scenario Under Review">
+                <div style={{ padding: "10px 14px", borderRadius: 6, background: "rgba(110,91,255,0.05)", border: "1px solid rgba(110,91,255,0.2)", marginBottom: 12 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#EAF4FF", marginBottom: 4 }}>
+                    {boardroomPayload.scenarioDecision}
+                  </div>
+                  {boardroomPayload.scenarioSummary && (
+                    <div style={{ fontSize: 12, color: "rgba(157,183,209,0.75)", lineHeight: 1.6 }}>
+                      {boardroomPayload.scenarioSummary}
+                    </div>
+                  )}
+                </div>
+                <Narrative>{boardroomPayload.baselineSummary}</Narrative>
+              </Section>
+            )}
+
+            {/* Baseline vs Scenario Delta Table — only when scenario is active */}
+            {boardroomPayload?.isScenarioMode && boardroomPayload.majorDeltas.length > 0 && (
+              <Section title="Baseline vs Scenario — Key Deltas">
+                {/* Headline movement signals */}
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
+                  {(() => {
+                    const runway = boardroomPayload.runwayMovement
+                    const ev = boardroomPayload.enterpriseValueMovement
+                    const risk = boardroomPayload.riskMovement
+                    const signals: { label: string; value: string; positive: boolean }[] = []
+                    if (runway) {
+                      const sign = runway.delta >= 0 ? "+" : ""
+                      signals.push({ label: "Runway", value: `${sign}${Math.round(runway.delta)}mo`, positive: runway.delta >= 0 })
+                    }
+                    if (ev && ev.pct !== 0) {
+                      const sign = ev.pct >= 0 ? "+" : ""
+                      signals.push({ label: "Enterprise Value", value: `${sign}${ev.pct.toFixed(1)}%`, positive: ev.pct >= 0 })
+                    }
+                    if (risk) {
+                      if (risk.newCritical.length > 0)
+                        signals.push({ label: "New Risk Zones", value: `+${risk.newCritical.length}`, positive: false })
+                      if (risk.resolved.length > 0)
+                        signals.push({ label: "Resolved Risks", value: `${risk.resolved.length} resolved`, positive: true })
+                    }
+                    return signals.map((s) => (
+                      <span key={s.label} style={{
+                        padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700,
+                        background: s.positive ? "rgba(183,255,60,0.07)" : "rgba(110,91,255,0.07)",
+                        border: `1px solid ${s.positive ? "rgba(183,255,60,0.22)" : "rgba(110,91,255,0.22)"}`,
+                        color: s.positive ? "#B7FF3C" : "#6E5BFF",
+                      }}>
+                        {s.label}: {s.value}
+                      </span>
+                    ))
+                  })()}
+                </div>
+                {/* Delta table */}
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid rgba(34,211,238,0.1)" }}>
+                      {["Metric", "Baseline", "Scenario", "Δ Abs", "Δ %"].map((h, i) => (
+                        <th key={h} style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(34,211,238,0.45)", padding: "5px 8px", textAlign: i === 0 ? "left" : "right" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {boardroomPayload.majorDeltas.map((d) => {
+                      const isPos = d.upIsGood ? d.absDelta > 0.001 : d.absDelta < -0.001
+                      const isNeg = d.upIsGood ? d.absDelta < -0.001 : d.absDelta > 0.001
+                      const deltaColor = isPos ? "#B7FF3C" : isNeg ? "#6E5BFF" : "rgba(148,180,214,0.4)"
+                      const sign = d.absDelta > 0 ? "+" : ""
+                      const fmtV = (v: number) => fmtBoardVal(v, d.unit)
+                      const fmtD = () => {
+                        if (d.unit === "percent") return `${sign}${d.absDelta.toFixed(1)}pp`
+                        if (d.unit === "months")  return `${sign}${Math.round(d.absDelta)}mo`
+                        if (d.unit === "score")   return `${sign}${d.absDelta.toFixed(0)}pts`
+                        return `${sign}${fmtV(d.absDelta)}`
+                      }
+                      return (
+                        <tr key={d.metric} style={{ borderBottom: "1px solid rgba(255,255,255,0.025)" }}>
+                          <td style={{ fontSize: 12, color: "rgba(226,240,255,0.7)", padding: "6px 8px" }}>{d.metric}</td>
+                          <td style={{ fontSize: 12, color: "rgba(148,180,214,0.55)", padding: "6px 8px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{fmtV(d.baselineValue)}</td>
+                          <td style={{ fontSize: 12, color: "rgba(226,240,255,0.85)", padding: "6px 8px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{fmtV(d.scenarioValue)}</td>
+                          <td style={{ fontSize: 12, fontWeight: 700, color: deltaColor, padding: "6px 8px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{fmtD()}</td>
+                          <td style={{ fontSize: 12, fontWeight: 700, color: deltaColor, padding: "6px 8px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
+                            {d.pctDelta != null ? `${d.pctDelta > 0 ? "+" : ""}${d.pctDelta.toFixed(1)}%` : "—"}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </Section>
+            )}
+
             {/* Risk Zones */}
             <Section title="Risk Assessment">
               {healthCategories.critical.map((k) => <RiskBadge key={k} label={KPI_ZONE_MAP[k].label} level="critical" />)}
@@ -331,9 +597,25 @@ export default function BoardroomPage() {
                 metrics={[
                   { label: "Survival Probability", value: `${outlook?.survivalProbability ?? 0}%`, probability: outlook?.survivalProbability ?? 0 },
                   { label: "Runway Risk", value: outlook?.cliff ? `Month ${outlook.cliff.month}` : "Low" },
-                  // TODO: EBITDA Positive Probability — requires Monte Carlo engine integration
-                  // TODO: Revenue Target Probability — requires Monte Carlo engine integration
-                  // TODO: Enterprise Value Target Probability — requires Monte Carlo engine integration
+                  // Revenue P90 upside at month 12 (from probability bands when projections exist)
+                  ...(boardroomPayload?.probabilityBands ? (() => {
+                    const pb = boardroomPayload.probabilityBands
+                    const rev0   = pb.p50.revenue[0]  ?? 0
+                    const rev12P50 = pb.p50.revenue[12] ?? rev0
+                    const rev12P90 = pb.p90.revenue[12] ?? rev0
+                    const rev12P10 = pb.p10.revenue[12] ?? rev0
+                    const p50Chg = rev0 > 0 ? ((rev12P50 - rev0) / rev0) * 100 : 0
+                    const p90Chg = rev0 > 0 ? ((rev12P90 - rev0) / rev0) * 100 : 0
+                    const p10Chg = rev0 > 0 ? ((rev12P10 - rev0) / rev0) * 100 : 0
+                    // EBITDA positive months in p50
+                    const ebitdaPosMo = pb.p50.ebitda.filter(v => v > 0).length
+                    return [
+                      { label: "Revenue Growth (P50/12mo)", value: `${p50Chg >= 0 ? "+" : ""}${p50Chg.toFixed(1)}%`, probability: Math.max(0, Math.min(100, 50 + p50Chg)) },
+                      { label: "Revenue Upside (P90/12mo)", value: `${p90Chg >= 0 ? "+" : ""}${p90Chg.toFixed(1)}%` },
+                      { label: "Revenue Floor (P10/12mo)",  value: `${p10Chg >= 0 ? "+" : ""}${p10Chg.toFixed(1)}%` },
+                      { label: "EBITDA Positive Months (P50)", value: `${ebitdaPosMo}/${pb.p50.ebitda.length}mo` },
+                    ]
+                  })() : []),
                 ]}
                 modelConfidence={healthCategories.critical.length === 0 ? "High" : healthCategories.critical.length <= 2 ? "Medium" : "Low"}
                 dataCompleteness={liveKpis ? "Complete" : "Partial"}
@@ -342,7 +624,11 @@ export default function BoardroomPage() {
 
             {/* Confidence */}
             <Section title="Confidence">
-              <Narrative>This assessment is based on baseline data provided during initiation. Confidence increases with richer input data and simulation calibration.</Narrative>
+              <Narrative>
+                {boardroomPayload?.isScenarioMode
+                  ? `This board pack reflects the active scenario: "${boardroomPayload.scenarioDecision}". Data completeness: ${boardroomPayload.dataCompleteness}. Deltas are derived from simulation results against the canonical baseline. Confidence increases with additional scenario iterations and Monte Carlo calibration.`
+                  : "This assessment reflects baseline data entered during initiation. No active scenario is applied. Run a What If scenario to generate comparative deltas and scenario-specific recommendations."}
+              </Narrative>
             </Section>
 
             <div style={{ marginBottom: 16 }}>
@@ -365,6 +651,20 @@ export default function BoardroomPage() {
       </div>
     </PageShell>
   )
+}
+
+/* ── Value formatter for delta table ── */
+
+function fmtBoardVal(v: number, unit: "currency" | "percent" | "months" | "count" | "score"): string {
+  if (unit === "currency") {
+    if (Math.abs(v) >= 1e6) return `$${(v / 1e6).toFixed(1)}M`
+    if (Math.abs(v) >= 1e3) return `$${(v / 1e3).toFixed(0)}K`
+    return `$${v.toFixed(0)}`
+  }
+  if (unit === "percent") return `${v.toFixed(1)}%`
+  if (unit === "months")  return `${Math.round(v)}mo`
+  if (unit === "score")   return v.toFixed(0)
+  return String(Math.round(v))
 }
 
 /* ── Tiny helper components ── */

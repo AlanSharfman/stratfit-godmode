@@ -4,14 +4,24 @@
    Center:   3D terrain viewport (~60%)
    Action:   3-column (Interpretation | Console | AI Panel)
    Bottom:   Vertical Impact Chain
+
+   Colour system: locked STRATFIT palette only
+     soft white   #EAF4FF
+     muted white  #9DB7D1
+     cyan accent  #21D4FD
+     purple       #6E5BFF
+     charcoal     #0A101A
+     panel navy   #0B1F36
    ═══════════════════════════════════════════════ */
 
 .root {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  color: #E6F1FF;
+  /* auto-scroll allows the 2-column action section to expand beyond viewport */
+  overflow-y: auto;
+  overflow-x: hidden;
+  color: #EAF4FF;
   height: 100%;
 }
 
@@ -19,23 +29,26 @@
 
 .pageHeader {
   flex-shrink: 0;
-  padding: 16px 24px 10px;
-  border-bottom: 1px solid rgba(34,211,238,0.04);
+  padding: 14px 24px 10px;
+  border-bottom: 1px solid rgba(33,212,253,0.06);
+  background: linear-gradient(180deg, rgba(8,27,51,0.55) 0%, transparent 100%);
 }
 
 .pageTitle {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
-  color: #E6F1FF;
-  letter-spacing: 0.04em;
-  margin: 0 0 2px;
+  color: #EAF4FF;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0 0 3px;
 }
 
 .pageSubtitle {
   font-size: 11px;
-  color: rgba(200,220,240,0.35);
+  color: rgba(157,183,209,0.5);
   line-height: 1.5;
   margin: 0;
+  letter-spacing: 0.01em;
 }
 
 /* ═══ TERRAIN VIEWPORT ═══ */
@@ -44,8 +57,10 @@
   flex: 1 1 60%;
   min-height: 280px;
   position: relative;
-  background: #0A1220;
-  border-bottom: 1px solid rgba(34,211,238,0.06);
+  /* Canvas is transparent; this is the visible background beneath it.
+     Must stay dark navy so fog and atmosphere read correctly. */
+  background: #0A101A;
+  border-bottom: 1px solid rgba(33,212,253,0.06);
 }
 
 .terrainLabel {
@@ -59,11 +74,11 @@
   text-transform: uppercase;
   padding: 5px 12px;
   border-radius: 6px;
-  background: rgba(12,20,34,0.85);
+  background: rgba(6,19,38,0.88);
   backdrop-filter: blur(8px);
   pointer-events: none;
-  color: #22D3EE;
-  border: 1px solid rgba(34,211,238,0.2);
+  color: #21D4FD;
+  border: 1px solid rgba(33,212,253,0.2);
 }
 
 /* ═══ Simulation Cinematic Flash ═══ */
@@ -75,7 +90,7 @@
   pointer-events: none;
   z-index: 5;
   opacity: 0;
-  background: radial-gradient(ellipse at center, rgba(44,227,255,0.12) 0%, transparent 70%);
+  background: radial-gradient(ellipse at center, rgba(33,212,253,0.10) 0%, transparent 70%);
 }
 
 .terrainSection.simActive::after {
@@ -89,39 +104,19 @@
   100% { opacity: 0; }
 }
 
-/* ═══ ACTION SECTION — 3-column grid ═══ */
+/* ═══ ACTION SECTION ═══
+   Layout is now Tailwind:  grid grid-cols-2 gap-8 px-5 py-4
+   Left column uses .leftColumn below for stacking controls.
+   Right column uses ScenarioOutputPanel (Tailwind card).
+   ═══════════════════════════════════════════════════════ */
 
-.actionSection {
-  display: grid;
-  grid-template-columns: 1fr 1.2fr 340px;
+/* Left column: stacked controls */
+.leftColumn {
+  display: flex;
+  flex-direction: column;
   gap: 12px;
-  padding: 12px 20px;
-  flex-shrink: 0;
-  max-height: 32vh;
-  overflow: auto;
-  border-bottom: 1px solid rgba(34,211,238,0.06);
-}
-
-.interpretationColumn {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
   min-width: 0;
   overflow: visible;
-}
-
-.consoleColumn {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-  overflow: visible;
-}
-
-.aiColumn {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
 }
 
 /* ═══ Interpretation Empty State ═══ */
@@ -130,10 +125,10 @@
   display: flex;
   flex-direction: column;
   padding: 18px 22px;
-  background: rgba(8,20,38,0.8);
-  border: 1px solid rgba(70,220,255,0.25);
+  background: rgba(11,31,54,0.75);
+  border: 1px solid rgba(33,212,253,0.14);
   border-radius: 12px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.35), 0 0 12px rgba(0,180,255,0.05);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.35);
   backdrop-filter: blur(12px);
   min-height: 120px;
 }
@@ -143,22 +138,20 @@
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(34,211,238,0.5);
+  color: rgba(33,212,253,0.5);
   margin-bottom: 4px;
 }
 
 .interpretationEmptySubtitle {
   font-size: 10px;
-  color: rgba(200,220,240,0.25);
+  color: rgba(157,183,209,0.35);
   margin-bottom: 12px;
 }
 
-.interpretationEmptyText {
-  font-size: 12px;
-  color: rgba(200,220,240,0.2);
-  text-align: center;
-  padding: 16px 12px;
-  line-height: 1.6;
+/* Footer disclaimer strip */
+.footerDisclaimer {
+  flex-shrink: 0;
+  padding: 8px 20px 4px;
 }
 
 /* ═══ Narrative Bar ═══ */
@@ -168,8 +161,8 @@
   align-items: center;
   gap: 10px;
   padding: 10px 16px;
-  background: rgba(8,18,35,0.85);
-  border: 1px solid rgba(54,226,255,0.1);
+  background: rgba(8,27,51,0.85);
+  border: 1px solid rgba(33,212,253,0.10);
   border-radius: 8px;
   backdrop-filter: blur(8px);
   animation: narrativeFadeIn 0.3s ease-out;
@@ -177,13 +170,13 @@
 
 @keyframes narrativeFadeIn {
   from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .narrativeText {
   flex: 1;
   font-size: 12px;
-  color: rgba(200,220,240,0.55);
+  color: rgba(157,183,209,0.65);
   line-height: 1.5;
 }
 
@@ -192,15 +185,15 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #2ce3ff;
+  background: #21D4FD;
   animation: aiPulse 1.2s ease-in-out infinite;
   flex-shrink: 0;
-  box-shadow: 0 0 8px rgba(44,227,255,0.5);
+  box-shadow: 0 0 8px rgba(33,212,253,0.5);
 }
 
 @keyframes aiPulse {
-  0%, 100% { opacity: 0.3; transform: scale(0.8); box-shadow: 0 0 4px rgba(44,227,255,0.3); }
-  50% { opacity: 1; transform: scale(1.2); box-shadow: 0 0 14px rgba(44,227,255,0.7); }
+  0%, 100% { opacity: 0.3; transform: scale(0.8);  box-shadow: 0 0 4px rgba(33,212,253,0.3); }
+  50%       { opacity: 1;   transform: scale(1.2);  box-shadow: 0 0 14px rgba(33,212,253,0.7); }
 }
 
 /* ═══ BOTTOM — Vertical Impact Chain ═══ */
@@ -208,8 +201,8 @@
 .impactSection {
   flex-shrink: 0;
   padding: 14px 24px 10px;
-  background: rgba(12,20,34,0.85);
-  border-top: 1px solid rgba(34,211,238,0.06);
+  background: rgba(6,19,38,0.90);
+  border-top: 1px solid rgba(33,212,253,0.06);
   animation: chainFadeIn 0.3s ease-out;
   max-height: 22vh;
   overflow: auto;
@@ -217,7 +210,7 @@
 
 @keyframes chainFadeIn {
   from { opacity: 0; }
-  to { opacity: 1; }
+  to   { opacity: 1; }
 }
 
 .impactHeader {
@@ -232,15 +225,15 @@
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(34,211,238,0.45);
+  color: rgba(33,212,253,0.45);
 }
 
 .impactToggle {
   background: none;
-  border: 1px solid rgba(34,211,238,0.15);
+  border: 1px solid rgba(33,212,253,0.15);
   border-radius: 6px;
   padding: 3px 10px;
-  color: rgba(34,211,238,0.5);
+  color: rgba(33,212,253,0.5);
   font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -250,8 +243,8 @@
 }
 
 .impactToggle:hover {
-  border-color: rgba(34,211,238,0.3);
-  color: #22D3EE;
+  border-color: rgba(33,212,253,0.30);
+  color: #21D4FD;
 }
 
 /* Vertical chain layout */
@@ -271,10 +264,10 @@
   width: 100%;
   max-width: 420px;
   padding: 10px 18px;
-  background: rgba(8,20,40,0.75);
-  border: 1px solid rgba(54,226,255,0.2);
+  background: rgba(11,31,54,0.80);
+  border: 1px solid rgba(33,212,253,0.16);
   border-radius: 10px;
-  box-shadow: 0 0 12px rgba(0,180,255,0.08);
+  box-shadow: 0 0 12px rgba(33,212,253,0.06);
   backdrop-filter: blur(8px);
   animation: nodeGlowIn 0.5s ease-out both;
 }
@@ -286,8 +279,8 @@
 .chainNode:nth-child(9) { animation-delay: 0.4s; }
 
 @keyframes nodeGlowIn {
-  0% { opacity: 0; transform: translateY(8px); box-shadow: 0 0 0 rgba(0,180,255,0); }
-  100% { opacity: 1; transform: translateY(0); box-shadow: 0 0 12px rgba(0,180,255,0.08); }
+  0%   { opacity: 0; transform: translateY(8px);  box-shadow: 0 0 0 rgba(33,212,253,0); }
+  100% { opacity: 1; transform: translateY(0);    box-shadow: 0 0 12px rgba(33,212,253,0.06); }
 }
 
 .chainNodeType {
@@ -295,13 +288,13 @@
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(54,226,255,0.5);
+  color: rgba(33,212,253,0.5);
 }
 
 .chainNodeLabel {
   font-size: 13px;
   font-weight: 600;
-  color: rgba(200,220,240,0.9);
+  color: rgba(234,244,255,0.9);
   text-align: center;
   line-height: 1.3;
 }
@@ -318,14 +311,14 @@
   align-items: center;
   justify-content: center;
   height: 28px;
-  color: rgba(54,226,255,0.35);
+  color: rgba(33,212,253,0.35);
   font-size: 16px;
   animation: arrowPulse 2s ease-in-out infinite;
 }
 
 @keyframes arrowPulse {
   0%, 100% { opacity: 0.3; }
-  50% { opacity: 0.7; }
+  50%       { opacity: 0.7; }
 }
 
 /* ═══ Disclaimer ═══ */
@@ -333,7 +326,7 @@
 .disclaimer {
   padding: 4px 20px 6px;
   font-size: 9px;
-  color: rgba(148,163,184,0.3);
+  color: rgba(157,183,209,0.30);
   text-align: center;
   letter-spacing: 0.04em;
   flex-shrink: 0;
@@ -347,8 +340,8 @@
   left: 0;
   right: 0;
   height: 320px;
-  background: rgba(12,20,34,0.97);
-  border-top: 1px solid rgba(34,211,238,0.1);
+  background: rgba(6,19,38,0.97);
+  border-top: 1px solid rgba(33,212,253,0.10);
   z-index: 100;
   display: flex;
   flex-direction: column;
@@ -365,27 +358,29 @@
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(34,211,238,0.5);
-  border-bottom: 1px solid rgba(34,211,238,0.06);
+  color: rgba(33,212,253,0.5);
+  border-bottom: 1px solid rgba(33,212,253,0.06);
   flex-shrink: 0;
 }
 
+/* Clear button uses violet — red/orange/pink are banned */
 .debugClearBtn {
   background: none;
-  border: 1px solid rgba(248,113,113,0.15);
+  border: 1px solid rgba(110,91,255,0.20);
   border-radius: 4px;
   padding: 3px 10px;
   font-size: 9px;
   font-weight: 600;
-  color: rgba(248,113,113,0.5);
+  color: rgba(110,91,255,0.55);
   cursor: pointer;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+  transition: color 0.15s, border-color 0.15s;
 }
 
 .debugClearBtn:hover {
   color: #6E5BFF;
-  border-color: rgba(110,91,255,0.3);
+  border-color: rgba(110,91,255,0.40);
 }
 
 .debugScroll {
@@ -407,14 +402,14 @@
 }
 
 .debugEntryHeader:hover {
-  background: rgba(34,211,238,0.03);
+  background: rgba(33,212,253,0.03);
 }
 
 .debugSuccess {
   font-size: 9px;
   font-weight: 700;
-  color: #34d399;
-  background: rgba(52,211,153,0.08);
+  color: #B7FF3C;
+  background: rgba(183,255,60,0.08);
   padding: 2px 6px;
   border-radius: 3px;
 }
@@ -431,7 +426,7 @@
 .debugQuestion {
   flex: 1;
   font-size: 11px;
-  color: rgba(200,220,240,0.6);
+  color: rgba(157,183,209,0.6);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -439,7 +434,7 @@
 
 .debugMeta {
   font-size: 9px;
-  color: rgba(200,220,240,0.25);
+  color: rgba(157,183,209,0.25);
   white-space: nowrap;
 }
 
@@ -455,7 +450,7 @@
 .debugSectionTitle {
   font-size: 9px;
   font-weight: 700;
-  color: rgba(34,211,238,0.4);
+  color: rgba(33,212,253,0.4);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   margin-bottom: 4px;
@@ -463,7 +458,7 @@
 
 .debugPre {
   font-size: 10px;
-  color: rgba(200,220,240,0.45);
+  color: rgba(157,183,209,0.45);
   white-space: pre-wrap;
   word-break: break-all;
   max-height: 200px;

@@ -19,7 +19,8 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { ROUTES } from "@/routes/routeContract"
 import PageShell from "@/components/nav/PageShell"
 import { useCanonicalBaseline } from "@/state/useCanonicalBaseline"
-import { usePhase1ScenarioStore, type SimulationKpis } from "@/state/phase1ScenarioStore"
+import { usePhase1ScenarioStore, type SimulationKpis, type SimulationResults } from "@/state/phase1ScenarioStore"
+import { computeDeltas } from "@/engine/compareDeltas"
 import { useCompareStore, type ComparePair, type CompareViewMode } from "@/store/compareStore"
 import { deriveTerrainMetrics, type TerrainMetrics } from "@/terrain/terrainFromBaseline"
 
@@ -255,6 +256,52 @@ export default function ComparePage() {
   const labelA = aId === null ? "Baseline" : (scenarioA?.decision ?? "Scenario").slice(0, 20)
   const labelB = bId === null ? "Baseline" : (scenarioB?.decision ?? "Scenario").slice(0, 20)
   const labelC = cId === null ? "Baseline" : (scenarioC?.decision ?? "Scenario").slice(0, 20)
+
+  // ── Baseline simulation results ──────────────────────────────────────────
+  // Used as the left-side input to computeDeltas.
+  // Prefers the "baseline-projection" scenario (created by InitializeBaseline)
+  // which carries full p10/p50/p90 projection data. Falls back to synthesising
+  // a minimal SimulationResults from baselineSimKpis when not yet available.
+  const baselineProjectionScenario = useMemo(
+    () => scenarios.find((s) => s.id === "baseline-projection") ?? null,
+    [scenarios],
+  )
+
+  const baselineSimResults = useMemo((): SimulationResults | null => {
+    if (baselineProjectionScenario?.simulationResults) {
+      return baselineProjectionScenario.simulationResults
+    }
+    if (!baselineSimKpis) return null
+    return {
+      completedAt:   0,
+      horizonMonths: 24,
+      summary:       "Baseline",
+      kpis:          baselineSimKpis,
+      terrain:       { seed: 0, multipliers: { cash: 1, burn: 1, growth: 1 } },
+    }
+  }, [baselineProjectionScenario, baselineSimKpis])
+
+  // ── Delta Engine: baseline vs active pair (projection-sourced) ───────────
+  // Resolves SimulationResults for a slot — baseline falls back to synthesised.
+  const resolveResults = useCallback(
+    (id: string | null, scenario: typeof scenarioA): SimulationResults | null => {
+      if (id === null) return baselineSimResults
+      return scenario?.simulationResults ?? null
+    },
+    [baselineSimResults],
+  )
+
+  const deltaMetrics = useMemo(() => {
+    const leftResults  = activePair === "BC"
+      ? resolveResults(bId, scenarioB)
+      : resolveResults(aId, scenarioA)
+    const rightResults = activePair === "AC"
+      ? resolveResults(cId, scenarioC)
+      : activePair === "BC"
+        ? resolveResults(cId, scenarioC)
+        : resolveResults(bId, scenarioB)
+    return computeDeltas(leftResults, rightResults)
+  }, [activePair, aId, bId, cId, scenarioA, scenarioB, scenarioC, resolveResults])
 
   // ── Active pair KPIs (for analytics panels) ──
   const { pairKpisL, pairKpisR, pairLabelL, pairLabelR } = useMemo(() => {
@@ -561,6 +608,7 @@ export default function ComparePage() {
               activePair={activePair}
               is3Way={is3Mode}
               onPairChange={setActivePair}
+              deltaMetrics={deltaMetrics}
             />
           </div>
 

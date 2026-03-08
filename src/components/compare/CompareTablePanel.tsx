@@ -10,6 +10,7 @@ import React, { memo, useMemo } from "react"
 import type { SimulationKpis } from "@/state/phase1ScenarioStore"
 import { selectRiskScore } from "@/selectors/riskSelectors"
 import type { ComparePair } from "@/store/compareStore"
+import type { DeltaMetrics, MetricDelta, DeltaUnit } from "@/engine/compareDeltas"
 
 export interface CompareTablePanelProps {
   kpisLeft: SimulationKpis | null
@@ -21,6 +22,11 @@ export interface CompareTablePanelProps {
   /** Whether 3-way mode is on */
   is3Way: boolean
   onPairChange: (pair: ComparePair) => void
+  /**
+   * Projection-sourced delta metrics computed by compareDeltas.ts.
+   * When present, rendered as highlight cards above the detail table.
+   */
+  deltaMetrics?: DeltaMetrics | null
 }
 
 /* ── Metric Definitions ── */
@@ -61,24 +67,124 @@ function score(v: number | null): string {
   return v.toFixed(0)
 }
 
+// Gross margin, growth rate, churn rate are stored as 0-1 decimals in SimulationKpis.
+// normalPct ensures consistent display regardless of upstream encoding.
+function normalPct(v: number): number {
+  return Math.abs(v) <= 1 ? v * 100 : v
+}
+
+// Enterprise value: ARR × growth-rate multiple (SaaS heuristic, capped 2× – 30×)
+function deriveEV(k: SimulationKpis): number {
+  const arr = k.revenue * 12
+  const gr = Math.abs(k.growthRate) <= 1 ? k.growthRate : k.growthRate / 100
+  const multiple = Math.max(2, Math.min(30, gr * 40))
+  return arr * multiple
+}
+
+// EBITDA proxy: gross profit minus operating expenditure
+// gross profit  = revenue * gross_margin
+// opex approx   = monthlyBurn - COGS  = monthlyBurn - revenue * (1 - margin)
+// EBITDA        = gross_profit - opex = revenue - monthlyBurn
+function deriveEBITDA(k: SimulationKpis): number {
+  return k.revenue - k.monthlyBurn
+}
+
 const METRICS: MetricDef[] = [
-  { key: "revenue",     label: "Revenue (MRR)", group: "ECONOMICS",  upIsGood: true,  extract: (k) => k.revenue,          fmt: $$ },
-  { key: "arr",         label: "ARR",           group: "ECONOMICS",  upIsGood: true,  extract: (k) => k.revenue * 12,     fmt: $$ },
-  { key: "grossMargin", label: "Gross Margin",  group: "ECONOMICS",  upIsGood: true,  extract: (k) => k.grossMargin,      fmt: pctRaw },
-  { key: "growthRate",  label: "Growth Rate",   group: "ECONOMICS",  upIsGood: true,  extract: (k) => k.growthRate,        fmt: pct },
-  { key: "arpa",        label: "ARPA",          group: "ECONOMICS",  upIsGood: true,  extract: (k) => k.arpa,             fmt: $$ },
-  { key: "cash",        label: "Cash",          group: "SURVIVAL",   upIsGood: true,  extract: (k) => k.cash,             fmt: $$ },
-  { key: "burn",        label: "Monthly Burn",  group: "SURVIVAL",   upIsGood: false, extract: (k) => k.monthlyBurn,      fmt: $$ },
-  { key: "runway",      label: "Runway",        group: "SURVIVAL",   upIsGood: true,  extract: (k) => k.runway,           fmt: mo },
-  { key: "risk",        label: "Risk Score",    group: "SURVIVAL",   upIsGood: false, extract: (k) => selectRiskScore(k),  fmt: score },
-  { key: "headcount",   label: "Headcount",     group: "OPERATIONS", upIsGood: true,  extract: (k) => k.headcount,        fmt: num },
-  { key: "churnRate",   label: "Churn Rate",    group: "OPERATIONS", upIsGood: false, extract: (k) => k.churnRate,         fmt: pct },
+  { key: "revenue",         label: "Revenue (MRR)",    group: "ECONOMICS",  upIsGood: true,  extract: (k) => k.revenue,                  fmt: $$ },
+  { key: "arr",             label: "ARR",              group: "ECONOMICS",  upIsGood: true,  extract: (k) => k.revenue * 12,             fmt: $$ },
+  { key: "ebitda",          label: "EBITDA (proxy)",   group: "ECONOMICS",  upIsGood: true,  extract: (k) => deriveEBITDA(k),            fmt: $$ },
+  { key: "grossMargin",     label: "Gross Margin",     group: "ECONOMICS",  upIsGood: true,  extract: (k) => normalPct(k.grossMargin),   fmt: pctRaw },
+  { key: "growthRate",      label: "Growth Rate",      group: "ECONOMICS",  upIsGood: true,  extract: (k) => normalPct(k.growthRate),    fmt: pctRaw },
+  { key: "arpa",            label: "ARPA",             group: "ECONOMICS",  upIsGood: true,  extract: (k) => k.arpa,                     fmt: $$ },
+  { key: "enterpriseValue", label: "Enterprise Value", group: "ECONOMICS",  upIsGood: true,  extract: (k) => deriveEV(k),               fmt: $$ },
+  { key: "cash",            label: "Cash / Liquidity", group: "SURVIVAL",   upIsGood: true,  extract: (k) => k.cash,                    fmt: $$ },
+  { key: "burn",            label: "Monthly Burn",     group: "SURVIVAL",   upIsGood: false, extract: (k) => k.monthlyBurn,              fmt: $$ },
+  { key: "runway",          label: "Runway",           group: "SURVIVAL",   upIsGood: true,  extract: (k) => k.runway,                  fmt: mo },
+  { key: "risk",            label: "Risk Score",       group: "SURVIVAL",   upIsGood: true,  extract: (k) => selectRiskScore(k),        fmt: score },
+  { key: "headcount",       label: "Headcount",        group: "OPERATIONS", upIsGood: true,  extract: (k) => k.headcount,               fmt: num },
+  { key: "churnRate",       label: "Churn Rate",       group: "OPERATIONS", upIsGood: false, extract: (k) => normalPct(k.churnRate),    fmt: pctRaw },
 ]
+
+/* ── Delta card formatters ── */
+
+function fmtDeltaValue(d: MetricDelta): string {
+  const { absDelta, unit } = d
+  const sign = absDelta > 0 ? "+" : ""
+  if (unit === "currency") return `${sign}${$$(absDelta)}`
+  if (unit === "months")   return `${sign}${Math.round(absDelta)}mo`
+  if (unit === "score")    return `${sign}${absDelta.toFixed(0)}pts`
+  if (unit === "percent")  return `${sign}${absDelta.toFixed(1)}pp`
+  return `${sign}${absDelta.toFixed(1)}`
+}
+
+function fmtPct(d: MetricDelta): string {
+  if (d.pctDelta == null) return ""
+  return `${d.pctDelta > 0 ? "+" : ""}${d.pctDelta.toFixed(1)}%`
+}
+
+function fmtByUnit(v: number, unit: DeltaUnit): string {
+  if (unit === "currency") return $$(v)
+  if (unit === "months")   return `${Math.round(v)}mo`
+  if (unit === "score")    return v.toFixed(0)
+  if (unit === "percent")  return `${v.toFixed(1)}%`
+  return v.toFixed(1)
+}
+
+function deltaColor(d: MetricDelta): string {
+  if (Math.abs(d.absDelta) < 0.0001) return "rgba(148,180,214,0.4)"
+  const positive = d.upIsGood ? d.absDelta > 0 : d.absDelta < 0
+  return positive ? "#B7FF3C" : "#6E5BFF"
+}
+
+/* ── Delta highlights bar ── */
+
+const DELTA_KEYS: (keyof DeltaMetrics)[] = [
+  "revenueDelta",
+  "ebitdaDelta",
+  "cashDelta",
+  "runwayDelta",
+  "riskDelta",
+  "enterpriseValueDelta",
+]
+
+interface DeltaHighlightBarProps {
+  deltaMetrics: DeltaMetrics
+  labelLeft: string
+  labelRight: string
+}
+
+const DeltaHighlightBar: React.FC<DeltaHighlightBarProps> = ({ deltaMetrics, labelLeft, labelRight }) => (
+  <div style={SD.bar}>
+    {DELTA_KEYS.map((key) => {
+      const d = deltaMetrics[key]
+      const col = deltaColor(d)
+      return (
+        <div key={key} style={SD.card}>
+          <span style={SD.cardLabel}>{d.label}</span>
+          <div style={SD.cardRow}>
+            <span style={SD.cardSide}>{labelLeft}</span>
+            <span style={SD.cardVal}>{fmtByUnit(d.baseline, d.unit)}</span>
+          </div>
+          <div style={SD.cardRow}>
+            <span style={SD.cardSide}>{labelRight}</span>
+            <span style={SD.cardVal}>{fmtByUnit(d.scenario, d.unit)}</span>
+          </div>
+          <div style={{ ...SD.cardDelta, color: col }}>
+            <span>{fmtDeltaValue(d)}</span>
+            {d.pctDelta != null && (
+              <span style={SD.cardPct}>{fmtPct(d)}</span>
+            )}
+          </div>
+        </div>
+      )
+    })}
+  </div>
+)
 
 /* ── Component ── */
 
 const CompareTablePanel: React.FC<CompareTablePanelProps> = memo(
-  ({ kpisLeft, kpisRight, labelLeft, labelRight, activePair, is3Way, onPairChange }) => {
+  ({ kpisLeft, kpisRight, labelLeft, labelRight, activePair, is3Way, onPairChange, deltaMetrics }) => {
     const rows = useMemo(() => {
       const groups: { group: string; items: typeof METRICS }[] = []
       const seen = new Set<string>()
@@ -94,6 +200,15 @@ const CompareTablePanel: React.FC<CompareTablePanelProps> = memo(
 
     return (
       <div style={S.root}>
+        {/* ── Delta highlight cards — projection-sourced canonical deltas ── */}
+        {deltaMetrics && (
+          <DeltaHighlightBar
+            deltaMetrics={deltaMetrics}
+            labelLeft={labelLeft}
+            labelRight={labelRight}
+          />
+        )}
+
         {/* ── Header ── */}
         <div style={S.header}>
           <span style={S.title}>Comparison Table</span>
@@ -148,20 +263,23 @@ const CompareTablePanel: React.FC<CompareTablePanelProps> = memo(
                     const isPos = m.upIsGood ? delta > 0.001 : delta < -0.001
                     const isNeg = m.upIsGood ? delta < -0.001 : delta > 0.001
                     const color = isPos
-                      ? "#22c55e"
+                      ? "#B7FF3C"
                       : isNeg
-                        ? "#ef4444"
+                        ? "#6E5BFF"
                         : "rgba(148,180,214,0.4)"
 
                     const fmtDelta = () => {
                       if (vL == null || vR == null) return "—"
                       const sign = delta > 0 ? "+" : ""
-                      if (m.key === "revenue" || m.key === "arr" || m.key === "cash" || m.key === "burn" || m.key === "arpa")
-                        return `${sign}${$$(delta).replace("$", "$")}`
+                      // Currency metrics
+                      if (["revenue", "arr", "cash", "burn", "arpa", "ebitda", "enterpriseValue"].includes(m.key))
+                        return `${sign}${$$(delta)}`
                       if (m.key === "runway") return `${sign}${Math.round(delta)}mo`
                       if (m.key === "risk") return `${sign}${delta.toFixed(0)}pts`
                       if (m.key === "headcount") return `${sign}${delta.toFixed(0)}`
-                      return `${sign}${(delta * 100).toFixed(1)}pp`
+                      // Percentage metrics are already normalised to 0-100 by normalPct in extract,
+                      // so delta is in percentage-point form — no ×100 needed.
+                      return `${sign}${delta.toFixed(1)}pp`
                     }
 
                     return (
@@ -338,5 +456,84 @@ const S: Record<string, React.CSSProperties> = {
     textAlign: "right" as const,
     fontFamily: MONO,
     whiteSpace: "nowrap" as const,
+  },
+}
+
+/* ── Delta highlight bar styles ── */
+
+const SD: Record<string, React.CSSProperties> = {
+  bar: {
+    display: "grid",
+    gridTemplateColumns: "repeat(3, 1fr)",
+    gap: 1,
+    background: "rgba(33,212,253,0.04)",
+    borderBottom: "1px solid rgba(33,212,253,0.12)",
+    padding: "10px 12px",
+    flexShrink: 0,
+  },
+
+  card: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 3,
+    padding: "8px 10px",
+    background: "rgba(11,31,54,0.55)",
+    borderRadius: 6,
+    border: "1px solid rgba(255,255,255,0.05)",
+  },
+
+  cardLabel: {
+    fontSize: 8,
+    fontWeight: 700,
+    letterSpacing: "0.12em",
+    textTransform: "uppercase" as const,
+    color: "rgba(33,212,253,0.5)",
+    fontFamily: FONT,
+    marginBottom: 2,
+  },
+
+  cardRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "baseline",
+    gap: 4,
+  },
+
+  cardSide: {
+    fontSize: 9,
+    fontWeight: 500,
+    color: "rgba(148,180,214,0.45)",
+    fontFamily: FONT,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap" as const,
+    maxWidth: "55%",
+  },
+
+  cardVal: {
+    fontSize: 11,
+    fontWeight: 600,
+    color: "rgba(226,240,255,0.75)",
+    fontFamily: MONO,
+    whiteSpace: "nowrap" as const,
+  },
+
+  cardDelta: {
+    display: "flex",
+    alignItems: "baseline",
+    gap: 5,
+    marginTop: 2,
+    fontSize: 12,
+    fontWeight: 700,
+    fontFamily: MONO,
+    borderTop: "1px solid rgba(255,255,255,0.04)",
+    paddingTop: 4,
+  },
+
+  cardPct: {
+    fontSize: 9,
+    fontWeight: 600,
+    opacity: 0.7,
+    fontFamily: MONO,
   },
 }

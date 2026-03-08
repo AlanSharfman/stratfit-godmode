@@ -7,7 +7,8 @@ import PositionRoute from "@/pages/position/PositionRoute"
 import WhatIfPage from "@/pages/what-if/WhatIfPage"
 import ActionsPage from "@/pages/actions/ActionsPage"
 import TimelinePage from "@/pages/timeline/TimelinePage"
-import RiskPage from "@/pages/modules/StrategicModulesPage"
+import RiskPage from "@/pages/risk/RiskPage"
+import ValuationPage from "@/pages/valuation/ValuationPage"
 import ComparePage from "@/pages/compare/ComparePage"
 import StudioPage from "@/pages/studio/StudioPage"
 import BoardroomPage from "@/pages/boardroom/BoardroomPage"
@@ -29,7 +30,7 @@ function AppRoutes() {
       <Route path="/risk" element={<RiskPage />} />
       <Route path="/compare" element={<ComparePage />} />
       <Route path="/studio" element={<StudioPage />} />
-      <Route path="/valuation" element={<RiskPage />} />
+      <Route path="/valuation" element={<ValuationPage />} />
       <Route path="/boardroom" element={<BoardroomPage />} />
       <Route path="/pulse" element={<PulsePage />} />
       <Route path="/legal/terms" element={<TermsPage />} />

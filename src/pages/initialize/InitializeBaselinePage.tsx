@@ -4,6 +4,8 @@ import { useSystemBaseline } from "@/system/SystemBaselineProvider"
 import type { BaselineV1 } from "@/onboard/baseline"
 import { CommandCenterSliderRow, type CommandCenterSliderTooltip } from "@/components/ui/CommandCenterSliderDeck"
 import PageShell from "@/components/nav/PageShell"
+import { usePhase1ScenarioStore, type SimulationKpis } from "@/state/phase1ScenarioStore"
+import { runSimulation } from "@/engine/simulationService"
 
 /* ═══════════════════════════════════════════════════════════════════
    STRATFIT — Initiate Command Center (God Mode Single-Page HUD)
@@ -785,6 +787,42 @@ export default function InitializeBaselinePage() {
     }
 
     setBaseline(baseline)
+
+    // Create a baseline projection scenario so Position/Compare/Boardroom have
+    // pre-computed p10/p50/p90 projections available without any active scenario.
+    // The scenario ID is stable per lock — re-locking updates the same record.
+    const baselineScenarioId = "baseline-projection"
+    const baselineKpis: SimulationKpis = {
+      cash:        baseline.financial.cashOnHand,
+      monthlyBurn: baseline.financial.monthlyBurn,
+      revenue:     baseline.financial.arr / 12,
+      grossMargin: baseline.financial.grossMarginPct / 100,
+      growthRate:  baseline.financial.growthRatePct  / 100,
+      churnRate:   baseline.operating.churnPct       / 100,
+      headcount:   baseline.financial.headcount,
+      arpa:        baseline.operating.acv,
+      runway:      baseline.financial.monthlyBurn > 0
+        ? baseline.financial.cashOnHand / baseline.financial.monthlyBurn
+        : null,
+    }
+    usePhase1ScenarioStore.getState().upsertScenario({
+      id:        baselineScenarioId,
+      createdAt: Date.now(),
+      decision:  "Baseline configuration",
+      status:    "complete",
+      simulationResults: {
+        completedAt:   Date.now(),
+        horizonMonths: 24,
+        summary:       "Baseline projections",
+        kpis:          baselineKpis,
+        terrain: {
+          seed:        0,
+          multipliers: { cash: 1, burn: 1, growth: 1 },
+        },
+      },
+    })
+    runSimulation(baselineScenarioId)
+
     navigate("/position", { replace: true })
   }, [form, setBaseline, navigate])
 

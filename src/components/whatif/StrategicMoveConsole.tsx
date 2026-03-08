@@ -17,7 +17,10 @@ interface StrategicMoveConsoleProps {
   onQueryChange: (q: string) => void
   onSubmit: () => void
   onSelectTemplate: (template: ScenarioTemplate) => void
+  /** True while an AI API call is in progress */
   loading?: boolean
+  /** True while the canonical runSimulation() is executing */
+  simRunning?: boolean
   hasStack?: boolean
   onSave?: () => void
   onClear?: () => void
@@ -31,12 +34,15 @@ export default function StrategicMoveConsole({
   onSubmit,
   onSelectTemplate,
   loading = false,
+  simRunning = false,
   hasStack = false,
   onSave,
   onClear,
   onBrowse,
   stackCount = 0,
 }: StrategicMoveConsoleProps) {
+  const isBusy = loading || simRunning
+  const btnLabel = simRunning ? "Running…" : loading ? "Analysing…" : "Run Scenario"
   const inputRef = useRef<HTMLInputElement>(null)
   const [showSuggestions, setShowSuggestions] = useState(false)
 
@@ -77,9 +83,9 @@ export default function StrategicMoveConsole({
         <button
           className={styles.runBtn}
           onClick={onSubmit}
-          disabled={!query.trim() || loading}
+          disabled={!query.trim() || isBusy}
         >
-          {loading ? "Simulating..." : "Run Simulation"}
+          {btnLabel}
         </button>
 
         {showSuggestions && suggestions.length > 0 && (
@@ -118,7 +124,7 @@ export default function StrategicMoveConsole({
               </button>
             )}
             {onClear && (
-              <button className={styles.pill} onClick={onClear} style={{ borderColor: "rgba(248,113,113,0.15)", color: "rgba(248,113,113,0.5)" }}>
+              <button className={styles.pill} onClick={onClear} style={{ borderColor: "rgba(110,91,255,0.20)", color: "rgba(110,91,255,0.65)" }}>
                 Clear ({stackCount})
               </button>
             )}

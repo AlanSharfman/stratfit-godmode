@@ -11,6 +11,14 @@ export type {
 } from "./types"
 export { validateWhatIfAnswer, safeErrorAnswer } from "./types"
 
+// ── Scenario lever interpreter ──
+export {
+  parseScenarioLevers,
+  CANONICAL_LEVER_IDS,
+  type CanonicalLeverId,
+  type ParsedLeverOutput,
+} from "./parseScenarioLevers"
+
 // ── New modular architecture ──
 export { STRATFIT_SYSTEM_PROMPT } from "./prompts/stratfitSystemPrompt"
 export { buildDeveloperPrompt } from "./prompts/stratfitDeveloperPrompt"

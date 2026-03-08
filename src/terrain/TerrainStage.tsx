@@ -134,14 +134,26 @@ export default function TerrainStage({
       camera={{ position: effectivePreset.pos as unknown as [number, number, number], fov: effectivePreset.fov, near: 0.1, far: 5000 }}
       gl={{ antialias: true, alpha: true }}
       shadows
-      onCreated={({ camera, gl }) => {
+      onCreated={({ camera, gl, scene }) => {
         if (!lockCamera) {
           camera.position.set(...effectivePreset.pos);
           camera.lookAt(...effectivePreset.target);
           camera.updateProjectionMatrix();
         }
-        gl.setClearColor("#060b16", 0);
+        gl.setClearColor("#061326", 0);
         gl.toneMappingExposure = 1.4;
+
+        // Exponential atmospheric fog.
+        // Density 0.0018 keeps the foreground plateau and first mountain peak
+        // fully clear while mid-ground fades subtly and distant terrain dissolves
+        // into the sky. Fog colour matches the platform background so the fade
+        // reads as depth, not a hard edge.
+        // Effect by distance (approx with density 0.0018):
+        //   ~100u   →  3% fog  (foreground clear)
+        //   ~300u   → 26% fog  (subtle mid-ground haze)
+        //   ~600u   → 66% fog  (distant ridge fade)
+        //   ~1000u  → 84% fog  (background dissolve)
+        scene.fog = new THREE.FogExp2("#061326", 0.0018);
       }}
     >
       <OrbitControls

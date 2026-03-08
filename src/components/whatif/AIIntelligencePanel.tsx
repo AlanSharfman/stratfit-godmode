@@ -34,11 +34,14 @@ export default function AIIntelligencePanel({
     return (
       <div className={styles.root}>
         <div className={styles.header}>
-          <span className={styles.headerLabel}>Strategic Intelligence</span>
+          <span className={styles.headerLabel}>Scenario Output</span>
         </div>
-        <div className={styles.subtitle}>AI-powered analysis of simulation results.</div>
-        <div className={styles.empty}>
-          Run a simulation to generate strategic intelligence.
+        <div className={styles.emptyState}>
+          <div className={styles.emptyTitle}>Scenario Output</div>
+          <p className={styles.emptyBody}>
+            Run a scenario to see how your strategic choice could impact revenue,
+            profitability, liquidity, and enterprise value.
+          </p>
         </div>
       </div>
     )
@@ -48,10 +51,9 @@ export default function AIIntelligencePanel({
     return (
       <div className={styles.root}>
         <div className={styles.header}>
-          <span className={styles.headerLabel}>Strategic Intelligence</span>
+          <span className={styles.headerLabel}>Scenario Output</span>
           <span className={styles.loadingDot} />
         </div>
-        <div className={styles.subtitle}>AI-powered analysis of simulation results.</div>
         <div className={styles.loadingText}>Processing simulation...</div>
       </div>
     )
@@ -60,7 +62,7 @@ export default function AIIntelligencePanel({
   return (
     <div className={styles.root}>
       <div className={styles.header}>
-        <span className={styles.headerLabel}>Strategic Intelligence</span>
+        <span className={styles.headerLabel}>Scenario Output</span>
         {confidence && (
           <span className={
             confidence === "high" ? styles.confidenceHigh
@@ -94,8 +96,8 @@ export default function AIIntelligencePanel({
           )}
 
           {answer.assumptions && answer.assumptions.length > 0 && (
-            <div className={styles.assumptionsBox}>
-              <div className={styles.sectionTitle} style={{ color: "rgba(245,158,11,0.6)" }}>Assumptions</div>
+              <div className={styles.assumptionsBox}>
+              <div className={styles.sectionTitle}>Assumptions</div>
               {answer.assumptions.map((a, i) => (
                 <div key={i} className={styles.assumption}>• {a}</div>
               ))}

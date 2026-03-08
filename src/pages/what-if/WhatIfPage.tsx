@@ -36,7 +36,10 @@ import {
 import {
   askWhatIf, hasWhatIfApiKey,
   type WhatIfAnswer, type WhatIfTerrainOverlay,
+  parseScenarioLevers, type ParsedLeverOutput,
 } from "@/engine/whatif"
+import { runSimulation } from "@/engine/simulationService"
+import { computeDeltas } from "@/engine/compareDeltas"
 import {
   useScenarioLibraryStore,
   toARRRange,
@@ -46,6 +49,7 @@ import {
 
 import StrategicMoveConsole from "@/components/whatif/StrategicMoveConsole"
 import AIIntelligencePanel from "@/components/whatif/AIIntelligencePanel"
+import { ScenarioOutputPanel } from "@/components/whatif/ScenarioOutputPanel"
 import CommandConsole from "@/components/command/CommandConsole"
 import styles from "./WhatIfPage.module.css"
 import { type StackedScenario, KPI_LABELS, formatDelta, buildNarrative } from "./whatIfHelpers"
@@ -65,6 +69,9 @@ export default function WhatIfPage() {
   const [showDebugPanel, setShowDebugPanel] = useState(false)
   const [lastCascadeSource, setLastCascadeSource] = useState<{ kpi: KpiKey; delta: number } | null>(null)
   const [aiLoading, setAiLoading] = useState(false)
+  // simRunning: true from scenario inject until projections land in the store.
+  // Covers the synchronous runSimulation() call + one Zustand store flush.
+  const [simRunning, setSimRunning] = useState(false)
   const [simFlash, setSimFlash] = useState(false)
   const [aiAnswer, setAiAnswer] = useState<WhatIfAnswer | null>(null)
   const [aiOverlays, setAiOverlays] = useState<WhatIfTerrainOverlay[]>([])
@@ -88,6 +95,20 @@ export default function WhatIfPage() {
   const setActiveScenId  = usePhase1ScenarioStore((s) => s.setActiveScenarioId)
   // Stable session ID — one per component mount (i.e. one per WhatIf visit)
   const sessionId = useRef(`whatif-session-${Date.now()}`)
+
+  // ── Canonical output: read simulation results from store ─────────────────
+  // After runSimulation() fires, the store is patched with projections.
+  // These selectors re-evaluate whenever the scenarios array changes so the
+  // output panel reflects the latest completed simulation automatically.
+  const sessionSimResults = usePhase1ScenarioStore(
+    (s) => s.scenarios.find((sc) => sc.id === sessionId.current)?.simulationResults ?? null,
+  )
+  const baselineSimResults = usePhase1ScenarioStore(
+    (s) => s.scenarios.find((sc) => sc.id === "baseline-projection")?.simulationResults ?? null,
+  )
+  // Accumulated lever interpretation — updated each time a scenario is injected.
+  // Merged into the canonical store bridge so Studio can pre-populate sliders.
+  const parsedLeversRef = useRef<ParsedLeverOutput | null>(null)
 
   const {
     timeline: scenarioTimeline,
@@ -173,6 +194,10 @@ export default function WhatIfPage() {
   /* ═══ Scenario Injection ═══ */
 
   const injectScenario = useCallback((template: ScenarioTemplate) => {
+    // Mark simulation as in-flight. Cleared by the useEffect below once
+    // sessionSimResults.projections is written by runSimulation().
+    setSimRunning(true)
+
     const scenario: StackedScenario = {
       id: `${template.id}-${Date.now()}`,
       question: template.question,
@@ -180,6 +205,23 @@ export default function WhatIfPage() {
       forces: { ...template.forces },
     }
     setStack((prev) => [...prev, scenario])
+
+    // ── Parse lever values from scenario text ─────────────────────────────
+    // Runs deterministically — no API call. Output is stored in parsedLeversRef
+    // so the canonical store bridge can include leverValues in the scenario record.
+    // This allows Studio to pre-populate its sliders when navigating from WhatIf.
+    const parsed = parseScenarioLevers(template.question)
+    parsedLeversRef.current = parsed
+    if (process.env.NODE_ENV === "development") {
+      console.debug("[STRATFIT] parseScenarioLevers", {
+        input:        parsed.inputText,
+        source:       parsed.source,
+        confidence:   parsed.confidence,
+        matchedRules: parsed.matchedRules,
+        levers:       parsed.levers,
+        warnings:     parsed.warnings,
+      })
+    }
     setQuery("")
     setTimelineMonth(0)
 
@@ -375,6 +417,9 @@ export default function WhatIfPage() {
       createdAt: Date.now(),
       decision:  stack.map((s) => s.question).join(" + "),
       status:    "complete",
+      // Lever values from the most recent parseScenarioLevers call.
+      // Studio uses these to pre-populate sliders when user navigates there.
+      leverValues: parsedLeversRef.current?.allLevers ?? undefined,
       simulationResults: {
         completedAt:   Date.now(),
         horizonMonths: 24,
@@ -389,7 +434,19 @@ export default function WhatIfPage() {
 
     upsertScenario(scenario)
     setActiveScenId(sessionId.current)
+    // Compute forward projections (p10/p50/p90) and write to simulationResults.projections.
+    // Called after upsertScenario so the KPIs are guaranteed present in the store.
+    runSimulation(sessionId.current)
   }, [projectedKpis, stack, baseline, upsertScenario, setActiveScenId])
+
+  // Clear simRunning once the store confirms projections are written.
+  // runSimulation() is synchronous so this fires in the same tick or the
+  // next render — gives the UI one frame of "Running…" then flips to results.
+  useEffect(() => {
+    if (simRunning && sessionSimResults?.projections) {
+      setSimRunning(false)
+    }
+  }, [simRunning, sessionSimResults])
 
   const persistSave = usePersistenceStore((s) => s.saveScenario)
   const saveScenario = useCallback(() => {
@@ -481,6 +538,79 @@ export default function WhatIfPage() {
     ]
   }, [lastCascadeSource, stack, cumulativePropagation])
 
+  // ── Canonical output deltas → pre-formatted metric strings ──────────────
+  // computeDeltas reads projections (p50 month-0) > kpis > heuristics.
+  // formatMetric converts a MetricDelta into the display string:
+  //   "$1.2M (+15.3%)"  /  "14 mos (-2 mos)"
+  // Falls back to scenario-only values when no baseline is available.
+  const outputDeltas = useMemo(
+    () => stack.length > 0 ? computeDeltas(baselineSimResults, sessionSimResults) : null,
+    [stack.length, baselineSimResults, sessionSimResults],
+  )
+
+  const scenarioMetrics = useMemo(() => {
+    // Need at least session results in store to show anything
+    if (!sessionSimResults) return undefined
+
+    function fmtCurrency(v: number): string {
+      const a = Math.abs(v)
+      if (a >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`
+      if (a >= 1_000)     return `$${(v / 1_000).toFixed(0)}K`
+      return `$${Math.round(v).toLocaleString()}`
+    }
+
+    function fmtUnit(v: number, unit: string): string {
+      if (unit === "currency") return fmtCurrency(v)
+      if (unit === "months")   return `${Math.round(v)} mos`
+      if (unit === "score")    return `${v.toFixed(0)} pts`
+      return String(Math.round(v))
+    }
+
+    function fmtDeltaStr(absDelta: number, pctDelta: number | null, unit: string): string {
+      if (Math.abs(absDelta) < 0.0001) return ""
+      const sign = absDelta > 0 ? "+" : ""
+      if (unit === "currency" && pctDelta != null) return `(${sign}${pctDelta.toFixed(1)}%)`
+      return `(${sign}${fmtUnit(absDelta, unit)})`
+    }
+
+    function strWithDelta(scenario: number, absDelta: number, pctDelta: number | null, unit: string): string {
+      const val   = fmtUnit(scenario, unit)
+      const delta = fmtDeltaStr(absDelta, pctDelta, unit)
+      return delta ? `${val} ${delta}` : val
+    }
+
+    // ── Path A: baseline available → show value + delta ──────────────────
+    if (outputDeltas) {
+      const { revenueDelta: rv, ebitdaDelta: eb, cashDelta: ca, runwayDelta: rw, enterpriseValueDelta: ev } = outputDeltas
+      return {
+        revenue:         strWithDelta(rv.scenario, rv.absDelta, rv.pctDelta, rv.unit),
+        ebitda:          strWithDelta(eb.scenario, eb.absDelta, eb.pctDelta, eb.unit),
+        liquidity:       strWithDelta(ca.scenario, ca.absDelta, ca.pctDelta, ca.unit),
+        runway:          strWithDelta(rw.scenario, rw.absDelta, rw.pctDelta, rw.unit),
+        enterpriseValue: strWithDelta(ev.scenario, ev.absDelta, ev.pctDelta, ev.unit),
+      }
+    }
+
+    // ── Path B: no baseline → show scenario values alone ─────────────────
+    // Prefer projections (p50 month-0); fall back to raw KPIs.
+    const k = sessionSimResults.kpis
+    const p = sessionSimResults.projections
+    const growthFrac = Math.abs(k.growthRate) <= 1 ? k.growthRate : k.growthRate / 100
+    const evHeuristic = k.revenue * 12 * Math.max(2, Math.min(30, growthFrac * 40))
+    return {
+      revenue:         fmtCurrency(p?.revenueProjection?.[0] ?? k.revenue),
+      ebitda:          fmtCurrency(p?.ebitdaProjection?.[0]  ?? (k.revenue - k.monthlyBurn)),
+      liquidity:       fmtCurrency(p?.cashProjection?.[0]    ?? k.cash),
+      runway:          `${Math.round(p?.runwayMonths ?? k.runway ?? 0)} mos`,
+      enterpriseValue: fmtCurrency(p?.enterpriseValueEstimate ?? evHeuristic),
+    }
+  }, [outputDeltas, sessionSimResults])
+
+  const scenarioLabel = useMemo(
+    () => stack.length > 0 ? stack.map((s) => s.question).join(" + ") : undefined,
+    [stack],
+  )
+
   /* ═══ RENDER ═══ */
 
   return (
@@ -526,38 +656,20 @@ export default function WhatIfPage() {
           )}
         </div>
 
-        {/* ═══ ACTION — 3-column: Interpretation | Console | AI ═══ */}
-        <div className={styles.actionSection}>
+        {/* ═══ ACTION — 2-column: Controls | Scenario Output ═══ */}
+        <div className="grid grid-cols-2 gap-8 px-5 py-4">
 
-          {/* LEFT — Scenario Interpretation Card */}
-          <div className={styles.interpretationColumn}>
-            {pendingInterpretation ? (
-              <ScenarioInterpretationCard
-                interpretation={pendingInterpretation}
-                onConfirm={handleInterpretationConfirm}
-                onCancel={handleInterpretationCancel}
-              />
-            ) : (
-              <div className={styles.interpretationEmpty}>
-                <div className={styles.interpretationEmptyTitle}>Scenario Interpretation</div>
-                <div className={styles.interpretationEmptySubtitle}>
-                  STRATFIT will structure your scenario before simulation.
-                </div>
-                <div className={styles.interpretationEmptyText}>
-                  Enter a scenario above to see how STRATFIT structures it.
-                </div>
-              </div>
-            )}
-          </div>
+          {/* LEFT — Scenario Controls */}
+          <div className={styles.leftColumn}>
 
-          {/* CENTER — Strategic Scenario Input */}
-          <div className={styles.consoleColumn}>
+            {/* Scenario Command Console */}
             <StrategicMoveConsole
               query={query}
               onQueryChange={setQuery}
               onSubmit={handleSubmit}
               onSelectTemplate={(t) => showInterpretation(t, null, 0.9)}
               loading={aiLoading}
+              simRunning={simRunning}
               hasStack={stack.length > 0}
               onSave={saveScenario}
               onClear={clearAll}
@@ -580,95 +692,89 @@ export default function WhatIfPage() {
                 isNarrating={isTimelineNarrating}
               />
             )}
-          </div>
 
-          {/* RIGHT — AI Intelligence Panel */}
-          <div className={styles.aiColumn}>
-            <AIIntelligencePanel
-              answer={aiAnswer}
-              loading={aiLoading}
-              propagation={cumulativePropagation}
-              hasSimulation={stack.length > 0}
-              confidence={overallConfidence}
-              onVoicePlay={() => lastCascadeSource && narrateCascade(lastCascadeSource.kpi, lastCascadeSource.delta)}
-              onVoiceStop={stopNarration}
-              isNarrating={isNarrating}
-              onFollowUp={handleFollowUp}
-              formatDelta={formatDelta}
-            />
-            {aiAnswer && (
-              <div style={{ marginTop: 8 }}>
-                <SimulationDisclaimerBar variant="ai" />
+            {/* Scenario Interpretation */}
+            {pendingInterpretation ? (
+              <ScenarioInterpretationCard
+                interpretation={pendingInterpretation}
+                onConfirm={handleInterpretationConfirm}
+                onCancel={handleInterpretationCancel}
+              />
+            ) : (
+              <div className={styles.interpretationEmpty}>
+                <div className={styles.interpretationEmptyTitle}>Scenario Interpretation</div>
+                <div className={styles.interpretationEmptySubtitle}>
+                  STRATFIT will structure your scenario before simulation.
+                </div>
               </div>
             )}
+
+            {/* Impact Chain */}
+            {showImpactChain && chainNodes.length > 0 && (
+              <div className={styles.impactSection}>
+                <div className={styles.impactHeader}>
+                  <span className={styles.impactTitle}>Decision Impact Chain</span>
+                  <button className={styles.impactToggle} onClick={() => setShowImpactChain(false)}>
+                    Hide
+                  </button>
+                </div>
+                <div className={styles.chainFlow}>
+                  {chainNodes.map((node, i) => (
+                    <React.Fragment key={i}>
+                      <div className={styles.chainNode}>
+                        <span className={styles.chainNodeType}>{node.type}</span>
+                        <span className={styles.chainNodeLabel}>{node.label}</span>
+                        {node.value && <span className={styles.chainNodeValue} style={{ color: node.color }}>{node.value}</span>}
+                      </div>
+                      {i < chainNodes.length - 1 && <div className={styles.chainArrow}>↓</div>}
+                    </React.Fragment>
+                  ))}
+                </div>
+                {lastCascadeSource && (
+                  <ImpactChain
+                    sourceKpi={lastCascadeSource.kpi}
+                    delta={lastCascadeSource.delta}
+                    height={160}
+                    animate
+                  />
+                )}
+              </div>
+            )}
+
           </div>
+
+          {/* RIGHT — Scenario Output Panel (always visible, sticky) */}
+          <div className="self-start sticky top-0 flex flex-col gap-3">
+            <ScenarioOutputPanel
+              title={scenarioLabel}
+              summary={aiAnswer?.summary ?? (stack.length > 0 ? narrative : undefined)}
+              metrics={scenarioMetrics}
+              loading={simRunning}
+            >
+              {/* AI follow-up questions + voice — only when AI answer available */}
+              {aiAnswer && (
+                <AIIntelligencePanel
+                  answer={aiAnswer}
+                  loading={false}
+                  propagation={cumulativePropagation}
+                  hasSimulation
+                  confidence={overallConfidence}
+                  onVoicePlay={() => lastCascadeSource && narrateCascade(lastCascadeSource.kpi, lastCascadeSource.delta)}
+                  onVoiceStop={stopNarration}
+                  isNarrating={isNarrating}
+                  onFollowUp={handleFollowUp}
+                  formatDelta={formatDelta}
+                />
+              )}
+              {aiAnswer && <SimulationDisclaimerBar variant="ai" />}
+            </ScenarioOutputPanel>
+          </div>
+
         </div>
 
-        {/* ═══ BOTTOM — Vertical Impact Chain ═══ */}
-        {showImpactChain && chainNodes.length > 0 && (
-          <div className={styles.impactSection}>
-            <div className={styles.impactHeader}>
-              <span className={styles.impactTitle}>Decision Impact Chain</span>
-              <button
-                className={styles.impactToggle}
-                onClick={() => setShowImpactChain(false)}
-              >
-                Hide
-              </button>
-            </div>
-            <div className={styles.chainFlow}>
-              {chainNodes.map((node, i) => (
-                <React.Fragment key={i}>
-                  <div className={styles.chainNode}>
-                    <span className={styles.chainNodeType}>{node.type}</span>
-                    <span className={styles.chainNodeLabel}>{node.label}</span>
-                    {node.value && <span className={styles.chainNodeValue} style={{ color: node.color }}>{node.value}</span>}
-                  </div>
-                  {i < chainNodes.length - 1 && <div className={styles.chainArrow}>↓</div>}
-                </React.Fragment>
-              ))}
-            </div>
-
-            {lastCascadeSource && (
-              <ImpactChain
-                sourceKpi={lastCascadeSource.kpi}
-                delta={lastCascadeSource.delta}
-                height={160}
-                animate
-              />
-            )}
-          </div>
-        )}
-
-        {/* Probability Overview */}
-        {stack.length > 0 && probabilityOverview && (
-          <div style={{ padding: "0 24px", marginTop: 16 }}>
-            <ProbabilitySummaryCard
-              metrics={[
-                {
-                  label: "Survival Probability",
-                  value: `${probabilityOverview.survivalProbability}%`,
-                  probability: probabilityOverview.survivalProbability,
-                },
-                {
-                  label: "Runway Risk",
-                  value: probabilityOverview.runwayRiskLabel,
-                  probability: probabilityOverview.runwayRiskProbability,
-                },
-                // TODO: EBITDA Positive Probability — requires Monte Carlo engine integration
-                // TODO: Revenue Target Probability — requires Monte Carlo engine integration
-                // TODO: Enterprise Value Target Probability — requires Monte Carlo engine integration
-              ]}
-              modelConfidence={probabilityOverview.modelConfidence}
-              dataCompleteness={probabilityOverview.dataCompleteness}
-            />
-          </div>
-        )}
-
         {/* Disclaimers */}
-        <div style={{ padding: "0 24px", marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+        <div className={styles.footerDisclaimer}>
           <SimulationDisclaimerBar variant="default" />
-          {aiAnswer && <SimulationDisclaimerBar variant="ai" />}
         </div>
       </div>
 

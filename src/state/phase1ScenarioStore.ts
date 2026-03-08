@@ -92,6 +92,12 @@ export type SimulationResults = {
   terrainMetrics?: EngineTerrainMetrics
   /** Engine-generated terrain events — deterministic from KPIs */
   events?: TerrainEvent[]
+  /**
+   * Forward projections computed by simulationService.runSimulation().
+   * Position, Compare, and Boardroom READ from here — they must not
+   * recompute these values locally.
+   */
+  projections?: import("@/engine/computeSimulationProjections").SimulationProjections
 }
 
 export type Phase1Scenario = {
@@ -320,6 +326,12 @@ export const usePhase1ScenarioStore = create<Phase1ScenarioState>()(
           const completedAt = Date.now()
           // Engine-generated events — deterministic from KPIs
           const events = generateSimulationEvents(kpis, 24)
+          // Forward projections — p10/p50/p90 over 24 months
+          // Imported lazily to avoid circular: computeSimulationProjections does not
+          // import phase1ScenarioStore at runtime (type-only import there).
+          const { computeSimulationProjections } = require("@/engine/computeSimulationProjections") as typeof import("@/engine/computeSimulationProjections")
+          const projections = computeSimulationProjections(kpis, 24)
+
           set((s) => ({
             lastCompletedRunId: completedAt,
             scenarios: s.scenarios.map((sc) =>
@@ -335,6 +347,7 @@ export const usePhase1ScenarioStore = create<Phase1ScenarioState>()(
                       terrain,
                       terrainMetrics,
                       events,
+                      projections,
                     },
                   }
                 : sc

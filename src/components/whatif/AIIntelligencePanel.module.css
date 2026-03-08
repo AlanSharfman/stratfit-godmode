@@ -1,101 +1,109 @@
+/* ═══════════════════════════════════════════════
+   AI Intelligence Panel / Scenario Output Panel
+   Card style: spec-compliant STRATFIT card
+   Colour system: locked palette only
+     #EAF4FF  soft white
+     #9DB7D1  muted white
+     #21D4FD  cyan accent
+     #6E5BFF  strategic purple
+     #B7FF3C  lime positive
+     #0B1F36  panel navy
+   BANNED: red, orange, pink, amber
+   ═══════════════════════════════════════════════ */
+
+/* AIIntelligencePanel renders as a child inside ScenarioOutputPanel —
+   no outer card (no background, border, or radius). It contributes
+   content only. ScenarioOutputPanel owns the card chrome. */
 .root {
   display: flex;
   flex-direction: column;
-  padding: 18px 22px;
-  background: rgba(6,18,35,0.85);
-  border: 1px solid rgba(70,220,255,0.35);
-  border-radius: 12px;
-  box-shadow: 0 4px 28px rgba(0,0,0,0.4), 0 0 16px rgba(0,180,255,0.06);
-  backdrop-filter: blur(16px);
-  overflow: auto;
-  min-height: 120px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+  backdrop-filter: none;
   position: relative;
+  overflow: visible;
 }
 
-.root::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 12px;
-  background: linear-gradient(160deg, rgba(54,226,255,0.04) 0%, transparent 40%, rgba(54,226,255,0.02) 100%);
-  pointer-events: none;
-  animation: glassShimmer 6s ease-in-out infinite alternate;
-}
-
-@keyframes glassShimmer {
-  0% { opacity: 0.5; }
-  100% { opacity: 1; }
-}
-
+/* Header hidden — ScenarioOutputPanel owns the "Scenario Output" label */
 .header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
+  display: none;
 }
 
 .headerLabel {
-  font-size: 10px;
+  display: none;
+}
+
+/* ─── Empty state ─── */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 0 4px;
+  position: relative;
+}
+
+.emptyTitle {
+  font-size: 18px;
   font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(34,211,238,0.5);
+  color: #EAF4FF;
+  letter-spacing: 0.02em;
 }
 
-.subtitle {
-  font-size: 10px;
-  color: rgba(200,220,240,0.25);
-  line-height: 1.5;
-  margin-bottom: 8px;
+.emptyBody {
+  font-size: 13px;
+  color: rgba(157,183,209,0.55);
+  line-height: 1.65;
+  margin: 0;
+  max-width: 340px;
 }
 
-.empty {
-  font-size: 12px;
-  color: rgba(200,220,240,0.2);
-  text-align: center;
-  padding: 20px 12px;
-  line-height: 1.6;
-}
-
+/* ─── Loading state ─── */
 .loadingDot {
   display: inline-block;
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #22D3EE;
+  background: #21D4FD;
   animation: pulse 1s ease-in-out infinite;
+  flex-shrink: 0;
 }
 
 @keyframes pulse {
   0%, 100% { opacity: 0.3; transform: scale(0.8); }
-  50% { opacity: 1; transform: scale(1.2); }
+  50%       { opacity: 1;   transform: scale(1.2); }
 }
 
 .loadingText {
-  font-size: 12px;
-  color: rgba(34,211,238,0.5);
+  font-size: 13px;
+  color: rgba(33,212,253,0.55);
   font-style: italic;
-  padding: 12px 0;
+  padding: 8px 0;
+  position: relative;
 }
 
+/* ─── Result content ─── */
 .content {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
+  position: relative;
 }
 
 .headline {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
-  color: #E6F1FF;
+  color: #EAF4FF;
   line-height: 1.35;
-  text-shadow: 0 0 10px rgba(54,226,255,0.15);
+  letter-spacing: 0.01em;
 }
 
 .summary {
-  font-size: 12px;
-  color: rgba(200,220,240,0.65);
-  line-height: 1.6;
+  font-size: 13px;
+  color: rgba(157,183,209,0.75);
+  line-height: 1.65;
 }
 
 .sectionTitle {
@@ -103,10 +111,11 @@
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(34,211,238,0.5);
-  margin-bottom: 4px;
+  color: rgba(33,212,253,0.50);
+  margin-bottom: 6px;
 }
 
+/* ─── Key Drivers ─── */
 .driversSection {
   display: flex;
   flex-direction: column;
@@ -117,25 +126,32 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 5px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.03);
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.driverRow:last-child {
+  border-bottom: none;
 }
 
 .driverKpi {
-  font-size: 11px;
-  color: rgba(200,220,240,0.6);
+  font-size: 12px;
+  color: rgba(157,183,209,0.70);
 }
 
 .driverDelta {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
-.deltaUp { color: #34d399; }
-.deltaDown { color: #f87171; }
-.deltaFlat { color: rgba(200,220,240,0.3); }
+/* Positive delta — lime (canonical positive color) */
+.deltaUp   { color: #B7FF3C; }
+/* Negative delta — violet (red/pink banned) */
+.deltaDown { color: #6E5BFF; }
+.deltaFlat { color: rgba(157,183,209,0.30); }
 
+/* ─── Confidence badges ─── */
 .confidenceBase {
   font-size: 9px;
   font-weight: 700;
@@ -145,66 +161,73 @@
   border-radius: 12px;
 }
 
+/* High — lime */
 .confidenceHigh {
   composes: confidenceBase;
-  background: rgba(52,211,153,0.1);
-  color: #34d399;
-  border: 1px solid rgba(52,211,153,0.15);
+  background: rgba(183,255,60,0.10);
+  color: #B7FF3C;
+  border: 1px solid rgba(183,255,60,0.18);
 }
 
+/* Medium — muted cyan */
 .confidenceMedium {
   composes: confidenceBase;
-  background: rgba(251,191,36,0.1);
-  color: #fbbf24;
-  border: 1px solid rgba(251,191,36,0.15);
+  background: rgba(33,212,253,0.08);
+  color: rgba(33,212,253,0.70);
+  border: 1px solid rgba(33,212,253,0.14);
 }
 
+/* Low — violet (red/pink banned) */
 .confidenceLow {
   composes: confidenceBase;
-  background: rgba(248,113,113,0.1);
-  color: #f87171;
-  border: 1px solid rgba(248,113,113,0.15);
+  background: rgba(110,91,255,0.10);
+  color: rgba(110,91,255,0.75);
+  border: 1px solid rgba(110,91,255,0.18);
 }
 
+/* ─── Assumptions box ─── */
+/* Orange/amber is banned — use violet instead */
 .assumptionsBox {
-  padding: 8px 10px;
-  background: rgba(245,158,11,0.04);
-  border: 1px solid rgba(245,158,11,0.08);
-  border-radius: 6px;
+  padding: 10px 14px;
+  background: rgba(110,91,255,0.06);
+  border: 1px solid rgba(110,91,255,0.12);
+  border-radius: 8px;
 }
 
 .assumption {
-  font-size: 10px;
-  color: rgba(245,158,11,0.6);
-  line-height: 1.5;
+  font-size: 11px;
+  color: rgba(110,91,255,0.70);
+  line-height: 1.55;
 }
 
+/* ─── Follow-up questions ─── */
 .followUpSection {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .followUpBtn {
   display: block;
   width: 100%;
   text-align: left;
-  padding: 6px 12px;
-  background: rgba(15,25,45,0.6);
-  border: 1px solid rgba(34,211,238,0.08);
+  padding: 8px 14px;
+  background: rgba(11,31,54,0.60);
+  border: 1px solid rgba(33,212,253,0.08);
   border-radius: 8px;
-  color: rgba(200,220,240,0.5);
-  font-size: 11px;
+  color: rgba(157,183,209,0.55);
+  font-size: 12px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
 .followUpBtn:hover {
-  background: rgba(34,211,238,0.08);
-  border-color: rgba(34,211,238,0.25);
-  color: #22D3EE;
+  background: rgba(33,212,253,0.07);
+  border-color: rgba(33,212,253,0.22);
+  color: #21D4FD;
 }
 
+/* ─── Voice row ─── */
 .voiceRow {
   display: flex;
   justify-content: flex-end;

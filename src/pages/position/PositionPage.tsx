@@ -1,28 +1,21 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import PageShell from "@/components/nav/PageShell"
-import { useShallow } from "zustand/react/shallow"
 
 import { ROUTES } from "@/routes/routeContract"
 
 import TerrainStage from "@/terrain/TerrainStage"
-import TerrainTuningPanel from "@/terrain/TerrainTuningPanel"
 import TerrainNavWidget from "@/terrain/TerrainNavWidget"
 import { DEFAULT_TUNING } from "@/terrain/terrainTuning"
-import type { TerrainTuningParams } from "@/terrain/terrainTuning"
-import type { TerrainMetrics } from "@/terrain/terrainFromBaseline"
-import { deriveTerrainMetrics } from "@/terrain/terrainFromBaseline"
 import type { TimeGranularity } from "@/terrain/TimelineTicks"
 
 import { usePhase1ScenarioStore } from "@/state/phase1ScenarioStore"
 import { useSystemBaseline } from "@/system/SystemBaselineProvider"
-import { useScenarioOverridesStore } from "@/state/scenarioOverridesStore"
 
 import KPIHealthRail from "@/components/kpi/KPIHealthRail"
 import type { KpiKey } from "@/domain/intelligence/kpiZoneMapping"
 import PositionExecSummary from "@/components/position/PositionExecSummary"
 import SystemProbabilityNotice from "@/components/system/ProbabilityNotice"
-import { selectTerrainMetrics } from "@/selectors/terrainSelectors"
 import IdleMotionLayer from "./IdleMotionLayer"
 import {
   buildPositionViewModel,
@@ -58,7 +51,6 @@ export default function PositionPage() {
   const simRunCount = useSimulationEngineStore((s) => s.runCount)
   const [granularity] = useState<TimeGranularity>("quarter")
   const [rippleKey, setRippleKey] = useState(0)
-  const [terrainTuning, setTerrainTuning] = useState<TerrainTuningParams>({ ...DEFAULT_TUNING })
   const viewportRef = useRef<HTMLDivElement>(null)
   const [revealedKpis] = useState<Set<KpiKey>>(() => new Set(ALL_KPI_KEYS))
   const [showKpiMarkers, setShowKpiMarkers] = useState(true)
@@ -156,96 +148,6 @@ export default function PositionPage() {
 
   // Redirect handled by PositionRoute — no duplicate navigate here
 
-  const { overrideScenarios, activeOverrideScenarioId } = useScenarioOverridesStore(
-    useShallow((s) => ({
-      overrideScenarios: s.scenarios,
-      activeOverrideScenarioId: s.activeScenarioId,
-    })),
-  )
-
-  // Derive flat terrain-compatible inputs from BaselineV1 so deriveTerrainMetrics works
-  const baselineFlat = useMemo(() => {
-    if (!baselineV1Raw) return null
-    const f = baselineV1Raw.financial
-    return {
-      cash:        f.cashOnHand,
-      monthlyBurn: f.monthlyBurn,
-      burnRate:    f.monthlyBurn,
-      revenue:     f.arr / 12,
-      growthRate:  f.growthRatePct,   // toFactor() handles % → decimal
-      grossMargin: f.grossMarginPct,  // toFactor() handles % → decimal
-      churnRate:   baselineV1Raw.operating.churnPct,
-      headcount:   f.headcount,
-      arpa:        baselineV1Raw.operating.acv,
-    }
-  }, [baselineV1Raw])
-
-  const effectiveInputs = useMemo(() => {
-    if (!baselineFlat) return null
-    const active = overrideScenarios.find((s) => s.id === activeOverrideScenarioId)
-    return active ? ({ ...baselineFlat, ...active.overrides } as const) : baselineFlat
-  }, [baselineFlat, overrideScenarios, activeOverrideScenarioId])
-
-  // ══ Terrain source-of-truth: single selector, scenario-first ══
-  const scenarioTerrainRef = useRef<{ scenarioId: string; metrics: TerrainMetrics } | null>(null)
-
-  const terrainMetrics = useMemo(() => {
-    if (activeScenarioId && scenarioTerrainRef.current?.scenarioId === activeScenarioId) {
-      return scenarioTerrainRef.current.metrics
-    }
-
-    const engineMetrics = activeScenario?.simulationResults?.terrainMetrics
-    if (
-      activeScenarioId &&
-      (activeScenario?.status === "running" || activeScenario?.status === "complete") &&
-      engineMetrics
-    ) {
-      const metrics: TerrainMetrics = Object.freeze({
-        elevationScale: engineMetrics.elevationScale,
-        roughness: engineMetrics.roughness,
-        ridgeIntensity: engineMetrics.ridgeIntensity,
-        volatility: engineMetrics.volatility,
-        liquidityDepth: effectiveInputs
-          ? Math.min(
-              ((Number(effectiveInputs.cash) || 0) /
-                (Number(effectiveInputs.burnRate) || Number((effectiveInputs as any).monthlyBurn) || 1)) / 12,
-              2,
-            )
-          : 1,
-        growthSlope: effectiveInputs
-          ? (Math.abs(Number(effectiveInputs.growthRate) || 0) <= 1
-              ? Number(effectiveInputs.growthRate) || 0
-              : (Number(effectiveInputs.growthRate) || 0) / 100)
-          : 0,
-      })
-      scenarioTerrainRef.current = { scenarioId: activeScenarioId!, metrics }
-      return metrics
-    }
-
-    const terrainData = selectTerrainMetrics(activeScenario?.simulationResults ?? null)
-    const hasMultipliers =
-      activeScenarioId &&
-      (activeScenario?.status === "running" || activeScenario?.status === "complete") &&
-      terrainData?.multipliers &&
-      effectiveInputs
-
-    if (hasMultipliers) {
-      const m = terrainData!.multipliers
-      const baseBurn = Number(effectiveInputs!.burnRate) || Number(effectiveInputs!.monthlyBurn) || 0
-      const morphed = {
-        ...effectiveInputs!,
-        cash:        (Number(effectiveInputs!.cash) || 0) * m.cash,
-        burnRate:    baseBurn * m.burn,
-        monthlyBurn: baseBurn * m.burn,
-        growthRate:  (Number(effectiveInputs!.growthRate) || 0) * m.growth,
-      }
-      const metrics = Object.freeze(deriveTerrainMetrics(morphed as any))
-      scenarioTerrainRef.current = { scenarioId: activeScenarioId!, metrics }
-      return metrics
-    }
-
-    return effectiveInputs ? deriveTerrainMetrics(effectiveInputs as any) : undefined
-  }, [activeScenarioId, activeScenario?.status, activeScenario?.simulationResults?.terrainMetrics, effectiveInputs])
 
   const vm = useMemo(() => {
     if (!baselineV1Raw) return null
@@ -256,6 +158,54 @@ export default function PositionPage() {
   // KPI box values must always correspond 1-to-1 with the Initiate page entries.
   // Simulation results drive terrain shape and scenarios, NOT the KPI display.
   const liveKpis = useMemo(() => vm?.kpis ?? null, [vm?.kpis])
+
+  // ── Terrain zone KPIs: read ONLY from simulationResults.projections ──────
+  // Maps simulation output to the five terrain zone drivers:
+  //   liquidity      → cashProjection     (cash health zone elevation)
+  //   revenueEngine  → revenueProjection  (revenue ridge height)
+  //   profitability  → ebitdaProjection   (profitability zone shape)
+  //   riskPressure   → riskIndex          (risk basin depth)
+  //   enterpriseValue→ enterpriseValueEstimate (value peak height)
+  //
+  // Falls back to liveKpis (baseline-only) when no active simulation exists.
+  // Terrain updates automatically whenever activeScenario projections change.
+  const effectiveZoneKpis = useMemo(() => {
+    if (!liveKpis) return null
+    const projections = activeScenario?.simulationResults?.projections
+    if (!projections) return liveKpis
+
+    // Use the p50 (base-case) series at month 0 as current terrain state.
+    const p50 = projections.probabilityBands.p50
+    const liquidity      = (p50.cash[0]    ?? projections.cashProjection[0])    ?? liveKpis.cashOnHand
+    const revenueEngine  = (p50.revenue[0] ?? projections.revenueProjection[0]) ?? liveKpis.revenueMonthly
+    const profitability  = (p50.ebitda[0]  ?? projections.ebitdaProjection[0])  ?? liveKpis.ebitdaMonthly
+    const riskPressure   = projections.riskIndex                                 ?? liveKpis.riskIndex
+    const enterpriseValue= projections.enterpriseValueEstimate                   ?? liveKpis.valuationEstimate
+
+    // Derive burn from gross margin and EBITDA: burn = rev×gm - ebitda
+    const gm   = liveKpis.grossMarginPct / 100
+    const burn = Math.max(0, revenueEngine * gm - profitability)
+
+    // Derive growth from 12-month revenue trajectory if projection data is available
+    const rev0  = projections.revenueProjection[0]
+    const rev12 = projections.revenueProjection[12]
+    const growthRatePct = (rev0 && rev12 && rev0 > 0)
+      ? Math.max(0, Math.round(((rev12 - rev0) / rev0) * 100))
+      : liveKpis.growthRatePct
+
+    return {
+      ...liveKpis,
+      cashOnHand:         liquidity,
+      revenueMonthly:     revenueEngine,
+      arr:                revenueEngine * 12,
+      ebitdaMonthly:      profitability,
+      burnMonthly:        burn,
+      runwayMonths:       projections.runwayMonths ?? (burn > 0 ? liquidity / burn : liveKpis.runwayMonths),
+      riskIndex:          riskPressure,
+      valuationEstimate:  enterpriseValue,
+      growthRatePct,
+    }
+  }, [liveKpis, activeScenario?.simulationResults?.projections])
 
   const intelligenceText = useMemo(() => {
     if (!liveKpis) return ""
@@ -481,29 +431,13 @@ export default function PositionPage() {
               maxPolarAngle={POSITION_MAX_POLAR}
               rotateSpeed={0.55}
               onFocusedMarkerScreen={handleFocusedMarkerScreen}
-              zoneKpis={liveKpis}
+              zoneKpis={effectiveZoneKpis}
               heatmapEnabled={false}
               cameraPreset={POSITION_PROGRESSIVE_PRESET}
               autoRotateSpeed={0}
               showKpiMarkers={showKpiMarkers}
               hideMarkers
-              tuning={terrainTuning}
-              terrainMetrics={{
-                ...(terrainMetrics ?? {
-                  elevationScale: 1,
-                  roughness: 1,
-                  liquidityDepth: 1,
-                  growthSlope: 0,
-                  volatility: 0,
-                }),
-                ridgeIntensity: terrainTuning.ridgeIntensity,
-                valleyDepth: terrainTuning.valleyDepth,
-                peakSoftness: terrainTuning.peakSoftness,
-                noiseFrequency: terrainTuning.noiseFrequency,
-                microDetailStrength: terrainTuning.microDetailStrength,
-                elevationScale: terrainTuning.elevationScale * (terrainMetrics?.elevationScale ?? 1),
-                roughness: terrainTuning.terrainRoughness * 2 * (terrainMetrics?.roughness ?? 1),
-              } satisfies TerrainMetrics}
+              tuning={DEFAULT_TUNING}
               granularity={granularity}
               driftMode="oscillate"
             />
@@ -529,7 +463,6 @@ export default function PositionPage() {
             {rippleKey > 0 && (
               <div key={rippleKey} className={styles.terrainRipple} aria-hidden="true" />
             )}
-            <TerrainTuningPanel params={terrainTuning} onChange={setTerrainTuning} />
             <button
               onClick={() => setShowKpiMarkers(v => !v)}
               title={showKpiMarkers ? "Hide KPI markers" : "Show KPI markers"}

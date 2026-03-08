@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import PageShell from "@/components/nav/PageShell"
 import CommandCenterSliderDeck, {
@@ -13,6 +13,12 @@ import { useSystemBaseline } from "@/system/SystemBaselineProvider"
 import { buildPositionViewModel, type PositionKpis } from "@/pages/position/overlays/positionState"
 import { KPI_KEYS, KPI_ZONE_MAP, getHealthLevel } from "@/domain/intelligence/kpiZoneMapping"
 import { LEVER_DEFS } from "@/logic/leverTaxonomy"
+import {
+  usePhase1ScenarioStore,
+  type SimulationKpis,
+  type Phase1Scenario,
+} from "@/state/phase1ScenarioStore"
+import { runSimulation } from "@/engine/simulationService"
 
 const STUDIO_LEVER_GROUPS = [
   { id: "growth", title: "Growth Vector", leverIds: ["demandStrength", "pricingPower", "expansionVelocity"] },
@@ -196,6 +202,27 @@ function buildStudioKpis(baseKpis: PositionKpis, levers: StudioLeverState): Posi
   }
 }
 
+/* ── Deterministic string hash (djb2) ── */
+function hashStr(str: string): number {
+  let h = 5381
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) + h + str.charCodeAt(i)) | 0
+  }
+  return h >>> 0
+}
+
+/* ── Human-readable lever change summary ── */
+function buildLeverSummary(levers: StudioLeverState): string {
+  const active = (Object.entries(levers) as [StudioLeverId, number][])
+    .filter(([id, v]) => Math.abs(v - STUDIO_DEFAULT_LEVERS[id]) > 5)
+    .map(([id, v]) => {
+      const dir = v > STUDIO_DEFAULT_LEVERS[id] ? "↑" : "↓"
+      const def = LEVER_DEFS.find((l) => l.id === id)
+      return `${def?.label ?? id} ${dir}`
+    })
+  return active.length > 0 ? `Studio: ${active.join(", ")}` : "Studio: Baseline configuration"
+}
+
 function buildStudioSections(levers: StudioLeverState): CommandCenterSliderSection[] {
   return STUDIO_LEVER_GROUPS.map((group) => ({
     id: group.id,
@@ -217,9 +244,41 @@ function buildStudioSections(levers: StudioLeverState): CommandCenterSliderSecti
 }
 
 export default function StudioPage() {
-  const [levers, setLevers] = useState<StudioLeverState>(STUDIO_DEFAULT_LEVERS)
-
   const { baseline } = useSystemBaseline()
+
+  // ── Canonical store ──────────────────────────────────────────────────────
+  const upsertScenario  = usePhase1ScenarioStore((s) => s.upsertScenario)
+  const setActiveScenId = usePhase1ScenarioStore((s) => s.setActiveScenarioId)
+  const activeScenarioId = usePhase1ScenarioStore((s) => s.activeScenarioId)
+  const scenarios        = usePhase1ScenarioStore((s) => s.scenarios)
+  const activeScenario   = useMemo(
+    () => (activeScenarioId ? scenarios.find((s) => s.id === activeScenarioId) ?? null : null),
+    [activeScenarioId, scenarios],
+  )
+
+  // ── Stable session ID — re-use existing studio session when navigating back ──
+  // Uses Zustand .getState() in IIFE (valid outside React; runs once at ref init).
+  const studioSessionId = useRef<string>(
+    (() => {
+      const aid = usePhase1ScenarioStore.getState().activeScenarioId
+      return aid?.startsWith("studio_") ? aid : `studio_${Date.now()}`
+    })(),
+  )
+
+  // ── Lever state — hydrated from active studio scenario on mount ──────────
+  const [levers, setLevers] = useState<StudioLeverState>(() => {
+    const aid = usePhase1ScenarioStore.getState().activeScenarioId
+    if (!aid?.startsWith("studio_")) return STUDIO_DEFAULT_LEVERS
+    const sc = usePhase1ScenarioStore.getState().scenarios.find((s) => s.id === aid)
+    if (!sc?.leverValues) return STUDIO_DEFAULT_LEVERS
+    const lv = sc.leverValues
+    const merged: StudioLeverState = { ...STUDIO_DEFAULT_LEVERS }
+    for (const key of Object.keys(STUDIO_DEFAULT_LEVERS) as StudioLeverId[]) {
+      if (typeof lv[key] === "number") merged[key] = lv[key]
+    }
+    return merged
+  })
+
   const baseKpis = useMemo(() => {
     if (!baseline) return null
     return buildPositionViewModel(baseline as any).kpis
@@ -242,19 +301,109 @@ export default function StudioPage() {
     [levers],
   )
 
+  // ── Bridge: lever changes → canonical scenario store ─────────────────────
+  // Fires on every lever movement. Keeps phase1ScenarioStore in sync so
+  // Position, Compare, and Boardroom all reflect live Studio adjustments.
+  useEffect(() => {
+    if (!modifiedKpis || !hasChanges) return
+
+    const safeDiv = (a: number, b: number) => (b > 0.0001 ? a / b : 1)
+
+    const simKpis: SimulationKpis = {
+      cash:        modifiedKpis.cashOnHand,
+      monthlyBurn: modifiedKpis.burnMonthly,
+      revenue:     modifiedKpis.revenueMonthly,
+      grossMargin: modifiedKpis.grossMarginPct / 100,
+      growthRate:  modifiedKpis.growthRatePct  / 100,
+      churnRate:   modifiedKpis.churnPct       / 100,
+      headcount:   modifiedKpis.headcount,
+      arpa:        baseline?.operating?.acv ?? 0,
+      runway:      modifiedKpis.runwayMonths,
+    }
+
+    const scenario: Phase1Scenario = {
+      id:          studioSessionId.current,
+      createdAt:   Date.now(),
+      decision:    buildLeverSummary(levers),
+      status:      "complete",
+      leverValues: { ...levers },
+      simulationResults: {
+        completedAt:   Date.now(),
+        horizonMonths: 24,
+        summary:       buildLeverSummary(levers),
+        kpis:          simKpis,
+        terrain: {
+          seed: hashStr(studioSessionId.current),
+          multipliers: {
+            cash:   safeDiv(modifiedKpis.cashOnHand,    baseKpis!.cashOnHand),
+            burn:   safeDiv(modifiedKpis.burnMonthly,   baseKpis!.burnMonthly),
+            growth: safeDiv(modifiedKpis.growthRatePct, baseKpis!.growthRatePct),
+          },
+        },
+      },
+    }
+
+    upsertScenario(scenario)
+    setActiveScenId(studioSessionId.current)
+    // Compute forward projections after KPIs are written to the store.
+    runSimulation(studioSessionId.current)
+  }, [modifiedKpis, hasChanges, levers, baseline, baseKpis, upsertScenario, setActiveScenId])
+
   const resetAll = useCallback(() => {
     setLevers({ ...STUDIO_DEFAULT_LEVERS })
-  }, [])
+    // Deactivate the studio scenario — leave it in history but stop driving downstream pages
+    if (usePhase1ScenarioStore.getState().activeScenarioId === studioSessionId.current) {
+      setActiveScenId(null)
+    }
+  }, [setActiveScenId])
 
   const saveAsScenario = useCallback(() => {
+    if (!modifiedKpis || !hasChanges) return
     const name = prompt("Name this scenario:")
-    if (!name) return
-    const active = Object.entries(levers).filter(([leverId, value]) => value !== STUDIO_DEFAULT_LEVERS[leverId as StudioLeverId])
-    if (active.length === 0) return
-    const saved = JSON.parse(localStorage.getItem("stratfit-saved-scenarios") || "[]")
-    saved.push({ name, levers: Object.fromEntries(active), timestamp: Date.now() })
-    localStorage.setItem("stratfit-saved-scenarios", JSON.stringify(saved))
-  }, [levers])
+    if (!name?.trim()) return
+
+    const safeDiv = (a: number, b: number) => (b > 0.0001 ? a / b : 1)
+    const savedId = `studio_saved_${Date.now()}`
+
+    const simKpis: SimulationKpis = {
+      cash:        modifiedKpis.cashOnHand,
+      monthlyBurn: modifiedKpis.burnMonthly,
+      revenue:     modifiedKpis.revenueMonthly,
+      grossMargin: modifiedKpis.grossMarginPct / 100,
+      growthRate:  modifiedKpis.growthRatePct  / 100,
+      churnRate:   modifiedKpis.churnPct       / 100,
+      headcount:   modifiedKpis.headcount,
+      arpa:        baseline?.operating?.acv ?? 0,
+      runway:      modifiedKpis.runwayMonths,
+    }
+
+    const saved: Phase1Scenario = {
+      id:          savedId,
+      createdAt:   Date.now(),
+      decision:    name.trim(),
+      status:      "complete",
+      leverValues: { ...levers },
+      simulationResults: {
+        completedAt:   Date.now(),
+        horizonMonths: 24,
+        summary:       `${name.trim()} — ${buildLeverSummary(levers)}`,
+        kpis:          simKpis,
+        terrain: {
+          seed: hashStr(savedId),
+          multipliers: {
+            cash:   safeDiv(modifiedKpis.cashOnHand,    baseKpis!.cashOnHand),
+            burn:   safeDiv(modifiedKpis.burnMonthly,   baseKpis!.burnMonthly),
+            growth: safeDiv(modifiedKpis.growthRatePct, baseKpis!.growthRatePct),
+          },
+        },
+      },
+    }
+
+    upsertScenario(saved)
+    // Saved scenario becomes the new active; update session ID so edits continue against it
+    studioSessionId.current = savedId
+    setActiveScenId(savedId)
+  }, [modifiedKpis, hasChanges, levers, baseline, baseKpis, upsertScenario, setActiveScenId])
 
   const healthChanges = useMemo(() => {
     if (!baseKpis || !modifiedKpis) return []
