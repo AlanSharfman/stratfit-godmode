@@ -18,11 +18,12 @@ import * as THREE from "three"
 import { TERRAIN_CONSTANTS, TERRAIN_WORLD_SCALE } from "@/terrain/terrainConstants"
 import { SEGMENTS } from "@/terrain/terrainHeightfield"
 
-// Grid spacing: every Nth vertex. At SEGMENTS=128, step=8 → 17 lines per axis.
-const GRID_STEP = 8
+// Grid spacing: every Nth vertex. At SEGMENTS=128, step=4 → 33 lines per axis.
+// Denser than step=8 to restore STRATFIT structural intelligence character.
+const GRID_STEP = 4
 
 // Lift slightly above terrain surface to prevent z-fighting.
-const GRID_LIFT = 0.4
+const GRID_LIFT = 0.5
 
 interface Props {
   heightfield: Float32Array | null
@@ -70,8 +71,8 @@ export default function TerrainIntelligenceGrid({ heightfield }: Props) {
   const material = useMemo(
     () =>
       new THREE.LineBasicMaterial({
-        color: 0x22d3ee,
-        opacity: 0.09,
+        color: 0x38bdf8,   // sky-400 — sharper, more luminous than 22d3ee
+        opacity: 0.22,
         transparent: true,
         depthWrite: false,
       }),

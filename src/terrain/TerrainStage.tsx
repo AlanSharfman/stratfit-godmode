@@ -178,7 +178,7 @@ export default function TerrainStage({
               Fill: soft right-side and front fill to lift shadow floor.
               Rim: subtle back-light that separates peaks from background.
               Fog: atmospheric depth — foreground clear, distance fades. */}
-          <ambientLight intensity={0.85} color="#132840" />
+          <ambientLight intensity={1.05} color="#1a4a6a" />
           <directionalLight
             position={[-180, 320, 140]} intensity={1.55} color="#5ad0ff"
             castShadow
@@ -192,7 +192,6 @@ export default function TerrainStage({
           <directionalLight position={[0, 60, 260]} intensity={0.38} color="#2080bb" />
           <directionalLight position={[0, 140, -300]} intensity={0.28} color="#1a6090" />
           <hemisphereLight args={["#2a9fd6", "#060e18", 0.55]} />
-          <fogExp2 attach="fog" args={[0x060e18, 0.00085]} />
         </>
       ) : (
         <>
@@ -203,7 +202,6 @@ export default function TerrainStage({
           <directionalLight position={[0, 100, 220]} intensity={0.26} color="#a0d8ff" />
           <directionalLight position={[-200, 40, -100]} intensity={0.18} color="#7dd3fc" />
           <hemisphereLight args={["#66e3ff", "#050b14", 0.40]} />
-          <fogExp2 attach="fog" args={[0x060e18, 0.00050]} />
         </>
       )}
 

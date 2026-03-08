@@ -23,12 +23,12 @@ interface Layer {
 }
 
 const LAYERS: Layer[] = [
-  { name: "bg-left-ridge",     seedKey: "bg-left-ridge",     scale: [1.55, 2.65, 1.25], position: [-260, -20, -280], rotationX: -Math.PI / 2, opacity: 0.44, emissiveIntensity: 0.18 },
-  { name: "bg-midleft-mass",   seedKey: "bg-midleft-mass",   scale: [1.35, 2.45, 1.20], position: [-120, -19, -230], rotationX: -Math.PI / 2, opacity: 0.38, emissiveIntensity: 0.15 },
-  { name: "bg-center-plateau", seedKey: "bg-center-plateau", scale: [1.75, 2.85, 1.35], position: [40,   -19, -260], rotationX: -Math.PI / 2, opacity: 0.34, emissiveIntensity: 0.14 },
-  { name: "bg-midright-shelf", seedKey: "bg-midright-shelf", scale: [1.45, 2.55, 1.20], position: [220,  -21, -285], rotationX: -Math.PI / 2, opacity: 0.30, emissiveIntensity: 0.13 },
-  { name: "bg-right-ridge",    seedKey: "bg-right-ridge",    scale: [1.65, 2.75, 1.30], position: [360,  -22, -340], rotationX: -Math.PI / 2, opacity: 0.26, emissiveIntensity: 0.12 },
-  { name: "bg-nearback-band",  seedKey: "bg-nearback-band",  scale: [1.25, 2.10, 1.10], position: [0,    -18, -150], rotationX: -Math.PI / 2, opacity: 0.20, emissiveIntensity: 0.10 },
+  { name: "bg-left-ridge",     seedKey: "bg-left-ridge",     scale: [1.55, 2.65, 1.25], position: [-260, -20, -280], rotationX: -Math.PI / 2, opacity: 0.22, emissiveIntensity: 0.10 },
+  { name: "bg-midleft-mass",   seedKey: "bg-midleft-mass",   scale: [1.35, 2.45, 1.20], position: [-120, -19, -230], rotationX: -Math.PI / 2, opacity: 0.18, emissiveIntensity: 0.08 },
+  { name: "bg-center-plateau", seedKey: "bg-center-plateau", scale: [1.75, 2.85, 1.35], position: [40,   -19, -260], rotationX: -Math.PI / 2, opacity: 0.16, emissiveIntensity: 0.07 },
+  { name: "bg-midright-shelf", seedKey: "bg-midright-shelf", scale: [1.45, 2.55, 1.20], position: [220,  -21, -285], rotationX: -Math.PI / 2, opacity: 0.14, emissiveIntensity: 0.06 },
+  { name: "bg-right-ridge",    seedKey: "bg-right-ridge",    scale: [1.65, 2.75, 1.30], position: [360,  -22, -340], rotationX: -Math.PI / 2, opacity: 0.12, emissiveIntensity: 0.05 },
+  { name: "bg-nearback-band",  seedKey: "bg-nearback-band",  scale: [1.25, 2.10, 1.10], position: [0,    -18, -150], rotationX: -Math.PI / 2, opacity: 0.10, emissiveIntensity: 0.04 },
 ]
 
 export default function BackgroundTerrainLayers() {

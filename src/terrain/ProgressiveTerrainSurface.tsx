@@ -88,29 +88,54 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
       [seed, seedPeaks, kpis, tuning],
     )
 
-    // Build geometry — write stabilized heightfield directly to mesh
+    // ── Persistent geometry ────────────────────────────────────────────────
+    // Created ONCE. Never recreated on KPI changes.
+    // Vertex Z positions are written directly by the lerp loop every frame.
+    // This eliminates the React-rerender jitter caused by geometry swapping.
     const geometry = useMemo(
-      () => createTerrainGeometry({ segments: SEGMENTS, heightfield: stabilizedHF }),
-      [stabilizedHF],
+      () => createTerrainGeometry({ segments: SEGMENTS, heightfield: null }),
+      [],
     )
+    useEffect(() => () => { geometry.dispose() }, [geometry])
 
-    // Target heights = stabilized heightfield (already clean, no further processing needed)
-    const targetHeights = stabilizedHF
+    // Animated heights — the live Z values currently written into the geometry.
+    // Separate from the geometry buffer so we can read/write efficiently.
+    const animHeights = useRef(new Float32Array((SEGMENTS + 1) * (SEGMENTS + 1)))
 
-    // Precompute cascade pulse offsets per zone for quick lookup
+    // Target heights ref — updated when KPIs change; lerp drives geometry toward it.
+    const targetHF = useRef<Float32Array>(stabilizedHF)
+    const morphInit = useRef(false)
+
+    useEffect(() => {
+      targetHF.current = stabilizedHF
+      morphSettled.current = false
+      if (!morphInit.current) {
+        // First mount: snap geometry to target immediately — no animation from flat terrain.
+        animHeights.current = new Float32Array(stabilizedHF)
+        const pos = geometry.attributes.position as THREE.BufferAttribute
+        for (let i = 0; i < stabilizedHF.length; i++) pos.setZ(i, stabilizedHF[i])
+        pos.needsUpdate = true
+        geometry.computeVertexNormals()
+        morphInit.current = true
+        morphSettled.current = true
+      }
+    }, [stabilizedHF, geometry])
+
+    // Cascade pulse offsets per zone for quick lookup
     const cascadeZonePulse = useRef(new Map<KpiKey, number>())
 
-    const normalsTimer = useRef(0)
     const morphSettled = useRef(false)
 
-    useEffect(() => { morphSettled.current = false }, [stabilizedHF])
-
-    // Animate vertex heights toward targets + cascade pulses
+    // ── Morph animation loop ──────────────────────────────────────────────
+    // Lerps animHeights toward targetHF every frame.
+    // Geometry Z values are written from animHeights — geometry is never recreated.
+    // Normals recomputed every frame while morphing for smooth lighting transitions.
     useFrame((state, delta) => {
       const pos = geometry.attributes.position as THREE.BufferAttribute
       const count = pos.count
       let changed = false
       const vertsPerRow = SEGMENTS + 1
+      const clampedDelta = Math.min(delta, 0.05) // guard against tab-switch frame spikes
 
       // Cascade pulse computation
       cascadeZonePulse.current.clear()
@@ -147,28 +172,27 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
           }
         }
 
-        const current = pos.getZ(i)
-        const target = targetHeights[i] + cascadeOffset
+        const current = animHeights.current[i]
+        const target = targetHF.current[i] + cascadeOffset
         const diff = target - current
         if (Math.abs(diff) > 0.01) {
-          pos.setZ(i, current + diff * Math.min(1, delta * morphSpeed))
+          const next = current + diff * Math.min(1, clampedDelta * morphSpeed)
+          animHeights.current[i] = next
+          pos.setZ(i, next)
           changed = true
         }
       }
 
       if (changed) {
         pos.needsUpdate = true
-        normalsTimer.current += delta
-        if (normalsTimer.current > 0.1) {
-          geometry.computeVertexNormals()
-          normalsTimer.current = 0
-        }
+        // Normals every frame during active morph — at 128 segs this is fast
+        // and eliminates the "pop" from throttled normal updates.
+        geometry.computeVertexNormals()
         morphSettled.current = false
       } else if (!morphSettled.current) {
         geometry.computeVertexNormals()
         morphSettled.current = true
       }
-
     })
 
     // Materials
@@ -181,7 +205,6 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
     const wireMat = useMemo(() => createTerrainWireMaterial(), [])
     useEffect(() => () => solidMat.dispose(), [solidMat])
     useEffect(() => () => wireMat.dispose(), [wireMat])
-    useEffect(() => () => { geometry.dispose() }, [geometry])
 
     // Transform — same as TerrainSurface
     useEffect(() => {
@@ -204,11 +227,10 @@ const ProgressiveTerrainSurface = forwardRef<ProgressiveTerrainHandle, Props>(
       const clampedCol = Math.max(0, Math.min(SEGMENTS, col))
       const clampedRow = Math.max(0, Math.min(SEGMENTS, row))
       const idx = clampedRow * (SEGMENTS + 1) + clampedCol
-      const pos = geometry.attributes.position as THREE.BufferAttribute
-      const h = pos.getZ(idx) ?? 0
-      // The mesh has rotation.x = -PI/2 so geometry Z maps to world Y via scale.z, not scale.y
+      // Read from animHeights (live animated buffer) — markers follow the morph
+      const h = animHeights.current[idx] ?? 0
       return h * TERRAIN_WORLD_SCALE.z + TERRAIN_CONSTANTS.yOffset
-    }, [geometry])
+    }, [])
 
     useImperativeHandle(ref, () => ({
       seed,

@@ -72,7 +72,7 @@ vec3 _rockFace = _altCol * 1.15 + vec3(0.020, 0.020, 0.030);
 diffuseColor.rgb = mix(diffuseColor.rgb, _rockFace, _slopeF * 0.58);
 
 float _ridgeMask = _hNorm * (1.0 - _slopeF) * smoothstep(0.30, 0.65, _hNorm);
-diffuseColor.rgb += vec3(0.025, 0.080, 0.130) * _ridgeMask * 1.6;
+diffuseColor.rgb += vec3(0.035, 0.110, 0.180) * _ridgeMask * 2.2;
 
 float _snowMask = smoothstep(0.72, 0.92, _hNorm) * (1.0 - _slopeF);
 diffuseColor.rgb = mix(diffuseColor.rgb, _peak, _snowMask * 0.42);
@@ -121,11 +121,11 @@ _atmFactor = _atmFactor * _atmFactor; // quadratic: slow near, stronger far
 vec3 _atmHaze = vec3(0.030, 0.058, 0.095); // deep navy mist
 diffuseColor.rgb = mix(diffuseColor.rgb, _atmHaze, _atmFactor * 0.18);
 
-// Edge proximity fade — terrain dissolves into background at mesh boundary.
-// Prevents the hard edge of the PlaneGeometry from being visible.
+// Edge proximity fade — only the outermost 15% of the mesh dissolves.
+// Pushed further out than before so the visible terrain body stays bright.
 // Terrain half-extents in world space: X ±630 (210*3), Z ±351 (135*2.6).
-float _eX = smoothstep(0.58, 0.96, abs(vWorldPos.x) / 630.0);
-float _eZ = smoothstep(0.52, 0.96, abs(vWorldPos.z) / 351.0);
+float _eX = smoothstep(0.82, 0.99, abs(vWorldPos.x) / 630.0);
+float _eZ = smoothstep(0.78, 0.99, abs(vWorldPos.z) / 351.0);
 float _edgeBlend = max(_eX, _eZ);
 vec3 _bgFade = vec3(0.024, 0.043, 0.086);
 diffuseColor.rgb = mix(diffuseColor.rgb, _bgFade, _edgeBlend);`
@@ -148,12 +148,12 @@ const FRAGMENT_VARYINGS = VERTEX_VARYINGS
 
 export function createTerrainSolidMaterial() {
   const mat = new THREE.MeshStandardMaterial({
-    color: 0x2080b0,
-    emissive: new THREE.Color(0x145878),
-    emissiveIntensity: 0.35,
+    color: 0x2a9fd8,
+    emissive: new THREE.Color(0x1a6a90),
+    emissiveIntensity: 0.50,
     transparent: false,
     opacity: 1.0,
-    roughness: 0.68,
+    roughness: 0.62,
     metalness: 0.05,
     flatShading: false,
     depthWrite: true,
