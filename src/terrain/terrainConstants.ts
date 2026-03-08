@@ -14,7 +14,7 @@ export const TERRAIN_CONSTANTS = {
     /** Secondary scale factor for terrain mode */
     heightFactor: 0.35,
     /** Y offset after rotation to center terrain */
-    yOffset: -6,
+    yOffset: -16,
     /** Noise octave base scale */
     noiseScale: 0.045,
     /** Ridge sharpness exponent */
